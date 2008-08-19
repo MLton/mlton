@@ -3152,8 +3152,18 @@ struct
              => seq [str ".globl ",
                      Label.layout l]
              | Hidden l
-             => seq [str ".hidden ",
-                     Label.layout l]
+             => (* visibility directive depends on target object file *)
+                let
+                   val elf = seq [str ".hidden", Label.layout l]
+                   val macho = seq [str ".private_extern", Label.layout l]
+                   val coff = seq [str "/*", str ".hidden", Label.layout l, str "*/"]
+                in
+                   case !Control.Target os of
+                      MLton.Platform.OS.Cygwin => coff
+                    | MLton.Platform.OS.Darwin => macho
+                    | MLton.Platform.OS.MinGW => coff
+                    | _ => elf
+                end
              | IndirectSymbol l 
              => seq [str ".indirect_symbol ",
                      Label.layout l]
@@ -3305,15 +3315,7 @@ struct
       val pseudoop_quad = PseudoOp o PseudoOp.quad
       val pseudoop_string = PseudoOp o PseudoOp.string
       val pseudoop_global = PseudoOp o PseudoOp.global
-      fun pseudoop_hidden l = 
-         (* .hidden is specific to GNU as targetting ELF;
-          * Windows used COFF; Darwin uses Mach-O.
-          *)
-         case !Control.Target.os of
-            MLton.Platform.OS.Cygwin => Comment (Label.toString l ^ " is hidden")
-          | MLton.Platform.OS.Darwin => Comment (Label.toString l ^ " is hidden")
-          | MLton.Platform.OS.MinGW => Comment (Label.toString l ^ " is hidden")
-          | _ => PseudoOp (PseudoOp.hidden l)
+      val pseudoop_hidden = PseudoOp o PseudoOp.hidden
       val pseudoop_indirect_symbol = PseudoOp o PseudoOp.indirect_symbol
       val pseudoop_local = PseudoOp o PseudoOp.locall
       val pseudoop_comm = PseudoOp o PseudoOp.comm
