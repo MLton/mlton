@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -759,13 +759,14 @@ fun useless (program: Program.t): Program.t =
                   PrimApp
                   {prim = prim,
                    args = args,
-                   targs = Prim.extractTargs (prim,
-                                              {args = argTypes,
-                                               result = resultType,
-                                               deArray = Type.deArray,
-                                               deArrow = Type.deArrow,
-                                               deVector = Type.deVector,
-                                               deWeak = Type.deWeak})}
+                   targs = (Prim.extractTargs
+                            (prim,
+                             {args = argTypes,
+                              result = resultType,
+                              deArray = Type.deArray,
+                              deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
+                              deVector = Type.deVector,
+                              deWeak = Type.deWeak}))}
                end
           | Select {tuple, offset} =>
                let
