@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -126,6 +126,11 @@ structure VarExp =
    struct
       datatype t = T of {targs: Type.t vector,
                          var: Var.t}
+
+      fun equals (T {targs = targs1, var = var1},
+                  T {targs = targs2, var = var2}) =
+         Var.equals (var1, var2)
+         andalso Vector.equals (targs1, targs2, Type.equals)
 
       fun mono var = T {var = var, targs = Vector.new0 ()}
 

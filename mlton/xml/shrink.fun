@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -18,6 +18,8 @@ open S
 open Dec PrimExp
 
 type int = Int.t
+
+val tracePrimApplyInfo = Trace.info "Xml.Shrink.Prim.apply"
 
 val traceShrinkExp =
    Trace.trace ("Xml.Shrink.shrinkExp", Exp.layout, Exp.layout)
@@ -78,6 +80,10 @@ structure VarInfo =
       val inc =
          Trace.trace2 ("Xml.Shrink.VarInfo.inc", layout, Int.layout, Unit.layout) inc
 
+      fun inc1 i = inc (i, 1)
+
+      val inc1 = Trace.trace ("Xml.Shrink.VarInfo.inc1", layout, Unit.layout) inc1
+
       fun delete i = inc (i, ~1)
 
       val delete = Trace.trace ("Xml.Shrink.VarInfo.delete", layout, Unit.layout) delete
@@ -87,6 +93,9 @@ structure VarInfo =
       val varExp =
          fn Mono {varExp, ...} => varExp
           | Poly x => x
+
+      fun equals (vi1, vi2) =
+         VarExp.equals (varExp vi1, varExp vi2)
    end
 
 structure InternalVarInfo =
@@ -176,7 +185,6 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
          replaceInfo
       fun replace (x, i) = replaceInfo (x, monoVarInfo x, i)
       val shrinkVarExp = VarInfo.varExp o varExpInfo
-      fun shrinkVarExps xs = Vector.map (xs, shrinkVarExp)
       local
          fun handleBoundVar (x, ts, _) =
             setVarInfo (x,
@@ -186,7 +194,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                                                 value = ref NONE,
                                                 varExp = VarExp.mono x}))
                         else InternalVarInfo.Self)
-         fun handleVarExp x = VarInfo.inc (varExpInfo x, 1)
+         fun handleVarExp x = VarInfo.inc1 (varExpInfo x)
       in
          fun countExp (e: Exp.t): unit =
             Exp.foreach {exp = e,
@@ -196,13 +204,46 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                          handleVarExp = handleVarExp}
       end
       fun deleteVarExp (x: VarExp.t): unit =
-         VarInfo.inc (varExpInfo x, ~1)
+         VarInfo.delete (varExpInfo x)
       fun deleteExp (e: Exp.t): unit = Exp.foreachVarExp (e, deleteVarExp)
       val deleteExp =
          Trace.trace ("Xml.Shrink.deleteExp", Exp.layout, Unit.layout) deleteExp
       fun deleteLambda l = deleteExp (Lambda.body l)
+      fun primApp (prim: Type.t Prim.t, args: VarInfo.t vector)
+         : (Type.t, VarInfo.t) Prim.ApplyResult.t =
+         let
+            val args' =
+               Vector.map
+               (args, fn vi =>
+                case vi of
+                   VarInfo.Poly _ => Prim.ApplyArg.Var vi
+                 | VarInfo.Mono {value, ...} =>
+                      (case !value of
+                          SOME (Value.ConApp {con, arg, ...}) =>
+                             if isSome arg
+                                then Prim.ApplyArg.Var vi
+                             else Prim.ApplyArg.Con {con = con,
+                                                     hasArg = false}
+                        | SOME (Value.Const c) =>
+                             Prim.ApplyArg.Const c
+                        | _ => Prim.ApplyArg.Var vi))
+         in
+            Trace.traceInfo'
+            (tracePrimApplyInfo,
+             fn (p, args, _) =>
+             let
+                open Layout
+             in
+                seq [Prim.layout p, str " ",
+                     List.layout (Prim.ApplyArg.layout
+                                  (VarExp.layout o VarInfo.varExp)) args]
+             end,
+             Prim.ApplyResult.layout (VarExp.layout o VarInfo.varExp))
+            Prim.apply
+            (prim, Vector.toList args', VarInfo.equals)
+         end
       (*---------------------------------------------------*)
-      (*                    shrinkExp                    *)
+      (*                    shrinkExp                      *)
       (*---------------------------------------------------*)
       fun shrinkExp arg: Exp.t =
          traceShrinkExp
@@ -304,10 +345,10 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                           then (delete (); decs)
                        else (case s of
                                 NONE => decs
-                              | SOME n => finish (n (), decs))
+                              | SOME mk => finish (mk (), decs))
                     end
             fun expansive (e: PrimExp.t) = finish (e, rest ())
-            fun nonExpansiveCon (delete, v: Value.t) =
+            fun nonExpansiveValue (delete, v: Value.t) =
                nonExpansive
                (delete,
                 fn () => (value := SOME v
@@ -338,7 +379,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                                  let
                                     val {arg = form, body, ...} = Lambda.dest l
                                  in
-                                    VarInfo.inc (arg, ~1)
+                                    VarInfo.delete arg
                                     ; replace (form, arg)
                                     ; isInlined := true
                                     ; numOccurrences := 0
@@ -421,11 +462,11 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                   else
                      let
                         val arg = Option.map (arg, varExpInfo)
-                     in nonExpansiveCon
+                     in nonExpansiveValue
                         (fn () => Option.app (arg, VarInfo.delete),
                          Value.ConApp {con = con, targs = targs, arg = arg})
                      end                             
-             | Const c => nonExpansiveCon (fn () => (), Value.Const c)
+             | Const c => nonExpansiveValue (fn () => (), Value.Const c)
              | Handle {try, catch, handler} =>
                   expansive (Handle {try = shrinkExp try,
                                      catch = catch,
@@ -441,12 +482,67 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                   end
              | PrimApp {prim, args, targs} =>
                   let
-                     fun make () =
-                        PrimApp {prim = prim, targs = targs,
-                                 args = shrinkVarExps args}
-                  in if Prim.maySideEffect prim
-                        then expansive (make ())
-                     else nonExpansive (fn () => (), fn () => SOME make)
+                     val args = varExpInfos args
+                     fun doit {prim, targs, args} =
+                        let
+                           fun make () =
+                              PrimApp {prim = prim, targs = targs,
+                                       args = Vector.map (args, VarInfo.varExp)}
+                        in
+                           if Prim.maySideEffect prim
+                              then expansive (make ())
+                           else nonExpansive (fn () => VarInfo.deletes args,
+                                              fn () => SOME make)
+                        end
+                     fun default () = doit {prim = prim, targs = targs, args = args}
+                     datatype z = datatype Prim.ApplyResult.t
+                  in
+                     case primApp (prim, args) of
+                        Apply (prim, args') =>
+                           let
+                              val args' = Vector.fromList args'
+                              val {no = unused, ...} =
+                                 Vector.partition
+                                 (args, fn arg =>
+                                  Vector.exists
+                                  (args', fn arg' =>
+                                   VarInfo.equals (arg, arg')))
+                              val _ = VarInfo.deletes unused
+                           in
+                              doit {prim = prim, targs = targs, args = args'}
+                           end
+                      | Bool b =>
+                           let
+                              val _ = VarInfo.deletes args
+                           in
+                              nonExpansiveValue
+                              (fn () => (),
+                               Value.ConApp {con = Con.fromBool b,
+                                             targs = Vector.new0 (),
+                                             arg = NONE})
+                           end
+                      | Const c =>
+                           let
+                              val _ = VarInfo.deletes args
+                           in
+                              nonExpansiveValue
+                              (fn () => (),
+                               Value.Const c)
+                           end
+                      | Var x =>
+                           let
+                              val _ =
+                                 Vector.foreach
+                                 (args, fn arg =>
+                                  if VarInfo.equals (arg, x)
+                                     then ()
+                                  else VarInfo.delete arg)
+                           in
+                              replaceInfo (var, info, x)
+                              ; VarInfo.delete x
+                              ; rest ()
+                           end
+                      | _ => default ()
                   end
              | Profile _ => expansive exp
              | Raise {exn, extend} =>
@@ -470,12 +566,12 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                   end
              | Tuple xs =>
                   let val xs = varExpInfos xs
-                  in nonExpansiveCon (fn () => VarInfo.deletes xs,
-                                      Value.Tuple xs)
+                  in nonExpansiveValue (fn () => VarInfo.deletes xs,
+                                        Value.Tuple xs)
                   end
              | Var x => let val x = varExpInfo x
                         in replaceInfo (var, info, x)
-                           ; VarInfo.inc (x, ~1)
+                           ; VarInfo.delete x
                            ; rest ()
                         end
          end
@@ -495,7 +591,7 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
          Option.app
          (overflow, fn x =>
           case varInfo x of
-             InternalVarInfo.VarInfo i => VarInfo.inc (i, 1)
+             InternalVarInfo.VarInfo i => VarInfo.inc1 i
            | _ => Error.bug "Xml.Shrink.shrinkOnce: strange overflow var")
       val body = shrinkExp body
       (* Must lookup the overflow variable again because it may have been set
