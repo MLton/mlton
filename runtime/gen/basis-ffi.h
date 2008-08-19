@@ -1121,4 +1121,3 @@ INTERNAL Real32_t WordU8_rndToReal32(Word8_t);
 INTERNAL Real64_t WordU8_rndToReal64(Word8_t);
 MLTON_CODEGEN_STATIC_INLINE Word8_t WordU8_rshift(Word8_t,Word32_t);
 #endif /* _MLTON_BASIS_FFI_H_ */
-

@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -344,7 +344,7 @@ fun outputC entries =
       val () = println "#ifndef _MLTON_BASIS_FFI_H_\n"
       val () = println "#define _MLTON_BASIS_FFI_H_\n"
       val () = List.app (fn entry => println (Entry.toC entry)) entries
-      val () = println "#endif /* _MLTON_BASIS_FFI_H_ */\n"
+      val () = println "#endif /* _MLTON_BASIS_FFI_H_ */"
       val () = TextIO.closeOut f
    in
       ()
