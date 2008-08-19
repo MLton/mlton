@@ -29,8 +29,8 @@ structure CUtil: C_UTIL =
             fun loop i =
                if i >= n
                   then ()
-                  else (Array.update (a, i, sub (s, i))
-                        ; loop (i + 1))
+                  else (Array.unsafeUpdate (a, i, sub (s, i))
+                        ; loop (i +? 1))
             val () = loop 0
          in 
             a
@@ -97,12 +97,14 @@ structure CUtil: C_UTIL =
              *)
             fun fromList l =
                let
-                  val a = Array.array (1 +? List.length l, NullString.empty)
+                  val n = List.length l
+                  val a = Array.arrayUninit (1 +? n)
                   val _ =
                      List.foldl (fn (s, i) =>
-                                 (Array.update (a, i, NullString.nullTerm s)
+                                 (Array.unsafeUpdate (a, i, NullString.nullTerm s)
                                   ; i +? 1))
                      0 l
+                  val _ = Array.unsafeUpdate (a, n, NullString.empty)
                in
                   a
                end
