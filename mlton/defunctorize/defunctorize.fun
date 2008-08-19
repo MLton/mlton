@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1096,11 +1096,5 @@ fun defunctorize (CoreML.Program.T {decs}) =
                      datatypes = Vector.fromList (!datatypes),
                      overflow = NONE}
    end
-
-val defunctorize =
-   Trace.trace 
-   ("Defunctorize.defunctorize", 
-    CoreML.Program.layout, Xml.Program.layout)
-   defunctorize
 
 end

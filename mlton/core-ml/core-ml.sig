@@ -181,7 +181,6 @@ signature CORE_ML =
          sig
             datatype t = T of {decs: Dec.t vector}
 
-            val layout: t -> Layout.t
             val layouts: t * (Layout.t -> unit) -> unit
          end
    end

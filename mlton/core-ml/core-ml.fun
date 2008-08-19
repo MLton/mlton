@@ -486,9 +486,6 @@ structure Program =
    struct
       datatype t = T of {decs: Dec.t vector}
 
-      fun layout (T {decs, ...}) =
-         Layout.align (Vector.toListMap (decs, Dec.layout))
-
       fun layouts (T {decs, ...}, output') =
          let
             open Layout
