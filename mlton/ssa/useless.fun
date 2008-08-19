@@ -765,6 +765,7 @@ fun useless (program: Program.t): Program.t =
                               result = resultType,
                               deArray = Type.deArray,
                               deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
+                              deRef = Type.deRef,
                               deVector = Type.deVector,
                               deWeak = Type.deWeak}))}
                end

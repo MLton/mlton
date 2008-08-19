@@ -1401,6 +1401,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
                            {args: 'a vector,
                             deArray: 'a -> 'a,
                             deArrow: 'a -> 'a * 'a,
+                            deRef: 'a -> 'a,
                             deVector: 'a -> 'a,
                             deWeak: 'a -> 'a,
                             result: 'a}) =
@@ -1430,9 +1431,9 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)
        | MLton_touch => one (arg 0)
-       | Ref_assign => one (arg 1)
-       | Ref_deref => one result
-       | Ref_ref => one (arg 0)
+       | Ref_assign => one (deRef (arg 0))
+       | Ref_deref => one (deRef (arg 0))
+       | Ref_ref => one (deRef result)
        | Vector_length => one (deVector (arg 0))
        | Vector_sub => one (deVector (arg 0))
        | Weak_canGet => one (deWeak (arg 0))

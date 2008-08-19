@@ -1054,6 +1054,7 @@ fun closureConvert
                                         result = ty,
                                         deArray = Type.deArray,
                                         deArrow = fn _ => Error.bug "ClosureConvert.convertPrimExp: deArrow",
+                                        deRef = Type.deRef,
                                         deVector = Type.deVector,
                                         deWeak = Type.deWeak}),
                                        Vector.map (args, convertVarInfo))

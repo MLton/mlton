@@ -251,6 +251,7 @@ signature PRIM =
       val extractTargs: 'a t * {args: 'b vector,
                                 deArray: 'b -> 'b,
                                 deArrow: 'b -> 'b * 'b,
+                                deRef: 'b -> 'b,
                                 deVector: 'b -> 'b,
                                 deWeak: 'b -> 'b,
                                 result: 'b} -> 'b vector

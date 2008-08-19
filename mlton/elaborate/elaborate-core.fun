@@ -976,6 +976,7 @@ fun primApp {args, prim, result: Type.t} =
                                      {args = Vector.map (args, Cexp.ty),
                                       deArray = Type.deArray,
                                       deArrow = Type.deArrow,
+                                      deRef = Type.deRef,
                                       deVector = Type.deVector,
                                       deWeak = Type.deWeak,
                                       result = result})
