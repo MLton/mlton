@@ -35,6 +35,9 @@ signature CONTROL_FLAGS =
 
       val chunk: chunk ref
 
+      val closureConvertGlobalize: bool ref
+      val closureConvertShrink: bool ref
+
       structure Codegen:
          sig
             datatype t =

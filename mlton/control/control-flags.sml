@@ -54,6 +54,14 @@ val chunk = control {name = "chunk",
                      default = Coalesce {limit = 4096},
                      toString = Chunk.toString}
 
+val closureConvertGlobalize = control {name = "closureConvertGlobalize",
+                                       default = true,
+                                       toString = Bool.toString}
+
+val closureConvertShrink = control {name = "closureConvertShrink",
+                                    default = true,
+                                    toString = Bool.toString}
+
 structure Codegen =
    struct
       datatype t =

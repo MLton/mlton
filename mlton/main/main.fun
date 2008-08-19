@@ -246,6 +246,12 @@ fun makeOptions {usage} =
                                                  end
                                             else usage ()
                                       end))),
+       (Expert, "closure-convert-globalize", " {true|false}",
+        "whether to globalize during closure conversion",
+        Bool (fn b => (closureConvertGlobalize := b))),
+       (Expert, "closure-convert-shrink", " {true|false}",
+        "whether to shrink during closure conversion",
+        Bool (fn b => (closureConvertShrink := b))),
        (Normal, "codegen",
         concat [" {",
                 String.concatWith

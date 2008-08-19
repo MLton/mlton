@@ -405,10 +405,12 @@ fun closureConvert
                                in {frees = frees, recs = recs}
                                end}
       val _ =
-         Control.trace (Control.Pass, "globalize")
-         Globalize.globalize {program = program,
-                              lambdaFree = LambdaInfo.frees o lambdaInfo,
-                              varGlobal = #isGlobal o varInfo}
+         if !Control.closureConvertGlobalize
+            then Control.trace (Control.Pass, "globalize")
+                 Globalize.globalize {program = program,
+                                      lambdaFree = LambdaInfo.frees o lambdaInfo,
+                                      varGlobal = #isGlobal o varInfo}
+         else ()
       local
          fun removeGlobal v = Vector.keepAll (v, not o isGlobal)
          val _ =
@@ -737,7 +739,10 @@ fun closureConvert
              ; NONE)
             handle Yes ts => SOME ts
          end
-      val shrinkFunction = Ssa.shrinkFunction {globals = Vector.new0 ()}
+      val shrinkFunction =
+         if !Control.closureConvertShrink
+            then Ssa.shrinkFunction {globals = Vector.new0 ()}
+         else fn f => f
       fun addFunc (ac, {args, body, isMain, mayInline, name, returns}) =
          let
             val (start, blocks) =
