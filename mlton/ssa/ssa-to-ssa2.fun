@@ -113,7 +113,26 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                      datatype z = datatype Prim.Name.t
                    in
                       case Prim.name prim of
-                         Array_sub => sub ()
+                         Array_array0Const =>
+                            let
+                               val zeroVar = Var.newNoname ()
+                               val zeroTy = S2.Type.word (S2.WordSize.seqIndex ())
+                               val zeroExp =
+                                  (S2.Exp.Const o S2.Const.word)
+                                  (S2.WordX.zero (S2.WordSize.seqIndex ()))
+                            in
+                               Vector.new2
+                               (S2.Statement.Bind
+                                {exp = zeroExp,
+                                 ty = zeroTy,
+                                 var = SOME zeroVar},
+                                S2.Statement.Bind
+                                {exp = S2.Exp.PrimApp {args = Vector.new1 zeroVar,
+                                                       prim = Prim.array},
+                                 ty = ty,
+                                 var = var})
+                            end
+                       | Array_sub => sub ()
                        | Array_update =>
                             Vector.new1
                             (S2.Statement.Update
