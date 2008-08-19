@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -38,15 +38,17 @@ fun size (T {numItems, ...}) = !numItems
 fun index (w: word, mask: word): int =
    Word.toInt (Word.andb (w, mask))
 
-val numPeeks: int ref = ref 0
-val numLinks: int ref = ref 0
+val numPeeks: Int64.int ref = ref 0
+val numLinks: Int64.int ref = ref 0
 
 fun stats () =
    let open Layout
    in align
-      [seq [str "numPeeks = ", Int.layout (!numPeeks)],
-       seq [str "average position in bucket = ",
+      [seq [str "hash set numPeeks = ", str (Int64.toString (!numPeeks))],
+       (* seq [str "hash set numLinks = ", str (Int64.toString (!numLinks))], *)
+       seq [str "hash set average position = ",
             str let open Real
+                    val fromInt = fromIntInf o Int64.toLarge
                 in format (fromInt (!numLinks) / fromInt (!numPeeks),
                            Format.fix (SOME 3))
                 end]]
@@ -126,10 +128,15 @@ fun remove (T {buckets, mask, numItems, ...}, w, p) =
 
 fun peekGen (T {buckets = ref buckets, mask, ...}, w, p, no, yes) =
    let
-      val _ = Int.inc numPeeks
+      val _ =
+         numPeeks := 1 + !numPeeks
+         handle Overflow => Error.bug "HashSet: numPeeks overflow"
       val j = index (w, !mask)
       val b = Array.sub (buckets, j)
-   in case List.peek (b, fn a => (Int.inc numLinks; p a)) of
+      fun update () =
+         numLinks := !numLinks + 1
+         handle Overflow => Error.bug "HashSet: numLinks overflow"
+   in case List.peek (b, fn a => (update (); p a)) of
       NONE => no (j, b)
     | SOME a => yes a
    end
