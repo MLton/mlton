@@ -69,7 +69,7 @@ val getTempPath = _import "MinGW_getTempPath" internal : C_Size.t * (Char8.t) ar
 end
 structure MLton = 
 struct
-val bug = _import "MLton_bug" internal : NullString8.t -> unit;
+val bug = _import "MLton_bug" internal : String8.t -> unit;
 structure Itimer = 
 struct
 val PROF = _const "MLton_Itimer_PROF" : C_Int.t;

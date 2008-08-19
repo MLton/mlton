@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -46,8 +46,7 @@ local
                                  ; PFFI.Stdio.print msg)
            | _ => PFFI.Stdio.print (P.Exn.name exn)
         ; PFFI.Stdio.print "\n"
-        ; P.MLton.bug (P.NullString8.fromString 
-                       "unhandled exception in Basis Library\000")))
+        ; P.MLton.bug ("unhandled exception in Basis Library")))
 in
 end
 
@@ -58,7 +57,6 @@ local
       P.TopLevel.setSuffix
       (fn () => 
        (P.MLton.halt 0
-        ; P.MLton.bug (P.NullString8.fromString 
-                       "missing suffix in Basis Library\000")))
+        ; P.MLton.bug ("missing suffix in Basis Library")))
 in
 end
