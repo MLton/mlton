@@ -33,7 +33,7 @@ partialLink='true'
 rm -f "${output}"
 
 if "$partialLink"; then
-  "${target}ld" -r -d -o "$output.o" "$@"
+  "${target}ld" -r -o "$output.o" "$@"
   # The osx linker already makes hidden symbols local, so we can skip this
   if [ "$(uname -s)" != "Darwin" ]; then
     "${target}objdump" -t "$output.o" \
