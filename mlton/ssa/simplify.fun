@@ -88,8 +88,6 @@ val ssaPassesDefault =
    nil
 
 val ssaPassesMinimal =
-   (* constantPropagation cannot be omitted. It implements Array_array0. *)
-   {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
    {name = "polyEqual", doit = PolyEqual.polyEqual} ::
    (* polyHash cannot be omitted.  It implements MLton_hash. *)
