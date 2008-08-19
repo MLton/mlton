@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -654,40 +654,37 @@ fun shrinkFunction {globals: Statement.t vector} =
             end) arg
          fun primApp (prim: Type.t Prim.t, args: VarInfo.t vector)
             : (Type.t, VarInfo.t) Prim.ApplyResult.t =
-            case Prim.name prim of
-               Prim.Name.FFI _ => Prim.ApplyResult.Unknown
-             | _ =>
-                  let
-                     val args' =
-                        Vector.map
-                        (args, fn vi =>
-                         case vi of
-                            VarInfo.T {value = ref (SOME v), ...} =>
-                               (case v of
-                                   Value.Const c => Prim.ApplyArg.Const c
-                                 | Value.Object {args, con} =>
-                                      (case (con, Vector.length args) of
-                                          (SOME con, 0) =>
-                                             Prim.ApplyArg.Con {con = con,
-                                                                hasArg = false}
-                                        | _ => Prim.ApplyArg.Var vi)
-                                 | _ => Prim.ApplyArg.Var vi)
-                          | _ => Prim.ApplyArg.Var vi)
-                  in
-                     Trace.traceInfo'
-                     (traceApplyInfo,
-                      fn (p, args, _) =>
-                      let
-                         open Layout
-                      in
-                         seq [Prim.layout p, str " ",
-                              List.layout (Prim.ApplyArg.layout
-                                           (Var.layout o VarInfo.var)) args]
-                      end,
-                      Prim.ApplyResult.layout (Var.layout o VarInfo.var))
-                     Prim.apply
-                     (prim, Vector.toList args', VarInfo.equals)
-                  end
+            let
+               val args' =
+                  Vector.map
+                  (args, fn vi =>
+                   case vi of
+                      VarInfo.T {value = ref (SOME v), ...} =>
+                         (case v of
+                             Value.Const c => Prim.ApplyArg.Const c
+                           | Value.Object {args, con} =>
+                                (case (con, Vector.length args) of
+                                    (SOME con, 0) =>
+                                       Prim.ApplyArg.Con {con = con,
+                                                          hasArg = false}
+                                  | _ => Prim.ApplyArg.Var vi)
+                           | _ => Prim.ApplyArg.Var vi)
+                    | _ => Prim.ApplyArg.Var vi)
+            in
+               Trace.traceInfo'
+               (traceApplyInfo,
+                fn (p, args, _) =>
+                let
+                   open Layout
+                in
+                   seq [Prim.layout p, str " ",
+                        List.layout (Prim.ApplyArg.layout
+                                     (Var.layout o VarInfo.var)) args]
+                end,
+                Prim.ApplyResult.layout (Var.layout o VarInfo.var))
+               Prim.apply
+               (prim, Vector.toList args', VarInfo.equals)
+            end
          (* Another DFS, this time accumulating the new blocks. *)
          val traceForceMeaningBlock =
             Trace.trace ("Ssa2.Shrink2.forceMeaningBlock",
