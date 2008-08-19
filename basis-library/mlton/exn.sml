@@ -15,11 +15,10 @@ structure MLtonExn =
 
       val history: t -> string list =
          if keepHistory then
-            (setInitExtra (NONE: extra)
-             ; setExtendExtra (fn e =>
-                               case e of
-                                  NONE => SOME (MLtonCallStack.current ())
-                                | SOME _ => e)
+            (setExtendExtra (fn e =>
+                             case e of
+                                NONE => SOME (MLtonCallStack.current ())
+                              | SOME _ => e)
              ; (fn e =>
                 case extra e of
                    NONE => []

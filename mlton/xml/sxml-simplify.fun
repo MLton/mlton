@@ -61,8 +61,6 @@ val sxmlPassesDefault =
 val sxmlPassesMinimal =
    {name = "implementSuffix", 
     enable = fn () => true, doit = ImplementSuffix.doit} ::
-   {name = "sxmlShrink2", 
-    enable = fn () => true, doit = S.shrink} ::
    {name = "implementExceptions", 
     enable = fn () => true, doit = ImplementExceptions.doit} ::
    nil

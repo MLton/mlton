@@ -92,19 +92,12 @@ structure Exn =
       val keepHistory = _command_line_const "Exn.keepHistory": bool = false;
       val setExtendExtra = _prim "Exn_setExtendExtra": ('a -> 'a) -> unit;
       val setExtendExtra: (extra -> extra) -> unit = setExtendExtra
-      val setInitExtra = _prim "Exn_setInitExtra": 'a -> unit;
-      val setInitExtra: extra -> unit = setInitExtra
 
-      (* Ensure that setInitExtra and setExtendExtra are initialized.
+      (* Ensure that setExtendExtra is initialized.
        * Important for -const 'Exn.keepHistory true', so that 
        * exceptions can be raised (and handled) during Basis Library
        * initialization.
        *)
-      val setInitExtra : extra -> unit =
-         if keepHistory
-            then (setInitExtra (NONE: extra)
-                  ; fn _ => ())
-         else fn _ => ()
       val setExtendExtra : (extra -> extra) -> unit =
          if keepHistory
             then (setExtendExtra (fn _ => NONE)

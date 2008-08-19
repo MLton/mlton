@@ -58,7 +58,6 @@ datatype 'a t =
  | Exn_extra (* implement exceptions *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
- | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
  | FFI_Symbol of {name: string, 
                   cty: CType.t option, 
@@ -245,7 +244,6 @@ fun toString (n: 'a t): string =
        | Exn_extra => "Exn_extra"
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
-       | Exn_setInitExtra => "Exn_setInitExtra"
        | FFI f => (CFunction.Target.toString o CFunction.target) f
        | FFI_Symbol {name, ...} => name
        | GC_collect => "GC_collect"
@@ -387,7 +385,6 @@ val equals: 'a t * 'a t -> bool =
     | (Exn_extra, Exn_extra) => true
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
-    | (Exn_setInitExtra, Exn_setInitExtra) => true
     | (FFI f, FFI f') => CFunction.equals (f, f')
     | (FFI_Symbol {name = n, ...}, FFI_Symbol {name = n', ...}) => n = n'
     | (GC_collect, GC_collect) => true
@@ -551,7 +548,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_extra => Exn_extra
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
-    | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
     | FFI_Symbol {name, cty, symbolScope} => 
         FFI_Symbol {name = name, cty = cty, symbolScope = symbolScope}
@@ -802,7 +798,6 @@ val kind: 'a t -> Kind.t =
        | Exn_extra => Functional
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
-       | Exn_setInitExtra => SideEffect
        | FFI _ => Kind.SideEffect
        | FFI_Symbol _ => Functional
        | GC_collect => SideEffect
@@ -1005,7 +1000,6 @@ in
        Exn_extra,
        Exn_name,
        Exn_setExtendExtra,
-       Exn_setInitExtra,
        GC_collect,
        IntInf_add,
        IntInf_andb,
@@ -1260,7 +1254,6 @@ fun 'a checkApp (prim: 'a t,
        | Exn_extra => oneTarg (fn t => (oneArg exn, t))
        | Exn_name => noTargs (fn () => (oneArg exn, string))
        | Exn_setExtendExtra => oneTarg (fn t => (oneArg (arrow (t, t)), unit))
-       | Exn_setInitExtra => oneTarg (fn t => (oneArg t, unit))
        | FFI f =>
             noTargs (fn () => (nArgs (CFunction.args f), CFunction.return f))
        | FFI_Symbol _ => noTargs (fn () => (noArgs, cpointer))
@@ -1421,7 +1414,6 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | CPointer_setObjptr => one (arg 2)
        | Exn_extra => one result
        | Exn_setExtendExtra => one (#2 (deArrow (arg 0)))
-       | Exn_setInitExtra => one (arg 0)
        | MLton_bogus => one result
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)
