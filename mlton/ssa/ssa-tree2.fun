@@ -158,7 +158,8 @@ structure Type =
 
       local
          val same: tree * tree -> bool =
-            fn (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
+            fn (CPointer, CPointer) => true
+             | (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
              | (IntInf, IntInf) => true
              | (Object {args = a1, con = c1}, Object {args = a2, con = c2}) =>
                   ObjectCon.equals (c1, c2)
