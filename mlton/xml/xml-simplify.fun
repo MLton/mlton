@@ -43,7 +43,7 @@ local
       (List.map([("xmlShrink", S.shrink),
                  ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
                 mkSimplePassGen))
-
+in
    fun xmlPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
@@ -54,24 +54,25 @@ local
                     case (List.peekMap (passGens, fn gen => gen s)) of
                        NONE => esc (Result.No s)
                      | SOME pass => pass)
-           ; Control.xmlPasses := ss
            ; Result.Yes ()
         end))
-
-   datatype t = datatype Control.optimizationPasses
-   fun xmlPassesSet opt =
-      case opt of
-         OptPassesDefault => (xmlPasses := xmlPassesDefault
-                              ; Control.xmlPasses := ["default"]
-                              ; Result.Yes ())
-       | OptPassesMinimal => (xmlPasses := xmlPassesMinimal
-                              ; Control.xmlPasses := ["minimal"]
-                              ; Result.Yes ())
-       | OptPassesCustom s => xmlPassesSetCustom s
-in
-   val _ = Control.xmlPassesSet := xmlPassesSet
-   val _ = List.push (Control.optimizationPassesSet, ("xml", xmlPassesSet))
 end
+
+val xmlPassesString = ref "default"
+val xmlPassesGet = fn () => !xmlPassesString
+val xmlPassesSet = fn s =>
+   let
+      val _ = xmlPassesString := s
+   in
+      case s of
+         "default" => (xmlPasses := xmlPassesDefault
+                       ; Result.Yes ())
+       | "minimal" => (xmlPasses := xmlPassesMinimal
+                       ; Result.Yes ())
+       | _ => xmlPassesSetCustom s
+   end
+val _ = List.push (Control.optimizationPasses,
+                   {il = "xml", get = xmlPassesGet, set = xmlPassesSet})
 
 fun pass ({name, doit}, p) =
    let

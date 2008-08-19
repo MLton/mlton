@@ -24,45 +24,31 @@ fun polyvariance (hofo, rounds, small, product) p =
     fn () => Polyvariance.duplicate p)
 
 type pass = {name: string,
-             enable: unit -> bool,
              doit: Program.t -> Program.t}
 
 val sxmlPassesDefault =
-   {name = "sxmlShrink1", 
-    enable = fn () => true, doit = S.shrink} ::
-   {name = "implementSuffix", 
-    enable = fn () => true, doit = ImplementSuffix.doit} ::
-   {name = "sxmlShrink2", 
-    enable = fn () => true, doit = S.shrink} ::
-   {name = "implementExceptions", 
-    enable = fn () => true, doit = ImplementExceptions.doit} ::
-   {name = "sxmlShrink3", 
-    enable = fn () => true, doit = S.shrink} ::
-(*
-   {name = "uncurry", 
-    enable = fn () => true, doit = Uncurry.uncurry} ::
-   {name = "sxmlShrink4", 
-    enable = fn () => true, doit = S.shrink} ::
-*)
-   {name = "polyvariance", 
-    enable = fn () => true, doit = Polyvariance.duplicate} ::
-   {name = "sxmlShrink4", 
-    enable = fn () => true, doit = S.shrink} ::
-   {name = "cpsTransform", 
-    enable = fn () => !Control.cpsTransform, doit = CPSTransform.doit} ::
-   {name = "cpsSxmlShrink5", 
-    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
-   {name = "cpsPolyvariance", 
-    enable = fn () => !Control.cpsTransform, doit = Polyvariance.duplicate} ::
-   {name = "cpsSxmlShrink6", 
-    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
+   {name = "sxmlShrink1", doit = S.shrink} ::
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", doit = S.shrink} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "sxmlShrink3", doit = S.shrink} ::
+   (* {name = "uncurry", doit = Uncurry.uncurry} :: *)
+   (* {name = "sxmlShrink4", doit = S.shrink} :: *)
+   {name = "polyvariance", doit = Polyvariance.duplicate} ::
+   {name = "sxmlShrink4", doit = S.shrink} ::
+   nil
+
+val sxmlPassesCpsTransform =
+   sxmlPassesDefault @
+   {name = "cpsTransform", doit = CPSTransform.doit} ::
+   {name = "cpsSxmlShrink5", doit = S.shrink} ::
+   {name = "cpsPolyvariance", doit = Polyvariance.duplicate} ::
+   {name = "cpsSxmlShrink6", doit = S.shrink} ::
    nil
 
 val sxmlPassesMinimal =
-   {name = "implementSuffix", 
-    enable = fn () => true, doit = ImplementSuffix.doit} ::
-   {name = "implementExceptions", 
-    enable = fn () => true, doit = ImplementExceptions.doit} ::
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
    nil
 
 val sxmlPasses : pass list ref = ref sxmlPassesDefault
@@ -75,7 +61,6 @@ local
       in fn s => if s = name
                     then SOME {name = name ^ "#" ^ 
                                (Int.toString (Counter.next count)),
-                               enable = fn () => true,
                                doit = doit}
                     else NONE
       end
@@ -111,7 +96,6 @@ local
                                             Int.toString small, ",",
                                             Int.toString product, ")#",
                                             Int.toString (Counter.next count)],
-                             enable = fn () => true,
                              doit = polyvariance (hofo, rounds, small, product)}
                     val s = String.dropPrefix (s, String.size "polyvariance")
                  in
@@ -130,7 +114,7 @@ local
                  ("implementExceptions", ImplementExceptions.doit), 
                  ("implementSuffix", ImplementSuffix.doit)],
                 mkSimplePassGen))
-
+in
    fun sxmlPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
@@ -141,24 +125,27 @@ local
                     case (List.peekMap (passGens, fn gen => gen s)) of
                        NONE => esc (Result.No s)
                      | SOME pass => pass)
-           ; Control.sxmlPasses := ss
            ; Result.Yes ()
         end))
-
-   datatype t = datatype Control.optimizationPasses
-   fun sxmlPassesSet opt =
-      case opt of
-         OptPassesDefault => (sxmlPasses := sxmlPassesDefault
-                              ; Control.sxmlPasses := ["default"]
-                              ; Result.Yes ())
-       | OptPassesMinimal => (sxmlPasses := sxmlPassesMinimal
-                              ; Control.sxmlPasses := ["minimal"]
-                              ; Result.Yes ())
-       | OptPassesCustom s => sxmlPassesSetCustom s
-in
-   val _ = Control.sxmlPassesSet := sxmlPassesSet
-   val _ = List.push (Control.optimizationPassesSet, ("sxml", sxmlPassesSet))
 end
+
+val sxmlPassesString = ref "default"
+val sxmlPassesGet = fn () => !sxmlPassesString
+val sxmlPassesSet = fn s =>
+   let
+      val _ = sxmlPassesString := s
+   in
+      case s of
+         "default" => (sxmlPasses := sxmlPassesDefault
+                       ; Result.Yes ())
+       | "cpsTransform" => (sxmlPasses := sxmlPassesCpsTransform
+                            ; Result.Yes ())
+       | "minimal" => (sxmlPasses := sxmlPassesMinimal
+                       ; Result.Yes ())
+       | _ => sxmlPassesSetCustom s
+   end
+val _ = List.push (Control.optimizationPasses,
+                   {il = "sxml", get = sxmlPassesGet, set = sxmlPassesSet})
 
 fun pass ({name, doit}, p) =
    let
@@ -181,10 +168,9 @@ fun pass ({name, doit}, p) =
    in
       p
    end
-fun maybePass ({name, doit, enable}, p) =
+fun maybePass ({name, doit}, p) =
    if List.exists (!Control.dropPasses, fn re =>
                    Regexp.Compiled.matchesAll (re, name))
-      orelse not (enable ())
       then p
    else pass ({name = name, doit = doit}, p)
 
@@ -192,8 +178,8 @@ fun simplify p =
    let
       fun simplify' p =
          List.fold
-         (!sxmlPasses, p, fn ({name, doit, enable}, p) =>
-          maybePass ({name = name, doit = doit, enable = enable}, p))
+         (!sxmlPasses, p, fn ({name, doit}, p) =>
+          maybePass ({name = name, doit = doit}, p))
       val p = simplify' p
    in
       p

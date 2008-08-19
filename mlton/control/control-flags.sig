@@ -52,8 +52,6 @@ signature CONTROL_FLAGS =
 
       val contifyIntoMain: bool ref
 
-      val cpsTransform: bool ref
-
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
@@ -263,12 +261,8 @@ signature CONTROL_FLAGS =
             val split: int option ref
          end
 
-      datatype optimizationPasses =
-         OptPassesCustom of string
-       | OptPassesDefault
-       | OptPassesMinimal
-      val optimizationPassesSet: 
-         (string * (optimizationPasses -> unit Result.t)) list ref
+      val optimizationPasses:
+         {il: string, set: string -> unit Result.t, get: unit -> string} list ref
 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
@@ -322,16 +316,6 @@ signature CONTROL_FLAGS =
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
 
-      (* SSA Passes *)
-      val ssaPassesSet: (optimizationPasses -> unit Result.t) ref
-      val ssaPasses: string list ref
-      val ssa2PassesSet: (optimizationPasses -> unit Result.t) ref
-      val ssa2Passes: string list ref
-
-      (* SXML Passes *)
-      val sxmlPassesSet: (optimizationPasses -> unit Result.t) ref
-      val sxmlPasses: string list ref
-
       datatype target =
          Cross of string
        | Self
@@ -383,10 +367,6 @@ signature CONTROL_FLAGS =
       val version: string
 
       val warnAnn: bool ref
-
-      (* XML Passes *)
-      val xmlPassesSet: (optimizationPasses -> unit Result.t) ref
-      val xmlPasses: string list ref
 
       val zoneCutDepth: int ref
 

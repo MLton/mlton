@@ -210,7 +210,7 @@ local
                  ("reverseFunctions",S.reverseFunctions),
                  ("shrink", S.shrink)], 
                 mkSimplePassGen))
-
+in
    fun ssaPassesSetCustom s =
       Exn.withEscape
       (fn esc =>
@@ -221,24 +221,25 @@ local
                     case (List.peekMap (passGens, fn gen => gen s)) of
                        NONE => esc (Result.No s)
                      | SOME pass => pass)
-           ; Control.ssaPasses := ss
            ; Result.Yes ()
         end))
-
-   datatype t = datatype Control.optimizationPasses
-   fun ssaPassesSet opt =
-      case opt of
-         OptPassesDefault => (ssaPasses := ssaPassesDefault
-                              ; Control.ssaPasses := ["default"]
-                              ; Result.Yes ())
-       | OptPassesMinimal => (ssaPasses := ssaPassesMinimal
-                              ; Control.ssaPasses := ["minimal"]
-                              ; Result.Yes ())
-       | OptPassesCustom s => ssaPassesSetCustom s
-in
-   val _ = Control.ssaPassesSet := ssaPassesSet
-   val _ = List.push (Control.optimizationPassesSet, ("ssa", ssaPassesSet))
 end
+
+val ssaPassesString = ref "default"
+val ssaPassesGet = fn () => !ssaPassesString
+val ssaPassesSet = fn s =>
+   let
+      val _ = ssaPassesString := s
+   in
+      case s of
+         "default" => (ssaPasses := ssaPassesDefault
+                       ; Result.Yes ())
+       | "minimal" => (ssaPasses := ssaPassesMinimal
+                       ; Result.Yes ())
+       | _ => ssaPassesSetCustom s
+   end
+val _ = List.push (Control.optimizationPasses,
+                   {il = "ssa", get = ssaPassesGet, set = ssaPassesSet})
 
 fun pass ({name, doit, midfix}, p) =
    let
