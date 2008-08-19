@@ -1458,6 +1458,7 @@ structure ApplyArg =
 structure ApplyResult =
    struct
       type 'a prim = 'a t
+      val layoutPrim = layout
 
       datatype ('a, 'b) t =
          Apply of 'a prim * 'b list
@@ -1466,11 +1467,6 @@ structure ApplyResult =
        | Overflow
        | Unknown
        | Var of 'b
-
-      val truee = Bool true
-      val falsee = Bool false
-
-      val layoutPrim = layout
 
       fun layout layoutX ar =
          let
@@ -1520,6 +1516,8 @@ fun ('a, 'b) apply (p: 'a t,
       datatype z = datatype t
       datatype z = datatype Const.t
       val bool = ApplyResult.Bool
+      val f = bool false
+      val t = bool true
       fun seqIndexConst i =
          ApplyResult.Const
          (Const.word (WordX.fromIntInf (i, WordSize.seqIndex ())))
@@ -1543,7 +1541,6 @@ fun ('a, 'b) apply (p: 'a t,
       val null = ApplyResult.Const Const.null
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.word w)
-      val f = ApplyResult.falsee
       fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
                  (_: WordSize.t, sg),
@@ -1889,8 +1886,8 @@ fun ('a, 'b) apply (p: 'a t,
                      then if Con.equals (c, c')
                              then if h
                                      then Unknown
-                                  else bool true
-                          else bool false
+                                  else t
+                          else f
                   else Unknown
              | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
              | (_, [Const (Word i), Var x]) => varWord (x, i, false)
@@ -1932,8 +1929,6 @@ fun ('a, 'b) apply (p: 'a t,
              | (_, [Var x, Var y]) =>
                   if varEquals (x, y)
                      then let
-                             val t = ApplyResult.truee
-                             val f = ApplyResult.falsee
                              datatype z = datatype ApplyResult.t
                           in
                              case p of
