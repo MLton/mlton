@@ -1639,16 +1639,22 @@ structure Program =
                (functions, fn f =>
                 let
                    val {args, blocks, ...} = Function.dest f
-                in
-                   Vector.foreach (args, countType o #2)
-                   ; (Vector.foreach
-                      (blocks, fn Block.T {statements, ...} =>
-                       (Int.inc numBlocks
-                        ; (Vector.foreach
-                           (statements, fn Statement.T {ty, ...} =>
-                            (countType ty
-                             ; Int.inc numStatements))))))
-                end)
+                   val _ = Vector.foreach (args, countType o #2)
+                   val _ =
+                      Vector.foreach
+                      (blocks, fn Block.T {args, statements, ...} =>
+                       let
+                          val _ = Int.inc numBlocks
+                          val _ = Vector.foreach (args, countType o #2)
+                          val _ =
+                             Vector.foreach
+                             (statements, fn Statement.T {ty, ...} =>
+                              let
+                                 val _ = Int.inc numStatements
+                                 val _ = countType ty
+                              in () end)
+                       in () end)
+                in () end)
             val numFunctions = List.length functions
             val _ = destroy ()
             open Layout
