@@ -1399,12 +1399,12 @@ val checkApp =
 
 fun ('a, 'b) extractTargs (prim: 'b t,
                            {args: 'a vector,
-                            deArray: 'a -> 'a,
-                            deArrow: 'a -> 'a * 'a,
-                            deRef: 'a -> 'a,
-                            deVector: 'a -> 'a,
-                            deWeak: 'a -> 'a,
-                            result: 'a}) =
+                            result: 'a,
+                            typeOps = {deArray: 'a -> 'a,
+                                       deArrow: 'a -> 'a * 'a,
+                                       deRef: 'a -> 'a,
+                                       deVector: 'a -> 'a,
+                                       deWeak: 'a -> 'a}}) =
    let
       val one = Vector.new1
       fun arg i = Vector.sub (args, i)

@@ -763,11 +763,11 @@ fun useless (program: Program.t): Program.t =
                             (prim,
                              {args = argTypes,
                               result = resultType,
-                              deArray = Type.deArray,
-                              deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
-                              deRef = Type.deRef,
-                              deVector = Type.deVector,
-                              deWeak = Type.deWeak}))}
+                              typeOps = {deArray = Type.deArray,
+                                         deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
+                                         deRef = Type.deRef,
+                                         deVector = Type.deVector,
+                                         deWeak = Type.deWeak}}))}
                end
           | Select {tuple, offset} =>
                let

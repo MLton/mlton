@@ -974,12 +974,12 @@ fun primApp {args, prim, result: Type.t} =
    let
       val targs = Prim.extractTargs (prim,
                                      {args = Vector.map (args, Cexp.ty),
-                                      deArray = Type.deArray,
-                                      deArrow = Type.deArrow,
-                                      deRef = Type.deRef,
-                                      deVector = Type.deVector,
-                                      deWeak = Type.deWeak,
-                                      result = result})
+                                      result = result,
+                                      typeOps = {deArray = Type.deArray,
+                                                 deArrow = Type.deArrow,
+                                                 deRef = Type.deRef,
+                                                 deVector = Type.deVector,
+                                                 deWeak = Type.deWeak}})
    in
       Cexp.make (Cexp.PrimApp {args = args,
                                prim = prim,
