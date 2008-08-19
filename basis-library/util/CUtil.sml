@@ -25,14 +25,11 @@ structure CUtil: C_UTIL =
                            sub: 'a * int -> 'b,
                            n: int) : 'b array =
          let
-            val a = Array.arrayUninit n
-            fun loop i =
-               if i >= n
-                  then ()
-                  else (Array.unsafeUpdate (a, i, sub (s, i))
-                        ; loop (i +? 1))
-            val () = loop 0
-         in 
+            val (a, _) =
+               Array.unfoldi
+               (n, (), fn (i, ()) =>
+                (sub (s, i), ()))
+         in
             a
          end
 
@@ -97,14 +94,12 @@ structure CUtil: C_UTIL =
              *)
             fun fromList l =
                let
-                  val n = List.length l
-                  val a = Array.arrayUninit (1 +? n)
-                  val _ =
-                     List.foldl (fn (s, i) =>
-                                 (Array.unsafeUpdate (a, i, NullString.nullTerm s)
-                                  ; i +? 1))
-                     0 l
-                  val _ = Array.unsafeUpdate (a, n, NullString.empty)
+                  val (a, _) =
+                     Array.unfoldi
+                     (1 +? List.length l, l, fn (_, l) =>
+                      case l of
+                         [] => (NullString.empty, l)
+                       | s::l => (NullString.nullTerm s, l))
                in
                   a
                end
