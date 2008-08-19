@@ -3154,9 +3154,9 @@ struct
              | Hidden l
              => (* visibility directive depends on target object file *)
                 let
-                   val elf = seq [str ".hidden", Label.layout l]
-                   val macho = seq [str ".private_extern", Label.layout l]
-                   val coff = seq [str "/*", str ".hidden", Label.layout l, str "*/"]
+                   val elf = seq [str ".hidden ", Label.layout l]
+                   val macho = seq [str ".private_extern ", Label.layout l]
+                   val coff = seq [str "/* ", str ".hidden ", Label.layout l, str " */"]
                 in
                    case !Control.Target.os of
                       MLton.Platform.OS.Cygwin => coff
