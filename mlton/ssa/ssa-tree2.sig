@@ -123,6 +123,7 @@ signature SSA_TREE2 =
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
+            val unit: t
          end
 
       structure Statement:

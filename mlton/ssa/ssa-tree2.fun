@@ -539,6 +539,8 @@ structure Exp =
                     offset: int}
        | Var of Var.t
 
+      val unit = Object {con = NONE, args = Vector.new0 ()}
+
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)

@@ -81,6 +81,15 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
             val ty = convertType ty
             fun simple (exp: S2.Exp.t): S2.Statement.t vector =
                Vector.new1 (S2.Statement.Bind {exp = exp, ty = ty, var = var})
+            fun maybeBindUnit (stmt: S2.Statement.t): S2.Statement.t vector =
+               case var of
+                  NONE => Vector.new1 stmt
+                | SOME _ =>
+                     Vector.new2
+                     (S2.Statement.Bind {var = var,
+                                         ty = ty,
+                                         exp = S2.Exp.unit},
+                      stmt)
          in
             case exp of
                S.Exp.ConApp {args, con} =>
@@ -134,17 +143,18 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                             end
                        | Array_sub => sub ()
                        | Array_update =>
-                            Vector.new1
+                            maybeBindUnit
                             (S2.Statement.Update
                              {base = Base.VectorSub {index = arg 1,
                                                      vector = arg 0},
                               offset = 0,
                               value = arg 2})
                        | Ref_assign =>
-                            Vector.new1 (S2.Statement.Update
-                                         {base = Base.Object (arg 0),
-                                          offset = 0,
-                                          value = arg 1})
+                            maybeBindUnit
+                            (S2.Statement.Update
+                             {base = Base.Object (arg 0),
+                              offset = 0,
+                              value = arg 1})
                        | Ref_deref =>
                             simple (S2.Exp.Select {base = Base.Object (arg 0),
                                                    offset = 0})
@@ -159,7 +169,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = convertPrim prim})
                    end
-             | S.Exp.Profile e => Vector.new1 (S2.Statement.Profile e)
+             | S.Exp.Profile e => maybeBindUnit (S2.Statement.Profile e)
              | S.Exp.Select {offset, tuple} =>
                   simple (S2.Exp.Select {base = Base.Object tuple,
                                          offset = offset})
