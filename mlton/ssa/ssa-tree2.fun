@@ -2094,7 +2094,7 @@ structure Program =
                  end
          end
 
-      fun layoutStats (T {globals, functions, main, ...}) =
+      fun layoutStats (T {datatypes, globals, functions, main, ...}) =
          let
             val (mainNumVars, mainNumBlocks) =
                case List.peek (functions, fn f =>
@@ -2109,20 +2109,62 @@ structure Program =
                      in
                         (!numVars, numBlocks)
                      end
+            val numTypes = ref 0
+            val {get = countType, destroy} =
+               Property.destGet
+               (Type.plist,
+                Property.initRec
+                (fn (t, countType) =>
+                 let
+                    datatype z = datatype Type.dest
+                    val _ =
+                       case Type.dest t of
+                          CPointer => ()
+                        | Datatype _ => ()
+                        | IntInf => ()
+                        | Object {args, ...} => Prod.foreach (args, countType)
+                        | Real _ => ()
+                        | Thread => ()
+                        | Weak t => countType t
+                        | Word _ => ()
+                    val _ = Int.inc numTypes
+                 in
+                    ()
+                 end))
+            val _ =
+               Vector.foreach
+               (datatypes, fn Datatype.T {cons, ...} =>
+                Vector.foreach (cons, fn {args, ...} =>
+                                Prod.foreach (args, countType)))
             val numStatements = ref (Vector.length globals)
             val numBlocks = ref 0
             val _ =
                List.foreach
                (functions, fn f =>
                 let
-                   val {blocks, ...} = Function.dest f
-                in
-                   Vector.foreach
-                   (blocks, fn Block.T {statements, ...} =>
-                    (Int.inc numBlocks
-                     ; numStatements := !numStatements + Vector.length statements))
-                end)
+                   val {args, blocks, ...} = Function.dest f
+                   val _ = Vector.foreach (args, countType o #2)
+                   val _ =
+                      Vector.foreach
+                      (blocks, fn Block.T {args, statements, ...} =>
+                       let
+                          val _ = Int.inc numBlocks
+                          val _ = Vector.foreach (args, countType o #2)
+                          val _ =
+                             Vector.foreach
+                             (statements, fn stmt =>
+                              let
+                                 val _ = Int.inc numStatements
+                                 datatype z = datatype Statement.t
+                                 val _ =
+                                    case stmt of
+                                       Bind {ty, ...} => countType ty
+                                     | _ => ()
+                              in () end)
+                       in () end)
+                in () end)
             val numFunctions = List.length functions
+            val _ = destroy ()
             open Layout
          in
             align
@@ -2131,6 +2173,7 @@ structure Program =
              seq [str "num functions in program = ", Int.layout numFunctions],
              seq [str "num blocks in program = ", Int.layout (!numBlocks)],
              seq [str "num statements in program = ", Int.layout (!numStatements)],
+             seq [str "num types in program = ", Int.layout (!numTypes)],
              Type.stats ()]
          end
 
