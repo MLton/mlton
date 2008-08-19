@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -355,14 +355,14 @@ fun sourceFilesMLB {input} =
 val elaborateMLB = Elaborate.elaborateMLB
 
 val displayEnvDecs =
-   Control.Layout
-   (fn (_, ds) => 
-    Vector.layout
-    (fn (d, b) =>
-     Layout.record
-     [("deadCode", Bool.layout b),
-      ("decs", List.layout CoreML.Dec.layout d)])
-    ds)
+   Control.Layouts
+   (fn ((_, decs),output) =>
+    (output (Layout.str "\n\n")
+     ; Vector.foreach
+       (decs, fn (dec, dc) =>
+        (output o Layout.record)
+        [("deadCode", Bool.layout dc),
+         ("decs", List.layout CoreML.Dec.layout dec)])))
 
 fun parseAndElaborateMLB (input: MLBString.t)
    : Env.t * (CoreML.Dec.t list * bool) vector =
@@ -454,13 +454,27 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                            in
                               decs
                            end,
-          display = Control.Layout (Vector.layout (List.layout CoreML.Dec.layout))}
+          display = Control.Layouts (fn (decss,output) =>
+                                     (output (Layout.str "\n\n")
+                                      ; Vector.foreach (decss, fn decs =>
+                                        List.foreach (decs, fn dec =>
+                                        output (CoreML.Dec.layout dec)))))}
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       val coreML = CoreML.Program.T {decs = decs}
 (*
       val _ = Control.message (Control.Detail, fn () =>
                                CoreML.Program.layoutStats coreML)
 *)
+      val _ =
+         let
+            open Control
+         in
+            if !keepCoreML
+               then saveToFile ({suffix = "core-ml"}, No, coreML,
+                                Layouts CoreML.Program.layouts)
+            else ()
+         end
+
       (* Set GC_state offsets and sizes. *)
       val _ =
          let
@@ -520,8 +534,8 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
           suffix = "xml",
           style = Control.ML,
           thunk = fn () => Defunctorize.defunctorize coreML,
-          display = Control.Layout Xml.Program.layout,
-          typeCheck = Xml.typeCheck}
+          typeCheck = Xml.typeCheck,
+          display = Control.Layouts Xml.Program.layouts}
    in
       xml
    end
@@ -537,18 +551,27 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
            suffix = "xml",
            style = Control.ML,
            thunk = fn () => Xml.simplify xml,
-           display = Control.Layout Xml.Program.layout,
-           typeCheck = Xml.typeCheck}
+           typeCheck = Xml.typeCheck,
+           display = Control.Layouts Xml.Program.layouts}
       val _ = Control.message (Control.Detail, fn () =>
                                Xml.Program.layoutStats xml)
+      val _ =
+         let
+            open Control
+         in
+            if !keepXML
+               then saveToFile ({suffix = "xml"}, No, xml,
+                                Layouts Xml.Program.layouts)
+            else ()
+         end
       val sxml =
          Control.passTypeCheck
          {name = "monomorphise",
           suffix = "sxml",
           style = Control.ML,
           thunk = fn () => Monomorphise.monomorphise xml,
-          display = Control.Layout Sxml.Program.layout,
-          typeCheck = Sxml.typeCheck}
+          typeCheck = Sxml.typeCheck,
+          display = Control.Layouts Sxml.Program.layouts}
       val _ = Control.message (Control.Detail, fn () =>
                                Sxml.Program.layoutStats sxml)
       val sxml =
@@ -557,10 +580,19 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           suffix = "sxml",
           style = Control.ML,
           thunk = fn () => Sxml.simplify sxml,
-          display = Control.Layout Sxml.Program.layout,
-          typeCheck = Sxml.typeCheck}
+          typeCheck = Sxml.typeCheck,
+          display = Control.Layouts Sxml.Program.layouts}
       val _ = Control.message (Control.Detail, fn () =>
                                Sxml.Program.layoutStats sxml)
+      val _ =
+         let
+            open Control
+         in
+            if !keepSXML
+               then saveToFile ({suffix = "sxml"}, No, sxml,
+                                Layouts Sxml.Program.layouts)
+            else ()
+         end
       val ssa =
          Control.passTypeCheck
          {name = "closureConvert",
@@ -569,6 +601,8 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           thunk = fn () => ClosureConvert.closureConvert sxml,
           typeCheck = Ssa.typeCheck,
           display = Control.Layouts Ssa.Program.layouts}
+      val _ = Control.message (Control.Detail, fn () =>
+                               Ssa.Program.layoutStats ssa)
       val ssa =
          Control.passTypeCheck
          {name = "ssaSimplify",
@@ -577,13 +611,15 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           thunk = fn () => Ssa.simplify ssa,
           typeCheck = Ssa.typeCheck,
           display = Control.Layouts Ssa.Program.layouts}
+      val _ = Control.message (Control.Detail, fn () =>
+                               Ssa.Program.layoutStats ssa)
       val _ =
          let
             open Control
          in
             if !keepSSA
                then saveToFile ({suffix = "ssa"}, No, ssa,
-                                 Layouts Ssa.Program.layouts)
+                                Layouts Ssa.Program.layouts)
             else ()
          end
       val ssa2 =
@@ -594,6 +630,8 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           thunk = fn () => SsaToSsa2.convert ssa,
           typeCheck = Ssa2.typeCheck,
           display = Control.Layouts Ssa2.Program.layouts}
+      val _ = Control.message (Control.Detail, fn () =>
+                               Ssa2.Program.layoutStats ssa2)
       val ssa2 =
          Control.passTypeCheck
          {name = "ssa2Simplify",
@@ -602,13 +640,15 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           thunk = fn () => Ssa2.simplify ssa2,
           typeCheck = Ssa2.typeCheck,
           display = Control.Layouts Ssa2.Program.layouts}
+      val _ = Control.message (Control.Detail, fn () =>
+                               Ssa2.Program.layoutStats ssa2)
       val _ =
          let
             open Control
          in
             if !keepSSA2
                then saveToFile ({suffix = "ssa2"}, No, ssa2,
-                                 Layouts Ssa2.Program.layouts)
+                                Layouts Ssa2.Program.layouts)
             else ()
          end
       val codegenImplementsPrim =
@@ -632,7 +672,7 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          in
             if !keepMachine
                then saveToFile ({suffix = "machine"}, No, machine,
-                                 Layouts Machine.Program.layouts)
+                                Layouts Machine.Program.layouts)
             else ()
          end
       val _ =

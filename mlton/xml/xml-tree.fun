@@ -213,14 +213,14 @@ in
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | 1 => seq [str " ", Tyvar.layout (Vector.sub (ts, 0))]
-       | _ => seq [str " ", tuple (Vector.toListMap (ts, Tyvar.layout))]
+       | 1 => seq [Tyvar.layout (Vector.sub (ts, 0)), str " "]
+       | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
          Exception ca =>
             seq [str "exception ", layoutConArg ca]
        | Fun {decs, tyvars} =>
-            align [seq [str "val rec", layoutTyvars tyvars, str " "],
+            align [seq [str "val rec ", layoutTyvars tyvars],
                    indent (align (Vector.toListMap
                                   (decs, fn {lambda, ty, var} =>
                                    align [seq [maybeConstrain (Var.layout var, ty),
@@ -232,13 +232,12 @@ in
                         maybeConstrain (Var.layout var, ty), str " = "],
                    indent (layoutPrimExp exp, 3)]
        | PolyVal {exp, ty, tyvars, var} =>
-            align [seq [str "val",
+            align [seq [str "val ",
                         if !Control.showTypes
                            then layoutTyvars tyvars
                         else empty,
-                           str " ",
-                           maybeConstrain (Var.layout var, ty),
-                           str " = "],
+                        maybeConstrain (Var.layout var, ty),
+                        str " = "],
                    indent (layoutExp exp, 3)]
    and layoutExp (Exp {decs, result}) =
       align [str "let",
@@ -844,7 +843,8 @@ structure Datatype =
          let
             open Layout
          in
-            seq [layoutTyvars tyvars, str " ", Tycon.layout tycon, str " = ",
+            seq [layoutTyvars tyvars,
+                 Tycon.layout tycon, str " = ",
                  align
                  (separateLeft (Vector.toListMap (cons, layoutConArg),
                                 "| "))]
@@ -865,11 +865,26 @@ structure Program =
          let
             open Layout
          in
-            align [seq [str "Overflow: ", Option.layout Var.layout overflow],
-                   str "Datatypes:",
+            align [str "\n\nDatatypes:",
                    align (Vector.toListMap (datatypes, Datatype.layout)),
-                   str "Body:",
+                   seq [str "\n\nOverflow: ", Option.layout Var.layout overflow],
+                   str "\n\nBody:",
                    Exp.layout body]
+         end
+
+      fun layouts (T {body, datatypes, overflow, ...}, output') =
+         let
+            open Layout
+            (* Layout includes an output function, so we need to rebind output
+             * to the one above.
+             *)
+            val output = output'
+         in
+            output (str "\n\nDatatypes:")
+            ; Vector.foreach (datatypes, output o Datatype.layout)
+            ; output (seq [str "\n\nOverflow: ", Option.layout Var.layout overflow])
+            ; output (str "\n\nBody:")
+            ; output (Exp.layout body)
          end
 
       fun clear (T {datatypes, body, ...}) =

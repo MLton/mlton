@@ -703,9 +703,27 @@ val inputFile = control {name = "input file",
                          default = "<bogus>",
                          toString = File.toString}
 
+val keepCoreML = control {name = "keep CoreML",
+                          default = false,
+                          toString = Bool.toString}
+
+val keepDefUse = control {name = "keep def use",
+                          default = true,
+                          toString = Bool.toString}
+
+val keepDot = control {name = "keep dot",
+                       default = false,
+                       toString = Bool.toString}
+
 val keepMachine = control {name = "keep Machine",
                            default = false,
                            toString = Bool.toString}
+
+val keepPasses = control {name = "keep passes",
+                          default = [],
+                          toString = List.toString
+                                     (Layout.toString o
+                                      Regexp.Compiled.layout)}
 
 val keepRSSA = control {name = "keep RSSA",
                         default = false,
@@ -719,19 +737,14 @@ val keepSSA2 = control {name = "keep SSA2",
                         default = false,
                         toString = Bool.toString}
 
-val keepDefUse = control {name = "keep def use",
-                          default = true,
-                          toString = Bool.toString}
+val keepSXML = control {name = "keep SXML",
+                        default = false,
+                        toString = Bool.toString}
 
-val keepDot = control {name = "keep dot",
+
+val keepXML = control {name = "keep XML",
                        default = false,
                        toString = Bool.toString}
-
-val keepPasses = control {name = "keep passes",
-                          default = [],
-                          toString = List.toString 
-                                     (Layout.toString o 
-                                      Regexp.Compiled.layout)}
 
 val labelsHaveExtra_ = control {name = "extra_",
                                 default = false,

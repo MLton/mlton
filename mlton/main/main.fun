@@ -450,14 +450,17 @@ fun makeOptions {usage} =
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
         SpaceString (fn s =>
                      case s of
-                        "dot" => keepDot := true
+                        "core-ml" => keepCoreML := true
+                      | "dot" => keepDot := true
                       | "g" => keepGenerated := true
                       | "machine" => keepMachine := true
                       | "o" => keepO := true
-                      | "sml" => keepSML := true
                       | "rssa" => keepRSSA := true
+                      | "sml" => keepSML := true
                       | "ssa" => keepSSA := true
                       | "ssa2" => keepSSA2 := true
+                      | "sxml" => keepSXML := true
+                      | "xml" => keepXML := true
                       | _ => usage (concat ["invalid -keep flag: ", s]))),
        (Expert, "keep-pass", " <pass>", "keep the results of pass",
         SpaceString

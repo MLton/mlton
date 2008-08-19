@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -182,5 +182,6 @@ signature CORE_ML =
             datatype t = T of {decs: Dec.t vector}
 
             val layout: t -> Layout.t
+            val layouts: t * (Layout.t -> unit) -> unit
          end
    end

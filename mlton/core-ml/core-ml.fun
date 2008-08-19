@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -488,6 +488,18 @@ structure Program =
 
       fun layout (T {decs, ...}) =
          Layout.align (Vector.toListMap (decs, Dec.layout))
+
+      fun layouts (T {decs, ...}, output') =
+         let
+            open Layout
+            (* Layout includes an output function, so we need to rebind output
+             * to the one above.
+             *)
+            val output = output'
+         in
+            output (Layout.str "\n\nDecs:")
+            ; Vector.foreach (decs, output o Dec.layout)
+         end
 
 (*       fun typeCheck (T {decs, ...}) =
  *       let

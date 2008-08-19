@@ -249,6 +249,7 @@ signature XML_TREE =
 
             val clear: t -> unit (* clear all property lists *)
             val layout: t -> Layout.t
+            val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
          end
    end

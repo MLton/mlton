@@ -185,19 +185,23 @@ signature CONTROL_FLAGS =
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
 
-      (* Save the Machine to a file. *)
-      val keepMachine: bool ref
-
-      (* List of pass names to save the result of. *)
+      (* List of pass names to save the input/output. *)
       val keepPasses: Regexp.Compiled.t list ref
 
-      (* Save the RSSA to a file. *)
+      (* Save the final CoreML to a file. *)
+      val keepCoreML: bool ref
+      (* Save the final Machine to a file. *)
+      val keepMachine: bool ref
+      (* Save the final RSSA to a file. *)
       val keepRSSA: bool ref
-
-      (* Save the SSA to a file. *)
+      (* Save the final SSA to a file. *)
       val keepSSA: bool ref
-      (* Save the SSA2 to a file. *)
+      (* Save the final SSA2 to a file. *)
       val keepSSA2: bool ref
+      (* Save the final SXML to a file. *)
+      val keepSXML: bool ref
+      (* Save the final XML to a file. *)
+      val keepXML: bool ref
 
       (* For the codegen -- do labels for gcc and assembler need an extra leading
        * underscore.
