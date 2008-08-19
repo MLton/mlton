@@ -421,7 +421,7 @@ Returns the symbol read and deletes the read symbol from the buffer."
             (esml-du-ctx-set-buf nil ctx)))))))
   (bury-buffer (esml-du-ctx-buf ctx))
   (with-current-buffer (esml-du-ctx-buf ctx)
-    (insert-file (esml-du-ctx-duf ctx))
+    (insert-file-contents (esml-du-ctx-duf ctx))
     (setq buffer-read-only t)
     (goto-char 1))
   (clrhash (esml-du-ctx-ref-to-sym-table ctx))
