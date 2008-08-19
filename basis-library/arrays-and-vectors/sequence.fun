@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -147,8 +147,6 @@ functor Sequence (S: sig
       fun newUninit' n = S.fromArray (arrayUninit' n)
       fun newUninit n = S.fromArray (arrayUninit n)
 
-      fun seq0 () = S.fromArray (arrayUninit' 0)
-
       fun generate' n =
         let
            val a = arrayUninit' n
@@ -215,6 +213,8 @@ functor Sequence (S: sig
       fun unfoldi (n, b, f) = unfoldi' (fromIntForLength n, b, wrap2 f)
       fun unfold (n, b, f) = unfoldi (n, b, f o #2)
 
+      fun seq0 () = #1 (unfold (0, (), fn _ => raise Fail "Sequence.seq0"))
+
       fun tabulate' (n, f) =
          #1 (unfoldi' (n, (), fn (i, ()) => (f i, ())))
       fun tabulate (n, f) =
@@ -224,13 +224,10 @@ functor Sequence (S: sig
       fun new (n, x) = tabulate (n, fn _ => x)
 
       fun fromList l =
-         let
-            val a = arrayUninit (List.length l)
-            val _ =
-               List.foldl (fn (x, i) => (Array.updateUnsafe (a, i, x) ; (i +? 1))) 0 l
-         in
-            S.fromArray a
-         end
+         #1 (unfold (List.length l, l, fn l =>
+                     case l of
+                        nil => raise Fail "Sequence.fromList"
+                      | h::t => (h, t)))
 
       structure Slice =
          struct
