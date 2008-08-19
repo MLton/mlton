@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -840,15 +840,17 @@ val optimizationPassesSet :
 
 val polyvariance =
    control {name = "polyvariance",
-            default = SOME {rounds = 2,
+            default = SOME {hofo = true,
+                            rounds = 2,
                             small = 30,
                             product = 300},
             toString =
             fn p =>
             Layout.toString
             (Option.layout
-             (fn {rounds, small, product} =>
-              Layout.record [("rounds", Int.layout rounds),
+             (fn {hofo, rounds, small, product} =>
+              Layout.record [("hofo", Bool.layout hofo),
+                             ("rounds", Int.layout rounds),
                              ("small", Int.layout small),
                              ("product", Int.layout product)])
              p)}

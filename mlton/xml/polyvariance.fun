@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -79,7 +79,7 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
       size
    end
 
-fun shouldDuplicate (program as Program.T {body, ...}, small, product)
+fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
    : Var.t -> bool =
    let
       val costs: (Var.t * int * int * int) list ref = ref []
@@ -94,7 +94,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
       val {get = varInfo: Var.t -> info option, set = setVarInfo, ...} =
          Property.getSetOnce (Var.plist, Property.initConst NONE)
       fun new {lambda = _, ty, var}: unit =
-         if Type.isHigherOrder ty
+         if not hofo orelse Type.isHigherOrder ty
             then setVarInfo (var, SOME {numOccurrences = ref 0,
                                         shouldDuplicate = ref false})
          else ()
@@ -230,10 +230,11 @@ fun shouldDuplicate (program as Program.T {body, ...}, small, product)
    end
 
 fun duplicate (program as Program.T {datatypes, body, overflow},
+               hofo: bool,
                small: int,
                product: int) =
    let
-      val shouldDuplicate = shouldDuplicate (program, small, product)
+      val shouldDuplicate = shouldDuplicate (program, hofo, small, product)
       datatype info =
          Replace of Var.t
        | Dup of {
@@ -433,13 +434,13 @@ val duplicate =
    fn p =>
    case !Control.polyvariance of
       NONE => p
-    | SOME {rounds, small, product} =>
+    | SOME {hofo, rounds, small, product} =>
          let
             fun loop (p, n) =
                if n = 0
                   then p
                else let
-                       val p = shrink (duplicate (p, small, product))
+                       val p = shrink (duplicate (p, hofo, small, product))
                        val _ =
                           Control.message (Control.Detail, fn () =>
                                            Program.layoutStats p)

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -17,10 +17,10 @@ structure Polyvariance = Polyvariance (open S)
 (* structure Uncurry = Uncurry (open S) *)
 structure CPSTransform = CPSTransform (open S)
 
-fun polyvariance (rounds, small, product) p =
+fun polyvariance (hofo, rounds, small, product) p =
    Ref.fluidLet
    (Control.polyvariance,
-    SOME {rounds = rounds, small = small, product = product},
+    SOME {hofo = hofo, rounds = rounds, small = small, product = product},
     fn () => Polyvariance.duplicate p)
 
 type pass = {name: string,
@@ -106,19 +106,21 @@ local
          fn s =>
          if String.hasPrefix (s, {prefix = "polyvariance"})
             then let
-                    fun mk (rounds, small, product) =
+                    fun mk (hofo, rounds, small, product) =
                        SOME {name = concat ["polyvariance(", 
+                                            Bool.toString hofo, ",",
                                             Int.toString rounds, ",",
                                             Int.toString small, ",",
                                             Int.toString product, ")#",
                                             Int.toString (Counter.next count)],
                              enable = fn () => true,
-                             doit = polyvariance (rounds, small, product)}
+                             doit = polyvariance (hofo, rounds, small, product)}
                     val s = String.dropPrefix (s, String.size "polyvariance")
                  in
                     case nums s of
-                       SOME [] => mk (2, 30, 300)
-                     | SOME [rounds, small, product] => mk (rounds, small, product)
+                       SOME [] => mk (true, 2, 30, 300)
+                     | SOME [hofo, rounds, small, product] =>
+                          mk (hofo <> 0, rounds, small, product)
                      | _ => NONE
                  end
          else NONE

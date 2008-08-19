@@ -535,27 +535,39 @@ fun makeOptions {usage} =
         SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
+       (Expert, "polyvariance-hofo", " {true|false}", "duplicate higher-order fns only",
+        Bool (fn hofo =>
+              case !polyvariance of
+                 SOME {product, rounds, small, ...} =>
+                    polyvariance := SOME {hofo = hofo,
+                                          product = product,
+                                          rounds = rounds,
+                                          small = small}
+               | _ => ())),
        (Expert, "polyvariance-product", " <n>", "set polyvariance threshold (300)",
         Int (fn product =>
              case !polyvariance of
-                SOME {rounds, small, ...} =>
-                   polyvariance := SOME {product = product,
+                SOME {hofo, rounds, small, ...} =>
+                   polyvariance := SOME {hofo = hofo,
+                                         product = product,
                                          rounds = rounds,
                                          small = small}
               | _ => ())),
        (Expert, "polyvariance-rounds", " <n>", "set polyvariance rounds (2)",
         Int (fn rounds =>
              case !polyvariance of
-                SOME {product, small, ...} =>
-                   polyvariance := SOME {product = product,
+                SOME {hofo, product, small, ...} =>
+                   polyvariance := SOME {hofo = hofo,
+                                         product = product,
                                          rounds = rounds,
                                          small = small}
               | _ => ())),
        (Expert, "polyvariance-small", " <n>", "set polyvariance threshold (30)",
         Int (fn small =>
              case !polyvariance of
-                SOME {product, rounds, ...} =>
-                   polyvariance := SOME {product = product,
+                SOME {hofo, product, rounds, ...} =>
+                   polyvariance := SOME {hofo = hofo,
+                                         product = product,
                                          rounds = rounds,
                                          small = small}
               | _ => ())),
