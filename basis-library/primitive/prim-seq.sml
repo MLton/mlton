@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -30,7 +30,7 @@ structure Vector =
       (* Don't mutate the array after you apply fromArray, because vectors 
        * are supposed to be immutable and the optimizer depends on this.  
        *)
-      val fromArray = _prim "Array_toVector": 'a array -> 'a vector;
+      val fromArrayUnsafe = _prim "Array_toVector": 'a array -> 'a vector;
       val length = _prim "Vector_length": 'a vector -> SeqIndex.int;
       val subUnsafe = _prim "Vector_sub": 'a vector * SeqIndex.int -> 'a;
    end
