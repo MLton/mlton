@@ -1200,14 +1200,13 @@ in
                          empty)
                         ; SymbolScope.External)
              | SOME x => x
-         val scope =
+         val () =
             if List.exists (attributes, fn attr => 
                                            attr = SymbolAttribute.Alloc)
-               then (Ffi.addSymbol {name = name, 
-                                    ty = ctypeCbTy, 
-                                    symbolScope = scope}
-                     ; SymbolScope.Internal)
-               else scope
+               then Ffi.addSymbol {name = name, 
+                                   ty = ctypeCbTy, 
+                                   symbolScope = scope}
+               else ()
          val addrExp =
             mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
