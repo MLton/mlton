@@ -42,11 +42,4 @@ signature C_UTIL =
             val toArrayOfLength: t * int -> string array
             val toList: t -> string list
          end
-
-      (* NULL terminated char** *)
-      structure StringVector :
-         sig
-            type t = string * C_Pointer.t array * C_Size.t vector
-            val fromList: string list -> t
-         end
    end

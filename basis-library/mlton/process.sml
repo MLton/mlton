@@ -352,14 +352,12 @@ structure MLtonProcess =
                let
                   val args = List.map cmdEscape args
                   val path = NullString.nullTerm path
-                  val args = CUtil.StringVector.fromList args
-                  val env = CUtil.StringVector.fromList env
+                  val args = CUtil.C_StringArray.fromList args
+                  val env = CUtil.C_StringArray.fromList env
                in
                   (PId.fromRep o SysCall.simpleResult')
                   ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
-                   Prim.spawne (path, 
-                                #1 args, #2 args, #3 args,
-                                #1 env, #2 env, #3 env))
+                   Prim.spawne (path, args, env))
                end
          else
             case Posix.Process.fork () of
@@ -378,12 +376,11 @@ structure MLtonProcess =
                let
                   val file = NullString.nullTerm file
                   val args = List.map cmdEscape args
-                  val args = CUtil.StringVector.fromList args
+                  val args = CUtil.C_StringArray.fromList args
                in
                   (PId.fromRep o SysCall.simpleResult')
                   ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
-                   Prim.spawnp (file, 
-                                #1 args, #2 args, #3 args))
+                   Prim.spawnp (file, args))
                end
          else    
             case Posix.Process.fork () of

@@ -107,40 +107,4 @@ structure CUtil: C_UTIL =
                   a
                end
          end
-
-      structure StringVector =
-         struct
-            type t = string * C_Pointer.t array * C_Size.t vector
-            val padVec =
-               Vector.fromList
-               ["\000\000\000",
-                "\000\000",
-                "\000",
-                "\000\000\000\000"]
-            fun fromList (l : string list) : t =
-               let
-                  val n = List.length l
-                  (* The C side updates the array with addresses
-                   * using the vector of offsets.
-                   *)
-                  val aPtr = Array.array (1 +? n, C_Pointer.null)
-                  val (vOff,(_,_,acc)) =
-                     Vector.unfoldi
-                     (n, (l, 0w0, []), fn (_, (l, off, acc)) =>
-                      let
-                         val s' = List.hd l
-                         val l' = List.tl l
-                         val n' = String.size s'
-
-                         val pad' = Vector.sub (padVec, Int.mod (n', 4))
-                         val sz' = n' + Vector.length pad'
-                         val off' = C_Size.+ (off, C_Size.fromInt sz')
-                      in
-                         (off, (l', off', pad'::s'::acc))
-                      end)
-                  val str = Vector.concat (List.rev acc)
-               in
-                  (str, aPtr, vOff)
-               end
-         end
    end
