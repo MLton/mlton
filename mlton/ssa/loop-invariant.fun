@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -161,10 +161,10 @@ fun loopInvariant (Program.T {globals, datatypes, functions, main}) =
                                   returns = returns,
                                   start = start})
          end
-      val program = 
+      val program =
          Program.T {datatypes = datatypes,
                     globals = globals,
-                    functions = List.revMap(functions, simplifyFunction), 
+                    functions = List.revMap (functions, simplifyFunction),
                     main = main}
       val _ = Program.clearTop program
    in
