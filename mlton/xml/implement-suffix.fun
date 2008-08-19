@@ -20,7 +20,8 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
       (* topLevelSuffix holds the ref cell containing the function of
        * type unit -> unit that should be called on program exit.
        *)
-      val topLevelSuffix = Var.newNoname ()
+      val topLevelSuffixType = Type.arrow (Type.unit, Type.unit)
+      val topLevelSuffixVar = Var.newNoname ()
 
       fun loop (e: Exp.t): Exp.t =
          let
@@ -77,11 +78,11 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
                   in
                      case Prim.name prim of
                         TopLevel_getSuffix =>
-                           deref (topLevelSuffix,
-                                  Type.arrow (Type.unit, Type.unit))
+                           deref (topLevelSuffixVar,
+                                  topLevelSuffixType)
                       | TopLevel_setSuffix =>
-                           assign (topLevelSuffix,
-                                   Type.arrow (Type.unit, Type.unit))
+                           assign (topLevelSuffixVar,
+                                   topLevelSuffixType)
                       | _ => keep ()
                   end
              | _ => keep ()
@@ -95,34 +96,31 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
                          body = loop body,
                          mayInline = mayInline}
          end
-      fun bug s =
-         Dexp.primApp {prim = Prim.bug,
-                       targs = Vector.new0 (),
-                       args = Vector.new1 (Dexp.string s),
-                       ty = Type.unit}
+      val body = Dexp.fromExp (loop body, Type.unit)
+      val body =
+         (Dexp.sequence o Vector.new2)
+         (body,
+          Dexp.app {func = (Dexp.deref
+                            (Dexp.monoVar
+                             (topLevelSuffixVar,
+                              Type.reff topLevelSuffixType))),
+                    arg = Dexp.unit (),
+                    ty = Type.unit})
       val body =
          Dexp.let1
-         {var = topLevelSuffix,
+         {var = topLevelSuffixVar,
           exp = Dexp.reff (Dexp.lambda
                            {arg = Var.newNoname (),
                             argType = Type.unit,
-                            body = bug "toplevel suffix not installed",
+                            body = Dexp.bug ("toplevel suffix not installed",
+                                             Type.unit),
                             bodyType = Type.unit,
                             mayInline = true}),
-          body =
-          (Dexp.sequence o Vector.new2)
-          (Dexp.fromExp (loop body, Type.unit),
-           Dexp.app {func = (Dexp.deref 
-                             (Dexp.monoVar
-                              (topLevelSuffix,
-                               let open Type
-                               in reff (arrow (unit, unit))
-                               end))),
-                     arg = Dexp.unit (),
-                     ty = Type.unit})}
+          body = body}
+      val body = Dexp.toExp body
    in
       Program.T {datatypes = datatypes,
-                 body = Dexp.toExp body,
+                 body = body,
                  overflow = overflow}
    end
 end
