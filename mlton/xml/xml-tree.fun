@@ -914,7 +914,7 @@ structure Program =
                 handleBoundVar = hom o #3,
                 handleExp = fn _ => ()})
             ; destroy ()
-            ; align [seq [str "size = ", Int.layout (!numPrimExps)],
+            ; align [seq [str "num primexps in program = ", Int.layout (!numPrimExps)],
                      seq [str "num types in program = ", Int.layout (!numTypes)],
                      Type.stats ()]
          end
