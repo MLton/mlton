@@ -347,19 +347,18 @@ structure Hash =
 
 fun polyHash (Program.T {datatypes, globals, functions, main}) =
    let
-      val shrink = shrinkFunction {globals = globals}
+      val {get = funcInfo: Func.t -> {hasHash: bool},
+           set = setFuncInfo, ...} =
+         Property.getSet (Func.plist, Property.initConst {hasHash = false})
+      val {get = labelInfo: Label.t -> {hasHash: bool},
+           set = setLabelInfo, ...} =
+         Property.getSet (Label.plist, Property.initConst {hasHash = false})
       val {get = tyconInfo: Tycon.t -> {cons: {con: Con.t,
                                                args: Type.t vector} vector},
            set = setTyconInfo, ...} =
          Property.getSetOnce
          (Tycon.plist, Property.initRaise ("PolyHash.info", Tycon.layout))
       val tyconCons = #cons o tyconInfo
-      val _ =
-         Vector.foreach
-         (datatypes, fn Datatype.T {tycon, cons} =>
-          setTyconInfo (tycon,
-                        {cons = cons}))
-      val newFunctions: Function.t list ref = ref []
       val {get = getHashFunc: Type.t -> Func.t option,
            set = setHashFunc,
            destroy = destroyHashFunc} =
@@ -374,9 +373,10 @@ fun polyHash (Program.T {datatypes, globals, functions, main}) =
       val returns = SOME (Vector.new1 Hash.stateTy)
       val seqIndexWordSize = WordSize.seqIndex ()
       val seqIndexTy = Type.word seqIndexWordSize
+      val newFunctions: Function.t list ref = ref []
       fun newFunction z =
          List.push (newFunctions,
-                    Function.profile (shrink (Function.new z),
+                    Function.profile (Function.new z,
                                       SourceInfo.polyHash))
       fun hashTyconFunc (tycon: Tycon.t): Func.t =
          case getTyconHashFunc tycon of
@@ -763,12 +763,44 @@ fun polyHash (Program.T {datatypes, globals, functions, main}) =
                in
                   name
                end
+
+      val _ =
+         Vector.foreach
+         (datatypes, fn Datatype.T {tycon, cons} =>
+          setTyconInfo (tycon,
+                        {cons = cons}))
+      val () =
+         List.foreach
+         (functions, fn f =>
+          let
+             val {name, blocks, ...} = Function.dest f
+          in
+             Vector.foreach
+             (blocks, fn Block.T {label, statements, ...} =>
+              let
+                 fun setHasHash () =
+                    (setFuncInfo (name, {hasHash = true})
+                     ; setLabelInfo (label, {hasHash = true}))
+              in
+                 Vector.foreach
+                 (statements, fn Statement.T {exp, ...} =>
+                  (case exp of
+                      PrimApp {prim, ...} =>
+                         (case Prim.name prim of
+                             Prim.Name.MLton_hash => setHasHash ()
+                           | _ => ())
+                    | _ => ()))
+              end)
+          end)
       fun doit blocks =
          let
             val blocks = 
                Vector.fold
                (blocks, [], 
-                fn (Block.T {label, args, statements, transfer}, blocks) =>
+                fn (block as Block.T {label, args, statements, transfer}, blocks) =>
+                if not (#hasHash (labelInfo label))
+                   then block::blocks
+                else
                 let
                    fun finish ({label, args, statements}, transfer) =
                       Block.T {label = label,
@@ -825,14 +857,19 @@ fun polyHash (Program.T {datatypes, globals, functions, main}) =
           let
              val {args, blocks, mayInline, name, raises, returns, start} =
                 Function.dest f
+             val f =
+                if #hasHash (funcInfo name)
+                   then Function.new {args = args,
+                                      blocks = doit blocks,
+                                      mayInline = mayInline,
+                                      name = name,
+                                      raises = raises,
+                                      returns = returns,
+                                      start = start}
+                else f
+             val () = Function.clear f
           in
-             shrink (Function.new {args = args,
-                                   blocks = doit blocks,
-                                   mayInline = mayInline,
-                                   name = name,
-                                   raises = raises,
-                                   returns = returns,
-                                   start = start})
+             f
           end)
       val program =
          Program.T {datatypes = datatypes,

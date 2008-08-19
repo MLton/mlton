@@ -82,7 +82,12 @@ structure Dexp =
 
 fun polyEqual (Program.T {datatypes, globals, functions, main}) =
    let
-      val shrink = shrinkFunction {globals = globals}
+      val {get = funcInfo: Func.t -> {hasEqual: bool},
+           set = setFuncInfo, ...} =
+         Property.getSet (Func.plist, Property.initConst {hasEqual = false})
+      val {get = labelInfo: Label.t -> {hasEqual: bool},
+           set = setLabelInfo, ...} =
+         Property.getSet (Label.plist, Property.initConst {hasEqual = false})
       val {get = varInfo: Var.t -> {isConst: bool},
            set = setVarInfo, ...} =
          Property.getSetOnce (Var.plist, Property.initConst {isConst = false})
@@ -91,39 +96,32 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                                                args: Type.t vector} vector},
            set = setTyconInfo, ...} =
          Property.getSetOnce
-         (Tycon.plist, Property.initRaise ("PolyEqual.info", Tycon.layout))
+         (Tycon.plist, Property.initRaise ("PolyEqual.tyconInfo", Tycon.layout))
       val isEnum = #isEnum o tyconInfo
       val tyconCons = #cons o tyconInfo
-      val _ =
-         Vector.foreach
-         (datatypes, fn Datatype.T {tycon, cons} =>
-          setTyconInfo (tycon,
-                        {isEnum = Vector.forall (cons, fn {args, ...} =>
-                                                 Vector.isEmpty args),
-                         cons = cons}))
-      val newFunctions: Function.t list ref = ref []
-      val {get = getEqualFunc: Tycon.t -> Func.t option, 
-           set = setEqualFunc, ...} =
+      val {get = getTyconEqualFunc: Tycon.t -> Func.t option,
+           set = setTyconEqualFunc, ...} =
          Property.getSet (Tycon.plist, Property.initConst NONE)
-      val {get = getVectorEqualFunc: Type.t -> Func.t option, 
+      val {get = getVectorEqualFunc: Type.t -> Func.t option,
            set = setVectorEqualFunc,
            destroy = destroyVectorEqualFunc} =
          Property.destGetSet (Type.plist, Property.initConst NONE)
       val returns = SOME (Vector.new1 Type.bool)
       val seqIndexWordSize = WordSize.seqIndex ()
       val seqIndexTy = Type.word seqIndexWordSize
+      val newFunctions: Function.t list ref = ref []
       fun newFunction z =
          List.push (newFunctions,
-                    Function.profile (shrink (Function.new z),
+                    Function.profile (Function.new z,
                                       SourceInfo.polyEqual))
-      fun equalFunc (tycon: Tycon.t): Func.t =
-         case getEqualFunc tycon of
+      fun equalTyconFunc (tycon: Tycon.t): Func.t =
+         case getTyconEqualFunc tycon of
             SOME f => f
           | NONE =>
                let
                   val name =
                      Func.newString (concat ["equal_", Tycon.originalName tycon])
-                  val _ = setEqualFunc (tycon, SOME name)
+                  val _ = setTyconEqualFunc (tycon, SOME name)
                   val ty = Type.datatypee tycon
                   val arg1 = (Var.newNoname (), ty)
                   val arg2 = (Var.newNoname (), ty)
@@ -316,7 +314,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
              | Type.Datatype tycon =>
                   if isEnum tycon orelse hasConstArg ()
                      then eq ()
-                  else Dexp.call {func = equalFunc tycon,
+                  else Dexp.call {func = equalTyconFunc tycon,
                                   args = Vector.new2 (dx1, dx2),
                                   ty = Type.bool}
              | Type.IntInf => 
@@ -365,9 +363,20 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
              | Type.Weak _ => eq ()
              | Type.Word ws => prim (Prim.wordEqual ws, Vector.new0 ())
          end
-      fun loopBind (Statement.T {exp, var, ...}) =
+
+      val _ =
+         Vector.foreach
+         (datatypes, fn Datatype.T {tycon, cons} =>
+          setTyconInfo (tycon,
+                        {isEnum = Vector.forall (cons, fn {args, ...} =>
+                                                 Vector.isEmpty args),
+                         cons = cons}))
+      fun setBind (Statement.T {exp, var, ...}) =
          let
-            fun const () = setVarInfo (valOf var, {isConst = true})
+            fun const () =
+               case var of
+                  NONE => ()
+                | SOME x => setVarInfo (x, {isConst = true})
          in
             case exp of
                Const c =>
@@ -382,17 +391,41 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                   if Vector.isEmpty args then const () else ()
              | _ => ()
          end
-      val _ = Vector.foreach (globals, loopBind)
+      val _ = Vector.foreach (globals, setBind)
+      val () =
+         List.foreach
+         (functions, fn f =>
+          let
+             val {name, blocks, ...} = Function.dest f
+          in
+             Vector.foreach
+             (blocks, fn Block.T {label, statements, ...} =>
+              let
+                 fun setHasEqual () =
+                    (setFuncInfo (name, {hasEqual = true})
+                     ; setLabelInfo (label, {hasEqual = true}))
+              in
+                 Vector.foreach
+                 (statements, fn stmt as Statement.T {exp, ...} =>
+                  (setBind stmt;
+                   case exp of
+                      PrimApp {prim, ...} =>
+                         (case Prim.name prim of
+                             Prim.Name.MLton_eq => setHasEqual ()
+                           | Prim.Name.MLton_equal => setHasEqual ()
+                           | _ => ())
+                    | _ => ()))
+              end)
+          end)
       fun doit blocks =
          let
-            val _ =
-               Vector.foreach
-               (blocks, fn Block.T {statements, ...} =>
-                Vector.foreach (statements, loopBind))
             val blocks = 
                Vector.fold
                (blocks, [], 
-                fn (Block.T {label, args, statements, transfer}, blocks) =>
+                fn (block as Block.T {label, args, statements, transfer}, blocks) =>
+                if not (#hasEqual (labelInfo label))
+                   then block::blocks
+                else
                 let
                    fun finish ({label, args, statements}, transfer) =
                       Block.T {label = label,
@@ -510,19 +543,24 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
             Vector.fromList blocks
          end
       val functions =
-         List.revMap 
+         List.revMap
          (functions, fn f =>
           let
              val {args, blocks, mayInline, name, raises, returns, start} =
                 Function.dest f
+             val f =
+                if #hasEqual (funcInfo name)
+                   then Function.new {args = args,
+                                      blocks = doit blocks,
+                                      mayInline = mayInline,
+                                      name = name,
+                                      raises = raises,
+                                      returns = returns,
+                                      start = start}
+                else f
+             val () = Function.clear f
           in
-             shrink (Function.new {args = args,
-                                   blocks = doit blocks,
-                                   mayInline = mayInline,
-                                   name = name,
-                                   raises = raises,
-                                   returns = returns,
-                                   start = start})
+             f
           end)
       val program =
          Program.T {datatypes = datatypes,
