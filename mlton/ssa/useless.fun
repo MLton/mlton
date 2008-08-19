@@ -665,8 +665,8 @@ fun useless (program: Program.t): Program.t =
       val varExists = Value.isUseful o value
       val unitVar = Var.newString "unit"
       val bogusGlobals: Statement.t list ref = ref []
-      val {get = bogus, ...} =
-         Property.get
+      val {get = bogus, destroy, ...} =
+         Property.destGet
          (Type.plist,
           Property.initFun
           (fn ty =>
@@ -1047,6 +1047,7 @@ fun useless (program: Program.t): Program.t =
                                globals = globals,
                                functions = functions,
                                main = main}
+      val _ = destroy ()
       val _ = Program.clearTop program
    in
       program
