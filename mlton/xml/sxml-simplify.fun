@@ -179,7 +179,7 @@ fun simplify p =
                let open Control
                in maybeSaveToFile
                   ({name = name, suffix = "pre.sxml"},
-                   Control.No, p, Control.Layout Program.layout)
+                   Control.No, p, Control.Layouts Program.layouts)
                end
             val p =
                Control.passTypeCheck
@@ -187,7 +187,7 @@ fun simplify p =
                 suffix = "post.sxml",
                 style = Control.No,
                 thunk = fn () => doit p,
-                display = Control.Layout Program.layout,
+                display = Control.Layouts Program.layouts,
                 typeCheck = typeCheck}
             val _ = stats p
          in
