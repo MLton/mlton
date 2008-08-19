@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -919,15 +919,14 @@ structure Program =
                      ; numStatements := !numStatements + Vector.length statements))
                 end)
             val numFunctions = 1 + List.length functions
+            val numObjectTypes = Vector.length objectTypes
             open Layout
          in
             align
-            (List.map
-             ([("num functions", Int.layout numFunctions),
-               ("num blocks", Int.layout (!numBlocks)),
-               ("num statements", Int.layout (!numStatements)),
-               ("num objectTypes", Int.layout (Vector.length objectTypes))],
-              fn (name, value) => seq [str (name ^ " "), value]))
+            [seq [str "num functions in program = ", Int.layout numFunctions],
+             seq [str "num blocks in program = ", Int.layout (!numBlocks)],
+             seq [str "num statements in program = ", Int.layout (!numStatements)],
+             seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
       fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
