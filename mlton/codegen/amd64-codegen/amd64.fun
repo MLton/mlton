@@ -3158,7 +3158,7 @@ struct
                    val macho = seq [str ".private_extern", Label.layout l]
                    val coff = seq [str "/*", str ".hidden", Label.layout l, str "*/"]
                 in
-                   case !Control.Target os of
+                   case !Control.Target.os of
                       MLton.Platform.OS.Cygwin => coff
                     | MLton.Platform.OS.Darwin => macho
                     | MLton.Platform.OS.MinGW => coff
