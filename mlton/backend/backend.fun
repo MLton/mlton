@@ -156,7 +156,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
       fun rssaSimplify p = 
          let
             open Rssa
-            fun pass ({name, doit}, p) =
+            fun pass' ({name, doit}, sel, p) =
                let
                   val _ =
                      let open Control
@@ -167,16 +167,20 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                      end
                   val p =
                      Control.passTypeCheck
-                     {display = Control.Layouts Program.layouts,
+                     {display = Control.Layouts
+                                (fn (r,output) =>
+                                 Program.layouts (sel r, output)),
                       name = name,
-                      stats = Program.layoutStats,
+                      stats = Program.layoutStats o sel,
                       style = Control.No,
                       suffix = "post.rssa",
                       thunk = fn () => doit p,
-                      typeCheck = Program.typeCheck}
+                      typeCheck = Program.typeCheck o sel}
                in
                   p
                end 
+            fun pass ({name, doit}, p) =
+               pass' ({name = name, doit = doit}, fn p => p, p)
             fun maybePass ({name, doit}, p) =
                if List.exists (!Control.dropPasses, fn re =>
                                Regexp.Compiled.matchesAll (re, name))
@@ -194,20 +198,9 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shrink}, p)
             val () = Program.checkHandlers p
             val (p, makeProfileInfo) =
-               let
-                  val makeProfileInfoRef = 
-                     ref (fn _ => Error.bug "Backend.toMachine.rssaSimplify: makeProfileInfoRef")
-                  fun doit p =
-                     let
-                        val (p, makeProfileInfo) = ImplementProfiling.doit p
-                     in
-                        makeProfileInfoRef := makeProfileInfo
-                        ; p
-                     end
-                  val p = pass ({name = "implementProfiling", doit = doit}, p)
-               in
-                  (p, !makeProfileInfoRef)
-               end
+               pass' ({name = "implementProfiling",
+                       doit = ImplementProfiling.doit},
+                      fn (p,_) => p, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
                                 doit = Program.orderFunctions}, p)
          in
