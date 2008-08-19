@@ -1310,7 +1310,8 @@ fun ('a, 'b) apply (p: 'a t,
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | _ => ApplyResult.Unknown
       val equal =
-         fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
+         fn (IntInf ii1, IntInf ii2) => bool (IntInf.equals (ii1, ii2))
+          | (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))
           | _ => ApplyResult.Unknown
       fun intInfBinary (i1, i2) =
