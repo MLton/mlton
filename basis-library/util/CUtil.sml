@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -89,6 +89,23 @@ structure CUtil: C_UTIL =
             fun toArray css = toArrayOfLength (css, length css)
 
             val toList = Array.toList o toArray
+
+            (* The C side converts the last element of the array, "",
+             * to the null terminator that C primitives expect.
+             * As far as C can tell, the other elements of the array
+             * are just char*'s.
+             *)
+            fun fromList l =
+               let
+                  val a = Array.array (1 +? List.length l, NullString.empty)
+                  val _ =
+                     List.foldl (fn (s, i) =>
+                                 (Array.update (a, i, NullString.nullTerm s)
+                                  ; i +? 1))
+                     0 l
+               in
+                  a
+               end
          end
 
       structure StringVector =
