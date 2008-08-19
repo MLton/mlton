@@ -148,10 +148,13 @@ structure Type =
 
       val isVector: t -> bool = isSome o deVectorOpt
 
-      fun isWeak t =
+      val deWeakOpt: t -> t option =
+         fn t =>
          case dest t of
-            Weak _ => true
-          | _ => false
+            Weak t => SOME t
+          | _ => NONE
+
+      val deWeak: t -> t = valOf o deWeakOpt
 
       local
          val same: tree * tree -> bool =
@@ -214,9 +217,6 @@ structure Type =
       val word: WordSize.t -> t =
          fn s => lookup (Tycon.hash (Tycon.word s), Word s)
 
-      val word8 = word WordSize.word8
-      val word32 = word WordSize.word32
-
       local
          val generator: Word.t = 0wx5555
          val tuple = newHash ()
@@ -247,10 +247,6 @@ structure Type =
          val array1 = make true
          val vector1 = make false
       end
-
-      val word8Vector = vector1 word8
-
-      val string = word8Vector
 
       fun ofConst c =
          let
@@ -309,59 +305,50 @@ structure Type =
                | Weak t => seq [layout t, str " weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
       end
-   end
-
-structure Type =
-   struct
-      open Type
 
       fun checkPrimApp {args, prim, result}: bool =
          let
-            datatype z = datatype Prim.Name.t
-            fun done (args', result') =
-               Vector.equals (args, Vector.fromList args', equals)
-               andalso equals (result, result')
-            local
-               fun make f s = let val t = f s in done ([t], t) end
-            in
-               val realUnary = make real
-               val wordUnary = make word
-            end
-            local
-               fun make f s = let val t = f s in done ([t, t], t) end
-            in
-               val realBinary = make real
-               val wordBinary = make word
-            end
-            local
-               fun make f s = let val t = f s in done ([t, t], bool) end
-            in
-               val realCompare = make real
-               val wordCompare = make word
-            end
-            val bigIntInfWord = word (WordSize.bigIntInfWord ())
-            val cint = word (WordSize.cint ())
-            val compareRes = word WordSize.compareRes
-            val cptrdiff = word (WordSize.cptrdiff ())
-            val csize = word (WordSize.csize ())
-            val seqIndex = word (WordSize.seqIndex ())
-            val shiftArg = word WordSize.shiftArg
-            val smallIntInfWord = word (WordSize.smallIntInfWord ())
+            exception BadPrimApp
+            fun default () =
+               let
+                  val targs =
+                     Prim.extractTargs
+                     (prim,
+                      {args = args,
+                       result = result,
+                       typeOps = {deArray = fn _ => raise BadPrimApp,
+                                  deArrow = fn _ => raise BadPrimApp,
+                                  deRef = fn _ => raise BadPrimApp,
+                                  deVector = fn _ => raise BadPrimApp,
+                                  deWeak = deWeak}})
+               in
+                  Prim.checkApp
+                  (prim,
+                   {args = args,
+                    result = result,
+                    targs = targs,
+                    typeOps = {array = array1,
+                               arrow = fn _ => raise BadPrimApp,
+                               bool = bool,
+                               cpointer = cpointer,
+                               equals = equals,
+                               exn = unit,
+                               intInf = intInf,
+                               real = real,
+                               reff = reff,
+                               thread = thread,
+                               unit = unit,
+                               vector = vector1,
+                               weak = weak,
+                               word = word}})
+               end
+            val default = fn () =>
+               (default ()) handle BadPrimApp => false
 
-            fun intInfBinary () = done ([intInf, intInf, csize], intInf)
-            fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
-            fun intInfUnary () = done ([intInf, csize], intInf)
-            fun realTernary s = done ([real s, real s, real s], real s)
-            val word8Array = array1 word8
-            fun wordShift s = done ([word s, shiftArg], word s)
+            datatype z = datatype Prim.Name.t
             fun arg i = Vector.sub (args, i)
-            fun noArgs () = 0 = Vector.length args
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
-            fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
-            fun threeArgs f = 3 = Vector.length args andalso f (arg 0, arg 1, arg 2)
-            fun eq () =
-               twoArgs (fn (x1, x2) =>
-                        equals (x1, x2) andalso equals (result, bool))
+            val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
                Array_array =>
@@ -379,128 +366,9 @@ structure Type =
                                         fn ({elt = ae, isMutable = ai},
                                             {elt = ve, isMutable = vi}) =>
                                         (not vi orelse ai)
-                                        andalso Type.equals (ae, ve))
+                                        andalso equals (ae, ve))
                     | _ => false)
-             | CPointer_add => done ([cpointer, csize], cpointer)
-             | CPointer_diff => done ([cpointer, cpointer], csize)
-             | CPointer_equal => done ([cpointer, cpointer], bool)
-             | CPointer_fromWord => done ([csize], cpointer)
-             | CPointer_getCPointer => done ([cpointer, cptrdiff], cpointer)
-             | CPointer_getObjptr => 
-                  twoArgs (fn _ => done ([cpointer, cptrdiff], result))
-             | CPointer_getReal s => done ([cpointer, cptrdiff], real s)
-             | CPointer_getWord s => done ([cpointer, cptrdiff], word s)
-             | CPointer_lt => done ([cpointer, cpointer], bool)
-             | CPointer_setCPointer => done ([cpointer, cptrdiff, cpointer], unit)
-             | CPointer_setObjptr =>
-                  threeArgs (fn (_, _, t) => done ([cpointer, cptrdiff, t], unit))
-             | CPointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
-             | CPointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
-             | CPointer_sub => done ([cpointer, csize], cpointer)
-             | CPointer_toWord => done ([cpointer], csize)
-             | FFI f => done (Vector.toList (CFunction.args f),
-                              CFunction.return f)
-             | FFI_Symbol _ => done ([], cpointer)
-             | GC_collect => done ([], unit)
-             | IntInf_add => intInfBinary ()
-             | IntInf_andb => intInfBinary ()
-             | IntInf_arshift => intInfShift ()
-             | IntInf_compare => done ([intInf, intInf], compareRes)
-             | IntInf_equal => done ([intInf, intInf], bool)
-             | IntInf_gcd => intInfBinary ()
-             | IntInf_lshift => intInfShift ()
-             | IntInf_mul => intInfBinary ()
-             | IntInf_neg => intInfUnary ()
-             | IntInf_notb => intInfUnary ()
-             | IntInf_orb => intInfBinary ()
-             | IntInf_quot => intInfBinary ()
-             | IntInf_rem => intInfBinary ()
-             | IntInf_sub => intInfBinary ()
-             | IntInf_toString => done ([intInf, word32, csize], string)
-             | IntInf_toVector => done ([intInf], vector1 bigIntInfWord)
-             | IntInf_toWord => done ([intInf], smallIntInfWord)
-             | IntInf_xorb => intInfBinary ()
-             | MLton_bogus => noArgs ()
-             | MLton_bug => done ([string], unit)
-             | MLton_eq => eq ()
-             | MLton_equal => eq ()
-             | MLton_halt => done ([cint], unit)
-             | MLton_hash => oneArg (fn x => done ([seqIndex, x],  word32))
-             | MLton_handlesSignals => done ([], bool)
-             | MLton_installSignalHandler => done ([], unit)
-             | MLton_share => oneArg (fn x => done ([x], unit))
-             | MLton_size => oneArg (fn x => done ([x], csize))
-             | MLton_touch => oneArg (fn x => done ([x], unit))
-             | Real_Math_acos s => realUnary s
-             | Real_Math_asin s => realUnary s
-             | Real_Math_atan s => realUnary s
-             | Real_Math_atan2 s => realBinary s
-             | Real_Math_cos s => realUnary s
-             | Real_Math_exp s => realUnary s
-             | Real_Math_ln s => realUnary s
-             | Real_Math_log10 s => realUnary s
-             | Real_Math_sin s => realUnary s
-             | Real_Math_sqrt s => realUnary s
-             | Real_Math_tan s => realUnary s
-             | Real_abs s => realUnary s
-             | Real_add s => realBinary s
-             | Real_castToWord (s, s') => done ([real s], word s')
-             | Real_div s => realBinary s
-             | Real_equal s => realCompare s
-             | Real_ldexp s => done ([real s, cint], real s)
-             | Real_le s => realCompare s
-             | Real_lt s => realCompare s
-             | Real_mul s => realBinary s
-             | Real_muladd s => realTernary s
-             | Real_mulsub s => realTernary s
-             | Real_neg s => realUnary s
-             | Real_qequal s => realCompare s
-             | Real_rndToReal (s, s') => done ([real s], real s')
-             | Real_rndToWord (s, s', _) => done ([real s], word s')
-             | Real_round s => realUnary s
-             | Real_sub s => realBinary s
-             | Thread_atomicBegin => done ([], unit)
-             | Thread_atomicEnd => done ([], unit)
-             | Thread_atomicState => done ([], word32)
-             | Thread_copy => done ([thread], thread)
-             | Thread_copyCurrent => done ([], unit)
-             | Thread_returnToC => done ([], unit)
-             | Thread_switchTo => done ([thread], unit)
-             | Weak_canGet =>
-                  oneArg (fn w => isWeak w andalso equals (result, bool))
-             | Weak_get => oneArg (fn _ => done ([weak result], result))
-             | Weak_new => oneArg (fn x => done ([x], weak x))
-             | Word8Array_subWord s => done ([word8Array, seqIndex], word s)
-             | Word8Array_updateWord s => done ([word8Array, seqIndex, word s], unit)
-             | Word8Vector_subWord s => done ([word8Vector, seqIndex], word s)
-             | WordVector_toIntInf => done ([vector1 bigIntInfWord], intInf)
-             | Word_add s => wordBinary s
-             | Word_addCheck (s, _) => wordBinary s
-             | Word_andb s => wordBinary s
-             | Word_castToReal (s, s') => done ([word s], real s')
-             | Word_equal s => wordCompare s
-             | Word_extdToWord (s, s', _) => done ([word s], word s')
-             | Word_lshift s => wordShift s
-             | Word_lt (s, _) => wordCompare s
-             | Word_mul (s, _) => wordBinary s
-             | Word_mulCheck (s, _) => wordBinary s
-             | Word_neg s => wordUnary s
-             | Word_negCheck s => wordUnary s
-             | Word_notb s => wordUnary s
-             | Word_orb s => wordBinary s
-             | Word_quot (s, _) => wordBinary s
-             | Word_rem (s, _) => wordBinary s
-             | Word_rndToReal (s, s', _) => done ([word s], real s')
-             | Word_rol s => wordShift s
-             | Word_ror s => wordShift s
-             | Word_rshift (s, _) => wordShift s
-             | Word_sub s => wordBinary s
-             | Word_subCheck (s, _) => wordBinary s
-             | Word_toIntInf => done ([smallIntInfWord], intInf)
-             | Word_xorb s => wordBinary s
-             | World_save => done ([string], unit)
-             | _ => Error.bug (concat ["SsaTree2.Type.checkPrimApp got strange prim: ",
-                                       Prim.toString prim])
+             | _ => default ()
          end
    end
 
