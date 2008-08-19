@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -478,16 +478,17 @@ structure Value =
                   Sconst.WordVector v => v
                 | _ => Error.bug err 
             val length = WordXVector.length v
+            val eltTy = Type.word (WordXVector.elementSize v)
             val elt =
                if 0 = length
-                  then const' (Const.unknown (), Type.word8)
+                  then const' (Const.unknown (), eltTy)
                else let
                        val w = WordXVector.sub (v, 0)
                     in
                        if WordXVector.forall (v, fn w' =>
                                               WordX.equals (w, w'))
                           then const (Sconst.word w)
-                       else const' (Const.unknown (), Type.word8)
+                       else const' (Const.unknown (), eltTy)
                     end
             val length =
                const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt length,
