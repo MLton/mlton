@@ -82,7 +82,6 @@ signature SSA_TREE =
             val datatypee: Tycon.t -> t
             val dest: t -> dest
             val deArray: t -> t
-            val deArrow: t -> t * t
             val deDatatype: t -> Tycon.t
             val deRef: t -> t
             val deTuple: t -> t vector
