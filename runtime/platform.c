@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -25,7 +25,7 @@ void MLton_init (int argc, char **argv, GC_state s) {
   CommandLine_argv = (C_StringArray_t)(argv + start);
 }
 
-void MLton_exit (GC_state s, C_Int_t status) {
+void MLton_halt (GC_state s, C_Int_t status) {
   GC_done (s);
   exit (status);
 }

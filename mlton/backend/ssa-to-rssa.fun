@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -88,7 +88,7 @@ structure CFunction =
             target = Direct "GC_copyThread",
             writesStackTop = true}
 
-      val exit = fn () =>
+      val halt = fn () =>
          T {args = Vector.new2 (Type.gcState (), Type.cint ()),
             bytesNeeded = NONE,
             convention = Cdecl,
@@ -100,7 +100,7 @@ structure CFunction =
             readsStackTop = true,
             return = Type.unit,
             symbolScope = Internal,
-            target = Direct "MLton_exit",
+            target = Direct "MLton_halt",
             writesStackTop = true}
 
       fun gcArrayAllocate {return} =
@@ -915,7 +915,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                             Transfer.CCall
                             {args = Vector.concat [Vector.new1 GCState,
                                                    vos args],
-                             func = CFunction.exit (),
+                             func = CFunction.halt (),
                              return = NONE})
                    | Thread_copyCurrent =>
                         let
