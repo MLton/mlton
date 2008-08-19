@@ -386,7 +386,7 @@ fun polyHash (Program.T {datatypes, globals, functions, main}) =
                   val name =
                      Func.newString (concat ["hash_", Tycon.originalName tycon])
                   val _ = setTyconHashFunc (tycon, SOME name)
-                  val ty = Type.con (tycon, Vector.new0 ())
+                  val ty = Type.datatypee tycon
                   val st = (Var.newNoname (), Hash.stateTy)
                   val dep = (Var.newNoname (), seqIndexTy)
                   val x = (Var.newNoname (), ty)

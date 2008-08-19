@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -7,6 +7,7 @@
  *)
 
 type int = Int.t
+type word = Word.t
 
 signature SSA_TREE_STRUCTS = 
    sig
@@ -56,7 +57,7 @@ signature SSA_TREE =
 
       structure Type:
          sig
-            include HASH_TYPE
+            type t
 
             datatype dest =
                Array of t
@@ -71,10 +72,41 @@ signature SSA_TREE =
              | Weak of t
              | Word of WordSize.t
 
+            val array: t -> t
+            val bool: t
+            val checkPrimApp: {targs: t vector,
+                               args: t vector,
+                               prim: t Prim.t,
+                               result: t} -> bool
+            val con: Tycon.t * t vector -> t
+            (* val cpointer: t *)
+            val datatypee: Tycon.t -> t
             val dest: t -> dest
-            val tyconArgs: t -> Tycon.t * t vector
+            val deArray: t -> t
+            val deArrow: t -> t * t
+            val deDatatype: t -> Tycon.t
+            val deRef: t -> t
+            val deTuple: t -> t vector
+            val deTupleOpt: t -> t vector option
+            val deVector: t -> t
+            val deWeak: t -> t
+            val equals: t * t -> bool
+            val hash: t -> word
+            (* val intInf: t *)
+            val isTuple: t -> bool
+            val isUnit: t -> bool
+            val layout: t -> Layout.t
+            val ofConst: Const.t -> t
+            val plist: t -> PropertyList.t
+            (* val real: RealSize.t -> t *)
+            val reff: t -> t
+            (* val thread: t *)
+            val tuple: t vector -> t
+            val vector: t -> t
+            val weak: t -> t
+            val word: WordSize.t -> t
+            val unit: t
          end
-      sharing Atoms = Type.Atoms
 
       structure Exp:
          sig

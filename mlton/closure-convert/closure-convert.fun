@@ -469,7 +469,7 @@ fun closureConvert
                         (Lambdas.toList ls, fn l =>
                          {lambda = Value.Lambda.dest l,
                           con = Con.newString "Env"})
-                     val ty = Type.con (tycon, Vector.new0 ())
+                     val ty = Type.datatypee tycon
                      val info = {ty = ty, cons = cons}
                      val _ = r := SOME info
                      (* r must be set before the following, because calls to

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -216,12 +216,6 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
       (* Build the dependents for each tycon. *)
       val _ =
          let
-            val {get = isDatatype, set = setDatatype, destroy} =
-               Property.destGetSetOnce (Tycon.plist, Property.initConst false)
-            val _ =
-               Vector.foreach 
-               (datatypes, fn Datatype.T {tycon, ...} =>
-                setDatatype (tycon, true))
             val _ =
                Vector.foreach
                (datatypes, fn Datatype.T {tycon, cons} =>
@@ -229,15 +223,27 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                    val {get = isDependent, set = setDependent, destroy} =
                       Property.destGetSet (Tycon.plist, Property.initConst false)
                    fun setTypeDependents t =
-                      let val (tycon', ts) = Type.tyconArgs t
-                      in if isDatatype tycon'
-                            then if isDependent tycon'
-                                    then ()
-                                 else (setDependent (tycon', true)
-                                       ; List.push (#dependents
-                                                    (tyconInfo tycon'),
-                                                    tycon))
-                         else Vector.foreach (ts, setTypeDependents)
+                      let
+                         datatype z = datatype Type.dest
+                      in
+                         case Type.dest t of
+                            Array t => setTypeDependents t
+                          | CPointer => ()
+                          | Datatype tycon' =>
+                               if isDependent tycon'
+                                  then ()
+                               else (setDependent (tycon', true)
+                                     ; List.push (#dependents
+                                                  (tyconInfo tycon'),
+                                                  tycon))
+                          | IntInf => ()
+                          | Real _ => ()
+                          | Ref t => setTypeDependents t
+                          | Thread => ()
+                          | Tuple ts => Vector.foreach (ts, setTypeDependents)
+                          | Vector t => setTypeDependents t
+                          | Weak t => setTypeDependents t
+                          | Word _ => ()
                       end
                    val _ =
                       Vector.foreach (cons, fn {args, ...} =>
@@ -245,7 +251,6 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                    val _ = destroy ()
                 in ()
                 end)
-            val _ = destroy ()
          in ()
          end
 
@@ -360,6 +365,19 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
        * For datatypes with one variant not containing an array type, eliminate
        * the datatype. 
        *)
+      fun containsArrayOrVector (ty: Type.t): bool =
+         let
+            datatype z = datatype Type.dest
+            fun loop t =
+               case Type.dest t of
+                  Array _ => true
+                | Ref t => loop t
+                | Tuple ts => Vector.exists (ts, loop)
+                | Vector _ => true
+                | Weak t => loop t
+                | _ => false
+         in loop ty
+         end
       val (datatypes, unary) =
          Vector.fold
          (datatypes, ([], []), fn (Datatype.T {tycon, cons}, (datatypes, unary)) =>
@@ -380,12 +398,9 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                 let
                    val {con, args} = Vector.sub (cons, 0)
                 in
-                   if Vector.exists (args, fn t =>
-                                     Type.containsTycon (t, Tycon.array)
-                                     orelse Type.containsTycon (t, Tycon.vector))
+                   if Vector.exists (args, containsArrayOrVector)
                       then (datatypes,
-                            {tycon = tycon, con = con, args = args}
-                            :: unary)
+                            {tycon = tycon, con = con, args = args} :: unary)
                    else (transparent (tycon, con, args)
                          ; (datatypes, unary))
                 end
@@ -393,18 +408,19 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                    unary)
           end)
       fun containsTycon (ty: Type.t, tyc: Tycon.t): bool =
-         let open Type
+         let
+            datatype z = datatype Type.dest
             fun loop t =
-               case dest t of
-                  Tuple ts => Vector.exists (ts, loop)
-                | Array t => loop t
-                | Vector t => loop t
-                | Ref t => loop t
-                | Weak t => loop t
+               case Type.dest t of
+                  Array t => loop t
                 | Datatype tyc' =>
                      (case tyconReplacement tyc' of
                          NONE => Tycon.equals (tyc, tyc')
                        | SOME t => loop t)
+                | Tuple ts => Vector.exists (ts, loop)
+                | Ref t => loop t
+                | Vector t => loop t
+                | Weak t => loop t
                 | _ => false
          in loop ty
          end
@@ -583,7 +599,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                         (_,     NONE)    => NONE
                       | (0,     SOME l)  => SOME l
                       | (n,     SOME l)  =>
-                           if n = tyconNumCons (Type.tycon (oldVarType test))
+                           if n = tyconNumCons (Type.deDatatype (oldVarType test))
                               then NONE
                            else SOME l
                   fun normal () =

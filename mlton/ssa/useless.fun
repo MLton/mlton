@@ -425,7 +425,7 @@ fun useless (program: Program.t): Program.t =
                 val _ =
                    setTyconInfo (tycon, {useful = ref false,
                                          cons = Vector.map (cons, #con)})
-                fun value () = fromType (Type.con (tycon, Vector.new0 ()))
+                fun value () = fromType (Type.datatypee tycon)
              in Vector.foreach
                 (cons, fn {con, args} =>
                  setConInfo (con, {value = value,

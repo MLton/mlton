@@ -645,7 +645,7 @@ fun simplify (program: Program.t): Program.t =
          Vector.foreach
          (datatypes, fn Datatype.T {tycon, cons} =>
           let
-             val result = Type.con (tycon, Vector.new0 ())
+             val result = Type.datatypee tycon
           in
              Vector.foreach
              (cons, fn {con, args} =>

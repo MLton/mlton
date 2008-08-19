@@ -402,7 +402,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       val _ =
          Vector.foreach
          (datatypes, fn Datatype.T {tycon, cons} =>
-          let val result = Type.con (tycon, Vector.new0 ())
+          let val result = Type.datatypee tycon
           in Vector.foreach
              (cons, fn {con, args} =>
               setConInfo (con, {args = args,

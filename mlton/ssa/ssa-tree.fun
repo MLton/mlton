@@ -19,11 +19,6 @@ structure Type =
       in open  T
       end
 
-      fun tyconArgs t =
-         case Dest.dest t of
-            Dest.Con x => x
-          | _ => Error.bug "SsaTree.Type.tyconArgs"
-
       datatype dest =
           Array of t
         | CPointer
@@ -73,6 +68,18 @@ structure Type =
                     | SOME f => f ts)
              | _ => Error.bug "SsaTree.Type.dest"
       end
+
+      val con = con
+
+      fun datatypee tycon = con (tycon, Vector.new0 ())
+      fun deDatatypeOpt t =
+         case dest t of
+            Datatype tycon => SOME tycon
+          | _ => NONE
+      fun deDatatype t =
+         case deDatatypeOpt t of
+            SOME tycon => tycon
+          | _ => Error.bug "SsaTree.Type.deDatatype"
 
       local
          open Layout
