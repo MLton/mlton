@@ -423,8 +423,45 @@ fun closureConvert
       end
       val {get = lambdasInfoOpt, ...} =
          Property.get (Lambdas.plist, Property.initFun (fn _ => ref NONE))
-      val {hom = convertType, destroy = destroyConvertType} =
-         Stype.makeMonoHom {con = fn (_, c, ts) => Type.con (c, ts)}
+      val (convertType, destroyConvertType) =
+         let
+            val {get, set, destroy, ...} =
+               Property.destGetSetOnce (Tycon.plist, Property.initConst NONE)
+
+            fun nullary c v =
+               if Vector.isEmpty v
+                  then c
+               else Error.bug "ClosureConvert.convertType.nullary: bogus application of nullary tycon"
+
+            fun unary make v =
+               if 1 = Vector.length v
+                  then make (Vector.sub (v, 0))
+               else Error.bug "ClosureConvert.convertType.unary: bogus application of unary tycon"
+            val tycons =
+               [(Tycon.arrow, fn _ => Error.bug "ClosureConvert.convertType.array"),
+                (Tycon.array, unary Type.array),
+                (Tycon.cpointer, nullary Type.cpointer),
+                (Tycon.intInf, nullary Type.intInf),
+                (Tycon.reff, unary Type.reff),
+                (Tycon.thread, nullary Type.thread),
+                (Tycon.tuple, Type.tuple),
+                (Tycon.vector, unary Type.vector),
+                (Tycon.weak, unary Type.weak)]
+               @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Type.real s)))
+               @ Vector.toListMap (Tycon.words, fn (t, s) => (t, nullary (Type.word s)))
+
+            val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
+
+            val {hom = convertType, destroy = destroyConvertType} =
+               Stype.makeMonoHom
+               {con = fn (_, tycon, ts) =>
+                case get tycon of
+                   NONE => nullary (Type.datatypee tycon) ts
+                 | SOME f => f ts}
+         in
+            (convertType,
+             fn () => (destroy () ; destroyConvertType ()))
+         end
       (* newDatatypes accumulates the new datatypes built for sets of lambdas. *)
       val newDatatypes: Datatype.t list ref = ref []
       fun valueType arg: Type.t =

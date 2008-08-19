@@ -78,8 +78,7 @@ signature SSA_TREE =
                                args: t vector,
                                prim: t Prim.t,
                                result: t} -> bool
-            val con: Tycon.t * t vector -> t
-            (* val cpointer: t *)
+            val cpointer: t
             val datatypee: Tycon.t -> t
             val dest: t -> dest
             val deArray: t -> t
@@ -92,15 +91,15 @@ signature SSA_TREE =
             val deWeak: t -> t
             val equals: t * t -> bool
             val hash: t -> word
-            (* val intInf: t *)
+            val intInf: t
             val isTuple: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
             val ofConst: Const.t -> t
             val plist: t -> PropertyList.t
-            (* val real: RealSize.t -> t *)
+            val real: RealSize.t -> t
             val reff: t -> t
-            (* val thread: t *)
+            val thread: t
             val tuple: t vector -> t
             val vector: t -> t
             val weak: t -> t
