@@ -1145,27 +1145,52 @@ fun 'a checkApp (prim: 'a t,
                              weak: 'a -> 'a,
                              word: WordSize.t -> 'a}}): bool =
    let
-      fun done (args', result') =
-         Vector.equals (args, Vector.fromList args', equals)
-         andalso equals (result, result')
+      fun arg i = Vector.sub (args, i)
+      fun noArgs () =
+         0 = Vector.length args
+      fun oneArg arg0' () =
+         1 = Vector.length args
+         andalso equals (arg0', arg 0)
+      fun twoArgs (arg0', arg1') () =
+         2 = Vector.length args
+         andalso equals (arg0', arg 0)
+         andalso equals (arg1', arg 1)
+      fun threeArgs (arg0', arg1', arg2') () =
+         3 = Vector.length args
+         andalso equals (arg0', arg 0)
+         andalso equals (arg1', arg 1)
+         andalso equals (arg2', arg 2)
+      fun nArgs args' () =
+         Vector.equals (args', args, equals)
+      fun done (args, result') =
+         args () andalso equals (result', result)
       fun targ i = Vector.sub (targs, i)
+      fun noTargs f =
+         0 = Vector.length targs
+         andalso done (f ())
       fun oneTarg f =
          1 = Vector.length targs
          andalso done (f (targ 0))
       local
-         fun make f s = let val t = f s in done ([t], t) end
+         fun make f s = let val t = f s
+                        in noTargs (fn () => (oneArg t, t))
+                        end
       in
          val realUnary = make real
          val wordUnary = make word
       end
       local
-         fun make f s = let val t = f s in done ([t, t], t) end
+         fun make f s = let val t = f s
+                        in noTargs (fn () => (twoArgs (t, t), t))
+                        end
       in
          val realBinary = make real
          val wordBinary = make word
       end
       local
-         fun make f s = let val t = f s in done ([t, t], bool) end
+         fun make f s = let val t = f s
+                        in noTargs (fn () => (twoArgs (t, t), bool))
+                        end
       in
          val realCompare = make real
          val wordCompare = make word
@@ -1181,49 +1206,71 @@ fun 'a checkApp (prim: 'a t,
 
       val word8 = word WordSize.word8
       val word32 = word WordSize.word32
-      fun intInfBinary () = done ([intInf, intInf, csize], intInf)
-      fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
-      fun intInfUnary () = done ([intInf, csize], intInf)
-      fun realTernary s = done ([real s, real s, real s], real s)
+      fun intInfBinary () =
+         noTargs (fn () => (threeArgs (intInf, intInf, csize), intInf))
+      fun intInfShift () =
+         noTargs (fn () => (threeArgs (intInf, shiftArg, csize), intInf))
+      fun intInfUnary () =
+         noTargs (fn () => (twoArgs (intInf, csize), intInf))
+      fun realTernary s =
+         noTargs (fn () => (threeArgs (real s, real s, real s), real s))
       val word8Array = array word8
-      fun wordShift s = done ([word s, shiftArg], word s)
+      fun wordShift s =
+         noTargs (fn () => (twoArgs (word s, shiftArg), word s))
       val word8Vector = vector word8
       val string = word8Vector
   in
       case prim of
-         Array_array => oneTarg (fn targ => ([seqIndex], array targ))
-       | Array_array0Const => oneTarg (fn targ => ([], array targ))
-       | Array_length => oneTarg (fn t => ([array t], seqIndex))
-       | Array_sub => oneTarg (fn t => ([array t, seqIndex], t))
-       | Array_toVector => oneTarg (fn t => ([array t], vector t))
-       | Array_update => oneTarg (fn t => ([array t, seqIndex, t], unit))
-       | CPointer_add => done ([cpointer, csize], cpointer)
-       | CPointer_diff => done ([cpointer, cpointer], csize)
-       | CPointer_equal => done ([cpointer, cpointer], bool)
-       | CPointer_fromWord => done ([csize], cpointer)
-       | CPointer_getCPointer => done ([cpointer, cptrdiff], cpointer)
-       | CPointer_getObjptr => oneTarg (fn t => ([cpointer, cptrdiff], t))
-       | CPointer_getReal s => done ([cpointer, cptrdiff], real s)
-       | CPointer_getWord s => done ([cpointer, cptrdiff], word s)
-       | CPointer_lt => done ([cpointer, cpointer], bool)
-       | CPointer_setCPointer => done ([cpointer, cptrdiff, cpointer], unit)
-       | CPointer_setObjptr => oneTarg (fn t => ([cpointer, cptrdiff, t], unit))
-       | CPointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
-       | CPointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
-       | CPointer_sub => done ([cpointer, csize], cpointer)
-       | CPointer_toWord => done ([cpointer], csize)
-       | Exn_extra => oneTarg (fn t => ([exn], t))
-       | Exn_name => done ([exn], string)
-       | Exn_setExtendExtra => oneTarg (fn t => ([arrow (t, t)], unit))
-       | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
-       | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
-       | FFI_Symbol _ => done ([], cpointer)
-       | GC_collect => done ([], unit)
+         Array_array => oneTarg (fn targ => (oneArg seqIndex, array targ))
+       | Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
+       | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
+       | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
+       | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
+       | Array_update =>
+            oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
+       | CPointer_add =>
+            noTargs (fn () => (twoArgs (cpointer, csize), cpointer))
+       | CPointer_diff =>
+            noTargs (fn () => (twoArgs (cpointer, cpointer), csize))
+       | CPointer_equal =>
+            noTargs (fn () => (twoArgs (cpointer, cpointer), bool))
+       | CPointer_fromWord => noTargs (fn () => (oneArg (csize), cpointer))
+       | CPointer_getCPointer =>
+            noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
+       | CPointer_getObjptr =>
+            oneTarg (fn t => (twoArgs (cpointer, cptrdiff), t))
+       | CPointer_getReal s =>
+            noTargs (fn () => (twoArgs (cpointer, cptrdiff), real s))
+       | CPointer_getWord s =>
+            noTargs (fn () => (twoArgs (cpointer, cptrdiff), word s))
+       | CPointer_lt =>
+            noTargs (fn () => (twoArgs (cpointer, cpointer), bool))
+       | CPointer_setCPointer =>
+            noTargs (fn () => (threeArgs (cpointer, cptrdiff, cpointer),
+                               unit))
+       | CPointer_setObjptr =>
+            oneTarg (fn t => (threeArgs (cpointer, cptrdiff, t), unit))
+       | CPointer_setReal s =>
+            noTargs (fn () => (threeArgs (cpointer, cptrdiff, real s), unit))
+       | CPointer_setWord s =>
+            noTargs (fn () => (threeArgs (cpointer, cptrdiff, word s), unit))
+       | CPointer_sub =>
+            noTargs (fn () => (twoArgs (cpointer, csize), cpointer))
+       | CPointer_toWord => noTargs (fn () => (oneArg cpointer, csize))
+       | Exn_extra => oneTarg (fn t => (oneArg exn, t))
+       | Exn_name => noTargs (fn () => (oneArg exn, string))
+       | Exn_setExtendExtra => oneTarg (fn t => (oneArg (arrow (t, t)), unit))
+       | Exn_setInitExtra => oneTarg (fn t => (oneArg t, unit))
+       | FFI f =>
+            noTargs (fn () => (nArgs (CFunction.args f), CFunction.return f))
+       | FFI_Symbol _ => noTargs (fn () => (noArgs, cpointer))
+       | GC_collect => noTargs (fn () => (noArgs, unit))
        | IntInf_add => intInfBinary ()
        | IntInf_andb => intInfBinary ()
        | IntInf_arshift => intInfShift ()
-       | IntInf_compare => done ([intInf, intInf], compareRes)
-       | IntInf_equal => done ([intInf, intInf], bool)
+       | IntInf_compare =>
+            noTargs (fn () => (twoArgs (intInf, intInf), compareRes))
+       | IntInf_equal => noTargs (fn () => (twoArgs (intInf, intInf), bool))
        | IntInf_gcd => intInfBinary ()
        | IntInf_lshift => intInfShift ()
        | IntInf_mul => intInfBinary ()
@@ -1233,23 +1280,25 @@ fun 'a checkApp (prim: 'a t,
        | IntInf_quot => intInfBinary ()
        | IntInf_rem => intInfBinary ()
        | IntInf_sub => intInfBinary ()
-       | IntInf_toString => done ([intInf, word32, csize], string)
-       | IntInf_toVector => done ([intInf], vector bigIntInfWord)
-       | IntInf_toWord => done ([intInf], smallIntInfWord)
+       | IntInf_toString =>
+            noTargs (fn () => (threeArgs (intInf, word32, csize), string))
+       | IntInf_toVector =>
+            noTargs (fn () => (oneArg intInf, vector bigIntInfWord))
+       | IntInf_toWord => noTargs (fn () => (oneArg intInf, smallIntInfWord))
        | IntInf_xorb => intInfBinary ()
-       | MLton_bogus => oneTarg (fn t => ([], t))
-       | MLton_bug => done ([string], unit)
-       | MLton_deserialize => oneTarg (fn t => ([word8Vector], t))
-       | MLton_eq => oneTarg (fn t => ([t, t], bool))
-       | MLton_equal => oneTarg (fn t => ([t, t], bool))
-       | MLton_halt => done ([cint], unit)
-       | MLton_hash => oneTarg (fn t => ([seqIndex, t], word32))
-       | MLton_handlesSignals => done ([], bool)
-       | MLton_installSignalHandler => done ([], unit)
-       | MLton_serialize => oneTarg (fn t => ([t], word8Vector))
-       | MLton_share => oneTarg (fn t => ([t], unit))
-       | MLton_size => oneTarg (fn t => ([t], csize))
-       | MLton_touch => oneTarg (fn t => ([t], unit))
+       | MLton_bogus => oneTarg (fn t => (noArgs, t))
+       | MLton_bug => noTargs (fn () => (oneArg string, unit))
+       | MLton_deserialize => oneTarg (fn t => (oneArg word8Vector, t))
+       | MLton_eq => oneTarg (fn t => (twoArgs (t, t), bool))
+       | MLton_equal => oneTarg (fn t => (twoArgs (t, t), bool))
+       | MLton_halt => noTargs (fn () => (oneArg cint, unit))
+       | MLton_hash => oneTarg (fn t => (twoArgs (seqIndex, t), word32))
+       | MLton_handlesSignals => noTargs (fn () => (noArgs, bool))
+       | MLton_installSignalHandler => noTargs (fn () => (noArgs, unit))
+       | MLton_serialize => oneTarg (fn t => (oneArg t, word8Vector))
+       | MLton_share => oneTarg (fn t => (oneArg t, unit))
+       | MLton_size => oneTarg (fn t => (oneArg t, csize))
+       | MLton_touch => oneTarg (fn t => (oneArg t, unit))
        | Real_Math_acos s => realUnary s
        | Real_Math_asin s => realUnary s
        | Real_Math_atan s => realUnary s
@@ -1263,10 +1312,11 @@ fun 'a checkApp (prim: 'a t,
        | Real_Math_tan s => realUnary s
        | Real_abs s => realUnary s
        | Real_add s => realBinary s
-       | Real_castToWord (s, s') => done ([real s], word s')
+       | Real_castToWord (s, s') =>
+            noTargs (fn () => (oneArg (real s), word s'))
        | Real_div s => realBinary s
        | Real_equal s => realCompare s
-       | Real_ldexp s => done ([real s, cint], real s)
+       | Real_ldexp s => noTargs (fn () => (twoArgs (real s, cint), real s))
        | Real_le s => realCompare s
        | Real_lt s => realCompare s
        | Real_mul s => realBinary s
@@ -1274,41 +1324,53 @@ fun 'a checkApp (prim: 'a t,
        | Real_mulsub s => realTernary s
        | Real_neg s => realUnary s
        | Real_qequal s => realCompare s
-       | Real_rndToReal (s, s') => done ([real s], real s')
-       | Real_rndToWord (s, s', _) => done ([real s], word s')
+       | Real_rndToReal (s, s') =>
+            noTargs (fn () => (oneArg (real s), real s'))
+       | Real_rndToWord (s, s', _) =>
+            noTargs (fn () => (oneArg (real s), word s'))
        | Real_round s => realUnary s
        | Real_sub s => realBinary s
-       | Ref_assign => oneTarg (fn t => ([reff t, t], unit))
-       | Ref_deref => oneTarg (fn t => ([reff t], t))
-       | Ref_ref => oneTarg (fn t => ([t], reff t))
-       | Thread_atomicBegin => done ([], unit)
-       | Thread_atomicEnd => done ([], unit)
-       | Thread_atomicState => done ([], word32)
-       | Thread_copy => done ([thread], thread)
-       | Thread_copyCurrent => done ([], unit)
-       | Thread_returnToC => done ([], unit)
-       | Thread_switchTo => done ([thread], unit)
-       | TopLevel_getHandler => done ([], arrow (exn, unit))
-       | TopLevel_getSuffix => done ([], arrow (unit, unit))
-       | TopLevel_setHandler => done ([arrow (exn, unit)], unit)
-       | TopLevel_setSuffix => done ([arrow (unit, unit)], unit)
-       | String_toWord8Vector => done ([string], word8Vector)
-       | Vector_length => oneTarg (fn t => ([vector t], seqIndex))
-       | Vector_sub => oneTarg (fn t => ([vector t, seqIndex], t))
-       | Weak_canGet => oneTarg (fn t => ([weak t], bool))
-       | Weak_get => oneTarg (fn t => ([weak t], t))
-       | Weak_new => oneTarg (fn t => ([t], weak t))
-       | Word8Array_subWord s => done ([word8Array, seqIndex], word s)
-       | Word8Array_updateWord s => done ([word8Array, seqIndex, word s], unit)
-       | Word8Vector_subWord s => done ([word8Vector, seqIndex], word s)
-       | Word8Vector_toString => done ([word8Vector], string)
-       | WordVector_toIntInf => done ([vector bigIntInfWord], intInf)
+       | Ref_assign => oneTarg (fn t => (twoArgs (reff t, t), unit))
+       | Ref_deref => oneTarg (fn t => (oneArg (reff t), t))
+       | Ref_ref => oneTarg (fn t => (oneArg t, reff t))
+       | Thread_atomicBegin => noTargs (fn () => (noArgs, unit))
+       | Thread_atomicEnd => noTargs (fn () => (noArgs, unit))
+       | Thread_atomicState => noTargs (fn () => (noArgs, word32))
+       | Thread_copy => noTargs (fn () => (oneArg thread, thread))
+       | Thread_copyCurrent => noTargs (fn () => (noArgs, unit))
+       | Thread_returnToC => noTargs (fn () => (noArgs, unit))
+       | Thread_switchTo => noTargs (fn () => (oneArg thread, unit))
+       | TopLevel_getHandler => noTargs (fn () => (noArgs, arrow (exn, unit)))
+       | TopLevel_getSuffix => noTargs (fn () => (noArgs, arrow (unit, unit)))
+       | TopLevel_setHandler =>
+            noTargs (fn () => (oneArg (arrow (exn, unit)), unit))
+       | TopLevel_setSuffix =>
+            noTargs (fn () => (oneArg (arrow (unit, unit)), unit))
+       | String_toWord8Vector =>
+            noTargs (fn () => (oneArg string, word8Vector))
+       | Vector_length => oneTarg (fn t => (oneArg (vector t), seqIndex))
+       | Vector_sub => oneTarg (fn t => (twoArgs (vector t, seqIndex), t))
+       | Weak_canGet => oneTarg (fn t => (oneArg (weak t), bool))
+       | Weak_get => oneTarg (fn t => (oneArg (weak t), t))
+       | Weak_new => oneTarg (fn t => (oneArg t, weak t))
+       | Word8Array_subWord s =>
+            noTargs (fn () => (twoArgs (word8Array, seqIndex), word s))
+       | Word8Array_updateWord s =>
+            noTargs (fn () => (threeArgs (word8Array, seqIndex, word s), unit))
+       | Word8Vector_subWord s =>
+            noTargs (fn () => (twoArgs (word8Vector, seqIndex), word s))
+       | Word8Vector_toString =>
+            noTargs (fn () => (oneArg (word8Vector), string))
+       | WordVector_toIntInf =>
+            noTargs (fn () => (oneArg (vector bigIntInfWord), intInf))
        | Word_add s => wordBinary s
        | Word_addCheck (s, _) => wordBinary s
        | Word_andb s => wordBinary s
-       | Word_castToReal (s, s') => done ([word s], real s')
+       | Word_castToReal (s, s') =>
+            noTargs (fn () => (oneArg (word s), real s'))
        | Word_equal s => wordCompare s
-       | Word_extdToWord (s, s', _) => done ([word s], word s')
+       | Word_extdToWord (s, s', _) =>
+            noTargs (fn () => (oneArg (word s), word s'))
        | Word_lshift s => wordShift s
        | Word_lt (s, _) => wordCompare s
        | Word_mul (s, _) => wordBinary s
@@ -1319,15 +1381,16 @@ fun 'a checkApp (prim: 'a t,
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
        | Word_rem (s, _) => wordBinary s
-       | Word_rndToReal (s, s', _) => done ([word s], real s')
+       | Word_rndToReal (s, s', _) =>
+            noTargs (fn () => (oneArg (word s), real s'))
        | Word_rol s => wordShift s
        | Word_ror s => wordShift s
        | Word_rshift (s, _) => wordShift s
        | Word_sub s => wordBinary s
        | Word_subCheck (s, _) => wordBinary s
-       | Word_toIntInf => done ([smallIntInfWord], intInf)
+       | Word_toIntInf => noTargs (fn () => (oneArg smallIntInfWord, intInf))
        | Word_xorb s => wordBinary s
-       | World_save => done ([string], unit)
+       | World_save => noTargs (fn () => (oneArg string, unit))
    end
 
 val checkApp =
