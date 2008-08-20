@@ -170,7 +170,7 @@ bool createHeap (GC_state s, GC_heap h,
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
   assert (0 == h->size and NULL == h->start);
-  backoff = (desiredSize - minSize) / 20;
+  backoff = (desiredSize - minSize) / 16;
   if (0 == backoff)
     backoff = 1; /* enough to terminate the loop below */
   backoff = align (backoff, s->sysvals.pageSize);
@@ -277,7 +277,7 @@ bool remapHeap (GC_state s, GC_heap h,
   assert (desiredSize >= h->size);
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
-  backoff = (desiredSize - minSize) / 20;
+  backoff = (desiredSize - minSize) / 16;
   if (0 == backoff)
     backoff = 1; /* enough to terminate the loop below */
   backoff = align (backoff, s->sysvals.pageSize);
