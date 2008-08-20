@@ -148,6 +148,7 @@ bool createHeap (GC_state s, GC_heap h,
                  size_t desiredSize,
                  size_t minSize) {
   size_t backoff;
+  size_t newSize;
 
   if (DEBUG_MEM)
     fprintf (stderr, "createHeap  desired size = %s  min size = %s\n",
@@ -168,7 +169,7 @@ bool createHeap (GC_state s, GC_heap h,
    * to fail.  This is important for large heaps.
    * Note that the loop always trys a NULL address last.
    */
-  h->size = desiredSize;
+  newSize = desiredSize;
   do {
     const unsigned int countLog2 = 5;
     const unsigned int count = 0x1 << countLog2;
@@ -182,9 +183,11 @@ bool createHeap (GC_state s, GC_heap h,
     static bool direction = TRUE;
     unsigned int i;
 
-    assert (isAligned (h->size, s->sysvals.pageSize));
+    assert (isAligned (newSize, s->sysvals.pageSize));
+
     for (i = 1; i <= count; i++) {
       size_t address;
+      pointer newStart;
 
       address = (size_t)i * step;
       if (direction)
@@ -193,46 +196,38 @@ bool createHeap (GC_state s, GC_heap h,
       if (i == count)
         address = 0;
 
-      h->start = GC_mmapAnon ((pointer)address, h->size);
-      if ((void*)-1 == h->start)
-        h->start = (void*)NULL;
-      unless ((void*)NULL == h->start) {
+      newStart = GC_mmapAnon ((pointer)address, newSize);
+      unless ((void*)-1 == newStart) {
         direction = not direction;
+        h->start = newStart;
+        h->size = newSize;
         if (h->size > s->cumulativeStatistics.maxHeapSize)
           s->cumulativeStatistics.maxHeapSize = h->size;
+        assert (minSize <= h->size and h->size <= desiredSize);
         if (DEBUG or s->controls.messages)
           fprintf (stderr,
                    "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
                    (uintptr_t)(h->start),
                    uintmaxToCommaString(h->size));
-        assert (h->size >= minSize);
         return TRUE;
       }
     }
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Creating heap of size %s bytes cannot be satisfied,]\n",
-               uintmaxToCommaString (h->size));
+               uintmaxToCommaString (newSize));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
                uintmaxToCommaString (backoff),
                uintmaxToCommaString (minSize));
     }
-    if (h->size > minSize
-        and (h->size - backoff) < minSize) {
-      h->size = minSize;
+    size_t nextSize = newSize - backoff;
+    if (nextSize < minSize and minSize < newSize) {
+      newSize = minSize;
     } else {
-      h->size -= backoff;
+      newSize = nextSize;
     }
-
-    size_t nextSize = h->size - backoff;
-    if (nextSize < minSize and minSize < h->size) {
-      h->size = minSize;
-    } else {
-      h->size = nextSize;
-    }
-  } while (h->size >= minSize);
-  h->size = 0;
+  } while (newSize >= minSize);
   return FALSE;
 }
 
@@ -253,11 +248,16 @@ bool remapHeap (GC_state s, GC_heap h,
                 size_t desiredSize,
                 size_t minSize) {
   size_t backoff;
-  size_t size;
+  size_t newSize;
+  size_t origSize;
 
 #if not HAS_REMAP
   return FALSE;
 #endif
+  if (DEBUG_MEM)
+    fprintf (stderr, "remapHeap  desired size = %s  min size = %s\n",
+             uintmaxToCommaString(desiredSize),
+             uintmaxToCommaString(minSize));
   assert (minSize <= desiredSize);
   assert (desiredSize >= h->size);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
@@ -265,19 +265,43 @@ bool remapHeap (GC_state s, GC_heap h,
   if (0 == backoff)
     backoff = 1; /* enough to terminate the loop below */
   backoff = align (backoff, s->sysvals.pageSize);
-  for (size = desiredSize; size >= minSize; size -= backoff) {
-    pointer new;
+  origSize = h->size;
+  newSize = desiredSize;
+  do {
+    pointer newStart;
 
-    new = GC_mremap (h->start, h->size, size);
-    unless ((void*)-1 == new) {
-      h->start = new;
-      h->size = size;
+    assert (isAligned (newSize, s->sysvals.pageSize));
+
+    newStart = GC_mremap (h->start, origSize, newSize);
+    unless ((void*)-1 == newStart) {
+      h->start = newStart;
+      h->size = newSize;
       if (h->size > s->cumulativeStatistics.maxHeapSize)
         s->cumulativeStatistics.maxHeapSize = h->size;
       assert (minSize <= h->size and h->size <= desiredSize);
+      if (DEBUG or s->controls.messages)
+        fprintf (stderr,
+                 "[GC: Remapped heap at "FMTPTR" to size %s bytes.]\n",
+                 (uintptr_t)(h->start),
+                 uintmaxToCommaString(h->size));
       return TRUE;
     }
-  }
+    if (s->controls.messages) {
+      fprintf (stderr,
+               "[GC: Remapping heap to size %s bytes cannot be satisfied,]\n",
+               uintmaxToCommaString (newSize));
+      fprintf (stderr,
+               "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
+               uintmaxToCommaString (backoff),
+               uintmaxToCommaString (minSize));
+    }
+    size_t nextSize = newSize - backoff;
+    if (nextSize < minSize and minSize < newSize) {
+      newSize = minSize;
+    } else {
+      newSize = nextSize;
+    }
+  } while (newSize >= minSize);
   return FALSE;
 }
 
