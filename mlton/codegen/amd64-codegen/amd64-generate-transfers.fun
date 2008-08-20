@@ -503,42 +503,7 @@ struct
               then AppendList.empty
            else AppendList.single (Assembly.directive_unreserve 
                                    {registers = [Register.rsp]})
-
-        val (mkCCallLabel, mkSymbolStubs) =
-           if !Control.Target.os = MLton.Platform.OS.Darwin
-              then 
-                 let
-                    val set: (word * String.t * Label.t) HashSet.t =
-                       HashSet.new {hash = #1}
-                    fun mkCCallLabel name =
-                       let
-                          val hash = String.hash name
-                       in
-                          (#3 o HashSet.lookupOrInsert)
-                          (set, hash,
-                           fn (hash', name', _) => hash = hash' andalso name = name',
-                           fn () => (hash, name, 
-                                     Label.newString (concat ["L_", name, "_stub"])))
-                       end
-                    fun mkSymbolStubs () =
-                       HashSet.fold
-                       (set, [], fn ((_, name, label), assembly) =>
-                        (Assembly.pseudoop_symbol_stub ()) ::
-                        (Assembly.label label) ::
-                        (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        assembly)
-                 in
-                    (mkCCallLabel, mkSymbolStubs)
-                 end
-              else
-                 (fn name => Label.fromString name,
-                  fn () => [])
-
+        
         datatype z = datatype Entry.t
         datatype z = datatype Transfer.t
         fun generateAll (gef as GEF {effect,...})
@@ -1182,12 +1147,14 @@ struct
                 | CCall {args, frameInfo, func, return}
                 => let
                      datatype z = datatype CFunction.Convention.t
+                     datatype z = datatype CFunction.SymbolScope.t
                      datatype z = datatype CFunction.Target.t
                      val CFunction.T {convention=_,
                                       maySwitchThreads,
                                       modifiesFrontier,
                                       readsStackTop, 
                                       return = returnTy,
+                                      symbolScope,
                                       target,
                                       writesStackTop, ...} = func
                      val stackTopMinusWordDeref
@@ -1521,13 +1488,70 @@ struct
                         case target of
                            Direct name =>
                               let
-                                 val target = mkCCallLabel name
+                                 datatype z = datatype MLton.Platform.OS.t
+                                 datatype z = datatype Control.Format.t
+                                 
+                                 val label = Label.fromString name
+                                 
+                                 (* how to access imported functions: *)
+                                 (* Windows rewrites the symbol __imp__name *)
+                                 val coff = Label.fromString ("_imp__" ^ name)
+                                 val macho = label (* @PLT is implicit *)
+                                 val elf = Label.fromString (name ^ "@PLT")
+                                 
+                                 val importLabel = 
+                                    case !Control.Target.os of
+                                       Cygwin => coff
+                                     | Darwin => macho
+                                     | MinGW => coff
+                                     |  _ => elf
+                                 
+                                 val direct =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.label label,
+                                     absolute = false}]
+                                     
+                                 val plt =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.label importLabel,
+                                     absolute = false}]
+                                
+                                 val indirect =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.memloc_label importLabel,
+                                     absolute = true}]
                               in
-                                 AppendList.fromList
-                                 [Assembly.directive_ccall (),
-                                  Assembly.instruction_call
-                                  {target = Operand.label target,
-                                   absolute = false}]
+                                case (symbolScope, 
+                                      !Control.Target.os, 
+                                      !Control.format) of
+                                   (* Internal functions can be easily reached
+                                    * with a direct (rip-relative) call.
+                                    *)
+                                  (Internal, _, _) => direct
+                                   (* Windows always does indirect calls to
+                                    * imported functions. The importLabel has
+                                    * the function address written to it.
+                                    *)
+                                 | (External, MinGW, _) => indirect
+                                 | (External, Cygwin, _) => indirect
+                                   (* ELF systems (and darwin too) create
+                                    * procedure lookup tables (PLT) which 
+                                    * proxy the call to libraries. The PLT
+                                    * does not contain an address, but instead
+                                    * a stub function. Often the PLT is auto-
+                                    * matically created. This applies to all
+                                    * darwin-x86_64 function calls and calls
+                                    * made from an ELF executable.
+                                    *)
+                                 | (External, Darwin, _) => direct
+                                 | (External, _, Library) => plt
+                                 | _ => direct
                               end
                          | Indirect =>
                               AppendList.fromList
@@ -2168,15 +2192,10 @@ struct
                       of [] => doit ()
                        | block => block::(doit ())))
         val assembly = doit ()
-        val symbol_stubs = mkSymbolStubs ()
         val _ = destLayoutInfo ()
         val _ = destProfileLabel ()
 
         val assembly = [Assembly.pseudoop_text ()]::assembly
-        val assembly =
-           if List.isEmpty symbol_stubs
-              then assembly
-              else symbol_stubs :: assembly
         val assembly =
            if List.isEmpty data
               then assembly

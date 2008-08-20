@@ -7,7 +7,6 @@
  *)
 
 type int = Int.t
-type word = Word.t
 
 signature AMD64_GENERATE_TRANSFERS_STRUCTS =
   sig
