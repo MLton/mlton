@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,13 +12,14 @@
  * All ML objects (including ML execution stacks) are allocated in a
  * contiguous heap.  The heap has the following general layout:
  * 
- *  ----------------------------------------------------
- *  |    old generation    |               |  nursery  |
- *  ----------------------------------------------------
+ *  -------------------------------------------------------------------------
+ *  |    old generation    |               |  nursery  | cardMap | crossMap |
+ *  -------------------------------------------------------------------------
  *  |------oldGenSize------|
  *  |-----------------------size-----------------------|
  *  ^                                      ^
  *  start                                  nursery
+ *  |------------------------------withMapsSize-----------------------------|
 */
 
 typedef struct GC_heap {
@@ -26,6 +27,7 @@ typedef struct GC_heap {
   size_t oldGenSize; /* size of old generation */
   size_t size; /* size of heap */
   pointer start; /* start of heap (and old generation) */
+  size_t withMapsSize; /* size of heap with card/cross maps */
 } *GC_heap;
 
 #define GC_HEAP_LIMIT_SLOP 512
@@ -51,7 +53,7 @@ static inline void initHeap (GC_state s, GC_heap h);
 static inline size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize);
 
 static inline void releaseHeap (GC_state s, GC_heap h);
-static void shrinkHeap (GC_state s, GC_heap h, size_t keep);
+static void shrinkHeap (GC_state s, GC_heap h, size_t keepSize);
 static bool createHeap (GC_state s, GC_heap h, size_t desiredSize, size_t minSize);
 static bool createHeapSecondary (GC_state s, size_t desiredSize);
 static bool remapHeap (GC_state s, GC_heap h, size_t desiredSize, size_t minSize);

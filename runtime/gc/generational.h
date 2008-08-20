@@ -84,10 +84,8 @@ static size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize);
 
 static inline void clearCardMap (GC_state s);
 static inline void clearCrossMap (GC_state s);
-static void createCardMapAndCrossMap (GC_state s);
-static void copyCardMapAndCrossMap (GC_state s, GC_heap h);
-static void shrinkCardMapAndCrossMap (GC_state s, size_t keep);
-static void remapCardMapAndCrossMap (GC_state s, pointer orig);
+static inline void clearCardMapAndCrossMap (GC_state s);
+static void setCardMapAndCrossMap (GC_state s);
 
 #if ASSERT
 static bool isCrossMapOk (GC_state s);

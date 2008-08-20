@@ -39,11 +39,10 @@ void updateWeaksForCheneyCopy (GC_state s) {
 void swapHeapsForCheneyCopy (GC_state s) {
   struct GC_heap tempHeap;
 
-  copyCardMapAndCrossMap (s, &s->secondaryHeap);
   tempHeap = s->secondaryHeap;
   s->secondaryHeap = s->heap;
   s->heap = tempHeap;
-  setCardMapAbsolute (s);
+  setCardMapAndCrossMap (s);
 }
 
 void majorCheneyCopyGC (GC_state s) {
@@ -86,7 +85,6 @@ void majorCheneyCopyGC (GC_state s) {
   bytesCopied = s->secondaryHeap.oldGenSize;
   s->cumulativeStatistics.bytesCopied += bytesCopied;
   swapHeapsForCheneyCopy (s);
-  clearCrossMap (s);
   s->lastMajorStatistics.kind = GC_COPYING;
   if (detailedGCTime (s))
     stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcCopying);

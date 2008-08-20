@@ -391,7 +391,6 @@ void majorMarkCompactGC (GC_state s) {
   foreachGlobalObjptr (s, threadInternalObjptr);
   updateForwardPointersForMarkCompact (s, currentStack);
   updateBackwardPointersAndSlideForMarkCompact (s, currentStack);
-  clearCrossMap (s);
   bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;
   s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;
   bytesMarkCompacted = s->heap.oldGenSize;

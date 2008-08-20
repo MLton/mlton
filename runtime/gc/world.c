@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -25,7 +25,7 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
   createHeap (s, &s->heap,
               sizeofHeapDesired (s, s->heap.oldGenSize, 0),
               s->heap.oldGenSize);
-  createCardMapAndCrossMap (s);
+  setCardMapAndCrossMap (s);
   fread_safe (s->heap.start, 1, s->heap.oldGenSize, f);
   if ((*(s->loadGlobals)) (f) != 0) diee("couldn't load globals");
   // unless (EOF == fgetc (file))

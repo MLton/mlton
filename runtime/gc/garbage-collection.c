@@ -41,8 +41,10 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
    * argument to createHeapSecondary above.  Above, it was an
    * estimate.  Here, it is exactly how much was live after the GC.
    */
-  if (mayResize)
+  if (mayResize) {
     resizeHeap (s, s->lastMajorStatistics.bytesLive + bytesRequested);
+    setCardMapAndCrossMap (s);
+  }
   resizeHeapSecondary (s);
   assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
 }

@@ -175,6 +175,11 @@ void clearCrossMap (GC_state s) {
           s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
 }
 
+void clearCardMapAndCrossMap (GC_state s) {
+  clearCardMap (s);
+  clearCrossMap (s);
+}
+
 size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize) {
   size_t totalMapSize;
 
@@ -185,7 +190,7 @@ size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize) {
   return totalMapSize;
 }
 
-static inline void initCardMapAndCrossMap (GC_state s, GC_heap h, size_t size) {
+void setCardMapAndCrossMap (GC_state s) {
   unless (s->mutatorMarksCards) {
     s->generationalMaps.cardMapLength = 0;
     s->generationalMaps.cardMap = NULL;
@@ -194,139 +199,28 @@ static inline void initCardMapAndCrossMap (GC_state s, GC_heap h, size_t size) {
     s->generationalMaps.crossMap = NULL;
     return;
   }
-  assert (isAligned (size, CARD_SIZE));
 
   GC_cardMapIndex cardMapLength;
   size_t cardMapSize;
   GC_crossMapIndex crossMapLength;
   size_t crossMapSize;
-  size_t totalMapSize;
 
-  cardMapLength = sizeToCardMapIndex (size);
-  cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->sysvals.pageSize);
-  cardMapLength = (GC_cardMapIndex)(cardMapSize / CARD_MAP_ELEM_SIZE);
+  cardMapSize = sizeofCardMap (s, s->heap.size);
+  cardMapLength = lenofCardMap (s, cardMapSize);
   s->generationalMaps.cardMapLength = cardMapLength;
 
-  crossMapLength = sizeToCardMapIndex (size);
-  crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->sysvals.pageSize);
-  crossMapLength = (GC_crossMapIndex)(crossMapSize / CROSS_MAP_ELEM_SIZE);
+  crossMapSize = sizeofCrossMap (s, s->heap.size);
+  crossMapLength = lenofCrossMap (s, crossMapSize);
   s->generationalMaps.crossMapLength = crossMapLength;
 
-  totalMapSize = cardMapSize + crossMapSize;
   /* The card map starts at the end of the heap. */
+  assert (s->heap.withMapsSize == s->heap.size + cardMapSize + crossMapSize);
   s->generationalMaps.cardMap =
-    (GC_cardMap) (h->start + size);
+    (GC_cardMap) (s->heap.start + s->heap.size);
   s->generationalMaps.crossMap =
-    (GC_crossMap) (s->generationalMaps.cardMap + (cardMapSize / CARD_MAP_ELEM_SIZE));
-  if (DEBUG_MEM or s->controls.messages)
-    fprintf (stderr,
-             "[GC: Created card/cross map at "FMTPTR" of size %s bytes.]\n",
-             (uintptr_t)(s->generationalMaps.cardMap),
-             uintmaxToCommaString(totalMapSize));
-  if (DEBUG_CARD_MARKING)
-    fprintf (stderr, "cardMap = "FMTPTR"  crossMap = "FMTPTR"\n",
-             (uintptr_t)s->generationalMaps.cardMap,
-             (uintptr_t)s->generationalMaps.crossMap);
+    (GC_crossMap) (s->heap.start + s->heap.size + cardMapSize);
   setCardMapAbsolute (s);
-}
-
-void createCardMapAndCrossMap (GC_state s) {
-  initCardMapAndCrossMap (s, &s->heap, s->heap.size);
-  if (s->mutatorMarksCards) {
-    clearCardMap (s);
-    clearCrossMap (s);
-  }
-}
-
-/* This function is called before the given heap becomes the new current heap
-   used to store the program datas.
-   The 2 heaps can have a different size. */
-void copyCardMapAndCrossMap (GC_state s, GC_heap h) {
-  if (s->mutatorMarksCards) {
-    GC_cardMap oldCardMap;
-    size_t oldCardMapSize;
-    GC_crossMap oldCrossMap;
-    size_t oldCrossMapSize;
-
-    oldCardMap = s->generationalMaps.cardMap;
-    oldCardMapSize = s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE;
-    oldCrossMap = s->generationalMaps.crossMap;
-    oldCrossMapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
-
-    initCardMapAndCrossMap (s, h, h->size);
-
-    clearCardMap (s);
-    GC_memcpy ((pointer)oldCardMap, (pointer)s->generationalMaps.cardMap,
-               min (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE,
-                    oldCardMapSize));
-    clearCrossMap (s);
-    GC_memcpy ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
-               min (s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE,
-                    oldCrossMapSize));
-  }
-}
-
-/* This function is called before we shrink the heap buffer which contains the
-   card/cross map datas. */
-void shrinkCardMapAndCrossMap (GC_state s, size_t keep) {
-  if (s->mutatorMarksCards) {
-    GC_crossMap oldCrossMap;
-
-    oldCrossMap = s->generationalMaps.crossMap;
-
-    initCardMapAndCrossMap (s, &s->heap, keep);
-
-    GC_memmove ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
-                s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
-    clearCardMap (s);
-  }
-}
-
-/* This function is called after we remap the heap buffer which contains the
-   card/cross map datas.
-   The remapped heap must be bigger than the original one. */
-void remapCardMapAndCrossMap (GC_state s, pointer orig) {
-  if (s->mutatorMarksCards) {
-    GC_cardMap oldCardMap;
-    size_t oldCardMapSize;
-    GC_crossMap oldCrossMap;
-    size_t oldCrossMapSize;
-
-    oldCardMap = (GC_cardMap) ((pointer) s->generationalMaps.cardMap + (s->heap.start - orig));
-    oldCardMapSize = s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE;
-    oldCrossMap = (GC_crossMap) (oldCardMap + (oldCardMapSize / CARD_MAP_ELEM_SIZE));
-    oldCrossMapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
-
-    initCardMapAndCrossMap (s, &s->heap, s->heap.size);
-
-    if (DEBUG_MEM or s->controls.messages) {
-      fprintf (stderr, "[GC: oldCardMap = "FMTPTR"  oldCrossMap = "FMTPTR"]\n",
-               (uintptr_t)oldCardMap,
-               (uintptr_t)oldCrossMap);
-      fprintf (stderr,
-               "[GC: oldCardMapSize = %s bytes  oldCrossMapSize = %s bytes]\n",
-               uintmaxToCommaString(oldCardMapSize), uintmaxToCommaString(oldCrossMapSize));
-      fprintf (stderr, "[GC: cardMap = "FMTPTR"  crossMap = "FMTPTR"]\n",
-               (uintptr_t)s->generationalMaps.cardMap,
-               (uintptr_t)s->generationalMaps.crossMap);
-    }
-    GC_memmove ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
-                oldCrossMapSize);
-    if (DEBUG_MEM or s->controls.messages) {
-      fprintf (stderr,
-               "[GC: crossMapSize = %s bytes]\n",
-               uintmaxToCommaString(s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE));
-    }
-    memset((pointer)s->generationalMaps.crossMap + oldCrossMapSize, CROSS_MAP_EMPTY,
-           s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE - oldCrossMapSize);
-    if (DEBUG_MEM or s->controls.messages) {
-      fprintf(stderr, "[GC: cross map OK]\n");
-    }
-    clearCardMap (s);
-    if (DEBUG_MEM or s->controls.messages) {
-      fprintf(stderr, "[GC: card map OK]\n");
-    }
-  }
+  clearCardMapAndCrossMap (s);
 }
 
 #if ASSERT
