@@ -114,7 +114,7 @@ void releaseHeap (GC_state s, GC_heap h) {
              "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
-  GC_release (h->start, h->size + computeCardMapAndCrossMapSize(s, h->size));
+  GC_release (h->start, h->size + sizeofCardMapAndCrossMap (s, h->size));
   initHeap (s, h);
 }
 
@@ -133,9 +133,9 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
                (uintptr_t)(h->start),
                uintmaxToCommaString(h->size),
                uintmaxToCommaString(keep));
-    shrinkCardMapAndCrossMap(s, keep);
-    oldMapSize = computeCardMapAndCrossMapSize(s, h->size);
-    newMapSize = computeCardMapAndCrossMapSize(s, keep);
+    shrinkCardMapAndCrossMap (s, keep);
+    oldMapSize = sizeofCardMapAndCrossMap (s, h->size);
+    newMapSize = sizeofCardMapAndCrossMap (s, keep);
     GC_decommit (h->start + keep + newMapSize, h->size - keep + oldMapSize - newMapSize);
     h->size = keep;
   }
@@ -188,7 +188,7 @@ bool createHeap (GC_state s, GC_heap h,
     static bool direction = TRUE;
     unsigned int i;
 
-    newWithMapsSize = newSize + computeCardMapAndCrossMapSize (s, newSize);
+    newWithMapsSize = newSize + sizeofCardMapAndCrossMap (s, newSize);
 
     assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
@@ -276,12 +276,12 @@ bool remapHeap (GC_state s, GC_heap h,
     backoff = 1; /* enough to terminate the loop below */
   backoff = align (backoff, s->sysvals.pageSize);
   origSize = h->size;
-  origWithMapsSize = origSize + computeCardMapAndCrossMapSize (s, origSize);
+  origWithMapsSize = origSize + sizeofCardMapAndCrossMap (s, origSize);
   newSize = desiredSize;
   do {
     pointer newStart;
 
-    newWithMapsSize = newSize + computeCardMapAndCrossMapSize (s, newSize);
+    newWithMapsSize = newSize + sizeofCardMapAndCrossMap (s, newSize);
 
     assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
@@ -366,7 +366,7 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     to = newHeap.start + size;
     remaining = size;
     copyCardMapAndCrossMap(s, &newHeap);
-    GC_decommit(orig + curHeapp->size, computeCardMapAndCrossMapSize(s, curHeapp->size));
+    GC_decommit(orig + curHeapp->size, sizeofCardMapAndCrossMap (s, curHeapp->size));
 copy:
     assert (remaining == (size_t)(from - curHeapp->start)
             and from >= curHeapp->start

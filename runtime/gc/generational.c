@@ -35,14 +35,14 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
   }
 }
 
-GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p) {
-  return (GC_cardMapIndex)p >> CARD_SIZE_LOG2;
-}
 GC_cardMapIndex sizeToCardMapIndex (size_t z) {
   return (GC_cardMapIndex)z >> CARD_SIZE_LOG2;
 }
 size_t cardMapIndexToSize (GC_cardMapIndex i) {
   return (size_t)i << CARD_SIZE_LOG2;
+}
+GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p) {
+  return (GC_cardMapIndex)p >> CARD_SIZE_LOG2;
 }
 GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p) {
   GC_cardMapElem *res;
@@ -52,6 +52,10 @@ GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p) {
     fprintf (stderr, "pointerToCardMapAddr ("FMTPTR") = "FMTPTR"\n",
              (uintptr_t)p, (uintptr_t)res);
   return res;
+}
+
+GC_crossMapIndex sizeToCrossMapIndex (size_t z) {
+  return (GC_crossMapIndex)z >> CARD_SIZE_LOG2;
 }
 
 bool isCardMarked (GC_state s, pointer p) {
@@ -104,6 +108,58 @@ pointer getCrossMapCardStart (GC_state s, pointer p) {
     : (p - 1) - ((uintptr_t)(p - 1) % CARD_SIZE);
 }
 
+size_t sizeofCardMap (GC_state s, size_t heapSize) {
+  unless (s->mutatorMarksCards) {
+    return 0;
+  }
+  assert (isAligned (heapSize, CARD_SIZE));
+
+  GC_cardMapIndex cardMapLength;
+  size_t cardMapSize;
+
+  cardMapLength = sizeToCardMapIndex (heapSize);
+  cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->sysvals.pageSize);
+
+  return cardMapSize;
+}
+
+GC_cardMapIndex lenofCardMap (__attribute__ ((unused)) GC_state s, size_t cardMapSize) {
+  GC_cardMapIndex cardMapLength;
+
+  assert (isAligned (cardMapSize, s->sysvals.pageSize));
+  assert (isAligned (cardMapSize, CARD_MAP_ELEM_SIZE));
+
+  cardMapLength = (GC_cardMapIndex)(cardMapSize / CARD_MAP_ELEM_SIZE);
+
+  return cardMapLength;
+}
+
+size_t sizeofCrossMap (GC_state s, size_t heapSize) {
+  unless (s->mutatorMarksCards) {
+    return 0;
+  }
+  assert (isAligned (heapSize, CARD_SIZE));
+
+  GC_crossMapIndex crossMapLength;
+  size_t crossMapSize;
+
+  crossMapLength = sizeToCrossMapIndex (heapSize);
+  crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->sysvals.pageSize);
+
+  return crossMapSize;
+}
+
+GC_crossMapIndex lenofCrossMap (__attribute__ ((unused)) GC_state s, size_t crossMapSize) {
+  GC_crossMapIndex crossMapLength;
+
+  assert (isAligned (crossMapSize, s->sysvals.pageSize));
+  assert (isAligned (crossMapSize, CROSS_MAP_ELEM_SIZE));
+
+  crossMapLength = (GC_crossMapIndex)(crossMapSize / CROSS_MAP_ELEM_SIZE);
+
+  return crossMapLength;
+}
+
 void clearCardMap (GC_state s) {
   if (DEBUG_GENERATIONAL and DEBUG_DETAILED)
     fprintf (stderr, "clearCardMap ()\n");
@@ -119,29 +175,12 @@ void clearCrossMap (GC_state s) {
           s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
 }
 
-/* Compute the number of bytes that are needed to store the card map and
-   cross map at the end of a heap with the given size. */
-size_t computeCardMapAndCrossMapSize (GC_state s, size_t size) {
-  unless (s->mutatorMarksCards) {
-    return 0;
-  }
-  assert (isAligned (size, CARD_SIZE));
-
-  GC_cardMapIndex cardMapLength;
-  size_t cardMapSize;
-  GC_crossMapIndex crossMapLength;
-  size_t crossMapSize;
+size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize) {
   size_t totalMapSize;
 
-  cardMapLength = sizeToCardMapIndex (size);
-  cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->sysvals.pageSize);
-  cardMapLength = (GC_cardMapIndex)(cardMapSize / CARD_MAP_ELEM_SIZE);
+  totalMapSize = sizeofCardMap (s, heapSize) + sizeofCrossMap (s, heapSize);
 
-  crossMapLength = sizeToCardMapIndex (size);
-  crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->sysvals.pageSize);
-  crossMapLength = (GC_crossMapIndex)(crossMapSize / CROSS_MAP_ELEM_SIZE);
-
-  totalMapSize = cardMapSize + crossMapSize;
+  assert (isAligned (totalMapSize, s->sysvals.pageSize));
 
   return totalMapSize;
 }
