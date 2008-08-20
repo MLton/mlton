@@ -334,6 +334,7 @@ enum {
 void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   GC_heap curHeapp;
   struct GC_heap newHeap;
+  GC_heap newHeapp;
 
   pointer origStart;
   size_t size;
@@ -353,30 +354,31 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
              uintmaxToCommaString(minSize));
   }
   curHeapp = &s->heap;
+  newHeapp = &newHeap;
   origStart = curHeapp->start;
   size = curHeapp->oldGenSize;
-  assert (size <= s->heap.size);
+  assert (size <= curHeapp->size);
   if (remapHeap (s, curHeapp, desiredSize, minSize)) {
     goto done;
   }
   shrinkHeap (s, curHeapp, size);
-  initHeap (s, &newHeap);
+  initHeap (s, newHeapp);
   /* Allocate a space of the desired size. */
-  if (createHeap (s, &newHeap, desiredSize, minSize)) {
+  if (createHeap (s, newHeapp, desiredSize, minSize)) {
     pointer from;
     pointer to;
     size_t remaining;
 
     from = curHeapp->start + size;
-    to = newHeap.start + size;
+    to = newHeapp->start + size;
     remaining = size;
     GC_decommit (origStart + curHeapp->size, sizeofCardMapAndCrossMap (s, curHeapp->size));
 copy:
     assert (remaining == (size_t)(from - curHeapp->start)
             and from >= curHeapp->start
-            and to >= newHeap.start);
+            and to >= newHeapp->start);
     if (remaining < COPY_CHUNK_SIZE) {
-      GC_memcpy (origStart, newHeap.start, remaining);
+      GC_memcpy (origStart, newHeapp->start, remaining);
       GC_release (origStart, curHeapp->size);
     } else {
       remaining -= COPY_CHUNK_SIZE;
@@ -386,8 +388,8 @@ copy:
       shrinkHeap (s, curHeapp, remaining);
       goto copy;
     }
-    newHeap.oldGenSize = size;
-    *curHeapp = newHeap;
+    newHeapp->oldGenSize = size;
+    *curHeapp = *newHeapp;
   } else if (s->controls.mayPageHeap) {
     /* Page the heap to disk and try again. */
     void *data;
