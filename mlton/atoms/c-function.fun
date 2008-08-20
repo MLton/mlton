@@ -26,12 +26,14 @@ structure Convention =
 structure SymbolScope =
    struct
       datatype t =
-         Internal
-       | External
+         External
+       | Private
+       | Public
 
       val toString =
-         fn Internal => "internal"
-          | External => "external"
+         fn External => "external"
+          | Private => "private"
+          | Public => "public"
 
       val layout = Layout.str o toString
    end
@@ -157,7 +159,7 @@ fun vanilla {args, name, prototype, return} =
       prototype = prototype,
       readsStackTop = false,
       return = return,
-      symbolScope = SymbolScope.Internal,
+      symbolScope = SymbolScope.Private,
       target = Direct name,
       writesStackTop = false}
 
@@ -172,8 +174,9 @@ fun cPrototype (T {convention, prototype = (args, return), symbolScope, target,
          else " "
       val symbolScope =
          case symbolScope of
-            SymbolScope.Internal => "INTERNAL "
-          | SymbolScope.External => "IMPORTED "
+            SymbolScope.External => "IMPORTED "
+          | SymbolScope.Private => "INTERNAL "
+          | SymbolScope.Public => "EXPORTED "
       val name = 
          case target of
             Direct name => name

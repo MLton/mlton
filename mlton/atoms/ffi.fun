@@ -57,8 +57,9 @@ fun declareExports {print} =
        let
           val symbolScope = 
              case symbolScope of 
-                SymbolScope.Internal => "INTERNAL "
-              | SymbolScope.External => "EXPORTED "
+                SymbolScope.External => "UNREACHABLE_CODE_IS_A_BUG"
+              | SymbolScope.Private => "INTERNAL "
+              | SymbolScope.Public => "EXPORTED "
           val decl = symbolScope ^ CType.toString ty ^ " " ^ name;
        in
          List.push (headers, "extern MLLIB_" ^ decl);
@@ -80,8 +81,9 @@ fun declareExports {print} =
               end)
           val header =
              concat [case symbolScope of 
-                        SymbolScope.Internal => "INTERNAL "
-                      | SymbolScope.External => "EXPORTED ",
+                        SymbolScope.External => "UNREACHABLE_CODE_IS_A_BUG"
+                      | SymbolScope.Private => "INTERNAL "
+                      | SymbolScope.Public => "EXPORTED ",
                      case res of
                         NONE => "void"
                       | SOME t => CType.toString t,

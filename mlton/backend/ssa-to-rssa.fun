@@ -64,7 +64,7 @@ structure CFunction =
             prototype = (Vector.new1 CType.gcState, NONE),
             readsStackTop = true,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_copyCurrentThread",
             writesStackTop = true}
 
@@ -84,7 +84,7 @@ structure CFunction =
                         end,
             readsStackTop = true,
             return = Type.thread (),
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_copyThread",
             writesStackTop = true}
 
@@ -99,7 +99,7 @@ structure CFunction =
             prototype = (Vector.new2 (CType.gcState, CType.cint ()), NONE),
             readsStackTop = true,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "MLton_halt",
             writesStackTop = true}
 
@@ -121,7 +121,7 @@ structure CFunction =
                          SOME CType.objptr),
             readsStackTop = true,
             return = return,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_arrayAllocate",
             writesStackTop = true}
 
@@ -136,7 +136,7 @@ structure CFunction =
             prototype = (Vector.new0 (), NONE),
             readsStackTop = true,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "Thread_returnToC",
             writesStackTop = true}
 
@@ -155,7 +155,7 @@ structure CFunction =
                          NONE),
             readsStackTop = true,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_switchToThread",
             writesStackTop = true}
 
@@ -172,7 +172,7 @@ structure CFunction =
                          SOME CType.bool),
             readsStackTop = false,
             return = Type.bool,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_weakCanGet",
             writesStackTop = false}
 
@@ -189,7 +189,7 @@ structure CFunction =
                          SOME CType.cpointer),
             readsStackTop = false,
             return = return,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_weakGet",
             writesStackTop = false}
 
@@ -208,7 +208,7 @@ structure CFunction =
                          SOME (CType.cpointer)),
             readsStackTop = true,
             return = return,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_weakNew",
             writesStackTop = true}
 
@@ -223,7 +223,7 @@ structure CFunction =
             prototype = (Vector.new2 (CType.gcState, CType.cpointer), NONE),
             readsStackTop = true,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_saveWorld",
             writesStackTop = true}
 
@@ -239,7 +239,7 @@ structure CFunction =
             prototype = (Vector.new2 (CType.gcState, CType.cpointer), NONE),
             readsStackTop = false,
             return = Type.unit,
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_share",
             writesStackTop = false}
 
@@ -256,7 +256,7 @@ structure CFunction =
                          SOME (CType.csize ())),
             readsStackTop = false,
             return = Type.csize (),
-            symbolScope = Internal,
+            symbolScope = Private,
             target = Direct "GC_size",
             writesStackTop = false}
    end
@@ -306,7 +306,7 @@ structure Name =
                                          SOME CType.intInf),
                             readsStackTop = amAllocationProfiling (),
                             return = Type.intInf (),
-                            symbolScope = Internal,
+                            symbolScope = Private,
                             target = Direct name,
                             writesStackTop = false}
             val intInfShift = fn () =>
@@ -325,7 +325,7 @@ structure Name =
                                          SOME CType.intInf),
                             readsStackTop = amAllocationProfiling (),
                             return = Type.intInf (),
-                            symbolScope = Internal,
+                            symbolScope = Private,
                             target = Direct name,
                             writesStackTop = false}
             val intInfToString = fn () =>
@@ -345,7 +345,7 @@ structure Name =
                                          SOME CType.string),
                             readsStackTop = amAllocationProfiling (),
                             return = Type.string (),
-                            symbolScope = Internal,
+                            symbolScope = Private,
                             target = Direct name,
                             writesStackTop = false}
             val intInfUnary = fn () =>
@@ -360,7 +360,7 @@ structure Name =
                                          SOME CType.intInf),
                             readsStackTop = amAllocationProfiling (),
                             return = Type.intInf (),
-                            symbolScope = Internal,
+                            symbolScope = Private,
                             target = Direct name,
                             writesStackTop = false}
             local

@@ -183,7 +183,7 @@ fun insertFunction (f: Function.t,
                                      prototype = (Vector.new0 (), NONE),
                                      readsStackTop = false,
                                      return = Type.unit,
-                                     symbolScope = CFunction.SymbolScope.Internal,
+                                     symbolScope = CFunction.SymbolScope.Private,
                                      target = CFunction.Target.Direct "MLton_allocTooLarge",
                                      writesStackTop = false}
                      val _ =

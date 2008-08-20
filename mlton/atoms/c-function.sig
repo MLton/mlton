@@ -26,7 +26,7 @@ signature C_FUNCTION =
 
       structure SymbolScope:
          sig
-            datatype t = Internal | External
+            datatype t = External | Private | Public
 
             val layout: t -> Layout.t
             val toString: t -> string

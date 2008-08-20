@@ -219,12 +219,13 @@ structure PrimKind =
    struct
       structure ImportExportAttribute =
          struct
-            datatype t = Cdecl | External | Internal | Stdcall
+            datatype t = Cdecl | External | Private | Public | Stdcall
 
             val toString: t -> string =
                fn Cdecl => "cdecl"
                 | External => "external"
-                | Internal => "internal"
+                | Private => "private"
+                | Public => "public"
                 | Stdcall => "stdcall"
 
             val layout = Layout.str o toString
@@ -232,7 +233,7 @@ structure PrimKind =
 
       structure SymbolAttribute =
          struct
-            datatype t = Alloc | External | Internal
+            datatype t = Alloc | External | Private | Public
          end
 
       datatype t =

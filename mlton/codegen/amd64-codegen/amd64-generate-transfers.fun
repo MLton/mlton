@@ -1530,10 +1530,15 @@ struct
                                 case (symbolScope, 
                                       !Control.Target.os, 
                                       !Control.format) of
-                                   (* Internal functions can be easily reached
+                                   (* Private functions can be easily reached
                                     * with a direct (rip-relative) call.
                                     *)
-                                  (Internal, _, _) => direct
+                                   (Private, _, _) => direct
+                                   (* Even though it is not safe to take the
+                                    * address of a public function, it is ok
+                                    * to call it directly.
+                                    *)
+                                 | (Public, _, _) => direct
                                    (* Windows always does indirect calls to
                                     * imported functions. The importLabel has
                                     * the function address written to it.

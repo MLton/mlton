@@ -515,8 +515,9 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                            doit
                            (name, fn () =>
                             concat [case symbolScope of
-                                       Internal => "INTERNAL "
-                                     | External => "IMPORTED ",
+                                       External => "IMPORTED "
+                                     | Private => "INTERNAL "
+                                     | Public => "EXPORTED ",
                                     "extern ",
                                     case cty of
                                        SOME x => CType.toString x

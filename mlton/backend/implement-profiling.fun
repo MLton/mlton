@@ -33,7 +33,7 @@ structure CFunction =
                prototype = (prototype, NONE),
                readsStackTop = true,
                return = Type.unit,
-               symbolScope = SymbolScope.Internal,
+               symbolScope = SymbolScope.Private,
                target = Target.Direct name,
                writesStackTop = false}
       in

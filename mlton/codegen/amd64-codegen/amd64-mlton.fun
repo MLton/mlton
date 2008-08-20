@@ -706,23 +706,24 @@ struct
                         transfer = NONE}]
                 in
                    case (symbolScope, !Control.Target.os, !Control.format) of
-                    (* As long as the symbol is internal (this means it is not
+                    (* As long as the symbol is private (this means it is not
                      * exported to code outside this text segment), then 
                      * RIP-relative addressing works on every OS/format. 
-                     *
-                     * WARNING: If the symbol >is< exported, even if defined
-                     * in this text segment, this technique can be dangerous.
-                     * 
-                     * C expects two pointers to the same symbol to be equal.
-                     * However, at least ELF&darwin relocate the address of
-                     * exported symbols to the executable. This is fatal for
-                     * _symbol alloc external, because the ML code would be
-                     * updating the wrong memory location, one unseen by the
-                     * executable. For functions it is less tragic, because
-                     * both addresses work, even if they don't compare to
-                     * equal under pointer arithmetic. Still wrong though.
                      *)
-                      (Internal, _, _) => direct
+                      (Private, _, _) => direct
+                    (* Windows MUST access locally defined symbols directly. 
+                     * An indirect access would lead to a linker error.
+                     *)
+                    | (Public, MinGW, _) => direct
+                    | (Public, Cygwin, _) => direct
+                    (* On ELF&darwin, a public symbol must be accessed via
+                     * the GOT. This is because the final value may not be
+                     * in this text segment. If the executable uses it, then
+                     * the unique C address resides in the executable's
+                     * text segment. The loader does this by creating a PLT
+                     * proxy or copying values to the executable text segment.
+                     *)
+                    | (Public, _, Library) => indirect
                     (* When compiling to a library, we need to access external
                      * symbols via some address that is updated by the loader.
                      * That address resides within our data segment, and can

@@ -885,19 +885,22 @@ fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
            | _ => NONE)
     | _ => NONE
 
-fun parseIEAttributesScope (attributes: ImportExportAttribute.t list)
+fun parseIEAttributesScope (attributes: ImportExportAttribute.t list,
+                            defScope : SymbolScope.t)
     : SymbolScope.t option = 
    case attributes of
-      [] => SOME SymbolScope.External
+      [] => SOME defScope
     | [a] => (case a of
-                 ImportExportAttribute.Internal => SOME SymbolScope.Internal
-               | ImportExportAttribute.External => SOME SymbolScope.External
+                 ImportExportAttribute.External => SOME SymbolScope.External
+               | ImportExportAttribute.Private => SOME SymbolScope.Private
+               | ImportExportAttribute.Public => SOME SymbolScope.Public
                | _ => NONE)
     | _ => NONE
 
 val splitIEAttributes = fn ImportExportAttribute.Cdecl => true
                          | ImportExportAttribute.External => false
-                         | ImportExportAttribute.Internal => false
+                         | ImportExportAttribute.Private => false
+                         | ImportExportAttribute.Public => false
                          | ImportExportAttribute.Stdcall => true
 
 fun import {attributes: ImportExportAttribute.t list,
@@ -934,7 +937,8 @@ fun import {attributes: ImportExportAttribute.t list,
                               ; Convention.Cdecl)
                    | SOME c => c
                val symbolScope =
-                  case parseIEAttributesScope symbolScope of
+                  case parseIEAttributesScope (symbolScope,
+                                               SymbolScope.External) of
                      NONE => (invalidAttributes ()
                               ; SymbolScope.External)
                    | SOME s => s
@@ -1090,14 +1094,15 @@ local
            mayInline = true})
       end
    
-   val symbolScope =
-     fn [] => SOME SymbolScope.External
-      | [SymbolAttribute.Internal] => SOME SymbolScope.Internal
+   fun symbolScope default =
+     fn [] => SOME default
+      | [SymbolAttribute.Private] => SOME SymbolScope.Private
+      | [SymbolAttribute.Public] => SOME SymbolScope.Public
       | [SymbolAttribute.External] => SOME SymbolScope.External
       | _ => NONE
    
-   val symbolScope = fn l =>
-      symbolScope (List.removeAll (l, fn x => x = SymbolAttribute.Alloc))
+   val symbolScope = fn (l, default) =>
+      symbolScope default (List.removeAll (l, fn x => x = SymbolAttribute.Alloc))
 in
    fun address {attributes: SymbolAttribute.t list,
                 elabedTy: Type.t,
@@ -1115,10 +1120,10 @@ in
              | SOME _ => ()
          val expandedPtrTy = expandedTy
          val scope = 
-            case symbolScope attributes of
+            case symbolScope (attributes, SymbolScope.External) of
                NONE => (Control.error 
                         (region, 
-                         str "use only one of {internal,external} with _address",
+                         str "use only one of {external,private,public} with _address",
                          empty)
                         ; SymbolScope.External)
              | SOME x => x
@@ -1193,21 +1198,30 @@ in
             case Type.toCBaseType expandedCbTy of
                NONE => (error (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
+         val alloc =
+            List.exists (attributes, fn attr => attr = SymbolAttribute.Alloc)
+         val defScope = if alloc then SymbolScope.Public 
+                                 else SymbolScope.External
          val scope = 
-            case symbolScope attributes of
+            case symbolScope (attributes, defScope) of
                NONE => (Control.error 
                         (region, 
-                         str "use only one of {internal,external} with _symbol",
+                         str "use only one of {external,private,public} with _symbol",
                          empty)
                         ; SymbolScope.External)
+             | SOME SymbolScope.External =>
+                  if not alloc then SymbolScope.External else
+                  (Control.error
+                   (region,
+                    str "cannot {alloc}ate an {external} _symbol",
+                    empty)
+                  ; SymbolScope.Public)
              | SOME x => x
          val () =
-            if List.exists (attributes, fn attr => 
-                                           attr = SymbolAttribute.Alloc)
-               then Ffi.addSymbol {name = name, 
-                                   ty = ctypeCbTy, 
-                                   symbolScope = scope}
-               else ()
+            if not alloc then () else
+            Ffi.addSymbol {name = name, 
+                           ty = ctypeCbTy, 
+                           symbolScope = scope}
          val addrExp =
             mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
@@ -1310,7 +1324,7 @@ fun export {attributes: ImportExportAttribute.t list,
       fun invalidType () =
          Control.error 
          (region,
-          str "invalid type for _export",
+          str "invalid type for _export: ",
           Type.layoutPretty elabedTy)
       val { yes = convention, no = symbolScope } =
          List.partition (attributes, splitIEAttributes)
@@ -1320,9 +1334,12 @@ fun export {attributes: ImportExportAttribute.t list,
                      ; Convention.Cdecl)
           | SOME c => c
       val symbolScope =
-         case parseIEAttributesScope symbolScope of
+         case parseIEAttributesScope (symbolScope, SymbolScope.Public) of
             NONE => (invalidAttributes ()
-                     ; SymbolScope.External)
+                     ; SymbolScope.Public)
+          | SOME SymbolScope.External =>
+               (error (seq [str "invalid attributes for _export: external"])
+                ; SymbolScope.Public)
           | SOME c => c
       val (exportId, args, res) =
          case Type.toCFunType expandedTy of

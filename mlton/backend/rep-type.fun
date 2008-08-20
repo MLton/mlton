@@ -848,7 +848,7 @@ structure BuiltInCFunction =
                                 NONE),
                    readsStackTop = true,
                    return = Type.unit,
-                   symbolScope = SymbolScope.Internal,
+                   symbolScope = SymbolScope.Private,
                    target = Direct "GC_collect",
                    writesStackTop = true}
          val t = make true
