@@ -29,10 +29,3 @@ static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
     return;
   memcpy (dst, src, size);
 }
-
-static inline void GC_memmove (pointer src, pointer dst, size_t size) {
-  if (DEBUG_DETAILED)
-    fprintf (stderr, "GC_memmove ("FMTPTR", "FMTPTR", %"PRIuMAX")\n",
-             (uintptr_t)src, (uintptr_t)dst, (uintmax_t)size);
-  memmove (dst, src, size);
-}
