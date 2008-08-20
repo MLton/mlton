@@ -23,7 +23,6 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
 /* forward (s, opp)
  * Forwards the object pointed to by *opp and updates *opp to point to
  * the new object.
- * It also updates the crossMap.
  */
 void forwardObjptr (GC_state s, objptr *opp) {
   objptr op;
