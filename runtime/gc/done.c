@@ -93,5 +93,4 @@ void GC_done (GC_state s) {
   }
   releaseHeap (s, &s->heap);
   releaseHeap (s, &s->secondaryHeap);
-  releaseCardMapAndCrossMap (s);
 }

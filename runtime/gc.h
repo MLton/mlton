@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -38,8 +38,8 @@ typedef GC_state GCState_t;
 #include "gc/int-inf.h"
 #include "gc/string.h"
 #include "gc/object-size.h"
-#include "gc/generational.h"
 #include "gc/heap.h"
+#include "gc/generational.h"
 #include "gc/current.h"
 #include "gc/foreach.h"
 #include "gc/translate.h"

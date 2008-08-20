@@ -114,7 +114,7 @@ void releaseHeap (GC_state s, GC_heap h) {
              "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
-  GC_release (h->start, h->size);
+  GC_release (h->start, h->size + computeCardMapAndCrossMapSize(s, h->size));
   initHeap (s, h);
 }
 
@@ -126,13 +126,17 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
   }
   keep = align (keep, s->sysvals.pageSize);
   if (keep < h->size) {
+    size_t oldMapSize, newMapSize;
     if (DEBUG or s->controls.messages)
       fprintf (stderr,
                "[GC: Shrinking heap at "FMTPTR" of size %s bytes to size %s bytes.]\n",
                (uintptr_t)(h->start),
                uintmaxToCommaString(h->size),
                uintmaxToCommaString(keep));
-    GC_decommit (h->start + keep, h->size - keep);
+    shrinkCardMapAndCrossMap(s, keep);
+    oldMapSize = computeCardMapAndCrossMapSize(s, h->size);
+    newMapSize = computeCardMapAndCrossMapSize(s, keep);
+    GC_decommit (h->start + keep + newMapSize, h->size - keep + oldMapSize - newMapSize);
     h->size = keep;
   }
 }
@@ -149,6 +153,7 @@ bool createHeap (GC_state s, GC_heap h,
                  size_t minSize) {
   size_t backoff;
   size_t newSize;
+  size_t newWithMapsSize;
 
   if (DEBUG_MEM)
     fprintf (stderr, "createHeap  desired size = %s  min size = %s\n",
@@ -183,7 +188,9 @@ bool createHeap (GC_state s, GC_heap h,
     static bool direction = TRUE;
     unsigned int i;
 
-    assert (isAligned (newSize, s->sysvals.pageSize));
+    newWithMapsSize = newSize + computeCardMapAndCrossMapSize (s, newSize);
+
+    assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
     for (i = 1; i <= count; i++) {
       size_t address;
@@ -196,7 +203,7 @@ bool createHeap (GC_state s, GC_heap h,
       if (i == count)
         address = 0;
 
-      newStart = GC_mmapAnon ((pointer)address, newSize);
+      newStart = GC_mmapAnon ((pointer)address, newWithMapsSize);
       unless ((void*)-1 == newStart) {
         direction = not direction;
         h->start = newStart;
@@ -249,7 +256,9 @@ bool remapHeap (GC_state s, GC_heap h,
                 size_t minSize) {
   size_t backoff;
   size_t newSize;
+  size_t newWithMapsSize;
   size_t origSize;
+  size_t origWithMapsSize;
 
 #if not HAS_REMAP
   return FALSE;
@@ -260,19 +269,23 @@ bool remapHeap (GC_state s, GC_heap h,
              uintmaxToCommaString(minSize));
   assert (minSize <= desiredSize);
   assert (desiredSize >= h->size);
+  minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
   backoff = (desiredSize - minSize) / 20;
   if (0 == backoff)
     backoff = 1; /* enough to terminate the loop below */
   backoff = align (backoff, s->sysvals.pageSize);
   origSize = h->size;
+  origWithMapsSize = origSize + computeCardMapAndCrossMapSize (s, origSize);
   newSize = desiredSize;
   do {
     pointer newStart;
 
-    assert (isAligned (newSize, s->sysvals.pageSize));
+    newWithMapsSize = newSize + computeCardMapAndCrossMapSize (s, newSize);
 
-    newStart = GC_mremap (h->start, origSize, newSize);
+    assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
+
+    newStart = GC_mremap (h->start, origWithMapsSize, newWithMapsSize);
     unless ((void*)-1 == newStart) {
       h->start = newStart;
       h->size = newSize;
@@ -319,6 +332,10 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   size_t size;
 
   assert (desiredSize >= s->heap.size);
+  /* Now the card/cross map is stored at the end of the heap buffer, make sure we
+     won't actually shrink the heap. */
+  if (minSize < s->heap.size)
+    minSize = s->heap.size;
   if (DEBUG_RESIZING or s->controls.messages) {
     fprintf (stderr,
              "[GC: Growing heap at "FMTPTR" of size %s bytes,]\n",
@@ -333,8 +350,10 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   orig = curHeapp->start;
   size = curHeapp->oldGenSize;
   assert (size <= s->heap.size);
-  if (remapHeap (s, curHeapp, desiredSize, minSize))
+  if (remapHeap (s, curHeapp, desiredSize, minSize)) {
+    remapCardMapAndCrossMap (s, orig);
     goto done;
+  }
   shrinkHeap (s, curHeapp, size);
   initHeap (s, &newHeap);
   /* Allocate a space of the desired size. */
@@ -346,21 +365,26 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     from = curHeapp->start + size;
     to = newHeap.start + size;
     remaining = size;
+    copyCardMapAndCrossMap(s, &newHeap);
+    GC_decommit(orig + curHeapp->size, computeCardMapAndCrossMapSize(s, curHeapp->size));
 copy:
     assert (remaining == (size_t)(from - curHeapp->start)
             and from >= curHeapp->start
             and to >= newHeap.start);
     if (remaining < COPY_CHUNK_SIZE) {
       GC_memcpy (orig, newHeap.start, remaining);
+      GC_release (orig, curHeapp->size);
     } else {
+      size_t keep;
       remaining -= COPY_CHUNK_SIZE;
       from -= COPY_CHUNK_SIZE;
       to -= COPY_CHUNK_SIZE;
       GC_memcpy (from, to, COPY_CHUNK_SIZE);
-      shrinkHeap (s, curHeapp, remaining);
+      keep = align (remaining, s->sysvals.pageSize);
+      GC_decommit (orig + keep, (size_t)(curHeapp->size - keep));
+      curHeapp->size = keep;
       goto copy;
     }
-    releaseHeap (s, curHeapp);
     newHeap.oldGenSize = size;
     *curHeapp = newHeap;
   } else if (s->controls.mayPageHeap) {
@@ -375,7 +399,6 @@ copy:
     }
     data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
-    releaseCardMapAndCrossMap (s);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
       if (DEBUG or s->controls.messages) {
         fprintf (stderr,
@@ -421,13 +444,12 @@ void resizeHeap (GC_state s, size_t minSize) {
              uintmaxToCommaString(s->heap.size));
   desiredSize = sizeofHeapDesired (s, minSize, s->heap.size);
   assert (minSize <= desiredSize);
-  if (desiredSize <= s->heap.size)
+  if (desiredSize <= s->heap.size) {
     shrinkHeap (s, &s->heap, desiredSize);
-  else {
+  } else {
     releaseHeap (s, &s->secondaryHeap);
     growHeap (s, desiredSize, minSize);
   }
-  resizeCardMapAndCrossMap (s);
   assert (s->heap.size >= minSize);
 }
 

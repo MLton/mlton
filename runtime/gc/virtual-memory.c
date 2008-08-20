@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,7 +12,7 @@ void *GC_mmapAnon_safe (void *p, size_t length) {
         result = GC_mmapAnon (p, length);
         if ((void*)-1 == result) {
                 GC_displayMem ();
-                die ("Out of memory.");
+                die ("Out of memory (2).  Unable to allocate %s bytes.\n", uintmaxToCommaString(length));
         }
         return result;
 }
@@ -28,4 +28,11 @@ static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
   if (src == dst)
     return;
   memcpy (dst, src, size);
+}
+
+static inline void GC_memmove (pointer src, pointer dst, size_t size) {
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "GC_memmove ("FMTPTR", "FMTPTR", %"PRIuMAX")\n",
+             (uintptr_t)src, (uintptr_t)dst, (uintmax_t)size);
+  memmove (dst, src, size);
 }

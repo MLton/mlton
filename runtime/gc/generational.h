@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -76,12 +76,11 @@ static inline pointer getCrossMapCardStart (GC_state s, pointer p);
 
 static inline void clearCardMap (GC_state s);
 static inline void clearCrossMap (GC_state s);
+static size_t computeCardMapAndCrossMapSize (GC_state s, size_t size);
 static void createCardMapAndCrossMap (GC_state s);
-static void releaseCardMapAndCrossMap (GC_state s);
-static void releaseCardMapAndCrossMapAux (GC_state s,
-                                          GC_cardMap cardMap, size_t cardMapSize,
-                                          GC_crossMap crossMap, size_t crossMapSize);
-static void resizeCardMapAndCrossMap (GC_state s);
+static void copyCardMapAndCrossMap (GC_state s, GC_heap h);
+static void shrinkCardMapAndCrossMap (GC_state s, size_t keep);
+static void remapCardMapAndCrossMap (GC_state s, pointer orig);
 
 #if ASSERT
 static bool isCrossMapOk (GC_state s);
