@@ -33,17 +33,21 @@ void initHeap (__attribute__ ((unused)) GC_state s,
 
 /* sizeofHeapDesired (s, l, cs)
  *
- * returns the desired heap size for a heap with l bytes live, given
- * that the current heap size is cs.
+ * returns the desired heap size for a heap with l bytes live,
+ * given that the current heap size is cs.
  */
-size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
+size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
+  size_t liveWithMapsSize;
   size_t res;
-  float ratio;
+  float withMapsRatio;
 
-  ratio = (float)s->sysvals.ram / (float)live;
-  if (ratio >= s->controls.ratios.live + s->controls.ratios.grow) {
+  liveSize = align (liveSize, s->sysvals.pageSize);
+  liveWithMapsSize = liveSize + sizeofCardMapAndCrossMap (s, liveSize);
+
+  withMapsRatio = (float)s->sysvals.ram / (float)liveWithMapsSize;
+  if (withMapsRatio >= s->controls.ratios.live + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM with desired ratios.live. */
-    res = live * s->controls.ratios.live;
+    res = liveSize * s->controls.ratios.live;
     /* If the heap is currently close in size to what we want, leave
      * it alone.  Favor growing over shrinking.
      */
@@ -51,16 +55,16 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
             or res <= .5 * currentSize)
       res = currentSize;
   } else if (s->controls.ratios.grow >= s->controls.ratios.copy
-             and ratio >= 2 * s->controls.ratios.copy) {
+             and withMapsRatio >= 2 * s->controls.ratios.copy) {
     /* Split RAM in half.  Round down by pageSize so that the total
      * amount of space taken isn't greater than RAM once rounding
      * happens.  This is so resizeHeapSecondary doesn't get confused
      * and free a semispace in a misguided attempt to avoid paging.
      */
     res = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
-  } else if (ratio >= s->controls.ratios.copy + s->controls.ratios.grow) {
+  } else if (withMapsRatio >= s->controls.ratios.copy + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM. */
-    res = s->sysvals.ram - s->controls.ratios.grow * live;
+    res = s->sysvals.ram - s->controls.ratios.grow * liveSize;
     /* If the heap isn't too much smaller than what we want, leave it
      * alone.  On the other hand, if it is bigger we want to leave res
      * as is so that the heap is shrunk, to try to avoid paging.
@@ -68,7 +72,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
     if (currentSize <= res
         and res <= 1.1 * currentSize)
       res = currentSize;
-  } else if (ratio >= s->controls.ratios.markCompact) {
+  } else if (withMapsRatio >= s->controls.ratios.markCompact) {
     /* Mark compact fits in RAM.  It doesn't matter what the current
      * size is.  If the heap is currently smaller, we are using
      * copying and should switch to mark-compact.  If the heap is
@@ -77,7 +81,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      */
     res = s->sysvals.ram;
   } else { /* Required live ratio. */
-    res = live * s->controls.ratios.markCompact;
+    res = liveSize * s->controls.ratios.markCompact;
     /* If the current heap is bigger than res, then shrinking always
      * sounds like a good idea.  However, depending on what pages the
      * VM keeps around, growing could be very expensive, if it
@@ -90,22 +94,22 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
       res = s->controls.fixedHeap;
     else
       res = s->controls.fixedHeap / 2;
-    if (res < live)
+    if (res < liveSize)
       die ("Out of memory with fixed heap size %s.",
            uintmaxToCommaString(s->controls.fixedHeap));
   } else if (s->controls.maxHeap > 0) {
     if (res > s->controls.maxHeap)
       res = s->controls.maxHeap;
-    if (res < live)
+    if (res < liveSize)
       die ("Out of memory with max heap size %s.",
            uintmaxToCommaString(s->controls.maxHeap));
   }
   if (DEBUG_RESIZING)
     fprintf (stderr, "%s = sizeofHeapDesired (%s, %s)\n",
              uintmaxToCommaString(res),
-             uintmaxToCommaString(live),
+             uintmaxToCommaString(liveSize),
              uintmaxToCommaString(currentSize));
-  assert (res >= live);
+  assert (res >= liveSize);
   return res;
 }
 
