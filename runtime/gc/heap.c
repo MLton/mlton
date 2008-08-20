@@ -350,13 +350,11 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   struct GC_heap newHeap;
   GC_heap newHeapp;
 
+  bool useCurrent;
   pointer origStart;
-  size_t size;
+  size_t liveSize;
 
   assert (desiredSize >= s->heap.size);
-  /* If desiredSize >= s->heap.size, then don't shrink the heap. */
-  if (minSize < s->heap.size)
-    minSize = s->heap.size;
   if (DEBUG_RESIZING or s->controls.messages) {
     fprintf (stderr,
              "[GC: Growing heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map),]\n",
@@ -368,15 +366,23 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
              uintmaxToCommaString(desiredSize),
              uintmaxToCommaString(minSize));
   }
+  if (minSize <= s->heap.size) {
+    useCurrent = TRUE;
+    /* Demand real growth from remapHeap and/or createHeap. */
+    minSize = (desiredSize / 2) + (s->heap.size / 2);
+  } else {
+    useCurrent = FALSE;
+  }
   curHeapp = &s->heap;
   newHeapp = &newHeap;
   origStart = curHeapp->start;
-  size = curHeapp->oldGenSize;
-  assert (size <= curHeapp->size);
+  liveSize = curHeapp->oldGenSize;
+  assert (liveSize <= curHeapp->size);
   if (remapHeap (s, curHeapp, desiredSize, minSize)) {
     goto done;
   }
-  shrinkHeap (s, curHeapp, size);
+  if (!useCurrent)
+    shrinkHeap (s, curHeapp, liveSize);
   initHeap (s, newHeapp);
   /* Allocate a space of the desired size. */
   if (createHeap (s, newHeapp, desiredSize, minSize)) {
@@ -384,17 +390,17 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     pointer to;
     size_t remaining;
 
-    from = curHeapp->start + size;
-    to = newHeapp->start + size;
-    remaining = size;
-    GC_decommit (origStart + curHeapp->size, sizeofCardMapAndCrossMap (s, curHeapp->size));
+    from = curHeapp->start + liveSize;
+    to = newHeapp->start + liveSize;
+    remaining = liveSize;
+    shrinkHeap (s, curHeapp, remaining);
 copy:
     assert (remaining == (size_t)(from - curHeapp->start)
             and from >= curHeapp->start
             and to >= newHeapp->start);
     if (remaining < COPY_CHUNK_SIZE) {
-      GC_memcpy (origStart, newHeapp->start, remaining);
-      GC_release (origStart, curHeapp->size);
+      GC_memcpy (curHeapp->start, newHeapp->start, remaining);
+      releaseHeap (s, curHeapp);
     } else {
       remaining -= COPY_CHUNK_SIZE;
       from -= COPY_CHUNK_SIZE;
@@ -403,30 +409,38 @@ copy:
       shrinkHeap (s, curHeapp, remaining);
       goto copy;
     }
-    newHeapp->oldGenSize = size;
+    newHeapp->oldGenSize = liveSize;
     *curHeapp = *newHeapp;
+  } else if (useCurrent) {
+    if (DEBUG_RESIZING or s->controls.messages) {
+      fprintf (stderr,
+               "[GC: Using heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map).]\n",
+               (uintptr_t)s->heap.start,
+               uintmaxToCommaString(s->heap.size),
+               uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
+    }
   } else if (s->controls.mayPageHeap) {
     /* Page the heap to disk and try again. */
     void *data;
 
     if (DEBUG or s->controls.messages) {
       fprintf (stderr,
-               "[GC: Writing heap at "FMTPTR" of size %s bytes to disk.]\n",
-               (uintptr_t)origStart,
-               uintmaxToCommaString(size));
+               "[GC: Writing %s bytes of heap at "FMTPTR" to disk.]\n",
+               uintmaxToCommaString(liveSize),
+               (uintptr_t)curHeapp->start);
     }
-    data = GC_diskBack_write (origStart, size);
+    data = GC_diskBack_write (curHeapp->start, liveSize);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
       if (DEBUG or s->controls.messages) {
         fprintf (stderr,
-                 "[GC: Reading heap to "FMTPTR" of size %s bytes from disk.]\n",
-                 (uintptr_t)(curHeapp->start),
-                 uintmaxToCommaString(size));
+                 "[GC: Reading %s bytes of heap to "FMTPTR" from disk.]\n",
+                 uintmaxToCommaString(liveSize),
+                 (uintptr_t)(curHeapp->start));
       }
-      GC_diskBack_read (data, curHeapp->start, size);
+      GC_diskBack_read (data, curHeapp->start, liveSize);
       GC_diskBack_close (data);
-      curHeapp->oldGenSize = size;
+      curHeapp->oldGenSize = liveSize;
     } else {
       GC_diskBack_close (data);
       if (s->controls.messages)
