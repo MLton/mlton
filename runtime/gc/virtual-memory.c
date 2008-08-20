@@ -7,14 +7,15 @@
  */
 
 void *GC_mmapAnon_safe (void *p, size_t length) {
-        void *result;
+  void *result;
 
-        result = GC_mmapAnon (p, length);
-        if ((void*)-1 == result) {
-                GC_displayMem ();
-                die ("Out of memory (2).  Unable to allocate %s bytes.\n", uintmaxToCommaString(length));
-        }
-        return result;
+  result = GC_mmapAnon (p, length);
+  if ((void*)-1 == result) {
+    GC_displayMem ();
+    die ("Out of memory.  Unable to allocate %s bytes.\n",
+         uintmaxToCommaString(length));
+  }
+  return result;
 }
 
 static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
