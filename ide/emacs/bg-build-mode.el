@@ -5,6 +5,8 @@
 
 (require 'compile)
 (require 'bg-build-util)
+(if (string-match "XEmacs" emacs-version)
+    (require 'overlay))
 
 ;; This is a minor mode for ``handsfree'' background batch building.  See
 ;; http://mlton.org/EmacsBgBuildMode for further information.
@@ -14,6 +16,7 @@
 ;;      - E.g. grep for saved files from given file
 ;; XXX: Locate project file(s) automatically
 ;; XXX: Context menu to the mode line indicator
+;; XXX: `mode-line-format' (XEmacs 21.4) support
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
@@ -379,7 +382,8 @@ The expression should evaluate to a bg-build project object."
                   bg-build-finished-builds)
             (bg-build-parse-messages)
             (set (make-local-variable 'bg-build-messages)
-                 (or (and (hash-table-p compilation-locs)
+                 (or (and (boundp 'compilation-locs)
+                          (hash-table-p compilation-locs)
                           (let ((entries nil))
                             (maphash
                              (function
@@ -586,7 +590,6 @@ The expression should evaluate to a bg-build project object."
 
 (defvar bg-build-status ""
   "Mode line status indicator for BGB mode")
-(add-to-list 'mode-line-modes '(t bg-build-status))
 
 (defun bg-build-status-update ()
   (let ((buffer (get-buffer bg-build-status-buffer-name)))
@@ -729,10 +732,15 @@ The expression should evaluate to a bg-build project object."
   :global t
   (remove-hook
    'after-save-hook (function bg-build-after-save-hook))
+  (when (boundp 'mode-line-modes)
+    (setq mode-line-modes
+          (remove '(t bg-build-status) mode-line-modes)))
   (when (bg-build-mode-enabled-in-some-buffer)
     (add-hook
      'after-save-hook
-     (function bg-build-after-save-hook))))
+     (function bg-build-after-save-hook))
+    (when (boundp 'mode-line-modes)
+      (add-to-list 'mode-line-modes '(t bg-build-status)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Finalization
