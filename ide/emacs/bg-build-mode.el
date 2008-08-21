@@ -1,4 +1,4 @@
-;; Copyright (C) 2007 Vesa Karvonen
+;; Copyright (C) 2007-2008 Vesa Karvonen
 ;;
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
@@ -13,6 +13,7 @@
 ;; XXX: Combinators for making common project configurations:
 ;;      - E.g. grep for saved files from given file
 ;; XXX: Locate project file(s) automatically
+;; XXX: Context menu to the mode line indicator
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
@@ -190,6 +191,8 @@ user."
 
 (defvar bg-build-add-project-history nil)
 
+(add-to-list 'auto-mode-alist '("\\.bgb$" . emacs-lisp-mode))
+
 (defun bg-build-add-project (&optional file dont-save)
   "Adds a project file to bg-build minor mode.  This basically
 reads and evaluates the first Emacs Lisp expression from specified file.
@@ -233,7 +236,7 @@ The expression should evaluate to a bg-build project object."
   (let* ((file (car project))
          (proc (bg-build-assoc-cdr file bg-build-live-builds)))
     (cond
-     ((and proc (process-live-p proc))
+     ((and proc (compat-process-live-p proc))
       ;; Ok.  We interrupt the build.
       (interrupt-process proc))
      (proc
@@ -259,7 +262,7 @@ The expression should evaluate to a bg-build project object."
                (unless (eq label 'progress)
                  (apply original-display-message label args))))))
     (unwind-protect
-        (funcall compilation-parse-errors-function nil nil)
+        (compat-compilation-parse-errors)
       (when (fboundp 'display-message)
         (fset 'display-message original-display-message)))))
 
@@ -275,7 +278,8 @@ The expression should evaluate to a bg-build project object."
 (defvar bg-build-highlighting-overlays nil)
 
 (defun bg-build-parse-message (message)
-  (when (consp message)
+  (cond
+   ((consp message)
     (let ((message (cdr message)))
       (cond
        ((markerp message)
@@ -283,11 +287,15 @@ The expression should evaluate to a bg-build project object."
                (file (buffer-file-name buffer))
                (point (marker-position message))
                (pos (bg-build-point-to-pos point)))
-          (cons file pos)))
+          (list (cons file pos))))
        ((consp message)
-        (cons (caar message)
-              (cons (cadr message)
-                    (1- (or (caddr message) 1)))))))))
+        (list
+         (cons (caar message)
+               (cons (cadr message)
+                     (1- (or (caddr message) 1)))))))))
+   ((vectorp message)
+    (list (cons (aref message 0)
+                (cons (aref message 1) (aref message 2)))))))
 
 (defun bg-build-delete-highlighting-overlays ()
   (mapc (function
@@ -371,11 +379,36 @@ The expression should evaluate to a bg-build project object."
                   bg-build-finished-builds)
             (bg-build-parse-messages)
             (set (make-local-variable 'bg-build-messages)
-                 (and (listp compilation-error-list)
-                      compilation-error-list))
+                 (or (and (hash-table-p compilation-locs)
+                          (let ((entries nil))
+                            (maphash
+                             (function
+                              (lambda (key value)
+                                (let* ((file (file-truename (caar value)))
+                                       (lines (cddr value)))
+                                  (mapc
+                                   (function
+                                    (lambda (line)
+                                      (let ((locs (cdr line)))
+                                        (mapc
+                                         (function
+                                          (lambda (loc)
+                                            (push (vector
+                                                   file
+                                                   (or (cadr loc) 0)
+                                                   (or (car loc) 0))
+                                                  entries)))
+                                         locs))))
+                                   lines))))
+                             compilation-locs)
+                            entries))
+                     (and (consp compilation-error-list)
+                          compilation-error-list)))
             (set (make-local-variable 'bg-build-highlighting-overlays)
-                 (mapcar (function bg-build-parse-message)
-                         bg-build-messages))))
+                 (apply
+                  (function append)
+                  (mapcar (function bg-build-parse-message)
+                          bg-build-messages)))))
         (setq bg-build-live-builds
               (bg-build-remove-from-assoc bg-build-live-builds file))
         (bg-build-check-build-queue)
@@ -551,6 +584,10 @@ The expression should evaluate to a bg-build project object."
     (switch-to-buffer buffer))
   (bg-build-status-update))
 
+(defvar bg-build-status ""
+  "Mode line status indicator for BGB mode")
+(add-to-list 'mode-line-modes '(t bg-build-status))
+
 (defun bg-build-status-update ()
   (let ((buffer (get-buffer bg-build-status-buffer-name)))
     (when buffer
@@ -586,7 +623,29 @@ The expression should evaluate to a bg-build project object."
           (insert "\nTotal of " (number-to-string bg-build-counter)
                   " builds started.\n")
           (setq buffer-read-only t)
-          (goto-char point))))))
+          (goto-char point)))))
+  (setq bg-build-status
+        (labels ((fmt (label n)
+                      (cond ((= n 0) "")
+                            ((= n 1) label)
+                            (t (format "%s%d" label n)))))
+          (let* ((queued (fmt "Q" (length bg-build-build-queue)))
+                 (live (fmt "L" (length bg-build-live-builds)))
+                 (messages
+                  (let ((n (reduce
+                            (function
+                             (lambda (n build)
+                               (with-current-buffer (cdr build)
+                                 (+ n (length bg-build-messages)))))
+                            bg-build-finished-builds
+                            :initial-value 0)))
+                    (if (and (= 0 n) bg-build-finished-builds)
+                        "F"
+                      (fmt "M" n))))
+                 (str (concat "[" queued live messages "] ")))
+            (if (string= str "[] ")
+                ""
+              str)))))
 
 (defun bg-build-status-the-project ()
   (let ((idx (- (bg-build-current-line) 3)))
@@ -666,7 +725,6 @@ The expression should evaluate to a bg-build project object."
 
 \\{bg-build-mode-map}
 "
-  :lighter " BGB"
   :group 'bg-build
   :global t
   (remove-hook

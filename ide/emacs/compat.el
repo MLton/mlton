@@ -1,4 +1,4 @@
-;; Copyright (C) 2007 Vesa Karvonen
+;; Copyright (C) 2007-2008 Vesa Karvonen
 ;;
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
@@ -35,6 +35,18 @@
     (defalias 'compat-read-file-name (function read-file-name))
   (defun compat-read-file-name (&optional a b c d e f)
     (funcall (function read-file-name) a b c d e)))
+
+(if (string-match "XEmacs" emacs-version)
+    (defalias 'compat-process-live-p (function process-live-p))
+  (defun compat-process-live-p (process)
+    (case (process-status process)
+      ((run stop) t))))
+
+(if (string-match "XEmacs" emacs-version)
+    (defun compat-compilation-parse-errors ()
+      (funcall compilation-parse-errors-function nil nil))
+  (defun compat-compilation-parse-errors ()
+    (compilation-compat-parse-errors (point-max))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
