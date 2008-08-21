@@ -403,8 +403,10 @@ argument the message is also inserted to the `kill-ring'."
                    (set-buffer buffer)
                    (mapc (function
                           (lambda (pos)
-                            (def-use-highlight-ref length pos 'def-use-use-face)))
-                         (gethash (def-use-buffer-file-truename) file-to-poss))))
+                            (def-use-highlight-ref
+                             length pos 'def-use-use-face)))
+                         (gethash
+                          (def-use-buffer-file-truename) file-to-poss))))
                 (buffer-list))
           (let* ((ref (def-use-sym-ref sym))
                  (buffer
