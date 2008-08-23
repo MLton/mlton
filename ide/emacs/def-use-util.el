@@ -156,6 +156,15 @@ one of the file attributes is nil."
              (nequal 10) ;; inode
              ))))
 
+(defun def-use-goto-line (line)
+  "Goes to specified line quietly without setting mark.  By default, the
+standard `goto-line' function in latest Gnu Emacs sets the mark displaying
+the message \"Mark set\"."
+  (save-restriction
+    (widen)
+    (goto-char 1)
+    (forward-line (1- line))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'def-use-util)

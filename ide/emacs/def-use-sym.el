@@ -11,7 +11,7 @@
 (defun def-use-pos-to-point (pos)
   "Returns the value of point in the current buffer at the position."
   (save-excursion
-    (goto-line (def-use-pos-line pos))
+    (def-use-goto-line (def-use-pos-line pos))
     (+ (point) (def-use-pos-col pos))))
 
 (defun def-use-point-to-pos (point)
