@@ -37,7 +37,7 @@
 ;; Def-use sources
 
 (defun def-use-add-dus (title sym-at-ref sym-to-uses finalize attr &rest args)
-  (push (cons args (cons sym-at-ref (cons sym-to-uses (cons attr (cons title finalize)))))
+  (push `(,args ,sym-at-ref ,sym-to-uses ,attr ,title . ,finalize)
         def-use-dus-list)
   (def-use-show-dus-update))
 
