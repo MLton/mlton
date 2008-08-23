@@ -15,6 +15,37 @@ struct
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
+  fun picRelative () =
+      (* When outputing position-independent-code (PIC), we need to keep
+       * one register pointing at a known local address. Addresses are
+       * then computed relative to this register.
+       *)
+      let 
+         datatype z = datatype Control.Format.t
+         datatype z = datatype MLton.Platform.OS.t
+         
+         (* If the ELF symbol is external, we already setup an indirect
+          * mov to load the address. Don't munge the symbol more.
+          *)
+         fun mungeLabelELF l =
+           case Label.toString l of s =>
+           if String.hasSuffix (s, { suffix = "@GOT" }) then l else
+           Label.fromString (s ^ "@GOTOFF")
+          
+         (* !!! PIC on darwin not done yet !!! *)
+         fun mungeLabelDarwin l =
+           Label.fromString (Label.toString l ^ "-someKnownSymbol")
+      in
+        case (!Control.format, !Control.Target.os) of
+            (* Windows doesn't do PIC at all *)
+            (_, MinGW)  => (fn l => l, NONE)
+          | (_, Cygwin) => (fn l => l, NONE)
+            (* We only need PIC to output libraries *)
+          | (Library, Darwin) => (mungeLabelDarwin, SOME Register.ebx)
+          | (Library, _) => (mungeLabelELF, SOME Register.ebx)
+          | _ => (fn l => l, NONE)
+      end
+      
   fun track memloc = let
                        val trackClasses 
                          = ClassSet.add(ClassSet.+
@@ -3446,48 +3477,69 @@ struct
               val MemLoc.U {immBase, memBase, immIndex, memIndex, scale, ...}
                 = MemLoc.destruct memloc
 
+              (* If PIC, find labels with RBX-relative addressing.
+               * It's bigger and slower, so only use it if we must.
+               *)
+              val (mungeLabel, base) = picRelative ()
+              
               val disp 
                 = case (immBase, immIndex) of
                      (NONE, NONE) => Immediate.zero
-                   | (SOME immBase, NONE) => immBase
-                   | (NONE, SOME immIndex) => immIndex
+                   | (SOME immBase, NONE) 
+                   => (case Immediate.destruct immBase of
+                          Immediate.Word _ => immBase
+                        | Immediate.Label l => 
+                            Immediate.label (mungeLabel l)
+                        | Immediate.LabelPlusWord (l, w) =>
+                            Immediate.labelPlusWord (mungeLabel l, w))
+                   | (NONE, SOME immIndex)
+                   => (case Immediate.destruct immIndex of
+                          Immediate.Word _ => immIndex
+                        | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc:indexLabel")
                    | (SOME immBase, SOME immIndex) 
                    => (case (Immediate.destruct immBase, Immediate.destruct immIndex) of
                           (Immediate.Label l1, Immediate.Word w2) => 
-                             Immediate.labelPlusWord (l1, w2)
+                             Immediate.labelPlusWord (mungeLabel l1, w2)
                         | (Immediate.LabelPlusWord (l1, w1), Immediate.Word w2) => 
-                             Immediate.labelPlusWord (l1, WordX.add (w1, w2))
+                             Immediate.labelPlusWord (mungeLabel l1, WordX.add (w1, w2))
                         | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc:disp")
 
               val {register = register_base,
                    assembly = assembly_base,
                    registerAllocation}
-                = case memBase
-                    of NONE => {register = NONE,
-                                assembly = AppendList.empty,
-                                registerAllocation = registerAllocation}
-                     | SOME memBase
-                     => let
-                          val {register, assembly, registerAllocation}
-                            = toRegisterMemLoc 
-                              {memloc = memBase,
-                               info = info,
-                               size = MemLoc.size memBase,
-                               move = true,
-                               supports 
-                               = case memIndex
-                                   of NONE => supports
-                                    | SOME memIndex
-                                    => (Operand.memloc memIndex)::
-                                       supports,
-                               saves = saves,
-                               force = Register.baseRegisters,
-                               registerAllocation = registerAllocation}
-                        in
-                          {register = SOME register,
-                           assembly = assembly,
-                           registerAllocation = registerAllocation}
-                        end
+               = case (Immediate.destruct disp, memBase) of
+                    (Immediate.Word _, NONE)
+                  =>  {register = NONE,
+                       assembly = AppendList.empty,
+                       registerAllocation = registerAllocation}
+                  | (Immediate.Word _, SOME memBase) (* no label, no PIC *)
+                  => let
+                        val {register, assembly, registerAllocation}
+                          = toRegisterMemLoc 
+                            {memloc = memBase,
+                             info = info,
+                             size = MemLoc.size memBase,
+                             move = true,
+                             supports 
+                             = case memIndex
+                                 of NONE => supports
+                                  | SOME memIndex
+                                 => (Operand.memloc memIndex)::
+                                     supports,
+                             saves = saves,
+                             force = Register.baseRegisters,
+                             registerAllocation = registerAllocation}
+                     in
+                       {register = SOME register,
+                        assembly = assembly,
+                        registerAllocation = registerAllocation}
+                     end
+                  | (_, SOME _) (* label & memBase? bad input *)
+                  => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc:base*2"
+                  | (_, NONE) (* label only -> use PIC if needed *)
+                  => {register = base,
+                      assembly = AppendList.empty,
+                      registerAllocation = registerAllocation}
 
               val {register = register_index,
                    assembly = assembly_index,
@@ -3507,7 +3559,7 @@ struct
                                supports = supports,
                                saves 
                                = case (memBase, register_base)
-                                   of (NONE, NONE) => saves
+                                   of (NONE, _) => saves
                                     | (SOME memBase, SOME register_base)
                                     => (Operand.memloc memBase)::
                                        (Operand.register register_base)::
@@ -3705,15 +3757,37 @@ struct
                               force = force,
                               registerAllocation = registerAllocation}
             val _ = Int.dec depth
+            val (mungeLabel, base) = picRelative ()
+            val instruction
+              = case Immediate.destruct immediate of
+                   Immediate.Word _ =>
+                       Assembly.instruction_mov 
+                       {dst = Operand.Register final_register,
+                        src = Operand.Immediate immediate,
+                        size = size}
+                 | Immediate.Label l =>
+                      Assembly.instruction_lea
+                      {dst = Operand.Register final_register,
+                       src = Operand.Address
+                              (Address.T { disp = SOME (Immediate.label
+                                                        (mungeLabel l)),
+                                           base = base,
+                                           index = NONE, scale = NONE }),
+                       size = size}
+                 | Immediate.LabelPlusWord (l, w) =>
+                      Assembly.instruction_lea
+                      {dst = Operand.Register final_register,
+                       src = Operand.Address
+                              (Address.T { disp = SOME (Immediate.labelPlusWord
+                                                        (mungeLabel l, w)),
+                                           base = base,
+                                           index = NONE, scale = NONE }),
+                       size = size}
           in
             {register = final_register,
              assembly = AppendList.appends
                         [assembly,
-                         AppendList.single
-                         (Assembly.instruction_mov
-                          {dst = Operand.Register final_register,
-                           src = Operand.Immediate immediate,
-                           size = size})],
+                         AppendList.single instruction],
              registerAllocation = registerAllocation}
           end
           handle Spill 
@@ -4273,7 +4347,17 @@ struct
                            registerAllocation: t}
         = case operand
             of Operand.Immediate i
-             => if immediate
+             => if immediate andalso 
+                   (let
+                       val (_, picBase) = picRelative ()
+                       val pic = picBase <> NONE
+                       val hasLabel =
+                          case Immediate.destruct i of
+                             Immediate.Word _ => false
+                           | _ => true
+                    in
+                       not (pic andalso hasLabel)
+                    end)
                   then {operand = operand,
                         assembly = AppendList.empty,
                         registerAllocation = registerAllocation}
@@ -4297,10 +4381,12 @@ struct
                        end
                 else if address
                   then let
+                         val (mungeLabel, picBase) = picRelative ()
+                         val label = mungeLabel (Label.fromString "raTemp1")
                          val address
                            = Address.T 
-                             {disp = SOME (Immediate.label (Label.fromString "raTemp1")),
-                              base = NONE,
+                             {disp = SOME (Immediate.label label),
+                              base = picBase,
                               index = NONE,
                               scale = NONE}
                        in 

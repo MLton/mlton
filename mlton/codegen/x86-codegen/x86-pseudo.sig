@@ -135,6 +135,7 @@ signature X86_PSEUDO =
         val label : Label.t -> t
         val deLabel : t -> Label.t option
         val memloc : MemLoc.t -> t
+        val memloc_label : Label.t -> t
         val deMemloc : t -> MemLoc.t option
 
         val size : t -> Size.t option

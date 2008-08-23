@@ -73,12 +73,14 @@ struct
                                 print: string -> unit,
                                 done: unit -> unit}}: unit
     = let
-         val reserveEsp =
+        val reserveEsp =
             (* There is no sigaltstack on cygwin, we need to reserve %esp to
              * hold the C stack pointer.  We only need to do this in programs
              * that handle signals.
              *)
             handlesSignals andalso let open Control.Target in !os = Cygwin end
+        
+        val (picMungeLabel, picBase) = x86AllocateRegisters.picRelative ()
 
         val makeC = outputC
         val makeS = outputS
@@ -177,15 +179,17 @@ struct
         fun outputJumpToSML print =
            let
               val jumpToSML = x86.Label.fromString "MLton_jumpToSML"
+              val findEIP   = x86.Label.fromString "MLton_findEIP"
               val returnToC = x86.Label.fromString "Thread_returnToC"
+              val c_stackP  = picMungeLabel x86MLton.c_stackP
+              val gcState   = picMungeLabel x86MLton.gcState_label
               val {frontierReg, stackTopReg} =
                  if reserveEsp
                     then {frontierReg = x86.Register.edi,
                           stackTopReg = x86.Register.ebp}
                     else {frontierReg = x86.Register.esp,
                           stackTopReg = x86.Register.ebp}
-              val asm =
-                 [
+              val prefixJumpToSML = [
                   x86.Assembly.pseudoop_text (),
                   x86.Assembly.pseudoop_p2align 
                   (x86.Immediate.int 4, NONE, NONE),
@@ -231,15 +235,28 @@ struct
                          {disp = SOME (x86.Immediate.int 12),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
-                   size = x86.Size.LONG},
+                   size = x86.Size.LONG}
+                  ]
+              (* This is only included if PIC *)
+              val loadGOT = [
+                  x86.Assembly.instruction_call
+                  {target = x86.Operand.label findEIP,
+                   absolute = false},
+                  x86.Assembly.instruction_binal
+                  {oper = x86.Instruction.ADD,
+                   src = x86.Operand.immediate_label x86MLton.globalOffsetTable,
+                   dst = x86.Operand.register x86.Register.ebx,
+                   size = x86.Size.LONG}
+                  ]
+              val suffixJumpToSML = [
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
-                   dst = x86.Operand.register x86.Register.ebx,
+                         {disp = SOME (x86.Immediate.label c_stackP),
+                          base = picBase, index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
-                  {src = x86.Operand.register x86.Register.ebx,
+                  {src = x86.Operand.register x86.Register.ebp,
                    dst = (x86.Operand.address o x86.Address.T)
                          {disp = SOME (x86.Immediate.int 8),
                           base = SOME x86.Register.esp,
@@ -248,32 +265,34 @@ struct
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.esp,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                         {disp = SOME (x86.Immediate.label c_stackP),
+                          base = picBase, index = NONE, scale = NONE},
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
                          {disp = (SOME o x86.Immediate.labelPlusInt)
-                                 (x86MLton.gcState_label,
+                                 (gcState,
                                   Bytes.toInt 
                                   (Machine.Runtime.GCField.offset
                                    Machine.Runtime.GCField.StackTop)),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = picBase, index = NONE, scale = NONE},
                    dst = x86.Operand.register stackTopReg,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
                          {disp = (SOME o x86.Immediate.labelPlusInt)
-                                 (x86MLton.gcState_label,
+                                 (gcState,
                                   Bytes.toInt 
                                   (Machine.Runtime.GCField.offset
                                    Machine.Runtime.GCField.Frontier)),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = picBase, index = NONE, scale = NONE},
                    dst = x86.Operand.register frontierReg,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_jmp
                   {target = x86.Operand.register x86.Register.eax,
-                   absolute = true},
+                   absolute = true}
+                  ]
+              val bodyReturnToC = [
                   x86.Assembly.pseudoop_p2align 
                   (x86.Immediate.int 4, NONE, NONE),
                   x86.Assembly.pseudoop_global returnToC,
@@ -281,8 +300,8 @@ struct
                   x86.Assembly.label returnToC,
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                         {disp = SOME (x86.Immediate.label c_stackP),
+                          base = picBase, index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.esp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
@@ -290,13 +309,13 @@ struct
                          {disp = SOME (x86.Immediate.int 8),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
-                   dst = x86.Operand.register x86.Register.ebx,
+                   dst = x86.Operand.register x86.Register.ebp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
-                  {src = x86.Operand.register x86.Register.ebx,
+                  {src = x86.Operand.register x86.Register.ebp,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                         {disp = SOME (x86.Immediate.label c_stackP),
+                          base = picBase, index = NONE, scale = NONE},
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
@@ -333,6 +352,29 @@ struct
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_ret {src = NONE}
                   ]
+              (* This is only included if PIC *)
+              val bodyFindEIP = [
+                  x86.Assembly.pseudoop_p2align 
+                  (x86.Immediate.int 4, NONE, NONE),
+                  x86.Assembly.pseudoop_global findEIP,
+                  x86.Assembly.pseudoop_hidden findEIP,
+                  x86.Assembly.label findEIP,
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {base = SOME x86.Register.esp,
+                          disp = NONE, index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebx,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_ret {src = NONE}
+                  ]
+              
+              val asm = 
+                 List.concat
+                 (if picBase <> NONE
+                  then [prefixJumpToSML, loadGOT, suffixJumpToSML,
+                        bodyReturnToC, bodyFindEIP]
+                  else [prefixJumpToSML, suffixJumpToSML, 
+                        bodyReturnToC])
            in
               List.foreach
               (asm,
@@ -386,7 +428,8 @@ struct
                     newProfileLabel = newProfileLabel,
                     liveInfo = liveInfo,
                     jumpInfo = jumpInfo,
-                    reserveEsp = reserveEsp})
+                    reserveEsp = reserveEsp,
+                    picUsesEbx = picBase <> NONE})
 
               val allocated_assembly : Assembly.t list list
                 = x86AllocateRegisters.allocateRegisters 

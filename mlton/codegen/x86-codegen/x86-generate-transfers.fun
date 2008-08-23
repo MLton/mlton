@@ -99,6 +99,37 @@ struct
                          | _ => []}
      end
 
+  val picUsesEbxRegs =
+    let
+      val transferRegs
+        =
+          (*
+          Register.eax::
+          Register.al::
+          *)
+          (* 
+          Register.ebx::
+          Register.bl::
+          *)
+          Register.ecx::
+          Register.cl::
+          Register.edx:: 
+          Register.dl::
+          Register.edi::
+          Register.esi::
+          (*
+          Register.esp::
+          Register.ebp::
+          *)
+          nil
+     in
+        {frontierReg = Register.esp,
+         stackTopReg = Register.ebp,
+         transferRegs = fn Entry.Jump _ => transferRegs
+                         | Entry.CReturn _ => Register.eax::Register.al::transferRegs
+                         | _ => []}
+     end
+
   val transferFltRegs : Entry.t -> Int.t = fn Entry.Jump _ => 6
                                             | Entry.CReturn _ => 6
                                             | _ => 0
@@ -127,11 +158,14 @@ struct
                          newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
                          liveInfo : x86Liveness.LiveInfo.t,
                          jumpInfo : x86JumpInfo.t,
-                         reserveEsp: bool}
+                         reserveEsp: bool,
+                         picUsesEbx: bool}
     = let
          val {frontierReg, stackTopReg, transferRegs} =
             if reserveEsp
                then reserveEspRegs
+            else if picUsesEbx
+               then picUsesEbxRegs
             else normalRegs
         val allClasses = !x86MLton.Classes.allClasses
         val livenessClasses = !x86MLton.Classes.livenessClasses
@@ -166,14 +200,19 @@ struct
                             weight = 2048, (* ??? *)
                             sync = false,
                             reserve = true}
+        val picUsesEbxAssume = {register = Register.ebx,
+                                memloc = x86MLton.globalOffsetTableContents,
+                                weight = 2048, (* ??? *)
+                                sync = false,
+                                reserve = true}
 
         fun blockAssumes l =
            let
               val l = frontierAssume :: stackAssume :: l
+              val l = if reserveEsp then cStackAssume :: l else l
+              val l = if picUsesEbx then picUsesEbxAssume :: l else l
            in
-              Assembly.directive_assume {assumes = if reserveEsp
-                                                      then cStackAssume :: l
-                                                   else l}
+              Assembly.directive_assume {assumes = l }
            end
 
         fun runtimeTransfer live setup trans
@@ -1099,12 +1138,14 @@ struct
                 | CCall {args, frameInfo, func, return}
                 => let
                      datatype z = datatype CFunction.Convention.t
+                     datatype z = datatype CFunction.SymbolScope.t
                      datatype z = datatype CFunction.Target.t
                      val CFunction.T {convention,
                                       maySwitchThreads,
                                       modifiesFrontier,
                                       readsStackTop, 
                                       return = returnTy,
+                                      symbolScope,
                                       target,
                                       writesStackTop, ...} = func
                      val stackTopMinusWordDeref
@@ -1322,17 +1363,87 @@ struct
                         case target of
                            Direct name =>
                               let
+                                 datatype z = datatype MLton.Platform.OS.t
+                                 datatype z = datatype Control.Format.t
+                                 
                                  val name = 
                                     case convention of
                                        Cdecl => name
                                      | Stdcall => concat [name, "@", Int.toString size_args]
-                                 val target = mkCCallLabel name
+
+                                 val label = Label.fromString name
+                                 
+                                 (* how to access imported functions: *)
+                                 (* Windows rewrites the symbol __imp__name *)
+                                 val coff = Label.fromString ("_imp__" ^ name)
+                                 val macho = Label.fromString ("L_" ^ name ^ "_stub")
+                                 val elf = Label.fromString (name ^ "@PLT")
+                                 
+                                 val importLabel = 
+                                    case !Control.Target.os of
+                                       Cygwin => coff
+                                     | Darwin => macho
+                                     | MinGW => coff
+                                     |  _ => elf
+                                 
+                                 val direct =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.label label,
+                                     absolute = false}]
+                                     
+                                 fun darwinStub () =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.label 
+                                              (mkCCallLabel name),
+                                     absolute = false}]
+                                     
+                                 val plt =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.label importLabel,
+                                     absolute = false}]
+                                
+                                 val indirect =
+                                   AppendList.fromList
+                                   [Assembly.directive_ccall (),
+                                    Assembly.instruction_call
+                                    {target = Operand.memloc_label importLabel,
+                                     absolute = true}]
                               in
-                                 AppendList.fromList
-                                 [Assembly.directive_ccall (),
-                                  Assembly.instruction_call
-                                  {target = Operand.label target,
-                                   absolute = false}]
+                                case (symbolScope, 
+                                      !Control.Target.os, 
+                                      !Control.format) of
+                                   (* Private functions can be easily reached
+                                    * with a direct (eip-relative) call.
+                                    *)
+                                   (Private, _, _) => direct
+                                   (* Even though it is not safe to take the
+                                    * address of a public function, it is ok
+                                    * to call it directly.
+                                    *)
+                                 | (Public, _, _) => direct
+                                   (* Windows always does indirect calls to
+                                    * imported functions. The importLabel has
+                                    * the function address written to it.
+                                    *)
+                                 | (External, MinGW, _) => indirect
+                                 | (External, Cygwin, _) => indirect
+                                   (* Darwin needs to generate special stubs
+                                    * that are filled in by the dynamic linker.
+                                    *)
+                                 | (External, Darwin, _) => darwinStub ()
+                                   (* ELF systems create procedure lookup
+                                    * tables (PLT) which proxy the call to 
+                                    * libraries. The PLT does not contain an
+                                    * address, but instead a stub function.
+                                    *)
+                                 | (External, _, Library) => plt
+                                 | _ => direct
                               end
                          | Indirect =>
                               AppendList.fromList

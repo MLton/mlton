@@ -24,4 +24,7 @@ signature X86_ALLOCATE_REGISTERS =
                             x86.Assembly.t list list
 
     val allocateRegisters_totals : unit -> unit
+    
+    val picRelative : unit -> (x86.Label.t -> x86.Label.t) * 
+                              x86.Register.t option
   end

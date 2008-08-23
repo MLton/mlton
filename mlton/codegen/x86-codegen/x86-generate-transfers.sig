@@ -34,6 +34,7 @@ signature X86_GENERATE_TRANSFERS =
         newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
         liveInfo: x86Liveness.LiveInfo.t,
         jumpInfo: x86JumpInfo.t,
-        reserveEsp: bool} -> x86.Assembly.t list list
+        reserveEsp: bool,
+        picUsesEbx: bool} -> x86.Assembly.t list list
     val generateTransfers_totals : unit -> unit
   end

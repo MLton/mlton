@@ -81,6 +81,10 @@ signature X86_MLTON_BASIC =
     val c_stackPContentsOperand : x86.Operand.t
     val c_stackPDerefDoubleOperand : x86.Operand.t
     val c_stackPDerefFloatOperand : x86.Operand.t
+    
+    (* Global offset table (GOT) *)
+    val globalOffsetTable : x86.Label.t
+    val globalOffsetTableContents : x86.MemLoc.t
 
     (* Static temps defined in x86-main.h *)
     val applyFFTempContentsOperand : x86.Operand.t

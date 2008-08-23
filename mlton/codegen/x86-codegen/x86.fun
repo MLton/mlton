@@ -1207,6 +1207,10 @@ struct
            | _ => NONE
       val address = Address
       val memloc = MemLoc
+      fun memloc_label l =
+         memloc (MemLoc.makeContents { base = Immediate.label l,
+                                       size = Size.LONG,
+                                       class = MemLoc.Class.Code })
       val deMemloc 
         = fn MemLoc x => SOME x
            | _ => NONE

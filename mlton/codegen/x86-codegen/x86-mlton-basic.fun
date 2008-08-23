@@ -165,6 +165,15 @@ struct
   val c_stackPDerefFloatOperand
     = Operand.memloc c_stackPDerefFloat
 
+  (* This is more a pseudo-location. The GOT is special and cannot
+   * be simply loaded. Similarly, we don't really read the contents.
+   *)
+  val globalOffsetTable = Label.fromString "_GLOBAL_OFFSET_TABLE_"
+  val globalOffsetTableContents
+    = makeContents {base = Immediate.label globalOffsetTable,
+                    size = pointerSize,
+                    class = Classes.StaticNonTemp}
+  
   val applyFFTemp = Label.fromString "applyFFTemp"
   val applyFFTempContents 
     = makeContents {base = Immediate.label applyFFTemp,
@@ -324,18 +333,18 @@ struct
    *
    * We also have another hack because on some platforms, Label.toString appends
    * an _ to the beginning of each label.
+   *
+   * Make it a label (not an immediate) so that it doesn't get PIC-ified.
    *)
   val fileLineLabel =
      Promise.lazy (fn () => Label.fromString (if !Control.labelsHaveExtra_
-                                                 then "_LINE__"
-                                              else "__LINE__"))
+                                                 then "_LINE__+9"
+                                              else "__LINE__+9"))
 
   val fileLine
     = fn () => if !Control.debug
-                 then Operand.immediate (Immediate.zero)
-                 else (Operand.immediate
-                       (Immediate.labelPlusInt
-                        (fileLineLabel (), 9)))
+                 then Operand.label (fileLineLabel ())
+                 else Operand.immediate (Immediate.zero)
 
   val gcState_label = Label.fromString "gcState"
 

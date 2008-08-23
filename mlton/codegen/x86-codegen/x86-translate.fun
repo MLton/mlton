@@ -172,7 +172,7 @@ struct
                   Vector.new1 (frontier, valOf (x86.Operand.size frontier))
                end
           | GCState => 
-               Vector.new1 (x86.Operand.label x86MLton.gcState_label,
+               Vector.new1 (x86.Operand.immediate_label x86MLton.gcState_label,
                             x86MLton.pointerSize)
           | Global g => Global.toX86Operand g
           | Label l => 
