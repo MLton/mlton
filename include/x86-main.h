@@ -43,7 +43,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 }
 
 #define MLtonCallFromC                                                  \
-void MLton_jumpToSML (pointer jump);                                    \
+INTERNAL void MLton_jumpToSML (pointer jump);                           \
 static void MLton_callFromC () {                                        \
         pointer jump;                                                   \
         GC_state s;                                                     \
