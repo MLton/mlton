@@ -425,6 +425,7 @@ argument the message is also inserted to the `kill-ring'."
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
+  (interactive)
   (save-excursion
     (save-window-excursion
       (def-use-highlight-sym (def-use-current-sym t)))))
