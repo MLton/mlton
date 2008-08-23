@@ -280,10 +280,10 @@ struct
 
   val fileLine
     = fn () => if !Control.debug
-                 then Operand.immediate (Immediate.zero)
-                 else (Operand.immediate
+                 then (Operand.immediate
                        (Immediate.labelPlusInt
                         (fileLineLabel (), 9)))
+                 else Operand.immediate (Immediate.zero)
 
   val gcState_label = Label.fromString "gcState"
 
