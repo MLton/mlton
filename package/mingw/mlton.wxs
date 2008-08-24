@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
+  <Product Name='MLton' Id='E78E6DFD-5738-B137-DD2A-EA81A1A841EC'
+    UpgradeCode='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'
+    Language='1033' Codepage='1252' Version='1.0' Manufacturer='MLton.org'>
+
+    <Package Id='????????-????-????-????-????????????' Keywords='Installer'
+      Description="MLton Installer"
+      Comments='MLton is an open-source, whole-program, optimizing Standard ML compiler.' Manufacturer='MLton.org'
+      InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+
+    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
+    <Property Id='DiskPrompt' Value="MLton Installation CD [1]" />
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFilesFolder' Name='PFiles'>
+        <Directory Id='INSTALLDIR' Name='MLton'/>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="PMenu" LongName="Programs">
+        <Directory Id="ProgramMenuDir" Name='MLton'/>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <Feature Id='Complete' Title='MLton' Description='A complete SML and C toolchain.'
+      Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+      <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1'>
+        <FeatureRef Id='Runtime'/>
+        <FeatureRef Id='W32API'/>
+        <FeatureRef Id='Binutils'/>
+        <FeatureRef Id='GCC'/>
+        <FeatureRef Id='MSYS'/>
+      </Feature>
+      <FeatureRef Id='MLton'/>
+    </Feature>
+
+    <UIRef Id="WixUI_Mondo" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+  </Product>
+</Wix>
