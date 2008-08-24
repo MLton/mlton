@@ -362,17 +362,11 @@ world:
 # puts them.
 DESTDIR := $(CURDIR)/install
 PREFIX := /usr
-ifeq ($(TARGET_OS), darwin)
-PREFIX := /usr/local
-endif
-ifeq ($(TARGET_OS), freebsd)
+ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
 PREFIX := /usr/local
 endif
 ifeq ($(TARGET_OS), mingw)
 PREFIX := /mingw
-endif
-ifeq ($(TARGET_OS), solaris)
-PREFIX := /usr/local
 endif
 prefix := $(PREFIX)
 MAN_PREFIX_EXTRA :=
@@ -381,7 +375,7 @@ ULIB := lib/mlton
 TLIB := $(DESTDIR)$(prefix)/$(ULIB)
 TMAN := $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC := $(DESTDIR)$(prefix)/share/doc/mlton
-ifeq ($(TARGET_OS), solaris)
+ifeq ($(findstring $(TARGET_OS), solaris mingw), $(TARGET_OS))
 TDOC := $(DESTDIR)$(prefix)/doc/mlton
 endif
 TEXM := $(TDOC)/examples
@@ -447,7 +441,7 @@ install-docs:
 		$(CP) changelog examples guide license README "$(TDOC)/"	\
 	)
 	if [ -r "$(TDOC)/guide/mlton-guide.pdf" ]; then 		\
-		mv "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/";		\
+		cp "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/";		\
 	fi
 	(								\
 		cd "$(SRC)/util" &&					\
@@ -458,8 +452,12 @@ install-docs:
 		; do 							\
 		$(CP) "$(SRC)/regression/$$f.sml" "$(TEXM)/"; 		\
 	done
-	$(CP) $(LEX)/$(LEX).pdf $(TDOC)
-	$(CP) $(YACC)/$(YACC).pdf $(TDOC)
+	if test -r $(LEX)/$(LEX).pdf; then                              \
+		$(CP) $(LEX)/$(LEX).pdf $(TDOC);                        \
+	fi
+	if test -r $(YACC)/$(YACC).pdf; then                            \
+		$(CP) $(YACC)/$(YACC).pdf $(TDOC);                      \
+	fi
 	find "$(TDOC)/" -name .svn -type d | xargs rm -rf
 	find "$(TDOC)/" -name .ignore -type f | xargs rm -rf
 	find "$(TEXM)/" -name .svn -type d | xargs rm -rf
