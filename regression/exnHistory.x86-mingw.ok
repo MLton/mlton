@@ -1,4 +1,4 @@
-f.raise exnhistory.sml 3.18
+f.<raise> exnhistory.sml 3.18
 f exnhistory.sml 1.5
 f exnhistory.sml 1.5
 f exnhistory.sml 1.5
@@ -10,3 +10,4 @@ f exnhistory.sml 1.5
 f exnhistory.sml 1.5
 f exnhistory.sml 1.5
 f exnhistory.sml 1.5
+<main>

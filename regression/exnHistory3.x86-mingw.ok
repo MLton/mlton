@@ -1,4 +1,4 @@
-f.raise exnhistory3.sml 5.18
+f.<raise> exnhistory3.sml 5.18
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
@@ -10,8 +10,9 @@ f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
+<main>
 ZZZ
-f.raise exnhistory3.sml 5.18
+f.<raise> exnhistory3.sml 5.18
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
@@ -23,3 +24,4 @@ f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
 f exnhistory3.sml 3.5
+<main>
