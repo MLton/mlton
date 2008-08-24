@@ -1170,7 +1170,7 @@ fun commandLine (args: string list): unit =
                                then System.system
                                     (arScript, 
                                      List.concat 
-                                      [[targetStr, output],
+                                      [[targetStr, OSStr, output],
                                        inputs,
                                        linkArchives])
                                else System.system
