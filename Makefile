@@ -82,7 +82,7 @@ basis-no-check:
 basis:
 	$(MAKE) basis-no-check
 	@echo 'Type checking basis.'
-	$(MLTON) -disable-ann deadCode \
+	"$(MLTON)" -disable-ann deadCode \
 		-stop tc \
 		'$$(SML_LIB)/basis/libs/all.mlb' \
 		>/dev/null
@@ -197,7 +197,7 @@ libraries:
 	$(MAKE) libraries-no-check
 	for f in $(LIBRARIES); do				\
 		echo "Type checking $$f library.";		\
-		$(MLTON) -disable-ann deadCode 			\
+		"$(MLTON)" -disable-ann deadCode 			\
 			-stop tc 				\
 			'$$(SML_LIB)/'"$$f/$$f.mlb" 		\
 			>/dev/null;				\
