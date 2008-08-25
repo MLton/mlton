@@ -19,13 +19,23 @@
 
       <Directory Id="ProgramMenuFolder" Name="PMenu" LongName="Programs">
         <Directory Id="ProgramMenuDir" Name='MLton'>
-          <Directory Id='ProgramMenuDocs' Name='Docs' LongName='Documentation'>
-          </Directory>
+          <Component Id='component.download.url' Guid='A9C0D185-9520-45FF-1B52-02894D3EAA54'>
+            <File Id='file.menu_download.url' Name='Download.URL' Source='Download.URL' DiskId='1' Vital='yes' />
+          </Component>
+          <Component Id='component.readme.txt' Guid='1FC6B351-547C-A5AB-7F0E-FB153F721170'>
+            <File Id='file.menu_readme.txt' Name='Readme.rtf' Source='Readme.rtf' DiskId='1' Vital='yes' />
+          </Component>
         </Directory>
       </Directory>
 
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
+
+    <DirectoryRef Id='dir.doc_mlton'>
+      <Component Id='component.documentation' Guid='1E019F99-0424-8133-D4F6-C7DDA0882798'>
+        <Shortcut Id='start_docs' Directory='ProgramMenuDir' Name='Docs' LongName='Documentation' Description='The MLton documentation folder'/>
+      </Component>
+    </DirectoryRef>
 
     <DirectoryRef Id='dir.bin'>
       <Component Id='component.path' Guid='5B06C123-B426-3D4D-BE48-4D07BAD8A6BA'>
@@ -33,16 +43,22 @@
       </Component>
       <Component Id='component.bin_mlton.bat' Guid='A2E613BD-41F8-1CF7-D5EA-0C41674D78AC'>
         <File Id='file.bin_mlton.bat' Name='mlton.bat' Source='mlton.bat' DiskId='1' Vital='yes' />
-        <ProgId Id='MLton.mlb' Description='Standard ML basis file'>
+        <ProgId Id='MLton.mlbfile' Description='Standard ML basis file'>
           <Extension Id='mlb' ContentType='application/mlb'>
             <Verb Id='buildMLB' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
           </Extension>
         </ProgId>
-        <ProgId Id='MLton.sml' Description='Standard ML source file'>
+        <ProgId Id='MLton.smlfile' Description='Standard ML source file'>
           <Extension Id='sml' ContentType='application/sml'>
             <Verb Id='buildSML' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
           </Extension>
         </ProgId>
+        <Registry Id='SMLIcon1' Root='HKCR' Key='.sml' Action='write' Type='string' Value='MLton.smlfile' />
+        <Registry Id='SMLIcon2' Root='HKCR' Key='MLton.smlfile' Action='write' Type='string' Value='Standard ML source file' />
+        <Registry Id='SMLIcon3' Root='HKCR' Key='MLton.smlfile\DefaultIcon' Action='write' Type='string' Value='[!INSTALLDIR]\lib\mlton\sml.ico' />
+        <Registry Id='MLBIcon1' Root='HKCR' Key='.mlb' Action='write' Type='string' Value='MLton.mlbfile' />
+        <Registry Id='MLBIcon2' Root='HKCR' Key='MLton.mlbfile' Action='write' Type='string' Value='Standard ML basis file' />
+        <Registry Id='MLBIcon3' Root='HKCR' Key='MLton.mlbfile\DefaultIcon' Action='write' Type='string' Value='[!INSTALLDIR]\lib\mlton\mlb.ico' />
       </Component>
       <Component Id='component.bin_msys.bat' Guid='9C492AB5-3C90-66AF-E442-D6B96A9890C4'>
         <File Id='file.bin_msys.bat' Name='msys.bat' Source='msys.bat' DiskId='1' Vital='yes'>
@@ -57,6 +73,9 @@
       <ComponentGroupRef Id='component.MLton' />
       <ComponentRef Id='component.bin_mlton.bat' />
       <ComponentRef Id='component.path' />
+      <ComponentRef Id='component.download.url' />
+      <ComponentRef Id='component.readme.txt' />
+      <ComponentRef Id='component.documentation' />
       <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10'>
         <ComponentGroupRef Id='component.Debug' />
       </Feature>

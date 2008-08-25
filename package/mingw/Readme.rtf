@@ -1,0 +1,66 @@
+MLton is a whole-program optimizing compiler for the Standard ML programming language. This package has associated MLton with .sml and .mlb files. Double-clicking on these files in the windows explorer will cause them to be compiled. MLton has also been placed into your system path so that you may use it from development environments such as Visual Studio or Eclipse by invoking 'mlton targetfile.sml'. Please refer to the manual for help on how to link MLton output against other programming libraries.
+
+If you installed the bundled MSYS package (a *nix style-shell) you should find an icon to start it in the Start Menu. MSYS can invoke 'mlton' along with a plethora of other *nix command-line utilities, notably GNU 'make'. Simply start MSYS and type 'mlton your-program-here.sml' into the window which appears.
+
+MLton has the following features. 
+
+  + Portability.  
+   Runs on the following platforms.
+   o AMD64: FreeBSD, Linux.
+   o HPPA: HPUX (11.00 and above), Linux (Debian).
+   o PowerPC: AIX (5.1 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
+   o Sparc: Linux (Debian), Solaris (8 and above).
+   o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux, MinGW/Windows, 
+      NetBSD, OpenBSD.
+  + Robustness.
+   o Supports the full SML 97 language as given in The Definition 
+      of Standard ML (Revised).
+   o A complete implementation of the Basis Library.
+   o Generates standalone executables.
+   o Compiles large programs.
+   o Support for large amounts of memory (up to 4G on 32-bit systems; 
+      more on 64-bit systems).
+   o Array lengths up to 2^31 - 1, the largest possible 
+      twos-complement 32-bit integer.
+   o Support for large files, using 64-bit file positions.
+  + Performance.
+   o Executables have excellent running times.
+   o Generates small executables.
+   o Untagged and unboxed native integers, reals, and words.
+   o Unboxed native arrays.
+   o Multiple garbage collection strategies.
+   o Fast arbitrary-precision arithmetic based on the GnuMP.
+  + Tools.
+   o Source-level profiling for both time and allocation.
+   o MLLex lexer generator.
+   o MLYacc parser generator.
+   o ML-NLFFIGEN.
+  + Extensions.
+   o A simple and fast C FFI that supports calling from SML to C and 
+      from C to SML.
+   o ML Basis system for programming in the very large.
+   o Libraries for C pointers, continuations, interval timers, random
+      numbers, resource limits, resource usage, signal handlers,
+      system logging, threads, and heap save and restore.
+
+For more information, go to the MLton home page. 
+
+        http://mlton.org/
+
+There are two mailing lists available.
+
+ * MLton@mlton.org        MLton developers
+ * MLton-user@mlton.org   MLton user community 
+
+doc directory contents:
+        README                  this file
+        changelog               changelog
+        cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
+        cmcat/                  a utility for producing whole programs in SML/NJ
+        examples/               example SML programs
+	guide/			HTML MLton guide (copy of the MLton wiki)
+        license/                license information
+        mllex.ps.gz             user guide for mllex lexer generator
+	mlton-guide.pdf		PDF version of MLton guide
+        mlyacc.ps.gz            user guide for mlyacc parser generator
+

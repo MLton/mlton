@@ -66,6 +66,7 @@ self.wxs:	files2wix-component.exe
 	rm -rf staging
 	make -C ../.. PREFIX= install
 	mv ../../install staging
+	cp sml.ico mlb.ico staging/lib/mlton
 	cd staging; find * -type f ! -name *-gdb.a | ../files2wix-component MLton > ../$@.tmp
 	mv $@.tmp $@
 
