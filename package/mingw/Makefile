@@ -50,10 +50,9 @@ gcc.wxs:		$(MINGW_GCC) self.wxs
 	mv $@.tmp $@
 
 msys.wxs:		$(MINGW_MSYS) self.wxs
-	(tar tjf $<; echo bin/bash.exe) | ./files2wix-component MSYS > $@.tmp
+	(tar --exclude postinstall -tjf $<; echo bin/bash.exe) | ./files2wix-component MSYS > $@.tmp
 	cd staging; tar xjf $(MINGW_MSYS)
 	cp staging/bin/sh.exe staging/bin/bash.exe
-	cp msys.bat staging
 	mv $@.tmp $@
 
 gmp.wxs:		$(MINGW_GMP) self.wxs

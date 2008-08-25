@@ -20,7 +20,8 @@ fun feature paths =
       val prefix = "\
          \    <ComponentGroup Id='component." ^ myId ^ "'>\n"
       fun component path = 
-         if #file (OS.Path.splitDirFile path) = "" then "" else "\
+         case OS.Path.splitDirFile path of {file, dir} =>
+         if file = "" orelse dir = "" then "" else "\
          \      <ComponentRef Id='component." ^ escape path ^ "' />\n"
       val suffix = "\
          \    </ComponentGroup>\n"
@@ -33,13 +34,13 @@ fun feature paths =
 fun dirEntry path =
    let
       val {dir, file} = OS.Path.splitDirFile path
-      val dir = if dir = "" then "INSTALLDIR" else "dir." ^ escape dir
+      val dirId = "dir." ^ escape dir
       val uglypath = escape path
       val guid = guid path
       val file83 = file83 file
    in
-      if file = "" then "" else
-      "    <DirectoryRef Id='" ^ dir ^ "'>\n\
+      if file = "" orelse dir = "" then "" else
+      "    <DirectoryRef Id='" ^ dirId ^ "'>\n\
       \      <Component Id='component." ^ uglypath ^ "' \
                        \Guid='" ^ guid ^ "'>\n\
       \         <File Id='file." ^ uglypath ^ "' \

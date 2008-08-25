@@ -30,7 +30,7 @@ goto EOF
 rem ember that we execute here if we recursed.
 :_Resume
 for %%F in (1 2 3) do shift
-if NOT EXIST "%WD%msys-1.0.dll" set WD=.\bin\
+if NOT EXIST "%WD%msys-1.0.dll" set WD=
 
 rem ember that we get here even in command.com.
 :_WindowsNT
@@ -43,7 +43,7 @@ set COMSPEC=%WINDIR%\SysWOW64\cmd.exe
 goto EOF
 :_NotX64
 
-if NOT EXIST "%WD%msys-1.0.dll" set WD=%~dp0\bin\
+if NOT EXIST "%WD%msys-1.0.dll" set WD=%~dp0
 
 rem ember Set up option to use rxvt based on value of %1
 if "x%MSYSCON%" == "x" set MSYSCON=rxvt.exe
