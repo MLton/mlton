@@ -24,18 +24,31 @@
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
-    <Feature Id='Complete' Title='MLton/MinGW' Description='A complete SML and C toolchain.'
-      Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1'>
-        <FeatureRef Id='Runtime'/>
-        <FeatureRef Id='W32API'/>
-        <FeatureRef Id='Binutils'/>
-        <FeatureRef Id='GCC'/>
-        <FeatureRef Id='GMP'/>
-        <FeatureRef Id='MSYS'/>
+    <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+      <ComponentGroupRef Id='component.MLton' />
+      <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10'>
+        <ComponentGroupRef Id='component.Debug' />
       </Feature>
-      <FeatureRef Id='MLton'/>
-      <FeatureRef Id='Debug'/>
+    </Feature>
+    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1'>
+      <ComponentGroupRef Id='component.GMP' />
+    </Feature>
+    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1'>
+      <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1'>
+        <ComponentGroupRef Id='component.Runtime' />
+      </Feature>
+      <Feature Id='W32API' Title='Win32 API' Description='Headers and link stub libraries needed to access windows system DLLs.' Level='1'>
+        <ComponentGroupRef Id='component.W32API' />
+      </Feature>
+      <Feature Id='Binutils' Title='Binutils' Description='Utilities for manipulating object files, such as the linker and assembler.' Level='1'>
+        <ComponentGroupRef Id='component.Binutils' />
+      </Feature>
+      <Feature Id='GCC' Title='GCC' Description='The GNU C Compiler. Compiles C files to assembly.' Level='1'>
+        <ComponentGroupRef Id='component.GCC' />
+      </Feature>
+      <Feature Id='MSYS' Title='MSYS' Description='A system shell along with UNIX-style command-line utilities.' Level='1'>
+        <ComponentGroupRef Id='component.MSYS' />
+      </Feature>
     </Feature>
 
     <UIRef Id="WixUI_Mondo" />

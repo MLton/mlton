@@ -1,19 +1,13 @@
-fun useArgument ([], default) = ([], default)
-  | useArgument (x :: r, _) = (r, x)
-
-val args = CommandLine.arguments ()
-val (args, parentId)   = useArgument (args, "Complete")
-val (args, selfId)     = useArgument (args, "MainProgram")
-val (args, title)      = useArgument (args, "Main Program")
-val (args, description)= useArgument (args, "")
-
-val () = if args = [] then () else
-         print "Warning: Too many arguments supplied.\n"
+val myId =
+   case CommandLine.arguments () of
+      [] => (print "Missing component group command-line argument.\n"; "XXX")
+    | (x :: []) => x
+    | (x :: _) => (print "Too many arguments supplied.\n"; x)
 
 val prefix = "\
    \<?xml version='1.0' encoding='windows-1252'?>\n\
    \<Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>\n\
-   \  <Fragment Id='Fragment" ^ selfId ^ "'>\n"
+   \  <Fragment Id='Fragment" ^ myId ^ "'>\n"
 val suffix = "\
    \  </Fragment>\n\
    \</Wix>\n"
@@ -24,15 +18,12 @@ val escape = CharVector.map escape
 fun feature paths =
    let
       val prefix = "\
-         \    <FeatureRef Id='" ^ parentId ^ "'>\n\
-         \      <Feature Id='" ^ selfId ^ "' Title='" ^ title ^ "' \
-                        \Description='" ^ description ^ "' Level='1'>\n"
+         \    <ComponentGroup Id='component." ^ myId ^ "'>\n"
       fun component path = 
          if #file (OS.Path.splitDirFile path) = "" then "" else "\
-         \        <ComponentRef Id='component." ^ escape path ^ "' />\n"
+         \      <ComponentRef Id='component." ^ escape path ^ "' />\n"
       val suffix = "\
-         \      </Feature>\n\
-         \    </FeatureRef>\n"
+         \    </ComponentGroup>\n"
    in
       print prefix
       ; List.app (print o component) paths

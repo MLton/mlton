@@ -30,46 +30,46 @@ filesys.wxs:	dirs2wix-filesys.exe $(MINGW_WIXOBJ) self.wixobj
 	mv $@.tmp $@
 
 mingw-runtime.wxs:	$(MINGW_RUNTIME) self.wxs
-	tar tzf $< | ./files2wix-feature "MinGW" "Runtime" "Runtime" "An assortment of thin wrappers that provide POSIX-like functionality on a windows platform." > $@.tmp
+	tar tzf $< | ./files2wix-component Runtime > $@.tmp
 	cd staging; tar xzf $(MINGW_RUNTIME)
 	mv $@.tmp $@
 
 w32api.wxs:		$(MINGW_W32API) self.wxs
-	tar tzf $< | ./files2wix-feature "MinGW" "W32API" "W32API" "Headers and link stub libraries needed to access windows system DLLs." > $@.tmp
+	tar tzf $< | ./files2wix-component W32API > $@.tmp
 	cd staging; tar xzf $(MINGW_W32API)
 	mv $@.tmp $@
 
 binutils.wxs:		$(MINGW_BINUTILS) self.wxs
-	tar tzf $< | grep -v info/dir | ./files2wix-feature "MinGW" "Binutils" "Binutils" "Utilities for manipulating object files, such as the linker and assembler." > $@.tmp
+	tar tzf $< | grep -v info/dir | ./files2wix-component Binutils > $@.tmp
 	cd staging; tar xzf $(MINGW_BINUTILS)
 	mv $@.tmp $@
 
 gcc.wxs:		$(MINGW_GCC) self.wxs
-	tar tzf $< | ./files2wix-feature "MinGW" "GCC" "GCC" "The GNU C Compiler. Compiles C files to assembly." > $@.tmp
+	tar tzf $< | ./files2wix-component GCC > $@.tmp
 	cd staging; tar xzf $(MINGW_GCC)
 	mv $@.tmp $@
 
 msys.wxs:		$(MINGW_MSYS) self.wxs
-	(tar tjf $<; echo bin/bash.exe) | ./files2wix-feature "MinGW" "MSYS" "MSYS" "A system shell along with UNIX-style command-line utilities." > $@.tmp
+	(tar tjf $<; echo bin/bash.exe) | ./files2wix-component MSYS > $@.tmp
 	cd staging; tar xjf $(MINGW_MSYS)
 	cp staging/bin/sh.exe staging/bin/bash.exe
 	cp msys.bat staging
 	mv $@.tmp $@
 
 gmp.wxs:		$(MINGW_GMP) self.wxs
-	tar tzf $< | sed 's@^gmp/@@' | ./files2wix-feature "MinGW" "GMP" "GnuMP" "A library for arbitrary precision arithmetic." > $@.tmp
+	tar tzf $< | sed 's@^gmp/@@' | ./files2wix-component GMP > $@.tmp
 	tar xzf $(MINGW_GMP)
 	cp -a gmp/* staging
 	rm -rf gmp
 	mv $@.tmp $@
 
-self.wxs:	files2wix-feature.exe
+self.wxs:	files2wix-component.exe
 	rm -rf staging
 	make -C ../.. PREFIX= install
 	mv ../../install staging
-	cd staging; find * -type f ! -name *-gdb.a | ../files2wix-feature "Complete" "MLton" "MLton" "A whole-program optimizing Standard ML compiler." > ../$@.tmp
+	cd staging; find * -type f ! -name *-gdb.a | ../files2wix-component MLton > ../$@.tmp
 	mv $@.tmp $@
 
 dbg.wxs:	self.wxs
-	cd staging; find * -type f -name *-gdb.a | ../files2wix-feature "Complete" "Debug" "MLton Debug" "The MLton runtime libraries with included debug information." > ../$@.tmp
+	cd staging; find * -type f -name *-gdb.a | ../files2wix-component Debug  ../$@.tmp
 	mv $@.tmp $@
