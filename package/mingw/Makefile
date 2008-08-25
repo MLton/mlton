@@ -71,5 +71,5 @@ self.wxs:	files2wix-component.exe
 	mv $@.tmp $@
 
 dbg.wxs:	self.wxs
-	cd staging; find * -type f -name *-gdb.a | ../files2wix-component Debug  ../$@.tmp
+	cd staging; find * -type f -name *-gdb.a | ../files2wix-component Debug > ../$@.tmp
 	mv $@.tmp $@

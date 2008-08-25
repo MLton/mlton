@@ -14,26 +14,50 @@
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
-        <Directory Id='INSTALLDIR' Name='MLton'/>
+        <Directory Id='INSTALLDIR' Name='MLton' />
       </Directory>
 
       <Directory Id="ProgramMenuFolder" Name="PMenu" LongName="Programs">
-        <Directory Id="ProgramMenuDir" Name='MLton'/>
+        <Directory Id="ProgramMenuDir" Name='MLton'>
+          <Directory Id='ProgramMenuDocs' Name='Docs' LongName='Documentation'>
+          </Directory>
+        </Directory>
       </Directory>
 
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
+    <DirectoryRef Id='dir.bin'>
+      <Component Id='component.path' Guid='5B06C123-B426-3D4D-BE48-4D07BAD8A6BA'>
+        <Environment Id='env.path' Name='PATH' Action='set' Part='last' System='yes' Value='[dir.bin]' />
+      </Component>
+      <Component Id='component.batch' Guid='A2E613BD-41F8-1CF7-D5EA-0C41674D78AC'>
+        <File Id='file.bin_mlton.bat' Name='mlton.bat' Source='mlton.bat' DiskId='1' Vital='yes' />
+        <ProgId Id='MLton.mlb' Description='Standard ML basis file'>
+          <Extension Id='mlb' ContentType='application/mlb'>
+            <Verb Id='buildMLB' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+          </Extension>
+        </ProgId>
+        <ProgId Id='MLton.sml' Description='Standard ML source file'>
+          <Extension Id='sml' ContentType='application/sml'>
+            <Verb Id='buildSML' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+          </Extension>
+        </ProgId>
+      </Component>
+    </DirectoryRef>
+   
     <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
       <ComponentGroupRef Id='component.MLton' />
+      <ComponentRef Id='component.batch' />
+      <ComponentRef Id='component.path' />
       <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10'>
         <ComponentGroupRef Id='component.Debug' />
       </Feature>
     </Feature>
-    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1'>
+    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR'>
       <ComponentGroupRef Id='component.GMP' />
     </Feature>
-    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1'>
+    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR'>
       <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1'>
         <ComponentGroupRef Id='component.Runtime' />
       </Feature>
@@ -41,12 +65,15 @@
         <ComponentGroupRef Id='component.W32API' />
       </Feature>
       <Feature Id='Binutils' Title='Binutils' Description='Utilities for manipulating object files, such as the linker and assembler.' Level='1'>
+        <ComponentRef Id='component.path' />
         <ComponentGroupRef Id='component.Binutils' />
       </Feature>
       <Feature Id='GCC' Title='GCC' Description='The GNU C Compiler. Compiles C files to assembly.' Level='1'>
+        <ComponentRef Id='component.path' />
         <ComponentGroupRef Id='component.GCC' />
       </Feature>
       <Feature Id='MSYS' Title='MSYS' Description='A system shell along with UNIX-style command-line utilities.' Level='1'>
+        <ComponentRef Id='component.path' />
         <ComponentGroupRef Id='component.MSYS' />
       </Feature>
     </Feature>
