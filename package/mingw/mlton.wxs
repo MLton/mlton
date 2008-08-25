@@ -55,10 +55,10 @@
         </ProgId>
         <Registry Id='SMLIcon1' Root='HKCR' Key='.sml' Action='write' Type='string' Value='MLton.smlfile' />
         <Registry Id='SMLIcon2' Root='HKCR' Key='MLton.smlfile' Action='write' Type='string' Value='Standard ML source file' />
-        <Registry Id='SMLIcon3' Root='HKCR' Key='MLton.smlfile\DefaultIcon' Action='write' Type='string' Value='[!INSTALLDIR]\lib\mlton\sml.ico' />
+        <Registry Id='SMLIcon3' Root='HKCR' Key='MLton.smlfile\DefaultIcon' Action='write' Type='string' Value='[INSTALLDIR]\lib\mlton\sml.ico' />
         <Registry Id='MLBIcon1' Root='HKCR' Key='.mlb' Action='write' Type='string' Value='MLton.mlbfile' />
         <Registry Id='MLBIcon2' Root='HKCR' Key='MLton.mlbfile' Action='write' Type='string' Value='Standard ML basis file' />
-        <Registry Id='MLBIcon3' Root='HKCR' Key='MLton.mlbfile\DefaultIcon' Action='write' Type='string' Value='[!INSTALLDIR]\lib\mlton\mlb.ico' />
+        <Registry Id='MLBIcon3' Root='HKCR' Key='MLton.mlbfile\DefaultIcon' Action='write' Type='string' Value='[INSTALLDIR]\lib\mlton\mlb.ico' />
       </Component>
       <Component Id='component.bin_msys.bat' Guid='9C492AB5-3C90-66AF-E442-D6B96A9890C4'>
         <File Id='file.bin_msys.bat' Name='msys.bat' Source='msys.bat' DiskId='1' Vital='yes'>
