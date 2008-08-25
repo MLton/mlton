@@ -13,18 +13,18 @@ set bin=%dir%\bin
 
 
 if not exist "%bin%" (
-  echo MLton directory %bin% does not exist
+  echo MLton directory "%bin%" does not exist
   goto :eof
 ) 
 
 if not exist "%lib%" (
-  echo MLton library directory %lib% does not exist
+  echo MLton library directory "%lib%" does not exist
   goto :eof
 )
 
 set cc=%bin%\gcc.exe
 if not exist "%cc%" (
-  echo GCC compiler %cc% does not exist
+  echo GCC compiler "%cc%" does not exist
   goto :eof
 )
 
