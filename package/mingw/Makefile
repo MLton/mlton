@@ -7,15 +7,16 @@ MINGW_W32API=$(TARDIR)/w32api-3.11.tar.gz
 MINGW_BINUTILS=$(TARDIR)/binutils-2.17.50-20060824-1.tar.gz
 MINGW_GCC=$(TARDIR)/gcc-core-3.4.5-20060117-1.tar.gz
 MINGW_MSYS=$(TARDIR)/msysCORE-1.0.11-2007.01.19-1.tar.bz2
+MINGW_GMP=$(TARDIR)/gmp-static-mingw-4.1.tar.gz
 
-MINGW_WXS=mingw-runtime.wxs w32api.wxs binutils.wxs gcc.wxs msys.wxs
+MINGW_WXS=mingw-runtime.wxs w32api.wxs binutils.wxs gcc.wxs gmp.wxs msys.wxs
 MINGW_WIXOBJ=$(patsubst %.wxs,%.wixobj,$(MINGW_WXS))
 
-mlton.msi:	mlton.wixobj self.wixobj filesys.wixobj $(MINGW_WIXOBJ)
+mlton.msi:	mlton.wixobj self.wixobj dbg.wixobj filesys.wixobj $(MINGW_WIXOBJ)
 	$(WIX)/light -out $@ $^ $(WIX)/wixui.wixlib -loc $(WIX)/WixUI_en-us.wxl
 
 clean:
-	rm -rf staging mlton.msi *.wixobj *.exe $(MINGW_WXS) self.wxs filesys.wxs
+	rm -rf staging mlton.msi *.wixobj *.exe $(MINGW_WXS) self.wxs dbg.wxs filesys.wxs
 
 %.wixobj:	%.wxs
 	$(WIX)/candle $<
@@ -55,9 +56,20 @@ msys.wxs:		$(MINGW_MSYS) self.wxs
 	cp msys.bat staging
 	mv $@.tmp $@
 
+gmp.wxs:		$(MINGW_GMP) self.wxs
+	tar tzf $< | sed 's@^gmp/@@' | ./files2wix-feature "MinGW" "GMP" "GnuMP" "A library for arbitrary precision arithmetic." > $@.tmp
+	tar xzf $(MINGW_GMP)
+	cp -a gmp/* staging
+	rm -rf gmp
+	mv $@.tmp $@
+
 self.wxs:	files2wix-feature.exe
 	rm -rf staging
 	make -C ../.. PREFIX= install
 	mv ../../install staging
-	cd staging; find * -type f | ../files2wix-feature "Complete" "MLton" "MLton" "A whole-program optimizing Standard ML compiler." > ../$@.tmp
+	cd staging; find * -type f ! -name *-gdb.a | ../files2wix-feature "Complete" "MLton" "MLton" "A whole-program optimizing Standard ML compiler." > ../$@.tmp
+	mv $@.tmp $@
+
+dbg.wxs:	self.wxs
+	cd staging; find * -type f -name *-gdb.a | ../files2wix-feature "Complete" "Debug" "MLton Debug" "The MLton runtime libraries with included debug information." > ../$@.tmp
 	mv $@.tmp $@

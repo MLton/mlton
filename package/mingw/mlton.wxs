@@ -24,16 +24,18 @@
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
-    <Feature Id='Complete' Title='MLton' Description='A complete SML and C toolchain.'
+    <Feature Id='Complete' Title='MLton/MinGW' Description='A complete SML and C toolchain.'
       Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
       <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1'>
         <FeatureRef Id='Runtime'/>
         <FeatureRef Id='W32API'/>
         <FeatureRef Id='Binutils'/>
         <FeatureRef Id='GCC'/>
+        <FeatureRef Id='GMP'/>
         <FeatureRef Id='MSYS'/>
       </Feature>
       <FeatureRef Id='MLton'/>
+      <FeatureRef Id='Debug'/>
     </Feature>
 
     <UIRef Id="WixUI_Mondo" />
