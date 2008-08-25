@@ -39,4 +39,11 @@ set ccopts=%ccopts% -fno-strength-reduce -fschedule-insns -fschedule-insns2
 set ccopts=%ccopts% -malign-functions=5 -malign-jumps=2 -malign-loops=2
 set linkopts=-lm -lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32
 
-"%mlton%" @MLton load-world "%world%" ram-slop 0.5 -- "%lib%" -cc "%cc%" -cc-opt-quote "-I%lib%\include" -cc-opt "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opt "%linkopts%" %*
+"%mlton%" @MLton load-world "%world%" ram-slop 0.5 -- "%lib%" -cc "%cc%" -ar-script "%bin%\static-library.bat" -cc-opt-quote "-I%lib%\include" -cc-opt "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opt "%linkopts%" %*
+
+rem If invoked with special useless option, pause output (done via explorer)
+if "%1" == "-cc-opt" (
+  if "%2" == "-O1" (
+    pause
+  )
+)
