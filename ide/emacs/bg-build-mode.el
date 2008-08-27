@@ -32,22 +32,7 @@
 ;; Customization
 
 (defgroup bg-build nil
-  "A minor mode for ``handsfree'' background batch builds.
-
-Functionality:
-- Each time a file is saved, and after a user configurable delay period
-  has been exhausted, a build is started silently in the background.
-- When the build is finished, an optional status message is displayed and
-  an optional action on failed builds is performed.
-- At any time, you can switch to a bg-build buffer where all the messages
-  from the build are shown.
-- After the build has finished you can jump to locations of warnings and
-  errors from the bg-build buffer or by using the `first-error' and
-  `next-error' commands.
-- When starting a build of a certain project, a possible previous live
-  build of the same project is killed first.
-- A project configuration file specifies the commands required to build a
-  project."
+  "A minor mode for ``handsfree'' background batch builds."
   :group 'compilation)
 
 (defcustom bg-build-action-on-failure (function first-error)
@@ -504,6 +489,41 @@ The expression should evaluate to a bg-build project object."
   (setq bg-build-build-queue
         (bg-build-cons-once project bg-build-build-queue))
   (bg-build-interrupt-build project))
+
+(defun bg-build-switch-to-messages (&optional other-window)
+  "Switches to the latest finished build buffer with messages."
+  (interactive "P")
+  (let ((builds bg-build-finished-builds))
+    (while (and builds
+                (not (with-current-buffer (cdar builds)
+                       bg-build-messages)))
+      (pop builds))
+    (if builds
+        (let ((buffer (cdar builds)))
+          (if other-window
+              (switch-to-buffer-other-window buffer)
+            (switch-to-buffer buffer)))
+      (message "No messages"))))
+
+(defun bg-build-switch-to-live (&optional other-window)
+  "Switches to the latest live build buffer."
+  (interactive "P")
+  (if bg-build-live-builds
+      (let ((buffer (process-buffer (cdar bg-build-live-builds))))
+        (if other-window
+            (switch-to-buffer-other-window buffer)
+          (switch-to-buffer buffer)))
+    (message "No live builds")))
+
+(defun bg-build-switch-to-finished (&optional other-window)
+  "Switches to the latest finished build buffer."
+  (interactive "P")
+  (if bg-build-finished-builds
+      (let ((buffer (cdar bg-build-finished-builds)))
+        (if other-window
+            (switch-to-buffer-other-window buffer)
+          (switch-to-buffer buffer)))
+    (message "No finished builds")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Automatic Build Triggering
