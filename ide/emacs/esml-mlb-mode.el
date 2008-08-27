@@ -55,16 +55,7 @@
 ;; Customization
 
 (defgroup esml-mlb nil
-  "Major mode for editing ML Basis files.
-
-Unrecognized
-- annotations (see `esml-mlb-show-annotations-command' and
-                   `esml-mlb-additional-annotations'),
-- path variables (see `esml-mlb-show-path-map-command',
-                      `esml-mlb-mlb-path-map-files', and
-                      `esml-mlb-additional-path-variables'), and
-- path name suffices (see `esml-mlb-path-suffix-regexp') are
-highlighed as warnings."
+  "Major mode for editing ML Basis files."
   :group 'sml)
 
 (defcustom esml-mlb-additional-annotations
