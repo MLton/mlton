@@ -467,19 +467,17 @@ struct
            val set: (word * String.t * Label.t) HashSet.t =
               HashSet.new {hash = #1}
         in
-           fun markDarwinSymbolStub name =
+           fun makeDarwinSymbolStubLabel name =
               let
                  val hash = String.hash name
-                 val mungedName = "L_" ^ name ^ "_stub"
-                 val _ =
-                    HashSet.lookupOrInsert
-                    (set, hash,
-                     fn (hash', name', _) =>
-                        hash = hash' andalso name = name',
-                     fn () =>
-                        (hash, name, Label.newString mungedName))
               in
-                 ()
+                 (#3 o HashSet.lookupOrInsert)
+                 (set, hash,
+                  fn (hash', name', _) =>
+                  hash = hash' andalso name = name',
+                  fn () =>
+                  (hash, name,
+                   Label.newString (concat ["L_", name, "_stub"])))
               end
 
            fun makeDarwinSymbolStubs () =
@@ -1363,78 +1361,77 @@ struct
                               let
                                  datatype z = datatype MLton.Platform.OS.t
                                  datatype z = datatype Control.Format.t
-                                 
-                                 val name = 
+
+                                 val name =
                                     case convention of
                                        Cdecl => name
                                      | Stdcall => concat [name, "@", Int.toString size_args]
 
-                                 val label = Label.fromString name
-                                 
+                                 val label = fn () => Label.fromString name
+
                                  (* how to access imported functions: *)
                                  (* Windows rewrites the symbol __imp__name *)
-                                 val coff = Label.fromString ("_imp__" ^ name)
-                                 val macho = Label.fromString ("L_" ^ name ^ "_stub")
-                                 val elf = Label.fromString (name ^ "@PLT")
-                                 
-                                 val importLabel = 
+                                 val coff = fn () => Label.fromString ("_imp__" ^ name)
+                                 val macho = fn () => makeDarwinSymbolStubLabel name
+                                 val elf = fn () => Label.fromString (name ^ "@PLT")
+
+                                 val importLabel = fn () =>
                                     case !Control.Target.os of
-                                       Cygwin => coff
-                                     | Darwin => macho
-                                     | MinGW => coff
-                                     |  _ => elf
-                                 
-                                 val direct =
+                                       Cygwin => coff ()
+                                     | Darwin => macho ()
+                                     | MinGW => coff ()
+                                     |  _ => elf ()
+
+                                 val direct = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.label label,
+                                    {target = Operand.label (label ()),
                                      absolute = false}]
-                                     
-                                 val plt =
+
+                                 val stub = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.label importLabel,
+                                    {target = Operand.label (importLabel ()),
                                      absolute = false}]
-                                
-                                 val indirect =
+
+                                 val indirect = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.memloc_label importLabel,
+                                    {target = Operand.memloc_label (importLabel ()),
                                      absolute = true}]
                               in
-                                case (symbolScope, 
-                                      !Control.Target.os, 
+                                case (symbolScope,
+                                      !Control.Target.os,
                                       !Control.format) of
                                    (* Private functions can be easily reached
                                     * with a direct (eip-relative) call.
                                     *)
-                                   (Private, _, _) => direct
+                                   (Private, _, _) => direct ()
                                    (* Even though it is not safe to take the
                                     * address of a public function, it is ok
                                     * to call it directly.
                                     *)
-                                 | (Public, _, _) => direct
+                                 | (Public, _, _) => direct ()
                                    (* Windows always does indirect calls to
                                     * imported functions. The importLabel has
                                     * the function address written to it.
                                     *)
-                                 | (External, MinGW, _) => indirect
-                                 | (External, Cygwin, _) => indirect
+                                 | (External, MinGW, _) => indirect ()
+                                 | (External, Cygwin, _) => indirect ()
                                    (* Darwin needs to generate special stubs
                                     * that are filled in by the dynamic linker.
                                     *)
-                                 | (External, Darwin, _) =>
-                                      (markDarwinSymbolStub name; plt)
+                                 | (External, Darwin, _) => stub ()
                                    (* ELF systems create procedure lookup
                                     * tables (PLT) which proxy the call to 
                                     * libraries. The PLT does not contain an
                                     * address, but instead a stub function.
                                     *)
-                                 | (External, _, Library) => plt
-                                 | _ => direct
+                                 | (External, _, Library) => stub ()
+                                 | _ => direct ()
                               end
                          | Indirect =>
                               AppendList.fromList
