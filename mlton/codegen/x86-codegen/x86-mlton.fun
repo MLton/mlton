@@ -6,8 +6,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type word = Word.t
-
 functor x86MLton (S: X86_MLTON_STRUCTS): X86_MLTON =
 struct
 
@@ -115,7 +113,7 @@ struct
   fun prim {prim : RepType.t Prim.t,
             args : (Operand.t * Size.t) vector,
             dsts : (Operand.t * Size.t) vector,
-            transInfo = {...} : transInfo}
+            transInfo = {addData, ...} : transInfo}
     = let
         val primName = Prim.toString prim
         datatype z = datatype Prim.Name.t
@@ -706,32 +704,6 @@ struct
             | W16 => sral i
             | W32 => sral i
             | W64 => Error.bug "x86MLton.prim: shift, W64"
-
-        val symbolPointerSet: (word * String.t * Label.t) HashSet.t =
-           HashSet.new {hash = #1}
-        fun markDarwinNonLazySymbolPointer name =
-           let
-              val hash = String.hash name
-              val mungedName = "L_" ^ name ^ "_non_lazy_ptr"
-              val _ =
-                 HashSet.lookupOrInsert
-                 (symbolPointerSet, hash,
-                  fn (hash', name', _) =>
-                     hash = hash' andalso name = name',
-                  fn () =>
-                     (hash, name, Label.newString mungedName))
-           in
-              ()
-           end
-        fun makeDarwinNonLazySymbolPointers () =
-           HashSet.fold
-           (symbolPointerSet, [],
-            fn ((_, name, label), assembly) =>
-              (Assembly.pseudoop_non_lazy_symbol_pointer ()) ::
-              (Assembly.label label) ::
-              (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
-              (Assembly.pseudoop_long [Immediate.zero]) ::
-              assembly)
       in
         AppendList.appends
         [comment_begin,
@@ -744,47 +716,60 @@ struct
              | CPointer_sub => binal Instruction.SUB
              | CPointer_toWord => mov ()
              | FFI_Symbol {name, symbolScope, ...}
-             => let     
+             => let
                    datatype z = datatype CFunction.SymbolScope.t
                    datatype z = datatype Control.Format.t
                    datatype z = datatype MLton.Platform.OS.t
 
                    val (dst, dstsize) = getDst1 ()
-                   val label = Label.fromString name
-                   
+
+                   val label = fn () => Label.fromString name
+
                    (* how to access an imported label's address *)
                    (* windows coff will add another leading _ to label *)
-                   val coff = Label.fromString ("_imp__" ^ name)
-                   val macho = Label.fromString ("L_" ^ name ^ "_non_lazy_ptr")
-                   val elf = Label.fromString (name ^ "@GOT")
-                   
-                   val importLabel = 
+                   val coff = fn () => Label.fromString ("_imp__" ^ name)
+                   val macho = fn () =>
+                      let
+                         val label =
+                            Label.newString (concat ["L_", name, "_non_lazy_ptr"])
+                         val () =
+                            addData
+                            [Assembly.pseudoop_non_lazy_symbol_pointer (),
+                             Assembly.label label,
+                             Assembly.pseudoop_indirect_symbol (Label.fromString name),
+                             Assembly.pseudoop_long [Immediate.zero]]
+                      in
+                         label
+                      end
+                   val elf = fn () => Label.fromString (name ^ "@GOT")
+
+                   val importLabel = fn () =>
                       case !Control.Target.os of
-                         Cygwin => coff
-                       | Darwin => macho
-                       | MinGW => coff
-                       | _ => elf
-                   
+                         Cygwin => coff ()
+                       | Darwin => macho ()
+                       | MinGW => coff ()
+                       | _ => elf ()
+
                    (* It's direct, but still PIC if library code *)
-                   val direct = 
+                   val direct = fn () =>
                       AppendList.fromList
                       [Block.mkBlock'
                        {entry = NONE,
                         statements =
                         [Assembly.instruction_lea
                          {dst = dst,
-                          src = Operand.memloc_label label,
+                          src = Operand.memloc_label (label ()),
                           size = dstsize}],
                         transfer = NONE}]
-                   
-                   val indirect = 
+
+                   val indirect = fn () =>
                       AppendList.fromList
                       [Block.mkBlock'
                        {entry = NONE,
                         statements =
                         [Assembly.instruction_mov
                          {dst = dst,
-                          src = Operand.memloc_label importLabel,
+                          src = Operand.memloc_label (importLabel ()),
                           size = dstsize}],
                         transfer = NONE}]
                 in
@@ -795,16 +780,16 @@ struct
                      * memloc_label is updated to %rbx relative in the
                      * allocate-registers pass.
                      *)
-                      (Private, _, _) => direct
+                      (Private, _, _) => direct ()
                     (* Windows MUST access locally defined symbols directly. 
                      * An indirect access would lead to a linker error.
                      *)
-                    | (Public, MinGW, _) => direct
-                    | (Public, Cygwin, _) => direct
+                    | (Public, MinGW, _) => direct ()
+                    | (Public, Cygwin, _) => direct ()
                     (* On darwin, even executables use the defintion address.
                      * Therefore we don't need to do indirection.
                      *)
-                    | (Public, Darwin, _) => direct
+                    | (Public, Darwin, _) => direct ()
                     (* On ELF, a public symbol must be accessed via
                      * the GOT. This is because the final value may not be
                      * in this text segment. If the executable uses it, then
@@ -812,13 +797,11 @@ struct
                      * text segment. The loader does this by creating a PLT
                      * proxy or copying values to the executable text segment.
                      *)
-                    | (Public, _, Library) => indirect
+                    | (Public, _, Library) => indirect ()
                     (* On darwin, the address is the point of definition. So
                      * indirection is needed. We also need to make a stub!
                      *)
-                    | (External, Darwin, _) =>
-                         (markDarwinNonLazySymbolPointer name
-                          ; indirect)
+                    | (External, Darwin, _) => indirect ()
                     (* When compiling to a library, we need to access external
                      * symbols via some address that is updated by the loader.
                      * That address resides within our data segment, and can
@@ -827,7 +810,7 @@ struct
                      * Windows rewrites __imp__name symbols in our segment.
                      * ELF rewrite name@GOT.
                      *)
-                    | (External, _, Library) => indirect
+                    | (External, _, Library) => indirect ()
                     (* When linking an executable, ELF uses a special trick 
                      * to "simplify" the code. All exported functions and
                      * symbols have pointers that correspond  to the 
@@ -841,9 +824,9 @@ struct
                      * On windows, the address is the point of definition. So
                      * we must use an indirect lookup even in executables.
                      *)
-                    | (External, MinGW, _) => indirect
-                    | (External, Cygwin, _) => indirect
-                    | _ => direct
+                    | (External, MinGW, _) => indirect ()
+                    | (External, Cygwin, _) => indirect ()
+                    | _ => direct ()
                 end
              | Real_Math_acos _
              => let
