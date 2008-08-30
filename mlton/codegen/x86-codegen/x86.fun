@@ -3284,6 +3284,7 @@ struct
         = Data
         | Text
         | SymbolStub
+        | NonLazySymbolPointer
         | Balign of Immediate.t * Immediate.t option * Immediate.t option
         | P2align of Immediate.t * Immediate.t option * Immediate.t option
         | Space of Immediate.t * Immediate.t
@@ -3305,6 +3306,8 @@ struct
              | Text => str ".text"
              | SymbolStub 
              => str ".section __IMPORT,__jump_table,symbol_stubs,self_modifying_code+pure_instructions,5"
+             | NonLazySymbolPointer
+             => str ".section __IMPORT,__pointers,non_lazy_symbol_pointers"
              | Balign (i,fill,max) 
              => seq [str ".balign ", 
                      Immediate.layout i,
@@ -3405,6 +3408,7 @@ struct
             fn Data => Data
              | Text => Text
              | SymbolStub => SymbolStub
+             | NonLazySymbolPointer => NonLazySymbolPointer
              | Balign (i,fill,max) => Balign (replacerImmediate i,
                                               Option.map(fill, replacerImmediate),
                                               Option.map(max, replacerImmediate))
@@ -3428,6 +3432,7 @@ struct
       val data = fn () => Data
       val text = fn () => Text
       val symbol_stub = fn () => SymbolStub
+      val non_lazy_symbol_pointer = fn () => NonLazySymbolPointer
       val balign = Balign
       val p2align = P2align
       val space = Space
@@ -3508,6 +3513,8 @@ struct
       val pseudoop_data = PseudoOp o PseudoOp.data
       val pseudoop_text = PseudoOp o PseudoOp.text
       val pseudoop_symbol_stub = PseudoOp o PseudoOp.symbol_stub
+      val pseudoop_non_lazy_symbol_pointer =
+         PseudoOp o PseudoOp.non_lazy_symbol_pointer
       val pseudoop_balign = PseudoOp o PseudoOp.balign
       val pseudoop_p2align = PseudoOp o PseudoOp.p2align
       val pseudoop_space = PseudoOp o PseudoOp.space

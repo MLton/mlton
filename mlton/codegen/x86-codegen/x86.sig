@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -794,6 +794,7 @@ signature X86 =
           = Data
           | Text
           | SymbolStub
+          | NonLazySymbolPointer
           | Balign of Immediate.t * Immediate.t option * Immediate.t option
           | P2align of Immediate.t * Immediate.t option * Immediate.t option
           | Space of Immediate.t * Immediate.t
@@ -812,6 +813,7 @@ signature X86 =
         val data : unit -> t
         val text : unit -> t
         val symbol_stub : unit -> t
+        val non_lazy_symbol_pointer : unit -> t
         val balign : Immediate.t * Immediate.t option * Immediate.t option -> t
         val p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
         val space : Immediate.t * Immediate.t -> t
@@ -879,6 +881,7 @@ signature X86 =
         val pseudoop_data : unit -> t
         val pseudoop_text : unit -> t
         val pseudoop_symbol_stub : unit -> t
+        val pseudoop_non_lazy_symbol_pointer : unit -> t
         val pseudoop_balign : Immediate.t * Immediate.t option * Immediate.t option ->t 
         val pseudoop_p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
         val pseudoop_space : Immediate.t * Immediate.t -> t

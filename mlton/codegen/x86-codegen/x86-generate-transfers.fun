@@ -463,40 +463,38 @@ struct
            else AppendList.single (Assembly.directive_unreserve 
                                    {registers = [Register.esp]})
 
-        val (mkCCallLabel, mkSymbolStubs) =
-           if !Control.Target.os = MLton.Platform.OS.Darwin
-              then 
-                 let
-                    val set: (word * String.t * Label.t) HashSet.t =
-                       HashSet.new {hash = #1}
-                    fun mkCCallLabel name =
-                       let
-                          val hash = String.hash name
-                       in
-                          (#3 o HashSet.lookupOrInsert)
-                          (set, hash,
-                           fn (hash', name', _) => hash = hash' andalso name = name',
-                           fn () => (hash, name, 
-                                     Label.newString (concat ["L_", name, "_stub"])))
-                       end
-                    fun mkSymbolStubs () =
-                       HashSet.fold
-                       (set, [], fn ((_, name, label), assembly) =>
-                        (Assembly.pseudoop_symbol_stub ()) ::
-                        (Assembly.label label) ::
-                        (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        (Assembly.instruction_hlt ()) ::
-                        assembly)
-                 in
-                    (mkCCallLabel, mkSymbolStubs)
-                 end
-              else
-                 (fn name => Label.fromString name,
-                  fn () => [])
+        local
+           val set: (word * String.t * Label.t) HashSet.t =
+              HashSet.new {hash = #1}
+        in
+           fun markDarwinSymbolStub name =
+              let
+                 val hash = String.hash name
+                 val mungedName = "L_" ^ name ^ "_stub"
+                 val _ =
+                    HashSet.lookupOrInsert
+                    (set, hash,
+                     fn (hash', name', _) =>
+                        hash = hash' andalso name = name',
+                     fn () =>
+                        (hash, name, Label.newString mungedName))
+              in
+                 ()
+              end
+
+           fun makeDarwinSymbolStubs () =
+              HashSet.fold
+              (set, [], fn ((_, name, label), assembly) =>
+                 (Assembly.pseudoop_symbol_stub ()) ::
+                 (Assembly.label label) ::
+                 (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
+                 (Assembly.instruction_hlt ()) ::
+                 (Assembly.instruction_hlt ()) ::
+                 (Assembly.instruction_hlt ()) ::
+                 (Assembly.instruction_hlt ()) ::
+                 (Assembly.instruction_hlt ()) ::
+                 assembly)
+        end
 
         datatype z = datatype Entry.t
         datatype z = datatype Transfer.t
@@ -1393,14 +1391,6 @@ struct
                                     {target = Operand.label label,
                                      absolute = false}]
                                      
-                                 fun darwinStub () =
-                                   AppendList.fromList
-                                   [Assembly.directive_ccall (),
-                                    Assembly.instruction_call
-                                    {target = Operand.label 
-                                              (mkCCallLabel name),
-                                     absolute = false}]
-                                     
                                  val plt =
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
@@ -1436,7 +1426,8 @@ struct
                                    (* Darwin needs to generate special stubs
                                     * that are filled in by the dynamic linker.
                                     *)
-                                 | (External, Darwin, _) => darwinStub ()
+                                 | (External, Darwin, _) =>
+                                      (markDarwinSymbolStub name; plt)
                                    (* ELF systems create procedure lookup
                                     * tables (PLT) which proxy the call to 
                                     * libraries. The PLT does not contain an
@@ -2060,7 +2051,7 @@ struct
                       of [] => doit ()
                        | block => block::(doit ())))
         val assembly = doit ()
-        val symbol_stubs = mkSymbolStubs ()
+        val symbol_stubs = makeDarwinSymbolStubs ()
         val _ = destLayoutInfo ()
         val _ = destProfileLabel ()
 

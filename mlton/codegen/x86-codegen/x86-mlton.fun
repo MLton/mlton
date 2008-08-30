@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -704,6 +704,32 @@ struct
             | W16 => sral i
             | W32 => sral i
             | W64 => Error.bug "x86MLton.prim: shift, W64"
+
+        val symbolPointerSet: (word * String.t * Label.t) HashSet.t =
+           HashSet.new {hash = #1}
+        fun markDarwinNonLazySymbolPointer name =
+           let
+              val hash = String.hash name
+              val mungedName = "L_" ^ name ^ "_non_lazy_ptr"
+              val _ =
+                 HashSet.lookupOrInsert
+                 (symbolPointerSet, hash,
+                  fn (hash', name', _) =>
+                     hash = hash' andalso name = name',
+                  fn () =>
+                     (hash, name, Label.newString mungedName))
+           in
+              ()
+           end
+        fun makeDarwinNonLazySymbolPointers () =
+           HashSet.fold
+           (symbolPointerSet, [],
+            fn ((_, name, label), assembly) =>
+              (Assembly.pseudoop_non_lazy_symbol_pointer ()) ::
+              (Assembly.label label) ::
+              (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
+              (Assembly.pseudoop_long [Immediate.zero]) ::
+              assembly)
       in
         AppendList.appends
         [comment_begin,
@@ -788,8 +814,9 @@ struct
                     (* On darwin, the address is the point of definition. So
                      * indirection is needed. We also need to make a stub!
                      *)
-                    | (External, Darwin, _) => ( (* !!! mkDarwinPtr name *)
-                                                indirect)
+                    | (External, Darwin, _) =>
+                         (markDarwinNonLazySymbolPointer name
+                          ; indirect)
                     (* When compiling to a library, we need to access external
                      * symbols via some address that is updated by the loader.
                      * That address resides within our data segment, and can
