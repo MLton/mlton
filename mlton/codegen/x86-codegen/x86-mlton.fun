@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
+type word = Word.t
+
 functor x86MLton (S: X86_MLTON_STRUCTS): X86_MLTON =
 struct
 
