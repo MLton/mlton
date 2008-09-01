@@ -55,15 +55,23 @@ fun declareExports {print} =
       List.foreach
       (!symbols, fn {name, ty, symbolScope} =>
        let
-          val symbolScope = 
-             case symbolScope of 
+          val (headerSymbolScope, symbolScope) =
+             case symbolScope of
                 SymbolScope.External =>
                    Error.bug "Ffi.declareExports.symbols: External"
-              | SymbolScope.Private => "INTERNAL "
-              | SymbolScope.Public => "EXPORTED "
-          val decl = symbolScope ^ CType.toString ty ^ " " ^ name;
+              | SymbolScope.Private => ("MLLIB_INTERNAL", "INTERNAL")
+              | SymbolScope.Public => ("MLLIB_EXPORTED", "EXPORTED")
+          val headerDecl =
+             concat ["extern", " ",
+                     headerSymbolScope, " ",
+                     CType.toString ty, " ",
+                     name]
+          val decl =
+             concat [symbolScope, " ",
+                     CType.toString ty, " ",
+                     name]
        in
-         List.push (headers, "extern MLLIB_" ^ decl);
+         List.push (headers, headerDecl);
          print (decl ^ ";\n")
        end);
       List.foreach
@@ -80,13 +88,14 @@ fun declareExports {print} =
                   concat ["\tlocalOpArgsRes[", Int.toString (i + 1), "] = ",
                           "(Pointer)(&", x, ");\n"])
               end)
-          val header =
-             concat [case symbolScope of 
-                        SymbolScope.External =>
-                           Error.bug "Ffi.declareExports.exports: External"
-                      | SymbolScope.Private => "INTERNAL "
-                      | SymbolScope.Public => "EXPORTED ",
-                     case res of
+          val (headerSymbolScope, symbolScope) =
+             case symbolScope of
+                SymbolScope.External =>
+                   Error.bug "Ffi.declareExports.exports: External"
+              | SymbolScope.Private => ("MLLIB_INTERNAL","INTERNAL")
+              | SymbolScope.Public => ("MLLIB_EXPORTED","EXPORTED")
+          val prototype =
+             concat [case res of
                         NONE => "void"
                       | SOME t => CType.toString t,
                      if convention <> Convention.Cdecl
@@ -101,8 +110,8 @@ fun declareExports {print} =
              1 + (Vector.length args)
              + (case res of NONE => 0 | SOME _ => 1)
        in
-          List.push (headers, "MLLIB_" ^ header)
-          ; print (concat [header, " {\n"])
+          List.push (headers, concat [headerSymbolScope, " ", prototype])
+          ; print (concat [symbolScope, " ", prototype, " {\n"])
           ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
           ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
           ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",
