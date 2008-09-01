@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -90,6 +90,7 @@ EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
                 cont.nextChunk = nextChunks[nextFun];                   \
         }                                                               \
         /* Trampoline */                                                \
+        returnToC = FALSE;                                              \
         do {                                                            \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         } while (not returnToC);                                        \
@@ -98,7 +99,7 @@ EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
         struct cont cont;                                               \
         nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         cont.nextChunk = nextChunks[nextFun];                           \
-        returnToC = false;                                              \
+        returnToC = FALSE;                                              \
         do {                                                            \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         } while (not returnToC);                                        \
