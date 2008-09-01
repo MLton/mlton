@@ -49,20 +49,19 @@ structure MLtonExn =
             handle _ => (message "Top-level handler raised exception.\n"
                          ; Exit.halt Exit.Status.failure
                          ; raise Fail "MLton.Exn.wrapHandler")
+         val defaultHandler = fn exn =>
+            (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
+             ; (case history exn of
+                   [] => ()
+                 | l =>
+                      (message "with history:\n"
+                       ; List.app (fn s => message (concat ["\t", s, "\n"])) l))
+             ; Exit.exit Exit.Status.failure)
       in
          val getTopLevelHandler = Primitive.TopLevel.getHandler
          val setTopLevelHandler = Primitive.TopLevel.setHandler o wrapHandler
          fun 'a defaultTopLevelHandler (exn: exn): 'a =
-            wrapHandler
-            (fn exn =>
-             (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
-              ; (case history exn of
-                    [] => ()
-                  | l =>
-                       (message "with history:\n"
-                        ; List.app (fn s => message (concat ["\t", s, "\n"])) l))
-              ; Exit.exit Exit.Status.failure))
-            exn
+            wrapHandler defaultHandler exn
          fun 'a topLevelHandler (exn: exn) : 'a =
             (getTopLevelHandler () exn
              ; raise Fail "MLton.Exn.topLevelHandler")
