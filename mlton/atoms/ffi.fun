@@ -57,7 +57,8 @@ fun declareExports {print} =
        let
           val symbolScope = 
              case symbolScope of 
-                SymbolScope.External => "UNREACHABLE_CODE_IS_A_BUG"
+                SymbolScope.External =>
+                   Error.bug "Ffi.declareExports.symbols: External"
               | SymbolScope.Private => "INTERNAL "
               | SymbolScope.Public => "EXPORTED "
           val decl = symbolScope ^ CType.toString ty ^ " " ^ name;
@@ -81,7 +82,8 @@ fun declareExports {print} =
               end)
           val header =
              concat [case symbolScope of 
-                        SymbolScope.External => "UNREACHABLE_CODE_IS_A_BUG"
+                        SymbolScope.External =>
+                           Error.bug "Ffi.declareExports.exports: External"
                       | SymbolScope.Private => "INTERNAL "
                       | SymbolScope.Public => "EXPORTED ",
                      case res of
