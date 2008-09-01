@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -154,8 +154,11 @@ val _ =
      
       fun librarySuffix () =
          let
+            (* Return to 'lib_open'. *)
             val () = Primitive.MLton.Thread.returnToC ()
+            (* Return from 'lib_close'. *)
             val () = Cleaner.clean Cleaner.atExit
+            (* Return to 'lib_close'. *)
             val () = Primitive.MLton.Thread.returnToC ()
          in
             ()
