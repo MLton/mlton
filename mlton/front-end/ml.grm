@@ -1067,9 +1067,9 @@ symattributes
       in
          case id of
             "alloc" => PrimKind.SymbolAttribute.Alloc :: symattributes
+          | "external" => PrimKind.SymbolAttribute.External :: symattributes
           | "private" => PrimKind.SymbolAttribute.Private :: symattributes
           | "public" => PrimKind.SymbolAttribute.Public :: symattributes
-          | "external" => PrimKind.SymbolAttribute.External :: symattributes
           | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
                   ; symattributes)
       end)
