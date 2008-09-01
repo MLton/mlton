@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -234,6 +234,14 @@ structure PrimKind =
       structure SymbolAttribute =
          struct
             datatype t = Alloc | External | Private | Public
+
+            val toString: t -> string =
+               fn Alloc => "alloc"
+                | External => "external"
+                | Private => "private"
+                | Public => "public"
+
+            val layout = Layout.str o toString
          end
 
       datatype t =

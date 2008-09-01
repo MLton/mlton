@@ -864,6 +864,11 @@ structure Type =
             else NONE
    end
 
+val isIEAttributeConvention =
+   fn ImportExportAttribute.Cdecl => true
+    | ImportExportAttribute.Stdcall => true
+    | _ => false
+
 fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list) 
     : Convention.t option =
    case attributes of
@@ -885,8 +890,14 @@ fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
            | _ => NONE)
     | _ => NONE
 
-fun parseIEAttributesScope (attributes: ImportExportAttribute.t list,
-                            defScope : SymbolScope.t)
+val isIEAttributeSymbolScope =
+   fn ImportExportAttribute.External => true
+    | ImportExportAttribute.Private => true
+    | ImportExportAttribute.Public => true
+    | _ => false
+
+fun parseIEAttributesSymbolScope (attributes: ImportExportAttribute.t list,
+                                  defScope : SymbolScope.t)
     : SymbolScope.t option = 
    case attributes of
       [] => SOME defScope
@@ -896,12 +907,6 @@ fun parseIEAttributesScope (attributes: ImportExportAttribute.t list,
                | ImportExportAttribute.Public => SOME SymbolScope.Public
                | _ => NONE)
     | _ => NONE
-
-val splitIEAttributes = fn ImportExportAttribute.Cdecl => true
-                         | ImportExportAttribute.External => false
-                         | ImportExportAttribute.Private => false
-                         | ImportExportAttribute.Public => false
-                         | ImportExportAttribute.Stdcall => true
 
 fun import {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
@@ -929,16 +934,18 @@ fun import {attributes: ImportExportAttribute.t list,
        | SOME (args, result) =>
             let
                datatype z = datatype CFunction.Target.t
-               val { yes = convention, no = symbolScope } =
-                  List.partition (attributes, splitIEAttributes)
+               val convention =
+                  List.keepAll (attributes, isIEAttributeConvention)
                val convention =
                   case parseIEAttributesConvention convention of
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
                val symbolScope =
-                  case parseIEAttributesScope (symbolScope,
-                                               SymbolScope.External) of
+                  List.keepAll (attributes, isIEAttributeSymbolScope)
+               val symbolScope =
+                  case parseIEAttributesSymbolScope
+                       (symbolScope, SymbolScope.External) of
                      NONE => (invalidAttributes ()
                               ; SymbolScope.External)
                    | SOME s => s
@@ -1093,16 +1100,37 @@ local
                            valueExp = Cexp.var (setArg, expandedCbTy)},
            mayInline = true})
       end
-   
-   fun symbolScope default =
-     fn [] => SOME default
-      | [SymbolAttribute.Private] => SOME SymbolScope.Private
-      | [SymbolAttribute.Public] => SOME SymbolScope.Public
-      | [SymbolAttribute.External] => SOME SymbolScope.External
-      | _ => NONE
-   
-   val symbolScope = fn (l, default) =>
-      symbolScope default (List.removeAll (l, fn x => x = SymbolAttribute.Alloc))
+
+   val isSymbolAttributeAlloc =
+      fn SymbolAttribute.Alloc => true
+       | _ => false
+
+   fun parseSymbolAttributesAlloc (attributes: SymbolAttribute.t list)
+       : bool option =
+      case attributes of
+         [] => SOME false
+       | [a] => (case a of
+                    SymbolAttribute.Alloc => SOME true
+                  | _=> NONE)
+       | _ => NONE
+
+   val isSymbolAttributeSymbolScope =
+      fn SymbolAttribute.Private => true
+       | SymbolAttribute.Public => true
+       | SymbolAttribute.External => true
+       | _ => false
+
+   fun parseSymbolAttributesSymbolScope (attributes: SymbolAttribute.t list,
+                                         defScope: SymbolScope.t)
+       : SymbolScope.t option =
+      case attributes of
+         [] => SOME defScope
+       | [a] => (case a of
+                    SymbolAttribute.Private => SOME SymbolScope.Private
+                  | SymbolAttribute.Public => SOME SymbolScope.Public
+                  | SymbolAttribute.External => SOME SymbolScope.External
+                  | _=> NONE)
+       | _ => NONE
 in
    fun address {attributes: SymbolAttribute.t list,
                 elabedTy: Type.t,
@@ -1110,35 +1138,35 @@ in
                 name: string,
                 region: Region.t}: Cexp.t =
       let
-         fun error () =
+         fun error l = Control.error (region, l, Layout.empty)
+         fun invalidAttributes () =
+            error (seq [str "invalid attributes for _address: ",
+                        List.layout SymbolAttribute.layout attributes])
+         fun invalidType () =
             Control.error
             (region, str "invalid type for _address",
              Type.layoutPretty elabedTy)
          val () =
             case Type.toCPtrType expandedTy of
-               NONE => (error (); ())
+               NONE => (invalidType (); ())
              | SOME _ => ()
          val expandedPtrTy = expandedTy
-         val scope = 
-            case symbolScope (attributes, SymbolScope.External) of
-               NONE => (Control.error 
-                        (region, 
-                         str "use only one of {external,private,public} with _address",
-                         empty)
-                        ; SymbolScope.External)
-             | SOME x => x
          val () =
-            if List.exists (attributes, fn attr =>
-                            attr = SymbolAttribute.Alloc)
-               then Control.error
-                    (region,
-                     str "use of alloc with _address is forbidden",
-                     empty)
-               else ()
+            case List.keepAll (attributes, isSymbolAttributeAlloc) of
+               [] => ()
+             | _ => invalidAttributes ()
+         val symbolScope =
+            List.keepAll (attributes, isSymbolAttributeSymbolScope)
+         val symbolScope =
+            case parseSymbolAttributesSymbolScope
+                 (symbolScope, SymbolScope.External) of
+               NONE => (invalidAttributes ()
+                        ; SymbolScope.External)
+             | SOME s => s
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
                        name = name,
-                       symbolScope = scope,
+                       symbolScope = symbolScope,
                        cty = NONE}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
@@ -1151,7 +1179,11 @@ in
                      name: string,
                      region: Region.t}: Cexp.t =
       let
-         fun error () =
+         fun error l = Control.error (region, l, Layout.empty)
+         fun invalidAttributes () =
+            error (seq [str "invalid attributes for _symbol: ",
+                        List.layout SymbolAttribute.layout attributes])
+         fun invalidType () =
             Control.error
             (region, str "invalid type for _symbol",
              Type.layoutPretty elabedTy)
@@ -1159,20 +1191,20 @@ in
             Exn.withEscape
             (fn escape =>
              let
-                val error = fn () =>
-                   (error ()
+                val invalidType = fn () =>
+                   (invalidType ()
                     ; ignore (escape Type.word8)
                     ; Error.bug "ElaborateCore.symbolDirect.escape")
              in
                 case Type.deTupleOpt expandedTy of
-                   NONE => error ()
+                   NONE => invalidType ()
                  | SOME tys => 
                       if Vector.length tys <> 2
-                         then error ()
+                         then invalidType ()
                          else let
                                  fun doit ty =
                                     case Type.deArrowOpt ty of
-                                       NONE => error ()
+                                       NONE => invalidType ()
                                      | SOME tys => tys
                                  val (getArgTy, getResTy) =
                                     doit (Vector.sub (tys, 0))
@@ -1181,52 +1213,54 @@ in
                                  val () =
                                     if Type.isUnit getArgTy 
                                        then ()
-                                       else error ()
+                                       else invalidType ()
                                  val () =
                                     if Type.isUnit setResTy
                                        then ()
-                                       else error ()
+                                       else invalidType ()
                                  val () =
                                     if Type.canUnify (getResTy, setArgTy)
                                        then ()
-                                       else error ()
+                                       else invalidType ()
                               in
                                  getResTy
                               end
              end)
          val ctypeCbTy =
             case Type.toCBaseType expandedCbTy of
-               NONE => (error (); CType.word (WordSize.word8, {signed = false}))
+               NONE => (invalidType ()
+                        ; CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
          val alloc =
-            List.exists (attributes, fn attr => attr = SymbolAttribute.Alloc)
-         val defScope = if alloc then SymbolScope.Public 
-                                 else SymbolScope.External
-         val scope = 
-            case symbolScope (attributes, defScope) of
-               NONE => (Control.error 
-                        (region, 
-                         str "use only one of {external,private,public} with _symbol",
-                         empty)
-                        ; SymbolScope.External)
-             | SOME SymbolScope.External =>
-                  if not alloc then SymbolScope.External else
-                  (Control.error
-                   (region,
-                    str "cannot {alloc}ate an {external} _symbol",
-                    empty)
-                  ; SymbolScope.Public)
-             | SOME x => x
+            List.keepAll (attributes, isSymbolAttributeAlloc)
+         val alloc =
+            case parseSymbolAttributesAlloc alloc of
+               NONE => (invalidAttributes ()
+                        ; false)
+             | SOME a => a
+         val defScope =
+            if alloc then SymbolScope.Public else SymbolScope.External
+         val symbolScope =
+            List.keepAll (attributes, isSymbolAttributeSymbolScope)
+         val symbolScope =
+            case parseSymbolAttributesSymbolScope
+                 (symbolScope, defScope) of
+               NONE => (invalidAttributes ()
+                        ; defScope)
+             | SOME s => s
+         val () =
+            if alloc andalso symbolScope = SymbolScope.External
+            then invalidAttributes () else ()
          val () =
             if not alloc then () else
             Ffi.addSymbol {name = name, 
                            ty = ctypeCbTy, 
-                           symbolScope = scope}
+                           symbolScope = symbolScope}
          val addrExp =
             mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
                        cty = SOME ctypeCbTy,
-                       symbolScope = scope}
+                       symbolScope = symbolScope}
          val symExp =
             mkSymbol {ctypeCbTy = ctypeCbTy,
                       expandedCbTy = expandedCbTy,
@@ -1240,7 +1274,7 @@ in
                        expandedTy: Type.t,
                        region: Region.t}: Cexp.t =
       let
-         fun error () =
+         fun invalidType () =
             Control.error
             (region, str "invalid type for _symbol",
              Type.layoutPretty elabedTy)
@@ -1248,23 +1282,23 @@ in
             Exn.withEscape
             (fn escape =>
              let
-                val error = fn () =>
-                   (error ()
+                val invalidType = fn () =>
+                   (invalidType ()
                     ; ignore (escape (Type.cpointer, Type.word8))
                     ; Error.bug "ElaborateCore.symbolIndirect.escape")
              in
                 case Type.deArrowOpt expandedTy of
-                   NONE => error ()
+                   NONE => invalidType ()
                  | SOME (ptrTy, symTy) =>
                       (case Type.deTupleOpt symTy of
-                          NONE => error ()
+                          NONE => invalidType ()
                         | SOME tys => 
                              if Vector.length tys <> 2
-                                then error ()
+                                then invalidType ()
                                 else let
                                         fun doit ty =
                                            case Type.deArrowOpt ty of
-                                              NONE => error ()
+                                              NONE => invalidType ()
                                             | SOME tys => tys
                                         val (getArgTy, getResTy) =
                                            doit (Vector.sub (tys, 0))
@@ -1273,26 +1307,26 @@ in
                                         val () =
                                            if Type.isUnit getArgTy 
                                               then ()
-                                              else error ()
+                                              else invalidType ()
                                         val () =
                                            if Type.isUnit setResTy
                                               then ()
-                                              else error ()
+                                              else invalidType ()
                                         val () =
                                            if Type.canUnify (getResTy, setArgTy)
                                               then ()
-                                              else error ()
+                                              else invalidType ()
                                      in
                                         (ptrTy, getResTy)
                                      end)
              end)
          val ctypeCbTy =
             case Type.toCBaseType expandedCbTy of
-               NONE => (error (); CType.word (WordSize.word8, {signed = false}))
+               NONE => (invalidType (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
          val () =
             case Type.toCPtrType expandedPtrTy of
-               NONE => (error (); ())
+               NONE => (invalidType (); ())
              | SOME _ => ()
          val ptrArg = Var.newNoname ()
          val ptrExp = Cexp.var (ptrArg, expandedPtrTy)
@@ -1324,23 +1358,26 @@ fun export {attributes: ImportExportAttribute.t list,
       fun invalidType () =
          Control.error 
          (region,
-          str "invalid type for _export: ",
+          str "invalid type for _export",
           Type.layoutPretty elabedTy)
-      val { yes = convention, no = symbolScope } =
-         List.partition (attributes, splitIEAttributes)
+      val convention =
+         List.keepAll (attributes, isIEAttributeConvention)
       val convention =
          case parseIEAttributesConvention convention of
             NONE => (invalidAttributes ()
                      ; Convention.Cdecl)
           | SOME c => c
       val symbolScope =
-         case parseIEAttributesScope (symbolScope, SymbolScope.Public) of
+         List.keepAll (attributes, isIEAttributeSymbolScope)
+      val symbolScope =
+         case parseIEAttributesSymbolScope
+              (symbolScope, SymbolScope.Public) of
             NONE => (invalidAttributes ()
                      ; SymbolScope.Public)
           | SOME SymbolScope.External =>
-               (error (seq [str "invalid attributes for _export: external"])
+               (invalidAttributes ()
                 ; SymbolScope.Public)
-          | SOME c => c
+          | SOME s => s
       val (exportId, args, res) =
          case Type.toCFunType expandedTy of
             NONE =>
