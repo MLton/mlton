@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -278,12 +278,15 @@ struct
                                                  then "_LINE__"
                                               else "__LINE__"))
 
+  (* When debugging, the assembly file is not passed through cpp,
+   * so use an dummy value (zero).
+   *)
   val fileLine
     = fn () => if !Control.debug
-                 then (Operand.immediate
+                 then Operand.immediate (Immediate.zero)
+                 else (Operand.immediate
                        (Immediate.labelPlusInt
                         (fileLineLabel (), 9)))
-                 else Operand.immediate (Immediate.zero)
 
   val gcState_label = Label.fromString "gcState"
 
