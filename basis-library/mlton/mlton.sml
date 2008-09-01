@@ -149,30 +149,8 @@ structure Word8Vector = struct
 end
 
 val _ = 
-   let
-      open MLtonPlatform.Format
-     
-      fun librarySuffix () =
-         let
-            (* Return to 'lib_open'. *)
-            val () = Primitive.MLton.Thread.returnToC ()
-            (* Return from 'lib_close'. *)
-            val () = Cleaner.clean Cleaner.atExit
-            (* Return to 'lib_close'. *)
-            val () = Primitive.MLton.Thread.returnToC ()
-         in
-            ()
-         end
-      
-      val suffix = 
-         case host of
-            Archive => librarySuffix
-          | Executable => Exit.defaultTopLevelSuffix
-          | Library => librarySuffix
-   in
    (Primitive.TopLevel.setHandler MLtonExn.defaultTopLevelHandler
-    ; Primitive.TopLevel.setSuffix suffix)
-   end
+    ; Primitive.TopLevel.setSuffix Exit.defaultTopLevelSuffix)
 end
 
 (* Patch OS.FileSys.tmpName to use mkstemp. *)

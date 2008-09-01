@@ -51,11 +51,33 @@ structure Exit =
             handle _ => (message "Top-level suffix raised exception.\n"
                          ; halt Status.failure
                          ; raise Fail "MLton.Exit.wrapSuffix")
+
+         fun suffixArchiveOrLibrary () =
+            let
+               (* Return to 'lib_open'. *)
+               val () = Primitive.MLton.Thread.returnToC ()
+               (* Enter from 'lib_close'. *)
+               val _ = exiting := true
+               val () = let open Cleaner in clean atExit end
+               (* Return to 'lib_close'. *)
+               val () = Primitive.MLton.Thread.returnToC ()
+            in
+               ()
+            end
+         fun suffixExecutable () = exit Status.success
+         val defaultSuffix =
+            let open Primitive.MLton.Platform.Format
+            in
+               case host of
+                  Archive => suffixArchiveOrLibrary
+                | Executable => suffixExecutable
+                | Library => suffixArchiveOrLibrary
+            end
       in
          val getTopLevelSuffix = Primitive.TopLevel.getSuffix
          val setTopLevelSuffix = Primitive.TopLevel.setSuffix o wrapSuffix
          fun 'a defaultTopLevelSuffix ((): unit): 'a =
-            wrapSuffix (fn () => exit Status.success) ()
+            wrapSuffix defaultSuffix ()
          fun 'a topLevelSuffix ((): unit) : 'a =
             (getTopLevelSuffix () ()
              ; raise Fail "MLton.Exit.topLevelSuffix")
