@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -267,19 +267,20 @@ fun outputDeclarations
             ()
          end
       fun declareIntInfs () =
-         (print "BeginIntInfs\n"
-          ; List.foreach (intInfs, fn (g, i) =>
-                          (C.callNoSemi ("IntInf",
-                                         [C.int (Global.index g),
-                                          C.string (IntInf.toString i)],
-                                         print)
-                           ; print "\n"))
-          ; print "EndIntInfs\n")
+         (print "BeginIntInfInits\n"
+          ; (List.foreach
+             (intInfs, fn (g, i) =>
+              (C.callNoSemi ("IntInfInitElem",
+                             [C.int (Global.index g),
+                              C.string (IntInf.toString i)],
+                             print)
+               ; print "\n")))
+          ; print "EndIntInfInits\n")
       fun declareStrings () =
-         (print "BeginVectors\n"
+         (print "BeginVectorInits\n"
           ; (List.foreach
              (vectors, fn (g, v) =>
-              (C.callNoSemi ("NewVector",
+              (C.callNoSemi ("VectorInitElem",
                              [C.string (WordXVector.toString v),
                               C.int (Bytes.toInt
                                      (WordSize.bytes
@@ -288,7 +289,7 @@ fun outputDeclarations
                               C.int (WordXVector.length v)],
                              print)
                  ; print "\n")))
-          ; print "EndVectors\n")
+          ; print "EndVectorInits\n")
       fun declareReals () =
          (print "static void real_Init() {\n"
           ; List.foreach (reals, fn (g, r) =>

@@ -24,13 +24,13 @@ typedef Pointer Objptr;
 #define DeclareProfileLabel(l)                  \
         extern char l __attribute__ ((weak))
 
-#define BeginIntInfs static struct GC_intInfInit intInfInits[] = {
-#define IntInf(g, n) { g, n },
-#define EndIntInfs };
+#define BeginIntInfInits static struct GC_intInfInit intInfInits[] = {
+#define IntInfInitElem(g, n) { g, n },
+#define EndIntInfInits };
 
-#define BeginVectors static struct GC_vectorInit vectorInits[] = {
-#define NewVector(a, b, c, d) { (pointer)a, b, c, d },
-#define EndVectors };
+#define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
+#define VectorInitElem(a, b, c, d) { (pointer)a, b, c, d },
+#define EndVectorInits };
 
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 #define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
