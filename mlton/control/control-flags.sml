@@ -624,9 +624,10 @@ structure Format =
          Archive
        | Executable
        | Library
-      
-      val all = [Archive, Executable, Library]
-      
+
+      (* Default option first for usage message. *)
+      val all = [Executable, Archive, Library]
+
       val toString: t -> string =
         fn Archive => "archive"
          | Executable => "executable"
