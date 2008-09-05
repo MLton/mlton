@@ -379,22 +379,20 @@ val ps =
 fun callWithIn (name, args, f: In.t -> 'a) =
    let
       val pid = Unix.execute (name, args)
-      val () = TextIO.closeOut (Unix.textOutstreamOf pid)
       val ins = Unix.textInstreamOf pid
    in
       Exn.finally
-      (fn () => In.withClose (ins, f),
+      (fn () => f ins,
        fn () => ignore (Unix.reap pid))
    end
 
 fun callWithOut (name, args, f: Out.t -> 'a) =
    let
       val pid = Unix.execute (name, args)
-      val () = TextIO.closeIn (Unix.textInstreamOf pid)
       val out = Unix.textOutstreamOf pid
    in
       Exn.finally
-      (fn () => Out.withClose (out, f),
+      (fn () => f out,
        fn () => ignore (Unix.reap pid))
    end
 
