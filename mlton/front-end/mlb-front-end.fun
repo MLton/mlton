@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -241,43 +241,45 @@ val lexAndParseString =
              end})))
       and lexAndParseProgOrMLB {cwd, relativize, seen}
                                (fileOrig: File.t, reg: Region.t) =
-         let
-            val {fileAbs, fileUse, relativize, ...} = 
-               regularize {cwd = cwd,
-                           fileOrig = fileOrig,
-                           region = reg,
-                           relativize = relativize}
-            fun fail default msg =
-               let
-                  val () = Control.error (reg, Layout.str msg, Layout.empty)
-               in
-                  default
-               end
-            val mlbExts = ["mlb"]
-            val progExts = ["ML","fun","sig","sml"]
-            fun err () =
-               fail (Ast.Basdec.Seq [])
-               (concat ["File ", fileOrig, " has an unknown extension"])
-         in
-            case File.extension fileUse of
-               NONE => err ()
-             | SOME s =>
-                  if List.contains (mlbExts, s, String.equals) then
-                     lexAndParseMLB {relativize = relativize,
-                                     seen = seen,
-                                     fileAbs = fileAbs,
-                                     fileOrig = fileOrig,
-                                     fileUse = fileUse,
-                                     fail = fail Ast.Basdec.empty,
-                                     reg = reg}
-                  else if List.contains (progExts, s, String.equals) then
-                     lexAndParseProg {fileAbs = fileAbs,
+         Exn.withEscape
+         (fn escape =>
+          let
+             fun fail default msg =
+                let
+                   val () = Control.error (reg, Layout.str msg, Layout.empty)
+                in
+                   default
+                end
+             fun err mst =
+                fail (Ast.Basdec.Seq []) (concat ["File ", fileOrig, mst])
+             val {fileAbs, fileUse, relativize, ...} =
+                regularize {cwd = cwd,
+                            fileOrig = fileOrig,
+                            region = reg,
+                            relativize = relativize}
+                handle _ => escape (err " could not be regularized")
+             val mlbExts = ["mlb"]
+             val progExts = ["ML","fun","sig","sml"]
+             fun errUnknownExt () = err " has an unknown extension"
+          in
+             case File.extension fileUse of
+                NONE => errUnknownExt ()
+              | SOME s =>
+                   if List.contains (mlbExts, s, String.equals) then
+                      lexAndParseMLB {relativize = relativize,
+                                      seen = seen,
+                                      fileAbs = fileAbs,
                                       fileOrig = fileOrig,
                                       fileUse = fileUse,
-                                      fail = fail Ast.Program.empty}
-                  else
-                     err ()
-         end
+                                      fail = fail Ast.Basdec.empty,
+                                      reg = reg}
+                   else if List.contains (progExts, s, String.equals) then
+                      lexAndParseProg {fileAbs = fileAbs,
+                                       fileOrig = fileOrig,
+                                       fileUse = fileUse,
+                                       fail = fail Ast.Program.empty}
+                   else errUnknownExt ()
+          end)
       and wrapLexAndParse (state, lexAndParse, arg) =
          Ref.fluidLet
          (lexAndParseProgOrMLBRef, lexAndParseProgOrMLB state, fn () =>
