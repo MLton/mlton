@@ -522,7 +522,7 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                                     "extern ",
                                     case cty of
                                        SOME x => CType.toString x
-                                     | NONE => "", 
+                                     | NONE => "void", 
                                     " ",
                                     name, 
                                     ";\n"])
