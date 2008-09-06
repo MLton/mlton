@@ -111,6 +111,7 @@ static HANDLE TimerQueue = NULL;
 static HANDLE RealTimer = NULL;
 static HANDLE VirtTimer = NULL;
 static HANDLE ProfTimer = NULL;
+static HANDLE PrioTimer = NULL;
 static void (*SIGALRM_handler)(int sig) = SIG_DFL;
 static void (*SIGVTAM_handler)(int sig) = SIG_DFL;
 static void (*SIGPROF_handler)(int sig) = SIG_DFL;
@@ -161,6 +162,12 @@ static VOID CALLBACK MLton_SIGPROF(__attribute__ ((unused)) PVOID myArg,
         ResumeThread(MainThread);
 }
 
+static void CALLBACK fixPriority(__attribute__ ((unused)) PVOID myArg,
+                                 __attribute__ ((unused)) BOOLEAN timeout) {
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+        DeleteTimerQueueTimer(TimerQueue, PrioTimer, NULL);
+}
+
 static int MLTimer(HANDLE *timer, 
                    const struct itimerval *value, 
                    WAITORTIMERCALLBACK callback) {
@@ -168,8 +175,27 @@ static int MLTimer(HANDLE *timer,
 
         /* Initialize the TimerQueue */
         if (MainThread == 0) {
+                /* This call improves the resolution of the scheduler from
+                 * 16ms to about 2ms in my testing. Sadly, it requires winmm.
+                 */
+                //timeBeginPeriod(1);
+
                 TimerQueue = CreateTimerQueue();
                 if (TimerQueue == NULL) { errno = ENOMEM; return -1; }
+
+                /* We need to get the TimerQueue to have higher priority.
+                 * From my testing, if it has the same priority as the main
+                 * thread and the main thread is busy, your best resolution
+                 * is a terribly slow 188ms. By boosting the priority of the
+                 * timer thread to ABOVE_NORMAL, I've gotten down to 2ms.
+                 */
+                CreateTimerQueueTimer(&PrioTimer, TimerQueue, fixPriority,
+                                      0, 1, 0, WT_EXECUTEINTIMERTHREAD);
+
+                /* We need a handle to the main thread usable by the timer
+                 * thread. GetCurrentThread() is a self-reference so we need
+                 * to copy it to a new handle for it to work in other threads.
+                 */
                 DuplicateHandle(GetCurrentProcess(), /* source process */
                                 GetCurrentThread(),  /* source handle  */
                                 GetCurrentProcess(), /* target process */
@@ -177,6 +203,7 @@ static int MLTimer(HANDLE *timer,
                                 0,                   /* access (ignored) */
                                 FALSE,               /* not inheritable */
                                 DUPLICATE_SAME_ACCESS);
+
                 if (MainThread == 0) die("Cannot get handle to initial thread");
         }
 
@@ -223,9 +250,10 @@ int setitimer (int which,
         }
 
 }
-/*
+
 static void catcher(__attribute__ ((unused)) int sig) {
         CONTEXT context;
+        context.ContextFlags = CONTEXT_CONTROL;
 
         GetThreadContext(MainThread, &context);
 #if defined(__i386__)
@@ -249,7 +277,6 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_flags = 0;
         sa->sa_handler = (_sig_func_ptr)&catcher;
 }
-*/
 
 /* ------------------------------------------------- */
 /*                   MLton.Rlimit                    */

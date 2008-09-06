@@ -40,7 +40,7 @@
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
-#define HAS_TIME_PROFILING FALSE
+#define HAS_TIME_PROFILING TRUE
 
 #define MLton_Platform_OS_host "mingw"
 
@@ -832,9 +832,11 @@ MLTON_WRAPPER pid_t MLton_waitpid (pid_t pid, int *status, int options);
 #define SIGPROF 30      /* profiling time alarm */
 #endif
 
-#ifndef _NSIG
-#define _NSIG 32
+/* We have extended the number of signals ... */
+#ifdef NSIG
+#undef NSIG
 #endif
+#define NSIG 32
 
 typedef __p_sig_fn_t MLton__sig_func_ptr;
 typedef int MLton_sigset_t;

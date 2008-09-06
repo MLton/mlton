@@ -348,3 +348,56 @@ C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         }
         return 0;
 }
+
+static intptr_t text_start = 0;
+static intptr_t text_end   = 0;
+
+/* GNU binutils generate this symbol */
+extern char base_address asm("__image_base__");
+
+static void findTextSegment (void) {
+        PIMAGE_DOS_HEADER dosHeader;
+        PIMAGE_NT_HEADERS ntHeader;
+        PIMAGE_SECTION_HEADER sectionHeader;
+        DWORD entryPoint, start = 0, end = 0;
+        UINT sections, i;
+        char *base = &base_address;
+
+        dosHeader = (PIMAGE_DOS_HEADER)base;
+        if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+                die("bad dos header magic");
+
+        ntHeader = (PIMAGE_NT_HEADERS)(base + dosHeader->e_lfanew);
+        if (ntHeader->Signature != IMAGE_NT_SIGNATURE)
+                die("bad NT header magic");
+
+        entryPoint = ntHeader->OptionalHeader.AddressOfEntryPoint;
+        sections = ntHeader->FileHeader.NumberOfSections;
+        sectionHeader = IMAGE_FIRST_SECTION(ntHeader);
+
+        for (i = 0; i < sections; ++i) {
+                start = sectionHeader->VirtualAddress;
+                end = start + sectionHeader->Misc.VirtualSize;
+                if (start <= entryPoint && entryPoint < end)
+                        break;
+                ++sectionHeader;
+        }
+
+        if (i == sections)
+                die("entry point has no containing section");
+
+        /* Factor in the loaded memory position */
+        text_start = (intptr_t)base + start;
+        text_end = (intptr_t)base + end;
+}
+
+code_pointer GC_getTextStart (void) {
+        if (!text_start) findTextSegment();
+        return (code_pointer)text_start;
+}
+
+code_pointer GC_getTextEnd (void) {
+        if (!text_end) findTextSegment();
+        return (code_pointer)text_end;
+}
+

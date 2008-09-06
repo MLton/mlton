@@ -1009,6 +1009,7 @@ fun commandLine (args: string list): unit =
           | FreeBSD => ()
           | HPUX => ()
           | Linux => ()
+          | MinGW => ()
           | NetBSD => ()
           | OpenBSD => ()
           | Solaris => ()
