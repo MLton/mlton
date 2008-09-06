@@ -147,7 +147,7 @@ struct
                          Int.max (max, regMax t))
                      val m = m + 1
                   in
-                     print (concat ["INTERNAL ", CType.toString t, 
+                     print (concat ["PRIVATE ", CType.toString t, 
                                     " local", CType.toString t,
                                     "[", Int.toString m, "];\n"])
                   end)

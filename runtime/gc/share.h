@@ -8,6 +8,6 @@
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-INTERNAL void GC_share (GC_state s, pointer object);
+PRIVATE void GC_share (GC_state s, pointer object);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

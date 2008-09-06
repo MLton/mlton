@@ -13,10 +13,10 @@
  #endif
  
 -extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
-+INTERNAL extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
++PRIVATE extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
  			int *sign, char **rve));
 -extern char* gdtoa__gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
-+INTERNAL extern char* gdtoa__gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
++PRIVATE extern char* gdtoa__gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
  			int mode, int ndigits, int *decpt, char **rve));
 -extern void gdtoa__freedtoa ANSI((char*));
 -extern float  gdtoa__strtof ANSI((CONST char *, char **));
@@ -42,30 +42,30 @@
 -extern int	gdtoa__strtorQ  ANSI((CONST char*, char**, int, void*));
 -extern int	gdtoa__strtorx  ANSI((CONST char*, char**, int, void*));
 -extern int	gdtoa__strtorxL ANSI((CONST char*, char**, int, void*));
-+INTERNAL extern void gdtoa__freedtoa ANSI((char*));
-+INTERNAL extern float  gdtoa__strtof ANSI((CONST char *, char **));
-+INTERNAL extern double gdtoa__strtod ANSI((CONST char *, char **));
-+INTERNAL extern int gdtoa__strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
++PRIVATE extern void gdtoa__freedtoa ANSI((char*));
++PRIVATE extern float  gdtoa__strtof ANSI((CONST char *, char **));
++PRIVATE extern double gdtoa__strtod ANSI((CONST char *, char **));
++PRIVATE extern int gdtoa__strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
 +
-+INTERNAL extern char*	gdtoa__g_ddfmt  ANSI((char*, double*, int, unsigned));
-+INTERNAL extern char*	gdtoa__g_dfmt   ANSI((char*, double*, int, unsigned));
-+INTERNAL extern char*	gdtoa__g_ffmt   ANSI((char*, float*,  int, unsigned));
-+INTERNAL extern char*	gdtoa__g_Qfmt   ANSI((char*, void*,   int, unsigned));
-+INTERNAL extern char*	gdtoa__g_xfmt   ANSI((char*, void*,   int, unsigned));
-+INTERNAL extern char*	gdtoa__g_xLfmt  ANSI((char*, void*,   int, unsigned));
++PRIVATE extern char*	gdtoa__g_ddfmt  ANSI((char*, double*, int, unsigned));
++PRIVATE extern char*	gdtoa__g_dfmt   ANSI((char*, double*, int, unsigned));
++PRIVATE extern char*	gdtoa__g_ffmt   ANSI((char*, float*,  int, unsigned));
++PRIVATE extern char*	gdtoa__g_Qfmt   ANSI((char*, void*,   int, unsigned));
++PRIVATE extern char*	gdtoa__g_xfmt   ANSI((char*, void*,   int, unsigned));
++PRIVATE extern char*	gdtoa__g_xLfmt  ANSI((char*, void*,   int, unsigned));
 +
-+INTERNAL extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
-+INTERNAL extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
-+INTERNAL extern int	gdtoa__strtoIf  ANSI((CONST char*, char**, float*, float*));
-+INTERNAL extern int	gdtoa__strtoIQ  ANSI((CONST char*, char**, void*, void*));
-+INTERNAL extern int	gdtoa__strtoIx  ANSI((CONST char*, char**, void*, void*));
-+INTERNAL extern int	gdtoa__strtoIxL ANSI((CONST char*, char**, void*, void*));
-+INTERNAL extern int	gdtoa__strtord  ANSI((CONST char*, char**, int, double*));
-+INTERNAL extern int	gdtoa__strtordd ANSI((CONST char*, char**, int, double*));
-+INTERNAL extern int	gdtoa__strtorf  ANSI((CONST char*, char**, int, float*));
-+INTERNAL extern int	gdtoa__strtorQ  ANSI((CONST char*, char**, int, void*));
-+INTERNAL extern int	gdtoa__strtorx  ANSI((CONST char*, char**, int, void*));
-+INTERNAL extern int	gdtoa__strtorxL ANSI((CONST char*, char**, int, void*));
++PRIVATE extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
++PRIVATE extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
++PRIVATE extern int	gdtoa__strtoIf  ANSI((CONST char*, char**, float*, float*));
++PRIVATE extern int	gdtoa__strtoIQ  ANSI((CONST char*, char**, void*, void*));
++PRIVATE extern int	gdtoa__strtoIx  ANSI((CONST char*, char**, void*, void*));
++PRIVATE extern int	gdtoa__strtoIxL ANSI((CONST char*, char**, void*, void*));
++PRIVATE extern int	gdtoa__strtord  ANSI((CONST char*, char**, int, double*));
++PRIVATE extern int	gdtoa__strtordd ANSI((CONST char*, char**, int, double*));
++PRIVATE extern int	gdtoa__strtorf  ANSI((CONST char*, char**, int, float*));
++PRIVATE extern int	gdtoa__strtorQ  ANSI((CONST char*, char**, int, void*));
++PRIVATE extern int	gdtoa__strtorx  ANSI((CONST char*, char**, int, void*));
++PRIVATE extern int	gdtoa__strtorxL ANSI((CONST char*, char**, int, void*));
  #if 1
 -extern int	gdtoa__strtodI  ANSI((CONST char*, char**, double*));
 -extern int	gdtoa__strtopd  ANSI((CONST char*, char**, double*));
@@ -74,13 +74,13 @@
 -extern int	gdtoa__strtopQ  ANSI((CONST char*, char**, void*));
 -extern int	gdtoa__strtopx  ANSI((CONST char*, char**, void*));
 -extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
-+INTERNAL extern int	gdtoa__strtodI  ANSI((CONST char*, char**, double*));
-+INTERNAL extern int	gdtoa__strtopd  ANSI((CONST char*, char**, double*));
-+INTERNAL extern int	gdtoa__strtopdd ANSI((CONST char*, char**, double*));
-+INTERNAL extern int	gdtoa__strtopf  ANSI((CONST char*, char**, float*));
-+INTERNAL extern int	gdtoa__strtopQ  ANSI((CONST char*, char**, void*));
-+INTERNAL extern int	gdtoa__strtopx  ANSI((CONST char*, char**, void*));
-+INTERNAL extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
++PRIVATE extern int	gdtoa__strtodI  ANSI((CONST char*, char**, double*));
++PRIVATE extern int	gdtoa__strtopd  ANSI((CONST char*, char**, double*));
++PRIVATE extern int	gdtoa__strtopdd ANSI((CONST char*, char**, double*));
++PRIVATE extern int	gdtoa__strtopf  ANSI((CONST char*, char**, float*));
++PRIVATE extern int	gdtoa__strtopQ  ANSI((CONST char*, char**, void*));
++PRIVATE extern int	gdtoa__strtopx  ANSI((CONST char*, char**, void*));
++PRIVATE extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
  #else
  #define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
  #define gdtoa__strtopdd(s,se,x) gdtoa__strtordd(s,se,1,x)

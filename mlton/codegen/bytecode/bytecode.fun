@@ -827,7 +827,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val () = done ()
       val {done, print, ...} = outputC ()
       fun declareCallC () =
-          (print "INTERNAL void MLton_callC (int i) {\n"
+          (print "PRIVATE void MLton_callC (int i) {\n"
            ; print "switch (i) {\n"
            ; List.foreach (!callCs, fn {display, index} =>
                            (print (concat ["case ", Int.toString index, ":\n\t"])

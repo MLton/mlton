@@ -13,19 +13,32 @@
 /*                      Symbols                      */
 /* ------------------------------------------------- */
 
+/* An external symbol is something not defined by the module
+ * (executable or library) being built. Rather, it is provided
+ * from a library dependency (dll, dylib, or shared object).
+ *
+ * A public symbol is defined in this module as being available
+ * to users outside of this module. If building a library, this 
+ * means the symbol will be part of the public interface.
+ * 
+ * A private symbol is defined within this module, but will not
+ * be made available outside of it. This is typically used for
+ * internal implementation details that should not be accessible.
+ */
+
 #if defined(_WIN32) || defined(_WIN64)
-#define IMPORTED __declspec(dllimport)
-#define EXPORTED __declspec(dllexport)
-#define INTERNAL
+#define EXTERNAL __declspec(dllimport)
+#define PUBLIC   __declspec(dllexport)
+#define PRIVATE
 #else
 #if __GNUC__ >= 4
-#define IMPORTED __attribute__((visibility("default")))
-#define EXPORTED __attribute__((visibility("default")))
-#define INTERNAL __attribute__((visibility("hidden")))
+#define EXTERNAL __attribute__((visibility("default")))
+#define PUBLIC   __attribute__((visibility("default")))
+#define PRIVATE  __attribute__((visibility("hidden")))
 #else
-#define IMPORTED
-#define EXPORTED
-#define INTERNAL
+#define EXTERNAL
+#define PUBLIC
+#define PRIVATE
 #endif
 #endif
 

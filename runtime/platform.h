@@ -140,9 +140,9 @@
 /*                        Runtime Init/Exit/Alloc                   */
 /* ---------------------------------------------------------------- */
 
-INTERNAL void MLton_init (int argc, char **argv, GC_state s);
-INTERNAL __attribute__ ((noreturn)) void MLton_halt (GC_state s, C_Int_t status);
-INTERNAL __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
+PRIVATE void MLton_init (int argc, char **argv, GC_state s);
+PRIVATE __attribute__ ((noreturn)) void MLton_halt (GC_state s, C_Int_t status);
+PRIVATE __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
@@ -161,37 +161,37 @@ int mkdir2 (const char *pathname, mode_t mode);
 /* GC_displayMem displays the virtual memory mapping to stdout.  
  * It is used to diagnose memory problems. 
  */
-INTERNAL void GC_displayMem (void);
+PRIVATE void GC_displayMem (void);
 
-INTERNAL void *GC_mmapAnon (void *start, size_t length);
-INTERNAL void *GC_mmapAnon_safe (void *start, size_t length);
-INTERNAL void *GC_mmapAnon_safe_protect (void *start, size_t length, 
+PRIVATE void *GC_mmapAnon (void *start, size_t length);
+PRIVATE void *GC_mmapAnon_safe (void *start, size_t length);
+PRIVATE void *GC_mmapAnon_safe_protect (void *start, size_t length, 
                                          size_t dead_low, size_t dead_high);
-INTERNAL void *GC_mremap (void *start, size_t oldLength, size_t newLength);
-INTERNAL void GC_release (void *base, size_t length);
-INTERNAL void GC_decommit (void *base, size_t length);
+PRIVATE void *GC_mremap (void *start, size_t oldLength, size_t newLength);
+PRIVATE void GC_release (void *base, size_t length);
+PRIVATE void GC_decommit (void *base, size_t length);
 
-INTERNAL size_t GC_pageSize (void);
-INTERNAL uintmax_t GC_physMem (void);
+PRIVATE size_t GC_pageSize (void);
+PRIVATE uintmax_t GC_physMem (void);
 
-INTERNAL void GC_setCygwinUseMmap (bool b);
+PRIVATE void GC_setCygwinUseMmap (bool b);
 
-INTERNAL void GC_diskBack_close (void *data);
-INTERNAL void GC_diskBack_read (void *data, pointer buf, size_t size);
-INTERNAL void *GC_diskBack_write (pointer buf, size_t size);
+PRIVATE void GC_diskBack_close (void *data);
+PRIVATE void GC_diskBack_read (void *data, pointer buf, size_t size);
+PRIVATE void *GC_diskBack_write (pointer buf, size_t size);
 
 /* ------------------------------------------------- */
 /*                Text Segment                       */
 /* ------------------------------------------------- */
 
-INTERNAL code_pointer GC_getTextEnd (void);
-INTERNAL code_pointer GC_getTextStart (void);
+PRIVATE code_pointer GC_getTextEnd (void);
+PRIVATE code_pointer GC_getTextStart (void);
 
 /* ------------------------------------------------- */
 /*                SigProf Handler                    */
 /* ------------------------------------------------- */
 
-INTERNAL void GC_setSigProfHandler (struct sigaction *sa);
+PRIVATE void GC_setSigProfHandler (struct sigaction *sa);
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
@@ -207,14 +207,14 @@ INTERNAL void GC_setSigProfHandler (struct sigaction *sa);
 
 #define MLton_Platform_Arch_bigendian isBigEndian()
 
-INTERNAL extern Bool MLton_Platform_CygwinUseMmap;
+PRIVATE extern Bool MLton_Platform_CygwinUseMmap;
 
 /* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
 #if (defined (__MSVCRT__))
-INTERNAL void MLton_initSockets (void);
+PRIVATE void MLton_initSockets (void);
 #else
 static inline void MLton_initSockets (void) {}
 #endif
@@ -225,8 +225,8 @@ static inline void MLton_initSockets (void) {}
 #else
 /* Platform has no MSG_DONTWAIT flag for recv(), so these must be
    defined to simulate that flag. */
-INTERNAL int MLton_recv(int s, void *buf, int len, int flags);
-INTERNAL int MLton_recvfrom(int s, void *buf, int len, int flags, void *from, socklen_t *fromlen);
+PRIVATE int MLton_recv(int s, void *buf, int len, int flags);
+PRIVATE int MLton_recvfrom(int s, void *buf, int len, int flags, void *from, socklen_t *fromlen);
 #endif
 
 #endif /* _MLTON_PLATFORM_H_ */

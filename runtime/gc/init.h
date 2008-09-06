@@ -13,4 +13,4 @@ static int processAtMLton (GC_state s, int argc,
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
-INTERNAL int GC_init (GC_state s, int argc, char **argv);
+PRIVATE int GC_init (GC_state s, int argc, char **argv);

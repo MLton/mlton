@@ -204,7 +204,7 @@ typedef Pointer Objptr;
  * one of the arguments is a constant.
  */
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func) INTERNAL
+#define MLTON_CODEGEN_WORDSQUOTREM(func) PRIVATE
 #endif
 #ifndef MLTON_CODEGEN_WORDSQUOTREM_IMPL
 #define MLTON_CODEGEN_WORDSQUOTREM_IMPL(func)

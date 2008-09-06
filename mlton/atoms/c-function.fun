@@ -174,9 +174,9 @@ fun cPrototype (T {convention, prototype = (args, return), symbolScope, target,
          else " "
       val symbolScope =
          case symbolScope of
-            SymbolScope.External => "IMPORTED "
-          | SymbolScope.Private => "INTERNAL "
-          | SymbolScope.Public => "EXPORTED "
+            SymbolScope.External => "EXTERNAL "
+          | SymbolScope.Private => "PRIVATE "
+          | SymbolScope.Public => "PUBLIC "
       val name = 
          case target of
             Direct name => name

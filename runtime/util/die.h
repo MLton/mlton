@@ -7,10 +7,10 @@
  */
 
 /* issue error message and exit */
-INTERNAL extern void die (const char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
+PRIVATE extern void die (const char *fmt, ...)
+                         __attribute__ ((format(printf, 1, 2)))
+                         __attribute__ ((noreturn));
 /* issue error message and exit.  Also print strerror(errno). */
-INTERNAL extern void diee (const char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
+PRIVATE extern void diee (const char *fmt, ...)
+                          __attribute__ ((format(printf, 1, 2)))
+                          __attribute__ ((noreturn));

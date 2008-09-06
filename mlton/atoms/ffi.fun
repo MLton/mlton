@@ -50,7 +50,7 @@ val headers: string list ref = ref []
 
 fun declareExports {print} =
    let
-      val _ = print "INTERNAL Pointer MLton_FFI_opArgsResPtr;\n"
+      val _ = print "PRIVATE Pointer MLton_FFI_opArgsResPtr;\n"
    in
       List.foreach
       (!symbols, fn {name, ty, symbolScope} =>
@@ -59,13 +59,13 @@ fun declareExports {print} =
              case symbolScope of
                 SymbolScope.External =>
                    Error.bug "Ffi.declareExports.symbols: External"
-              | SymbolScope.Private => ("MLLIB_INTERNAL", "INTERNAL")
-              | SymbolScope.Public => ("MLLIB_EXPORTED", "EXPORTED")
+              | SymbolScope.Private => ("MLLIB_PRIVATE", "PRIVATE")
+              | SymbolScope.Public => ("MLLIB_PUBLIC", "PUBLIC")
           val headerDecl =
-             concat ["extern", " ",
-                     headerSymbolScope, " ",
+             concat [headerSymbolScope,
+                     "(extern ",
                      CType.toString ty, " ",
-                     name]
+                     name, ";)"]
           val decl =
              concat [symbolScope, " ",
                      CType.toString ty, " ",
@@ -92,8 +92,8 @@ fun declareExports {print} =
              case symbolScope of
                 SymbolScope.External =>
                    Error.bug "Ffi.declareExports.exports: External"
-              | SymbolScope.Private => ("MLLIB_INTERNAL","INTERNAL")
-              | SymbolScope.Public => ("MLLIB_EXPORTED","EXPORTED")
+              | SymbolScope.Private => ("MLLIB_PRIVATE","PRIVATE")
+              | SymbolScope.Public => ("MLLIB_PUBLIC","PUBLIC")
           val prototype =
              concat [case res of
                         NONE => "void"
@@ -110,7 +110,7 @@ fun declareExports {print} =
              1 + (Vector.length args)
              + (case res of NONE => 0 | SOME _ => 1)
        in
-          List.push (headers, concat [headerSymbolScope, " ", prototype])
+          List.push (headers, concat [headerSymbolScope, "(", prototype, ";)"])
           ; print (concat [symbolScope, " ", prototype, " {\n"])
           ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
           ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
@@ -133,6 +133,6 @@ fun declareExports {print} =
 
 fun declareHeaders {print} =
    (declareExports {print = fn _ => ()}
-    ; List.foreach (!headers, fn s => (print s; print ";\n")))
+    ; List.foreach (!headers, fn s => (print s; print "\n")))
 
 end

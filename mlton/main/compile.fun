@@ -420,26 +420,35 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ =
                       File.outputContents
                       (concat [!Control.libDir, "/include/ml-types.h"], out)
+                   val _ =
+                      File.outputContents
+                      (concat [!Control.libDir, "/include/export.h"], out)
                    fun print s = Out.output (out, s)
+                   val lib = File.base f
+                   val libcap = CharVector.map Char.toUpper lib
                    val _ = print "\n"
                    val _ = print "typedef void* CPointer;\n"
                    val _ = print "typedef Pointer Objptr;\n"
                    val _ = print "\n"
-                   val _ = print "/* Define appropriately before #include'ing this header. */\n"
-                   val _ = print "/* Internal methods are only available when linked directly with ML */\n"
-                   val _ = print "/* Exported methods are also available when compiled into a shared library */\n"
-                   val _ = print "#ifndef MLLIB_INTERNAL\n"
-                   val _ = print "#define MLLIB_INTERNAL\n"
-                   val _ = print "#endif\n"
-                   val _ = print "#ifndef MLLIB_EXPORTED\n"
-                   val _ = print "#define MLLIB_EXPORTED\n"
+                   val _ = 
+                      if !Control.format = Control.Executable
+                      then print "#if 1 /* C executables compile with same symbol scope as ML executables */\n"
+                      else print ("#ifdef PART_OF_LIBRARY_" ^ libcap ^ "\n")
+                   val _ = print "#define MLLIB_PRIVATE(x) PRIVATE x\n"
+                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
+                   val _ = print "#else\n"
+                   val _ = print "#define MLLIB_PRIVATE(x)\n"
+                   val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
                    val _ = print "#endif\n"
                    val _ = print "\n"
                    val _ = 
                       if !Control.format = Control.Executable then () else
-                          (print ("MLLIB_EXPORTED void " ^ File.base f ^ "_open(int argc, const char** argv);\n")
-                          ;print ("MLLIB_EXPORTED void " ^ File.base f ^ "_close();\n"))
-                   val _ = Ffi.declareHeaders {print = print}
+                          (print ("MLLIB_PUBLIC(void " ^ lib ^ "_open(int argc, const char** argv);)\n")
+                          ;print ("MLLIB_PUBLIC(void " ^ lib ^ "_close();)\n"))
+                   val _ = Ffi.declareHeaders {print = print} 
+                   val _ = print "\n"
+                   val _ = print "#undef MLLIB_PRIVATE\n"
+                   val _ = print "#undef MLLIB_PUBLIC\n"
                 in
                    ()
                 end)

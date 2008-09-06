@@ -11,21 +11,21 @@
 #include "common-main.h"
 
 /* Globals */
-INTERNAL Word64 applyFFTempFun;
-INTERNAL Word64 applyFFTempStackArg;
-INTERNAL Word64 applyFFTempRegArg[6];
-INTERNAL Real32 applyFFTempXmmsRegArgD[8];
-INTERNAL Real64 applyFFTempXmmsRegArgS[8];
-INTERNAL Word32 checkTemp;
-INTERNAL Word64 cReturnTemp[16];
-INTERNAL Pointer c_stackP;
-INTERNAL Word64 fpcvtTemp;
-INTERNAL Word32 fpeqTemp;
-INTERNAL Word64 divTemp;
-INTERNAL Word64 indexTemp;
-INTERNAL Word64 raTemp1;
-INTERNAL Word64 spill[32];
-INTERNAL Word64 stackTopTemp;
+PRIVATE Word64 applyFFTempFun;
+PRIVATE Word64 applyFFTempStackArg;
+PRIVATE Word64 applyFFTempRegArg[6];
+PRIVATE Real32 applyFFTempXmmsRegArgD[8];
+PRIVATE Real64 applyFFTempXmmsRegArgS[8];
+PRIVATE Word32 checkTemp;
+PRIVATE Word64 cReturnTemp[16];
+PRIVATE Pointer c_stackP;
+PRIVATE Word64 fpcvtTemp;
+PRIVATE Word32 fpeqTemp;
+PRIVATE Word64 divTemp;
+PRIVATE Word64 indexTemp;
+PRIVATE Word64 raTemp1;
+PRIVATE Word64 spill[32];
+PRIVATE Word64 stackTopTemp;
 
 #ifndef DEBUG_AMD64CODEGEN
 #define DEBUG_AMD64CODEGEN FALSE
@@ -36,7 +36,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 }
 
 #define MLtonCallFromC                                                  \
-INTERNAL void MLton_jumpToSML (pointer jump);                           \
+PRIVATE void MLton_jumpToSML (pointer jump);                            \
 static void MLton_callFromC () {                                        \
         pointer jump;                                                   \
         GC_state s;                                                     \
@@ -64,7 +64,7 @@ static void MLton_callFromC () {                                        \
 
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 MLtonCallFromC                                                          \
-EXPORTED int MLton_main (int argc, char* argv[]) {                      \
+PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         pointer jump;                                                   \
         extern pointer ml;                                              \
                                                                         \
@@ -81,7 +81,7 @@ EXPORTED int MLton_main (int argc, char* argv[]) {                      \
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
 MLtonCallFromC                                                          \
-EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         pointer jump;                                                   \
         extern pointer ml;                                              \
                                                                         \
@@ -94,7 +94,7 @@ EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
         }                                                               \
         MLton_jumpToSML(jump);                                          \
 }                                                                       \
-EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         pointer jump;                                                   \
         jump = *(pointer*)(gcState.stackTop - GC_RETURNADDRESS_SIZE);   \
         MLton_jumpToSML(jump);                                          \

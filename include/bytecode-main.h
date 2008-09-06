@@ -15,7 +15,7 @@
 #define DEBUG_CODEGEN FALSE
 #endif
 
-INTERNAL struct Bytecode MLton_bytecode;
+PRIVATE struct Bytecode MLton_bytecode;
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return *((GC_frameIndex*)(MLton_bytecode.code + ra - sizeof(GC_frameIndex)));
@@ -49,7 +49,7 @@ static void MLton_callFromC () {                                        \
 
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 MLtonCallFromC                                                          \
-EXPORTED int MLton_main (int argc, char* argv[]) {                      \
+PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         uintptr_t nextFun;                                              \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -65,7 +65,7 @@ EXPORTED int MLton_main (int argc, char* argv[]) {                      \
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
 MLtonCallFromC                                                          \
-EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextFun;                                              \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -77,7 +77,7 @@ EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
         }                                                               \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
 }                                                                       \
-EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         uintptr_t nextFun;                                              \
         nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \

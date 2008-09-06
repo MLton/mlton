@@ -18,8 +18,8 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 
 #define MLtonCallFromC                                                  \
 /* Globals */                                                           \
-INTERNAL uintptr_t nextFun;                                             \
-INTERNAL int returnToC;                                                 \
+PRIVATE uintptr_t nextFun;                                              \
+PRIVATE int returnToC;                                                  \
 static void MLton_callFromC () {                                        \
         struct cont cont;                                               \
         GC_state s;                                                     \
@@ -51,7 +51,7 @@ static void MLton_callFromC () {                                        \
 
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, mc, ml)                     \
 MLtonCallFromC                                                          \
-EXPORTED int MLton_main (int argc, char* argv[]) {                      \
+PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         struct cont cont;                                               \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -78,7 +78,7 @@ EXPORTED int MLton_main (int argc, char* argv[]) {                      \
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
 MLtonCallFromC                                                          \
-EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         struct cont cont;                                               \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -95,7 +95,7 @@ EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         } while (not returnToC);                                        \
 }                                                                       \
-EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         struct cont cont;                                               \
         nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         cont.nextChunk = nextChunks[nextFun];                           \

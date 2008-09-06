@@ -456,7 +456,7 @@ fun outputDeclarations
          end
    in
       outputIncludes (includes, print)
-      ; declareGlobals ("INTERNAL ", print)
+      ; declareGlobals ("PRIVATE ", print)
       ; declareExports ()
       ; declareLoadSaveGlobals ()
       ; declareIntInfs ()
@@ -516,9 +516,9 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                            doit
                            (name, fn () =>
                             concat [case symbolScope of
-                                       External => "IMPORTED "
-                                     | Private => "INTERNAL "
-                                     | Public => "EXPORTED ",
+                                       External => "EXTERNAL "
+                                     | Private => "PRIVATE "
+                                     | Public => "PUBLIC ",
                                     "extern ",
                                     case cty of
                                        SOME x => CType.toString x
@@ -1177,7 +1177,7 @@ fun output {program as Machine.Program.T {chunks,
          in
             outputIncludes (["c-chunk.h"], print)
             ; outputOffsets ()
-            ; declareGlobals ("INTERNAL extern ", print)
+            ; declareGlobals ("PRIVATE extern ", print)
             ; declareFFI (chunk, {print = print})
             ; declareChunks ()
             ; declareProfileLabels ()
@@ -1203,7 +1203,7 @@ fun output {program as Machine.Program.T {chunks,
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
-          ; print "INTERNAL struct cont ( *nextChunks []) () = {"
+          ; print "PRIVATE struct cont ( *nextChunks []) () = {"
           ; Vector.foreach (entryLabels, fn l =>
                             let
                                val {chunkLabel, ...} = labelInfo l

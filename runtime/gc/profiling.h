@@ -100,9 +100,9 @@ static inline char* profileIndexSourceName (GC_state s, GC_sourceIndex i);
 
 static void writeProfileCount (GC_state s, FILE *f, GC_profileData p, GC_profileMasterIndex i);
 
-INTERNAL GC_profileData profileMalloc (GC_state s);
-INTERNAL void profileWrite (GC_state s, GC_profileData p, const char* fileName);
-INTERNAL void profileFree (GC_state s, GC_profileData p);
+PRIVATE GC_profileData profileMalloc (GC_state s);
+PRIVATE void profileWrite (GC_state s, GC_profileData p, const char* fileName);
+PRIVATE void profileFree (GC_state s, GC_profileData p);
 
 static void setProfTimer (long usec);
 static void initProfilingTime (GC_state s);
@@ -113,21 +113,21 @@ static void initProfiling (GC_state s);
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-INTERNAL void GC_profileEnter (GC_state s);
-INTERNAL void GC_profileLeave (GC_state s);
-INTERNAL void GC_profileInc (GC_state s, size_t amount);
-INTERNAL void GC_profileAllocInc (GC_state s, size_t amount);
+PRIVATE void GC_profileEnter (GC_state s);
+PRIVATE void GC_profileLeave (GC_state s);
+PRIVATE void GC_profileInc (GC_state s, size_t amount);
+PRIVATE void GC_profileAllocInc (GC_state s, size_t amount);
 
-INTERNAL GC_profileData GC_getProfileCurrent (GC_state s);
-INTERNAL void GC_setProfileCurrent (GC_state s, GC_profileData p);
+PRIVATE GC_profileData GC_getProfileCurrent (GC_state s);
+PRIVATE void GC_setProfileCurrent (GC_state s, GC_profileData p);
 
-INTERNAL GC_profileData GC_profileMalloc (GC_state s);
-INTERNAL void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
-INTERNAL void GC_profileFree (GC_state s, GC_profileData p);
+PRIVATE GC_profileData GC_profileMalloc (GC_state s);
+PRIVATE void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
+PRIVATE void GC_profileFree (GC_state s, GC_profileData p);
 
-INTERNAL void GC_profileDone (GC_state s);
+PRIVATE void GC_profileDone (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 
-INTERNAL void GC_handleSigProf (code_pointer pc);
+PRIVATE void GC_handleSigProf (code_pointer pc);
 

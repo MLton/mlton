@@ -19,14 +19,14 @@ struct cont {
         void *nextChunk;
 };
 
-INTERNAL extern uintptr_t nextFun;
-INTERNAL extern int returnToC;
-INTERNAL extern struct cont (*nextChunks []) (void);
+PRIVATE extern uintptr_t nextFun;
+PRIVATE extern int returnToC;
+PRIVATE extern struct cont (*nextChunks []) (void);
 
 #define ChunkName(n) Chunk ## n
 
 #define DeclareChunk(n)                         \
-        INTERNAL struct cont ChunkName(n)(void)
+        PRIVATE struct cont ChunkName(n)(void)
 
 #define Chunkp(n) &(ChunkName(n))
 

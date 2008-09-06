@@ -91,6 +91,6 @@ static void showSources (GC_state s);
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-INTERNAL char* GC_sourceName (GC_state s, GC_sourceIndex i);
+PRIVATE char* GC_sourceName (GC_state s, GC_sourceIndex i);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

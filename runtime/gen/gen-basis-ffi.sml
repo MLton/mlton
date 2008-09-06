@@ -181,7 +181,7 @@ structure Entry =
          case entry of
             Const {name, ty} => 
                String.concat
-               ["INTERNAL extern const ",
+               ["PRIVATE extern const ",
                 Type.toC ty,
                 " ",
                 Name.toC name,
@@ -198,7 +198,7 @@ structure Entry =
                 ");"]
           | Symbol {name, ty} =>
                String.concat
-               ["INTERNAL extern ",
+               ["PRIVATE extern ",
                 Type.toC ty,
                 " ",
                 Name.toC name,
