@@ -22,18 +22,6 @@ in
       struct
          open PrimitiveFFI
 
-         structure MLton =
-            struct
-               open MLton
-
-               structure Itimer =
-                  struct
-                     open Itimer
-
-                     val set = stub ("set", set)
-                  end
-            end
-
          structure OS =
             struct
                open OS

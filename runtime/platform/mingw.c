@@ -42,11 +42,11 @@ size_t GC_pageSize (void) {
 }
 
 HANDLE fileDesHandle (int fd) {
-  // The temporary prevents a "cast does not match function type" warning.
-  intptr_t t;
+        // The temporary prevents a "cast does not match function type" warning.
+        intptr_t t;
 
-  t = _get_osfhandle (fd);
-  return (HANDLE)t;
+        t = _get_osfhandle (fd);
+        return (HANDLE)t;
 }
 
 int mkstemp (char *template) {
@@ -102,13 +102,154 @@ int gettimeofday (struct timeval *tv,
 /*                   MLton.Itimer                    */
 /* ------------------------------------------------- */
 
-__attribute__ ((noreturn))
-int setitimer (__attribute__ ((unused)) int which, 
-               __attribute__ ((unused)) const struct itimerval *value, 
-               __attribute__ ((unused)) struct itimerval *ovalue) {
-        // !!! perhaps use code from alarm?
-        die ("setitimer not implemented");
+/* We use the kernel's TimerQueues -- see:
+ *  http://msdn.microsoft.com/en-us/library/ms686796(VS.85).aspx
+ */
+
+static HANDLE MainThread = NULL;
+static HANDLE TimerQueue = NULL;
+static HANDLE RealTimer = NULL;
+static HANDLE VirtTimer = NULL;
+static HANDLE ProfTimer = NULL;
+static void (*SIGALRM_handler)(int sig) = SIG_DFL;
+static void (*SIGVTAM_handler)(int sig) = SIG_DFL;
+static void (*SIGPROF_handler)(int sig) = SIG_DFL;
+
+/* The timer handler is fired in another thread.
+ * The idea is to suspend the main thread and resume it once we're done.
+ * This will appear more-or-less the same as if a Unix system had received
+ * the signal. We will also be firing the handler in the timer thread itself
+ * for performance reasons (MLton uses this mechanism to do multi-threading).
+ * This means the signal handlers must be fast, which they are since they
+ * just mark the signal to be processed later.
+ */
+
+static VOID CALLBACK MLton_SIGALRM(__attribute__ ((unused)) PVOID myArg,
+                                   __attribute__ ((unused)) BOOLEAN timeout) {
+        SuspendThread(MainThread);
+        if (SIGALRM_handler == SIG_IGN) {
+                /* noop */
+        } else if (SIGALRM_handler == SIG_DFL) {
+                die("alarm");
+        } else {
+                (*SIGALRM_handler)(SIGALRM);
+        }
+        ResumeThread(MainThread);
 }
+static VOID CALLBACK MLton_SIGVTAM(__attribute__ ((unused)) PVOID myArg,
+                                   __attribute__ ((unused)) BOOLEAN timeout) {
+        SuspendThread(MainThread);
+        if (SIGVTAM_handler == SIG_IGN) {
+                /* noop */
+        } else if (SIGVTAM_handler == SIG_DFL) {
+                die("vtalarm");
+        } else {
+                (*SIGVTAM_handler)(SIGVTALRM);
+        }
+        ResumeThread(MainThread);
+}
+static VOID CALLBACK MLton_SIGPROF(__attribute__ ((unused)) PVOID myArg,
+                                   __attribute__ ((unused)) BOOLEAN timeout) {
+        SuspendThread(MainThread);
+        if (SIGPROF_handler == SIG_IGN) {
+                /* noop */
+        } else if (SIGPROF_handler == SIG_DFL) {
+                die("sigprof");
+        } else {
+                (*SIGPROF_handler)(SIGPROF);
+        }
+        ResumeThread(MainThread);
+}
+
+static int MLTimer(HANDLE *timer, 
+                   const struct itimerval *value, 
+                   WAITORTIMERCALLBACK callback) {
+        DWORD DueTime, Period;
+
+        /* Initialize the TimerQueue */
+        if (MainThread == 0) {
+                TimerQueue = CreateTimerQueue();
+                if (TimerQueue == NULL) { errno = ENOMEM; return -1; }
+                DuplicateHandle(GetCurrentProcess(), /* source process */
+                                GetCurrentThread(),  /* source handle  */
+                                GetCurrentProcess(), /* target process */
+                                &MainThread,         /* target handle  */
+                                0,                   /* access (ignored) */
+                                FALSE,               /* not inheritable */
+                                DUPLICATE_SAME_ACCESS);
+                if (MainThread == 0) die("Cannot get handle to initial thread");
+        }
+
+        /* Windows uses ms accuracy for TimerQueues */
+        DueTime = value->it_value.tv_sec * 1000
+                + (value->it_value.tv_usec + 999) / 1000;
+        Period  = value->it_interval.tv_sec * 1000
+                + (value->it_interval.tv_usec + 999) / 1000;
+
+        if (timer != NULL) {
+                DeleteTimerQueueTimer(TimerQueue, *timer, NULL);
+                *timer = NULL;
+        }
+        
+        if (DueTime == 0) {
+                return 0;
+        } 
+
+        if (!CreateTimerQueueTimer(
+                timer,       /* output: created timer */
+                TimerQueue,  /* The queue which holds the timers */
+                callback,    /* Invoked on timer events */
+                0,           /* myArg for the callback */
+                DueTime,     /* Must be non-zero => time till first event */
+                Period,      /* Time till the event repeats (forever) */
+                WT_EXECUTEINTIMERTHREAD)) { /* Don't use a thread pool */
+                 errno = ENOMEM;
+                 return -1;
+        }
+
+        return 0;
+}
+
+int setitimer (int which, 
+               const struct itimerval *value, 
+               struct itimerval *ovalue) {
+        if (ovalue != 0) die("setitimer doesn't support retrieving old state");
+
+        switch (which) {
+        case ITIMER_REAL: return MLTimer(&RealTimer, value, &MLton_SIGALRM);
+        case ITIMER_VIRT: return MLTimer(&VirtTimer, value, &MLton_SIGVTAM);
+        case ITIMER_PROF: return MLTimer(&ProfTimer, value, &MLton_SIGPROF);
+        default:          errno = EINVAL; return -1;
+        }
+
+}
+/*
+static void catcher(__attribute__ ((unused)) int sig) {
+        CONTEXT context;
+
+        GetThreadContext(MainThread, &context);
+#if defined(__i386__)
+        GC_handleSigProf((code_pointer) context.Eip);
+#elif defined(__x86_64__)
+        GC_handleSigProf((code_pointer) context.Rip);
+#elif defined(_PPC_)
+        GC_handleSigProf((code_pointer) context.Iar);
+#elif defined(_ALPHA_)
+        GC_handleSigProf((code_pointer) context.Fir);
+#elif defined(MIPS)
+        GC_handleSigProf((code_pointer) context.Fir);
+#elif defined(ARM)
+        GC_handleSigProf((code_pointer) context.Pc);
+#else
+#error Profiling handler is missing for this architecture
+#endif
+} 
+
+void GC_setSigProfHandler (struct sigaction *sa) {
+        sa->sa_flags = 0;
+        sa->sa_handler = (_sig_func_ptr)&catcher;
+}
+*/
 
 /* ------------------------------------------------- */
 /*                   MLton.Rlimit                    */
@@ -163,49 +304,49 @@ int setrlimit (int resource, const struct rlimit *rlp) {
  *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/getprocesstimes.asp
  */
 int getrusage (int who, struct rusage *usage) {
-  /* FILETIME has dw{High,Low}DateTime which store the number of
-   * 100-nanoseconds since January 1, 1601
-   */
-  FILETIME creation_time;
-  FILETIME exit_time;
-  FILETIME kernel_time;
-  FILETIME user_time;
+        /* FILETIME has dw{High,Low}DateTime which store the number of
+         * 100-nanoseconds since January 1, 1601
+         */
+        FILETIME creation_time;
+        FILETIME exit_time;
+        FILETIME kernel_time;
+        FILETIME user_time;
 
-  uint64_t user_usecs, kernel_usecs;
+        uint64_t user_usecs, kernel_usecs;
 
-  if (who == RUSAGE_CHILDREN) {
-    // !!! could use exit_time - creation_time from cwait 
-    memset(usage, 0, sizeof(struct rusage));
-    return 0;
-  }
+        if (who == RUSAGE_CHILDREN) {
+                // !!! could use exit_time - creation_time from cwait 
+                memset(usage, 0, sizeof(struct rusage));
+                return 0;
+        }
   
-  if (who != RUSAGE_SELF) {
-    errno = EINVAL;
-    return -1;
-  }
+        if (who != RUSAGE_SELF) {
+                errno = EINVAL;
+                return -1;
+        }
 
-  if (GetProcessTimes(GetCurrentProcess(), 
-                      &creation_time, &exit_time,
-                      &kernel_time, &user_time) == 0) {
-    errno = EFAULT;
-    return -1;
-  }
+        if (GetProcessTimes(GetCurrentProcess(), 
+                            &creation_time, &exit_time,
+                            &kernel_time, &user_time) == 0) {
+                errno = EFAULT;
+                return -1;
+        }
   
-  kernel_usecs = kernel_time.dwHighDateTime;
-  kernel_usecs <<= sizeof(kernel_time.dwHighDateTime)*8;
-  kernel_usecs |= kernel_time.dwLowDateTime;
-  kernel_usecs /= 10;
+        kernel_usecs = kernel_time.dwHighDateTime;
+        kernel_usecs <<= sizeof(kernel_time.dwHighDateTime)*8;
+        kernel_usecs |= kernel_time.dwLowDateTime;
+        kernel_usecs /= 10;
 
-  user_usecs = user_time.dwHighDateTime;
-  user_usecs <<= sizeof(user_time.dwHighDateTime)*8;
-  user_usecs |= user_time.dwLowDateTime;
-  user_usecs /= 10;
+        user_usecs = user_time.dwHighDateTime;
+        user_usecs <<= sizeof(user_time.dwHighDateTime)*8;
+        user_usecs |= user_time.dwLowDateTime;
+        user_usecs /= 10;
 
-  usage->ru_utime.tv_sec  = user_usecs / 1000000;
-  usage->ru_utime.tv_usec = user_usecs % 1000000;
-  usage->ru_stime.tv_sec  = kernel_usecs / 1000000;
-  usage->ru_stime.tv_usec = kernel_usecs % 1000000;
-  return 0;
+        usage->ru_utime.tv_sec  = user_usecs / 1000000;
+        usage->ru_utime.tv_usec = user_usecs % 1000000;
+        usage->ru_stime.tv_sec  = kernel_usecs / 1000000;
+        usage->ru_stime.tv_usec = kernel_usecs % 1000000;
+        return 0;
 }
 
 /* ------------------------------------------------- */
@@ -234,28 +375,28 @@ static void GetWin32FileName (int fd, char* fname) {
         fileSize = GetFileSize (fh, &fileSizeHi);
         fhmap = CreateFileMapping (fh, NULL, PAGE_READONLY, 0, fileSize, NULL);
         if (fhmap) {
-            pMem = MapViewOfFile (fhmap, FILE_MAP_READ, 0, 0, 1);
-            if (pMem) {
-                GetMappedFileNameA (GetCurrentProcess(), pMem, fname, MAX_PATH);
-                UnmapViewOfFile (pMem);
-            }
-            CloseHandle (fhmap);
+                pMem = MapViewOfFile (fhmap, FILE_MAP_READ, 0, 0, 1);
+                if (pMem) {
+                        GetMappedFileNameA (GetCurrentProcess(),
+                                            pMem, fname, MAX_PATH);
+                        UnmapViewOfFile (pMem);
+                }
+                CloseHandle (fhmap);
         }
-        return; 
 }
 
 int fchmod (int filedes, mode_t mode) {
-      char fname[MAX_PATH + 1];
+        char fname[MAX_PATH + 1];
 
-      GetWin32FileName (filedes, fname);
-      return _chmod (fname, mode);
+        GetWin32FileName (filedes, fname);
+        return _chmod (fname, mode);
 }
 
 int fchdir (int filedes) {
-      char fname[MAX_PATH + 1];
+        char fname[MAX_PATH + 1];
 
-      GetWin32FileName (filedes, fname);
-      return chdir (fname);
+        GetWin32FileName (filedes, fname);
+        return chdir (fname);
 }
 
 __attribute__ ((noreturn))
@@ -319,16 +460,16 @@ int symlink (__attribute__ ((unused)) const char *oldpath,
 }
 
 int truncate (const char *path, off_t len) {
-  int fd;
+        int fd;
 
-  if ((fd = open(path, O_RDWR)) == -1)
-    return -1;
-  if (ftruncate(fd, len) < 0) {
-    close(fd);
-    return -1;
-  }
-  close(fd);
-  return 0;
+        if ((fd = open(path, O_RDWR)) == -1)
+                return -1;
+        if (ftruncate(fd, len) < 0) {
+                close(fd);
+                return -1;
+        }
+        close(fd);
+        return 0;
 }
 
 
@@ -557,6 +698,7 @@ static void setSysname (struct utsname *buf) {
 }
 
 int uname (struct utsname *buf) {
+        MLton_initSockets(); /* needed for gethostname */
         setMachine (buf);
         setSysname (buf);
         unless (0 == gethostname (buf->nodename, sizeof (buf->nodename))) {
@@ -576,53 +718,13 @@ int uname (struct utsname *buf) {
 /*                   Posix.Process                   */
 /* ------------------------------------------------- */
 
-static UINT_PTR curr_timer = 0;
-static int curr_timer_dur = 0;
-static LARGE_INTEGER timer_start_val;
-
-
-static VOID CALLBACK alarm_signalled(__attribute__ ((unused)) HWND window,
-                                     __attribute__ ((unused)) UINT message,
-                                     __attribute__ ((unused)) UINT_PTR timer_id,
-                                     __attribute__ ((unused)) DWORD timestamp) {
-    printf("Timer fired\n");
-}
-
-/*
- * Win32 alarm implementation
- */
 int alarm (int secs) {
-        LARGE_INTEGER timer_end_val, frequency;
-        int remaining = 0;
-        long elapse = secs * 1000;      /* win32 uses usecs */
-
-        /* Unsetting the alarm */
-        if (secs == 0 && curr_timer == 0) {
-            return 0;
-        }
-        if (curr_timer != 0) {
-                KillTimer(0, curr_timer);
-                QueryPerformanceCounter(&timer_end_val);
-                QueryPerformanceFrequency(&frequency);
-                if (frequency.QuadPart != 0) {
-                        remaining = curr_timer_dur - ((int)(timer_end_val.QuadPart
-                                - timer_start_val.QuadPart)/frequency.QuadPart);
-                        if (remaining < 0) {
-                                remaining = 0;
-                        }
-                }
-
-                timer_start_val.QuadPart = 0;
-                curr_timer_dur = 0;
-                curr_timer = 0;
-        }
-        if (secs != 0) {
-                /* Otherwise, set a timer */
-                curr_timer = SetTimer(0, 0, elapse, alarm_signalled);
-                QueryPerformanceCounter(&timer_start_val);
-                curr_timer_dur = secs;
-        }
-        return remaining;
+        struct itimerval new;
+        new.it_interval.tv_usec = 0;
+        new.it_interval.tv_sec = 0;
+        new.it_value.tv_usec = 0;
+        new.it_value.tv_sec = secs;
+        return setitimer(ITIMER_REAL, &new, 0);
 }
 
 __attribute__ ((noreturn))
@@ -671,24 +773,40 @@ pid_t waitpid (__attribute__ ((unused)) pid_t pid,
 /* ------------------------------------------------- */
 
 int sigaction (int signum, 
-                        const struct sigaction *newact,
-                        struct sigaction *oldact) {
-
-        struct sigaction oa;
+               const struct sigaction *newact,
+               struct sigaction *oldact) {
+        _sig_func_ptr old;
 
         if (signum < 0 or signum >= NSIG) {
                 errno = EINVAL;
                 return -1;
         }
-        if (newact) {
-                if (signum == SIGKILL or signum == SIGSTOP) {
-                        errno = EINVAL;
-                        return -1;
-                }
-                oa.sa_handler = signal (signum, newact->sa_handler);
+
+        switch (signum) {
+        case SIGKILL:
+        case SIGSTOP:
+                errno = EINVAL;
+                return -1;
+        case SIGALRM:
+                old = SIGALRM_handler;
+                if (newact) SIGALRM_handler = newact->sa_handler;
+                break;
+        case SIGVTALRM:
+                old = SIGVTAM_handler;
+                if (newact) SIGVTAM_handler = newact->sa_handler;
+                break;
+        case SIGPROF:
+                old = SIGPROF_handler;
+                if (newact) SIGPROF_handler = newact->sa_handler;
+                break;
+        default:
+                old = signal (signum, newact?newact->sa_handler:0);
+                if (!newact) signal (signum, old);
+                break;
         }
+
         if (oldact)
-                oldact->sa_handler = oa.sa_handler;
+                oldact->sa_handler = old;
         return 0;
 }
 

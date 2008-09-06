@@ -151,7 +151,7 @@ for f in *.sml; do
         case `host-os` in
         cygwin|mingw)
                 case "$f" in
-                echo|signals|socket|suspend|textio.2|thread2|world*)
+                echo|signals|socket|suspend|textio.2|world*)
                         continue
                 ;;
                 esac
@@ -160,7 +160,7 @@ for f in *.sml; do
         case `host-os` in
         mingw)
                 case "$f" in
-                cmdline|command-line|filesys|mutex|posix-exit|prodcons|signals2|timeout|unixpath)
+                cmdline|command-line|filesys|mutex|posix-exit|signals2|unixpath)
                         continue
                 ;;
                 esac
