@@ -1,5 +1,7 @@
 /* Many of the functions used in mingw.c are Win2000+ */
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0500
+#endif
 
 #include <inttypes.h>
 #include <stdint.h>
