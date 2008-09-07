@@ -73,28 +73,69 @@ int mkstemp (char *template) {
 #define EPOCHFILETIME (116444736000000000LL)
 #endif
 
-/* Based on notes by Wu Yongwei: 
+/* Based on notes by Wu Yongwei and IBM: 
  *   http://mywebpage.netscape.com/yongweiwutime.htm 
+ *   http://www.ibm.com/developerworks/library/i-seconds/
+ * 
+ * The basic plan is to get an initial time using GetSystemTime
+ * that is good up to ~10ms accuracy. From then on, we compute
+ * using deltas with the high-resolution (> microsecond range)
+ * performance timers. A 64-bit accumulator holds microseconds 
+ * since (*nix) epoch. This is good for over 500,000 years before
+ * wrap-around becomes a concern. However, we do need to watch
+ * out for wrap-around with the QueryPerformanceCounter, because
+ * it could be measuring at a higher frequency than microseconds.
  */
 int gettimeofday (struct timeval *tv, 
                   __attribute__ ((unused)) struct timezone *tz) {
-        FILETIME ft;
-        LARGE_INTEGER li;
-        __int64 t;
-        static bool tzInit = FALSE;
+        static LARGE_INTEGER frequency;
+        static LARGE_INTEGER baseCounter;
+        static LARGE_INTEGER microSeconds; /* static vars start = 0 */
 
-        unless (tzInit) {
-                tzInit = TRUE;
+        LARGE_INTEGER deltaCounter;
+        LARGE_INTEGER nowMicroSeconds;
+
+        if (microSeconds.QuadPart == 0) {
+                FILETIME ft;
+
+                /* tzset prepares the localtime function. I don't
+                 * really understand why it's here and not there,
+                 * but this has been the case since before svn logs.
+                 * So I leave it here to preserve the status-quo.
+                 */
                 tzset();
+
+                GetSystemTimeAsFileTime (&ft);
+                QueryPerformanceCounter(&baseCounter);
+                QueryPerformanceFrequency(&frequency);
+                if (frequency.QuadPart == 0)
+                        die("no high resolution clock");
+
+                microSeconds.LowPart = ft.dwLowDateTime;
+                microSeconds.HighPart = ft.dwHighDateTime;
+                microSeconds.QuadPart -= EPOCHFILETIME;
+                microSeconds.QuadPart /= 10; /* 100ns -> 1ms */
         }
-        GetSystemTimeAsFileTime (&ft);
-        li.LowPart = ft.dwLowDateTime;
-        li.HighPart = ft.dwHighDateTime;
-        t = li.QuadPart;
-        t -= EPOCHFILETIME;
-        t /= 10;
-        tv->tv_sec = (long)(t / 1000000);
-        tv->tv_usec = (long)(t % 1000000);
+
+        QueryPerformanceCounter(&deltaCounter);
+        deltaCounter.QuadPart -= baseCounter.QuadPart;
+        nowMicroSeconds = microSeconds;
+        nowMicroSeconds.QuadPart +=
+                1000000 * deltaCounter.QuadPart / frequency.QuadPart;
+
+        tv->tv_sec = (long)(nowMicroSeconds.QuadPart / 1000000);
+        tv->tv_usec = (long)(nowMicroSeconds.QuadPart % 1000000);
+
+        /* Watch out for wrap-around in the PerformanceCounter.
+         * We expect the delta * 1000000 to fit inside a 64 bit integer.
+         * To be safe, we will rebase the clock whenever it exceeds 32 bits.
+         * We don't want to rebase all the time because it introduces drift.
+         */
+        if (nowMicroSeconds.HighPart != 0) {
+                microSeconds = nowMicroSeconds;
+                baseCounter.QuadPart += deltaCounter.QuadPart;
+        }
+
         return 0;
 }
 
@@ -178,7 +219,7 @@ static int MLTimer(HANDLE *timer,
                 /* This call improves the resolution of the scheduler from
                  * 16ms to about 2ms in my testing. Sadly, it requires winmm.
                  */
-                //timeBeginPeriod(1);
+                timeBeginPeriod(1);
 
                 TimerQueue = CreateTimerQueue();
                 if (TimerQueue == NULL) { errno = ENOMEM; return -1; }

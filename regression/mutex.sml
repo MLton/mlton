@@ -155,7 +155,7 @@ fun main (name, args) =
                            ; if !gotIt
                                 then raise Fail "bug"
                              else (gotIt := true
-                                   ; for (0, 1000, fn _ => ())
+                                   ; for (0, 100000, fn _ => ())
                                    ; gotIt := false
                                    ; Mutex.unlock m
                                    ; loop (i - 1)))
