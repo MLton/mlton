@@ -7,7 +7,7 @@ MINGW_W32API=$(TARDIR)/w32api-3.11.tar.gz
 MINGW_BINUTILS=$(TARDIR)/binutils-2.17.50-20060824-1.tar.gz
 MINGW_GCC=$(TARDIR)/gcc-core-3.4.5-20060117-1.tar.gz
 MINGW_MSYS=$(TARDIR)/msysCORE-1.0.11-2007.01.19-1.tar.bz2
-MINGW_GMP=$(TARDIR)/gmp-static-mingw-4.1.tar.gz
+MINGW_GMP=$(TARDIR)/mingw-gmp-4.2.3-1.tar.gz
 
 MINGW_WXS=mingw-runtime.wxs w32api.wxs binutils.wxs gcc.wxs gmp.wxs msys.wxs
 MINGW_WIXOBJ=$(patsubst %.wxs,%.wixobj,$(MINGW_WXS))
@@ -56,10 +56,8 @@ msys.wxs:		$(MINGW_MSYS) self.wxs
 	mv $@.tmp $@
 
 gmp.wxs:		$(MINGW_GMP) self.wxs
-	tar tzf $< | sed 's@^gmp/@@' | ./files2wix-component GMP > $@.tmp
-	tar xzf $(MINGW_GMP)
-	cp -a gmp/* staging
-	rm -rf gmp
+	tar tzf $< | ./files2wix-component GMP > $@.tmp
+	cd staging; tar xzf $(MINGW_GMP)
 	mv $@.tmp $@
 
 self.wxs:	files2wix-component.exe
