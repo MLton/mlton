@@ -217,7 +217,7 @@ static int MLTimer(HANDLE *timer,
         /* Initialize the TimerQueue */
         if (MainThread == 0) {
                 /* This call improves the resolution of the scheduler from
-                 * 16ms to about 2ms in my testing. Sadly, it requires winmm.
+                 * 16ms to about 2ms in my testing. Sadly it requires winmm.
                  */
                 timeBeginPeriod(1);
 
