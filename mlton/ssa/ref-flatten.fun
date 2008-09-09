@@ -774,8 +774,16 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                       case Type.dest t of
                          CPointer => ()
                        | Datatype tc => 
-                            (ignore o Graph.addEdge)
-                            (graph, {from = n, to = tyconNode tc})
+                            let
+                               val m = tyconNode tc
+                               val e = {from = n, to = m}
+                            in
+                               (* Avoid redundant edges. *)
+                               if Node.hasEdge e then ()
+                               else 
+                                  (ignore o Graph.addEdge)
+                                  (graph, {from = n, to = tyconNode tc})
+                            end
                        | IntInf => ()
                        | Object {args, ...} =>
                             Prod.foreach (args, loop)
