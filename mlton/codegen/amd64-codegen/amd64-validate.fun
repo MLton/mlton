@@ -26,7 +26,9 @@ struct
             else true
 
       fun validate_base {register}
-        = if not (validate {register = register}
+        = if not (eq (register, rip))
+             andalso
+             not (validate {register = register}
                   andalso
                   List.contains(baseRegisters,
                                 register,
