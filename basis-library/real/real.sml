@@ -116,10 +116,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
              | _ => if signBit x then ~x else x
 
       fun isFinite r =
-         case class r of
-            INF => false
-          | NAN => false
-          | _ => true
+         abs r <= maxFinite
 
       val op == = Prim.==
 
@@ -153,10 +150,10 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          else y
 
       fun sign (x: real): int =
-         case class x of
-            NAN => raise Domain
-          | ZERO => 0
-          | _ => if x > zero then 1 else ~1
+         if x > zero then 1
+         else if x < zero then ~1
+         else if x == zero then 0
+         else raise Domain
 
       fun sameSign (x, y) = signBit x = signBit y
 
@@ -266,10 +263,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val realMod = #frac o split
 
       fun checkFloat x =
-         case class x of
-            INF => raise Overflow
-          | NAN => raise Div
-          | _ => x
+         if isFinite x then x
+         else if isNan x then raise Div
+         else raise Overflow
 
       fun roundReal (x: real, m: rounding_mode): real =
          IEEEReal.withRoundingMode (m, fn () => R.round x)
@@ -623,61 +619,72 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                                minInt': 'a,
                                precision': int}} =
             (fromIntUnsafe,
-             if Int.< (precision, #precision' other)
-                then let
-                        val maxInt' = #maxInt' other
-                        val minInt' = #minInt' other
-                        (* maxInt can't be represented exactly. *)
-                        (* minInt can be represented exactly. *)
-                        val (maxInt,minInt) = 
-                           IEEEReal.withRoundingMode
-                           (TO_ZERO, fn () => (fromIntUnsafe maxInt',
-                                               fromIntUnsafe minInt'))
-                     in
-                        fn (m: rounding_mode) => fn x =>
-                        case class x of
-                           INF => raise Overflow
-                         | NAN => raise Domain
-                         | _ => if minInt <= x andalso x <= maxInt
-                                   then toIntUnsafe (roundReal (x, m))
-                                else raise Overflow
-                     end
-             else let
-                     val maxInt' = #maxInt' other
-                     val minInt' = #minInt' other
-                     val maxInt = fromIntUnsafe maxInt'
-                     val minInt = fromIntUnsafe minInt'
-                  in
-                     fn (m: rounding_mode) => fn x =>
-                     case class x of
-                        INF => raise Overflow
-                      | NAN => raise Domain
-                      | _ => if minInt <= x
-                                then if x <= maxInt
-                                        then toIntUnsafe (roundReal (x, m))
-                             else if x < maxInt + one
-                                then (case m of
-                                         TO_NEGINF => maxInt'
-                                       | TO_POSINF => raise Overflow
-                                       | TO_ZERO => maxInt'
-                                       | TO_NEAREST =>
-                                            (* Depends on maxInt being odd. *)
-                                            if x - maxInt >= half
-                                               then raise Overflow
-                                            else maxInt')
-                                else raise Overflow
-                             else if x > minInt - one
-                                then (case m of
-                                         TO_NEGINF => raise Overflow
-                                       | TO_POSINF => minInt'
-                                       | TO_ZERO => minInt'
-                                       | TO_NEAREST =>
-                                            (* Depends on minInt being even. *)
-                                            if x - minInt < ~half
-                                               then raise Overflow
-                                            else minInt')
-                             else raise Overflow
-                  end)
+             if Int.< (precision, #precision' other) then
+                let
+                   val maxInt' = #maxInt' other
+                   val minInt' = #minInt' other
+                   (* maxInt can't be represented exactly. *)
+                   (* minInt can be represented exactly. *)
+                   val (maxInt,minInt) =
+                       IEEEReal.withRoundingMode
+                       (TO_ZERO, fn () => (fromIntUnsafe maxInt',
+                                           fromIntUnsafe minInt'))
+                in
+                   fn (m: rounding_mode) => fn x =>
+                   if minInt <= x then
+                      if x <= maxInt then
+                         toIntUnsafe (roundReal (x, m))
+                      else
+                         raise Overflow
+                   else
+                      if x < minInt then
+                         raise Overflow
+                      else
+                         raise Domain (* NaN *)
+                end
+             else
+                let
+                   val maxInt' = #maxInt' other
+                   val minInt' = #minInt' other
+                   val maxInt = fromIntUnsafe maxInt'
+                   val minInt = fromIntUnsafe minInt'
+                in
+                   fn (m: rounding_mode) => fn x =>
+                   if minInt <= x then
+                      if x <= maxInt then
+                         toIntUnsafe (roundReal (x, m))
+                      else
+                         if x < maxInt + one then
+                            (case m of
+                                TO_NEGINF => maxInt'
+                              | TO_POSINF => raise Overflow
+                              | TO_ZERO => maxInt'
+                              | TO_NEAREST =>
+                                (* Depends on maxInt being odd. *)
+                                if x - maxInt >= half then
+                                   raise Overflow
+                                else
+                                   maxInt')
+                         else
+                            raise Overflow
+                   else
+                      if x < minInt then
+                         if minInt - one < x then
+                            (case m of
+                                TO_NEGINF => raise Overflow
+                              | TO_POSINF => minInt'
+                              | TO_ZERO => minInt'
+                              | TO_NEAREST =>
+                                (* Depends on minInt being even. *)
+                                if x - minInt < ~half then
+                                   raise Overflow
+                                else
+                                   minInt')
+                         else
+                            raise Overflow
+                      else
+                         raise Domain (* NaN *)
+                end)
       in
          val (fromInt8,toInt8) =
             make {fromIntUnsafe = R.fromInt8Unsafe,
