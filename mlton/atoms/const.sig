@@ -13,7 +13,7 @@ signature CONST_STRUCTS =
       structure RealX: REAL_X
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
-      sharing WordX = WordXVector.WordX
+      sharing WordX = RealX.WordX = WordXVector.WordX
    end
 
 signature CONST = 

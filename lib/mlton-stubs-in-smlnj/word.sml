@@ -122,3 +122,25 @@ structure Word64 = FixWord (LargeWord)
 structure Word = Word32
 structure SysWord = Word32
 structure LargeWord = Word64
+
+(* Dummy implementation that will not be used at run-time. *)
+structure PackWord32Little = struct
+   val bytesPerElem = 0
+   val isBigEndian = false
+   fun subVec _ = raise Fail "PackWord32Little.subVec"
+   fun subVecX _ = raise Fail "PackWord32Little.subVecX"
+   fun subArr _ = raise Fail "PackWord32Little.subArr"
+   fun subArrX _ = raise Fail "PackWord32Little.subArrX"
+   fun update _ = raise Fail "PackWord32Little.update"
+end
+
+(* Dummy implementation that will not be used at run-time. *)
+structure PackWord64Little = struct
+   val bytesPerElem = 0
+   val isBigEndian = false
+   fun subVec _ = raise Fail "PackWord64Little.subVec"
+   fun subVecX _ = raise Fail "PackWord64Little.subVecX"
+   fun subArr _ = raise Fail "PackWord64Little.subArr"
+   fun subArrX _ = raise Fail "PackWord64Little.subArrX"
+   fun update _ = raise Fail "PackWord64Little.update"
+end

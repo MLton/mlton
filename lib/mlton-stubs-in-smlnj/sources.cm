@@ -42,6 +42,10 @@ structure Math
 structure MLton
 structure OS
 structure Option
+structure PackReal32Little
+structure PackReal64Little
+structure PackWord32Little
+structure PackWord64Little
 structure Position
 structure Posix
 structure Real

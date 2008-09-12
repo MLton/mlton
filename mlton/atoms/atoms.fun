@@ -24,8 +24,9 @@ structure Atoms =
       structure Con = Con ()
       structure CType = CType (structure RealSize = RealSize
                                structure WordSize = WordSize)
-      structure RealX = RealX (structure RealSize = RealSize)
       structure WordX = WordX (structure WordSize = WordSize)
+      structure RealX = RealX (structure RealSize = RealSize
+                               structure WordX = WordX)
       structure WordXVector = WordXVector (structure WordSize = WordSize
                                            structure WordX = WordX)
       structure Func =

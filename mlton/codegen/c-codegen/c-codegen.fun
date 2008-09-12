@@ -45,12 +45,19 @@ structure RealX =
 
       fun toC (r: t): string =
          let
-            (* The only difference between SML reals and C floats/doubles is that
+            (* The main difference between SML reals and C floats/doubles is that
              * SML uses "~" while C uses "-".
              *)
             val s =
                String.translate (toString r,
                                  fn #"~" => "-" | c => String.fromChar c)
+            (* Also, inf is spelled INFINITY and nan is NAN in C. *)
+            val s =
+               case s of
+                  "-inf" => "-INFINITY"
+                | "inf"  => "INFINITY"
+                | "nan"  => "NAN"
+                | other  => other
          in
             case size r of
                R32 => concat ["(Real32)", s]

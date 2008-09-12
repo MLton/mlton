@@ -16,10 +16,10 @@ local
    (* Windows doesn't like files named con, so use con- instead. *)
    con-.sig
    con-.fun
-   real-x.sig
-   real-x.fun
    word-x.sig
    word-x.fun
+   real-x.sig
+   real-x.fun
    word-x-vector.sig
    word-x-vector.fun
    c-type.sig

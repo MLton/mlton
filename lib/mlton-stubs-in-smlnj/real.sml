@@ -178,3 +178,27 @@ structure Real: REAL =
 
 structure Real32 = Real
 structure Real64 = Real
+
+(* Dummy implementation that will not be used at run-time. *)
+structure PackReal32Little = struct
+   type real = Real32.real
+   val bytesPerElem = 0
+   val isBigEndian = false
+   fun toBytes _ = raise Fail "PackReal32Little.toBytes"
+   fun fromBytes _ = raise Fail "PackReal32Little.fromBytes"
+   fun subVec _ = raise Fail "PackReal32Little.subVec"
+   fun subArr _ = raise Fail "PackReal32Little.subArr"
+   fun update _ = raise Fail "PackReal32Little.update"
+end
+
+(* Dummy implementation that will not be used at run-time. *)
+structure PackReal64Little = struct
+   type real = Real64.real
+   val bytesPerElem = 0
+   val isBigEndian = false
+   fun toBytes _ = raise Fail "PackReal64Little.toBytes"
+   fun fromBytes _ = raise Fail "PackReal64Little.fromBytes"
+   fun subVec _ = raise Fail "PackReal64Little.subVec"
+   fun subArr _ = raise Fail "PackReal64Little.subArr"
+   fun update _ = raise Fail "PackReal64Little.update"
+end

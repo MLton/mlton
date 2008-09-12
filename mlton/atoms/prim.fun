@@ -20,6 +20,7 @@ type word = Word.t
 local
    open Const
 in
+   structure RealX = RealX
    structure WordX = WordX
    structure WordXVector = WordXVector
 end
@@ -1516,6 +1517,7 @@ fun ('a, 'b) apply (p: 'a t,
       datatype z = datatype t
       datatype z = datatype Const.t
       val bool = ApplyResult.Bool
+      val boolOpt = fn NONE => ApplyResult.Unknown | SOME b => bool b
       val f = bool false
       val t = bool true
       fun seqIndexConst i =
@@ -1539,8 +1541,16 @@ fun ('a, 'b) apply (p: 'a t,
          else ApplyResult.Const (Const.intInf ii)
       val intInfConst = intInf o IntInf.fromInt
       val null = ApplyResult.Const Const.null
+      fun real (r: RealX.t): ('a, 'b) ApplyResult.t =
+         ApplyResult.Const (Const.real r)
+      val realOpt = fn NONE => ApplyResult.Unknown | SOME r => real r
+      fun realNeg (s, x): ('a, 'b) ApplyResult.t =
+          ApplyResult.Apply (Real_neg s, [x])
+      fun realAdd (s, x, y): ('a, 'b) ApplyResult.t =
+          ApplyResult.Apply (Real_add s, [x, y])
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.word w)
+      val wordOpt = fn NONE => ApplyResult.Unknown | SOME w => word w
       fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
                  (_: WordSize.t, sg),
@@ -1656,6 +1666,38 @@ fun ('a, 'b) apply (p: 'a t,
                  seqIndexConst (IntInf.fromInt (WordXVector.length v))
            | (Vector_sub, [WordVector v, Word i]) =>
                  word (WordXVector.sub (v, WordX.toInt i))
+           | (Real_neg _, [Real r]) => realOpt (RealX.neg r)
+           | (Real_abs _, [Real r]) => realOpt (RealX.abs r)
+           | (Real_Math_acos _, [Real r]) => realOpt (RealX.acos r)
+           | (Real_Math_asin _, [Real r]) => realOpt (RealX.asin r)
+           | (Real_Math_atan _, [Real r]) => realOpt (RealX.atan r)
+           | (Real_Math_atan2 _, [Real r1, Real r2]) =>
+                realOpt (RealX.atan2 (r1, r2))
+           | (Real_Math_cos _, [Real r]) => realOpt (RealX.cos r)
+           | (Real_Math_exp _, [Real r]) => realOpt (RealX.exp r)
+           | (Real_Math_ln _, [Real r]) => realOpt (RealX.ln r)
+           | (Real_Math_log10 _, [Real r]) => realOpt (RealX.log10 r)
+           | (Real_Math_sin _, [Real r]) => realOpt (RealX.sin r)
+           | (Real_Math_sqrt _, [Real r]) => realOpt (RealX.sqrt r)
+           | (Real_Math_tan _, [Real r]) => realOpt (RealX.tan r)
+           | (Real_add _, [Real r1, Real r2]) => realOpt (RealX.add (r1, r2))
+           | (Real_div _, [Real r1, Real r2]) => realOpt (RealX.div (r1, r2))
+           | (Real_mul _, [Real r1, Real r2]) => realOpt (RealX.mul (r1, r2))
+           | (Real_sub _, [Real r1, Real r2]) => realOpt (RealX.sub (r1, r2))
+           | (Real_muladd _, [Real r1, Real r2, Real r3]) =>
+                realOpt (RealX.muladd (r1, r2, r3))
+           | (Real_mulsub _, [Real r1, Real r2, Real r3]) =>
+                realOpt (RealX.mulsub (r1, r2, r3))
+           | (Real_equal _, [Real r1, Real r2]) => boolOpt (RealX.equal (r1, r2))
+           | (Real_le _, [Real r1, Real r2]) => boolOpt (RealX.le (r1, r2))
+           | (Real_lt _, [Real r1, Real r2]) => boolOpt (RealX.lt (r1, r2))
+           | (Real_qequal _, [Real r1, Real r2]) => boolOpt (RealX.qequal (r1, r2))
+           | (Real_castToWord _, [Real r]) => wordOpt (RealX.castToWord r)
+           | (Word_castToReal _, [Word w]) => realOpt (RealX.castFromWord w)
+           | (Word_rndToReal (_, s, {signed}), [Word w]) =>
+                realOpt
+                (RealX.fromIntInf
+                 (if signed then WordX.toIntInfX w else WordX.toIntInf w, s))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
            | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
@@ -1752,6 +1794,56 @@ fun ('a, 'b) apply (p: 'a t,
                                     else Unknown
                    | _ => Unknown
                end handle Exn.Overflow => Unknown
+            fun varReal (x, r, inOrder) =
+               let
+                  datatype z = datatype RealX.decon
+                  datatype z = datatype ApplyResult.t
+                  fun negIf (s, signBit) =
+                      if signBit then realNeg (s, x) else Var x
+                  (* The SML Basis library does not distinguish between
+                     different NaN values, so optimizations that may only
+                     produce a different NaN value can be considered safe.
+                     For example, SNaN*1.0 = SNaN/1.0 = QNaN, so it is
+                     safe to optimize x*1.0 and x/1.0 to x. *)
+               in
+                  case RealX.decon r of
+                     NONE => Unknown
+                   | SOME d =>
+                     case d of
+                        ZERO _ => Unknown
+                      | ONE {signBit} =>
+                        (case p of
+                            Real_mul s => negIf (s, signBit)
+                          | Real_div s => if inOrder
+                                             then negIf (s, signBit)
+                                          else Unknown
+                          | _ => Unknown)
+                      | NAN =>
+                        (case p of
+                            Real_Math_atan2 _ => real r
+                          | Real_add _ => real r
+                          | Real_div _ => real r
+                          | Real_mul _ => real r
+                          | Real_sub _ => real r
+                          | Real_equal _ => bool false
+                          | Real_qequal _ => bool true
+                          | Real_le _ => bool false
+                          | Real_lt _ => bool false
+                          | _ => Unknown)
+                      | POW2 {signBit, exp} =>
+                        (case p of
+                            Real_mul s =>
+                            if not signBit andalso exp = 2
+                               then realAdd (s, x, x)
+                            else Unknown
+                          | Real_div s =>
+                            if not signBit andalso exp = 0
+                               then realAdd (s, x, x)
+                            else Unknown
+                          | _ => Unknown)
+                      | INF _ => Unknown
+                      | FIN _ => Unknown
+               end
             fun varWord (x, w, inOrder) =
                let
                   val zero = word o WordX.zero
@@ -1889,6 +1981,8 @@ fun ('a, 'b) apply (p: 'a t,
                                   else t
                           else f
                   else Unknown
+             | (_, [Var x, Const (Real r)]) => varReal (x, r, true)
+             | (_, [Const (Real r), Var x]) => varReal (x, r, false)
              | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
              | (_, [Const (Word i), Var x]) => varWord (x, i, false)
              | (_, [Const (IntInf i1), Const (IntInf i2), _]) => 
