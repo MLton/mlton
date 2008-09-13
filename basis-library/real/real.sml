@@ -218,9 +218,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                              end)
       end
 
-      fun fromManExp {exp, man} = 
+      fun fromManExp {exp, man} =
          (R.ldexp (man, C_Int.fromInt exp))
-         handle Overflow => 
+         handle Overflow =>
             man * (if Int.< (exp, 0) then zero else posInf)
 
       val fromManExp =
@@ -242,7 +242,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                INF => {frac = if x > zero then zero else ~zero,
                        whole = x}
              | NAN => {frac = nan, whole = nan}
-             | _ => 
+             | _ =>
                   let
                      val (frac, whole) =
                         One.use (one, fn int =>
@@ -295,9 +295,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                     | _ => x - realTrunc (x/y) * y))
 
       (* fromDecimal, scan, fromString: decimal -> binary conversions *)
-      fun strto (str: NullString.t, 
+      fun strto (str: NullString.t,
                  rounding_mode: IEEEReal.rounding_mode) =
-         let 
+         let
             val rounding : C_Int.int =
                case rounding_mode of
                   TO_NEAREST => 1
@@ -319,8 +319,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                         then concat ["-", Int.toString (Int.~ exp)]
                         else Int.toString exp
 (*
-                  val str = concat [if sign then "-" else "", 
-                                    "0.", digits, 
+                  val str = concat [if sign then "-" else "",
+                                    "0.", digits,
                                     "E", exp, "\000"]
 *)
                   val n = Int.+ (if sign then 1 else 0,
@@ -363,7 +363,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       fun scan reader state =
          case IEEEReal.scan reader state of
             NONE => NONE
-          | SOME (da, state) => 
+          | SOME (da, state) =>
                SOME (valOf (fromDecimalWithRoundingMode
                             (da, IEEEReal.getRoundingMode ())),
                      state)
@@ -375,7 +375,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       local
          val one = One.make (fn () => ref (0: C_Int.int))
       in
-         fun gdtoa (x: real, mode: mode, ndig: int, 
+         fun gdtoa (x: real, mode: mode, ndig: int,
                     rounding_mode: IEEEReal.rounding_mode) =
             let
                val mode : C_Int.int =
@@ -392,7 +392,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                    | TO_ZERO => 0
             in
                One.use (one, fn decpt =>
-                        (Prim.gdtoa (x, mode, ndig, rounding, decpt), 
+                        (Prim.gdtoa (x, mode, ndig, rounding, decpt),
                          C_Int.toInt (!decpt)))
             end
       end
@@ -411,7 +411,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      digits = [],
                      exp = 0,
                      sign = signBit x}
-          | c => 
+          | c =>
                let
                   val (cs, exp) = gdtoa (x, Gen, 0, TO_NEAREST)
                   fun loop (i, ac) =
@@ -446,7 +446,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                                                 decpt),
                                          #"0")]
                else
-                  let 
+                  let
                      val whole =
                         if decpt = 0
                            then "0"
@@ -478,7 +478,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          fun sci (x: real, ndig: int): string =
             let
                val sign = if x < zero then "~" else ""
-               val (cs, decpt) = 
+               val (cs, decpt) =
                   gdtoa (x, Sci, Int.+ (1, ndig), IEEEReal.getRoundingMode ())
                val length = CUtil.C_String.length cs
                val whole = String.tabulate (1, fn _ => CUtil.C_String.sub (cs, 0))
@@ -512,7 +512,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             case class x of
                INF => if x > zero then "inf" else "~inf"
              | NAN => "nan"
-             | _ => 
+             | _ =>
                   let
                      val (prefix, x) =
                         if x < zero
@@ -571,7 +571,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                            fn x =>
                            let
                               val sign = if x < zero then "~" else ""
-                              val (cs, decpt) = 
+                              val (cs, decpt) =
                                  gdtoa (x, Fix, n, IEEEReal.getRoundingMode ())
                            in
                               fix (sign, cs, decpt, n)
@@ -740,7 +740,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                in
                   case class x of
                      INF => raise Overflow
-                   | _ => 
+                   | _ =>
                         valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
                end
 
@@ -809,7 +809,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                 then let
                         val maxWord' = #maxWord' other
                         (* maxWord can't be represented exactly. *)
-                        val maxWord = 
+                        val maxWord =
                            IEEEReal.withRoundingMode
                            (TO_ZERO, fn () => fromWordUnsafe maxWord')
                         val zeroWord = #zeroWord other
@@ -822,7 +822,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                                    then if x <= maxWord
                                            then toWordUnsafe (roundReal (x, m))
                                         else raise Overflow
-                                else if x > ~one 
+                                else if x > ~one
                                    then (case m of
                                             TO_NEGINF => raise Overflow
                                           | TO_POSINF => zeroWord
@@ -856,7 +856,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                                                then raise Overflow
                                             else maxWord')
                                 else raise Overflow
-                             else if x > ~one 
+                             else if x > ~one
                                 then (case m of
                                          TO_NEGINF => raise Overflow
                                        | TO_POSINF => zeroWord
@@ -1064,20 +1064,20 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
  * floating point numbers are represented, word {de,in}crement
  * automatically does the right thing at the boundary between normals
  * and denormals.  Also, convienently, maxFinite+1 = posInf and
- * minFinite-1 = negInf. 
+ * minFinite-1 = negInf.
  *)
 
 structure Real32 = Real (open Primitive.Real32
                          local open Primitive.PackReal32 in
-                            fun nextAfterDown r = 
+                            fun nextAfterDown r =
                                castFromWord (Word32.- (castToWord r, 0wx1))
-                            fun nextAfterUp r = 
+                            fun nextAfterUp r =
                                castFromWord (Word32.+ (castToWord r, 0wx1))
                          end)
 structure Real64 = Real (open Primitive.Real64
                          local open Primitive.PackReal64 in
-                            fun nextAfterDown r = 
+                            fun nextAfterDown r =
                                castFromWord (Word64.- (castToWord r, 0wx1))
-                            fun nextAfterUp r = 
+                            fun nextAfterUp r =
                                castFromWord (Word64.+ (castToWord r, 0wx1))
                          end)
