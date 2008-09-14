@@ -91,9 +91,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          val fromLarge = S.f
       end
 
-      val zero = fromLarge TO_NEAREST 0.0
-      val one = fromLarge TO_NEAREST 1.0
-      val two = fromLarge TO_NEAREST 2.0
+      val zero = R.fromInt32Unsafe 0
+      val one = R.fromInt32Unsafe 1
+      val two = R.fromInt32Unsafe 2
 
       val half = one / two
       val negOne = ~ one
