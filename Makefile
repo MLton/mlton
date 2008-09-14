@@ -171,7 +171,7 @@ freebsd:
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
         # do not change "make" to "$(MAKE)" in the following line
-	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package  
+	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package
 
 LIBRARIES := ckit-lib cml mlrisc-lib mlnlffi-lib mlyacc-lib smlnj-lib
 
@@ -197,15 +197,15 @@ libraries:
 	$(MAKE) libraries-no-check
 	for f in $(LIBRARIES); do				\
 		echo "Type checking $$f library.";		\
-		"$(MLTON)" -disable-ann deadCode 			\
-			-stop tc 				\
-			'$$(SML_LIB)/'"$$f/$$f.mlb" 		\
+		"$(MLTON)" -disable-ann deadCode		\
+			-stop tc				\
+			'$$(SML_LIB)/'"$$f/$$f.mlb"		\
 			>/dev/null;				\
 	done
 
 .PHONY: nj-mlton
 nj-mlton:
-	$(MAKE) dirs runtime 
+	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" nj-mlton
 	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
@@ -228,7 +228,7 @@ nj-mlton-quad:
 mlbpathmap:
 	touch "$(MLBPATHMAP)"
 	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml';	\
-	  echo 'SML_LIB $$(LIB_MLTON_DIR)/sml'; ) 	\
+	  echo 'SML_LIB $$(LIB_MLTON_DIR)/sml'; )	\
 		>>"$(MLBPATHMAP).tmp"
 	mv "$(MLBPATHMAP).tmp" "$(MLBPATHMAP)"
 
@@ -250,14 +250,14 @@ debugged:
 
 .PHONY: profiled
 profiled:
-	for t in alloc count time; do 					\
-		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t" 		\
+	for t in alloc count time; do					\
+		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
 		"$(LIB)/$(AOUT).$$t" @MLton -- "$(LIB)/world.$$t";	\
-		sed "s/mlton-compile/mlton-compile.$$t/" 		\
-			<"$(MLTON)" | 					\
-			sed "s/world.mlton/world.$$t.mlton/" 		\
+		sed "s/mlton-compile/mlton-compile.$$t/"		\
+			<"$(MLTON)" |					\
+			sed "s/world.mlton/world.$$t.mlton/"		\
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
 	done
@@ -273,7 +273,7 @@ rpms:
 	mkdir -p "$(SOURCEDIR)"
 	( cd "$(SRC)" && tar -cpf - . ) | ( cd "$(SOURCEDIR)" && tar -xpf - )
 	$(CP) "$(SOURCEDIR)/$(SPEC)" "$(TOPDIR)/SPECS/mlton.spec"
-	( cd "$(TOPDIR)/SOURCES" && tar -cpf - mlton-$(VERSION) )		\
+	( cd "$(TOPDIR)/SOURCES" && tar -cpf - mlton-$(VERSION) )	\
 		| $(GZIP) >"$(SOURCEDIR).tgz"
 	rm -rf "$(SOURCEDIR)"
 	rpm -ba --quiet --clean "$(TOPDIR)/SPECS/mlton.spec"
@@ -287,7 +287,7 @@ runtime:
 	$(CP) runtime/gen/sizes "$(LIB)/$(TARGET)/"
 	mkdir -p "$(SRC)/basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)"
 	$(CP) runtime/gen/c-types.sml \
-		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
+		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
 	$(CP) runtime/bytecode/opcodes "$(LIB)/"
@@ -311,7 +311,7 @@ script:
 targetmap:
 	touch "$(TARGETMAP)"
 	( echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)';		\
-          sed '/$(TARGET)/d' <"$(TARGETMAP)" ) 			\
+          sed '/$(TARGET)/d' <"$(TARGETMAP)" )			\
 		>>"$(TARGETMAP).tmp"
 	mv "$(TARGETMAP).tmp" "$(TARGETMAP)"
 
@@ -321,7 +321,7 @@ tools:
 	$(MAKE) -C "$(NLFFIGEN)"
 	$(MAKE) -C "$(PROF)"
 	$(MAKE) -C "$(YACC)"
-	$(CP) "$(LEX)/$(LEX)$(EXE)" 		\
+	$(CP) "$(LEX)/$(LEX)$(EXE)"		\
 		"$(NLFFIGEN)/$(NLFFIGEN)$(EXE)"	\
 		"$(PROF)/$(PROF)$(EXE)"		\
 		"$(YACC)/$(YACC)$(EXE)"		\
@@ -343,13 +343,13 @@ version:
 	mv z "$(SPEC)"
 
 .PHONY: world-no-check
-world-no-check: 
+world-no-check:
 	@echo 'Making world.'
 	$(MAKE) basis-no-check
 	"$(LIB)/$(AOUT)$(EXE)" @MLton -- "$(LIB)/world"
 
 .PHONY: world
-world: 
+world:
 	$(MAKE) world-no-check
 	@echo 'Type checking basis.'
 	"$(MLTON)" -disable-ann deadCode \
@@ -399,16 +399,16 @@ MAN_PAGES :=  \
 install-no-docs:
 	mkdir -p "$(TLIB)" "$(TBIN)" "$(TMAN)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
-	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
+	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"			\
 		<"$(BIN)/mlton" >"$(TBIN)/mlton"
 	chmod a+x "$(TBIN)/mlton"
 	if [ -x "$(BIN)/mlton.trace" ]; then                            \
-		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"		\
 			<"$(BIN)/mlton.trace" >"$(TBIN)/mlton.trace";   \
 		chmod a+x "$(TBIN)/mlton.trace";                        \
 	fi
 	if [ -x "$(BIN)/mlton.debug" ]; then                            \
-		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"		\
 			<"$(BIN)/mlton.debug" >"$(TBIN)/mlton.debug";   \
 		chmod a+x "$(TBIN)/mlton.debug";                        \
 	fi
@@ -425,10 +425,10 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	;;								\
 	*)								\
 		for f in "$(TLIB)/$(AOUT)$(EXE)" "$(TBIN)/$(LEX)$(EXE)"	\
-			"$(TBIN)/$(NLFFIGEN)$(EXE)" "$(TBIN)/$(PROF)$(EXE)"	\
+			"$(TBIN)/$(NLFFIGEN)$(EXE)" "$(TBIN)/$(PROF)$(EXE)" \
 			"$(TBIN)/$(YACC)$(EXE)"; do			\
 			strip --remove-section=.comment			\
-				--remove-section=.note "$$f"; 		\
+				--remove-section=.note "$$f";		\
 		done							\
 	esac
 endif
@@ -438,9 +438,9 @@ install-docs:
 	mkdir -p "$(TDOC)"
 	(								\
 		cd "$(SRC)/doc" &&					\
-		$(CP) changelog examples guide license README "$(TDOC)/"	\
+		$(CP) changelog examples guide license README "$(TDOC)/" \
 	)
-	if [ -r "$(TDOC)/guide/mlton-guide.pdf" ]; then 		\
+	if [ -r "$(TDOC)/guide/mlton-guide.pdf" ]; then			\
 		cp "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/";		\
 	fi
 	(								\
@@ -449,8 +449,8 @@ install-docs:
 	)
 	for f in callcc command-line hello-world same-fringe signals	\
 			size taut thread1 thread2 thread-switch timeout \
-		; do 							\
-		$(CP) "$(SRC)/regression/$$f.sml" "$(TEXM)/"; 		\
+		; do							\
+		$(CP) "$(SRC)/regression/$$f.sml" "$(TEXM)/";		\
 	done
 	if test -r $(LEX)/$(LEX).pdf; then                              \
 		$(CP) $(LEX)/$(LEX).pdf $(TDOC);                        \
@@ -466,7 +466,7 @@ install-docs:
 TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
 
 .PHONY: post-install-debian
-post-install-debian:	
+post-install-debian:
 	cd "$(TDOC)/" && rm -rf license
 	$(CP) "$(SRC)/debian/copyright" "$(SRC)/debian/README.Debian" "$(TDOC)/"
 	$(CP) "$(SRC)/debian/changelog" "$(TDOC)/changelog.Debian"
