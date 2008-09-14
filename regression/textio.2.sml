@@ -1,18 +1,20 @@
 (* Notice: This test will not be passed on platforms like Win32!
            But for Linux it happens to work... *)
 
+val filename = OS.FileSys.tmpName ()
+
 fun testRange (start, length) =
       let
         val allChars = CharVector.tabulate(length, fn i => chr ((i + start) mod 256))
 
-        val outStr = TextIO.openOut "testTextIO.txt"
+        val outStr = TextIO.openOut filename
         val _ = TextIO.output (outStr, allChars)
         val _ = TextIO.closeOut outStr
-        
-        val inStr = TextIO.openIn "testTextIO.txt"
+
+        val inStr = TextIO.openIn filename
         val readChars = TextIO.inputAll inStr
         val _ = TextIO.closeIn inStr
-        
+
         fun testCharF (c, cnt) =
               let
                 val readC = CharVector.sub(readChars, cnt)
@@ -24,7 +26,7 @@ fun testRange (start, length) =
               in
                 cnt + 1
               end
-      
+
         val _ = CharVector.foldl testCharF 0 allChars
       in
         ()

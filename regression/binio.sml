@@ -1,15 +1,17 @@
+val filename = OS.FileSys.tmpName ()
+
 fun testRange (start, length) =
       let
         val allChars = Word8Vector.tabulate(length, fn i => Word8.fromInt ((i + start) mod 256))
 
-        val outStr = BinIO.openOut "testBinIO.txt"
+        val outStr = BinIO.openOut filename
         val _ = BinIO.output (outStr, allChars)
         val _ = BinIO.closeOut outStr
-        
-        val inStr = BinIO.openIn "testBinIO.txt"
+
+        val inStr = BinIO.openIn filename
         val readChars = BinIO.inputAll inStr
         val _ = BinIO.closeIn inStr
-        
+
         fun testCharF (c, cnt) =
               let
                 val readC = Word8Vector.sub(readChars, cnt)
@@ -21,7 +23,7 @@ fun testRange (start, length) =
               in
                 cnt + 1
               end
-      
+
         val _ = Word8Vector.foldl testCharF 0 allChars
       in
         ()
