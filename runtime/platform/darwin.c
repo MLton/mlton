@@ -47,6 +47,14 @@ static void catcher (__attribute__ ((unused)) int sig,
 #else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.eip);
 #endif
+#elif (defined(__x86_64__))
+#if __DARWIN_UNIX03
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.rip);
+#else
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.rip);
+#endif
+#else
+#error Unsupported darwin CPU architecture
 #endif
 }
 

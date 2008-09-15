@@ -3824,6 +3824,7 @@ struct
                       registerAllocation = registerAllocation}
                   | (_, NONE, SOME memIndex) (* label + index => use lea if library *)
                   => if !Control.format <> Control.Library
+                        andalso !Control.Target.os <> MLton.Platform.OS.Darwin
                         then {disp = SOME disp,
                               register = NONE,
                               assembly = AppendList.empty,
