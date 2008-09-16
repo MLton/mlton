@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# A script that creates OS X Universal Binaries
+# Simply use mlton-ub instead of mlton.
+
+set -e
+
+declare -a args rargs
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    @MLton)
+        while [ "$#" -gt 0 -a "$1" != "--" ]; do
+            rargs[${#rargs[@]}]="$1"
+            shift
+        done
+        rargs[${#rargs[@]}]="--"
+        shift
+        ;;
+    -output)
+        shift
+        file="$1"
+        shift
+        ;;
+    -*)
+        args[${#args[@]}]="$1"
+        args[${#args[@]}]="$2"
+        shift
+        shift
+        ;;
+    *)
+        if test -z "$file"; then file="${1%.*}"; fi
+        args[${#args[@]}]="$1"
+        shift
+        ;;
+    esac
+done
+
+if [ -z "$file" ]; then
+    exec mlton "${rargs[@]}" "${args[@]}"
+fi
+ 
+mlton "${rargs[@]}" -output "$file.i386"   -target i386   "${args[@]}"
+mlton "${rargs[@]}" -output "$file.x86_64" -target x86_64 "${args[@]}"
+mlton "${rargs[@]}" -output "$file.ppc"    -target ppc    "${args[@]}"
+mlton "${rargs[@]}" -output "$file.ppc64"  -target ppc64  "${args[@]}"
+
+lipo -create -output "$file" \
+    "$file.i386" "$file.x86_64" "$file.ppc" "$file.ppc64"
+rm -f "$file.i386" "$file.x86_64" "$file.ppc" "$file.ppc64"
