@@ -1,8 +1,8 @@
+#include "platform.h"
+
 #include <mach-o/getsect.h>  // for get_etext()
 #include <dlfcn.h>
 #include <stdio.h>
-
-#include "platform.h"
 
 #include "diskBack.unix.c"
 #include "mkdir2.c"
@@ -49,7 +49,7 @@ static void catcher (__attribute__ ((unused)) int sig,
 #endif
 #elif (defined(__x86_64__))
 #if __DARWIN_UNIX03
-        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.rip);
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.__rip);
 #else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.rip);
 #endif
