@@ -19,7 +19,7 @@ signature MLTON_PLATFORM =
 
       structure Format:
          sig
-            datatype t = Archive | Executable | Library
+            datatype t = Archive | Executable | LibArchive | Library
 
             val fromString: string -> t option
             val host: t

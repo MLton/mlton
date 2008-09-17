@@ -750,7 +750,6 @@ struct
                        | MinGW => coff ()
                        | _ => elf ()
 
-                   (* It's direct, but still PIC if library code *)
                    val direct = fn () =>
                       AppendList.fromList
                       [Block.mkBlock'
@@ -773,19 +772,18 @@ struct
                           size = dstsize}],
                         transfer = NONE}]
                 in
-                   case (symbolScope, !Control.Target.os, !Control.format) of
-                    (* As long as the symbol is private (this means it is not
+                   case (symbolScope, 
+                         !Control.Target.os, 
+                         !Control.positionIndependent) of
+                    (* Even private PIC symbols on darwin need indirection. *)
+                      (Private, Darwin, true) => indirect ()
+                    (* As long as the symbol is private (thus it is not
                      * exported to code outside this text segment), then 
                      * use normal addressing. If PIC is needed, then the
-                     * memloc_label is updated to %rbx relative in the
+                     * memloc_label is updated to relative access in the
                      * allocate-registers pass.
                      *)
-                      (Private, _, _) => direct ()
-                    (* Windows MUST access locally defined symbols directly. 
-                     * An indirect access would lead to a linker error.
-                     *)
-                    | (Public, MinGW, _) => direct ()
-                    | (Public, Cygwin, _) => direct ()
+                    | (Private, _, _) => direct ()
                     (* On darwin, even executables use the defintion address.
                      * Therefore we don't need to do indirection.
                      *)
@@ -796,37 +794,39 @@ struct
                      * the unique C address resides in the executable's
                      * text segment. The loader does this by creating a PLT
                      * proxy or copying values to the executable text segment.
-                     *)
-                    | (Public, _, Library) => indirect ()
-                    (* On darwin, the address is the point of definition. So
-                     * indirection is needed. We also need to make a stub!
-                     *)
-                    | (External, Darwin, _) => indirect ()
-                    (* When compiling to a library, we need to access external
-                     * symbols via some address that is updated by the loader.
-                     * That address resides within our data segment, and can
-                     * be easily referenced using RBX-relative addressing.
-                     * This trick is used on every platform MLton supports.
-                     * Windows rewrites __imp__name symbols in our segment.
-                     * ELF rewrite name@GOT.
-                     *)
-                    | (External, _, Library) => indirect ()
-                    (* When linking an executable, ELF uses a special trick 
+                     * When linking an executable, ELF uses a special trick 
                      * to "simplify" the code. All exported functions and
                      * symbols have pointers that correspond  to the 
                      * executable. Function pointers point to the 
                      * automatically created PLT entry in the executable.
                      * Variables are copied/relocated into the executable bss.
+                     * 
                      * This means that direct access is fine for executable
                      * and archive formats. (It also means direct access is
                      * NOT fine for a library, even if it defines the symbol)
                      * 
-                     * On windows, the address is the point of definition. So
-                     * we must use an indirect lookup even in executables.
+                     *)
+                    | (Public, _, true) => indirect ()
+                    | (Public, _, false) => direct ()
+                    (* On darwin, the address is the point of definition. So
+                     * indirection is needed. We also need to make a stub!
+                     *)
+                    | (External, Darwin, _) => indirect ()
+                    (* On windows, the address is the point of definition. So
+                     * we must always use an indirect lookup to the symbols
+                     * windows rewrites (__imp__name) in our segment.
                      *)
                     | (External, MinGW, _) => indirect ()
                     | (External, Cygwin, _) => indirect ()
-                    | _ => direct ()
+                    (* When compiling ELF to a library, we access external
+                     * symbols via some address that is updated by the loader.
+                     * That address resides within our data segment, and can
+                     * be easily referenced using RBX-relative addressing.
+                     * This trick is used on every platform MLton supports.
+                     * ELF rewrites symbols of form name@GOT.
+                     *)
+                    | (External, _, true) => indirect ()
+                    | (External, _, false) => direct ()
                 end
              | Real_Math_acos _
              => let

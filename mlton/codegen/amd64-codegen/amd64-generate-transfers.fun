@@ -1527,9 +1527,9 @@ struct
                                     {target = Operand.memloc_label importLabel,
                                      absolute = true}]
                               in
-                                case (symbolScope, 
+                                case (symbolScope,
                                       !Control.Target.os, 
-                                      !Control.format) of
+                                      !Control.positionIndependent) of
                                    (* Private functions can be easily reached
                                     * with a direct (rip-relative) call.
                                     *)
@@ -1554,9 +1554,8 @@ struct
                                     * darwin-x86_64 function calls and calls
                                     * made from an ELF executable.
                                     *)
-                                 | (External, Darwin, _) => direct
-                                 | (External, _, Library) => plt
-                                 | _ => direct
+                                 | (External, _, true) => plt
+                                 | (External, _, false) => direct
                               end
                          | Indirect =>
                               AppendList.fromList

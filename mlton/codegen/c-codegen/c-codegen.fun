@@ -410,6 +410,7 @@ fun outputDeclarations
             C.callNoSemi (case !Control.format of
                              Control.Archive => "MLtonLibrary"
                            | Control.Executable => "MLtonMain"
+                           | Control.LibArchive => "MLtonLibrary"
                            | Control.Library => "MLtonLibrary",
                           [C.int align,
                            magic,

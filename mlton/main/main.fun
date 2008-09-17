@@ -823,6 +823,28 @@ fun commandLine (args: string list): unit =
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !Target.os
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
+      
+      (* Determine whether code should be PIC (position independent) or not.
+       * This decision depends on the platform and output format.
+       *)
+      val positionIndependent =
+         case (targetOS, targetArch, !format) of 
+            (* Windows is never position independent *)
+            (MinGW, _, _) => false
+          | (Cygwin, _, _) => false
+            (* Technically, Darwin should always be PIC.
+             * However, PIC on i386/darwin is unimplemented so we avoid it.
+             * PowerPC PIC is bad too, but the C codegen will use PIC behind
+             * our back unless forced, so let's just admit that it's PIC.
+             *)
+          | (Darwin, X86, Executable) => false
+          | (Darwin, X86, Archive) => false
+          | (Darwin, _, _) => true
+            (* On ELF systems, we only need PIC for LibArchive/Library *)
+          | (_, _, Library) => true
+          | (_, _, LibArchive) => true
+          | _ => false
+      val () = Control.positionIndependent := positionIndependent
 
       val stop = !stop
 
@@ -939,7 +961,7 @@ fun commandLine (args: string list): unit =
                    :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir]],
-                      if !format = Library then 
+                      if positionIndependent then 
                       ["-lmlton-pic", "-lgdtoa-pic"]
                       else if !debugRuntime then 
                       ["-lmlton-gdb", "-lgdtoa-gdb"]
@@ -1163,11 +1185,13 @@ fun commandLine (args: string list): unit =
                               case !format of
                                  Archive => maybeOut ".a"
                                | Executable => maybeOut ""
+                               | LibArchive => maybeOut ".a"
                                | Library => maybeOut libExt
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
-                               if !format = Archive 
+                               if !format = Archive orelse 
+                                  !format = LibArchive
                                then System.system
                                     (arScript, 
                                      List.concat 
@@ -1230,7 +1254,7 @@ fun commandLine (args: string list): unit =
                              [[ "-std=gnu99", "-c" ],
                               if !format = Executable 
                               then [] else [ "-DLIBNAME=" ^ libname () ],
-                              if !format = Library 
+                              if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
                               if !debug then debugSwitches else [],
                               ccOpts,

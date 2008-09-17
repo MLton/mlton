@@ -1389,7 +1389,7 @@ struct
                                     {target = Operand.label (label ()),
                                      absolute = false}]
 
-                                 val stub = fn () =>
+                                 val plt = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
@@ -1405,7 +1405,7 @@ struct
                               in
                                 case (symbolScope,
                                       !Control.Target.os,
-                                      !Control.format) of
+                                      !Control.positionIndependent) of
                                    (* Private functions can be easily reached
                                     * with a direct (eip-relative) call.
                                     *)
@@ -1423,15 +1423,16 @@ struct
                                  | (External, Cygwin, _) => indirect ()
                                    (* Darwin needs to generate special stubs
                                     * that are filled in by the dynamic linker.
+                                    * This is needed even for non-PIC.
                                     *)
-                                 | (External, Darwin, _) => stub ()
+                                 | (External, Darwin, _) => plt ()
                                    (* ELF systems create procedure lookup
                                     * tables (PLT) which proxy the call to 
                                     * libraries. The PLT does not contain an
                                     * address, but instead a stub function.
                                     *)
-                                 | (External, _, Library) => stub ()
-                                 | _ => direct ()
+                                 | (External, _, true) => plt ()
+                                 | (External, _, false) => direct ()
                               end
                          | Indirect =>
                               AppendList.fromList

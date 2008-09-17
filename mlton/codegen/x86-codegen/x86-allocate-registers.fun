@@ -33,17 +33,15 @@ struct
            Label.fromString (s ^ "@GOTOFF")
           
          (* !!! PIC on darwin not done yet !!! *)
+         (* It will work using %esp -> MLtonLocalBaseSymbol *)
          fun mungeLabelDarwin l =
-           Label.fromString (Label.toString l ^ "-someKnownSymbol")
+           Label.fromString (Label.toString l ^ "-MLtonLocalBaseSymbol")
       in
-        case (!Control.format, !Control.Target.os) of
-            (* Windows doesn't do PIC at all *)
-            (_, MinGW)  => (fn l => l, NONE)
-          | (_, Cygwin) => (fn l => l, NONE)
-            (* We only need PIC to output libraries *)
-          | (Library, Darwin) => (mungeLabelDarwin, SOME Register.ebx)
-          | (Library, _) => (mungeLabelELF, SOME Register.ebx)
-          | _ => (fn l => l, NONE)
+        case (!Control.Target.os, !Control.positionIndependent) of
+            (* Only darwin and ELF might be using PIC *)
+            (Darwin, true) => (mungeLabelDarwin, SOME Register.esp)
+          | (_, true) => (mungeLabelELF, SOME Register.ebx)
+          | (_, false) => (fn l => l, NONE)
       end
       
   fun track memloc = let

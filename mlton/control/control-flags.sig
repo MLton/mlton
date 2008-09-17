@@ -151,6 +151,7 @@ signature CONTROL_FLAGS =
             datatype t =
                Archive
              | Executable
+             | LibArchive
              | Library
             val all: t list
             val toString: t -> string
@@ -266,6 +267,8 @@ signature CONTROL_FLAGS =
 
       val optimizationPasses:
          {il: string, set: string -> unit Result.t, get: unit -> string} list ref
+      
+      val positionIndependent : bool ref
 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product

@@ -682,7 +682,6 @@ struct
                        | MinGW => coff
                        | _ => elf
                    
-                   (* It's direct, but still PIC *)
                    val direct = 
                       AppendList.fromList
                       [Block.mkBlock'
@@ -705,34 +704,14 @@ struct
                           size = dstsize}],
                         transfer = NONE}]
                 in
-                   case (symbolScope, !Control.Target.os, !Control.format) of
+                   case (symbolScope, 
+                         !Control.Target.os, 
+                         !Control.positionIndependent) of
                     (* As long as the symbol is private (this means it is not
                      * exported to code outside this text segment), then 
                      * RIP-relative addressing works on every OS/format. 
                      *)
                       (Private, _, _) => direct
-                    (* Windows MUST access locally defined symbols directly. 
-                     * An indirect access would lead to a linker error.
-                     *)
-                    | (Public, MinGW, _) => direct
-                    | (Public, Cygwin, _) => direct
-                    (* On ELF&darwin, a public symbol must be accessed via
-                     * the GOT. This is because the final value may not be
-                     * in this text segment. If the executable uses it, then
-                     * the unique C address resides in the executable's
-                     * text segment. The loader does this by creating a PLT
-                     * proxy or copying values to the executable text segment.
-                     *)
-                    | (Public, _, Library) => indirect
-                    (* When compiling to a library, we need to access external
-                     * symbols via some address that is updated by the loader.
-                     * That address resides within our data segment, and can
-                     * be easily referenced using RIP-relative addressing.
-                     * This trick is used on every platform MLton supports.
-                     * Windows rewrites __imp__name symbols in our segment.
-                     * ELF and darwin-x86_64 rewrite name@GOTPCREL.
-                     *)
-                    | (External, _, Library) => indirect
                     (* When linking an executable, ELF and darwin-x86_64 use 
                      * a special trick to "simplify" the code. All exported
                      * functions and symbols have pointers that correspond to
@@ -743,12 +722,30 @@ struct
                      * and archive formats. (It also means direct access is
                      * NOT fine for a library, even if it defines the symbol)
                      * 
-                     * On windows, the address is the point of definition. So
+                     * On ELF&darwin, a public symbol must be accessed via
+                     * the GOT. This is because the final value may not be
+                     * in this text segment. If the executable uses it, then
+                     * the unique C address resides in the executable's
+                     * text segment. The loader does this by creating a PLT
+                     * proxy or copying values to the executable text segment.
+                     *)
+                    | (Public, _, true) => indirect
+                    | (Public, _, false) => direct
+                    (* On windows, the address is the point of definition. So
                      * we must use an indirect lookup even in executables.
                      *)
                     | (External, MinGW, _) => indirect
                     | (External, Cygwin, _) => indirect
-                    | _ => direct
+                    (* When compiling to a library, we need to access external
+                     * symbols via some address that is updated by the loader.
+                     * That address resides within our data segment, and can
+                     * be easily referenced using RIP-relative addressing.
+                     * This trick is used on every platform MLton supports.
+                     * Windows rewrites __imp__name symbols in our segment.
+                     * ELF and darwin-x86_64 rewrite name@GOTPCREL.
+                     *)
+                    | (External, _, true) => indirect
+                    | (External, _, false) => direct
                 end
              | Real_Math_sqrt _ => sse_unas Instruction.SSE_SQRTS
              | Real_abs s =>

@@ -181,12 +181,14 @@ structure Platform =
             datatype t =
                Archive
              | Executable
+             | LibArchive
              | Library
 
             val host: t =
                case _build_const "MLton_Platform_Format": String8.string; of
                   "archive" => Archive
                 | "executable" => Executable
+                | "libarchive" => LibArchive
                 | "library" => Library
                 | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_Format"
          end

@@ -623,14 +623,16 @@ structure Format =
       datatype t =
          Archive
        | Executable
+       | LibArchive
        | Library
 
       (* Default option first for usage message. *)
-      val all = [Executable, Archive, Library]
+      val all = [Executable, Archive, LibArchive, Library]
 
       val toString: t -> string =
         fn Archive => "archive"
          | Executable => "executable"
+         | LibArchive => "libarchive"
          | Library => "library"
    end
 
@@ -853,6 +855,8 @@ val polyvariance =
                              ("small", Int.layout small),
                              ("product", Int.layout product)])
              p)}
+
+val positionIndependent = ref false
 
 val preferAbsPaths = control {name = "prefer abs paths",
                               default = false,

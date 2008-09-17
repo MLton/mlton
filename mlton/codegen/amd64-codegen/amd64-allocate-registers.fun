@@ -3779,7 +3779,7 @@ struct
               (* The base register gets supplied by three distinct cases:
                * 1 - memBase (which means that there is no label)
                * 2 - RIP     (which means there is no index)
-               * 3 - lea     (which means this is a library)
+               * 3 - lea     (which means this is PIC)
                * else nothing
                *)
               val {disp,
@@ -3822,9 +3822,8 @@ struct
                       register = SOME Register.rip,
                       assembly = AppendList.empty,
                       registerAllocation = registerAllocation}
-                  | (_, NONE, SOME memIndex) (* label + index => use lea if library *)
-                  => if !Control.format <> Control.Library
-                        andalso !Control.Target.os <> MLton.Platform.OS.Darwin
+                  | (_, NONE, SOME memIndex) (* label + index => use lea if PIC *)
+                  => if !Control.positionIndependent = false
                         then {disp = SOME disp,
                               register = NONE,
                               assembly = AppendList.empty,

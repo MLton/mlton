@@ -36,6 +36,7 @@ val buildConstants: (string * (unit -> string)) list =
        ("MLton_Platform_Format", fn () => case !format of
                                              Archive => "archive"
                                            | Executable => "executable"
+                                           | LibArchive => "libarchive"
                                            | Library => "library"),
        ("MLton_Profile_isOn", fn () => bool (case !profile of
                                                 ProfileNone => false

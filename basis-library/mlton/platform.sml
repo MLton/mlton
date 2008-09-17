@@ -46,6 +46,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
             val all = [
                 (Archive, "Archive"),
                 (Executable, "Executable"),
+                (LibArchive, "LibArchive"),
                 (Library, "Library")]
 
             fun fromString s =

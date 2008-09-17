@@ -71,6 +71,7 @@ structure Exit =
                case host of
                   Archive => suffixArchiveOrLibrary
                 | Executable => suffixExecutable
+                | LibArchive => suffixArchiveOrLibrary
                 | Library => suffixArchiveOrLibrary
             end
       in
