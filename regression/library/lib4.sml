@@ -1,8 +1,8 @@
 (* Prepare lib3 *)
-val () = _import "lib3_open" public : unit -> unit; ()
+val () = _import "lib3_open" public : int * string vector -> unit; 
+         (1, Vector.fromList ["lib3"])
 
 type p = MLton.Pointer.t
-
 type 'a s = (unit -> 'a) * ('a -> unit)
 val (_, setSI) = _symbol "lib4smlSymPrivate" alloc private : p s;
 val (_, setSB) = _symbol "lib4smlSymPublic"  alloc public  : p s;

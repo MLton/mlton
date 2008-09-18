@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-ML=mlton
+ML=../../build/bin/mlton
 
 O[0]='-default-ann'
 O[1]='allowFFI true'
@@ -8,8 +8,14 @@ O[2]='-link-opt'
 O[3]='-L.'
 O[4]='-target'
 O[5]='x86_64'
+O[6]='-debug'
+O[7]='true'
 
 LIB="-link-opt -l"
+
+# Enable finding libraries locally
+export LD_LIBRARY_PATH=.
+
 set -ex
 
 # Compile DSO #1
@@ -25,5 +31,4 @@ $ML "${O[@]}" -format archive -export-header lib5.h lib5.sml lib5.c
 $ML "${O[@]}" ${LIB}4 ${LIB}5 -format executable -export-header check.h check.sml check.c
 
 # Check that symbols resolved correctly
-export LD_LIBRARY_PATH=.
 ./check
