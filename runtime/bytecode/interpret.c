@@ -84,7 +84,7 @@ regs(Word16);
 regs(Word32);
 regs(Word64);
 
-extern Objptr globalObjptrNonRoot[];
+PRIVATE extern Objptr globalObjptrNonRoot[];
 
 #undef regs
 
