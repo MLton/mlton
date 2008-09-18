@@ -1,0 +1,29 @@
+#! /usr/bin/env bash
+
+ML=mlton
+
+O[0]='-default-ann'
+O[1]='allowFFI true'
+O[2]='-link-opt'
+O[3]='-L.'
+O[4]='-target'
+O[5]='x86_64'
+
+LIB="-link-opt -l"
+set -ex
+
+# Compile DSO #1
+$ML "${O[@]}" -format libarchive -export-header lib1.h lib1.sml lib1.c
+$ML "${O[@]}" ${LIB}1 -format library -export-header lib2.h lib2.sml lib2.c
+
+# Compile DSO #2
+$ML "${O[@]}" -format libarchive -export-header lib3.h lib3.sml lib3.c
+$ML "${O[@]}" ${LIB}2 ${LIB}3 -format library -export-header lib4.h lib4.sml lib4.c
+
+# Compile executable
+$ML "${O[@]}" -format archive -export-header lib5.h lib5.sml lib5.c
+$ML "${O[@]}" ${LIB}4 ${LIB}5 -format executable -export-header check.h check.sml check.c
+
+# Check that symbols resolved correctly
+export LD_LIBRARY_PATH=.
+./check
