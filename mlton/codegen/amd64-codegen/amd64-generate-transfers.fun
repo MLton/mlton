@@ -843,16 +843,16 @@ struct
                               remove_classes = ClassSet.empty,
                               dead_memlocs = MemLocSet.empty,
                               dead_classes = ClassSet.empty},
+                             Assembly.instruction_jcc
+                             {condition = condition_neg,
+                              target = Operand.label falsee'},
                              Assembly.directive_saveregalloc
                              {live = MemLocSet.add
                                      (MemLocSet.add
                                       (LiveSet.toMemLocSet falsee_live,
                                        stackTop ()),
                                       frontier ()),
-                              id = id},
-                             Assembly.instruction_jcc
-                             {condition = condition_neg,
-                              target = Operand.label falsee'}],
+                              id = id}],
                             (fall gef 
                                   {label = truee,
                                    live = truee_live}))
@@ -873,16 +873,16 @@ struct
                               remove_classes = ClassSet.empty,
                               dead_memlocs = MemLocSet.empty,
                               dead_classes = ClassSet.empty},
+                             Assembly.instruction_jcc
+                             {condition = condition,
+                              target = Operand.label truee'},
                              Assembly.directive_saveregalloc
                              {live = MemLocSet.add
                                      (MemLocSet.add
                                       (LiveSet.toMemLocSet truee_live,
                                        stackTop ()),
                                       frontier ()),
-                              id = id},
-                             Assembly.instruction_jcc
-                             {condition = condition,
-                              target = Operand.label truee'}],
+                              id = id}],
                             (fall gef 
                                   {label = falsee,
                                    live = falsee_live}))
@@ -950,16 +950,16 @@ struct
                                  {src1 = test,
                                   src2 = Operand.immediate_word k,
                                   size = size},
+                                 Assembly.instruction_jcc
+                                 {condition = Instruction.E,
+                                  target = Operand.label target'},
                                  Assembly.directive_saveregalloc
                                  {live = MemLocSet.add
                                          (MemLocSet.add
                                           (LiveSet.toMemLocSet target_live,
                                            stackTop ()),
                                           frontier ()),
-                                  id = id},
-                                 Assembly.instruction_jcc
-                                 {condition = Instruction.E,
-                                  target = Operand.label target'}]
+                                  id = id}]
                               end)
                    in
                      AppendList.appends
@@ -1758,10 +1758,6 @@ struct
                           val jump_table_label
                             = Label.newString "jumpTable"
 
-                          val idD = Directive.Id.new ()
-                          val defaultD = pushCompensationBlock
-                                         {label = default,
-                                          id = idD}
                           val idT = Directive.Id.new ()
                           val defaultT = 
                              Promise.delay
@@ -1792,6 +1788,11 @@ struct
                                          (filler(cases, incFn j))
 
                           val jump_table = filler (cases, minK)
+
+                          val idD = Directive.Id.new ()
+                          val defaultD = pushCompensationBlock
+                                         {label = default,
+                                          id = idD}
 
                           val default_live = getLive(liveInfo, default)
                           val live
@@ -1941,7 +1942,7 @@ struct
                            {id = idD,
                             live = MemLocSet.add
                                    (MemLocSet.add
-                                    (LiveSet.toMemLocSet live,
+                                    (LiveSet.toMemLocSet default_live,
                                      stackTop ()),
                                     frontier ())},
                            Assembly.instruction_jmp
