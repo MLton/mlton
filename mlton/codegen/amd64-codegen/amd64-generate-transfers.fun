@@ -1758,10 +1758,21 @@ struct
                           val jump_table_label
                             = Label.newString "jumpTable"
 
-                          val idT = Directive.Id.new ()
-                          val defaultT = pushCompensationBlock
+                          val idD = Directive.Id.new ()
+                          val defaultD = pushCompensationBlock
                                          {label = default,
-                                          id = idT}
+                                          id = idD}
+                          val idT = Directive.Id.new ()
+                          val defaultT = 
+                             Promise.delay
+                             (fn () =>
+                              let
+                                 val _ = incNear(jumpInfo, default)
+                              in 
+                                 pushCompensationBlock
+                                 {label = default,
+                                  id = idT}
+                              end)
 
                           val rec filler 
                             = fn ([],_) => []
@@ -1776,7 +1787,8 @@ struct
                                            (Immediate.label target')::
                                            (filler(cases', incFn j))
                                          end 
-                                    else (Immediate.label defaultT)::
+                                    else (Immediate.label 
+                                          (Promise.force defaultT))::
                                          (filler(cases, incFn j))
 
                           val jump_table = filler (cases, minK)
@@ -1881,6 +1893,9 @@ struct
                                        remove_classes = ClassSet.empty,
                                        dead_memlocs = MemLocSet.singleton checkTemp',
                                        dead_classes = ClassSet.empty},
+                                      Assembly.instruction_jcc
+                                      {condition = Instruction.NZ,
+                                       target = Operand.label defaultC},
                                       Assembly.directive_saveregalloc
                                       {id = idC,
                                        live = MemLocSet.add
@@ -1888,9 +1903,6 @@ struct
                                                (LiveSet.toMemLocSet default_live,
                                                 stackTop ()),
                                                frontier ())},
-                                      Assembly.instruction_jcc
-                                      {condition = Instruction.NZ,
-                                       target = Operand.label defaultC},
                                       Assembly.instruction_sral
                                       {oper = Instruction.SAR,
                                        count = Operand.immediate_int shift,
@@ -1922,6 +1934,19 @@ struct
                            {src1 = indexTemp,
                             src2 = Operand.immediate_word rangeK,
                             size = Size.QUAD},
+                           Assembly.instruction_jcc
+                           {condition = Instruction.A,
+                            target = Operand.label defaultD},
+                           Assembly.directive_saveregalloc
+                           {id = idD,
+                            live = MemLocSet.add
+                                   (MemLocSet.add
+                                    (LiveSet.toMemLocSet live,
+                                     stackTop ()),
+                                    frontier ())},
+                           Assembly.instruction_jmp
+                           {target = address,
+                            absolute = true},
                            Assembly.directive_saveregalloc
                            {id = idT,
                             live = MemLocSet.add
@@ -1929,12 +1954,6 @@ struct
                                     (LiveSet.toMemLocSet live,
                                      stackTop ()),
                                     frontier ())},
-                           Assembly.instruction_jcc
-                           {condition = Instruction.A,
-                            target = Operand.label defaultT},
-                           Assembly.instruction_jmp
-                           {target = address,
-                            absolute = true},
                            Assembly.directive_force
                            {commit_memlocs = MemLocSet.empty,
                             commit_classes = ClassSet.empty,
