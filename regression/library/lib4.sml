@@ -1,5 +1,5 @@
 (* Prepare lib3 *)
-val () = _import "lib3_open" : unit -> unit; ()
+val () = _import "lib3_open" public : unit -> unit; ()
 
 type p = MLton.Pointer.t
 
