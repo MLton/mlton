@@ -15,9 +15,6 @@
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 
-typedef Pointer CPointer;
-typedef Pointer Objptr;
-
 /* The label must be declared as weak because gcc's optimizer may prove that
  * the code that declares the label is dead and hence eliminate the declaration.
  */

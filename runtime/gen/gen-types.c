@@ -64,10 +64,10 @@ static const char* cTypesSMLPrefix[] = {
 
 static const char* mlTypesHStd[] = {
   "/* ML types */",
-  "// typedef void* Pointer;",
-  "// typedef uintptr_t Pointer;",
-  "// typedef unsigned char* Pointer;",
-  "// struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4), may_alias));",
+  // "typedef void* Pointer;",
+  // "typedef uintptr_t Pointer;",
+  // "typedef unsigned char* Pointer;",
+  // "struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4), may_alias));",
   "typedef unsigned char PointerAux __attribute__ ((aligned (4), may_alias));",
   "typedef PointerAux* Pointer;",
   "#define Array(t) Pointer",
@@ -145,6 +145,8 @@ static const char* mlTypesHStd[] = {
   "typedef String8_t NullString8_t;",
   "typedef String8_t NullString8;",
   "",
+  "typedef void* CPointer;",
+  "typedef Pointer Objptr;",
   NULL
 };
 

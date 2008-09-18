@@ -15,9 +15,6 @@
 #include "c-types.h"
 #include "c-common.h"
 
-typedef Pointer CPointer;
-typedef Pointer Objptr;
-
 #ifndef TRUE
 #define TRUE 1
 #endif

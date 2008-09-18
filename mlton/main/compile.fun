@@ -427,9 +427,6 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val lib = File.base f
                    val libcap = CharVector.map Char.toUpper lib
                    val _ = print "\n"
-                   val _ = print "typedef void* CPointer;\n"
-                   val _ = print "typedef Pointer Objptr;\n"
-                   val _ = print "\n"
                    val _ = 
                       if !Control.format = Control.Executable
                       then print "#if 1 /* C executables compile with same symbol scope as ML executables */\n"
