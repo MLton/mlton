@@ -15,7 +15,7 @@
 #define DEBUG_CODEGEN FALSE
 #endif
 
-PRIVATE struct Bytecode MLton_bytecode;
+PRIVATE extern struct Bytecode MLton_bytecode;
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return *((GC_frameIndex*)(MLton_bytecode.code + ra - sizeof(GC_frameIndex)));

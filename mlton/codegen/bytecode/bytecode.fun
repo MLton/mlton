@@ -872,7 +872,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                          Int.toString name,
                                          " },\n"]))
           ; print "};\n"
-          ; print "struct Bytecode MLton_bytecode = {\n"
+          ; print "PRIVATE struct Bytecode MLton_bytecode = {\n"
           ; printString labels
           ; printString (word8ArrayToString code)
           ; printInt (Array.length code)
