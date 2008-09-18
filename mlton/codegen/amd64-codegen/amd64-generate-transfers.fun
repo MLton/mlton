@@ -1547,6 +1547,7 @@ struct
                                     *)
                                  | (External, MinGW, _) => indirect
                                  | (External, Cygwin, _) => indirect
+                                 | (External, Darwin, _) => plt
                                    (* ELF systems (and darwin too) create
                                     * procedure lookup tables (PLT) which 
                                     * proxy the call to libraries. The PLT
