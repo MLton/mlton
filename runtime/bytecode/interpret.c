@@ -63,17 +63,17 @@ typedef Word16 RegIndex;
 typedef Word8 Scale;
 typedef Int16 StackOffset;  // StackOffset must be signed.
 
-struct GC_state gcState;
+PRIVATE extern struct GC_state gcState;
 
 //----------------------------------------------------------------------
 // Imports
 //----------------------------------------------------------------------
 
 #define regs(ty)                                \
-        int ty##RegI;                           \
-        extern ty global##ty[];                 \
+        int ty##RegI = 0;                       \
+        PRIVATE extern ty global##ty[];         \
         static ty ty##VReg[1000];               \
-        ty ty##Reg[1000]
+        ty ty##Reg[1000] = { 0 }
 
 regs(CPointer);
 regs(Objptr);
