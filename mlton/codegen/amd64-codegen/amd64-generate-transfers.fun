@@ -1534,11 +1534,13 @@ struct
                                     * with a direct (rip-relative) call.
                                     *)
                                    (Private, _, _) => direct
-                                   (* Even though it is not safe to take the
-                                    * address of a public function, it is ok
-                                    * to call it directly.
-                                    *)
-                                 | (Public, _, _) => direct
+                                   (* Call at the point of definition. *)
+                                 | (Public, MinGW, _) => direct
+                                 | (Public, Cygwin, _) => direct
+                                 | (Public, Darwin, _) => direct
+                                   (* ELF requires PLT even for public fns. *)
+                                 | (Public, _, true) => plt
+                                 | (Public, _, false) => direct
                                    (* Windows always does indirect calls to
                                     * imported functions. The importLabel has
                                     * the function address written to it.
