@@ -969,7 +969,10 @@ fun commandLine (args: string list): unit =
                       ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
       val linkArchives =
-         if !debugRuntime then 
+         if positionIndependent then 
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" }, 
+          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
+         else if !debugRuntime then 
          [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" }, 
           OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
          else 
