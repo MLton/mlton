@@ -1,17 +1,17 @@
 #include <assert.h>
 
 #include "check.h"
-#include "lib5.h"
-#include "lib4.h"
-#include "lib3.h"
+#include "m5.h"
+#include "m4.h"
+#include "m3.h"
 
-extern EXTERNAL void* lib3cSymPublic;
-extern EXTERNAL void* lib3cFnPublic(void);
-extern EXTERNAL void* lib4cSymPublic;
-extern EXTERNAL void* lib4cFnPublic(void);
+extern EXTERNAL void* libm3cSymPublic;
+extern EXTERNAL void* libm3cFnPublic(void);
+extern EXTERNAL void* libm4cSymPublic;
+extern EXTERNAL void* libm4cFnPublic(void);
 
-extern PUBLIC void* lib5cSymPublic;
-extern PUBLIC void* lib5cFnPublic(void);
+extern PUBLIC void* libm5cSymPublic;
+extern PUBLIC void* libm5cFnPublic(void);
 
 PRIVATE void* checkcSymPrivate = 0;
 PUBLIC  void* checkcSymPublic  = 0;
@@ -33,21 +33,21 @@ PRIVATE void checkconfirmC(void) {
   assert (checksmlFnPrivate() == &checksmlSymPrivate);
   assert (checksmlFnPublic()  == &checksmlSymPublic);
   
-  /* Check lib3 */
-  assert (&lib3smlFnPublic  == lib3smlSymPublic);
-  assert (&lib3cFnPublic    == lib3cSymPublic);
-  assert (lib3smlFnPublic() == &lib3smlSymPublic);
-  assert (lib3cFnPublic()   == &lib3cSymPublic);
+  /* Check libm3 */
+  assert (&libm3smlFnPublic  == libm3smlSymPublic);
+  assert (&libm3cFnPublic    == libm3cSymPublic);
+  assert (libm3smlFnPublic() == &libm3smlSymPublic);
+  assert (libm3cFnPublic()   == &libm3cSymPublic);
   
-  /* Check lib4 */
-  assert (&lib4smlFnPublic  == lib4smlSymPublic);
-  assert (&lib4cFnPublic    == lib4cSymPublic);
-  assert (lib4smlFnPublic() == &lib4smlSymPublic);
-  assert (lib4cFnPublic()   == &lib4cSymPublic);
+  /* Check libm4 */
+  assert (&libm4smlFnPublic  == libm4smlSymPublic);
+  assert (&libm4cFnPublic    == libm4cSymPublic);
+  assert (libm4smlFnPublic() == &libm4smlSymPublic);
+  assert (libm4cFnPublic()   == &libm4cSymPublic);
   
-  /* Check lib5 */
-  assert (&lib5smlFnPublic  == lib5smlSymPublic);
-  assert (&lib5cFnPublic    == lib5cSymPublic);
-  assert (lib5smlFnPublic() == &lib5smlSymPublic);
-  assert (lib5cFnPublic()   == &lib5cSymPublic);
+  /* Check libm5 */
+  assert (&libm5smlFnPublic  == libm5smlSymPublic);
+  assert (&libm5cFnPublic    == libm5cSymPublic);
+  assert (libm5smlFnPublic() == &libm5smlSymPublic);
+  assert (libm5cFnPublic()   == &libm5cSymPublic);
 }
