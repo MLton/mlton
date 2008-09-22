@@ -25,6 +25,9 @@ signature FFI =
       val addSymbol: {ty: CType.t,
                       name: string,
                       symbolScope: CFunction.SymbolScope.t} -> unit
+      val checkScope: {name: string,
+                       symbolScope: CFunction.SymbolScope.t} ->
+                      CFunction.SymbolScope.t
       val declareExports: {print: string -> unit} -> unit
       val declareHeaders: {print: string -> unit} -> unit
       val numExports: unit -> int

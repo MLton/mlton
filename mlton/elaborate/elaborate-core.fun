@@ -908,6 +908,21 @@ fun parseIEAttributesSymbolScope (attributes: ImportExportAttribute.t list,
                | _ => NONE)
     | _ => NONE
 
+fun scopeCheck {name, symbolScope, region} =
+   let
+      fun warn l = 
+         Control.warning (region, seq (List.map (l, str)), Layout.empty)
+      val oldScope = 
+         Ffi.checkScope {name = name, symbolScope = symbolScope}
+   in
+      if symbolScope = oldScope then () else
+      warn [ "symbol '", name, "' redeclared as ", 
+             SymbolScope.toString symbolScope, 
+             " (previously ", 
+             SymbolScope.toString oldScope,
+             "). This may cause linker errors"]
+   end
+
 fun import {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
             expandedTy: Type.t,
@@ -949,6 +964,12 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; SymbolScope.External)
                    | SOME s => s
+               val () = 
+                  case name of
+                     NONE => ()
+                   | SOME x => scopeCheck {name = x, 
+                                           symbolScope = symbolScope, 
+                                           region = region}
                val addrTy = Type.cpointer
                val func =
                   CFunction.T {args = let
@@ -1163,6 +1184,9 @@ in
                NONE => (invalidAttributes ()
                         ; SymbolScope.External)
              | SOME s => s
+         val () = scopeCheck {name = name, 
+                              symbolScope = symbolScope, 
+                              region = region}
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
                        name = name,
@@ -1251,6 +1275,9 @@ in
          val () =
             if alloc andalso symbolScope = SymbolScope.External
             then invalidAttributes () else ()
+         val () = scopeCheck {name = name, 
+                              symbolScope = symbolScope, 
+                              region = region}
          val () =
             if not alloc then () else
             Ffi.addSymbol {name = name, 
@@ -1378,6 +1405,9 @@ fun export {attributes: ImportExportAttribute.t list,
                (invalidAttributes ()
                 ; SymbolScope.Public)
           | SOME s => s
+      val () = scopeCheck {name = name, 
+                           symbolScope = symbolScope, 
+                           region = region}
       val (exportId, args, res) =
          case Type.toCFunType expandedTy of
             NONE =>

@@ -13,6 +13,23 @@ open S
 structure Convention = CFunction.Convention
 structure SymbolScope = CFunction.SymbolScope
 
+local
+   val scopes: (word * String.t * SymbolScope.t) HashSet.t = 
+      HashSet.new {hash = #1}
+in
+   fun checkScope {name, symbolScope} =
+      let
+         val hash = String.hash name
+      in
+         (#3 o HashSet.lookupOrInsert)
+         (scopes, hash,
+          fn (hash', name', _) =>
+          hash = hash' andalso name = name',
+          fn () =>
+          (hash, name, symbolScope))
+      end
+end
+
 val exports: {args: CType.t vector,
               convention: Convention.t,
               id: int,
