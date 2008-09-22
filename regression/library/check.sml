@@ -19,10 +19,10 @@ val getCI = _import "checkcFnPrivate" private : i;
 val getCB = _import "checkcFnPublic" public : i;
 
 (* Store our idea of what the function pointers are in symbols *)
-val () = setSI (_address "checksmlFnPrivate" : p;)
-val () = setSB (_address "checksmlFnPublic"  : p;)
-val () = setCI (_address "checkcFnPrivate"   : p;)
-val () = setCB (_address "checkcFnPublic"    : p;)
+val () = setSI (_address "checksmlFnPrivate" private : p;)
+val () = setSB (_address "checksmlFnPublic"  public  : p;)
+val () = setCI (_address "checkcFnPrivate"   private : p;)
+val () = setCB (_address "checkcFnPublic"    public  : p;)
 
 (* Have C confirm that it sees the same function pointers we do.
  * C will check the values of the variables against it's own pointers.
