@@ -48,9 +48,11 @@ if "$partialLink"; then
       > "$output.globals"
     "${target}objcopy" --globalize-symbols "$output.globals" "$output.o"
   else
-    # ELF systems are all the same...
+    # ELF systems are all the same... localize hidden symbols
+    # Be careful not to localize gcc PIC's common section thunks
     "${target}objdump" -t "$output.o" \
       | grep ' \.hidden ' \
+      | grep -v get_pc_thunk \
       | sed 's/^.* \.hidden //' \
       > "$output.locals"
     "${target}objcopy" --localize-symbols "$output.locals" "$output.o"
