@@ -1,15 +1,11 @@
 #! /usr/bin/env bash
 
-ML=mlton #../../build/bin/mlton
+ML=../../build/bin/mlton
 
 O[0]='-default-ann'
 O[1]='allowFFI true'
 O[2]='-link-opt'
 O[3]='-L.'
-O[4]='-debug'
-O[5]='true'
-#O[6]='-target'
-#O[7]='x86'
 
 LIB="-link-opt -l"
 
@@ -19,16 +15,16 @@ export LD_LIBRARY_PATH=.
 set -ex
 
 # Compile DSO #1
-$ML "${O[@]}" -format libarchive -export-header m1.h libm1.sml libm1.c
-$ML "${O[@]}" ${LIB}m1 -format library -export-header m2.h libm2.sml libm2.c
+$ML "${O[@]}" "$@" -format libarchive -export-header m1.h libm1.sml libm1.c
+$ML "${O[@]}" "$@" ${LIB}m1 -format library -export-header m2.h libm2.sml libm2.c
 
 # Compile DSO #2
-$ML "${O[@]}" -format libarchive -export-header m3.h libm3.sml libm3.c
-$ML "${O[@]}" ${LIB}m2 ${LIB}m3 -format library -export-header m4.h libm4.sml libm4.c
+$ML "${O[@]}" "$@" -format libarchive -export-header m3.h libm3.sml libm3.c
+$ML "${O[@]}" "$@" ${LIB}m2 ${LIB}m3 -format library -export-header m4.h libm4.sml libm4.c
 
 # Compile executable
-$ML "${O[@]}" -format archive -export-header m5.h libm5.sml libm5.c
-$ML "${O[@]}" ${LIB}m4 ${LIB}m5 -format executable -export-header check.h check.sml check.c
+$ML "${O[@]}" "$@" -format archive -export-header m5.h libm5.sml libm5.c
+$ML "${O[@]}" "$@" ${LIB}m4 ${LIB}m5 -format executable -export-header check.h check.sml check.c
 
 # Check that symbols resolved correctly
 ./check

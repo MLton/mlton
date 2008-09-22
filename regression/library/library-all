@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+
+set -e
+
+./library-test "$@" -codegen native
+./library-test "$@" -codegen bytecode
+./library-test "$@" -codegen c
+
+./library-test "$@" -debug true -codegen native
+./library-test "$@" -debug true -codegen bytecode
+./library-test "$@" -debug true -codegen c
+
+# Time profiling messes around with labels. Make sure this works.
+./library-test "$@" -profile time -codegen native
+./library-test "$@" -profile time -codegen bytecode
+./library-test "$@" -profile time -codegen c
