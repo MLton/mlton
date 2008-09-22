@@ -291,7 +291,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                  ignore
                                  (HashSet.lookupOrInsert
                                   (calls, hash,
-                                   fn {name = n, ...} => n = name,
+                                   fn {name = n, symbol, ...} => 
+                                   n = name andalso symbol,
                                    fn () =>
                                    let
                                       val index = Counter.next callCounter
@@ -311,7 +312,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                    in
                                       {hash = hash,
                                        index = index,
-                                       name = name}
+                                       name = name,
+                                       symbol = true}
                                    end))
                               end)
                         | _ => ())
@@ -331,7 +333,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                     ignore
                                     (HashSet.lookupOrInsert
                                      (calls, hash,
-                                      fn {name = n, ...} => n = name,
+                                      fn {name = n, symbol, ...} => 
+                                      n = name andalso (not symbol),
                                       fn () =>
                                       let
                                          val index = Counter.next callCounter
@@ -345,7 +348,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                       in
                                          {hash = hash,
                                           index = index,
-                                          name = name}
+                                          name = name,
+                                          symbol = false}
                                       end))
                                  end
                             | Indirect => ()
@@ -354,9 +358,15 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
          fun directIndex (name: string) =
             #index (HashSet.lookupOrInsert
                     (calls, String.hash name,
-                     fn {name = n, ...} => n = name,
+                     fn {name = n, symbol, ...} => 
+                     n = name andalso (not symbol),
                      fn () => Error.bug "Bytecode.output.directIndex"))
-         val ffiSymbolIndex = directIndex
+         fun ffiSymbolIndex (name: string) = 
+            #index (HashSet.lookupOrInsert
+                    (calls, String.hash name,
+                     fn {name = n, symbol, ...} => 
+                     n = name andalso symbol,
+                     fn () => Error.bug "Bytecode.output.ffiSymbolIndex"))
       end
       fun indirectIndex (f: 'a CFunction.t): int =
          let
