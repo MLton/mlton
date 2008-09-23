@@ -1174,22 +1174,28 @@ fun commandLine (args: string list): unit =
                          | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
-                           val (libOpts, libExt) = 
+                           val libExt = 
                               case targetOS of
-                                 Darwin => ([ "-dynamiclib" ], ".dylib")
-                               | MinGW => ([ "-shared", 
-                                             "-Wl,--out-implib," ^
-                                                libname () ^ ".a",
-                                             "-Wl,--output-def," ^
-                                                libname () ^ ".def"], 
-                                           ".dll")
-                               | _ => ([ "-shared" ], ".so")
+                                 Darwin => ".dylib"
+                               | MinGW => ".dll"
+                               | _ => ".so"
                            val output = 
                               case !format of
                                  Archive => maybeOut ".a"
                                | Executable => maybeOut ""
                                | LibArchive => maybeOut ".a"
                                | Library => maybeOut libExt
+                           val { base = outputBase, ext=_ } = 
+                              OS.Path.splitBaseExt output
+                           val libOpts = 
+                              case targetOS of
+                                 Darwin => [ "-dynamiclib" ]
+                               | MinGW =>  [ "-shared", 
+                                             "-Wl,--out-implib," ^
+                                                output ^ ".a",
+                                             "-Wl,--output-def," ^
+                                                outputBase ^ ".def"]
+                               | _ =>      [ "-shared" ]
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
