@@ -472,6 +472,8 @@ fun makeOptions {usage} =
                                     in List.push (keepPasses, re)
                                     end
                    | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
+       (Expert, "libname", " <basename>", "the name of the generated library",
+        SpaceString (fn s => libname := s)),
        (Normal, "link-opt", " <opt>", "pass option to linker",
         (SpaceString o tokenizeOpt)
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
@@ -824,6 +826,12 @@ fun commandLine (args: string list): unit =
       val targetOS = !Target.os
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       
+      (* It doesn't make sense to have a library without FFI *)
+      val () =
+         case !format of
+            Executable => ()
+          | _ => ignore (Control.Elaborate.processDefault "allowFFI true")
+      
       (* Determine whether code should be PIC (position independent) or not.
        * This decision depends on the platform and output format.
        *)
@@ -1150,10 +1158,23 @@ fun commandLine (args: string list): unit =
                         case !output of
                            NONE => suffix suf
                          | SOME f => f
-                     fun libname () =
-                        case !exportHeader of
-                           NONE => "lib"
-                         | SOME f => File.base f
+                     val { base = outputBase, ext=_ } =
+                        OS.Path.splitBaseExt (maybeOut ".ext")
+                     val { file = defLibname, dir=_ } = 
+                        OS.Path.splitDirFile outputBase
+                     val defLibname =
+                        if String.hasPrefix (defLibname, {prefix = "lib"})
+                        then String.extract (defLibname, 3, NONE)
+                        else defLibname
+                     val () = 
+                        if !libname <> "" then () else
+                        libname := defLibname
+                     (* Library output includes a header by default *)
+                     val () = 
+                        case (!format, !exportHeader) of
+                           (Executable, _) => ()
+                         | (_, NONE) => exportHeader := SOME (!libname ^ ".h")
+                         | _ => ()
                      val _ =
                         atMLtons :=
                         Vector.fromList
@@ -1174,27 +1195,22 @@ fun commandLine (args: string list): unit =
                          | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
-                           val libExt = 
-                              case targetOS of
-                                 Darwin => ".dylib"
-                               | MinGW => ".dll"
-                               | _ => ".so"
                            val output = 
-                              case !format of
-                                 Archive => maybeOut ".a"
-                               | Executable => maybeOut ""
-                               | LibArchive => maybeOut ".a"
-                               | Library => maybeOut libExt
-                           val { base = outputBase, ext=_ } = 
-                              OS.Path.splitBaseExt output
+                              case (!format, targetOS) of
+                                 (Archive, _) => maybeOut ".a"
+                               | (Executable, _) => maybeOut ""
+                               | (LibArchive, _) => maybeOut ".a"
+                               | (Library, Darwin) => maybeOut ".dylib"
+                               | (Library, MinGW) => !libname ^ ".dll"
+                               | (Library, _) => maybeOut ".so"
                            val libOpts = 
                               case targetOS of
                                  Darwin => [ "-dynamiclib" ]
                                | MinGW =>  [ "-shared", 
                                              "-Wl,--out-implib," ^
-                                                output ^ ".a",
+                                                maybeOut ".a",
                                              "-Wl,--output-def," ^
-                                                outputBase ^ ".def"]
+                                                !libname ^ ".def"]
                                | _ =>      [ "-shared" ]
                            val _ =
                               trace (Top, "Link")
@@ -1262,7 +1278,7 @@ fun commandLine (args: string list): unit =
                              List.concat
                              [[ "-std=gnu99", "-c" ],
                               if !format = Executable 
-                              then [] else [ "-DLIBNAME=" ^ libname () ],
+                              then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
                               if !debug then debugSwitches else [],

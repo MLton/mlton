@@ -215,6 +215,9 @@ signature CONTROL_FLAGS =
 
       (* lib/mlton/target directory *)
       val libTargetDir: Dir.t ref
+      
+      (* name of the output library *)
+      val libname : string ref
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref

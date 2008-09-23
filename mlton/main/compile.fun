@@ -417,15 +417,19 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                File.withOut
                (f, fn out =>
                 let
+                   fun print s = Out.output (out, s)
+                   val libname = !Control.libname
+                   val libcap = CharVector.map Char.toUpper libname
+                   val _ = print ("#ifndef __" ^ libcap ^ "_ML_H__\n")
+                   val _ = print ("#define __" ^ libcap ^ "_ML_H__\n")
+                   val _ = print "\n"
                    val _ =
                       File.outputContents
                       (concat [!Control.libDir, "/include/ml-types.h"], out)
+                   val _ = print "\n"
                    val _ =
                       File.outputContents
                       (concat [!Control.libDir, "/include/export.h"], out)
-                   fun print s = Out.output (out, s)
-                   val lib = File.base f
-                   val libcap = CharVector.map Char.toUpper lib
                    val _ = print "\n"
                    val _ = 
                       if !Control.format = Control.Executable
@@ -440,12 +444,14 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "\n"
                    val _ = 
                       if !Control.format = Control.Executable then () else
-                          (print ("MLLIB_PUBLIC(void " ^ lib ^ "_open(int argc, const char** argv);)\n")
-                          ;print ("MLLIB_PUBLIC(void " ^ lib ^ "_close();)\n"))
+                          (print ("MLLIB_PUBLIC(void " ^ libname ^ "_open(int argc, const char** argv);)\n")
+                          ;print ("MLLIB_PUBLIC(void " ^ libname ^ "_close();)\n"))
                    val _ = Ffi.declareHeaders {print = print} 
                    val _ = print "\n"
                    val _ = print "#undef MLLIB_PRIVATE\n"
                    val _ = print "#undef MLLIB_PUBLIC\n"
+                   val _ = print "\n"
+                   val _ = print ("#endif /* __" ^ libcap ^ "_ML_H__ */\n")
                 in
                    ()
                 end)

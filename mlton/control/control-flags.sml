@@ -765,6 +765,8 @@ val libTargetDir = control {name = "lib target dir",
                             default = "<libTargetDir unset>",
                             toString = fn s => s} 
 
+val libname = ref ""
+
 val loopPasses = control {name = "loop passes",
                           default = 1,
                           toString = Int.toString}
