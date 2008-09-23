@@ -181,13 +181,6 @@ PRIVATE void GC_diskBack_read (void *data, pointer buf, size_t size);
 PRIVATE void *GC_diskBack_write (pointer buf, size_t size);
 
 /* ------------------------------------------------- */
-/*                Text Segment                       */
-/* ------------------------------------------------- */
-
-PRIVATE code_pointer GC_getTextEnd (void);
-PRIVATE code_pointer GC_getTextStart (void);
-
-/* ------------------------------------------------- */
 /*                SigProf Handler                    */
 /* ------------------------------------------------- */
 

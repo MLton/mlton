@@ -4,7 +4,6 @@
 
 #include "diskBack.unix.c"
 #include "float-math.c"
-#include "getText.c"
 #include "mkdir2.c"
 #include "mmap.c"
 #include "mmap-protect.c"

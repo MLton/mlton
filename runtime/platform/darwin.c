@@ -1,6 +1,5 @@
 #include "platform.h"
 
-#include <mach-o/getsect.h>  // for get_etext()
 #include <dlfcn.h>
 #include <stdio.h>
 
@@ -10,20 +9,6 @@
 #include "nonwin.c"
 #include "sysctl.c"
 #include "use-mmap.c"
-
-code_pointer GC_getTextEnd (void) {
-        return (code_pointer)(long)(get_etext ());
-}
-
-code_pointer GC_getTextStart (void) {
-        void* address;
-        Dl_info info;
-        
-        address = dlsym(RTLD_DEFAULT, "main");
-        dladdr(address, &info);
-        
-        return (code_pointer)info.dli_fbase;
-}
 
 void GC_displayMem (void) {
         static char buffer[256];

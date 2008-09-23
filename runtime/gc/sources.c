@@ -49,48 +49,38 @@ void sortSourceLabels (GC_state s) {
          compareSourceLabels);
   if (0 == s->sourceMaps.sourceLabels[s->sourceMaps.sourceLabelsLength - 1].label)
     die ("Max source label is 0 -- something is wrong.");
-  if (DEBUG_SOURCES)
-    for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
-      fprintf (stderr, FMTPTR"  %"PRIu32"\n",
-               (uintptr_t)s->sourceMaps.sourceLabels[i].label,
-               s->sourceMaps.sourceLabels[i].sourceSeqIndex);
   if (ASSERT)
     for (i = 1; i < s->sourceMaps.sourceLabelsLength; i++)
       assert (s->sourceMaps.sourceLabels[i-1].label
               <= s->sourceMaps.sourceLabels[i].label);
 }
 
-void initTextSources (GC_state s) {
-  GC_sourceLabelIndex i;
-  code_pointer p;
+void compressSourceLabels (GC_state s) {
+  GC_sourceLabelIndex in, out, i;
   GC_sourceSeqIndex sourceSeqIndex;
-
-  sortSourceLabels (s);
-  /* Initialize s->sourceMaps.textSources. */
-  s->sourceMaps.textEnd = GC_getTextEnd();
-  s->sourceMaps.textStart = GC_getTextStart();
-  if (ASSERT)
-    for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++) {
-      code_pointer label;
-
-      label = s->sourceMaps.sourceLabels[i].label;
-      assert (0 == label
-              or (s->sourceMaps.textStart <= label
-                  and label < s->sourceMaps.textEnd));
-    }
-  s->sourceMaps.textSources =
-    (GC_sourceSeqIndex *)
-    (calloc_safe((size_t)(s->sourceMaps.textEnd - s->sourceMaps.textStart), 
-                 sizeof(*(s->sourceMaps.textSources))));
-  p = s->sourceMaps.textStart;
+  
+  /* Eliminate duplicate sourceLabels */
+  out = 0;
   sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
-  for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++) {
-    for ( ; p < s->sourceMaps.sourceLabels[i].label; p++)
-      s->sourceMaps.textSources[p - s->sourceMaps.textStart] = sourceSeqIndex;
-    sourceSeqIndex = s->sourceMaps.sourceLabels[i].sourceSeqIndex;
+  for (in = 0; in < s->sourceMaps.sourceLabelsLength; ++in) {
+    if (s->sourceMaps.sourceLabels[in].sourceSeqIndex != sourceSeqIndex) {
+      s->sourceMaps.sourceLabels[out++] = s->sourceMaps.sourceLabels[in];
+      sourceSeqIndex = s->sourceMaps.sourceLabels[in].sourceSeqIndex;
+    }
   }
-  for ( ; p < s->sourceMaps.textEnd; p++)
-    s->sourceMaps.textSources[p - s->sourceMaps.textStart] = sourceSeqIndex;
+  
+  s->sourceMaps.sourceLabelsLength = out;
+
+  if (DEBUG_SOURCES)
+    for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
+      fprintf (stderr, FMTPTR"  %"PRIu32"\n",
+               (uintptr_t)s->sourceMaps.sourceLabels[i].label,
+               s->sourceMaps.sourceLabels[i].sourceSeqIndex);
+}
+
+void initSourceLabels (GC_state s) {
+  sortSourceLabels (s);
+  compressSourceLabels (s);
 }
 
 #endif

@@ -15,17 +15,6 @@
 #include "setenv.putenv.c"
 #include "use-mmap.c"
 
-extern unsigned char __text_start;
-extern unsigned char etext;
-
-code_pointer GC_getTextStart (void) {
-        return &__text_start;
-}
-
-code_pointer GC_getTextEnd (void) {
-        return &etext;
-}
-
 struct pstnames {
         int type;
         const char *name;

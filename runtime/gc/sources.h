@@ -63,12 +63,6 @@ struct GC_sourceMaps {
    */
   struct GC_source *sources;
   uint32_t sourcesLength;
-  code_pointer textEnd;
-  /* An array of indices, one entry for each address in the text
-   * segment, giving an index into sourceSeqs.
-   */
-  GC_sourceSeqIndex *textSources;
-  code_pointer textStart;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
@@ -82,7 +76,8 @@ static inline char* getSourceName (GC_state s, GC_sourceIndex i);
 #if HAS_TIME_PROFILING
 static inline int compareSourceLabels (const void *v1, const void *v2);
 static void sortSourceLabels (GC_state s);
-static void initTextSources (GC_state s);
+static void compressSourceLabels (GC_state s);
+static void initSourceLabels (GC_state s);
 #endif
 
 static void showSources (GC_state s);

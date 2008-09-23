@@ -1,7 +1,6 @@
 #include "platform.h"
 
 #include "diskBack.unix.c"
-#include "getText.c"
 #include "mkdir2.c"
 #include "mmap-protect.c"
 #include "nonwin.c"
