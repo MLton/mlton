@@ -110,6 +110,7 @@ doit "$lib" \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
         -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
+        -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
         -target-link-opt netbsd                                  \
                 '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'             \
         -target-link-opt openbsd '-L/usr/local/lib/'             \
