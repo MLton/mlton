@@ -18,7 +18,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 
 #define Main(al, mg, mfs, mmc, pk, ps, gnr, mc, ml)                     \
 /* Globals */                                                           \
-pthread_key_t gcstate_key;                                              \
+C_Pthread_Key_t gcstate_key;                                            \
 void MLton_callFromC (uint32_t ffiOp) {                                 \
         struct cont cont;                                               \
         GC_state s = pthread_getspecific (gcstate_key);                 \
