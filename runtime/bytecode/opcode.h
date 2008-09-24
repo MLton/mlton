@@ -193,7 +193,7 @@
 
 #define opcodeGen(z)  #z,
 
-const char *opcodeStrings [] = {
+PRIVATE const char *opcodeStrings [] = {
         opcodes ()
 };
 

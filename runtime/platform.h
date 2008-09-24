@@ -121,7 +121,7 @@
 #endif
 
 #ifndef MLTON_CODEGEN_STATIC_INLINE
-#define MLTON_CODEGEN_STATIC_INLINE /*static inline*/
+#define MLTON_CODEGEN_STATIC_INLINE PRIVATE
 #endif
 #ifndef MLTON_CODEGEN_MATHFN
 #define MLTON_CODEGEN_MATHFN(decl) 
@@ -148,7 +148,7 @@ PRIVATE __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
 
-int mkdir2 (const char *pathname, mode_t mode);
+PRIVATE int mkdir2 (const char *pathname, mode_t mode);
 
 /* ---------------------------------------------------------------- */
 /*                        Garbage Collector                         */
