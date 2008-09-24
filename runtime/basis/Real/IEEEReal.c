@@ -42,13 +42,34 @@ static inline void fesetround (C_Int_t mode) {
 #endif
 }
 
+#elif (defined __UCLIBC__)
+
+/* Use whatever we got from fpu_control.h for this CPU model */
+#define FE_MASK (FE_DOWNWARD|FE_TONEAREST|FE_TOWARDZERO|FE_UPWARD)
+
+static inline int fegetround () {
+        fpu_control_t controlWord;
+        _FPU_GETCW(controlWord);
+        return controlWord & FE_MASK;
+}
+
+static inline int fesetround (int mode) {
+        fpu_control_t controlWord;
+
+        _FPU_GETCW (controlWord);
+        controlWord = (controlWord & ~FE_MASK) | mode;
+        _FPU_SETCW (controlWord);
+        return 0;
+}
+
+
 #else
 
 #error fe{get,set}round not implemented
 
 #endif
 
-#endif
+#endif /* !HAS_FEROUND */
 
 C_Int_t IEEEReal_getRoundingMode (void) {
   return fegetround ();

@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <stdint.h>
-#ifndef __UCLIBC__
+#ifdef __UCLIBC__
+#include <fpu_control.h>
+#else
 #include <fenv.h>
 #endif
 
@@ -28,7 +30,11 @@
 #include <termios.h>
 #include <utime.h>
 
+#ifdef __UCLIBC__
+#define HAS_FEROUND FALSE
+#else
 #define HAS_FEROUND TRUE
+#endif
 #define HAS_FPCLASSIFY TRUE
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP TRUE
@@ -61,11 +67,8 @@ typedef unsigned long int nfds_t;
 #endif
 
 #ifdef __UCLIBC__
-#include <fpu_control.h>
-
 #define FE_DOWNWARD     _FPU_RC_DOWN
 #define FE_TONEAREST    _FPU_RC_NEAREST
 #define FE_TOWARDZERO   _FPU_RC_ZERO
 #define FE_UPWARD       _FPU_RC_UP
-#include "feround.h"
 #endif

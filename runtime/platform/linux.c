@@ -9,9 +9,6 @@
 #include "nonwin.c"
 #include "sysconf.c"
 #include "use-mmap.c"
-#ifdef __UCLIBC__
-#include "feround.c"
-#endif
 
 #ifndef EIP
 #define EIP     14
