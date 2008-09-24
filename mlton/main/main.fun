@@ -133,6 +133,8 @@ fun setTargetType (target: string, usage): unit =
 fun hasCodegen (cg) =
    let
       datatype z = datatype Control.Target.arch
+      datatype z = datatype Control.Target.os
+      datatype z = datatype Control.Format.t
       datatype z = datatype Control.codegen
    in
       case !Control.Target.arch of
@@ -141,6 +143,11 @@ fun hasCodegen (cg) =
                     | _ => true)
        | X86 => (case cg of
                     amd64Codegen => false
+                  | x86Codegen => 
+                      (* Darwin PIC doesn't work *)
+                      !Control.Target.os <> Darwin orelse
+                      !Control.format = Executable orelse
+                      !Control.format = Archive
                   | _ => true)
        | _ => (case cg of
                   amd64Codegen => false
