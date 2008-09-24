@@ -22,7 +22,8 @@ $ML "${O[@]}" "$@" ${LIB}m2 ${LIB}m3 -format library libm4.sml libm4.c
 
 # Compile executable
 $ML "${O[@]}" "$@" -format archive libm5.sml libm5.c
-$ML "${O[@]}" "$@" ${LIB}m4 ${LIB}m5 -format executable -export-header check.h check.sml check.c
+$ML "${O[@]}" "$@" ${LIB}m4 ${LIB}m5 -format executable \
+  -default-ann 'allowFFI true' -export-header check.h check.sml check.c
 
 # Check that symbols resolved correctly
 ./check
