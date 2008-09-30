@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -73,7 +73,7 @@ void compressSourceLabels (GC_state s) {
 
   if (DEBUG_SOURCES)
     for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
-      fprintf (stderr, FMTPTR"  %"PRIu32"\n",
+      fprintf (stderr, FMTPTR"  "FMTSSI"\n",
                (uintptr_t)s->sourceMaps.sourceLabels[i].label,
                s->sourceMaps.sourceLabels[i].sourceSeqIndex);
 }
