@@ -35,19 +35,22 @@ partialLink='true'
 rm -f "${output}"
 
 if "$partialLink"; then
-  "${target}ld" -r -o "$output.o" "$@"
-  
   # Localize all but export symbols. Platform dependent.
   if [ "$os" = "darwin" ]; then
+    "${target}ld" -r -o "$output.o" "$@"
     # The osx linker already makes hidden symbols local
-    echo -n 
   elif [ "$os" = "mingw" -o "$os" = "cygwin" ]; then
+    # We need to force the export directives to be copied
+    echo "SECTIONS { .drectve : { *(.drectve) } }" > "$output.script"
+    "${target}ld" -r --enable-stdcall-fixup -o "$output.o" "$output.script" "$@"
+    # Extract the list of exports to make them global
     "${target}dlltool" --output-def "$output.def" "$@"
     grep '@' "$output.def" \
-      | sed 's/^[[:space:]]*\([^[:space:]]*\).*$/\1/' \
+      | sed 's/^[[:space:]]*\([^[:space:]]*\).*$/_\1/' \
       > "$output.globals"
-    "${target}objcopy" --globalize-symbols "$output.globals" "$output.o"
+    "${target}objcopy" --keep-global-symbols "$output.globals" "$output.o"
   else
+    "${target}ld" -r -o "$output.o" "$@"
     # ELF systems are all the same... localize hidden symbols
     # Be careful not to localize gcc PIC's common section thunks
     "${target}objdump" -t "$output.o" \
@@ -61,7 +64,7 @@ if "$partialLink"; then
   # Create the final archive
   "${target}ar" rc "$output" "$output.o"
   "${target}ranlib" "$output"
-  rm -f "$output.o" "$output.def" "$output.globals" "$output.locals"
+  rm -f "$output.o" "$output.def" "$output.globals" "$output.locals" "$output.script"
 else
   "${target}ar" rc "$output" "$@"
   "${target}ranlib" "$output"
