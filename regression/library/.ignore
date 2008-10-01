@@ -1,8 +1,9 @@
 m?.h
+m?.def
+m?.dll
 libm?.so
 libm?.a
 libm?.dylib
-libm?.dll
 check.h
 check
 check.exe
