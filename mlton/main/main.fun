@@ -833,12 +833,6 @@ fun commandLine (args: string list): unit =
       val targetOS = !Target.os
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       
-      (* It doesn't make sense to have a library without FFI *)
-      val () =
-         case !format of
-            Executable => ()
-          | _ => ignore (Control.Elaborate.processDefault "allowFFI true")
-      
       (* Determine whether code should be PIC (position independent) or not.
        * This decision depends on the platform and output format.
        *)

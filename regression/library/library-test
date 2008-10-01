@@ -2,8 +2,10 @@
 
 ML=../../build/bin/mlton
 
-O[0]='-link-opt'
-O[1]='-L.'
+O[0]='-default-ann'
+O[1]='allowFFI true'
+O[2]='-link-opt'
+O[3]='-L.'
 
 LIB="-link-opt -l"
 
