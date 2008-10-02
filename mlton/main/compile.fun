@@ -439,8 +439,8 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                        | Control.LibArchive => "NO_DEFAULT_LINK"
                        | Control.Library    => "DYNAMIC_LINK"
                    val _ = 
-                      print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \n\
-                             \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \n\
+                      print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \\\n\
+                             \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \\\n\
                              \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
                    val _ = 
                       print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
@@ -457,6 +457,8 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
                    val _ = print "#else\n"
                    val _ = print ("#error Must specify linkage for " ^ libname ^ "\n")
+                   val _ = print "#define MLLIB_PRIVATE(x)\n"
+                   val _ = print "#define MLLIB_PUBLIC(x)\n"
                    val _ = print "#endif\n"
                    val _ = print "\n"
                    val _ = print "#ifdef __cplusplus\n"

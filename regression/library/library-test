@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-ML=mlton #../../build/bin/mlton
+ML=../../build/bin/mlton
 
 O[0]='-default-ann'
 O[1]='allowFFI true'
