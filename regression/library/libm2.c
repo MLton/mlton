@@ -1,7 +1,8 @@
 #include <assert.h>
 
-#define PART_OF_LIBRARY_M2
+#define PART_OF_M2
 #include "m2.h"
+#define STATIC_LINK_M2
 #include "m1.h"
 
 extern PUBLIC void* libm1cSymPublic;

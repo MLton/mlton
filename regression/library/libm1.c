@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#define PART_OF_LIBRARY_M1
+#define PART_OF_M1
 #include "m1.h"
 
 PRIVATE void* libm1cSymPrivate = 0;

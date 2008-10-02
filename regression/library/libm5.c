@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#define PART_OF_LIBRARY_M5
+#define PART_OF_M5
 #include "m5.h"
 #include "m4.h"
 #include "m3.h"

@@ -431,15 +431,36 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                       File.outputContents
                       (concat [!Control.libDir, "/include/export.h"], out)
                    val _ = print "\n"
+                   (* How do programs link against this library by default *)
+                   val defaultLinkage =
+                      case !Control.format of
+                         Control.Archive    => "STATIC_LINK"
+                       | Control.Executable => "PART_OF"
+                       | Control.LibArchive => "NO_DEFAULT_LINK"
+                       | Control.Library    => "DYNAMIC_LINK"
                    val _ = 
-                      if !Control.format = Control.Executable
-                      then print "#if 1 /* C executables compile with same symbol scope as ML executables */\n"
-                      else print ("#ifdef PART_OF_LIBRARY_" ^ libcap ^ "\n")
+                      print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \n\
+                             \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \n\
+                             \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
+                   val _ = 
+                      print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
+                   val _ = print "#endif\n"
+                   val _ = print "\n"
+                   val _ = print ("#if defined(PART_OF_" ^ libcap ^ ")\n")
                    val _ = print "#define MLLIB_PRIVATE(x) PRIVATE x\n"
                    val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
-                   val _ = print "#else\n"
+                   val _ = print ("#elif defined(STATIC_LINK_" ^ libcap ^ ")\n")
+                   val _ = print "#define MLLIB_PRIVATE(x)\n"
+                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
+                   val _ = print ("#elif defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
                    val _ = print "#define MLLIB_PRIVATE(x)\n"
                    val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
+                   val _ = print "#else\n"
+                   val _ = print ("#error Must specify linkage for " ^ libname ^ "\n")
+                   val _ = print "#endif\n"
+                   val _ = print "\n"
+                   val _ = print "#ifdef __cplusplus\n"
+                   val _ = print "extern \"C\" {\n"
                    val _ = print "#endif\n"
                    val _ = print "\n"
                    val _ = 
@@ -450,6 +471,10 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "\n"
                    val _ = print "#undef MLLIB_PRIVATE\n"
                    val _ = print "#undef MLLIB_PUBLIC\n"
+                   val _ = print "\n"
+                   val _ = print "#ifdef __cplusplus\n"
+                   val _ = print "}\n"
+                   val _ = print "#endif\n"
                    val _ = print "\n"
                    val _ = print ("#endif /* __" ^ libcap ^ "_ML_H__ */\n")
                 in
