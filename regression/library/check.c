@@ -3,6 +3,7 @@
 #include "check.h"
 #include "m5.h"
 #include "m4.h"
+#define DYNAMIC_LINK_M3
 #include "m3.h"
 
 extern EXTERNAL void* libm3cSymPublic;

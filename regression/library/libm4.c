@@ -2,8 +2,10 @@
 
 #define PART_OF_M4
 #include "m4.h"
+#define STATIC_LINK_M3
 #include "m3.h"
 #include "m2.h"
+#define DYNAMIC_LINK_M1
 #include "m1.h"
 
 extern EXTERNAL void* libm1cSymPublic;

@@ -2,7 +2,7 @@
 
 #define PART_OF_M2
 #include "m2.h"
-#define STATIC_LINK_M2
+#define STATIC_LINK_M1
 #include "m1.h"
 
 extern PUBLIC void* libm1cSymPublic;

@@ -3,6 +3,7 @@
 #define PART_OF_M3
 #include "m3.h"
 #include "m2.h"
+#define DYNAMIC_LINK_M1
 #include "m1.h"
 
 extern EXTERNAL void* libm1cSymPublic;
