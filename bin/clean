@@ -20,7 +20,7 @@ doit () {
         rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
         if [ -r "$ignore" ]; then
 		# xargs allows us to have quoted strings for filenames
-		xargs -n 1 find . -name < "$ignore" | xargs rm -rf
+		xargs -n 1 find . -maxdepth 1 -name < "$ignore" | xargs rm -rf
         fi
         for f in *; do
                 if [ -d "$f" ]; then
