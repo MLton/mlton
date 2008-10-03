@@ -1,0 +1,107 @@
+Index: bfd/coff64-rs6000.c
+===================================================================
+RCS file: /cvs/src/src/bfd/coff64-rs6000.c,v
+retrieving revision 1.71
+diff -c -3 -p -r1.71 coff64-rs6000.c
+*** bfd/coff64-rs6000.c	18 Jul 2008 11:30:22 -0000	1.71
+--- bfd/coff64-rs6000.c	30 Sep 2008 10:07:17 -0000
+*************** static const struct xcoff_backend_data_r
+*** 2580,2586 ****
+        coff_print_aux,
+        dummy_reloc16_extra_cases,
+        dummy_reloc16_estimate,
+!       NULL,			/* bfd_coff_sym_is_global */
+        coff_compute_section_file_positions,
+        NULL,			/* _bfd_coff_start_final_link */
+        xcoff64_ppc_relocate_section,
+--- 2580,2586 ----
+        coff_print_aux,
+        dummy_reloc16_extra_cases,
+        dummy_reloc16_estimate,
+!       NULL,			/* bfd_coff_symbol_classification */
+        coff_compute_section_file_positions,
+        NULL,			/* _bfd_coff_start_final_link */
+        xcoff64_ppc_relocate_section,
+Index: bfd/coffgen.c
+===================================================================
+RCS file: /cvs/src/src/bfd/coffgen.c,v
+retrieving revision 1.67
+diff -c -3 -p -r1.67 coffgen.c
+*** bfd/coffgen.c	14 Aug 2008 02:38:22 -0000	1.67
+--- bfd/coffgen.c	30 Sep 2008 10:07:17 -0000
+*************** coff_write_native_symbol (bfd *abfd,
+*** 1082,1087 ****
+--- 1082,1092 ----
+  			    debug_string_size_p);
+  }
+  
++ static void
++ null_error_handler (const char * fmt ATTRIBUTE_UNUSED, ...)
++ {
++ }
++ 
+  /* Write out the COFF symbols.  */
+  
+  bfd_boolean
+*************** coff_write_symbols (bfd *abfd)
+*** 1138,1143 ****
+--- 1143,1184 ----
+  	}
+        else
+  	{
++ 	  if (coff_backend_info (abfd)->_bfd_coff_classify_symbol != NULL)
++ 	    {
++ 	      bfd_error_handler_type current_error_handler;
++ 	      enum coff_symbol_classification class;
++ 	      unsigned char *n_sclass;
++ 
++ 	      /* Suppress error reporting by bfd_coff_classify_symbol.
++ 		 Error messages can be generated when we are processing a local
++ 		 symbol which has no associated section and we do not have to
++ 		 worry about this, all we need to know is that it is local.  */
++ 	      current_error_handler = bfd_set_error_handler (null_error_handler);
++ 	      class = bfd_coff_classify_symbol (abfd, &c_symbol->native->u.syment);
++ 	      (void) bfd_set_error_handler (current_error_handler);
++ 	  
++ 	      n_sclass = &c_symbol->native->u.syment.n_sclass;
++ 
++ 	      /* If the symbol class has been changed (eg objcopy/ld script/etc)
++ 		 we cannot retain the existing sclass from the original symbol.
++ 		 Weak symbols only have one valid sclass, so just set it always.
++ 		 If it is not local class and should be, set it C_STAT.
++ 		 If it is global and not classified as global, or if it is
++ 		 weak (which is also classified as global), set it C_EXT.  */
++ 
++ 	      if (symbol->flags & BSF_WEAK)
++ 		*n_sclass = obj_pe (abfd) ? C_NT_WEAK : C_WEAKEXT;
++ 	      else if (symbol->flags & BSF_LOCAL && class != COFF_SYMBOL_LOCAL)
++ 		*n_sclass = C_STAT;
++ 	      else if (symbol->flags & BSF_GLOBAL
++ 		       && (class != COFF_SYMBOL_GLOBAL
++ #ifdef COFF_WITH_PE
++ 			   || *n_sclass == C_NT_WEAK
++ #endif
++ 			   || *n_sclass == C_WEAKEXT))
++ 		c_symbol->native->u.syment.n_sclass = C_EXT;
++ 	    }
++ 
+  	  if (!coff_write_native_symbol (abfd, c_symbol, &written,
+  					 &string_size, &debug_string_section,
+  					 &debug_string_size))
+Index: gas/config/tc-tic4x.c
+===================================================================
+RCS file: /cvs/src/src/gas/config/tc-tic4x.c,v
+retrieving revision 1.26
+diff -c -3 -p -r1.26 tc-tic4x.c
+*** gas/config/tc-tic4x.c	14 Aug 2008 14:54:40 -0000	1.26
+--- gas/config/tc-tic4x.c	30 Sep 2008 10:07:19 -0000
+*************** tic4x_globl (int ignore ATTRIBUTE_UNUSED
+*** 821,826 ****
+--- 821,827 ----
+        *input_line_pointer = c;
+        SKIP_WHITESPACE ();
+        S_SET_STORAGE_CLASS (symbolP, C_EXT);
++       S_SET_EXTERNAL (symbolP);
+        if (c == ',')
+  	{
+  	  input_line_pointer++;
