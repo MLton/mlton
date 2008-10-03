@@ -306,6 +306,9 @@ script:
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
+ifeq (mingw, $(TARGET_OS))
+	$(CP) "$(SRC)/bin/static-library.bat" "$(LIB)"
+endif
 
 .PHONY: targetmap
 targetmap:
