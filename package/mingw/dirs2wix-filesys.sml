@@ -1,6 +1,6 @@
 val prefix = "\
    \<?xml version='1.0' encoding='windows-1252'?>\n\
-   \<Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>\n\
+   \<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>\n\
    \  <Fragment Id='FragmentFileSys'>\n\
    \    <DirectoryRef Id='INSTALLDIR'>\n"
 val suffix = "\
@@ -8,8 +8,11 @@ val suffix = "\
    \  </Fragment>\n\
    \</Wix>\n"
 
+fun tail s =
+    if String.size s < 60 then s else
+    String.extract (s, String.size s - 60, NONE)
 fun escape c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
-val escape = CharVector.map escape
+val escape = tail o CharVector.map escape
 
 val depth = ref 3
 fun pad () = CharVector.tabulate (!depth * 2, fn _ => #" ")
@@ -17,26 +20,13 @@ fun indent (t, head) =
   let
      val path = head @ [t]
      val paths = String.concatWith "/" path
-     val file83 = file83 t
-     val long = if file83 = t then "" else " LongName='" ^ t ^ "'"
      val () =
         print (pad () ^ "<Directory Id='dir." ^ escape paths ^ "' \
-                                   \Name='" ^ file83 ^ "'" ^ long ^ ">\n")
+                                   \Name='" ^ t ^ "'>\n")
      val () = depth := !depth + 1
   in
     head
   end
-and file83 file =
-   let
-      val {base, ext} = OS.Path.splitBaseExt file
-      fun trunc x s = String.substring (s, 0, Int.min (x, String.size s))
-      val (base, ext) = (trunc 8 base, Option.map (trunc 3) ext)
-      fun crush c = if Char.contains "\\?|><:/*+,;=[] " c then #"_" else c
-      val crush = CharVector.map crush
-      val (base, ext) = (crush base, Option.map crush ext)
-   in
-      case ext of NONE => base | SOME ext => base ^ "." ^ ext
-   end
 
 fun unindent _ =
    (depth := !depth - 1

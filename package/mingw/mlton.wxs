@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='windows-1252'?>
-<Wix xmlns='http://schemas.microsoft.com/wix/2003/01/wi'>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
   <Product Name='MLton' Id='E78E6DFD-5738-B137-DD2A-EA81A1A841EC'
     UpgradeCode='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'
     Language='1033' Codepage='1252' Version='1.0' Manufacturer='MLton.org'>
 
-    <Package Id='????????-????-????-????-????????????' Keywords='Installer'
+    <Package Id='*' Keywords='Installer'
       Description="MLton Installer"
       Comments='MLton is an open-source, whole-program, optimizing Standard ML compiler.' Manufacturer='MLton.org'
       InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
@@ -17,12 +17,15 @@
         <Directory Id='INSTALLDIR' Name='MLton' />
       </Directory>
 
-      <Directory Id="ProgramMenuFolder" Name="PMenu" LongName="Programs">
+      <Directory Id="ProgramMenuFolder" Name="Programs">
         <Directory Id="ProgramMenuDir" Name='MLton'>
           <Component Id='component.download.url' Guid='A9C0D185-9520-45FF-1B52-02894D3EAA54'>
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall'/>
+            <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\download' Type='string' Value='' KeyPath='yes' />
             <File Id='file.menu_download.url' Name='Download.URL' Source='Download.URL' DiskId='1' Vital='yes' />
           </Component>
           <Component Id='component.readme.txt' Guid='1FC6B351-547C-A5AB-7F0E-FB153F721170'>
+            <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\readme' Type='string' Value='' KeyPath='yes' />
             <File Id='file.menu_readme.txt' Name='Readme.rtf' Source='Readme.rtf' DiskId='1' Vital='yes' />
           </Component>
         </Directory>
@@ -33,79 +36,87 @@
 
     <DirectoryRef Id='dir.doc_mlton'>
       <Component Id='component.documentation' Guid='1E019F99-0424-8133-D4F6-C7DDA0882798'>
-        <Shortcut Id='start_docs' Directory='ProgramMenuDir' Name='Docs' LongName='Documentation' Description='The MLton documentation folder'/>
+        <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\docs' Type='string' Value='' KeyPath='yes' />
+        <Shortcut Id='start_docs' Directory='ProgramMenuDir' Name='Documentation' Description='The MLton documentation folder'/>
       </Component>
     </DirectoryRef>
 
     <DirectoryRef Id='dir.bin'>
       <Component Id='component.path' Guid='5B06C123-B426-3D4D-BE48-4D07BAD8A6BA'>
+        <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\path' Type='string' Value='' KeyPath='yes' />
         <Environment Id='env.path' Name='PATH' Action='set' Part='last' System='yes' Value='[dir.bin]' />
       </Component>
       <Component Id='component.bin_mlton.bat' Guid='A2E613BD-41F8-1CF7-D5EA-0C41674D78AC'>
         <File Id='file.bin_mlton.bat' Name='mlton.bat' Source='mlton.bat' DiskId='1' Vital='yes' />
-        <ProgId Id='MLton.mlbfile' Description='Standard ML basis file'>
+        <File Id='file.bin_sml.ico' Name='sml.ico' Source='sml.ico' DiskId='1' Vital='yes' />
+        <File Id='file.bin_mlb.ico' Name='mlb.ico' Source='mlb.ico' DiskId='1' Vital='yes' />
+        <ProgId Id='MLton.mlbFile' Description='Standard ML basis file' Icon='file.bin_mlb.ico'>
           <Extension Id='mlb' ContentType='application/mlb'>
-            <Verb Id='buildMLB' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+            <Verb Id='buildMLB' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-cc-opt -O1 -verbose 1 "%1"' />
           </Extension>
         </ProgId>
-        <ProgId Id='MLton.smlfile' Description='Standard ML source file'>
+        <ProgId Id='MLton.smlFile' Description='Standard ML source file' Icon='file.bin_sml.ico'>
           <Extension Id='sml' ContentType='application/sml'>
-            <Verb Id='buildSML' Sequence='10' Command='Compile' Target='[!file.bin_mlton.bat]' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+            <Verb Id='buildSML' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-cc-opt -O1 -verbose 1 "%1"' />
           </Extension>
         </ProgId>
-        <Registry Id='SMLIcon1' Root='HKCR' Key='.sml' Action='write' Type='string' Value='MLton.smlfile' />
-        <Registry Id='SMLIcon2' Root='HKCR' Key='MLton.smlfile' Action='write' Type='string' Value='Standard ML source file' />
-        <Registry Id='SMLIcon3' Root='HKCR' Key='MLton.smlfile\DefaultIcon' Action='write' Type='string' Value='[INSTALLDIR]\lib\mlton\sml.ico' />
-        <Registry Id='MLBIcon1' Root='HKCR' Key='.mlb' Action='write' Type='string' Value='MLton.mlbfile' />
-        <Registry Id='MLBIcon2' Root='HKCR' Key='MLton.mlbfile' Action='write' Type='string' Value='Standard ML basis file' />
-        <Registry Id='MLBIcon3' Root='HKCR' Key='MLton.mlbfile\DefaultIcon' Action='write' Type='string' Value='[INSTALLDIR]\lib\mlton\mlb.ico' />
       </Component>
       <Component Id='component.bin_msys.bat' Guid='9C492AB5-3C90-66AF-E442-D6B96A9890C4'>
-        <File Id='file.bin_msys.bat' Name='msys.bat' Source='msys.bat' DiskId='1' Vital='yes'>
-          <Shortcut Id='start_msys' Directory='ProgramMenuDir' Name='MSYS' Description='Unix-like system shell' Icon='msys.ico'>
-            <Icon Id='msys.ico' SourceFile='staging/msys.ico'/>
-          </Shortcut>
-        </File>
+        <File Id='file.bin_msys.bat' Name='msys.bat' Source='msys.bat' DiskId='1' Vital='yes' />
+      </Component>
+      <Component Id='component.start_msys' Guid='9C4163A5-3C90-6BAF-E442-D6B9619890C2'>
+        <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\msys' Type='string' Value='' KeyPath='yes' />
+        <Shortcut Id='start_msys' Directory='ProgramMenuDir' Name='MSYS' Description='Unix-like system shell' Icon='msys.ico' Target='[#file.bin_msys.bat]'>
+          <Icon Id='msys.ico' SourceFile='staging/msys.ico'/>
+        </Shortcut>
       </Component>
     </DirectoryRef>
    
-    <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR'>
+    <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <ComponentGroupRef Id='component.MLton' />
       <ComponentRef Id='component.bin_mlton.bat' />
       <ComponentRef Id='component.path' />
       <ComponentRef Id='component.download.url' />
       <ComponentRef Id='component.readme.txt' />
       <ComponentRef Id='component.documentation' />
-      <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10'>
+      <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10' AllowAdvertise='no'>
         <ComponentGroupRef Id='component.Debug' />
       </Feature>
     </Feature>
-    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <ComponentGroupRef Id='component.GMP' />
+    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+      <ComponentGroupRef Id='component.gmp' />
     </Feature>
-    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR'>
-      <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1'>
-        <ComponentGroupRef Id='component.Runtime' />
+    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+      <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.runtime' />
       </Feature>
-      <Feature Id='W32API' Title='Win32 API' Description='Headers and link stub libraries needed to access windows system DLLs.' Level='1'>
-        <ComponentGroupRef Id='component.W32API' />
+      <Feature Id='W32API' Title='Win32 API' Description='Headers and link stub libraries needed to access windows system DLLs.' Level='1' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.w32api' />
       </Feature>
-      <Feature Id='Binutils' Title='Binutils' Description='Utilities for manipulating object files, such as the linker and assembler.' Level='1'>
+      <Feature Id='Binutils' Title='Binutils' Description='Utilities for manipulating object files, such as the linker and assembler.' Level='1' AllowAdvertise='no'>
         <ComponentRef Id='component.path' />
-        <ComponentGroupRef Id='component.Binutils' />
+        <ComponentGroupRef Id='component.binutils' />
       </Feature>
-      <Feature Id='GCC' Title='GCC' Description='The GNU C Compiler. Compiles C files to assembly.' Level='1'>
+      <Feature Id='GCC' Title='GCC' Description='The GNU C Compiler. Compiles C files to assembly.' Level='1' AllowAdvertise='no'>
         <ComponentRef Id='component.path' />
-        <ComponentGroupRef Id='component.GCC' />
+        <ComponentGroupRef Id='component.gcc' />
       </Feature>
-      <Feature Id='MSYS' Title='MSYS' Description='A system shell along with UNIX-style command-line utilities.' Level='1'>
+      <Feature Id='MSYS' Title='MSYS' Description='A system shell along with UNIX-style command-line utilities.' Level='1' AllowAdvertise='no'>
+        <ComponentRef Id='component.start_msys' />
         <ComponentRef Id='component.bin_msys.bat' />
         <ComponentRef Id='component.path' />
-        <ComponentGroupRef Id='component.MSYS' />
+        <ComponentGroupRef Id='component.msys' />
+      </Feature>
+      <Feature Id='GDB' Title='GDB' Description='A command-line operated program debugger.' Level='10' AllowAdvertise='no'>
+        <ComponentRef Id='component.path' />
+        <ComponentGroupRef Id='component.gdb' />
       </Feature>
     </Feature>
 
     <UIRef Id="WixUI_Mondo" />
-    <UIRef Id="WixUI_ErrorProgressText" />
+    <WixVariable Id="WixUIBannerBmp" Value="Bitmaps/bannrbmp.bmp" />  
+    <WixVariable Id="WixUIDialogBmp" Value="Bitmaps/dlgbmp.bmp" />  
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" /> 
+    <Property Id='WIXUI_INSTALLDIR' Value='INSTALLDIR' /> 
   </Product>
 </Wix>
