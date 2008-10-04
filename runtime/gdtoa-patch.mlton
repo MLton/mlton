@@ -84,3 +84,15 @@
  #else
  #define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
  #define gdtoa__strtopdd(s,se,x) gdtoa__strtordd(s,se,1,x)
+--- gdtoa/gdtoaimp.h.orig	2008-10-04 02:33:51 +0000
++++ gdtoa/gdtoaimp.h	2008-10-04 02:34:41 +0000
+@@ -503,7 +503,8 @@
+ #define g__fmt g__fmt_D2A
+ #define gethex gethex_D2A
+ #define hexdig hexdig_D2A
+-#define hexdig_init hexdig_init_D2A
++/* work around MinGW bug */
++#define hexdig_init hexdig_init_D3A
+ #define hexnan hexnan_D2A
+ #define hi0bits hi0bits_D2A
+ #define i2b i2b_D2A
