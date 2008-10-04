@@ -1,5 +1,5 @@
---- gdtoa/gdtoaimp.h.orig	2008-07-31 18:06:25.097868376 +0200
-+++ gdtoa/gdtoaimp.h	2008-07-31 18:09:15.882512312 +0200
+--- gdtoa/gdtoaimp.h.orig	2008-10-04 02:27:47 +0000
++++ gdtoa/gdtoaimp.h	2008-10-04 02:32:34 +0000
 @@ -176,6 +176,7 @@
  #ifndef GDTOAIMP_H_INCLUDED
  #define GDTOAIMP_H_INCLUDED
@@ -8,7 +8,7 @@
  
  #ifdef DEBUG
  #include "stdio.h"
-@@ -528,53 +529,53 @@
+@@ -529,53 +530,53 @@
  #define trailz trailz_D2A
  #define ulp ulp_D2A
  
@@ -55,7 +55,7 @@
  			int *decpt, int *sign, char **rve));
 - extern char *g__fmt ANSI((char*, char*, char*, int, ULong));
 - extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-- extern void hexdig_init_D2A(Void);
+- extern void hexdig_init ANSI((Void));
 - extern int hexnan ANSI((CONST char**, FPI*, ULong*));
 - extern int hi0bits ANSI((ULong));
 - extern Bigint *i2b ANSI((int));
@@ -81,7 +81,7 @@
 - extern double ulp ANSI((double));
 +PRIVATE extern char *g__fmt ANSI((char*, char*, char*, int, ULong));
 +PRIVATE extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-+PRIVATE extern void hexdig_init_D2A(Void);
++PRIVATE extern void hexdig_init ANSI((Void));
 +PRIVATE extern int hexnan ANSI((CONST char**, FPI*, ULong*));
 +PRIVATE extern int hi0bits ANSI((ULong));
 +PRIVATE extern Bigint *i2b ANSI((int));
