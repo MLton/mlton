@@ -14,3 +14,5 @@ set -e
 ./library-test "$@" -profile time
 ./library-test "$@" -profile time -codegen bytecode
 ./library-test "$@" -profile time -codegen c
+
+echo '********** ALL PASS **********'
