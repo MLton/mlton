@@ -1,3 +1,6 @@
+val () = print "libm1 starting up\n"
+val () = OS.Process.atExit (fn () => print "libm1 exits\n")
+
 type p = MLton.Pointer.t
 
 type 'a s = (unit -> 'a) * ('a -> unit)

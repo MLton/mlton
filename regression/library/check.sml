@@ -1,3 +1,8 @@
+val () = print "check starting up\n"
+val () = OS.Process.atExit 
+         (fn () => (_import "m5_close" public : unit -> unit; ()
+                   ; print "check exits\n"))
+
 (* Prepare lib5 *)
 val () = _import "m5_open" public : int * string vector -> unit; 
          (1, Vector.fromList ["libm5"])

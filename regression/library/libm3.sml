@@ -1,3 +1,8 @@
+val () = print "libm3 starting up\n"
+val () = OS.Process.atExit 
+         (fn () => (_import "m2_close" public : unit -> unit; ()
+                   ; print "libm3 exits\n"))
+
 (* Prepare libm2 *)
 val () = _import "m2_open" external : int * string vector -> unit; 
          (1, Vector.fromList ["libm2"])

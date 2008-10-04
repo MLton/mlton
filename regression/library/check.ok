@@ -1,0 +1,18 @@
+check starting up
+libm5 starting up
+libm4 starting up
+libm3 starting up
+libm2 starting up
+libm1 starting up
+m1 pointer test complete.
+m2 pointer test complete.
+m3 pointer test complete.
+m4 pointer test complete.
+m5 pointer test complete.
+check pointer test complete.
+libm1 exits
+libm2 exits
+libm3 exits
+libm4 exits
+libm5 exits
+check exits

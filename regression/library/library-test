@@ -28,4 +28,10 @@ $ML "${O[@]}" "$@" ${LIB}m5 ${LIB}m4 -format executable \
   -default-ann 'allowFFI true' -export-header check.h check.sml check.c
 
 # Check that symbols resolved correctly
-./check
+./check > check.log
+
+# Confirm expected output
+set +x
+diff -u check.ok check.log
+echo '********** PASS:' "$@" '**********'
+rm -f check.log
