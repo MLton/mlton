@@ -28,7 +28,7 @@ $ML "${O[@]}" "$@" ${LIB}m5 ${LIB}m4 -format executable \
   -default-ann 'allowFFI true' -export-header check.h check.sml check.c
 
 # Check that symbols resolved correctly
-./check > check.log
+./check | sed '' > check.log
 
 # Confirm expected output
 set +x
