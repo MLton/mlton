@@ -26,7 +26,7 @@
  * internal implementation details that should not be accessible.
  */
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
 #define EXTERNAL __declspec(dllimport)
 #define PUBLIC   __declspec(dllexport)
 #define PRIVATE
