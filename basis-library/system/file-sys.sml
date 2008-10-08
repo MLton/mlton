@@ -83,7 +83,7 @@ structure OS_FileSys =
                end
             (* If the volume is not empty, chDir to it rather than to "/" *)
             and gotoRoot (n, arcs, vol) =
-                (if vol <> "" 
+                (if vol <> "" andalso vol <> "/"
                     then chDir (vol ^ (if isMinGW then "\\" else "/"))
                  else chDir "/"
                  ; walkPath (n, [], arcs, vol))
