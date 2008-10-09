@@ -14,7 +14,7 @@ structure Convention = CFunction.Convention
 structure SymbolScope = CFunction.SymbolScope
 
 local
-   val scopes: (word * String.t * SymbolScope.t) HashSet.t = 
+   val scopes: (Word.t * String.t * SymbolScope.t) HashSet.t = 
       HashSet.new {hash = #1}
 in
    fun checkScope {name, symbolScope} =
