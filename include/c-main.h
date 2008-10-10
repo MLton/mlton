@@ -39,6 +39,7 @@ static void MLton_callFromC () {                                        \
         do {                                                            \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         } while (not returnToC);                                        \
+        returnToC = FALSE;                                              \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
         s->atomicState -= 1;                                            \
