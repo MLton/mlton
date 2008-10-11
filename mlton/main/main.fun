@@ -1202,11 +1202,17 @@ fun commandLine (args: string list): unit =
                                | (Executable, _) => maybeOut ""
                                | (LibArchive, _) => maybeOut ".a"
                                | (Library, Darwin) => maybeOut ".dylib"
-                               | (Library, MinGW) => !libname ^ ".dll"
+                               | (Library, Cygwin) => !libname ^ ".dll"
+                               | (Library, MinGW)  => !libname ^ ".dll"
                                | (Library, _) => maybeOut ".so"
                            val libOpts = 
                               case targetOS of
                                  Darwin => [ "-dynamiclib" ]
+                               | Cygwin =>  [ "-shared", 
+                                              "-Wl,--out-implib," ^
+                                                 maybeOut ".a",
+                                              "-Wl,--output-def," ^
+                                                 !libname ^ ".def"]
                                | MinGW =>  [ "-shared", 
                                              "-Wl,--out-implib," ^
                                                 maybeOut ".a",
