@@ -175,7 +175,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.nursery = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.nursery)
             die ("@MLton nursery-ratio argument must be greater than 1.0.");
-        } else if (0 == strcmp (arg, "page-heap")) {
+        } else if (0 == strcmp (arg, "may-page-heap")) {
           i++;
           if (i == argc)
             die ("@MLton may-page-heap missing argument.");
