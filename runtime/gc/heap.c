@@ -150,7 +150,7 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keepSize) {
                uintmaxToCommaString(keepWithMapsSize - keepSize));
     }
     assert (keepWithMapsSize <= h->withMapsSize);
-    GC_decommit (h->start + keepWithMapsSize, h->withMapsSize - keepWithMapsSize);
+    GC_release (h->start + keepWithMapsSize, h->withMapsSize - keepWithMapsSize);
     h->size = keepSize;
     h->withMapsSize = keepWithMapsSize;
   }

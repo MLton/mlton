@@ -83,10 +83,6 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 }
 
-void GC_decommit (void *base, size_t length) {
-        munmap_safe (base, length);
-}
-
 /* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor.
  */
 void *GC_mmapAnon (void *start, size_t length) {

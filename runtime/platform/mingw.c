@@ -3,22 +3,22 @@
 #include "platform.h"
 
 #include "windows.c"
-
-void GC_decommit (void *base, size_t length) {
-        Windows_decommit (base, length);
-}
-
-void *GC_mremap (void *base, size_t old, size_t new) {
-        return Windows_mremap (base, old, new);
-}
+#include "mremap.c"
 
 void *GC_mmapAnon (void *start, size_t length) {
         return Windows_mmapAnon (start, length);
 }
 
-void GC_release (void *base, 
-                 __attribute__ ((unused)) size_t length) {
-        Windows_release (base);
+void GC_release (void *base, size_t length) {
+        Windows_release (base, length);
+}
+
+void *GC_extendHead (void *base, size_t length) {
+        return Windows_mmapAnon (base, length);
+}
+
+void *GC_extendTail (void *base, size_t length) {
+        return Windows_extend (base, length);
 }
 
 uintmax_t GC_physMem (void) {
@@ -38,7 +38,7 @@ uintmax_t GC_physMem (void) {
 size_t GC_pageSize (void) {
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
-        return (size_t)sysinfo.dwPageSize;
+        return (size_t)sysinfo.dwAllocationGranularity;
 }
 
 HANDLE fileDesHandle (int fd) {

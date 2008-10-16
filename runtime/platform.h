@@ -169,7 +169,6 @@ PRIVATE void *GC_mmapAnon_safe_protect (void *start, size_t length,
                                          size_t dead_low, size_t dead_high);
 PRIVATE void *GC_mremap (void *start, size_t oldLength, size_t newLength);
 PRIVATE void GC_release (void *base, size_t length);
-PRIVATE void GC_decommit (void *base, size_t length);
 
 PRIVATE size_t GC_pageSize (void);
 PRIVATE uintmax_t GC_physMem (void);

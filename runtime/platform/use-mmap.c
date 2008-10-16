@@ -1,9 +1,5 @@
 #include "mmap.c"
 
-void GC_decommit (void *base, size_t length) {
-        munmap_safe (base, length);
-}
-
 void GC_release (void *base, size_t length) {
         munmap_safe (base, length);
 }

@@ -206,36 +206,24 @@ static HANDLE dupHandle (int fd) {
         return dupd;
 }
 
-static inline void Windows_decommit (void *base, size_t length) {
-        if (0 == VirtualFree (base, length, MEM_DECOMMIT))
-                die ("VirtualFree decommit failed");
-}
+/* Windows memory is allocated in two phases: reserve and commit.
+ * A reservation makes the address space unavailable to other reservations.
+ * Commiting reserved memory actually maps the reserved memory for use.
+ * Decommitting a portion of a reservation releases the physical memory only.
+ * The complicating detail is that one cannot partially release a reservation.
+ *
+ * The management routines below manage a 'heap' that is composed of several
+ * distinct reservations, laid out in the following order:
+ *   0+ reservations set MEM_COMMIT
+ *   1  reservation starting MEM_COMMIT with an optional MEM_RESERVE tail
+ *
+ * The heap always starts on a reservation and ends at where the MEM_RESERVE
+ * region (if any) begins.
+ */
 
-static inline void *Windows_mremap (void *base, size_t old, size_t new) {
+/* Create a new heap */
+static inline void *Windows_mmapAnon (void *base, size_t length) {
         void *res;
-        void *tail;
-
-        /* Attempt to recover decommit'd memory */
-        tail = (void*)((intptr_t)base + old);
-        res = VirtualAlloc(tail, new - old, MEM_COMMIT, PAGE_READWRITE);
-        if (NULL == res)
-                return (void*)-1;
-
-        return base;
-}
-
-static inline void *Windows_mmapAnon (void *start, size_t length) {
-        void *res;
-        size_t reserve;
-
-        /* If length > 256MB on win32, we round up to the nearest 512MB.
-         * By reserving more than we need, we can later mremap to use it.
-         * This avoids fragmentation on 32 bit machines, near the 2GB limit.
-         * It doesn't hurt us in 64 bit mode either (lots of address space).
-         */
-        if (length > ((size_t)1 << 28))
-                reserve = align (length, ((size_t)1 << 29));
-        else    reserve = length;
 
         /* We prevoiusly used "0" instead of start, which lead to crashes.
          * After reading win32 documentation, the reason for these crashes
@@ -245,36 +233,113 @@ static inline void *Windows_mmapAnon (void *start, size_t length) {
          * freed, it will kill the new heap as well. This bug will not happen
          * now because we reserve, then commit. Reserved memory cannot conflict.
          */
-        res = VirtualAlloc (start, reserve, MEM_RESERVE, PAGE_NOACCESS);
-
-        /* Try shifting the block left (to play well with MLton's scan) */
-        if (NULL == res) {
-                uintptr_t base = (uintptr_t)start;
-                size_t shift = reserve - length;
-                if (base > shift)
-                        res = VirtualAlloc ((void*)(base-shift), reserve, 
-                                            MEM_RESERVE, PAGE_NOACCESS);
-        }
-
-        /* Fall back to zero reserved allocation */
-        if (NULL == res)
-                res = VirtualAlloc (start, length, MEM_RESERVE, PAGE_NOACCESS);
-
-        /* Nothing more we can try at this offset */
-        if (NULL == res)
+        res = VirtualAlloc (base, length, MEM_RESERVE, PAGE_NOACCESS);
+        if (0 == res)
                 return (void*)-1;
 
         /* Actually get the memory for use */
-        res = VirtualAlloc (res, length, MEM_COMMIT, PAGE_READWRITE);
-        if (NULL == res)
-                die("VirtualAlloc MEM_COMMIT of MEM_RESERVEd memory failed!\n");
+        if (0 == VirtualAlloc (res, length, MEM_COMMIT, PAGE_READWRITE)) {
+                VirtualFree(res, 0, MEM_RELEASE);
+                return (void*)-1;
+        }
 
         return res;
 }
 
-static inline void Windows_release (void *base) {
-        if (0 == VirtualFree (base, 0, MEM_RELEASE))
-                die ("VirtualFree release failed");
+static inline void Windows_release (void *base, size_t length) {
+        MEMORY_BASIC_INFORMATION mi;
+        
+        if (length == 0) return;
+        
+        /* We might not be able to release the first reservation because
+         * it overlaps the base address we wish to keep. The idea is to
+         * decommit the part we don't need, and release all reservations
+         * that may be after this point.
+         */
+        
+        if (0 == VirtualQuery(base, &mi, sizeof(mi)))
+                die("VirtualQuery failed");
+        assert (mi.State != MEM_FREE);
+        assert (mi.RegionSize <= length);
+        
+        if (mi.AllocationBase != base) {
+                if (0 == VirtualFree(base, mi.RegionSize, MEM_DECOMMIT))
+                        die("VirtualFree(MEM_DECOMMIT)");
+                
+                /* Requery: the following region might also be decommit */
+                VirtualQuery(base, &mi, sizeof(mi));
+                assert (mi.State == MEM_RESERVE);
+                
+                /* It's possible the consolidated reserved space is larger
+                 * than the range we were asked to free. Bail out early.
+                 */
+                if (mi.RegionSize >= length) return;
+                
+                /* Skip decommited region and move to the next reservation */
+                base = (char*)base + mi.RegionSize;
+                length -= mi.RegionSize;
+        }
+        
+        /* Clean-up the remaining tail. */
+        while (length > 0) {
+                if (0 == VirtualQuery(base, &mi, sizeof(mi)))
+                        die("VirtualQuery");
+                
+                /* We should never have a completely decommitted alloc */
+                assert (mi.State == MEM_COMMIT);
+                /* This method is supposed to only do complete releases */
+                assert (mi.AllocationBase == base);
+                /* The committed region should never exceed the length */
+                assert (mi.RegionSize <= length);
+                
+                if (0 == VirtualFree(base, 0, MEM_RELEASE))
+                        die("VirtualFree(MEM_RELEASE) failed");
+                
+                base = (char*)base + mi.RegionSize;
+                length -= mi.RegionSize;
+        }
+        
+        /* The last release also handled the optional MEM_RESERVE region */
+}
+
+/* Extend an existing heap */
+static inline void* Windows_extend (void *base, size_t length) {
+        MEMORY_BASIC_INFORMATION mi;
+        void *end;
+        
+        /* Check the status of memory after the end of the allocation */
+        VirtualQuery(base, &mi, sizeof(mi));
+        
+        if (mi.State == MEM_FREE) {
+                /* No tail of reserved memory -> simply try to allocate */
+                return Windows_mmapAnon(base, length);
+        } else if (mi.State == MEM_RESERVE) {
+                assert (mi.AllocationBase <= base);
+                end = (char*)base + mi.RegionSize;
+                
+                if (mi.RegionSize > length) { /* only commit is needed */
+                        if (0 == VirtualAlloc(base, length, 
+                                              MEM_COMMIT, PAGE_READWRITE)) {
+                                return (void*)-1;
+                        } else {
+                                return base;
+                        }
+                } else if (end == Windows_mmapAnon(end, length-mi.RegionSize)) {
+                        if (0 == VirtualAlloc(base, mi.RegionSize, 
+                                              MEM_COMMIT, PAGE_READWRITE)) {
+                                VirtualFree(end, 0, MEM_RELEASE);
+                                return (void*)-1;
+                        } else {
+                                return base;
+                        }
+                } else {
+                        /* Failed to allocate tail */
+                        return (void*)-1;
+                }
+        } else {
+                /* The memory is used by another mapping */
+                return (void*)-1;
+        }
 }
 
 C_Errno_t(C_PId_t) 

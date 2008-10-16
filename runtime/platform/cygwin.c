@@ -6,6 +6,7 @@
 #include "mmap.c"
 #include "recv.nonblock.c"
 #include "windows.c"
+#include "mremap.c"
 
 /* 
  * The sysconf(_SC_PAGESIZE) is the necessary alignment for using
@@ -20,10 +21,19 @@
  * See: http://cygwin.com/ml/cygwin/2006-06/msg00341.html
  */ 
 static size_t GC_pageSize_sysconf (void) {
+  SYSTEM_INFO sysinfo;
   long int pageSize;
 
   pageSize = sysconf (_SC_PAGESIZE);
-  return (size_t)pageSize;
+  GetSystemInfo(&sysinfo);
+  
+  /* MLton_Platform_CygwinUseMmap is not set when this is called.
+   * Assume the worst; choose the larger allocation unit.
+   */
+  if ((size_t)pageSize < (size_t)sysinfo.dwAllocationGranularity)
+    return (size_t)sysinfo.dwAllocationGranularity;
+  else
+    return (size_t)pageSize;
 }
 
 static size_t GC_pageSize_windows (void) {
@@ -59,13 +69,6 @@ uintmax_t GC_physMem (void) {
   return (uintmax_t)memstat.dwTotalPhys;
 }
 
-void GC_decommit (void *base, size_t length) {
-        if (MLton_Platform_CygwinUseMmap)
-                munmap_safe (base, length);
-        else
-                Windows_decommit (base, length);
-}
-
 void *GC_mmapAnon (void *start, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
                 return mmapAnon (start, length);
@@ -77,9 +80,22 @@ void GC_release (void *base, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
                 munmap_safe (base, length);
         else
-                Windows_release (base);
+                Windows_release (base, length);
 }
 
+void* GC_extendHead (void *base, size_t length) {
+        if (MLton_Platform_CygwinUseMmap)
+                return mmapAnon (base, length);
+        else
+                return Windows_mmapAnon (base, length);
+}
+
+void* GC_extendTail (void *base, size_t length) {
+        if (MLton_Platform_CygwinUseMmap)
+                return mmapAnon (base, length);
+        else
+                return Windows_extend (base, length);
+}
 
 HANDLE fileDesHandle (int fd) {
   // The temporary prevents a "cast does not match function type" warning.
