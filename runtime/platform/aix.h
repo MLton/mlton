@@ -37,15 +37,16 @@
 
 #define MLton_Platform_OS_host "aix"
 
-#include "feround.h"
-
 #define FE_TOWARDZERO 0 // FP_RND_RZ
 #define FE_TONEAREST  1 // FP_RND_RN
 #define FE_UPWARD     2 // FP_RND_RP
 #define FE_DOWNWARD   3 // FP_RND_RM
 
+int fegetround(void);
+void fesetround(int mode);
 int fpclassify64(double d);
 
+#ifndef _AIXVERSION_520
 /* These are GCC builtins, but <math.h> does not define the prototypes. */
 float acosf(float x);
 float asinf(float x);
@@ -67,6 +68,7 @@ float sinhf(float x);
 float sqrtf(float x);
 float tanf(float x);
 float tanhf(float x);
+#endif
 
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
