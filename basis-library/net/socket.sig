@@ -165,13 +165,20 @@ signature SOCKET =
 signature SOCKET_EXTRA =
   sig
     include SOCKET
+    val fromRep : C_Sock.t -> ('af, 'sock_type) sock
+    val toRep : ('af, 'sock_type) sock -> C_Sock.t
     val sockToWord: ('af, 'sock_type) sock -> SysWord.word
     val wordToSock: SysWord.word -> ('af, 'sock_type) sock
     val sockToFD: ('af, 'sock_type) sock -> Posix.FileSys.file_desc
     val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) sock
-    type pre_sock_addr
+    type pre_sock_addr = Word8.word array
     val unpackSockAddr: 'af sock_addr -> Word8.word vector
     val newSockAddr: unit -> (pre_sock_addr * C_Socklen.t ref * (unit -> 'af sock_addr))
+
+    structure SOCKExtra:
+      sig
+         val toRep : SOCK.sock_type -> C_Sock.t
+      end
 
     structure CtlExtra:
        sig

@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Socket : SOCKET_EXTRA =
+structure Socket :> SOCKET_EXTRA =
 struct
 
 structure Prim = PrimitiveFFI.Socket
@@ -15,6 +15,8 @@ structure FileSys = Posix.FileSys
 
 structure Sock = Net.Sock
 type sock = Sock.t
+val fromRep = Sock.fromRep
+val toRep = Sock.toRep
 val sockToWord = C_Sock.castToSysWord o Sock.toRep
 val wordToSock = Sock.fromRep o C_Sock.castFromSysWord
 val sockToFD = PrePosix.FileDesc.fromRep o Sock.toRep
@@ -64,6 +66,7 @@ structure SockType = Net.SockType
 structure SOCK =
    struct
       type sock_type = SockType.t
+      val toRep = SockType.toRep
       val stream = SockType.fromRep Prim.SOCK.STREAM
       val dgram = SockType.fromRep Prim.SOCK.DGRAM
       val names : (string * sock_type) list = 
@@ -80,6 +83,7 @@ structure SOCK =
             SOME (_, st) => SOME st
           | NONE => NONE
    end
+structure SOCKExtra = SOCK
 
 structure CtlExtra =
    struct

@@ -1,5 +1,10 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-10-27
+   - Fixed phantom typing of sockets by hiding the representation of socket
+     types.  Previously the representation of sockets was revealed rendering
+     the phantom types useless.
+
 * 2008-07-24
    - Added support for compiling to a C library. The relevant new compiler
      options are '-ar' and '-format'. Libraries are named based on the
