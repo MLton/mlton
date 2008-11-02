@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Const (S: CONST_STRUCTS): CONST = 
+functor Const (S: CONST_STRUCTS): CONST =
 struct
 
 open S
@@ -29,7 +29,6 @@ structure SmallIntInf =
                then SOME (WordX.orb (WordX.one ws,
                                      WordX.lshift (WordX.fromIntInf (i, ws),
                                                    WordX.one ws)))
-                          
                else NONE
          end
 
@@ -64,7 +63,7 @@ in
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
-end      
+end
 
 val toString = Layout.toString o layout
 
