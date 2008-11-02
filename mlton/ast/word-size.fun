@@ -89,7 +89,7 @@ fun range (s, {signed}) =
    if signed
       then
          let
-            val pow = IntInf.pow (2, Bits.toInt (bits s) - 1)
+            val pow = IntInf.<< (1, Bits.toWord (bits s) - 0w1)
          in
             (~ pow, pow - 1)
          end
