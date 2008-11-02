@@ -10,9 +10,21 @@ structure IntInf: INTEGER = Integer (open Pervasive.IntInf
 
 structure IntInf: INT_INF =
    struct
-      open IntInf 
+      open IntInf
 
-      val hash = String.hash o toString
+      val hash = let
+         val prime =
+             (Word.toIntInf o Word.~ o Word.fromInt)
+              (case Word.wordSize of
+                  8 => 5
+                | 16 => 15
+                | 32 => 5
+                | 64 => 59
+                | 128 => 159
+                | _ => Error.bug "Unknown Word.wordSize")
+      in
+         fn i => Word.fromIntInf (i mod prime)
+      end
 
       local
          open Pervasive.IntInf
