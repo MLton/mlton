@@ -108,12 +108,12 @@ fun isInRange (s, i, sg) =
 datatype prim = W8 | W16 | W32 | W64
 
 fun primOpt (s: t): prim option =
-   let
-      val b = Bits.toInt (bits s)
-   in
-      List.peekMap ([(8, W8), (16, W16), (32, W32), (64, W64)],
-                    fn (b', p) => if b = b' then SOME p else NONE)
-   end
+   case Bits.toInt (bits s) of
+      8 => SOME W8
+    | 16 => SOME W16
+    | 32 => SOME W32
+    | 64 => SOME W64
+    | _ => NONE
 
 fun prim s =
    case primOpt s of
