@@ -22,6 +22,7 @@ signature WORD_X_VECTOR =
       val equals: t * t -> bool
       val forall: t * (WordX.t -> bool) -> bool
       val fromString: string -> t
+      val hash : t -> word
       val layout: t -> Layout.t
       val length: t -> int
       val sub: t * int -> WordX.t

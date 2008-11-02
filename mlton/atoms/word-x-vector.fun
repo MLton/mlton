@@ -47,6 +47,8 @@ fun toString (T {elements, elementSize}): string =
                      end)))
    end
 
+val hash = String.hash o toString
+
 val layout = Layout.str o toString
 
 fun equals (v, v') =

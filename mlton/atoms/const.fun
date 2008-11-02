@@ -69,11 +69,11 @@ val toString = Layout.toString o layout
 
 fun hash (c: t): word =
    case c of
-      IntInf i => String.hash (IntInf.toString i)
+      IntInf i => IntInf.hash i
     | Null => 0wx0
     | Real r => RealX.hash r
-    | Word w => Word.fromIntInf (WordX.toIntInf w)
-    | WordVector v => String.hash (WordXVector.toString v)
+    | Word w => WordX.hash w
+    | WordVector v => WordXVector.hash v
 
 fun equals (c, c') =
    case (c, c') of
