@@ -5,14 +5,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature WORD_X_VECTOR_STRUCTS = 
+signature WORD_X_VECTOR_STRUCTS =
    sig
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       sharing WordSize = WordX.WordSize
    end
 
-signature WORD_X_VECTOR = 
+signature WORD_X_VECTOR =
    sig
       include WORD_X_VECTOR_STRUCTS
 

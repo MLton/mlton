@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor WordXVector (S: WORD_X_VECTOR_STRUCTS): WORD_X_VECTOR = 
+functor WordXVector (S: WORD_X_VECTOR_STRUCTS): WORD_X_VECTOR =
 struct
 
 open S
@@ -49,7 +49,7 @@ fun toString (T {elements, elementSize}): string =
 
 val layout = Layout.str o toString
 
-fun equals (v, v') = 
+fun equals (v, v') =
     WordSize.equals (elementSize v, elementSize v')
     andalso Vector.equals (elements v, elements v', WordX.equals)
 
