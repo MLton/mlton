@@ -58,11 +58,11 @@ FLAGS += $(COMPILE_ARGS)
 SOURCES :=			\
 	$(FILE)			\
 	$(UP)			\
-	front-end/ml.lex.sml 	\
-	front-end/ml.grm.sig 	\
+	front-end/ml.lex.sml	\
+	front-end/ml.grm.sig	\
 	front-end/ml.grm.sml	\
-	front-end/mlb.lex.sml 	\
-	front-end/mlb.grm.sig 	\
+	front-end/mlb.lex.sml	\
+	front-end/mlb.grm.sig	\
 	front-end/mlb.grm.sml	\
 	$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi)
 
@@ -154,12 +154,12 @@ nj-whole: $(SOURCES)
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;'; 				\
-		echo 'local'; 							\
+		echo 'Control.polyEqWarn := false;';				\
+		echo 'local';							\
 		cmcat sources.cm | grep 'mlton-stubs-in-smlnj' | xargs cat;	\
 		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
 		cmcat sources.cm | grep -v 'mlyacc' |				\
-			grep -v 'mlton-stubs-in-smlnj' | xargs cat; 		\
+			grep -v 'mlton-stubs-in-smlnj' | xargs cat;		\
 		echo 'in';							\
 		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
 		echo 'end';							\
