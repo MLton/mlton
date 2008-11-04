@@ -104,7 +104,7 @@ structure CFunction =
             writesStackTop = true}
 
       fun gcArrayAllocate {return} =
-         T {args = Vector.new4 (Type.gcState (), 
+         T {args = Vector.new4 (Type.gcState (),
                                 Type.csize (),
                                 Type.seqIndex (),
                                 Type.objptrHeader ()),
@@ -151,7 +151,7 @@ structure CFunction =
             modifiesFrontier = true,
             prototype = (Vector.new3 (CType.gcState,
                                       CType.thread,
-                                      CType.csize ()), 
+                                      CType.csize ()),
                          NONE),
             readsStackTop = true,
             return = Type.unit,
@@ -168,7 +168,7 @@ structure CFunction =
             mayGC = false,
             maySwitchThreads = false,
             modifiesFrontier = false,
-            prototype = (Vector.new2 (CType.gcState, CType.cpointer), 
+            prototype = (Vector.new2 (CType.gcState, CType.cpointer),
                          SOME CType.bool),
             readsStackTop = false,
             return = Type.bool,
@@ -202,7 +202,7 @@ structure CFunction =
             mayGC = true,
             maySwitchThreads = false,
             modifiesFrontier = true,
-            prototype = (Vector.new3 (CType.gcState, 
+            prototype = (Vector.new3 (CType.gcState,
                                       CType.objptrHeader (),
                                       CType.cpointer),
                          SOME (CType.cpointer)),
@@ -252,7 +252,7 @@ structure CFunction =
             mayGC = false,
             maySwitchThreads = false,
             modifiesFrontier = false,
-            prototype = (Vector.new2 (CType.gcState, CType.cpointer), 
+            prototype = (Vector.new2 (CType.gcState, CType.cpointer),
                          SOME (CType.csize ())),
             readsStackTop = false,
             return = Type.csize (),
@@ -444,7 +444,7 @@ structure Name =
                IntInf_add => intInfBinary ()
              | IntInf_andb => intInfBinary ()
              | IntInf_arshift => intInfShift ()
-             | IntInf_compare => 
+             | IntInf_compare =>
                   (* CHECK; cint would be better? *)
                   vanilla {args = Vector.new2 (Type.intInf (), Type.intInf ()),
                            name = name,
@@ -483,7 +483,7 @@ structure Name =
              | Real_abs s => realUnary s
              | Real_add s => realBinary s
              | Real_castToWord (s1, s2) =>
-                  coerce (real s1, realCType s1, 
+                  coerce (real s1, realCType s1,
                           word s2, wordCType (s2, {signed = false}))
              | Real_div s => realBinary s
              | Real_equal s => realCompare s
@@ -517,11 +517,11 @@ structure Name =
              | Word_addCheck (s, sg) => wordBinaryOverflows (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
              | Word_castToReal (s1, s2) =>
-                  coerce (word s1, wordCType (s1, {signed = false}), 
+                  coerce (word s1, wordCType (s1, {signed = false}),
                           real s2, realCType s2)
              | Word_equal s => wordCompare (s, {signed = false})
              | Word_extdToWord (s1, s2, sg) =>
-                  coerce (word s1, wordCType (s1, sg), 
+                  coerce (word s1, wordCType (s1, sg),
                           word s2, wordCType (s2, {signed = false}))
              | Word_lshift s => wordShift (s, {signed = false})
              | Word_lt z => wordCompare z
@@ -534,7 +534,7 @@ structure Name =
              | Word_quot z => wordBinary z
              | Word_rem z => wordBinary z
              | Word_rndToReal (s1, s2, sg) =>
-                  coerce (word s1, wordCType (s1, sg), 
+                  coerce (word s1, wordCType (s1, sg),
                           real s2, realCType s2)
              | Word_xorb s => wordBinary (s, {signed = false})
              | Word_rol s => wordShift (s, {signed = false})
@@ -696,7 +696,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                           Option.map (toRtype t, fn t =>
                                                       (Var.new x, t)))
             val l' = Label.new l
-            val _ = 
+            val _ =
                List.push
                (extraBlocks,
                 Block.T {args = args,
@@ -752,9 +752,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
          case Type.deReal t of
             NONE => Operand.cast (Operand.word (Type.bogusWord t), t)
           | SOME s => Operand.Const (Const.real (RealX.zero s))
-      val handlesSignals = 
-         S.Program.hasPrim 
-         (program, fn p => 
+      val handlesSignals =
+         S.Program.hasPrim
+         (program, fn p =>
           case Prim.name p of
              Prim.Name.MLton_installSignalHandler => true
            | _ => false)
@@ -766,7 +766,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                    case toRtype t of
                       NONE => Type.unit
                     | SOME t => t)
-      fun translateTransfer (t: S.Transfer.t): (Statement.t list * 
+      fun translateTransfer (t: S.Transfer.t): (Statement.t list *
                                                 Transfer.t) =
          case t of
             S.Transfer.Arith {args, overflow, prim, success, ty} =>
@@ -785,14 +785,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            (Var {var = res, ty = ty}))})}
                in
                   if codegenImplementsPrim prim
-                     then ([], 
+                     then ([],
                            Transfer.Arith {dst = res,
                                            args = vos args,
                                            overflow = overflow,
                                            prim = prim,
                                            success = noOverflow,
                                            ty = ty})
-                     else 
+                     else
                         let
                            datatype z = datatype Prim.Name.t
                            fun doOperCheckCF (operCheck) =
@@ -815,8 +815,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         statements = Vector.new0 (),
                                         transfer = (Transfer.ifBool
                                                     (Var {var = checkRes,
-                                                          ty = Type.bool}, 
-                                                     {falsee = noOverflow, 
+                                                          ty = Type.bool},
+                                                     {falsee = noOverflow,
                                                       truee = overflow}))}
                                     end
                               in
@@ -858,17 +858,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               else ([], doOperCF (Prim.name prim, operCheck))
                         in
                            case Prim.name prim of
-                              Word_addCheck (s, sg) => 
-                                 doit (Prim.wordAdd s, 
+                              Word_addCheck (s, sg) =>
+                                 doit (Prim.wordAdd s,
                                        Word_addCheck (s, sg))
-                            | Word_mulCheck (s, sg) => 
+                            | Word_mulCheck (s, sg) =>
                                  doit (Prim.wordMul (s, sg),
                                        Word_mulCheck (s, sg))
-                            | Word_negCheck s => 
-                                 doit (Prim.wordNeg s, 
+                            | Word_negCheck s =>
+                                 doit (Prim.wordNeg s,
                                        Word_negCheck s)
-                            | Word_subCheck (s, sg) => 
-                                 doit (Prim.wordSub s, 
+                            | Word_subCheck (s, sg) =>
+                                 doit (Prim.wordSub s,
                                        Word_subCheck (s, sg))
                             | _ => Error.bug (concat ["SsaToRssa.translateTransfer: ",
                                                       "strange arith:",
@@ -956,7 +956,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                       | S.Statement.Update {base, offset, value} =>
                            (case toRtype (varType value) of
                                NONE => none ()
-                             | SOME t => 
+                             | SOME t =>
                                   let
                                      val baseOp = Base.map (base, varOp)
                                      val ss =
@@ -1007,7 +1007,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                       | S.Exp.Object {args, con} =>
                            (case toRtype ty of
                                NONE => none ()
-                             | SOME dstTy => 
+                             | SOME dstTy =>
                                   adds (object {args = args,
                                                 con = con,
                                                 dst = (valOf var, dstTy),
@@ -1095,7 +1095,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                  ccall {args = vos args,
                                         func = f}
                               fun simpleCCallWithGCState (f: CFunction.t) =
-                                 ccall {args = Vector.concat 
+                                 ccall {args = Vector.concat
                                                [Vector.new1 GCState,
                                                 vos args],
                                         func = f}
@@ -1217,15 +1217,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            if not (Type.isObjptr t)
                                               then none ()
                                            else
-                                              simpleCCallWithGCState 
+                                              simpleCCallWithGCState
                                               (CFunction.share (Operand.ty (a 0))))
                                | MLton_size =>
-                                    simpleCCallWithGCState 
+                                    simpleCCallWithGCState
                                     (CFunction.size (Operand.ty (a 0)))
                                | MLton_touch =>
                                     let
                                        val a = arg 0
-                                       val args = 
+                                       val args =
                                           if isSome (toRtype (varType a))
                                              then Vector.new1 (varOp a)
                                           else Vector.new0 ()
@@ -1272,13 +1272,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                          dst = continue})}
                                      in
                                         (bumpAtomicState 1,
-                                         if handlesSignals 
+                                         if handlesSignals
                                             then
                                                Transfer.ifBool
                                                (Runtime SignalIsPending,
                                                 {falsee = continue,
                                                  truee = signalIsPending})
-                                         else 
+                                         else
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
                                      end)
@@ -1295,7 +1295,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         datatype z = datatype GCField.t
                                         val func =
                                            CFunction.gc {maySwitchThreads = true}
-                                        val returnFromHandler = 
+                                        val returnFromHandler =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.CReturn {func = func},
@@ -1303,7 +1303,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             transfer =
                                             Goto {args = Vector.new0 (),
                                                   dst = continue}}
-                                        val args = 
+                                        val args =
                                            Vector.new5
                                            (GCState,
                                             Operand.zero (WordSize.csize ()),
@@ -1332,13 +1332,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               truee = switchToHandler})}
                                      in
                                         (bumpAtomicState ~1,
-                                         if handlesSignals 
-                                            then 
+                                         if handlesSignals
+                                            then
                                                Transfer.ifBool
                                                (Runtime SignalIsPending,
                                                 {falsee = continue,
                                                  truee = testAtomicState})
-                                         else 
+                                         else
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
                                      end)
@@ -1349,23 +1349,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     (CFunction.copyThread ())
                                | Thread_switchTo =>
                                     ccall {args = (Vector.new3
-                                                   (GCState, 
-                                                    a 0, 
+                                                   (GCState,
+                                                    a 0,
                                                     EnsuresBytesFree)),
                                            func = CFunction.threadSwitchTo ()}
                                | Vector_length => arrayOrVectorLength ()
                                | Weak_canGet =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
-                                     fn _ => 
+                                     fn _ =>
                                      simpleCCallWithGCState
-                                     (CFunction.weakCanGet 
+                                     (CFunction.weakCanGet
                                       {arg = Operand.ty (a 0)}),
                                      fn () => move (Operand.bool false))
                                | Weak_get =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
-                                     fn t => 
+                                     fn t =>
                                      simpleCCallWithGCState
                                      (CFunction.weakGet
                                       {arg = Operand.ty (a 0),
@@ -1442,7 +1442,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                              | SOME var =>
                                   (case toRtype ty of
                                       NONE => none ()
-                                    | SOME ty => 
+                                    | SOME ty =>
                                          adds
                                          (select
                                           {base = Base.map (base, varOp),
@@ -1458,7 +1458,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
          in
             loop (Vector.length statements - 1, ss, transfer)
          end
-      fun translateBlock (S.Block.T {label, args, statements, transfer}) = 
+      fun translateBlock (S.Block.T {label, args, statements, transfer}) =
          let
             val (ss, t) = translateTransfer transfer
             val (ss, t) = translateStatementsTransfer (statements, ss, t)
