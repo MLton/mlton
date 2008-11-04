@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ElaborateCore (S: ELABORATE_CORE_STRUCTS): ELABORATE_CORE = 
+functor ElaborateCore (S: ELABORATE_CORE_STRUCTS): ELABORATE_CORE =
 struct
 
 open S
@@ -77,7 +77,7 @@ in
    structure CFunction = CFunction
    structure CType = CType
    structure CharSize = CharSize
-   structure Convention  = CFunction.Convention 
+   structure Convention  = CFunction.Convention
    structure SymbolScope  = CFunction.SymbolScope
    structure Con = Con
    structure Const = Const
@@ -141,7 +141,7 @@ structure Lookup =
    end
 
 fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
-   let 
+   let
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
             Atype.Var a => (* rule 44 *)
@@ -152,7 +152,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                   fun normal () =
                      case lookup c of
                         NONE => Type.new ()
-                      | SOME s => 
+                      | SOME s =>
                            let
                               val kind = TypeStr.kind s
                               val numArgs = Vector.length ts
@@ -164,7 +164,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                               else
                                  let
                                     open Layout
-                                    val _ = 
+                                    val _ =
                                        Control.error
                                        (Atype.region ty,
                                         seq [str "type ",
@@ -208,8 +208,8 @@ val {hom = typeTycon: Type.t -> Tycon.t option, ...} =
                  var = fn _ => NONE}
 
 val typeTycon =
-   Trace.trace 
-   ("ElaborateCore.typeTycon", Type.layout, Option.layout Tycon.layout) 
+   Trace.trace
+   ("ElaborateCore.typeTycon", Type.layout, Option.layout Tycon.layout)
    typeTycon
 
 fun 'a elabConst (c: Aconst.t,
@@ -391,7 +391,7 @@ fun approximateN (l: Layout.t, prefixMax, suffixMax): Layout.t =
         | SOME suffixMax =>
              if n <= prefixMax + suffixMax
                 then s
-             else concat [String.prefix (s, prefixMax - 2), 
+             else concat [String.prefix (s, prefixMax - 2),
                           "  ...  ",
                           String.suffix (s, suffixMax - 5)])
    end
@@ -437,7 +437,7 @@ val elaboratePat:
                             then SOME p
                          else NONE)) of
                      NONE => ()
-                   | SOME p' => 
+                   | SOME p' =>
                         let
                            open Layout
                         in
@@ -492,7 +492,7 @@ val elaboratePat:
                       in
                          case s of
                             NONE => dontCare ()
-                          | SOME s => 
+                          | SOME s =>
                                let
                                   val {args, instance} = Scheme.instantiate s
                                   val args = args ()
@@ -652,7 +652,7 @@ val elaboratePat:
                                   then var ()
                                else
                                   let
-                                     val _ = 
+                                     val _ =
                                         Control.error
                                         (region,
                                          seq [str "undefined constructor: ",
@@ -676,7 +676,7 @@ val elaboratePat:
                                   case s of
                                      NONE => dontCare ()
                                    | SOME s =>
-                                        let 
+                                        let
                                            val {args, instance} =
                                               Scheme.instantiate s
                                         in
@@ -727,7 +727,7 @@ structure Type =
       open Type
 
       fun layoutPrettyBracket ty =
-         let 
+         let
             open Layout
          in
             seq [str "[", layoutPretty ty, str "]"]
@@ -824,15 +824,15 @@ structure Type =
       fun toCBaseType (ty: t): z option =
          case toCType ty of
             NONE => NONE
-          | SOME {ctype, name} => 
+          | SOME {ctype, name} =>
                SOME {ctype = ctype, name = name, ty = ty}
       fun toCArgType (ty: t): z vector option =
          case deTupleOpt ty of
-            NONE => 
+            NONE =>
                (case toCBaseType ty of
                    NONE => NONE
                  | SOME z => SOME (Vector.new1 z))
-          | SOME tys => 
+          | SOME tys =>
                Exn.withEscape
                (fn esc =>
                 (SOME o Vector.map)
@@ -869,7 +869,7 @@ val isIEAttributeConvention =
     | ImportExportAttribute.Stdcall => true
     | _ => false
 
-fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list) 
+fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
     : Convention.t option =
    case attributes of
       [] => SOME Convention.Cdecl
@@ -898,7 +898,7 @@ val isIEAttributeSymbolScope =
 
 fun parseIEAttributesSymbolScope (attributes: ImportExportAttribute.t list,
                                   defScope : SymbolScope.t)
-    : SymbolScope.t option = 
+    : SymbolScope.t option =
    case attributes of
       [] => SOME defScope
     | [a] => (case a of
@@ -910,15 +910,15 @@ fun parseIEAttributesSymbolScope (attributes: ImportExportAttribute.t list,
 
 fun scopeCheck {name, symbolScope, region} =
    let
-      fun warn l = 
+      fun warn l =
          Control.warning (region, seq (List.map (l, str)), Layout.empty)
-      val oldScope = 
+      val oldScope =
          Ffi.checkScope {name = name, symbolScope = symbolScope}
    in
       if symbolScope = oldScope then () else
-      warn [ "symbol '", name, "' redeclared as ", 
-             SymbolScope.toString symbolScope, 
-             " (previously ", 
+      warn [ "symbol '", name, "' redeclared as ",
+             SymbolScope.toString symbolScope,
+             " (previously ",
              SymbolScope.toString oldScope,
              "). This may cause linker errors"]
    end
@@ -934,8 +934,8 @@ fun import {attributes: ImportExportAttribute.t list,
          error (seq [str "invalid attributes for _import: ",
                      List.layout ImportExportAttribute.layout attributes])
       fun invalidType () =
-         Control.error 
-         (region, 
+         Control.error
+         (region,
           str "invalid type for _import",
           Type.layoutPretty elabedTy)
    in
@@ -964,11 +964,11 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; SymbolScope.External)
                    | SOME s => s
-               val () = 
+               val () =
                   case name of
                      NONE => ()
-                   | SOME x => scopeCheck {name = x, 
-                                           symbolScope = symbolScope, 
+                   | SOME x => scopeCheck {name = x,
+                                           symbolScope = symbolScope,
                                            region = region}
                val addrTy = Type.cpointer
                val func =
@@ -1024,7 +1024,7 @@ local
       Cexp.make (Cexp.Const
                  (fn () => Const.word (WordX.zero WordSize.bool)),
                  Type.word WordSize.bool)
-   val oneExpBool = 
+   val oneExpBool =
       Cexp.make (Cexp.Const
                  (fn () => Const.word (WordX.one WordSize.bool)),
                  Type.word WordSize.bool)
@@ -1038,8 +1038,8 @@ local
                   cty: CType.t option,
                   symbolScope: SymbolScope.t }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol {name = name, 
-                                      cty = cty, 
+               prim = Prim.ffiSymbol {name = name,
+                                      cty = cty,
                                       symbolScope = symbolScope},
                result = expandedPtrTy}
 
@@ -1047,10 +1047,10 @@ local
                 expandedCbTy,
                 ptrExp: Cexp.t}: Cexp.t =
       let
-         val fetchExp = 
+         val fetchExp =
             primApp {args = Vector.new2 (ptrExp, zeroExpPtrdiff ()),
                      prim = Prim.cpointerGet ctypeCbTy,
-                     result = if isBool 
+                     result = if isBool
                                  then Type.word WordSize.bool
                                  else expandedCbTy}
       in
@@ -1085,7 +1085,7 @@ local
                         nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
                         redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                         region = Region.bogus,
-                        rules = Vector.new2 
+                        rules = Vector.new2
                                 ({exp = oneExpBool, lay = NONE, pat = Cpat.truee},
                                  {exp = zeroExpBool, lay = NONE, pat = Cpat.falsee}),
                         test = valueExp}
@@ -1107,7 +1107,7 @@ local
          ((Cexp.lambda o Lambda.make)
           {arg = getArg,
            argType = Type.unit,
-           body = mkFetch {ctypeCbTy = ctypeCbTy, 
+           body = mkFetch {ctypeCbTy = ctypeCbTy,
                            isBool = isBool,
                            expandedCbTy = expandedCbTy,
                            ptrExp = ptrExp},
@@ -1184,8 +1184,8 @@ in
                NONE => (invalidAttributes ()
                         ; SymbolScope.External)
              | SOME s => s
-         val () = scopeCheck {name = name, 
-                              symbolScope = symbolScope, 
+         val () = scopeCheck {name = name,
+                              symbolScope = symbolScope,
                               region = region}
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
@@ -1222,7 +1222,7 @@ in
              in
                 case Type.deTupleOpt expandedTy of
                    NONE => invalidType ()
-                 | SOME tys => 
+                 | SOME tys =>
                       if Vector.length tys <> 2
                          then invalidType ()
                          else let
@@ -1235,7 +1235,7 @@ in
                                  val (setArgTy, setResTy) =
                                     doit (Vector.sub (tys, 1))
                                  val () =
-                                    if Type.isUnit getArgTy 
+                                    if Type.isUnit getArgTy
                                        then ()
                                        else invalidType ()
                                  val () =
@@ -1275,13 +1275,13 @@ in
          val () =
             if alloc andalso symbolScope = SymbolScope.External
             then invalidAttributes () else ()
-         val () = scopeCheck {name = name, 
-                              symbolScope = symbolScope, 
+         val () = scopeCheck {name = name,
+                              symbolScope = symbolScope,
                               region = region}
          val () =
             if not alloc then () else
-            Ffi.addSymbol {name = name, 
-                           ty = ctypeCbTy, 
+            Ffi.addSymbol {name = name,
+                           ty = ctypeCbTy,
                            symbolScope = symbolScope}
          val addrExp =
             mkAddress {expandedPtrTy = Type.cpointer,
@@ -1319,7 +1319,7 @@ in
                  | SOME (ptrTy, symTy) =>
                       (case Type.deTupleOpt symTy of
                           NONE => invalidType ()
-                        | SOME tys => 
+                        | SOME tys =>
                              if Vector.length tys <> 2
                                 then invalidType ()
                                 else let
@@ -1332,7 +1332,7 @@ in
                                         val (setArgTy, setResTy) =
                                            doit (Vector.sub (tys, 1))
                                         val () =
-                                           if Type.isUnit getArgTy 
+                                           if Type.isUnit getArgTy
                                               then ()
                                               else invalidType ()
                                         val () =
@@ -1375,7 +1375,7 @@ end
 fun export {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
             expandedTy: Type.t,
-            name: string, 
+            name: string,
             region: Region.t}: Aexp.t =
    let
       fun error l = Control.error (region, l, Layout.empty)
@@ -1383,7 +1383,7 @@ fun export {attributes: ImportExportAttribute.t list,
          error (seq [str "invalid attributes for _export: ",
                      List.layout ImportExportAttribute.layout attributes])
       fun invalidType () =
-         Control.error 
+         Control.error
          (region,
           str "invalid type for _export",
           Type.layoutPretty elabedTy)
@@ -1405,8 +1405,8 @@ fun export {attributes: ImportExportAttribute.t list,
                (invalidAttributes ()
                 ; SymbolScope.Public)
           | SOME s => s
-      val () = scopeCheck {name = name, 
-                           symbolScope = symbolScope, 
+      val () = scopeCheck {name = name,
+                           symbolScope = symbolScope,
                            region = region}
       val (exportId, args, res) =
          case Type.toCFunType expandedTy of
@@ -1559,11 +1559,11 @@ fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
       let
          open Layout
       in
-         Control.error 
+         Control.error
          (region,
           str (concat (if ElabControl.expert c
                           then [keyword, " disallowed"]
-                          else [keyword, " disallowed, compile with -default-ann '", 
+                          else [keyword, " disallowed, compile with -default-ann '",
                                 ElabControl.name c, " true'"])),
           empty)
       end
@@ -1592,7 +1592,7 @@ fun elaborateDec (d, {env = E, nest}) =
             {markFunc = markFunc,
              setBound = setBound,
              unmarkFunc = unmarkFunc}
-         end  
+         end
       fun elabType (t: Atype.t): Type.t =
          elaborateType (t, Lookup.fromEnv E)
       fun elabTypBind (typBind: TypBind.t) =
@@ -2050,8 +2050,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                      val body = elabExp (body, nest, NONE)
                                      val body =
                                         Cexp.enterLeave
-                                        (body, 
-                                         profileBody 
+                                        (body,
+                                         profileBody
                                          andalso !Control.profileBranch,
                                          fn () =>
                                          let
@@ -2061,8 +2061,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                        Layout.toString
                                                        (approximatePrefix
                                                         (seq
-                                                         (separateRight 
-                                                          (Vector.toListMap 
+                                                         (separateRight
+                                                          (Vector.toListMap
                                                            (args, Apat.layout), " ")))),
                                                        ">"]
                                          in
@@ -2160,7 +2160,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                     Type.tuple
                                                     (Vector.map (pats, Cpat.ty))))}
                                               end),
-                                             test = 
+                                             test =
                                              Cexp.tuple
                                              (Vector.map2
                                               (xs, argTypes, Cexp.var))}
@@ -2322,8 +2322,8 @@ fun elaborateDec (d, {env = E, nest}) =
                              val exp = elabExp (exp, nest, Apat.getName pat)
                              val exp =
                                 Cexp.enterLeave
-                                (exp, 
-                                 profileBody 
+                                (exp,
+                                 profileBody
                                  andalso !Control.profileVal
                                  andalso Cexp.isExpansive exp, fn () =>
                                  let
@@ -2630,7 +2630,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                       Cexp.RaiseMatch)
                       val body =
                          Cexp.enterLeave
-                         (body, 
+                         (body,
                           profileBody,
                           fn () => SourceInfo.function {name = nest,
                                                         region = region})
@@ -2662,7 +2662,7 @@ fun elaborateDec (d, {env = E, nest}) =
                            empty))
                    in
                       Cexp.make (Cexp.Handle {catch = (arg, Type.exn),
-                                              handler = body, 
+                                              handler = body,
                                               try = try},
                                  Cexp.ty try)
                    end
@@ -2740,7 +2740,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.orElse (ce, ce')
                    end
-              | Aexp.Prim kind => 
+              | Aexp.Prim kind =>
                    let
                       fun elabAndExpandTy ty =
                          let
@@ -2762,7 +2762,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        *)
                       fun wrap (e, t) = Cexp.make (Cexp.node e, t)
                       fun etaExtraNoWrap {expandedTy,
-                                          extra, 
+                                          extra,
                                           prim: Type.t Prim.t}: Cexp.t =
                          case Type.deArrowOpt expandedTy of
                             NONE => primApp {args = extra,
@@ -2777,7 +2777,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                               result = bodyType}
                                   val body =
                                      case Type.deTupleOpt argType of
-                                        NONE => 
+                                        NONE =>
                                            app (Vector.new1
                                                 (Cexp.var (arg, argType)))
                                       | SOME ts =>
@@ -2800,8 +2800,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                        {exp = app (Vector.map
                                                                    (vars, Cexp.var)),
                                                         lay = NONE,
-                                                        pat = Cpat.tuple 
-                                                              (Vector.map 
+                                                        pat = Cpat.tuple
+                                                              (Vector.map
                                                                (vars, Cpat.var))},
                                                test = Cexp.var (arg, argType)}
                                            end
@@ -2812,17 +2812,17 @@ fun elaborateDec (d, {env = E, nest}) =
                                    body = body,
                                    mayInline = true}
                                end
-                      fun etaNoWrap {expandedTy, 
+                      fun etaNoWrap {expandedTy,
                                      prim: Type.t Prim.t} : Cexp.t =
                          etaExtraNoWrap {expandedTy = expandedTy,
                                          extra = Vector.new0 (),
                                          prim = prim}
-                      fun eta {elabedTy, expandedTy, 
+                      fun eta {elabedTy, expandedTy,
                                prim: Type.t Prim.t} : Cexp.t =
                          wrap (etaNoWrap {expandedTy = expandedTy,
                                           prim = prim},
                                elabedTy)
-                      fun lookConst {default: string option, 
+                      fun lookConst {default: string option,
                                      elabedTy, expandedTy,
                                      name: string} =
                          let
@@ -2849,7 +2849,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                         else if Tycon.isIntX c
                                            then case Tycon.deIntX c of
                                                    NONE => bug ()
-                                                 | SOME is => 
+                                                 | SOME is =>
                                                       ConstType.Word
                                                       (WordSize.fromBits (IntSize.bits is))
                                         else if Tycon.isRealX c
@@ -2862,7 +2862,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                            (case (Type.deConOpt
                                                   (Vector.sub (ts, 0))) of
                                                NONE => false
-                                             | SOME (c, _) => 
+                                             | SOME (c, _) =>
                                                   Tycon.isCharX c
                                                   andalso (Tycon.deCharX c = CharSize.C8))
                                            then ConstType.String
@@ -2894,9 +2894,9 @@ fun elaborateDec (d, {env = E, nest}) =
                        | BuildConst {name, ty} =>
                             let
                                val () =
-                                  check (ElabControl.allowConstant, 
+                                  check (ElabControl.allowConstant,
                                          "_build_const")
-                               val (elabedTy, expandedTy) = 
+                               val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                             in
                                lookConst {default = NONE,
@@ -2909,7 +2909,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                val () =
                                   check (ElabControl.allowConstant,
                                          "_command_line_const")
-                               val (elabedTy, expandedTy) = 
+                               val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                                val value =
                                   elabConst
@@ -2921,17 +2921,17 @@ fun elaborateDec (d, {env = E, nest}) =
                                     | c => Const.toString c,
                                    {false = "false", true = "true"})
                             in
-                               lookConst {default = SOME value, 
+                               lookConst {default = SOME value,
                                           elabedTy = elabedTy,
                                           expandedTy = expandedTy,
                                           name = name}
                             end
-                       | Const {name, ty} => 
+                       | Const {name, ty} =>
                             let
                                val () =
-                                  check (ElabControl.allowConstant, 
+                                  check (ElabControl.allowConstant,
                                          "_const")
-                               val (elabedTy, expandedTy) = 
+                               val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                             in
                                lookConst {default = NONE,
@@ -2943,10 +2943,10 @@ fun elaborateDec (d, {env = E, nest}) =
                             let
                                val () =
                                   check (ElabControl.allowFFI, "_export")
-                               val (elabedTy, expandedTy) = 
+                               val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                                fun error () =
-                                  Control.error 
+                                  Control.error
                                   (region,
                                    str "invalid type for _export",
                                    Type.layoutPretty elabedTy)
@@ -2965,7 +2965,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                        | SOME (argTy, resTy) =>
                                             (case Type.deArrowOpt argTy of
                                                 NONE => error ()
-                                              | SOME _ => 
+                                              | SOME _ =>
                                                    let
                                                       val () =
                                                          if Type.isUnit resTy
@@ -3008,7 +3008,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                                fun error () =
-                                  Control.error 
+                                  Control.error
                                   (region,
                                    str "invalid type for _import",
                                    Type.layoutPretty elabedTy)
@@ -3018,7 +3018,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    let
                                       val error = fn () =>
                                          (error ()
-                                          ; ignore (escape (Type.cpointer, 
+                                          ; ignore (escape (Type.cpointer,
                                                             Type.arrow (Type.unit, Type.unit)))
                                           ; Error.bug "ElaborateCore.elabExp.IImport.escape")
                                    in
@@ -3074,12 +3074,12 @@ fun elaborateDec (d, {env = E, nest}) =
                                                expandedTy = expandedTy,
                                                region = region}
                             end
-                       | Prim {name, ty} => 
+                       | Prim {name, ty} =>
                             let
                                val () =
-                                  check (ElabControl.allowPrim, 
+                                  check (ElabControl.allowPrim,
                                          "_prim")
-                               val (elabedTy, expandedTy) = 
+                               val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                                val prim =
                                   case Prim.fromString name of
@@ -3151,7 +3151,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                (sequenceTypeChecks, fn () =>
                                 Vector.foreachi
                                 (es', fn (i, e') =>
-                                 if i = last 
+                                 if i = last
                                     then ()
                                     else let
                                             val ty = Cexp.ty e'
@@ -3161,7 +3161,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                else let
                                                        val e = Vector.sub (es, i)
                                                        open Layout
-                                                    in 
+                                                    in
                                                        f (Aexp.region e,
                                                           str "sequence expression not of type unit",
                                                           align [seq [str "type: ", Type.layoutPrettyBracket ty],
@@ -3186,7 +3186,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       case scheme of
                          NONE => dontCare ()
-                       | SOME scheme => 
+                       | SOME scheme =>
                             let
                                val {args, instance} = Scheme.instantiate scheme
                                fun con c = Cexp.Con (c, args ())
@@ -3224,12 +3224,12 @@ fun elaborateDec (d, {env = E, nest}) =
                                                         {id = Var.newNoname (),
                                                          args = Vector.new0 ()}
                                                      end
-                                                | SOME (y, is) =>  
+                                                | SOME (y, is) =>
                                                      (unify (instance,
                                                              #instance (valOf is), fn _ =>
                                                              Error.bug "ElaborateCore.elabExp: Var:overload unify")
                                                       ; {id = y, args = #args (valOf is) ()}))
-                                           val _ = 
+                                           val _ =
                                               List.push (overloads, (p, ignore o resolve))
                                         in
                                            Cexp.Var (#id o resolve, #args o resolve)
@@ -3262,7 +3262,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 let
                                    val ty = Cexp.ty expr'
                                 in
-                                   if Type.isUnit ty 
+                                   if Type.isUnit ty
                                       then ()
                                       else f (Aexp.region expr,
                                               str "while body not of type unit",
@@ -3341,7 +3341,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 seq [str "in: ", lay ()]]))
                     val exp =
                        Cexp.enterLeave
-                       (exp, 
+                       (exp,
                         profileBody andalso !Control.profileBranch,
                         fn () =>
                         let
@@ -3368,7 +3368,7 @@ fun elaborateDec (d, {env = E, nest}) =
          end
       val ds = elabDec (Scope.scope d, nest, true)
       (* List.insertionSort is anti-stable;
-       * hence, it sorts and reverses the overloads. 
+       * hence, it sorts and reverses the overloads.
        *)
       val _ = List.foreach (List.insertionSort
                             (!overloads, fn ((x,_),(y,_)) =>
