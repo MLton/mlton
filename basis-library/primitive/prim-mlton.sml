@@ -94,7 +94,7 @@ structure Exn =
       val setExtendExtra: (extra -> extra) -> unit = setExtendExtra
 
       (* Ensure that setExtendExtra is initialized.
-       * Important for -const 'Exn.keepHistory true', so that 
+       * Important for -const 'Exn.keepHistory true', so that
        * exceptions can be raised (and handled) during Basis Library
        * initialization.
        *)
@@ -135,7 +135,7 @@ structure GC =
       val setHashConsDuringGC =
          _import "GC_setHashConsDuringGC" private: GCState.t * bool -> unit;
       val setMessages = _import "GC_setControlsMessages" private: GCState.t * bool -> unit;
-      val setRusageMeasureGC = 
+      val setRusageMeasureGC =
          _import "GC_setControlsRusageMeasureGC" private: GCState.t * bool -> unit;
       val setSummary = _import "GC_setControlsSummary" private: GCState.t * bool -> unit;
       val unpack = _import "GC_unpack" private: GCState.t -> unit;
@@ -145,17 +145,17 @@ structure Platform =
    struct
       structure Arch =
          struct
-            datatype t = 
-               Alpha 
-             | AMD64 
-             | ARM 
-             | HPPA 
-             | IA64 
-             | m68k 
-             | MIPS 
-             | PowerPC 
-             | S390 
-             | Sparc 
+            datatype t =
+               Alpha
+             | AMD64
+             | ARM
+             | HPPA
+             | IA64
+             | m68k
+             | MIPS
+             | PowerPC
+             | S390
+             | Sparc
              | X86
 
             val host: t =
@@ -311,7 +311,7 @@ structure Thread =
 
       val atomicState = _prim "Thread_atomicState": unit -> Word32.word;
       val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
-      fun atomicEnd () = 
+      fun atomicEnd () =
          if atomicState () = 0w0
             then raise Primitive.Exn.Fail8 "Thread.atomicEnd"
             else _prim "Thread_atomicEnd": unit -> unit; ()
@@ -337,7 +337,7 @@ structure Thread =
       val savedPre = _import "GC_getSavedThread" private: GCState.t -> preThread;
       val setCallFromCHandler =
          _import "GC_setCallFromCHandlerThread" private: GCState.t * thread -> unit;
-      val setSignalHandler = 
+      val setSignalHandler =
          _import "GC_setSignalHandlerThread" private: GCState.t * thread -> unit;
       val setSaved = _import "GC_setSavedThread" private: GCState.t * thread -> unit;
       val startSignalHandler = _import "GC_startSignalHandler" private: GCState.t -> unit;
@@ -368,11 +368,11 @@ structure World =
        * creates nasty bugs where the return code from the CCall
        * expects to see a bool result according to the C return
        * convention, but there isn't one when returning in the load
-       * world.  
+       * world.
        *)
       val save = _prim "World_save": NullString8.t -> unit;
    end
 
-end 
+end
 
 end
