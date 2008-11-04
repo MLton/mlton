@@ -165,6 +165,11 @@ int processAtMLton (GC_state s, int argc, char **argv,
             die ("@MLton max-heap missing argument.");
           s->controls.maxHeap = align (stringToBytes (argv[i++]),
                                        2 * s->sysvals.pageSize);
+        } else if (0 == strcmp (arg, "may-page-heap")) {
+          i++;
+          if (i == argc)
+            die ("@MLton may-page-heap missing argument.");
+          s->controls.mayPageHeap = stringToBool (argv[i++]);
         } else if (0 == strcmp (arg, "no-load-world")) {
           i++;
           s->controls.mayLoadWorld = FALSE;
@@ -175,11 +180,6 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.nursery = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.nursery)
             die ("@MLton nursery-ratio argument must be greater than 1.0.");
-        } else if (0 == strcmp (arg, "may-page-heap")) {
-          i++;
-          if (i == argc)
-            die ("@MLton may-page-heap missing argument.");
-          s->controls.mayPageHeap = stringToBool (argv[i++]);
         } else if (0 == strcmp (arg, "ram-slop")) {
           i++;
           if (i == argc)
