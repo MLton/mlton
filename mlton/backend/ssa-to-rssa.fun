@@ -250,11 +250,14 @@ structure CFunction =
             convention = Cdecl,
             ensuresBytesFree = false,
             mayGC = false,
-            maySwitchThreads = false,
+            maySwitchThreads = true, (* Ensure the stack has a return address
+                                      * this guards against the GC possibly
+                                      * tracing the current thread's stack.
+                                      *)
             modifiesFrontier = false,
             prototype = (Vector.new2 (CType.gcState, CType.cpointer),
                          SOME (CType.csize ())),
-            readsStackTop = false,
+            readsStackTop = true,
             return = Type.csize (),
             symbolScope = Private,
             target = Direct "GC_size",

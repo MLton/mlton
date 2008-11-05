@@ -8,12 +8,15 @@
 
 size_t GC_size (GC_state s, pointer root) {
   size_t res;
-
+  
+  enter(s); /* write a valid stack header in case it is reached */
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size marking\n");
   res = dfsMarkByMode (s, root, MARK_MODE, FALSE, FALSE);
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size unmarking\n");
   dfsMarkByMode (s, root, UNMARK_MODE, FALSE, FALSE);
+  leave(s);
+  
   return res;
 }
