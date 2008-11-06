@@ -1167,9 +1167,10 @@ fun commandLine (args: string list): unit =
                         if String.hasPrefix (defLibname, {prefix = "lib"})
                         then String.extract (defLibname, 3, NONE)
                         else defLibname
+                     fun toAlNum c = if Char.isAlphaNum c then c else #"_"
                      val () =
                         if !libname <> "" then () else
-                        libname := defLibname
+                        libname := CharVector.map toAlNum defLibname
                      (* Library output includes a header by default *)
                      val () =
                         case (!format, !exportHeader) of
