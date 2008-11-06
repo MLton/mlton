@@ -143,7 +143,7 @@ fun hasCodegen (cg) =
                     | _ => true)
        | X86 => (case cg of
                     amd64Codegen => false
-                  | x86Codegen => 
+                  | x86Codegen =>
                       (* Darwin PIC doesn't work *)
                       !Control.Target.os <> Darwin orelse
                       !Control.format = Executable orelse
@@ -366,7 +366,7 @@ fun makeOptions {usage} =
         boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
         SpaceString (fn s => exportHeader := SOME s)),
-       (Expert, "format", 
+       (Expert, "format",
         concat [" {",
                 String.concatWith
                 (List.keepAllMap
@@ -376,7 +376,7 @@ fun makeOptions {usage} =
         "generated output format",
         SpaceString (fn s =>
                      Control.format
-                     := (case List.peek 
+                     := (case List.peek
                               (Control.Format.all, fn cg =>
                                s = Control.Format.toString cg) of
                             SOME cg => cg
@@ -832,12 +832,12 @@ fun commandLine (args: string list): unit =
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !Target.os
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
-      
+
       (* Determine whether code should be PIC (position independent) or not.
        * This decision depends on the platform and output format.
        *)
       val positionIndependent =
-         case (targetOS, targetArch, !format) of 
+         case (targetOS, targetArch, !format) of
             (* Windows is never position independent *)
             (MinGW, _, _) => false
           | (Cygwin, _, _) => false
@@ -935,17 +935,17 @@ fun commandLine (args: string list): unit =
        * Older gcc versions used -b for multiple targets.
        * If this is still needed, a shell script wrapper can hide this.
        *)
-      val gcc = 
-         case target of 
-            Cross s => 
+      val gcc =
+         case target of
+            Cross s =>
                let
                   val {dir = gccDir, file = gccFile} =
                      OS.Path.splitDirFile (!gcc)
-               in 
+               in
                   OS.Path.joinDirFile
                   {dir = gccDir,
                    file = s ^ "-" ^ gccFile}
-               end 
+               end
           | Self => !gcc
       val arScript = !arScript
 
@@ -964,28 +964,28 @@ fun commandLine (args: string list): unit =
           else ac)
       val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
-      val ccOpts = concat ["-I", 
+      val ccOpts = concat ["-I",
                            OS.Path.mkAbsolute { path = "include",
                                                 relativeTo = !libTargetDir }]
                    :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir]],
-                      if positionIndependent then 
+                      if positionIndependent then
                       ["-lmlton-pic", "-lgdtoa-pic"]
-                      else if !debugRuntime then 
+                      else if !debugRuntime then
                       ["-lmlton-gdb", "-lgdtoa-gdb"]
-                      else 
+                      else
                       ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
       val linkArchives =
-         if positionIndependent then 
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" }, 
+         if positionIndependent then
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
-         else if !debugRuntime then 
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" }, 
+         else if !debugRuntime then
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
-         else 
-         [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" }, 
+         else
+         [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
       val _ =
          if not (hasCodegen (!codegen))
@@ -1161,17 +1161,17 @@ fun commandLine (args: string list): unit =
                          | SOME f => f
                      val { base = outputBase, ext=_ } =
                         OS.Path.splitBaseExt (maybeOut ".ext")
-                     val { file = defLibname, dir=_ } = 
+                     val { file = defLibname, dir=_ } =
                         OS.Path.splitDirFile outputBase
                      val defLibname =
                         if String.hasPrefix (defLibname, {prefix = "lib"})
                         then String.extract (defLibname, 3, NONE)
                         else defLibname
-                     val () = 
+                     val () =
                         if !libname <> "" then () else
                         libname := defLibname
                      (* Library output includes a header by default *)
-                     val () = 
+                     val () =
                         case (!format, !exportHeader) of
                            (Executable, _) => ()
                          | (_, NONE) => exportHeader := SOME (!libname ^ ".h")
@@ -1196,7 +1196,7 @@ fun commandLine (args: string list): unit =
                          | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
-                           val output = 
+                           val output =
                               case (!format, targetOS) of
                                  (Archive, _) => maybeOut ".a"
                                | (Executable, _) => maybeOut ""
@@ -1205,15 +1205,15 @@ fun commandLine (args: string list): unit =
                                | (Library, Cygwin) => !libname ^ ".dll"
                                | (Library, MinGW)  => !libname ^ ".dll"
                                | (Library, _) => maybeOut ".so"
-                           val libOpts = 
+                           val libOpts =
                               case targetOS of
                                  Darwin => [ "-dynamiclib" ]
-                               | Cygwin =>  [ "-shared", 
+                               | Cygwin =>  [ "-shared",
                                               "-Wl,--out-implib," ^
                                                  maybeOut ".a",
                                               "-Wl,--output-def," ^
                                                  !libname ^ ".def"]
-                               | MinGW =>  [ "-shared", 
+                               | MinGW =>  [ "-shared",
                                              "-Wl,--out-implib," ^
                                                 maybeOut ".a",
                                              "-Wl,--output-def," ^
@@ -1222,11 +1222,11 @@ fun commandLine (args: string list): unit =
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
-                               if !format = Archive orelse 
+                               if !format = Archive orelse
                                   !format = LibArchive
                                then System.system
-                                    (arScript, 
-                                     List.concat 
+                                    (arScript,
+                                     List.concat
                                       [[targetStr, OSStr, output],
                                        inputs,
                                        linkArchives])
@@ -1278,13 +1278,13 @@ fun commandLine (args: string list): unit =
                      let
                         val debugSwitches = gccDebug @ ["-DASSERT=1"]
                         val output = mkOutputO (c, input)
-                        
+
                         val _ =
                            System.system
                             (gcc,
                              List.concat
                              [[ "-std=gnu99", "-c" ],
-                              if !format = Executable 
+                              if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
