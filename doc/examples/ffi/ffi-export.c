@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "export.h"
 
+/* Functions in C are by default PUBLIC symbols */
 void g () {
         Char8 c;
 

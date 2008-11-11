@@ -18,6 +18,9 @@ structure DynLink :> DYN_LINK =
       type mode = Word32.word
       type fptr = MLton.Pointer.t
 
+      (* These symbols come from a system libray, so the default import scope
+       * of external is correct.
+       *)
       val dlopen =
          _import "dlopen" : string * mode -> hndl;
       val dlerror =
