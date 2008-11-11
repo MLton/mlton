@@ -34,7 +34,7 @@ iimport: iimport.sml
 		iimport.sml
 
 %.o:	%.c
-	$(mlton) -stop o $<
+	gcc -Wall -c -o $@ $<
 %.h:	%.sml
 	$(mlton) -export-header $@ -stop tc $<
 %:
