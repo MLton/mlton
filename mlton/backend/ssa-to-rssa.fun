@@ -233,15 +233,19 @@ structure CFunction =
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
-            mayGC = false,
+            mayGC = true, (* MLton.share works by tracing an object.
+                           * Make sure all the GC invariants are true,
+                           * because tracing might encounter the current
+                           * stack in the heap.
+                           *)
             maySwitchThreads = false,
             modifiesFrontier = true, (* actually, just readsFrontier *)
             prototype = (Vector.new2 (CType.gcState, CType.cpointer), NONE),
-            readsStackTop = false,
+            readsStackTop = true,
             return = Type.unit,
             symbolScope = Private,
             target = Direct "GC_share",
-            writesStackTop = false}
+            writesStackTop = true}
 
       (* CHECK; size with objptr *)
       fun size t =
@@ -249,9 +253,10 @@ structure CFunction =
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
-            mayGC = true, (* MLton.size works by running the garbage
-                           * collector to trace the heap. Make sure all
-                           * invariants needed to do this safely are true.
+            mayGC = true, (* MLton.share works by tracing an object.
+                           * Make sure all the GC invariants are true,
+                           * because tracing might encounter the current
+                           * stack in the heap.
                            *)
             maySwitchThreads = false,
             modifiesFrontier = true,

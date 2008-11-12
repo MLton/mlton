@@ -10,6 +10,7 @@ void GC_share (GC_state s, pointer object) {
   size_t bytesExamined;
   size_t bytesHashConsed;
 
+  enter (s); /* update stack in heap, in case it is reached */
   if (DEBUG_SHARE)
     fprintf (stderr, "GC_share "FMTPTR"\n", (uintptr_t)object);
   if (DEBUG_SHARE or s->controls.messages)
@@ -24,4 +25,5 @@ void GC_share (GC_state s, pointer object) {
   s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;
   if (DEBUG_SHARE or s->controls.messages)
     printBytesHashConsedMessage (bytesHashConsed, bytesExamined);
+  leave (s);
 }
