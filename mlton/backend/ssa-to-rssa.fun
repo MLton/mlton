@@ -253,7 +253,7 @@ structure CFunction =
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
-            mayGC = true, (* MLton.share works by tracing an object.
+            mayGC = true, (* MLton.size works by tracing an object.
                            * Make sure all the GC invariants are true,
                            * because tracing might encounter the current
                            * stack in the heap.
