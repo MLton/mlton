@@ -1,4 +1,4 @@
-(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -49,13 +49,15 @@ fun makeOptions {usage} =
         (Normal, "light", "",
          "suppress 'heavy' versions of function wrappers and field accessors",
          None (fn () => weight := {heavy = false, light = true})),
-        (Normal, "linkage", " {dynamic|static}",
+        (Normal, "linkage", " {archive|dynamic|shared}",
          "how to link C objects",
          SpaceString (fn s =>
-                      if s = "dynamic"
+                      if s = "archive"
+                         then linkage := Linkage.Archive
+                      else if s = "dynamic"
                          then linkage := Linkage.Dynamic
-                      else if s = "static"
-                         then linkage := Linkage.Static
+                      else if s = "shared"
+                         then linkage := Linkage.Shared
                       else usage (concat ["invalid -linkage arg: ", s]))),
         (Normal, "match", " <re>",
          "generate ML definitions for #include-d definitions matching <re>",

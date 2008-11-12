@@ -49,11 +49,12 @@ val libhandle = control {name = "libhandle",
 
 structure Linkage =
    struct
-      datatype t = Dynamic | Static
+      datatype t = Archive | Dynamic | Shared
 
       val toString =
-         fn Dynamic => "dynamic"
-          | Static => "static"
+         fn Archive => "archive"
+          | Dynamic => "dynamic"
+          | Shared => "shared"
    end
 val linkage = control {name = "linkage",
                        default = Linkage.Dynamic,

@@ -1,4 +1,4 @@
-(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -33,7 +33,7 @@ signature CONTROL =
 
       structure Linkage :
          sig
-            datatype t = Dynamic | Static
+            datatype t = Archive | Dynamic | Shared
          end
       val linkage : Linkage.t ref
 

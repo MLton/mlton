@@ -1,7 +1,7 @@
 (* gen.sml
  * 2005 Matthew Fluet (mfluet@acm.org)
  *  Adapted for MLton.
-(* Copyright (C) 2005-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -680,6 +680,11 @@ let
           | NONE => raise Fail "missing fptr_type (mkcall)"
       end
 
+   fun pr_addr_import (pr_fdef, name, attrs) =
+       pr_fdef ("h", [EUnit],
+                EPrim ("_address \"" ^ name ^ "\" " ^ attrs,
+                       Type "CMemory.addr"))
+
    fun pr_gvar_promise x =
       let
          val {src, name, spec = (c, t)} = x
@@ -723,12 +728,12 @@ let
               VBox 4;
               nl (); str "open C.Dim C_Int";
               case linkage of
-                 Control.Linkage.Dynamic =>
+                 Control.Linkage.Archive =>
+                 pr_addr_import (pr_fdef, name, "public")
+               | Control.Linkage.Dynamic =>
                     pr_vdef ("h", EApp (EVar libhandle, EString name))
-               | Control.Linkage.Static =>
-                    pr_fdef ("h", [EUnit],
-                             EPrim ("_address \"" ^ name ^ "\"",
-                                    Type "CMemory.addr"));
+               | Control.Linkage.Shared =>
+                 pr_addr_import (pr_fdef, name, "external");
               endBox ();
               nl (); str "in";
               VBox 4;
@@ -837,12 +842,12 @@ let
               VBox 4;
               nl (); str "open C.Dim C_Int";
               case linkage of
-                 Control.Linkage.Dynamic =>
+                 Control.Linkage.Archive =>
+                 pr_addr_import (pr_fdef, name, "public")
+               | Control.Linkage.Dynamic =>
                     pr_vdef ("h", EApp (EVar libhandle, EString name))
-               | Control.Linkage.Static =>
-                    pr_fdef ("h", [EUnit],
-                             EPrim ("_address \"" ^ name ^ "\"",
-                                    Type "CMemory.addr"));
+               | Control.Linkage.Shared =>
+                 pr_addr_import (pr_fdef, name, "external");
               endBox ();
               nl (); str "in";
               VBox 4;
