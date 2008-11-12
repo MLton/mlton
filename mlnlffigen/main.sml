@@ -19,22 +19,22 @@ fun makeOptions {usage} =
       List.map
       ([(Expert, "debug", " {false|true}", "",
          boolRef debug),
-        (Normal, "allSU", " {false|true}", 
+        (Normal, "allSU", " {false|true}",
          "generate ML definitions for all #include-d struct and union definitions",
          boolRef allSU),
-        (Normal, "collect", " {true|false}", 
+        (Normal, "collect", " {true|false}",
          "collect enum constants from unnamed enumerateions",
          boolRef collect_enums),
         (Normal, "cppopt", " <opt>",
          "pass option to preprocessor",
          SpaceString (fn s => List.push (cppopts, s))),
-        (Normal, "dir", " <dir>", 
+        (Normal, "dir", " <dir>",
          "output directory for generated files",
          SpaceString (fn s => dir := s)),
         (Normal, "enum-constructors", " {false|true}",
          "when possible, make the ML representation type of enumerations a datatype",
          boolRef enum_cons),
-        (Normal, "gensym", " <string>", 
+        (Normal, "gensym", " <string>",
          "suffix for \"gensym-ed\" generated ML structure names",
          SpaceString (fn s => gensym := s)),
         (Normal, "heavy", "",
@@ -49,19 +49,19 @@ fun makeOptions {usage} =
         (Normal, "light", "",
          "suppress 'heavy' versions of function wrappers and field accessors",
          None (fn () => weight := {heavy = false, light = true})),
-        (Normal, "linkage", " {dynamic|static}", 
+        (Normal, "linkage", " {dynamic|static}",
          "how to link C objects",
          SpaceString (fn s =>
-                      if s = "dynamic" 
+                      if s = "dynamic"
                          then linkage := Linkage.Dynamic
                       else if s = "static"
                          then linkage := Linkage.Static
                       else usage (concat ["invalid -linkage arg: ", s]))),
-        (Normal, "match", " <re>", 
+        (Normal, "match", " <re>",
          "generate ML definitions for #include-d definitions matching <re>",
-         SpaceString (fn re => 
-                      let 
-                         val regexp = 
+         SpaceString (fn re =>
+                      let
+                         val regexp =
                             SOME (RE.compileString re)
                             handle RegExpSyntax.CannotParse => NONE
                                  | RegExpSyntax.CannotCompile => NONE
@@ -74,7 +74,7 @@ fun makeOptions {usage} =
                                      let
                                         val n = String.length s
                                         fun getc i =
-                                           if (i < n) 
+                                           if (i < n)
                                               then SOME (String.sub (s, i), i + 1)
                                               else NONE
                                      in
@@ -87,26 +87,26 @@ fun makeOptions {usage} =
                                end
                           | NONE => usage (concat ["invalid -match arg: ", re])
                       end)),
-        (Normal, "mlbfile", " <file>", 
+        (Normal, "mlbfile", " <file>",
          "name of the generated .mlb file",
          SpaceString (fn s => mlbfile := s)),
         (Normal, "namedargs", " {false|true}",
          "generate function wrappers with named arguments",
          boolRef namedargs),
-        (Normal, "prefix", " <string>", 
+        (Normal, "prefix", " <string>",
          "prefix for generated ML structure names",
          SpaceString (fn s => prefix := s)),
-        (Normal, "target", " <arch>-<os>", 
+        (Normal, "target", " <arch>-<os>",
          "platform that executable will run on",
-         SpaceString (fn s => 
+         SpaceString (fn s =>
                       (case Target.fromString s of
-                          NONE => 
+                          NONE =>
                              usage (concat ["invalid -target arg: ", s])
-                        | SOME t => 
+                        | SOME t =>
                              (case Target.make t of
                                  NONE => usage (concat ["unsupported -target arg: ", s])
                                | SOME z => target := SOME z)))),
-        (Normal, "width", " 75", 
+        (Normal, "width", " 75",
          "output line width for pretty-printing",
          intRef width)],
        fn (style, name, arg, desc, opt) =>
@@ -120,7 +120,7 @@ val {parse, usage} =
                    showExpert = fn () => !Control.debug}
 
 val die = Process.fail
-   
+
 fun commandLine args =
    let
       val rest = parse args

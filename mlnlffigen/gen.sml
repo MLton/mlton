@@ -17,8 +17,8 @@
  *
  * author: Matthias Blume (blume@tti-c.org)
  *)
-structure Gen : 
-sig 
+structure Gen :
+sig
    val gen : {cfiles: string list} -> unit
 end =
 struct
@@ -57,20 +57,20 @@ fun EWord w = EVar ("0wx" ^ Word.toString w)
 fun EInt i = EVar (Int.toString i)
 fun ELInt i = EVar (LargeInt.toString i)
 fun EString s = EVar (concat ["\"", String.toString s, "\""])
-   
+
 fun warn m = Out.output (Out.error, "warning: " ^ m)
 fun err m = raise Fail (concat ("gen: " :: m))
 
 fun unimp what = raise Fail ("unimplemented type: " ^ what)
 fun unimp_arg what = raise Fail ("unimplemented argument type: " ^ what)
 fun unimp_res what = raise Fail ("unimplemented result type: " ^ what)
-   
+
 val writeto = "write'to"
 
 fun gen args =
 let
    val {cfiles} = args
-      
+
    val allSU = !Control.allSU
    val collect_enums = !Control.collect_enums
    val dir = !Control.dir
@@ -89,8 +89,8 @@ let
 
    val gensym_suffix =
       if gensym = "" then "" else "_" ^ gensym
-   val {name = targetName, 
-        sizes = targetSizes, 
+   val {name = targetName,
+        sizes = targetSizes,
         endianShift = targetEndianShift} = target
    val targetName = String.toLower targetName
    val {heavy = doheavy, light = dolight} = weight
@@ -106,20 +106,20 @@ let
       val version = "0.9.1"
       val author = "Matthias Blume"
       val email = "blume@tti-c.org"
-         
+
       val modifications = [{author = "Matthew Fluet",
                             email = "mfluet@acm.org",
                             note = "Adapted for MLton."}]
-         
+
       val credits =
-         concat 
-         (["(* [by ", author, "'s ", 
+         concat
+         (["(* [by ", author, "'s ",
            program, " (version ", version, ") for ", targetName, "] *)"] @
           (map (fn {author, email, note} =>
-                concat ["\n(* [modified by ", author, 
+                concat ["\n(* [modified by ", author,
                         " (", email, ") <", note, ">] *)"]))
           modifications)
-      val commentsto = 
+      val commentsto =
          concat ["(* Send comments and suggestions to ", email, ". Thanks! *)"]
       val dontedit = "(* This file has been generated automatically. DO NOT EDIT! *)"
    in
@@ -127,7 +127,7 @@ let
          let
             val device = CPIFDev.openOut (f, width)
             val stream = PP.openStream device
-               
+
             fun nl () = PP.newline stream
             fun str s = PP.string stream s
             fun sp () = PP.space stream 1
@@ -164,11 +164,11 @@ let
             line commentsto;
             nl ();
             {stream = stream,
-             line = line, nl = nl, str = str, sp = sp, nsp = nsp, 
+             line = line, nl = nl, str = str, sp = sp, nsp = nsp,
              Box = Box, endBox = endBox,
-             HVBox = HVBox, HBox = HBox, HOVBox = HOVBox, VBox = VBox, 
-             ppty = ppty, ppExp = ppExp, ppFun = ppFun, 
-             pr_vdef = pr_vdef, pr_fdef = pr_fdef, 
+             HVBox = HVBox, HBox = HBox, HOVBox = HOVBox, VBox = VBox,
+             ppty = ppty, ppExp = ppExp, ppFun = ppFun,
+             pr_vdef = pr_vdef, pr_fdef = pr_fdef,
              pr_tdef = pr_tdef, pr_vdecl = pr_vdecl,
              closePP = closePP}
          end
@@ -176,14 +176,14 @@ let
 
    local
       val cpp_tmpl =
-         Option.fold 
-         (Process.getEnv "FFIGEN_CPP", 
+         Option.fold
+         (Process.getEnv "FFIGEN_CPP",
           "gcc -E -U__GNUC__ %o %s > %t",
           fn (cpp_tmpl,_) => cpp_tmpl)
       val cpp_tmpl =
          String.substituteFirst
-         (cpp_tmpl, 
-          {substring = "%o", 
+         (cpp_tmpl,
+          {substring = "%o",
            replacement = String.concatWith (List.rev (!Control.cppopts), " ")})
 
       fun mkidlsource (cfile,ifile) =
@@ -191,7 +191,7 @@ let
             val cpp =
                List.fold
                ([{substring = "%s", replacement = cfile},
-                 {substring = "%t", replacement = ifile}], 
+                 {substring = "%t", replacement = ifile}],
                 cpp_tmpl,
                 fn (s, subst) => String.substituteFirst (subst, s))
          in
@@ -226,13 +226,13 @@ let
    end
    val {structs, unions, gvars, gfuns, gtys, enums} = spec
 
-   val (structs, unions, enums) = 
+   val (structs, unions, enums) =
       let
-         val structs = 
+         val structs =
             List.fold (structs, SM.empty, fn (s, m) => SM.insert (m, #tag s, s))
-         val unions = 
+         val unions =
             List.fold (unions, SM.empty, fn (s, m) => SM.insert (m, #tag s, s))
-         val enums = 
+         val enums =
             List.fold (enums, SM.empty, fn (s, m) => SM.insert (m, #tag s, s))
 
          val sdone = ref SS.empty
@@ -258,11 +258,11 @@ let
          val senter = xenter (sdone, structs, smap, #fields)
          val uenter = xenter (udone, unions, umap, #all)
          val eenter = xenter (edone, enums, emap, fn _ => [])
-            
+
          fun sinclude (s: S.s) = if #exclude s then () else senter (#tag s)
          fun uinclude (u: S.u) = if #exclude u then () else uenter (#tag u)
          fun einclude (e: S.enum) = if #exclude e then () else eenter (#tag e)
-            
+
          fun gty {src, name, spec} = ty_sched spec
          fun gvar {src, name, spec = (_, t)} = ty_sched t
          fun gfun {src, name, spec, argnames} = ty_sched (S.FPTR spec)
@@ -274,7 +274,7 @@ let
                    | S.STRUCT t => senter t
                    | S.UNION t => uenter t
                    | S.ENUM (t, anon) =>
-                        if collect_enums andalso anon 
+                        if collect_enums andalso anon
                            then eenter "'"
                            else eenter t
                    | S.VOIDPTR => ()
@@ -286,7 +286,7 @@ let
                    | S.ARR {t, ... } => do_ty t
                    | S.UNIMPLEMENTED _ => ()
                fun ty_loop tys =
-                  case tys of 
+                  case tys of
                      [] => nextround ()
                    | ty :: tys => (do_ty ty; ty_loop tys)
             in
@@ -305,7 +305,7 @@ let
          nextround ();
          (!smap, !umap, !emap)
       end
-   val (fptr_types,incomplete_structs, incomplete_unions, incomplete_enums) = 
+   val (fptr_types,incomplete_structs, incomplete_unions, incomplete_enums) =
       let
          fun taginsert (t, ss) =
             if SS.member (ss, t) then ss else SS.add (ss, t)
@@ -321,7 +321,7 @@ let
              | NONE => insert (t, acc)
 
          fun do_ty (ty, acc) =
-            case ty of 
+            case ty of
                S.BASIC _ => acc
              | S.STRUCT t => maybe_insert (t, structs, acc, sinsert)
              | S.UNION t => maybe_insert (t, unions, acc, uinsert)
@@ -361,7 +361,7 @@ let
             fun mfold (m, f, b) = SM.foldl f b m
         in
            lfold (gvars, gvar,
-           lfold (gfuns, gfun, 
+           lfold (gfuns, gfun,
            lfold (gtys, gty,
            mfold (structs, s,
            mfold (unions, u,
@@ -401,14 +401,14 @@ let
    local
       val dir_exists = ref false
       val checkDir = fn () =>
-         if !dir_exists 
+         if !dir_exists
             then ()
             else (dir_exists := true;
-                  if OS.FileSys.isDir dir handle _ => false 
+                  if OS.FileSys.isDir dir handle _ => false
                      then ()
                      else OS.FileSys.mkDir dir)
    in
-      fun smlFileAndExport (file,export,do_export) = 
+      fun smlFileAndExport (file,export,do_export) =
          let
             (* We don't want apostrophes in file names -> turn them into minuses.
              * We also want to use only lowercase characters as some file systems
@@ -449,16 +449,16 @@ let
    fun rwro_type c = Type (rwro_str c)
    fun rwro_c_type S.RW = Type "'c"
      | rwro_c_type S.RO = Type "ro"
-      
+
    fun dim_ty 0 = Type "dec"
      | dim_ty n = Con ("dg" ^ Int.toString (n mod 10),
                        [dim_ty (n div 10)])
    val dim_ty = fn n =>
-      if n < 0 
+      if n < 0
          then raise Fail "negative dimension"
          else dim_ty n
 
-   fun dim_val n = 
+   fun dim_val n =
       let
          fun build 0 = EVar "dec"
            | build n = EApp (build (n div 10),
@@ -534,20 +534,20 @@ let
          SOME (_,promise) => (Promise.force promise; structname)
        | NONE => err ["missing structure: ", structname]
 
-   fun SUEtag K tag = 
+   fun SUEtag K tag =
       Type ((forceGenStruct (SUETstruct K tag)) ^ ".tag")
    val Stag = SUEtag "S"
    val Utag = SUEtag "U"
    fun Etag (tag, anon) =
       SUEtag "E" (if collect_enums andalso anon then "'" else tag)
-   fun SUEtyp K tag = 
+   fun SUEtyp K tag =
       EVar ((forceGenStruct (SUETstruct K tag)) ^ ".typ")
    val Styp = SUEtyp "S"
    val Utyp = SUEtyp "U"
 
-   fun fptr_rtti_qid i = 
+   fun fptr_rtti_qid i =
       (forceGenStruct (fptr_rtti_struct_id i)) ^ ".typ"
-   fun fptr_mkcall_qid i = 
+   fun fptr_mkcall_qid i =
       (forceGenStruct (fptr_rtti_struct_id i)) ^ ".mkcall"
 
    fun witness_fptr_type_p prime {args, res} =
@@ -617,11 +617,11 @@ let
          val (res_t, extra_arg_t, extra_argname) =
             case res of
                NONE => (Unit, [], [])
-             | SOME (S.STRUCT t) => 
+             | SOME (S.STRUCT t) =>
                   let val ot = Suobj'rw prime (Stag t)
                   in (ot, [ot], [writeto])
                   end
-             | SOME (S.UNION t) => 
+             | SOME (S.UNION t) =>
                   let val ot = Suobj'rw prime (Utag t)
                   in (ot, [ot], [writeto])
                   end
@@ -641,11 +641,11 @@ let
    fun rtti_type ty =
       Con ("T.typ", [witness_type ty])
 
-   local 
+   local
       fun simple v = EVar ("T." ^ v)
    in
       fun rtti_val ty =
-         case ty of 
+         case ty of
             S.BASIC basic_t => simple (stem basic_t)
           | S.STRUCT t =>
                if s_inc t then raise Incomplete else Styp t
@@ -654,7 +654,7 @@ let
           | S.ENUM t =>
                EConstr (EVar "T.enum", Con ("T.typ", [Con ("enum", [Etag t])]))
           | S.VOIDPTR => simple "voidptr"
-          | S.FPTR cft => 
+          | S.FPTR cft =>
                let
                   val cfth = hash_cft cft
                in
@@ -672,7 +672,7 @@ let
    end
 
    fun fptr_mkcall spec =
-      let 
+      let
          val h = hash_cft spec
       in
          case %? (fptr_types, h) of
@@ -690,7 +690,7 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport ("g-" ^ name, gstruct_export, true)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_fdef, pr_vdef, pr_tdef, ...} =
@@ -755,7 +755,7 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport ("f-" ^ name, fstruct_export, true)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_fdef, pr_vdef, pr_vdecl, ...} =
@@ -764,18 +764,18 @@ let
                  let
                     val ml_vars =
                        List.mapi
-                       (args, fn (i, _) => 
+                       (args, fn (i, _) =>
                         EVar ("x" ^ Int.toString (i + 1)))
-                    fun app0 (what, e) = 
+                    fun app0 (what, e) =
                        if is_light then e else EApp (EVar what, e)
                     fun light (what, e) = app0 ("Light." ^ what, e)
                     fun heavy (what, t, e) =
-                       if is_light 
+                       if is_light
                           then e
                           else EApp (EApp (EVar ("Heavy." ^ what), rtti_val t), e)
                     fun oneArg (e, t) =
                        case t of
-                          S.BASIC basic_t => 
+                          S.BASIC basic_t =>
                              EApp (EVar ("Cvt.c_" ^ stem basic_t), e)
                         | S.STRUCT _ => EApp (EVar "ro'", light ("obj", e))
                         | S.UNION _ => EApp (EVar "ro'", light ("obj", e))
@@ -809,7 +809,7 @@ let
                           NONE => call
                         | SOME t =>
                              (case t of
-                                 S.BASIC basic_t => 
+                                 S.BASIC basic_t =>
                                     EApp (EVar ("Cvt.ml_" ^ stem basic_t), call)
                                | S.STRUCT _ => heavy ("obj", t, call)
                                | S.UNION _ => heavy ("obj", t, call)
@@ -873,24 +873,24 @@ let
       end
    val () = fillGenStructTable (List.foreach, gfuns, pr_gfun_promise)
 
-   val get_callop = 
+   val get_callop =
       let
          val ncallops = ref 0
          val callops = ref IM.empty
          fun callop_sid i = "Callop_" ^ Int.toString i
          fun callop_qid i = callop_sid i ^ ".callop"
-         fun get (ml_args_t, ml_res_t) = 
+         fun get (ml_args_t, ml_res_t) =
             let
                val e_proto_hash = hash_mltype (Arrow (ml_args_t, ml_res_t))
             in
                case %? (!callops, e_proto_hash) of
                   SOME i => callop_qid i
-                | NONE => 
+                | NONE =>
                      let
                         val i = !ncallops
                         val sn = callop_sid i
                         val sn_export = "structure " ^ sn
-                        val (file, done) = 
+                        val (file, done) =
                            smlFileAndExport
                            ("callop-" ^ Int.toString i, sn_export, false)
                         val {closePP, str, nl, Box, VBox, endBox,
@@ -907,8 +907,8 @@ let
                                                Arrow (ml_args_t,
                                                       ml_res_t))));
                         endBox ();
-                        nl (); str "end"; nl (); 
-                        closePP (); 
+                        nl (); str "end"; nl ();
+                        closePP ();
                         done ();
                         callop_qid i
                      end
@@ -927,7 +927,7 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport ("fptr-rtti-" ^ (Int.toString i), fstruct_export, false)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_fdef, pr_vdef, pr_tdef, ...} =
@@ -950,23 +950,23 @@ let
               fun fldwrap (e, n, alt) =
                  EApp (EVar ("CMemory.wrap_" ^ n),
                        EApp (EVar ("Get." ^ n ^ alt), e))
-              fun vwrap e = 
+              fun vwrap e =
                  EApp (EVar "CMemory.wrap_addr",
                        EApp (EVar "reveal", e))
-              fun fwrap e = 
+              fun fwrap e =
                  EApp (EVar "CMemory.wrap_addr",
                        EApp (EVar "freveal", e))
-              fun pwrap e = 
+              fun pwrap e =
                  EApp (EVar "CMemory.wrap_addr",
                        EApp (EVar "reveal",
                              EApp (EVar "Ptr.inject'", e)))
-              fun fldvwrap (e, alt) = 
+              fun fldvwrap (e, alt) =
                  EApp (EVar "CMemory.wrap_addr",
-                       EApp (EVar "reveal", 
+                       EApp (EVar "reveal",
                              EApp (EVar ("Get.voidptr" ^ alt), e)))
-              fun fldfwrap (e, alt) = 
+              fun fldfwrap (e, alt) =
                  EApp (EVar "CMemory.wrap_addr",
-                       EApp (EVar "freveal", 
+                       EApp (EVar "freveal",
                              if alt = "'"
                                 then EApp (EVar "Get.fptr'", e)
                                 else EApp (EVar "Light.fptr",
@@ -976,12 +976,12 @@ let
                        EApp (EVar "reveal",
                              EApp (EVar ("Ptr.inject" ^ alt),
                                    EApp (EVar ("Get.ptr" ^ alt), e))))
-              fun suwrap e = 
+              fun suwrap e =
                  pwrap (EApp (EVar "Ptr.|&!", e))
-              fun ewrap e = 
+              fun ewrap e =
                  EApp (EVar "CMemory.wrap_sint",
                        EApp (EVar "Cvt.c2i_enum", e))
-              fun fldewrap (e, alt) = 
+              fun fldewrap (e, alt) =
                  EApp (EVar "CMemory.wrap_sint",
                        EApp (EVar ("Get.enum" ^ alt), e))
 
@@ -989,7 +989,7 @@ let
                    extra_arg_v, extra_arg_e, extra_ml_arg_t,
                    res_wrap) =
                  case res of
-                    NONE => 
+                    NONE =>
                        (Unit, [], [], [], fn r => r)
                   | SOME (S.STRUCT _) =>
                        (Unit,
@@ -1003,7 +1003,7 @@ let
                         [suwrap (EVar "x0")],
                         [Type "CMemory.cc_addr"],
                         fn r => ESeq (r, EVar "x0"))
-                  | SOME t => 
+                  | SOME t =>
                        let
                           fun unwrap n r =
                              EApp (EVar ("Cvt.c_" ^ n),
@@ -1050,7 +1050,7 @@ let
                      | S.UNIMPLEMENTED what => unimp_arg what
                  end
               and arglist ([], _) = ([], [], [])
-                | arglist (h :: tl, i) = 
+                | arglist (h :: tl, i) =
                  let
                     val p = EVar ("x" ^ Int.toString i)
                     val (ta, ea, bnds) = arglist (tl, i + 1)
@@ -1058,16 +1058,16 @@ let
                  in
                     (ta' @ ta, ea' @ ea, bnds' @ bnds)
                  end
-                    
+
               val (ml_args_tl, args_el, bnds) = arglist (args, 1)
-                 
+
               val ml_args_t = Tuple (extra_ml_arg_t @ ml_args_tl)
-                 
+
               val arg_vl =
-                 List.mapi 
+                 List.mapi
                  (args, fn (i, _) =>
                   EVar ("x" ^ Int.toString (i + 1)))
-                 
+
               val arg_e = ETuple (extra_arg_e @ args_el)
               val callop_n = get_callop (ml_args_t, ml_res_t)
            in
@@ -1108,7 +1108,7 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport ("t-" ^ name, tstruct_export, true)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_vdef, pr_tdef, ...} =
@@ -1126,7 +1126,7 @@ let
               nl (); str (tstruct_export ^ " = struct");
               Box 4;
               pr_tdef ("t", witness_type spec);
-              Option.app 
+              Option.app
               (rtti_val_opt, fn rtti_val =>
                pr_vdef ("typ", EConstr (rtti_val, Con ("T.typ", [Type "t"]))));
               endBox ();
@@ -1154,18 +1154,18 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport (k ^ "t-" ^ tag, suetstruct_export, tinfo = T_INC)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_vdef, pr_tdef, ...} =
                  openPP (file, src)
               val (utildef, tag_t) =
-                 if anon 
+                 if anon
                     then
                        ("structure X :> sig type t end \
                         \= struct type t = unit end",
                         Type "X.t")
-                    else 
+                    else
                        ("open Tag",
                         Vector.foldr
                         (tag, Type k, fn (c, tag_t) =>
@@ -1222,7 +1222,7 @@ let
       val () = fillGenStructTable' (SM.app, enums, pr_et_promise)
    end
    local
-      fun pr_i_suet_promise (tag, k, K) = 
+      fun pr_i_suet_promise (tag, k, K) =
          pr_suet_promise (NONE, tag, false, T_INC, k, K)
       fun pr_i_st_promise tag = pr_i_suet_promise (tag, "s", "S")
       fun pr_i_ut_promise tag = pr_i_suet_promise (tag, "u", "U")
@@ -1243,7 +1243,7 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport (k ^ "-" ^ tag, sustruct_export, true)
               val {closePP, str, nl, Box, VBox, endBox,
                    pr_fdef, pr_vdef, pr_tdef, ...} =
@@ -1251,7 +1251,7 @@ let
               fun pr_field_type {name, spec} =
                  case spec of
                     S.OFIELD {spec = (c, ty), synthetic = false, offset} =>
-                       pr_tdef (fieldtype_id name, 
+                       pr_tdef (fieldtype_id name,
                                 witness_type ty)
                   | _ => ()
               fun pr_field_rtti {name, spec} =
@@ -1316,11 +1316,11 @@ let
                        pr_bf_acc (name, "", "s", bf)
                   | S.UBF bf =>
                        pr_bf_acc (name, "", "u", bf)
-              fun pr_one_field f = 
+              fun pr_one_field f =
                  let
                     val _ = pr_field_type f
-                    val incomplete = 
-                       (pr_field_rtti f; false) 
+                    val incomplete =
+                       (pr_field_rtti f; false)
                        handle Incomplete => true
                  in
                     if dolight orelse incomplete then pr_field_acc' f else ();
@@ -1365,18 +1365,18 @@ let
           Promise.delay
           (fn () =>
            let
-              val (file, done) = 
+              val (file, done) =
                  smlFileAndExport ("e-" ^ tag, estruct_export, true)
               val {closePP, str, line, nl, sp, Box, VBox, endBox,
                    pr_fdef, pr_vdef, pr_tdef, ...} =
                  openPP (file, SOME src)
-              fun no_duplicate_values () = 
+              fun no_duplicate_values () =
                  let
                     fun loop (l, s) =
                        case l of
                           [] => true
                         | {name, spec} :: l =>
-                             if LIS.member (s, spec) 
+                             if LIS.member (s, spec)
                                 then (warn (concat ["enum ", descr,
                                                     " has duplicate values;\
                                                     \ using sing,\
@@ -1387,9 +1387,9 @@ let
                     loop (spec, LIS.empty)
                  end
               val dodt = enum_cons andalso no_duplicate_values ()
-              fun dt_mlrep () = 
+              fun dt_mlrep () =
                  let
-                    fun pcl () = 
+                    fun pcl () =
                        let
                           fun loop (c, l) =
                              case l of
@@ -1403,10 +1403,10 @@ let
                           loop ("  ", spec);
                           endBox ()
                        end
-                    fun pfl (fname, arg, res, fini: unit -> unit) = 
+                    fun pfl (fname, arg, res, fini: unit -> unit) =
                        let
                           fun loop (pfx, l) =
-                             case l of 
+                             case l of
                                 [] => ()
                               | v :: l =>
                                    (line (concat [pfx, " ", arg v, " => ", res v]);
@@ -1429,7 +1429,7 @@ let
                     pfl ("i2m", vstr, cstr,
                          fn () => line "  | _ => raise General.Domain")
                  end
-              fun int_mlrep () = 
+              fun int_mlrep () =
                  let
                     fun v {name, spec} =
                        pr_vdef (enum_id name, EConstr (ELInt spec, Type "mlrep"))
@@ -1442,7 +1442,7 @@ let
                     pr_fdef ("m2i", [mlx], ix);
                     pr_fdef ("i2m", [ix], mlx)
                  end
-              fun getset p = 
+              fun getset p =
                  let
                     fun constr c = Con ("enum_obj" ^ p, [Type "tag", Type c])
                  in
@@ -1477,7 +1477,7 @@ let
       end
    val () = fillGenStructTable' (SM.app, enums, pr_e_promise)
 
-   fun do_mlbfile () = 
+   fun do_mlbfile () =
       let
          val file = descrFile mlbfile
          val () = File.remove file
