@@ -79,6 +79,7 @@ FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
 endif
 
 ifeq ($(TARGET_ARCH), x86)
+FLAGS += -m32
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
 OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
