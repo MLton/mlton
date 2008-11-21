@@ -1159,6 +1159,10 @@ fun commandLine (args: string list): unit =
                         case !output of
                            NONE => suffix suf
                          | SOME f => f
+                     fun maybeOutBase suf =
+                        case !output of
+                           NONE => suffix suf
+                         | SOME f => concat [File.base f, suf]
                      val { base = outputBase, ext=_ } =
                         OS.Path.splitBaseExt (maybeOut ".ext")
                      val { file = defLibname, dir=_ } =
@@ -1266,14 +1270,12 @@ fun commandLine (args: string list): unit =
                            if !keepGenerated
                               orelse start = Place.Generated
                               then
-                                 concat [File.base input,
-                                         ".o"]
+                                 maybeOutBase ".o"
                               else
-                                 suffix
-                                 (concat [".",
-                                          Int.toString
-                                          (Counter.next c),
-                                          ".o"])
+                                 maybeOutBase
+                                    (concat [".",
+                                             Int.toString (Counter.next c),
+                                             ".o"])
                         else temp ".o"
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
@@ -1354,7 +1356,7 @@ fun commandLine (args: string list): unit =
                               val _ = Int.inc r
                               val file = (if !keepGenerated
                                              orelse stop = Place.Generated
-                                             then suffix
+                                             then maybeOutBase
                                           else temp) suf
                               val _ = List.push (outputs, file)
                               val out = Out.openOut file
