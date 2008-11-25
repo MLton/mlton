@@ -52,7 +52,7 @@ fun makeOptions {usage} =
         (Normal, "linkage", " {archive|dynamic|shared}",
          "how to link C objects",
          SpaceString (fn s =>
-                      if s = "archive"
+                      if s = "archive" orelse s = "static"
                          then linkage := Linkage.Archive
                       else if s = "dynamic"
                          then linkage := Linkage.Dynamic
