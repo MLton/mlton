@@ -52,12 +52,12 @@
         <File Id='file.bin_mlb.ico' Name='mlb.ico' Source='mlb.ico' DiskId='1' Vital='yes' />
         <ProgId Id='MLton.mlbFile' Description='Standard ML basis file' Icon='file.bin_mlb.ico'>
           <Extension Id='mlb' ContentType='application/mlb'>
-            <Verb Id='buildMLB' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+            <Verb Id='buildMLB' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-pause -verbose 1 "%1"' />
           </Extension>
         </ProgId>
         <ProgId Id='MLton.smlFile' Description='Standard ML source file' Icon='file.bin_sml.ico'>
           <Extension Id='sml' ContentType='application/sml'>
-            <Verb Id='buildSML' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-cc-opt -O1 -verbose 1 "%1"' />
+            <Verb Id='buildSML' Command='Compile' TargetFile='file.bin_mlton.bat' Argument='-pause -verbose 1 "%1"' />
           </Extension>
         </ProgId>
       </Component>
@@ -71,7 +71,7 @@
         </Shortcut>
       </Component>
     </DirectoryRef>
-   
+
     <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <ComponentGroupRef Id='component.MLton' />
       <ComponentRef Id='component.bin_mlton.bat' />
@@ -114,9 +114,9 @@
     </Feature>
 
     <UIRef Id="WixUI_Mondo" />
-    <WixVariable Id="WixUIBannerBmp" Value="Bitmaps/bannrbmp.bmp" />  
-    <WixVariable Id="WixUIDialogBmp" Value="Bitmaps/dlgbmp.bmp" />  
-    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" /> 
-    <Property Id='WIXUI_INSTALLDIR' Value='INSTALLDIR' /> 
+    <WixVariable Id="WixUIBannerBmp" Value="Bitmaps/bannrbmp.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Bitmaps/dlgbmp.bmp" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <Property Id='WIXUI_INSTALLDIR' Value='INSTALLDIR' />
   </Product>
 </Wix>
