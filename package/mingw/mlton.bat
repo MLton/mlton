@@ -73,4 +73,4 @@ set linkopts=-lm -lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm -Wl,--enab
 set retval=%errorlevel%
 
 if "%pause%" == "yes" pause
-exit /b %_retval%
+exit /b %retval%
