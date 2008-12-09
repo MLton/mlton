@@ -1264,7 +1264,7 @@ fun commandLine (args: string list): unit =
                         in
                            ()
                         end
-                  fun mkOutputO (c: Counter.t, input: File.t): File.t =
+                  fun mkOutputO (c: Counter.t, _): File.t =
                      if stop = Place.O orelse !keepO
                         then
                            if !keepGenerated
