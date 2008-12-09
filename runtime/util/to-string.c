@@ -5,7 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-#include "export.h"
 #include "util.h"
 
 const char* boolToString (bool b) {

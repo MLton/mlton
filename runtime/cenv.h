@@ -131,12 +131,13 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #endif
 
 #include "gmp.h"
+#include "export.h"
 
-COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_voidStar, 
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_voidStar,
                     sizeof(uintptr_t) == sizeof(void*));
-COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t, 
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t,
                     sizeof(uintptr_t) == sizeof(size_t));
-COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_ptrdiff_t, 
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_ptrdiff_t,
                     sizeof(uintptr_t) == sizeof(ptrdiff_t));
 COMPILE_TIME_ASSERT(sizeof_voidStar__is__pointer_bits,
                     sizeof(void*)*CHAR_BIT == POINTER_BITS);

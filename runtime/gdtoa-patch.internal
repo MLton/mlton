@@ -1,17 +1,9 @@
 --- gdtoa/gdtoaimp.h.orig	2008-10-04 02:27:47 +0000
 +++ gdtoa/gdtoaimp.h	2008-10-04 02:32:34 +0000
-@@ -176,6 +176,7 @@
- #ifndef GDTOAIMP_H_INCLUDED
- #define GDTOAIMP_H_INCLUDED
- #include "gdtoa.h"
-+#include "../export.h"
- 
- #ifdef DEBUG
- #include "stdio.h"
 @@ -529,53 +530,53 @@
  #define trailz trailz_D2A
  #define ulp ulp_D2A
- 
+
 - extern char *dtoa_result;
 - extern CONST double bigtens[], tens[], tinytens[];
 - extern unsigned char hexdig[];
@@ -105,6 +97,6 @@
 +PRIVATE extern Bigint *sum ANSI((Bigint*, Bigint*));
 +PRIVATE extern int trailz ANSI((Bigint*));
 +PRIVATE extern double ulp ANSI((double));
- 
+
  #ifdef __cplusplus
  }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -6,7 +6,6 @@
  */
 
 #include "cenv.h"
-#include "export.h"
 #include "util.h"
 
 static const char* mlTypesHPrefix[] = {
@@ -306,7 +305,7 @@ static const char* cTypesSMLSuffix[] = {
   NULL
 };
 
-int main (__attribute__ ((unused)) int argc, 
+int main (__attribute__ ((unused)) int argc,
           __attribute__ ((unused)) char* argv[]) {
   FILE *mlTypesHFd;
   FILE *cTypesHFd;
@@ -323,9 +322,9 @@ int main (__attribute__ ((unused)) int argc,
   cTypesHFd = fopen_safe ("c-types.h", "w");
   cTypesSMLFd = fopen_safe ("c-types.sml", "w");
 
-  for (int i = 0; cTypesHPrefix[i] != NULL; i++) 
+  for (int i = 0; cTypesHPrefix[i] != NULL; i++)
     writeStringWithNewline (cTypesHFd, cTypesHPrefix[i]);
-  for (int i = 0; cTypesSMLPrefix[i] != NULL; i++) 
+  for (int i = 0; cTypesSMLPrefix[i] != NULL; i++)
     writeStringWithNewline (cTypesSMLFd, cTypesSMLPrefix[i]);
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
@@ -429,9 +428,9 @@ int main (__attribute__ ((unused)) int argc,
   chksystype(mp_limb_t, "MPLimb");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  for (int i = 0; cTypesHSuffix[i] != NULL; i++) 
+  for (int i = 0; cTypesHSuffix[i] != NULL; i++)
     writeStringWithNewline (cTypesHFd, cTypesHSuffix[i]);
-  for (int i = 0; cTypesSMLSuffix[i] != NULL; i++) 
+  for (int i = 0; cTypesSMLSuffix[i] != NULL; i++)
     writeStringWithNewline (cTypesSMLFd, cTypesSMLSuffix[i]);
 
   fclose_safe(mlTypesHFd);
