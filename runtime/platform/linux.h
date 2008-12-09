@@ -54,6 +54,7 @@ extern char **environ; /* for Posix_ProcEnv_environ */
    versions. */
 
 #ifndef __suseconds_t_defined
+#include <linux/types.h>
 typedef __kernel_suseconds_t suseconds_t;
 #define __suseconds_t_defined
 #endif
