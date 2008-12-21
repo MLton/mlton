@@ -74,51 +74,38 @@ functor CharFn(Arg : CHAR_ARG)
       fun notContains s = not o contains s
 
       val c = fromChar
-      val (  la,    lA,    lf,    lF,    lz,    lZ,    l0,    l9,  lSPACE,lBANG, lTIL,  lDEL) =
-          (c#"a", c#"A", c#"f", c#"F", c#"z", c#"Z", c#"0", c#"9", c#" ", c#"!", c#"~", c#"\127")
+      val (  la,    lA,    lf,    lF,    lz,    lZ,    l0,    l9,  lSPACE,lBANG, lTIL,  lTAB,   lCR,    lDEL) =
+          (c#"a", c#"A", c#"f", c#"F", c#"z", c#"Z", c#"0", c#"9", c#" ", c#"!", c#"~", c#"\t", c#"\r", c#"\127")
 
       (* Range comparisons don't need tables! It's faster to just compare. *)
-      fun isLower c = c >= la andalso c <= lz
-      fun isUpper c = c >= lA andalso c <= lZ
-      fun isDigit c = c >= l0 andalso c <= l9
-      fun isGraph c = c >= lBANG  andalso c <= lTIL
-      fun isPrint c = c >= lSPACE andalso c <= lTIL
-      fun isCntrl c = c <  lSPACE orelse  c  = lDEL
+      fun isLower c = la <= c andalso c <= lz
+      fun isUpper c = c <= lZ andalso lA <= c (* More discriminating first! *)
+      fun isDigit c = c <= l9 andalso l0 <= c (* More discriminating first! *)
+      fun isGraph c = lBANG <= c andalso c <= lTIL
+      fun isPrint c = lSPACE <= c andalso c <= lTIL
+      fun isCntrl c = c < lSPACE orelse c = lDEL
       fun isAscii c = c <= lDEL
 
+      (* These take advantage of ASCII ordering to minimize comparisons. *)
+      fun isAlpha c = if la <= c then c <= lz else lA <= c andalso c <= lZ
+      fun isAlphaNum c =
+          if lA <= c then
+             if la <= c then c <= lz else c <= lZ
+          else
+             l0 <= c andalso c <= l9
+      fun isHexDigit c =
+          if lA <= c then
+             if la <= c then c <= lf else c <= lF
+          else
+             l0 <= c andalso c <= l9
+      fun isSpace c = if lCR < c then c = lSPACE else lTAB <= c
+      fun isPunct c = isGraph c andalso not (isAlphaNum c)
+
       local
-         (* We can use a table for small ranges *)
-         val limit = 128
-         fun memoize (f: char -> 'a, g: char -> 'a): char -> 'a =
-            let
-               val v = Vector.tabulate (limit, f o chrUnsafe)
-               val limit = chr limit
-            in
-               fn c => if c >= limit then g c else
-                       Vector.sub (v, ord c)
-            end
-
-         fun make (test, diff) =
-            memoize (fn c => if test c then chrUnsafe (Int.+? (ord c, diff))
-                                       else c,
-                     fn c => c)
+         fun make (test, diff) c =
+             if test c then chrUnsafe (Int.+? (ord c, diff)) else c
          val diff = Int.- (ord lA, ord la)
-
-         infix || &&
-         fun f || g = memoize (fn c => f c orelse  g c, fn _ => false)
-         fun f && g = memoize (fn c => f c andalso g c, fn _ => false)
-
-         val WS = fromString " \t\r\n\v\f"
-
-         fun laf c = (c >= la andalso c <= lf) orelse
-                     (c >= lA andalso c <= lF)
       in
-         val isAlpha = isUpper || isLower
-         val isHexDigit = isDigit || laf
-         val isAlphaNum = isAlpha || isDigit
-         val isSpace = memoize (contains WS, fn _ => false)
-         val isPunct = isGraph && (not o isAlphaNum)
-
          val toLower = make (isUpper, Int.~ diff)
          val toUpper = make (isLower, diff)
       end
