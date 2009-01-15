@@ -1554,22 +1554,3 @@ MLTON_WRAPPER void MLton_syslog(int priority, const char* fmt, const char* msg);
 #define openlog MLton_openlog
 #define closelog MLton_closelog
 #define syslog MLton_syslog
-
-/* ------------------------------------------------- */
-/*                      libdl                        */
-/* ------------------------------------------------- */
-
-MLTON_WRAPPER void *MLton_dlopen(const char *filename, int flag_IGNORED);
-MLTON_WRAPPER const char *MLton_dlerror(void);
-MLTON_WRAPPER void *MLton_dlsym(void *void_hmodule, const char *symbol);
-MLTON_WRAPPER int MLton_dlclose(void *void_hmodule);
-
-#undef dlopen
-#undef dlerror
-#undef dlsym
-#undef dlclose
-
-#define dlopen MLton_dlopen
-#define dlerror MLton_dlerror
-#define dlsym MLton_dlsym
-#define dlclose MLton_dlclose
