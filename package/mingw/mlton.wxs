@@ -86,6 +86,9 @@
     <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <ComponentGroupRef Id='component.gmp' />
     </Feature>
+    <Feature Id='dlfcn' Title='dlfcn-win32' Description='An implementation of the POSIX dynamic linking loader API for Windows.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+      <ComponentGroupRef Id='component.dlfcn' />
+    </Feature>
     <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1' AllowAdvertise='no'>
         <ComponentGroupRef Id='component.runtime' />
