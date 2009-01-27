@@ -17,6 +17,7 @@ structure Port =
 structure Address =
    struct
       type t = NetHostDB.in_addr
+      fun toVector x = x
    end
 
 structure Host =

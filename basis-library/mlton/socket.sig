@@ -11,6 +11,7 @@ signature MLTON_SOCKET =
       structure Address:
          sig
             type t = NetHostDB.in_addr
+            val toVector : t -> Word8Vector.vector
          end
 
       structure Ctl:
