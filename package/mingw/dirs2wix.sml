@@ -1,7 +1,7 @@
 val prefix = "\
    \<?xml version='1.0' encoding='windows-1252'?>\n\
    \<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>\n\
-   \  <Fragment Id='FragmentFileSys'>\n\
+   \  <Fragment Id='FragmentDirs'>\n\
    \    <DirectoryRef Id='INSTALLDIR'>\n"
 val suffix = "\
    \    </DirectoryRef>\n\

@@ -1,0 +1,6 @@
+. ../dl/mirrors
+#f=binutils-2.19-mingw32-bin.tar.gz
+#get "$MINGW" "$f"
+f=binutils-2.18.50-20080109-2-coffgen.tar.gz
+get "$REBUILT" "$f"
+gzip -dc "$f"

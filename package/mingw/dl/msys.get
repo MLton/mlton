@@ -1,0 +1,4 @@
+. ../dl/mirrors
+f=msysCORE-1.0.11-20080826.tar.gz
+get "$MINGW" "$f"
+gzip -dc "$f"

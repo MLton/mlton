@@ -1,0 +1,9 @@
+MINGW=http://garr.dl.sourceforge.net/sourceforge/mingw
+GOOGLE=http://dlfcn-win32.googlecode.com/files
+REBUILT=http://mlton.org/pages/Experimental/attachments
+
+get () {
+mirror="$1"
+file="$2"
+test -f "$file" || (wget -O "$file.tmp" "$mirror/$file"; mv "$file.tmp" "$file")
+}

@@ -1,0 +1,4 @@
+. ../dl/mirrors
+f=w32api-3.13-mingw32-dev.tar.gz
+get "$MINGW" "$f"
+gzip -dc "$f"

@@ -11,6 +11,8 @@
 
     <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
     <Property Id='DiskPrompt' Value="MLton Installation CD [1]" />
+    <Property Id="ARPPRODUCTICON" Value="mlton.ico" />
+    <Icon Id="mlton.ico" SourceFile="mlton.ico" />
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
@@ -73,20 +75,20 @@
     </DirectoryRef>
 
     <Feature Id='MLton' Title='MLton' Description='A whole-program optimizing Standard ML compiler.' Display='expand' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
-      <ComponentGroupRef Id='component.MLton' />
+      <ComponentGroupRef Id='component.self' />
       <ComponentRef Id='component.bin_mlton.bat' />
       <ComponentRef Id='component.path' />
       <ComponentRef Id='component.download.url' />
       <ComponentRef Id='component.readme.txt' />
       <ComponentRef Id='component.documentation' />
       <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10' AllowAdvertise='no'>
-        <ComponentGroupRef Id='component.Debug' />
+        <ComponentGroupRef Id='component.dbg' />
       </Feature>
     </Feature>
     <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <ComponentGroupRef Id='component.gmp' />
     </Feature>
-    <Feature Id='dlfcn' Title='dlfcn-win32' Description='An implementation of the POSIX dynamic linking loader API for Windows.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+    <Feature Id='dlfcn' Title='Dlfcn' Description='An implementation of the POSIX dynamic linking loader API for Windows.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <ComponentGroupRef Id='component.dlfcn' />
     </Feature>
     <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>

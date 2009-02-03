@@ -1,48 +1,45 @@
-WIX="/c/Programme/Windows Installer XML v3/bin"
-TARDIR=/c/DOKUME~1/terpstra/Desktop/MinGW
 MLTON=../../build/bin/mlton
+PKG=self dbg runtime w32api binutils gcc gmp msys gdb dlfcn
 
-MINGW_WXS=runtime.wxs w32api.wxs binutils.wxs gcc.wxs gmp.wxs msys.wxs gdb.wxs dlfcn.wxs
-MINGW_WIXOBJ=$(patsubst %.wxs,%.wixobj,$(MINGW_WXS))
+PKG_LST=$(patsubst %,%.lst,$(PKG))
+PKG_WXS=$(patsubst %,%.wxs,$(PKG))
+PKG_WIXOBJ=$(patsubst %,%.wixobj,$(PKG))
 
-MLton.msi:	mlton.wixobj self.wixobj dbg.wixobj filesys.wixobj $(MINGW_WIXOBJ)
-	$(WIX)/light -cultures:en-us -ext WixUIExtension -out $@ $^
+MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
+	light -cultures:en-us -ext WixUIExtension -out $@ $^
 
 clean:
-	rm -rf staging MLton.msi *.wixobj *.exe $(MINGW_WXS) self.wxs dbg.wxs filesys.wxs
+	rm -rf staging MLton.msi *.wixobj *.exe $(PKG_WXS) $(PKG_LST) files.wxs dirs.wxs
 
 %.wixobj:	%.wxs
-	$(WIX)/candle -ext WixUIExtension $<
+	candle -ext WixUIExtension $<
 
 %.exe:		%.sml
 	$(MLTON) $<
 
-self.wxs:	files2wix-component.exe
+self.lst:	files2cmp.exe
 	rm -rf staging
 	$(MAKE) -C ../.. PREFIX= install
 	mv ../../install staging
-	cd staging; find * -type f ! -name *-gdb.a | ../files2wix-component MLton > ../$@.tmp
+	cd staging; find * -type f ! -name *-gdb.a > ../$@.tmp
 	mv $@.tmp $@
 
-dbg.wxs:	self.wxs
-	cd staging; find * -type f -name *-gdb.a | ../files2wix-component Debug > ../$@.tmp
+dbg.lst:	self.lst
+	cd staging; find * -type f -name *-gdb.a > ../$@.tmp
 	mv $@.tmp $@
 
-# This has to happen after everything else is unpacked
-filesys.wxs:	dirs2wix-filesys.exe $(MINGW_WIXOBJ) self.wixobj
-	cd staging; find * -type d | ../dirs2wix-filesys > ../$@.tmp
+%.lst:	dl/%.get dbg.lst
+	cd staging; . ../$< | tar --exclude postinstall -t -k | sed 's@^\./@@' > ../$@.tmp
+	cd staging; . ../$< | tar -x
 	mv $@.tmp $@
 
-runtime.wxs:	$(TARDIR)/mingwrt-3.15.1-mingw32-dev.tar.gz self.wxs
-w32api.wxs:	$(TARDIR)/w32api-3.12-mingw32-dev.tar.gz self.wxs
-binutils.wxs:	$(TARDIR)/binutils-20080624-coffgen.tar.gz self.wxs
-gcc.wxs:	$(TARDIR)/gcc-core-3.4.5-20060117-3.tar.gz self.wxs
-msys.wxs:	$(TARDIR)/msysCORE-1.0.11-20080826.tar.gz self.wxs
-gdb.wxs:	$(TARDIR)/gdb-6.8-mingw-3.tar.gz self.wxs
-gmp.wxs:	$(TARDIR)/mingw-gmp-4.2.4-1.tar.gz self.wxs
-dlfcn.wxs:	$(TARDIR)/dlfcn-win32-shared-r11.tar.gz self.wxs
+%.wxs:	%.lst
+	./files2cmp $(*F) < $< > $@
 
-%.wxs:
-	tar --exclude postinstall -tzf $< | ./files2wix-component $(*F) > $@.tmp
-	cd staging; tar -xzf $<
+# This has to happen after everything else is unpacked; depend on PKG_LST
+dirs.wxs:	dirs2wix.exe $(PKG_LST)
+	cd staging; find * -type d | ../dirs2wix > ../$@.tmp
+	mv $@.tmp $@
+files.wxs:	files2wix.exe $(PKG_LST)
+	cat $(PKG_LST) | sort | uniq | ./files2wix > ./$@.tmp
 	mv $@.tmp $@

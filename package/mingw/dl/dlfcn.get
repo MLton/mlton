@@ -1,0 +1,4 @@
+. ../dl/mirrors
+f=dlfcn-win32-shared-r11.tar.bz2
+get "$GOOGLE" "$f"
+bzip2 -dc "$f"
