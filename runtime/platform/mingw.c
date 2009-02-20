@@ -73,20 +73,20 @@ int mkstemp (char *template) {
 #define EPOCHFILETIME (116444736000000000LL)
 #endif
 
-/* Based on notes by Wu Yongwei and IBM: 
- *   http://mywebpage.netscape.com/yongweiwutime.htm 
+/* Based on notes by Wu Yongwei and IBM:
+ *   http://mywebpage.netscape.com/yongweiwutime.htm
  *   http://www.ibm.com/developerworks/library/i-seconds/
- * 
+ *
  * The basic plan is to get an initial time using GetSystemTime
  * that is good up to ~10ms accuracy. From then on, we compute
  * using deltas with the high-resolution (> microsecond range)
- * performance timers. A 64-bit accumulator holds microseconds 
+ * performance timers. A 64-bit accumulator holds microseconds
  * since (*nix) epoch. This is good for over 500,000 years before
  * wrap-around becomes a concern. However, we do need to watch
  * out for wrap-around with the QueryPerformanceCounter, because
  * it could be measuring at a higher frequency than microseconds.
  */
-int gettimeofday (struct timeval *tv, 
+int gettimeofday (struct timeval *tv,
                   __attribute__ ((unused)) struct timezone *tz) {
         static LARGE_INTEGER frequency;
         static LARGE_INTEGER baseCounter;
@@ -209,8 +209,8 @@ static void CALLBACK fixPriority(__attribute__ ((unused)) PVOID myArg,
         DeleteTimerQueueTimer(TimerQueue, PrioTimer, NULL);
 }
 
-static int MLTimer(HANDLE *timer, 
-                   const struct itimerval *value, 
+static int MLTimer(HANDLE *timer,
+                   const struct itimerval *value,
                    WAITORTIMERCALLBACK callback) {
         DWORD DueTime, Period;
 
@@ -258,10 +258,10 @@ static int MLTimer(HANDLE *timer,
                 DeleteTimerQueueTimer(TimerQueue, *timer, NULL);
                 *timer = NULL;
         }
-        
+
         if (DueTime == 0) {
                 return 0;
-        } 
+        }
 
         if (!CreateTimerQueueTimer(
                 timer,       /* output: created timer */
@@ -278,8 +278,8 @@ static int MLTimer(HANDLE *timer,
         return 0;
 }
 
-int setitimer (int which, 
-               const struct itimerval *value, 
+int setitimer (int which,
+               const struct itimerval *value,
                struct itimerval *ovalue) {
         if (ovalue != 0) die("setitimer doesn't support retrieving old state");
 
@@ -312,7 +312,7 @@ static void catcher(__attribute__ ((unused)) int sig) {
 #else
 #error Profiling handler is missing for this architecture
 #endif
-} 
+}
 
 void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_flags = 0;
@@ -383,23 +383,23 @@ int getrusage (int who, struct rusage *usage) {
         uint64_t user_usecs, kernel_usecs;
 
         if (who == RUSAGE_CHILDREN) {
-                // !!! could use exit_time - creation_time from cwait 
+                // !!! could use exit_time - creation_time from cwait
                 memset(usage, 0, sizeof(struct rusage));
                 return 0;
         }
-  
+
         if (who != RUSAGE_SELF) {
                 errno = EINVAL;
                 return -1;
         }
 
-        if (GetProcessTimes(GetCurrentProcess(), 
+        if (GetProcessTimes(GetCurrentProcess(),
                             &creation_time, &exit_time,
                             &kernel_time, &user_time) == 0) {
                 errno = EFAULT;
                 return -1;
         }
-  
+
         kernel_usecs = kernel_time.dwHighDateTime;
         kernel_usecs <<= sizeof(kernel_time.dwHighDateTime)*8;
         kernel_usecs |= kernel_time.dwLowDateTime;
@@ -422,8 +422,8 @@ int getrusage (int who, struct rusage *usage) {
 /* ------------------------------------------------- */
 
 __attribute__ ((noreturn))
-int poll (__attribute__ ((unused)) struct pollfd *ufds, 
-          __attribute__ ((unused)) unsigned int nfds, 
+int poll (__attribute__ ((unused)) struct pollfd *ufds,
+          __attribute__ ((unused)) unsigned int nfds,
           __attribute__ ((unused)) int timeout) {
         die ("poll not implemented");
 }
@@ -468,27 +468,27 @@ int fchdir (int filedes) {
 }
 
 __attribute__ ((noreturn))
-int chown (__attribute__ ((unused)) const char *path, 
-           __attribute__ ((unused)) uid_t owner, 
+int chown (__attribute__ ((unused)) const char *path,
+           __attribute__ ((unused)) uid_t owner,
            __attribute__ ((unused)) gid_t group) {
         die ("chown not implemented");
 }
 
 __attribute__ ((noreturn))
-int fchown (__attribute__ ((unused)) int fd, 
-            __attribute__ ((unused)) uid_t owner, 
+int fchown (__attribute__ ((unused)) int fd,
+            __attribute__ ((unused)) uid_t owner,
             __attribute__ ((unused)) gid_t group) {
         die ("fchown not implemented");
 }
 
 __attribute__ ((noreturn))
-long fpathconf (__attribute__ ((unused)) int filedes, 
+long fpathconf (__attribute__ ((unused)) int filedes,
                 __attribute__ ((unused)) int name) {
         die ("fpathconf not implemented");
 }
 
 __attribute__ ((noreturn))
-int link (__attribute__ ((unused)) const char *oldpath, 
+int link (__attribute__ ((unused)) const char *oldpath,
           __attribute__ ((unused)) const char *newpath) {
         die ("link not implemented");
 }
@@ -503,26 +503,26 @@ int mkdir2 (const char *pathname, mode_t mode) {
 }
 
 __attribute__ ((noreturn))
-int mkfifo (__attribute__ ((unused)) const char *pathname, 
+int mkfifo (__attribute__ ((unused)) const char *pathname,
             __attribute__ ((unused)) mode_t mode) {
         die ("mkfifo not implemented");
 }
 
 __attribute__ ((noreturn))
-long pathconf (__attribute__ ((unused)) const char *path, 
+long pathconf (__attribute__ ((unused)) const char *path,
                __attribute__ ((unused)) int name) {
         die ("pathconf not implemented");
 }
 
 __attribute__ ((noreturn))
-int readlink (__attribute__ ((unused)) const char *path, 
-              __attribute__ ((unused)) char *buf, 
+int readlink (__attribute__ ((unused)) const char *path,
+              __attribute__ ((unused)) char *buf,
               __attribute__ ((unused)) size_t bufsiz) {
         die ("readlink not implemented");
 }
 
 __attribute__ ((noreturn))
-int symlink (__attribute__ ((unused)) const char *oldpath, 
+int symlink (__attribute__ ((unused)) const char *oldpath,
              __attribute__ ((unused)) const char *newpath) {
         die ("symlink not implemented");
 }
@@ -546,8 +546,8 @@ int truncate (const char *path, off_t len) {
 /* ------------------------------------------------- */
 
 __attribute__ ((noreturn))
-int fcntl (__attribute__ ((unused)) int fd, 
-           __attribute__ ((unused)) int cmd, 
+int fcntl (__attribute__ ((unused)) int fd,
+           __attribute__ ((unused)) int cmd,
            ...) {
         die ("fcntl not implemented");
 }
@@ -575,10 +575,10 @@ int pipe (int filedes[2]) {
         filedes[0] = _open_osfhandle((intptr_t)read_h,  _O_RDONLY);
         filedes[1] = _open_osfhandle((intptr_t)write_h, _O_WRONLY);
         if (filedes[0] == -1 or filedes[1] == -1) {
-                if (filedes[0] == -1) 
-                        CloseHandle(read_h); 
+                if (filedes[0] == -1)
+                        CloseHandle(read_h);
                 else    close(filedes[0]);
-                if (filedes[1] == -1) 
+                if (filedes[1] == -1)
                         CloseHandle(write_h);
                 else    close(filedes[1]);
 
@@ -613,7 +613,7 @@ gid_t getgid (void) {
 }
 
 __attribute__ ((noreturn))
-int getgroups (__attribute__ ((unused)) int size, 
+int getgroups (__attribute__ ((unused)) int size,
                __attribute__ ((unused)) gid_t list[]) {
         die ("getgroups not implemented");
 }
@@ -645,7 +645,7 @@ uid_t getuid (void) {
 
 int setenv (const char *name, const char *value, int overwrite) {
         /* We could use _putenv, but then we'd need a temporary buffer for
-         * use to concat name=value. 
+         * use to concat name=value.
          */
         if (not overwrite and getenv (name)) {
                 errno = EEXIST;
@@ -666,13 +666,13 @@ int setgid (__attribute__ ((unused)) gid_t gid) {
 }
 
 __attribute__ ((noreturn))
-int setgroups (__attribute__ ((unused)) size_t size, 
+int setgroups (__attribute__ ((unused)) size_t size,
                __attribute__ ((unused)) const gid_t *list) {
         die ("setgroups not implemented");
 }
 
 __attribute__ ((noreturn))
-int setpgid (__attribute__ ((unused)) pid_t pid, 
+int setpgid (__attribute__ ((unused)) pid_t pid,
              __attribute__ ((unused)) pid_t pgid) {
         die ("setpgid not implemented");
 }
@@ -713,10 +713,10 @@ static void setMachine (struct utsname *buf) {
         case PROCESSOR_ARCHITECTURE_INTEL:
                 if (level < 3) level = 3;
                 if (level > 6) level = 6;
-                platform = "i%d86"; 
+                platform = "i%d86";
                 break;
         case PROCESSOR_ARCHITECTURE_IA64:    platform = "ia64";    break;
-        case PROCESSOR_ARCHITECTURE_AMD64:   platform = "amd64";   break; 
+        case PROCESSOR_ARCHITECTURE_AMD64:   platform = "amd64";   break;
         case PROCESSOR_ARCHITECTURE_PPC:     platform = "ppc";     break;
         case PROCESSOR_ARCHITECTURE_ALPHA:   platform = "alpha";   break;
         case PROCESSOR_ARCHITECTURE_MIPS:    platform = "mips";    break;
@@ -802,7 +802,7 @@ int fork (void) {
 
 
 __attribute__ ((noreturn))
-int kill (__attribute__ ((unused)) pid_t pid, 
+int kill (__attribute__ ((unused)) pid_t pid,
           __attribute__ ((unused)) int sig) {
         die ("kill not implemented");
 }
@@ -830,8 +830,8 @@ pid_t wait (__attribute__ ((unused)) int *status) {
 }
 
 __attribute__ ((noreturn))
-pid_t waitpid (__attribute__ ((unused)) pid_t pid, 
-               __attribute__ ((unused)) int *status, 
+pid_t waitpid (__attribute__ ((unused)) pid_t pid,
+               __attribute__ ((unused)) int *status,
                __attribute__ ((unused)) int options) {
         die ("waitpid not implemented");
 }
@@ -840,7 +840,7 @@ pid_t waitpid (__attribute__ ((unused)) pid_t pid,
 /*                      Signals                      */
 /* ------------------------------------------------- */
 
-int sigaction (int signum, 
+int sigaction (int signum,
                const struct sigaction *newact,
                struct sigaction *oldact) {
         _sig_func_ptr old;
@@ -993,8 +993,8 @@ struct group *getgrnam (__attribute__ ((unused)) const char *name) {
 
 struct passwd *getpwnam (__attribute__ ((unused)) const char *name) {
         return NULL;
-//      unless (NERR_Success == 
-//                      NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
+//      unless (NERR_Success ==
+//                      NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL,
 //                                      (LPBYTE*)&usrData))
 //              return NULL;
         passwd.pw_dir = (char*)usrData->usri3_home_dir;
@@ -1025,13 +1025,13 @@ speed_t cfgetospeed (__attribute__ ((unused)) struct termios *termios_p) {
 }
 
 __attribute__ ((noreturn))
-int cfsetispeed (__attribute__ ((unused)) struct termios *termios_p, 
+int cfsetispeed (__attribute__ ((unused)) struct termios *termios_p,
                  __attribute__ ((unused)) speed_t speed) {
         die ("cfsetispeed not implemented");
 }
 
 __attribute__ ((noreturn))
-int cfsetospeed (__attribute__ ((unused)) struct termios *termios_p, 
+int cfsetospeed (__attribute__ ((unused)) struct termios *termios_p,
                  __attribute__ ((unused)) speed_t speed) {
         die ("cfsetospeed not implemented");
 }
@@ -1042,19 +1042,19 @@ int tcdrain (__attribute__ ((unused)) int fd) {
 }
 
 __attribute__ ((noreturn))
-int tcflow (__attribute__ ((unused)) int fd, 
+int tcflow (__attribute__ ((unused)) int fd,
             __attribute__ ((unused)) int action) {
         die ("tcflow not implemented");
 }
 
 __attribute__ ((noreturn))
-int tcflush (__attribute__ ((unused)) int fd, 
+int tcflush (__attribute__ ((unused)) int fd,
              __attribute__ ((unused)) int queue_selector) {
         die ("tcflush not implemented");
 }
 
 __attribute__ ((noreturn))
-int tcgetattr (__attribute__ ((unused)) int fd, 
+int tcgetattr (__attribute__ ((unused)) int fd,
                __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcgetattr not implemented");
 }
@@ -1065,20 +1065,20 @@ pid_t tcgetpgrp (__attribute__ ((unused)) int fd) {
 }
 
 __attribute__ ((noreturn))
-int tcsendbreak (__attribute__ ((unused)) int fd, 
+int tcsendbreak (__attribute__ ((unused)) int fd,
                  __attribute__ ((unused)) int duration) {
         die ("tcsendbreak not implemented");
 }
 
 __attribute__ ((noreturn))
-int tcsetattr (__attribute__ ((unused)) int fd, 
-               __attribute__ ((unused)) int optional_actions, 
+int tcsetattr (__attribute__ ((unused)) int fd,
+               __attribute__ ((unused)) int optional_actions,
                __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcsetattr not implemented");
 }
 
 __attribute__ ((noreturn))
-int tcsetpgrp (__attribute__ ((unused)) int fd, 
+int tcsetpgrp (__attribute__ ((unused)) int fd,
                __attribute__ ((unused)) pid_t pgrpid) {
         die ("tcsetpgrp not implemented");
 }
@@ -1100,16 +1100,16 @@ C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
 /* ------------------------------------------------- */
 
 __attribute__ ((noreturn))
-int ioctl (__attribute__ ((unused)) int d, 
-           __attribute__ ((unused)) int request, 
+int ioctl (__attribute__ ((unused)) int d,
+           __attribute__ ((unused)) int request,
            ...) {
         die ("ioctl not implemented");
 }
 
 __attribute__ ((noreturn))
-int socketpair (__attribute__ ((unused)) int d, 
-                __attribute__ ((unused)) int type, 
-                __attribute__ ((unused)) int protocol, 
+int socketpair (__attribute__ ((unused)) int d,
+                __attribute__ ((unused)) int type,
+                __attribute__ ((unused)) int protocol,
                 __attribute__ ((unused)) int sv[2]) {
         die ("socketpair not implemented");
 }
@@ -1145,13 +1145,13 @@ void closelog(void) {
 
 void syslog(int priority, __attribute__ ((unused)) const char* fmt, const char* msg) {
   static const char* severity[] = {
-    "debug", 
-    "informational", 
-    "notice", 
-    "warning", 
-    "error", 
-    "CRITICAL", 
-    "ALERT", 
+    "debug",
+    "informational",
+    "notice",
+    "warning",
+    "error",
+    "CRITICAL",
+    "ALERT",
     "EMERGENCY"
   };
 

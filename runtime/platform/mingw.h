@@ -98,11 +98,11 @@ MLTON_WRAPPER int MLton_mkstemp (char *template);
 #define POLLOUT 4
 #endif
 
-#ifndef _PC_CHOWN_RESTRICTED 
+#ifndef _PC_CHOWN_RESTRICTED
 #define _PC_CHOWN_RESTRICTED 6
 #endif
 
-#ifndef _PC_LINK_MAX 
+#ifndef _PC_LINK_MAX
 #define _PC_LINK_MAX 0
 #endif
 
@@ -224,7 +224,7 @@ MLTON_WRAPPER int MLton_gettimeofday (struct timeval *tv, struct timezone *tz);
 /* ------------------------------------------------- */
 
 #ifndef ITIMER_REAL
-#define ITIMER_REAL    0                /*generates sigalrm */  
+#define ITIMER_REAL    0                /*generates sigalrm */
 #endif
 
 #ifndef ITIMER_VIRTUAL
@@ -236,7 +236,7 @@ MLTON_WRAPPER int MLton_gettimeofday (struct timeval *tv, struct timezone *tz);
 #endif
 
 #ifndef ITIMER_PROF
-#define ITIMER_PROF    2                /*generates sigprof */ 
+#define ITIMER_PROF    2                /*generates sigprof */
 #endif
 
 struct MLton_itimerval {
@@ -727,7 +727,7 @@ MLTON_WRAPPER pid_t MLton_waitpid (pid_t pid, int *status, int options);
 
 #define alarm MLton_alarm
 #define fork MLton_fork
-#define kill MLton_kill 
+#define kill MLton_kill
 #define pause MLton_pause
 #define nanosleep MLton_nanosleep
 #define sleep MLton_sleep
@@ -862,8 +862,8 @@ struct MLton_sigaction {
 #define SIGTOMASK(sn)   (1 << ((sn)-1))
 #endif
 
-MLTON_WRAPPER int MLton_sigaction (int signum, 
-                              const struct sigaction *act, 
+MLTON_WRAPPER int MLton_sigaction (int signum,
+                              const struct sigaction *act,
                               struct sigaction *oldact);
 MLTON_WRAPPER int MLton_sigaddset (sigset_t *set, int signum);
 MLTON_WRAPPER int MLton_sigdelset (sigset_t *set, int signum);
@@ -880,7 +880,7 @@ MLTON_WRAPPER int MLton_sigsuspend (const sigset_t *mask);
 #undef sigemptyset
 #undef sigfillset
 #undef sigismember
-#undef sigpending 
+#undef sigpending
 #undef sigprocmask
 #undef sigsuspend
 
