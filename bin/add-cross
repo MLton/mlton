@@ -110,6 +110,9 @@ amd64)
 hppa)
         archOpts=''
 ;;
+ia64)
+	archOpts='-mlp64'
+;;
 sparc)
         archOpts='-m32'
 ;;

@@ -74,6 +74,10 @@ FLAGS += -fgnu89-inline
 endif
 endif
 
+ifeq ($(TARGET_ARCH), ia64)
+FLAGS += -mlp64 -mtune=itanium2
+endif
+
 ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
 endif
