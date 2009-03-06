@@ -37,7 +37,7 @@ structure Kind =
           | _ => false
    end
 
-val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout) 
+val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout)
 
 structure RealX =
    struct
@@ -92,13 +92,13 @@ structure C =
       fun args (ss: string list): string
          = concat ("(" :: List.separate (ss, ", ") @ [")"])
 
-      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit 
+      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
          = (print f
             ; print " ("
-            ; (case xs 
+            ; (case xs
                   of [] => ()
                 | x :: xs => (print x
-                              ; List.foreach (xs, 
+                              ; List.foreach (xs,
                                              fn x => (print ", "; print x))))
             ; print ")")
 
@@ -229,12 +229,12 @@ fun declareGlobals (prefix: string, print) =
          (CType.all, fn t =>
           let
              val s = CType.toString t
-          in            
+          in
              print (concat [prefix, s, " global", s,
                             " [", C.int (Global.numberOfType t), "];\n"])
              ; print (concat [prefix, s, " CReturn", CType.name t, ";\n"])
           end)
-      val _ =                               
+      val _ =
          print (concat [prefix, "Pointer globalObjptrNonRoot [",
                         C.int (Global.numberOfNonRoot ()),
                         "];\n"])
@@ -339,10 +339,10 @@ fun outputDeclarations
              val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
                    Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      ("ARRAY_TAG", hasIdentity, 
+                      ("ARRAY_TAG", hasIdentity,
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      ("NORMAL_TAG", hasIdentity, 
+                      ("NORMAL_TAG", hasIdentity,
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
                       ("STACK_TAG", false, 0, 0)
@@ -406,7 +406,7 @@ fun outputDeclarations
                 | Control.ProfileLabel => "PROFILE_NONE"
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
                 | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
-         in 
+         in
             C.callNoSemi (case !Control.format of
                              Control.Archive => "MLtonLibrary"
                            | Control.Executable => "MLtonMain"
@@ -530,9 +530,9 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                                     "extern ",
                                     case cty of
                                        SOME x => CType.toString x
-                                     | NONE => "void", 
+                                     | NONE => "void",
                                     " ",
-                                    name, 
+                                    name,
                                     ";\n"])
                       | _ => ())
                | _ => ())
@@ -582,7 +582,7 @@ fun output {program as Machine.Program.T {chunks,
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
-              val frameIndex = 
+              val frameIndex =
                  case Kind.frameInfoOpt kind of
                     NONE => (if Kind.isEntry kind
                                 then entry (Counter.next indexCounter)
@@ -736,8 +736,8 @@ fun output {program as Machine.Program.T {chunks,
                                    ")"]
                                fun app (): string =
                                   case Prim.name prim of
-                                     Prim.Name.FFI_Symbol {name, ...} => 
-                                        concat 
+                                     Prim.Name.FFI_Symbol {name, ...} =>
+                                        concat
                                         ["((",CType.toString CType.CPointer,
                                          ")(&", name, "))"]
                                    | _ => call ()
@@ -757,7 +757,7 @@ fun output {program as Machine.Program.T {chunks,
                                     print)
                             ))
          end
-      val amTimeProfiling = 
+      val amTimeProfiling =
          !Control.profile = Control.ProfileTimeField
          orelse !Control.profile = Control.ProfileTimeLabel
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
@@ -899,7 +899,7 @@ fun output {program as Machine.Program.T {chunks,
                 let
                    val info as {layedOut, ...} = labelInfo l
                 in
-                   if !layedOut 
+                   if !layedOut
                       then print (concat ["\tgoto ", Label.toString l, ";\n"])
                    else printLabelCode info
                 end) arg
@@ -918,7 +918,7 @@ fun output {program as Machine.Program.T {chunks,
                            in
                               print s
                               ; print ":\n"
-                           end 
+                           end
                       | _ => ()
                   fun pop (fi: FrameInfo.t) =
                      (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
@@ -1013,7 +1013,7 @@ fun output {program as Machine.Program.T {chunks,
                                      :: (Vector.toListMap (args, operandToString)
                                          @ [Label.toString overflow]),
                                      print)
-                           ; gotoLabel success 
+                           ; gotoLabel success
                            ; maybePrintLabel overflow
                         end
                    | CCall {args, frameInfo, func, return} =>
@@ -1062,7 +1062,7 @@ fun output {program as Machine.Program.T {chunks,
                                              (fptr::args) => (fptr, args)
                                            | _ => Error.bug "CCodegen.outputTransfer: CCall,Indirect"
                                        val name =
-                                          concat ["(*(", 
+                                          concat ["(*(",
                                                   CFunction.cPointerType func,
                                                   " ", fptr, "))"]
                                     in
@@ -1096,8 +1096,8 @@ fun output {program as Machine.Program.T {chunks,
                            if ChunkLabel.equals (labelChunk source, dstChunk)
                               then gotoLabel label
                            else
-                              C.call ("\tFarJump", 
-                                      [chunkLabelToString dstChunk, 
+                              C.call ("\tFarJump",
+                                      [chunkLabelToString dstChunk,
                                        labelToStringIndex label],
                                       print)
                         end
@@ -1105,7 +1105,7 @@ fun output {program as Machine.Program.T {chunks,
                    | Raise => C.call ("\tRaise", [], print)
                    | Return => C.call ("\tReturn", [], print)
                    | Switch switch =>
-                        let 
+                        let
                            fun bool (test: Operand.t, t, f) =
                               iff (operandToString test, t, f)
                            fun doit {cases: (string * Label.t) vector,
@@ -1223,7 +1223,7 @@ fun output {program as Machine.Program.T {chunks,
                                ; print ",\n"
                             end)
           ; print "};\n")
-      val _ = 
+      val _ =
          outputDeclarations {additionalMainArgs = additionalMainArgs,
                              includes = ["c-main.h"],
                              program = program,
