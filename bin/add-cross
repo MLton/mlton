@@ -123,7 +123,7 @@ esac
 
 case "$crossOS" in
 aix)
-        osOpts=''
+        osOpts='-maix64'
 ;;
 cygwin)
         osOpts=''

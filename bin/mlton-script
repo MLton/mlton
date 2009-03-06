@@ -98,6 +98,7 @@ doit "$lib" \
         -target-cc-opt freebsd '-I/usr/local/include'            \
         -target-cc-opt netbsd '-I/usr/pkg/include'               \
         -target-cc-opt openbsd '-I/usr/local/include'            \
+        -target-cc-opt aix '-maix64'                             \
         -target-cc-opt ia64 '-mlp64 -mtune=itanium2'             \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86                                       \
@@ -111,6 +112,7 @@ doit "$lib" \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
+        -target-link-opt aix '-maix64'                           \
         -target-link-opt ia64 '-mlp64'                           \
         -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
