@@ -38,7 +38,7 @@ case "$1" in
         done
         if [ "$#" -gt 0 -a "$1" == "--" ]; then
                 shift
-        else    
+        else
                 echo '@MLton missing --'
                 exit 1
         fi
@@ -92,8 +92,8 @@ doit "$lib" \
         -target-as-opt x86 '-m32'                                \
         -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt darwin                                    \
-                '-I/usr/local/include 
-                 -I/opt/local/include 
+                '-I/usr/local/include
+                 -I/opt/local/include
                  -I/sw/include'                                  \
         -target-cc-opt freebsd '-I/usr/local/include'            \
         -target-cc-opt netbsd '-I/usr/pkg/include'               \
