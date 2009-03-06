@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -37,11 +37,11 @@ DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
 PICFLAGS := -DPIC
 GCOPTFLAGS :=
 GCDEBUGFLAGS :=
-GCPICFLAGS := 
+GCPICFLAGS :=
 WARNFLAGS :=
 OPTWARNFLAGS :=
 DEBUGWARNFLAGS :=
-PICWARNFLAGS := 
+PICWARNFLAGS :=
 
 # Win32&64 don't use PIC code, all other platforms do
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
