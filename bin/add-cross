@@ -83,8 +83,8 @@ ssh $machine "rm -rf $tmp && mkdir $tmp"
 echo 'Making runtime.'
 ( cd "$src" && tar cf - Makefile basis-library bin include runtime ) |
         ssh $machine "cd $tmp && tar xf - && cd runtime &&
-                ../bin/mmake COMPILE_FAST=yes OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
-		cd .. && make dirs runtime"
+                ../bin/mmake COMPILE_FAST=yes CPPFLAGS=\"$CPPFLAGS\" OMIT_BYTECODE=yes LDFLAGS=\"$LDFLAGS\" TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
+		cd .. && make CPPFLAGS=\"$CPPFLAGS\" LDFLAGS=\"$LDFLAGS\" dirs runtime"
 ssh $machine "cd $tmp/build/lib/self && tar cf - ." |
         ( cd "$lib/$crossTarget" && tar xf - )
 ssh $machine "cd $tmp/basis-library/config/c && tar cf - $crossArch-$crossOS" |
@@ -156,6 +156,6 @@ echo "Compiling and running print-constants on $machine."
 "$src/build/bin/mlton" -target $crossTarget -build-constants true |
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c &&
-                        gcc $archOpts $osOpts -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm"
+                        gcc $archOpts $osOpts $CPPFLAGS -I. -o $exe $exe.c libmlton.a libgdtoa.a $LDFLAGS -lgmp -lm"
 ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
