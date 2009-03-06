@@ -21,6 +21,8 @@ int fegetround (void) {
         case FP_RM: mode = 1; break;
         case FP_RP: mode = 2; break;
         case FP_RZ: mode = 3; break;
+        default:
+                die ("fegetround: invalid mode %d\n", mode);
         }
         return mode;
 }
@@ -31,6 +33,8 @@ int fesetround (int mode) {
         case 1: mode = FP_RM; break;
         case 2: mode = FP_RP; break;
         case 3: mode = FP_RZ; break;
+        default:
+                die ("fesetround: invalid mode %d\n", mode);
         }
         fpsetround (mode);
         return 0;

@@ -15,6 +15,8 @@
 #include <sys/filio.h> /* For FIONBIO, FIONREAD. */
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+/* This is defined in <sys/mman.h>, bet we'll redefine it in export.h. */
+#undef PRIVATE
 #include <sys/param.h>
 #include <sys/poll.h>
 #include <sys/resource.h>
@@ -32,21 +34,11 @@
 #include <unistd.h>
 #include <utime.h>
 
-#include "feround.h"
 #ifdef __sparc__
 #include "float-math.h"
 #include "setenv.h"
 #endif
 
-#define FE_TONEAREST 0
-#define FE_DOWNWARD 1
-#define FE_UPWARD 2
-#define FE_TOWARDZERO 3
-
-#define HAS_FEROUND TRUE
-#define HAS_FPCLASSIFY FALSE
-#define HAS_FPCLASSIFY32 FALSE
-#define HAS_FPCLASSIFY64 TRUE
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
@@ -56,11 +48,6 @@
 
 #define MLton_Platform_OS_host "solaris"
 
-#define LOG_AUTHPRIV LOG_AUTH
-#define LOG_PERROR 0
-
-int fpclassify32 (float f);
-int fpclassify64 (double d);
 
 #ifndef PRIuPTR
 #define PRIuPTR "u"
@@ -69,47 +56,6 @@ int fpclassify64 (double d);
 #ifndef PRIxPTR
 #define PRIxPTR "x"
 #endif
-
-extern char **environ; /* for Posix_ProcEnv_environ */
-
-/* Solaris 7 does not define MAP_ANON. */
-#ifndef MAP_ANON
-#define MAP_ANON        0x100           /* map anonymous pages directly */
-#endif
-
-/* Solaris 7 does not handle IPv6. */
-#ifndef AF_INET6
-
-#define AF_INET6 26 /* Internet Protocol, Version 6 */
-#define PF_INET6 AF_INET6
-
-struct sockaddr_in6 {
-  int dummy; // quell gcc warnings about "struct has no members"
-};
-struct sockaddr_storage {
-  union {
-    struct sockaddr_in sa_in;
-    struct sockaddr_un sa_un;
-  } sa;
-};
-
-#endif /* AF_INET6 */
-
-/* Solaris 2.6 does not define suseconds_t in system headers. */
-#ifndef _SUSECONDS_T
-#define _SUSECONDS_T
-typedef long    suseconds_t;    /* signed # of microseconds */
-#endif /* _SUSECONDS_T */
-
-/* Solaris 2.6 does not define socklen_t in system headers. */
-#ifndef _SOCKLEN_T
-#define _SOCKLEN_T
-#if defined(_XPG4_2) && !defined(_XPG5) && !defined(_LP64)
-typedef size_t socklen_t;
-#else
-typedef uint32_t socklen_t;
-#endif /* defined(_XPG4_2) && !defined(_XPG5) && !defined(_LP64) */
-#endif /* _SOCKLEN_T */
 
 /* Solaris 8 and older do not define a value for UINTPTR_MAX, so
    we redefine it with a value. */
@@ -121,3 +67,46 @@ typedef uint32_t socklen_t;
 #define UINTPTR_MAX     UINT32_MAX
 #endif
 #endif
+
+
+/* ------------------------------------------------- */
+/*                  Posix.ProcEnv                    */
+/* ------------------------------------------------- */
+
+extern char **environ;
+
+
+/* ------------------------------------------------- */
+/*                  MLton.Syslog                     */
+/* ------------------------------------------------- */
+
+#define LOG_AUTHPRIV LOG_AUTH
+#define LOG_PERROR 0
+
+
+/* ------------------------------------------------- */
+/*                         Real                      */
+/* ------------------------------------------------- */
+
+#ifdef __sparc__
+#undef fegetround
+#undef fesetround
+#define fegetround MLton_fegetround
+#define fesetround MLton_fesetround
+int fegetround(void);
+int fesetround(int rounding_mode);
+#endif
+
+#undef fpclassify64
+#define fpclassify64 MLton_fpclassify64
+int fpclassify64 (double d);
+
+#define FE_TONEAREST  0
+#define FE_DOWNWARD   1
+#define FE_UPWARD     2
+#define FE_TOWARDZERO 3
+
+#define HAS_FEROUND      TRUE
+#define HAS_FPCLASSIFY   FALSE
+#define HAS_FPCLASSIFY32 FALSE
+#define HAS_FPCLASSIFY64 TRUE
