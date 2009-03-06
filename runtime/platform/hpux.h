@@ -77,14 +77,14 @@ struct sockaddr_in6 {
 };
 #endif /* !AF_INET6 */
 
-#if HPUX_VERSION <= 1111
+#if HPUX_VERSION < 1111
 struct sockaddr_storage {
   union {
     struct sockaddr_in sa_in;
     struct sockaddr_un sa_un;
   } sa;
 };
-#endif /* HPUX_VERSION <= 1111 */
+#endif /* HPUX_VERSION < 1111 */
 
 typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 
