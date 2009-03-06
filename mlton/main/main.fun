@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -60,6 +60,8 @@ val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
+datatype debugFormat = Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
+val debugFormat: debugFormat option ref = ref NONE
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunk: Control.chunk option ref = ref NONE
@@ -297,6 +299,18 @@ fun makeOptions {usage} =
                        ; debugRuntime := b))),
        (Expert, "debug-runtime", " {false|true}", "produce executable with debug info",
         boolRef debugRuntime),
+       (Expert, "debug-format", " {default|dwarf|dwarf+|drwaf2|stabs|stabs+}",
+        "choose debug symbol format",
+        SpaceString (fn s =>
+                        debugFormat :=
+                        (case s of
+                            "default" => NONE
+                          | "dwarf" => SOME Dwarf
+                          | "dwarf+" => SOME DwarfPlus
+                          | "dwarf2" => SOME Dwarf2
+                          | "stabs" => SOME Stabs
+                          | "stabs+" => SOME StabsPlus
+                          | _ => usage (concat ["invalid -debug-format flag: ", s])))),
        let
           val flag = "default-ann"
        in
@@ -1185,20 +1199,18 @@ fun commandLine (args: string list): unit =
                         atMLtons :=
                         Vector.fromList
                         (maybeOut "" :: tokenize (rev ("--" :: (!runtimeArgs))))
-                     datatype debugFormat =
-                        Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
                      (* The -Wa,--gstabs says to pass the --gstabs option to the
                       * assembler. This tells the assembler to generate stabs
                       * debugging information for each assembler line.
                       *)
-                     val debugFormat = StabsPlus
                      val (gccDebug, asDebug) =
-                        case debugFormat of
-                           Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
-                         | DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
-                         | Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
-                         | Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
-                         | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
+                        case !debugFormat of
+                           NONE => (["-g"], "-Wa,-g")
+                         | SOME Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
+                         | SOME DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
+                         | SOME Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
+                         | SOME Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
+                         | SOME StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
                            val output =
