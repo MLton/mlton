@@ -1,4 +1,3 @@
-
 /* On AIX 5.1 (and older) there is no fegetround() or fesetround().
    Instead, float.h defines fp_read_rnd() and fp_swap_rnd() with
    equivalent functionality.  GCC has its own version of float.h, so
@@ -15,7 +14,6 @@
 #include "mmap-protect.c"
 #include "nonwin.c"
 #include "recv.nonblock.c"
-#include "sysconf.c"
 #include "use-mmap.c"
 
 int fegetround (void)
@@ -53,6 +51,30 @@ int fpclassify64 (double d)
         }
 }
 
+size_t GC_pageSize (void) {
+        long pageSize;
+
+        pageSize = sysconf (_SC_PAGESIZE);
+        if (pageSize < 0)
+                diee ("GC_pageSize error: sysconf (_SC_PAGESIZE) failed");
+
+        return (size_t)pageSize;
+}
+
+/* We cannot use _SC_PHYS_PAGES from sysconf.c.  It fails on some
+   versions of AIX. */
+uintmax_t GC_physMem (void) {
+        struct vminfo vminfo;
+        uintmax_t physMem;
+
+        if (vmgetinfo (&vminfo, VMINFO, sizeof (vminfo)) < 0)
+                diee ("GC_physMem error: vmgetinfo failed");
+
+        physMem = (uintmax_t)vminfo.memsizepgs * (uintmax_t)4096;
+        return physMem;
+}
+
+
 struct map_type {
         int flag;
         const char *type;
@@ -73,19 +95,19 @@ struct map_segment {
 };
 
 static struct map_segment map_segments[] =
-        {{0x00000000, 0x0fffffff, "kernel"},
+        {{(prptr64_t)0x00000000, (prptr64_t)0x0fffffff, "kernel"},
          /* Application program text. */
-         {0x10000000, 0x1fffffff, "text"},
+         {(prptr64_t)0x10000000, (prptr64_t)0x1fffffff, "text"},
          /* Application program data and the application stack. */
-         {0x20000000, 0x2fffffff, "data"},
+         {(prptr64_t)0x20000000, (prptr64_t)0x2fffffff, "data"},
          /* Available for use by shared memory or mmap services. */
-         {0x30000000, 0xafffffff, "mmap"},
+         {(prptr64_t)0x30000000, (prptr64_t)0xafffffff, "mmap"},
          /* Shared library text. */
-         {0xd0000000, 0xdfffffff, "shtext"},
+         {(prptr64_t)0xd0000000, (prptr64_t)0xdfffffff, "shtext"},
          /* Miscellaneous kernel data. */
-         {0xe0000000, 0xefffffff, "kdata"},
+         {(prptr64_t)0xe0000000, (prptr64_t)0xefffffff, "kdata"},
          /* Application shared library data. */
-         {0xf0000000, 0xffffffff, "shdata"},
+         {(prptr64_t)0xf0000000, (prptr64_t)0xffffffff, "shdata"},
          {0, 0, NULL}};
 
 
@@ -97,8 +119,8 @@ get_map_type (int flags, prptr64_t addr)
         for (m = map_types; m->flag; m++)
                 if (m->flag & flags)
                         return m->type;
-        if ((addr >= 0xd0000000 && addr <= 0xdfffffff)
-            || (addr >= 0xf0000000 && addr <= 0xffffffff))
+        if ((addr >= (prptr64_t)0xd0000000 && addr <= (prptr64_t)0xdfffffff)
+            || (addr >= (prptr64_t)0xf0000000 && addr <= (prptr64_t)0xffffffff))
                 return "shlib";
         return "";
 }
