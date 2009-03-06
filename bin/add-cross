@@ -11,16 +11,16 @@ set -e
 #    to run this script, since it uses ssh and the native gcc on the target.
 #    Examples of $crossTarget are i386-pc-cygwin and sparc-sun-solaris.
 #
-# 2. <crossArch> specifies the target architecture.  
+# 2. <crossArch> specifies the target architecture.
 #    The posibilities are: amd64, hppa, sparc, x86.
 #
 # 3. <crossOS> specifies the target OS.
-#    The possibilities are: aix, cygwin, darwin, freebsd, hpux, linux, mingw, 
+#    The possibilities are: aix, cygwin, darwin, freebsd, hpux, linux, mingw,
 #    netbsd, openbsd, solaris.
 #
 # 4. <machine> specifies a remote machine of the target type.  This script
 #    will ssh to $machine to compile the runtime and to compile and run the
-#    program that will print the values of all the constants that the MLton 
+#    program that will print the values of all the constants that the MLton
 #    basis library needs.
 #
 # Here are some example uses of this script.
@@ -80,14 +80,14 @@ tmp='/tmp/mlton-add-cross'
 
 ssh $machine "rm -rf $tmp && mkdir $tmp"
 
-echo 'Making runtime.' 
-( cd "$src" && tar cf - Makefile basis-library bin include runtime ) | 
+echo 'Making runtime.'
+( cd "$src" && tar cf - Makefile basis-library bin include runtime ) |
         ssh $machine "cd $tmp && tar xf - && cd runtime &&
                 ../bin/mmake COMPILE_FAST=yes OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
 		cd .. && make dirs runtime"
-ssh $machine "cd $tmp/build/lib/self && tar cf - ." | 
+ssh $machine "cd $tmp/build/lib/self && tar cf - ." |
         ( cd "$lib/$crossTarget" && tar xf - )
-ssh $machine "cd $tmp/basis-library/config/c && tar cf - $crossArch-$crossOS" | 
+ssh $machine "cd $tmp/basis-library/config/c && tar cf - $crossArch-$crossOS" |
         ( cd "$lib/sml/basis/config/c" && tar xf - )
 ( cd "$src" &&
         mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
@@ -153,9 +153,9 @@ esac
 
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
-"$src/build/bin/mlton" -target $crossTarget -build-constants true | 
+"$src/build/bin/mlton" -target $crossTarget -build-constants true |
         ssh $machine "cd $tmp/runtime &&
-                        cat >$exe.c && 
+                        cat >$exe.c &&
                         gcc $archOpts $osOpts -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm"
 ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
