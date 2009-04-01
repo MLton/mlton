@@ -758,6 +758,7 @@ signature BASIS_EXTRA =
    where type OS.Process.status = OS.Process.status (* UNIX, POSIX_PROCESS *)
    where type Position.int = Position.int
    where type Posix.IO.file_desc = Posix.IO.file_desc
+   where type Posix.Process.exit_status = Posix.Process.exit_status
    where type Posix.Signal.signal = Posix.Signal.signal
    where type Socket.dgram = Socket.dgram
    where type ('a, 'b) Socket.sock = ('a, 'b) Socket.sock
