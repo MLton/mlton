@@ -104,10 +104,12 @@ size_t GC_pageSize (void) {
 
 uintmax_t GC_physMem (void) {
         struct pst_static buf;
+        uintmax_t physMem;
 
         if (pstat_getstatic (&buf, sizeof (buf), 1, 0) < 0)
                 diee ("failed to get physical memory size");
-        return buf.physical_memory * buf.page_size;
+        physMem = (uintmax_t)buf.physical_memory * (uintmax_t)buf.page_size;
+        return physMem;
 }
 
 #ifdef __hppa__
