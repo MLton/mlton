@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -30,7 +30,7 @@ functor IO (S : sig
 
 (* This file is just a dummy provided in place of the structure that MLton
  * supplies so that we can compile under SML/NJ.
- *) 
+ *)
 structure MLton: MLTON =
    struct
       type int = Int.int
@@ -182,7 +182,7 @@ structure MLton: MLTON =
             structure Arch =
                struct
                   datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
-                               MIPS | PowerPC | S390 | Sparc | X86
+                               MIPS | PowerPC | PowerPC64 | S390 | Sparc | X86
 
                   val host: t = X86
 
@@ -193,9 +193,10 @@ structure MLton: MLTON =
                              (IA64, "IA64"),
                              (m68k, "m68k"),
                              (MIPS, "MIPS"),
-                             (PowerPC, "PowerPC"), 
+                             (PowerPC, "PowerPC"),
+                             (PowerPC64, "PowerPC64"),
                              (S390, "S390"),
-                             (Sparc, "Sparc"), 
+                             (Sparc, "Sparc"),
                              (X86, "X86")]
 
                   fun fromString s =

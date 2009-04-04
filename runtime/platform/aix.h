@@ -1,4 +1,10 @@
-#define __ppc__
+#if defined(_ARCH_PPC64)
+#define __powerpc64__
+#elif defined(_ARCH_PPC)
+#define __powerpc__
+#else
+#error "Unknown architecture"
+#endif
 
 #include <unistd.h>
 

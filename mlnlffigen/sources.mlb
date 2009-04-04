@@ -21,6 +21,7 @@ local
       sizes-hppa.sml
       sizes-ia64.sml
       sizes-ppc.sml
+      sizes-powerpc64.sml
       sizes-sparc.sml
       sizes-x86.sml
    end

@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -109,6 +109,9 @@ structure Target =
                                 endianShift = EndianBig.shift}
           | (PowerPC, _) => SOME {name = toString t, sizes = SizesPPC.sizes,
                                   endianShift = EndianLittle.shift}
+          | (PowerPC64, _) => SOME {name = toString t, 
+                                    sizes = SizesPowerPC64.sizes,
+                                    endianShift = EndianLittle.shift}
           | (X86, _) => SOME {name = toString t, sizes = SizesX86.sizes,
                               endianShift = EndianLittle.shift}
           | _ => NONE

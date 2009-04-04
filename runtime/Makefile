@@ -78,7 +78,7 @@ ifeq ($(TARGET_ARCH), ia64)
 FLAGS += -mlp64 -mtune=itanium2
 endif
 
-ifeq ($(TARGET_OS)-$(TARGET_ARCH), aix-powerpc)
+ifeq ($(TARGET_OS)-$(TARGET_ARCH), aix-powerpc64)
 FLAGS += -maix64
 AR := ar -X 64 rc
 endif

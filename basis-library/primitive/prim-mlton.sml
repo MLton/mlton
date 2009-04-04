@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -154,6 +154,7 @@ structure Platform =
              | m68k
              | MIPS
              | PowerPC
+             | PowerPC64
              | S390
              | Sparc
              | X86
@@ -168,6 +169,7 @@ structure Platform =
                 | "m68k" => m68k
                 | "mips" => MIPS
                 | "powerpc" => PowerPC
+                | "powerpc64" => PowerPC64
                 | "s390" => S390
                 | "sparc" => Sparc
                 | "x86" => X86

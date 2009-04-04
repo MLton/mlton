@@ -31,7 +31,7 @@ AIX)
         HOST_OS='aix'
         arch=`/usr/sbin/lsattr -a type -F deflt -l proc0`
         case $arch in
-        POWER) arch=powerpc ;;
+        POWER) arch=powerpc64 ;;
         esac
 ;;
 CYGWIN*)
@@ -105,6 +105,9 @@ m68k*)
 mips*)
 # big-endian and little-endian detect via headers
         HOST_ARCH=mips
+;;
+powerpc64)
+	HOST_ARCH=powerpc64
 ;;
 powerpc)
         HOST_ARCH=powerpc

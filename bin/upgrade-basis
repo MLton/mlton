@@ -29,7 +29,7 @@ tmp="$$.sml"
 
 echo "val () = print \"I work\"" >"$tmp"
 if ! mlton "$tmp" 1>&2; then
-        die "Error: cannot upgrade basis because the compiler doesn't work" 
+        die "Error: cannot upgrade basis because the compiler doesn't work"
 fi
 
 feature () {
@@ -67,7 +67,7 @@ structure OS =
    end'
 
 feature 'val _ = IntInf.~>>' '
-structure IntInf = 
+structure IntInf =
    struct
       open IntInf
 
@@ -121,6 +121,9 @@ mips)
 powerpc)
         arch='PowerPC'
 ;;
+powerpc64)
+        arch='PowerPC64'
+;;
 s390)
         arch='S390'
 ;;
@@ -171,7 +174,7 @@ solaris)
 esac
 
 cat <<-EOF
-structure MLton = 
+structure MLton =
    struct
       open MLton
 
@@ -184,7 +187,7 @@ structure MLton =
             structure Arch =
                struct
                   datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
-                               MIPS | PowerPC | S390 | Sparc | X86
+                               MIPS | PowerPC | PowerPC64 | S390 | Sparc | X86
 
                   val all = [(Alpha, "Alpha"),
                              (AMD64, "AMD64"),
@@ -193,9 +196,10 @@ structure MLton =
                              (IA64, "IA64"),
                              (m68k, "m68k"),
                              (MIPS, "MIPS"),
-                             (PowerPC, "PowerPC"), 
+                             (PowerPC, "PowerPC"),
+                             (PowerPC64, "PowerPC64"),
                              (S390, "S390"),
-                             (Sparc, "Sparc"), 
+                             (Sparc, "Sparc"),
                              (X86, "X86")]
 
                   fun fromString s =

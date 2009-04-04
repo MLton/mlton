@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -104,6 +104,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/m68k.h"
 #elif (defined (__mips__))
 #include "platform/mips.h"
+#elif (defined (__powerpc64__))
+#include "platform/powerpc64.h"
 #elif (defined (__ppc__)) || (defined (__powerpc__))
 #include "platform/powerpc.h"
 #elif (defined (__s390__))
