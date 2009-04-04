@@ -10,7 +10,10 @@ in
    in
       local
          linkage.sig
-         ann "allowFFI true" in
+         ann 
+            "allowFFI true"
+            "allowConstant true"
+         in
             linkage-libdl.sml
          end
          bitop-fn.sml

@@ -17,9 +17,9 @@
 structure DynLinkage :> DYN_LINKAGE = struct
 
     exception DynLinkError of string
-    val () = 
-       MLton.Exn.addExnMessager 
-       (fn DynLinkError s => SOME (concat ["DynLinkError: ", s]) 
+    val () =
+       MLton.Exn.addExnMessager
+       (fn DynLinkError s => SOME (concat ["DynLinkError: ", s])
          | _ => NONE)
 
     local
@@ -36,10 +36,10 @@ structure DynLinkage :> DYN_LINKAGE = struct
 
     type mode = C_UInt.word
     local
-       val RTLD_LAZY   = 0wx00001
-       val RTLD_NOW    = 0wx00002
-       val RTLD_GLOBAL = 0wx00100
-       val RTLD_LOCAL  = 0wx00000
+       val RTLD_LAZY   = _const "DynLinkage_RTLD_LAZY"   : C_UInt.t;
+       val RTLD_NOW    = _const "DynLinkage_RTLD_NOW"    : C_UInt.t;
+       val RTLD_GLOBAL = _const "DynLinkage_RTLD_GLOBAL" : C_UInt.t;
+       val RTLD_LOCAL  = _const "DynLinkage_RTLD_LOCAL"  : C_UInt.t;
     in
        fun mk_mode {lazy: bool, global: bool} : mode=
           C_UInt.orb

@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -6,8 +6,15 @@
  */
 
 #include "platform.h"
+#include <dlfcn.h>
 
 Bool MLton_Platform_CygwinUseMmap = FALSE;
+
+/* These are needed in the DynLinkage structure in mlnlffi-lib. */
+const C_UInt_t DynLinkage_RTLD_GLOBAL = RTLD_GLOBAL;
+const C_UInt_t DynLinkage_RTLD_LAZY   = RTLD_LAZY;
+const C_UInt_t DynLinkage_RTLD_LOCAL  = RTLD_LOCAL;
+const C_UInt_t DynLinkage_RTLD_NOW    = RTLD_NOW;
 
 void GC_setCygwinUseMmap (bool b) {
   MLton_Platform_CygwinUseMmap = b;
