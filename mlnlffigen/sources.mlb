@@ -1,4 +1,4 @@
-(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -24,6 +24,9 @@ local
       sizes-sparc.sml
       sizes-x86.sml
    end
+   
+   cppcmd.sml
+
    local open basis_lib pp_lib in
       cpif-dev.sml
       pp.sml

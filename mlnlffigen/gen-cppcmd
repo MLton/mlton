@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -e
+
+dir=`dirname "$0"`
+src=`cd "$dir/.." && pwd`
+lib="$src/build/lib"
+eval `"$lib/platform"`
+
+output () {
+        echo "val defaultCppCmd = \"gcc $1 -E -U__GNUC__ %o %s > %t\""
+}
+
+# The flags here should match the flags used by mlton.  At least the
+# 64 vs 32 bit flags have an effect on what the system headers look
+# like.
+case "$HOST_OS-$HOST_ARCH" in
+aix-*)
+	output "-maix64"
+	;;
+*-ia64)
+	output "-mlp64"
+	;;
+*-amd64)
+	output "-m64"
+	;;
+*-x86)
+	output "-m32"
+	;;
+*-sparc)
+	output "-m32"
+	;;
+*)
+	output ""
+	;;
+esac

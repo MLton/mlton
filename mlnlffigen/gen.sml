@@ -1,7 +1,7 @@
 (* gen.sml
  * 2005 Matthew Fluet (mfluet@acm.org)
  *  Adapted for MLton.
-(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -178,7 +178,7 @@ let
       val cpp_tmpl =
          Option.fold
          (Process.getEnv "FFIGEN_CPP",
-          "gcc -E -U__GNUC__ %o %s > %t",
+          defaultCppCmd,
           fn (cpp_tmpl,_) => cpp_tmpl)
       val cpp_tmpl =
          String.substituteFirst
