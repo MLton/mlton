@@ -11,7 +11,7 @@ in
       local
          linkage.sig
          ann "allowFFI true" in
-            rtld-flags.sml
+            platform/rtld-flags.$(TARGET_OS).sml
             linkage-libdl.sml
          end
          bitop-fn.sml
