@@ -42,13 +42,6 @@ val setYDay = _import "Date_Tm_setYDay" private : C_Int.t -> unit;
 val setYear = _import "Date_Tm_setYear" private : C_Int.t -> unit;
 end
 end
-structure DynLinkage = 
-struct
-val RTLD_GLOBAL = _const "DynLinkage_RTLD_GLOBAL" : C_UInt.t;
-val RTLD_LAZY = _const "DynLinkage_RTLD_LAZY" : C_UInt.t;
-val RTLD_LOCAL = _const "DynLinkage_RTLD_LOCAL" : C_UInt.t;
-val RTLD_NOW = _const "DynLinkage_RTLD_NOW" : C_UInt.t;
-end
 structure IEEEReal = 
 struct
 structure FloatClass = 

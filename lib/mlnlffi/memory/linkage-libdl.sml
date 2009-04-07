@@ -36,10 +36,7 @@ structure DynLinkage :> DYN_LINKAGE = struct
 
     type mode = C_UInt.word
     local
-       val RTLD_LAZY   = _const "DynLinkage_RTLD_LAZY"   : C_UInt.t;
-       val RTLD_NOW    = _const "DynLinkage_RTLD_NOW"    : C_UInt.t;
-       val RTLD_GLOBAL = _const "DynLinkage_RTLD_GLOBAL" : C_UInt.t;
-       val RTLD_LOCAL  = _const "DynLinkage_RTLD_LOCAL"  : C_UInt.t;
+       open RTLDFlags
     in
        fun mk_mode {lazy: bool, global: bool} : mode=
           C_UInt.orb

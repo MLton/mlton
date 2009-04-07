@@ -180,6 +180,7 @@ libraries-no-check:
 	mkdir -p "$(LIB)/sml"
 	cd "$(LIB)/sml" && rm -rf $(LIBRARIES)
 	$(MAKE) -C "$(SRC)/lib/ckit-lib"
+	$(MAKE) -C "$(SRC)/lib/mlnlffi"
 	$(MAKE) -C "$(SRC)/lib/mlrisc-lib"
 	$(MAKE) -C "$(SRC)/lib/smlnj-lib"
 	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
