@@ -1068,7 +1068,7 @@ fun commandLine (args: string list): unit =
                                       MLton.Platform.OS.toString targetOS])
                else ()
       fun printVersion (out: Out.t): unit =
-         Out.output (out, concat [version, " ", build, "\n"])
+         Out.output (out, concat [Version.banner, "\n"])
       val () =
          case !show of
             NONE => ()
@@ -1539,9 +1539,6 @@ val commandLine = Process.makeCommandLine commandLine
 
 val main = fn (_, args) => commandLine args
 
-val mainWrapped = fn () =>
-   OS.Process.exit
-   (main (CommandLine.name (), CommandLine.arguments ())
-    handle _ => OS.Process.failure)
+val mainWrapped = fn () => OS.Process.exit (commandLine (CommandLine.arguments ()))
 
 end

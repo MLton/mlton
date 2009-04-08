@@ -59,7 +59,7 @@ all:
 
 .PHONY: all-no-docs
 all-no-docs:
-	$(MAKE) dirs runtime compiler world-no-check script mlbpathmap targetmap constants libraries tools
+	$(MAKE) dirs runtime compiler basis-no-check script mlbpathmap targetmap constants libraries tools
 # Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
 # We also want to re-run the just-built tools (mllex and mlyacc)
 # because they may be better than those that were used for the first
@@ -68,7 +68,7 @@ ifeq (true, $(BOOTSTRAP_OTHER))
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
 endif
-	$(MAKE) compiler world
+	$(MAKE) compiler basis
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis-no-check
@@ -118,8 +118,7 @@ constants:
 debugged:
 	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
-	"$(LIB)/$(AOUT).debug" @MLton -- "$(LIB)/world.debug"
-	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" | sed 's/world.mlton/world.debug.mlton/' > "$(MLTON).debug"
+	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
 	chmod a+x "$(MLTON).debug"
 
 .PHONY: dirs
@@ -186,10 +185,8 @@ profiled:
 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
-		"$(LIB)/$(AOUT).$$t" @MLton -- "$(LIB)/world.$$t";	\
-		sed "s/mlton-compile/mlton-compile.$$t/"		\
-			<"$(MLTON)" |					\
-			sed "s/world.mlton/world.$$t.mlton/"		\
+		sed "s/mlton-compile/mlton-compile.$$t/" 		\
+			<"$(MLTON)" | 					\
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
 	done
@@ -260,8 +257,7 @@ targetmap:
 traced:
 	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
-	"$(LIB)/$(AOUT).trace" @MLton -- "$(LIB)/world.trace"
-	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" | sed 's/world.mlton/world.trace.mlton/' > "$(MLTON).trace"
+	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
 
 .PHONY: tools
@@ -283,7 +279,7 @@ version:
 		package/debian/changelog				\
 		"$(SPEC)"						\
 		package/freebsd/Makefile				\
-		mlton/control/control-flags.sml;			\
+		mlton/control/version_sml.src;				\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && \
 		mv z "$$f";						\
@@ -291,20 +287,6 @@ version:
 	sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"
 	mv z "$(SPEC)"
 
-.PHONY: world-no-check
-world-no-check:
-	@echo 'Making world.'
-	$(MAKE) basis-no-check
-	"$(LIB)/$(AOUT)$(EXE)" @MLton -- "$(LIB)/world"
-
-.PHONY: world
-world:
-	$(MAKE) world-no-check
-	@echo 'Type checking basis.'
-	"$(MLTON)" -disable-ann deadCode \
-		-stop tc \
-		'$$(SML_LIB)/basis/libs/all.mlb' \
-		>/dev/null
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually

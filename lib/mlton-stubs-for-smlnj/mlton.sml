@@ -20,9 +20,4 @@ structure MLton =
             fun setMessages b = SMLofNJ.Internals.GC.messages b
             fun pack () = collect ()
          end
-      structure World =
-         struct
-            datatype status = Clone | Original
-            val save = fn _ => raise Fail "MLton.World.save"
-         end
    end

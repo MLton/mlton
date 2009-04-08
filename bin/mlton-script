@@ -17,7 +17,6 @@ mingw)
 ;;
 esac
 mlton="$lib/mlton-compile$exe"
-mlton_world="$lib/world.mlton"
 
 smlnj='sml'
 # Try to use the SML/NJ .arch-n-opsys
@@ -49,7 +48,7 @@ case "$1" in
 esac
 
 doitMLton () {
-    exec "$mlton" @MLton load-world "$mlton_world" ram-slop 0.5 "${rargs[@]}" -- "$@"
+    exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
 }
 doitSMLNJ () {
     exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
@@ -58,10 +57,8 @@ doitPolyML () {
     exec "$mlton_polyml" "$@"
 }
 
-# If $mlton is executable and $mlton_world exists and is not older than
-# $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
-        if [ -x "$mlton" -a -s "$mlton_world" ]; then
+        if [ -x "$mlton" ]; then
             doitMLton "$@"
         elif [ -s "$mlton_smlnj_heap" ]; then
             doitSMLNJ "$@"

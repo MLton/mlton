@@ -10,10 +10,6 @@
 Group
 
 structure Main
-#if (defined (SMLNJ_VERSION))
-#else
-structure ExportMLton
-#endif
 
 is
 
@@ -39,7 +35,3 @@ compile.fun
 main.sig
 main.fun
 main.sml
-#if (defined (SMLNJ_VERSION))
-#else
-export-mlton.sml
-#endif

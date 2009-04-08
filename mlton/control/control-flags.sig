@@ -24,9 +24,6 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
-      (* build identifies the machine on which this MLton was built. *)
-      val build: string
-
       datatype chunk =
          OneChunk
        | ChunkPerFunc
@@ -370,9 +367,6 @@ signature CONTROL_FLAGS =
        | Pass
        | Detail
       val verbosity: verbosity ref
-
-      (* version number *)
-      val version: string
 
       val warnAnn: bool ref
 

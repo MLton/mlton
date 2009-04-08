@@ -221,6 +221,7 @@ use "control/region.sig";
 use "control/region.sml";
 use "control/source.sig";
 use "control/source.sml";
+use "control/version.sml";
 use "control/control.sig";
 use "control/control.sml";
 use "control/system.sig";

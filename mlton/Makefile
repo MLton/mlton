@@ -78,9 +78,17 @@ front-end/mlb.lex.sml: front-end/mlb.lex
 front-end/mlb.grm.sig front-end/mlb.grm.sml: front-end/mlb.grm
 	$(MAKE) -C front-end mlb.grm.sig mlb.grm.sml
 
+control/version.sml: control/version_sml.src
+	cat control/version_sml.src |						\
+		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`date`\2/" |		\
+		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
+		control/version.sml
+
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(FILE)
 
@@ -108,6 +116,8 @@ SMLNJ	:= sml
 
 .PHONY: smlnj-mlton
 smlnj-mlton: $(SOURCES)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -119,6 +129,8 @@ smlnj-mlton: $(SOURCES)
 
 .PHONY: smlnj-mlton-dual
 smlnj-mlton-dual: $(SOURCES)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -132,6 +144,8 @@ smlnj-mlton-dual: $(SOURCES)
 
 .PHONY: smlnj-mlton-quad
 smlnj-mlton-quad: $(SOURCES)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -176,6 +190,8 @@ POLYML	:= poly
 
 .PHONY: polyml-mlton
 polyml-mlton: mlton-polyml.use $(SOURCES)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
 	(									\
 		echo 'use "mlton-polyml.use";';					\
 		echo 'PolyML.export("mlton-polyml", Main.mainWrapped);';	\

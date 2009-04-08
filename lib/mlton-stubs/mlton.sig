@@ -48,5 +48,5 @@ signature MLTON =
 (*       structure Weak: MLTON_WEAK *)
 (*       structure Word: MLTON_WORD *)
 (*       structure Word8: MLTON_WORD *)
-      structure World: MLTON_WORLD
+(*       structure World: MLTON_WORLD *)
    end

@@ -1,0 +1,16 @@
+(* Copyright (C) 2009 Matthew Fluet.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+structure Version =
+   struct
+      val version = "MLTONVERSION"
+      val buildDate = "MLTONBUILDDATE"
+      val buildNode = "MLTONBUILDNODE"
+
+      val banner = concat ["MLton ", version,
+                           " (built ", buildDate,
+                           " on ", buildNode, ")"]
+   end
