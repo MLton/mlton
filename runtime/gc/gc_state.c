@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -83,7 +84,7 @@ void setGCStateCurrentHeap (GC_state s,
        or (s->lastMajorStatistics.kind == GC_MARK_COMPACT)
        /* The live ratio is low enough to make it worthwhile. */
        or ((float)h->size / (float)s->lastMajorStatistics.bytesLive
-           <= (h->size < s->sysvals.ram
+           <= (h->withMapsSize < s->sysvals.ram
                ? s->controls.ratios.copyGenerational
                : s->controls.ratios.markCompactGenerational))
        )) {
