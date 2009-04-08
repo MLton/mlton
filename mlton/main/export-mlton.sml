@@ -4,15 +4,17 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Export : EXPORT =
+structure ExportMLton =
    struct
-
-      fun exportNJ (file: File.t): unit =
-         SMLofNJ.exportFn (file, Main.main)
-
       fun exportMLton (): unit =
          case CommandLine.arguments () of
             [worldFile] =>
-               SMLofNJ.exportFn (worldFile, Main.main)
+               let
+                  open MLton.World OS.Process
+               in
+                  case save (worldFile ^ ".mlton") of
+                     Original => exit success
+                   | Clone => Main.mainWrapped ()
+               end
           | _ => Error.bug "usage: exportMLton worldFile"
    end

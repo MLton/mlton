@@ -18,23 +18,24 @@ is
 ../mlton-stubs-for-smlnj/sources.cm
 #endif
 
+io.sig
+
+thread.sig
+thread.sml
+
 array.sig
 bin-io.sig
 cont.sig
 exn.sig
 finalizable.sig
 gc.sig
-io.sig
 itimer.sig
 platform.sig
 proc-env.sig
 process.sig
 profile.sig
 random.sig
-random.sml
 rusage.sig
-thread.sig
-thread.sml
 signal.sig
 socket.sig
 text-io.sig
@@ -42,6 +43,8 @@ vector.sig
 weak.sig
 word.sig
 world.sig
+
+random.sml
 
 mlton.sig
 mlton.sml

@@ -4,8 +4,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature EXPORT =
-   sig
-      val exportMLton: unit -> unit
-      val exportNJ: File.t -> unit
+structure ExportSMLNJ =
+   struct
+      fun exportSMLNJ (file: string): unit =
+         SMLofNJ.exportFn (file, Main.main)
    end

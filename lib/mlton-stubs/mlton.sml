@@ -490,10 +490,10 @@ structure MLton: MLTON =
 
       structure World =
          struct
-            datatype status = Original | Clone
+            datatype status = datatype MLton.World.status
+            val save = MLton.World.save
 
             fun load _ = raise Fail "World.load"
-            fun save _ = raise Fail "World.save"
             fun saveThread _ = raise Fail "World.saveThread"
          end
 

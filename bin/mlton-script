@@ -17,16 +17,18 @@ mingw)
 ;;
 esac
 mlton="$lib/mlton-compile$exe"
-world="$lib/world.mlton"
-nj='sml'
+mlton_world="$lib/world.mlton"
+
+smlnj='sml'
 # Try to use the SML/NJ .arch-n-opsys
 if .arch-n-opsys >/dev/null 2>&1; then
         eval `.arch-n-opsys`
-        njHeap="$lib/mlton.$HEAP_SUFFIX"
+        mlton_smlnj_heap="$lib/mlton-smlnj.$HEAP_SUFFIX"
         unset `.arch-n-opsys | sed 's#=[^ ]*##g'`
 else
-        njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
+        mlton_smlnj_heap=""
 fi
+
 mlton_polyml="$lib/mlton-polyml$exe"
 
 declare -a rargs
@@ -46,15 +48,25 @@ case "$1" in
         ;;
 esac
 
-# If $mlton is executable and $world exists and is not older than
+doitMLton () {
+    exec "$mlton" @MLton load-world "$mlton_world" ram-slop 0.5 "${rargs[@]}" -- "$@"
+}
+doitSMLNJ () {
+    exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+}
+doitPolyML () {
+    exec "$mlton_polyml" "$@"
+}
+
+# If $mlton is executable and $mlton_world exists and is not older than
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
-        if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 "${rargs[@]}" -- "$@"
-        elif [ -s "$njHeap" ]; then
-                exec "$nj" @SMLload="$njHeap" "$@"
+        if [ -x "$mlton" -a -s "$mlton_world" ]; then
+            doitMLton "$@"
+        elif [ -s "$mlton_smlnj_heap" ]; then
+            doitSMLNJ "$@"
         elif [ -x "$mlton_polyml" ]; then
-                exec "$mlton_polyml" "$@"
+            doitPolyML "$@"
         fi
         echo 'Unable to run MLton.  Check that lib is set properly.' >&2
         exit 1

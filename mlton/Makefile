@@ -103,24 +103,22 @@ clean:
 #
 # The following rebuilds the heap file for the SML/NJ compiled version
 # of MLton.
-# It requires that you have SMLNJ/NJ with the Compilation Manager (CM)
-# installed.  You may need to replace the following with 'sml-cm'.
 #
 SMLNJ	:= sml
 
-.PHONY: nj-mlton
-nj-mlton: $(SOURCES)
+.PHONY: smlnj-mlton
+smlnj-mlton: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
-		echo 'CM.make "sources.cm";';					\
-		echo 'Export.exportNJ("$(LIB)/mlton");'				\
+		echo 'CM.make "mlton-smlnj.cm";';				\
+		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
 	) | "$(SMLNJ)"
 
-.PHONY: nj-mlton-dual
-nj-mlton-dual: $(SOURCES)
+.PHONY: smlnj-mlton-dual
+smlnj-mlton-dual: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -128,12 +126,12 @@ nj-mlton-dual: $(SOURCES)
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
-		echo 'CM.make "sources.cm";';					\
-		echo 'Export.exportNJ("$(LIB)/mlton");'				\
+		echo 'CM.make "mlton-smlnj.cm";';				\
+		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
 	) | "$(SMLNJ)"
 
-.PHONY: nj-mlton-quad
-nj-mlton-quad: $(SOURCES)
+.PHONY: smlnj-mlton-quad
+smlnj-mlton-quad: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -143,12 +141,12 @@ nj-mlton-quad: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server3", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
-		echo 'CM.make "sources.cm";';					\
-		echo 'Export.exportNJ("$(LIB)/mlton");'				\
+		echo 'CM.make "mlton-smlnj.cm";';				\
+		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
 	) | "$(SMLNJ)"
 
-.PHONY: nj-whole
-nj-whole: $(SOURCES)
+.PHONY: smlnj-whole
+smlnj-whole: $(SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -165,7 +163,7 @@ nj-whole: $(SOURCES)
 			grep -v 'mlton-stubs-for-smlnj' |			\
 			grep -v 'mlton-stubs' | xargs cat;	 		\
 		echo 'in';							\
-		echo 'Export.exportNJ("$(LIB)/mlton");'				\
+		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
 		echo 'end';							\
 	) >mlton.whole.sml
 	"$(SMLNJ)" <mlton.whole.sml
@@ -177,13 +175,29 @@ nj-whole: $(SOURCES)
 POLYML	:= poly
 
 .PHONY: polyml-mlton
-polyml-mlton: $(SOURCES)
+polyml-mlton: mlton-polyml.use $(SOURCES)
 	(									\
-		echo 'use "sources.use";';					\
-		echo 'PolyML.export("mlton-polyml", Main.mainAuto);';		\
+		echo 'use "mlton-polyml.use";';					\
+		echo 'PolyML.export("mlton-polyml", Main.mainWrapped);';	\
 	) | "$(POLYML)"
 	$(CC) -o $(LIB)/mlton-polyml mlton-polyml.o -lpolymain -lpolyml
 	rm -f mlton-polyml.o
+
+mlton-polyml.use:
+	(									\
+		cat ../lib/basis-stubs-for-polyml/sources.use |			\
+			sed 's|use "\(.*\)";|../lib/basis-stubs-for-polyml/\1|'; \
+		mlton -stop f mlton-stubs.cm | grep 'mlyacc';			\
+		cat ../lib/mlton-stubs-for-polyml/sources.use |			\
+			sed 's|use "\(.*\)";|../lib/mlton-stubs-for-polyml/\1|'; \
+		mlton -stop f mlton-stubs.cm | grep 'mlton-stubs';		\
+		mlton -stop f mlton-stubs.cm |					\
+			grep -v 'upgrade-basis.sml' |				\
+			grep -v 'mlton-stubs' |					\
+			grep -v 'mlyacc' |					\
+			grep -v 'main/export-mlton.sml' |			\
+			grep -v 'call-main.sml';				\
+	) | sed 's|\(.*\)|use "\1";|' > mlton-polyml.use
 
 .PHONY: warn
 warn:

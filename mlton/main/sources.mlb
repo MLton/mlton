@@ -30,9 +30,7 @@ local
    main.sig
    main.fun
    main.sml
-   export.sig
-   export.sml
+   export-mlton.sml
 in
-   structure Main
-   structure Export
+   structure ExportMLton
 end

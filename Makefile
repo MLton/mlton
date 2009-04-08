@@ -165,27 +165,6 @@ libraries:
 			>/dev/null;				\
 	done
 
-.PHONY: nj-mlton
-nj-mlton:
-	$(MAKE) dirs runtime
-	$(MAKE) -C "$(COMP)" nj-mlton
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
-	@echo 'Build of MLton succeeded.'
-
-.PHONY: nj-mlton-dual
-nj-mlton-dual:
-	$(MAKE) dirs runtime
-	$(MAKE) -C "$(COMP)" nj-mlton-dual
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
-	@echo 'Build of MLton succeeded.'
-
-.PHONY: nj-mlton-quad
-nj-mlton-quad:
-	$(MAKE) dirs runtime
-	$(MAKE) -C "$(COMP)" nj-mlton-quad
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
-	@echo 'Build of MLton succeeded.'
-
 .PHONY: mlbpathmap
 mlbpathmap:
 	touch "$(MLBPATHMAP)"
@@ -246,6 +225,28 @@ script:
 ifeq (mingw, $(TARGET_OS))
 	$(CP) "$(SRC)/bin/static-library.bat" "$(LIB)"
 endif
+
+
+.PHONY: smlnj-mlton
+smlnj-mlton:
+	$(MAKE) dirs runtime
+	$(MAKE) -C "$(COMP)" smlnj-mlton
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	@echo 'Build of MLton succeeded.'
+
+.PHONY: smlnj-mlton-dual
+smlnj-mlton-dual:
+	$(MAKE) dirs runtime
+	$(MAKE) -C "$(COMP)" smlnj-mlton-dual
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	@echo 'Build of MLton succeeded.'
+
+.PHONY: smlnj-mlton-quad
+smlnj-mlton-quad:
+	$(MAKE) dirs runtime
+	$(MAKE) -C "$(COMP)" smlnj-mlton-quad
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	@echo 'Build of MLton succeeded.'
 
 .PHONY: targetmap
 targetmap:

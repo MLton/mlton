@@ -20,4 +20,9 @@ structure MLton =
             fun setMessages (b : bool) = ()
             fun pack () = collect ()
          end
+      structure World =
+         struct
+            datatype status = Clone | Original
+            val save = fn _ => raise Fail "MLton.World.save"
+         end
    end

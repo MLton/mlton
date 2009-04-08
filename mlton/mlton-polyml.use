@@ -1,44 +1,40 @@
-(* Copyright (C) 2009 Matthew Fluet.
- *
- * MLton is released under a BSD-style license.
- * See the file MLton-LICENSE for details.
- *)
-
 use "../lib/basis-stubs-for-polyml/int.sml";
 use "../lib/basis-stubs-for-polyml/real.sml";
 use "../lib/basis-stubs-for-polyml/unsafe.sig";
 use "../lib/basis-stubs-for-polyml/unsafe.sml";
 use "../lib/basis-stubs-for-polyml/word.sml";
-
 use "../lib/mlyacc/base.sig";
 use "../lib/mlyacc/join.sml";
 use "../lib/mlyacc/lrtable.sml";
 use "../lib/mlyacc/stream.sml";
 use "../lib/mlyacc/parser2.sml";
-
 use "../lib/mlton-stubs-for-polyml/mlton.sml";
+use "../lib/mlton-stubs/io.sig";
 use "../lib/mlton-stubs/thread.sig";
 use "../lib/mlton-stubs/thread.sml";
-use "../lib/mlton-stubs/signal.sig";
-use "../lib/mlton-stubs/vector.sig";
-use "../lib/mlton-stubs/io.sig";
-use "../lib/mlton-stubs/text-io.sig";
-use "../lib/mlton-stubs/socket.sig";
-use "../lib/mlton-stubs/rusage.sig";
-use "../lib/mlton-stubs/random.sig";
-use "../lib/mlton-stubs/profile.sig";
-use "../lib/mlton-stubs/process.sig";
-use "../lib/mlton-stubs/proc-env.sig";
-use "../lib/mlton-stubs/platform.sig";
-use "../lib/mlton-stubs/itimer.sig";
-use "../lib/mlton-stubs/gc.sig";
-use "../lib/mlton-stubs/exn.sig";
 use "../lib/mlton-stubs/array.sig";
-use "../lib/mlton-stubs/mlton.sig";
+use "../lib/mlton-stubs/bin-io.sig";
+use "../lib/mlton-stubs/cont.sig";
+use "../lib/mlton-stubs/exn.sig";
+use "../lib/mlton-stubs/finalizable.sig";
+use "../lib/mlton-stubs/gc.sig";
+use "../lib/mlton-stubs/itimer.sig";
+use "../lib/mlton-stubs/platform.sig";
+use "../lib/mlton-stubs/proc-env.sig";
+use "../lib/mlton-stubs/process.sig";
+use "../lib/mlton-stubs/profile.sig";
+use "../lib/mlton-stubs/random.sig";
+use "../lib/mlton-stubs/rusage.sig";
+use "../lib/mlton-stubs/signal.sig";
+use "../lib/mlton-stubs/socket.sig";
+use "../lib/mlton-stubs/text-io.sig";
+use "../lib/mlton-stubs/vector.sig";
+use "../lib/mlton-stubs/weak.sig";
 use "../lib/mlton-stubs/word.sig";
+use "../lib/mlton-stubs/world.sig";
 use "../lib/mlton-stubs/random.sml";
+use "../lib/mlton-stubs/mlton.sig";
 use "../lib/mlton-stubs/mlton.sml";
-
 use "../lib/mlton/pervasive/pervasive.sml";
 use "../lib/mlton/basic/error.sig";
 use "../lib/mlton/basic/error.sml";

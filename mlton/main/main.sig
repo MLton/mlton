@@ -16,5 +16,5 @@ signature MAIN =
       include MAIN_STRUCTS
 
       val main: string * string list -> OS.Process.status
-      val mainAuto: unit -> unit
+      val mainWrapped: unit -> 'a
    end
