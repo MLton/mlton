@@ -422,7 +422,8 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     shrinkHeap (s, curHeapp, liveSize);
   initHeap (s, newHeapp);
   /* Allocate a space of the desired size. */
-  if (createHeap (s, newHeapp, desiredSize, minSize)) {
+  if (minSize + sizeofCardMapAndCrossMap (s, minSize) <= SIZE_MAX - curHeapp->withMapsSize
+      and createHeap (s, newHeapp, desiredSize, minSize)) {
     pointer from;
     pointer to;
     size_t remaining;
