@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -63,14 +64,14 @@ fun stats' (T {buckets, numItems, ...}) =
        val (min,max,total)
          = Array.fold
            (!buckets,
-            (Int.maxInt, Int.minInt, 0.0),
+            (NONE, NONE, 0.0),
             fn (l,(min,max,total)) 
              => let
                   val n = List.length l
                   val d = (Real.fromInt n) - avg
                 in
-                  (Int.min(min,n),
-                   Int.max(max,n),
+                  (SOME (Option.fold(min,n,Int.min)),
+                   SOME (Option.fold(max,n,Int.max)),
                    total + d * d)
                 end)
        val stdd = let open Real in Math.sqrt(total / (fromInt numb')) end
@@ -80,8 +81,8 @@ fun stats' (T {buckets, numItems, ...}) =
        seq [str "numBuckets = ", Int.layout numb],
        seq [str "avg = ", str (rfmt avg),
             str " stdd = ", str (rfmt stdd),
-            str " min = ", Int.layout min, 
-            str " max = ", Int.layout max]]
+            str " min = ", Option.layout Int.layout min,
+            str " max = ", Option.layout Int.layout max]]
    end
 
 fun resize (T {buckets, hash, mask, ...}, size: int, newMask: word): unit =

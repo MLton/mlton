@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1154,22 +1155,22 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
       val {destroy = destroy1,
            get = tyconShortest: (FlexibleTycon.t
                                  -> {flex: FlexibleTycon.t option ref,
-                                     length: int} ref), ...} =
+                                     length: int option} ref), ...} =
          Property.destGet (FlexibleTycon.plist,
                            Property.initFun (fn _ => ref {flex = ref NONE,
-                                                          length = Int.maxInt}))
+                                                          length = NONE}))
       val {destroy = destroy2,
-           get = interfaceShortest: t -> int ref, ...} =
-         Property.destGet (plist, Property.initFun (fn _ => ref Int.maxInt))
+           get = interfaceShortest: t -> int option ref, ...} =
+         Property.destGet (plist, Property.initFun (fn _ => ref NONE))
       fun loop (I: t, length: int): FlexibleTycon.t option ref TyconMap.t =
          let
             val r = interfaceShortest I
          in
-            if length >= !r
+            if isSome (!r) andalso length >= valOf (!r)
                then TyconMap.empty ()
             else
                let
-                  val _ = r := length
+                  val _ = r := SOME length
                   val {strs, types, ...} = dest I
                   val types =
                      Array.map
@@ -1185,14 +1186,15 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                                       let
                                          val r = tyconShortest c
                                       in
-                                         if length >= #length (!r)
+                                         if isSome (#length (!r))
+                                            andalso length >= valOf (#length (!r))
                                             then ref NONE
                                          else 
                                             let
                                                val _ = #flex (!r) := NONE
                                                val flex = ref (SOME c)
                                                val _ = r := {flex = flex,
-                                                             length = length}
+                                                             length = SOME length}
                                             in
                                                flex
                                             end

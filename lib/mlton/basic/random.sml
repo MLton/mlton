@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -42,23 +43,33 @@ fun int () = Word.toIntX (word ())
 
 val int = Trace.trace ("Random.int", Unit.layout, Int.layout) int
 
-val maxInt = Int.maxInt
+local
+val maxNat =
+   let
+      val shft = Option.fold (Int.precision, Word.wordSize, Int.min)
+      val shft = Word.fromInt (shft - 1)
+   in
+      Word.toInt (Word.notb (Word.<< (Word.notb 0w0, shft)))
+   end
 
-fun nat () = Word.toInt (Word.andb (word (), Word.fromInt maxInt))
+val maxNatW = Word.fromInt maxNat
+
+fun nat () = Word.toInt (Word.andb (word (), maxNatW))
 
 val nat = Trace.trace ("Random.nat", Unit.layout, Int.layout) nat
 
-val maxIntR = Real.fromInt maxInt
+val maxNatR = Real.fromInt maxNat
 
-fun scale r = r / maxIntR
+fun scale r = r / maxNatR
 
 val natReal = Real.fromInt o nat
 
 val natReal = Trace.trace0 ("Random.natReal", Real.layout) natReal
-
+in
 fun real () = scale (natReal () + scale (natReal ()))
 
 val real = Trace.trace0 ("Random.real", Real.layout) real
+end
 
 local
    val r: word ref = ref 0w0

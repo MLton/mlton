@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,8 +10,9 @@ structure Int:
    sig
       include INTEGER
 
-      val maxInt: t
-      val minInt: t
+      val maxInt: t option
+      val minInt: t option
+      val precision: Pervasive.Int.int option
       val roundDownToPowerOfTwo: t -> t
       val roundUpToPowerOfTwo: t -> t
       val toReal: t -> real
@@ -36,8 +38,9 @@ structure Int:
          end
 
       type int = t
-      val maxInt = valOf Int.maxInt
-      val minInt = valOf Int.minInt
+      val maxInt = Int.maxInt
+      val minInt = Int.minInt
+      val precision = Int.precision
       val toReal = Pervasive.Real.fromInt
    end
 

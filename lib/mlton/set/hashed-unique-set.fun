@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -26,13 +27,13 @@ datatype t = T of {buckets: Set.t vector,
 fun stats' {buckets, mask}
   = Vector.fold
     (buckets,
-     (0, Int.maxInt, Int.minInt),
+     (0, NONE, NONE),
      fn (s', (size, min, max)) => let 
                                     val n = Set.size s'
                                   in
                                     (size + n,
-                                     Int.min(min, n),
-                                     Int.max(max, n))
+                                     SOME (Option.fold(min,n,Int.min)),
+                                     SOME (Option.fold(max,n,Int.max)))
                                   end)
 fun stats s 
   = let
@@ -97,6 +98,7 @@ fun shrink {buckets, mask}
 fun T' {buckets, mask}
   = let
       val (size,min,max) = stats' {buckets = buckets, mask = mask}
+      val max = case max of SOME max => max | NONE => ~1
       val n = Vector.length buckets
     in
       if max > n
