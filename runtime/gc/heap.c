@@ -290,11 +290,16 @@ bool createHeap (GC_state s, GC_heap h,
  */
 bool createHeapSecondary (GC_state s, size_t desiredSize) {
   size_t desiredWithMapsSize;
+  size_t minSize, minWithMapsSize;
   desiredWithMapsSize = desiredSize + sizeofCardMapAndCrossMap (s, desiredSize);
   if ((s->controls.fixedHeap > 0
        and s->heap.withMapsSize + desiredWithMapsSize > s->controls.fixedHeap)
       or (s->controls.maxHeap > 0
           and s->heap.withMapsSize + desiredWithMapsSize > s->controls.maxHeap))
+    return FALSE;
+  minSize = align (s->heap.oldGenSize, s->sysvals.pageSize);
+  minWithMapsSize = minSize + sizeofCardMapAndCrossMap (s, minSize);
+  if (minWithMapsSize > SIZE_MAX - s->heap.withMapsSize)
     return FALSE;
   return createHeap (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
 }
