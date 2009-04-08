@@ -114,7 +114,7 @@ smlnj-mlton: $(SOURCES)
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "mlton-smlnj.cm";';				\
-		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
+		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
 
 .PHONY: smlnj-mlton-dual
@@ -127,7 +127,7 @@ smlnj-mlton-dual: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "mlton-smlnj.cm";';				\
-		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
+		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
 
 .PHONY: smlnj-mlton-quad
@@ -142,7 +142,7 @@ smlnj-mlton-quad: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server3", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "mlton-smlnj.cm";';				\
-		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
+		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
 
 .PHONY: smlnj-whole
@@ -163,7 +163,7 @@ smlnj-whole: $(SOURCES)
 			grep -v 'mlton-stubs-for-smlnj' |			\
 			grep -v 'mlton-stubs' | xargs cat;	 		\
 		echo 'in';							\
-		echo 'ExportSMLNJ.exportSMLNJ("$(LIB)/mlton-smlnj");'		\
+		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 		echo 'end';							\
 	) >mlton.whole.sml
 	"$(SMLNJ)" <mlton.whole.sml

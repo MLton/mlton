@@ -11,7 +11,6 @@ Group
 
 structure Main
 #if (defined (SMLNJ_VERSION))
-structure ExportSMLNJ
 #else
 structure ExportMLton
 #endif
@@ -41,7 +40,6 @@ main.sig
 main.fun
 main.sml
 #if (defined (SMLNJ_VERSION))
-export-smlnj.sml
 #else
 export-mlton.sml
 #endif
