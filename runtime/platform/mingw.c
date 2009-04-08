@@ -729,25 +729,72 @@ static void setMachine (struct utsname *buf) {
 }
 
 static void setSysname (struct utsname *buf) {
-        OSVERSIONINFO osv;
+        OSVERSIONINFOEX osv;
         const char* os = "??";
 
+#ifndef _WIN64
+        /* Call GetNativeSystemInfo if supported or GetSystemInfo otherwise. */
+        SYSTEM_INFO si;
+        void (WINAPI *pGNSI)(LPSYSTEM_INFO);
+        pGNSI = (PVOID) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
+                                       "GetNativeSystemInfo");
+        if (NULL != pGNSI)
+          pGNSI(&si);
+        else
+          GetSystemInfo(&si);
+#endif
+
         osv.dwOSVersionInfoSize = sizeof (osv);
-        GetVersionEx (&osv);
+        /* Try to get extended information in order to be able to match the O.S. more
+           precisely using osv.wProductType */
+        if (! GetVersionEx ((OSVERSIONINFO *) &osv)) {
+          ZeroMemory(&osv, sizeof(OSVERSIONINFOEX));
+          osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+          GetVersionEx((OSVERSIONINFO *) &osv);
+        }
         switch (osv.dwPlatformId) {
         case VER_PLATFORM_WIN32_NT:
+#ifdef _WIN64
                 if (osv.dwMinorVersion == 0) {
-                        if (osv.dwMajorVersion <= 4)    os = "NT";
-                        else                            os = "2000";
-                } else if (osv.dwMinorVersion <= 1)     os = "XP";
-                else if (osv.dwMinorVersion <= 2)       os = "2003";
-                else                                    os = "NTx";
+                  if (osv.dwMajorVersion <= 6) {
+                    if (osv.wProductType == VER_NT_WORKSTATION)
+                                                          os = "Vista_64";
+                    else
+                                                          os = "2008_64";
+                  } else                                  os = "NTx_64";
+                } else if (osv.dwMinorVersion <= 2)       os = "XP_64";
+                else                                      os = "NTx_64";
+#else
+                if (osv.dwMinorVersion == 0) {
+                        if (osv.dwMajorVersion <= 4)      os = "NT";
+                        else if (osv.dwMajorVersion <= 5) os = "2000";
+                        else {
+                          if (osv.wProductType == VER_NT_WORKSTATION) {
+                            if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+                                                          os = "Vista_WOW64";
+                            else
+                                                          os = "Vista";
+                          } else {
+                            if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+                                                          os = "2008";
+                            else
+                                                          os = "2008_WOW64";
+                          }
+                        }
+                } else if (osv.dwMinorVersion <= 1)       os = "XP";
+                else if (osv.dwMinorVersion <= 2) {
+                  if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+                                                          os = "XP_WOW64";
+                  else
+                                                          os = "2003";
+                } else                                    os = "NTx";
+#endif
                 break;
         case VER_PLATFORM_WIN32_WINDOWS:
-                if (osv.dwMinorVersion == 0)            os = "95";
-                else if (osv.dwMinorVersion < 90)       os = "98";
-                else if (osv.dwMinorVersion == 90)      os = "Me";
-                else                                    os = "9X";
+                if (osv.dwMinorVersion == 0)              os = "95";
+                else if (osv.dwMinorVersion < 90)         os = "98";
+                else if (osv.dwMinorVersion == 90)        os = "Me";
+                else                                      os = "9X";
                 break;
         case VER_PLATFORM_WIN32s:
                 os = "31"; /* aka DOS + Windows 3.1 */
