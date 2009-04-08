@@ -10,6 +10,7 @@
 Group
 
 structure Main
+structure Export
 
 is
 
@@ -35,3 +36,5 @@ compile.fun
 main.sig
 main.fun
 main.sml
+export.sig
+export.sml

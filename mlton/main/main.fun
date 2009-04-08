@@ -1538,13 +1538,6 @@ fun commandLine (args: string list): unit =
 
 val commandLine = Process.makeCommandLine commandLine
 
-fun exportNJ (file: File.t): unit =
-   SMLofNJ.exportFn (file, fn (_, args) => commandLine args)
-
-fun exportMLton (): unit =
-   case CommandLine.arguments () of
-      [worldFile] =>
-         SMLofNJ.exportFn (worldFile, fn (_, args) => commandLine args)
-    | _ => Error.bug "usage: exportMLton worldFile"
+val main = fn (_, args) => commandLine args
 
 end

@@ -117,7 +117,7 @@ nj-mlton: $(SOURCES)
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
+		echo 'Export.exportNJ("$(LIB)/mlton");'				\
 	) | "$(SML)"
 
 .PHONY: nj-mlton-dual
@@ -130,7 +130,7 @@ nj-mlton-dual: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
+		echo 'Export.exportNJ("$(LIB)/mlton");'				\
 	) | "$(SML)"
 
 .PHONY: nj-mlton-quad
@@ -145,7 +145,7 @@ nj-mlton-quad: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server3", pathtrans = NONE, pref = 0};';\
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
-		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
+		echo 'Export.exportNJ("$(LIB)/mlton");'				\
 	) | "$(SML)"
 
 .PHONY: nj-whole
@@ -154,14 +154,19 @@ nj-whole: $(SOURCES)
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;';				\
-		echo 'local';							\
-		cmcat sources.cm | grep 'mlton-stubs-in-smlnj' | xargs cat;	\
+		echo 'Control.polyEqWarn := false;'; 				\
+		echo 'local'; 							\
+		cmcat sources.cm | grep 'basis-stubs-for-smlnj' | xargs cat;	\
 		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
-		cmcat sources.cm | grep -v 'mlyacc' |				\
-			grep -v 'mlton-stubs-in-smlnj' | xargs cat;		\
+		cmcat sources.cm | grep 'mlton-stubs-for-smlnj' | xargs cat;	\
+		cmcat sources.cm | grep 'mlton-stubs' | xargs cat;		\
+		cmcat sources.cm | 						\
+			grep -v 'basis-stubs-for-smlnj' |			\
+			grep -v 'mlyacc' |					\
+			grep -v 'mlton-stubs-for-smlnj' |			\
+			grep -v 'mlton-stubs' | xargs cat;	 		\
 		echo 'in';							\
-		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
+		echo 'Export.exportNJ("$(LIB)/mlton");'				\
 		echo 'end';							\
 	) >mlton.whole.sml
 	"$(SML)" <mlton.whole.sml
