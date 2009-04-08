@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,8 +10,6 @@ functor OrderedUniqueSet(Element : ORDER): SET =
 struct
 
 structure Element = Element
-
-type int = Int.t
 
 datatype t = T of {elements: Element.t list,
                    length: int}

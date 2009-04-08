@@ -43,5 +43,3 @@ structure Int:
       val precision = Int.precision
       val toReal = Pervasive.Real.fromInt
    end
-
-structure Int32: INTEGER = Int

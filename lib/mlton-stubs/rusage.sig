@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,11 +10,8 @@
 signature MLTON_RUSAGE =
    sig
       type t = {utime: Time.time, (* user time *)
-                stime: Time.time  (* system time *)
-                }
+                stime: Time.time}  (* system time *)
 
       val measureGC: bool -> unit
-      val rusage: unit -> {children: t,
-                           gc: t,
-                           self: t}
+      val rusage: unit -> {children: t, gc: t, self: t}
    end

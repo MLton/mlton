@@ -1,16 +1,16 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
 
-structure Char0 =
+structure Char0 : CHAR0 =
 struct
 
 structure Array = Pervasive.Array
 structure Int = Pervasive.Int
-type int = Int.int
 structure String = Pervasive.String
 open Pervasive.Char
 
@@ -25,7 +25,7 @@ val fromInt = chr
 val escapeSML = toString
 val escapeC = toCString
 val toString = String.str
-val equals = op =
+val equals: t * t -> bool = op =
 val toWord8 = Byte.charToByte
 val fromWord8 = Byte.byteToChar
 

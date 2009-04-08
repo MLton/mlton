@@ -7,7 +7,6 @@
  *
  * author: Matthias Blume (blume@cs.princeton.edu)
  *)
-type int = Int.t
 signature CM_LEXER = sig
 
     exception LexicalError of string * string

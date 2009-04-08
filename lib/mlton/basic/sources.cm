@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -39,8 +40,8 @@ structure Bool
 structure Buffer
 structure Byte
 structure Char
-structure CharArray
-structure CharBuffer
+(* structure CharArray *)
+(* structure CharBuffer *)
 structure CharVector
 structure ChoicePattern
 structure ClearablePromise
@@ -69,7 +70,7 @@ structure Http
 structure In
 structure InitScript
 structure Int
-structure Int32
+(* structure Int32 *)
 structure IntInf
 structure InsertionSort
 structure INetSock
@@ -109,7 +110,7 @@ structure RDB
 structure Random
 structure Reader
 structure Real
-structure RealVector
+(* structure RealVector *)
 structure Real32
 structure Real64
 structure Ref
@@ -138,12 +139,12 @@ structure Unsafe
 structure Url
 structure Vector
 structure Word
-structure Word32
 structure Word8
-structure Word8Array
-structure Word8ArraySlice
-structure Word8Vector
-structure Word16
+(* structure Word8Array *)
+(* structure Word8ArraySlice *)
+(* structure Word8Vector *)
+(*structure Word16*)
+(* structure Word32 *)
 
 functor AlphaBeta
 functor Control
@@ -168,16 +169,18 @@ functor UniqueSet
 is
 
 #if (defined (SMLNJ_VERSION))
+../../basis-stubs-for-smlnj/sources.cm
 ../../mlton-stubs/sources.cm
 #endif
-
 ../pervasive/sources.cm
+
 error.sig
 error.sml
 exn0.sml
 outstream0.sml
 layout.sig
 relation0.sml
+char0.sig
 char0.sml
 string0.sml
 layout.sml
@@ -190,7 +193,6 @@ fold.fun
 list.sml
 word.sig
 word8.sml
-word32.sig
 max-pow-2-that-divides.fun
 word.sml
 string1.sml
@@ -335,7 +337,6 @@ escape.sml
 buffer.sig
 buffer.sml
 socket.sml
-word16.sml
 inet-sock.sml
 word8-array-slice.sml
 

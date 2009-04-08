@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -14,7 +15,6 @@ structure Pid: PID =
          fun fromString s =
             Option.map(Pervasive.Int.fromString s, wordToPid o SysWord.fromInt)
       end
-
 
       val layout = Layout.str o toString
 

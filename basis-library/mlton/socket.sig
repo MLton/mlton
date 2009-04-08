@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -19,14 +20,6 @@ signature MLTON_SOCKET =
             val getERROR:
                ('af, 'sock_type) Socket.sock
                -> (string * Posix.Error.syserror option) option
-         end
-
-      structure Host:
-         sig
-            type t = {name: string}
-
-            val getByAddress: Address.t -> t option
-            val getByName: string -> t option
          end
 
       structure Port:

@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -11,8 +12,6 @@ struct
 open S
 
 structure CFunction = CFunction
-
-type int = Int.t
 
 structure Type =
    struct

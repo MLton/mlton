@@ -4,7 +4,6 @@ structure ParseGen
    
 is
 
-../../lib/mlton-stubs-in-smlnj/sources.cm
 ../../lib/mlyacc/sources.cm
 
 utils.sig

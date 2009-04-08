@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -506,7 +507,7 @@ structure Rope =
       fun sizePlus (r: t, ac: int): int =
          case r of
             Appends rs => List.fold (rs, ac, sizePlus)
-          | File f => ac + Int64.toInt (File.size f)
+          | File f => ac + Position.toInt (File.size f)
           | String s => ac + String.size s
 
       fun size (r: t): int = sizePlus (r, 0)

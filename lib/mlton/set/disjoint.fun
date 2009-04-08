@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -7,8 +8,6 @@
 
 functor DisjointSet ():> DISJOINT_SET =
 struct
-
-type int = Int.t
 
 datatype 'a t = T of 'a parent ref
 and 'a parent =

@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -22,6 +23,7 @@ in
       outstream0.sml
       layout.sig
       relation0.sml
+      char0.sig
       char0.sml
       string0.sml
       layout.sml
@@ -34,7 +36,6 @@ in
       list.sml
       word.sig
       word8.sml
-      word32.sig
       max-pow-2-that-divides.fun
       word.sml
       string1.sml
@@ -209,7 +210,7 @@ in
       structure Bool
       structure Buffer
       structure Char
-      structure CharArray
+      (* structure CharArray *)
       structure CharVector
       structure ChoicePattern
       structure ClearablePromise
@@ -229,10 +230,10 @@ in
       structure FixedPoint
       structure Function
       structure HashSet
-      (*    structure Http *)
+      (* structure Http *)
       structure In
       structure Int
-      structure Int32
+      (* structure Int32 *)
       structure IntInf
       structure InsertionSort
       structure Justify
@@ -260,7 +261,7 @@ in
       structure QuickSort
       structure Random
       structure Real
-      structure RealVector
+      (* structure RealVector *)
       structure Real32
       structure Real64
       structure Ref
@@ -282,10 +283,10 @@ in
       structure Unit
       structure Vector
       structure Word
-      structure Word32
       structure Word8
-      structure Word8Array
-      structure Word8Vector
+      (* structure Word8Array *)
+      (* structure Word8Vector *)
+      (* structure Word32 *)
 
       functor Control
       functor Env

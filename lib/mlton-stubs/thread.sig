@@ -1,11 +1,10 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-
-type int = Int.int
 
 signature MLTON_THREAD =
    sig
@@ -13,9 +12,9 @@ signature MLTON_THREAD =
          sig
             datatype t = NonAtomic | Atomic of int
          end
+      val atomically: (unit -> 'a) -> 'a
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
-      val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
       structure Runnable :
@@ -25,6 +24,12 @@ signature MLTON_THREAD =
 
       type 'a t
 
+      (* atomicSwitch f
+       * as switch, but assumes an atomic calling context.  Upon
+       * switch-ing back to the current thread, an implicit atomicEnd is
+       * performed.
+       *)
+      val atomicSwitch: ('a t -> Runnable.t) -> 'a
       (* new f
        * create a new thread that, when run, applies f to
        * the value given to the thread.  f must terminate by
@@ -49,20 +54,4 @@ signature MLTON_THREAD =
        * atomically.
        *)
       val switch: ('a t -> Runnable.t) -> 'a
-      (* atomicSwitch f
-       * as switch, but assumes an atomic calling context.  Upon
-       * switch-ing back to the current thread, an implicit atomicEnd is
-       * performed.
-       *)
-      val atomicSwitch: ('a t -> Runnable.t) -> 'a
-   end
-
-signature MLTON_THREAD_EXTRA =
-   sig
-      include MLTON_THREAD
-
-      val amInSignalHandler: unit -> bool
-      val register: int * (unit -> unit) -> unit
-      val setHandler: (Runnable.t -> Runnable.t) -> unit
-      val switchToHandler: unit -> unit
    end

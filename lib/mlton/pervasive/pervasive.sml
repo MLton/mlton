@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -21,7 +22,6 @@ structure Pervasive =
       structure General = General
       structure IEEEReal = IEEEReal
       structure Int = Int
-      structure Int32 = Int32
       structure IntInf = IntInf
       structure LargeInt = LargeInt
       structure LargeReal = LargeReal
@@ -50,16 +50,13 @@ structure Pervasive =
       structure Unix = Unix
       structure Vector = Vector
       structure Word = Word
-      structure Word32 = Word32
-      structure Word64 = Word64
       structure Word8 = Word8
-      structure Word16 = Word16
       structure Word8Array = Word8Array
       structure Word8Vector = Word8Vector
+      structure Word32 = Word32
+      structure Word64 = Word64
 
       type unit = General.unit
-      type int = Int.int
-      type word = Word.word
       type real = Real.real
       type char = Char.char
       type string = String.string

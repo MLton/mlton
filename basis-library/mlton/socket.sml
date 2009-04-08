@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,26 +10,17 @@
 structure MLtonSocket: MLTON_SOCKET =
 struct
 
-structure Port =
-   struct
-      type t = int
-   end
-
 structure Address =
    struct
       type t = NetHostDB.in_addr
       fun toVector x = x
    end
 
-structure Host =
+structure Ctl = Socket.CtlExtra
+
+structure Port =
    struct
-      type t = {name: string}
-
-      val get: NetHostDB.entry option -> t option =
-        Option.map (fn entry => {name = NetHostDB.name entry})
-
-      val getByAddress = get o NetHostDB.getByAddr
-      val getByName = get o NetHostDB.getByName
+      type t = int
    end
 
 type passiveSocket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
@@ -102,7 +94,5 @@ fun shutdownWrite out =
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
 
 val fdToSock = Socket.fdToSock
-
-structure Ctl = Socket.CtlExtra
 
 end

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,8 +10,6 @@ structure List: LIST =
 struct
 
 structure Int = Pervasive.Int
-type int = Int.int
-
 structure F =
    struct
       type 'a t = 'a list
@@ -620,5 +619,3 @@ fun equivalence (l, p) =
        loop (ecs, [])
     end)
 end
-
-val length = List.length

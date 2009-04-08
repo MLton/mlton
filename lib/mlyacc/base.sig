@@ -4,8 +4,6 @@
 (* Modified by sweeks@acm.org on 2000-8-24.
  * Ported to MLton.
  *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* base.sig: Base signature file for SML-Yacc.  This file contains signatures

@@ -6,26 +6,52 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor IO (S : sig
-                   type instream
-                   type outstream
-                   val openOut: string -> outstream
-                end) =
+functor MkIO (S : sig
+                     type instream
+                     type outstream
+                     val openOut: string -> outstream
+                  end) =
    struct
       open S
 
-      fun inFd _ = raise Fail "inFd"
+      fun inFd _ = raise Fail "IO.inFd"
       fun mkstemps {prefix, suffix} =
          let
-            val name = concat [prefix, Random.alphaNumString 6, suffix]
+            val name = concat [prefix, MLtonRandom.alphaNumString 6, suffix]
          in (name, openOut name)
          end
       fun mkstemp s = mkstemps {prefix = s, suffix = ""}
-      fun newIn _ = raise Fail "newIn"
-      fun newOut _ = raise Fail "newOut"
-      fun outFd _ = raise Fail "outFd"
-      fun setIn _ = raise Fail "setIn"
-      fun tempPrefix _ = raise Fail "tempPrefix"
+      fun newIn _ = raise Fail "IO.newIn"
+      fun newOut _ = raise Fail "IO.newOut"
+      fun outFd _ = raise Fail "IO.outFd"
+      fun setIn _ = raise Fail "IO.setIn"
+      fun tempPrefix _ = raise Fail "IO.tempPrefix"
+   end
+
+functor MkWord(W : WORD) : MLTON_WORD =
+   struct
+      open W
+      type t = word
+
+      val wordSize = Word.fromInt wordSize
+      val one = fromInt 1
+
+      val bswap = fn _ => raise Fail "Word.bswap"
+      fun rol (w: word, w': Word.word): word =
+         let
+            val w' = Word.mod (w', wordSize)
+         in
+            orb (>> (w, Word.- (wordSize, w')),
+                 << (w, w'))
+         end
+      fun ror (w: word, w': Word.word): word =
+         let
+            val w' = Word.mod (w', wordSize)
+         in
+            orb (>> (w, w'),
+                 << (w, Word.- (wordSize, w')))
+         end
+
    end
 
 (* This file is just a dummy provided in place of the structure that MLton
@@ -33,25 +59,15 @@ functor IO (S : sig
  *)
 structure MLton: MLTON =
    struct
-      type int = Int.int
-      type word = Word.word
-
-      type pointer = Word32.word
-
-      val cleanAtExit = fn _ => raise Fail "cleanAtExit"
       val debug = false
-      val deserialize = fn _ => raise Fail "deserialize"
-      val eq = fn _ => false
-      val errno = fn _ => raise Fail "errno"
-      (* Using Array.maxLen will make isMLton true when being compiled by MLton
-       * and false when being compiled by SML/NJ.
-       *)
-      val isMLton = Array.maxLen = 0x7FFFFFFF
+      val eq = fn _ => raise Fail "eq"
+      val equal = fn _ => raise Fail "equal"
+      val hash = fn _ => raise Fail "hash"
+      val isMLton = MLton.isMLton
       val safe = true
-      val serialize = fn _ => raise Fail "serialize"
       val share = fn _ => raise Fail "share"
       val shareAll = fn _ => raise Fail "shareAll"
-      val size = fn _ => ~1: int
+      val size = MLton.size
 
       structure Array =
          struct
@@ -73,51 +89,17 @@ structure MLton: MLTON =
                end
          end
 
-      structure BinIO =
-         struct
-            type instream = unit
-            type outstream = unit
-
-            fun inFd _ = raise Fail "inFd"
-            fun mkstemps _ = raise Fail "mkstemps"
-            fun mkstemp _ = raise Fail "mkstemp"
-            fun newIn _ = raise Fail "newIn"
-            fun newOut _ = raise Fail "newOut"
-            fun outFd _ = raise Fail "outFd"
-            fun setIn _ = raise Fail "setIn"
-            fun tempPrefix _ = raise Fail "tempPrefix"
-         end
-
-      structure CallStack =
-         struct
-            type t = unit
-
-            val keep = false
-            fun current () = ()
-            fun toStrings () = []
-         end
-
-      structure Cont =
-         struct
-            type 'a t = unit
-
-            val callcc = fn _ => raise Fail "Cont.callcc"
-            val prepend = fn _ => raise Fail "Cont.prepend"
-            val throw = fn _ => raise Fail "Cont.throw"
-            val throw' = fn _ => raise Fail "Cont.throw'"
-         end
+      structure BinIO = MkIO (BinIO)
 
       structure Exn =
          struct
-            val history = fn _ => []
-
             val addExnMessager = fn _ => raise Fail "Exn.addExnMessager"
-            val topLevelHandler = fn _ => raise Fail "Exn.topLevelHandler"
-         end
+            val history = MLton.Exn.history
 
-      structure FFI =
-         struct
-            val handleCallFromC = fn _ => raise Fail "FFI.handleCallFromC"
+            val defaultTopLevelHandler = fn _ => raise Fail "Exn.defaultTopLevelHandler"
+            val getTopLevelHandler = fn _ => raise Fail "Exn.getTopLevelHandler"
+            val setTopLevelHandler = fn _ => raise Fail "Exn.setTopLevelHandler"
+            val topLevelHandler = fn _ => raise Fail "Exn.topLevelHandler"
          end
 
       structure Finalizable =
@@ -133,30 +115,21 @@ structure MLton: MLTON =
 
       structure GC =
          struct
-            fun collect _ = ()
+            val collect = MLton.GC.collect
             val pack = MLton.GC.pack
-            fun setMessages _ = ()
+            val setMessages = MLton.GC.setMessages
             fun setSummary _ = ()
-            fun time _ = Time.zeroTime
             fun unpack _ = ()
-         end
 
-      structure IntInf =
-         struct
-            open IntInf
-
-            type t = IntInf.int
-
-            datatype rep =
-               Big of Word.word Vector.vector
-             | Small of Int.int
-
-            val areSmall =
-               fn _ => raise Fail "MLton.IntInf.areSmall unimplemented"
-            val gcd = fn _ => raise Fail "MLton.IntInf.gcd unimplemented"
-            val isSmall = fn _ => raise Fail "MLton.IntInf.isSmall unimplemented"
-            val rep = fn _ => raise Fail "MLton.IntInf.rep unimplemented"
-            val size = fn _ => raise Fail "MLton.IntInf.size unimplemented"
+            structure Statistics =
+               struct
+                  val bytesAllocated = fn _ => raise Fail "GC.Statistics.bytesAllocated"
+                  val lastBytesLive = fn _ => raise Fail "GC.Statistics.lastBytesLive"
+                  val numCopyingGCs = fn _ => raise Fail "GC.Statistics.numCopyingGCs"
+                  val numMarkCompactGCs = fn _ => raise Fail "GC.Statistics.numMarkCompactGCs"
+                  val numMinorGCs = fn _ => raise Fail "GC.Statistics.numMinorGCs"
+                  val maxBytesLive = fn _ => raise Fail "GC.Statistics.maxBytesLive"
+               end
          end
 
       structure Itimer =
@@ -176,7 +149,7 @@ structure MLton: MLTON =
                struct
                   open String
 
-                  val toLower = translate (str o Char.toLower)
+                  val toLower = CharVector.map Char.toLower
                end
 
             structure Arch =
@@ -247,41 +220,6 @@ structure MLton: MLTON =
 
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
                end
-         end
-
-      structure Pointer =
-         struct
-            type t = unit
-
-            val add = fn _ => raise Fail "Pointer.add"
-            val compare = fn _ => raise Fail "Pointer.compare"
-            val diff = fn _ => raise Fail "Pointer.diff"
-            val free = fn _ => raise Fail "Pointer.free"
-            val getInt8 = fn _ => raise Fail "Pointer.getInt8"
-            val getInt16 = fn _ => raise Fail "Pointer.getInt16"
-            val getInt32 = fn _ => raise Fail "Pointer.getInt32"
-            val getInt64 = fn _ => raise Fail "Pointer.getInt64"
-            val getPointer = fn _ => raise Fail "Pointer.getPointer"
-            val getReal32 = fn _ => raise Fail "Pointer.getReal32"
-            val getReal64 = fn _ => raise Fail "Pointer.getReal64"
-            val getWord8 = fn _ => raise Fail "Pointer.getWord8"
-            val getWord16 = fn _ => raise Fail "Pointer.getWord16"
-            val getWord32 = fn _ => raise Fail "Pointer.getWord32"
-            val getWord64 = fn _ => raise Fail "Pointer.getWord64"
-            val isNull = fn _ => raise Fail "Pointer.isNull"
-            val null = ()
-            val setInt8 = fn _ => raise Fail "Pointer.setInt8"
-            val setInt16 = fn _ => raise Fail "Pointer.setInt16"
-            val setInt32 = fn _ => raise Fail "Pointer.setInt32"
-            val setInt64 = fn _ => raise Fail "Pointer.setInt64"
-            val setPointer = fn _ => raise Fail "Pointer.setPointer"
-            val setReal32 = fn _ => raise Fail "Pointer.setReal32"
-            val setReal64 = fn _ => raise Fail "Pointer.setReal64"
-            val setWord8 = fn _ => raise Fail "Pointer.setWord8"
-            val setWord16 = fn _ => raise Fail "Pointer.setWord16"
-            val setWord32 = fn _ => raise Fail "Pointer.setWord32"
-            val setWord64 = fn _ => raise Fail "Pointer.setWord64"
-            val sub = fn _ => raise Fail "Pointer.sub"
          end
 
       structure ProcEnv =
@@ -363,8 +301,6 @@ structure MLton: MLTON =
 
       structure Profile =
          struct
-            val profile = false
-
             structure Data =
                struct
                   type t = unit
@@ -378,50 +314,7 @@ structure MLton: MLTON =
             val withData = fn _ => raise Fail "Profile.withData"
          end
 
-      structure Ptrace =
-         struct
-            type pid = Posix.Process.pid
-            fun attach _ = raise Fail "attach"
-            fun cont _ = raise Fail "cont"
-            fun detach _ = raise Fail "detach"
-            fun kill _ = raise Fail "kill"
-            fun peekText _ = raise Fail "peekText"
-            fun singleStep _ = raise Fail "singleStep"
-            fun sysCall _ = raise Fail "sysCall"
-         end
-
-      structure Random = Random
-
-      structure Rlimit =
-         struct
-            structure RLim =
-               struct
-                  type t = SysWord.word
-                  val castFromSysWord = fn w => w
-                  val castToSysWord = fn w => w
-               end
-
-            val infinity: RLim.t = 0w0
-
-            type t = int
-
-            val coreFileSize: t = 0
-            val cpuTime: t = 0
-            val dataSize: t = 0
-            val fileSize: t = 0
-            val numFiles: t = 0
-            val stackSize: t = 0
-            val virtualMemorySize: t = 0
-
-(* NOT STANDARD
-            val lockedInMemorySize: t = 0
-            val numProcesses: t = 0
-            val residentSetSize: t = 0
-*)
-
-            fun get _ = raise Fail "Rlimit.get"
-            fun set _ = raise Fail "Rlimit.set"
-         end
+      structure Random = MLtonRandom
 
       structure Rusage =
          struct
@@ -466,8 +359,8 @@ structure MLton: MLTON =
                   val default = ()
                   val handler = fn _ => ()
                   val ignore = ()
-                  val isDefault = fn _ => raise Fail "isDefault"
-                  val isIgnore = fn _ => raise Fail "isIgnore"
+                  val isDefault = fn _ => raise Fail "Signal.Handler.isDefault"
+                  val isIgnore = fn _ => raise Fail "Signal.Handler.isIgnore"
                   fun simple _ = ()
                end
 
@@ -477,40 +370,32 @@ structure MLton: MLTON =
 
                   val all = ()
                   fun allBut _ = ()
-                  fun block _ = raise Fail "block"
+                  fun block _ = raise Fail "Signal.Mask.block"
                   fun getBlocked _ = ()
-                  fun isMember _ = raise Fail "isMember"
+                  fun isMember _ = raise Fail "Signal.Mask.isMember"
                   val none = ()
-                  fun setBlocked _ = raise Fail "setBlocked"
+                  fun setBlocked _ = raise Fail "Signal.Mask.setBlocked"
                   fun some _ = ()
-                  fun unblock _ = raise Fail "unblock"
+                  fun unblock _ = raise Fail "Signal.Mask.unblock"
                end
 
-            fun getHandler _ = raise Fail "getHandler"
-            fun handled _ = raise Fail "handled"
+            fun getHandler _ = raise Fail "Signal.getHandler"
+            fun handled _ = raise Fail "Signal.handled"
             val restart = ref true
-            fun setHandler _ = raise Fail "setHandler"
-            fun suspend _ = raise Fail "suspend"
+            fun setHandler _ = raise Fail "Signal.setHandler"
+            fun suspend _ = raise Fail "Signal.suspend"
          end
 
       structure Socket =
          struct
             structure Address =
                struct
-                  type t = word
+                  type t = NetHostDB.in_addr
                end
 
             structure Ctl =
                struct
                   fun getERROR _ = NONE
-               end
-
-            structure Host =
-               struct
-                  type t = {name: string}
-
-                  fun getByAddress _ = raise Fail "Socket.Host.getByAddress"
-                  fun getByName _ = raise Fail "Socket.Host.getByName"
                end
 
             structure Port =
@@ -522,64 +407,15 @@ structure MLton: MLTON =
 
             fun accept _ = raise Fail "Socket.accept"
             fun connect _ = raise Fail "Socket.connect"
-            fun fdToSock _ = raise Fail "Socket.fdToSock"
             fun listen _ = raise Fail "Socket.listen"
             fun listenAt _ = raise Fail "Socket.listenAt"
             fun shutdownRead _ = raise Fail "Socket.shutdownWrite"
             fun shutdownWrite _ = raise Fail "Socket.shutdownWrite"
+
+            fun fdToSock _ = raise Fail "Socket.fdToSock"
          end
 
-      (* From Tom 7 <twm@andrew.cmu.edu>. *)
-      (* Implementation of Syslog which doesn't log anything. *)
-
-      structure Syslog =
-         struct
-
-            type openflag = unit
-
-            val CONS = ()
-            val NDELAY = ()
-            val PERROR = ()
-            val PID = ()
-
-            type facility = unit
-
-            val AUTHPRIV = ()
-            val CRON = ()
-            val DAEMON = ()
-            val KERN = ()
-            val LOCAL0 = ()
-            val LOCAL1 = ()
-            val LOCAL2 = ()
-            val LOCAL3 = ()
-            val LOCAL4 = ()
-            val LOCAL5 = ()
-            val LOCAL6 = ()
-            val LOCAL7 = ()
-            val LPR = ()
-            val MAIL = ()
-            val NEWS = ()
-            val SYSLOG = ()
-            val USER = ()
-            val UUCP = ()
-
-            type loglevel = unit
-
-            val EMERG = ()
-            val ALERT = ()
-            val CRIT = ()
-            val ERR = ()
-            val WARNING = ()
-            val NOTICE = ()
-            val INFO = ()
-            val DEBUG = ()
-
-            val closelog = fn _ => raise Fail "Syslog.closelog"
-            val log = fn _ => raise Fail "Syslog.log"
-            val openlog = fn _ => raise Fail "Syslog.openlog"
-         end
-
-      structure TextIO = IO (TextIO)
+      structure TextIO = MkIO (TextIO)
 
       structure Thread = MLtonThread
 
@@ -587,40 +423,42 @@ structure MLton: MLTON =
          struct
             open Vector
 
-            fun create (n, f) =
+            fun create n =
                let
                   val r = ref (Array.fromList [])
-                  val lim = ref 0
-                  fun check i =
-                     if 0 <= i andalso i < !lim then () else raise Subscript
-                  val sub = fn i => (check i; Array.sub (!r, i))
-                  val update = fn (i, x) => (check i; Array.update (!r, i, x))
-                  val (tab, finish) = f {sub = sub, update = update}
+                  val subLim = ref 0
+                  fun sub i =
+                     if 0 <= i andalso i < !subLim
+                        then Array.sub (!r, i)
+                     else raise Subscript
+                  val updateLim = ref 0
+                  fun update (i, x) =
+                     if 0 <= i andalso i < !updateLim
+                        then if i = !updateLim andalso i < n
+                                then (r := (Array.tabulate (i + 1, fn j =>
+                                                            if i = j
+                                                               then x
+                                                            else Array.sub (!r, j)));
+                                      subLim := i + 1;
+                                      updateLim := i + 1)
+                             else raise Subscript
+                     else
+                        Array.update (!r, i, x)
+                  val gotIt = ref false
+                  fun done () =
+                     if !gotIt then
+                        raise Fail "already got vector"
+                     else
+                        if n = !updateLim then
+                           (gotIt := true;
+                            updateLim := 0;
+                            Array.vector (!r))
+                        else
+                           raise Fail "vector not full"
                in
-                  if 0 = n then
-                     (finish (); Vector.fromList [])
-                  else
-                     let
-                        val init = tab 0
-                        val a = Array.array (n, init)
-                        val () = r := a
-                        val () =
-                           Array.modifyi (fn (i, _) =>
-                                          let
-                                             val res =
-                                                if i = 0 then
-                                                   init
-                                                else
-                                                   tab i
-                                             val () = lim := i + 1
-                                          in
-                                             res
-                                          end)
-                           a
-                        val () = finish ()
-                     in
-                        Array.vector a
-                     end
+                  {done = done,
+                   sub = sub,
+                   update = update}
                end
 
             fun unfoldi (n, a, f) =
@@ -656,64 +494,6 @@ structure MLton: MLTON =
             fun saveThread _ = raise Fail "World.saveThread"
          end
 
-      structure Word =
-         struct
-            open Word
-
-            type t = word
-
-            fun rol (w, w') =
-               let
-                  val w' = w' mod (fromInt wordSize)
-               in
-                  orb (>> (w, fromInt wordSize - w'),
-                       << (w, w'))
-               end
-            fun ror (w, w') =
-               let
-                  val w' = w' mod (fromInt wordSize)
-               in
-                  orb (>> (w, w'),
-                       << (w, fromInt wordSize - w'))
-               end
-            local
-               val max =    Word.toLargeInt 0wxFFFFFFFF
-               val maxInt = Word.toLargeInt 0wx7FFFFFFF
-               fun make (f: IntInf.int * IntInf.int -> IntInf.int)
-                  (w: word, w': word): word =
-                  let
-                     val res = f (Word.toLargeInt w, Word.toLargeInt w')
-                  in
-                     if IntInf.> (res, max)
-                        then raise Overflow
-                     else Word.fromLargeInt res
-                  end
-            in
-               val addCheck = make IntInf.+
-               val mulCheck = make IntInf.*
-            end
-         end
-
-      structure Word8 =
-         struct
-            open Word8
-
-            type t = word
-
-            val _ = >> : word * Word.word -> word
-            fun rol (w: word, w': Word.word): word =
-               let
-                  val w' = Word.mod (w', Word.fromInt wordSize)
-               in
-                  orb (>> (w, Word.- (Word.fromInt wordSize, w')),
-                       << (w, w'))
-               end
-            fun ror (w, w') =
-               let
-                  val w' = Word.mod (w', Word.fromInt wordSize)
-               in
-                  orb (>> (w, w'),
-                       << (w, Word.- (Word.fromInt wordSize, w')))
-               end
-         end
+      structure Word = MkWord(Word)
+      structure Word8 = MkWord(Word8)
    end

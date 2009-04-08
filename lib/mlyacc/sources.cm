@@ -5,7 +5,7 @@
 
 Library
 
-(*signature STREAM *)
+(* signature STREAM *)
 signature LR_TABLE
 signature TOKEN
 signature LR_PARSER
@@ -23,7 +23,7 @@ structure LrParser
 is
 
 #if (defined (SMLNJ_VERSION))
-../mlton-stubs/sources.cm
+../basis-stubs-for-smlnj/sources.cm
 #endif
 
 base.sig

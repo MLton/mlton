@@ -10,8 +10,6 @@
 functor RemoveUnused (S: REMOVE_UNUSED_STRUCTS): REMOVE_UNUSED =
 struct
 
-type int = Int.t
-
 open S
 open Exp Transfer
 

@@ -1,12 +1,10 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-
-type int = Pervasive.Int.int
-type word8 = Pervasive.Word8.word
 
 signature CHAR =
    sig
@@ -29,7 +27,7 @@ signature CHAR =
       val fromHexDigit: int -> t
       val fromInt: int -> t
       val fromString: string -> t option
-      val fromWord8:  word8 -> t
+      val fromWord8:  Word8.t -> t
       val isAlpha: t -> bool
       val isAlphaNum: t -> bool
       val isAscii: t -> bool
@@ -60,7 +58,7 @@ signature CHAR =
       val toLower: t -> t
       val toString: t -> string
       val toUpper: t -> t
-      val toWord8: t -> word8
+      val toWord8: t -> Word8.t
    end
 
 functor TestChar (S: CHAR): sig end =

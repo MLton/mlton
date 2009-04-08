@@ -1,11 +1,10 @@
-(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-
-type int = Int.int
 
 structure MLtonThread =
    struct
@@ -18,11 +17,11 @@ structure MLtonThread =
       val atomically = fn _ => raise Fail "Thread.atomically"
       val atomicState = fn _ => raise Fail "Thread.atomicState"
 
-      type 'a t = unit
+      type 'a t = exn
 
       structure Runnable =
          struct
-            type t = unit
+            type t = exn
          end
 
       val atomicSwitch = fn _ => raise Fail "Thread.atomicSwitch"

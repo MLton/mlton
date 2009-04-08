@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -95,7 +96,7 @@ end
 datatype 'r r =
    R of {zero: 'r, half: 'r, one: 'r, inf: 'r, abs: 'r -> 'r,
          signBit: 'r -> bool, isNan: 'r -> bool,
-         toManExp: 'r -> {exp: Int32.int, man: 'r},
+         toManExp: 'r -> {exp: int, man: 'r},
          compareReal: 'r * 'r -> PIR.real_order,
          bits: Bits.t,
          subVec: P.Word8Vector.vector * int -> P.LargeWord.word,

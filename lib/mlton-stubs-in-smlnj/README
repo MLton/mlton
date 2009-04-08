@@ -1,4 +1,0 @@
-All of the files in this directory exist in order to make the SML/NJ
-toplevel environment look more like MLton's.  One of the biggest
-changes is making the int type be Int32.int and all of the basis
-library modules to use Int32 instead of Int.

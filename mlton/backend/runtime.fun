@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -208,7 +209,7 @@ val cpointerSize : unit -> Bytes.t =
 val labelSize = cpointerSize
 
 (* See platform.c. *)
-val allocTooLarge = Bytes.fromWord 0wxFFFFFFFC
+val allocTooLarge = Bytes.fromIntInf (IntInf.<< (1, 0w30))
 
 (* See gc/heap.h. *)
 val limitSlop = Bytes.fromInt 512

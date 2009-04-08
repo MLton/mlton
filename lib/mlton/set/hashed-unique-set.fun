@@ -6,9 +6,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type int = Int.t
-type word = Word.t
-
 functor HashedUniqueSet(structure Set : SET
                         structure Element : sig include T val hash : t -> word end
                         sharing type Set.Element.t = Element.t) : SET =

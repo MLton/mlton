@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -10,7 +11,7 @@ struct
 
 type ('a, 's) t = 's -> ('a * 's) option
 
-fun char(r, c) s =
+fun char(r, c: char) s =
    case r s of
       NONE => NONE
     | SOME(c', s) => if c = c' then SOME((), s) else NONE

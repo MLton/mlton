@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,34 +7,25 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type int = Int.int
-type word = Word.word
-
 signature MLTON_SOCKET =
    sig
       structure Address:
          sig
-            type t = word
+            type t = NetHostDB.in_addr
          end
 
+(*
       structure Ctl:
          sig
             val getERROR:
                ('af, 'sock_type) Socket.sock
                -> (string * Posix.Error.syserror option) option
          end
-
-      structure Host:
-         sig
-            type t = {name: string}
-
-            val getByAddress: Address.t -> t option
-            val getByName: string -> t option
-         end
+*)
 
       structure Port:
          sig
-            type t = int
+            type t
          end
 
       type t
@@ -45,5 +37,7 @@ signature MLTON_SOCKET =
       val shutdownRead: TextIO.instream -> unit
       val shutdownWrite: TextIO.outstream -> unit
 
+(*
       val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) Socket.sock
+*)
    end

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,8 +11,6 @@ functor x86Liveness(S: X86_LIVENESS_STRUCTS) : X86_LIVENESS =
 struct
   open S
   open x86
-
-  type int = Int.t
 
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop

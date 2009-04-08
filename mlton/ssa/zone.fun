@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,8 +10,6 @@ functor Zone (S: ZONE_STRUCTS): ZONE =
 struct
 
 open S
-
-type int = Int.t
 
 structure Graph = DirectedGraph
 local

@@ -84,7 +84,7 @@ in
                if w - 0w1 <= !max
                   then ()
                else (r := MLton.Random.rand ()
-                     ; max := 0wxFFFFFFFF)
+                     ; max := Word.notb 0wx0)
             val w' = !r
             val () = r := Word.div (w', w)
             val () = max := Word.div (!max, w)

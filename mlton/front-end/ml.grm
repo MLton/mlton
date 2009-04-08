@@ -5,8 +5,6 @@
  * Copyright 1989,1992 by AT&T Bell Laboratories
  *)
 
-type int = Int.t
-
 fun reg (left, right) = Region.make {left = left, right = right}
 fun error (reg, msg) = Control.error (reg, Layout.str msg, Layout.empty)
 

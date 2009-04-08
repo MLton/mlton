@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -18,7 +19,7 @@ ann "forceUsed" in
       signature INTEGER
       signature INT_INF
       signature LIST
-      (*signature MONO_CONTAINER *)
+      (* signature MONO_CONTAINER *)
       signature MONO_ENV
       signature OPTION
       signature ORDER
@@ -43,7 +44,7 @@ ann "forceUsed" in
       structure Bool
       structure Buffer
       structure Char
-      structure CharArray
+      (* structure CharArray *)
       structure CharVector
       structure ChoicePattern
       structure ClearablePromise
@@ -64,10 +65,10 @@ ann "forceUsed" in
       structure FixedPoint
       structure Function
       structure HashSet
-      (*    structure Http *)
+      (* structure Http *)
       structure In
       structure Int
-      structure Int32
+      (* structure Int32 *)
       structure IntInf
       structure InsertionSort
       structure Justify
@@ -95,7 +96,7 @@ ann "forceUsed" in
       structure QuickSort
       structure Random
       structure Real
-      structure RealVector
+      (* structure RealVector *)
       structure Real32
       structure Real64
       structure Ref
@@ -118,9 +119,9 @@ ann "forceUsed" in
       structure Vector
       structure Word
       structure Word8
-      structure Word8Array
-      structure Word8Vector
-      structure Word32
+      (* structure Word8Array *)
+      (* structure Word8Vector *)
+      (* structure Word32 *)
 
       (* functor BinaryHeap *)
       functor Control

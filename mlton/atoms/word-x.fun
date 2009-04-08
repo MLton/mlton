@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,8 +10,6 @@ functor WordX (S: WORD_X_STRUCTS): WORD_X =
 struct
 
 open S
-
-type word = Word.t
 
 val modulus: WordSize.t -> IntInf.t =
    fn s => IntInf.<< (1, Bits.toWord (WordSize.bits s))

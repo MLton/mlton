@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh 
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -6,8 +7,6 @@
  *)
 
 local
-   type int = Int.t
-   type word = Word.t
    structure All:>
       sig
          type bits

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -6,9 +7,6 @@
  *)
 
 (* This code is not working -- it is not even in sources.cm *)
-type int = Int.t
-type word = Word.t
-
 signature HASH_TABLE =
    sig
       type ('a, 'b) t

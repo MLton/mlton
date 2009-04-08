@@ -1,15 +1,58 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
 
-structure Random: MLTON_RANDOM = 
+structure MLtonRandom: MLTON_RANDOM =
    struct
-      fun seed _ = SOME (0w13: Word32.word)
-      fun useed _ = SOME (0w13: Word32.word)
+      (* Uses /dev/random and /dev/urandom to get a random word.
+       * If they can't be read from, return NONE.
+       *)
       local
+         fun make (file, name) =
+            let
+               val buf = Word8Array.array (4, 0w0)
+            in
+               fn () =>
+               (let
+                   val fd =
+                      let
+                         open Posix.FileSys
+                      in
+                         openf (file, O_RDONLY, O.flags [])
+                      end
+                   fun loop rem =
+                      let
+                         val n = Posix.IO.readArr (fd,
+                                                   Word8ArraySlice.slice
+                                                   (buf, 4 - rem, SOME rem))
+                         val _ = if n = 0
+                                    then (Posix.IO.close fd; raise Fail name)
+                                 else ()
+                         val rem = rem - n
+                      in
+                         if rem = 0
+                            then ()
+                         else loop rem
+                      end
+                   val _ = loop 4
+                   val _ = Posix.IO.close fd
+                in
+                   SOME (Word.fromLarge (PackWord32Little.subArr (buf, 0)))
+                end
+                   handle OS.SysErr _ => NONE)
+            end
+      in
+         val seed = make ("/dev/random", "Random.seed")
+         val useed = make ("/dev/urandom", "Random.useed")
+      end
+
+      local
+         open Word
          val seed: word ref = ref 0w13
       in
          (* From page 284 of Numerical Recipes in C. *)
@@ -23,13 +66,6 @@ structure Random: MLTON_RANDOM =
 
          fun srand (w: word): unit = seed := w
       end
-
-      structure String =
-         struct
-            open String
-
-            val tabulate = CharVector.tabulate
-         end
 
       local
          val chars =
@@ -65,5 +101,5 @@ structure Random: MLTON_RANDOM =
       end
 
       fun alphaNumString (length: int): string =
-         String.tabulate (length, fn _ => alphaNumChar ())
+         CharVector.tabulate (length, fn _ => alphaNumChar ())
    end
