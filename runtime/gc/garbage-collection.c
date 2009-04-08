@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -111,9 +112,10 @@ void performGC (GC_state s,
              uintmaxToCommaString(nurseryBytesRequested),
              uintmaxToCommaString(oldGenBytesRequested));
     fprintf (stderr, 
-             "[GC:\theap at "FMTPTR" of size %s bytes,]\n",
+             "[GC:\theap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map),]\n",
              (uintptr_t)(s->heap.start),
-             uintmaxToCommaString(s->heap.size));
+             uintmaxToCommaString(s->heap.size),
+             uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
     fprintf (stderr, 
              "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
              uintmaxToCommaString(nurserySize),
@@ -164,9 +166,10 @@ void performGC (GC_state s,
              uintmaxToCommaString(s->cumulativeStatistics.numGCs),
              uintmaxToCommaString(gcTime));
     fprintf (stderr, 
-             "[GC:\theap at "FMTPTR" of size %s bytes,]\n",
+             "[GC:\theap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map),]\n",
              (uintptr_t)(s->heap.start),
-             uintmaxToCommaString(s->heap.size));
+             uintmaxToCommaString(s->heap.size),
+             uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
     fprintf (stderr, 
              "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
              uintmaxToCommaString(nurserySize),
