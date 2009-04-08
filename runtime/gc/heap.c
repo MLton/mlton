@@ -481,12 +481,10 @@ copy:
       curHeapp->oldGenSize = liveSize;
     } else {
       GC_diskBack_close (data);
-      if (s->controls.messages)
-        GC_displayMem ();
-      die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
-           uintmaxToCommaString(minSize));
+      goto oom;
     }
   } else {
+oom:
     if (s->controls.messages)
       GC_displayMem ();
     die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
