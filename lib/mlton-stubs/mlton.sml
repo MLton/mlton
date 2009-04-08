@@ -322,18 +322,22 @@ structure MLton: MLTON =
 
            fun measureGC _ = ()
 
-           (* Fake it with Posix.ProcEnv.times *)
+           (* Fake it with Posix.ProcEnv.times
+            * and Timer.totalCPUTimer and Timer.checkCPUTimes.
+            *)
            fun rusage () =
               let
                  val zero = {utime = Time.zeroTime, stime = Time.zeroTime}
               in
                  let
+                    val {gc = {usr = gcutime, sys = gcstime}, ...} =
+                       Timer.checkCPUTimes (Timer.totalCPUTimer ())
                     val {utime, stime, cutime, cstime, ...} =
                        Posix.ProcEnv.times ()
                  in
                     {self = {utime = utime, stime = stime},
                      children = {utime = cutime, stime = cstime},
-                     gc = zero}
+                     gc = {utime = gcutime, stime = gcstime}}
                  end handle Time => {children = zero, gc = zero, self = zero}
                  (* The handle Time is there because of a bug in SML/NJ that
                   * causes a Time exception to be raised on machines with a
