@@ -196,7 +196,6 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keepSize) {
 bool createHeap (GC_state s, GC_heap h,
                  size_t desiredSize,
                  size_t minSize) {
-  size_t backoff;
   size_t newSize;
   size_t newWithMapsSize;
 
@@ -210,10 +209,6 @@ bool createHeap (GC_state s, GC_heap h,
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
   assert (0 == h->size and NULL == h->start);
-  backoff = (desiredSize - minSize) / 16;
-  if (0 == backoff)
-    backoff = 1; /* enough to terminate the loop below */
-  backoff = align (backoff, s->sysvals.pageSize);
   /* mmap toggling back and forth between high and low addresses to
    * decrease the chance of virtual memory fragmentation causing an mmap
    * to fail.  This is important for large heaps.
@@ -266,6 +261,11 @@ bool createHeap (GC_state s, GC_heap h,
         return TRUE;
       }
     }
+    size_t backoff;
+    backoff = (newSize - minSize) / 16;
+    if (0 == backoff)
+      backoff = 1;
+    backoff = align (backoff, s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Creating heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
@@ -309,7 +309,6 @@ bool createHeapSecondary (GC_state s, size_t desiredSize) {
 bool remapHeap (GC_state s, GC_heap h,
                 size_t desiredSize,
                 size_t minSize) {
-  size_t backoff;
   size_t newSize;
   size_t newWithMapsSize;
   size_t origSize;
@@ -326,10 +325,6 @@ bool remapHeap (GC_state s, GC_heap h,
   assert (desiredSize >= h->size);
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
-  backoff = (desiredSize - minSize) / 16;
-  if (0 == backoff)
-    backoff = 1; /* enough to terminate the loop below */
-  backoff = align (backoff, s->sysvals.pageSize);
   origSize = h->size;
   origWithMapsSize = origSize + sizeofCardMapAndCrossMap (s, origSize);
   newSize = desiredSize;
@@ -356,6 +351,11 @@ bool remapHeap (GC_state s, GC_heap h,
                  uintmaxToCommaString(h->withMapsSize - h->size));
       return TRUE;
     }
+    size_t backoff;
+    backoff = (newSize - minSize) / 16;
+    if (0 == backoff)
+      backoff = 1;
+    backoff = align (backoff, s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Remapping heap to size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
