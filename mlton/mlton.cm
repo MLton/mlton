@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -8,5 +9,7 @@
 Group is
 
 upgrade-basis.sml
+(* Need to elaborate ML-Yacc library in Basis Library, not MLton library. *)
+../lib/mlyacc/sources.cm
 sources.cm
 call-main.sml
