@@ -1,11 +1,22 @@
-This is a modified version of the ml-lex directory that comes with SML/NJ
-110.55.  I made a few changes so that the sources are compilable with MLton.
+This is a modified version of the ml-lex directory that comes with SML/NJ.
 
-mfluet@acm.org  2005-7-21.
+Files from SML/NJ:
+  INSTALL -- deleted
+  README
+  build -- deleted
+  build.bat -- deleted
+  export-lex.sml -- deleted
+  lexgen.doc
+  lexgen.sml -- modified
+  lexgen.tex -- modified
+  ml-lex.cm -- deleted
+  mlex_int.doc
+  tool/* -- deleted
 
-*****
-
-This is a modified version of the ml-lex directory that comes with SML/NJ
-110.9.1.  I made a few changes so that the sources are compilable with MLton.
-
-sweeks@acm.org  2000-8-22.
+Files added:
+  Makefile
+  README.MLton
+  call-main.sml
+  macros.hva
+  main.sml
+  mllex.mlb

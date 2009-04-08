@@ -1,3 +1,10 @@
+% Modified by Matthew Fluet on 2007-11-07.
+% Add %posint command.
+%
+% Modified by Matthew Fluet on 2007-10-31.
+% Add \r escape sequence (from Florian Weimer).
+% Fix TeX formatting bug (from Florian Weimer).
+%
 \documentstyle{article}
 \title{        A lexical analyzer generator for Standard ML.\\
                                Version 1.6.0, October 1994
@@ -5,7 +12,7 @@
 \author{                    Andrew W. Appel$^1$\\
                             James S. Mattson\\
                             David R. Tarditi$^2$\\
-\\              
+\\
 \small
 $^1$Department of Computer Science, Princeton University \\
 \small
@@ -26,7 +33,7 @@ file COPYRIGHT distributed with this software).
 
 \vspace{1in}
 
-New in this version:  
+New in this version:
 \begin{itemize}
 \item REJECT is much less costly than before.
 \item Lexical analyzers with more than 255 states can now compile in your
@@ -80,7 +87,7 @@ and to concentrate on what to do with the recognized words, not how
 to recognize the words.  It saves programmer time and increases
 program maintainability.
 
-Unfortunately, Lex is targeted only C.  It also places artificial 
+Unfortunately, Lex is targeted only C.  It also places artificial
 limits on the size of strings that can be recognized.
 
 ML-Lex is a variant of Lex for the ML programming language.  ML-Lex
@@ -145,7 +152,7 @@ and exited when the end of the string is recognized.
 Regular expressions are a simple language for denoting classes of
 strings.  A regular expression is defined inductively over an
 alphabet with a set of basic operations.  The alphabet for ML-Lex is
-the Ascii character set (character codes 0--127; or if 
+the Ascii character set (character codes 0--127; or if
 \verb|%full| is used, 0--255).
 
 The syntax and semantics of regular expressions will be described in
@@ -161,7 +168,7 @@ to the most weakly binding):
 
 \item   A set of characters enclosed in square brackets [ ] stands
         for any one of those characters.  Inside the brackets, only
-        the symbols  \verb|\ - ^| are reserved.  An initial up-arrow 
+        the symbols  \verb|\ - ^| are reserved.  An initial up-arrow
         \verb|^| stands
         for the complement of the characters listed, e.g. \verb|[^abc]|
         stands any character except a, b, or c.  The hyphen - denotes
@@ -219,7 +226,7 @@ to the most weakly binding):
 
 \item\verb-|-   The infix operator \verb-|- stands for alternation.  The expression
         $e_1$~\verb"|"~$e_2$  stands for anything that either $e_1$ or $e_2$ stands for.
-    
+
 \item[\verb|/|] The infix operator \verb|/| denotes lookahead.  Lookahead is not
         implemented and cannot be used, because there is a bug
         in the algorithm for generating lexers with lookahead.  If
@@ -235,7 +242,7 @@ to the most weakly binding):
         for lookahead involving the newline character (that is, it
         is an abbreviation for \verb|/\n|).
 \end{itemize}
-        
+
 Here are some examples of regular expressions, and descriptions of the
 set of strings they denote:
 
@@ -256,7 +263,7 @@ set of strings they denote:
 \subsection{User declarations}
 
 Anything up to the first \verb|%%| is in the user declarations section.  The
-user should note that no symbolic identifier containing 
+user should note that no symbolic identifier containing
 \verb|%%| can be
 used in this section.
 
@@ -296,7 +303,7 @@ The following \% commands are also available:
 \item[\tt \%arg]       extra (curried) formal parameter argument to be
                           passed to the lex functions, and to be passed
                           to the eof function in place of ()
-\item[\tt \%posint \{identifier\}]  use the {\tt INTEGER} structure for the 
+\item[\tt \%posint \{identifier\}]  use the {\tt INTEGER} structure for the
                           type of {\tt yypos}; use {\tt Int64} or {\tt Position}
                           to allow lexing of multi-gigabyte input files
 \end{description}
@@ -337,7 +344,7 @@ any unmatched input on the standard output.
 \label{avail}
 
 ML-Lex places the value of the string matched by a regular expression
-in \verb|yytext|, a string variable.  
+in \verb|yytext|, a string variable.
 
 The user may recursively
 call the lexing function with \verb|lex()|.  (If \verb|%arg| is used, the
@@ -371,11 +378,11 @@ of {\tt yytext}, relative to the beginning of the file.}\\
 {\tt yylineno } & {\tt \%count} &         Current line number\\
 \\
 \end{tabular}
-        
+
 
 These values should be used only if necessary.  Adding {\tt REJECT} to a
 lexer will slow it down by 20\%; adding {\tt yylineno} will slow it down by
-another 20\%, or more.  (It is much more efficient to 
+another 20\%, or more.  (It is much more efficient to
 recognize \verb|\n| and
 have an action that increments the line-number variable.)  The use of
 the lookahead operator {\tt /} will also slow down the entire lexer.
@@ -419,7 +426,7 @@ For example,
 creates a lexer that operates on the file whose name is f.
 
 When the {\tt \%posarg} directive is used, the type of
-{\tt makeLexer} is 
+{\tt makeLexer} is
 \begin{verbatim}
   val makeLexer : ((int->string)*int) -> yyarg -> lexresult
 \end{verbatim}
@@ -434,10 +441,10 @@ should read a string of characters
 from the input stream.  It should return a null string to indicate
 that the end of the stream has been reached.  The integer is the
 number of characters that the lexer wishes to read; the function may
-return any non-zero number of characters.  For example, 
+return any non-zero number of characters.  For example,
 
 \begin{verbatim}
-  val lexer = 
+  val lexer =
     let val input_line = fn f =>
           let fun loop result =
              let val c = input (f,1)
@@ -460,9 +467,7 @@ The lexer tries to read a large number of characters from the input
 function at once, and it is desirable that the input function return
 as many as possible.  Reading many characters at once makes the lexer
 more efficient.  Fewer input calls and buffering operations are
-needed, and input is more efficient in large block reads.
-Furthermore, performance is very poor (quadratic in the token length)
-when a token requires lots of calls to the input function. For 
+needed, and input is more efficient in large block reads.  For
 interactive streams this is less of a concern, as the limiting factor
 is the speed at which the user can type.
 
@@ -495,7 +500,7 @@ Here is a sample lexer for a calculator program:
 \small
 \begin{verbatim}
 datatype lexresult= DIV | EOF | EOS | ID of string | LPAREN |
-                     NUM of int | PLUS | PRINT | RPAREN | SUB | TIMES 
+                     NUM of int | PLUS | PRINT | RPAREN | SUB | TIMES
 
 val linenum = ref 1
 val error = fn x => output(std_out,x ^ "\n")
@@ -524,8 +529,8 @@ ws = [\ \t];
 Here is the parser for the calculator:
 \begin{verbatim}
 
-(* Sample interactive calculator to demonstrate use of lexer 
- 
+(* Sample interactive calculator to demonstrate use of lexer
+
    The original grammar was
 
        stmt_list -> stmt_list stmt
@@ -534,14 +539,14 @@ Here is the parser for the calculator:
        t -> t * f | t/f | f
        f -> (exp) | id | num
 
-  The function parse takes a stream and parses it for the calculator 
+  The function parse takes a stream and parses it for the calculator
   program.
 
   If a syntax error occurs, parse prints an error message and calls
   itself on the stream.  On this system that has the effect of ignoring
-  all input to the end of a line.  
+  all input to the end of a line.
 *)
-       
+
 structure Calc =
  struct
    open CalcLex
@@ -573,7 +578,7 @@ structure Calc =
          case !nexttok of
             EOF => ()
           | _ => (STMT(); STMT_LIST())
-        
+
      and STMT() =
          (case !nexttok
            of EOS  => ()

@@ -24,10 +24,10 @@ following three constructors:
           removed from the backward propagating list after this node is
           encountered.
 
-    
+
      The function scan inside the function lex operates as a transition
 function, scanning the input until it is no longer possible to take any
-more transitions.  It accumulates a list of the accepting leaf list 
+more transitions.  It accumulates a list of the accepting leaf list
 associated with each accepting state passed through.
 
        Scan operates as follows:
@@ -39,16 +39,16 @@ associated with each accepting state passed through.
                 * l - position of the next character in the buffer b to read
                 * i0 - starting position in the buffer.
 
-        Output: If no match is found, it raises the exception LexError. 
+        Output: If no match is found, it raises the exception LexError.
                 Otherwise, it returns a value of type lexresult.
 
         It operates as a transtion function:
              It (1) adds the list of accepting leaves for the current state to
                     the list of accepting leave lists
                 (2) tries to make a transition on the current input character
-                    to the next state.  If it can't make a transition, it 
+                    to the next state.  If it can't make a transition, it
                     executes the action function.
-                        (a) - if it is past the end of the buffer, it 
+                        (a) - if it is past the end of the buffer, it
                                 (1) checks if it as at end eof.  If it is then:
                                         It checks to see if it has made any
                                         transitions since it was first called -
@@ -71,7 +71,7 @@ associated with each accepting state passed through.
 
                                     This buffer update operation requires
                                     O(n^2/1024) char. copies for lexemes > 1024
-                                    characters in length, and O(n) char. copies 
+                                    characters in length, and O(n) char. copies
                                     for lexemes <= 1024 characters in length.
                                     It can be made O(n) using linked list
                                     buffers & a Byte.array of size n (not the

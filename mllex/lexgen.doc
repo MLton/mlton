@@ -63,7 +63,7 @@ and to concentrate on what to do with the recognized words, not how
 to recognize the words.  It saves programmer time and increases
 program maintainability.
 
-Unfortunately, Lex is targeted only C.  It also places artificial 
+Unfortunately, Lex is targeted only C.  It also places artificial
 limits on the size of strings that can be recognized.
 
 ML-Lex is a variant of Lex for the ML programming language.  ML-Lex
@@ -149,7 +149,7 @@ to the most weakly-binding):
         but first; to include - literally in a set, put it first or last.
 
         The dot . character stands for any character except newline,
-        i.e. the same as [^\n]  
+        i.e. the same as [^\n]
 
         The following special escape sequences are available, inside
         or outside of square-brackets:
@@ -192,7 +192,7 @@ to the most weakly-binding):
 
         The infix operator | stands for alternation.  The expression
         e1 | e2  stands for anything that either e1 or e2 stands for.
-    
+
         The infix operator / denotes lookahead.  Lookahead is not
         implemented and cannot be used, because there is a bug
         in the algorithm for generating lexers with lookahead.  If
@@ -210,7 +210,7 @@ to the most weakly-binding):
         sign $ occurred at the end of an expression, that expression
         would only match strings that occur at the end of a line
         (right before a newline character).
-        
+
 Here are some examples of regular expressions, and descriptions of the
 set of strings they denote:
 
@@ -300,7 +300,7 @@ any unmatched input on the standard output.
 V. Values available inside the code associated with a rule.
 
 Mlex places the value of the string matched by a regular expression
-in yytext, a string variable.  
+in yytext, a string variable.
 
 The user may recursively
 call the lexing function with lex().  (If %arg is used, the
@@ -325,12 +325,12 @@ command is in the ML-Lex definitions sections:
                                         string, or that matches the longest
                                         possible prefix of this string,
                                         is used instead.
-                                
+
         yypos                           Current character position from
                                         beginning of file.
 
         yylineno        %count          Current line number
-        
+
 
 These values should be used only if necessary.  Adding REJECT to a
 lexer will slow it down by 20%; adding yylineno will slow it down by
@@ -368,9 +368,9 @@ The function from int -> string should read a string of characters
 from the input stream.  It should return a null string to indicate
 that the end of the stream has been reached.  The integer is the
 number of characters that the lexer wishes to read; the function may
-return any non-zero number of characters.  For example, 
+return any non-zero number of characters.  For example,
 
-  val lexer = 
+  val lexer =
     let val input_line = fn f =>
           let fun loop result =
              let val c = input (f,1)
@@ -420,7 +420,7 @@ VIII. Sample
 Here is a sample lexer for a calculator program:
 
 datatype lexresult= DIV | EOF | EOS | ID of string | LPAREN |
-                     NUM of int | PLUS | PRINT | RPAREN | SUB | TIMES 
+                     NUM of int | PLUS | PRINT | RPAREN | SUB | TIMES
 
 val linenum = ref 1
 val error = fn x => output(std_out,x ^ "\n")
@@ -448,7 +448,7 @@ ws = [\ \t];
 Here is the parser for the calculator:
 
 (* Sample interactive calculator to demonstrate use of lexer produced by ML-Lex
- 
+
    The original grammar was
 
        stmt_list -> stmt_list stmt
@@ -457,14 +457,14 @@ Here is the parser for the calculator:
        t -> t * f | t/f | f
        f -> (exp) | id | num
 
-  The function parse takes a stream and parses it for the calculator 
+  The function parse takes a stream and parses it for the calculator
   program.
 
   If a syntax error occurs, parse prints an error message and calls itself
   on the stream.  On this system that has the effect of ignoring all input
   to the end of a line.
 *)
-       
+
 structure Calc =
  struct
    open CalcLex
@@ -496,7 +496,7 @@ structure Calc =
          case !nexttok of
             EOF => ()
           | _ => (STMT(); STMT_LIST())
-        
+
      and STMT() =
          (case !nexttok
            of EOS  => ()
