@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2009 Matthew Fluet.
+ # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -113,41 +114,13 @@ constants:
 	./tmp >"$(LIB)/$(TARGET)/constants"
 	rm -f tmp tmp.c
 
-DEBSRC := mlton-$(VERSION).orig
-.PHONY: deb
-deb:
-	$(MAKE) clean clean-svn version
-	mv package/debian .
-	tar -cpf - . | \
-		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
-	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
-	cd .. && mv $(DEBSRC) mlton-$(VERSION)
-	cd ../mlton-$(VERSION) && pdebuild --pbuilderroot ss
-
-.PHONY: deb-binary
-deb-binary:
-	fakeroot debian/rules binary
-
-.PHONY: deb-change
-deb-change:
-	(								\
-		echo 'mlton ($(VERSION)-1) unstable; urgency=low';	\
-		echo;							\
-		echo '  * new upstream version';			\
-		echo;							\
-		echo ' -- Stephen Weeks <sweeks@sweeks.com>  '`date -R`;\
-		echo;							\
-		cat package/debian/changelog;				\
-	) >/tmp/changelog
-	mv /tmp/changelog package/debian/changelog
-
-.PHONY: deb-lint
-deb-lint:
-	lintian ../mlton_$(VERSION)-1_i386.deb
-
-.PHONY: deb-spell
-deb-spell:
-	ispell -g package/debian/control
+.PHONY: debugged
+debugged:
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
+	"$(LIB)/$(AOUT).debug" @MLton -- "$(LIB)/world.debug"
+	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" | sed 's/world.mlton/world.debug.mlton/' > "$(MLTON).debug"
+	chmod a+x "$(MLTON).debug"
 
 .PHONY: dirs
 dirs:
@@ -160,18 +133,6 @@ docs: dirs
 	if htmldoc --version >/dev/null 2>&1; then \
 		bin/make-pdf-guide; \
 	fi
-
-BSDSRC := /tmp/mlton-$(VERSION)
-.PHONY: freebsd
-freebsd:
-	$(MAKE) clean clean-svn version
-	rm -rf "$(BSDSRC)"
-	mkdir -p "$(BSDSRC)"
-	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
-	cd /tmp && tar -cpf - mlton-$(VERSION) | \
-		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
-        # do not change "make" to "$(MAKE)" in the following line
-	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package
 
 LIBRARIES := ckit-lib cml mlrisc-lib mlnlffi-lib mlyacc-lib smlnj-lib
 
@@ -233,22 +194,6 @@ mlbpathmap:
 		>>"$(MLBPATHMAP).tmp"
 	mv "$(MLBPATHMAP).tmp" "$(MLBPATHMAP)"
 
-.PHONY: traced
-traced:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
-	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
-	"$(LIB)/$(AOUT).trace" @MLton -- "$(LIB)/world.trace"
-	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" | sed 's/world.mlton/world.trace.mlton/' > "$(MLTON).trace"
-	chmod a+x "$(MLTON).trace"
-
-.PHONY: debugged
-debugged:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
-	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
-	"$(LIB)/$(AOUT).debug" @MLton -- "$(LIB)/world.debug"
-	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" | sed 's/world.mlton/world.debug.mlton/' > "$(MLTON).debug"
-	chmod a+x "$(MLTON).debug"
-
 .PHONY: profiled
 profiled:
 	for t in alloc count time; do					\
@@ -262,22 +207,6 @@ profiled:
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
 	done
-
-TOPDIR := 'TOPDIR-unset'
-SOURCEDIR := $(TOPDIR)/SOURCES/mlton-$(VERSION)
-.PHONY: rpms
-rpms:
-	$(MAKE) clean clean-svn version
-	mkdir -p "$(TOPDIR)"
-	cd "$(TOPDIR)" && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
-	rm -rf "$(SOURCEDIR)"
-	mkdir -p "$(SOURCEDIR)"
-	( cd "$(SRC)" && tar -cpf - . ) | ( cd "$(SOURCEDIR)" && tar -xpf - )
-	$(CP) "$(SOURCEDIR)/$(SPEC)" "$(TOPDIR)/SPECS/mlton.spec"
-	( cd "$(TOPDIR)/SOURCES" && tar -cpf - mlton-$(VERSION) )	\
-		| $(GZIP) >"$(SOURCEDIR).tgz"
-	rm -rf "$(SOURCEDIR)"
-	rpm -ba --quiet --clean "$(TOPDIR)/SPECS/mlton.spec"
 
 .PHONY: runtime
 runtime:
@@ -318,6 +247,14 @@ targetmap:
           sed '/$(TARGET)/d' <"$(TARGETMAP)" )			\
 		>>"$(TARGETMAP).tmp"
 	mv "$(TARGETMAP).tmp" "$(TARGETMAP)"
+
+.PHONY: traced
+traced:
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
+	"$(LIB)/$(AOUT).trace" @MLton -- "$(LIB)/world.trace"
+	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" | sed 's/world.mlton/world.trace.mlton/' > "$(MLTON).trace"
+	chmod a+x "$(MLTON).trace"
 
 .PHONY: tools
 tools:
@@ -467,8 +404,44 @@ install-docs:
 	find "$(TEXM)/" -name .svn -type d | xargs rm -rf
 	find "$(TEXM)/" -name .ignore -type f | xargs rm -rf
 
-TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
 
+DEBSRC := mlton-$(VERSION).orig
+.PHONY: deb
+deb:
+	$(MAKE) clean clean-svn version
+	mv package/debian .
+	tar -cpf - . | \
+		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
+	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
+	cd .. && mv $(DEBSRC) mlton-$(VERSION)
+	cd ../mlton-$(VERSION) && pdebuild --pbuilderroot ss
+
+.PHONY: deb-binary
+deb-binary:
+	fakeroot debian/rules binary
+
+.PHONY: deb-change
+deb-change:
+	(								\
+		echo 'mlton ($(VERSION)-1) unstable; urgency=low';	\
+		echo;							\
+		echo '  * new upstream version';			\
+		echo;							\
+		echo ' -- Stephen Weeks <sweeks@sweeks.com>  '`date -R`;\
+		echo;							\
+		cat package/debian/changelog;				\
+	) >/tmp/changelog
+	mv /tmp/changelog package/debian/changelog
+
+.PHONY: deb-lint
+deb-lint:
+	lintian ../mlton_$(VERSION)-1_i386.deb
+
+.PHONY: deb-spell
+deb-spell:
+	ispell -g package/debian/control
+
+TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
 .PHONY: post-install-debian
 post-install-debian:
 	cd "$(TDOC)/" && rm -rf license
@@ -480,3 +453,33 @@ post-install-debian:
 	done
 	cd "$(TDOC)/" && $(GZIP) changelog changelog.Debian
 	chown -R root.root "$(TDOC)" "$(TLIB)"
+
+
+BSDSRC := /tmp/mlton-$(VERSION)
+.PHONY: freebsd
+freebsd:
+	$(MAKE) clean clean-svn version
+	rm -rf "$(BSDSRC)"
+	mkdir -p "$(BSDSRC)"
+	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
+	cd /tmp && tar -cpf - mlton-$(VERSION) | \
+		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
+        # do not change "make" to "$(MAKE)" in the following line
+	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package
+
+
+TOPDIR := 'TOPDIR-unset'
+SOURCEDIR := $(TOPDIR)/SOURCES/mlton-$(VERSION)
+.PHONY: rpms
+rpms:
+	$(MAKE) clean clean-svn version
+	mkdir -p "$(TOPDIR)"
+	cd "$(TOPDIR)" && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
+	rm -rf "$(SOURCEDIR)"
+	mkdir -p "$(SOURCEDIR)"
+	( cd "$(SRC)" && tar -cpf - . ) | ( cd "$(SOURCEDIR)" && tar -xpf - )
+	$(CP) "$(SOURCEDIR)/$(SPEC)" "$(TOPDIR)/SPECS/mlton.spec"
+	( cd "$(TOPDIR)/SOURCES" && tar -cpf - mlton-$(VERSION) )		\
+		| $(GZIP) >"$(SOURCEDIR).tgz"
+	rm -rf "$(SOURCEDIR)"
+	rpm -ba --quiet --clean "$(TOPDIR)/SPECS/mlton.spec"
