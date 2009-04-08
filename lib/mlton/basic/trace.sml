@@ -57,7 +57,6 @@ structure Trace: TRACE =
 struct
 
 structure IC = IntermediateComputation
-structure Int = Pervasive.Int
 structure Timer = Time
 
 val immediateDefault = ref false

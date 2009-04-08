@@ -9,7 +9,6 @@
 functor Fold (S: FOLD_STRUCTS): FOLD = 
 struct
 
-structure Int = Pervasive.Int
 open S
 
 fun foldi (l: 'a t, b, f) =

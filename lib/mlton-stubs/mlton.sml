@@ -34,7 +34,6 @@ functor MkWord(W : WORD) : MLTON_WORD =
       type t = word
 
       val wordSize = Word.fromInt wordSize
-      val one = fromInt 1
 
       val bswap = fn _ => raise Fail "Word.bswap"
       fun rol (w: word, w': Word.word): word =
