@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -81,6 +82,7 @@ static inline GC_cardMapIndex lenofCardMap (GC_state s, size_t cardMapSize);
 static inline size_t sizeofCrossMap (GC_state s, size_t heapSize);
 static inline GC_crossMapIndex lenofCrossMap (GC_state s, size_t crossMapSize);
 static size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize);
+static size_t invertSizeofCardMapAndCrossMap (GC_state s, size_t heapWithMapsSize);
 
 static inline void clearCardMap (GC_state s);
 static inline void clearCrossMap (GC_state s);

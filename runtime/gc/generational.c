@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -188,6 +189,61 @@ size_t sizeofCardMapAndCrossMap (GC_state s, size_t heapSize) {
   assert (isAligned (totalMapSize, s->sysvals.pageSize));
 
   return totalMapSize;
+}
+
+/*
+ * heapSize = invertSizeofCardMapAndCrossMap (s, heapWithMapsSize);
+ * implies
+ * heapSize + sizeofCardMapAndCrossMap (s, heapSize)
+ *  <= heapWithMapsSize
+ *  < (heapSize + s->sysvals.pageSize)
+ *    + sizeofCardMapAndCrossMap (s, heapSize + s->sysvals.pageSize)
+ */
+size_t invertSizeofCardMapAndCrossMap (GC_state s, size_t heapWithMapsSize) {
+  unless (s->mutatorMarksCards) {
+    return heapWithMapsSize;
+  }
+  assert (isAligned (heapWithMapsSize, s->sysvals.pageSize));
+
+  size_t minHeapSize;
+  if (heapWithMapsSize <= 3 * s->sysvals.pageSize) {
+    minHeapSize = 0;
+  } else {
+    double minHeapSizeD;
+    minHeapSizeD =
+      (((double)(CARD_SIZE)
+        / (double)(CARD_SIZE + CARD_MAP_ELEM_SIZE + CROSS_MAP_ELEM_SIZE))
+       * (double)(heapWithMapsSize - 3 * s->sysvals.pageSize)) -
+      (((double)(CARD_MAP_ELEM_SIZE + CROSS_MAP_ELEM_SIZE)
+        / (double)(CARD_SIZE + CARD_MAP_ELEM_SIZE + CROSS_MAP_ELEM_SIZE)) *
+       (double)(s->sysvals.pageSize));
+    minHeapSize = alignDown ((size_t)minHeapSizeD, s->sysvals.pageSize);
+  }
+
+  size_t heapSize = minHeapSize;
+  size_t nextHeapSize = heapSize + s->sysvals.pageSize;
+  /* The termination condition is:
+   *   heapWithMapsSize >= nextHeapSize + sizeofCardMapAndCrossMap (s, nextHeapSize)
+   * However, nextHeapSize + sizeofCardMapAndCrossMap (s, nextHeapSize) may overflow.
+   */
+  while (heapWithMapsSize >= sizeofCardMapAndCrossMap (s, nextHeapSize) and
+         heapWithMapsSize - sizeofCardMapAndCrossMap (s, nextHeapSize) >= nextHeapSize) {
+    heapSize = nextHeapSize;
+    nextHeapSize += s->sysvals.pageSize;
+  }
+
+  assert (isAligned (heapSize, s->sysvals.pageSize));
+  assert (heapSize + sizeofCardMapAndCrossMap (s, heapSize) <= heapWithMapsSize);
+  assert (nextHeapSize == heapSize + s->sysvals.pageSize);
+  assert (heapWithMapsSize < sizeofCardMapAndCrossMap (s, nextHeapSize) or
+          heapWithMapsSize - sizeofCardMapAndCrossMap (s, nextHeapSize) < nextHeapSize);
+
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "invertSizeofCardMapAndCrossMap(%s) = %s\n",
+             uintmaxToCommaString(heapWithMapsSize),
+             uintmaxToCommaString(heapSize));
+
+  return heapSize;
 }
 
 void setCardMapAndCrossMap (GC_state s) {
