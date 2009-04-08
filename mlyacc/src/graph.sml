@@ -87,7 +87,7 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
            let val printCore = prCore a
                val printSymbol = print o nontermToString
                val nodes = nodes g
-               val printEdges = fn n => 
+               val printEdges = fn n =>
                  List.app (fn {edge,to=CORE (_,state)} =>
                         (print "\tshift on ";
                          printSymbol edge;

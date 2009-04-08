@@ -18,7 +18,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 
         datatype tmpcore = TMPCORE of (item * term list ref) list * int
         datatype lcore = LCORE of (item * term list) list * int
-        
+
 
          val prLcore =
           fn a as (SymbolToString,nontermToString,termToString,print) =>
@@ -121,7 +121,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                                     | f (_, []) = 0
                               in  f (n, r)
                               end
-                             
+
                         val check_rule = fn (rule as RULE {num,...}) =>
                             let val pos = rule_pos rule
                             in (print "look_pos: ";
@@ -169,7 +169,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 
 (* findRef: state * item -> lookahead ref cell for item *)
 
-              val findRef = 
+              val findRef =
                 let val states = Array.fromList new_nodes
                     val dummy = ref nil
                 in fn (state,item) =>
@@ -185,16 +185,16 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                                                     print "\n")) l;
                                                 raise Find)
                     end
-                end 
-                        
+                end
+
 
 (* findRuleRefs: state -> rule -> lookahead refs for rule. *)
-                
+
                val findRuleRefs =
                  let val shift = shift graph
                  in fn state =>
                         (* handle epsilon productions *)
-                  fn (rule as RULE {rhs=nil,...}) => 
+                  fn (rule as RULE {rhs=nil,...}) =>
                          [findRef(state,ITEM{rule=rule,dot=0,rhsAfter=nil})]
                    | (rule as RULE {rhs=sym::rest,...}) =>
                    let  val pos = Int.max(look_pos rule,1)
@@ -207,7 +207,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                                       findRef(state,ITEM{rule=rule,
                                                          dot=pos,
                                                          rhsAfter=rhs})::result)
-                                
+
 (* find first item of the form A -> x .B y, where y =*=> epsilon and
    x is not epsilon, or A -> x.  use scan' to pick up all refs after this
    point *)
@@ -236,7 +236,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                                   | false => r)
                            | (_,r) => r) [] (produces n)
                        fun dfs(a as (n,r)) =
-                         if (NontermSet.exists a) then r 
+                         if (NontermSet.exists a) then r
                          else List.foldr dfs (NontermSet.insert(n,r))
                                 (collect_nonterms n)
                   in dfs(nt,NontermSet.empty)
@@ -272,7 +272,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                     in dfs((nt,nil),NTL.empty)
                     end
 
-                val look_info = 
+                val look_info =
                   if not DEBUG then look_info
                   else fn nt =>
                        (print "look_info of "; prNonterm nt; print "=\n";
@@ -299,7 +299,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                      in NTL.fold upd_nonterm ntl ntl
                      end
 
-                val prop_look = 
+                val prop_look =
                   if not DEBUG then prop_look
                   else fn ntl =>
                     (print "prop_look =\n";
@@ -326,7 +326,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                        val do_nonterm = fn i =>
                         let val nonterms_followed_by_null =
                                 nonterms_w_null i
-                            val nonterms_added_through_closure = 
+                            val nonterms_added_through_closure =
                               NTL.make_list (prop_look (look_info i))
                             val result =
                             map (fn (nt,l) =>

@@ -1,19 +1,11 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
- *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-   
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
                      structure LrTable : LR_TABLE
                      sharing type LrTable.term = IntGrammar.Grammar.term
                      sharing type LrTable.nonterm = IntGrammar.Grammar.nonterm
-                    ) : MAKE_LR_TABLE = 
-   struct 
+                    ) : MAKE_LR_TABLE =
+   struct
         open Array List
         infix 9 sub
         structure Core = mkCore(structure IntGrammar = IntGrammar)
@@ -46,12 +38,12 @@ functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
                              | START of int
 
                 val summary = fn l =>
-                   let val numRR : int ref = ref 0
-                       val numSR : int ref = ref 0
-                       val numSTART : int ref = ref 0
-                       val numNOT_REDUCED : int ref = ref 0
-                       val numNS : int ref = ref 0
-                       fun loop (h::t) = 
+                   let val numRR = ref 0
+                       val numSR = ref 0
+                       val numSTART = ref 0
+                       val numNOT_REDUCED = ref 0
+                       val numNS = ref 0
+                       fun loop (h::t) =
                        (case h
                          of RR _ => numRR := !numRR+1
                           | SR _ => numSR := !numSR+1
@@ -93,7 +85,7 @@ functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
             end
 
 
-        open IntGrammar Grammar Errs LrTable Core 
+        open IntGrammar Grammar Errs LrTable Core
 
 (* rules for resolving conflicts:
 
@@ -134,11 +126,11 @@ some reductions are removed from the list before conflicting reductions
 can be compared against them.  All reduce/reduce conflicts, however,
 can be generated given a list of the reduce/reduce conflicts generated
 by this method.
-        
+
    This can be done by taking the transitive closure of the relation given
 by the list.  If reduce/reduce (a,b) and reduce/reduce (b,c)  are true,
 then reduce/reduce (a,c) is true.   The relation is symmetric and transitive.
-                  
+
 Adding shifts:
 
     Finally scan the list merging in shifts and resolving conflicts
@@ -184,7 +176,7 @@ is true.
          end
 
   val computeActions = fn (rules,precedence,graph,defaultReductions) =>
-     
+
     let val rulePrec =
           let val precData = array(length rules,NONE : int option)
           in app (fn RULE {rulenum=r,precedence=p,...} => update(precData,r,p))
@@ -214,7 +206,7 @@ is true.
                 | f (nil,nil,result,errs) = (rev result,errs)
                 | f (nil,h::t,result,errs) =
                         f (nil,t,h::result,errs)
-                | f (h::t,nil,result,errs) = 
+                | f (h::t,nil,result,errs) =
                         f (t,nil,h::result,errs)
           in f(shifts,reduces,nil,nil)
           end
@@ -245,7 +237,7 @@ is true.
                                                          shifts,reduces)
                         val actions' = pruneError actions
                         val (actions,default) =
-                           let fun hasReduce (nil,actions) = 
+                           let fun hasReduce (nil,actions) =
                                               (rev actions,REDUCE rulenum)
                                  | hasReduce ((a as (_,SHIFT _)) :: r,actions) =
                                                 hasReduce(r,a::actions)
@@ -257,7 +249,7 @@ is true.
                                  | loop ((a as (_,REDUCE _)) :: r,actions) =
                                                 hasReduce(r,actions)
                                  | loop (_ :: r,actions) = loop(r,actions)
-                          in if defaultReductions 
+                          in if defaultReductions
                                andalso length actions = length actions'
                              then loop(actions,nil)
                              else (actions',ERROR)
@@ -272,7 +264,7 @@ is true.
                   in ((pruneError actions,ERROR),gotos,errs1@errs2)
                   end
          end
-   end                  
+   end
 
         val mkTable = fn (grammar as GRAMMAR{rules,terms,nonterms,start,
                                   precedence,termToString,noshift,
@@ -298,13 +290,13 @@ is true.
                   fun zip (h::t,h'::t') = (h,h') :: zip(t,t')
                     | zip (nil,nil) = nil
                     | zip _ = let exception MkTable in raise MkTable end
-                  
+
                   fun unzip l =
                    let fun f ((a,b,c)::r,j,k,l) = f(r,a::j,b::k,c::l)
                          | f (nil,j,k,l) = (rev j,rev k,rev l)
                    in f(l,nil,nil,nil)
                    end
-                
+
                    val (actions,gotos,errs) =
                         let val doState =
                             computeActions(rules,precedence,graph,
@@ -319,14 +311,14 @@ is true.
                      case gotos
                      of nil => (actions,gotos,errs)
                       | h :: t =>
-                        let val newStateActions = 
+                        let val newStateActions =
                            (map (fn t => (t,ACCEPT)) (Look.make_set eop),ERROR)
-                           val state0Goto = 
+                           val state0Goto =
                                GotoList.insert((start,STATE (length actions)),h)
                         in (actions @ [newStateActions],
                             state0Goto :: (t @ [nil]),
                             errs @ [nil])
-                        end 
+                        end
 
                 val startErrs =
                   List.foldr (fn (RULE {rhs,rulenum,...},r) =>
@@ -365,7 +357,7 @@ is true.
 
                 val numstates = length actions
 
-                val allErrs = startErrs @ notReduced @ nonshiftErrs @ 
+                val allErrs = startErrs @ notReduced @ nonshiftErrs @
                               (List.concat errs)
 
                 fun convert_to_pairlist(nil : ('a * 'b) list): ('a,'b) pairlist =

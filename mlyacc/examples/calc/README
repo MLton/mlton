@@ -22,7 +22,7 @@ respectively.  Then it will compile the resulting SML source files
 and the calc.sml file containing the driver code.
 
 The end result of loading these files is a structure Calc containing a
-top-level driver function named parse.  
+top-level driver function named parse.
 
   Calc.parse : unit -> unit
 

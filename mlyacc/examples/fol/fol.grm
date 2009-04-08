@@ -14,7 +14,7 @@
 (* gform: goal formula
    dform: definite clause *)
 
-%nonterm 
+%nonterm
     start of Absyn.absyn
   | clause | query | gform | dform
   | atom | termlist | term  | varbd | id
@@ -55,7 +55,7 @@ gform : TRUE                    ()
       | FORALL varbd gform      ()      (* universal quantification *)
       | EXISTS varbd gform      ()      (* existential quantification *)
       | atom                    ()      (* atomic formula *)
-      | LPAREN gform RPAREN     ()      
+      | LPAREN gform RPAREN     ()
 
 dform : TRUE                    ()
       | dform COMMA dform       ()      (* and *)
@@ -79,4 +79,3 @@ varbd : LCID DOT        ()
 
 id : LCID               ()
    | UCID               ()
-

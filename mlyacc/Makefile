@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2009 Matthew Fluet.
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -21,9 +22,6 @@ all:	$(NAME)
 $(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	"$(MLTON)" $(FLAGS) $(NAME).mlb
-
-$(NAME).sml: $(NAME).cm $(shell "$(MLTON)" -stop f $(NAME).cm)
-	mlton -stop sml $(NAME).cm
 
 src/yacc.lex.sml: src/yacc.lex
 	rm -f src/yacc.lex.sml && \

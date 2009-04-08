@@ -30,7 +30,7 @@ and the other sml source files.
 The end result of loading these files is a structure Parse containing
 the following top-level driver functions:
 
-  val prog_parse : string -> Absyn.absyn 
+  val prog_parse : string -> Absyn.absyn
    (* parse a program from a string *)
 
   val query_parse : string -> Absyn.absyn

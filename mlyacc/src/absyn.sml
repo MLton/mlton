@@ -1,3 +1,6 @@
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
+ *)
 (* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
 
 structure Absyn : ABSYN =
@@ -72,7 +75,7 @@ structure Absyn : ABSYN =
                      | (PTUPLE l) =>
                           let val l' = map f l
                           in if List.exists(fn WILD=>false | _ => true) l'
-                             then PTUPLE l' 
+                             then PTUPLE l'
                              else WILD
                           end
                      | (AS(a,b)) =>
@@ -87,8 +90,8 @@ structure Absyn : ABSYN =
            val simplifyExp : exp -> exp =
                let fun f(EAPP(a,b)) = EAPP(f a,f b)
                      | f(ETUPLE l) = ETUPLE(map f l)
-                     | f(FN(p,e)) = FN(simplifyPat p,f e) 
-                     | f(LET(dl,e)) = 
+                     | f(FN(p,e)) = FN(simplifyPat p,f e)
+                     | f(LET(dl,e)) =
                           LET(map (fn VB(p,e) =>
                                   VB(simplifyPat p,f e)) dl,
                               f e)
@@ -99,42 +102,65 @@ structure Absyn : ABSYN =
        in RULE(simplifyPat p,simplifyExp e)
        end
 
-       fun printRule (S : string -> unit, sayPos) r = let
+       fun printRule (say : string -> unit, sayln:string -> unit, fmtPos) r = let
            fun flat (a, []) = rev a
              | flat (a, SEQ (e1, e2) :: el) = flat (a, e1 :: e2 :: el)
              | flat (a, e :: el) = flat (e :: a, el)
-           fun pl (lb, rb, c, f, []) = (S" "; S lb; S rb)
-             | pl (lb, rb, c, f, h :: t) =
-               (S" "; S lb; f h; app (fn x => (S c ; f x)) t; S rb)
-           fun pe (CODE {text, pos}) =
-               (S" ("; sayPos (SOME pos); S text; sayPos NONE; S")")
-             | pe (EAPP (x, y as (EAPP _))) = (pe x; S" ("; pe y; S")")
-             | pe (EAPP (x, y)) = (pe x; pe y)
-             | pe (EINT i) = (S" "; S (Int.toString i))
-             | pe (ETUPLE l) = pl ("(", ")", ",", pe, l)
-             | pe (EVAR v) = (S" "; S v)
-             | pe (FN (p, b)) = (S" (fn"; pp p; S" =>"; pe b; S")")
-             | pe (LET ([], b)) = pe b
-             | pe (LET (dl, b)) =
-               let fun pr (VB (p, e)) = (S"\n"; S"   val "; pp p; S" ="; pe e)
-               in
-                  S" let"; app pr dl ; S"\n"; S" in"; pe b; S"\n"; S" end"
+           fun pl (lb, rb, c, f, [], a) = " " :: lb :: rb :: a
+             | pl (lb, rb, c, f, h :: t, a) =
+                 " " :: lb :: f (h, foldr (fn (x, a) => c :: f (x, a))
+                                          (rb :: a)
+                                          t)
+           fun pe (CODE {text, pos}, a) =
+                 " (" :: fmtPos (SOME pos) :: text :: fmtPos NONE :: ")" :: a
+             | pe (EAPP (x, y as (EAPP _)), a) =
+                 pe (x, " (" :: pe (y, ")" :: a))
+             | pe (EAPP (x, y), a) =
+                 pe (x, pe (y, a))
+             | pe (EINT i, a) =
+                 " " :: Int.toString i :: a
+             | pe (ETUPLE l, a) = pl ("(", ")", ",", pe, l, a)
+             | pe (EVAR v, a) =
+                 " " :: v :: a
+             | pe (FN (p, b), a) =
+                 " (fn" :: pp (p, " =>" :: pe (b, ")" :: a))
+             | pe (LET ([], b), a) =
+                 pe (b, a)
+             | pe (LET (dl, b), a) =
+               let fun pr (VB (p, e), a) =
+                       " val " :: pp (p, " =" :: pe (e, "\n" :: a))
+               in " let" :: foldr pr (" in" :: pe (b, "\nend" :: a)) dl
                end
-             | pe (SEQ (e1, e2)) = pl ("(", ")", ";", pe, flat ([], [e1, e2]))
-             | pe (UNIT) = S" ()"
-           and pp (PVAR v) = (S" "; S v)
-             | pp (PAPP (x, y as PAPP _)) = (S" "; S x; S" ("; pp y; S")")
-             | pp (PAPP (x, y)) = (S" "; S x; pp y)
-             | pp (PINT i) = (S" "; S (Int.toString i))
-             | pp (PLIST (l, NONE)) = (pl ("[", "]", ",", pp, l))
-             | pp (PLIST (l, SOME t)) =
-               (S" ("; app (fn x => (pp x; S" ::")) l; pp t; S")")
-             | pp (PTUPLE l) = pl ("(", ")", ",", pp, l)
-             | pp (WILD) = S" _"
-             | pp (AS (v, PVAR v')) = (S" ("; S v; S" as "; S v'; S")")
-             | pp (AS (v, p)) = (S" ("; S v; S" as ("; pp p; S"))")
+             | pe (SEQ (e1, e2), a) =
+                 pl ("(", ")", ";", pe, flat ([], [e1, e2]), a)
+             | pe (UNIT, a) =
+                 " ()" :: a
+           and pp (PVAR v, a) =
+                 " " :: v :: a
+             | pp (PAPP (x, y as PAPP _), a) =
+                 " " :: x :: " (" :: pp (y, ")" :: a)
+             | pp (PAPP (x, y), a) =
+                 " " :: x :: pp (y, a)
+             | pp (PINT i, a) =
+                 " " :: Int.toString i :: a
+             | pp (PLIST (l, NONE), a) =
+                 pl ("[", "]", ",", pp, l, a)
+             | pp (PLIST (l, SOME t), a) =
+                 " (" :: foldr (fn (x, a) => pp (x, " ::" :: a))
+                               (pp (t, ")" :: a))
+                               l
+             | pp (PTUPLE l, a) =
+                 pl ("(", ")", ",", pp, l, a)
+             | pp (WILD, a) =
+                 " _" :: a
+             | pp (AS (v, PVAR v'), a) =
+                 " (" :: v :: " as " :: v' :: ")" :: a
+             | pp (AS (v, p), a) =
+                 " (" :: v :: " as (" :: pp (p, "))" :: a)
+           fun out "\n" = sayln ""
+             | out s = say s
        in
            case simplifyRule r of
-               RULE (p, e) => (pp p; S" =>"; pe e; S"\n")
+               RULE (p, e) => app out (pp (p, " =>" :: pe (e, ["\n"])))
        end
 end;

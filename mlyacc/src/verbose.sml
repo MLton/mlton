@@ -1,11 +1,3 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
- *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor mkVerbose(structure Errs : LR_ERRS) : VERBOSE =
@@ -77,7 +69,7 @@ struct
                 (print "warning: rule <";
                  printRule i;
                  print "> will never be reduced\n")
-         | START i => 
+         | START i =>
                 (print "warning: start symbol appears on the rhs of ";
                  print "<";
                  printRule i;
@@ -90,7 +82,7 @@ struct
                  printRule i;
                  print ">\n")
       end
-   structure PairList : sig 
+   structure PairList : sig
                           val app : ('a * 'b -> unit) -> ('a,'b) pairlist -> unit
                           val length : ('a,'b) pairlist -> int
                         end
@@ -104,13 +96,13 @@ struct
          val length = fn l =>
              let fun g(EMPTY,len) = len
                    | g(PAIR(_,_,r),len) = g(r,len+1)
-             in g(l,0: int)
+             in g(l,0)
              end
       end
    val printVerbose =
         fn {termToString,nontermToString,table,stateErrs,entries:int,
             print,printRule,errs,printCores} =>
-           let 
+           let
                 val printTerm = print o termToString
                 val printNonterm = print o nontermToString
 
@@ -126,12 +118,12 @@ struct
 
                 val gotoTableSize = ref 0
                 val actionTableSize = ref 0
-                
-                val _ = if length errs > 0 
+
+                val _ = if length errs > 0
                            then (printSummary print errs;
                                  print "\n";
                                  app printError errs)
-                           else ()  
+                           else ()
                 fun loop i =
                   if i=states then ()
                   else let val s = STATE i
@@ -151,7 +143,7 @@ struct
                                               PairList.length gotoList;
                                actionTableSize := (!actionTableSize) +
                                                PairList.length actionList + 1
-                               ) 
+                               )
                            end;
                            loop (i+1))
                         end
@@ -162,5 +154,3 @@ struct
               print (Int.toString (!gotoTableSize)^ " goto table entries\n")
           end
 end;
-
-

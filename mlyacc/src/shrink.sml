@@ -1,11 +1,3 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
- *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1991 Andrew W. Appel, David R. Tarditi *)
 
 signature SORT_ARG =
@@ -108,10 +100,10 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
 
          We then return the length of R, R, and the list that results from
          permuting SE by P.
-     *) 
+     *)
 
        type entry = A.entry
-             
+
        val gt = fn ((a,_),(b,_)) => A.gt(a,b)
 
        structure Sort = MergeSortFun(type entry = A.entry * int
@@ -120,17 +112,17 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
           fn l =>
              let fun loop (index,nil) = nil
                    | loop (index,h :: t) = (h,index) :: loop(index+1,t)
-             in loop (0: int,l)
-             end 
-    
-       local fun loop ((e,_) :: t, prev, class, R , SE: int list) =
+             in loop (0,l)
+             end
+
+       local fun loop ((e,_) :: t, prev, class, R , SE) =
                if A.eq(e,prev)
                  then loop(t,e,class,R, class :: SE)
                  else loop(t,e,class+1,e :: R, (class + 1) :: SE)
              | loop (nil,_,_,R,SE) = (rev R, rev SE)
        in val createEquivalences =
            fn nil => (nil,nil)
-            | (e,_) :: t => loop(t, e, 0, [e],[0: int])
+            | (e,_) :: t => loop(t, e, 0, [e],[0])
        end
 
        val inversePermute = fn permutation =>
@@ -140,8 +132,8 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
                        fun loop (elem :: r, dest :: s) =
                              (update(result,dest,elem); loop(r,s))
                          | loop _ = ()
-                       fun listofarray(i: int): int list =
-                          if i < Array.length result then 
+                       fun listofarray i =
+                          if i < Array.length result then
                                 (result sub i) :: listofarray (i+1)
                           else nil
                     in loop (l,permutation); listofarray 0
@@ -164,7 +156,7 @@ functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
         open LrTable
         val gtAction = fn (a,b) =>
               case a
-              of SHIFT (STATE s) => 
+              of SHIFT (STATE s) =>
                    (case b of SHIFT (STATE s') => s>s' | _ => true)
                | REDUCE i => (case b of SHIFT _ => false | REDUCE i' => i>i'
                                       | _ => true)
@@ -194,7 +186,7 @@ functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
 (*        structure GotoEntryList =
             struct
                type entry = (nonterm,state) pairlist
-               val rec eq = 
+               val rec eq =
                     fn (EMPTY,EMPTY) => true
                      | (PAIR (t,d,r),PAIR(t',d',r')) =>
                             t=t' andalso d=d' andalso eq(r,r')
@@ -222,7 +214,7 @@ functor ShrinkLrTableFun(structure LrTable : LR_TABLE) : SHRINK_LR_TABLE =
              let val c = ref 0
              in (app (fn (row,_) => c := !c + length row) l; !c)
              end
-       val shrinkActionList = 
+       val shrinkActionList =
          fn (table,verbose) =>
            case EquivActionList.equivalences
                      (map (describeActions table) (states (numStates table)))

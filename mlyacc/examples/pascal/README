@@ -6,27 +6,26 @@ To construct the parser, make this your current directory and run
   CM.make "sources.cm";
 
 This will apply ML-Yacc to the file "pascal.grm" to create
-the files "pascal.grm.sig" and "pascal.grm.sml", then 
+the files "pascal.grm.sig" and "pascal.grm.sml", then
 ML_Lex will be applied to pascal.lex to produce pascal.lex.sml.
 
 Then these generated files will be compiled together with necessary
 components from the ML-Yacc library supplied by the ml-yacc-lib.cm
-file. 
+file.
 
 The end result is a structure Parser with two functions.  The
-function 
+function
 
   parse: string ->
          PascalParser.result *
-         (Parser.PascalParser.svalue,PascalParser.pos) LrParser.Token.token 
+         (Parser.PascalParser.svalue,PascalParser.pos) LrParser.Token.token
             LrParser.stream
 
 parses input from a file, while
 
   keybd: unit ->
          Parser.PascalParser.result *
-         (Parser.PascalParser.svalue,Parser.PascalParser.pos) 
+         (Parser.PascalParser.svalue,Parser.PascalParser.pos)
            LrParser.Token.token LrParser.stream
 
 parses from the standard input.
-

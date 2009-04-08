@@ -14,11 +14,11 @@
         YTYPE   |       YUNTIL  |       YVAR    |       YWHILE |
         YWITH   |       YBINT   |       YOCT    |       YHEX |
         YCASELAB |      YILLCH  |       YEXTERN  |
- YDOT | YLPAR  | YRPAR | YSEMI  | YCOMMA  | YCOLON |  YCARET |  YLBRA | 
+ YDOT | YLPAR  | YRPAR | YSEMI  | YCOMMA  | YCOLON |  YCARET |  YLBRA |
  YRBRA | YTILDE |
- YLESS | YEQUAL | YGREATER 
+ YLESS | YEQUAL | YGREATER
 | YPLUS | YMINUS | YBAR
-| UNARYSIGN 
+| UNARYSIGN
 | YSTAR | YSLASH | YAMP
 |  EOF
 
@@ -33,30 +33,30 @@
 %left   YSTAR   YSLASH  YDIV    YMOD    YAND    YAMP
 %left   YNOT
 
-%nonterm goal | prog_hedr | block | decls | decl | labels | label_decl | 
-const_decl | type_decl | var_decl | proc_decl | pheadres | phead | 
-porf | params | param | ftype | param_list | const | number | const_list | 
-type' | simple_type | struct_type | simple_type_list | field_list | 
-fixed_part | field | variant_part | variant_list | variant | stat_list | 
-stat_lsth | cstat_list | cstat | stat | assign | expr | element_list | 
-element | variable | qual_var | wexpr | octhex | expr_list | wexpr_list | 
-relop | addop | divop | negop | var_list | id_list | const_id | type_id | 
+%nonterm goal | prog_hedr | block | decls | decl | labels | label_decl |
+const_decl | type_decl | var_decl | proc_decl | pheadres | phead |
+porf | params | param | ftype | param_list | const | number | const_list |
+type' | simple_type | struct_type | simple_type_list | field_list |
+fixed_part | field | variant_part | variant_list | variant | stat_list |
+stat_lsth | cstat_list | cstat | stat | assign | expr | element_list |
+element | variable | qual_var | wexpr | octhex | expr_list | wexpr_list |
+relop | addop | divop | negop | var_list | id_list | const_id | type_id |
 var_id | array_id | ptr_id | record_id | field_id | func_id
 | begin
 
 %keyword
-        YAND            YARRAY          YBEGIN          YCASE 
-        YCONST          YDIV            YDO             
-        YTO             YELSE           YEND            YFILE 
-        YFOR            YFORWARD        YPROCEDURE      YGOTO 
-        YIF             YIN             
-        YLABEL          YMOD            YNOT            
-        YOF             YOR             YPACKED         YNIL 
+        YAND            YARRAY          YBEGIN          YCASE
+        YCONST          YDIV            YDO
+        YTO             YELSE           YEND            YFILE
+        YFOR            YFORWARD        YPROCEDURE      YGOTO
+        YIF             YIN
+        YLABEL          YMOD            YNOT
+        YOF             YOR             YPACKED         YNIL
         YFUNCTION       YPROG           YRECORD         YREPEAT
-        YSET            YSTRING         YTHEN           YDOWNTO 
-        YTYPE           YUNTIL          YVAR            YWHILE 
-        YWITH           YOCT            YHEX 
-        YEXTERN         YAMP 
+        YSET            YSTRING         YTHEN           YDOWNTO
+        YTYPE           YUNTIL          YVAR            YWHILE
+        YWITH           YOCT            YHEX
+        YEXTERN         YAMP
 
 %prefer YID YSEMI YCOMMA  YLBRA
 

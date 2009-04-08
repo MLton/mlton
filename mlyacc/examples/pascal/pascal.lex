@@ -38,8 +38,8 @@ structure KeyWord : sig
                 | f nil = NONE
           in  f (Array.sub(HashTable, i))
           end
- 
-        val _ = 
+
+        val _ =
             (List.app add
         [("and",YAND),
          ("array",YARRAY),

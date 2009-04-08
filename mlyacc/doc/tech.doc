@@ -7,7 +7,7 @@ computes the parse tables from the LALR(1) graph.
 
 Look at the file sigs.sml to see how the modules are layed out.
 The file graph.sml contains the Graph functor, which produces a structure
-containing a function mkGraph.  mkGraph takes a grammar and returns a 
+containing a function mkGraph.  mkGraph takes a grammar and returns a
 some useful values and functions, including the LR(0) graph.  It renumbers
 the rules to an internal form to make the LR(0) graph generation more
 efficient.  The LR(0) graph includes only core items in its set of items.
@@ -23,7 +23,7 @@ lookaheads attached.  Nullable items (which usually aren't core items) are
 added and all other items without dots at the end (i.e. non-reduction items)
 are removed.
 
-The functor MkTable produces a function with takes the LR(0) graph 
+The functor MkTable produces a function with takes the LR(0) graph
 produced by the function in mkGraph and the LR(0) graph with lookaheads
 produced by Lalr and creates an LALR(1) table from these graphs.
 
@@ -56,7 +56,7 @@ or goto, and then add these new cores with the symbol used in the shift
 or goto to the graph.  We continue doing this until there are no more cores
 to adds to the graph.
 
-We have to take the closure of a core to include those items which are 
+We have to take the closure of a core to include those items which are
 derived from nonterminals with a dot before them.  If item A -> 'a .B 'c
 is in a core, the all productions derived by B must also be in the core.
 
@@ -112,17 +112,17 @@ Lookaheads are attached to an item when
 
             In (a), lookahead(items derived from B) includes first('c)
             and lookahead(A -> 'a .B 'c)
-        
+
             In (b), lookahead(items derived from B) includes only first('c).
 
-            This is an example of back propagation. 
-        
+            This is an example of back propagation.
+
         Note that an item is either the result of a closure or the
         result of a shift/goto.  It is never the result of both (that
         would be a contradiction).
 
         The following representation will be used:
-        
+
           goto/shift items:
                 an ordered list of item * lookahead ref *
                                           lookahead ref for the resulting
@@ -143,7 +143,7 @@ the graph.  An item i may receive lookaheads in two ways.  If item i
 was the result of a shift or goto from some item j, then lookahead(i) includes
 lookahead(j).  If item i is a production of some nonterminal B, and there
 exists some item j of the form A -> x .B y, then item i will be added through
-closure(j).  This implies that lookahead(i) includes first(y).  If y => 
+closure(j).  This implies that lookahead(i) includes first(y).  If y =>
 epsilon, then lookahead(i) includes lookahead(j).
 
 Lookahead must be recorded for completion items, which are items of the
@@ -196,7 +196,7 @@ The following algorithm computes the information for each nonterminal:
         (1) nonterminals  such that c =c+=> .C y and y =*=> epsilon
 
         Let s = the set of nonterminals added through closure = B
-        
+
         repeat
                 for all B which are elements of s,
                         if B -> .C z and z =*=> epsilon then
@@ -220,9 +220,9 @@ The following algorithm computes the information for each nonterminal:
         for each nonterminal in this set.
 
 These algorithms can be restated as either breadth-first or depth-first search
-algorithms.   The loop invariant of the algorithms is that whenever a 
+algorithms.   The loop invariant of the algorithms is that whenever a
 nonterminal is added to the set being calculated, all the productions
-for the nonterminal are checked.  
+for the nonterminal are checked.
 
 This algorithm computes the lookahead for each item:
 
@@ -240,7 +240,7 @@ This algorithm computes the lookahead for each item:
                           all items of A -> x. or A -> x .B y, where
                           y =*=> epsilon, and x is not epsilon
 
-                      add the lookahead we have computed for X to the 
+                      add the lookahead we have computed for X to the
                       elements of l
 
                       if B =c+=> X z, where z is nullable, add first(y) to

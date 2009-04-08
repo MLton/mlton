@@ -6,10 +6,10 @@
 
 structure Calc : sig
                    val parse : unit -> unit
-                 end = 
+                 end =
 struct
 
-(* 
+(*
  * We apply the functors generated from calc.lex and calc.grm to produce
  * the CalcParser structure.
  *)
@@ -25,7 +25,7 @@ struct
          structure ParserData = CalcLrVals.ParserData
          structure Lex = CalcLex)
 
-(* 
+(*
  * We need a function which given a lexer invokes the parser. The
  * function invoke does this.
  *)
@@ -37,14 +37,14 @@ struct
        in CalcParser.parse(0,lexstream,print_error,())
       end
 
-(* 
+(*
  * Finally, we need a driver function that reads one or more expressions
  * from the standard input. The function parse, shown below, does
  * this. It runs the calculator on the standard input and terminates when
  * an end-of-file is encountered.
  *)
 
-  fun parse () = 
+  fun parse () =
       let val lexer = CalcParser.makeLexer (fn _ => TextIO.inputLine TextIO.stdIn)
           val dummyEOF = CalcLrVals.Tokens.EOF(0,0)
           val dummySEMI = CalcLrVals.Tokens.SEMI(0,0)

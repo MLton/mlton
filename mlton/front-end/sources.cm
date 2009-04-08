@@ -15,7 +15,11 @@ functor MLBFrontEnd
 is
 
 ../../lib/mlton/sources.cm
-../../lib/mlyacc/sources.cm
+#if (defined (SMLNJ_VERSION))
+ml-yacc-lib-proxy.cm
+#else
+../../lib/mlyacc/ml-yacc-lib.cm
+#endif
 ../ast/sources.cm
 ../control/sources.cm
 

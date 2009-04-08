@@ -1,11 +1,6 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
  *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-   
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor HeaderFun () : HEADER =
@@ -20,11 +15,11 @@ functor HeaderFun () : HEADER =
                             inStream : TextIO.instream,
                             errorOccurred : bool ref}
 
-        val newSource = 
+        val newSource =
           fn (s : string,i : TextIO.instream ,errs : TextIO.outstream) =>
               {name=s,errStream=errs,inStream=i,
                errorOccurred = ref false}
-                        
+
         val errorOccurred = fn (s : inputSource) =>fn () => !(#errorOccurred s)
 
         val pr = fn out : TextIO.outstream => fn s : string => TextIO.output(out,s)
@@ -32,15 +27,15 @@ functor HeaderFun () : HEADER =
         val error = fn {name,errStream, errorOccurred,...} : inputSource =>
               let val pr = pr errStream
               in fn l : pos => fn msg : string =>
-                  (pr name; pr ", line "; pr (Int.toString (#line l));
-                   pr ": Error: "; pr msg; pr "\n"; errorOccurred := true)
+                  (pr name; pr ", line "; pr (Int.toString (#line l)); pr ": Error: ";
+                   pr msg; pr "\n"; errorOccurred := true)
               end
 
         val warn = fn {name,errStream, errorOccurred,...} : inputSource =>
               let val pr = pr errStream
               in fn l : pos => fn msg : string =>
-                  (pr name; pr ", line "; pr (Int.toString (#line l));
-                   pr ": Warning: "; pr msg; pr "\n")
+                  (pr name; pr ", line "; pr (Int.toString (#line l)); pr ": Warning: ";
+                   pr msg; pr "\n")
               end
 
         datatype prec = LEFT | RIGHT | NONASSOC
@@ -49,17 +44,17 @@ functor HeaderFun () : HEADER =
         val symbolName = fn SYMBOL(s,_) => s
         val symbolPos = fn SYMBOL(_,p) => p
         val symbolMake = fn sp => SYMBOL sp
-    
+
         type ty = string
         val tyName = fn i => i
         val tyMake = fn i => i
- 
+
         datatype control = NODEFAULT | VERBOSE | PARSER_NAME of symbol |
                            FUNCTOR of string  | START_SYM of symbol |
                            NSHIFT of symbol list | POS of string | PURE |
                            PARSE_ARG of string * string |
                            TOKEN_SIG_INFO of string
-                           
+
         datatype declData = DECL of
                         {eop : symbol list,
                          keyword : symbol list,
@@ -84,7 +79,7 @@ functor HeaderFun () : HEADER =
                DECL {eop=e',control=c',keyword=k',nonterm=n',prec=prec',
                      change=su',term=t',value=v'} : declData,
                inputSource,pos) =
-          let val ignore = fn s => 
+          let val ignore = fn s =>
                         (warn inputSource pos ("ignoring duplicate " ^ s ^
                                             " declaration"))
               val join = fn (e,NONE,NONE) => NONE
@@ -113,4 +108,3 @@ functor HeaderFun () : HEADER =
 end;
 
 structure Header = HeaderFun();
-      

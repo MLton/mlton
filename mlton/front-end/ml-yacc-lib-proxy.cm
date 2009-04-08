@@ -1,0 +1,16 @@
+(* Copyright (C) 2009 Matthew Fluet.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+Library
+
+library($/ml-yacc-lib.cm) - (
+  signature STREAM
+  structure Stream
+)
+
+is
+
+$/ml-yacc-lib.cm

@@ -8,11 +8,11 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
       infix 9 sub
       structure LrTable = LrTable
       open ShrinkLrTable LrTable
-      
-     
+
+
       (* lineLength = approximately the largest number of characters to allow
          on a line when printing out an encode string *)
-          
+
       val lineLength = 72
 
       (* maxLength = length of a table entry.  All table entries are encoded
@@ -100,18 +100,18 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
                  | (SHIFT (STATE i)) => printInt (i+2)
                  | ACCEPT => printInt 0
                  | ERROR => printInt 1
-        
+
          val printTermAction = fn (T t,action) =>
                 (printInt (t+1); printAction action)
 
          val printGoto = fn (NT n,STATE s) => (printInt (n+1); printInt s)
 
-         val ((rowCount,rowNumbers,actionRows),entries)= 
+         val ((rowCount,rowNumbers,actionRows),entries)=
                    shrinkActionList(table,verbose)
          val getActionRow = let val a = Array.fromList actionRows
                             in fn i => a sub i
                             end
-         val printGotoRow : int -> unit = 
+         val printGotoRow : int -> unit =
                let val f = printPairRow printGoto
                    val g = describeGoto table
                in fn i => f (g (STATE i))
@@ -128,7 +128,7 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
            print "val actionRowNumbers =\n\"";
            printList (fn i => printInt i) rowNumbers;
            print "\"\n";
-           print "val gotoT =\n"; 
+           print "val gotoT =\n";
            printTable(printGotoRow,states);
            print "val numstates = ";
            print (Int.toString states);

@@ -4,14 +4,14 @@ structure Grammar : GRAMMAR =
         struct
 
                 (* define types term and nonterm using those in LrTable
-                   datatype term = T of int 
+                   datatype term = T of int
                    datatype nonterm = NT of int *)
 
                 open LrTable
                 datatype symbol = TERM of term | NONTERM of nonterm
                 datatype grammar = GRAMMAR of
                                 {rules: {lhs: nonterm,
-                                         rhs: symbol list, 
+                                         rhs: symbol list,
                                          precedence: int option,
                                          rulenum: int} list,
                                 noshift : term list,
@@ -35,7 +35,7 @@ structure IntGrammar : INTGRAMMAR =
                                  num: int,(* internal # assigned by coreutils *)
                                  rulenum: int,
                                  precedence: int option}
-                
+
                 val eqTerm : term * term -> bool = (op =)
                 val gtTerm : term * term -> bool = fn (T i,T j) => i>j
 
@@ -78,7 +78,7 @@ structure IntGrammar : INTGRAMMAR =
                                         ())
                         else ())
                    end
-                        
+
                 val prGrammar =
                          fn (a as (symbolToString,nontermToString,print)) =>
                              fn (GRAMMAR {rules,terms,nonterms,start,...}) =>

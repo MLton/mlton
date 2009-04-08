@@ -2,7 +2,7 @@
 
 (* drt (12/15/89) -- the functor should be used during development work,
    but it is wastes space in the release version.
-   
+
 functor ParserGen(structure LrTable : LR_TABLE
                   structure Stream : STREAM) : LR_PARSER =
 *)
@@ -19,9 +19,9 @@ structure LrParser :> LR_PARSER =
             datatype ('a,'b) token = TOKEN of LrTable.term * ('a * 'b * 'b)
             val sameToken = fn (TOKEN (t,_),TOKEN(t',_)) => t=t'
         end
-     
 
-     open LrTable 
+
+     open LrTable
      open Token
 
      val DEBUG = false
@@ -51,12 +51,12 @@ structure LrParser :> LR_PARSER =
                             errtermvalue,showTerminal,
                             error,terms,noShift},
                       lookahead} =>
- let fun prAction(stack as (state, _) :: _, 
+ let fun prAction(stack as (state, _) :: _,
                   next as (TOKEN (term,_),_), action) =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
-                         ^ showState state      
+                         ^ showState state
                          ^ " next="
                          ^ showTerminal term
                          ^ " action="
@@ -95,4 +95,3 @@ structure LrParser :> LR_PARSER =
    in parseStep(next,[(initialState table,(void,leftPos,leftPos))])
    end
 end;
-

@@ -24,7 +24,7 @@ fun parse s =
     end
 
 fun keybd () =
-    let val stream = 
+    let val stream =
             PascalParser.makeLexer (fn i => TextIO.inputLine TextIO.stdIn)
         fun error (e,i:int,_) =
             TextIO.output(TextIO.stdOut,

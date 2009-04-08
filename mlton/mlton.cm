@@ -10,6 +10,6 @@ Group is
 
 upgrade-basis.sml
 (* Need to elaborate ML-Yacc library in Basis Library, not MLton library. *)
-../lib/mlyacc/sources.cm
+../lib/mlyacc/ml-yacc-lib.cm
 sources.cm
 call-main.sml

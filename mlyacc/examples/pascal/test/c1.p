@@ -1,4 +1,4 @@
-program simplex(input, output); 
+program simplex(input, output);
 
 { two-phase simplex algorithm: version Feb. 24, 1988 }
 
@@ -24,12 +24,12 @@ var
     pivotel: real;                      { pivot element }
     cbar: real;         { price when searching for entering column }
     carry: array[-1..mmax, -1..mmax] of real;   { inverse-basis matrix of the
-						  revised simplex method }
+                                                  revised simplex method }
     phase: 1..2;        { phase }
     price: array[0..mmax] of real;      { shadow prices = row -1 of carry =
-					  -dual variables }
+                                          -dual variables }
     basis: array[0..mmax] of integer;  { basis columns, negative integers
-					  artificial }
+                                          artificial }
     ncol: 1..ncolmax;                   { number of columns }
     tab: array[0..mmax, 1..ncolmax] of real;    { tableau }
     lhs: array[0..mmax] of real;        { left-hand-side }
@@ -54,13 +54,13 @@ var
     pivotcol:= 0;
     for col:= 1 to ncol do
       begin
-	tempcost:= d[col];
-	for i:= 0 to m do tempcost:= tempcost - price[i]*tab[i, col];
-	if( cbar > tempcost ) then
-	  begin
-	   cbar:= tempcost;
-	   pivotcol:= col
-	  end
+        tempcost:= d[col];
+        for i:= 0 to m do tempcost:= tempcost - price[i]*tab[i, col];
+        if( cbar > tempcost ) then
+          begin
+           cbar:= tempcost;
+           pivotcol:= col
+          end
       end;  { for col }
     if ( cbar > -eps ) then optimal:= true
   end;   { columnsearch }
@@ -77,9 +77,9 @@ var
   begin  { rowsearch }
     for i:= 0 to m do           { generate column }
       begin
-	curcol[i]:= 0.0;        { current column = B inverse * original col. }
-	for  j:= 0 to m do curcol[i]:=
-			   curcol[i] + carry[i, j]*tab[j, pivotcol]
+        curcol[i]:= 0.0;        { current column = B inverse * original col. }
+        for  j:= 0 to m do curcol[i]:=
+                           curcol[i] + carry[i, j]*tab[j, pivotcol]
       end;
   curcol[-1]:= cbar;            { first element in current column }
   pivotrow:= -1;
@@ -87,24 +87,24 @@ var
   for i:= 0 to m do                             { ratio test }
     begin
       if( curcol[i] > eps ) then
-	begin
-	  ratio:= carry[i, -1]/curcol[i];
-	    if( minratio > ratio ) then         { favorable row }
-	      begin
-		minratio:= ratio;
-		pivotrow:= i;
-		pivotel:= curcol[i]
-	      end
-	    else { break tie with max pivot }
-	      if ( (minratio = ratio) and (pivotel < curcol[i]) ) then
-		  begin
-		    pivotrow:= i;
-		    pivotel:= curcol[i]
-		  end
-	end  { curcol > eps }
+        begin
+          ratio:= carry[i, -1]/curcol[i];
+            if( minratio > ratio ) then         { favorable row }
+              begin
+                minratio:= ratio;
+                pivotrow:= i;
+                pivotel:= curcol[i]
+              end
+            else { break tie with max pivot }
+              if ( (minratio = ratio) and (pivotel < curcol[i]) ) then
+                  begin
+                    pivotrow:= i;
+                    pivotel:= curcol[i]
+                  end
+        end  { curcol > eps }
       end;  { for i }
     if ( pivotrow = -1 ) then  unbounded:= true         { nothing found }
-			 else  unbounded:= false
+                         else  unbounded:= false
   end;  { rowsearch }
 
 
@@ -119,8 +119,8 @@ procedure pivot;
     for j:= -1 to m do carry[pivotrow, j]:= carry[pivotrow, j]/pivotel;
     for i:= -1 to m do
       if( i<> pivotrow ) then
-	for j:= -1 to m do
-	  carry[i, j]:= carry[i, j] - carry[pivotrow, j]*curcol[i];
+        for j:= -1 to m do
+          carry[i, j]:= carry[i, j] - carry[pivotrow, j]*curcol[i];
     curcost:= -carry[-1, -1]
   end;  { pivot }
 
@@ -135,17 +135,17 @@ procedure changephase;
     phase:= 2;
     for i:= 0 to m do if( basis[i] <= 0 ) then
       writeln( '...artificial basis element ', basis[i]:5,
-	       ' remains in basis after phase 1');
+               ' remains in basis after phase 1');
     for j:= 1 to ncol do d[j]:= c[j];   { switch to original cost vector }
     for j:= -1 to m do
       begin
-	carry[-1, j]:= 0.0;
-	for i:= 0 to m do
-	  begin
-	    b:= basis[i];       { ignore artificial basis elements that are }
-	    if( b >= 1 ) then   { still in basis }
-	      carry[-1, j]:= carry[-1, j] - c[b]*carry[i,j]
-	  end  { for i }
+        carry[-1, j]:= 0.0;
+        for i:= 0 to m do
+          begin
+            b:= basis[i];       { ignore artificial basis elements that are }
+            if( b >= 1 ) then   { still in basis }
+              carry[-1, j]:= carry[-1, j] - c[b]*carry[i,j]
+          end  { for i }
       end;  { for j }
     curcost:= -carry[-1, -1]
   end;   { changephase }
@@ -185,8 +185,8 @@ begin { setup }
   if( ncol <= ncolmax ) then               { check number of columns }
     for col:= 1 to ncol do      { initialize cost vector for phase 1 }
       begin
-	d[col]:= 0.0;
-	for row:= 0 to m do d[col]:= d[col] - tab[row, col]
+        d[col]:= 0.0;
+        for row:= 0 to m do d[col]:= d[col] - tab[row, col]
       end
   else
     begin
@@ -201,56 +201,56 @@ end; { setup }
 begin  { simplex }
   setup;
   while( (numpivots < maxpivots) and (not done) and
-	 ( (curcost > lowlim) or (phase = 1) ) ) do
+         ( (curcost > lowlim) or (phase = 1) ) ) do
     begin
       columnsearch;
       if( not optimal ) then
-	begin                         { not optimal }
-	  rowsearch;
-	    if( unbounded ) then
-	      begin
-		done:= true;
-		result:= unbound;
-		writeln('problem is unbounded')
-	      end
-	    else
-	      begin
-		pivot;
-		numpivots:= numpivots + 1;
-		if ( (numpivots = 1 ) or ( numpivots mod 10 = 0 ) ) then
-		      writeln('pivot ', numpivots:4, ' cost= ', curcost:12)
-	      end
-	end  { not optimal }
+        begin                         { not optimal }
+          rowsearch;
+            if( unbounded ) then
+              begin
+                done:= true;
+                result:= unbound;
+                writeln('problem is unbounded')
+              end
+            else
+              begin
+                pivot;
+                numpivots:= numpivots + 1;
+                if ( (numpivots = 1 ) or ( numpivots mod 10 = 0 ) ) then
+                      writeln('pivot ', numpivots:4, ' cost= ', curcost:12)
+              end
+        end  { not optimal }
       else                            { optimal }
-	  if( phase = 1 ) then
-	    begin
-	      if( curcost > eps ) then
-		begin
-		  done:= true;
-		  result:= infeas;
-		  writeln('problem is infeasible')
-		end
-	      else
-		begin
-		  if ( (numpivots <> 1 ) and ( numpivots mod 10 <> 0 ) ) then
-		    writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
-		  writeln('phase 1 successfully completed');
-		  changephase
-		end
-	    end  { if phase = 1 }
-	  else
-	    begin
-	      if ( (numpivots <> 1 ) and ( numpivots mod 10 <> 0 ) ) then
-		writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
-	      writeln('phase 2 successfully completed');
-	      done:= true;
-	      result:= opt
-	    end
+          if( phase = 1 ) then
+            begin
+              if( curcost > eps ) then
+                begin
+                  done:= true;
+                  result:= infeas;
+                  writeln('problem is infeasible')
+                end
+              else
+                begin
+                  if ( (numpivots <> 1 ) and ( numpivots mod 10 <> 0 ) ) then
+                    writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
+                  writeln('phase 1 successfully completed');
+                  changephase
+                end
+            end  { if phase = 1 }
+          else
+            begin
+              if ( (numpivots <> 1 ) and ( numpivots mod 10 <> 0 ) ) then
+                writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
+              writeln('phase 2 successfully completed');
+              done:= true;
+              result:= opt
+            end
     end;  { while }
   if( (curcost <= lowlim) and (phase = 2) ) then
     begin
       if ( (numpivots <> 1 ) and ( numpivots mod 10 <> 0 ) ) then
-	writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
+        writeln('pivot ', numpivots:4, ' cost= ', curcost:12);
       result:= unbound;
       writeln('problem is unbounded')
     end;
@@ -265,8 +265,7 @@ begin  { simplex }
       writeln('optimal solution reached');
       writeln('cost    =', -carry[-1,-1]:10:6);
       for i:= 0 to m do
-	writeln('x(', basis[i]:4, ')= ', carry[i,-1]:10:6)
+        writeln('x(', basis[i]:4, ')= ', carry[i,-1]:10:6)
     end
 
 end.
-

@@ -1,3 +1,6 @@
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
+ *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 functor ParseGenParserFun(structure Header : HEADER
@@ -18,8 +21,7 @@ functor ParseGenParserFun(structure Header : HEADER
                               Header.error source p s
               val stream =  Parser.makeLexer (fn i => (TextIO.inputN(in_str,i)))
                             source
-              val (result,_) = (#line Header.pos := 1;
-                                #start Header.pos := 0;
+              val (result,_) = (#line Header.pos := 1; #start Header.pos := 0;
                                 Header.text := nil;
                                 Parser.parse(15,stream,error,source))
            in (TextIO.closeIn in_str; (result,source))

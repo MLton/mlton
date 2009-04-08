@@ -1,3 +1,6 @@
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
+ *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* parser for the ML parser generator *)
@@ -12,7 +15,7 @@ open Hdr
 %left  ASTERISK
 %pos pos
 
-%term   ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON | 
+%term   ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON |
         COMMA | DELIMITER | EOF | FOR |
         HEADER of string | ID of string*Header.pos | IDDOT of string |
         PERCENT_HEADER | INT of string | KEYWORD | LBRACE | LPAREN |
@@ -196,8 +199,7 @@ RHS_LIST : ID_LIST G_RULE_PREC PROG
             ([{rhs=ID_LIST,code={text=PROG,pos=PROGleft},prec=G_RULE_PREC}])
 
         | RHS_LIST BAR ID_LIST G_RULE_PREC PROG
-            ({rhs=ID_LIST,code={text=PROG,pos=PROGleft},
-              prec=G_RULE_PREC}::RHS_LIST)
+            ({rhs=ID_LIST,code={text=PROG,pos=PROGleft},prec=G_RULE_PREC}::RHS_LIST)
 
 TY : TYVAR
         (TYVAR)
@@ -223,7 +225,7 @@ RECORD_LIST : RECORD_LIST COMMA LABEL COLON TY
 
 QUAL_ID : ID    ((fn (a,_) => a) ID)
        | IDDOT QUAL_ID (IDDOT^QUAL_ID)
-         
+
 LABEL : ID  ((fn (a,_) => a) ID)
       | INT (INT)
 

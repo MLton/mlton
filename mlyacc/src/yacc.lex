@@ -1,10 +1,6 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
  *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi
 
    yacc.lex: Lexer specification
@@ -23,9 +19,9 @@ open Tokens
 val error = Hdr.error
 val text = Hdr.text
 
-val pcount: int ref = ref 0
-val commentLevel: int ref = ref 0
-val actionstart: pos ref = ref {line = 1, col = 0}
+val pcount = ref 0
+val commentLevel = ref 0
+val actionstart = ref {line = 1, col = 0}
 
 fun linePos () = {line = !(#line Hdr.pos), col = 0}
 fun pos pos = {line = !(#line Hdr.pos), col = pos - !(#start Hdr.pos)}
@@ -57,8 +53,8 @@ fun lookup (s,left,right) = let
        end
 end
 
-fun inc (ri as ref i : int ref) = (ri := i+1)
-fun dec (ri as ref i : int ref) = (ri := i-1)
+fun inc (ri as ref i) = (ri := i+1)
+fun dec (ri as ref i) = (ri := i-1)
 
 fun incLineNum pos = (inc (#line Hdr.pos) ; #start Hdr.pos := pos)
 
@@ -148,4 +144,3 @@ qualid ={id}".";
 <F>\\           => (Add yytext; YYBEGIN STRING; continue());
 <F>.            => (Add yytext; error inputSource (pos yypos) "unclosed string";
                     YYBEGIN CODE; continue());
-

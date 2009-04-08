@@ -1,4 +1,4 @@
-(* Uses the generated lexer and parser to export parsing functions 
+(* Uses the generated lexer and parser to export parsing functions
  *)
 
 signature PARSE =
@@ -8,7 +8,7 @@ sig
 
 (* parse a program from a string *)
 
-  val prog_parse : string -> Absyn.absyn 
+  val prog_parse : string -> Absyn.absyn
 
 (* parse a query from a string *)
 
@@ -17,7 +17,7 @@ sig
 (* parse a program in a file *)
 
   val file_parse : string -> Absyn.absyn
- 
+
 (* parse a query from the standard input *)
 
   val top_parse : unit -> Absyn.absyn
@@ -44,7 +44,7 @@ fun parse (dummyToken,lookahead,reader : int -> string) =
         val empty = !Interface.line
         val dummyEOF = Tokens.EOF(empty,empty)
         val dummyTOKEN = dummyToken(empty,empty)
-        fun invoke lexer = 
+        fun invoke lexer =
            let val newLexer = Parser.Stream.cons(dummyTOKEN,lexer)
            in Parser.parse(lookahead,newLexer,Interface.error,
                                 Interface.nothing)
@@ -62,7 +62,7 @@ fun string_reader s =
     let val next = ref s
      in fn _ => !next before next := ""
     end
-    
+
 fun prog_parse s = parse (Tokens.PARSEPROG,15,string_reader s)
 
 fun query_parse s = parse (Tokens.PARSEQUERY,15,string_reader s)
@@ -73,7 +73,7 @@ fun file_parse name =
         before TextIO.closeIn dev
     end
 
-fun top_parse () = 
+fun top_parse () =
     parse (Tokens.PARSEQUERY,0,(fn i => TextIO.inputLine TextIO.stdIn))
 
 end  (* functor Parse *)

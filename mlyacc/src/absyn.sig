@@ -1,11 +1,6 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
  *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 signature ABSYN =
@@ -28,6 +23,7 @@ signature ABSYN =
                     | AS of string * pat
        and     decl = VB of pat * exp
        and     rule = RULE of pat * exp
-       val printRule : ((string -> unit) * (Header.pos option -> unit))
+       val printRule : ((string -> unit) * (string -> unit)
+                        * (Header.pos option -> string))
                        -> rule -> unit
     end

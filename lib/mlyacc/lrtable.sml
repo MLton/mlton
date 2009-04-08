@@ -1,11 +1,5 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
- *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
-structure LrTable : LR_TABLE = 
+structure LrTable : LR_TABLE =
     struct
         open Array List
         infix 9 sub
@@ -25,7 +19,7 @@ structure LrTable : LR_TABLE =
         val numStates = fn ({states,...} : table) => states
         val numRules = fn ({rules,...} : table) => rules
         val describeActions =
-           fn ({action,...} : table) => 
+           fn ({action,...} : table) =>
                    fn (STATE s) => action sub s
         val describeGoto =
            fn ({goto,...} : table) =>

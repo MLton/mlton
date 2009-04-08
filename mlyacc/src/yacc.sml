@@ -1,11 +1,6 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
+(* Modified by Vesa Karvonen on 2007-12-18.
+ * Create line directives in output.
  *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1989, 1990 Andrew W. Appel, David R. Tarditi *)
 
 functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
@@ -28,12 +23,12 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 
     (* approx. maximum length of a line *)
 
-    val lineLength : int = 70
+    val lineLength = 70
 
     (* record type describing names of structures in the program being
         generated *)
 
-    datatype names = NAMES 
+    datatype names = NAMES
                         of {miscStruct : string,  (* Misc{n} struct name *)
                             tableStruct : string, (* LR table structure *)
                             tokenStruct : string, (* Tokens{n} struct name *)
@@ -46,7 +41,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                             dataStruct:string, (* name of structure in Misc *)
                                                 (* which holds parser data *)
                             dataSig:string (* signature for this structure *)
-                                        
+
                             }
 
     val DEBUG = true
@@ -58,7 +53,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                       of {say : string -> unit,
                           saydot : string -> unit,
                           sayln : string -> unit,
-                          sayPos : {line : int, col : int} option -> unit,
+                          fmtPos : {line : int, col : int} option -> string,
                           pureActions: bool,
                           pos_type : string,
                           arg_type : string,
@@ -82,7 +77,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                           (* tokenInfo is the user inserted spec in
                              the *_TOKEN sig*)
                           tokenInfo : string option}
-                          
+
     structure SymbolHash = Hash(type elem = string
                                 val gt = (op >) : string*string -> bool)
 
@@ -116,7 +111,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                                  termvoid,ntvoid,saydot,hasType,start,
                                  pureActions,...},
                            NAMES {valueStruct,...},symbolType) =>
-     let val prConstr = fn (symbol,SOME s) => 
+     let val prConstr = fn (symbol,SOME s) =>
                            say (" | " ^ (symbolName symbol) ^ " of " ^
                                   (if pureActions then "" else "unit -> ") ^
                                 " (" ^ tyName s ^ ")"
@@ -163,7 +158,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                          say (Int.toString i);
                          say ",(";
                          say (dataStruct ^ "." ^ valueStruct ^ ".");
-                         if (hasType (TERM term)) then 
+                         if (hasType (TERM term)) then
                             (say (termToString term);
                              if pureActions then say " i"
                              else say " (fn () => i)")
@@ -173,7 +168,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                 in app f terms
                 end;
                 sayln "end")
-                          
+
     (* function to print signatures out - takes print function which
         does not need to insert line breaks *)
 
@@ -187,7 +182,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                  (List.foldr (fn ((s,ty),r) => String.concat [
                     "val ", symbolName s,
                     (case ty
-                     of NONE => ": " 
+                     of NONE => ": "
                       | SOME l => ": (" ^ (tyName l) ^ ") * "),
                     " 'a * 'a -> (svalue,'a) token\n", r]) "" term) ^
                  "end\nsignature " ^ miscSig ^
@@ -196,7 +191,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                   "\nsharing type " ^ dataStruct ^
                   ".Token.token = Tokens.token\nsharing type " ^
                   dataStruct ^ ".svalue = Tokens.svalue\nend\n")
-                
+
     (* function to print structure for error correction *)
 
     val printEC = fn (keyword : term list,
@@ -222,7 +217,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
          fun printChange () =
             (sayln "val preferred_change : (term list * term list) list = ";
              app (fn (d,i) =>
-                    (say"("; printTermList d; say ","; printTermList i; 
+                    (say"("; printTermList d; say ","; printTermList i;
                      sayln ")::"
                     )
                  ) preferred_change;
@@ -244,7 +239,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
             say "_ => ";
             say (valueStruct ^ ".");
             sayln termvoid; sayln "end")
-              
+
 
           val printNames = fn () =>
                 let val f = fn term => (
@@ -257,13 +252,13 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                     sayln "_ => \"bogus-term\"")
                 end
 
-           val ecTerms = 
+           val ecTerms =
                 List.foldr (fn (t,r) =>
                   if hasType (TERM t) orelse exists (fn (a,_)=>a=t) value
                     then r
                     else t::r)
                 [] terms
-                                  
+
         in  say "structure ";
             say ecStruct;
             sayln "=";
@@ -285,10 +280,10 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
         end
 
 val printAction = fn (rules,
-                          VALS {hasType,say,sayln,sayPos,termvoid,ntvoid,
+                          VALS {hasType,say,sayln,fmtPos,termvoid,ntvoid,
                                 symbolToString,saydot,start,pureActions,...},
                           NAMES {actionsStruct,valueStruct,tableStruct,arg,...}) =>
-let val printAbsynRule = Absyn.printRule(say,sayPos)
+let val printAbsynRule = Absyn.printRule(say,sayln,fmtPos)
     val is_nonterm = fn (NONTERM i) => true | _ => false
     val numberRhs = fn r =>
         List.foldl (fn (e,(r,table)) =>
@@ -316,7 +311,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
                                    PAPP(valueStruct^"."^ntvoid,
                                         PVAR symNum)
                               else WILD)
-                           else 
+                           else
                                PAPP(valueStruct^"."^symString,
                                  if num=1 andalso pureActions
                                      then AS(symNum,PVAR symString)
@@ -389,7 +384,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
     end
 
           val prRules = fn () =>
-             (sayln "fn (i392:int,defaultPos,stack,";
+             (sayln "fn (i392,defaultPos,stack,";
               say   "    ("; say arg; sayln "):arg) =>";
               sayln "case (i392,stack)";
               say "of ";
@@ -401,7 +396,6 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
            say actionsStruct;
            sayln " =";
            sayln "struct ";
-           sayln "type int = Int.int";
            sayln "exception mlyAction of int";
            sayln "local open Header in";
            sayln "val actions = ";
@@ -433,25 +427,25 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
         val defaultReductions = not (List.exists (fn NODEFAULT=>true | _ => false) control)
         val pos_type =
            let fun f nil = NONE
-                 | f ((POS s)::r) = SOME s 
+                 | f ((POS s)::r) = SOME s
                  | f (_::r) = f r
            in f control
            end
         val start =
            let fun f nil = NONE
-                 | f ((START_SYM s)::r) = SOME s 
+                 | f ((START_SYM s)::r) = SOME s
                  | f (_::r) = f r
            in f control
            end
         val name =
            let fun f nil = NONE
-                 | f ((PARSER_NAME s)::r) = SOME s 
+                 | f ((PARSER_NAME s)::r) = SOME s
                  | f (_::r) = f r
            in f control
            end
         val header_decl =
            let fun f nil = NONE
-                 | f ((FUNCTOR s)::r) = SOME s 
+                 | f ((FUNCTOR s)::r) = SOME s
                  | f (_::r) = f r
            in f control
            end
@@ -465,21 +459,21 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
 
         val arg_decl =
            let fun f nil = ("()","unit")
-                 | f ((PARSE_ARG s)::r) = s 
+                 | f ((PARSE_ARG s)::r) = s
                  | f (_::r) = f r
            in f control
            end
 
         val noshift =
            let fun f nil = nil
-                 | f ((NSHIFT s)::r) = s 
+                 | f ((NSHIFT s)::r) = s
                  | f (_::r) = f r
            in f control
            end
 
         val pureActions =
            let fun f nil = false
-                 | f ((PURE)::r) = true 
+                 | f ((PURE)::r) = true
                  | f (_::r) = f r
            in f control
            end
@@ -500,7 +494,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
            | SOME l => l
 
 
-        val termHash = 
+        val termHash =
           List.foldr (fn ((symbol,_),table) =>
               let val name = symbolName symbol
               in if SymbolHash.exists(name,table) then
@@ -512,14 +506,14 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
 
         val isTerm = fn name => SymbolHash.exists(name,termHash)
 
-        val symbolHash = 
+        val symbolHash =
           List.foldr (fn ((symbol,_),table) =>
             let val name = symbolName symbol
             in if SymbolHash.exists(name,table) then
                  (error (symbolPos symbol)
                      (if isTerm name then
                           name ^ " is defined as a terminal and a nonterminal"
-                      else 
+                      else
                           "duplicate definition of " ^ name ^ " in %nonterm");
                      table)
              else SymbolHash.add(name,table)
@@ -539,7 +533,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
                 (symbolName symbol^" in "^err^" is not defined as a " ^ sym)
 
         val termNum : string -> Header.symbol -> term =
-          let val termError = symError "terminal" 
+          let val termError = symError "terminal"
           in fn stmt =>
              let val stmtError = termError stmt
              in fn symbol =>
@@ -549,9 +543,9 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
                                 else (stmtError symbol; ~1))
              end
           end
-                        
+
         val nontermNum : string -> Header.symbol -> nonterm =
-          let val nontermError = symError "nonterminal" 
+          let val nontermError = symError "nonterminal"
           in fn stmt =>
              let val stmtError = nontermError stmt
              in fn symbol =>
@@ -563,7 +557,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
           end
 
         val symbolNum : string -> Header.symbol -> Grammar.symbol =
-          let val symbolError = symError "symbol" 
+          let val symbolError = symError "symbol"
           in fn stmt =>
              let val stmtError = symbolError stmt
              in fn symbol =>
@@ -585,7 +579,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
 
         val eop = map (termNum "%eop") eop
         val keyword = map (termNum "%keyword") keyword
-        val prec = map (fn (a,l) => 
+        val prec = map (fn (a,l) =>
                         (a,case a
                            of LEFT => map (termNum "%left") l
                             | RIGHT => map (termNum "%right") l
@@ -635,7 +629,7 @@ let val printAbsynRule = Absyn.printRule(say,sayPos)
                   else data sub i
            end
 
-        val nontermToString = 
+        val nontermToString =
            let val data = array(numNonterms,"")
                val unmap = fn (symbol,_) =>
                     let val name = symbolName symbol
@@ -680,8 +674,7 @@ precedences of the rule and the terminal are equal.
                 val addPrec = fn termPrec => fn term as (T i) =>
                    case precData sub i
                    of SOME _ =>
-                     error {line = 1, col = 0}
-                           ("multiple precedences specified for terminal " ^
+                     error {line = 1, col = 0} ("multiple precedences specified for terminal " ^
                             (termToString term))
                     | NONE => update(precData,i,termPrec)
                 val termPrec = fn ((LEFT,_) ,i) => i
@@ -697,7 +690,7 @@ precedences of the rule and the terminal are equal.
            end
 
         val elimAssoc =  fn i => (i - (i mod 3) + 1)
-        val rulePrec = 
+        val rulePrec =
            let fun findRightTerm (nil,r) = r
                  | findRightTerm (TERM t :: tail,r) =
                                  findRightTerm(tail,SOME t)
@@ -705,7 +698,7 @@ precedences of the rule and the terminal are equal.
            in fn rhs =>
                  case findRightTerm(rhs,NONE)
                  of NONE => NONE
-                  | SOME term => 
+                  | SOME term =>
                        case termPrec term
                        of SOME i => SOME  (elimAssoc i)
                         | a => a
@@ -728,10 +721,10 @@ precedences of the rule and the terminal are equal.
         val start =
          case start
            of NONE => #lhs (hd grammarRules)
-            | SOME name => 
+            | SOME name =>
                 nontermNum "%start" name
 
-        val symbolType = 
+        val symbolType =
            let val data = array(numTerms+numNonterms,NONE : ty option)
                fun unmap (symbol,ty) =
                    update(data,
@@ -750,7 +743,7 @@ precedences of the rule and the terminal are equal.
                   else data sub i
            end
 
-        val symbolToString = 
+        val symbolToString =
              fn NONTERM i => nontermToString i
               | TERM i => termToString i
 
@@ -761,23 +754,7 @@ precedences of the rule and the terminal are equal.
                                  nontermToString = nontermToString,
                                  precedence = termPrec}
 
-        (* Debugging output added by sweeks@acm.org. *)
-        val _ =
-           if false
-              then
-                 (List.foldl
-                  (fn ({lhs, rhs, rulenum, ...}, i) =>
-                   (print (String.concat [Int.toString rulenum, ": ",
-                                          nontermToString lhs, " ->"])
-                    ; List.app (fn s => (print (String.concat
-                                                [" ", symbolToString s]))) rhs
-                    ; print "\n"
-                    ; i + 1))
-                  0 grammarRules
-                  ; ())
-           else ()
-
-        val name' = case name 
+        val name' = case name
                     of NONE => ""
                      | SOME s => symbolName s
 
@@ -792,32 +769,32 @@ precedences of the rule and the terminal are equal.
                            miscSig = name' ^ "_LRVALS",
                            dataStruct = "ParserData",
                            dataSig = "PARSER_DATA"}
-                       
+
         val (table,stateErrs,corePrint,errs) =
                  MakeTable.mkTable(grammar,defaultReductions)
 
         val entries = ref 0 (* save number of action table entries here *)
-        
+
     in  let val result = TextIO.openOut (spec ^ ".sml")
             val sigs = TextIO.openOut (spec ^ ".sig")
             val specPath = OS.FileSys.fullPath spec
             val resultPath = OS.FileSys.fullPath (spec ^ ".sml")
             val line = ref 1
             val col = ref 0
-            fun say s =
-                (TextIO.output (result, s)
-               ; CharVector.app
-                    (fn #"\n" => (line := !line + 1 ; col := 0)
-                      | _     => col := !col + 1)
-                    s)
+            val pr = fn s => TextIO.output(result,s)
+            val say = fn s =>
+               (CharVector.app (fn #"\n" => (line := !line + 1 ; col := 0)
+                                 | _     => col := !col + 1)
+                               s
+                ; pr s)
             val saydot = fn s => (say (s ^ "."))
             val sayln = fn t => (say t; say "\n")
             fun fmtLineDir {line, col} path =
-                String.concat ["(*#line ", Int.toString line, ".",
-                               Int.toString (col+1), " \"", path, "\"*)"]
-            val sayPos =
-             fn NONE => sayln (fmtLineDir {line = !line, col = 0} resultPath)
-              | SOME pos => say (fmtLineDir pos specPath)
+               String.concat ["(*#line ", Int.toString line, ".",
+                              Int.toString (col+1), " \"", path, "\"*)"]
+            val fmtPos =
+               fn NONE => (fmtLineDir {line = !line, col = 0} resultPath) ^ "\n"
+                | SOME pos => fmtLineDir pos specPath
             val termvoid = makeUniqueId "VOID"
             val ntvoid = makeUniqueId "ntVOID"
             val hasType = fn s => case symbolType s
@@ -827,7 +804,7 @@ precedences of the rule and the terminal are equal.
                                       else (T n) :: f(n+1)
                         in f 0
                         end
-            val values = VALS {say=say,sayln=sayln,saydot=saydot,sayPos=sayPos,
+            val values = VALS {say=say,sayln=sayln,saydot=saydot,fmtPos=fmtPos,
                                termvoid=termvoid, ntvoid = ntvoid,
                                hasType=hasType, pos_type = pos_type,
                                arg_type = #2 arg_decl,
@@ -839,7 +816,7 @@ precedences of the rule and the terminal are equal.
 
             val (NAMES {miscStruct,tableStruct,dataStruct,tokenSig,tokenStruct,dataSig,...}) = names
          in case header_decl
-            of NONE => (say "functor "; say miscStruct; 
+            of NONE => (say "functor "; say miscStruct;
                         sayln "(structure Token : TOKEN)";
                         say " : sig structure ";
                         say dataStruct;
@@ -854,9 +831,9 @@ precedences of the rule and the terminal are equal.
             sayln "struct";
             sayln "structure Header = ";
             sayln "struct";
-            sayPos (SOME {line = 1, col = 1});
+            say (fmtPos (SOME {line = 1, col = 1}));
             sayln header;
-            sayPos NONE;
+            say (fmtPos NONE);
             sayln "end";
             sayln "structure LrTable = Token.LrTable";
             sayln "structure Token = Token";
@@ -871,7 +848,7 @@ precedences of the rule and the terminal are equal.
             sayln "end";
             printTokenStruct(values,names);
             sayln "end";
-            printSigs(values,names,fn s => TextIO.output(sigs,s));    
+            printSigs(values,names,fn s => TextIO.output(sigs,s));
             TextIO.closeOut sigs;
             TextIO.closeOut result;
             MakeTable.Errs.printSummary (fn s => TextIO.output(TextIO.stdOut,s)) errs
@@ -881,7 +858,7 @@ precedences of the rule and the terminal are equal.
              val say = fn s=> TextIO.output(f,s)
              val printRule =
                 let val rules = Array.fromList grammarRules
-                in fn say => 
+                in fn say =>
                    let val prRule = fn {lhs,rhs,precedence,rulenum} =>
                      ((say o nontermToString) lhs; say " : ";
                       app (fn s => (say (symbolToString s); say " ")) rhs)

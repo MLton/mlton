@@ -31,7 +31,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
                         val eq = eqNonterm
                         val gt = gtNonterm
                 end)
-        
+
         val mkFuncs = fn {rules : rule list, nonterms : int,
                           produces : nonterm -> rule list} =>
 
@@ -59,7 +59,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
                        place it back on the list
                    (4) repeat until the list does not change.
 
-           We have found all the possible nullable rules. 
+           We have found all the possible nullable rules.
       *)
 
         val nullable = let
@@ -94,7 +94,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
                 if nullable nt then f (rest,addSymbol(sym,result))
                 else addSymbol(sym,result)
               | f ((sym as TERM _) :: _,result) = addSymbol(sym,result)
-        in f 
+        in f
         end
 
      (* accumulate: look at the start of the right-hand-sides of rules,
@@ -155,7 +155,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
                    of true => nullable_string r
                     | f => f)
         | nullable_string nil = true
-          
+
     in {nullable = nullable, first = prefix}
     end
 end;

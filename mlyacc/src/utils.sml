@@ -1,17 +1,9 @@
-(* Modified by mfluet@acm.org on 2005-8-01.
- * Update with SML/NJ 110.55+.
- *)
-(* Modified by sweeks@acm.org on 2000-8-24.
- * Ported to MLton.
- *)
-type int = Int.int
-
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 
 (* Implementation of ordered sets using ordered lists and red-black trees.  The
    code for red-black trees was originally written by Norris Boyd, which was
    modified for use here.
-*)   
+*)
 
 (* ordered sets implemented using ordered lists.
 
@@ -47,7 +39,7 @@ functor ListOrdSet(B : sig type elem
 struct
  type elem = B.elem
  val elem_gt = B.gt
- val elem_eq = B.eq 
+ val elem_eq = B.eq
 
  type set = elem list
  exception Select_arb
@@ -61,13 +53,13 @@ struct
               | f nil = [key]
         in f s
         end
-                
+
  val select_arb = fn nil => raise Select_arb
                    | a::b => a
 
  val exists = fn (key,s) =>
         let fun f (h::t) = if elem_gt(key,h) then f t
-                           else elem_eq(h,key) 
+                           else elem_eq(h,key)
               | f nil = false
         in f s
         end
@@ -79,12 +71,12 @@ struct
               | f nil = NONE
         in f s
         end
-   
+
  fun revfold f lst init = List.foldl f init lst
  fun fold f lst init = List.foldr f init lst
  val app = List.app
 
-fun set_eq(h::t,h'::t') = 
+fun set_eq(h::t,h'::t') =
         (case elem_eq(h,h')
           of true => set_eq(t,t')
            | a => a)
@@ -99,7 +91,7 @@ fun set_gt(h::t,h'::t') =
            |  a => a)
   | set_gt(_::_,nil) = true
   | set_gt _ = false
-                
+
 fun union(a as (h::t),b as (h'::t')) =
           if elem_gt(h',h) then h::union(t,b)
           else if elem_eq(h,h') then h::union(t,t')
@@ -136,7 +128,7 @@ val remove = fn (e,s) =>
 
  fun singleton X = [X]
 
- fun card(S): int = fold (fn (a,count) => count+1) S 0
+ fun card(S) = fold (fn (a,count) => count+1) S 0
 
       local
             fun closure'(from, f, result) =
@@ -191,7 +183,7 @@ struct
 
  type elem = B.elem
  val elem_gt = B.gt
- val elem_eq = B.eq 
+ val elem_eq = B.eq
 
  datatype Color = RED | BLACK
 
@@ -247,7 +239,7 @@ struct
 
  fun select_arb (TREE(k,_,l,r)) = k
    | select_arb EMPTY = raise Select_arb
-   
+
  fun exists(key,t) =
   let fun look EMPTY = false
         | look (TREE(k,_,l,r)) =
@@ -365,7 +357,7 @@ struct
 
       fun singleton X = insert(X,empty)
 
-      fun card(S): int = fold (fn (_,count) => count+1) S 0
+      fun card(S) = fold (fn (_,count) => count+1) S 0
 
       fun union(Xs,Ys)= fold insert Ys Xs
 
@@ -493,7 +485,7 @@ struct
 
   fun make_table l = List.foldr insert empty l
 
-  fun size S : int = fold (fn (_,count) => count+1) S 0
+  fun size S = fold (fn (_,count) => count+1) S 0
 
   fun make_list table = fold (op ::) table nil
 
@@ -530,10 +522,10 @@ struct
 
     type table = {count : int, table : int HashTable.table}
 
-    val empty: table = {count=0,table=HashTable.empty}
+    val empty = {count=0,table=HashTable.empty}
     val size = fn {count,table} => count
     val add = fn (e,{count,table}) =>
-       ({count=count+1,table=HashTable.insert((e,count),table)}: table)
+                {count=count+1,table=HashTable.insert((e,count),table)}
     val find = fn (e,{table,count}) => HashTable.find(e,table)
     val exists = fn (e,{table,count}) => HashTable.exists(e,table)
 end;

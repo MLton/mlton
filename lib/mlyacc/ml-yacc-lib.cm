@@ -1,11 +1,8 @@
-(* Modified by sweeks@acm.org on 2000-8-22.
- * Commented out Stream and STREAM exports.
- *)
 (* sources file for ML-Yacc library *)
 
 Library
 
-(* signature STREAM *)
+signature STREAM
 signature LR_TABLE
 signature TOKEN
 signature LR_PARSER
@@ -17,13 +14,13 @@ signature ARG_PARSER
 functor Join
 functor JoinWithArg
 structure LrTable
-(* structure Stream *)
+structure Stream
 structure LrParser
 
 is
 
-#if (defined (SMLNJ_VERSION))
-../basis-stubs-for-smlnj/sources.cm
+#if defined(NEW_CM)
+  $/basis.cm
 #endif
 
 base.sig
