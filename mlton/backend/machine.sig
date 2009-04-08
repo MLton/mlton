@@ -80,12 +80,10 @@ signature MACHINE =
              | Cast of t * Type.t
              | Contents of {oper: t,
                             ty: Type.t}
-             | File (* expanded by codegen into string constant *)
              | Frontier
              | GCState
              | Global of Global.t
              | Label of Label.t
-             | Line (* expand by codegen into int constant *)
              | Null
              | Offset of {base: t,
                           offset: Bytes.t,

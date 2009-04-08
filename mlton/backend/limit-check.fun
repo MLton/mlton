@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -272,11 +273,9 @@ fun insertFunction (f: Function.t,
                                label = collect,
                                statements = Vector.new0 (),
                                transfer = (Transfer.CCall
-                                           {args = Vector.new5 (Operand.GCState,
+                                           {args = Vector.new3 (Operand.GCState,
                                                                 amount,
-                                                                force,
-                                                                Operand.File,
-                                                                Operand.Line),
+                                                                force),
                                             func = func,
                                             return = SOME collectReturn})}
                       :: (Block.T

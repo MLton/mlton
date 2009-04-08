@@ -527,7 +527,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
              | Contents {oper, ...} =>
                    (emitLoadOperand oper
                     ; emitOpcode (contents (ls, cty)))
-             | File => emitOperand (Null, ls)
              | Frontier => emitOpcode (frontier ls)
              | GCState => emitOpcode (gcState ls)
              | Global g =>
@@ -538,8 +537,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
              | Label l =>
                   (emitOpcode (wordOpcode (ls, cty))
                    ; emitLabel l)
-             | Line => (emitOpcode (wordOpcode (ls, cty))
-                        ; emitWordX (WordX.zero (WordSize.cint ())))
              | Null => (emitOpcode (wordOpcode (ls, cty))
                         ; emitWordX (WordX.zero (WordSize.cpointer ())))
              | Offset {base, offset = off, ...} =>

@@ -52,9 +52,7 @@ signature RSSA =
                 * a real operand.
                 *)
              | EnsuresBytesFree
-             | File (* expand by codegen into string constant *)
              | GCState
-             | Line (* expand by codegen into int constant *)
              | Offset of {base: t,
                           offset: Bytes.t,
                           ty: Type.t}

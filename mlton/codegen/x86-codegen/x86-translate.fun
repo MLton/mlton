@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -164,7 +165,6 @@ struct
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
-          | File => Vector.new1 (x86MLton.fileName, x86MLton.pointerSize)
           | Frontier => 
                let 
                   val frontier = x86MLton.gcState_frontierContentsOperand ()
@@ -177,8 +177,6 @@ struct
           | Global g => Global.toX86Operand g
           | Label l => 
                Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
-          | Line => 
-               Vector.new1 (x86MLton.fileLine (), x86MLton.wordSize)
           | Null => 
                Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>

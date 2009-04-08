@@ -96,11 +96,6 @@ signature AMD64_MLTON_BASIC =
     val global_base : amd64.CType.t -> amd64.Label.t
     val globalObjptrNonRoot_base : amd64.Label.t
 
-    (* Misc. *)
-    val fileNameLabel : amd64.Label.t
-    val fileName : amd64.Operand.t
-    val fileLine : unit -> amd64.Operand.t
-
     (* gcState relative locations defined in gc.h *)
     val gcState_label: amd64.Label.t
     val gcState_offset: {offset: int, ty: amd64.CType.t} -> amd64.Operand.t

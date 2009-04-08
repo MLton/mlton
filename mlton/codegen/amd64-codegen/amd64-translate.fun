@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -164,7 +165,6 @@ struct
                       scale = amd64.Scale.One,
                       size = size}, size), offset + amd64.Size.toBytes size))
                end
-          | File => Vector.new1 (amd64MLton.fileName, amd64MLton.pointerSize)
           | Frontier => 
                let 
                   val frontier = amd64MLton.gcState_frontierContentsOperand ()
@@ -177,8 +177,6 @@ struct
           | Global g => Global.toAMD64Operand g
           | Label l => 
                Vector.new1 (amd64.Operand.immediate_label l, amd64MLton.pointerSize)
-          | Line => 
-               Vector.new1 (amd64MLton.fileLine (), amd64MLton.wordSize)
           | Null => 
                Vector.new1 (amd64.Operand.immediate_zero, amd64MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>

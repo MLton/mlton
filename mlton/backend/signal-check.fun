@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -104,11 +105,9 @@ fun insertInFunction (f: Function.t): Function.t =
                     statements = Vector.new0 (),
                     transfer =
                     Transfer.CCall
-                    {args = Vector.new5 (Operand.GCState,
+                    {args = Vector.new3 (Operand.GCState,
                                          Operand.word (WordX.zero (WordSize.csize ())),
-                                         Operand.bool false,
-                                         Operand.File,
-                                         Operand.Line),
+                                         Operand.bool false),
                      func = func,
                      return = SOME collectReturn}})
                :: (Block.T

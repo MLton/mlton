@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1196,12 +1197,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | FFI f => simpleCCall f
                                | GC_collect =>
                                     ccall
-                                    {args = (Vector.new5
+                                    {args = (Vector.new3
                                              (GCState,
                                               Operand.zero (WordSize.csize ()),
-                                              Operand.bool true,
-                                              File,
-                                              Line)),
+                                              Operand.bool true)),
                                      func = (CFunction.gc
                                              {maySwitchThreads = handlesSignals})}
                                | IntInf_toVector => cast ()
@@ -1312,12 +1311,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Goto {args = Vector.new0 (),
                                                   dst = continue}}
                                         val args =
-                                           Vector.new5
+                                           Vector.new3
                                            (GCState,
                                             Operand.zero (WordSize.csize ()),
-                                            Operand.bool false,
-                                            File,
-                                            Line)
+                                            Operand.bool false)
                                         val switchToHandler =
                                            newBlock
                                            {args = Vector.new0 (),

@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,7 +28,6 @@ static inline void ensureHasHeapBytesFree (GC_state s,
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-PRIVATE void GC_collect (GC_state s, size_t bytesRequested, bool force,
-                         char *file, int line);
+PRIVATE void GC_collect (GC_state s, size_t bytesRequested, bool force);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

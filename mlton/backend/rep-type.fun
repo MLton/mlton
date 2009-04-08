@@ -834,16 +834,14 @@ structure BuiltInCFunction =
 
       local
          fun make b = fn () =>
-            T {args = Vector.new5 (Type.gcState (), Type.csize (), Type.bool, 
-                                   Type.cpointer (), Type.word WordSize.word32),
+            T {args = Vector.new3 (Type.gcState (), Type.csize (), Type.bool),
                    bytesNeeded = NONE,
                    convention = Cdecl,
                    ensuresBytesFree = true,
                    mayGC = true,
                    maySwitchThreads = b,
                    modifiesFrontier = true,
-                   prototype = (Vector.new5 (CType.cpointer, CType.csize (), CType.bool, 
-                                             CType.cpointer, CType.Int32),
+                   prototype = (Vector.new3 (CType.cpointer, CType.csize (), CType.bool),
                                 NONE),
                    readsStackTop = true,
                    return = Type.unit,

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -168,13 +169,6 @@ struct
         (* Assembly specific *)
 
         val _ = x86MLtonBasic.init ()
-
-        fun file_begin file
-          = [x86.Assembly.pseudoop_data (),
-             x86.Assembly.pseudoop_p2align 
-             (x86.Immediate.int 2, NONE, NONE),
-             x86.Assembly.label x86MLton.fileNameLabel,
-             x86.Assembly.pseudoop_string [file]]
 
         fun outputJumpToSML print =
            let
@@ -468,11 +462,7 @@ struct
               val split = !Control.Native.split
               fun loop chunks
                 = let
-                    val {file, print, done} = makeS()
-                    val _ = List.foreach
-                            (file_begin file,
-                             fn asm => (Layout.print(Assembly.layout asm, print);
-                                        print "\n"))
+                    val {print, done, ...} = makeS()
                     fun loop' (chunks, size) 
                       = case chunks
                           of [] => done ()

@@ -674,7 +674,6 @@ fun output {program as Machine.Program.T {chunks,
                                        C.bytes offset]]
              | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
              | Contents {oper, ty} => contents (ty, toString oper)
-             | File => "(CPointer)(__FILE__)"
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
@@ -684,7 +683,6 @@ fun output {program as Machine.Program.T {chunks,
                                           Int.toString (Global.index g)]]
                   else concat ["GPNR", C.args [Int.toString (Global.index g)]]
              | Label l => labelToStringIndex l
-             | Line => "__LINE__"
              | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,

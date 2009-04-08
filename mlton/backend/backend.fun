@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -502,9 +503,7 @@ let
              | Const c => constOperand c
              | EnsuresBytesFree =>
                   Error.bug "Backend.translateOperand: EnsuresBytesFree"
-             | File => M.Operand.File
              | GCState => M.Operand.GCState
-             | Line => M.Operand.Line
              | Offset {base, offset, ty} =>
                   let
                      val base = translateOperand base

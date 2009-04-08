@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -204,12 +205,10 @@ structure Operand =
        | Cast of t * Type.t
        | Contents of {oper: t,
                       ty: Type.t}
-       | File
        | Frontier
        | GCState
        | Global of Global.t
        | Label of Label.t
-       | Line
        | Null
        | Offset of {base: t,
                     offset: Bytes.t,
@@ -224,12 +223,10 @@ structure Operand =
        fn ArrayOffset {ty, ...} => ty
         | Cast (_, ty) => ty
         | Contents {ty, ...} => ty
-        | File => Type.cpointer ()
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
         | Label l => Type.label l
-        | Line => Type.cint ()
         | Null => Type.cpointer ()
         | Offset {ty, ...} => ty
         | Real r => Type.real (RealX.size r)
@@ -257,12 +254,10 @@ structure Operand =
              | Contents {oper, ty} =>
                   seq [str (concat ["C", Type.name ty, " "]),
                        paren (layout oper)]
-             | File => str "<File>"
              | Frontier => str "<Frontier>"
              | GCState => str "<GCState>"
              | Global g => Global.layout g
              | Label l => Label.layout l
-             | Line => str "<Line>"
              | Null => str "NULL"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
@@ -285,11 +280,9 @@ structure Operand =
                 Type.equals (t, t') andalso equals (z, z')
            | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
                 equals (z, z')
-           | (File, File) => true
            | (GCState, GCState) => true
            | (Global g, Global g') => Global.equals (g, g')
            | (Label l, Label l') => Label.equals (l, l')
-           | (Line, Line) => true
            | (Offset {base = b, offset = i, ...},
               Offset {base = b', offset = i', ...}) =>
                 equals (b, b') andalso Bytes.equals (i, i')
@@ -1047,7 +1040,6 @@ structure Program =
                       | Contents {oper, ...} =>
                            (checkOperand (oper, alloc)
                             ; Type.isCPointer (Operand.ty oper))
-                      | File => true
                       | Frontier => true
                       | GCState => true
                       | Global _ =>
@@ -1060,7 +1052,6 @@ structure Program =
                            (let val _ = labelBlock l
                             in true
                             end handle _ => false)
-                      | Line => true
                       | Null => true
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
