@@ -16,8 +16,8 @@ structure MLton =
          end
       structure GC =
          struct
-            fun collect () = ()
+            fun collect () = PolyML.fullGC ()
             fun setMessages (b : bool) = ()
-            fun pack () = ()
+            fun pack () = collect ()
          end
    end
