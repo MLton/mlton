@@ -103,11 +103,10 @@ clean:
 #
 # The following rebuilds the heap file for the SML/NJ compiled version
 # of MLton.
-# It requires that you have SML/NJ with the Compilation
-# Manager (CM) installed.  You may need to replace the following with
-# 'sml-cm'.
+# It requires that you have SMLNJ/NJ with the Compilation Manager (CM)
+# installed.  You may need to replace the following with 'sml-cm'.
 #
-SML	:= sml
+SMLNJ	:= sml
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
@@ -118,7 +117,7 @@ nj-mlton: $(SOURCES)
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Export.exportNJ("$(LIB)/mlton");'				\
-	) | "$(SML)"
+	) | "$(SMLNJ)"
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
@@ -131,7 +130,7 @@ nj-mlton-dual: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Export.exportNJ("$(LIB)/mlton");'				\
-	) | "$(SML)"
+	) | "$(SMLNJ)"
 
 .PHONY: nj-mlton-quad
 nj-mlton-quad: $(SOURCES)
@@ -146,7 +145,7 @@ nj-mlton-quad: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Export.exportNJ("$(LIB)/mlton");'				\
-	) | "$(SML)"
+	) | "$(SMLNJ)"
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
@@ -169,7 +168,22 @@ nj-whole: $(SOURCES)
 		echo 'Export.exportNJ("$(LIB)/mlton");'				\
 		echo 'end';							\
 	) >mlton.whole.sml
-	"$(SML)" <mlton.whole.sml
+	"$(SMLNJ)" <mlton.whole.sml
+
+#
+# The following rebuilds the executable file for the Poly/ML compiled
+# version of MLton.
+#
+POLYML	:= poly
+
+.PHONY: polyml-mlton
+polyml-mlton: $(SOURCES)
+	(									\
+		echo 'use "sources.use";';					\
+		echo 'PolyML.export("mlton-polyml", Main.mainAuto);';		\
+	) | "$(POLYML)"
+	$(CC) -o $(LIB)/mlton-polyml mlton-polyml.o -lpolymain -lpolyml
+	rm -f mlton-polyml.o
 
 .PHONY: warn
 warn:

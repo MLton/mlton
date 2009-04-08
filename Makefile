@@ -194,6 +194,13 @@ mlbpathmap:
 		>>"$(MLBPATHMAP).tmp"
 	mv "$(MLBPATHMAP).tmp" "$(MLBPATHMAP)"
 
+.PHONY: polyml-mlton
+polyml-mlton:
+	$(MAKE) dirs runtime
+	$(MAKE) -C "$(COMP)" polyml-mlton
+	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	@echo 'Build of MLton succeeded.'
+
 .PHONY: profiled
 profiled:
 	for t in alloc count time; do					\

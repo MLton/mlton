@@ -27,6 +27,7 @@ if .arch-n-opsys >/dev/null 2>&1; then
 else
         njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 fi
+mlton_polyml="$lib/mlton-polyml$exe"
 
 declare -a rargs
 case "$1" in
@@ -52,6 +53,8 @@ doit () {
                 exec "$mlton" @MLton load-world "$world" ram-slop 0.5 "${rargs[@]}" -- "$@"
         elif [ -s "$njHeap" ]; then
                 exec "$nj" @SMLload="$njHeap" "$@"
+        elif [ -x "$mlton_polyml" ]; then
+                exec "$mlton_polyml" "$@"
         fi
         echo 'Unable to run MLton.  Check that lib is set properly.' >&2
         exit 1

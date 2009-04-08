@@ -1540,4 +1540,8 @@ val commandLine = Process.makeCommandLine commandLine
 
 val main = fn (_, args) => commandLine args
 
+val mainAuto = fn () =>
+   (OS.Process.exit o main)
+   (CommandLine.name (), CommandLine.arguments ())
+
 end
