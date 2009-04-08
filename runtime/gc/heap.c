@@ -484,16 +484,18 @@ copy:
       goto oom;
     }
   } else {
-oom:
-    if (s->controls.messages)
-      GC_displayMem ();
-    die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
-         uintmaxToCommaString(minSize));
+    goto oom;
   }
 done:
   unless (origStart == s->heap.start) {
     translateHeap (s, origStart, s->heap.start, s->heap.oldGenSize);
   }
+  return;
+oom:
+  if (s->controls.messages)
+    GC_displayMem ();
+  die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
+       uintmaxToCommaString(minSize));
 }
 
 /* resizeHeap (s, minSize)
