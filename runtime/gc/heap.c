@@ -289,10 +289,12 @@ bool createHeap (GC_state s, GC_heap h,
 /* createHeapSecondary (s, desiredSize)
  */
 bool createHeapSecondary (GC_state s, size_t desiredSize) {
+  size_t desiredWithMapsSize;
+  desiredWithMapsSize = desiredSize + sizeofCardMapAndCrossMap (s, desiredSize);
   if ((s->controls.fixedHeap > 0
-       and s->heap.size + desiredSize > s->controls.fixedHeap)
+       and s->heap.withMapsSize + desiredWithMapsSize > s->controls.fixedHeap)
       or (s->controls.maxHeap > 0
-          and s->heap.size + desiredSize > s->controls.maxHeap))
+          and s->heap.withMapsSize + desiredWithMapsSize > s->controls.maxHeap))
     return FALSE;
   return createHeap (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
 }
@@ -513,16 +515,18 @@ void resizeHeap (GC_state s, size_t minSize) {
 /* resizeHeapSecondary (s)
  */
 void resizeHeapSecondary (GC_state s) {
-  size_t primarySize;
-  size_t secondarySize;
+  size_t primarySize, primaryWithMapsSize;
+  size_t secondarySize, secondaryWithMapsSize;
 
   primarySize = s->heap.size;
+  primaryWithMapsSize = s->heap.withMapsSize;
   secondarySize = s->secondaryHeap.size;
+  secondaryWithMapsSize = s->secondaryHeap.withMapsSize;
   if (DEBUG_RESIZING)
     fprintf (stderr, "secondaryHeapResize\n");
   if (0 == secondarySize)
     return;
-  if (2 * primarySize > s->sysvals.ram)
+  if (2 * primaryWithMapsSize > s->sysvals.ram)
     /* Holding on to secondaryHeap might cause paging.  So don't. */
     releaseHeap (s, &s->secondaryHeap);
   else if (secondarySize < primarySize) {
