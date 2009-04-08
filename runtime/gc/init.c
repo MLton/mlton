@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -344,14 +345,15 @@ int GC_init (GC_state s, int argc, char **argv) {
   unless (s->controls.ratios.stackCurrentPermitReserved
           <= s->controls.ratios.stackCurrentMaxReserved)
     die ("Ratios must satisfy stack-current-permit-reserved <= stack-current-max-reserved.");
-  /* We align s->ram by pageSize so that we can test whether or not we
-   * we are using mark-compact by comparing heap size to ram size.  If
-   * we didn't round, the size might be slightly off.
+  /* We align s->sysvals.ram by s->sysvals.pageSize so that we can
+   * test whether or not we we are using mark-compact by comparing
+   * heap size to ram size.  If we didn't round, the size might be
+   * slightly off.
    */
   uintmax_t ram;
-  ram = alignMax ((uintmax_t)(s->controls.ratios.ramSlop * s->sysvals.physMem), 
+  ram = alignMax ((uintmax_t)(s->controls.ratios.ramSlop * (double)(s->sysvals.physMem)),
                   (uintmax_t)(s->sysvals.pageSize));
-  ram = min (ram, (uintmax_t)SIZE_MAX);
+  ram = min (ram, alignMaxDown((uintmax_t)SIZE_MAX, (uintmax_t)(s->sysvals.pageSize)));
   s->sysvals.ram = (size_t)ram;
   if (DEBUG or DEBUG_RESIZING or s->controls.messages)
     fprintf (stderr, "[GC: Found %s bytes of RAM; using %s bytes (%.1f%% of RAM).]\n",
