@@ -27,7 +27,7 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
     sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive + bytesRequested, 0);
   if (not FORCE_MARK_COMPACT
       and not s->hashConsDuringGC // only markCompact can hash cons
-      and s->heap.size < s->sysvals.ram
+      and s->heap.withMapsSize < s->sysvals.ram
       and (not isHeapInit (&s->secondaryHeap)
            or createHeapSecondary (s, desiredSize)))
     majorCheneyCopyGC (s);
