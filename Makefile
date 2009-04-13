@@ -233,17 +233,11 @@ smlnj-mlton:
 
 .PHONY: smlnj-mlton-dual
 smlnj-mlton-dual:
-	$(MAKE) dirs runtime
-	$(MAKE) -C "$(COMP)" smlnj-mlton-dual
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
-	@echo 'Build of MLton succeeded.'
+	$(MAKE) SMLNJ_CM_SERVERS=2 smlnj-mlton
 
 .PHONY: smlnj-mlton-quad
 smlnj-mlton-quad:
-	$(MAKE) dirs runtime
-	$(MAKE) -C "$(COMP)" smlnj-mlton-quad
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
-	@echo 'Build of MLton succeeded.'
+	$(MAKE) SMLNJ_CM_SERVERS=4 smlnj-mlton
 
 .PHONY: targetmap
 targetmap:

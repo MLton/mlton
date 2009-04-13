@@ -113,6 +113,7 @@ clean:
 # of MLton.
 #
 SMLNJ	:= sml
+SMLNJ_CM_SERVERS := 0
 
 .PHONY: smlnj-mlton
 smlnj-mlton: $(SOURCES)
@@ -123,38 +124,11 @@ smlnj-mlton: $(SOURCES)
 		echo '#set CM.Control.verbose false;';				\
 		echo '#set CM.Control.warn_obsolete false;';			\
 		echo 'Control.polyEqWarn := false;';				\
-		echo 'CM.make "mlton-smlnj.cm";';				\
-		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
-	) | "$(SMLNJ)"
-
-.PHONY: smlnj-mlton-dual
-smlnj-mlton-dual: $(SOURCES)
-	rm -f control/version.sml
-	$(MAKE) control/version.sml
-	(									\
-		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;';				\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
-		echo 'CM.make "mlton-smlnj.cm";';				\
-		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
-	) | "$(SMLNJ)"
-
-.PHONY: smlnj-mlton-quad
-smlnj-mlton-quad: $(SOURCES)
-	rm -f control/version.sml
-	$(MAKE) control/version.sml
-	(									\
-		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;';				\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server1", pathtrans = NONE, pref = 0};';\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server3", pathtrans = NONE, pref = 0};';\
-		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
+		echo 'local';							\
+		echo 'fun loop 0 = () | loop n = (CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server" ^ (Int.toString n), pathtrans = NONE, pref = 0}; loop (n - 1));'; \
+		echo 'in';							\
+		echo 'val _ = loop $(SMLNJ_CM_SERVERS);';			\
+		echo 'end;';							\
 		echo 'CM.make "mlton-smlnj.cm";';				\
 		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
