@@ -2,3 +2,4 @@ mlton-compile
 mlton-compile.exe
 mlton.sml
 upgrade-basis.sml
+mlton-polyml.use

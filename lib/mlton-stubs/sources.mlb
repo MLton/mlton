@@ -1,0 +1,54 @@
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+local
+
+$(SML_LIB)/basis/basis.mlb
+local
+$(SML_LIB)/basis/mlton.mlb
+in
+structure MLton
+end
+
+io.sig
+
+thread.sig
+thread.sml
+
+array.sig
+bin-io.sig
+cont.sig
+exn.sig
+finalizable.sig
+gc.sig
+itimer.sig
+platform.sig
+proc-env.sig
+process.sig
+profile.sig
+random.sig
+rusage.sig
+signal.sig
+socket.sig
+text-io.sig
+vector.sig
+weak.sig
+word.sig
+world.sig
+
+random.sml
+
+mlton.sig
+mlton.sml
+
+in
+
+signature MLTON_THREAD
+structure MLton
+
+end

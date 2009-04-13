@@ -163,7 +163,7 @@ smlnj-whole: $(SOURCES)
 POLYML	:= poly
 
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use $(SOURCES)
+polyml-mlton: mlton-polyml.use
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	(									\
@@ -173,16 +173,19 @@ polyml-mlton: mlton-polyml.use $(SOURCES)
 	$(CC) -o $(LIB)/mlton-polyml mlton-polyml.o -lpolymain -lpolyml
 	rm -f mlton-polyml.o
 
-mlton-polyml.use:
+mlton-polyml.use: ../lib/basis-stubs-for-polyml/sources.use ../lib/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
 	(									\
 		cat ../lib/basis-stubs-for-polyml/sources.use |			\
 			sed 's|use "\(.*\)";|../lib/basis-stubs-for-polyml/\1|'; \
-		mlton -stop f mlton-stubs.cm | grep 'mlyacc';			\
+		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
 		cat ../lib/mlton-stubs-for-polyml/sources.use |			\
 			sed 's|use "\(.*\)";|../lib/mlton-stubs-for-polyml/\1|'; \
-		mlton -stop f mlton-stubs.cm | grep 'mlton-stubs';		\
-		mlton -stop f mlton-stubs.cm |					\
-			grep -v 'upgrade-basis.sml' |				\
+		mlton -stop f ../lib/mlton-stubs/sources.mlb |			\
+			grep -v 'mlb$$' | 					\
+			grep 'mlton-stubs';					\
+		mlton -stop f mlton.mlb |					\
+			grep -v 'mlb$$' |					\
+			grep -v 'sml/basis' | 					\
 			grep -v 'mlton-stubs' |					\
 			grep -v 'mlyacc' |					\
 			grep -v 'main/export-mlton.sml' |			\
