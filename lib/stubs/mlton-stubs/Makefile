@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2009 Matthew Fluet.
+ # Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -10,7 +11,7 @@ all: links
 
 .PHONY: links
 links:
-	for f in `cd ../../basis-library/mlton && ls *.sig`; do 	\
+	for f in `cd ../../../basis-library/mlton && ls *.sig`; do 	\
 		if [ "$$f" != 'ffi.sig' ]; then				\
 			rm -f $$f && 					\
 				ln ../../basis-library/mlton/$$f .; 	\
@@ -19,4 +20,4 @@ links:
 
 .PHONY: clean
 clean:
-	../../bin/clean
+	../../../bin/clean

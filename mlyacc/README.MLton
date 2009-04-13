@@ -7,14 +7,14 @@ Files from SML/NJ:
   build.bat -- deleted
   doc/
   examples/
-  lib/base.sig -- moved to <src>/lib/mlyacc
-  lib/join.sml -- moved to <src>/lib/mlyacc
-  lib/lrtable.sml -- moved to <src>/lib/mlyacc
+  lib/base.sig -- moved to <src>/lib/mlyacc-lib
+  lib/join.sml -- moved to <src>/lib/mlyacc-lib
+  lib/lrtable.sml -- moved to <src>/lib/mlyacc-lib
   lib/ml-yacc-lib.cm
-  lib/parser1.sml -- moved to <src>/lib/mlyacc
-  lib/parser2.sml -- moved to <src>/lib/mlyacc
+  lib/parser1.sml -- moved to <src>/lib/mlyacc-lib
+  lib/parser2.sml -- moved to <src>/lib/mlyacc-lib
   lib/sources.cm -- deleted
-  lib/stream.sml -- moved to <src>/lib/mlyacc
+  lib/stream.sml -- moved to <src>/lib/mlyacc-lib
   src/FILES
   src/README
   src/absyn.sig -- modifed
@@ -51,6 +51,6 @@ Files added:
   call-main.sml
   doc/Makefile
   doc/macros.hva
-  lib/mlyacc-lib.mlb -- moved to <src>/lib/mlyacc
+  lib/mlyacc-lib.mlb -- moved to <src>/lib/mlyacc-lib
   main.sml
   mlyacc.mlb

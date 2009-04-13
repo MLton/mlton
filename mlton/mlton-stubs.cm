@@ -9,5 +9,5 @@
 Group is
 
 upgrade-basis.sml
-../lib/mlton-stubs/sources.cm
+../lib/stubs/mlton-stubs/sources.cm
 mlton.cm

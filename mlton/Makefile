@@ -173,14 +173,14 @@ polyml-mlton: mlton-polyml.use
 	$(CC) -o $(LIB)/mlton-polyml mlton-polyml.o -lpolymain -lpolyml
 	rm -f mlton-polyml.o
 
-mlton-polyml.use: ../lib/basis-stubs-for-polyml/sources.use ../lib/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
+mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
 	(									\
-		cat ../lib/basis-stubs-for-polyml/sources.use |			\
-			sed 's|use "\(.*\)";|../lib/basis-stubs-for-polyml/\1|'; \
+		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
+			sed 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
 		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
-		cat ../lib/mlton-stubs-for-polyml/sources.use |			\
-			sed 's|use "\(.*\)";|../lib/mlton-stubs-for-polyml/\1|'; \
-		mlton -stop f ../lib/mlton-stubs/sources.mlb |			\
+		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
+			sed 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
+		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
 			grep -v 'mlb$$' | 					\
 			grep 'mlton-stubs';					\
 		mlton -stop f mlton.mlb |					\

@@ -492,7 +492,7 @@ structure MLton: MLTON =
          struct
             datatype status = Clone | Original
             fun load _ = raise Fail "World.load"
-            fun save _ = raise Fail "MLton.World.save"
+            fun save _ = raise Fail "World.save"
             fun saveThread _ = raise Fail "World.saveThread"
          end
 

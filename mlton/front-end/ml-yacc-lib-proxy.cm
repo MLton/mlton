@@ -6,11 +6,11 @@
 
 Library
 
-library($/ml-yacc-lib.cm) - (
+library(../../lib/mlyacc-lib/ml-yacc-lib.cm) - (
   signature STREAM
   structure Stream
 )
 
 is
 
-$/ml-yacc-lib.cm
+../../lib/mlyacc-lib/ml-yacc-lib.cm

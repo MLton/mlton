@@ -9,4 +9,4 @@
 
 .PHONY: clean
 clean:
-	../../bin/clean
+	../../../bin/clean

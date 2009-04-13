@@ -9,7 +9,7 @@
 
 local
    ../../lib/mlton/sources.mlb
-   ../../lib/mlyacc/mlyacc-lib.mlb
+   ../../lib/mlyacc-lib/mlyacc-lib.mlb
    ../ast/sources.mlb
    ../control/sources.mlb
 

@@ -169,8 +169,8 @@ functor UniqueSet
 is
 
 #if (defined (SMLNJ_VERSION))
-../../basis-stubs-for-smlnj/sources.cm
-../../mlton-stubs/sources.cm
+../../stubs/basis-stubs-for-smlnj/sources.cm
+../../stubs/mlton-stubs/sources.cm
 #endif
 ../pervasive/sources.cm
 

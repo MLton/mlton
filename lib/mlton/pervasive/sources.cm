@@ -16,7 +16,7 @@ structure Pervasive
 is
 
 #if (defined (SMLNJ_VERSION))
-../../basis-stubs-for-smlnj/sources.cm
+../../stubs/basis-stubs-for-smlnj/sources.cm
 #endif
 
 pervasive.sml
