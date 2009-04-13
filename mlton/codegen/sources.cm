@@ -15,7 +15,7 @@ functor x86Codegen
 
 is
 
-c-codegen/sources.cm
-bytecode/sources.cm
-x86-codegen/sources.cm
 amd64-codegen/sources.cm
+bytecode/sources.cm
+c-codegen/sources.cm
+x86-codegen/sources.cm
