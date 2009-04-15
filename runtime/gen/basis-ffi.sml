@@ -61,7 +61,7 @@ val FE_TONEAREST = _const "IEEEReal_RoundingMode_FE_TONEAREST" : C_Int.t;
 val FE_TOWARDZERO = _const "IEEEReal_RoundingMode_FE_TOWARDZERO" : C_Int.t;
 val FE_UPWARD = _const "IEEEReal_RoundingMode_FE_UPWARD" : C_Int.t;
 end
-val setRoundingMode = _import "IEEEReal_setRoundingMode" private : C_Int.t -> unit;
+val setRoundingMode = _import "IEEEReal_setRoundingMode" private : C_Int.t -> C_Int.t;
 end
 structure MinGW = 
 struct

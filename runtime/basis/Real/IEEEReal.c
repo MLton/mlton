@@ -75,7 +75,7 @@ C_Int_t IEEEReal_getRoundingMode (void) {
   return fegetround ();
 }
 
-void IEEEReal_setRoundingMode (C_Int_t m) {
+C_Int_t IEEEReal_setRoundingMode (C_Int_t m) {
   assert (m != IEEEReal_RoundingMode_FE_NOSUPPORT);
-  fesetround (m);
+  return fesetround (m);
 }

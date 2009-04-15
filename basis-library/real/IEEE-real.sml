@@ -86,7 +86,12 @@ structure IEEEReal: IEEE_REAL_EXTRA =
 
       datatype rounding_mode = datatype RoundingMode.t
 
-      val setRoundingMode = Prim.setRoundingMode o RoundingMode.toInt
+      fun setRoundingMode (m: rounding_mode): unit =
+          if Prim.setRoundingMode (RoundingMode.toInt m) = 0
+             then ()
+          else
+             raise PosixError.raiseSys PosixError.inval
+
       val getRoundingMode = RoundingMode.fromInt o Prim.getRoundingMode
 
       fun withRoundingMode (m: rounding_mode, th: unit -> 'a): 'a =

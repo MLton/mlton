@@ -43,7 +43,7 @@ PRIVATE extern const C_Int_t IEEEReal_RoundingMode_FE_NOSUPPORT;
 PRIVATE extern const C_Int_t IEEEReal_RoundingMode_FE_TONEAREST;
 PRIVATE extern const C_Int_t IEEEReal_RoundingMode_FE_TOWARDZERO;
 PRIVATE extern const C_Int_t IEEEReal_RoundingMode_FE_UPWARD;
-PRIVATE void IEEEReal_setRoundingMode(C_Int_t);
+PRIVATE C_Int_t IEEEReal_setRoundingMode(C_Int_t);
 PRIVATE C_Size_t MinGW_getTempPath(C_Size_t,Array(Char8_t));
 PRIVATE __attribute__((noreturn)) void MLton_bug(String8_t);
 PRIVATE extern const C_Int_t MLton_Itimer_PROF;

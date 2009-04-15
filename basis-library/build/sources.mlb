@@ -181,6 +181,20 @@ in
    ../util/CUtil.sig
    ../util/CUtil.sml
 
+   ../util/unique-id.sig
+   ../util/unique-id.fun
+   ../util/cleaner.sig
+   ../util/cleaner.sml
+   ../util/abs-rep.sig
+   ../util/abs-rep.fun
+
+   ../config/c/sys-types.sml
+   ../system/pre-os.sml
+   ../posix/pre-posix.sml
+
+   ../posix/error.sig
+   ../posix/error.sml
+
    ../real/IEEE-real.sig
    ../real/IEEE-real.sml
    ../real/math.sig
@@ -207,20 +221,6 @@ in
       ../config/c/position.sml
       ../config/c/sys-word.sml
    end end
-
-   ../util/unique-id.sig
-   ../util/unique-id.fun
-   ../util/cleaner.sig
-   ../util/cleaner.sml
-   ../util/abs-rep.sig
-   ../util/abs-rep.fun
-
-   ../config/c/sys-types.sml
-   ../system/pre-os.sml
-   ../posix/pre-posix.sml
-
-   ../posix/error.sig
-   ../posix/error.sml
 
    ../system/time.sig
    ../system/time.sml
