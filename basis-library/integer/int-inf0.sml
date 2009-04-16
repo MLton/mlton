@@ -1198,12 +1198,12 @@ structure IntInf =
             if shift = 0wx0
                then arg
                else Prim.<< (arg, shift, 
-                             reserve (S.+ (1, S.+ (numLimbs arg, shiftSize shift)), 1))
+                             reserve (S.+ (numLimbs arg, shiftSize shift), 1))
          fun bigRashift (arg: bigInt, shift: Word32.word): bigInt =
             if shift = 0wx0
                then arg
                else Prim.~>> (arg, shift,
-                              reserve (S.+ (1, S.max (0, S.- (numLimbs arg, shiftSize shift))), 0))
+                              reserve (S.max (0, S.- (numLimbs arg, shiftSize shift)), 1))
       end
 
       fun mkBigCvt {base: Int32.int,
