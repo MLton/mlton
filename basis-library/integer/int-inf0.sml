@@ -1203,7 +1203,7 @@ structure IntInf =
             if shift = 0wx0
                then arg
                else Prim.~>> (arg, shift,
-                              reserve (S.max (1, S.- (numLimbs arg, shiftSize shift)), 0))
+                              reserve (S.+ (1, S.max (0, S.- (numLimbs arg, shiftSize shift))), 0))
       end
 
       fun mkBigCvt {base: Int32.int,
