@@ -102,9 +102,11 @@ structure Target =
             (AMD64, _) => SOME {name = toString t, sizes = SizesAMD64.sizes,
                                 endianShift = EndianLittle.shift}
           | (HPPA, _) => SOME {name = toString t, sizes = SizesHPPA.sizes,
-                                endianShift = EndianBig.shift}
-          | (IA64, _) => SOME {name = toString t, sizes = SizesIA64.sizes,
-                                endianShift = EndianLittle.shift}
+                               endianShift = EndianBig.shift}
+          | (IA64, HPUX) => SOME {name = toString t, sizes = SizesIA64.sizes,
+                                  endianShift = EndianBig.shift}
+          | (IA64, Linux) => SOME {name = toString t, sizes = SizesIA64.sizes,
+                                   endianShift = EndianLittle.shift}
           | (Sparc, _) => SOME {name = toString t, sizes = SizesSparc.sizes,
                                 endianShift = EndianBig.shift}
           | (PowerPC, _) => SOME {name = toString t, sizes = SizesPPC.sizes,
