@@ -133,25 +133,28 @@ local
        else
           let
              val old = PIR.getRoundingMode ()
-             (* According to the Basis library spec, setRoundingMode could
-              * fail (raise an exception), but the current implementation
-              * in MLton does not seem to do so.  This code may need to be
-              * revisited if the behavior of setRoundingMode changes in
-              * MLton.  The idea here is simply to evaluate the operation
-              * in all (relevant) rounding modes to ensure that the result
-              * is the same regardless of rounding mode.
-              *)
-             val () = PIR.setRoundingMode PIR.TO_NEGINF
-             val min = f arg
-             val () = PIR.setRoundingMode PIR.TO_POSINF
-             val max = f arg
-             val () = PIR.setRoundingMode old
           in
-             if PIR.EQUAL = compareReal (min, max)
-                andalso signBit min = signBit max
-                orelse isNan min andalso isNan max
-                then SOME (tag min)
-             else NONE
+             (* According to the Basis Library specification,
+              * setRoundingMode can fail (raise an exception).
+              *)
+             let
+                val () = PIR.setRoundingMode PIR.TO_NEGINF
+                val min = f arg
+                val () = PIR.setRoundingMode PIR.TO_POSINF
+                val max = f arg
+                val () = PIR.setRoundingMode old
+             in
+                if PIR.EQUAL = compareReal (min, max)
+                   andalso signBit min = signBit max
+                   orelse isNan min andalso isNan max
+                   then SOME (tag min)
+                else NONE
+             end
+             handle _ =>
+                (if PIR.getRoundingMode () = old
+                    then ()
+                 else PIR.setRoundingMode old
+                 ; NONE)
           end
 
    fun make1 (o32, o64) =
