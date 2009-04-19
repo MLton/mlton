@@ -1401,8 +1401,7 @@ fun commandLine (args: string list): unit =
                                  Compile.compileSML
                                  {input = files,
                                   outputC = make (Control.C, ".c"),
-                                  outputS = make (Control.Assembly,
-                                                  if !debug then ".s" else ".S")}
+                                  outputS = make (Control.Assembly, ".s")}
                      in
                         case stop of
                            Place.Generated => ()
