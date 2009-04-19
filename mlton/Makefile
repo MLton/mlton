@@ -188,7 +188,6 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 			grep -v 'sml/basis' | 					\
 			grep -v 'mlton-stubs' |					\
 			grep -v 'mlyacc' |					\
-			grep -v 'main/export-mlton.sml' |			\
 			grep -v 'call-main.sml';				\
 	) | sed 's|\(.*\)|use "\1";|' > mlton-polyml.use
 
