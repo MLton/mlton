@@ -143,7 +143,7 @@ structure Word8
 (* structure Word8Array *)
 (* structure Word8ArraySlice *)
 (* structure Word8Vector *)
-(*structure Word16*)
+(* structure Word16 *)
 (* structure Word32 *)
 
 functor AlphaBeta
@@ -336,16 +336,13 @@ escape.sig
 escape.sml
 buffer.sig
 buffer.sml
-socket.sml
-inet-sock.sml
-word8-array-slice.sml
+base64.sig
+base64.sml
 
 # if ( defined(SMLNJ_VERSION) )
 
 alpha-beta.fun
 alpha-beta.sig
-base64.sig
-base64.sml
 bounded-order.fun
 bounded-order.sig
 char-buffer.sig
@@ -368,6 +365,7 @@ html.sig
 html.sml
 http.sig
 http.sml
+inet-sock.sml
 init-script.sig
 init-script.sml
 iterate.sig
@@ -399,6 +397,7 @@ reader.sig
 reader.sml
 resizable-array.fun
 resizable-array.sig
+socket.sml
 sum.fun
 sum.sig
 tab.sig
@@ -410,5 +409,6 @@ two-list-queue-mutable.sml
 unimplemented.sml
 url.sig
 url.sml
+word8-array-slice.sml
 
 # endif
