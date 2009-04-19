@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -250,8 +251,8 @@ val lexAndParseString =
                 in
                    default
                 end
-             fun err mst =
-                fail (Ast.Basdec.Seq []) (concat ["File ", fileOrig, mst])
+             fun err msg =
+                fail (Ast.Basdec.Seq []) (concat ["File ", fileOrig, msg])
              val {fileAbs, fileUse, relativize, ...} =
                 regularize {cwd = cwd,
                             fileOrig = fileOrig,
