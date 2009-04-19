@@ -97,9 +97,6 @@ $(AOUT): $(SOURCES)
 $(UP):
 	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
 
-mlton.sml: $(SOURCES)
-	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
-
 .PHONY: def-use
 def-use:
 	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
