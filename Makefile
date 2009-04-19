@@ -232,11 +232,11 @@ smlnj-mlton:
 
 .PHONY: smlnj-mlton-dual
 smlnj-mlton-dual:
-	$(MAKE) SMLNJ_CM_SERVERS=2 smlnj-mlton
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=2 smlnj-mlton
 
 .PHONY: smlnj-mlton-quad
 smlnj-mlton-quad:
-	$(MAKE) SMLNJ_CM_SERVERS=4 smlnj-mlton
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=4 smlnj-mlton
 
 .PHONY: targetmap
 targetmap:

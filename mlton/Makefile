@@ -112,8 +112,8 @@ clean:
 # The following rebuilds the heap file for the SML/NJ compiled version
 # of MLton.
 #
-SMLNJ	:= sml
-SMLNJ_CM_SERVERS := 0
+SMLNJ := sml
+SMLNJ_CM_SERVERS_NUM := 0
 
 .PHONY: smlnj-mlton
 smlnj-mlton: $(SOURCES)
@@ -127,7 +127,7 @@ smlnj-mlton: $(SOURCES)
 		echo 'local';							\
 		echo 'fun loop 0 = () | loop n = (CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server" ^ (Int.toString n), pathtrans = NONE, pref = 0}; loop (n - 1));'; \
 		echo 'in';							\
-		echo 'val _ = loop $(SMLNJ_CM_SERVERS);';			\
+		echo 'val _ = loop $(SMLNJ_CM_SERVERS_NUM);';			\
 		echo 'end;';							\
 		echo 'CM.make "mlton-smlnj.cm";';				\
 		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
