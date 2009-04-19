@@ -104,6 +104,11 @@ mlton.sml: $(SOURCES)
 def-use:
 	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
 
+.PHONY: warn
+warn:
+	mlton -stop tc -default-ann 'warnUnused true' $(FILE) \
+		>/tmp/z.warn 2>&1
+
 .PHONY: clean
 clean:
 	../bin/clean
@@ -190,8 +195,3 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 			grep -v 'mlyacc' |					\
 			grep -v 'call-main.sml';				\
 	) | sed 's|\(.*\)|use "\1";|' > mlton-polyml.use
-
-.PHONY: warn
-warn:
-	mlton -stop tc -default-ann 'warnUnused true' $(FILE) \
-		>/tmp/z.warn 2>&1
