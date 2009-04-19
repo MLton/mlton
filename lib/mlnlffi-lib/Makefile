@@ -23,3 +23,7 @@ memory/platform/rtld-flags.$(TARGET_OS).sml: gen-rtld-flags.c
 	$(CC) $(CFLAGS) -o gen-rtld-flags gen-rtld-flags.c
 	./gen-rtld-flags > memory/platform/rtld-flags.$(TARGET_OS).sml
 	rm -f gen-rtld-flags$(EXE)
+
+.PHONY: clean
+clean:
+	../../bin/clean
