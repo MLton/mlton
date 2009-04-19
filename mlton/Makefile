@@ -121,7 +121,7 @@ SMLNJ := sml
 SMLNJ_CM_SERVERS_NUM := 0
 
 .PHONY: smlnj-mlton
-smlnj-mlton: $(SOURCES)
+smlnj-mlton:
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	(									\
@@ -137,29 +137,6 @@ smlnj-mlton: $(SOURCES)
 		echo 'CM.make "mlton-smlnj.cm";';				\
 		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
-
-.PHONY: smlnj-whole
-smlnj-whole: $(SOURCES)
-	(									\
-		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
-		echo 'Control.polyEqWarn := false;'; 				\
-		echo 'local'; 							\
-		cmcat sources.cm | grep 'basis-stubs-for-smlnj' | xargs cat;	\
-		cmcat sources.cm | grep 'mlyacc' | xargs cat;			\
-		cmcat sources.cm | grep 'mlton-stubs-for-smlnj' | xargs cat;	\
-		cmcat sources.cm | grep 'mlton-stubs' | xargs cat;		\
-		cmcat sources.cm | 						\
-			grep -v 'basis-stubs-for-smlnj' |			\
-			grep -v 'mlyacc' |					\
-			grep -v 'mlton-stubs-for-smlnj' |			\
-			grep -v 'mlton-stubs' | xargs cat;	 		\
-		echo 'in';							\
-		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
-		echo 'end';							\
-	) >mlton.whole.sml
-	"$(SMLNJ)" <mlton.whole.sml
 
 #
 # The following rebuilds the executable file for the Poly/ML compiled
