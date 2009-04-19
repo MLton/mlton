@@ -1,9 +1,35 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2009-04-16
+   - Fixed bug in IntInf.~>> that could cause a glibc assertion
+     failure.
+
+* 2009-04-01
+   - Fixed exported type of MLton.Process.reap.
+
+* 2009-01-27
+   - Added MLton.Socket.Address.toVector to get the network-byte-order
+     representation of an IP address.
+
+* 2008-11-10
+   - Fixed bug in MLton.size and MLton.share when tracing the current
+     stack.
+
 * 2008-10-27
    - Fixed phantom typing of sockets by hiding the representation of socket
      types.  Previously the representation of sockets was revealed rendering
      the phantom types useless.
+
+* 2008-10-10
+   - Fixed bug in nexted _export/_import functions.
+
+* 2008-09-12
+   - Improved constant folding of floating point operations.
+
+* 2008-08-20
+   - Store the card/cross map at the end of the allocated ML heap;
+     avoids possible out of memory errors when resizing the ML heap
+     cannot be followed by a card/cross map allocation.
 
 * 2008-07-24
    - Added support for compiling to a C library. The relevant new compiler
