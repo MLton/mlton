@@ -23,7 +23,7 @@ static inline C_Int_t fegetround (void) {
                >> FPU_ROUNDING_CONTROL_SHIFT;
 }
 
-static inline void fesetround (C_Int_t mode) {
+static inline C_Int_t fesetround (C_Int_t mode) {
         uint16_t fpuControl;
 #ifdef __x86_64__
         uint32_t sseControl;
@@ -40,6 +40,7 @@ static inline void fesetround (C_Int_t mode) {
         sseControl |= mode << SSE_ROUNDING_CONTROL_SHIFT;
         _SSE_SETCSR (sseControl);
 #endif
+        return 0;
 }
 
 #elif (defined __UCLIBC__)
