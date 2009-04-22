@@ -66,25 +66,13 @@
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
 
-/* Old versions of HP-UX do not handle IPv6. */
-#ifndef AF_INET6
-
-#define AF_INET6 22 /* Internet Protocol, Version 6 */
-#define PF_INET6 AF_INET6
-
-struct sockaddr_in6 {
-  int dummy; // quell gcc warnings about "struct has no members"
-};
-#endif /* !AF_INET6 */
-
-#if HPUX_VERSION < 1111
-struct sockaddr_storage {
-  union {
-    struct sockaddr_in sa_in;
-    struct sockaddr_un sa_un;
-  } sa;
-};
-#endif /* HPUX_VERSION < 1111 */
+/* fesetround() doesn't seem to be returning 0 as expected. */
+static int MLton_fesetround (int mode)
+{
+        fesetround (mode);
+        return 0;
+}
+#define fesetround MLton_fesetround
 
 typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 
