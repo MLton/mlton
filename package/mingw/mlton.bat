@@ -61,7 +61,6 @@ shift
 goto args_loop
 :args_done
 
-set world=%lib%\world.mlton
 set mlton=%lib%\mlton-compile.exe
 
 set ccopts=-O1 -fno-strict-aliasing -fomit-frame-pointer -w
@@ -69,7 +68,7 @@ set ccopts=%ccopts% -fno-strength-reduce -fschedule-insns -fschedule-insns2
 set ccopts=%ccopts% -malign-functions=5 -malign-jumps=2 -malign-loops=2
 set linkopts=-lm -lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm -Wl,--enable-stdcall-fixup
 
-"%mlton%" @MLton load-world "%world%" ram-slop 0.5 %rargs% -- "%lib%" -cc "%cc%" -ar-script "%bin%\static-library.bat" -cc-opt-quote "-I%lib%\include" -cc-opt "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opt "%linkopts%" %args%
+"%mlton%" @MLton ram-slop 0.5 %rargs% -- "%lib%" -cc "%cc%" -ar-script "%bin%\static-library.bat" -cc-opt-quote "-I%lib%\include" -cc-opt "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opt "%linkopts%" %args%
 set retval=%errorlevel%
 
 if "%pause%" == "yes" pause
