@@ -110,3 +110,12 @@ int fpclassify64 (double d);
 #define HAS_FPCLASSIFY   FALSE
 #define HAS_FPCLASSIFY32 FALSE
 #define HAS_FPCLASSIFY64 TRUE
+
+/* These are not predefined on Solaris 8. */
+#ifndef NAN
+#define NAN (__builtin_nanf (""))
+#endif
+
+#ifndef INFINITY
+#define INFINITY (__builtin_inff())
+#endif
