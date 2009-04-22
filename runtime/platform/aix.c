@@ -1,8 +1,3 @@
-/* On AIX 5.1 (and older) there is no fegetround() or fesetround().
-   Instead, float.h defines fp_read_rnd() and fp_swap_rnd() with
-   equivalent functionality.  GCC has its own version of float.h, so
-   we include the system header directly before everything else. */
-#include "/usr/include/float.h"
 #include "platform.h"
 
 #include <sys/mman.h>
@@ -15,16 +10,6 @@
 #include "nonwin.c"
 #include "recv.nonblock.c"
 #include "use-mmap.c"
-
-int fegetround (void)
-{
-        return fp_read_rnd ();
-}
-
-void fesetround (int mode)
-{
-        fp_swap_rnd (mode);
-}
 
 int fpclassify64 (double d)
 {
