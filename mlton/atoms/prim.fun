@@ -1836,7 +1836,7 @@ fun ('a, 'b) apply (p: 'a t,
                                then realAdd (s, x, x)
                             else Unknown
                           | Real_div s =>
-                            if not signBit andalso exp = 0
+                            if inOrder andalso not signBit andalso exp = 0
                                then realAdd (s, x, x)
                             else Unknown
                           | _ => Unknown)
