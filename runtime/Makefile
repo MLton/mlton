@@ -57,13 +57,7 @@ endif
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
-ifeq (3.4, $(firstword $(sort $(GCC_VERSION) 3.4)))
-GCOPTFLAGS += --param inline-unit-growth=100
-GCOPTFLAGS += --param max-inline-insns-single=1000
-GCOPTFLAGS += --param large-function-growth=1000
-endif
 DEBUGFLAGS += -gstabs+
-OPTWARNFLAGS += -Winline
 endif
 
 ifeq ($(findstring $(TARGET_ARCH), hppa ia64 powerpc sparc),$(TARGET_ARCH))
@@ -93,14 +87,6 @@ ifeq (3, $(firstword $(sort $(GCC_MAJOR_VERSION) 3)))
 OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 OPTFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
-endif
-ifeq (3.3, $(firstword $(sort $(GCC_MAJOR_VERSION) 3.3)))
-GCOPTFLAGS += --param max-inline-insns-single=1000
-ifeq (3.4, $(firstword $(sort $(GCC_MAJOR_VERSION) 3.4)))
-GCOPTFLAGS += --param inline-unit-growth=200
-GCOPTFLAGS += --param large-function-growth=2200
-OPTWARNFLAGS += -Winline
-endif
 endif
 DEBUGFLAGS += -gstabs+
 endif
