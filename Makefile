@@ -228,6 +228,7 @@ endif
 smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" smlnj-mlton
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 

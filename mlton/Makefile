@@ -144,7 +144,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 		echo 'if (CM.make "mlton-smlnj.cm") handle _ => false';		\
 		echo '   then ()';						\
 		echo '   else OS.Process.exit OS.Process.failure;'; 		\
-		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
+		echo 'SMLofNJ.exportFn("mlton-smlnj",Main.main);'		\
 	) | "$(SMLNJ)"
 
 #
