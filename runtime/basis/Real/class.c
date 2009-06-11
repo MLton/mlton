@@ -1,12 +1,12 @@
 #include "platform.h"
 
-#if HAS_FPCLASSIFY
+#if defined (HAS_FPCLASSIFY) && HAS_FPCLASSIFY
 
 C_Int_t Real32_class (Real32_t f) {
   return fpclassify (f);
 }
 
-#elif HAS_FPCLASSIFY32
+#elif defined (HAS_FPCLASSIFY32) && HAS_FPCLASSIFY32
 
 C_Int_t Real32_class (Real32_t f) {
   return fpclassify32 (f);
@@ -77,13 +77,13 @@ C_Int_t Real32_class (Real32_t f) {
 #endif
 
 
-#if HAS_FPCLASSIFY
+#if defined (HAS_FPCLASSIFY) && HAS_FPCLASSIFY
 
 C_Int_t Real64_class (Real64_t d) {
   return fpclassify (d);
 }
 
-#elif HAS_FPCLASSIFY64
+#elif defined (HAS_FPCLASSIFY64) && HAS_FPCLASSIFY64
 
 C_Int_t Real64_class (Real64_t d) {
   return fpclassify64 (d);

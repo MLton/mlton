@@ -1,4 +1,5 @@
-/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -450,19 +451,19 @@ typedef char *String;
 #undef FlushStackTop
 #define CacheFrontier()                         \
         do {                                    \
-                frontier = gcState.frontier;    \
+                frontier = (Pointer)(gcState.frontier); \
         } while (0)
 #define CacheStackTop()                         \
         do {                                    \
-                stackTop = gcState.stackTop;    \
+                stackTop = (Pointer)(gcState.stackTop); \
         } while (0)
 #define FlushFrontier()                         \
         do {                                    \
-                gcState.frontier = frontier;    \
+                gcState.frontier = (pointer)frontier; \
         } while (0)
 #define FlushStackTop()                         \
         do {                                    \
-                gcState.stackTop = stackTop;    \
+                gcState.stackTop = (pointer)stackTop; \
         } while (0)
 
 #define disp(ty,ty2,fmt)                                        \
@@ -591,7 +592,7 @@ mainLoop:
                 goto mainLoop;
         }
         case opcodeSym (Raise):
-                maybe StackTop = gcState.stackBottom + gcState.exnStack;
+                maybe StackTop = (Pointer)(gcState.stackBottom + gcState.exnStack);
                 // fall through to Return.
         case opcodeSym (Return):
                 Goto (*(Label*)(StackTop - sizeof (Label)));
