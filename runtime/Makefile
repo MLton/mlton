@@ -89,21 +89,18 @@ endif
 
 ifeq ($(TARGET_ARCH), x86)
 FLAGS += -m32
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
+ifeq (3, $(firstword $(sort $(GCC_MAJOR_VERSION) 3)))
 OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 OPTFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
-ifeq ($(findstring $(GCC_VERSION), 3.3 3.4 4.0),$(GCC_VERSION))
+ifeq (3.3, $(firstword $(sort $(GCC_MAJOR_VERSION) 3.3)))
 GCOPTFLAGS += --param max-inline-insns-single=1000
-ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
+ifeq (3.4, $(firstword $(sort $(GCC_MAJOR_VERSION) 3.4)))
 GCOPTFLAGS += --param inline-unit-growth=200
 GCOPTFLAGS += --param large-function-growth=2200
 OPTWARNFLAGS += -Winline
 endif
-endif
-ifeq ($(findstring $(GCC_VERSION), 4.1),$(GCC_VERSION))
-OPTWARNFLAGS += -Winline
 endif
 DEBUGFLAGS += -gstabs+
 endif
