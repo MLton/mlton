@@ -43,15 +43,18 @@ FLAGS += -target $(TARGET)
 FLAGS += -verbose 2 -output "$(AOUT)"
 FLAGS += $(COMPILE_ARGS)
 
-SOURCES :=			\
-	$(FILE)			\
-	$(UP)			\
+FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
 	front-end/ml.grm.sig	\
 	front-end/ml.grm.sml	\
 	front-end/mlb.lex.sml	\
 	front-end/mlb.grm.sig	\
-	front-end/mlb.grm.sml	\
+	front-end/mlb.grm.sml
+
+SOURCES :=			\
+	$(FILE)			\
+	$(UP)			\
+	$(FRONT_END_SOURCES)	\
 	$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi)
 
 .PHONY: all
@@ -125,7 +128,7 @@ SMLNJ := sml
 SMLNJ_CM_SERVERS_NUM := 0
 
 .PHONY: smlnj-mlton
-smlnj-mlton:
+smlnj-mlton: $(FRONT_END_SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	(									\
@@ -151,7 +154,7 @@ smlnj-mlton:
 POLYML	:= poly
 
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use
+polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	(									\
