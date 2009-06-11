@@ -27,19 +27,15 @@ ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   FLAGS += -default-ann 'warnUnused true'
   # FLAGS += -type-check true
 else
-ifeq (cygwin, $(HOST_OS))
-  # The stubs don't work on Cygwin, since they define spawn in terms of
-  # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
-  FILE := mlton.cm
-else
-ifeq (mingw, $(HOST_OS))
-  # Ditto for MinGW.
+ifneq (,$(findstring $(HOST_OS), cygwin mingw))
+  # The stubs don't work on Cygwin or MinGW, since they define spawn
+  # in terms of fork, and fork doesn't work on Cygwin or MinGW.  So,
+  # make without the stubs.
   FILE := mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
   FILE := mlton-stubs.cm
-endif
 endif
 endif
 
