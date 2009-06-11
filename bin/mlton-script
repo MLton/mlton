@@ -19,11 +19,9 @@ esac
 mlton="$lib/mlton-compile$exe"
 
 smlnj='sml'
-# Try to use the SML/NJ .arch-n-opsys
-if .arch-n-opsys >/dev/null 2>&1; then
-        eval `.arch-n-opsys`
-        mlton_smlnj_heap="$lib/mlton-smlnj.$HEAP_SUFFIX"
-        unset `.arch-n-opsys | sed 's#=[^ ]*##g'`
+if $smlnj -h >/dev/null 2>&1; then
+        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
+        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
 else
         mlton_smlnj_heap=""
 fi
