@@ -12,10 +12,8 @@ BIN := $(BUILD)/bin
 HOST_ARCH := $(shell "$(SRC)/bin/host-arch")
 HOST_OS := $(shell "$(SRC)/bin/host-os")
 LIB := $(BUILD)/lib
-MLTON := mlton
 TARGET := self
 AOUT := mlton-compile
-UP := upgrade-basis.sml
 PATH := $(BIN):$(shell echo $$PATH)
 
 FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
@@ -53,12 +51,18 @@ FRONT_END_SOURCES :=		\
 
 SOURCES :=			\
 	$(FILE)			\
-	$(UP)			\
+	upgrade-basis.sml	\
 	$(FRONT_END_SOURCES)	\
 	$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi)
 
 .PHONY: all
 all: $(AOUT)
+
+control/version.sml: control/version_sml.src
+	cat control/version_sml.src |						\
+		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`date`\2/" |		\
+		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
+		control/version.sml
 
 front-end/ml.lex.sml: front-end/ml.lex
 	$(MAKE) -C front-end ml.lex.sml
@@ -69,11 +73,10 @@ front-end/mlb.lex.sml: front-end/mlb.lex
 front-end/mlb.grm.sig front-end/mlb.grm.sml: front-end/mlb.grm
 	$(MAKE) -C front-end mlb.grm.sig mlb.grm.sml
 
-control/version.sml: control/version_sml.src
-	cat control/version_sml.src |						\
-		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`date`\2/" |		\
-		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
-		control/version.sml
+# Pass $(PATH) to upgrade-basis because it is run via
+# #!/usr/bin/env bash, which resets the path.
+upgrade-basis.sml:
+	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >upgrade-basis.sml
 
 mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
 	(									\
@@ -81,7 +84,7 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
 		echo '$$(SML_LIB)/basis/mlton.mlb';				\
 		echo '$$(SML_LIB)/basis/basis.mlb';				\
-		echo '$(UP)';							\
+		echo 'upgrade-basis.sml';					\
 		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
 		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
 			grep -v 'mlb$$' | 					\
@@ -93,28 +96,17 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 			grep -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
-
 $(AOUT): $(SOURCES)
-	rm -f $(UP)
-	$(MAKE) $(UP)
+	rm -f upgrade-basis.sml
+	$(MAKE) upgrade-basis.sml
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(FILE)
 
-# Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
-# bash, which resets the path.
-$(UP):
-	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
-
 .PHONY: def-use
 def-use:
 	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
-
-.PHONY: warn
-warn:
-	mlton -stop tc -default-ann 'warnUnused true' $(FILE) \
-		>/tmp/z.warn 2>&1
 
 .PHONY: clean
 clean:
