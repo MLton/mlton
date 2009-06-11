@@ -18,10 +18,10 @@ structure Place =
       datatype t = CM | Files | Generated | MLB | O | OUT | SML | TypeCheck
 
       val toInt: t -> int =
-         fn MLB => 1
-          | CM => 1
+         fn CM => 1
+          | MLB => 1
+          | SML => 1
           | Files => 2
-          | SML => 3
           | TypeCheck => 4
           | Generated => 5
           | O => 6
@@ -69,7 +69,6 @@ datatype explicitCodegen = Native | Explicit of Control.codegen
 val explicitCodegen: explicitCodegen option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
-val keepSML = ref false
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val profileTimeSet: bool ref = ref false
@@ -480,7 +479,6 @@ fun makeOptions {usage} =
                       | "machine" => keepMachine := true
                       | "o" => keepO := true
                       | "rssa" => keepRSSA := true
-                      | "sml" => keepSML := true
                       | "ssa" => keepSSA := true
                       | "ssa2" => keepSSA2 := true
                       | "sxml" => keepSXML := true
@@ -731,7 +729,6 @@ fun makeOptions {usage} =
                      "f" => Place.Files
                    | "g" => Place.Generated
                    | "o" => Place.O
-                   | "sml" => Place.SML
                    | "tc" => Place.TypeCheck
                    | _ => usage (concat ["invalid -stop arg: ", s])))),
        (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
@@ -1421,25 +1418,11 @@ fun commandLine (args: string list): unit =
                   fun compileCM input =
                      let
                         val files = CM.cm {cmfile = input}
-                        fun saveSML smlFile =
-                           File.withOut
-                           (smlFile, fn out =>
-                            (outputHeader' (ML, out)
-                             ; (List.foreach
-                                (files, fn f =>
-                                 (Out.output
-                                  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
-                                  ; File.outputContents (f, out))))))
                      in
                         case stop of
                            Place.Files =>
                               showFiles (Vector.fromList files)
-                         | Place.SML => saveSML (maybeOut ".sml")
-                         | _ =>
-                              (if !keepSML
-                                  then saveSML (suffix ".sml")
-                               else ()
-                               ; compileSml files)
+                         | _ => compileSml files
                      end
                   fun compileMLB file =
                      let
@@ -1474,21 +1457,11 @@ fun commandLine (args: string list): unit =
                                   in Layout.output (l, out)
                                      ; Out.newline out
                                   end)
-                        fun saveSML smlFile =
-                           File.withOut
-                           (smlFile, fn out =>
-                            (outputHeader' (ML, out)
-                             ; (Vector.foreach
-                                (Compile.sourceFilesMLB {input = file}, fn f =>
-                                 (Out.output
-                                  (out, concat ["(*#line 0.0 \"", f, "\"*)\n"])
-                                  ; File.outputContents (f, out))))))
                         val _ =
                            case stop of
                               Place.Files =>
                                  showFiles
                                  (Compile.sourceFilesMLB {input = file})
-                            | Place.SML => saveSML (maybeOut ".sml")
                             | Place.TypeCheck =>
                                  trace (Top, "Type Check SML")
                                  Compile.elaborateMLB {input = file}
@@ -1501,7 +1474,6 @@ fun commandLine (args: string list): unit =
                      in
                         case stop of
                            Place.Files => ()
-                         | Place.SML => ()
                          | Place.TypeCheck => ()
                          | Place.Generated => ()
                          | _ =>

@@ -1,5 +1,10 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2009-04-18
+   - Removed command line switches -keep sml and -stop sml.  Their
+     meaning was unclear with .mlb files; their effect with .cm files
+     can be achieved with -stop f.
+
 * 2009-04-16
    - Fixed bug in IntInf.~>> that could cause a glibc assertion
      failure.
