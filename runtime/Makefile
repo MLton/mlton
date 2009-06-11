@@ -193,7 +193,7 @@ endif
 
 OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
 DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
-PICWARNCFLAGS := $(WARNCFLAGS) $(OPTWARNFLAGS) $(PICWARNFLAGS)
+PICWARNCFLAGS := $(WARNCFLAGS)  -Wdisabled-optimization $(OPTWARNFLAGS)
 
 UTILHFILES :=							\
 	util.h							\
@@ -386,10 +386,10 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 
 ## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
 bytecode/interpret-pic.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+	$(CC) -I../include $(PICCFLAGS) $(GCPICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+	$(CC) -I../include $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
