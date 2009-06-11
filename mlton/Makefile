@@ -84,6 +84,25 @@ control/version.sml: control/version_sml.src
 		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
 		control/version.sml
 
+mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
+	(									\
+		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
+		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
+		echo '$$(SML_LIB)/basis/mlton.mlb';				\
+		echo '$$(SML_LIB)/basis/basis.mlb';				\
+		echo '$(UP)';							\
+		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
+		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
+			grep -v 'mlb$$' | 					\
+			grep 'mlton-stubs';					\
+		mlton -stop f mlton.mlb |					\
+			grep -v 'mlb$$' |					\
+			grep -v 'sml/basis' | 					\
+			grep -v 'mlton-stubs' |					\
+			grep -v 'mlyacc';					\
+	) > mlton-stubs.mlb
+
+
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
