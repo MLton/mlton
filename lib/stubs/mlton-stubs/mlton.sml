@@ -156,8 +156,6 @@ structure MLton: MLTON =
                   datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
                                MIPS | PowerPC | PowerPC64 | S390 | Sparc | X86
 
-                  val host: t = X86
-
                   val all = [(Alpha, "Alpha"),
                              (AMD64, "AMD64"),
                              (ARM, "ARM"),
@@ -180,6 +178,11 @@ structure MLton: MLTON =
                      end
 
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+
+                  val host: t =
+                     case fromString (MLton.Platform.Arch.toString MLton.Platform.Arch.host) of
+                        NONE => raise Fail "MLton.Platform.Arch.host: strange arch"
+                      | SOME host => host
                end
 
             structure OS =
@@ -195,8 +198,6 @@ structure MLton: MLTON =
                    | NetBSD
                    | OpenBSD
                    | Solaris
-
-                  val host: t = Linux
 
                   val all = [(AIX, "AIX"),
                              (Cygwin, "Cygwin"),
@@ -218,6 +219,11 @@ structure MLton: MLTON =
                      end
 
                   fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+
+                  val host: t =
+                     case fromString (MLton.Platform.OS.toString MLton.Platform.OS.host) of
+                        NONE => raise Fail "MLton.Platform.OS.host: strange os"
+                      | SOME os => os
                end
          end
 
