@@ -36,11 +36,17 @@ Summary:
    o Other libraries.
     * Updated: ckit library, SML/NJ library, MLRISC library.
   + Tools.
-   o ml-lex
+   o mllex
+    * Eliminated 'type int = Int.int' in output.
     * Include (*#line line:col "file.lex" *) directives in output.
     * Added %posint command, to set the yypos type and allow the
       lexing of multi-gigabyte files.
-   o ml-yacc
+   o mlnlffigen
+    * Added command-line switches -linkage archive and -linkage shared.
+    * Deprecated command-line switch -linkage static.
+    * Added support for ia64 and hppa targets.
+   o mlyacc
+    * Eliminated 'type int = Int.int' in output.
     * Include (*#line line:col "file.grm" *) directives in output.
 
 * 2009-06-09
