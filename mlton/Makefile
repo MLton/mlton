@@ -161,7 +161,7 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 		echo 'use "mlton-polyml.use";';					\
 		echo 'PolyML.export("mlton-polyml", Main.mainWrapped);';	\
 	) | "$(POLYML)"
-	$(CC) -o $(LIB)/mlton-polyml mlton-polyml.o -lpolymain -lpolyml
+	$(CC) -o mlton-polyml mlton-polyml.o -lpolymain -lpolyml
 	rm -f mlton-polyml.o
 
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)

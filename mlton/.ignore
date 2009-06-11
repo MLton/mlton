@@ -1,5 +1,7 @@
 mlton-compile
 mlton-compile.exe
+mlton-polyml
+mlton-polyml.exe
 mlton-polyml.use
 mlton-stubs.mlb
 upgrade-basis.sml
