@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1491,40 +1492,40 @@ struct
                                  datatype z = datatype MLton.Platform.OS.t
                                  datatype z = datatype Control.Format.t
                                  
-                                 val label = Label.fromString name
+                                 val label = fn () => Label.fromString name
                                  
                                  (* how to access imported functions: *)
                                  (* Windows rewrites the symbol __imp__name *)
-                                 val coff = Label.fromString ("_imp__" ^ name)
-                                 val macho = label (* @PLT is implicit *)
-                                 val elf = Label.fromString (name ^ "@PLT")
+                                 val coff = fn () => Label.fromString ("_imp__" ^ name)
+                                 val macho = fn () => label () (* @PLT is implicit *)
+                                 val elf = fn () => Label.fromString (name ^ "@PLT")
                                  
-                                 val importLabel = 
+                                 val importLabel = fn () =>
                                     case !Control.Target.os of
-                                       Cygwin => coff
-                                     | Darwin => macho
-                                     | MinGW => coff
-                                     |  _ => elf
+                                       Cygwin => coff ()
+                                     | Darwin => macho ()
+                                     | MinGW => coff ()
+                                     |  _ => elf ()
                                  
-                                 val direct =
+                                 val direct = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.label label,
+                                    {target = Operand.label (label ()),
                                      absolute = false}]
                                      
-                                 val plt =
+                                 val plt = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.label importLabel,
+                                    {target = Operand.label (importLabel ()),
                                      absolute = false}]
                                 
-                                 val indirect =
+                                 val indirect = fn () =>
                                    AppendList.fromList
                                    [Assembly.directive_ccall (),
                                     Assembly.instruction_call
-                                    {target = Operand.memloc_label importLabel,
+                                    {target = Operand.memloc_label (importLabel ()),
                                      absolute = true}]
                               in
                                 case (symbolScope,
@@ -1533,21 +1534,21 @@ struct
                                    (* Private functions can be easily reached
                                     * with a direct (rip-relative) call.
                                     *)
-                                   (Private, _, _) => direct
+                                   (Private, _, _) => direct ()
                                    (* Call at the point of definition. *)
-                                 | (Public, MinGW, _) => direct
-                                 | (Public, Cygwin, _) => direct
-                                 | (Public, Darwin, _) => direct
+                                 | (Public, MinGW, _) => direct ()
+                                 | (Public, Cygwin, _) => direct ()
+                                 | (Public, Darwin, _) => direct ()
                                    (* ELF requires PLT even for public fns. *)
-                                 | (Public, _, true) => plt
-                                 | (Public, _, false) => direct
+                                 | (Public, _, true) => plt ()
+                                 | (Public, _, false) => direct ()
                                    (* Windows always does indirect calls to
                                     * imported functions. The importLabel has
                                     * the function address written to it.
                                     *)
-                                 | (External, MinGW, _) => indirect
-                                 | (External, Cygwin, _) => indirect
-                                 | (External, Darwin, _) => plt
+                                 | (External, MinGW, _) => indirect ()
+                                 | (External, Cygwin, _) => indirect ()
+                                 | (External, Darwin, _) => plt ()
                                    (* ELF systems (and darwin too) create
                                     * procedure lookup tables (PLT) which 
                                     * proxy the call to libraries. The PLT
@@ -1557,8 +1558,8 @@ struct
                                     * darwin-x86_64 function calls and calls
                                     * made from an ELF executable.
                                     *)
-                                 | (External, _, true) => plt
-                                 | (External, _, false) => direct
+                                 | (External, _, true) => plt ()
+                                 | (External, _, false) => direct ()
                               end
                          | Indirect =>
                               AppendList.fromList
