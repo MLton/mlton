@@ -25,7 +25,7 @@ ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   FILE := mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
   FLAGS += -default-ann 'warnUnused true'
-  # FLAGS += -type-check true -show-types true
+  # FLAGS += -type-check true
 else
 ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
