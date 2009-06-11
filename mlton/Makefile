@@ -99,7 +99,7 @@ $(AOUT): $(SOURCES)
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(FILE)
 
-#! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
+# Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
 $(UP):
 	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
