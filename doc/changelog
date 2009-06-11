@@ -16,17 +16,23 @@ Summary:
     * Added: may-page-heap {false|true}
    o may-page-heap: By default, MLton will not page the heap to disk
        when unable to grow the heap to accomodate an allocation.
-       (Previously, this behavior was the default, with no mans to
+       (Previously, this behavior was the default, with no means to
        disable, with security an least-surpise issues.)
    o Bug fixes: see changelog
   + Language.
+   o Allow numeric characters in ML Basis path variables.
   + Libraries.
    o Basis Library.
     * Bug fixes: see changelog.
    o MLton structure.
-    * Added: MLton.Socket.Address.toVector
+    * Added: MLton.equal, MLton.hash, MLton.Cont.isolate,
+        MLton.GC.Statistics, MLton.Pointer.sizeofPointer,
+        MLton.Socket.Address.toVector
     * Changed:
     * Deprecated: MLton.Socket
+   o Unsafe structure.
+    * Added versions of all of the monomorphic array and vector
+      structures.
    o Other libraries.
     * Updated: ckit library, SML/NJ library, MLRISC library.
   + Tools.
@@ -87,6 +93,9 @@ Summary:
    - Fixed bug in the name mangling of _import-ed functions with the
      stdcall convention.
 
+* 2008-06-12
+   - Added MLton.Pointer.sizeofPointer.
+
 * 2008-06-06
    - Added expert command line switch -emit-main {true|false}.
 
@@ -94,6 +103,9 @@ Summary:
    - Fixed bug in Windows code to page the heap to disk when unable to
      grow the heap to a desired size.
      Thanks to Sami Evangelista for the bug report.
+
+* 2008-05-10
+   - Implemented MLton.Cont.isolate.
 
 * 2008-04-20
    - Fixed bug in *NIX code to page the heap to disk when unable to
@@ -112,6 +124,10 @@ Summary:
      OS.IO.iodesc, Posix.IO.file_desc, Posix.Signal.signal,
      Socket.sock, Socket.SOGK.sock_type as integers were exposed.
 
+* 2008-03-14
+   - Added unsafe versions of all of the monomorphic array and vector
+     structures.
+
 * 2008-03-02
    - Fixed bug in Basis Library where the representation of
      OS.Process.status as an integer was exposed.
@@ -121,6 +137,14 @@ Summary:
      data structure. Thanks to Daniel Spoonhower for the bug report
      and initial diagnosis and patch.
 
+* 2008-01-25
+   - Various updates to GC statistics gathering.  Some basic GC
+     statistics can be accessed from SML by MLton.GC.Statistics.*
+     functions.
+
+* 2008-01-24
+   - Added primitive (structural) polymorphic hash.
+
 * 2008-01-21
    - Fixed frontend to accept "op longvid" patterns and expressions.
      Thanks to Florian Weimer for the bug report.
@@ -128,6 +152,10 @@ Summary:
 * 2008-01-17
    - Extended -show-def-use output to include types of variable
      definitions.
+
+* 2008-01-09
+   - Extended MLton_equal to be a structural equality on all types,
+     including real and -> types.
 
 * 2007-12-18
    - Changed ML-Yacc and ML-Lex to output line directives so that
@@ -184,6 +212,9 @@ Summary:
 * 2007-11-07
    - Added command-line switch -mlb-path-var '<name> <value>' for
      specifying MLB path variables.
+
+* 2007-11-06
+  - Allow numeric characters in MLB path variables.
 
 * 2007-09-20
    - Fixed bug in elaboration of structures with signature
