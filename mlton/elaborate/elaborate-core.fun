@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -959,17 +960,26 @@ fun import {attributes: ImportExportAttribute.t list,
                val symbolScope =
                   List.keepAll (attributes, isIEAttributeSymbolScope)
                val symbolScope =
-                  case parseIEAttributesSymbolScope
-                       (symbolScope, SymbolScope.External) of
-                     NONE => (invalidAttributes ()
-                              ; SymbolScope.External)
-                   | SOME s => s
-               val () =
                   case name of
-                     NONE => ()
-                   | SOME x => scopeCheck {name = x,
-                                           symbolScope = symbolScope,
-                                           region = region}
+                     NONE =>
+                        (if List.isEmpty symbolScope
+                            then ()
+                            else invalidAttributes ()
+                         ; SymbolScope.External)
+                   | SOME name =>
+                        let
+                           val symbolScope =
+                              case parseIEAttributesSymbolScope
+                                   (symbolScope, SymbolScope.External) of
+                                 NONE => (invalidAttributes ()
+                                          ; SymbolScope.External)
+                               | SOME s => s
+                           val () = scopeCheck {name = name,
+                                                symbolScope = symbolScope,
+                                                region = region}
+                        in
+                           symbolScope
+                        end
                val addrTy = Type.cpointer
                val func =
                   CFunction.T {args = let
