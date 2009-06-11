@@ -43,6 +43,9 @@ Summary:
    o ml-yacc
     * Include (*#line line:col "file.grm" *) directives in output.
 
+* 2009-06-09
+   - Removed deprecated command line switch -show-anns {false, true}.
+
 * 2009-04-18
    - Removed command line switches -keep sml and -stop sml.  Their
      meaning was unclear with .mlb files; their effect with .cm files

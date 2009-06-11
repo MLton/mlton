@@ -689,13 +689,6 @@ fun makeOptions {usage} =
                           "anns" => Show.Anns
                         | "path-map" => Show.PathMap
                         | _ => usage (concat ["invalid -show arg: ", s])))),
-       (Expert, "show-anns", " {false|true}", "deprecated (use -show anns)",
-        Bool
-        (fn b =>
-         (if b then show := SOME Show.Anns else ()
-          ; Out.output
-            (Out.error,
-             "Warning: deprecated option: -show-anns.  Use -show anns.\n")))),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
         SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
