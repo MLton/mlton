@@ -120,15 +120,13 @@ Set the inlining threshold used in the optimizer.  The threshold is an
 approximate measure of code size of a procedure.  The default is 320.
 
 .TP
-\fB-keep \fI{\fBg\fP|\fBo\fP|\fBsml\fP}\fP\fR
+\fB-keep \fI{\fBg\fP|\fBo\fP}\fP\fR
 Save intermediate files.  If no \fB-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc and the assembler
 .br
 \fBo\fP    object (\fB.o\fP) files
-.br
-\fBsml\fP  SML file
 .in -.5i
 
 .TP
@@ -143,8 +141,16 @@ syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 .TP
 \fB-mlb-path-map \fIfile\fP\fR
 Use \fIfile\fP as an ML Basis path map to define additional MLB path variables.
-Multiple uses of \fB-mlb-path-map\fP are allowed, with variable
-definitions in later path maps taking precendence over earlier ones.
+Multiple uses of \fB-mlb-path-map\fP and \fB-mlb-path-var\fP are
+allowed, with variable definitions in later path maps taking
+precendence over earlier ones.
+
+.TP
+\fB-mlb-path-var '\fIname value\fP'\fR
+Define an additional MLB path variable.
+Multiple uses of \fB-mlb-path-map\fP and \fB-mlb-path-var\fP are
+allowed, with variable definitions in later path maps taking
+precendence over earlier ones.
 
 .TP
 \fB-output \fIfile\fP\fR
@@ -221,7 +227,7 @@ defined appears on a line, follwed on subequent lines by the position
 of each use.
 
 .TP
-\fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBtc\fP}\fP\fR
+\fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBtc\fP}\fP\fR
 Specify when to stop.
 .in +.5i
 \fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
@@ -229,8 +235,6 @@ Specify when to stop.
 \fBg\fP    generated \fB.S\fP and \fB.c\fP files
 .br
 \fBo\fP    object (\fB.o\fP) files
-.br
-\fBsml\fP  SML file (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
 .br
 \fBtc\fP   after type checking
 .in -.5i

@@ -1,5 +1,42 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+Summary:
+  + New platforms:
+  + Compiler.
+   o Command-line switches.
+    * Added: -mlb-path-var '<name> <value>'
+    * Removed: -keep sml, -stop sml
+   o Improved constant folding of floating-point operations.
+   o Support for compiling to a C library; see documentation.
+   o Extended -show-def-use output to include types of variable
+       definitions.
+   o Bug fixes: see changelog
+  + Runtime.
+   o @MLton switches.
+    * Added: may-page-heap {false|true}
+   o may-page-heap: By default, MLton will not page the heap to disk
+       when unable to grow the heap to accomodate an allocation.
+       (Previously, this behavior was the default, with no mans to
+       disable, with security an least-surpise issues.)
+   o Bug fixes: see changelog
+  + Language.
+  + Libraries.
+   o Basis Library.
+    * Bug fixes: see changelog.
+   o MLton structure.
+    * Added: MLton.Socket.Address.toVector
+    * Changed:
+    * Deprecated: MLton.Socket
+   o Other libraries.
+    * Updated: ckit library, SML/NJ library, MLRISC library.
+  + Tools.
+   o ml-lex
+    * Include (*#line line:col "file.lex" *) directives in output.
+    * Added %posint command, to set the yypos type and allow the
+      lexing of multi-gigabyte files.
+   o ml-yacc
+    * Include (*#line line:col "file.grm" *) directives in output.
+
 * 2009-04-18
    - Removed command line switches -keep sml and -stop sml.  Their
      meaning was unclear with .mlb files; their effect with .cm files
