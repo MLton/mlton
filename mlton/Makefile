@@ -138,7 +138,9 @@ smlnj-mlton:
 		echo 'in';							\
 		echo 'val _ = loop $(SMLNJ_CM_SERVERS_NUM);';			\
 		echo 'end;';							\
-		echo 'CM.make "mlton-smlnj.cm";';				\
+		echo 'if (CM.make "mlton-smlnj.cm") handle _ => false';		\
+		echo '   then ()';						\
+		echo '   else OS.Process.exit OS.Process.failure;'; 		\
 		echo 'SMLofNJ.exportFn("$(LIB)/mlton-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
 
