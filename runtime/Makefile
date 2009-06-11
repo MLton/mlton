@@ -57,7 +57,7 @@ endif
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
-ifeq ($(findstring $(GCC_VERSION), 3.4 4.0 4.1 4.3),$(GCC_VERSION))
+ifeq (3.4, $(firstword $(sort $(GCC_VERSION) 3.4)))
 GCOPTFLAGS += --param inline-unit-growth=100
 GCOPTFLAGS += --param max-inline-insns-single=1000
 GCOPTFLAGS += --param large-function-growth=1000
