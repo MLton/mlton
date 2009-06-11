@@ -31,11 +31,11 @@ ifneq (,$(findstring $(HOST_OS), cygwin mingw))
   # The stubs don't work on Cygwin or MinGW, since they define spawn
   # in terms of fork, and fork doesn't work on Cygwin or MinGW.  So,
   # make without the stubs.
-  FILE := mlton.cm
+  FILE := mlton.mlb
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
-  FILE := mlton-stubs.cm
+  FILE := mlton-stubs.mlb
 endif
 endif
 
