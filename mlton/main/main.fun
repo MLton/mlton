@@ -1355,76 +1355,7 @@ fun commandLine (args: string list): unit =
                            Place.O => ()
                          | _ => compileO (rev oFiles)
                      end
-                  fun compileSml (files: File.t list) =
-                     let
-                        val outputs: File.t list ref = ref []
-                        val r = ref 0
-                        fun make (style: style, suf: string) () =
-                           let
-                              val suf = concat [".", Int.toString (!r), suf]
-                              val _ = Int.inc r
-                              val file = (if !keepGenerated
-                                             orelse stop = Place.Generated
-                                             then maybeOutBase
-                                          else temp) suf
-                              val _ = List.push (outputs, file)
-                              val out = Out.openOut file
-                              fun print s = Out.output (out, s)
-                              val _ = outputHeader' (style, out)
-                              fun done () = Out.close out
-                           in
-                              {file = file,
-                               print = print,
-                               done = done}
-                           end
-                        val _ =
-                           case !verbosity of
-                              Silent => ()
-                            | Top => ()
-                            | _ =>
-                                 outputHeader
-                                 (Control.No, fn l =>
-                                  let val out = Out.error
-                                  in Layout.output (l, out)
-                                     ; Out.newline out
-                                  end)
-                        val _ =
-                           case stop of
-                              Place.TypeCheck =>
-                                 trace (Top, "Type Check SML")
-                                 Compile.elaborateSML {input = files}
-                            | _ =>
-                                 trace (Top, "Compile SML")
-                                 Compile.compileSML
-                                 {input = files,
-                                  outputC = make (Control.C, ".c"),
-                                  outputS = make (Control.Assembly, ".s")}
-                     in
-                        case stop of
-                           Place.Generated => ()
-                         | Place.TypeCheck => ()
-                         | _ =>
-                              (* Shrink the heap before calling gcc. *)
-                              (MLton.GC.pack ()
-                               ; compileCSO (List.concat [!outputs, csoFiles]))
-                     end
-                  fun showFiles (fs: File.t vector) =
-                     Vector.foreach
-                     (fs, fn f =>
-                      print (concat [String.translate
-                                     (f, fn #"\\" => "/"
-                                          | c => str c),
-                                     "\n"]))
-                  fun compileCM input =
-                     let
-                        val files = CM.cm {cmfile = input}
-                     in
-                        case stop of
-                           Place.Files =>
-                              showFiles (Vector.fromList files)
-                         | _ => compileSml files
-                     end
-                  fun compileMLB file =
+                  fun mkCompileSrc {listFiles, elaborate, compile} input =
                      let
                         val outputs: File.t list ref = ref []
                         val r = ref 0
@@ -1460,15 +1391,19 @@ fun commandLine (args: string list): unit =
                         val _ =
                            case stop of
                               Place.Files =>
-                                 showFiles
-                                 (Compile.sourceFilesMLB {input = file})
+                                 Vector.foreach
+                                 (listFiles {input = input}, fn f =>
+                                  (print (String.translate
+                                          (f, fn #"\\" => "/" | c => str c))
+                                   ; print "\n"))
                             | Place.TypeCheck =>
                                  trace (Top, "Type Check SML")
-                                 Compile.elaborateMLB {input = file}
+                                 elaborate
+                                 {input = input}
                             | _ =>
                                  trace (Top, "Compile SML")
-                                 Compile.compileMLB
-                                 {input = file,
+                                 compile
+                                 {input = input,
                                   outputC = make (Control.C, ".c"),
                                   outputS = make (Control.Assembly, ".s")}
                      in
@@ -1481,15 +1416,24 @@ fun commandLine (args: string list): unit =
                               (MLton.GC.pack ()
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end
+                  val compileSML =
+                     mkCompileSrc {listFiles = fn {input} => Vector.fromList input,
+                                   elaborate = Compile.elaborateSML,
+                                   compile = Compile.compileSML}
+                  val compileMLB =
+                     mkCompileSrc {listFiles = Compile.sourceFilesMLB,
+                                   elaborate = Compile.elaborateMLB,
+                                   compile = Compile.compileMLB}
+                  fun compileCM (file: File.t) =
+                     let
+                        val files = CM.cm {cmfile = file}
+                     in
+                        compileSML files
+                     end
                   fun compile () =
                      case start of
                         Place.CM => compileCM input
-                      | Place.SML =>
-                           Control.checkFile
-                           (input,
-                            {fail = fn s => raise Fail s,
-                             name = input,
-                             ok = fn () => compileSml [input]})
+                      | Place.SML => compileSML [input]
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
