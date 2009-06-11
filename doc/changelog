@@ -7,7 +7,8 @@ Summary:
     * Added: -mlb-path-var '<name> <value>'
     * Removed: -keep sml, -stop sml
    o Improved constant folding of floating-point operations.
-   o Support for compiling to a C library; see documentation.
+   o Experimental: Support for compiling to a C library; see wiki
+       documentation.
    o Extended -show-def-use output to include types of variable
        definitions.
    o Bug fixes: see changelog
@@ -17,7 +18,7 @@ Summary:
    o may-page-heap: By default, MLton will not page the heap to disk
        when unable to grow the heap to accomodate an allocation.
        (Previously, this behavior was the default, with no means to
-       disable, with security an least-surpise issues.)
+       disable, with security an least-surprise issues.)
    o Bug fixes: see changelog
   + Language.
    o Allow numeric characters in ML Basis path variables.
@@ -37,7 +38,7 @@ Summary:
     * Updated: ckit library, SML/NJ library, MLRISC library.
   + Tools.
    o mllex
-    * Eliminated 'type int = Int.int' in output.
+    * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col "file.lex" *) directives in output.
     * Added %posint command, to set the yypos type and allow the
       lexing of multi-gigabyte files.
@@ -46,7 +47,7 @@ Summary:
     * Deprecated command-line switch -linkage static.
     * Added support for ia64 and hppa targets.
    o mlyacc
-    * Eliminated 'type int = Int.int' in output.
+    * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col "file.grm" *) directives in output.
 
 * 2009-06-09
