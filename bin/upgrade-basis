@@ -95,84 +95,6 @@ structure Word =
 structure Word32 = Word
 structure LargeWord = Word'
 
-eval `"$bin/platform"`
-case "$ARCH" in
-alpha)
-        arch='Alpha'
-;;
-amd64)
-        arch='AMD64'
-;;
-arm)
-        arch='ARM'
-;;
-hppa)
-        arch='HPPA'
-;;
-ia64)
-        arch='IA64'
-;;
-m68k)
-        arch='m68k'
-;;
-mips)
-        arch='MIPS'
-;;
-powerpc)
-        arch='PowerPC'
-;;
-powerpc64)
-        arch='PowerPC64'
-;;
-s390)
-        arch='S390'
-;;
-sparc)
-        arch='Sparc'
-;;
-x86)
-        arch='X86'
-;;
-*)
-        die "strange HOST_ARCH: $HOST_ARCH"
-esac
-
-case "$OS" in
-aix)
-        os='AIX'
-;;
-cygwin)
-        os='Cygwin'
-;;
-darwin)
-        os='Darwin'
-;;
-freebsd)
-        os='FreeBSD'
-;;
-hpux)
-	os="HPUX"
-;;
-linux)
-        os='Linux'
-;;
-mingw)
-        os='MinGW'
-;;
-netbsd)
-        os='NetBSD'
-;;
-openbsd)
-        os='OpenBSD'
-;;
-solaris)
-        os='Solaris'
-;;
-*)
-        die "strange HOST_OS: $HOST_OS"
-;;
-esac
-
 cat <<-EOF
 structure MLton =
    struct
@@ -180,66 +102,17 @@ structure MLton =
 
       structure Platform =
          struct
-            fun peek (l, f) = List.find f l
-            fun omap (opt, f) = Option.map f opt
-            val toLower = String.translate (str o Char.toLower)
-
             structure Arch =
                struct
-                  datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
-                               MIPS | PowerPC | PowerPC64 | S390 | Sparc | X86
-
-                  val all = [(Alpha, "Alpha"),
-                             (AMD64, "AMD64"),
-                             (ARM, "ARM"),
-                             (HPPA, "HPPA"),
-                             (IA64, "IA64"),
-                             (m68k, "m68k"),
-                             (MIPS, "MIPS"),
-                             (PowerPC, "PowerPC"),
-                             (PowerPC64, "PowerPC64"),
-                             (S390, "S390"),
-                             (Sparc, "Sparc"),
-                             (X86, "X86")]
-
-                  fun fromString s =
-                     let
-                        val s = toLower s
-                     in
-                        omap (peek (all, fn (_, s') => s = toLower s'), #1)
-                     end
-
-                  val host = $arch
-
-                  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+                  type t = string
+                  val host = "$ARCH"
+                  val toString = fn s => s
                end
-
             structure OS =
                struct
-                  datatype t = AIX | Cygwin | Darwin | FreeBSD | HPUX | Linux
-                             | MinGW | NetBSD | OpenBSD | Solaris
-
-                  val all = [(AIX, "AIX"),
-                             (Cygwin, "Cygwin"),
-                             (Darwin, "Darwin"),
-                             (FreeBSD, "FreeBSD"),
-                             (HPUX, "HPUX"),
-                             (Linux, "Linux"),
-                             (MinGW, "MinGW"),
-                             (NetBSD, "NetBSD"),
-                             (OpenBSD, "OpenBSD"),
-                             (Solaris, "Solaris")]
-
-                  fun fromString s =
-                     let
-                        val s = toLower s
-                     in
-                        omap (peek (all, fn (_, s') => s = toLower s'), #1)
-                     end
-
-                  val host = $os
-
-                  fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+                  type t = string
+                  val host = "$OS"
+                  val toString = fn s => s
                end
          end
    end
