@@ -452,7 +452,7 @@ let
                IntInf i =>
                   (case Const.SmallIntInf.toWord i of
                       NONE => globalIntInf i
-                    | SOME w => M.Operand.Word w)
+                    | SOME w => M.Operand.Cast (M.Operand.Word w, Type.intInf ()))
              | Null => M.Operand.Null
              | Real r => globalReal r
              | Word w => M.Operand.Word w
@@ -568,11 +568,14 @@ let
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (offset + LABEL_SIZE) - StackBottom; *)
                   let
-                     val tmp =
+                     val tmp1 =
                         M.Operand.Register
                         (Register.new (Type.cpointer (), NONE))
+                     val tmp2 =
+                        M.Operand.Register
+                        (Register.new (Type.csize (), NONE))
                   in
-                     Vector.new2
+                     Vector.new3
                      (M.Statement.PrimApp
                       {args = (Vector.new2
                                (stackTopOp,
@@ -582,15 +585,18 @@ let
                                   (Bytes.toInt
                                    (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
                                   WordSize.cpointer ())))),
-                       dst = SOME tmp,
+                       dst = SOME tmp1,
                        prim = Prim.cpointerAdd},
                       M.Statement.PrimApp
-                      {args = Vector.new2 (tmp, stackBottomOp),
-                       dst = SOME exnStackOp,
-                       prim = Prim.cpointerDiff})
+                      {args = Vector.new2 (tmp1, stackBottomOp),
+                       dst = SOME tmp2,
+                       prim = Prim.cpointerDiff},
+                      M.Statement.move
+                      {dst = exnStackOp,
+                       src = M.Operand.Cast (tmp2, Type.exnStack ())})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(uint* )(stackTop + offset);   *)
+                  (* ExnStack = *(uint* )(stackTop + offset); *)
                   Vector.new1
                   (M.Statement.move
                    {dst = exnStackOp,

@@ -386,17 +386,19 @@ structure Statement =
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
                Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+            val temp = Register (Register.new (Type.cpointer (), NONE))
          in
-            Vector.new3
+            Vector.new4
             (Move {dst = Contents {oper = Frontier,
                                    ty = Type.objptrHeader ()},
                    src = Word (WordX.fromIntInf (Word.toIntInf header,
                                                  WordSize.objptrHeader ()))},
-             (* CHECK; if objptr <> cpointer, need coercion here. *)
              PrimApp {args = Vector.new2 (Frontier,
                                           bytes (Runtime.headerSize ())),
-                      dst = SOME dst,
+                      dst = SOME temp,
                       prim = Prim.cpointerAdd},
+             (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
+             Move {dst = dst, src = Cast (temp, Operand.ty dst)},
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
                       prim = Prim.cpointerAdd})
@@ -1219,19 +1221,28 @@ structure Program =
                            else NONE
                         end
                    | Noop => SOME alloc
-                   | PrimApp {args, dst, ...} =>
+                   | PrimApp {args, dst, prim, ...} =>
                         let
                            val _ = checkOperands (args, alloc)
+                           val alloc =
+                              case dst of
+                                 NONE => SOME alloc
+                               | SOME z =>
+                                    let
+                                       val alloc = Alloc.define (alloc, z)
+                                       val _ = checkOperand (z, alloc)
+                                    in
+                                       SOME alloc
+                                    end
+                           val ok =
+                              Type.checkPrimApp
+                              {args = Vector.map (args, Operand.ty),
+                               prim = prim,
+                               result = Option.map (dst, Operand.ty)}
                         in
-                           case dst of
-                              NONE => SOME alloc
-                            | SOME z =>
-                                 let
-                                    val alloc = Alloc.define (alloc, z)
-                                    val _ = checkOperand (z, alloc)
-                                 in
-                                    SOME alloc
-                                 end
+                           if ok
+                              then alloc
+                              else NONE
                         end
                    | ProfileLabel l =>
                         if profileLabelIsOk l
