@@ -231,6 +231,12 @@ structure Type =
          case node t of
             Real s => SOME s
           | _ => NONE
+      
+      val deSeq: t -> t vector option =
+         fn t =>
+         case node t of
+            Seq v => SOME v
+          | _ => NONE
 
       val deWord: t -> WordSize.t option =
          fn t =>
@@ -320,6 +326,8 @@ structure Type =
             else 
                case node t of
                   CPointer => C.CPointer
+                | GCState => C.CPointer
+                | Label _ => C.CPointer
                 | Real s =>
                      (case s of
                          RealSize.R32 => C.Real32
