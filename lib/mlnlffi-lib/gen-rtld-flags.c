@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
+#ifndef RTLD_LOCAL
+#define RTLD_LOCAL 0
+#endif
+
 int main(int argc, char *argv[])
 {
   printf("structure RTLDFlags = struct\n");
