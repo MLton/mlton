@@ -26,12 +26,12 @@ test7b    	OK
 test7c    	OK
 test7d    	OK
 test7e    	OK
-test8a    	EXN
-test8b    	EXN
+test8a    	WRONG
+test8b    	WRONG
 test8c    	OK
 test8d    	OK
-test8e    	EXN
-test8f    	EXN
+test8e    	OK
+test8f    	OK
 test8g    	OK
 test8h    	OK
 test9a    	OK
