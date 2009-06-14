@@ -1266,13 +1266,12 @@ fun commandLine (args: string list): unit =
                         in
                            ()
                         end
-                  fun mkOutputO (c: Counter.t, _): File.t =
+                  fun mkOutputO (c: Counter.t, input: File.t): File.t =
                      if stop = Place.O orelse !keepO
                         then
-                           if !keepGenerated
-                              orelse start = Place.Generated
+                           if File.dirOf input = File.dirOf (maybeOutBase ".o")
                               then
-                                 maybeOutBase ".o"
+                                 concat [File.base input, ".o"]
                               else
                                  maybeOutBase
                                     (concat [".",
@@ -1358,7 +1357,7 @@ fun commandLine (args: string list): unit =
                               val _ = Int.inc r
                               val file = (if !keepGenerated
                                              orelse stop = Place.Generated
-                                             then suffix
+                                             then maybeOutBase
                                           else temp) suf
                               val _ = List.push (outputs, file)
                               val out = Out.openOut file
