@@ -269,17 +269,7 @@ structure MLtonProcess =
          if not (strContains " \t\"" y) andalso y<>"" then y else
          String.implode (List.rev (#"\"" :: mingwQuote y))
 
-      (* In cygwin, according to what I read, \ should always become \\.
-       * Furthermore, more characters cause escaping as compared to MinGW. 
-       * From what I read, " should become "", not \", but I leave the old
-       * behaviour alone until someone runs the spawn regression.
-       *)
-      fun cygwinEscape y = 
-         if not (strContains " \t\"\r\n\f'" y) andalso y<>"" then y else
-         concat ["\"",
-                 String.translate
-                 (fn #"\"" => "\\\"" | #"\\" => "\\\\" | x => String.str x) y,
-                 "\""]
+      fun cygwinEscape y = y
 
       val cmdEscape = 
          if MLton.Platform.OS.host = MLton.Platform.OS.MinGW
