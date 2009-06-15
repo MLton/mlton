@@ -18,6 +18,7 @@ val tests = [
   "holy\"smoke",
   "holy \"smoke" ]
 
+val cmd = CommandLine.name ()
 val args = CommandLine.arguments ()
 
 fun loop ([], []) = print "OK!\n"
@@ -29,6 +30,10 @@ open Posix.Process
 open MLton.Process
 val () =
   if List.length args = 0
-  then ignore (waitpid (W_CHILD (spawn { path = "spawn", args = "spawn"::tests }), []))
+  then let
+          val pid = spawn {path = cmd, args = cmd::tests}
+          val status = waitpid (W_CHILD pid, [])
+       in
+          ()
+       end
   else loop (tests, args)
- 
