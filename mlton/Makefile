@@ -105,7 +105,9 @@ $(AOUT): $(SOURCES)
 	mlton $(FLAGS) $(FILE)
 
 .PHONY: def-use
-def-use:
+def-use: mlton.def-use
+
+mlton.def-use: $(SOURCES)
 	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
 
 .PHONY: clean
