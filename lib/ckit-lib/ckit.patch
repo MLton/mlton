@@ -1,13 +1,6 @@
-diff -N -C 2 -r ckit/ckit-lib.mlb ckit-mlton/ckit-lib.mlb
-*** ckit/ckit-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- ckit-mlton/ckit-lib.mlb	2007-07-31 19:39:13.000000000 -0500
-***************
-*** 0 ****
---- 1 ----
-+ src/ckit-lib.mlb
 diff -N -C 2 -r ckit/README.mlton ckit-mlton/README.mlton
-*** ckit/README.mlton	1969-12-31 18:00:00.000000000 -0600
---- ckit-mlton/README.mlton	2007-07-31 19:39:13.000000000 -0500
+*** ckit/README.mlton	Wed Dec 31 18:00:00 1969
+--- ckit-mlton/README.mlton	Fri May 18 16:13:58 2007
 ***************
 *** 0 ****
 --- 1,13 ----
@@ -24,9 +17,16 @@ diff -N -C 2 -r ckit/README.mlton ckit-mlton/README.mlton
 +  * {{{ast/sizeof.sml}}} (modified): Rewrote use of ''or-patterns''.
 +  * {{{ast/initializer-normalizer.sml}}} (modified): Rewrote use of ''or-patterns''.
 +  * {{{ast/build-ast.sml}}} (modified): Rewrote use of ''or-patterns''.
+diff -N -C 2 -r ckit/ckit-lib.mlb ckit-mlton/ckit-lib.mlb
+*** ckit/ckit-lib.mlb	Wed Dec 31 18:00:00 1969
+--- ckit-mlton/ckit-lib.mlb	Fri May 18 16:13:58 2007
+***************
+*** 0 ****
+--- 1 ----
++ src/ckit-lib.mlb
 diff -N -C 2 -r ckit/src/ast/ast-sig.sml ckit-mlton/src/ast/ast-sig.sml
-*** ckit/src/ast/ast-sig.sml	2001-10-31 14:22:44.000000000 -0600
---- ckit-mlton/src/ast/ast-sig.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/ast-sig.sml	Wed Oct 31 14:22:44 2001
+--- ckit-mlton/src/ast/ast-sig.sml	Fri May 18 16:14:04 2007
 ***************
 *** 68,72 ****
       = TypeDecl of {shadow: {strct:bool} option, tid:tid}
@@ -124,8 +124,8 @@ diff -N -C 2 -r ckit/src/ast/ast-sig.sml ckit-mlton/src/ast/ast-sig.sml
       {name: Symbol.symbol,  (* the name of the member *)
        uid : Pid.uid,        (* unique identifier *)
 diff -N -C 2 -r ckit/src/ast/build-ast.sml ckit-mlton/src/ast/build-ast.sml
-*** ckit/src/ast/build-ast.sml	2003-08-28 16:59:15.000000000 -0500
---- ckit-mlton/src/ast/build-ast.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/build-ast.sml	Thu Aug 28 16:59:15 2003
+--- ckit-mlton/src/ast/build-ast.sml	Fri May 18 16:14:04 2007
 ***************
 *** 291,295 ****
   	 | _ => false
@@ -290,8 +290,8 @@ diff -N -C 2 -r ckit/src/ast/build-ast.sml ckit-mlton/src/ast/build-ast.sml
   					       if isPartial tid
   					       then SOME{tid=tid, alreadyDefined=false}
 diff -N -C 2 -r ckit/src/ast/initializer-normalizer.sml ckit-mlton/src/ast/initializer-normalizer.sml
-*** ckit/src/ast/initializer-normalizer.sml	2003-08-28 16:59:15.000000000 -0500
---- ckit-mlton/src/ast/initializer-normalizer.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/initializer-normalizer.sml	Thu Aug 28 16:59:15 2003
+--- ckit-mlton/src/ast/initializer-normalizer.sml	Fri May 18 16:14:04 2007
 ***************
 *** 157,161 ****
   		| SOME _ => fail "Incomplete type for union ref"
@@ -312,8 +312,8 @@ diff -N -C 2 -r ckit/src/ast/initializer-normalizer.sml ckit-mlton/src/ast/initi
   	    feed (scalarNorm ctype, inits)
   	 | Ast.Void => fail "Incomplete type: void"
 diff -N -C 2 -r ckit/src/ast/pp/pp-ast-adornment-sig.sml ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml
-*** ckit/src/ast/pp/pp-ast-adornment-sig.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml	2007-07-31 19:49:19.000000000 -0500
+*** ckit/src/ast/pp/pp-ast-adornment-sig.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml	Fri May 18 16:14:15 2007
 ***************
 *** 1,9 ****
   (* Copyright (c) 1998 by Lucent Technologies *)
@@ -345,8 +345,8 @@ diff -N -C 2 -r ckit/src/ast/pp/pp-ast-adornment-sig.sml ckit-mlton/src/ast/pp/p
   end
 ! (* end *)
 diff -N -C 2 -r ckit/src/ast/pp/pp-ast-ext-sig.sml ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml
-*** ckit/src/ast/pp/pp-ast-ext-sig.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml	2007-07-31 19:49:19.000000000 -0500
+*** ckit/src/ast/pp/pp-ast-ext-sig.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml	Fri May 18 16:14:15 2007
 ***************
 *** 1,5 ****
   (* Copyright (c) 1998 by Lucent Technologies *)
@@ -383,8 +383,8 @@ diff -N -C 2 -r ckit/src/ast/pp/pp-ast-ext-sig.sml ckit-mlton/src/ast/pp/pp-ast-
   
 ! (* end *)
 diff -N -C 2 -r ckit/src/ast/pp/pp-lib.sml ckit-mlton/src/ast/pp/pp-lib.sml
-*** ckit/src/ast/pp/pp-lib.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/ast/pp/pp-lib.sml	2007-07-31 19:49:19.000000000 -0500
+*** ckit/src/ast/pp/pp-lib.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/ast/pp/pp-lib.sml	Fri May 18 16:14:15 2007
 ***************
 *** 116,120 ****
     fun ppId pps ({name,uid,kind,stClass,global,...}: Ast.id) = 
@@ -402,8 +402,8 @@ diff -N -C 2 -r ckit/src/ast/pp/pp-lib.sml ckit-mlton/src/ast/pp/pp-lib.sml
   	     if !suppressPidGlobalUnderscores then ppSymbol' pps name
   	     else ppSymbol pps (name,uid)
 diff -N -C 2 -r ckit/src/ast/sizeof.sml ckit-mlton/src/ast/sizeof.sml
-*** ckit/src/ast/sizeof.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/ast/sizeof.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/sizeof.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/ast/sizeof.sml	Fri May 18 16:14:04 2007
 ***************
 *** 322,326 ****
         case ty
@@ -420,8 +420,8 @@ diff -N -C 2 -r ckit/src/ast/sizeof.sml ckit-mlton/src/ast/sizeof.sml
   	     processTid sizesErrWarnBug tidtab tid
   	 | Ast.EnumRef _ => 
 diff -N -C 2 -r ckit/src/ast/type-util-sig.sml ckit-mlton/src/ast/type-util-sig.sml
-*** ckit/src/ast/type-util-sig.sml	2001-10-31 14:22:44.000000000 -0600
---- ckit-mlton/src/ast/type-util-sig.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/type-util-sig.sml	Wed Oct 31 14:22:44 2001
+--- ckit-mlton/src/ast/type-util-sig.sml	Fri May 18 16:14:04 2007
 ***************
 *** 1,9 ****
   (* Copyright (c) 1998 by Lucent Technologies *)
@@ -453,8 +453,8 @@ diff -N -C 2 -r ckit/src/ast/type-util-sig.sml ckit-mlton/src/ast/type-util-sig.
   
 ! (* end (* local *) *)
 diff -N -C 2 -r ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
-*** ckit/src/ast/type-util.sml	2001-10-31 14:22:44.000000000 -0600
---- ckit-mlton/src/ast/type-util.sml	2007-07-31 19:44:55.000000000 -0500
+*** ckit/src/ast/type-util.sml	Wed Oct 31 14:22:44 2001
+--- ckit-mlton/src/ast/type-util.sml	Fri May 18 16:14:04 2007
 ***************
 *** 283,287 ****
       case reduceTypedef tidtab ty
@@ -522,8 +522,8 @@ diff -N -C 2 -r ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
   	     | (nil, argl, _) => (["Type Warning: function call has too many args"]
   				  , List.map (functionArgConv tidtab) argl
 diff -N -C 2 -r ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
-*** ckit/src/ckit-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- ckit-mlton/src/ckit-lib.mlb	2007-08-15 21:45:10.000000000 -0500
+*** ckit/src/ckit-lib.mlb	Wed Dec 31 18:00:00 1969
+--- ckit-mlton/src/ckit-lib.mlb	Tue Jun 16 10:57:17 2009
 ***************
 *** 0 ****
 --- 1,888 ----
@@ -1416,8 +1416,8 @@ diff -N -C 2 -r ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 + 
 + end
 diff -N -C 2 -r ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex.sml
-*** ckit/src/parser/grammar/c.lex.sml	2007-06-06 21:44:54.000000000 -0500
---- ckit-mlton/src/parser/grammar/c.lex.sml	2007-08-12 21:21:02.000000000 -0500
+*** ckit/src/parser/grammar/c.lex.sml	Wed Jun  6 21:44:54 2007
+--- ckit-mlton/src/parser/grammar/c.lex.sml	Mon Aug 13 18:51:19 2007
 ***************
 *** 230,234 ****
   
@@ -1432,8 +1432,8 @@ diff -N -C 2 -r ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/
   ]
   
 diff -N -C 2 -r ckit/src/parser/parse-tree-sig.sml ckit-mlton/src/parser/parse-tree-sig.sml
-*** ckit/src/parser/parse-tree-sig.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/parser/parse-tree-sig.sml	2007-07-31 19:44:54.000000000 -0500
+*** ckit/src/parser/parse-tree-sig.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/parser/parse-tree-sig.sml	Fri May 18 16:14:04 2007
 ***************
 *** 28,33 ****
       | LshiftAssign | RshiftAssign 
@@ -1640,8 +1640,8 @@ diff -N -C 2 -r ckit/src/parser/parse-tree-sig.sml ckit-mlton/src/parser/parse-t
         (specifier, declarator, ctype, decltype, operator, expression, statement)
         ParseTreeExt.externalDeclExt
 diff -N -C 2 -r ckit/src/parser/parse-tree.sml ckit-mlton/src/parser/parse-tree.sml
-*** ckit/src/parser/parse-tree.sml	2000-04-05 13:34:51.000000000 -0500
---- ckit-mlton/src/parser/parse-tree.sml	2007-07-31 19:44:54.000000000 -0500
+*** ckit/src/parser/parse-tree.sml	Wed Apr  5 13:34:51 2000
+--- ckit-mlton/src/parser/parse-tree.sml	Fri May 18 16:14:04 2007
 ***************
 *** 24,29 ****
       | LshiftAssign | RshiftAssign 
