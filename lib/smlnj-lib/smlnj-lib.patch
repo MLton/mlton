@@ -1,6 +1,6 @@
 diff -N -C 2 -r smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls-lib.mlb
 *** smlnj-lib/Controls/controls-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Controls/controls-lib.mlb	Tue Jun 16 10:57:51 2009
+--- smlnj-lib-mlton/Controls/controls-lib.mlb	Tue Jun 16 11:20:52 2009
 ***************
 *** 0 ****
 --- 1,170 ----
@@ -305,21 +305,6 @@ diff -N -C 2 -r smlnj-lib/HTML/html-attrs-fn.sml smlnj-lib-mlton/HTML/html-attrs
 + 	  end
   	  in
   	    get
-diff -N -C 2 -r smlnj-lib/HTML/html-cons-lib.mlb smlnj-lib-mlton/HTML/html-cons-lib.mlb
-*** smlnj-lib/HTML/html-cons-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-cons-lib.mlb	Fri May 18 16:14:00 2007
-***************
-*** 0 ****
---- 1,9 ----
-+ 
-+ ann
-+   "nonexhaustiveMatch warn" "redundantMatch warn"
-+   "sequenceNonUnit warn"
-+   "warnUnused false" "forceUsed"
-+ in
-+ 
-+ 
-+ end
 diff -N -C 2 -r smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-elements-fn.sml
 *** smlnj-lib/HTML/html-elements-fn.sml	Sun Nov  6 13:36:15 2005
 --- smlnj-lib-mlton/HTML/html-elements-fn.sml	Fri May 18 16:14:00 2007
@@ -339,7 +324,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-el
   	  in
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.desc
 *** smlnj-lib/HTML/html-gram.desc	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.desc	Tue Jun 16 10:57:50 2009
+--- smlnj-lib-mlton/HTML/html-gram.desc	Tue Jun 16 11:20:52 2009
 ***************
 *** 0 ****
 --- 1,6055 ----
@@ -6400,7 +6385,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.des
 + 788 goto table entries
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
 *** smlnj-lib/HTML/html-gram.sig	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.sig	Tue Jun 16 10:57:50 2009
+--- smlnj-lib-mlton/HTML/html-gram.sig	Tue Jun 16 11:20:52 2009
 ***************
 *** 0 ****
 --- 1,140 ----
@@ -6546,7 +6531,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
 *** smlnj-lib/HTML/html-gram.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.sml	Tue Jun 16 10:57:50 2009
+--- smlnj-lib-mlton/HTML/html-gram.sml	Tue Jun 16 11:20:52 2009
 ***************
 *** 0 ****
 --- 1,2477 ----
@@ -9029,7 +9014,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 *** smlnj-lib/HTML/html-lex.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-lex.sml	Tue Jun 16 10:57:50 2009
+--- smlnj-lib-mlton/HTML/html-lex.sml	Tue Jun 16 11:20:52 2009
 ***************
 *** 0 ****
 --- 1,670 ----
@@ -9705,7 +9690,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 *** smlnj-lib/HTML/html-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-lib.mlb	Tue Jun 16 10:57:51 2009
+--- smlnj-lib-mlton/HTML/html-lib.mlb	Tue Jun 16 11:20:53 2009
 ***************
 *** 0 ****
 --- 1,298 ----
@@ -10009,7 +9994,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/hash-cons-lib.mlb
 *** smlnj-lib/HashCons/hash-cons-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	Tue Jun 16 10:57:51 2009
+--- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	Tue Jun 16 11:20:53 2009
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -10159,7 +10144,7 @@ diff -N -C 2 -r smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/ha
 + end
 diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 *** smlnj-lib/INet/inet-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/INet/inet-lib.mlb	Tue Jun 16 10:57:51 2009
+--- smlnj-lib-mlton/INet/inet-lib.mlb	Tue Jun 16 11:20:53 2009
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -10309,7 +10294,7 @@ diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/JSON/json-lib.mlb smlnj-lib-mlton/JSON/json-lib.mlb
 *** smlnj-lib/JSON/json-lib.mlb	Sat May 10 08:45:04 2008
---- smlnj-lib-mlton/JSON/json-lib.mlb	Tue Jun 16 10:57:52 2009
+--- smlnj-lib-mlton/JSON/json-lib.mlb	Tue Jun 16 11:20:53 2009
 ***************
 *** 1,47 ****
 - (* json-lib.mlb
@@ -10538,7 +10523,7 @@ diff -N -C 2 -r smlnj-lib/JSON/json-lib.mlb smlnj-lib-mlton/JSON/json-lib.mlb
   end
 diff -N -C 2 -r smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 *** smlnj-lib/PP/pp-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/PP/pp-lib.mlb	Tue Jun 16 10:57:52 2009
+--- smlnj-lib-mlton/PP/pp-lib.mlb	Tue Jun 16 11:20:54 2009
 ***************
 *** 0 ****
 --- 1,212 ----
@@ -10777,7 +10762,7 @@ diff -N -C 2 -r smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
 +  * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
 diff -N -C 2 -r smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/reactive-lib.mlb
 *** smlnj-lib/Reactive/reactive-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Reactive/reactive-lib.mlb	Tue Jun 16 10:57:52 2009
+--- smlnj-lib-mlton/Reactive/reactive-lib.mlb	Tue Jun 16 11:20:54 2009
 ***************
 *** 0 ****
 --- 1,71 ----
@@ -10854,7 +10839,7 @@ diff -N -C 2 -r smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/rea
 + end
 diff -N -C 2 -r smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-lib.mlb
 *** smlnj-lib/RegExp/regexp-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/RegExp/regexp-lib.mlb	Tue Jun 16 10:57:52 2009
+--- smlnj-lib-mlton/RegExp/regexp-lib.mlb	Tue Jun 16 11:20:54 2009
 ***************
 *** 0 ****
 --- 1,235 ----
@@ -11095,7 +11080,7 @@ diff -N -C 2 -r smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-li
 + end
 diff -N -C 2 -r smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
 *** smlnj-lib/Unix/unix-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Unix/unix-lib.mlb	Tue Jun 16 10:57:52 2009
+--- smlnj-lib-mlton/Unix/unix-lib.mlb	Tue Jun 16 11:20:54 2009
 ***************
 *** 0 ****
 --- 1,45 ----
@@ -11384,7 +11369,7 @@ diff -N -C 2 -r smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack
   
 diff -N -C 2 -r smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
 *** smlnj-lib/Util/smlnj-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Util/smlnj-lib.mlb	Tue Jun 16 10:57:53 2009
+--- smlnj-lib-mlton/Util/smlnj-lib.mlb	Tue Jun 16 11:20:55 2009
 ***************
 *** 0 ****
 --- 1,1108 ----
@@ -12548,58 +12533,16 @@ diff -N -C 2 -r smlnj-lib/Util/time-limit.mlton.sml smlnj-lib-mlton/Util/time-li
 +        | Engine.Raise exn => raise exn
 +        | Engine.TimeOut _ => raise TimeOut
 + end
-diff -N -C 2 -r smlnj-lib/Util/univariate-stats.sml smlnj-lib-mlton/Util/univariate-stats.sml
-*** smlnj-lib/Util/univariate-stats.sml	Thu Dec 16 13:19:12 2004
---- smlnj-lib-mlton/Util/univariate-stats.sml	Mon Oct 29 14:32:45 2007
-***************
-*** 45,49 ****
-  end = struct
-  
-!     infix 8 $  val op $ = Unsafe.Array.sub
-      infix 3 <- fun (a, i) <- x = Unsafe.Array.update (a, i, x)
-  
---- 45,49 ----
-  end = struct
-  
-!     infix 8 $$  val op $$ = Unsafe.Array.sub
-      infix 3 <- fun (a, i) <- x = Unsafe.Array.update (a, i, x)
-  
-***************
-*** 81,85 ****
-  		else let val sz = sz+sz
-  			 val b = Array.tabulate
-! 				     (sz, fn i => if i<n then a$i else 0.0)
-  		     in (b, sz) end
-  	in (a,n)<-x;
---- 81,85 ----
-  		else let val sz = sz+sz
-  			 val b = Array.tabulate
-! 				     (sz, fn i => if i<n then a$$i else 0.0)
-  		     in (b, sz) end
-  	in (a,n)<-x;
-***************
-*** 116,120 ****
-  
-      fun averageDeviation (E { ext_info = (a, _), ni, nr, mean = m, ... }) =
-! 	let fun ad (i, ds) = if i>=ni then ds/nr else ad (i+1, ds + abs(a$i-m))
-  	in ad (0, 0.0) end
-  end
---- 116,120 ----
-  
-      fun averageDeviation (E { ext_info = (a, _), ni, nr, mean = m, ... }) =
-! 	let fun ad (i, ds) = if i>=ni then ds/nr else ad (i+1, ds + abs(a$$i-m))
-  	in ad (0, 0.0) end
-  end
 diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 *** smlnj-lib/smlnj-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/smlnj-lib.mlb	Fri May 18 16:13:58 2007
+--- smlnj-lib-mlton/smlnj-lib.mlb	Tue Jun 16 11:20:46 2009
 ***************
 *** 0 ****
 --- 1,13 ----
 + local
 +    Controls/controls-lib.mlb
-+    HashCons/hash-cons-lib.mlb
 +    HTML/html-lib.mlb
++    HashCons/hash-cons-lib.mlb
 +    INet/inet-lib.mlb
 +    PP/pp-lib.mlb
 +    Reactive/reactive-lib.mlb
@@ -12607,5 +12550,5 @@ diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 +    Unix/unix-lib.mlb
 +    Util/smlnj-lib.mlb
 +    Util/time-limit.mlb
-+ in 
++ in
 + end
