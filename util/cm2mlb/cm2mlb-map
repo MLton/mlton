@@ -14,15 +14,15 @@ $c          $(SML_LIB)/mlnlffi-lib
 $c/c.cm     $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
 
 $SMLNJ-LIB            $(SML_LIB)/smlnj-lib
-$smlnj-lib.cm         $(SML_LIB)/smlnj-lib/Util
 $controls-lib.cm      $(SML_LIB)/smlnj-lib/Controls
 $hash-cons-lib.cm     $(SML_LIB)/smlnj-lib/HashCons
-$inet-lib.cm          $(SML_LIB)/smlnj-lib/INet
-$unix-lib.cm          $(SML_LIB)/smlnj-lib/Unix
-$pp-lib.cm            $(SML_LIB)/smlnj-lib/PP
 $html-lib.cm          $(SML_LIB)/smlnj-lib/HTML
-$regexp-lib.cm        $(SML_LIB)/smlnj-lib/RegExp
+$inet-lib.cm          $(SML_LIB)/smlnj-lib/INet
+$pp-lib.cm            $(SML_LIB)/smlnj-lib/PP
 $reactive-lib.cm      $(SML_LIB)/smlnj-lib/Reactive
+$regexp-lib.cm        $(SML_LIB)/smlnj-lib/RegExp
+$smlnj-lib.cm         $(SML_LIB)/smlnj-lib/Util
+$unix-lib.cm          $(SML_LIB)/smlnj-lib/Unix
 
 $ckit-lib.cm                 $(SML_LIB)/ckit-lib
 $ckit-lib.cm/ckit-lib.cm     $(SML_LIB)/ckit-lib/ckit-lib.mlb
