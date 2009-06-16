@@ -11,6 +11,16 @@ Summary:
        documentation.
    o Extended -show-def-use output to include types of variable
        definitions.
+   o Deprecated features (to be removed in a future release)
+    * Bytecode codegen: The bytecode codegen has not seen significant
+        use and it is not well understood by any of the active
+        developers.
+    * Support for .cm files as input: The ML Basis system provides
+        much better infrastructure for "programming in the very large"
+        than the (very) limited support for CM.  The cm2mlb tool
+        (available in the source distribution) can be used to convert
+        CM projects to MLB projects, preserving the CM scoping of
+        module identifiers.
    o Bug fixes: see changelog
   + Runtime.
    o @MLton switches.
@@ -35,7 +45,7 @@ Summary:
     * Added versions of all of the monomorphic array and vector
       structures.
    o Other libraries.
-    * Updated: ckit library, SML/NJ library, MLRISC library.
+    * Updated: ckit library, MLRISC library, SML/NJ library.
   + Tools.
    o mllex
     * Eliminated top-level 'type int = Int.int' in output.
