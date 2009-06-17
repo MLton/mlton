@@ -278,14 +278,11 @@ structure MLtonProcess =
          case protect (Process.fork, ()) of
             NONE => (* child *)
                let 
-                  val base =
-                     Substring.string
-                     (Substring.taker (fn c => c <> #"/") (Substring.full path))
                   fun dup2 (old, new) =
                      if old = new
                         then ()
                      else (IO.dup2 {old = old, new = new}; IO.close old)
-                  val args = base :: args
+                  val args = path :: args
                   val execTh =
                      case env of
                         NONE =>
