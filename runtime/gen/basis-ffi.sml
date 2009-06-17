@@ -1142,6 +1142,7 @@ struct
 structure Process = 
 struct
 val create = _import "Windows_Process_create" private : NullString8.t * NullString8.t * NullString8.t * C_Fd.t * C_Fd.t * C_Fd.t -> (C_PId.t) C_Errno.t;
+val getexitcode = _import "Windows_Process_getexitcode" private : C_PId.t * (C_Status.t) ref -> (C_Int.t) C_Errno.t;
 val terminate = _import "Windows_Process_terminate" private : C_PId.t * C_Signal.t -> (C_Int.t) C_Errno.t;
 end
 end

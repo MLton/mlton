@@ -399,6 +399,21 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         return result;
 }
 
+C_Errno_t(C_Int_t) Windows_Process_getexitcode (C_PId_t pid, Ref(C_Status_t) status) {
+        HANDLE h;
+
+        h = (HANDLE)pid;
+        unless (WaitForSingleObject (h, INFINITE) == WAIT_OBJECT_0) {
+                errno = ECHILD;
+                return -1;
+        }
+        unless (GetExitCodeProcess (h, (DWORD*)status)) {
+                errno = ECHILD;
+                return -1;
+        }
+        return 0;
+}
+
 C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
 

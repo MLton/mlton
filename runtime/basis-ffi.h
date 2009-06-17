@@ -934,6 +934,7 @@ PRIVATE void Stdio_printStderr(String8_t);
 PRIVATE void Stdio_printStdout(String8_t);
 PRIVATE C_Int_t Time_getTimeOfDay(Ref(C_Time_t),Ref(C_SUSeconds_t));
 PRIVATE C_Errno_t(C_PId_t) Windows_Process_create(NullString8_t,NullString8_t,NullString8_t,C_Fd_t,C_Fd_t,C_Fd_t);
+PRIVATE C_Errno_t(C_Int_t) Windows_Process_getexitcode(C_PId_t,Ref(C_Status_t));
 PRIVATE C_Errno_t(C_Int_t) Windows_Process_terminate(C_PId_t,C_Signal_t);
 MLTON_CODEGEN_STATIC_INLINE Word16_t Word16_add(Word16_t,Word16_t);
 MLTON_CODEGEN_STATIC_INLINE Word16_t Word16_andb(Word16_t,Word16_t);
