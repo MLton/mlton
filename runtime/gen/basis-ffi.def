@@ -824,6 +824,7 @@ Stdio.printStderr = _import PRIVATE : String8.t -> unit
 Stdio.printStdout = _import PRIVATE : String8.t -> unit
 Time.getTimeOfDay = _import PRIVATE : C_Time.t ref * C_SUSeconds.t ref -> C_Int.t
 Windows.Process.create = _import PRIVATE : NullString8.t * NullString8.t * NullString8.t * C_Fd.t * C_Fd.t * C_Fd.t -> C_PId.t C_Errno.t
+Windows.Process.createNull = _import PRIVATE : NullString8.t * NullString8.t * C_Fd.t * C_Fd.t * C_Fd.t -> C_PId.t C_Errno.t
 Windows.Process.getexitcode = _import PRIVATE : C_PId.t * C_Status.t ref -> C_Int.t C_Errno.t
 Windows.Process.terminate = _import PRIVATE : C_PId.t * C_Signal.t -> C_Int.t C_Errno.t
 ##

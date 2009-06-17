@@ -398,6 +398,12 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         return (C_PId_t)pi.hProcess;
 }
 
+C_Errno_t(C_PId_t) 
+Windows_Process_createNull (NullString8_t cmds, NullString8_t args, 
+                            C_Fd_t in, C_Fd_t out, C_Fd_t err) {
+  return Windows_Process_create (cmds, args, NULL, in, out, err);
+}
+
 C_Errno_t(C_Int_t) Windows_Process_getexitcode (C_PId_t pid, Ref(C_Status_t) status) {
         HANDLE h;
 
