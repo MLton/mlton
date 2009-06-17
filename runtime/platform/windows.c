@@ -423,11 +423,7 @@ C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
 
         h = (HANDLE)pid;
-        /* We terminate with 'sig' for the _return_ code + 0x80
-         * Then in the basis library I test for this to decide W_SIGNALED.
-         * Perhaps not the best choice, but I have no better idea.
-         */
-        unless (TerminateProcess (h, sig | 0x80)) {
+        unless (TerminateProcess (h, sig)) {
                 errno = ECHILD;
                 return -1;
         }
