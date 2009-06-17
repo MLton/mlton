@@ -279,11 +279,18 @@ structure MLtonProcess =
                      if old = new
                         then ()
                      else (IO.dup2 {old = old, new = new}; IO.close old)
+                  val args = base :: args
+                  val execTh =
+                     case env of
+                        NONE =>
+                           (fn () => Process.exec (path, args))
+                      | SOME env =>
+                           (fn () => Process.exece (path, args, env))
                in
                   dup2 (stdin, FileSys.stdin)
                   ; dup2 (stdout, FileSys.stdout)
                   ; dup2 (stderr, FileSys.stderr)
-                  ; ignore (Process.exece (path, base :: args, env))
+                  ; ignore (execTh ())
                   ; Process.exit 0w127 (* just in case *)
                end
           | SOME pid => pid (* parent *)
@@ -331,12 +338,47 @@ structure MLtonProcess =
           end)
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
-         (PId.fromRep o create)
-         (path,
-          NullString.nullTerm (String.concatWith " "
-                               (List.map cmdEscape (path :: args))),
-          NullString.nullTerm (String.concatWith "\000" env ^ "\000"),
-          FileDesc.toRep stdin, FileDesc.toRep stdout, FileDesc.toRep stderr)
+         let
+            val path' = 
+               NullString.nullTerm
+               (let 
+                   open MLton.Platform.OS
+                in
+                   case host of
+                      Cygwin => Cygwin.toExe path
+                    | MinGW => path
+                    | _ => raise Fail "MLton.Process.launchWithCreate: path'"
+                end)
+            val args' =
+               NullString.nullTerm 
+               (String.concatWith " " (List.map cmdEscape (path :: args)))
+            val env' =
+               Option.map 
+               (fn env =>
+                NullString.nullTerm 
+                ((String.concatWith "\000" env) ^ "\000"))
+               env
+            val stdin' = FileDesc.toRep stdin
+            val stdout' = FileDesc.toRep stdout
+            val stderr' = FileDesc.toRep stderr
+            val createTh =
+               case env' of
+                  NONE =>
+                     (fn () =>
+                      PrimitiveFFI.Windows.Process.createNull
+                      (path', args', stdin', stdout', stderr'))
+                | SOME env' =>
+                     (fn () =>
+                      PrimitiveFFI.Windows.Process.create
+                      (path', args', env', stdin', stdout', stderr'))
+            val pid' =
+               SysCall.simpleResult'
+               ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
+                createTh ())
+            val pid = PId.fromRep pid'
+         in
+            pid
+         end
 
       val launch =
          fn z =>
@@ -348,10 +390,6 @@ structure MLtonProcess =
          else
             let
                val () = TextIO.flushOut TextIO.stdOut
-               val env =
-                  case env of
-                     NONE => ProcEnv.environ ()
-                   | SOME x => x
                val (fstdin, cstdin) = Param.openStdin stdin
                val (fstdout, cstdout) = Param.openOut FileSys.stdout stdout
                val (fstderr, cstderr) = Param.openOut FileSys.stderr stderr
