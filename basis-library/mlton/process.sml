@@ -322,24 +322,6 @@ structure MLtonProcess =
          if MLton.Platform.OS.host = MLton.Platform.OS.MinGW
          then mingwEscape else cygwinEscape
 
-      fun create (cmd, args, env, stdin, stdout, stderr) =
-         SysCall.simpleResult'
-         ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
-          let
-             val cmd =
-                let
-                   open MLton.Platform.OS
-                in
-                   case host of
-                      Cygwin => Cygwin.toExe cmd
-                    | MinGW => cmd
-                    | _ => raise Fail "create"
-                end
-          in
-             PrimitiveFFI.Windows.Process.create
-             (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
-          end)
-
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
          let
             val path' = 
