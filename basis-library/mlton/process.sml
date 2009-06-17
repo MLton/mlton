@@ -193,13 +193,11 @@ structure MLtonProcess =
       end
 
       fun ('a, 'b) protect (f: 'a -> 'b, x: 'a): 'b =
-         if useWindowsProcess then f x
-         else
-            let
-               val () = Mask.block Mask.all
-            in
-               DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
-            end
+         let
+            val () = Mask.block Mask.all
+         in
+            DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
+         end
 
       local
          fun reap reapFn (T {pid, status, stderr, stdin, stdout, ...}) =
