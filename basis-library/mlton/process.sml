@@ -330,7 +330,7 @@ structure MLtonProcess =
                    open MLton.Platform.OS
                 in
                    case host of
-                      Cygwin => Cygwin.toExe path
+                      Cygwin => Cygwin.toFullWindowsPath path
                     | MinGW => path
                     | _ => raise Fail "MLton.Process.launchWithCreate: path'"
                 end)
