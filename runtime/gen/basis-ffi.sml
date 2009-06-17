@@ -689,7 +689,7 @@ struct
 val NOHANG = _const "Posix_Process_W_NOHANG" : C_Int.t;
 val UNTRACED = _const "Posix_Process_W_UNTRACED" : C_Int.t;
 end
-val waitpid = _import "Posix_Process_waitpid" private : C_PId.t * (C_Int.t) ref * C_Int.t -> (C_PId.t) C_Errno.t;
+val waitpid = _import "Posix_Process_waitpid" private : C_PId.t * (C_Status.t) ref * C_Int.t -> (C_PId.t) C_Errno.t;
 end
 structure Signal = 
 struct

@@ -567,7 +567,7 @@ PRIVATE C_Errno_t(C_Status_t) Posix_Process_system(NullString8_t);
 PRIVATE C_Signal_t Posix_Process_termSig(C_Status_t);
 PRIVATE extern const C_Int_t Posix_Process_W_NOHANG;
 PRIVATE extern const C_Int_t Posix_Process_W_UNTRACED;
-PRIVATE C_Errno_t(C_PId_t) Posix_Process_waitpid(C_PId_t,Ref(C_Int_t),C_Int_t);
+PRIVATE C_Errno_t(C_PId_t) Posix_Process_waitpid(C_PId_t,Ref(C_Status_t),C_Int_t);
 PRIVATE C_Errno_t(C_Int_t) Posix_Signal_default(C_Signal_t);
 PRIVATE C_Errno_t(C_Int_t) Posix_Signal_handlee(C_Signal_t);
 PRIVATE void Posix_Signal_handleGC(void);
