@@ -348,16 +348,15 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         char    *cmd;
         char    *arg;
         char    *env;
-        C_PId_t  result;
         STARTUPINFO si;
-        PROCESS_INFORMATION proc;
+        PROCESS_INFORMATION pi;
 
         cmd = (char*)cmds;
         arg = (char*)args;
         env = (char*)envs;
-        memset (&proc, 0, sizeof (proc));
-        memset (&si, 0, sizeof (si));
-        si.cb = sizeof(si);
+
+        ZeroMemory (&si, sizeof(STARTUPINFO));
+        si.cb = sizeof(STARTUPINFO);
         si.hStdInput = dupHandle (in);
         si.hStdOutput = dupHandle (out);
         si.hStdError = dupHandle (err);
@@ -366,37 +365,37 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
                 if (si.hStdInput) CloseHandle (si.hStdInput);
                 if (si.hStdOutput) CloseHandle (si.hStdOutput);
                 if (si.hStdError) CloseHandle (si.hStdError);
-                /* errno already faked by create_dup_handle */
+                /* errno already faked by dupHandle */
                 return -1;
         }
-        result = CreateProcess (
-                 cmd,           /* The executable as a windows path */
-                 arg,           /* Command-line as a string */
-                 0,             /* Process inherits security params */
-                 0,             /* Initial thread inherits security params */
-                 TRUE,          /* Inherit HANDLEs set as inherit */
-                 0,             /* Normal priority + no special flags */
-                 env,           /* Environment as a string {n=v\0}\0 */
-                 0,             /* Current directory = parent's */
-                 &si,           /* Start info from above */
-                 &proc);        /* returned handle */
-        if (0 == result) {
+        ZeroMemory (&pi, sizeof(PROCESS_INFORMATION));
+        unless (CreateProcess (
+                  cmd,          /* Module name */
+                  arg,          /* Command line */
+                  NULL,         /* Process handle not inheritable */
+                  NULL,         /* Thread handle not inheritable */
+                  TRUE,         /* Set handle inheritance to TRUE */
+                  0,            /* No creation flags */
+                  env,          /* Environment */
+                  NULL,         /* Use parent's starting directory */
+                  &si,          /* Pointer to STARTUPINFO structure */
+                  &pi           /* Pointer to PROCESS_INFORMATION structure */
+                )) {
                 errno = ENOENT; /* probably does not exist (aka ENOFILE)*/
-                result = -1;
-        } else {
-                /* Process created successfully */
-                /* We will return the process handle for the 'pid'.
-                 * This way we can TerminateProcess (kill) it and
-                 * _cwait (waitpid) for it.
-                 * The thread handle is not needed, so clean it.
-                 */
-                CloseHandle (proc.hThread);
-                result = (C_PId_t)proc.hProcess;
+                return -1;
         }
+        /* Process created successfully */
+        /* We will return the process handle for the 'pid'.
+         * This way we can TerminateProcess (kill) it and
+         * WaitForSingleObject/GetExitCodeProcess (reap) it.
+         * The thread handle is not needed, so clean it.
+         */
+        CloseHandle (pi.hThread);
         CloseHandle (si.hStdInput);
         CloseHandle (si.hStdOutput);
         CloseHandle (si.hStdError);
-        return result;
+
+        return (C_PId_t)pi.hProcess;
 }
 
 C_Errno_t(C_Int_t) Windows_Process_getexitcode (C_PId_t pid, Ref(C_Status_t) status) {
