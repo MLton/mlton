@@ -174,7 +174,11 @@ structure MLtonProcess =
         end
 
       datatype ('stdin, 'stdout, 'stderr) t =
-         T of {pid: Process.pid,
+         T of {pid: Process.pid, (* if useWindowsProcess, 
+                                  * then this is a Windows process handle 
+                                  * and can't be passed to
+                                  * Posix.Process.* functions. 
+                                  *)
                status: Posix.Process.exit_status option ref,
                stderr: ('stderr, input) Child.t,
                stdin:  ('stdin, output) Child.t,
@@ -197,39 +201,74 @@ structure MLtonProcess =
                DynamicWind.wind (fn () => f x, fn () => Mask.unblock Mask.all)
             end
 
-      fun reap (T {pid, status, stderr, stdin, stdout}) =
-         case !status of
-            NONE => 
-               let
-                  val _ = Child.close (!stdin, !stdout, !stderr)
-                  (* protect is probably too much; typically, one
-                   * would only mask SIGINT, SIGQUIT and SIGHUP
-                   *)
-                  val (_, st) =
-                     protect (Process.waitpid, (Process.W_CHILD pid, []))
-                  val () = status := SOME st
-               in
-                  st
-               end
-          | SOME status => status
+      local
+         fun reap reapFn (T {pid, status, stderr, stdin, stdout, ...}) =
+            case !status of
+               NONE =>
+                  let
+                     val _ = Child.close (!stdin, !stdout, !stderr)
+                     val st = reapFn pid
+                  in
+                     status := SOME st
+                     ; st
+                  end
+             | SOME st => st
+      in
+         fun reapForFork p =
+            reap (fn pid =>
+                  let
+                     (* protect is probably too much; typically, one
+                      * would only mask SIGINT, SIGQUIT and SIGHUP.
+                      *)
+                     val (_, st) =
+                        protect (Process.waitpid, (Process.W_CHILD pid, []))
+                  in
+                     st
+                  end) 
+                  p
+         fun reapForCreate p =
+            reap (fn pid =>
+                  let
+                     val pid' = PId.toRep pid
+                     val status' = ref (C_Status.fromInt 0)
+                     val () =
+                        SysCall.simple
+                        (fn () =>
+                         PrimitiveFFI.Windows.Process.getexitcode 
+                         (pid', status'))
+                  in
+                     Process.fromStatus' (!status')
+                  end)
+                 p
+      end
+      val reap = fn p =>
+         (if useWindowsProcess then reapForCreate else reapForFork) p
 
-      fun kill (p as T {pid, status, ...}, signal) =
-        case !status of
-           NONE =>
-              let
-                 val pid' = PId.toRep pid
-                 val signal' = Signal.toRep signal
-                 val () =
-                    if useWindowsProcess
-                       then
-                          SysCall.simple
-                          (fn () =>
-                           PrimitiveFFI.Windows.Process.terminate (pid', signal'))
-                    else Process.kill (Process.K_PROC pid, signal)
-              in
-                 ignore (reap p)
-              end
-         | SOME _ => ()
+      local
+         fun kill killFn (p as T {pid, status, ...}, signal) =
+            case !status of
+               NONE =>
+                  let
+                     val () = killFn (pid, signal)
+                  in
+                     ignore (reap p)
+                  end
+             | SOME _ => ()
+      in
+         fun killForFork p =
+            kill (fn (pid, signal) =>
+                  Process.kill (Process.K_PROC pid, signal))
+                 p
+         fun killForCreate p =
+            kill (fn (pid, signal) =>
+                  SysCall.simple
+                  (fn () =>
+                   PrimitiveFFI.Windows.Process.terminate 
+                   (PId.toRep pid, Signal.toRep signal)))
+                 p
+      end
+      val kill = fn (p, signal) =>
+         (if useWindowsProcess then killForCreate else killForFork) (p, signal)
 
       fun launchWithFork (path, args, env, stdin, stdout, stderr) =
          case protect (Process.fork, ()) of

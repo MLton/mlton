@@ -46,4 +46,5 @@ signature POSIX_PROCESS =
 signature POSIX_PROCESS_EXTRA = 
    sig
       include POSIX_PROCESS
+      val fromStatus': C_Status.t -> exit_status
    end
