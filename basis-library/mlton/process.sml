@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -137,18 +138,23 @@ structure MLtonProcess =
                   then ()
                else IO.setfd (fd, IO.FD.flags [IO.FD.cloexec])
 
-            fun openOut std p =
-               case p of 
-                  File s => (FileSys.creat (s, readWrite), Child.Term)
-                | FileDesc f => (f, Child.Term)
-                | Pipe =>
-                     let
-                        val {infd, outfd} = IO.pipe ()
-                        val () = setCloseExec infd
-                     in
-                        (outfd, Child.FileDesc infd)
-                     end
-                | Self => (std, Child.Term)
+            local
+               fun openOut std p =
+                  case p of 
+                     File s => (FileSys.creat (s, readWrite), Child.Term)
+                   | FileDesc f => (f, Child.Term)
+                   | Pipe =>
+                        let
+                           val {infd, outfd} = IO.pipe ()
+                           val () = setCloseExec infd
+                        in
+                           (outfd, Child.FileDesc infd)
+                        end
+                   | Self => (std, Child.Term)
+            in
+               fun openStdout p = openOut FileSys.stdout p
+               fun openStderr p = openOut FileSys.stderr p
+            end
 
             fun openStdin p =
                case p of
@@ -391,8 +397,8 @@ structure MLtonProcess =
             let
                val () = TextIO.flushOut TextIO.stdOut
                val (fstdin, cstdin) = Param.openStdin stdin
-               val (fstdout, cstdout) = Param.openOut FileSys.stdout stdout
-               val (fstderr, cstderr) = Param.openOut FileSys.stderr stderr
+               val (fstdout, cstdout) = Param.openStdout stdout
+               val (fstderr, cstderr) = Param.openStderr stderr
                val closeStdio =
                   fn () => (Param.close stdin fstdin
                             ; Param.close stdout fstdout
