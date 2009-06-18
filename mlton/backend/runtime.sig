@@ -76,7 +76,6 @@ signature RUNTIME =
              | Weak of {gone: bool}
          end
 
-      val allocTooLarge: Bytes.t
       val arrayLengthOffset: unit -> Bytes.t
       val arrayLengthSize: unit -> Bytes.t
       val headerOffset: unit -> Bytes.t

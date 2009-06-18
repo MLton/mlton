@@ -166,7 +166,7 @@ fun insertFunction (f: Function.t,
       local
          val r: Label.t option ref = ref NONE
       in
-         fun allocTooLarge () =
+         fun heapCheckTooLarge () =
             case !r of
                SOME l => l
              | NONE =>
@@ -185,7 +185,7 @@ fun insertFunction (f: Function.t,
                                      readsStackTop = false,
                                      return = Type.unit,
                                      symbolScope = CFunction.SymbolScope.Private,
-                                     target = CFunction.Target.Direct "MLton_allocTooLarge",
+                                     target = CFunction.Target.Direct "MLton_heapCheckTooLarge",
                                      writesStackTop = false}
                      val _ =
                         newBlocks :=
@@ -312,6 +312,12 @@ fun insertFunction (f: Function.t,
                 in
                    label
                 end
+             fun gotoHeapCheckTooLarge () =
+                newBlock
+                (true,
+                 Vector.new0 (),
+                 Transfer.Goto {args = Vector.new0 (),
+                                dst = heapCheckTooLarge ()})
              fun primApp (prim, op1, op2, {collect, dontCollect}) =
                 let
                    val res = Var.newNoname ()
@@ -414,10 +420,22 @@ fun insertFunction (f: Function.t,
                                         Operand.Runtime Frontier,
                                         insert (Operand.word
                                                 (WordX.zero (WordSize.csize ()))))
-                 else heapCheck (true,
-                                 Operand.word (WordX.fromIntInf
-                                               (Bytes.toIntInf bytes,
-                                                WordSize.csize ()))))
+                 else
+                    let
+                       val bytes =
+                          let
+                             val bytes =
+                                WordX.fromIntInf
+                                (Bytes.toIntInf bytes,
+                                 WordSize.csize ())
+                          in
+                             SOME bytes
+                          end handle Overflow => NONE
+                    in
+                       case bytes of
+                          NONE => gotoHeapCheckTooLarge ()
+                        | SOME bytes => heapCheck (true, Operand.word bytes)
+                    end)
              fun smallAllocation (): unit =
                 let
                    val b = blockCheckAmount {blockIndex = i}
@@ -435,38 +453,42 @@ fun insertFunction (f: Function.t,
                          (case c of
                              Const.Word w =>
                                 heapCheckNonZero
-                                (Bytes.fromWord
-                                 (Word.addCheck
-                                  (Word.fromIntInf (WordX.toIntInf w),
-                                   Bytes.toWord extraBytes))
-                                 handle Overflow => Runtime.allocTooLarge)
-                           | _ => Error.bug "LimitCheck.bigAllocation: strange primitive bytes needed")
+                                (Bytes.+
+                                 (Bytes.fromIntInf (WordX.toIntInf w),
+                                  extraBytes))
+                           | _ => Error.bug "LimitCheck.bigAllocation: strange constant bytesNeeded")
                     | _ =>
                          let
                             val bytes = Var.newNoname ()
-                            val _ =
-                               newBlock
-                               (true,
-                                Vector.new0 (),
-                                Transfer.Arith
-                                {args = Vector.new2 (Operand.word
-                                                     (WordX.fromIntInf
-                                                      (Word.toIntInf
-                                                       (Bytes.toWord extraBytes),
-                                                       WordSize.csize ())),
-                                                     bytesNeeded),
-                                 dst = bytes,
-                                 overflow = allocTooLarge (),
-                                 prim = Prim.wordAddCheck (WordSize.csize (),
-                                                           {signed = false}),
-                                 success = (heapCheck
-                                            (false, 
-                                             Operand.Var
-                                             {var = bytes,
-                                              ty = Type.csize ()})),
-                                 ty = Type.csize ()})
+                            val extraBytes =
+                               let
+                                  val extraBytes =
+                                     WordX.fromIntInf
+                                     (Bytes.toIntInf extraBytes,
+                                      WordSize.csize ())
+                               in
+                                  SOME extraBytes
+                               end handle Overflow => NONE
                          in
-                            ()
+                            case extraBytes of
+                               NONE => ignore (gotoHeapCheckTooLarge ())
+                             | SOME extraBytes =>
+                                  (ignore o newBlock)
+                                  (true,
+                                   Vector.new0 (),
+                                   Transfer.Arith
+                                   {args = Vector.new2 (Operand.word extraBytes,
+                                                        bytesNeeded),
+                                    dst = bytes,
+                                    overflow = heapCheckTooLarge (),
+                                    prim = Prim.wordAddCheck (WordSize.csize (),
+                                                              {signed = false}),
+                                    success = (heapCheck
+                                               (false,
+                                                Operand.Var
+                                                {var = bytes,
+                                                 ty = Type.csize ()})),
+                                    ty = Type.csize ()})
                          end
                 end
           in

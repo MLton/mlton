@@ -208,9 +208,6 @@ val cpointerSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.cpointer)
 val labelSize = cpointerSize
 
-(* See platform.c. *)
-val allocTooLarge = Bytes.fromIntInf (IntInf.<< (1, 0w30))
-
 (* See gc/heap.h. *)
 val limitSlop = Bytes.fromInt 512
 

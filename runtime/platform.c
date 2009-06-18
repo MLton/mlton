@@ -30,8 +30,7 @@ void MLton_halt (GC_state s, C_Int_t status) {
   exit (status);
 }
 
-void MLton_allocTooLarge (void) {
-  fprintf (stderr, "Out of memory: attempt to allocate more than %"PRIuMAX" bytes.\n",
-           (uintmax_t)0x7FFFFFFF);
-  exit (2);
+void MLton_heapCheckTooLarge (void) {
+  die ("Out of memory.  Unable to check heap for more than %"PRIuMAX" bytes.\n",
+       (uintmax_t)SIZE_MAX);
 }
