@@ -32,7 +32,7 @@ static inline size_t align (size_t a, size_t b) {
   assert (b >= 1 && b == (b & -b));
   a += b - 1;
   a &= -b;
-  assert (isAlignedMax (a, b));
+  assert (isAligned (a, b));
   return a;       
 }
 
