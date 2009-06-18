@@ -316,11 +316,20 @@ structure MLtonProcess =
          if not (strContains " \t\"" y) andalso y<>"" then y else
          String.implode (List.rev (#"\"" :: mingwQuote y))
 
-      fun cygwinEscape y = y
+      fun cygwinEscape y = 
+         if not (strContains " \t\"\r\n\f'" y) andalso y<>"" then y else
+         concat ["\"",
+                 String.translate
+                 (fn #"\"" => "\\\"" | #"\\" => "\\\\" | x => String.str x) y,
+                 "\""]
 
-      val cmdEscape = 
+      val cmdEscapeCreate = 
          if MLton.Platform.OS.host = MLton.Platform.OS.MinGW
          then mingwEscape else cygwinEscape
+
+      val cmdEscapeSpawn = 
+         if MLton.Platform.OS.host = MLton.Platform.OS.MinGW
+         then mingwEscape else (fn s => s)
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
          let
@@ -336,7 +345,7 @@ structure MLtonProcess =
                 end)
             val args' =
                NullString.nullTerm 
-               (String.concatWith " " (List.map cmdEscape (path :: args)))
+               (String.concatWith " " (List.map cmdEscapeCreate (path :: args)))
             val env' =
                Option.map 
                (fn env =>
@@ -400,7 +409,7 @@ structure MLtonProcess =
          if useWindowsProcess
             then
                let
-                  val args = List.map cmdEscape args
+                  val args = List.map cmdEscapeSpawn args
                   val path = NullString.nullTerm path
                   val args = CUtil.C_StringArray.fromList args
                   val env = CUtil.C_StringArray.fromList env
@@ -425,7 +434,7 @@ structure MLtonProcess =
             then
                let
                   val file = NullString.nullTerm file
-                  val args = List.map cmdEscape args
+                  val args = List.map cmdEscapeSpawn args
                   val args = CUtil.C_StringArray.fromList args
                in
                   (PId.fromRep o SysCall.simpleResult')
