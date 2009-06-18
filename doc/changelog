@@ -1,7 +1,7 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
 Summary:
-  + New platforms:
+  + New platforms.
   + Compiler.
    o Command-line switches.
     * Added: -mlb-path-var '<name> <value>'
