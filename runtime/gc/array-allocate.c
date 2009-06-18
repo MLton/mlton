@@ -10,7 +10,6 @@ pointer GC_arrayAllocate (GC_state s,
                           size_t ensureBytesFree,
                           GC_arrayLength numElements,
                           GC_header header) {
-  uintmax_t arraySizeMax, arraySizeAlignedMax;
   size_t arraySize, arraySizeAligned;
   size_t bytesPerElement;
   uint16_t bytesNonObjptrs;
@@ -24,14 +23,21 @@ pointer GC_arrayAllocate (GC_state s,
     fprintf (stderr, "GC_arrayAllocate (%"PRIuMAX", "FMTARRLEN", "FMTHDR")\n",
              (uintmax_t)ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
-  arraySizeMax =
-    (uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE;
-  arraySizeAlignedMax = alignMax (arraySizeMax, s->alignment);
-  if (arraySizeAlignedMax >= (uintmax_t)SIZE_MAX)
-    die ("Out of memory.  Unable to allocate array with %s bytes.",
-         uintmaxToCommaString(arraySizeAlignedMax));
-  arraySize = (size_t)arraySizeMax;
-  arraySizeAligned = (size_t)arraySizeAlignedMax;
+  /* Check for overflow when computing arraySize.
+   * Note: bytesPerElement > 0
+   */
+  if (numElements > (SIZE_MAX / bytesPerElement)) {
+    goto doOverflow;
+  }
+  arraySize = bytesPerElement * numElements;
+  if (arraySize > SIZE_MAX - GC_ARRAY_HEADER_SIZE) {
+    goto doOverflow;
+  }
+  arraySize += GC_ARRAY_HEADER_SIZE;
+  arraySizeAligned = align (arraySize, s->alignment);
+  if (arraySizeAligned < arraySize) {
+    goto doOverflow;
+  }
   if (arraySizeAligned < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
     /* Very small (including empty) arrays have OBJPTR_SIZE bytes
      * space for the forwarding pointer.
@@ -116,4 +122,8 @@ pointer GC_arrayAllocate (GC_state s,
    * to reflect what the mutator did with stackTop.
    */
   return result;
+
+doOverflow:
+  die ("Out of memory.  Unable to allocate array with "FMTARRLEN" elements and elements of size %"PRIuMAX" bytes.",
+       numElements, (uintmax_t)bytesPerElement);
 }
