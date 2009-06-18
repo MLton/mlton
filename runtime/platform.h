@@ -141,7 +141,7 @@
 
 PRIVATE void MLton_init (int argc, char **argv, GC_state s);
 PRIVATE __attribute__ ((noreturn)) void MLton_halt (GC_state s, C_Int_t status);
-PRIVATE __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
+PRIVATE __attribute__ ((noreturn)) void MLton_heapCheckTooLarge (void);
 
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
