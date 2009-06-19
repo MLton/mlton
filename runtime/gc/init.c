@@ -238,7 +238,9 @@ int processAtMLton (GC_state s, int argc, char **argv,
             die ("@MLton stack-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "use-mmap")) {
           i++;
-          GC_setCygwinUseMmap (TRUE);
+          if (i == argc)
+            die ("@MLton use-mmap missing argument.");
+          GC_setCygwinUseMmap (stringToBool (argv[i++]));
         } else if (0 == strcmp (arg, "--")) {
           i++;
           done = TRUE;
