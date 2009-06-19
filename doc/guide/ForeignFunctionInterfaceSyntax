@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -105,25 +105,65 @@ The type annotation and the semicolon are not optional in the syntax of <a href=
 </p>
 <h2 id="head-d70f93df5e8f9b55be44fbeee9d203972e3383d4">Address</h2>
 
-<pre>_address "C function or variable name" : cPtrTy;
+<pre>_address "CFunctionOrVariableName" attr... : cPtrTy;
 </pre><p>
 Denotes the address of the C function or variable. 
 </p>
-<h2 id="head-3f84ef531f9db996694ad09a8fdddbca1440577e">Symbol</h2>
-
-<pre>_symbol "C variable name" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
-</pre><p>
-Denotes the <em>getter</em> and <em>setter</em> for a C variable.   The <em>cBaseTy</em>s must be identical. 
-</p>
 <p>
-<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized: 
 </p>
 
     <ul>
 
     <li>
 <p>
- <tt>alloc</tt> : allocate storage (and export a symbol) for the C variable 
+ <tt>external</tt> : import with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>private</tt> : import with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>public</tt> : import with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-3f84ef531f9db996694ad09a8fdddbca1440577e">Symbol</h2>
+
+<pre>_symbol "CVariableName" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
+</pre><p>
+Denotes the <em>getter</em> and <em>setter</em> for a C variable.   The <em>cBaseTy</em>s must be identical. 
+</p>
+<p>
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>alloc</tt> : allocate storage (and export a symbol) for the C variable. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>external</tt> : import or export with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default if not <tt>alloc</tt>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>private</tt> : import or export with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>public</tt> : import or export with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default if <tt>alloc</tt>). 
 </p>
 </li>
 
@@ -141,25 +181,60 @@ Denotes the <em>getter</em> and <em>setter</em> for a C pointer to a variable. T
 </pre><p>
 Denotes an SML function whose behavior is implemented by calling the C function.  See <a href="CallingFromSMLToC"> Calling from SML to C</a> for more details. 
 </p>
-
-<pre>_import * attr... : cPtrTy -&gt; cFuncTy;
-</pre><p>
-Denotes an SML function whose behavior is implemented by calling a C function through a C function pointer. 
-</p>
 <p>
-<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized: 
 </p>
 
     <ul>
 
     <li>
 <p>
- <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention. 
+ <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention (default). 
 </p>
 </li>
     <li>
 <p>
- <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention. 
+ <tt>external</tt> : import with external symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>private</tt> : import with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>public</tt> : import with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention (ignored except on Cygwin and MinGW). 
+</p>
+</li>
+
+    </ul>
+
+
+
+<pre>_import * attr... : cPtrTy -&gt; cFuncTy;
+</pre><p>
+Denotes an SML function whose behavior is implemented by calling a C function through a C function pointer. 
+</p>
+<p>
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention (default). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention (ignored except on Cygwin and MinGW). 
 </p>
 </li>
 
@@ -176,19 +251,29 @@ See <a href="CallingFromSMLToCFunctionPointer"> Calling from SML to C function p
 Exports a C function with the name <tt>CFunctionName</tt> that can be used to call an SML function of the type <em>cFuncTy</em>. When the function denoted by the export expression is applied to an SML function <tt>f</tt>, subsequent C calls to <tt>CFunctionName</tt> will call <tt>f</tt>.  It is an error to call <tt>CFunctionName</tt> before the export has been applied.  The export may be applied more than once, with each application replacing any previous definition of <tt>CFunctionName</tt>. 
 </p>
 <p>
-<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes.  The following attributes are recognized: 
 </p>
 
     <ul>
 
     <li>
 <p>
- <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention. 
+ <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention (default). 
 </p>
 </li>
     <li>
 <p>
- <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention. 
+ <tt>private</tt> : export with private symbol scope (see <a href="LibrarySupport">LibrarySupport</a>). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>public</tt> : export with public symbol scope (see <a href="LibrarySupport">LibrarySupport</a>) (default). 
+</p>
+</li>
+    <li>
+<p>
+ <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention (ignored except on Cygwin and MinGW). 
 </p>
 </li>
 
@@ -204,5 +289,5 @@ See <a href="CallingFromCToSML"> Calling from C to SML</a> for more details.
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:24:43 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-10 20:08:16 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,15 +51,30 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-I maintain the Fedora package of MLton, in <a class="external" href="http://fedoraproject.org/wiki/Extras"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fedora Extras</a>. </div>
+
+    <ul>
+
+    <li>
+<p>
+ I maintain the Fedora package of MLton, in <a class="external" href="https://admin.fedoraproject.org/pkgdb/packages/name/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fedora</a>. 
+</p>
+</li>
+    <li>
+<p>
+ I have contributed some patches for Makefiles and PDF documentation building. 
+</p>
+</li>
+</ul>
+
+</div>
 
 
 
 <p>
 <hr>
-Last edited on 2006-12-03 04:04:02 by <span title="pool-72-77-83-84.pitbpa.fios.verizon.net"><a href="AdamGoode">AdamGoode</a></span>.
+Last edited on 2007-09-19 00:57:59 by <span title="pool-71-182-143-22.pitbpa.fios.verizon.net"><a href="AdamGoode">AdamGoode</a></span>.
 </body></html>

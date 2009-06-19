@@ -51,11 +51,266 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<pre class=code>Here are the changes from version 20051202 to version 200708??.
+<pre class=code>Here are the changes from version 20070826 to version YYYYMMDD.
+
+Summary:
+  + New platforms.
+   o ia64-hpux
+   o powerpc64-aix
+  + Compiler.
+   o Command-line switches.
+    * Added: -mlb-path-var '&lt;name&gt; &lt;value&gt;'
+    * Removed: -keep sml, -stop sml
+   o Improved constant folding of floating-point operations.
+   o Experimental: Support for compiling to a C library; see wiki
+       documentation.
+   o Extended -show-def-use output to include types of variable
+       definitions.
+   o Deprecated features (to be removed in a future release)
+    * Bytecode codegen: The bytecode codegen has not seen significant
+        use and it is not well understood by any of the active
+        developers.
+    * Support for .cm files as input: The ML Basis system provides
+        much better infrastructure for &quot;programming in the very large&quot;
+        than the (very) limited support for CM.  The cm2mlb tool
+        (available in the source distribution) can be used to convert
+        CM projects to MLB projects, preserving the CM scoping of
+        module identifiers.
+   o Bug fixes: see changelog
+  + Runtime.
+   o @MLton switches.
+    * Added: may-page-heap {false|true}
+   o may-page-heap: By default, MLton will not page the heap to disk
+       when unable to grow the heap to accomodate an allocation.
+       (Previously, this behavior was the default, with no means to
+       disable, with security an least-surprise issues.)
+   o Bug fixes: see changelog
+  + Language.
+   o Allow numeric characters in ML Basis path variables.
+  + Libraries.
+   o Basis Library.
+    * Bug fixes: see changelog.
+   o MLton structure.
+    * Added: MLton.equal, MLton.hash, MLton.Cont.isolate,
+        MLton.GC.Statistics, MLton.Pointer.sizeofPointer,
+        MLton.Socket.Address.toVector
+    * Changed:
+    * Deprecated: MLton.Socket
+   o Unsafe structure.
+    * Added versions of all of the monomorphic array and vector
+      structures.
+   o Other libraries.
+    * Updated: ckit library, MLRISC library, SML/NJ library.
+  + Tools.
+   o mllex
+    * Eliminated top-level 'type int = Int.int' in output.
+    * Include (*#line line:col &quot;file.lex&quot; *) directives in output.
+    * Added %posint command, to set the yypos type and allow the
+      lexing of multi-gigabyte files.
+   o mlnlffigen
+    * Added command-line switches -linkage archive and -linkage shared.
+    * Deprecated command-line switch -linkage static.
+    * Added support for ia64 and hppa targets.
+   o mlyacc
+    * Eliminated top-level 'type int = Int.int' in output.
+    * Include (*#line line:col &quot;file.grm&quot; *) directives in output.
+
+* 2009-06-09
+   - Removed deprecated command line switch -show-anns {false, true}.
+
+* 2009-04-18
+   - Removed command line switches -keep sml and -stop sml.  Their
+     meaning was unclear with .mlb files; their effect with .cm files
+     can be achieved with -stop f.
+
+* 2009-04-16
+   - Fixed bug in IntInf.~&gt;&gt; that could cause a glibc assertion
+     failure.
+
+* 2009-04-01
+   - Fixed exported type of MLton.Process.reap.
+
+* 2009-01-27
+   - Added MLton.Socket.Address.toVector to get the network-byte-order
+     representation of an IP address.
+
+* 2008-11-10
+   - Fixed bug in MLton.size and MLton.share when tracing the current
+     stack.
+
+* 2008-10-27
+   - Fixed phantom typing of sockets by hiding the representation of socket
+     types.  Previously the representation of sockets was revealed rendering
+     the phantom types useless.
+
+* 2008-10-10
+   - Fixed bug in nexted _export/_import functions.
+
+* 2008-09-12
+   - Improved constant folding of floating point operations.
+
+* 2008-08-20
+   - Store the card/cross map at the end of the allocated ML heap;
+     avoids possible out of memory errors when resizing the ML heap
+     cannot be followed by a card/cross map allocation.
+
+* 2008-07-24
+   - Added support for compiling to a C library. The relevant new compiler
+     options are '-ar' and '-format'. Libraries are named based on the
+     name of the -export-header file. Libraries have two extra methods:
+       * NAME_open(argc, argv) initializes the library and runs the SML code
+         until it reaches the end of the program. If the SML code exits or
+         raises an uncaught exception, the entire program will terminate.
+       * NAME_close() will execute any registered atExit functions, any
+         outstanding finalizers, and frees the ML heap.
+
+* 2008-07-16
+   - Fixed bug in the name mangling of _import-ed functions with the
+     stdcall convention.
+
+* 2008-06-12
+   - Added MLton.Pointer.sizeofPointer.
+
+* 2008-06-06
+   - Added expert command line switch -emit-main {true|false}.
+
+* 2008-05-17
+   - Fixed bug in Windows code to page the heap to disk when unable to
+     grow the heap to a desired size.
+     Thanks to Sami Evangelista for the bug report.
+
+* 2008-05-10
+   - Implemented MLton.Cont.isolate.
+
+* 2008-04-20
+   - Fixed bug in *NIX code to page the heap to disk when unable to
+     grow the heap to a desired size.
+     Thanks to Nicolas Bertolotti for the bug report and patch.
+
+* 2008-04-07
+   - More flexible active/paused stack resizing policy.
+     Removed thread-shrink-ratio runtime option.
+     Added stack-current-grow-ratio, stack-current-max-reserved-ratio,
+     stack-current-permit-ratio, stack-current-shrink-ratio,
+     stack-max-reserved-ratio, and stack-shrink-ratio runtime options.
+
+* 2008-04-07
+   - Fixed bugs in Basis Library where the representations of
+     OS.IO.iodesc, Posix.IO.file_desc, Posix.Signal.signal,
+     Socket.sock, Socket.SOGK.sock_type as integers were exposed.
+
+* 2008-03-14
+   - Added unsafe versions of all of the monomorphic array and vector
+     structures.
+
+* 2008-03-02
+   - Fixed bug in Basis Library where the representation of
+     OS.Process.status as an integer was exposed.
+
+* 2008-02-13
+   - Fixed space-safety bug in pass to flatten refs into containing
+     data structure. Thanks to Daniel Spoonhower for the bug report
+     and initial diagnosis and patch.
+
+* 2008-01-25
+   - Various updates to GC statistics gathering.  Some basic GC
+     statistics can be accessed from SML by MLton.GC.Statistics.*
+     functions.
+
+* 2008-01-24
+   - Added primitive (structural) polymorphic hash.
+
+* 2008-01-21
+   - Fixed frontend to accept &quot;op longvid&quot; patterns and expressions.
+     Thanks to Florian Weimer for the bug report.
+
+* 2008-01-17
+   - Extended -show-def-use output to include types of variable
+     definitions.
+
+* 2008-01-09
+   - Extended MLton_equal to be a structural equality on all types,
+     including real and -&gt; types.
+
+* 2007-12-18
+   - Changed ML-Yacc and ML-Lex to output line directives so that
+     MLton's def-use information points to the source files (.grm
+     and .lex) instead of the generated implementations (.grm.sml
+     and .lex.sml).
+
+* 2007-12-14
+   - Added runtime option 'may-page-heap {false|true}'.  By default,
+     MLton will not page the heap to disk when unable to grow the heap
+     to a desired size.  (Previously, this behavior was the default,
+     with no means to disable, with security and least-surprise
+     concerns.)
+     Thanks to Wesley Terpstra for the patch.
+   - Fixed bug the FFI visible representation of Int16.int ref (and
+     references of other primitive types smaller than 32-bits) on
+     big-endian platforms.
+     Thanks to Dave Herman for the bug report.
+
+* 2007-12-13
+   - Fixed bug in ImperativeIOExtra.canInput (TextIO.canInput).
+     Thanks to Ville Laurikari for the bug report.
+
+* 2007-12-09
+   - Better constant folding of IntInf operations.
+
+* 2007-12-07
+   - Fixed bug in algebraic simplification of real primitives.
+     Real.&lt;= (x, x) is false when x is NaN.
+
+* 2007-11-29
+   - Fixed bug in type inference of flexible records.  This would
+     later cause the compiler to raise the TypeError exception.
+     Thanks to Wesley Terpstra for the bug report.
+
+* 2007-11-28
+   - Fixed bug in cross-compilation of gdtoa library.  Thanks to
+     Wesley Terpstra for the bug report and patch.
+
+* 2007-11-20
+   - Fixed bug in pass to flatten refs into containing data structure.
+     Thanks to Ruy LeyWild for the bug report.
+
+* 2007-11-19
+   - Fixed bug in the handling of weak pointers by the mark-compact
+     garbage collector.  Thanks to Sean McLaughlin for the bug report
+     and Florian Weimer for the initial diagnosis.
+
+* 2007-11-07
+   - Added %posint command to ml-lex, to set the yypos type and allow
+     the lexing of multi-gigabyte input files.  Thanks to Florian
+     Weimer for the feature concept and original patch.
+
+* 2007-11-07
+   - Added command-line switch -mlb-path-var '&lt;name&gt; &lt;value&gt;' for
+     specifying MLB path variables.
+
+* 2007-11-06
+  - Allow numeric characters in MLB path variables.
+
+* 2007-09-20
+   - Fixed bug in elaboration of structures with signature
+     constraints.  This would later cause the compiler to raise the
+     TypeError exception.  Thanks to Vesa Karvonen for the bug report.
+
+* 2007-09-11
+   - Fixed bug in interaction of _export-ed functions and signal
+     handlers.  Thanks to Sean McLaughlin for the bug report.
+
+* 2007-09-03
+   - Fixed bug in implementation of _export-ed functions using 'char'
+     type.  Thanks to Katsuhiro Ueno for the bug report.
+
+--------------------------------------------------------------------------------
+
+Here are the changes from version 20051202 to version 20070826.
 
 Summary:
   + New platforms:
@@ -79,10 +334,10 @@ Summary:
   + Libraries.
    o Basis Library.
     * Added: PackWord16Big, PackWord16Little, PackWord64Big,
-	PackWord64Little.
+        PackWord64Little.
     * Bug Fixes: see changelog.
    o MLton structure.
-    * Added: MLTON_MONO_ARRAY, MLTON_MONO_VECTOR, MLTON_REAL, 
+    * Added: MLTON_MONO_ARRAY, MLTON_MONO_VECTOR, MLTON_REAL,
         MLton.BinIO.tempPrefix, MLton.CharArray, MLton.CharVector,
         MLton.IntInf.BigWord, MLton.IntInf.SmallInt,
         MLton.Exn.defaultTopLevelHandler,
@@ -93,7 +348,7 @@ Summary:
         MLton.Word16, MLton.Word32, MLton.Word64, MLton.Word8Array,
         MLton.Word8Vector.
     * Changed: MLton.Array.unfoldi, MLton.IntInf.rep, MLton.Rlimit,
-        MLton.Vector.unfoldi. 
+        MLton.Vector.unfoldi.
     * Deprecated: MLton.Socket
    o Other libraries.
     * Added: MLRISC libary.
@@ -201,7 +456,7 @@ Summary:
      pass their argument as a single argument to gcc (i.e., without
      tokenization at spaces).  These options support using headers and
      libraries (including the MLton runtime headers and libraries) from a
-     path with spaces.  
+     path with spaces.
 
 * 2006-12-02
    - Extensive reorganization of garbage collector, runtime system, and
@@ -233,7 +488,7 @@ Summary:
 * 2006-06-24
    - Fixed a bug in pass to flatten data structures.  Thanks to Joe Hurd
      for the bug report.
-	
+
 * 2006-06-08
   - Fixed a bug in the native codegen's implementation of the C-calling
     convention.
@@ -253,7 +508,7 @@ Summary:
 * 2006-04-25
   - Ported to HPPA-HPUX.
   - Fixed PackReal{,32,64}{Big,Little} to follow the Basis Library
-    specification. 
+    specification.
 
 * 2006-04-19
   - Fixed a bug in MLton.share that could cause a segfault.
@@ -274,7 +529,7 @@ Summary:
 
 * 2006-03-02
   - Ported a bugfix from SML/NJ for a bug with the combination of withNack
-    and never in CML. 
+    and never in CML.
 
 * 2006-02-09
   - Support compiler specific annotations in ML Basis files.  If an
@@ -288,7 +543,7 @@ Summary:
   - Fixed bug in elaboration of functors; a program with a very large
     number of functors could exhibit the error
     &quot;ElaborateEnv.functorClosure: firstTycons&quot;.
-	
+
 --------------------------------------------------------------------------------
 
 Here are the changes from version 20041109 to version 20051202.
@@ -317,7 +572,7 @@ Summary:
    o Basis Library.
     * Added: Int1, Word1.
    o MLton structure.
-    * Added: Process.create, ProcEnv.setgroups, Rusage.measureGC, 
+    * Added: Process.create, ProcEnv.setgroups, Rusage.measureGC,
         Socket.fdToSock Socket.Ctl.getError.
     * Changed: MLton.Platform.Arch.
    o Other libraries.
@@ -369,7 +624,7 @@ Summary:
     finalizable values in all cases.
 
 * 2005-08-18
-  - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to 
+  - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to
     standard distribution.
   - Fixed bug in Socket.Ctl.*, which got the endianness wrong on
     big-endian machines.  Thanks to Wesley Terpstra for the bug report
@@ -398,11 +653,11 @@ Summary:
 * 2005-08-03
   - Annotation changes.
     Deprecated: allowExport, allowImport, warnMatch
-    Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch, 
+    Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch,
       redundantMatch
 
 * 2005-08-01
-  - Update mllex and mlyacc with SML/NJ 110.55+ versions.  This 
+  - Update mllex and mlyacc with SML/NJ 110.55+ versions.  This
     incorporates a small number of minor bug fixes.
 
 * 2005-07-23
@@ -415,7 +670,7 @@ Summary:
     See documentation for more detail.
 
 * 2005-07-21
-  - Update mllex and mlyacc with SML/NJ 110.55 versions.  This 
+  - Update mllex and mlyacc with SML/NJ 110.55 versions.  This
     incorporates a small number of minor bug fixes.
 
 * 2005-07-20
@@ -442,7 +697,7 @@ Summary:
   - InetSock.{any,toAddr} raise SysErr if port is not in [0, 2^16).
 
 * 2005-07-02
-  - Fixed bug in Socket.recvVecFrom{,',NB,NB'}.  The type was too 
+  - Fixed bug in Socket.recvVecFrom{,',NB,NB'}.  The type was too
     polymorphic and allowed the creation of a bogus sock_addr.
 
 * 2005-06-28
@@ -468,7 +723,7 @@ Summary:
 
 * 2005-04-13
   - Fixed a bug in the representation of flat arrays/vectors that
-    caused incorrect behavior when the element size was 2 or 4 bytes 
+    caused incorrect behavior when the element size was 2 or 4 bytes
     and there were multiple components to the element (e.g. (char *
     char) vector).
 
@@ -493,7 +748,7 @@ Summary:
   - Added mlnlffigen tool (heavily adapted from SML/NJ).
 
 * 2005-02-12
-  - Added MLNLFFI Library (heavily adapted from SML/NJ) to standard 
+  - Added MLNLFFI Library (heavily adapted from SML/NJ) to standard
     distribution.
 
 * 2005-02-04
@@ -550,17 +805,17 @@ Summary:
     o Added: share, shareAll
     o Changed: Exn, IntInf, Signal, Thread.
   + Command-line switch changes.
-    o Deprecated: 
+    o Deprecated:
         -native (use -codegen)
         -sequence-unit (use -default-ann)
         -warn-match (use -default-ann)
         -warn-unused (use -default-ann)
-    o Removed: 
+    o Removed:
         -detect-overflow
         -exn-history (use -const)
         -safe
         -show-basis-used
-    o Added: 
+    o Added:
         -codegen
         -const
         -default-ann
@@ -595,7 +850,7 @@ Summary:
     the month.
 
 * 2004-08-18
-  - Changed MLton.{Thread,Signal,World} to distinguish between 
+  - Changed MLton.{Thread,Signal,World} to distinguish between
     implicitly and explicitly paused threads.
 
 * 2004-07-28
@@ -648,7 +903,7 @@ Summary:
   - Fixed a bug with sharing constraints in signatures that would
     sometimes mistakenly treat two structures as identical when they
     shouldn't have been.  This would cause some programs to be
-    mistakenly rejected. 
+    mistakenly rejected.
 
 * 2004-04-30
   - Added MLton.Signal.{handled,restart}.
@@ -708,13 +963,13 @@ Summary:
     o Deprecated: -basis.
     o Removed: -lib-search, -link, -may-load-world, -static.
     o Added: -link-opt, -runtime, -sequence-unit, -show-def-use,
-             -stop tc, -warn-match, -warn-unused. 
+             -stop tc, -warn-match, -warn-unused.
     o Changed: -export-header, -show-basis, -show-basis-used.
     o Renamed: -host to -target.
   + FFI changes.
     o Renamed _ffi as _import.
     o Added cdecl and stdcall attributes to _import and _export
-      expressions. 
+      expressions.
   + MLton structure changes.
     o Added: Pointer.
     o Removed: Ptrace.
@@ -777,7 +1032,7 @@ Summary:
 
 * 2003-12-01
   - Added structure MLton.Pointer, which includes a type t for
-    pointers (memory addresses, not SML heap pointers) and operations 
+    pointers (memory addresses, not SML heap pointers) and operations
     for loading from and storing to memory.
 
 * 2003-11-03
@@ -786,7 +1041,7 @@ Summary:
 
 * 2003-10-13
   - Added -warn-match to control display nonexhaustive and redundant
-    match warnings. 
+    match warnings.
   - Fixed space leak in StreamIO causing the entire stream to be
     retained.   Thanks to Jared Showalter for the bug report and fix.
 
@@ -796,7 +1051,7 @@ Summary:
 * 2003-09-25
   - Fixed Posix.IO.getfl, which had mistakenly called fcntl with
     F_GETFD instead of F_GETFL.
-  - Tracking basis library changes: 
+  - Tracking basis library changes:
     o Socket module datagram functions no longer return amount
       written, since they always write the entire amount or fail.  So,
       send{Arr,Vec}To{,'} now return unit instead of int.
@@ -810,10 +1065,10 @@ Summary:
     o TextIO.inputLine now returns a string option.
     o Slices used in Byte, PRIM_IO, PrimIO, Posix.IO, StreamIO
     o Posix.IO.readVec raises Size, not Subscript, with negative
-      argument. 
+      argument.
 
 * 2003-09-22
-  - Fixed Real.toManExp so that the mantissa is in [0.5, 1), 
+  - Fixed Real.toManExp so that the mantissa is in [0.5, 1),
     not [1, 2).  The spec says that 1.0 &lt;= man * radix &lt; radix, which
     since radix is 2, implies that the mantissa is in [0.5, 1).
   - Added Time.{from,to}Nanoseconds.
@@ -857,7 +1112,7 @@ Summary:
 * 2003-09-03
   - Lots of fixes to Real functions.
     o Real32 is now completely in place, except for Real32.nextAfter
-      on SunOS. 
+      on SunOS.
     o Fixed Real.Math.exp on x86 to return the right value when
       applied to posInf and negInf.
     o Changed Real.Math.{cos,sin,tan} on x86 to always use a call to
@@ -865,7 +1120,7 @@ Summary:
       eliminates some anomalies between compiling -native false and
       -native true.
     o Change Real.Math.pow to handle exceptional cases in the SML
-      code. 
+      code.
     o Fixed Real.signBit on Sparcs.
 
 * 2003-08-28
@@ -889,7 +1144,7 @@ Summary:
 * 2003-08-17
   - Eliminated -link and -lib-search, which are no longer needed.
     Eliminated support for passing -l*, -L*, and *.a on the command
-    line.  Use -link-opt instead. 
+    line.  Use -link-opt instead.
 
 * 2003-08-16
   - Added -link-opt, for passing options to gcc when linking.
@@ -990,7 +1245,7 @@ Summary:
     types polled for instead of what was actually available.
 
 * 2003-06-04
-  - Fixed bug in known case SSA optimization that could case incorrect 
+  - Fixed bug in known case SSA optimization that could case incorrect
     results in compiled programs.
 
 * 2003-06-03
@@ -1045,10 +1300,10 @@ Summary:
   - Fixed a runtime system bug that could cause a segfault.  This bug
     would happen after a GC during heap resizing when copying a heap,
     if the heap was allocated at a very low (&lt;10M) address.  The bug
-    actually showed up on a Cygwin system. 
+    actually showed up on a Cygwin system.
 
 * 2003-05-08
-  - Fixed bug in HashType that raised &quot;Vector.forall2&quot; when the 
+  - Fixed bug in HashType that raised &quot;Vector.forall2&quot; when the
     arity of a type constructor is changed by simplifyTypes, but
     a newly constructed type has the same hash value.
 
@@ -1057,7 +1312,7 @@ Summary:
     the implementation of the BinIO and TextIO modules.
 
 * 2003-04-28
-  - Fixed bug that caused an assertion failure when generating a jump 
+  - Fixed bug that caused an assertion failure when generating a jump
     table for a case dispatch on a non-word sized index with non-zero
     lower bound on the range.
 
@@ -1071,7 +1326,7 @@ Summary:
     -native false.  The bug was introduced with the C codegen
     improvements that split the C into multiple files.  Now, the C
     codegen declares all profile labels used in each file so that they
-    are global symbols. 
+    are global symbols.
 
 * 2003-04-18
   - Added MLton.Weak, which supports weak pointers.
@@ -1097,7 +1352,7 @@ Summary:
   + Added source-level profiling of both time and allocation.
   + Updated basis library to 2002 specification.  To obtain the old
     library, compile with -basis 1997.
-  + Added many modules to basis library: 
+  + Added many modules to basis library:
     BinPrimIO, GenericSock, ImperativeIO, INetSock, NetHostDB,
     NetProtDB, NetServDB, Socket, StreamIO, TextPrimIO, UnixSock.
   + Completed implementation of IntInf and OS.IO.
@@ -1149,7 +1404,7 @@ Summary:
 
 * 2002-11-22
   - Fixed bug that caused time profiling to fail (with a segfault) when resuming
-    a saved world. 
+    a saved world.
 
 * 2002-11-07
   - Fixed bug in MLton.eq that could arise when using eq on functions.
@@ -1194,7 +1449,7 @@ Summary:
   + Added IntInf.log2, MLton.GC.pack, MLton.GC.unpack.
   + Fixed bug in load world that could cause &quot;sread failed&quot; on Cygwin.
   + Fixed optimizer bug that could cause &quot;no analyze var value property&quot;
-    message. 
+    message.
 
 * 2002-09
   - Integrated Sam Rushing's changes to port MLton to FreeBSD.
@@ -1203,7 +1458,7 @@ Summary:
   - Changed the implementation of exception history to be completely functional.
     Now, the extra field in exceptions (when compiling -exn-history true) is a
     string list instead of a string list ref, and raise conses a new exception
-    with a new element in the list instead of assigning to the list.  This 
+    with a new element in the list instead of assigning to the list.  This
     changes the semantics of exception history (for the better) on some
     programs. See regression/exnHistory3.sml for an example.  It also
     significantly improves performance when compiling -exn-history true.
@@ -1214,7 +1469,7 @@ Summary:
 
 * 2002-08-20
   - Fixed SSA optimizer bug that could cause the following error message
-        x_0 has no analyze var value property 
+        x_0 has no analyze var value property
 
 * 2002-07-28
   - Added MLton.GC.{pack,unpack}.  pack shrinks the heap so that other processes
@@ -1270,11 +1525,11 @@ Here are the changes from version 20011006 to version 20020410.
 * 2002-03-22
   - Set up the stubs so that MLton can be compiled in the standard basis
     library, with no MLton structure.  Thus it is now easy to compile MLton
-    with an older (or newer) version of itself that has a different MLton 
+    with an older (or newer) version of itself that has a different MLton
     structure.
 
 * 2002-03-17
-  - Added MLton.Process.{spawn,spawne,spawnp}, which use primitives when 
+  - Added MLton.Process.{spawn,spawne,spawnp}, which use primitives when
     running on Cygwin and fork/exec when running on Linux.
 
 * 2002-02 - 2002-03
@@ -1284,10 +1539,10 @@ Here are the changes from version 20011006 to version 20020410.
   - Added gmp back for use with Cygwin.
 
 * 2002-02-10
-  - Reworked object header words so that Array.maxLen = valOf Int.maxInt.  
+  - Reworked object header words so that Array.maxLen = valOf Int.maxInt.
     Also fixed a long-standing minor bug in MLton, where
     Array.array (Array.maxLen, ...) would raise Size instead of attempting
-    to allocate the array.  It was an off-by-one error in the meaning of 
+    to allocate the array.  It was an off-by-one error in the meaning of
     Array.maxLen.
 
 * 2002-02-08
@@ -1295,10 +1550,10 @@ Here are the changes from version 20011006 to version 20020410.
     live data is a signifant fraction of the amount of RAM, based on code from
     PolySpace.  MLton executables by default can now use more than the
     available amount of RAM.  Executables will still respect the max-heap
-    runtime arg if it is set. 
+    runtime arg if it is set.
 
 * 2002-02-04
-  - Improvements to runtime so that it fails to get space, it attempts to get 
+  - Improvements to runtime so that it fails to get space, it attempts to get
     less space instead of failing.  Based on PolySpace's modifications.
   - Added MLton.eq.
 
@@ -1306,12 +1561,12 @@ Here are the changes from version 20011006 to version 20020410.
   - Added MLton.IntInf.gcd.
   - Removed gmp from MLton sources.  We now link with /usr/lib/gmp.a.
   - Added TextIO.getPosOut.
-  - Renamed type MLton.Itimer.which to MLton.Itimer.t and 
+  - Renamed type MLton.Itimer.which to MLton.Itimer.t and
     MLton.Itimer.whichSignal to MLton.Itimer.signal.
   - Added -coalesce flag, for use with the C backend.
 
 * 2002-01-26
-  - Added -show-basis-used, which prints out the parts of the basis library 
+  - Added -show-basis-used, which prints out the parts of the basis library
     that the input program uses.
   - Changed several other flags (-print-at-fun-entry, -show-basis, -static)
     to follow the {false|true} convention.
@@ -1323,7 +1578,7 @@ Here are the changes from version 20011006 to version 20020410.
 
 * 2002-01-18
   - The MACHINE IL has been replaced with an RSSA (representation explicit SSA)
-    IL and an improved MACHINE IL.  
+    IL and an improved MACHINE IL.
 
 * 2002-01-16
   - Added known case SSA optimization
@@ -1408,14 +1663,14 @@ Summary:
         val rec NONE = fn () =&gt; ()
         val _ = NONE ()
     Again, this is checked in valrec.sml.
-  - Added '\r\n' to ml.lex so that Windows style newlines are acceptable in 
+  - Added '\r\n' to ml.lex so that Windows style newlines are acceptable in
     input files.
 
 * 2001-10-4
   - Fixed bug in the implementation of &quot;open&quot; declarations, which in the case of
-    &quot;open A B&quot; had opened A and then looked up B in the resulting environment.  
+    &quot;open A B&quot; had opened A and then looked up B in the resulting environment.
     The correct behaviour (see rule 22 of the Definition) is to lookup each
-    longstrid in the current environment, and then open them all in sequence. 
+    longstrid in the current environment, and then open them all in sequence.
     This is now checked for in the open.sml regression test.  Thanks to Andreas
     Rossberg for pointing this bug out.
   - Fixed bug that caused tyvars of length 1 (i.e. ') to be rejected.  This is
@@ -1455,8 +1710,8 @@ Summary:
 * 2001-8-22
   - Added support for #line directives of the form
         (*#line line.col &quot;file&quot;*)
-    These directives only affect error messages produced by the parser and 
-    elaborator.   
+    These directives only affect error messages produced by the parser and
+    elaborator.
 
 * 2001-8-17
   - Fixed bug in removeUnused optimzation that caused the following program to
@@ -1466,7 +1721,7 @@ Summary:
 
 * 2001-8-14
   - New x86-codegen infrastructure.
-    o support for tracking liveness of stack slots and carrying them 
+    o support for tracking liveness of stack slots and carrying them
        in registers across basic blocks
     o more specific Entry and Transfer datatypes to make calling convention
        distinctions more explicit
@@ -1527,7 +1782,7 @@ Summary:
   - Workaround for Linux kernel bug that can cause getrusage to return a wrong
     system time value (low by one second).  See fixedGetrusage in gc.c.
   - Bug fix to x86 codegen.  The register allocator could get confused when
-    doing comparisons of floating point numbers and use the wrong operand. 
+    doing comparisons of floating point numbers and use the wrong operand.
     The bug seems to have never been detected because it only happens when both
     of the operands are already on the floating point stack, which is rare,
     since one is almost always in memory since we don't carry floating point
@@ -1556,24 +1811,24 @@ Summary:
     detection elimination will work on the loop index variable.
 
 * 2001-7-11
-  - Fixed minor bugs in Array2.{array,tabulate}, Substring.{slice} that caused 
+  - Fixed minor bugs in Array2.{array,tabulate}, Substring.{slice} that caused
     the Overflow exception to be raised instead of Size or Subscript
   - Fixed bug in Pack32Big.update that caused the wrong location to be updated.
   - Fixed several bugs in Pack32{Big,Little}.{subArr,subVec,update} that caused
     Overflow to be raised instead of Subscript.  Also, improved the
     implementation so that bounds checking only occurs once per call (instead of
     four times, which was sometimes happening.
-  - Fixed bugs in Time.{toMilliseconds,toMicroseconds} that could cause 
+  - Fixed bugs in Time.{toMilliseconds,toMicroseconds} that could cause
     a spurious Overflow exception.
   - Fixed bugs in Time.{fromMilliseconds,fromMicroseconds} that could cause
     a spurious Time exception.
   - Improved Pack32.sub* by reordering the orbs.
   - Improved {Int,IntInf}.mod to increase chances of constant folding.
   - Switched many uses of +, -, * in basis library to the non-overflow checked
-    versions.  Modules changed were: Array, Array2, Byte, Char, Int, IntInf, 
+    versions.  Modules changed were: Array, Array2, Byte, Char, Int, IntInf,
     List, Pack32{Big,Little}, Util, String, StringCvt, Substring, TextIO, Time,
     Vector.
-  - Added regression tests for Array2, Int (overflow checking), Pack32, 
+  - Added regression tests for Array2, Int (overflow checking), Pack32,
     Substring, Time.
   - Changed CPS output so that it includes a dot graph for each CPS function.
 
@@ -1588,7 +1843,7 @@ Here are the changes from the 20000906 version to the 20010706 version.
 
 Summary:
     + Native X86 code generator (instead of using gcc)
-    + Significantly improved compile times 
+    + Significantly improved compile times
     + Significantly improved run times for generated executables
     + Many bug fixes
     + Correct raising of the Overflow exception for integer arithmetic
@@ -1625,7 +1880,7 @@ Summary:
     Doug Bagley for the fix.
 
 * 2001-5-30
-  - Fixed bug in remove-unused that caused polymorphic equality to return 
+  - Fixed bug in remove-unused that caused polymorphic equality to return
     true sometimes when constructors were never used in a pattern match.
     For example, the following (in which A and B are not used as patterns):
         datatype t = A | B
@@ -1669,7 +1924,7 @@ Summary:
 
 * 2000-12-8
   - More careful removal of tracing code when compiling MLton_debug=0.
-    This cut down self compile data size by 100k and compile time by a few 
+    This cut down self compile data size by 100k and compile time by a few
     seconds.
   - Added built in character and word cases propagated throughout all ILs.
 
@@ -1686,7 +1941,7 @@ Summary:
     world (the original environ was saved).  In fact, it did not work at all
     because the ML primitive expected a constant and the C was a nullary
     function. This caused a segfault with any program using
-    Posix.ProcEnv.environ. 
+    Posix.ProcEnv.environ.
   - Added MLton.ProcEnv.setenv, since there doesn't seem to be any setenv in
     the basis library.
 
@@ -1713,7 +1968,7 @@ Summary:
         tuple or if expressions.  This should speed up the translation and
         make the output smaller.
   - Fixed a bug in the match compiler that caused it to not generate integer
-        case statements.  This should speed up the mlyacc benchmark and the 
+        case statements.  This should speed up the mlyacc benchmark and the
         MLton front end.
 
 * 2000-11-9
@@ -1761,7 +2016,7 @@ Summary:
     was behaving really badly on RHAT 7.0.
   - Tweaked compiler to shorten width of C output lines to work around
         bug in RHAT 7.0 cpp which silently truncates (very) long lines.
-  - Fixed bug in grammar that didn't allow &quot;op&quot; to occur in datatype and 
+  - Fixed bug in grammar that didn't allow &quot;op&quot; to occur in datatype and
     exception bindings, causing the following to fail
         datatype t = op T
         exception op E = op Fail
@@ -1770,14 +2025,14 @@ Summary:
 * 2000-10-18
   - Fixed two bugs in the gc that did comparisons with (s-&gt;limit - s-&gt;frontier),
     which of course doesn't work if frontier is beyond limit, since these are
-    unsigned.  This could have caused segfaults, except that the mutator 
+    unsigned.  This could have caused segfaults, except that the mutator
     checks the frontier upon return from the GC.
 
 * 2000-10-17
-  - Fixed bug in backend in the calculation of maxFrameSize.  It could be 
+  - Fixed bug in backend in the calculation of maxFrameSize.  It could be
     wrong (low) in some situations.
-  - Improved CPS inliner's estimate of function sizes.  The size of a function 
-    now takes into account other inlined functions that the function calls. 
+  - Improved CPS inliner's estimate of function sizes.  The size of a function
+    now takes into account other inlined functions that the function calls.
     This also changed the meaning of the size argument to the -inline switch.
     It now corresponds (roughly) to the product of the size of the function
     and the number of calls.  In general, it should be larger than before.
@@ -1805,7 +2060,7 @@ Summary:
   - Combined remove-unused-constructors, remove-unused-functions, and
     remove-unused-globals into a single pass that runs to fixed-point and
     produces results at least as good as running the previous three in (any)
-    sequence. 
+    sequence.
 
 * 2000-9-29
   - Added GC_FIRST_CHECK, which does a gc at each limit check the first time it
@@ -1814,7 +2069,7 @@ Summary:
     instead of lists of characters so that the per char space overhead is small.
 
 * 2000-9-21
-  - Fixed bug in profiling labels in C code.  The label was always the basic 
+  - Fixed bug in profiling labels in C code.  The label was always the basic
     block label instead of the cps function label.
   - Added -b switch to mlprof to gather data at the basic block level.
   - Improved performance of TextIO.input1 by about 3X.
@@ -1831,7 +2086,7 @@ Summary:
 * 2000-9-11
   - Fixed Real_qequal in mlton-lib.h.  It was missing a paren that caused
     code using it to not even compile.  It was also semantically incorrect.
-  - Noted that Real_{equal,lt,le,gt,ge} may not follow basis library spec, since 
+  - Noted that Real_{equal,lt,le,gt,ge} may not follow basis library spec, since
     ANSI does not require IEEE compliance, and hence these could return wrong
     results when nans are involved.
 
@@ -1844,7 +2099,7 @@ Here are the changes from the 20000712 version to the 20000906 version.
     that mlton can now process a limited subset of CM files as input.
 
 * 2000-9-6
-  - Fixed Socket_listen in mlton-lib.c so that it closes the socket if the 
+  - Fixed Socket_listen in mlton-lib.c so that it closes the socket if the
         bind, listen, or getsockname fails.  This could have caused a file
         descriptor leak.
 
@@ -1876,7 +2131,7 @@ Here are the changes from the 20000712 version to the 20000906 version.
 * 2000-8-15
   - Fixed bug in backend -- computation of maxFrameSize was wrong.  It didn't
     count slots in frames that didn't make nontail calls.  This could lead to
-    the stack being overwritten because a stack limit check didn't guarantee 
+    the stack being overwritten because a stack limit check didn't guarantee
     enough space, and lead to a seg fault.
   - Fixed bug in gc.c newThreadOfSize.  If the thread allocation caused a gc,
     then the stack wasn't forwarded, leading to a seg fault.  The solution was
@@ -1893,8 +2148,8 @@ Here are the changes from the 20000712 version to the 20000906 version.
 
 * 2000-8-10
   - Fixed bug in CPS typechecker.  It didn't enforce that handlers should be
-    defined before any reference to them -- including implicit references in 
-    HandlerPops.  This caused an evil bug in the liveness analysis where a 
+    defined before any reference to them -- including implicit references in
+    HandlerPops.  This caused an evil bug in the liveness analysis where a
     variable that was only live in the handler was missed in a continuation
     because the liveness for the handler wasn't computed yet.
   - Limited the size for moving up limit checks for arrays whose size is known
@@ -1902,7 +2157,7 @@ Here are the changes from the 20000712 version to the 20000906 version.
   - added -indent, -kp, -show-types switches.
   - Put optimization in CPS IL suggested by Neal Glew.  It determines for each
     toplevel function if it can raise an exception to its caller.  Also, it
-    removes HanderPush and HandlerPop for handlers that are not on top of the 
+    removes HanderPush and HandlerPop for handlers that are not on top of the
     stack for any nontail call.
 
 * 2000-8-8
@@ -1910,7 +2165,7 @@ Here are the changes from the 20000712 version to the 20000906 version.
     pseudo registers -- they aren't necessarily forced to the stack.
 
 * 2000-8-3
-  - Fixed bug in constant folding.  
+  - Fixed bug in constant folding.
         Word8.&gt;&gt; had been used to implement Word8.~&gt;&gt;.
   - Fixed bug in allocate registers that was not forcing the size argument to
     Primitive.Array.array to be a stack slot.  This could cause problems if
@@ -1934,9 +2189,9 @@ Here are the changes from the 20000712 version to the 20000906 version.
 
 * 2000-7-26
   - Eliminated GC_switchToThread and Thread_switchTo1, since the inlined
-    version Thread_switchTo is all that's needed, and Matt's X86 backend 
+    version Thread_switchTo is all that's needed, and Matt's X86 backend
     now handles it.
-  - Added MLton.Signal.vtalrm, needed for 
+  - Added MLton.Signal.vtalrm, needed for
     Itimer.Set{which = Itimer.Virtual, ...}
 
 * 2000-7-25
@@ -2001,9 +2256,9 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
     rule is that a variable goes in a stack slot if it is ever live
     across a nontail call, in a handler, or (this is the new part)
     across a limit check.
-  - Arguments are passed on the stack, with the convention determined by 
+  - Arguments are passed on the stack, with the convention determined by
     argument types.
-  - The &quot;locals&quot; array of pointers that was copied to/from for GC is now 
+  - The &quot;locals&quot; array of pointers that was copied to/from for GC is now
     gone, because no registers (in particular no pointer valued
     registers) can be live at a limit check point.
 * 1999-11-21
@@ -2012,7 +2267,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
         (presumably on 1999-8-9) that caused a gc to *not* be performed when
         doing a save world.  This caused the heaps created by save world to
         be the same size as the heap -- not the live data.  This was quite
-        bad. 
+        bad.
     o Cleaned up the Makefile.  Add make depend.
     o Added max gc pause to gc-summary info.
     o Move heap translation variables that had been file statics into
@@ -2030,8 +2285,8 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
   - Cleaned up backend/machine.fun a bit so that it spits out macros
     for allocation of objects and bumping of frontier.  Added macros
     MLTON_object and MLTON_incFrontier to include/mlton-lib.h.
-  - Fixed a bug in backend/limit-check.fun that caused loops to not be 
-    detected if they were only reached by a case branch.  This could 
+  - Fixed a bug in backend/limit-check.fun that caused loops to not be
+    detected if they were only reached by a case branch.  This could
     cause there to be loop that allocates with no limit check.
     Needless to say, this could cause a segfault if the loop ran for
     long enough.
@@ -2045,7 +2300,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
   Fixed bug in mlton-lib.h in MLTON_allocArrayNoPointers that was
   triggered when bytesPerElt == 0.  The problem was that it wasn't
   reserving space for the forwarding pointer.  This could cause a seg
-  fault. 
+  fault.
 * 1999-8-8 and 1999-8-9
   Added support for signal handling.
 * 1999-8-7
@@ -2060,7 +2315,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
 * 1999-7-31
   - Cleaned up the GC.  Changed headers, by stealing a bit from the
     number of non pointers and making it a mark bit (used in GC_size).
-  - Rewrote GC_size so that it runs in time proportional to the number 
+  - Rewrote GC_size so that it runs in time proportional to the number
     of pointers in the object.  It does a depth-first-search now,
     using toSpace to hold the stack.
 * 1999-7-30
@@ -2073,7 +2328,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
   been a previous call to setTmBuf.
 * 1999-7-28
   - Fixed bugs in Posix.IO.FLock.{getlk,setlk,setlkw}, which would
-    cause compilation to fail because FLock.toInt was defined as the C 
+    cause compilation to fail because FLock.toInt was defined as the C
     castInt, which no longer exists.  Instead, expand FLock.toInt to
     MLTON_pointerToInt, which was added to include/mlton-lib.h.
   - Changed Posix.Primitive.Flock to Posix.Primitive.FLock.
@@ -2085,7 +2340,7 @@ Here are the changes from the 1999-7-12 to the 20000712 version.
 * 1999-7-25
   Added some other missing signature definitions to toplevel.
 * 1999-7-24
-  Added missing OS_* signature definitions to 
+  Added missing OS_* signature definitions to
   basis-library/top-level/top-level.sml.
 * 1999-7-19
   Fixed bug in basis-library/arrays-and-vectors/mono-array.sml.  Used
@@ -2103,23 +2358,23 @@ Here are the changes from the 1999-3-19 version to the 1999-7-12 version.
   Rewrote src/backend/allocate-registers.fun so that it does a better
   job of sharing &quot;registers&quot; (i.e. C local variables) and stack slots.
   This should cut down on the amount of copying that has to happen
-  before and after a gc.  It should also cut down on the size of stack 
+  before and after a gc.  It should also cut down on the size of stack
   slots.
 * 1999-7-10
   Fixed a bug in src/backend/parallel-move.fun that should have been
   triggered on most any parallel move.  I guess parallel moves almost
-  never happened due to the old register allocation strategy -- but, 
-  with the new one (see note for 1999-7-12) parallel moves will be 
+  never happened due to the old register allocation strategy -- but,
+  with the new one (see note for 1999-7-12) parallel moves will be
   frequent.
 * 1999-6-27
-  Fixed src/main.sml so that when compiling -p, the .c file is compiled 
-        -g and the .o is linked -p. 
-  In bakend/machine.fun, added profiling comments before chunkswitches 
+  Fixed src/main.sml so that when compiling -p, the .c file is compiled
+        -g and the .o is linked -p.
+  In bakend/machine.fun, added profiling comments before chunkswitches
         and put in an optimization to avoid printing repeated profiling
         comments.  Also, profiling comments are only output when
         compiling -p.
 * 1999-6-17
-  Changed -i to -inline, -f to -flatten, -np to -no-polyvariance, 
+  Changed -i to -inline, -f to -flatten, -np to -no-polyvariance,
         -u to -unsafe.
   Added -i, -I, -l, -L flags for includes and libraries.
   Updated documentation for these options and for ffi.
@@ -2130,7 +2385,7 @@ Here are the changes from the 1999-3-19 version to the 1999-7-12 version.
 * 1999-6-16
   Fixed undefined variable time in GC_done in src/runtime/gc.c.
 * 1999-6-8
-  in include/mlton-lib.h, 
+  in include/mlton-lib.h,
      removed #include &lt;huge_val.h&gt;
      added #include &lt;math.h&gt;
      and deleted all of the function signatures I had copied from math.h
@@ -2139,15 +2394,15 @@ Here are the changes from the 1999-3-19 version to the 1999-7-12 version.
 * 1999-6-7
   IntInf.pow added to basis library.
 * 1999-6-4
-  bin/mlton changed to use .arch-n-opsys if it exists. 
+  bin/mlton changed to use .arch-n-opsys if it exists.
 * 1999-6-3
   src/Makefile changed to use sml-cm instead of sml
 * 1999-5-10
-  Patch to src/atoms/small-int-inf.fun to work around a bug in the SML/NJ 
+  Patch to src/atoms/small-int-inf.fun to work around a bug in the SML/NJ
   implementation of bignums.  This bug was causing some hex bignum
   constants to be lexed incorrectly.
 * 1999-4-15
-  Comments emitted in C code for profiling.  The comments identify the 
+  Comments emitted in C code for profiling.  The comments identify the
   Cps function responsible for each C statement.
 * 1999-4-15
   callcc and throw added.
@@ -2170,7 +2425,7 @@ Here are the changes from the 1998-8-26 version to the 1999-3-19 version.
 * There are now facilities for heap checkpointing (MLton.saveWorld)
   and object size computation (MLton.size).
 * MLton uses the GNU multiprecision library to provide a fast
-  implemenation of IntInf. 
+  implemenation of IntInf.
 </PRE>
  </div>
 

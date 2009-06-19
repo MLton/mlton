@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -259,11 +259,15 @@ The idea of <tt>makeUpdate</tt> is to inductively build the update function for 
 <p>
 With MLton, the efficiency of this approach is as good as one would expect with the special syntax.  Namely a sequence of updates will be optimized into a single record construction that copies the unchanged fields and fills in the changed fields with their new values. 
 </p>
+<h2 id="head-76c74bd071dd73f01696fddbbffc77712a479faf">Applications</h2>
+<p>
+Functional record update can be used to implement labelled <a href="OptionalArguments">optional arguments</a>. 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:06:30 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-01-08 12:30:02 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

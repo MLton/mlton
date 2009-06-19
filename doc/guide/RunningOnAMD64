@@ -51,12 +51,12 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on the amd64 architecture. <p>
-On amd64, MLton supports native code generation (<tt>-codegen&nbsp;native</tt> or <tt>-codegen&nbsp;amd64</tt>). 
+MLton runs fine on the AMD64 (x86-64) architecture. <p>
+On AMD64, MLton supports native code generation (<tt>-codegen&nbsp;native</tt> or <tt>-codegen&nbsp;amd64</tt>). 
 </p>
 </div>
 
@@ -64,5 +64,5 @@ On amd64, MLton supports native code generation (<tt>-codegen&nbsp;native</tt> o
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:19:47 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 22:53:17 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

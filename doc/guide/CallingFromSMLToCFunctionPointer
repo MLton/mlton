@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -94,6 +94,9 @@ This example uses <tt>dlopen</tt> and friends (imported using normal <tt>_import
       </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> mode </FONT></B>=<B><FONT COLOR="#228B22"> Word32.word
       </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> fptr </FONT></B>=<B><FONT COLOR="#228B22"> MLton.Pointer.t
 
+      <I><FONT COLOR="#B22222">(* These symbols come from a system libray, so the default import scope
+       * of external is correct.
+       *)</FONT></I>
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> dlopen =
          _import <B><FONT COLOR="#BC8F8F">&quot;dlopen&quot;</FONT></B> : string * mode -&gt; hndl;
       <B><FONT COLOR="#A020F0">val</FONT></B> dlerror =

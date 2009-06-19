@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -64,6 +64,11 @@ MLton runs fine on AIX. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">A
  <a href="RunningOnPowerPC">RunningOnPowerPC</a> 
 </p>
 </li>
+    <li>
+<p>
+ <a href="RunningOnPowerPC64">RunningOnPowerPC64</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -72,5 +77,5 @@ MLton runs fine on AIX. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">A
 
 <p>
 <hr>
-Last edited on 2007-07-12 19:01:02 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 23:07:39 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

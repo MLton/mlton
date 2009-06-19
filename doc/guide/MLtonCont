@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -62,6 +62,7 @@ urchinTracker();
       <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
 
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a t -&gt; 'a) -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t
       <B><FONT COLOR="#A020F0">val</FONT></B> prepend: 'a t * ('b -&gt; 'a) -&gt; 'b t
       <B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a t * 'a -&gt; 'b
       <B><FONT COLOR="#A020F0">val</FONT></B> throw': 'a t * (unit -&gt; 'a) -&gt; 'b
@@ -82,7 +83,13 @@ the type of continuations that expect a value of type <tt>'a</tt>.
     <li class="gap">
 <p>
  <tt>callcc&nbsp;f</tt>  <br>
-applies <tt>f</tt> to the current continuation.  This copies the entire  stack; hence, <tt>callcc</tt> takes time proportional to the current  stack size. 
+applies <tt>f</tt> to the current continuation.  This copies the entire  stack; hence, <tt>callcc</tt> takes time proportional to the size of the current  stack. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>isolate&nbsp;f</tt>  <br>
+creates a continuation that evaluates <tt>f</tt> in an empty context.  This is a constant time operation, and yields a constant size stack. 
 </p>
 </li>
     <li class="gap">
@@ -100,7 +107,20 @@ throws value <tt>v</tt> to continuation <tt>k</tt>.  This copies the entire  sta
     <li class="gap">
 <p>
  <tt>throw'&nbsp;(k,&nbsp;th)</tt>  <br>
-a generalization of throw that evaluates <tt>th&nbsp;()</tt> in the context  of <tt>k</tt>.  Thus, for example, if <tt>th&nbsp;()</tt> raises an exception or  grabs another continuation, it will see <tt>k</tt>, not the current  continuation. 
+a generalization of throw that evaluates <tt>th&nbsp;()</tt> in the context  of <tt>k</tt>.  Thus, for example, if <tt>th&nbsp;()</tt> raises an exception or  captures another continuation, it will see <tt>k</tt>, not the current  continuation. 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="MLtonContIsolateImplementation">MLtonContIsolateImplementation</a> 
 </p>
 </li>
 </ul>
@@ -111,5 +131,5 @@ a generalization of throw that evaluates <tt>th&nbsp;()</tt> in the context  of 
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:43:48 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-05-10 11:52:41 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

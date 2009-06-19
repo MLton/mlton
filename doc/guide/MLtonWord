@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -60,8 +60,9 @@ urchinTracker();
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_WORD =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
-         
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> rol: t * word -&gt; t
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> bswap: t -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> rol: t * word -&gt; t
       <B><FONT COLOR="#A020F0">val</FONT></B> ror: t * word -&gt; t
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
@@ -103,5 +104,5 @@ rotates right (circular).
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:45:58 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-02-20 15:28:17 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

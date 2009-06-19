@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -111,7 +111,7 @@ urchinTracker();
 </li>
         <li>
 <p>
- Create <strong>ReleaseYYYYMM??</strong> (i.e., forthcoming release) based on <strong>ReleaseVVVVLLCC</strong> (i.e., previous release). 
+ Create <strong>ReleaseYYYYMM??</strong> (i.e., forthcoming release) based on <strong>ReleaseXXXXLLCC</strong> (i.e., previous release). 
 </p>
 </li>
 
@@ -143,7 +143,7 @@ urchinTracker();
 
         <li>
 <p>
- Create <strong>BugsYYYYMM??</strong> based on <strong>BugsVVVVLLCC</strong>. 
+ Create <strong>BugsYYYYMM??</strong> based on <strong>BugsXXXXLLCC</strong>. 
 </p>
 </li>
 
@@ -214,7 +214,7 @@ This ensures that the guide distributed with the release looks updated for the r
 
     <li>
 <p>
- Update <strong>ReleaseVVVVLLCC</strong>. 
+ Update <strong>ReleaseXXXXLLCC</strong>. 
 </p>
 </li>
 
@@ -222,7 +222,7 @@ This ensures that the guide distributed with the release looks updated for the r
 
         <li>
 <p>
- Change intro to "<tt>This&nbsp;is&nbsp;an&nbsp;archived&nbsp;public&nbsp;release&nbsp;of&nbsp;MLton,&nbsp;version&nbsp;VVVVLLCC.</tt>" 
+ Change intro to "<tt>This&nbsp;is&nbsp;an&nbsp;archived&nbsp;public&nbsp;release&nbsp;of&nbsp;MLton,&nbsp;version&nbsp;XXXXLLCC.</tt>" 
 </p>
 </li>
 
@@ -239,7 +239,7 @@ This ensures that the guide distributed with the release looks updated for the r
 
         <li>
 <p>
- Change <tt>Include(ReleaseVVVVLLCC,&nbsp;"Release&nbsp;VVVVLLCC")</tt> to <tt>Include(ReleaseYYYYMMDD,"Release&nbsp;YYYYMMDD")</tt>. 
+ Change <tt>Include(ReleaseXXXXLLCC,&nbsp;"Release&nbsp;XXXXLLCC")</tt> to <tt>Include(ReleaseYYYYMMDD,"Release&nbsp;YYYYMMDD")</tt>. 
 </p>
 </li>
 
@@ -540,5 +540,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2007-08-26 20:56:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-30 18:30:38 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

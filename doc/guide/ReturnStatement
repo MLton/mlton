@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -97,7 +97,7 @@ Probably the most direct way to translate code using <tt>return</tt> statements 
    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
    <I><FONT COLOR="#B22222">(** The type of exits. *)</FONT></I>
 
-   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> within : ('a t -&gt; 'a) -&gt; 'a
+   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> within : ('a t, 'a) CPS.t
    <I><FONT COLOR="#B22222">(**
     * Sets up an exit and passes it to the given function.  The function
     * may then return normally or by calling {to} with the exit and a
@@ -128,7 +128,7 @@ Probably the most direct way to translate code using <tt>return</tt> statements 
     * be called from a context of any type.
     *)</FONT></I>
 
-   <B><FONT COLOR="#A020F0">val</FONT></B> call : (('a -&gt; 'b) -&gt; 'a) -&gt; 'a
+   <B><FONT COLOR="#A020F0">val</FONT></B> call : ('a -&gt; 'b, 'a) CPS.t
    <I><FONT COLOR="#B22222">(**
     * Simpler, but less flexibly typed, interface to {within} and {to}.
     * Specifically, {call f} is equivalent to {within (f o to)}.

@@ -53,12 +53,12 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.smlnj.org/doc/ckit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit Library</a> is a C front end written in SML that translates C source code (after preprocessing) into abstract syntax represented as a set of SML datatypes.  The ckit Library is distributed with SML/NJ.  Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20070812, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.65. 
+As of 20090618, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.70. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -180,5 +180,5 @@ The following changes were made to the ckit Library, in addition to deriving the
 
 <p>
 <hr>
-Last edited on 2007-08-23 17:24:41 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 21:17:48 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -61,6 +61,17 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
     <li>
 <p>
  SML/NJ allows spaces in long identifiers, as in <tt>S&nbsp;.&nbsp;x</tt>.  Section 2.5 of the Definition implies that <tt>S&nbsp;.&nbsp;x</tt> should be treated as three separate lexical items. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows <tt>op</tt> to appear in <tt>val</tt> specifications: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> FOO = <B><FONT COLOR="#0000FF">sig</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> + : int * int -&gt; int
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ Grammar on page 14 of the Definition does not allow it. 
 </p>
 </li>
     <li class="gap">
@@ -193,14 +204,14 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
 <p>
  SML/NJ allows <tt>and</tt> in <tt>sharing</tt> specs in signatures, as in 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> S =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> v
-      </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u
-      </FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> v
-   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#A020F0">signature</FONT></B> S =
+   <B><FONT COLOR="#A020F0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> t
+      <B><FONT COLOR="#A020F0">type</FONT></B> u
+      <B><FONT COLOR="#A020F0">type</FONT></B> v
+      <B><FONT COLOR="#A020F0">sharing</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t = u
+      <B><FONT COLOR="#A020F0">and</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> u = v
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
 </p>
@@ -337,6 +348,27 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
  
 </p>
 </li>
+    <li class="gap">
+<p>
+ SML/NJ exposes the equality property of the type <tt>status</tt> in <tt>OS.Process</tt>. This means that programs which directly compare two values of type <tt>status</tt> will work with SML/NJ but not MLton. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ Under SML/NJ on Windows, <tt>OS.Path.validVolume</tt> incorrectly considers absolute empty volumes to be valid. In other words, when the expression 
+<pre class=code>
+OS.Path.validVolume { isAbs = true, vol = <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> }
+</PRE>
+  is evaluated by SML/NJ on Windows, the result is <tt>true</tt>.  MLton, on the other hand, correctly follows the Basis Library Specification, which states that on Windows, <tt>OS.Path.validVolume</tt> should return <tt>false</tt> whenever <tt>isAbs&nbsp;=&nbsp;true</tt> and <tt>vol&nbsp;=&nbsp;""</tt>. 
+</p>
+ This incorrect behavior causes other <tt>OS.Path</tt> functions to behave differently. For example, when the expression 
+<pre class=code>
+OS.Path.toString (OS.Path.fromString <B><FONT COLOR="#BC8F8F">&quot;\\usr\\local&quot;</FONT></B>)
+</PRE>
+<p>
+  is evaluated by SML/NJ on Windows, the result is <tt>"\\usr\\local"</tt>, whereas under MLton on Windows, evaluating this expression (correctly) causes an <tt>OS.Path.Path</tt> exception to be raised. 
+</p>
+</li>
 </ul>
 
 </div>
@@ -345,5 +377,5 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:07:20 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-11-14 11:26:00 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

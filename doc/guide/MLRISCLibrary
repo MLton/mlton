@@ -51,12 +51,12 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC Library</a>  is a framework for retargetable and optimizing compiler back ends.  The MLRISC Library is distributed with SML/NJ. Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20070812, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.65. 
+As of 20090618, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.70. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -90,6 +90,30 @@ The AMD64 backend</td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/AMD64-Peephole.mlb</tt></td>
 <td>
 The AMD64 peephole optimizer</td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/CCall.mlb</tt></td>
+<td>
+ </td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/CCall-sparc.mlb</tt></td>
+<td>
+ </td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/CCall-x86-64.mlb</tt></td>
+<td>
+ </td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/CCall-x86.mlb</tt></td>
+<td>
+ </td>
 </tr>
  <tr>
 <td>
@@ -141,6 +165,12 @@ The IA32 peephole optimizer</td>
 </tr>
  <tr>
 <td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/Peephole.mlb</tt></td>
+<td>
+ </td>
+</tr>
+ <tr>
+<td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/PPC.mlb</tt></td>
 <td>
 The PPC backend</td>
@@ -153,15 +183,15 @@ The PPC backend</td>
 </tr>
  <tr>
 <td>
-<tt>$(SML_LIB)/mlrisc-lib/mlb/SA.mlb</tt></td>
-<td>
- </td>
-</tr>
- <tr>
-<td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/SPARC.mlb</tt></td>
 <td>
 The Sparc backend</td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/StagedAlloc.mlb</tt></td>
+<td>
+ </td>
 </tr>
  <tr>
 <td>
@@ -243,5 +273,5 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2007-08-23 17:24:50 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 21:22:50 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -125,6 +125,11 @@ Report unused identifiers.
  <a href="MLBasisAnnotationExamples">MLBasisAnnotationExamples</a> 
 </p>
 </li>
+    <li>
+<p>
+ <a href="WarnUnusedAnomalies">WarnUnusedAnomalies</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -133,5 +138,5 @@ Report unused identifiers.
 
 <p>
 <hr>
-Last edited on 2007-08-23 17:10:20 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-11-01 16:16:26 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

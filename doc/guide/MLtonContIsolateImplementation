@@ -1,0 +1,416 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonContIsolateImplementation - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonContIsolateImplementation
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+As noted before, it is fairly easy to get the operational behavior of <tt>isolate</tt> with just <tt>callcc</tt> and <tt>throw</tt>, but establishing the right space behavior is trickier.  Here, we show how to start from the obvious, but inefficient, implementation of <tt>isolate</tt> using only <tt>callcc</tt> and <tt>throw</tt>, and 'derive' an equivalent, but more efficient, implementation of <tt>isolate</tt> using MLton's primitive stack capture and copy operations.  This isn't a formal derivation, as we are not formally showing the equivalence of the programs (though I believe that they are all equivalent, modulo the space behavior). <p>
+Here is a direct implementation of isolate using only <tt>callcc</tt> and <tt>throw</tt>: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   <B><FONT COLOR="#0000FF">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> x = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+      <B><FONT COLOR="#A020F0">val</FONT></B> _ = (f x ; Exit.topLevelSuffix ())
+              <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+   <B><FONT COLOR="#0000FF">in</FONT></B>
+      <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>)
+</PRE>
+<p>
+ 
+</p>
+<p>
+We use the standard nested <tt>callcc</tt> trick to return a continuation that is ready to receive an argument, execute the isolated function, and exit the program.  Both <tt>Exit.topLevelSuffix</tt> and <tt>MLtonExn.topLevelHandler</tt> will terminate the program. 
+</p>
+<p>
+Throwing to an isolated function will execute the function in a 'semantically' empty context, in the sense that we never re-execute the 'original' continuation of the call to isolate (i.e., the context that was in place at the time <tt>isolate</tt> was called).  However, we assume that the compiler isn't able to recognize that the 'original' continuation is unused; for example, while we (the programmer) know that <tt>Exit.topLevelSuffix</tt> and <tt>MLtonExn.topLevelHandler</tt> will terminate the program, the compiler may only see opaque calls to unknown foreign-functions.  So, that original continuation (in its entirety) is part of the continuation returned by <tt>isolate</tt> and throwing to the continuation returned by <tt>isolate</tt> will execute <tt>f&nbsp;x</tt> (with the exit wrapper) in the context of that original continuation.  Thus, the garbage collector will retain  everything reachable from that original continuation during the evaluation of <tt>f&nbsp;x</tt>, even though it is 'semantically' garbage. 
+</p>
+<p>
+Note that this space-leak is independent of the implementation of continuations (it arises in both MLton's stack copying implementation of continuations and would arise in SML/NJ's CPS-translation implementation); we are only assuming that the implementation can't 'see' the program termination, and so must retain the original continuation (and anything reachable from it). 
+</p>
+<p>
+So, we need an 'empty' continuation in which to execute <tt>f&nbsp;x</tt>.  (No surprise there, as that is the written description of <tt>isolate</tt>.)  To do this, we capture a top-level continuation and throw to that in order to execute <tt>f&nbsp;x</tt>: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> base: (unit -&gt; unit) t =
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   <B><FONT COLOR="#0000FF">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> th = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+      <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+              <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+   <B><FONT COLOR="#0000FF">in</FONT></B>
+      <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>)
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   <B><FONT COLOR="#0000FF">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> x = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+   <B><FONT COLOR="#0000FF">in</FONT></B>
+      throw (base, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f x)
+   <B><FONT COLOR="#0000FF">end</FONT></B>)
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+We presume that <tt>base</tt> is evaluated 'early' in the program.  There is a subtlety here, because one needs to believe that this <tt>base</tt> continuation (which technically corresponds to the entire rest of the program evaluation) 'works' as an empty context; in particular, we want it to be the case that executing <tt>f&nbsp;x</tt> in the <tt>base</tt> context retains less space than executing <tt>f&nbsp;x</tt> in the context in place at the call to <tt>isolate</tt> (as occurred in the previous implementation of <tt>isolate</tt>).  This isn't particularly easy to believe if one takes a normal substitution-based operational semantics, because it seems that the context captured and bound to <tt>base</tt> is arbitrarily large.  However, this context is mostly unevaluated code; the only heap-allocated values that are reachable from it are those that were evaluated before the evaluation of <tt>base</tt> (and used in the program after the evaluation of <tt>base</tt>).  Assuming that <tt>base</tt> is evaluated 'early' in the program, we conclude that there are few heap-allocated values reachable from its continuation.  In contrast, the previous implementation of <tt>isolate</tt> could capture a context that has many heap-allocated values reachable from it (because we could evaluate <tt>isolate&nbsp;f</tt> 'late' in the program and 'deep' in a call stack), which would all remain reachable during the evaluation of <tt>f&nbsp;x</tt>.  [We'll return to this point later, as it is taking a slightly MLton-esque view of the evaluation of a program, and may not apply as strongly to other implementations (e.g., SML/NJ).] 
+</p>
+<p>
+Now, once we throw to <tt>base</tt> and begin executing <tt>f&nbsp;x</tt>, only the heap-allocated values reachable from <tt>f</tt> and <tt>x</tt> and the few heap-allocated values reachable from <tt>base</tt> are retained by the garbage collector.  So, it seems that <tt>base</tt> 'works' as an empty context. 
+</p>
+<p>
+But, what about the continuation returned from <tt>isolate&nbsp;f</tt>?  Note that the continuation returned by <tt>isolate</tt> is one that receives an argument <tt>x</tt> and then throws to <tt>base</tt> to evaluate <tt>f&nbsp;x</tt>.  If we used a CPS-translation implementation (and assume sufficient beta-contractions to eliminate administrative redexes), then the original continuation passed to <tt>isolate</tt> (i.e., the continuation bound to <tt>k1</tt>) will not be free in the continuation returned by <tt>isolate&nbsp;f</tt>.  Rather, the only free variables in the continuation returned by <tt>isolate&nbsp;f</tt> will be <tt>base</tt> and <tt>f</tt>, so the only heap-allocated values reachable from the continuation returned by <tt>isolate&nbsp;f</tt> will be those values reachable from <tt>base</tt> (assumed to be few) and those values reachable from <tt>f</tt> (necessary in order to execute <tt>f</tt> at some later point). 
+</p>
+<p>
+But, MLton doesn't use a CPS-translation implementation.  Rather, at each call to <tt>callcc</tt> in the body of <tt>isolate</tt>, MLton will copy the current execution stack.  Thus, <tt>k2</tt> (the continuation returned by <tt>isolate&nbsp;f</tt>) will include execution stack at the time of the call to <tt>isolate&nbsp;f</tt> -- that is, it will include the 'original' continuation of the call to <tt>isolate&nbsp;f</tt>.  Thus, the heap-allocated values reachable from the continuation returned by <tt>isolate&nbsp;f</tt> will include those values reachable from <tt>base</tt>, those values reachable from <tt>f</tt>, and those values reachable from the original continuation of the call to <tt>isolate&nbsp;f</tt>.  So, just holding on to the continuation returned by <tt>isolate&nbsp;f</tt> will retain all of the heap-allocated values live at the time <tt>isolate&nbsp;f</tt> was called.  This leaks space, since, 'semantically', the continuation returned by <tt>isolate&nbsp;f</tt> only needs the heap-allocated values reachable from <tt>f</tt> (and <tt>base</tt>). 
+</p>
+<p>
+In practice, this probably isn't a significant issue.  A common use of <tt>isolate</tt> is implement <tt>abort</tt>: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> abort th = throw (isolate th, ())
+</PRE>
+ The continuation returned by <tt>isolate&nbsp;th</tt> is dead immediately after being thrown to -- the continuation isn't retained, so neither is the 'semantic' garbage it would have retained. 
+</p>
+<p>
+But, it is easy enough to 'move' onto the 'empty' context <tt>base</tt> the capturing of the context that we want to be returned by <tt>isolate&nbsp;f</tt>: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> base: (unit -&gt; unit) t =
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   <B><FONT COLOR="#0000FF">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> th = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+      <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+              <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+   <B><FONT COLOR="#0000FF">in</FONT></B>
+      <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>)
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   throw (base, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
+          <B><FONT COLOR="#0000FF">let</FONT></B>
+             <B><FONT COLOR="#A020F0">val</FONT></B> x = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+          <B><FONT COLOR="#0000FF">in</FONT></B>
+             throw (base, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f x)
+          <B><FONT COLOR="#0000FF">end</FONT></B>))
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+This implementation now has the right space behavior; the continuation returned by <tt>isolate&nbsp;f</tt> will only retain the heap-allocated values reachable from <tt>f</tt> and from <tt>base</tt>.  (Technically, the continuation will retain two copies of the stack that was in place at the time <tt>base</tt> was evaluated, but we are assuming that that stack small.) 
+</p>
+<p>
+One minor inefficiency of this implementation (given MLton's implementation of continuations) is that every <tt>callcc</tt> and <tt>throw</tt> entails copying a stack (albeit, some of them are small).  We can avoid this in the evaluation of <tt>base</tt> by using a reference cell, because <tt>base</tt> is evaluated at the top-level: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> base: (unit -&gt; unit) option t =
+  <B><FONT COLOR="#A020F0">let</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> baseRef: (unit -&gt; unit) option t option ref = ref NONE
+     <B><FONT COLOR="#A020F0">val</FONT></B> th = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; (base := SOME k; NONE))
+  <B><FONT COLOR="#A020F0">in</FONT></B>
+     <B><FONT COLOR="#A020F0">case</FONT></B> th <B><FONT COLOR="#A020F0">of</FONT></B>
+        NONE =&gt; (<B><FONT COLOR="#A020F0">case</FONT></B> !baseRef <B><FONT COLOR="#A020F0">of</FONT></B>
+                    NONE =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: missing base&quot;</FONT></B>
+                  | SOME base =&gt; base)
+      | SOME th =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                      <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+                              <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+                   <B><FONT COLOR="#A020F0">in</FONT></B>
+                      <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped)
+                      func&quot;</FONT></B>
+                   <B><FONT COLOR="#A020F0">end</FONT></B>
+  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  callcc
+  (<B><FONT COLOR="#A020F0">fn</FONT></B> k1 =&gt;
+   throw (base, SOME (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
+          <B><FONT COLOR="#0000FF">let</FONT></B>
+             <B><FONT COLOR="#A020F0">val</FONT></B> x = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k2 =&gt; throw (k1, k2))
+          <B><FONT COLOR="#0000FF">in</FONT></B>
+             throw (base, SOME (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f x))
+          <B><FONT COLOR="#0000FF">end</FONT></B>)))
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+Now, to evaluate <tt>base</tt>, we only copy the stack once (instead of 3 times).  Because we don't have a dummy continuation around to initialize the reference cell, the reference cell holds a continuation <tt>option</tt>.  To distinguish between the original evaluation of <tt>base</tt> (when we want to return the continuation) and the subsequent evaluations of <tt>base</tt> (when we want to evaluate a thunk), we capture a <tt>(unit&nbsp;-&gt;&nbsp;unit)&nbsp;option</tt> continuation. 
+</p>
+<p>
+This seems to be as far as we can go without exploiting the concrete implementation of continuations in <a href="MLtonCont">MLtonCont</a>.  Examining the implementation, we note that the type of continuations is given by 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> (unit -&gt; 'a) -&gt; unit
+</FONT></B></PRE>
+ and the implementation of <tt>throw</tt> is given by 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> ('a, 'b) throw' (k: 'a t, v: unit -&gt; 'a): 'b =
+  (k v; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.throw': return from continuation&quot;</FONT></B>)
+
+<B><FONT COLOR="#A020F0">fun</FONT></B> ('a, 'b) throw (k: 'a t, v: 'a): 'b = throw' (k, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; v)
+</PRE>
+ 
+</p>
+<p>
+Suffice to say, a continuation is simply a function that accepts a thunk to yield the thrown value and the body of the function performs the actual throw. Using this knowledge, we can create a dummy continuation to initialize <tt>baseRef</tt> and greatly simplify the body of <tt>isolate</tt>: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> base: (unit -&gt; unit) option t =
+  <B><FONT COLOR="#A020F0">let</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> baseRef: (unit -&gt; unit) option t ref =
+        ref (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: missing base&quot;</FONT></B>)
+     <B><FONT COLOR="#A020F0">val</FONT></B> th = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; (baseRef := k; NONE))
+  <B><FONT COLOR="#A020F0">in</FONT></B>
+     <B><FONT COLOR="#A020F0">case</FONT></B> th <B><FONT COLOR="#A020F0">of</FONT></B>
+        NONE =&gt; !baseRef
+      | SOME th =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                      <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+                              <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+                   <B><FONT COLOR="#A020F0">in</FONT></B>
+                      <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped)
+                      func&quot;</FONT></B>
+                   <B><FONT COLOR="#A020F0">end</FONT></B>
+  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (v: unit -&gt; 'a) =&gt;
+  throw (base, SOME (f o v))
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+Note that this implementation of <tt>isolate</tt> makes it clear that the continuation returned by <tt>isolate&nbsp;f</tt> only retains the heap-allocated values reachable from <tt>f</tt> and <tt>base</tt>.  It also retains only one copy of the stack that was in place at the time <tt>base</tt> was evaluated.  Finally, it completely avoids making any copies of the stack that is in place at the time <tt>isolate&nbsp;f</tt> is evaluated; indeed, <tt>isolate&nbsp;f</tt> is a constant-time operation. 
+</p>
+<p>
+Next, suppose we limited ourselves to capturing <tt>unit</tt> continuations with <tt>callcc</tt>.  We can't pass th thunk to be evaluated in the 'empty' context directly, but we can use a reference cell. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> thRef: (unit -&gt; unit) option ref = ref NONE
+<B><FONT COLOR="#A020F0">val</FONT></B> base: unit t =
+  <B><FONT COLOR="#A020F0">let</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> baseRef: unit t ref =
+        ref (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: missing base&quot;</FONT></B>)
+     <B><FONT COLOR="#A020F0">val</FONT></B> () = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; baseRef := k)
+  <B><FONT COLOR="#A020F0">in</FONT></B>
+     <B><FONT COLOR="#A020F0">case</FONT></B> !thRef <B><FONT COLOR="#A020F0">of</FONT></B>
+        NONE =&gt; !baseRef
+      | SOME th =&gt;
+           <B><FONT COLOR="#A020F0">let</FONT></B>
+              <B><FONT COLOR="#A020F0">val</FONT></B> _ = thRef := NONE
+              <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+                      <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+           <B><FONT COLOR="#A020F0">in</FONT></B>
+              <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+           <B><FONT COLOR="#A020F0">end</FONT></B>
+  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+  <B><FONT COLOR="#A020F0">fn</FONT></B> (v: unit -&gt; 'a) =&gt;
+  <B><FONT COLOR="#A020F0">let</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> () = thRef := SOME (f o v)
+  <B><FONT COLOR="#A020F0">in</FONT></B>
+     throw (base, ())
+  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+Note that it is important to set <tt>thRef</tt> to <tt>NONE</tt> before evaluating the thunk, so that the garbage collector doesn't retain all the heap-allocated values reachable from <tt>f</tt> and <tt>v</tt> during the evaluation of <tt>f&nbsp;(v&nbsp;())</tt>.  This is because <tt>thRef</tt> is still live during the evaluation of the thunk; in particular, it was allocated before the evaluation of <tt>base</tt> (and used after), and so is retained by continuation on which the thunk is evaluated. 
+</p>
+<p>
+This implementation can be easily adapted to use MLton's primitive stack copying operations. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> thRef: (unit -&gt; unit) option ref = ref NONE
+<B><FONT COLOR="#A020F0">val</FONT></B> base: Thread.preThread =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = Thread.copyCurrent ()
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      <B><FONT COLOR="#A020F0">case</FONT></B> !thRef <B><FONT COLOR="#A020F0">of</FONT></B>
+         NONE =&gt; Thread.savedPre ()
+       | SOME th =&gt;
+            <B><FONT COLOR="#A020F0">let</FONT></B>
+               <B><FONT COLOR="#A020F0">val</FONT></B> () = thRef := NONE
+               <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+                       <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+            <B><FONT COLOR="#A020F0">in</FONT></B>
+               <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+            <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (v: unit -&gt; 'a) =&gt;
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = thRef := SOME (f o v)
+      <B><FONT COLOR="#A020F0">val</FONT></B> new = Thread.copy base
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      Thread.switchTo new
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+In essence, <tt>Thread.copyCurrent</tt> copies the current execution stack and stores it in an implicit reference cell in the runtime system, which is fetchable with <tt>Thread.savedPre</tt>.  When we are ready to throw to the isolated function, <tt>Thread.copy</tt> copies the saved execution stack (because the stack is modified in place during execution, we need to retain a pristine copy in case the isolated function itself throws to other isolated functions) and <tt>Thread.switchTo</tt> abandons the current execution stack, installing the newly copied execution stack. 
+</p>
+<p>
+The actual implementation of <tt>MLton.Cont.isolate</tt> simply adds some <tt>Thread.atomicBegin</tt> and <tt>Thread.atomicEnd</tt> commands, which effectively protect the global <tt>thRef</tt> and accommodate the fact that <tt>Thread.switchTo</tt> does an implicit <tt>Thread.atomicEnd</tt> (used for leaving a signal handler thread). 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> thRef: (unit -&gt; unit) option ref = ref NONE
+<B><FONT COLOR="#A020F0">val</FONT></B> base: Thread.preThread =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = Thread.copyCurrent ()
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      <B><FONT COLOR="#A020F0">case</FONT></B> !thRef <B><FONT COLOR="#A020F0">of</FONT></B>
+         NONE =&gt; Thread.savedPre ()
+       | SOME th =&gt;
+            <B><FONT COLOR="#A020F0">let</FONT></B>
+               <B><FONT COLOR="#A020F0">val</FONT></B> () = thRef := NONE
+               <B><FONT COLOR="#A020F0">val</FONT></B> _ = MLton.atomicEnd <I><FONT COLOR="#B22222">(* Match 1 *)</FONT></I>
+               <B><FONT COLOR="#A020F0">val</FONT></B> _ = (th () ; Exit.topLevelSuffix ())
+                       <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+            <B><FONT COLOR="#A020F0">in</FONT></B>
+               <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;MLton.Cont.isolate: return from (wrapped) func&quot;</FONT></B>
+            <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">in</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (v: unit -&gt; 'a) =&gt;
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> _ = MLton.atomicBegin <I><FONT COLOR="#B22222">(* Match 1 *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = thRef := SOME (f o v)
+      <B><FONT COLOR="#A020F0">val</FONT></B> new = Thread.copy base
+      <B><FONT COLOR="#A020F0">val</FONT></B> _ = MLton.atomicBegin <I><FONT COLOR="#B22222">(* Match 2 *)</FONT></I>
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      Thread.switchTo new <I><FONT COLOR="#B22222">(* Match 2 *)</FONT></I>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+It is perhaps interesting to note that the above implementation was originally 'derived' by specializing implementations of the <a href="MLtonThread">MLtonThread</a> <tt>new</tt>, <tt>prepare</tt>, and <tt>switch</tt> functions as if their only use was in the following implementation of <tt>isolate</tt>: 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a t =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (f: 'a -&gt; unit) =&gt;
+   <B><FONT COLOR="#A020F0">fn</FONT></B> (v: unit -&gt; 'a) =&gt;
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> th = (f (v ()) ; Exit.topLevelSuffix ())
+               <B><FONT COLOR="#A020F0">handle</FONT></B> exn =&gt; MLtonExn.topLevelHandler exn
+      <B><FONT COLOR="#A020F0">val</FONT></B> t = MLton.Thread.prepare (MLton.Thread.new th, ())
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      MLton.Thread.switch (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; t)
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+It was pleasant to discover that it could equally well be 'derived' starting from the <tt>callcc</tt> and <tt>throw</tt> implementation. 
+</p>
+<p>
+As a final comment, we noted that the degree to which the context of <tt>base</tt> could be considered 'empty' (i.e., retaining few heap-allocated values) depended upon a slightly MLton-esque view.  In particular, MLton does not heap allocate executable code.  So, although the <tt>base</tt> context keeps a lot of unevaluated code 'live', such code is not heap allocated.  In a system like SML/NJ, that does heap allocate executable code, one might want it to be the case that after throwing to an isolated function, the garbage collector retains only the code necessary to evaluate the function, and not any code that was necessary to evaluate the <tt>base</tt> context. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2008-05-02 03:05:42 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

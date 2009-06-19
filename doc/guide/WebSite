@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -128,7 +128,7 @@ This web site is a Wiki and is implemented using <a href="MoinMoin">MoinMoin</a>
 
 <h2 id="head-cf03cf2e9cdf95a20af09137dfb9071db0c31bf2">Navigation</h2>
 <p>
-The box in the upper-right corner is to Google search the entire web site.  Also in the upper right is a link to an <a href="Index">Index</a> of all pages, sorted by page title. 
+The box in the upper-right corner is to Google search the entire web site.  Also in the upper right is a link to a <a href="TitleIndex">TitleIndex</a> of all pages. 
 </p>
 <p>
 You can also do a search of just the wiki.  
@@ -145,5 +145,5 @@ Wiki title search <form method="GET"><input type="hidden" name="action" value="t
 
 <p>
 <hr>
-Last edited on 2004-12-03 00:40:23 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-11-08 03:31:18 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

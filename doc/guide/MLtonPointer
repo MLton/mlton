@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -87,6 +87,7 @@ urchinTracker();
       <B><FONT COLOR="#A020F0">val</FONT></B> setWord16: t * int * Word16.word -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> setWord32: t * int * Word32.word -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> setWord64: t * int * Word64.word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> sizeofPointer: word
       <B><FONT COLOR="#A020F0">val</FONT></B> sub: t * word -&gt; t
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
@@ -140,6 +141,12 @@ assigns <tt>v</tt> to the object stored at index i of the array of <em>X</em>  o
 </li>
     <li class="gap">
 <p>
+ <tt>sizeofPointer</tt>  <br>
+size, in bytes, of a pointer. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <tt>sub&nbsp;(p,&nbsp;w)</tt>  <br>
 returns the pointer <tt>w</tt> bytes before <tt>p</tt>.  Does not check for  overflow. 
 </p>
@@ -152,5 +159,5 @@ returns the pointer <tt>w</tt> bytes before <tt>p</tt>.  Does not check for  ove
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:44:35 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-05 23:27:00 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

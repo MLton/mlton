@@ -51,12 +51,12 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 MLton runs on a variety of platforms and is distributed in both source and binary form.  The format for the binary package depends on the platform.  The binary package will install under <tt>/usr</tt> or <tt>/usr/local</tt>, depending on the platform.  A <tt>.tgz</tt> or <tt>.tbz</tt> binary package should be extracted in the root directory. If you install MLton somewhere else, you must set the <tt>lib</tt> variable in the <tt>/usr/bin/mlton</tt> script to the directory that contains the libraries (<tt>/usr/lib/mlton</tt> by default). <p>
-MLton requires that you have the <a class="external" href="http://www.gnu.org/software/gmp/gmp.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GNU multiprecision library</a> installed on your machine.  MLton must be able to find both the <tt>gmp.h</tt> include file and the <tt>libgmp.a</tt> or <tt>libgmp.so</tt> library. If you see the error message <tt>gmp.h:&nbsp;No&nbsp;such&nbsp;file&nbsp;or&nbsp;directory</tt>, you should copy <tt>gmp.h</tt> to <tt>/usr/lib/mlton/self/include</tt>.  If you see the error message <tt>/usr/bin/ld:&nbsp;cannot&nbsp;find&nbsp;-lgmp</tt>, you should add a <tt>-link-opt&nbsp;-L</tt> argument in the <tt>/usr/bin/mlton</tt> script so that the linker can find <tt>libgmp</tt>.  If, for example, <tt>libgmp.a</tt> is in <tt>/tmp</tt>, then add <tt>-link-opt&nbsp;-L/tmp</tt>. 
+MLton requires that you have the <a href="GnuMP"> GNU multiprecision</a> library installed on your machine.  MLton must be able to find both the <tt>gmp.h</tt> include file and the <tt>libgmp.a</tt> (or <tt>libgmp.so</tt> or <tt>libgmp.dylib</tt>) library. If you see the error message <tt>gmp.h:&nbsp;No&nbsp;such&nbsp;file&nbsp;or&nbsp;directory</tt>, you should copy <tt>gmp.h</tt> to <tt>/usr/lib/mlton/self/include</tt>.  If you see the error message <tt>/usr/bin/ld:&nbsp;cannot&nbsp;find&nbsp;-lgmp</tt>, you should add a <tt>-link-opt&nbsp;-L</tt> argument in the <tt>/usr/bin/mlton</tt> script so that the linker can find <tt>libgmp</tt>.  If, for example, <tt>libgmp.a</tt> is in <tt>/tmp</tt>, then add <tt>-link-opt&nbsp;-L/tmp</tt>. 
 </p>
 <p>
 Installation of MLton creates the following files and directories. 
@@ -134,5 +134,5 @@ When installing the Cygwin <tt>tgz</tt>, you should use Cygwin's <tt>bash</tt> a
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:13:31 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-30 20:06:41 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -149,7 +149,7 @@ Set the inlining threshold used in the optimizer.  The threshold is  an approxim
 </li>
     <li class="gap">
 <p>
- <tt>-keep&nbsp;{g|o|sml}</tt>  <br>
+ <tt>-keep&nbsp;{g|o}</tt>  <br>
 Save intermediate files.  If no <tt>-keep</tt> argument is given, then  only the output file is saved. 
 <div>
 <table>
@@ -165,12 +165,6 @@ Save intermediate files.  If no <tt>-keep</tt> argument is given, then  only the
 <td>
  object (<tt>.o</tt>) files </td>
 </tr>
- <tr>
-<td>
- <tt>sml</tt> </td>
-<td>
- SML file </td>
-</tr>
 
 </p>
 </table>
@@ -185,7 +179,13 @@ Pass <em>option</em> to <tt>gcc</tt> when linking.  You can use this to  specify
     <li class="gap">
 <p>
  <tt>-mlb-path-map&nbsp;</tt><em>file</em>  <br>
-Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define  additional MLB path variables.  Multiple uses of  <tt>-mlb-path-map</tt> are allowed, with variable definitions in later  path maps taking precedence over earlier ones. 
+Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define  additional MLB path variables.  Multiple uses of  <tt>-mlb-path-map</tt> and <tt>-mlb-path-var</tt> are allowed, with variable definitions in later  path maps taking precedence over earlier ones. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>-mlb-path-var&nbsp;'</tt><em>name</em><tt>&nbsp;</tt><em>value</em><tt>'</tt>  <br>
+Define an additional MLB path variable.  Multiple uses of  <tt>-mlb-path-map</tt> and <tt>-mlb-path-var</tt> are allowed, with variable definitions in later  path maps taking precedence over earlier ones. 
 </p>
 </li>
     <li class="gap">
@@ -252,7 +252,7 @@ Output def-use information to <em>file</em>.  Each identifier that is  defined a
 </li>
     <li class="gap">
 <p>
- <tt>-stop&nbsp;{f|g|o|sml|tc}</tt>  <br>
+ <tt>-stop&nbsp;{f|g|o|tc}</tt>  <br>
 Specify when to stop. 
 <div>
 <table>
@@ -273,12 +273,6 @@ Specify when to stop.
  <tt>o</tt> </td>
 <td>
  object (<tt>.o</tt>) files </td>
-</tr>
- <tr>
-<td>
- <tt>sml</tt> </td>
-<td>
- SML file (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
 </tr>
  <tr>
 <td>
@@ -361,5 +355,5 @@ How verbose to be about what passes are running.  The default is  <tt>0</tt>.
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:01:06 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-05 16:16:22 by <span title="adsl-99-131-135-212.dsl.emhril.sbcglobal.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

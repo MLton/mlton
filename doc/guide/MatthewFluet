@@ -51,11 +51,11 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Matthew Fluet ( <a class="external" href="mailto:mfluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mfluet@acm.org</a> , <a class="external" href="http://ttic.uchicago.edu/~fluet"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://ttic.uchicago.edu/~fluet</a> ) is an Assistant Research Professor at the <a class="external" href="http://www.tti-c.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Toyota Technological Institute at Chicago</a>. <hr>
+Matthew Fluet ( <a class="external" href="mailto:Matthew.Fluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">Matthew.Fluet@acm.org</a> , <a class="external" href="http://ttic.uchicago.edu/~fluet"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://ttic.uchicago.edu/~fluet</a> ) is an Assistant Research Professor at the <a class="external" href="http://www.tti-c.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Toyota Technological Institute at Chicago</a>. <hr>
  <p>
 Current MLton projects: 
 </p>
@@ -64,34 +64,421 @@ Current MLton projects:
 
     <li>
 <p>
- Porting MLton to x86_64 
+ general maintenance 
 </p>
 </li>
     <li>
 <p>
- Migrating SSA optimizations to SSA2 
+ release new version 
+</p>
+</li>
+
+    </ul>
+
+
+<hr>
+ <p>
+Misc. and underspecified TODOs: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Copyright check in precommit: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2007-November/030041.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2007-November/030041.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ understand <a href="RefFlatten">RefFlatten</a> and <a href="DeepFlatten">DeepFlatten</a> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2005-April/026990.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2005-April/026990.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2007-November/030056.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2007-November/030056.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-April/030250.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-April/030250.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-July/030279.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-July/030279.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-August/030312.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-August/030312.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-September/030360.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-September/030360.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2009-June/001542.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-June/001542.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ simplify <tt>Socket.Ctl</tt> implementation: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2007-December/030087.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2007-December/030087.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ marshal control values via different functions, rather than via SML <tt>Word8Array.array</tt>s 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ coordinate w/ Dan Spoonhower and Lukasz Ziarek and Armand Navabi on multi-threaded 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-March/030214.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-March/030214.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ Intel Research bug: <tt>no&nbsp;tyconRep&nbsp;property</tt> (company won't release sample code) 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2008-March/001358.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2008-March/001358.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ treatment of real constants 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-May/030262.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-May/030262.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-June/030271.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-June/030271.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ representation of bool and bool in <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-May/030264.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-May/030264.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ <a href="http://www.icfpcontest.org">http://www.icfpcontest.org</a> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ John Reppy claims that "It looks like the card-marking overhead that one incurs when using generational collection swamps the benefits of generational collection." 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ page to disk policy / single heap 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-June/030278.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-June/030278.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-August/030318.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-August/030318.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ <tt>MLton.GC.pack</tt> doesn't keep a small heap if a garbage collection occurs before <tt>MLton.GC.unpack</tt>.   
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ It might be preferable for <tt>MLton.GC.pack</tt> to be implemented as a (new) <tt>MLton.GC.Ratios.setLive&nbsp;1.1</tt> followed by <tt>MLton.GC.collect&nbsp;()</tt> and for <tt>MLton.GC.unpack</tt> to be implemented as <tt>MLton.GC.Ratios.setLive&nbsp;8.0</tt> followed by <tt>MLton.GC.collect&nbsp;()</tt>. 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ The <tt>static&nbsp;struct&nbsp;GC_objectType&nbsp;objectTypes[]&nbsp;=</tt> array includes many duplicates.  Objects of distinct source type, but equivalent representations (in terms of size, bytes non-pointers, number pointers) can share the objectType index. 
 </p>
 </li>
     <li>
 <p>
- Improving CML implementation 
+ The <tt>{x86,amd64}Validate</tt> modules are no longer helpful. Consider eliminating them. 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-September/030364.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-September/030364.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
     <li>
 <p>
- Porting ML-Doc 
+ PolySpace bug: <a href="Redundant">Redundant</a> optimization (company won't release sample code) 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-September/030355.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-September/030355.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
     <li>
 <p>
- Porting ML-NLFFI 
+ treatment of exception raised during <a href="BasisLibrary">BasisLibrary</a> evaluation 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-December/030501.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-December/030501.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-December/030502.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-December/030502.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-December/030503.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-December/030503.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
     <li>
 <p>
- Porting ML-RISC 
+ Use <tt>memcpy</tt> 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2009-January/001506.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-January/001506.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-January/030506.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-January/030506.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ Optimize <tt>Word{S,U}&lt;N&gt;_extdToWord&lt;M&gt;</tt> conversions 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2009-January/001506.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-January/001506.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-January/030505.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-January/030505.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ Implement more 64bit primops in x86 codegen 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-January/030507.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-January/030507.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ Enrich path-map file syntax: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2008-September/030348.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-September/030348.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2009-January/001507.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-January/001507.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ PolySpace bug: crash during Cheney-copy collection 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-February/030513.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-February/030513.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ ReactiveSystems performance bug: <a href="SimplifyTypes">SimplifyTypes</a> optimization, <a href="RefFlatten">RefFlatten</a> optimization 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2009-June/001542.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-June/001542.html</a> 
+</p>
+</li>
+</ul>
+
 </ul>
 
 </div>
@@ -100,5 +487,5 @@ Current MLton projects:
 
 <p>
 <hr>
-Last edited on 2006-11-02 15:51:09 by <span title="128.135.191.161"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-19 14:45:02 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

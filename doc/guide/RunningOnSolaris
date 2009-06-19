@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -66,7 +66,7 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 </li>
     <li class="gap">
 <p>
- Making the documentation requires that you install <tt>latex</tt>  and <tt>dvips</tt>, which are available in the <tt>tetex</tt> package.  It  also requires <tt>htmldoc</tt>, for which we haven't yet tracked down a  package. 
+ Making the documentation requires that you install <tt>latex</tt>  and <tt>dvips</tt>, which are available in the <tt>tetex</tt> package. 
 </p>
 </li>
     <li class="gap">
@@ -95,5 +95,5 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:20:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 23:11:28 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

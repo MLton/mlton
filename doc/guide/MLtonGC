@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -64,6 +64,15 @@ urchinTracker();
       <B><FONT COLOR="#A020F0">val</FONT></B> setMessages: bool -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> setSummary: bool -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> unpack: unit -&gt; unit
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Statistics :
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> bytesAllocated: unit -&gt; IntInf.int
+            <B><FONT COLOR="#A020F0">val</FONT></B> lastBytesLive: unit -&gt; IntInf.int
+            <B><FONT COLOR="#A020F0">val</FONT></B> numCopyingGCs: unit -&gt; IntInf.int
+            <B><FONT COLOR="#A020F0">val</FONT></B> numMarkCompactGCs: unit -&gt; IntInf.int
+            <B><FONT COLOR="#A020F0">val</FONT></B> numMinorGCs: unit -&gt; IntInf.int
+            <B><FONT COLOR="#A020F0">val</FONT></B> maxBytesLive: unit -&gt; IntInf.int
+         <B><FONT COLOR="#0000FF">end</FONT></B>
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -99,7 +108,43 @@ controls whether a summary of garbage collection statistics is  printed upon ter
     <li class="gap">
 <p>
  <tt>unpack&nbsp;()</tt>  <br>
- resizes a packed heap to the size desired by the runtime. 
+resizes a packed heap to the size desired by the runtime. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.bytesAllocated&nbsp;()</tt>  <br>
+returns bytes allocated (as of the most recent garbage collection). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.lastBytesLive&nbsp;()</tt>  <br>
+returns bytes live (as of the most recent garbage collection). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.numCopyingGCs&nbsp;()</tt>  <br>
+returns number of (major) copying garbage collections performed (as of the most recent garbage collection). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.numMarkCompactGCs&nbsp;()</tt>  <br>
+returns number of (major) mark-compact garbage collections performed (as of the most recent garbage collection). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.numMinorGCs&nbsp;()</tt>  <br>
+returns number of minor garbage collections performed (as of the most recent garbage collection). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>Statistics.maxBytesLive&nbsp;()</tt>  <br>
+returns maximum bytes live (as of the most recent garbage collection). 
 </p>
 </li>
 </ul>
@@ -110,5 +155,5 @@ controls whether a summary of garbage collection statistics is  printed upon ter
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:44:05 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-05 22:16:09 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

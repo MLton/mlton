@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -90,7 +90,7 @@ Other sites that have a MLton page (or more).
 </li>
     <li>
 <p>
- <a class="external" href="http://www.icewalkers.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">icewalkers</a> 
+ <a class="external" href="http://www.icewalkers.com/Linux/Software/517050/mlton.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">icewalkers</a> 
 </p>
 </li>
     <li>
@@ -111,5 +111,5 @@ Other sites that have a MLton page (or more).
 
 <p>
 <hr>
-Last edited on 2006-06-16 19:17:13 by <span title="adsl-71-141-6-144.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-30 18:39:36 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

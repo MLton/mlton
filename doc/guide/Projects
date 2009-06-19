@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -75,7 +75,12 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 </li>
     <li>
 <p>
- Interfaces to libraries: OpenGL, ... 
+ Interfaces to libraries: OpenGL, Gtk+, D-BUS, ... 
+</p>
+</li>
+    <li>
+<p>
+ More libraries written in SML (see <a class="external" href="http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mltonlib</a>) 
 </p>
 </li>
     <li>
@@ -107,6 +112,28 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 Right now, MLton's closure conversion algorithm uses a simple flat closure to represent each function. 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2003-October/024570.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2003-October/024570.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton-user/2007-July/001150.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2007-July/001150.html</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/References#ShaoAppel94"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/References#ShaoAppel94</a> 
+</p>
+</li>
+
+            </ul>
+
+
         <li>
 <p>
  Elimination of array bounds checks in loops 
@@ -127,6 +154,23 @@ Right now, MLton's closure conversion algorithm uses a simple flat closure to re
  Loop-invariant code motion, especially for tuple selects 
 </p>
 </li>
+        <li>
+<p>
+ Partial redundancy elimination 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2006-April/028598.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2006-April/028598.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
         <li>
 <p>
  Loop unrolling, especially for small loops 
@@ -169,5 +213,5 @@ Right now, MLton's closure conversion algorithm uses a simple flat closure to re
 
 <p>
 <hr>
-Last edited on 2007-08-23 17:09:17 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-02-26 03:27:21 by <span title="pool-96-236-146-138.pitbpa.fios.verizon.net"><a href="AdamGoode">AdamGoode</a></span>.
 </body></html>

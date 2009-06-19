@@ -51,15 +51,15 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a class="external" href="http://www.ps.uni-sb.de/alice/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Alice</a> is an extension of SML with concurrency, distribution, and constraint solving. </div>
+<a class="external" href="http://www.ps.uni-sb.de/alice/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Alice ML</a> is an extension of SML with concurrency, dynamic typing, components, distribution, and constraint solving. </div>
 
 
 
 <p>
 <hr>
-Last edited on 2004-12-28 19:46:32 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-11-08 17:42:55 by <span title="128.135.191.174">AndreasRossberg</span>.
 </body></html>

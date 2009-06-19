@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -289,20 +289,178 @@ Here you can download the latest public release of MLton, version 20070826.  Els
 For a complete list of changes and bug fixes since <a href="Release20051202">Release20051202</a>, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070826-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20051202">Bugs20051202</a>. 
 </p>
 <h2 id="head-d62432d3375582b0d63518db784f802c69fac82f">20070826 binary packages</h2>
-<p>
 
+        <ul>
+
+        <li>
+<p>
+ AMD64 
 </p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.amd64-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Linux</a>, glibc 2.3 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ HPPA 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.hppa-hpux1100.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HPUX</a> 11.00 and above, statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ PowerPC 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.powerpc-aix51.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">AIX</a> 5.1 and above, statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.powerpc-darwin.gmp-static.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 8.10 (Mac OS X), statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 8.10 (Mac OS X), dynamically linked against <a href="GnuMP">GnuMP</a> in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of <a href="GnuMP">GnuMP</a>) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ Sparc 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.sparc-solaris8.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Solaris</a> 8 and above, statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ X86 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-cygwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> 1.5.24-2 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-darwin.gmp-macports.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin (.tgz)</a> 8.10 (Mac OS X), dynamically linked against <a href="GnuMP">GnuMP</a> in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of <a href="GnuMP">GnuMP</a>) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-darwin.gmp-macports.dmg"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin (.dmg)</a> 8.10 (Mac OS X), dynamically linked against <a href="GnuMP">GnuMP</a> in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of <a href="GnuMP">GnuMP</a>) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-darwin.gmp-static.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin (.tgz)</a> 8.10 (Mac OS X), statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-darwin.gmp-static.dmg"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin (.dmg)</a> 8.10 (Mac OS X), statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-freebsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Linux</a>, glibc 2.3 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Linux</a>, glibc 2.1, statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-mingw.gmp-dll.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, dynamically linked against <a href="GnuMP">GnuMP</a> (requires <tt>libgmp-3.dll</tt>) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.x86-mingw.gmp-static.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, statically linked against <a href="GnuMP">GnuMP</a> 
+</p>
+</li>
+
+            </ul>
+
+
+
+        </ul>
+
+
 <h2 id="head-3c37f5e19583a54a2bd97e294cdca7b44008313b">20070826 source packages</h2>
-<p>
 
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20070826-1.src.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source tgz</a> 
 </p>
+</li>
+    <li class="gap">
+<p>
+ Debian <a href="http://mlton.org/pages/Download/attachments/mlton_20070826-1.dsc"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dsc</a>,  <a href="http://mlton.org/pages/Download/attachments/mlton_20070826-1.diff.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">diff.gz</a>,  <a href="http://mlton.org/pages/Download/attachments/mlton_20070826.orig.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">orig.tar.gz</a> 
+</p>
+</li>
+
+    </ul>
+
+
 <h2 id="head-c9f200c953410684e25381b86acb0096e9ca73f2">Packages available at other sites</h2>
 
     <ul>
 
     <li>
 <p>
- <a class="external" href="http://packages.debian.org/cgi-bin/search_packages.pl?keywords=mlton&amp;searchon=names&amp;version=all&amp;release=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> 
+ <a class="external" href="http://packages.debian.org/search?keywords=mlton&amp;searchon=names&amp;suite=all&amp;section=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> 
 </p>
 </li>
     <li>
@@ -312,7 +470,7 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 </li>
     <li>
 <p>
- <a class="external" href="http://koji.fedoraproject.org/koji/packageinfo?packageID=2541"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fedora</a> 
+ <a class="external" href="https://admin.fedoraproject.org/pkgdb/packages/name/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fedora</a> 
 </p>
 </li>
     <li>
@@ -346,5 +504,5 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 
 <p>
 <hr>
-Last edited on 2007-08-26 20:57:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-15 15:42:56 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -63,6 +63,7 @@ urchinTracker();
          <B><FONT COLOR="#0000FF">sig</FONT></B>
             <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a cont
             </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont -&gt; 'a) -&gt; 'a
+            <B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a cont
             <B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont -&gt; 'a -&gt; 'b
          <B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> SysInfo:
@@ -160,5 +161,5 @@ saves the state of the computation to file <tt>f</tt> and continue.  Returns <tt
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:46:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-05-10 11:43:49 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

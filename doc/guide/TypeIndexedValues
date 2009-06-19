@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -627,11 +627,30 @@ Cyclic data (excluding closures) in Standard ML can only be constructed imperati
 <p>
  
 </p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+<p>
+There are a number of related techniques.  Here are some of them. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Fold">Fold</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="StaticSum">StaticSum</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2007-08-26 02:10:40 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2009-06-10 19:24:04 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -123,11 +123,15 @@ Exception generativity is required for type safety.  Consider the following vali
 <p>
 If exceptions weren't generative, then each call <tt>f&nbsp;()</tt> would yield the same exception constructor <tt>E</tt>.  Then, our <tt>cast</tt> function could use <tt>make:&nbsp;'a&nbsp;-&gt;&nbsp;exn</tt> to convert any value into an exception and then <tt>get:&nbsp;exn&nbsp;-&gt;&nbsp;'b</tt> to convert that exception to a value of arbitrary type.  If <tt>cast</tt> worked, then we could cast an integer as a function and apply.  Of course, because of generative exceptions, this program raises <tt>Fail&nbsp;"f"</tt>. 
 </p>
+<h2 id="head-76c74bd071dd73f01696fddbbffc77712a479faf">Applications</h2>
+<p>
+The <tt>exn</tt> type is effectively a <a href="UniversalType">universal type</a>. 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:34:34 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-11-24 10:59:36 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

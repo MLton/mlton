@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -75,7 +75,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a class="external" href="http://www.diku.dk/users/tofte/publ/oregon/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Essentials of Standard ML Modules</a>.  Mads Tofte. 
+ <a class="external" href="http://www.diku.dk/topps/bibliography/1996.html#D-312"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Essentials of Standard ML Modules</a>.  Mads Tofte. 
 </p>
 </li>
 </ul>
@@ -86,5 +86,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-05-10 15:17:53 by <span title="adsl-64-166-225-167.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-09-28 10:15:26 by <span title="84.47.179.31">VictorAnyakin</span>.
 </body></html>

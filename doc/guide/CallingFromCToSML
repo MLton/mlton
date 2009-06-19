@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -88,31 +88,31 @@ Suppose that <tt>export.sml</tt> is
            (print (concat [<B><FONT COLOR="#BC8F8F">&quot;i = &quot;</FONT></B>, Int.toString i,
                            <B><FONT COLOR="#BC8F8F">&quot;  r = &quot;</FONT></B>, Real.toString r, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
             ; #<B><FONT COLOR="#BC8F8F">&quot;g&quot;</FONT></B>))
-<B><FONT COLOR="#A020F0">val</FONT></B> g = _import <B><FONT COLOR="#BC8F8F">&quot;g&quot;</FONT></B>: unit -&gt; unit;
+<B><FONT COLOR="#A020F0">val</FONT></B> g = _import <B><FONT COLOR="#BC8F8F">&quot;g&quot;</FONT></B> public: unit -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = g ()
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = g ()
 
 <B><FONT COLOR="#A020F0">val</FONT></B> e = _export <B><FONT COLOR="#BC8F8F">&quot;f2&quot;</FONT></B>: (Word8.word -&gt; word array) -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = e (<B><FONT COLOR="#A020F0">fn</FONT></B> w =&gt;
            Array.tabulate (<B><FONT COLOR="#5F9EA0">10</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; Word.fromLargeWord (Word8.toLargeWord w)))
-<B><FONT COLOR="#A020F0">val</FONT></B> g2 = _import <B><FONT COLOR="#BC8F8F">&quot;g2&quot;</FONT></B>: unit -&gt; word array;
+<B><FONT COLOR="#A020F0">val</FONT></B> g2 = _import <B><FONT COLOR="#BC8F8F">&quot;g2&quot;</FONT></B> public: unit -&gt; word array;
 <B><FONT COLOR="#A020F0">val</FONT></B> a = g2 ()
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [<B><FONT COLOR="#BC8F8F">&quot;0wx&quot;</FONT></B>, Word.toString (Array.sub (a, <B><FONT COLOR="#5F9EA0">0</FONT></B>)), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
 
 <B><FONT COLOR="#A020F0">val</FONT></B> e = _export <B><FONT COLOR="#BC8F8F">&quot;f3&quot;</FONT></B>: (unit -&gt; unit) -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = e (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; print <B><FONT COLOR="#BC8F8F">&quot;hello\n&quot;</FONT></B>);
-<B><FONT COLOR="#A020F0">val</FONT></B> g3 = _import <B><FONT COLOR="#BC8F8F">&quot;g3&quot;</FONT></B>: unit -&gt; unit;
+<B><FONT COLOR="#A020F0">val</FONT></B> g3 = _import <B><FONT COLOR="#BC8F8F">&quot;g3&quot;</FONT></B> public: unit -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = g3 ()
 
 <I><FONT COLOR="#B22222">(* This example demonstrates mutual recursion between C and SML. *)</FONT></I>
 <B><FONT COLOR="#A020F0">val</FONT></B> e = _export <B><FONT COLOR="#BC8F8F">&quot;f4&quot;</FONT></B>: (int -&gt; unit) -&gt; unit;
-<B><FONT COLOR="#A020F0">val</FONT></B> g4 = _import <B><FONT COLOR="#BC8F8F">&quot;g4&quot;</FONT></B>: int -&gt; unit;
+<B><FONT COLOR="#A020F0">val</FONT></B> g4 = _import <B><FONT COLOR="#BC8F8F">&quot;g4&quot;</FONT></B> public: int -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = e (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; <B><FONT COLOR="#A020F0">if</FONT></B> i = <B><FONT COLOR="#5F9EA0">0</FONT></B> <B><FONT COLOR="#A020F0">then</FONT></B> () <B><FONT COLOR="#A020F0">else</FONT></B> g4 (i - <B><FONT COLOR="#5F9EA0">1</FONT></B>))
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = g4 <B><FONT COLOR="#5F9EA0">13</FONT></B>
 
 <B><FONT COLOR="#A020F0">val</FONT></B> (_, zzzSet) = _symbol <B><FONT COLOR="#BC8F8F">&quot;zzz&quot;</FONT></B> alloc: (unit -&gt; int) * (int -&gt; unit);
 <B><FONT COLOR="#A020F0">val</FONT></B> () = zzzSet <B><FONT COLOR="#5F9EA0">42</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> g5 = _import <B><FONT COLOR="#BC8F8F">&quot;g5&quot;</FONT></B>: unit -&gt; unit;
+<B><FONT COLOR="#A020F0">val</FONT></B> g5 = _import <B><FONT COLOR="#BC8F8F">&quot;g5&quot;</FONT></B> public: unit -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = g5 ()
 
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = print <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
@@ -144,6 +144,7 @@ Use <tt>export.h</tt> in a C program, <tt>ffi-export.c</tt>, as follows.
 <pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&lt;stdio.h&gt;</FONT></B>
 #<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;export.h&quot;</FONT></B>
 
+<I><FONT COLOR="#B22222">/* Functions in C are by default PUBLIC symbols */</FONT></I>
 <B><FONT COLOR="#228B22">void</FONT></B> <B><FONT COLOR="#0000FF">g</FONT></B> () {
         Char8 c;
 

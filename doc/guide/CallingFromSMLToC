@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -75,23 +75,25 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <pre class=code><I><FONT COLOR="#B22222">(* main.sml *)</FONT></I>
 
 <I><FONT COLOR="#B22222">(* Declare ffi to be implemented by calling the C function ffi. *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> ffi = _import <B><FONT COLOR="#BC8F8F">&quot;ffi&quot;</FONT></B>: real array * int ref * int -&gt; char;
+<B><FONT COLOR="#A020F0">val</FONT></B> ffi = _import <B><FONT COLOR="#BC8F8F">&quot;ffi&quot;</FONT></B> public: real array * int * int ref * char ref * int -&gt; char;
 <B><FONT COLOR="#0000FF">open</FONT></B> Array
 
 <B><FONT COLOR="#A020F0">val</FONT></B> size = <B><FONT COLOR="#5F9EA0">10</FONT></B>
 <B><FONT COLOR="#A020F0">val</FONT></B> a = tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; real i)
-<B><FONT COLOR="#A020F0">val</FONT></B> r = ref <B><FONT COLOR="#5F9EA0">0</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> ri = ref <B><FONT COLOR="#5F9EA0">0</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> rc = ref #<B><FONT COLOR="#BC8F8F">&quot;0&quot;</FONT></B>
 <B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#5F9EA0">17</FONT></B>
 
 <I><FONT COLOR="#B22222">(* Call the C function *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> c = ffi (a, r, n)
+<B><FONT COLOR="#A020F0">val</FONT></B> c = ffi (a, Array.length a, ri, rc, n)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) = _symbol <B><FONT COLOR="#BC8F8F">&quot;FFI_INT&quot;</FONT></B>: (unit -&gt; int) * (int -&gt; unit);
+<I><FONT COLOR="#B22222">(* FFI_INT is declared as public in ffi-import.c *)</FONT></I>
+<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) = _symbol <B><FONT COLOR="#BC8F8F">&quot;FFI_INT&quot;</FONT></B> public: (unit -&gt; int) * (int -&gt; unit);
 
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [Int.toString (nGet ()), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
 
 <B><FONT COLOR="#A020F0">val</FONT></B> _ =
-   print (<B><FONT COLOR="#A020F0">if</FONT></B> c = #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !r = <B><FONT COLOR="#5F9EA0">45</FONT></B>
+   print (<B><FONT COLOR="#A020F0">if</FONT></B> c = #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !ri = <B><FONT COLOR="#5F9EA0">45</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !rc = c
              <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
           <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;fail\n&quot;</FONT></B>)
 </PRE>
@@ -101,25 +103,27 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <tt>ffi-import.c</tt> is 
 </p>
 <p>
-<pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;platform.h&quot;</FONT></B>
+<pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;export.h&quot;</FONT></B>
 
 Int32 FFI_INT = 13;
 Word32 FFI_WORD = 0xFF;
-Bool FFI_BOOL = TRUE;
+Bool FFI_BOOL = 1;
 Real64 FFI_REAL = 3.14159;
 
-Char8 <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int32 n) {
+Char8 <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Int32 a1len, Pointer a2, Pointer a3, Int32 n) {
         <B><FONT COLOR="#228B22">double</FONT></B> *ds = (<B><FONT COLOR="#228B22">double</FONT></B>*)a1;
-        <B><FONT COLOR="#228B22">int</FONT></B> *p = (<B><FONT COLOR="#228B22">int</FONT></B>*)a2;
+        <B><FONT COLOR="#228B22">int</FONT></B> *pi = (<B><FONT COLOR="#228B22">int</FONT></B>*)a2;
+        <B><FONT COLOR="#228B22">char</FONT></B> *pc = (<B><FONT COLOR="#228B22">char</FONT></B>*)a3;
         <B><FONT COLOR="#228B22">int</FONT></B> i;
         <B><FONT COLOR="#228B22">double</FONT></B> sum;
 
         sum = 0.0;
-        <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; GC_getArrayLength (a1); ++i) {
+        <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; a1len; ++i) {
                 sum += ds[i];
                 ds[i] += n;
         }
-        *p = (<B><FONT COLOR="#228B22">int</FONT></B>)sum;
+        *pi = (<B><FONT COLOR="#228B22">int</FONT></B>)sum;
+        *pc = <B><FONT COLOR="#BC8F8F">'c'</FONT></B>;
         <B><FONT COLOR="#A020F0">return</FONT></B> <B><FONT COLOR="#BC8F8F">'c'</FONT></B>;
 }
 </PRE>

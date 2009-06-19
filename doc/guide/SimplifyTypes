@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -64,17 +64,17 @@ This pass computes a "cardinality" of each datatype, which is an abstraction of 
 
     <li>
 <p>
- Zero means the datatype has no values (except for bottom). 
+ <tt>Zero</tt> means the datatype has no values (except for bottom). 
 </p>
 </li>
     <li>
 <p>
- One means the datatype has one value (except for bottom). 
+ <tt>One</tt> means the datatype has one value (except for bottom). 
 </p>
 </li>
     <li>
 <p>
- Many means the datatype has many values. 
+ <tt>Many</tt> means the datatype has many values. 
 </p>
 </li>
 
@@ -82,7 +82,7 @@ This pass computes a "cardinality" of each datatype, which is an abstraction of 
 
 
 <p>
-This pass removes all datatypes whose cardinality is Zero or One and removes: 
+This pass removes all datatypes whose cardinality is <tt>Zero</tt> or <tt>One</tt> and removes: 
 </p>
 
     <ul>
@@ -117,17 +117,17 @@ This pass marks constructors as one of:
 
     <li>
 <p>
- Useless: it never appears in a <tt>ConApp</tt>. 
+ <tt>Useless</tt>: it never appears in a <tt>ConApp</tt>. 
 </p>
 </li>
     <li>
 <p>
- Transparent: it is the only variant in its datatype and its argument type does not contain any uses of <tt>array</tt> or <tt>vector</tt>. 
+ <tt>Transparent</tt>: it is the only variant in its datatype and its argument type does not contain any uses of <tt>array</tt> or <tt>vector</tt>. 
 </p>
 </li>
     <li>
 <p>
- Useful: otherwise 
+ <tt>Useful</tt>: otherwise 
 </p>
 </li>
 
@@ -135,7 +135,7 @@ This pass marks constructors as one of:
 
 
 <p>
-This pass also removes Useless and Transparent constructors. 
+This pass also removes <tt>Useless</tt> and <tt>Transparent</tt> constructors. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
@@ -163,17 +163,17 @@ it removes uses of polymorphic equality that must return true
 
 
 <p>
-We must keep track of Transparent constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
+We must keep track of <tt>Transparent</tt> constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
 <pre class=code>
   <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
 </FONT></B></PRE>
- Such a datatype has Cardinality.Many, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
+ Such a datatype has <tt>Cardinality.Many</tt>, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
 </p>
 <p>
 Must do similar things for <tt>vectors</tt>. 
 </p>
 <p>
-Also, to eliminate as many Transparent constructors as possible, for something like the following, 
+Also, to eliminate as many <tt>Transparent</tt> constructors as possible, for something like the following, 
 <pre class=code>
   <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array
        </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
@@ -190,5 +190,5 @@ Also, to eliminate as many Transparent constructors as possible, for something l
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:39:32 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-19 14:47:43 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

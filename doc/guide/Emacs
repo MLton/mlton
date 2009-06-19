@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -78,6 +78,11 @@ There are a few Emacs modes for SML.
         <li>
 <p>
  <a class="external" href="http://www.smlnj.org/doc/Emacs/sml-mode.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.smlnj.org/doc/Emacs/sml-mode.html</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a class="external" href="http://www.iro.umontreal.ca/~monnier/elisp/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.iro.umontreal.ca/~monnier/elisp/</a> 
 </p>
 </li>
 
@@ -161,5 +166,5 @@ Alternatively, you could use a sed script to rewrite MLton's errors. Here is one
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:05:44 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-08-16 18:45:47 by <span title="cs181037157.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

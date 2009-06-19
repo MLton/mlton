@@ -51,11 +51,11 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Technically, SML'97 as defined in the <a href="DefinitionOfStandardML">Definition</a> requires only a a minimal initial basis, which, while including the types <tt>int</tt>, <tt>real</tt>, <tt>char</tt>, and <tt>string</tt>, need have no operations on those base types.  Hence, the only observable output of an SML'97 program is termination or raising an exception.  Most SML compilers should agree there, to the degree each agrees with the Definition.  See <a href="UnresolvedBugs">UnresolvedBugs</a> for MLton's very few corner cases. <p>
+Technically, SML'97 as defined in the <a href="DefinitionOfStandardML">Definition</a> requires only a minimal initial basis, which, while including the types <tt>int</tt>, <tt>real</tt>, <tt>char</tt>, and <tt>string</tt>, need have no operations on those base types.  Hence, the only observable output of an SML'97 program is termination or raising an exception.  Most SML compilers should agree there, to the degree each agrees with the Definition.  See <a href="UnresolvedBugs">UnresolvedBugs</a> for MLton's very few corner cases. <p>
 Realistically, a program needs to make use of the  <a href="BasisLibrary">Basis Library</a>. Within the Basis Library, there are numerous places where the behavior is implementation dependent.  For a trivial example: 
 </p>
 
@@ -74,5 +74,5 @@ may either raise the <tt>Option</tt> exception (if  <tt>Int.maxInt&nbsp;==&nbsp;
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:25:49 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2009-05-07 18:10:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

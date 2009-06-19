@@ -55,7 +55,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -1135,6 +1135,11 @@ urchinTracker();
  <a id="ZiarekEtAl06"></a>  <a class="external" href="http://www.cs.purdue.edu/homes/suresh/abstracts.html#icfp06"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Stabilizers: A Modular Checkpointing Abstraction for Concurrent Functional Programs</a>.  Lukasz Ziarek, Philip Schatz, and Suresh Jagannathan.  <a href="#ICFP">ICFP</a> 2006. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <a id="ZiarekEtAl08"></a>  <a class="external" href="http://www.springerlink.com/content/ku5036n4xjj40715/?p=70c738f3dc1546b68580ad328afee59f&amp;pi=0"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Flattening tuples in an SSA intermediate representation</a>.  Lukasz Ziarek, Stephen Weeks, and Suresh Jagannathan.  <a href="#HOSC">HOSC</a> 2008. 
+</p>
+</li>
 
     </ul>
 
@@ -1286,5 +1291,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-23 00:55:54 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-10-03 16:12:19 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

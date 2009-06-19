@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -1138,6 +1138,26 @@ Fold has a number of practical applications.  Here are some of them.
  <a href="VariableArityPolymorphism">VariableArityPolymorphism</a> 
 </p>
 </li>
+
+    </ul>
+
+
+<p>
+There are a number of related techniques.  Here are some of them. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="StaticSum">StaticSum</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="TypeIndexedValues">TypeIndexedValues</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -1146,5 +1166,5 @@ Fold has a number of practical applications.  Here are some of them.
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:06:10 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-10 19:19:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

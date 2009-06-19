@@ -53,12 +53,12 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 The  <a class="external" href="http://www.smlnj.org/doc/smlnj-lib/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML/NJ Library</a>  is a collection of libraries that are distributed with SML/NJ.  Due to differences between SML/NJ and MLton, these libraries will not work out-of-the box with MLton.   <p>
-As of 20070812, MLton includes a port of the SML/NJ Library, currently synchronized with SML/NJ version 110.65. 
+As of 20090618, MLton includes a port of the SML/NJ Library, currently synchronized with SML/NJ version 110.70. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -95,15 +95,15 @@ Support for implementing hash-consed data structures.</td>
 </tr>
  <tr>
 <td>
-<tt>$(SML_LIB)/smlnj-lib/INet/inet-lib.mlb</tt></td>
+<tt>$(SML_LIB)/smlnj-lib/HTML/html-lib.mlb</tt></td>
 <td>
-Networking utilities; supported on both Unix and Windows systems.</td>
+HTML parsing and pretty-printing library.</td>
 </tr>
  <tr>
 <td>
-<tt>$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb</tt></td>
+<tt>$(SML_LIB)/smlnj-lib/INet/inet-lib.mlb</tt></td>
 <td>
-Utilities for Unix-based operating systems.</td>
+Networking utilities; supported on both Unix and Windows systems.</td>
 </tr>
  <tr>
 <td>
@@ -113,9 +113,9 @@ Pretty-printing library.</td>
 </tr>
  <tr>
 <td>
-<tt>$(SML_LIB)/smlnj-lib/HTML/html-lib.mlb</tt></td>
+<tt>$(SML_LIB)/smlnj-lib/Reactive/reactive-lib.mlb</tt></td>
 <td>
-HTML parsing and pretty-printing library.</td>
+Reactive scripting library.</td>
 </tr>
  <tr>
 <td>
@@ -125,9 +125,9 @@ Regular expression library.</td>
 </tr>
  <tr>
 <td>
-<tt>$(SML_LIB)/smlnj-lib/Reactive/reactive-lib.mlb</tt></td>
+<tt>$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb</tt></td>
 <td>
-Reactive scripting library.</td>
+Utilities for Unix-based operating systems.</td>
 </tr>
 
 </p>
@@ -140,12 +140,12 @@ Reactive scripting library.</td>
 <pre>$smlnj-lib.cm       $(SML_LIB)/smlnj-lib/Util
 $controls-lib.cm    $(SML_LIB)/smlnj-lib/Controls
 $hash-cons-lib.cm   $(SML_LIB)/smlnj-lib/HashCons
-$inet-lib.cm        $(SML_LIB)/smlnj-lib/INet
-$unix-lib.cm        $(SML_LIB)/smlnj-lib/Unix
-$pp-lib.cm          $(SML_LIB)/smlnj-lib/PP
 $html-lib.cm        $(SML_LIB)/smlnj-lib/HTML
-$regexp-lib.cm      $(SML_LIB)/smlnj-lib/RegExp
+$inet-lib.cm        $(SML_LIB)/smlnj-lib/INet
+$pp-lib.cm          $(SML_LIB)/smlnj-lib/PP
 $reactive-lib.cm    $(SML_LIB)/smlnj-lib/Reactive
+$regexp-lib.cm      $(SML_LIB)/smlnj-lib/RegExp
+$unix-lib.cm        $(SML_LIB)/smlnj-lib/Unix
 </pre> This will automatically convert a <tt>$/smlnj-lib.cm</tt> import in an input <tt>.cm</tt> file into a <tt>$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb</tt> import in the output <tt>.mlb</tt> file.
 </p>
 </li>
@@ -230,5 +230,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2007-08-23 17:24:54 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 21:17:16 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

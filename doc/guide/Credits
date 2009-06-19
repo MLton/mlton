@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -130,7 +130,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- <a href="VesaKarvonen">VesaKarvonen</a> contributed <tt>esml-mode.el</tt> (see <a href="Emacs">Emacs</a>) and  patches for improving match warnings. 
+ <a href="VesaKarvonen">VesaKarvonen</a> contributed <tt>esml-mode.el</tt> and <tt>esml-mlb-mode.el</tt> (see <a href="Emacs">Emacs</a>),   contributed patches for improving match warnings,   contributed <tt>esml-du-mlton.el</tt> and extended def-use output to include types of variable definitions (see <a href="EmacsDefUseMode">EmacsDefUseMode</a>), and  improved constant folding of floating-point operations. 
 </p>
 </li>
     <li class="gap">
@@ -140,7 +140,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Ville Laurikari ported MLton to HPPA/HP-UX. 
+ Ville Laurikari ported MLton to IA64/HPUX, HPPA/HPUX, PowerPC/AIX, PowerPC64/AIX. 
 </p>
 </li>
     <li class="gap">
@@ -190,7 +190,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- <a href="WesleyTerpstra">WesleyTerpstra</a> added support for <tt>MLton.Process.create</tt>, made  a number of contributions to the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>, and  contributed a number of other runtime system patches. 
+ <a href="WesleyTerpstra">WesleyTerpstra</a> added support for <tt>MLton.Process.create</tt>, made  a number of contributions to the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>,   contributed a number of other runtime system patches, and  added support for compiling to a C library. 
 </p>
 </li>
     <li class="gap">
@@ -245,12 +245,12 @@ We have also benefited from other software development tools and used code from 
 </li>
     <li class="gap">
 <p>
- MLton uses the [<a href="http://www.gnu.org/software/gmp/gmp.html">http://www.gnu.org/software/gmp/gmp.html</a> GNU  multiprecision library] for its implementation of <tt>IntInf</tt>.  
+ MLton uses the <a class="external" href="http://www.gnu.org/software/gmp/gmp.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GNU multiprecision library</a> for its implementation of <tt>IntInf</tt>.  
 </p>
 </li>
     <li class="gap">
 <p>
- MLton's implementation of mllex, mlyacc, the   <a href="CKitLibrary">ckit Library</a>,   <a href="ConcurrentML">Concurrent ML</a>,   and <a href="MLNLFFI">ML-NLFFI</a>   are modified versions of code from SML/NJ. 
+ MLton's implementation of mllex, mlyacc,   the <a href="CKitLibrary">ckit Library</a>,   the <a href="MLRISCLibrary">MLRISC Library</a>,   the <a href="SMLNJLibrary">SML/NJ Library</a>,   <a href="ConcurrentML">Concurrent ML</a>,   mlnlffigen and <a href="MLNLFFI">ML-NLFFI</a>   are modified versions of code from SML/NJ. 
 </p>
 </li>
 </ul>
@@ -261,5 +261,5 @@ We have also benefited from other software development tools and used code from 
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:04:00 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 23:23:18 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

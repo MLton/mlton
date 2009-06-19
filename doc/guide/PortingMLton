@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -60,7 +60,7 @@ Porting MLton to a new target platform (architecture or OS) involves the followi
 
     <li>
 <p>
-Make the necessary changes to the scripts, runtime system, Basis  Library implementation, and compiler. 
+Make the necessary changes to the scripts, runtime system,   <a href="BasisLibrary"> Basis Library</a> implementation, and compiler. 
 </p>
 </li>
     <li class="gap">
@@ -100,28 +100,6 @@ Some of the following steps will not be necessary if MLton already supports the 
  In <tt>bin/platform</tt>, add new cases to define <tt>$HOST_OS</tt> and   <tt>$HOST_ARCH</tt>. 
 </p>
 </li>
-        <li class="gap">
-<p>
- In <tt>bin/upgrade-basis</tt>, 
-</p>
-</li>
-
-            <ul>
-
-            <li>
-<p>
- add new cases to set <tt>$arch</tt> and <tt>$os</tt>. 
-</p>
-</li>
-            <li>
-<p>
- add new cases in the code for <tt>MLton.Platform</tt> to define    <tt>Arch.t</tt>, <tt>OS.t</tt>, <tt>Arch.all</tt>, and <tt>OS.all</tt>. 
-</p>
-</li>
-
-            </ul>
-
-
 
         </ul>
 
@@ -139,9 +117,26 @@ Some of the following steps will not be necessary if MLton already supports the 
 
             <li>
 <p>
- In <tt>platform.h</tt>, add a new case to include    <tt>platform/&lt;os&gt;.h</tt>. 
+ In <tt>platform.h</tt>, add a new case to include    <tt>platform/&lt;arch&gt;.h</tt> and <tt>platform/&lt;os&gt;.h</tt>. 
 </p>
 </li>
+            <li class="gap">
+<p>
+ In <tt>platform/&lt;arch&gt;.h</tt>: 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ define <tt>MLton_Platform_Arch_host</tt>. 
+</p>
+</li>
+
+                </ul>
+
+
             <li class="gap">
 <p>
  In <tt>platform/&lt;os&gt;.h</tt>: 
@@ -176,22 +171,12 @@ Some of the following steps will not be necessary if MLton already supports the 
 </li>
             <li class="gap">
 <p>
- In <tt>basis/Real/class.c</tt>, add the architecture specific code    to implement <tt>Real&lt;N&gt;.class</tt> (i.e. to determine the class of a    floating point number.  It would be nice to implement this code    (portably) in the Basis Library implementation some day. 
-</p>
-</li>
-            <li class="gap">
-<p>
- Add rounding mode control to IEEEReal.c for the new arch. 
+ Add rounding mode control to <tt>basis/Real/IEEEReal.c</tt> for the new arch (if not <tt>HAS_FEROUND</tt>) 
 </p>
 </li>
             <li class="gap">
 <p>
  Compile and install the <a href="GnuMP">GnuMP</a>.  This varies from platform to    platform.  In <tt>platform/&lt;os&gt;.h</tt>, you need to include the    appropriate <tt>gmp.h</tt>. 
-</p>
-</li>
-            <li class="gap">
-<p>
- Make sure the definition of <tt>ReturnToC</tt> in    <tt>include/x86-main.h</tt> is correct. 
 </p>
 </li>
 
@@ -208,7 +193,7 @@ Some of the following steps will not be necessary if MLton already supports the 
 
             <li>
 <p>
- In <tt>misc/primitive.sml</tt>, 
+ In <tt>primitive/prim-mlton.sml</tt>, 
 </p>
 </li>
 
@@ -221,12 +206,17 @@ Some of the following steps will not be necessary if MLton already supports the 
 </li>
                 <li class="gap">
 <p>
+ modify the constants that define <tt>MLton.Platform.Arch.host</tt> to match with     <tt>MLton_Platform_Arch_host</tt>, as set in     <tt>runtime/platform/&lt;arch&gt;.h</tt>. 
+</p>
+</li>
+                <li class="gap">
+<p>
  Add a new variant to the <tt>MLton.Platform.OS.t</tt> datatype.  
 </p>
 </li>
                 <li class="gap">
 <p>
- modify the constants that define <tt>host</tt> to match with     <tt>MLton_Platform_OS_host</tt>, as set in     <tt>runtime/platform/&lt;os&gt;.h</tt>. 
+ modify the constants that define <tt>MLton.Platform.OS.host</tt> to match with     <tt>MLton_Platform_OS_host</tt>, as set in     <tt>runtime/platform/&lt;os&gt;.h</tt>. 
 </p>
 </li>
 
@@ -246,21 +236,9 @@ Some of the following steps will not be necessary if MLton already supports the 
             <li class="gap">
 <p>
  Look at all the uses of <tt>MLton.Platform</tt> in the Basis    Library implementation and see if you need to do anything special.  You might use    the following command to see where to look. 
-<pre>   find basis-library -type f | xargs grep 'MLton\.Platform'</pre>   If in doubt, leave the code alone and wait to see what happens when    you run the regression tests.  Here's some that will likely need to    be modified. 
+<pre>   find basis-library -type f | xargs grep 'MLton\.Platform'</pre>   If in doubt, leave the code alone and wait to see what happens when    you run the regression tests. 
 </p>
 </li>
-
-                <ul>
-
-                <li>
-<p>
- <tt>real/pack-real.sml</tt>: definition of isBigEndian 
-</p>
-</li>
-
-                </ul>
-
-
 
             </ul>
 
@@ -275,7 +253,12 @@ Some of the following steps will not be necessary if MLton already supports the 
 
         <li>
 <p>
- In <tt>lib/mlton-stubs/</tt> run <tt>make&nbsp;links</tt> to ensure that   <tt>platform.sig</tt> has the changes made to the basis.  Then, update   <tt>mlton.sml</tt> to add any new variants in <tt>MLton.Platform</tt>. 
+ In <tt>lib/stubs/mlton-stubs/platform.sig</tt> add any new variants,   as was done in the Basis Library. 
+</p>
+</li>
+        <li class="gap">
+<p>
+ In <tt>lib/stubs/mlton-stubs/mlton.sml</tt> add any new variants in <tt>MLton.Platform</tt>,   as was done in the Basis Library. 
 </p>
 </li>
 
@@ -287,7 +270,7 @@ Some of the following steps will not be necessary if MLton already supports the 
 
 
 <p>
-The string used to identify a particular architecture or operating system must be the same (except for possibly case of letters) in the scripts, runtime, and basis library.  In <tt>mlton/main/main.fun</tt>, MLton itself uses the basis library conversions to and from strings: 
+The string used to identify a particular architecture or operating system must be the same (except for possibly case of letters) in the scripts, runtime, Basis Library implementation, and compiler (stubs).  In <tt>mlton/main/main.fun</tt>, MLton itself uses the conversions to and from strings: 
 </p>
 
         <ul>
@@ -320,7 +303,7 @@ Use <tt>bin/add-cross</tt> to add support for the new target.  In  particular, t
 <p>
 Run the regression tests with the cross-compiler.  To cross-compile  all the tests, do 
 <pre> bin/regression -cross &lt;target&gt;</pre> This will create all the executables.  Then, copy  <tt>bin/regression</tt> and the <tt>regression</tt> directory to the target  machine, and do 
-<pre> bin/regression -run-only</pre> This should run all the tests.  
+<pre> bin/regression -run-only &lt;target&gt;</pre> This should run all the tests.  
 </p>
 </li>
 
@@ -340,7 +323,7 @@ Once you've got all the regressions working, you can build MLton for the new tar
     <li>
 <p>
 On a working machine, with the newly rebuilt compiler, in the  <tt>mlton</tt> directory, do: 
-<pre> mlton -stop g -target &lt;target&gt; mlton.cm</pre>
+<pre> mlton -stop g -target &lt;target&gt; mlton.mlb</pre>
 </p>
 </li>
     <li class="gap">
@@ -369,7 +352,7 @@ On the target machine, compile and link MLton.  That is, in the  mlton directory
     <li class="gap">
 <p>
 At this point, MLton should be working and you can finish the rest  of a usual make on the target machine. 
-<pre> make script constants targetmap mlbpathmap world libraries tools install</pre>
+<pre> make basis-no-check script mlbpathmap targetmap constants libraries tools</pre>
 </p>
 </li>
 
@@ -404,5 +387,5 @@ The above description is based on the following emails sent to the MLton list.
 
 <p>
 <hr>
-Last edited on 2007-07-12 18:42:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-10 18:37:14 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

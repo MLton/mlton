@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -124,12 +124,17 @@ Here are notes about using MLton on the following platforms. <h2 id="head-fe3dae
 </li>
     <li>
 <p>
- <a href="RunningOnAMD64">HPPA</a> 
+ <a href="RunningOnHPPA">HPPA</a> 
 </p>
 </li>
     <li>
 <p>
  <a href="RunningOnPowerPC">PowerPC</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnPowerPC64">PowerPC64</a> 
 </p>
 </li>
     <li>
@@ -163,5 +168,5 @@ Here are notes about using MLton on the following platforms. <h2 id="head-fe3dae
 
 <p>
 <hr>
-Last edited on 2007-08-13 01:29:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-18 22:56:09 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

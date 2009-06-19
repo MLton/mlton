@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -74,7 +74,7 @@ MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png
 </li>
         <li>
 <p>
- The Bash shell is required.  If you are using a prebuilt MSYS, you   probably want to symlink bash to sh. 
+ The Bash shell is required.  If you are using a prebuilt MSYS, you   probably want to symlink <tt>bash</tt> to <tt>sh</tt>. 
 </p>
 </li>
 
@@ -419,5 +419,5 @@ MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:20:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-12-17 16:36:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -51,12 +51,14 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
 <ol>
+<li>
+<a href="Index">Index</a></li>
 <li>
 <a href="ZZZOrphanedPages">ZZZOrphanedPages</a></li>
 </ol>

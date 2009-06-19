@@ -51,13 +51,18 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 There are a number of implementations of <a href="StandardML">Standard ML</a>, from interpreters, to byte-code compilers, to incremental compilers, to whole-program compilers. 
     <ul>
 
+    <li>
+<p>
+ <a href="Alice">Alice ML</a> 
+</p>
+</li>
     <li>
 <p>
  <a href="HaMLet">HaMLet</a> 
@@ -144,5 +149,5 @@ There are a number of implementations of <a href="StandardML">Standard ML</a>, f
 
 <p>
 <hr>
-Last edited on 2006-10-26 20:01:45 by <span title="ppp-71-139-190-155.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-11-08 17:41:33 by <span title="128.135.191.174">AndreasRossberg</span>.
 </body></html>

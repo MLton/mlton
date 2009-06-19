@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -60,6 +60,8 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
 <B><FONT COLOR="#0000FF">structure</FONT></B> MLton:
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#A020F0">val</FONT></B> eq: 'a * 'a -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> equal: 'a * 'a -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> hash: 'a -&gt; Word32.word
       <B><FONT COLOR="#A020F0">val</FONT></B> isMLton: bool
       <B><FONT COLOR="#A020F0">val</FONT></B> share: 'a -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> shareAll: unit -&gt; unit
@@ -280,6 +282,18 @@ returns true if <tt>x</tt> and <tt>y</tt> are equal as pointers.  For  simple ty
 </li>
     <li class="gap">
 <p>
+ <tt>equal&nbsp;(x,&nbsp;y)</tt>  <br>
+returns true if <tt>x</tt> and <tt>y</tt> are structurally equal.  For equality types, this is the same as <a href="PolymorphicEquality">PolymorphicEquality</a>.  For other types, it is a conservative approximation of equivalence. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>hash&nbsp;x</tt>  <br>
+returns a structural hash of <tt>x</tt>.  The hash function is consistent between execution of the same program, but may not be consistent between different programs. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <tt>isMLton</tt>  <br>
 is always true in a MLton implementation, and is always false in a  stub implementation. 
 </p>
@@ -391,5 +405,5 @@ The size of a continuation option ref is &lt; 1000.
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:45:32 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-06 01:21:46 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

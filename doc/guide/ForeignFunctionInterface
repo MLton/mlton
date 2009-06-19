@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -100,6 +100,19 @@ MLton's foreign function interface (FFI) extends Standard ML and makes it easy t
  <a href="CallingFromCToSML">Calling From C To SML</a> 
 </p>
 </li>
+
+    </ul>
+
+
+<h2 id="head-ccdd1d886dbc2aa2717cc1131bf9d75c2cca33fc">Building System Libraries</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="LibrarySupport">Library Support</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -108,5 +121,5 @@ MLton's foreign function interface (FFI) extends Standard ML and makes it easy t
 
 <p>
 <hr>
-Last edited on 2007-05-21 06:24:27 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2009-06-10 19:26:13 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

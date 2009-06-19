@@ -51,31 +51,11 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 The contents of these pages have been moved to other pages. <p>
-The survey pages are currently unused. 
-</p>
-
-    <ul>
-
-    <li>
-<p>
- <a href="Survey">Survey</a> 
-</p>
-</li>
-    <li>
-<p>
- <a href="SurveyDone">SurveyDone</a> 
-</p>
-</li>
-
-    </ul>
-
-
-<p>
 These templates are used by other pages. 
 </p>
 
@@ -99,5 +79,5 @@ These templates are used by other pages.
 
 <p>
 <hr>
-Last edited on 2007-07-08 21:49:15 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-19 16:14:27 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

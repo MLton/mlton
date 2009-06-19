@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -234,6 +234,12 @@ In some situations, the child process should have its output  discarded.  The <t
 This will connect the input/output of the child process to a pipe  which the parent process holds. This may later form the input to one  of the <tt>Child.*</tt> functions and/or the <tt>Param.child</tt> function. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <tt>Param.self</tt>  <br>
+This will connect the input/output of the child process to the corresponding stream of the parent process. 
+</p>
+</li>
 
     </ul>
 
@@ -375,5 +381,5 @@ The following example program launches the <tt>ipconfig</tt> utility, pipes its 
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:44:51 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-15 22:22:05 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

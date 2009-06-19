@@ -14,6 +14,7 @@
 <link rel="Start" href="Home">
 
 
+<link rel="Appendix" title="def-use-capture.png" href="http://mlton.org/pages/EmacsDefUseMode/attachments/def-use-capture.png">
 </head>
 
 <body lang="en" dir="ltr">
@@ -51,37 +52,49 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton provides an <a href="CompileTimeOptions">option</a>, <tt>-show-def-use</tt> <tt>file</tt>, to output precise and accurate whole-program def-use information to a file.  Unlike typical tags facilities, the information includes local variables and distinguishes between different definitions even when they have the same name.  The def-use Emacs mode uses the information to provide navigation support, which can be particularly useful while reading SML programs compiled with MLton (such as the MLton compiler itself). <h3 id="head-fc338f87a058158eb824b53705961801516a9460">Features</h3>
+MLton provides an <a href="CompileTimeOptions">option</a>, <tt>-show-def-use</tt> <em><tt>file</tt></em>, to output precise (giving exact source locations) and accurate (including all uses and no false data) whole-program def-use information to a file.  Unlike typical tags facilities, the information includes local variables and distinguishes between different definitions even when they have the same name.  The def-use Emacs mode uses the information to provide navigation support, which can be particularly useful while reading SML programs compiled with MLton (such as the MLton compiler itself). <h3 id="head-52492f6375ce5f6a91468129578923abaccf4791">Screen Capture</h3>
+<p>
+Note the highlighting and the type displayed in the minibuffer. 
+</p>
+<p>
+<img src="http://mlton.org/pages/EmacsDefUseMode/attachments/def-use-capture.png?ts=1202837158" alt="def-use-capture.png"> 
+</p>
+<h3 id="head-fc338f87a058158eb824b53705961801516a9460">Features</h3>
 
     <ul>
 
     <li>
 <p>
- Highlighting of definitions and uses. 
+ Highlights definitions and uses.  Different colors for definitions,  unused definitions, and uses. 
 </p>
 </li>
     <li>
 <p>
- Navigation: <tt>jump-to-def</tt>, <tt>jump-to-next</tt>, and  <tt>jump-to-prev</tt>. 
+ Shows types (with highlighting) of variable definitions in the  minibuffer. 
 </p>
 </li>
     <li>
 <p>
- Listing, visiting and marking of all references to a definition  (within a program). 
+ Navigation: <tt>jump-to-def</tt>, <tt>jump-to-next</tt>, and  <tt>jump-to-prev</tt>.  These work precisely (no searching involved). 
 </p>
 </li>
     <li>
 <p>
- Loads def-use files in the background. 
+ Can list, visit and mark all references to a definition  (within a program). 
 </p>
 </li>
     <li>
 <p>
  Automatically reloads updated def-use files. 
+</p>
+</li>
+    <li>
+<p>
+ Automatically loads previously used def-use files at startup. 
 </p>
 </li>
     <li>
@@ -95,56 +108,43 @@ MLton provides an <a href="CompileTimeOptions">option</a>, <tt>-show-def-use</tt
 
 <h3 id="head-a479c9c34e878d07b4d67a73a48f432ad7dc53c8">Download</h3>
 <p>
-There is no package for the def-use mode at the moment.  To install the mode you need to fetch the Emacs lisp, <tt>*.el</tt>, files from the MLton repository: <a class="external" href="http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">emacs</a>. 
+There is no separate package for the def-use mode although the mode has been relatively stable for some time already.  To install the mode you need to get the Emacs lisp, <tt>*.el</tt>, files from MLton's repository: <a class="external" href="http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">emacs</a>. The easiest way to get the files is to use <a href="Subversion">Subversion</a> to access MLton's <a href="Sources">sources</a>.  If you only want the Emacs lisp files, you can use the following command: 
+<pre>svn co svn://mlton.org/mlton/trunk/ide/emacs mlton-emacs-ide
+</pre>
 </p>
 <h3 id="head-cdd7bb2816b7a8f88bce0e47be39943bc369516b">Setup</h3>
 <p>
 The easiest way to load def-use mode is to first tell Emacs where to find the files.  For example, add 
-</p>
-
-            <ul>
-
-   
 <pre class=code>
 (add-to-list 'load-path (file-truename <B><FONT COLOR="#BC8F8F">&quot;path-to-the-el-files&quot;</FONT></B>))
 </PRE>
-<p>
- 
-</p>
-
-            </ul>
-
-
-<p>
-to your <tt>~/.emacs</tt> or <tt>~/.xemacs/init.el</tt>.  You'll probably also want to start <tt>def-use-mode</tt> automatically by adding 
-</p>
-
-            <ul>
-
-   
+ to your <tt>~/.emacs</tt> or <tt>~/.xemacs/init.el</tt>.  You'll probably also want to start <tt>def-use-mode</tt> automatically by adding 
 <pre class=code>
 (require 'esml-du-mlton)
 (def-use-mode)
 </PRE>
-<p>
- 
-</p>
-
-            </ul>
-
-
-<p>
-to your Emacs init file.  Once the def-use mode is activated, you should see the <tt>DU</tt> indicator on the mode line. 
+ to your Emacs init file.  Once the def-use mode is activated, you should see the <tt>DU</tt> indicator on the mode line. 
 </p>
 <h3 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h3>
 <p>
-To use def-use mode one typically first sets up the program's makefile or build script so that the def-use information is saved each time the program is compiled.  In addition to the <tt>-show-def-use</tt> <tt>file</tt> option, the <tt>-prefer-abs-paths</tt> <tt>true</tt> expert option is required.  Note that the time it takes to save the information is small (compared to type-checking), so it is recommended to simply add the options to the MLton invocation that type-checks or compiles the program. 
+To use def-use mode one typically first sets up the program's makefile or build script so that the def-use information is saved each time the program is compiled.  In addition to the <tt>-show-def-use</tt> <em><tt>file</tt></em> option, the <tt>-prefer-abs-paths</tt> <tt>true</tt> expert option is required.  Note that the time it takes to save the information is small (compared to type-checking), so it is recommended to simply add the options to the MLton invocation that compiles the program.  However, it is only necessary to type check the program (or library), so one can specify the <tt>-stop&nbsp;tc</tt> option.  For example, suppose you have a program defined by an MLB file named <tt>my-prg.mlb</tt>, you can save the def-use information to the file <tt>my-prg.du</tt> by invoking MLton as: 
+<pre>mlton -prefer-abs-paths true -show-def-use my-prg.du -stop tc my-prg.mlb
+</pre>
 </p>
 <p>
-Finally, one needs to tell the mode where to find the def-use information.  This is done with the <tt>esml-du-mlton</tt> command.  The esml-du package can also load recently used def-use files automatically at startup. 
+Finally, one needs to tell the mode where to find the def-use information.  This is done with the <tt>esml-du-mlton</tt> command.  For example, to load the <tt>my-prg.du</tt> file, one would type: 
+<pre>M-x esml-du-mlton my-prg.du
+</pre>
 </p>
 <p>
-After doing all of the above, find an SML file covered by the def-use information, and place the cursor at some variable (definition or use, it doesn't matter). 
+After doing all of the above, find an SML file covered by the previously saved and loaded def-use information, and place the cursor at some variable (definition or use, it doesn't matter).  You should see the variable being highlighted.  (Note that specifications in signatures do not define variables.) 
+</p>
+<p>
+You might also want to setup and use the <a href="EmacsBgBuildMode">Bg-Build mode</a> to start builds automatically. 
+</p>
+<h3 id="head-93b9e289e2842469d001eccf7ad5d79f3c302dc9">Types</h3>
+<p>
+<tt>-show-def-use</tt> output was extended to include types of variable definitions in revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6333&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6333</a>.  To get good type names, the types must be in scope at the end of the program.  If you are using the <a href="MLBasis">ML Basis</a> system, this means that the root MLB-file for your application should not wrap the libraries used in the application inside <tt>local&nbsp;...&nbsp;in</tt>, because that would remove them from the scope before the end of the program. 
 </p>
 </div>
 
@@ -152,5 +152,5 @@ After doing all of the above, find an SML file covered by the def-use informatio
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:24:24 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-04-08 07:48:56 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

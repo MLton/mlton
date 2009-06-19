@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -73,15 +73,9 @@ First the signature of the framework (<a href = "http://mlton.org/cgi-bin/viewsv
  * abstract types.
  *)</FONT></I>
 <B><FONT COLOR="#0000FF">signature</FONT></B> TIE = <B><FONT COLOR="#0000FF">sig</FONT></B>
-   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a dom </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> 'a cod
-   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a dom -&gt; 'a cod
-   <I><FONT COLOR="#B22222">(**
-    * The type of fixpoint witnesses.
-    *
-    * The type constructors {dom} and {cod} are used to expose the arrow
-    * {-&gt;} type constructor (to allow eta-expansion) while keeping the
-    * domain and codomain abstract.
-    *)</FONT></I>
+   <B><FONT COLOR="#0000FF">include</FONT></B> ETAEXP'
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a etaexp
+   <I><FONT COLOR="#B22222">(** The type of fixpoint witnesses. *)</FONT></I>
 
    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fix : 'a t -&gt; 'a Fix.t
    <I><FONT COLOR="#B22222">(**
@@ -127,11 +121,16 @@ First the signature of the framework (<a href = "http://mlton.org/cgi-bin/viewsv
     * a witness.
     *)</FONT></I>
 
-   <B><FONT COLOR="#A020F0">val</FONT></B> *` : 'a t * 'b t -&gt; ('a, 'b) Product.t t
+   <B><FONT COLOR="#A020F0">val</FONT></B> product : 'a t * ('a -&gt; 'b t) -&gt; ('a, 'b) Product.t t
    <I><FONT COLOR="#B22222">(**
-    * Given witnesses for {'a} and {'b} produces a witness for the product
-    * {('a, 'b) Product.t}.  This is used when mutual recursion is needed.
+    * Dependent product combinator.  Given a witness for {'a} and a
+    * constructor from a {'a} to witness for {'b}, produces a witness for
+    * the product {('a, 'b) Product.t}.  The constructor for {'b} should
+    * not access the (proxy) value {'a} before it has been fixed.
     *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> *` : 'a t * 'b t -&gt; ('a, 'b) Product.t t
+   <I><FONT COLOR="#B22222">(** {a *` b} is equivalent to {product (a, const b)}. *)</FONT></I>
 
    <B><FONT COLOR="#A020F0">val</FONT></B> tuple2 : 'a t * 'b t -&gt; ('a * 'b) t
    <I><FONT COLOR="#B22222">(**
@@ -160,9 +159,10 @@ Here is the implementation (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlto
 <pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tie :&gt; TIE = <B><FONT COLOR="#0000FF">struct</FONT></B>
    <B><FONT COLOR="#0000FF">open</FONT></B> Product
    <B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
-   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a dom </FONT></B>=<B><FONT COLOR="#228B22"> Unit.t
-   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a cod </FONT></B>=<B><FONT COLOR="#228B22"> ('a * 'a UnOp.t) Thunk.t
-   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a dom -&gt; 'a cod
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a etaexp_dom </FONT></B>=<B><FONT COLOR="#228B22"> Unit.t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a etaexp_cod </FONT></B>=<B><FONT COLOR="#228B22"> ('a * 'a UnOp.t) Thunk.t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a etaexp </FONT></B>=<B><FONT COLOR="#228B22"> 'a etaexp_dom -&gt; 'a etaexp_cod
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a etaexp
    </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fix aT f = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = aT () () <B><FONT COLOR="#A020F0">in</FONT></B> ta (f a) <B><FONT COLOR="#A020F0">end</FONT></B>
    <B><FONT COLOR="#A020F0">val</FONT></B> pure = Thunk.mk
    <B><FONT COLOR="#A020F0">fun</FONT></B> iso bT (iso <B><FONT COLOR="#A020F0">as</FONT></B> (_, b2a)) () () = <B><FONT COLOR="#A020F0">let</FONT></B>
@@ -170,13 +170,14 @@ Here is the implementation (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlto
    <B><FONT COLOR="#A020F0">in</FONT></B>
       (b2a b, Fn.map iso fB)
    <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> *` (aT, bT) () () = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#A020F0">fun</FONT></B> product (aT, a2bT) () () = <B><FONT COLOR="#A020F0">let</FONT></B>
       <B><FONT COLOR="#A020F0">val</FONT></B> (a, fA) = aT () ()
-      <B><FONT COLOR="#A020F0">val</FONT></B> (b, fB) = bT () ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> (b, fB) = a2bT a () ()
    <B><FONT COLOR="#A020F0">in</FONT></B>
       (a &amp; b, Product.map (fA, fB))
    <B><FONT COLOR="#A020F0">end</FONT></B>
    <I><FONT COLOR="#B22222">(* The rest are not primitive operations. *)</FONT></I>
+   <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> *` (aT, bT) = product (aT, Fn.const bT)
    <B><FONT COLOR="#A020F0">fun</FONT></B> tuple2 ab = iso (<B><FONT COLOR="#A020F0">op</FONT></B> *` ab) Product.isoTuple2
    <B><FONT COLOR="#A020F0">fun</FONT></B> tier th = pure ((<B><FONT COLOR="#A020F0">fn</FONT></B> (a, ua) =&gt; (a, Fn.const a o ua)) o th)
    <B><FONT COLOR="#A020F0">fun</FONT></B> id x = pure (Fn.const (x, Fn.id))

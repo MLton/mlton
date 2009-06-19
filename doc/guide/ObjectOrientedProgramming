@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -71,6 +71,11 @@ urchinTracker();
     <li class="gap">
 <p>
  <a href = "References#LarsenNiss04"> mGTK: An SML binding of Gtk+</a> 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a href = "References#FluetPucella02"> Phantom Types and Subtyping</a> 
 </p>
 </li>
 
@@ -472,5 +477,5 @@ The resulting <tt>D</tt> module, like the <tt>Dispenser</tt> module, works with 
 
 <p>
 <hr>
-Last edited on 2007-02-15 17:22:16 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2008-10-20 11:18:45 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

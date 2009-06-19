@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -76,7 +76,8 @@ Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/
 Example: 
 </p>
 <p>
- <pre class=code><I><FONT COLOR="#B22222">(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+ <pre class=code><I><FONT COLOR="#B22222">(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -85,15 +86,6 @@ Example:
  *)</FONT></I>
 
 <B><FONT COLOR="#0000FF">structure</FONT></B> Main = Main ()
-
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
-   <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#0000FF">open</FONT></B> Trace.Immediate
-   <B><FONT COLOR="#A020F0">in</FONT></B>
-      debug := Out Out.error
-      ; flagged ()
-      ; on []
-   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
 </p>

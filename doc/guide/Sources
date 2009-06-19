@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -69,7 +69,7 @@ Committers (you know who you are) can access via
 All commits are sent to <tt>MLton-commit@mlton.org</tt>  (<a class="external" href="http://mlton.org/mailman/listinfo/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,  <a class="external" href="http://mlton.org/pipermail/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>), which is only for commit email.  Discussion should go to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
 </p>
 <p>
-If the first line of a commit log message begins with "<tt>MAIL&nbsp;</tt>", then the commit message will be sent with the subject as the rest of that first line, and will also be sent to [<a href="mailto:MLton@mlton.org">mailto:MLton@mlton.org</a> <a href="mailto:MLton@mlton.org">MLton@mlton.org</a>]. 
+If the first line of a commit log message begins with "<tt>MAIL&nbsp;</tt>", then the commit message will be sent with the subject as the rest of that first line, and will also be sent to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
 </p>
 <h2 id="head-164b3d4809f98d0458414f1bf9cf3c9dcba16bb5">Changelog</h2>
 <p>
@@ -85,5 +85,5 @@ Prior to 20050730, we used CVS.  We left the CVS server up until 20060809, at wh
 
 <p>
 <hr>
-Last edited on 2007-08-10 19:45:16 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-04-16 16:13:29 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

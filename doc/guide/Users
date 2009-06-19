@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -136,7 +136,12 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 </li>
     <li>
 <p>
- <a class="external" href="http://www.ps.uni-sb.de/hamlet/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HaMLet</a> a model implementation of Standard ML. 
+ <a class="external" href="http://www.ps.uni-sb.de/hamlet/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HaMLet</a>, a model implementation of Standard ML. 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://code.google.com/p/kepler-code/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">KeplerCode</a>, independent verification of the computational aspects of proofs of the Kepler conjecture and the Dodecahedral conjecture. 
 </p>
 </li>
     <li>
@@ -220,5 +225,5 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 
 <p>
 <hr>
-Last edited on 2007-07-11 19:57:59 by <span title="c-66-229-219-21.hsd1.fl.comcast.net">RyanNewton</span>.
+Last edited on 2008-12-13 21:47:21 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

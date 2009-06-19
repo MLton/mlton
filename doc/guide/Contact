@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -103,6 +103,11 @@ In addition to the pipermail archive at mlton.org, there are archives of both  <
  Discussions started on the mailing lists should stay on the mailing lists.  Private replies may be bounced to the mailing list for the benefit of those following the discussion. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ Discussions started on <tt>MLton-user@mlton.org</tt> may be migrated to <tt>MLton@mlton.org</tt>, particularly when the discussion shifts from how to use MLton to how to modify MLton (e.g., to fix a bug identified by the initial discussion). 
+</p>
+</li>
 
     </ul>
 
@@ -124,5 +129,5 @@ In addition to the pipermail archive at mlton.org, there are archives of both  <
 
 <p>
 <hr>
-Last edited on 2007-03-17 18:41:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2008-11-12 15:40:32 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

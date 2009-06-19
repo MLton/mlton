@@ -51,11 +51,13 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML Kit</a> is a  <a href="StandardMLImplementations">Standard ML Compiler</a>. <h2 id="head-46f4183d0c3208e69771f54fb5d6447c38716517">Some Properties of the MLKit</h2>
+The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML Kit</a> is a  <a href="StandardMLImplementations">Standard ML Compiler</a>. <p>
+MLKit supports: 
+</p>
 
     <ul>
 
@@ -69,7 +71,7 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
             <li>
 <p>
- including most of the latest <a href="BasisLibrary">Standard ML Basis Library</a> 
+ including most of the latest <a href="BasisLibrary">Standard ML Basis Library</a>, 
 </p>
 </li>
 
@@ -78,7 +80,7 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
     <li>
 <p>
- Supports <a href="MLBasis">ML Basis</a> Files 
+ <a href="MLBasis">ML Basis</a> files 
 </p>
 </li>
 
@@ -86,7 +88,7 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
             <li>
 <p>
- and <em><strong>separate compilation</strong></em> 
+ and <em><strong>separate compilation</strong></em>, 
 </p>
 </li>
 
@@ -103,7 +105,7 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
             <li>
 <p>
- and garbage collection 
+ and garbage collection, 
 </p>
 </li>
 
@@ -112,7 +114,7 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
     <li>
 <p>
- Two Backends 
+ Multiple backends, including 
 </p>
 </li>
 
@@ -120,7 +122,17 @@ The <a class="external" href="http://www.it-c.dk/research/mlkit/"><img src="moin
 
             <li>
 <p>
- native x86 and bytecode 
+ native x86, 
+</p>
+</li>
+            <li>
+<p>
+ bytecode, and 
+</p>
+</li>
+            <li>
+<p>
+ <tt>JavaScript</tt> (see <a class="external" href="http://www.itu.dk/people/mael/smltojs/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SMLtoJs</a>). 
 </p>
 </li>
 
@@ -155,5 +167,5 @@ At the time of writing, MLKit does not support:
 
 <p>
 <hr>
-Last edited on 2006-02-04 11:17:46 by <span title="cs180212.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-09-12 12:08:36 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

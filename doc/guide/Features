@@ -51,7 +51,7 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
@@ -131,7 +131,29 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
+ <a href="RunningOnLinux">Linux</a> (Debian, Fedora) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ <a href="RunningOnSparc">Sparc</a> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
  <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnSolaris">Solaris</a> 
 </p>
 </li>
 
@@ -185,28 +207,6 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
             </ul>
 
 
-        <li class="gap">
-<p>
- <a href="RunningOnSparc">Sparc</a> 
-</p>
-</li>
-
-            <ul>
-
-            <li>
-<p>
- <a href="RunningOnLinux">Linux</a> (Debian) 
-</p>
-</li>
-            <li>
-<p>
- <a href="RunningOnSolaris">Solaris</a> 
-</p>
-</li>
-
-            </ul>
-
-
 
         </ul>
 
@@ -250,7 +250,7 @@ MLton is sufficiently efficient and robust that it can compile large  programs, 
 </li>
     <li class="gap">
 <p>
- Array lengths up to 2<sup>31</sup> - 1, the largest possible twos-complement 32-bit integer.  
+ Support for large array lengths (up to 2<sup>31</sup> - 1 on 32-bit systems; up to 2<sup>63</sup> - 1 on 64-bit systems).  
 </p>
 </li>
     <li class="gap">
@@ -436,5 +436,5 @@ MLton has a facility for saving the entire state of a computation to a file and 
 
 <p>
 <hr>
-Last edited on 2007-08-24 21:51:26 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-12 16:17:49 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

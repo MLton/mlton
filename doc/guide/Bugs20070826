@@ -51,18 +51,298 @@ urchinTracker();
 		font-size:70%;
 		text-align: right;">
       <a href = "Home">Home</a>
-      &nbsp;<a href = "Index">Index</a>
+      &nbsp;<a href = "TitleIndex">Index</a>
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
 Here are the known bugs in <a href="Release20070826">MLton 20070826</a>, listed in reverse chronological order of date reported. <p>
-
+<a id="19"></a> 
 </p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in <tt>IntInf.~&gt;&gt;</tt> that could cause a <tt>glibc</tt> assertion.  Fixed by revisions <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=7083&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">7083</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=7084&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">7084</a>, and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=7085&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">7085</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="18"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the return type of <tt>MLton.Process.reap</tt>.  Thanks to Risto Saarelma for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=7029&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">7029</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="17"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in <tt>MLton.size</tt> and <tt>MLton.share</tt> when tracing the current stack.  Fixed by revisions <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6978&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6978</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6981&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6981</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6988&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6988</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6989&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6989</a>, and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6990&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6990</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="16"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in nested <tt>_export</tt>/<tt>_import</tt> functions.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6919&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6919</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="15"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the name mangling of <tt>_import</tt>-ed functions with the <tt>stdcall</tt> convention.  Thanks to Lars Bergstrom for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6672&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6672</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="14"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in Windows code to page the heap to disk when unable to grow the heap to a desired size.  Thanks to Sami Evangelista for the bug report.  Fixed by revisions <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6600&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6600</a> and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6624&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6624</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="13"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in *NIX code to page the heap to disk when unable to grow the heap to a desired size.  Thanks to Nicolas Bertolotti for the bug report and patch.  Fixed by revisions <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6596&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6596</a> and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6600&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6600</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="12"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Space-safety bug in pass to flatten refs into containing data structure.  Thanks to Daniel Spoonhower for the bug report and initial diagnosis and patch.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6395&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6395</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="11"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the frontend that rejected <tt>op&nbsp;longvid</tt> patterns and expressions.  Thanks to Florian Weimer for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6347&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6347</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="10"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the <a class="external" href="http://mlton.org/basis/imperative-io.html#SIG:IMPERATIVE_IO.canInput:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">IMPERATIVE_IO.canInput</a> function of the <a href="BasisLibrary">Basis Library</a> implementation.  Thanks to Ville Laurikari for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6261&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6261</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="9"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in algebraic simplification of real primitives.  <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.\|@LTE\|:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real&lt;N&gt;.&lt;=(x, x)</a> is <tt>false</tt> when <tt>x</tt> is NaN.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6242&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6242</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="8"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the FFI visible representation of <tt>Int16.int&nbsp;ref</tt> (and references of other primitive types smaller than 32-bits) on big-endian platforms.  Thanks to Dave Herman for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6267&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6267</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="7"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in type inference of flexible records.  This would later cause the compiler to raise the <tt>TypeError</tt> exception.  Thanks to Wesley Terpstra for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6229&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6229</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="6"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in cross-compilation of <tt>gdtoa</tt> library.  Thanks to Wesley Terpstra for the bug report and patch.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6620&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6620</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="5"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in pass to flatten refs into containing data structure.  Thanks to Ruy Ley-Wild for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6191&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6191</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="4"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the handling of weak pointers by the mark-compact garbage collector.  Thanks to Sean McLaughlin for the bug report and Florian Weimer for the initial diagnosis.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6183&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6183</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="3"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the elaboration of structures with signature constraints.  This would later cause the compiler to raise the <tt>TypeError</tt> exception.  Thanks to Vesa Karvonen for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6046&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6046</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="2"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the interaction of <tt>_export</tt>-ed functions and signal handlers.  Thanks to Sean McLaughlin for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=6013&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">6013</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="1"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the implementation of <tt>_export</tt>-ed functions using the <tt>char</tt>  type, leading to a linker error.    Thanks to Katsuhiro Ueno for the bug report.    Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5999&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5999</a>. 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2007-08-26 19:54:52 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-04-19 02:30:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
