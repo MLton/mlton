@@ -12,6 +12,8 @@ fun testRange (start, length) =
         val readChars = BinIO.inputAll inStr
         val _ = BinIO.closeIn inStr
 
+        val _ = OS.FileSys.remove filename
+
         fun testCharF (c, cnt) =
               let
                 val readC = Word8Vector.sub(readChars, cnt)
@@ -19,7 +21,7 @@ fun testRange (start, length) =
                           ()
                         else
                           print ("Error at index: " ^ (Int.toString cnt) ^ ": " ^
-                                 (Word8.toString c) ^ " <> " ^ (Word8.toString readC))
+                                 (Word8.toString c) ^ " <> " ^ (Word8.toString readC) ^ "\n")
               in
                 cnt + 1
               end
