@@ -2,8 +2,6 @@ Here are the changes from version 20070826 to version YYYYMMDD.
 
 Summary:
   + New platforms.
-   o ia64-hpux
-   o powerpc64-aix
   + Compiler.
    o Command-line switches.
     * Added: -mlb-path-var '<name> <value>'
