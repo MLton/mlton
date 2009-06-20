@@ -622,7 +622,7 @@ static void disassemble (Bytecode b, CodeOffset codeOffset) {
 
 void MLton_Bytecode_interpret (Bytecode b, CodeOffset codeOffset) {
         if (DEBUG or DEBUG_BYTECODE) {
-                fprintf (stderr, "MLton_Bytecode_interpret ("FMTPTR", %"PRIuPTR")\n",
+                fprintf (stderr, "MLton_Bytecode_interpret ("FMTPTR", %"PRIxPTR")\n",
                                 (uintptr_t)b,
                                 codeOffset);
                 disassemble (b, codeOffset);
