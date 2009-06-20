@@ -112,7 +112,12 @@ HANDLE fileDesHandle (int fd) {
 C_String_t Cygwin_toFullWindowsPath (NullString8_t path) {
         static char res[MAX_PATH];
 
+#if ((CYGWIN_VERSION_API_MAJOR > 0) || (CYGWIN_VERSION_API_MINOR > 181))
+        cygwin_conv_path (CCP_POSIX_TO_WIN_A | CCP_ABSOLUTE, 
+                          (char*)path, &res[0], MAX_PATH);
+#else
         cygwin_conv_to_full_win32_path ((char*)path, &res[0]);
+#endif
         return (C_String_t)&res[0];
 }
 
