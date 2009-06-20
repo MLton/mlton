@@ -26,6 +26,7 @@
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/sysinfo.h>
 #include <syslog.h>
 #include <termios.h>
 #include <utime.h>
