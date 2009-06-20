@@ -85,7 +85,6 @@ float ldexpf(float x, int exp);
 #endif /* __hppa__ */
 
 #define PRIxPTR "lx"
-#define PRIuPTR "lu"
 
 /* These are incorrectly defined in the system headers. */
 #undef PRIu32

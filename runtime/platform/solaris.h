@@ -48,11 +48,6 @@
 
 #define MLton_Platform_OS_host "solaris"
 
-
-#ifndef PRIuPTR
-#define PRIuPTR "u"
-#endif
-
 #ifndef PRIxPTR
 #define PRIxPTR "x"
 #endif
