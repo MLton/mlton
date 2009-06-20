@@ -149,21 +149,20 @@ for f in *.sml; do
                 fi
         fi
         case `host-os` in
-        cygwin|mingw)
+        cygwin)
                 case "$f" in
-                echo|signals|socket|suspend|textio.2|world*)
+                socket|textio.2)
                         continue
                 ;;
                 esac
         ;;
-        esac
-        case `host-os` in
         mingw)
                 case "$f" in
-                cmdline|command-line|filesys|posix-exit|signals2|unixpath)
+                cmdline|command-line|echo|filesys|posix-exit|signals|signals2|socket|suspend|textio.2|unixpath|world*)
                         continue
                 ;;
                 esac
+        ;;
         esac
         case "$f" in
         serialize)

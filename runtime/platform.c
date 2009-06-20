@@ -7,7 +7,7 @@
 
 #include "platform.h"
 
-Bool MLton_Platform_CygwinUseMmap = FALSE;
+Bool MLton_Platform_CygwinUseMmap = TRUE;
 
 void GC_setCygwinUseMmap (bool b) {
   MLton_Platform_CygwinUseMmap = b;
