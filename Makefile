@@ -204,14 +204,20 @@ runtime:
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
+ifeq ($(OMIT_BYTECODE), yes)
+else
 	$(CP) runtime/bytecode/opcodes "$(LIB)/"
+endif
 	$(CP) runtime/*.h "$(INC)/"
 	mv "$(INC)/c-types.h" "$(LIB)/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
+ifeq ($(OMIT_BYTECODE), yes)
+else
 	$(CP) runtime/bytecode/interpret.h "$(INC)"
+endif
 	for x in "$(LIB)"/"$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script

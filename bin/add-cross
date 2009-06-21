@@ -12,11 +12,8 @@ set -e
 #    Examples of $crossTarget are i386-pc-cygwin and sparc-sun-solaris.
 #
 # 2. <crossArch> specifies the target architecture.
-#    The posibilities are: amd64, hppa, sparc, x86.
 #
 # 3. <crossOS> specifies the target OS.
-#    The possibilities are: aix, cygwin, darwin, freebsd, hpux, linux, mingw,
-#    netbsd, openbsd, solaris.
 #
 # 4. <machine> specifies a remote machine of the target type.  This script
 #    will ssh to $machine to compile the runtime and to compile and run the
@@ -76,15 +73,21 @@ mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
 tmp='/tmp/mlton-add-cross'
 
-( cd "$src" && mmake dirs )
+( cd "$src" &&
+        mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
+                dirs )
 
 ssh $machine "rm -rf $tmp && mkdir $tmp"
 
-echo 'Making runtime.'
-( cd "$src" && tar cf - Makefile basis-library bin include runtime ) |
-        ssh $machine "cd $tmp && tar xf - && cd runtime &&
-                ../bin/mmake COMPILE_FAST=yes CPPFLAGS=\"$CPPFLAGS\" OMIT_BYTECODE=yes LDFLAGS=\"$LDFLAGS\" TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
-		cd .. && make CPPFLAGS=\"$CPPFLAGS\" LDFLAGS=\"$LDFLAGS\" dirs runtime"
+echo "Copying files."
+( cd "$src" && tar cf - --exclude '*.o' --exclude '*.a' Makefile basis-library bin include runtime ) |
+        ssh $machine "cd $tmp && tar xf - &&
+                if [ ! $crossArch == \`./bin/host-arch\` ]; then echo $machine is \`./bin/host-arch\`, not $crossArch; exit 1; fi &&
+                if [ ! $crossOS == \`./bin/host-os\` ]; then echo $machine is \`./bin/host-os\`, not $crossOS; exit 1; fi"
+
+echo "Making runtime on $machine."
+ssh $machine "cd $tmp && ./bin/mmake CPPFLAGS=\"$CPPFLAGS\" LDFLAGS=\"$LDFLAGS\" COMPILE_FAST=yes OMIT_BYTECODE=yes clean dirs runtime"
+
 ssh $machine "cd $tmp/build/lib/self && tar cf - ." |
         ( cd "$lib/$crossTarget" && tar xf - )
 ssh $machine "cd $tmp/basis-library/config/c && tar cf - $crossArch-$crossOS" |
@@ -129,10 +132,10 @@ cygwin)
         osOpts=''
 ;;
 darwin)
-        osOpts='-I/opt/local/include -I/sw/include -L/opt/local/lib -L/sw/lib -lgmp'
+        osOpts='-I/usr/local/include -I/opt/local/include -I/sw/include -L/usr/local/lib -L/opt/local/lib -L/sw/lib'
 ;;
 freebsd)
-        osOpts='-I/usr/local/include -L/usr/local/lib/ -lgmp'
+        osOpts='-I/usr/local/include -L/usr/local/lib/'
 ;;
 hpux)
         osOpts=''
@@ -141,13 +144,13 @@ linux)
         osOpts=''
 ;;
 mingw)
-	libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
+	libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm'
 ;;
 netbsd)
-        osOpts='-I/usr/pkg/include -Wl,-R/usr/pkg/lib -L/usr/pkg/lib/ -lgmp'
+        osOpts='-I/usr/pkg/include -Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'
 ;;
 openbsd)
-        osOpts='-I/usr/local/include -L/usr/local/lib/ -lgmp'
+        osOpts='-I/usr/local/include -L/usr/local/lib/'
 ;;
 solaris)
         osOpts='-lnsl -lsocket -lrt'
