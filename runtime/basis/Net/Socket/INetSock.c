@@ -11,21 +11,21 @@ Socket_INetSock_toAddr (Vector(Word8_t) in_addr, Word16_t port,
   *((socklen_t*)addrlen) = sizeof(struct sockaddr_in);
 }
 
-static uint16_t fromAddr_port;
-static struct in_addr fromAddr_in_addr;
+static uint16_t Socket_INetSock_fromAddr_port;
+static struct in_addr Socket_INetSock_fromAddr_in_addr;
 
 void Socket_INetSock_fromAddr (Vector(Word8_t) addr) {
   const struct sockaddr_in *sa = (const struct sockaddr_in*)addr;
 
   assert(sa->sin_family == AF_INET);
-  fromAddr_port = sa->sin_port;
-  fromAddr_in_addr = sa->sin_addr;
+  Socket_INetSock_fromAddr_port = sa->sin_port;
+  Socket_INetSock_fromAddr_in_addr = sa->sin_addr;
 }
 
 Word16_t Socket_INetSock_getPort (void) {
-  return (Word16_t)fromAddr_port;
+  return (Word16_t)Socket_INetSock_fromAddr_port;
 }
 
 void Socket_INetSock_getInAddr (Array(Word8_t) addr) {
-  *(struct in_addr*)addr = fromAddr_in_addr;
+  *(struct in_addr*)addr = Socket_INetSock_fromAddr_in_addr;
 }

@@ -85,35 +85,35 @@ void Posix_Signal_resetPending (void) {
   GC_setGCSignalPending (&gcState, FALSE);
 }
 
-static sigset_t set;
+static sigset_t Posix_Signal_sigset;
 
 C_Errno_t(C_Int_t) Posix_Signal_sigaddset (C_Signal_t signum) {
-  return sigaddset (&set, signum);
+  return sigaddset (&Posix_Signal_sigset, signum);
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_sigdelset (C_Signal_t signum) {
-  return sigdelset (&set, signum);
+  return sigdelset (&Posix_Signal_sigset, signum);
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_sigemptyset (void) {
-  return sigemptyset (&set);
+  return sigemptyset (&Posix_Signal_sigset);
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_sigfillset (void) {
-  return sigfillset (&set);
+  return sigfillset (&Posix_Signal_sigset);
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_sigismember (C_Signal_t signum) {
-  return sigismember (&set, signum);
+  return sigismember (&Posix_Signal_sigset, signum);
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how) {
-  return sigprocmask (how, &set, &set);
+  return sigprocmask (how, &Posix_Signal_sigset, &Posix_Signal_sigset);
 }
 
 void Posix_Signal_sigsuspend (void) {
   int res;
 
-  res = sigsuspend (&set);
+  res = sigsuspend (&Posix_Signal_sigset);
   assert (-1 == res);
 }

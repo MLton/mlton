@@ -3,33 +3,33 @@
 
 #include "platform.h"
 
-static struct servent *servent;
+static struct servent *NetHostDB_servent;
 
 C_String_t NetServDB_getEntryName(void) {
-  return (C_String_t)(servent->s_name);
+  return (C_String_t)(NetHostDB_servent->s_name);
 }
 
 C_Int_t NetServDB_getEntryAliasesNum(void) {
   int num = 0;
-  while (servent->s_aliases[num] != NULL) num++;
+  while (NetHostDB_servent->s_aliases[num] != NULL) num++;
   return num;
 }
 
 C_String_t NetServDB_getEntryAliasesN(C_Int_t n) {
-  return (C_String_t)(servent->s_aliases[n]);
+  return (C_String_t)(NetHostDB_servent->s_aliases[n]);
 }
 
 C_Int_t NetServDB_getEntryPort(void) {
-  return servent->s_port;
+  return NetHostDB_servent->s_port;
 }
 
 C_String_t NetServDB_getEntryProto(void) {
-  return (C_String_t)(servent->s_proto);
+  return (C_String_t)(NetHostDB_servent->s_proto);
 }
 
 C_Int_t NetServDB_getByName(NullString8_t name, NullString8_t proto) {
-  servent = getservbyname((const char*)name, (const char*)proto);
-  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
+  NetHostDB_servent = getservbyname((const char*)name, (const char*)proto);
+  return (C_Int_t)(NetHostDB_servent != NULL and NetHostDB_servent->s_name != NULL);
 }
 
 C_Int_t NetServDB_getByNameNull(NullString8_t name) {
@@ -37,8 +37,8 @@ C_Int_t NetServDB_getByNameNull(NullString8_t name) {
 }
 
 C_Int_t NetServDB_getByPort(C_Int_t port, NullString8_t proto) {
-  servent = getservbyport(port, (const char*)proto);
-  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
+  NetHostDB_servent = getservbyport(port, (const char*)proto);
+  return (C_Int_t)(NetHostDB_servent != NULL and NetHostDB_servent->s_name != NULL);
 }
 
 C_Int_t NetServDB_getByPortNull(C_Int_t port) {
