@@ -4,9 +4,11 @@ programming language.  MLton has the following features.
   + Portability.  
    Runs on the following platforms.
    o AMD64: FreeBSD, Linux (Debian, Fedora, ...).
+   o IA64: HPUX (11.11 and above).
    o HPPA: HPUX (11.11 and above), Linux (Debian).
    o PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian,
       Fedora, ...).
+   o PowerPC64: AIX (5.2 and above).
    o Sparc: Linux (Debian), Solaris (8 and above).
    o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian,
       Fedora, ...), MinGW/Windows, NetBSD, OpenBSD.
@@ -37,9 +39,10 @@ programming language.  MLton has the following features.
    o A simple and fast C FFI that supports calling from SML to C and 
       from C to SML.
    o ML Basis system for programming in the very large.
-   o Libraries for C pointers, continuations, interval timers, random
-      numbers, resource limits, resource usage, signal handlers,
-      system logging, threads, and heap save and restore.
+   o Libraries for continuations, finalization, interval timers,
+      random numbers, resource limits, resource usage, signal
+      handlers, object size, system logging, threads, weak pointers,
+      and world save and restore.
 
 For more information, go to the MLton home page. 
 
@@ -56,9 +59,8 @@ doc directory contents:
         cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
         cmcat/                  a utility for producing whole programs in SML/NJ
         examples/               example SML programs
-	guide/			HTML MLton guide (copy of the MLton wiki)
+        guide/                  HTML MLton guide (copy of the MLton wiki)
         license/                license information
-        mllex.ps.gz             user guide for mllex lexer generator
-	mlton-guide.pdf		PDF version of MLton guide
-        mlyacc.ps.gz            user guide for mlyacc parser generator
-
+        mllex.pd                user guide for mllex lexer generator
+        mlton-guide.pdf         PDF version of MLton guide
+        mlyacc.pdf              user guide for mlyacc parser generator
