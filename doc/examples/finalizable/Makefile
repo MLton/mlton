@@ -11,7 +11,7 @@ mlton := mlton -default-ann 'allowFFI true'
 
 all:
 	$(mlton) finalizable.sml cons.c
-	finalizable
+	./finalizable
 
 .PHONY: clean
 clean:
