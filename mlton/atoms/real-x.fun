@@ -255,18 +255,20 @@ in
 end
 
 local
-   fun doit (R {bits, toBytes, subVec, ...}) x =
-       WordX.fromIntInf
+   fun doit (R {bits, toBytes, subVec, ...}) x = let
+   in
+       (SOME o WordX.fromIntInf)
           (P.LargeWord.toLargeInt (subVec (toBytes x, 0)),
            WordX.WordSize.fromBits bits)
+   end handle _ => NONE
 in
    fun castToWord x =
        if disableCF ()
           then NONE
        else
-          SOME (case x of
-                   Real32 x => doit r32 x
-                 | Real64 x => doit r64 x)
+          (case x of
+              Real32 x => doit r32 x
+            | Real64 x => doit r64 x)
 end
 
 local
@@ -275,7 +277,7 @@ local
    in
       update (a, 0, P.LargeWord.fromLargeInt (WordX.toIntInf w))
     ; SOME (tag (subArr (a, 0)))
-   end
+   end handle _ => NONE
 in
    fun castFromWord w =
       if disableCF () then
