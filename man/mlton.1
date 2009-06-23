@@ -1,4 +1,4 @@
-.TH mlton 1 "June 18, 2009"
+.TH mlton 1 "June 23, 2009"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -34,7 +34,7 @@ which intermediate files are saved and can stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the generated files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
-The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, \fB.S\fP, and \fB.sml\fP.
+The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, \fB.s\fP, and \fB.sml\fP.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.
@@ -124,7 +124,7 @@ approximate measure of code size of a procedure.  The default is 320.
 Save intermediate files.  If no \fB-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
-\fBg\fP    generated \fB.S\fP and \fB.c\fP files passed to gcc and the assembler
+\fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to gcc and the assembler
 .br
 \fBo\fP    object (\fB.o\fP) files
 .in -.5i
@@ -232,14 +232,14 @@ Specify when to stop.
 .in +.5i
 \fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
 .br
-\fBg\fP    generated \fB.S\fP and \fB.c\fP files
+\fBg\fP    generated \fB.c\fP and \fB.s\fP files
 .br
 \fBo\fP    object (\fB.o\fP) files
 .br
 \fBtc\fP   after type checking
 .in -.5i
 If you compile \fB-stop g\fP or \fB-stop o\fP, you can resume
-compilation by running \fBMLton\fP on the generated \fB.c\fP and \fB.S\fP
+compilation by running \fBMLton\fP on the generated \fB.c\fP and \fB.s\fP
 or \fB.o\fP files.
 
 .TP
