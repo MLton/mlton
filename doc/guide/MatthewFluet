@@ -171,6 +171,11 @@ Misc. and underspecified TODOs:
 
     <li>
 <p>
+ <tt>MST_DONTWAIT</tt> isn't Posix 
+</p>
+</li>
+    <li>
+<p>
  coordinate w/ Dan Spoonhower and Lukasz Ziarek and Armand Navabi on multi-threaded 
 </p>
 </li>
@@ -477,6 +482,38 @@ Misc. and underspecified TODOs:
  <a href="http://mlton.org/pipermail/mlton-user/2009-June/001542.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-June/001542.html</a> 
 </p>
 </li>
+
+            </ul>
+
+
+    <li>
+<p>
+ eliminate <tt>-build-constants</tt> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ all <tt>_const</tt>s are known by <tt>runtime/gen/basis-ffi.def</tt> 
+</p>
+</li>
+            <li>
+<p>
+ generate <tt>gen-constants.c</tt> from <tt>basis-ffi.def</tt> 
+</p>
+</li>
+            <li>
+<p>
+ generate <tt>constants</tt> from <tt>gen-constants.c</tt> and <tt>libmlton.a</tt> 
+</p>
+</li>
+            <li>
+<p>
+ similar to <tt>gen-sizes.c</tt> and <tt>sizes</tt> 
+</p>
+</li>
 </ul>
 
 </ul>
@@ -487,5 +524,5 @@ Misc. and underspecified TODOs:
 
 <p>
 <hr>
-Last edited on 2009-06-19 14:45:02 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-22 01:40:55 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

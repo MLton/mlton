@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.mlb</tt>, <tt>.o</tt>, <tt>.S</tt>, and <tt>.sml</tt>. <p>
+MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.mlb</tt>, <tt>.o</tt>, <tt>.s</tt>, and <tt>.sml</tt>. <p>
 With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a number of choices (e.g. <tt>{true|false}</tt>), the first value listed is the default. 
 </p>
 <h2 id="head-6bf5da9c080bee3a8142586c412aa39971137eee">Options</h2>
@@ -137,7 +137,7 @@ Write C prototypes to <em>file</em> for all of the functions in the  program <a 
 </li>
     <li class="gap">
 <p>
- <tt>-ieee-fp&nbsp;</tt>{false|true}  <br>
+ <tt>-ieee-fp&nbsp;{false|true}</tt>  <br>
 Cause the native code generator to be pedantic about following the  IEEE floating point standard.  By default, it is not, because of  the performance cost.  This only has an effect with   <tt>-codegen&nbsp;x86</tt>.  
 </p>
 </li>
@@ -157,7 +157,7 @@ Save intermediate files.  If no <tt>-keep</tt> argument is given, then  only the
 <td>
  <tt>g</tt> </td>
 <td>
- generated <tt>.S</tt> and <tt>.c</tt> files passed to gcc and the assembler </td>
+ generated <tt>.c</tt> and <tt>.s</tt> files passed to gcc and the assembler </td>
 </tr>
  <tr>
 <td>
@@ -266,7 +266,7 @@ Specify when to stop.
 <td>
  <tt>g</tt> </td>
 <td>
- generated <tt>.S</tt> and <tt>.c</tt> files </td>
+ generated <tt>.c</tt> and <tt>.s</tt> files </td>
 </tr>
  <tr>
 <td>
@@ -285,7 +285,7 @@ after type checking </td>
 </table>
 </div>
 <p>
- If you compile with <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume  compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>  or <tt>.o</tt> files.  
+ If you compile with <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume  compilation by running MLton on the generated <tt>.c</tt> and <tt>.s</tt>  or <tt>.o</tt> files.  
 </p>
 </li>
     <li class="gap">
@@ -355,5 +355,5 @@ How verbose to be about what passes are running.  The default is  <tt>0</tt>.
 
 <p>
 <hr>
-Last edited on 2009-06-05 16:16:22 by <span title="adsl-99-131-135-212.dsl.emhril.sbcglobal.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-23 16:01:50 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

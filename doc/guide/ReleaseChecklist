@@ -407,11 +407,6 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
  Debian: ??? 
 </p>
 </li>
-    <li>
-<p>
- Red Hat: Fedora 8 will have MLton packaged soon after the release, at least for 32-bit arches. Fedora 7 and 6 will likely follow. 
-</p>
-</li>
 
     </ul>
 
@@ -422,7 +417,7 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
     <li>
 <p>
- <tt>basis</tt> gets a snapshot of <a class="external" href="http://standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://standardml.org/Basis</a>. 
+ <tt>basis</tt> gets a snapshot of <a class="external" href="http://standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://standardml.org/Basis</a> (if any relevant changes). 
 </p>
 </li>
     <li>
@@ -445,7 +440,22 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 </li>
         <li>
 <p>
- copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt>. 
+ Copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt>. 
+</p>
+</li>
+        <li>
+<p>
+ Upload <tt>guide/guide-YYYYMMDD.tgz</tt> and unpack. 
+</p>
+</li>
+        <li>
+<p>
+ Add <tt>&lt;Directory&nbsp;/var/www/html/mlton.org/guide/YYYYMMDD&gt;&nbsp;DefaultType&nbsp;text/html&nbsp;&lt;/Directory&gt;</tt> to <tt>/etc/apache2/sites-available/mlton.org</tt> 
+</p>
+</li>
+        <li>
+<p>
+ Restart <tt>apache2</tt> service. 
 </p>
 </li>
 
@@ -540,5 +550,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2007-08-30 18:30:38 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-22 17:44:32 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

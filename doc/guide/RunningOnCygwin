@@ -69,12 +69,7 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
 </li>
     <li class="gap">
 <p>
- Cygwin's <tt>mmap</tt> emulation is less than perfect.  Sometimes it  interacts badly with <tt>Posix.Process.fork</tt>.  For idiomatic uses of  <tt>fork</tt> plus <tt>exec</tt>, you can instead use the  <tt>MLton.Process.spawn</tt> family of functions, which work on all our  platforms. 
-</p>
-</li>
-    <li class="gap">
-<p>
- Cygwin's <tt>mmap</tt> emulation does not make available as much  contiguous virtual address space as using the Windows  <tt>VirtualAlloc</tt> function.  Earlier versions of MLton used  <tt>VirtualAlloc</tt> instead of <tt>mmap</tt>, but that no longer works. 
+ Cygwin's <tt>mmap</tt> emulation is less than perfect.  Sometimes it  interacts badly with <tt>Posix.Process.fork</tt>. 
 </p>
 </li>
 
@@ -98,5 +93,5 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
 
 <p>
 <hr>
-Last edited on 2006-07-20 19:36:31 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2009-06-23 14:48:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

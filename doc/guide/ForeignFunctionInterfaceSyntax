@@ -134,6 +134,9 @@ Denotes the address of the C function or variable.
     </ul>
 
 
+<p>
+See <a href="MLtonPointer"> MLtonPointer</a> for functions that manipulate C pointers. 
+</p>
 <h2 id="head-3f84ef531f9db996694ad09a8fdddbca1440577e">Symbol</h2>
 
 <pre>_symbol "CVariableName" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
@@ -289,5 +292,5 @@ See <a href="CallingFromCToSML"> Calling from C to SML</a> for more details.
 
 <p>
 <hr>
-Last edited on 2009-06-10 20:08:16 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-22 16:17:40 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

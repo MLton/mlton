@@ -82,7 +82,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
- <a href="RunningOnLinux">Linux</a> (Debian, Red Hat, ...) 
+ <a href="RunningOnLinux">Linux</a> (Debian, Fedora, ...) 
 </p>
 </li>
 
@@ -99,12 +99,29 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- <a href="RunningOnHPUX">HPUX</a> (11.00 and above) 
+ <a href="RunningOnHPUX">HPUX</a> (11.11 and above) 
 </p>
 </li>
             <li>
 <p>
  <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ <a href="RunningOnIA64">IA64</a>: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnHPUX">HPUX</a> (11.11 and above) 
 </p>
 </li>
 
@@ -121,7 +138,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- <a href="RunningOnAIX">AIX</a> (5.1 and above) 
+ <a href="RunningOnAIX">AIX</a> (5.2 and above) 
 </p>
 </li>
             <li>
@@ -132,6 +149,23 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
             <li>
 <p>
  <a href="RunningOnLinux">Linux</a> (Debian, Fedora) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ <a href="RunningOnPowerPC64">PowerPC64</a>: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnAIX">AIX</a> (5.2 and above) 
 </p>
 </li>
 
@@ -185,7 +219,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
- <a href="RunningOnLinux">Linux</a> (Debian, Red Hat, ...) 
+ <a href="RunningOnLinux">Linux</a> (Debian, Fedora, ...) 
 </p>
 </li>
             <li>
@@ -436,5 +470,5 @@ MLton has a facility for saving the entire state of a computation to a file and 
 
 <p>
 <hr>
-Last edited on 2009-06-12 16:17:49 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-06-22 16:02:38 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
