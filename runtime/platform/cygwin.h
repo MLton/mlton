@@ -47,6 +47,8 @@
 #define MSG_DONTWAIT 0x1000000
 #endif
 
+#define SPAWN_MODE _P_NOWAIT
+
 /* Cygwin does not handle IPv6. */
 #ifndef AF_INET6
 

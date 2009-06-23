@@ -62,10 +62,6 @@
 #define EXECVE execve
 #endif
 
-#ifndef SPAWN_MODE
-#define SPAWN_MODE 0
-#endif
-
 
 /* Because HAS_FPCLASSIFY is unset, the runtime will provide it's own
  * implementation. It doesn't matter much what the values are, because
