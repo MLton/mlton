@@ -202,8 +202,10 @@ PRIVATE extern Bool MLton_Platform_CygwinUseMmap;
 
 #if (defined (__MSVCRT__))
 PRIVATE void MLton_initSockets (void);
+PRIVATE void MLton_fixSocketErrno (void);
 #else
 static inline void MLton_initSockets (void) {}
+static inline void MLton_fixSocketErrno (void) {}
 #endif
 
 #if HAS_MSG_DONTWAIT

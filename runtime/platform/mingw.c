@@ -1173,6 +1173,96 @@ void MLton_initSockets (void) {
         }
 }
 
+/* This table was constructed with help of 
+ *   http://msdn.microsoft.com/en-us/library/ms740668(VS.85).aspx#winsock.wsaenotsock_2
+ *   man errno(3)
+ */
+void MLton_fixSocketErrno (void) {
+        int status = WSAGetLastError ();
+        
+        switch (status) {
+        case 0:                  errno = 0;               break;
+        case WSAEINTR:           errno = EINTR;           break;
+        case WSAEBADF:           errno = EBADF;           break;
+        case WSAEACCES:          errno = EACCES;          break;
+        case WSAEFAULT:          errno = EFAULT;          break;
+        case WSAEINVAL:          errno = EINVAL;          break;
+        case WSAEMFILE:          errno = EMFILE;          break;
+        case WSAEWOULDBLOCK:     errno = EWOULDBLOCK;     break;
+        case WSAEINPROGRESS:     errno = EINPROGRESS;     break;
+        case WSAEALREADY:        errno = EALREADY;        break;
+        case WSAENOTSOCK:        errno = ENOTSOCK;        break;
+        case WSAEDESTADDRREQ:    errno = EDESTADDRREQ;    break;
+        case WSAEMSGSIZE:        errno = EMSGSIZE;        break;
+        case WSAEPROTOTYPE:      errno = EPROTOTYPE;      break;
+        case WSAENOPROTOOPT:     errno = ENOPROTOOPT;     break;
+        case WSAEPROTONOSUPPORT: errno = EPROTONOSUPPORT; break;
+        case WSAESOCKTNOSUPPORT: errno = ESOCKTNOSUPPORT; break;
+        case WSAEOPNOTSUPP:      errno = EOPNOTSUPP;      break;
+        case WSAEPFNOSUPPORT:    errno = EPFNOSUPPORT;    break;
+        case WSAEAFNOSUPPORT:    errno = EAFNOSUPPORT;    break;
+        case WSAEADDRINUSE:      errno = EADDRINUSE;      break;
+        case WSAEADDRNOTAVAIL:   errno = EADDRNOTAVAIL;   break;
+        case WSAENETDOWN:        errno = ENETDOWN;        break;
+        case WSAENETUNREACH:     errno = ENETUNREACH;     break;
+        case WSAENETRESET:       errno = ENETRESET;       break;
+        case WSAECONNABORTED:    errno = ECONNABORTED;    break;
+        case WSAECONNRESET:      errno = ECONNRESET;      break;
+        case WSAENOBUFS:         errno = ENOBUFS;         break;
+        case WSAEISCONN:         errno = EISCONN;         break;
+        case WSAENOTCONN:        errno = ENOTCONN;        break;
+        case WSAESHUTDOWN:       errno = ESHUTDOWN;       break;
+        case WSAETIMEDOUT:       errno = ETIMEDOUT;       break;
+        case WSAECONNREFUSED:    errno = ECONNREFUSED;    break;
+        case WSAELOOP:           errno = ELOOP;           break;
+        case WSAENAMETOOLONG:    errno = ENAMETOOLONG;    break;
+        case WSAEHOSTDOWN:       errno = EHOSTDOWN;       break;
+        case WSAEHOSTUNREACH:    errno = EHOSTUNREACH;    break;
+        case WSAENOTEMPTY:       errno = ENOTEMPTY;       break;
+        case WSAEDQUOT:          errno = EDQUOT;          break;
+        case WSAESTALE:          errno = ESTALE;          break;
+        case WSAEREMOTE:         errno = EREMOTE;         break;
+        /* These codes appear to have a matching name, but the manual
+         * descriptions of what the error codes mean seem to differ
+         */
+        case WSAEUSERS:          errno = EUSERS;          break;
+        case WSAECANCELLED:      errno = ECANCELED;       break;
+        case WSA_E_CANCELLED:    errno = ECANCELED;       break;
+        /* These codes have no matching code in the errno(3) man page. */
+        case WSAEPROCLIM:        errno = EBUSY;           break;
+        case WSAETOOMANYREFS:    errno = ENOMEM;          break;
+        case WSAEDISCON:         errno = ESHUTDOWN;       break;
+        case WSA_E_NO_MORE:
+        case WSAENOMORE:
+        case WSASYSCALLFAILURE:  errno = EIO;             break;
+        /* These codes are returned from the OS and subject to chage */
+        // WSA_INVALID_HANDLE
+        // WSA_NOT_ENOUGH_MEMORY
+        // WSA_INVALID_PARAMETER
+        // WSA_OPERATION_ABORTED
+        // WSA_IO_INCOMPLETE
+        // WSA_IO_PENDING
+        /* These codes mean some sort of windows specific fatal error */
+        case WSASYSNOTREADY: 
+        case WSAVERNOTSUPPORTED:
+        case WSANOTINITIALISED:
+        case WSAEINVALIDPROCTABLE:
+        case WSAEINVALIDPROVIDER:
+        case WSAEPROVIDERFAILEDINIT:
+        case WSASERVICE_NOT_FOUND:
+        case WSATYPE_NOT_FOUND:
+                                 die("Problem loading winsock");
+        case WSAEREFUSED:
+        case WSAHOST_NOT_FOUND:
+        case WSATRY_AGAIN:
+        case WSANO_RECOVERY:
+        case WSANO_DATA:
+                                 die("Strange winsock specific status code");
+        default:
+                                 die("Unknown winsock status code");
+        }
+}
+
 /* ------------------------------------------------- */
 /*                      Syslog                       */
 /* ------------------------------------------------- */
