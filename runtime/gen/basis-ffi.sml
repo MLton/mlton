@@ -65,7 +65,9 @@ val setRoundingMode = _import "IEEEReal_setRoundingMode" private : C_Int.t -> C_
 end
 structure MinGW = 
 struct
+val clearNonBlock = _import "MinGW_clearNonBlock" private : C_Fd.t -> unit;
 val getTempPath = _import "MinGW_getTempPath" private : C_Size.t * (Char8.t) array -> C_Size.t;
+val setNonBlock = _import "MinGW_setNonBlock" private : C_Fd.t -> unit;
 end
 structure MLton = 
 struct

@@ -37,7 +37,7 @@
 #define HAS_FPCLASSIFY FALSE
 #define HAS_FPCLASSIFY32 FALSE
 #define HAS_FPCLASSIFY64 FALSE
-#define HAS_MSG_DONTWAIT TRUE
+#define HAS_MSG_DONTWAIT FALSE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SIGNBIT TRUE
@@ -1539,7 +1539,7 @@ MLTON_WRAPPER int MLton_tcsetpgrp (int fd, pid_t pgrpid);
 #endif
 
 #ifndef MSG_DONTWAIT
-#define MSG_DONTWAIT 0
+#define MSG_DONTWAIT 0x1000000
 #endif
 
 #ifndef MSG_EOR

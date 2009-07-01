@@ -391,8 +391,10 @@ fun nonBlock (errVal, f, post, no) =
 
 local
    structure PIO = PrimitiveFFI.Posix.IO
-in
-   fun withNonBlock (s, f: unit -> 'a) =
+   structure OS = Primitive.MLton.Platform.OS
+   structure MinGW = PrimitiveFFI.MinGW
+   
+   fun withNonBlockNormal (s, f: unit -> 'a) =
       let
          val fd = Sock.toRep s
          val flags = 
@@ -407,6 +409,20 @@ in
          (f, fn () =>
           Syscall.simpleRestart (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
+   
+   fun withNonBlockMinGW (s, f: unit -> 'a) =
+      let
+         val fd = Sock.toRep s
+         val () = MinGW.setNonBlock fd
+      in
+         DynamicWind.wind
+         (f, fn () => MinGW.clearNonBlock fd)
+      end
+in
+   val withNonBlock = fn x =>
+      case OS.host of
+         OS.MinGW => withNonBlockMinGW x
+       | _ => withNonBlockNormal x
 end
 
 fun connect (s, SA sa) =

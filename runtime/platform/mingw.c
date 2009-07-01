@@ -1263,6 +1263,34 @@ void MLton_fixSocketErrno (void) {
         }
 }
 
+int MLton_recv(int s, void *buf, int len, int flags) {
+        int ret, status = 0;
+        
+        if (flags & MSG_DONTWAIT) MinGW_setNonBlock(s);
+        ret = recv(s, buf, len, flags & ~MSG_DONTWAIT);
+        
+        /* We need to preserve the error status across non-blocking call */
+        if (ret == -1) status = WSAGetLastError();
+        if (flags & MSG_DONTWAIT) MinGW_clearNonBlock(s);
+        if (ret == -1) WSASetLastError(status);
+        
+        return ret;
+}
+
+int MLton_recvfrom(int s, void *buf, int len, int flags, void *from,
+                   socklen_t *fromlen) {
+        int ret, status = 0;
+        
+        if (flags & MSG_DONTWAIT) MinGW_setNonBlock(s);
+        ret = recvfrom(s, buf, len, flags & ~MSG_DONTWAIT, from, fromlen);
+        
+        /* We need to preserve the error status across non-blocking call */
+        if (ret == -1) status = WSAGetLastError();
+        if (flags & MSG_DONTWAIT) MinGW_clearNonBlock(s);
+        if (ret == -1) WSASetLastError(status);
+        
+        return ret;
+}
 /* ------------------------------------------------- */
 /*                      Syslog                       */
 /* ------------------------------------------------- */
@@ -1312,4 +1340,14 @@ void syslog(int priority, __attribute__ ((unused)) const char* fmt, const char* 
 
 C_Size_t MinGW_getTempPath(C_Size_t buf_size, Array(Char8_t) buf) {
         return GetTempPath(buf_size, (char*)buf);
+}
+
+void MinGW_setNonBlock(C_Fd_t fd) {
+        unsigned long yes = 1;
+        ioctlsocket(fd, FIONBIO, &yes);
+}
+
+void MinGW_clearNonBlock(C_Fd_t fd) {
+        unsigned long no = 0;
+        ioctlsocket(fd, FIONBIO, &no);
 }
