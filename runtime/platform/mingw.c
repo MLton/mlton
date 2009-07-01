@@ -1263,6 +1263,29 @@ void MLton_fixSocketErrno (void) {
         }
 }
 
+/* The default strerror() does not know extended error codes. */
+char *MLton_strerror(int code) {
+        static char buffer[512];
+        
+        /* Windows specific strerror */
+        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 
+                          0,      /* Not used for FROM_SYSTEM */
+                          code,   /* The status code to look up */
+                          0,      /* Use the default language */
+                          buffer, /* Write the message to here */
+                          sizeof(buffer)-1,
+                          0) == 0) {
+                strcpy(buffer, "Unknown error");
+        }
+        
+        /* Cut message at EOL */
+        for (int i = 0; buffer[i]; ++i)
+                if (buffer[i] == '\n' || buffer[i] == '\r')
+                        buffer[i] = 0;
+        
+        return buffer;
+}
+
 int MLton_recv(int s, void *buf, int len, int flags) {
         int ret, status = 0;
         

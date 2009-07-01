@@ -364,6 +364,12 @@ MLTON_WRAPPER int MLton_poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 /*                    Posix.Error                    */
 /* ------------------------------------------------- */
 
+/* We cannot yet replace strerror at the time util.c is built */
+#ifndef MLTON_UTIL
+MLTON_WRAPPER char *MLton_strerror(int code);
+#undef strerror
+#define strerror MLton_strerror
+#endif
 
 /* If MinGW doesn't (currently) define an error status we need, but winsock
  * does, then default to using the winsock status. They will not conflict.
