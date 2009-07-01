@@ -93,5 +93,5 @@ uintmax_t GC_physMem (void) {
         if (sysinfo(&si) < 0)
                 diee ("GC_physMem error: sysinfo failed");
         
-        return si.totalram;
+        return (uintmax_t)si.totalram * (uintmax_t)si.mem_unit;
 }
