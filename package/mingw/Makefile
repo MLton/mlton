@@ -9,7 +9,7 @@ MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -cultures:en-us -ext WixUIExtension -out $@ $^
 
 clean:
-	rm -rf staging MLton.msi *.wixobj *.exe $(PKG_WXS) $(PKG_LST) files.wxs dirs.wxs
+	rm -rf staging MLton.msi *.wixpdb *.wixobj *.exe $(PKG_WXS) $(PKG_LST) files.wxs dirs.wxs
 
 %.wixobj:	%.wxs
 	candle -ext WixUIExtension $<

@@ -112,7 +112,7 @@ constants:
 	"$(BIN)/mlton" -build-constants true >tmp.c
 	"$(BIN)/mlton" -output tmp tmp.c
 	./tmp >"$(LIB)/$(TARGET)/constants"
-	rm -f tmp tmp.c
+	rm -f tmp tmp.exe tmp.c
 
 .PHONY: debugged
 debugged:
