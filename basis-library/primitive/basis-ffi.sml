@@ -81,7 +81,6 @@ val VIRTUAL = _const "MLton_Itimer_VIRTUAL" : C_Int.t;
 end
 structure Process = 
 struct
-val cwait = _import "MLton_Process_cwait" private : C_PId.t * (C_Status.t) ref -> (C_PId.t) C_Errno.t;
 val spawne = _import "MLton_Process_spawne" private : NullString8.t * (NullString8.t) array * (NullString8.t) array -> (C_PId.t) C_Errno.t;
 val spawnp = _import "MLton_Process_spawnp" private : NullString8.t * (NullString8.t) array -> (C_PId.t) C_Errno.t;
 end

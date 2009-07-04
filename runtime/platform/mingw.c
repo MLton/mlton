@@ -847,11 +847,13 @@ int fork (void) {
         die ("fork not implemented");
 }
 
-
-__attribute__ ((noreturn))
-int kill (__attribute__ ((unused)) pid_t pid,
-          __attribute__ ((unused)) int sig) {
-        die ("kill not implemented");
+int kill (pid_t pid, int sig) {
+        HANDLE h = (HANDLE)pid;
+        unless (TerminateProcess (h, SIGNALLED_BIT | sig)) {
+                errno = ECHILD;
+                return -1;
+        }
+        return 0;
 }
 
 int nanosleep (const struct timespec *req, struct timespec *rem) {
@@ -876,11 +878,31 @@ pid_t wait (__attribute__ ((unused)) int *status) {
         die ("wait not implemented");
 }
 
-__attribute__ ((noreturn))
-pid_t waitpid (__attribute__ ((unused)) pid_t pid,
-               __attribute__ ((unused)) int *status,
-               __attribute__ ((unused)) int options) {
-        die ("waitpid not implemented");
+pid_t waitpid (pid_t pid, int *status, int options) {
+        HANDLE h;
+        DWORD delay;
+
+        /* pid <= 0 is handled in stub-mingw.sml */
+        h = (HANDLE)pid;
+
+        delay = ((options & WNOHANG) != 0) ? 0 : INFINITE;
+
+        switch (WaitForSingleObject (h, delay)) {
+        case WAIT_OBJECT_0: /* process has exited */
+                break;
+        case WAIT_TIMEOUT:  /* process has not exited */
+                return 0;
+        default:            /* some sort of error */
+                errno = ECHILD;
+                return -1;
+        }
+
+        unless (GetExitCodeProcess (h, (DWORD*)status)) {
+                errno = ECHILD;
+                return -1;
+        }
+
+        return pid;
 }
 
 /* ------------------------------------------------- */
@@ -1128,18 +1150,6 @@ __attribute__ ((noreturn))
 int tcsetpgrp (__attribute__ ((unused)) int fd,
                __attribute__ ((unused)) pid_t pgrpid) {
         die ("tcsetpgrp not implemented");
-}
-
-/* ------------------------------------------------- */
-/*                      Process                      */
-/* ------------------------------------------------- */
-
-C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
-        HANDLE h;
-
-        h = (HANDLE)pid;
-        /* -1 on error, the casts here are due to bad types on both sides */
-        return _cwait ((int*)status, (_pid_t)h, 0);
 }
 
 /* ------------------------------------------------- */

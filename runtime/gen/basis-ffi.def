@@ -42,7 +42,6 @@ MLton.Itimer.PROF = _const : C_Int.t
 MLton.Itimer.REAL = _const : C_Int.t
 MLton.Itimer.VIRTUAL = _const : C_Int.t
 MLton.Itimer.set = _import PRIVATE : C_Int.t * C_Time.t * C_SUSeconds.t * C_Time.t * C_SUSeconds.t -> C_Int.t C_Errno.t
-MLton.Process.cwait = _import PRIVATE : C_PId.t * C_Status.t ref -> C_PId.t C_Errno.t
 MLton.Process.spawne = _import PRIVATE : NullString8.t * NullString8.t array * NullString8.t array -> C_PId.t C_Errno.t
 MLton.Process.spawnp = _import PRIVATE : NullString8.t * NullString8.t array -> C_PId.t C_Errno.t
 MLton.Rlimit.AS = _const : C_Int.t

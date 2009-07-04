@@ -102,9 +102,6 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          val status: C_Status.t ref = ref (C_Status.fromInt 0)
          fun wait (wa, status, flags) =
             let
-               val useCwait = 
-                  Primitive.MLton.Platform.OS.host = Primitive.MLton.Platform.OS.MinGW
-                  andalso case wa of W_CHILD _ => true | _ => false
                val pid =
                   case wa of
                      W_ANY_CHILD => C_PId.castFromFixedInt ~1
@@ -116,10 +113,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                (PId.fromRep o SysCall.simpleResultRestart')
                ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 let
-                   val pid = 
-                      if useCwait 
-                         then PrimitiveFFI.MLton.Process.cwait (pid, status)
-                      else Prim.waitpid (pid, status, flags)
+                   val pid = Prim.waitpid (pid, status, flags)
                 in
                    pid
                 end)

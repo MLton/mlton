@@ -89,11 +89,12 @@ in
 
                      val exece = stub ("exece", exece)
                      val execp = stub ("execp", execp)
-                     (*val exit = stub ("exit", exit)*)
                      val fork = stub ("fork", fork)
-                     val kill = stub ("kill", kill)
                      val pause = stub ("pause", pause)
-                     val waitpid = stub ("waitpid", waitpid)
+                     val waitpid = fn (args as (pid, _, _)) =>
+                        if pid <= 0 
+                        then stub ("waitpid", waitpid) args
+                        else waitpid args
                   end
 
                structure SysDB =

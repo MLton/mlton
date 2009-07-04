@@ -52,7 +52,6 @@ PRIVATE extern const C_Int_t MLton_Itimer_PROF;
 PRIVATE extern const C_Int_t MLton_Itimer_REAL;
 PRIVATE C_Errno_t(C_Int_t) MLton_Itimer_set(C_Int_t,C_Time_t,C_SUSeconds_t,C_Time_t,C_SUSeconds_t);
 PRIVATE extern const C_Int_t MLton_Itimer_VIRTUAL;
-PRIVATE C_Errno_t(C_PId_t) MLton_Process_cwait(C_PId_t,Ref(C_Status_t));
 PRIVATE C_Errno_t(C_PId_t) MLton_Process_spawne(NullString8_t,Array(NullString8_t),Array(NullString8_t));
 PRIVATE C_Errno_t(C_PId_t) MLton_Process_spawnp(NullString8_t,Array(NullString8_t));
 PRIVATE extern const C_Int_t MLton_Rlimit_AS;

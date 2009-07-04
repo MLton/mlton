@@ -831,14 +831,15 @@ MLTON_WRAPPER int MLton_uname (struct utsname *buf);
 #define EXECVP(file, args)  execvp (file, (const char* const*) args)
 #define SPAWN_MODE _P_NOWAIT
 
-/* A status looks like:
-      <2 bytes info> <2 bytes code>
-
-      <code> == 0, child has exited, info is the exit value
-      <code> == 1..7e, child has exited, info is the signal number.
-      <code> == 7f, child has stopped, info was the signal number.
-      <code> == 80, there was a core dump.
-*/
+/* Windows exit status comes from:
+ *  1. ExitProcess (used by return from main and exit)
+ *  2. TerminateProcess (used by a remote process to 'kill')
+ *
+ * Windows does NOT differentiate between these two cases.
+ * The waitpid API expects us to be able to tell the difference,
+ * so we will emulate this difference by setting high 31st bit 
+ * whenever we 'kill' a process.
+ */
 
 #ifndef WNOHANG
 #define WNOHANG 1
@@ -848,24 +849,26 @@ MLTON_WRAPPER int MLton_uname (struct utsname *buf);
 #define WUNTRACED 2
 #endif
 
+#define SIGNALLED_BIT   0x80000000UL
+
 #ifndef WIFEXITED
-#define WIFEXITED(w)    (((w) & 0xff) == 0)
+#define WIFEXITED(w)    (((w) & SIGNALLED_BIT) == 0)
 #endif
 
 #ifndef WIFSIGNALED
-#define WIFSIGNALED(w)  (((w) & 0x7f) > 0 && (((w) & 0x7f) < 0x7f))
+#define WIFSIGNALED(w)  (((w) & SIGNALLED_BIT) != 0)
 #endif
 
 #ifndef WIFSTOPPED
-#define WIFSTOPPED(w)   (((w) & 0xff) == 0x7f)
+#define WIFSTOPPED(w)   0
 #endif
 
 #ifndef WEXITSTATUS
-#define WEXITSTATUS(w)  (((w) >> 8) & 0xff)
+#define WEXITSTATUS(w)  ((w) & 0xff)
 #endif
 
 #ifndef WTERMSIG
-#define WTERMSIG(w)     ((w) & 0x7f)
+#define WTERMSIG(w)     ((w) & 0xff)
 #endif
 
 #ifndef WSTOPSIG

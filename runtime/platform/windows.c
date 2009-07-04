@@ -423,7 +423,7 @@ C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
 
         h = (HANDLE)pid;
-        unless (TerminateProcess (h, sig)) {
+        unless (TerminateProcess (h, 0x80000000UL | sig)) {
                 errno = ECHILD;
                 return -1;
         }
