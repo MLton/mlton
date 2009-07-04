@@ -820,8 +820,8 @@ int uname (struct utsname *buf) {
                 strcpy (buf->nodename, "unknown");
         }
 #ifdef _WIN64
-        sprintf (buf->release, "%d", MINGW64_VERSION_MINOR);
-        sprintf (buf->version, "%d", MINGW64_VERSION_MAJOR);
+        sprintf (buf->release, "%d", __MINGW64_VERSION_MINOR);
+        sprintf (buf->version, "%d", __MINGW64_VERSION_MAJOR);
 #else
         sprintf (buf->release, "%d", __MINGW32_MINOR_VERSION);
         sprintf (buf->version, "%d", __MINGW32_MAJOR_VERSION);
