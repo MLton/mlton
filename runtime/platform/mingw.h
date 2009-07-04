@@ -873,7 +873,7 @@ MLTON_WRAPPER int MLton_uname (struct utsname *buf);
 #endif
 
 /* Sometimes defined by mingw */
-#ifndef TIMESPEC_DEFINED
+#if !defined(TIMESPEC_DEFINED) && !defined(_TIMESPEC_DEFINED)
 struct timespec {
   time_t tv_sec;
   long tv_nsec;
