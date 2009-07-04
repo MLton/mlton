@@ -1,0 +1,4 @@
+. ../dl/mirrors
+f=mingw-w64_x86-64_mingw32_4.4.0-1.tar.bz2
+get "$REBUILT" "$f"
+bzip2 -dc "$f"

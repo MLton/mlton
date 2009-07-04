@@ -1,0 +1,4 @@
+. ../dl/mirrors
+f=wget.tar.bz2
+get "$REBUILT" "$f"
+bunzip2 -dc "$f"

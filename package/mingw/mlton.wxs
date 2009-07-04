@@ -81,17 +81,9 @@
       <ComponentRef Id='component.download.url' />
       <ComponentRef Id='component.readme.txt' />
       <ComponentRef Id='component.documentation' />
-      <Feature Id='Debug' Title='Debug' Description='The MLton runtime libraries with included debug information.' Level='10' AllowAdvertise='no'>
-        <ComponentGroupRef Id='component.dbg' />
-      </Feature>
     </Feature>
-    <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
-      <ComponentGroupRef Id='component.gmp' />
-    </Feature>
-    <Feature Id='dlfcn' Title='Dlfcn' Description='An implementation of the POSIX dynamic linking loader API for Windows.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
-      <ComponentGroupRef Id='component.dlfcn' />
-    </Feature>
-    <Feature Id='MinGW' Title='MinGW' Description='The minimalist GNU for Windows C compiler toolchain.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+
+    <Feature Id='MinGW32' Title='MinGW32' Description='The minimalist GNU for Windows C compiler toolchain, targetting Win32.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
       <Feature Id='Runtime' Title='Runtime' Description='An assortment of thin wrappers that provide POSIX-like functionality on a windows platform.' Level='1' AllowAdvertise='no'>
         <ComponentGroupRef Id='component.runtime' />
       </Feature>
@@ -112,9 +104,31 @@
         <ComponentRef Id='component.path' />
         <ComponentGroupRef Id='component.msys' />
       </Feature>
+      <Feature Id='GMP' Title='GMP' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.gmp' />
+      </Feature>
+      <Feature Id='dlfcn' Title='Dlfcn' Description='An implementation of the POSIX dynamic linking loader API for Windows.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.dlfcn' />
+      </Feature>
       <Feature Id='GDB' Title='GDB' Description='A command-line operated program debugger.' Level='10' AllowAdvertise='no'>
         <ComponentRef Id='component.path' />
         <ComponentGroupRef Id='component.gdb' />
+      </Feature>
+      <Feature Id='WGet' Title='WGet' Description='A command-line tool for retrieving files from the web.' Level='10' AllowAdvertise='no'>
+        <ComponentRef Id='component.path' />
+        <ComponentGroupRef Id='component.wget' />
+      </Feature>
+    </Feature>
+
+    <Feature Id='Win64' Title='Win64' Description='Support compiling programs for the Win64 platform.' Level='10' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+      <Feature Id='MinGW64' Title='MinGW64' Description='The minimalist GNU for Windows C compiler toolchain, targetting Win64 platforms.' Level='10' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.mingw64' />
+      </Feature>
+      <Feature Id='MLton64' Title='MLton64' Description='Libraries and target information to build 64-bit SML programs.' Level='10' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.self64' />
+      </Feature>
+      <Feature Id='GMP64' Title='GMP64' Description='An arbitrary precision integer artihmetic library.' Level='10' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+        <ComponentGroupRef Id='component.gmp64' />
       </Feature>
     </Feature>
 

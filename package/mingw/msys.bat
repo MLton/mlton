@@ -46,10 +46,10 @@ goto EOF
 if NOT EXIST "%WD%msys-1.0.dll" set WD=%~dp0
 
 rem ember Set up option to use rxvt based on value of %1
-if "x%MSYSCON%" == "x" set MSYSCON=rxvt.exe
-if "x%1" == "x-norxvt" set MSYSCON=sh.exe
-if "x%1" == "x--norxvt" set MSYSCON=sh.exe
-if "x%MSYSCON%" == "xsh.exe" shift
+if "x%MSYSCON%" == "x" set MSYSCON=sh.exe
+if "x%1" == "x-rxvt" set MSYSCON=rxvt.exe
+if "x%1" == "x--rxvt" set MSYSCON=rxvt.exe
+if "x%MSYSCON%" == "xrxvt.exe" shift
 
 if "x%MSYSTEM%" == "x" set MSYSTEM=MINGW32
 if "%1" == "MINGW32" set MSYSTEM=MINGW32
