@@ -14,6 +14,7 @@ structure Address =
    struct
       type t = NetHostDB.in_addr
       fun toVector x = x
+      fun fromVector x = x
    end
 
 structure Ctl = Socket.CtlExtra
