@@ -62,6 +62,7 @@ C_Errno_t(C_Int_t) Socket_select (Vector(C_Fd_t) read_vec,
   } else {
     except_fds = NULL;
   }
+  MLton_initSockets ();
   res = select(FD_SETSIZE, read_fds, write_fds, except_fds, Socket_timeoutPtr);
   if (res == -1) {
     MLton_fixSocketErrno();
