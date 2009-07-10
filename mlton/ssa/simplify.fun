@@ -15,6 +15,7 @@ open S
 structure CommonArg = CommonArg (S)
 structure CommonBlock = CommonBlock (S)
 structure CommonSubexp = CommonSubexp (S)
+structure CombineConversions = CombineConversions (S)
 structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
 structure Flatten = Flatten (S)
@@ -77,6 +78,7 @@ val ssaPassesDefault =
    {name = "localRef", doit = LocalRef.eliminate} ::
    {name = "flatten", doit = Flatten.flatten} ::
    {name = "localFlatten3", doit = LocalFlatten.flatten} ::
+   {name = "combineConversions", doit = CombineConversions.combine} ::
    {name = "commonArg", doit = CommonArg.eliminate} ::
    {name = "commonSubexp", doit = CommonSubexp.eliminate} ::
    {name = "commonBlock", doit = CommonBlock.eliminate} ::
@@ -183,6 +185,7 @@ local
    val passGens = 
       inlinePassGen ::
       (List.map([("addProfile", Profile.addProfile),
+                 ("combineConversions",  CombineConversions.combine),
                  ("commonArg", CommonArg.eliminate),
                  ("commonBlock", CommonBlock.eliminate),
                  ("commonSubexp", CommonSubexp.eliminate),

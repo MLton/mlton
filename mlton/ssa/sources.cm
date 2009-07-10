@@ -67,6 +67,8 @@ global.sig
 global.fun
 multi.sig
 multi.fun
+combine-conversions.sig
+combine-conversions.fun
 constant-propagation.sig
 constant-propagation.fun
 contify.sig
