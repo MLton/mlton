@@ -73,31 +73,34 @@ int mkstemp (char *template) {
 #define EPOCHFILETIME (116444736000000000LL)
 #endif
 
-/* Based on notes by Wu Yongwei and IBM:
- *   http://mywebpage.netscape.com/yongweiwutime.htm
- *   http://www.ibm.com/developerworks/library/i-seconds/
- *
- * The basic plan is to get an initial time using GetSystemTime
+/* The basic plan is to get an initial time using GetSystemTime
  * that is good up to ~10ms accuracy. From then on, we compute
  * using deltas with the high-resolution (> microsecond range)
  * performance timers. A 64-bit accumulator holds microseconds
  * since (*nix) epoch. This is good for over 500,000 years before
- * wrap-around becomes a concern. However, we do need to watch
- * out for wrap-around with the QueryPerformanceCounter, because
- * it could be measuring at a higher frequency than microseconds.
+ * wrap-around becomes a concern.
+ *
+ * However, we might need to watch out for wrap-around with the
+ * QueryPerformanceCounter, because it could be measuring at a higher
+ * frequency than microseconds.
+ *
+ * This function only strives to allow a program to run for
+ * 100 years without being restarted.
  */
 int gettimeofday (struct timeval *tv,
                   __attribute__ ((unused)) struct timezone *tz) {
-        static LARGE_INTEGER frequency;
-        static LARGE_INTEGER baseCounter;
-        static LARGE_INTEGER microSeconds; /* static vars start = 0 */
+        static LARGE_INTEGER frequency;        /* ticks/second */
+        static LARGE_INTEGER baseCounter;      /* ticks since last rebase */
+        static LARGE_INTEGER baseMicroSeconds; /* unix time at last rebase */
 
+        LARGE_INTEGER nowCounter;
         LARGE_INTEGER deltaCounter;
         LARGE_INTEGER nowMicroSeconds;
+        double deltaMicroseconds;
 
-        if (microSeconds.QuadPart == 0) {
+        /* This code is run the first time gettimeofday is called. */
+        if (frequency.QuadPart == 0) {
                 FILETIME ft;
-
                 /* tzset prepares the localtime function. I don't
                  * really understand why it's here and not there,
                  * but this has been the case since before svn logs.
@@ -105,37 +108,72 @@ int gettimeofday (struct timeval *tv,
                  */
                 tzset();
 
-                GetSystemTimeAsFileTime (&ft);
                 QueryPerformanceCounter(&baseCounter);
                 QueryPerformanceFrequency(&frequency);
                 if (frequency.QuadPart == 0)
                         die("no high resolution clock");
 
-                microSeconds.LowPart = ft.dwLowDateTime;
-                microSeconds.HighPart = ft.dwHighDateTime;
-                microSeconds.QuadPart -= EPOCHFILETIME;
-                microSeconds.QuadPart /= 10; /* 100ns -> 1ms */
+                GetSystemTimeAsFileTime (&ft);
+                baseMicroSeconds.LowPart = ft.dwLowDateTime;
+                baseMicroSeconds.HighPart = ft.dwHighDateTime;
+                baseMicroSeconds.QuadPart -= EPOCHFILETIME;
+                baseMicroSeconds.QuadPart /= 10; /* 100ns -> 1ms */
         }
-
-        QueryPerformanceCounter(&deltaCounter);
-        deltaCounter.QuadPart -= baseCounter.QuadPart;
-        nowMicroSeconds = microSeconds;
-        nowMicroSeconds.QuadPart +=
-                1000000 * deltaCounter.QuadPart / frequency.QuadPart;
-
+        
+        /* Use the high res counter ticks to calculate the delta. 
+         * A double has 52+1 bits of precision. This means it can fit
+         * deltas of up to 9007199254 seconds, or 286 years. We could
+         * rebase before an overflow, but 286 is already > 100.
+         */
+        QueryPerformanceCounter(&nowCounter);
+        deltaCounter.QuadPart = nowCounter.QuadPart - baseCounter.QuadPart;
+        deltaMicroseconds = deltaCounter.QuadPart;
+        deltaMicroseconds /= frequency.QuadPart;
+        deltaMicroseconds *= 1000000.0;
+        nowMicroSeconds.QuadPart = 
+                baseMicroSeconds.QuadPart + deltaMicroseconds;
+        
+        /* If the frequency too fast, we need to check for wrap around.
+         * 2**32 seconds is 136 years, so if HighPart == 0 we don't need to
+         * waste a system call on GetSystemTimeAsFileTime.
+         */
+        if (frequency.HighPart != 0) {
+                LARGE_INTEGER nowLowResMicroSeconds;
+                FILETIME ft;
+                
+                /* Use low res timer to detect performance counter wrap-around. */
+                GetSystemTimeAsFileTime (&ft);
+                nowLowResMicroSeconds.LowPart = ft.dwLowDateTime;
+                nowLowResMicroSeconds.HighPart = ft.dwHighDateTime;
+                nowLowResMicroSeconds.QuadPart -= EPOCHFILETIME;
+                nowLowResMicroSeconds.QuadPart /= 10;
+                
+                /* If deltaMicroseconds deviates by more than a second from the low
+                 * resolution timer, assume the high performance counter has wrapped.
+                 * One second is a safe margin b/c QueryPerformanceFrequency must fit
+                 * in a 64-bit integer. Therefore any wrap must exceed one second.
+                 */
+                if (nowMicroSeconds.QuadPart + 1000000 <  nowLowResMicroSeconds.QuadPart) {
+                        baseCounter = nowCounter;
+                        baseMicroSeconds = nowLowResMicroSeconds;
+                        nowMicroSeconds = nowLowResMicroSeconds;
+                }
+                
+                /* The above wrap-around detection destroys high resolution timing.
+                 * However, if one needs high resolution timing, then one is querying
+                 * gettimeofday quite often. Therefore, rebase the clock before any
+                 * wrap around troubles happen. We don't do this too often as it 
+                 * introduces clock drift.
+                 */
+                if ((deltaCounter.HighPart & 0xffff0000UL) != 0) {
+                        baseCounter = nowCounter;
+                        baseMicroSeconds = nowMicroSeconds;
+                }
+        }
+        
         tv->tv_sec = (long)(nowMicroSeconds.QuadPart / 1000000);
         tv->tv_usec = (long)(nowMicroSeconds.QuadPart % 1000000);
-
-        /* Watch out for wrap-around in the PerformanceCounter.
-         * We expect the delta * 1000000 to fit inside a 64 bit integer.
-         * To be safe, we will rebase the clock whenever it exceeds 32 bits.
-         * We don't want to rebase all the time because it introduces drift.
-         */
-        if (nowMicroSeconds.HighPart != 0) {
-                microSeconds = nowMicroSeconds;
-                baseCounter.QuadPart += deltaCounter.QuadPart;
-        }
-
+        
         return 0;
 }
 
