@@ -36,8 +36,8 @@ self64.lst:	self.lst
 	cp ../../runtime.x64/gen/sizes ../../runtime.x64/*.a staging/lib/mlton/x86_64-w64-mingw32
 	rm staging/lib/mlton/x86_64-w64-mingw32/*-gdb.a
 	rm -rf ../../runtime.x64
-	mlton -target x86_64-w64-mingw32 -build-constants true > staging/w64-constants.c
-	mlton -target x86_64-w64-mingw32 -verbose 1 staging/w64-constants.c
+	$(MLTON) -target x86_64-w64-mingw32 -build-constants true > staging/w64-constants.c
+	$(MLTON) -target x86_64-w64-mingw32 -verbose 1 staging/w64-constants.c
 	./staging/w64-constants > staging/lib/mlton/x86_64-w64-mingw32/constants
 	echo "x86_64-w64-mingw32 amd64 mingw" >> staging/lib/mlton/target-map
 	cd staging; find lib/mlton/x86_64-w64-mingw32 lib/mlton/sml/basis/config/c/amd64-mingw -type f > ../$@.tmp
