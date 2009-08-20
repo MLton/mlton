@@ -26,10 +26,10 @@ val bytesPerElem = Int.div (wordSize, 8)
 
 fun offset (i, n) = 
    let
-      val i' = Int.* (bytesPerElem, i)
       val () =
          if Primitive.Controls.safe
-            andalso (Int.geu (Int.+ (i', Int.- (bytesPerElem, 1)), n))
+            andalso (Int.geu (Int.+ (Int.* (bytesPerElem, i), 
+                                     Int.- (bytesPerElem, 1)), n))
             then raise Subscript
             else ()
    in
