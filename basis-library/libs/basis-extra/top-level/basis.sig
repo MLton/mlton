@@ -380,6 +380,19 @@ signature BASIS_EXTRA =
       sharing Unsafe.Word32Vector = Word32Vector
       sharing Unsafe.Word64Array = Word64Array
       sharing Unsafe.Word64Vector = Word64Vector
+      sharing Unsafe.Word64Vector = Word64Vector
+      sharing Unsafe.PackReal32Big = PackReal32Big
+      sharing Unsafe.PackReal32Little = PackReal32Little
+      sharing Unsafe.PackReal64Big = PackReal64Big
+      sharing Unsafe.PackReal64Little = PackReal64Little
+      sharing Unsafe.PackRealBig = PackRealBig
+      sharing Unsafe.PackRealLittle = PackRealLittle
+      sharing Unsafe.PackWord16Big = PackWord16Big
+      sharing Unsafe.PackWord16Little = PackWord16Little
+      sharing Unsafe.PackWord32Big = PackWord32Big
+      sharing Unsafe.PackWord32Little = PackWord32Little
+      sharing Unsafe.PackWord64Big = PackWord64Big
+      sharing Unsafe.PackWord64Little = PackWord64Little
 
       (* ************************************************** *)
       (* ************************************************** *)

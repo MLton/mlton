@@ -10,3 +10,11 @@ signature PACK_REAL =
       val subArr: Word8Array.array * int -> real 
       val update: Word8Array.array * int * real -> unit
    end
+
+signature PACK_REAL_EXTRA =
+   sig
+      include PACK_REAL
+      val unsafeSubVec: Word8Vector.vector * int -> real 
+      val unsafeSubArr: Word8Array.array * int -> real 
+      val unsafeUpdate: Word8Array.array * int * real -> unit
+   end

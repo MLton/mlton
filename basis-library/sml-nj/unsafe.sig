@@ -79,4 +79,17 @@ signature UNSAFE =
       structure Word32Vector: UNSAFE_MONO_VECTOR
       structure Word64Array: UNSAFE_MONO_ARRAY
       structure Word64Vector: UNSAFE_MONO_VECTOR
+      
+      structure PackReal32Big : PACK_REAL
+      structure PackReal32Little : PACK_REAL
+      structure PackReal64Big : PACK_REAL
+      structure PackReal64Little : PACK_REAL
+      structure PackRealBig : PACK_REAL
+      structure PackRealLittle : PACK_REAL
+      structure PackWord16Big : PACK_WORD
+      structure PackWord16Little : PACK_WORD
+      structure PackWord32Big : PACK_WORD
+      structure PackWord32Little : PACK_WORD
+      structure PackWord64Big : PACK_WORD
+      structure PackWord64Little : PACK_WORD
    end

@@ -183,7 +183,7 @@ functor PackReal (S: sig
                         val subArrRev: Word8.word array * SeqIndex.int -> real
                         val subVecRev: Word8.word vector * SeqIndex.int -> real
                         val updateRev: Word8.word array * SeqIndex.int * real -> unit
-                     end): PACK_REAL =
+                     end): PACK_REAL_EXTRA =
 struct
 
 open S
@@ -217,6 +217,14 @@ fun update (a, i, r) =
       updA (a, i, r)
    end
 
+fun unsafeUpdate (a, i, r) =
+   let
+      val i = SeqIndex.fromInt i
+      val a = Word8Array.toPoly a
+   in
+      updA (a, i, r)
+   end
+
 local
    fun make (sub, length, toPoly) (av, i) =
       let
@@ -227,6 +235,18 @@ local
 in
    val subArr = make (subA, Word8Array.length, Word8Array.toPoly)
    val subVec = make (subV, Word8Vector.length, Word8Vector.toPoly)
+end
+
+local
+   fun make (sub, length, toPoly) (av, i) =
+      let
+         val i = SeqIndex.fromInt i
+      in
+         sub (toPoly av, i)
+      end
+in
+   val unsafeSubArr = make (subA, Word8Array.length, Word8Array.toPoly)
+   val unsafeSubVec = make (subV, Word8Vector.length, Word8Vector.toPoly)
 end
 
 fun toBytes (r: real): Word8Vector.vector =
@@ -241,51 +261,51 @@ fun fromBytes v = subVec (v, 0)
 
 end
 
-structure PackReal32Big: PACK_REAL =
+structure PackReal32Big: PACK_REAL_EXTRA =
    PackReal (open Real32
              open PackReal32Arg
              val isBigEndian = true)
-structure PackReal32Little: PACK_REAL =
+structure PackReal32Little: PACK_REAL_EXTRA =
    PackReal (open Real32
              open PackReal32Arg
              val isBigEndian = false)
-structure PackReal32Host: PACK_REAL =
+structure PackReal32Host: PACK_REAL_EXTRA =
    PackReal (open Real32
              open PackReal32Arg
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian)
-structure PackReal64Big: PACK_REAL =
+structure PackReal64Big: PACK_REAL_EXTRA =
    PackReal (open Real64
              open PackReal64Arg
              val isBigEndian = true)
-structure PackReal64Little: PACK_REAL =
+structure PackReal64Little: PACK_REAL_EXTRA =
    PackReal (open Real64
              open PackReal64Arg
              val isBigEndian = false)
-structure PackReal64Host: PACK_REAL =
+structure PackReal64Host: PACK_REAL_EXTRA =
    PackReal (open Real64
              open PackReal64Arg
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian)
-structure PackRealBig: PACK_REAL =
+structure PackRealBig: PACK_REAL_EXTRA =
    PackReal (open Real
              open PackRealArg
              val isBigEndian = true)
-structure PackRealLittle: PACK_REAL =
+structure PackRealLittle: PACK_REAL_EXTRA =
    PackReal (open Real
              open PackRealArg
              val isBigEndian = false)
-structure PackRealHost: PACK_REAL =
+structure PackRealHost: PACK_REAL_EXTRA =
    PackReal (open Real
              open PackRealArg
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian)
-structure PackLargeRealBig: PACK_REAL =
+structure PackLargeRealBig: PACK_REAL_EXTRA =
    PackReal (open LargeReal
              open PackLargeRealArg
              val isBigEndian = true)
-structure PackLargeRealLittle: PACK_REAL =
+structure PackLargeRealLittle: PACK_REAL_EXTRA =
    PackReal (open LargeReal
              open PackLargeRealArg
              val isBigEndian = false)
-structure PackLargeRealHost: PACK_REAL =
+structure PackLargeRealHost: PACK_REAL_EXTRA =
    PackReal (open LargeReal
              open PackLargeRealArg
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian)
