@@ -19,4 +19,5 @@ signature MLTON_INT_INF =
          Big of BigWord.word vector
        | Small of SmallInt.int
       val rep: t -> rep
+      val fromRep: rep -> t option
    end

@@ -29,6 +29,7 @@ signature INT_INF_EXTRA =
          Big of BigWord.word Vector.vector
        | Small of SmallInt.int
       val rep: int -> rep
+      val fromRep: rep -> int option
 
       val zero: int
       val one: int

@@ -24,6 +24,7 @@ signature PRIM_INT_INF =
          Big of C_MPLimb.word vector
        | Small of ObjptrInt.int
       val rep: int -> rep
+      val fromRep: rep -> int option
 
       structure Prim : 
          sig
@@ -423,6 +424,24 @@ structure IntInf =
          if isSmall i
             then Small (dropTagCoerceInt i)
             else Big (Prim.toVector i)
+      
+      fun fromRep r =
+         case r of
+            Big v => 
+               let
+                  val ok =
+                     SeqIndex.> (Vector.length v, 1) andalso
+                     W.<= (V.subUnsafe (v, 0), 0w1)
+               in
+                  if ok then SOME (Prim.fromVector v) else NONE
+               end
+          | Small i => 
+                let
+                   val out = addTagCoerceInt i
+                   val undo = dropTagCoerceInt out
+                in
+                   if i = undo then SOME out else NONE
+                end
 
       local
          fun 'a make {zextdToMPLimb: 'a -> MPLimb.word,
