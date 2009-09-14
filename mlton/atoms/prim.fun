@@ -1861,23 +1861,19 @@ fun ('a, 'b) apply (p: 'a t,
                                 then Var x
                              else Apply (neg s, [x])
                      else Unknown
-                  fun ro () =
+                  fun ro s =
                      if inOrder
                         then
-                           let
-                              val s = WordX.size w
-                           in
-                              if WordX.isZero
-                                 (WordX.rem
-                                  (w,
-                                   WordX.fromIntInf
-                                   (IntInf.fromInt
-                                    (Bits.toInt (WordSize.bits s)),
-                                    s),
-                                   {signed = false}))
-                                 then Var x
-                              else Unknown
-                           end
+                           if WordX.isZero
+                              (WordX.rem
+                               (w,
+                                WordX.fromIntInf
+                                (IntInf.fromInt
+                                 (Bits.toInt (WordSize.bits s)),
+                                 WordX.size w),
+                                {signed = false}))
+                              then Var x
+                           else Unknown
                      else
                         if WordX.isZero w orelse WordX.isAllOnes w
                            then word w
@@ -1944,8 +1940,8 @@ fun ('a, 'b) apply (p: 'a t,
                                     orelse signed andalso WordX.isNegOne w)
                            then zero s
                         else Unknown
-                   | Word_rol _ => ro ()
-                   | Word_ror _ => ro ()
+                   | Word_rol s => ro s
+                   | Word_ror s => ro s
                    | Word_rshift (s, {signed}) =>
                         if signed
                            then
