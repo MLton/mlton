@@ -37,7 +37,7 @@ self64.lst:	self.lst
 	echo "x86_64-w64-mingw32 amd64 mingw" >> staging/lib/mlton/target-map
 	rm staging/lib/mlton/x86_64-w64-mingw32/*-gdb.a
 	rm -rf ../../runtime.x64
-	sed "s@'/lib/mlton'@\`cd \"\$dir/lib/mlton\" \&\& pwd\`@" < staging/bin/mlton > staging/mlton
+	sed "s@'/lib/mlton'@\`cd \"\$$dir/lib/mlton\" \&\& pwd\`@" < staging/bin/mlton > staging/mlton
 	./staging/mlton -target x86_64-w64-mingw32 -build-constants true > staging/w64-constants.c
 	./staging/mlton -target x86_64-w64-mingw32 -verbose 1 staging/w64-constants.c
 	./staging/w64-constants > staging/lib/mlton/x86_64-w64-mingw32/constants
