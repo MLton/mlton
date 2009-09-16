@@ -44,8 +44,8 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
    */
   if (mayResize) {
     resizeHeap (s, s->lastMajorStatistics.bytesLive + bytesRequested);
-    setCardMapAndCrossMap (s);
   }
+  setCardMapAndCrossMap (s);
   resizeHeapSecondary (s);
   assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
 }
