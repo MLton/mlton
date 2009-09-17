@@ -54,7 +54,11 @@ open S
  *       because each conversion affects the result separately
  *)
 
-val { get, set, ... } =
+val { get : Var.t -> ((WordSize.t 
+                       * WordSize.t 
+                       * {signed:bool}) 
+                      * Var.t) option,
+      set, ... } =
    Property.getSetOnce (Var.plist, Property.initConst NONE)
 
 fun rules x3 (conversion as ((W2, W3, {signed=s2}), x2)) =
