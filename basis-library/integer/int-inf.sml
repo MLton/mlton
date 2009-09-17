@@ -242,7 +242,7 @@ structure IntInf: INT_INF_EXTRA =
                     : (int, 'a) reader =
             let
                fun reader (s: 'a): (int * 'a) option =
-                  let val s = StringCvt.skipWS cread s
+                  let val s = StringCvt.skipWS cread s in
                   case cread s of
                      NONE => NONE
                    | SOME (ch, s') =>
