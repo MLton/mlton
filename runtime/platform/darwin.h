@@ -28,6 +28,7 @@
 #include <syslog.h>
 #include <termios.h>
 #include <ucontext.h>
+#include <sys/ucontext.h>
 #include <utime.h>
 
 #include <crt_externs.h>
@@ -45,7 +46,7 @@
 
 // MacOS only defines this if POSIX_C_SOURCE is defined.
 // However, defining that breaks half the osx system headers.
-// They couldn't possibly change the number at this point anyways.
+// They couldn't possibly change the number at this point anyway.
 #ifndef SIGPOLL
 #define SIGPOLL 7
 #endif
