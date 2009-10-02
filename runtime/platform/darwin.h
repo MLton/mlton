@@ -27,7 +27,6 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
-#include <ucontext.h>
 #include <sys/ucontext.h>
 #include <utime.h>
 
