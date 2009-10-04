@@ -53,7 +53,7 @@ SOURCES :=			\
 	$(FILE)			\
 	upgrade-basis.sml	\
 	$(FRONT_END_SOURCES)	\
-	$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi)
+	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi))
 
 .PHONY: all
 all: $(AOUT)
@@ -158,7 +158,7 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 	$(CC) -o mlton-polyml mlton-polyml.o -lpolymain -lpolyml
 	rm -f mlton-polyml.o
 
-mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
+mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell mlton -stop f mlton.mlb))
 	(									\
 		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			sed 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
