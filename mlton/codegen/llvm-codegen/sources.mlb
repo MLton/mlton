@@ -12,8 +12,16 @@ local
    ../../../lib/mlton/sources.mlb
    ../../backend/sources.mlb
 
-   llvm-codegen.sig
-   llvm-codegen.fun
+   ann
+      "warnUnused true"
+      "forceUsed"
+      "nonexhaustiveMatch warn"
+      "redundantMatch warn"
+      "sequenceNonUnit warn"
+   in
+      llvm-codegen.sig
+      llvm-codegen.fun
+   end
 in
    signature LLVM_CODEGEN
    functor LLVMCodegen
