@@ -1012,6 +1012,7 @@ fun commandLine (args: string list): unit =
                          amd64Codegen => ChunkPerFunc
                        | Bytecode => OneChunk
                        | CCodegen => Coalesce {limit = 4096}
+                       | LLVMCodegen => OneChunk
                        | x86Codegen => ChunkPerFunc
                        )
            | SOME c => c)
@@ -1299,6 +1300,15 @@ fun commandLine (args: string list): unit =
                      in
                         output
                      end
+                  fun compileLL (c: Counter.t, input: File.t): File.t =
+                     let
+                        val output = mkOutputO (c, input)
+                        val _ =
+                           System.system
+                           ("llvm-as", ["-f", "-o", output, input])
+                     in
+                        output
+                     end
                   fun compileS (c: Counter.t, input: File.t): File.t =
                      let
                         val output = mkOutputO (c, input)
@@ -1333,6 +1343,8 @@ fun commandLine (args: string list): unit =
                                    then input :: ac
                                 else if SOME "c" = extension
                                    then (compileC (c, input)) :: ac
+                                else if SOME "ll" = extension
+                                   then (compileLL (c, input)) :: ac
                                 else if SOME "s" = extension
                                         orelse SOME "S" = extension
                                    then (compileS (c, input)) :: ac
@@ -1397,6 +1409,7 @@ fun commandLine (args: string list): unit =
                                  compile
                                  {input = input,
                                   outputC = make (Control.C, ".c"),
+                                  outputLL = make (Control.LLVM, ".ll"),
                                   outputS = make (Control.Assembly, ".s")}
                      in
                         case stop of

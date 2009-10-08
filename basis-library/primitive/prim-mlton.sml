@@ -61,7 +61,7 @@ structure CallStack =
 
 structure Codegen =
    struct
-      datatype t = Bytecode | C | x86 | amd64
+      datatype t = Bytecode | C | LLVM | x86 | amd64
 
       val codegen =
          case _build_const "MLton_Codegen_codegen": Int32.int; of
@@ -69,12 +69,14 @@ structure Codegen =
           | 1 => C
           | 2 => x86
           | 3 => amd64
+          | 4 => LLVM
           | _ => raise Primitive.Exn.Fail8 "MLton_Codegen_codegen"
 
       val isBytecode = codegen = Bytecode
       val isC = codegen = C
       val isX86 = codegen = x86
       val isAmd64 = codegen = amd64
+      val isLLVM = codegen = LLVM
       (* val isNative = isX86 orelse isAmd64 *)
    end
 

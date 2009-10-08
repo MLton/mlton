@@ -18,10 +18,17 @@ signature BACKEND_STRUCTS =
 
 signature BACKEND = 
    sig
+      structure Rssa : RSSA
       include BACKEND_STRUCTS
 
       val toMachine:
          Ssa.Program.t
          * {codegenImplementsPrim: Machine.Type.t Machine.Prim.t -> bool}
          -> Machine.Program.t
+         
+      (* Leaves exceptions unmodified *)
+      val toRssa:
+         Ssa.Program.t
+         * {codegenImplementsPrim: Machine.Type.t Machine.Prim.t -> bool}
+         -> Rssa.Program.t
    end

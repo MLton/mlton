@@ -11,6 +11,7 @@ Group
 signature MACHINE
 signature REP_TYPE
 signature RUNTIME
+signature RSSA
 
 functor Backend
 functor Machine

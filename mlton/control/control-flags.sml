@@ -66,14 +66,16 @@ structure Codegen =
          amd64Codegen
        | Bytecode
        | CCodegen
+       | LLVMCodegen
        | x86Codegen
 
-      val all = [x86Codegen,amd64Codegen,CCodegen,Bytecode]
+      val all = [x86Codegen,amd64Codegen,CCodegen,LLVMCodegen,Bytecode]
 
       val toString: t -> string =
          fn amd64Codegen => "amd64"
           | Bytecode => "bytecode"
           | CCodegen => "c"
+          | LLVMCodegen => "llvm"
           | x86Codegen => "x86"
    end
 

@@ -39,6 +39,7 @@ signature CONTROL_FLAGS =
             datatype t =
                Bytecode
              | CCodegen
+             | LLVMCodegen
              | x86Codegen
              | amd64Codegen
             val all: t list

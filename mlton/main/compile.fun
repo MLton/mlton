@@ -111,6 +111,8 @@ structure Backend = Backend (structure Ssa = Ssa2
                              fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Ffi = Ffi
                                structure Machine = Machine)
+structure LLVMCodegen = LLVMCodegen (structure Ffi = Ffi
+                                     structure Rssa = Backend.Rssa)
 structure Bytecode = Bytecode (structure CCodegen = CCodegen
                                structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
@@ -578,7 +580,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       xml
    end
 
-fun preCodegen {input: MLBString.t}: Machine.Program.t =
+fun preCodegen {input: MLBString.t}: Ssa2.Program.t =
    let
       val xml = elaborate {input = input}
       val xml =
@@ -680,10 +682,17 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
                                 Layouts Ssa2.Program.layouts)
             else ()
          end
+   in
+      ssa2
+   end
+
+fun machineBackend ssa2 =
+   let
       val codegenImplementsPrim =
          case !Control.codegen of
             Control.Bytecode => Bytecode.implementsPrim
           | Control.CCodegen => CCodegen.implementsPrim
+          | Control.LLVMCodegen => LLVMCodegen.implementsPrim
           | Control.x86Codegen => x86Codegen.implementsPrim
           | Control.amd64Codegen => amd64Codegen.implementsPrim
       val machine =
@@ -715,46 +724,102 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
       machine
    end
 
-fun compile {input: MLBString.t, outputC, outputS}: unit =
+fun rssaBackend ssa2 =
    let
-      val machine =
-         Control.trace (Control.Top, "pre codegen")
-         preCodegen {input = input}
-      fun clearNames () =
-         (Machine.Program.clearLabelNames machine
-          ; Machine.Label.printNameAlphaNumeric := true)
+      val codegenImplementsPrim =
+         case !Control.codegen of
+            Control.Bytecode => Bytecode.implementsPrim
+          | Control.CCodegen => CCodegen.implementsPrim
+          | Control.LLVMCodegen => LLVMCodegen.implementsPrim
+          | Control.x86Codegen => x86Codegen.implementsPrim
+          | Control.amd64Codegen => amd64Codegen.implementsPrim
+      val rssa  =
+         Control.passTypeCheck
+         {display = Control.Layouts Backend.Rssa.Program.layouts,
+          name = "backend",
+          stats = fn _ => Layout.empty,
+          style = Control.No,
+          suffix = "rssa",
+          thunk = fn () =>
+                  (Backend.toRssa
+                   (ssa2,
+                    {codegenImplementsPrim = codegenImplementsPrim})),
+          typeCheck = Backend.Rssa.Program.typeCheck}
+      val _ =
+         let
+            open Control
+         in
+            if !keepMachine
+               then saveToFile ({suffix = "rssa"}, No, rssa,
+                                Layouts Backend.Rssa.Program.layouts)
+            else ()
+         end
+   in
+      rssa
+   end
+
+fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
+   let
+      fun machine () =
+         let
+            val ssa2 =
+               Control.trace (Control.Top, "pre codegen")
+               preCodegen {input = input}
+            val machine =
+               Control.trace (Control.Top, "machine backend")
+               machineBackend ssa2
+            val () = Machine.Program.clearLabelNames machine
+            val () = Machine.Label.printNameAlphaNumeric := true
+         in
+            machine
+         end
+      
+      fun rssa () =
+         let
+            val ssa2 =
+               Control.trace (Control.Top, "pre codegen")
+               preCodegen {input = input}
+            val rssa =
+               Control.trace (Control.Top, "rssa backend")
+               rssaBackend ssa2
+         in
+            rssa
+         end
+         
       val () =
          case !Control.codegen of
             Control.Bytecode =>
                Control.trace (Control.Top, "bytecode gen")
-               Bytecode.output {program = machine,
+               Bytecode.output {program = machine (),
                                 outputC = outputC}
           | Control.CCodegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "C code gen")
-                   CCodegen.output {program = machine,
-                                    outputC = outputC}))
+                Control.trace (Control.Top, "C code gen")
+                CCodegen.output {program = machine (),
+                                 outputC = outputC}
+          | Control.LLVMCodegen =>
+                Control.trace (Control.Top, "llvm code gen")
+                LLVMCodegen.output {program = rssa (),
+                                    outputLL = outputLL}
           | Control.x86Codegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "x86 code gen")
-                   x86Codegen.output {program = machine,
-                                      outputC = outputC,
-                                      outputS = outputS}))
+                Control.trace (Control.Top, "x86 code gen")
+                x86Codegen.output {program = machine (),
+                                   outputC = outputC,
+                                   outputS = outputS}
           | Control.amd64Codegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "amd64 code gen")
-                   amd64Codegen.output {program = machine,
-                                        outputC = outputC,
-                                        outputS = outputS}))
+                Control.trace (Control.Top, "amd64 code gen")
+                amd64Codegen.output {program = machine (),
+                                     outputC = outputC,
+                                     outputS = outputS}
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in
       ()
    end handle Done => ()
 
-fun compileMLB {input: File.t, outputC, outputS}: unit =
+fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
    compile {input = MLBString.fromFile input,
             outputC = outputC,
+            outputLL = outputLL,
             outputS = outputS}
 
 val elaborateMLB =
@@ -783,9 +848,10 @@ local
                 end)
       end
 in
-   fun compileSML {input: File.t list, outputC, outputS}: unit =
+   fun compileSML {input: File.t list, outputC, outputLL, outputS}: unit =
       compile {input = genMLB {input = input},
                outputC = outputC,
+               outputLL = outputLL,
                outputS = outputS}
    val elaborateSML =
       fn {input: File.t list} =>

@@ -143,6 +143,86 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
                       start = start}
    end
 
+fun rssaSimplify {handlers} p = 
+   let
+      open Rssa
+      fun pass' ({name, doit}, sel, p) =
+         let
+            val _ =
+               let open Control
+               in maybeSaveToFile
+                  ({name = name, 
+                    suffix = "pre.rssa"},
+                   Control.No, p, Control.Layouts Program.layouts)
+               end
+            val p =
+               Control.passTypeCheck
+               {display = Control.Layouts
+                          (fn (r,output) =>
+                           Program.layouts (sel r, output)),
+                name = name,
+                stats = Program.layoutStats o sel,
+                style = Control.No,
+                suffix = "post.rssa",
+                thunk = fn () => doit p,
+                typeCheck = Program.typeCheck o sel}
+         in
+            p
+         end 
+      fun pass ({name, doit}, p) =
+         pass' ({name = name, doit = doit}, fn p => p, p)
+      fun maybePass ({name, doit}, p) =
+         if List.exists (!Control.dropPasses, fn re =>
+                         Regexp.Compiled.matchesAll (re, name))
+            then p
+         else pass ({name = name, doit = doit}, p)
+      val p = maybePass ({name = "rssaShrink1", 
+                          doit = Program.shrink}, p)
+      val p = pass ({name = "insertLimitChecks", 
+                     doit = LimitCheck.insert}, p)
+      val p = pass ({name = "insertSignalChecks", 
+                     doit = SignalCheck.insert}, p)
+      val p = if not handlers then p else
+              pass ({name = "implementHandlers", 
+                     doit = ImplementHandlers.doit}, p)
+      val p = maybePass ({name = "rssaShrink2", 
+                          doit = Program.shrink}, p)
+      val () = Program.checkHandlers p
+      val (p, makeProfileInfo) =
+         pass' ({name = "implementProfiling",
+                 doit = ImplementProfiling.doit},
+                fn (p,_) => p, p)
+      val p = maybePass ({name = "rssaOrderFunctions", 
+                          doit = Program.orderFunctions}, p)
+   in
+      (p, makeProfileInfo)
+   end
+
+fun toRssa (program: Ssa.Program.t, codegen) =
+   let
+      val program =
+         Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
+                                name = "toRssa",
+                                stats = R.Program.layoutStats,
+                                style = Control.No,
+                                suffix = "rssa",
+                                thunk = fn () => SsaToRssa.convert (program, 
+                                                                    codegen),
+                                typeCheck = R.Program.typeCheck}
+      val (program, makeProfileInfo) =
+         Control.passTypeCheck
+         {display = Control.Layouts (fn ((program, _), output) =>
+                                     Rssa.Program.layouts (program, output)),
+          name = "rssaSimplify",
+          stats = fn (program,_) => Rssa.Program.layoutStats program,
+          style = Control.No,
+          suffix = "rssa",
+          thunk = fn () => rssaSimplify {handlers=false} program,
+          typeCheck = R.Program.typeCheck o #1}
+   in
+      program
+   end
+
 fun toMachine (program: Ssa.Program.t, codegen) =
    let
       fun pass (name, doit, program) =
@@ -154,59 +234,6 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 thunk = fn () => doit program,
                                 typeCheck = R.Program.typeCheck}
       val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
-      fun rssaSimplify p = 
-         let
-            open Rssa
-            fun pass' ({name, doit}, sel, p) =
-               let
-                  val _ =
-                     let open Control
-                     in maybeSaveToFile
-                        ({name = name, 
-                          suffix = "pre.rssa"},
-                         Control.No, p, Control.Layouts Program.layouts)
-                     end
-                  val p =
-                     Control.passTypeCheck
-                     {display = Control.Layouts
-                                (fn (r,output) =>
-                                 Program.layouts (sel r, output)),
-                      name = name,
-                      stats = Program.layoutStats o sel,
-                      style = Control.No,
-                      suffix = "post.rssa",
-                      thunk = fn () => doit p,
-                      typeCheck = Program.typeCheck o sel}
-               in
-                  p
-               end 
-            fun pass ({name, doit}, p) =
-               pass' ({name = name, doit = doit}, fn p => p, p)
-            fun maybePass ({name, doit}, p) =
-               if List.exists (!Control.dropPasses, fn re =>
-                               Regexp.Compiled.matchesAll (re, name))
-                  then p
-               else pass ({name = name, doit = doit}, p)
-            val p = maybePass ({name = "rssaShrink1", 
-                                doit = Program.shrink}, p)
-            val p = pass ({name = "insertLimitChecks", 
-                           doit = LimitCheck.insert}, p)
-            val p = pass ({name = "insertSignalChecks", 
-                           doit = SignalCheck.insert}, p)
-            val p = pass ({name = "implementHandlers", 
-                           doit = ImplementHandlers.doit}, p)
-            val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink}, p)
-            val () = Program.checkHandlers p
-            val (p, makeProfileInfo) =
-               pass' ({name = "implementProfiling",
-                       doit = ImplementProfiling.doit},
-                      fn (p,_) => p, p)
-            val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions}, p)
-         in
-            (p, makeProfileInfo)
-         end
       val (program, makeProfileInfo) =
          Control.passTypeCheck
          {display = Control.Layouts (fn ((program, _), output) =>
@@ -215,7 +242,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           stats = fn (program,_) => Rssa.Program.layoutStats program,
           style = Control.No,
           suffix = "rssa",
-          thunk = fn () => rssaSimplify program,
+          thunk = fn () => rssaSimplify {handlers=true} program,
           typeCheck = R.Program.typeCheck o #1}
       val _ =
          let

@@ -25,13 +25,14 @@ structure Verbosity =
           | _ => false
    end
 
-datatype style = No | Assembly | C | Dot | ML
+datatype style = No | Assembly | C | Dot | LLVM | ML
 
 val preSuf =
    fn No => ("", "")
     | Assembly => ("/* ", " */")
     | C => ("/* ", " */")
     | Dot => ("// ", "")
+    | LLVM => ("; ", "")
     | ML => ("(* ", " *)")
 
 fun outputHeader (style: style, output: Layout.t -> unit) =

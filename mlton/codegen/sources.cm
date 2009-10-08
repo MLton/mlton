@@ -11,6 +11,7 @@ Group
 functor amd64Codegen
 functor Bytecode
 functor CCodegen
+functor LLVMCodegen
 functor x86Codegen
 
 is
@@ -18,4 +19,5 @@ is
 amd64-codegen/sources.cm
 bytecode/sources.cm
 c-codegen/sources.cm
+llvm-codegen/sources.cm
 x86-codegen/sources.cm
