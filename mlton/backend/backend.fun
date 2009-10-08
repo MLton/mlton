@@ -210,7 +210,7 @@ fun toRssa (program: Ssa.Program.t, codegen) =
                                 thunk = fn () => SsaToRssa.convert (program, 
                                                                     codegen),
                                 typeCheck = R.Program.typeCheck}
-      val (program, makeProfileInfo) =
+      val (program, _) =
          Control.passTypeCheck
          {display = Control.Layouts (fn ((program, _), output) =>
                                      Rssa.Program.layouts (program, output)),
