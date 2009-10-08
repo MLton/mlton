@@ -187,7 +187,8 @@ fun rssaSimplify {handlers} p =
                      doit = ImplementHandlers.doit}, p)
       val p = maybePass ({name = "rssaShrink2", 
                           doit = Program.shrink}, p)
-      val () = Program.checkHandlers p
+      val () = if not handlers then () else
+               Program.checkHandlers p
       val (p, makeProfileInfo) =
          pass' ({name = "implementProfiling",
                  doit = ImplementProfiling.doit},
