@@ -176,7 +176,7 @@ mlbpathmap:
 polyml-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" polyml-mlton
-	$(CP) "$(COMP)/polyml-mlton$(EXE)" "$(LIB)/"
+	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
