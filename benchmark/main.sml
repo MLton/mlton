@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,7 +13,7 @@ struct
 type int = Int.t
 
 fun usage msg =
-   Process.usage {usage = "[-mlkit] [-mosml] [-smlnj] bench1 bench2 ...",
+   Process.usage {usage = "[-mlkit] [-mlton </path/to/mlton>] [-mosml] [-poly] [-smlnj] bench1 bench2 ...",
                   msg = msg}
 
 val doOnce = ref false
@@ -207,6 +208,29 @@ fun mosmlCompile {bench} =
     exe = "a.out",
     doTextPlusData = false}
 
+val njSuffix =
+   Promise.delay
+   (fn () =>
+    let
+       val sml = "sml"
+       val suffix =
+           File.withTemp
+           (fn tmp =>
+            (File.withTempOut
+             (fn output =>
+              Out.output
+              (output, concat ["val tmp = TextIO.openOut(\"", tmp, "\");\n",
+                               "val _ = TextIO.output(tmp, SMLofNJ.SysInfo.getHeapSuffix());\n",
+                               "val _ = TextIO.closeOut(tmp);\n"]),
+              fn input =>
+              withInput
+              (input, fn () =>
+               Process.wait (Process.spawnp {file = sml, args = [sml]})))
+             ; In.withClose (In.openIn tmp, In.inputAll)))
+    in
+       suffix
+    end)
+
 fun njCompile {bench} =
    Escape.new
    (fn e =>
@@ -231,17 +255,8 @@ fun njCompile {bench} =
          handle _ => Escape.escape (e, {compile = NONE,
                                         run = NONE,
                                         size = NONE})
-       val suffix =
-                 let
-                   datatype z = datatype MLton.Platform.Arch.t
-                   datatype z = datatype MLton.Platform.OS.t
-                 in
-                   case (MLton.Platform.Arch.host, MLton.Platform.OS.host) of
-                     (X86, Linux) => ".x86-linux"
-                   | (Sparc, Solaris) => ".sparc-solaris"
-                   | _ => raise Fail "don't know SML/NJ suffix for host type"
-                 end
-       val heap = concat [bench, suffix]
+       val suffix = Promise.force njSuffix
+       val heap = concat [bench, ".", suffix]
     in
        if not (File.doesExist heap)
           then {compile = NONE,
