@@ -16,7 +16,6 @@
 /* potentially correct for other archs:
  *  alpha: ucp->m_context.sc_pc
  *  ia64: ucp->m_context.sc_ip & ~0x3UL
- *  s390: ucp->m_context.sregs->regs.psw.addr
  */
 static void catcher (__attribute__ ((unused)) int sig, 
                      __attribute__ ((unused)) siginfo_t* sip, 
@@ -54,6 +53,9 @@ static void catcher (__attribute__ ((unused)) int sig,
 #elif (defined (__arm__))
         ucontext_t* ucp = (ucontext_t*)mystery;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.arm_pc);
+#elif (defined (__s390__))
+        ucontext_t* ucp = (ucontext_t*)mystery;
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.psw.addr);
 #else
 #error Profiling handler is missing for this architecture
 #endif
