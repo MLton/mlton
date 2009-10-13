@@ -1,5 +1,9 @@
-## Move this into next package
-  * handle nostrip build option.  closes #437581
+mlton (20091013-1) experimental; ugency=low
+
+  * new upstream version (svn r7242)
+  * handle nostrip build option (closes #437581)
+
+ -- Wesley W. Terpstra <terpstra@debian.org>  Tue, 13 Oct 2009 03:44:11 +0200
 
 mlton (20070826-1) unstable; urgency=low
 

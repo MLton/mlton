@@ -1,8 +1,8 @@
 Source: mlton
 Section: devel
 Priority: optional
-Maintainer: Stephen Weeks <sweeks@sweeks.com>
-Build-Depends: mlton (>= 20041109-1), htmldoc, libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra
+Maintainer: Wesley W. Terpstra <terpstra@debian.org>
+Build-Depends: mlton (>= 20070826-1), htmldoc, libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra
 Standards-Version: 3.7.2
 
 Package: mlton
