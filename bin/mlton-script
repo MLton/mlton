@@ -12,6 +12,9 @@ case "$HOST_OS" in
 mingw)
 	exe='.exe'
 ;;
+hpux)
+        ia64hpux="-mlp64"
+;;
 *)
 	exe=''
 ;;
@@ -110,7 +113,7 @@ doit "$lib" \
         -target-cc-opt netbsd '-I/usr/pkg/include'               \
         -target-cc-opt openbsd '-I/usr/local/include'            \
         -target-cc-opt aix '-maix64'                             \
-        -target-cc-opt ia64 '-mtune=itanium2'                    \
+        -target-cc-opt ia64 "$ia64hpux -mtune=itanium2"          \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86                                       \
                 '-m32
@@ -125,7 +128,7 @@ doit "$lib" \
         -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
         -target-link-opt aix '-maix64'                           \
-        -target-link-opt ia64 '-mlp64'                           \
+        -target-link-opt ia64 "$ia64hpux"                        \
         -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
         -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
