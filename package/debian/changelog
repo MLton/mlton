@@ -1,4 +1,4 @@
-mlton (20091013-1) experimental; ugency=low
+mlton (20091013-1) experimental; urgency=low
 
   * new upstream version (svn r7242)
   * handle nostrip build option (closes #437581)
