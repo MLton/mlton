@@ -100,6 +100,7 @@ doit "$lib" \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opt amd64 '-m64'                              \
         -target-as-opt x86 '-m32'                                \
+        -target-cc-opt alpha '-mieee'                            \
         -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt darwin                                    \
                 '-I/usr/local/include
@@ -120,6 +121,7 @@ doit "$lib" \
                 -malign-jumps=2
                 -malign-loops=2'                                 \
         -target-link-opt amd64 '-m64'                            \
+        -target-link-opt alpha '-mieee'                          \
         -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
         -target-link-opt aix '-maix64'                           \

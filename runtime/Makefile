@@ -55,6 +55,10 @@ FLAGS += -fvisibility=hidden
 endif
 endif
 
+ifeq ($(TARGET_ARCH), alpha)
+FLAGS += -mieee
+endif
+
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
 DEBUGFLAGS += -gstabs+

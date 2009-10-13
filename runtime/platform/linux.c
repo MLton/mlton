@@ -13,9 +13,6 @@
 #define EIP     14
 #endif
 
-/* potentially correct for other archs:
- *  alpha: ucp->m_context.sc_pc
- */
 static void catcher (__attribute__ ((unused)) int sig, 
                      __attribute__ ((unused)) siginfo_t* sip, 
                      void* mystery) {
@@ -26,6 +23,9 @@ static void catcher (__attribute__ ((unused)) int sig,
 #endif
         ucontext_t* ucp = (ucontext_t*)mystery;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_RIP]);
+#elif (defined (__alpha__))
+        ucontext_t* ucp = (ucontext_t*)mystery;
+        GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_pc));
 #elif (defined (__hppa__))
         ucontext_t* ucp = (ucontext_t*)mystery;
         GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
