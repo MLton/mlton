@@ -169,7 +169,8 @@ fun defaultAlignIs8 () =
       datatype z = datatype Control.Target.arch
    in
       case !Control.Target.arch of
-         HPPA => true
+         Alpha => true
+       | HPPA => true
        | IA64 => true
        | Sparc => true
        | _ => false
