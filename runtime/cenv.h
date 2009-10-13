@@ -71,7 +71,7 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/cygwin.h"
 #elif (defined (__Darwin__))
 #include "platform/darwin.h"
-#elif (defined (__FreeBSD__))
+#elif (defined (__FreeBSD__) || defined(__FreeBSD_kernel__))
 #include "platform/freebsd.h"
 #elif (defined (__hpux__))
 #include "platform/hpux.h"

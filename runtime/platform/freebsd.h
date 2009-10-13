@@ -39,4 +39,6 @@
 
 #define MLton_Platform_OS_host "freebsd"
 
+#define getpgrp() getpgrp(getpid())
+
 extern char **environ; /* for Posix_ProcEnv_environ */

@@ -40,7 +40,7 @@ CYGWIN*)
 Darwin)
         HOST_OS='darwin'
 ;;
-FreeBSD*)
+*FreeBSD*)
         HOST_OS='freebsd'
 ;;
 HP-UX)
