@@ -15,7 +15,6 @@
 
 /* potentially correct for other archs:
  *  alpha: ucp->m_context.sc_pc
- *  ia64: ucp->m_context.sc_ip & ~0x3UL
  */
 static void catcher (__attribute__ ((unused)) int sig, 
                      __attribute__ ((unused)) siginfo_t* sip, 
@@ -30,6 +29,9 @@ static void catcher (__attribute__ ((unused)) int sig,
 #elif (defined (__hppa__))
         ucontext_t* ucp = (ucontext_t*)mystery;
         GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
+#elif (defined(__ia64__))
+        ucontext_t* ucp = (ucontext_t*)mystery;
+        GC_handleSigProf ((code_pointer) ucp->_u._mc.sc_ip);
 #elif (defined (__ppc__)) || (defined (__powerpc__))
         ucontext_t* ucp = (ucontext_t*)mystery;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.regs->nip);

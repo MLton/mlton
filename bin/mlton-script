@@ -109,7 +109,7 @@ doit "$lib" \
         -target-cc-opt netbsd '-I/usr/pkg/include'               \
         -target-cc-opt openbsd '-I/usr/local/include'            \
         -target-cc-opt aix '-maix64'                             \
-        -target-cc-opt ia64 '-mlp64 -mtune=itanium2'             \
+        -target-cc-opt ia64 '-mtune=itanium2'                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86                                       \
                 '-m32
