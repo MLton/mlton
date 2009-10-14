@@ -318,7 +318,7 @@ GZIP_MAN := false
 endif
 
 .PHONY: install
-install: install-docs install-no-docs
+install: install-docs install-no-docs move-docs
 
 MAN_PAGES :=  \
 	mllex.1 \
@@ -395,6 +395,12 @@ install-docs:
 	find "$(TEXM)/" -name .svn -type d | xargs rm -rf
 	find "$(TEXM)/" -name .ignore -type f | xargs rm -rf
 
+
+.PHONY: move-docs
+move-docs:	install-docs install-no-docs
+	cd "$(TLIB)/sml"; for i in *; do mkdir "$(TDOC)/$$i"; done
+	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
+	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
 
 DEBSRC := mlton-$(VERSION).orig
 .PHONY: deb
