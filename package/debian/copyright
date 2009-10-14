@@ -14,7 +14,7 @@ is released under a BSD-style license.
 
    MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
    
-   Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+   Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
       Jagannathan, and Stephen Weeks.
    Copyright (c) 1997-2000 by the NEC Research Institute
    
@@ -27,13 +27,13 @@ is released under a BSD-style license.
    pertaining to distribution of the software without specific, written
    prior permission.
 
-   NEC disclaims all warranties with regard to this software, including
-   all implied warranties of merchantability and fitness. In no event
-   shall NEC be liable for any special, indirect or consequential damages
-   or any damages whatsoever resulting from loss of use, data or profits,
-   whether in an action of contract, negligence or other tortious action,
-   arising out of or in connection with the use or performance of this
-   software.
+   The above copyright holders disclaim all warranties with regard to
+   this software, including all implied warranties of merchantability and
+   fitness. In no event shall the above copyright holders be liable for
+   any special, indirect or consequential damages or any damages
+   whatsoever resulting from loss of use, data or profits, whether in an
+   action of contract, negligence or other tortious action, arising out
+   of or in connection with the use or performance of this software.
 
 The following portions of the software are derived from the Standard ML
 of New Jersey compiler:

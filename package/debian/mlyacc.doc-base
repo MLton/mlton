@@ -3,7 +3,7 @@ Title: ML-Yacc User's Manual
 Author: David R. Tarditi, Andrew W. Appel
 Abstract: This document describes how to write parser specification files for
  mlyacc.
-Section: Apps/Programming
+Section: Programming
 
-Format: postscript
+Format: PDF
 Files: /usr/share/doc/mlton/mlyacc.pdf

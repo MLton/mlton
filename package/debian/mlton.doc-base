@@ -3,7 +3,7 @@ Title: MLton Guide
 Author: The MLton Team
 Abstract: This document describes how to use MLton, a whole-program
  optimizing compiler for the Standard ML Programming language.
-Section: Apps/Programming
+Section: Programming
 
 Format: HTML
 Index: /usr/share/doc/mlton/guide/Home

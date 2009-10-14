@@ -19,7 +19,7 @@ build-stamp:
 clean:
 	rm -f build-stamp configure-stamp
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
+	$(MAKE) clean
 
 BUILDDIR = $(CURDIR)/debian/mlton
 install: build
@@ -35,10 +35,6 @@ binary-indep: build install
 binary-arch: build install
 	# dh_installdeb
 	mkdir -p $(BUILDDIR)/DEBIAN
-	for f in postinst prerm; do 				\
-		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f;	\
-		chown root.root $(BUILDDIR)/DEBIAN/$$f;		\
-	done
 	# dh_shlibdeps
 	dpkg-shlibdeps \
 		-e$(BUILDDIR)/usr/bin/mllex \

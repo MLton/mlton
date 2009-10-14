@@ -5,7 +5,7 @@ mlton (20091013) unstable; urgency=low
   * Standards-version 3.8.3.0 (no changes)
   * Added alpha ia64 kfreebsd-i386 s390 ports
     * manual uploads of (half-broken) bootstrap packages will follow
-  * Handle nostrip build option (closes #437581)
+  * Handle nostrip build option (closes: #437581)
 
  -- Wesley W. Terpstra <terpstra@debian.org>  Wed, 14 Oct 2009 15:37:25 +0200
 
