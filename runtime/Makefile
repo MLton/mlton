@@ -56,7 +56,7 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
-FLAGS += -mieee 
+FLAGS += -mieee -mbwx -mtune=ev6
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
