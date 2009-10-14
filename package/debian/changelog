@@ -7,7 +7,7 @@ mlton (20091013-1) unstable; urgency=low
     * manual uploads of (half-broken) bootstrap packages will follow
   * Handle nostrip build option (closes: #437581)
 
- -- Wesley W. Terpstra <terpstra@debian.org>  Wed, 14 Oct 2009 15:37:25 +0200
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Wed, 14 Oct 2009 15:37:25 +0200
 
 mlton (20070826-1) unstable; urgency=low
 
