@@ -170,6 +170,7 @@ fun defaultAlignIs8 () =
    in
       case !Control.Target.arch of
          Alpha => true
+       | AMD64 => true
        | HPPA => true
        | IA64 => true
        | Sparc => true
