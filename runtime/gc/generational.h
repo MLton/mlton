@@ -16,10 +16,8 @@
 typedef uint8_t GC_cardMapElem;
 typedef uint8_t GC_crossMapElem;
 
-typedef GC_cardMapElem GC_cardMapStart __attribute__ ((aligned (4)));
-typedef GC_crossMapElem GC_crossMapStart __attribute__ ((aligned (4)));
-typedef GC_cardMapStart *GC_cardMap;
-typedef GC_crossMapStart *GC_crossMap;
+typedef GC_cardMapElem *GC_cardMap;
+typedef GC_crossMapElem *GC_crossMap;
 
 typedef size_t GC_cardMapIndex;
 typedef size_t GC_crossMapIndex;

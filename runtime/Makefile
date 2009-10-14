@@ -56,7 +56,7 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
-FLAGS += -mieee
+FLAGS += -mieee 
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
@@ -157,7 +157,7 @@ WARNCFLAGS += -Wfloat-equal
 WARNCFLAGS += -Wundef
 WARNCFLAGS += -Wshadow
 WARNCFLAGS += -Wpointer-arith
-WARNCFLAGS += -Wbad-function-cast -Wcast-qual -Wcast-align
+WARNCFLAGS += -Wbad-function-cast -Wcast-qual
 WARNCFLAGS += -Wwrite-strings
 # WARNCFLAGS += -Wconversion
 WARNCFLAGS += -Waggregate-return

@@ -8,7 +8,7 @@
 
 // typedef void* pointer;
 // typedef unsigned char* pointer;
-typedef unsigned char pointerAux __attribute__ ((aligned (4), may_alias));
+typedef unsigned char pointerAux __attribute__ ((may_alias));
 typedef pointerAux* pointer;
 
 #if POINTER_BITS == 32
