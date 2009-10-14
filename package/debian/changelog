@@ -1,6 +1,9 @@
-mlton (20091013-1) experimental; urgency=low
+mlton (20091013) unstable; urgency=low
 
-  * new upstream version (svn r7242)
+  * new maintainer
+  * new upstream version taken from svn r7263
+  * added alpha ia64 kfreebsd-i386 s390 ports
+    * manual uploads of (half-broken) bootstrap packages will follow
   * handle nostrip build option (closes #437581)
 
  -- Wesley W. Terpstra <terpstra@debian.org>  Tue, 13 Oct 2009 03:44:11 +0200
