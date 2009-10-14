@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra <terpstra@debian.org>
 Build-Depends: mlton (>= 20070826-1), htmldoc, libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra
-Standards-Version: 3.7.2
+Standards-Version: 3.8.3.0
 
 Package: mlton
 Architecture: alpha amd64 hppa i386 ia64 kfreebsd-i386 powerpc s390 sparc

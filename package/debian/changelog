@@ -1,12 +1,13 @@
 mlton (20091013) unstable; urgency=low
 
-  * new maintainer
-  * new upstream version taken from svn r7263
-  * added alpha ia64 kfreebsd-i386 s390 ports
+  * New maintainer
+  * New upstream version taken from svn r7263
+  * Standards-version 3.8.3.0 (no changes)
+  * Added alpha ia64 kfreebsd-i386 s390 ports
     * manual uploads of (half-broken) bootstrap packages will follow
-  * handle nostrip build option (closes #437581)
+  * Handle nostrip build option (closes #437581)
 
- -- Wesley W. Terpstra <terpstra@debian.org>  Tue, 13 Oct 2009 03:44:11 +0200
+ -- Wesley W. Terpstra <terpstra@debian.org>  Wed, 14 Oct 2009 15:37:25 +0200
 
 mlton (20070826-1) unstable; urgency=low
 
