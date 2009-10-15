@@ -39,6 +39,9 @@
 
 #define MLton_Platform_OS_host "freebsd"
 
+/* This is probably debian specific, since freebsd worked w/o it before. */
+#if (defined (__FreeBSD_kernel__))
 #define getpgrp() getpgrp(getpid())
+#endif
 
 extern char **environ; /* for Posix_ProcEnv_environ */
