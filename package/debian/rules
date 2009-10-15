@@ -1,29 +1,25 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# GNU copyright 1997 to 1999 by Joey Hess.
 
+VERSION=$(dpkg-parsechangelog  | grep Version | cut -d" " -f2)
 CP = cp -fpR
 
 configure: configure-stamp
 configure-stamp:
-	# Add here commands to configure the package.
+	make VERSION=$(VERSION) RELEASE=1 version
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
-	# Add here commands to compile the package.
 	$(MAKE)
-	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
+	./bin/regression
 	touch build-stamp
 
 clean:
 	rm -f build-stamp configure-stamp
-	# Add here commands to clean up after the build process.
 	$(MAKE) clean
 
 BUILDDIR = $(CURDIR)/debian/mlton
 install: build
-	# Add here commands to install the package into debian/mlton.
 	$(MAKE) install post-install-debian DESTDIR=$(BUILDDIR) \
 		MAN_PREFIX_EXTRA=/share
 
