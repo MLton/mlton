@@ -4,6 +4,7 @@ mlton (20091015) unstable; urgency=low
   * Added mips and mipsel architectures (bootstrap already uploaded)
   * Switch to debian native version numbers
   * Base the MLton version on the changelog
+  * Mark the smlnj script as bash-specific (closes: #530142)
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Thu, 15 Oct 2009 21:09:17 +0200
 

@@ -12552,3 +12552,15 @@ diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 +    Util/time-limit.mlb
 + in
 + end
+diff -N -C 2 -r smlnj-lib/Doc/config.sh smlnj-lib-mlton/Doc/config.sh
+*** smlnj-lib/Doc/config.sh	2007-05-10 23:39:48.000000000 +0200
+--- smlnj-lib-mlton/Doc/config.sh	2009-10-15 21:54:08.000000000 +0200
+***************
+*** 1,3 ****
+! #!/bin/sh
+  #
+  # This script creates the Makefile for building the documentation.  You
+--- 1,3 ----
+! #! /bin/bash
+  #
+  # This script creates the Makefile for building the documentation.  You
