@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-VERSION=$(dpkg-parsechangelog  | grep Version | cut -d" " -f2)
+VERSION := $(shell dpkg-parsechangelog  | grep Version | cut -d" " -f2)
 CP = cp -fpR
 
 configure: configure-stamp
@@ -16,7 +16,7 @@ build-stamp:
 
 clean:
 	rm -f build-stamp configure-stamp
-	$(MAKE) clean
+	$(MAKE) clean clean-svn
 
 BUILDDIR = $(CURDIR)/debian/mlton
 install: build
