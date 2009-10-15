@@ -402,42 +402,6 @@ move-docs:	install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
 
-DEBSRC := mlton-$(VERSION).orig
-.PHONY: deb
-deb:
-	$(MAKE) clean clean-svn version
-	mv package/debian .
-	tar -cpf - . | \
-		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
-	cd .. && tar -cpf - $(DEBSRC) | $(GZIP) >mlton_$(VERSION).orig.tar.gz
-	cd .. && mv $(DEBSRC) mlton-$(VERSION)
-	cd ../mlton-$(VERSION) && pdebuild --pbuilderroot ss
-
-.PHONY: deb-binary
-deb-binary:
-	fakeroot debian/rules binary
-
-.PHONY: deb-change
-deb-change:
-	(								\
-		echo 'mlton ($(VERSION)-1) unstable; urgency=low';	\
-		echo;							\
-		echo '  * new upstream version';			\
-		echo;							\
-		echo ' -- Stephen Weeks <sweeks@sweeks.com>  '`date -R`;\
-		echo;							\
-		cat package/debian/changelog;				\
-	) >/tmp/changelog
-	mv /tmp/changelog package/debian/changelog
-
-.PHONY: deb-lint
-deb-lint:
-	lintian ../mlton_$(VERSION)-1_i386.deb
-
-.PHONY: deb-spell
-deb-spell:
-	ispell -g package/debian/control
-
 TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
 .PHONY: post-install-debian
 post-install-debian:
