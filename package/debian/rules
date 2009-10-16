@@ -15,13 +15,13 @@ build-stamp:
 	touch build-stamp
 
 clean:
-	rm -f build-stamp configure-stamp
+	rm -rf build-stamp configure-stamp debian/mlton debian/substvars
 	$(MAKE) clean clean-svn
 
 BUILDDIR = $(CURDIR)/debian/mlton
 install: build
 	$(MAKE) install post-install-debian DESTDIR=$(BUILDDIR) \
-		MAN_PREFIX_EXTRA=/share
+		PREFIX=/usr MAN_PREFIX_EXTRA=/share
 
 # Build architecture-independent files here.
 binary-indep: build install
