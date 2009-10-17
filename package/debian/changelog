@@ -4,10 +4,11 @@ mlton (20091017) unstable; urgency=low
    * caused thrashing on nautilus (amd64)
    * bootstrap troubles from 20070812 on paer (hppa)
   * Solution => fixed-heap based on debian target (rules/heap-size)
-   * 800MB for 32-bit systems (should work well with 1GB RAM)
-    * hppa, hurd-i386, i386, kfreebsd-i386, mips, mipsel, powerpc, s390, sparc
+   * 800MB for 32-bit systems
+    * hppa, i386, kfreebsd-i386, mips, mipsel, powerpc, s390, sparc
    * 1400MB for 64-bit systems
     * alpha, amd64, ia64, kfreebsd-amd64
+   * 700MB for i386-hurd (it can only map 800MB total)
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sat, 17 Oct 2009 19:12:00 +0200
 

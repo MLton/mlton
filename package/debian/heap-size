@@ -11,6 +11,8 @@ if dpkg-architecture -iany-alpha; then result=1.4g; fi
 if dpkg-architecture -iany-amd64; then result=1.4g; fi
 if dpkg-architecture -iany-ia64;  then result=1.4g; fi
 
+if dpkg-architecture -ihurd-i386; then result=700m; fi
+
 # Default to more
 if test -z "$result"; then result=2g; echo "Warning: Unknown architecture." >&2; fi
 
