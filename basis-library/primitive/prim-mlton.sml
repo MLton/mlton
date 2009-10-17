@@ -202,6 +202,7 @@ structure Platform =
              | Cygwin
              | Darwin
              | FreeBSD
+             | Hurd
              | HPUX
              | Linux
              | MinGW
@@ -215,6 +216,7 @@ structure Platform =
                 | "cygwin" => Cygwin
                 | "darwin" => Darwin
                 | "freebsd" => FreeBSD
+                | "hurd" => Hurd
                 | "hpux" => HPUX
                 | "linux" => Linux
                 | "mingw" => MinGW

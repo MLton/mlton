@@ -43,6 +43,9 @@ Darwin)
 *FreeBSD*)
         HOST_OS='freebsd'
 ;;
+GNU)
+        HOST_OS='hurd'
+;;
 HP-UX)
 	HOST_OS='hpux'
 ;;
@@ -127,7 +130,7 @@ sparc*)
 sun*)
         HOST_ARCH=sparc
 ;;
-i?86)
+i?86*)
         HOST_ARCH=x86
 ;;
 *)

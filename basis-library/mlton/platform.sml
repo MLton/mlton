@@ -69,6 +69,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                 (Cygwin, "Cygwin"),
                 (Darwin, "Darwin"),
                 (FreeBSD, "FreeBSD"),
+                (Hurd, "Hurd"),
                 (HPUX, "HPUX"),
                 (Linux, "Linux"),
                 (MinGW, "MinGW"),

@@ -103,6 +103,8 @@ structure Target =
                                 endianShift = EndianLittle.shift}
           | (HPPA, _) => SOME {name = toString t, sizes = SizesHPPA.sizes,
                                endianShift = EndianBig.shift}
+          | (IA64, Hurd) => SOME {name = toString t, sizes = SizesIA64.sizes,
+                                  endianShift = EndianBig.shift}
           | (IA64, HPUX) => SOME {name = toString t, sizes = SizesIA64.sizes,
                                   endianShift = EndianBig.shift}
           | (IA64, Linux) => SOME {name = toString t, sizes = SizesIA64.sizes,

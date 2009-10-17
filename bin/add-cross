@@ -137,6 +137,9 @@ darwin)
 freebsd)
         osOpts='-I/usr/local/include -L/usr/local/lib/'
 ;;
+hurd)
+        osOpts=''
+;;
 hpux)
         osOpts=''
 ;;

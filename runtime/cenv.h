@@ -16,7 +16,7 @@
 /* Only enable _POSIX_C_SOURCE on platforms that don't have broken
  * system headers.
  */
-#if (defined (__linux__))
+#if (defined (__linux__) || defined(__GNU__))
 #define _POSIX_C_SOURCE 200112L
 #endif
 #define _FILE_OFFSET_BITS 64
@@ -75,6 +75,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/freebsd.h"
 #elif (defined (__hpux__))
 #include "platform/hpux.h"
+#elif (defined (__GNU__))
+#include "platform/hurd.h"
 #elif (defined (__linux__))
 #include "platform/linux.h"
 #elif (defined (__MINGW32__))
