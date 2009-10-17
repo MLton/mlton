@@ -1,16 +1,18 @@
 #!/usr/bin/make -f
 
-VERSION := $(shell dpkg-parsechangelog  | grep Version | cut -d" " -f2)
+VERSION  := $(shell dpkg-parsechangelog  | grep Version | cut -d" " -f2)
+HEAPSIZE := $(shell . rules/heap-size)
 CP = cp -fpR
 
 configure: configure-stamp
 configure-stamp:
+	free
 	make VERSION=$(VERSION) RELEASE=1 version
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
-	$(MAKE)
+	$(MAKE) RUNTIME_ARGS="fixed-heap $(HEAPSIZE)"
 	./bin/regression
 	touch build-stamp
 

@@ -1,3 +1,16 @@
+mlton (20091017) unstable; urgency=low
+
+  * Debian buildds are heavily loaded -> ram-slop 0.7 is a bad idea.
+   * caused thrashing on nautilus (amd64)
+   * bootstrap troubles from 20070812 on paer (hppa)
+  * Solution => fixed-heap based on debian target (rules/heap-size)
+   * 800MB for 32-bit systems (should work well with 1GB RAM)
+    * hppa, hurd-i386, i386, kfreebsd-i386, mips, mipsel, powerpc, s390, sparc
+   * 1200MB for 64-bit systems (should work well with 1.5GB RAM)
+    * alpha, amd64, ia64, kfreebsd-amd64
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sat, 17 Oct 2009 19:12:00 +0200
+
 mlton (20091015) unstable; urgency=low
 
   * Rebuild proper packages using the buildd
