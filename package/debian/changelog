@@ -8,7 +8,12 @@ mlton (20091017) unstable; urgency=low
     * hppa, i386, kfreebsd-i386, mips, mipsel, powerpc, s390, sparc
    * 1400MB for 64-bit systems
     * alpha, amd64, ia64, kfreebsd-amd64
-   * 700MB for i386-hurd (it can only map 800MB total)
+   * Added hurd-i386 port
+    * 700MB fixed-heap (hurd can only map 800MB physical RAM)
+    * Disable regression suite on hurd; there is a bug in signal handling on
+      this platform (#551470) which causes these tests to hang:
+        mutex prodcons signals signals2 suspend timeout
+    * Otherwise all regressions pass
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sat, 17 Oct 2009 19:12:00 +0200
 

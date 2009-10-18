@@ -13,7 +13,7 @@ configure-stamp:
 build: configure-stamp build-stamp
 build-stamp:
 	$(MAKE) RUNTIME_ARGS="fixed-heap $(HEAPSIZE)"
-	./bin/regression
+	if dpkg-architecture -ihurd-any; then true; else ./bin/regression; fi
 	touch build-stamp
 
 clean:
