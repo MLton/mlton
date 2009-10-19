@@ -1,62 +1,68 @@
 #! /bin/bash
 
-# MLton versions around 20091019 require 700m and 1.32g to build.
+# MLton versions around 20091019 require 650m and 1.35g to build.
 # Earlier MLton versions (20070812)require slightly more.
+# The heap size needs to leave about 300m of physical RAM free.
+
+# Plan:
+#  32-bit builds use 700m or 1.5g (for 1GB and >= 2GB)
+#  64-bit builds use 1.7g or 3g   (for 2GB and >= 4GB)
 
 # Unfortunately, the debian buildds don't have that much memory
 # alpha          -  4g (goedel)
 #                -  8g (goetz)
 #   => 3g heap
-# amd64          -  1g (nautilus)              UNUSABLE
-#                - ??? (excelsior, brahms)
-#   => ???
+# amd64          -  1g (nautilus)              UNUSABLE / black-listed
+#                -  2g (excelsior, brahms)
+#   => 1.7g
 # hppa           -  8g (paer)
 #                -3.5g (penalosa, peri)
-#   => 3g heap
+#   => 1.5g heap
 # hurd-i386
-#                - 400m/800m ??? (mozart, rossini, sthibault, bach)
-#   => 700m heap
+#                - 400m ??? (rossini, sthibault, bach)
+#                - 800m (mozart)
+#   => 650m heap
 # i386           - 16g (murphy)
 #                -  4g (puccini)
-#   => 2g heap
+#   => 1.5g heap
 # ia64           - 12g (mundy)
 #                -  4g (caballero)
 #   => 3g heap
-# kfreebsd-amd64 - ??? (himalia2)
-#                -1.5g (fano)
-#   => 1.35g heap
-# kfreebsd-i386  - ??? (himalia1)
-#                - ??? (finzi)
-#   => ???
+# kfreebsd-amd64 -  2g (himalia2)
+#                -1.5g (fano)                  UNUSABLE / black-listed
+#   => 1.7g heap
+# kfreebsd-i386  -  2g (himalia1)
+#                -  1g (finzi)                 black-listed
+#   => 1.5g
 # mips           -  1g (ball)
 #                -1.4g (mayr)
-#   => 800m heap
+#   => 700m heap
 # mipsel         -  1g (mayer)
-#                -0.5g (rem)                   UNUSABLE
-#   => 800m heap
+#                -0.5g (rem)                   UNUSABLE / black-listed
+#   => 700m heap
 # powerpc        -0.3g (voltaire)              UNUSABLE / black-listed
 #                -0.5g (malo)                  UNUSABLE / black-listed
 #                -  3g (praetorius)
-#   => 2g heap
+#   => 1.5g heap
 # s390           - ??? (31)
-#                - ??? (lxdebian)
-#   => ???
+#                -  1g (lxdebian) ... but fast swap?
+#   => 700m
 # sparc          -  2g (schroeder, lebrun, spontini)
-#   => 1.8g heap
+#   => 1.5g heap
 
 if dpkg-architecture -ealpha;          then result=3g;    fi
-if dpkg-architecture -eamd64;          then result=1.8g;  fi # ??? & need black
-if dpkg-architecture -ehppa;           then result=3g;    fi
-if dpkg-architecture -ehurd-i386;      then result=700m;  fi
-if dpkg-architecture -ei386;           then result=2g;    fi
+if dpkg-architecture -eamd64;          then result=1.7g;  fi
+if dpkg-architecture -ehppa;           then result=1.5g;  fi
+if dpkg-architecture -ehurd-i386;      then result=650m;  fi
+if dpkg-architecture -ei386;           then result=1.5g;  fi
 if dpkg-architecture -eia64;           then result=3g;    fi
-if dpkg-architecture -ekfreebsd-amd64; then result=1.35g; fi # ??? & need black
-if dpkg-architecture -ekfreebsd-i386;  then result=700m;  fi # ???
-if dpkg-architecture -emips;           then result=800m;  fi
-if dpkg-architecture -emipsel;         then result=800m;  fi # need black
-if dpkg-architecture -epowerpc;        then result=2g;    fi
-if dpkg-architecture -es390;           then result=1.8g;  fi # ???
-if dpkg-architecture -esparc;          then result=1.8g;  fi
+if dpkg-architecture -ekfreebsd-amd64; then result=1.7g;  fi
+if dpkg-architecture -ekfreebsd-i386;  then result=1.5g;  fi
+if dpkg-architecture -emips;           then result=700m;  fi
+if dpkg-architecture -emipsel;         then result=700m;  fi
+if dpkg-architecture -epowerpc;        then result=1.5g;  fi
+if dpkg-architecture -es390;           then result=700m;  fi
+if dpkg-architecture -esparc;          then result=1.5g;  fi
 
 # Default to more
 if test -z "$result"; then result=2g; echo "Warning: Unknown architecture." >&2; fi

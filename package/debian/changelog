@@ -1,3 +1,12 @@
+mlton (20091019) unstable; urgency=low
+
+  * Revised the heap-size script again to ensure 300m free for the OS.
+  * Got fano.debian.org black-listed (1.5G freebsd-amd64).
+  * Got nautilus.debian.org black-listed (1G for amd64).
+  * Got rem.debian.org black-listed (0.5G for mips).
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 19 Oct 2009 14:37:57 +0200
+
 mlton (20091018) unstable; urgency=low
 
   * Apparently, procps needs to be installed to use 'free'.
