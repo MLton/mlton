@@ -1,6 +1,7 @@
 mlton (20091018) unstable; urgency=low
 
   * Apparently, procps needs to be installed to use 'free'.
+  * The buildds aren't overloaded, they just suck. Revised heap-size.
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 19 Oct 2009 02:32:45 +0200
 
