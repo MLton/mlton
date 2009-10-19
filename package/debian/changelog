@@ -1,3 +1,9 @@
+mlton (20091018) unstable; urgency=low
+
+  * Apparently, procps needs to be installed to use 'free'.
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 19 Oct 2009 02:32:45 +0200
+
 mlton (20091017) unstable; urgency=low
 
   * Debian buildds are heavily loaded -> ram-slop 0.7 is a bad idea.
