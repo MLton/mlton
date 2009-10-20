@@ -1,0 +1,32 @@
+Real32
+  Reported
+    precision:    24
+    max exponent: 128
+    min exponent: ~148
+    subnormal:    yes
+  Actual
+    precision:    24
+    max exponent: 128
+    min exponent: ~148
+    subnormal:    yes
+  Exported
+    precision:    24
+    max exponent: 128
+    min exponent: ~148
+    subnormal:    yes
+Real64
+  Reported
+    precision:    53
+    max exponent: 1024
+    min exponent: ~1073
+    subnormal:    yes
+  Actual
+    precision:    53
+    max exponent: 1024
+    min exponent: ~1073
+    subnormal:    yes
+  Exported
+    precision:    53
+    max exponent: 1024
+    min exponent: ~1073
+    subnormal:    yes
