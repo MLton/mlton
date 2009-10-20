@@ -7,9 +7,10 @@ functor Basic(structure Real : REAL
       val () = print ("    precision:    " ^ Int.toString precision ^ "\n")
       val {man=_, exp} = toManExp maxFinite
       val () = print ("    max exponent: " ^ Int.toString exp ^ "\n")
-      val {man=_, exp} = toManExp minPos
+      val {man=_, exp} = toManExp minNormalPos
       val () = print ("    min exponent: " ^ Int.toString exp ^ "\n")
-      val () = print ("    subnormal:    yes\n")
+      val {man=_, exp} = toManExp minPos
+      val () = print ("    min denormal: " ^ Int.toString exp ^ "\n")
       
       (* Now let's compute the actual mantissa *)
       val zero = fromInt 0
@@ -19,38 +20,43 @@ functor Basic(structure Real : REAL
       fun precision eq x =
          if eq (x+one, x) then 0 else
          Int.+ (1, precision eq (x+x))
-      fun maxExp inf x =
-         if inf (x+x) then 1 else
-         Int.+ (1, maxExp inf (x+x))
-      fun minExp zero x =
-         if zero (x / two) then 1 else
-         Int.- (minExp zero (x / two), 1)
-      fun deNorm zero =
-         if zero (minPos * (one + one / two) - minPos) then "no" else "yes"
+      fun maxExp eq x =
+         if eq (x, x+x) then 0 else
+         Int.+ (1, maxExp eq (x+x))
+      fun lowBit (1, x) = x
+        | lowBit (i, x) = lowBit (Int.- (i, 1), x / two)
+      fun minExp eq x =
+         if not (eq (x, (x / two) * two)) orelse eq (x, zero) then 1 else
+         Int.- (minExp eq (x / two), 1)
       
-      val xprecision = precision == one
-      val xmaxExp = maxExp (not o isFinite) one
-      val xminExp = minExp (fn z => == (z, zero)) one
-      val xdeNorm = deNorm (fn z => == (z, zero))
+      val eq = ==
+      val xprecision = precision eq one
+      val lastBit = one + lowBit (xprecision, one)
+      val xmaxExp = maxExp eq one
+      val xminNormalExp = minExp eq lastBit
+      val xminExp = minExp eq one
       
       val () = print "  Actual\n"
       val () = print ("    precision:    " ^ Int.toString xprecision ^ "\n")
       val () = print ("    max exponent: " ^ Int.toString xmaxExp ^ "\n")
-      val () = print ("    min exponent: " ^ Int.toString xminExp ^ "\n")
-      val () = print ("    subnormal:    " ^ xdeNorm ^ "\n")
+      val () = print ("    min exponent: " ^ Int.toString xminNormalExp ^ "\n")
+      val () = print ("    min denormal: " ^ Int.toString xminExp ^ "\n")
       
       val a = Word8Array.array (Pack.bytesPerElem, 0w0)
       fun id x = (Pack.update (a, 0, x); Pack.subArr (a, 0))
-      val xprecision = precision (fn (x, y) => == (id x, id y)) one
-      val xmaxExp = maxExp (not o isFinite o id) one
-      val xminExp = minExp (fn z => == (id z, zero)) one
-      val xdeNorm = deNorm (fn z => == (id z, zero))
+      
+      val eq = fn (x, y) => == (id x, id y)
+      val xprecision = precision eq one
+      val lastBit = one + lowBit (xprecision, one)
+      val xmaxExp = maxExp eq one
+      val xminNormalExp = minExp eq lastBit
+      val xminExp = minExp eq one
       
       val () = print "  Exported\n"
       val () = print ("    precision:    " ^ Int.toString xprecision ^ "\n")
       val () = print ("    max exponent: " ^ Int.toString xmaxExp ^ "\n")
-      val () = print ("    min exponent: " ^ Int.toString xminExp ^ "\n")
-      val () = print ("    subnormal:    " ^ xdeNorm ^ "\n")
+      val () = print ("    min exponent: " ^ Int.toString xminNormalExp ^ "\n")
+      val () = print ("    min denormal: " ^ Int.toString xminExp ^ "\n")
    end
 
 val () = print "Real32\n"
