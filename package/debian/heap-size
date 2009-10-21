@@ -19,8 +19,9 @@
 #                -3.5g (penalosa, peri)
 #   => 1.5g heap
 # hurd-i386
-#                - 400m ??? (rossini, sthibault, bach)
-#                - 800m (mozart)
+#                -400m (rossini)               UNUSABLE / black-listed
+#                - 1g- (bach)                  UNUSABLE / black-listed
+#                - 1g+ (mozart)
 #   => 650m heap
 # i386           - 16g (murphy)
 #                -  4g (puccini)
@@ -53,7 +54,7 @@
 if dpkg-architecture -ealpha;          then result=3g;    fi
 if dpkg-architecture -eamd64;          then result=1.7g;  fi
 if dpkg-architecture -ehppa;           then result=1.5g;  fi
-if dpkg-architecture -ehurd-i386;      then result=650m;  fi
+if dpkg-architecture -ehurd-i386;      then result=700m;  fi
 if dpkg-architecture -ei386;           then result=1.5g;  fi
 if dpkg-architecture -eia64;           then result=3g;    fi
 if dpkg-architecture -ekfreebsd-amd64; then result=1.7g;  fi
@@ -66,5 +67,8 @@ if dpkg-architecture -esparc;          then result=1.5g;  fi
 
 # Default to more
 if test -z "$result"; then result=2g; echo "Warning: Unknown architecture." >&2; fi
+
+# Allow buildd admin to override heap-size with environment variable
+if test -n "$DEB_BUILD_HEAP"; then result="$DEB_BUILD_HEAP"; fi
 
 echo "$result"

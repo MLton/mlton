@@ -1,9 +1,10 @@
-mlton (20091019) unstable; urgency=low
+mlton (20091021) unstable; urgency=low
 
   * Revised the heap-size script again to ensure 300m free for the OS.
-  * Got fano.debian.org black-listed (1.5G freebsd-amd64).
-  * Got nautilus.debian.org black-listed (1G for amd64).
-  * Got rem.debian.org black-listed (0.5G for mips).
+  * Got these buildds black-listed for low ram: fano, nautilus, rem
+  * Changed s390 alignment to 8 to fix Real64 regressions.
+  * Filled in regression tests for alpha, hppa, mips/el, powerpc, and s390.
+  * Added option DEB_BUILD_HEAP to override debian/heap-size defaults.
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 19 Oct 2009 14:37:57 +0200
 
