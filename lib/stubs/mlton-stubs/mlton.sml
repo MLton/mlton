@@ -193,6 +193,7 @@ structure MLton: MLTON =
                    | Darwin
                    | FreeBSD
                    | HPUX
+                   | Hurd
                    | Linux
                    | MinGW
                    | NetBSD
@@ -204,6 +205,7 @@ structure MLton: MLTON =
                              (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
                              (HPUX, "HPUX"),
+                             (Hurd, "Hurd"),
                              (Linux, "Linux"),
                              (MinGW, "MinGW"),
                              (NetBSD, "NetBSD"),
