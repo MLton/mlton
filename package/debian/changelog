@@ -1,3 +1,9 @@
+mlton (20091022) unstable; urgency=low
+
+  * Added missing hurd variant to mlton-stubs bootstrap library.
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Thu, 22 Oct 2009 12:00:13 +0200
+
 mlton (20091021) unstable; urgency=low
 
   * Revised the heap-size script again to ensure 300m free for the OS.
