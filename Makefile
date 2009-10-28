@@ -288,6 +288,9 @@ version:
 	sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"
 	mv z "$(SPEC)"
 
+.PHONY: check
+check:
+	./bin/regression
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
