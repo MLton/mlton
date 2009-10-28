@@ -21,6 +21,7 @@ DEB_MAKE_CHECK_TARGET   = check
 common-configure-arch::
 	free
 
-# Remove empty directories to appease lintian
+# Remove licenses and empty directories to appease lintian
 common-install-arch::
 	find $(CURDIR)/debian/tmp -type d -empty -delete
+	rm -rf $(CURDIR)/debian/tmp/usr/share/doc/mlton/license
