@@ -318,7 +318,10 @@ GZIP_MAN := false
 endif
 
 .PHONY: install
-install: install-docs install-no-docs move-docs
+install: install-no-strip install-strip
+
+.PHONY: install-no-strip
+install-no-strip: install-docs install-no-docs move-docs 
 
 MAN_PAGES :=  \
 	mllex.1 \
@@ -351,7 +354,9 @@ install-no-docs:
 	if $(GZIP_MAN); then						\
 		cd "$(TMAN)" && $(GZIP) $(MAN_PAGES);			\
 	fi
-ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+
+.PHONY: install-strip
+install-strip:
 	case "$(TARGET_OS)" in						\
 	aix|cygwin|darwin|solaris)					\
 	;;								\
@@ -363,7 +368,6 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 				--remove-section=.note "$$f";		\
 		done							\
 	esac
-endif
 
 .PHONY: install-docs
 install-docs:
