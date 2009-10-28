@@ -277,7 +277,6 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		package/debian/changelog				\
 		"$(SPEC)"						\
 		package/freebsd/Makefile				\
 		mlton/control/version_sml.src;				\
@@ -408,20 +407,6 @@ move-docs:	install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in *; do test -d "$(TDOC)/$$i" || mkdir -p "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
-
-TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
-.PHONY: post-install-debian
-post-install-debian:
-	cd "$(TDOC)/" && rm -rf license
-	$(CP) "$(SRC)/debian/copyright" "$(SRC)/debian/README.Debian" "$(TDOC)/"
-	$(CP) "$(SRC)/debian/changelog" "$(TDOC)/changelog.Debian"
-	mkdir -p $(TDOCBASE)
-	for f in mllex mlton mlyacc; do \
-		$(CP) "$(SRC)/debian/$$f.doc-base" "$(TDOCBASE)/$$f"; \
-	done
-	cd "$(TDOC)/" && $(GZIP) changelog changelog.Debian
-	chown -R root.root "$(TDOC)" "$(TLIB)"
-
 
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd
