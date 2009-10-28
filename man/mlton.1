@@ -38,33 +38,33 @@ The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, \fB.s\fP, and \
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.
-\fBmlton -z\fP.  In the explanation below and in the usage message,
+\fBmlton \-z\fP.  In the explanation below and in the usage message,
 for flags that take a number of choices
 (e.g. \fI{\fBtrue\fP|\fBfalse\fP}\fR), the first value listed is the
 default. 
 
 .SH Compile-time options
 .TP
-\fB-align \fI{\fB4\fP|\fB8\fP}\fP\fR
+\fB\-align \fI{\fB4\fP|\fB8\fP}\fP\fR
 Aligns object sizes and doubles in memory by the specified alignment.
 The default varies depending on architecture.
 
 .TP
-\fB-as-opt \fIoption\fP\fR
+\fB\-as\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBgcc\fP when assembling.
 
 .TP
-\fB-cc-opt \fIoption\fP\fR
+\fB\-cc\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
-\fB-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBbytecode\fP}\fP\fR
-Generate native code, C code, or byte code.  With \fB-codegen
-native\fP (\fB-codegen x86\fP or \fB-codegen amd64\fP), \fBMLton\fP
+\fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBbytecode\fP}\fP\fR
+Generate native code, C code, or byte code.  With \fB\-codegen
+native\fP (\fB\-codegen x86\fP or \fB\-codegen amd64\fP), \fBMLton\fP
 typically compiles more quickly and generates better code.
 
 .TP
-\fB-const '\fIname value\fP'\fR
+\fB\-const '\fIname value\fP'\fR
 Set the value of a compile-time constant.  Here is a list of available
 constants, their default values, and what they control.
 
@@ -77,51 +77,51 @@ construction, raise, and handle.
 .in -.5i
 
 .TP
-\fB-default-ann \fIann\fP\fR
+\fB\-default\-ann \fIann\fP\fR
 Specify default ML Basis annotations.  For
-example, \fB-default-ann 'warnUnused true'\fP 
+example, \fB\-default\-ann 'warnUnused true'\fP 
 causes unused variable warnings to be enabled by default.
 Defaults may be overridden by an annotation in an ML Basis file.
 
 .TP
-\fB-default-type \fItype\fP\fR
+\fB\-default\-type \fItype\fP\fR
 Specify the default binding for a primitive type.  For example, 
-\fB-default-type word64\fP causes the top-level type \fBword\fP and
+\fB\-default\-type word64\fP causes the top-level type \fBword\fP and
 the top-level structure \fBWord\fP in the Basis Library to be equal to
 \fBWord64.word\fP and \fBWord64:WORD\fP, respectively.  Similarly, 
-\fB-default-type intinf\fP causes the top-level type \fBint\fP and
+\fB\-default\-type intinf\fP causes the top-level type \fBint\fP and
 the top-level structure \fBInt\fP in the Basis Library to be equal to
 \fBIntInf.int\fP and \fBIntInf:INTEGER\fP, respectively.
 
 .TP
-\fB-disable-ann \fIann\fP\fR
+\fB\-disable\-ann \fIann\fP\fR
 Ignore the specified ML Basis annotation in every ML Basis File. For example,
 to see \fIall\fP match and unused warnings, compile with 
-\fB-default-ann 'warnUnused true'\fP, 
-\fB-disable-ann forceUsed\fP,
-\fB-disable-ann nonexhaustiveMatch\fP,
-\fB-disable-ann redundantMatch\fP,
-and \fB-disable-ann warnUnused\fP.
+\fB\-default\-ann 'warnUnused true'\fP, 
+\fB\-disable\-ann forceUsed\fP,
+\fB\-disable\-ann nonexhaustiveMatch\fP,
+\fB\-disable\-ann redundantMatch\fP,
+and \fB\-disable\-ann warnUnused\fP.
 
 .TP
-\fB-export-header \fIfile\fP\fR
+\fB\-export\-header \fIfile\fP\fR
 Write C prototypes to \fIfile\fP for all of the functions in the
 program exported from SML to C.
 
 .TP
-\fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+\fB\-ieee\-fp \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 Cause the x86 native code generator to be pedantic about following the IEEE
 floating point standard.  By default, it is not, because of the
-performance cost.  This only has an effect with \fB-codegen x86\fP.
+performance cost.  This only has an effect with \fB\-codegen x86\fP.
 
 .TP
-\fB-inline \fIn\fP\fR
+\fB\-inline \fIn\fP\fR
 Set the inlining threshold used in the optimizer.  The threshold is an
 approximate measure of code size of a procedure.  The default is 320.
 
 .TP
-\fB-keep \fI{\fBg\fP|\fBo\fP}\fP\fR
-Save intermediate files.  If no \fB-keep\fP argument is given, then
+\fB\-keep \fI{\fBg\fP|\fBo\fP}\fP\fR
+Save intermediate files.  If no \fB\-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
 \fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to gcc and the assembler
@@ -130,104 +130,104 @@ only the output file is saved.
 .in -.5i
 
 .TP
-\fB-link-opt \fIoption\fP\fR
+\fB\-link\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBgcc\fP when linking.  You can use this to
-specify library search paths, e.g. \fB-link-opt -Lpath\fP, and
-libraries to link with, e.g. \fB-link-opt -lfoo\fP, or even both at
-the same time, e.g. \fB-link-opt '-Lpath -lfoo'\fP.  If you wish to
-pass an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
-syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
+specify library search paths, e.g. \fB\-link\-opt \-Lpath\fP, and
+libraries to link with, e.g. \fB\-link\-opt \-lfoo\fP, or even both at
+the same time, e.g. \fB\-link\-opt '\-Lpath \-lfoo'\fP.  If you wish to
+pass an option to the linker, you must use \fBgcc\fP's \fB\-Wl,\fP
+syntax, e.g., \fB\-link\-opt '\-Wl,\-\-export\-dynamic'\fP.
 
 .TP
-\fB-mlb-path-map \fIfile\fP\fR
+\fB\-mlb\-path\-map \fIfile\fP\fR
 Use \fIfile\fP as an ML Basis path map to define additional MLB path variables.
-Multiple uses of \fB-mlb-path-map\fP and \fB-mlb-path-var\fP are
+Multiple uses of \fB\-mlb\-path\-map\fP and \fB\-mlb\-path\-var\fP are
 allowed, with variable definitions in later path maps taking
 precendence over earlier ones.
 
 .TP
-\fB-mlb-path-var '\fIname value\fP'\fR
+\fB\-mlb\-path\-var '\fIname value\fP'\fR
 Define an additional MLB path variable.
-Multiple uses of \fB-mlb-path-map\fP and \fB-mlb-path-var\fP are
+Multiple uses of \fB\-mlb\-path\-map\fP and \fB\-mlb\-path\-var\fP are
 allowed, with variable definitions in later path maps taking
 precendence over earlier ones.
 
 .TP
-\fB-output \fIfile\fP\fR
+\fB\-output \fIfile\fP\fR
 Specify the name of the final output file.
 The default name is the input file name with its suffix removed and an
 appropriate, possibly empty, suffix added.
 
 .TP
-\fB-profile \fI{\fBno\fP|\fBalloc\fP|\fBcount\fP|\fBtime\fP}\fP\fR
+\fB\-profile \fI{\fBno\fP|\fBalloc\fP|\fBcount\fP|\fBtime\fP}\fP\fR
 Produce an executable that gathers profiling data.  When
 such an executable is run, it will produce an \fBmlmon.out\fP file.
 The man page on \fBmlprof\fP describes how to extract information from
 this file.
 
 .TP
-\fB-profile-branch \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+\fB\-profile\-branch \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 If true, the profiler will separately gather profiling data
 for each branch of a function definition, \fBcase\fP
 expression, and \fBif\fP expression.
 
 .TP
-\fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+\fB\-profile\-stack \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 If true, the profiler will gather profiling data for all
 functions on the stack, not just the currently executing function.
 
 .TP
-\fB-profile-val \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+\fB\-profile\-val \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 If true, the profiler will separately gather profiling data
 for each (expansive) \fBval\fP declaration.
 
 .TP
-\fB-runtime \fIarg\fP\fR
+\fB\-runtime \fIarg\fP\fR
 Pass argument to the runtime system via \fB@MLton\fP.  The argument
 will be processed before other \fB@MLton\fP command line switches.
-Multiple uses of \fB-runtime\fP are allowed, and will pass all the
+Multiple uses of \fB\-runtime\fP are allowed, and will pass all the
 arguments in order.  If the same runtime switch occurs more than once,
 then the last setting will take effect.  There is no need to supply the
-leading \fB@MLton\fP or the trailing \fB--\fP; these will be 
+leading \fB@MLton\fP or the trailing \fB\-\-\fP; these will be 
 supplied automatically.
 
-An argument to \fB-runtime\fP may contain spaces, which will cause the
+An argument to \fB\-runtime\fP may contain spaces, which will cause the
 argument to be treated as a sequence of words by the runtime.  For
 example, the command line:
 .in +.5i
-\fBmlton -runtime 'ram-slop 0.4' foo.sml\fP
+\fBmlton \-runtime 'ram\-slop 0.4' foo.sml\fP
 .in -.5i
 will cause foo to run as if it had been called like
 .in +.5i
-\fBfoo @MLton ram-slop 0.4 --\fP
+\fBfoo @MLton ram\-slop 0.4 \-\-\fP
 .in -.5i
 
-An executable created with \fB-runtime stop\fP doesn't proces any
+An executable created with \fB\-runtime stop\fP doesn't proces any
 \fB@MLton\fP arguments.  This is useful to create an executable,
 e.g. \fBecho\fP, that must treat \fB@MLton\fP like any other
 command-line argument.
 .in +.5i
-\fB% mlton -runtime stop echo.sml\fP
+\fB% mlton \-runtime stop echo.sml\fP
 .in -.5i
 .in +.5i
-\fB% echo @MLton --\fP
+\fB% echo @MLton \-\-\fP
 .in -.5i
 .in +.5i
-\fB@MLton --\fP
+\fB@MLton \-\-\fP
 .in -.5i
 
 .TP
-\fB-show-basis \fIfile\fP\fR
+\fB\-show\-basis \fIfile\fP\fR
 Pretty print to \fIfile\fP the basis defined by the input program.
 
 .TP
-\fB-show-def-use \fIfile\fP\fR
+\fB\-show\-def\-use \fIfile\fP\fR
 Output def-use information to \fIfile\fP.  Each identifier that is
 defined appears on a line, follwed on subequent lines by the position
 of each use.
 
 .TP
-\fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBtc\fP}\fP\fR
+\fB\-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBtc\fP}\fP\fR
 Specify when to stop.
 .in +.5i
 \fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
@@ -238,12 +238,12 @@ Specify when to stop.
 .br
 \fBtc\fP   after type checking
 .in -.5i
-If you compile \fB-stop g\fP or \fB-stop o\fP, you can resume
+If you compile \fB\-stop g\fP or \fB\-stop o\fP, you can resume
 compilation by running \fBMLton\fP on the generated \fB.c\fP and \fB.s\fP
 or \fB.o\fP files.
 
 .TP
-\fB-target \fI{\fBself\fP|...}\fP\fR
+\fB\-target \fI{\fBself\fP|...}\fP\fR
 Generate an executable that runs on the specified platform.  The
 default is \fBself\fP, which means to compile for the machine that
 \fBMLton\fP is running on.  To use any other target, you must first
@@ -251,8 +251,8 @@ install a cross compiler.  See the \fBMLton Guide\fP for
 details.
 
 .TP
-\fB-target-as-opt \fItarget\fP \fIoption\fP\fR
-Like \fB-as-opt\fP, this passes \fIoption\fP to \fBgcc\fP when assembling,
+\fB\-target\-as\-opt \fItarget\fP \fIoption\fP\fR
+Like \fB\-as\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when assembling,
 except it only passes \fIoption\fP when the target architecture or
 operating system is \fItarget\fP.
 Valid values for \fItarget\fP are:
@@ -262,21 +262,21 @@ Valid values for \fItarget\fP are:
 \fBlinux\fP, \fBmingw\fP, \fBnetbsd\fP, \fBopenbsd\fP, \fBsolaris\fP.
 
 .TP
-\fB-target-cc-opt \fItarget\fP \fIoption\fP\fR
-Like \fB-cc-opt\fP, this passes \fIoption\fP to \fBgcc\fP when compiling
+\fB\-target\-cc\-opt \fItarget\fP \fIoption\fP\fR
+Like \fB\-cc\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when compiling
 C code, except it only passes \fIoption\fP when the target architecture
 or operating system is \fItarget\fP.  Valid values for \fItarget\fR
-are as for \fB-target-as-opt\fP.
+are as for \fB\-target\-as\-opt\fP.
 
 .TP
-\fB-target-link-opt \fItarget\fP \fIoption\fP\fR
-Like \fB-link-opt\fP, this passes \fIoption\fP to \fBgcc\fP when linking,
+\fB\-target\-link\-opt \fItarget\fP \fIoption\fP\fR
+Like \fB\-link\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when linking,
 except it only passes \fIoption\fP when the target architecture or
 operating system is \fItarget\fP.
-Valid values for \fItarget\fP are as for \fB-target-as-opt\fP.
+Valid values for \fItarget\fP are as for \fB\-target\-as\-opt\fP.
 
 .TP
-\fB-verbose \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP\fR
+\fB\-verbose \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP\fR
 How verbose to be about what passes are running.  The default is 0.
 .in +.5i
 \fB0\fP  silent
@@ -293,29 +293,29 @@ Executables produced by \fBMLton\fP take command line arguments that control
 the runtime system.  These arguments are optional, and occur before
 the executable's usual arguments.  To use these options, the first
 argument to the executable must be \fB@MLton\fP.  The optional
-arguments then follow, must be terminated by \fB--\fP, and are
+arguments then follow, must be terminated by \fB\-\-\fP, and are
 followed by any arguments to the program.  The optional arguments are
 \fInot\fP made available to the SML program via
 \fBCommandLine.arguments\fP.  For example, a valid call to
 \fBhello-world\fP is:
 .in +.5i
-\fBhello-world @MLton gc-summary fixed-heap 10k -- a b c\fP
+\fBhello-world @MLton gc\-summary fixed\-heap 10k \-\- a b c\fP
 .in -.5i
 In the above example, 
 \fBCommandLine.arguments () = ["a", "b", "c"]\fP.
 
 It is allowed to have a sequence of \fB@MLton\fP arguments, as in:
 .in +.5i
-\fBhello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c\fP
+\fBhello-world @MLton gc\-summary \-\- @MLton fixed\-heap 10k \-\- a b c\fP
 .in -.5i
 
 Run-time options can also control \fBMLton\fP, as in
 .in +.5i
-\fBmlton @MLton fixed-heap 0.5g -- foo.sml\fP
+\fBmlton @MLton fixed\-heap 0.5g \-\- foo.sml\fP
 .in -.5i
 
 .TP
-\fBfixed-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
+\fBfixed\-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
 Use a fixed size heap of size \fIx\fP, where \fIx\fP is a real number
 and the trailing letter indicates its units.
 .in +.5i
@@ -327,49 +327,49 @@ and the trailing letter indicates its units.
 .in -.5i
 A value of \fB0\fP means to use almost all the RAM present on the machine.
 
-The heap size used by \fBfixed-heap\fP includes all memory
+The heap size used by \fBfixed\-heap\fP includes all memory
 allocated by SML code, including memory for the stack (or stacks,
 if there are multiple threads).  It does not, however, include any
 memory used for code itself or memory used by C globals, the C
 stack, or malloc.
 
 .TP
-\fBgc-messages\fP
+\fBgc\-messages\fP
 Print a message at the start and end of every garbage collection.
 
 .TP
-\fBgc-summary\fP
+\fBgc\-summary\fP
 Print a summary of garbage collection statistics upon program
 termination.
 
 .TP
-\fBload-world \fIworld\fP\fR
+\fBload\-world \fIworld\fP\fR
 Restart the computation with the file specified by \fIworld\fP, which must have
 been created by a call to \fBMLton.World.save\fP by the same
 executable.  See the \fBMLton Guide\fP for details.
 
 .TP
-\fBmax-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
+\fBmax\-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
 Run the computation with an automatically resized heap that is never
 larger than \fIx\fP, where \fIx\fP is a real number and the trailing
-letter indicates the units as with \fBfixed-heap\fP.  The
-heap size for \fBmax-heap\fP is accounted for as with
-\fBfixed-heap\fP.
+letter indicates the units as with \fBfixed\-heap\fP.  The
+heap size for \fBmax\-heap\fP is accounted for as with
+\fBfixed\-heap\fP.
 
 .TP
-\fBmay-page-heap \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+\fBmay\-page\-heap \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 Enable paging the heap to disk when unable to grow the heap to a
 desired size.
 
 .TP
-\fBno-load-world\fP
-Disable \fBload-world\fP.  This can be used as an argument to the
-compiler via \fB-runtime no-load-world\fP to create executables that
+\fBno\-load\-world\fP
+Disable \fBload\-world\fP.  This can be used as an argument to the
+compiler via \fB\-runtime no\-load\-world\fP to create executables that
 will not load a world.  This may be useful to ensure that set-uid
 executables do not load some strange world.
 
 .TP
-\fBram-slop \fIx\fP\fR
+\fBram\-slop \fIx\fP\fR
 Multiply \fBx\fP by the amount of RAM on the machine to obtain what
 the runtime views as the amount of RAM it can use.  Typically \fBx\fP
 is less than 1, and is used to account for space used by other
@@ -378,8 +378,8 @@ programs running on the same machine.
 .TP
 \fBstop\fP
 Causes the runtime to stop processing \fB@MLton\fP arguments once the
-next \fB--\fP is reached.  This can be used as an argument to the
-compiler via \fB-runtime stop\fP to create executables that don't
+next \fB\-\-\fP is reached.  This can be used as an argument to the
+compiler via \fB\-runtime stop\fP to create executables that don't
 process any \fB@MLton\fP arguments.
 
 .SH DIAGNOSTICS
