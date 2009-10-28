@@ -2,12 +2,12 @@ Source: mlton
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (>= 20070826), gcc, htmldoc, libgmp3-dev (>= 4.0.1), texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52)
+Build-Depends: mlton (>= 20070826), gcc-4.4, htmldoc, libgmp3-dev (>= 4.0.1), texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52)
 Standards-Version: 3.8.3.0
 
 Package: mlton
 Architecture: alpha amd64 hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
-Depends: ${shlibs:Depends}, gcc, libc6-dev, libgmp3-dev (>= 4.0.1)
+Depends: ${shlibs:Depends}, gcc-4.4, libc6-dev, libgmp3-dev (>= 4.0.1)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML
  MLton is a whole-program optimizing compiler
