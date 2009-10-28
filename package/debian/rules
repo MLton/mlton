@@ -25,3 +25,7 @@ common-configure-arch::
 common-install-arch::
 	find $(CURDIR)/debian/tmp -type d -empty -delete
 	rm -rf $(CURDIR)/debian/tmp/usr/share/doc/mlton/license
+	if test -n "$(DEB_ISNATIVE)"; then mv \
+		$(CURDIR)/debian/tmp/usr/share/doc/mlton/changelog \
+		$(CURDIR)/debian/tmp/usr/share/doc/mlton/changelog.PreviousRelease; \
+	fi
