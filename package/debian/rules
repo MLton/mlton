@@ -9,8 +9,8 @@ HEAPSIZE := $(shell . debian/heap-size)
 # MLton compiles optimized, debug, and pic versions on its own.
 DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR)
 
-# The MLton guide is html.
-DEB_COMPRESS_EXCLUDE = mlton/guide
+# The MLton guide is html. Don't compress example .sml files.
+DEB_COMPRESS_EXCLUDE = mlton/guide .sml
 
 DEB_MAKE_CLEAN_TARGET   = clean clean-svn
 DEB_MAKE_BUILD_TARGET   = all RUNTIME_ARGS="fixed-heap $(HEAPSIZE)" VERSION=$(DEB_VERSION)
