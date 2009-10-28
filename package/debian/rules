@@ -1,53 +1,22 @@
 #!/usr/bin/make -f
 
-VERSION  := $(shell dpkg-parsechangelog  | grep Version | cut -d" " -f2)
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/makefile.mk
+
 HEAPSIZE := $(shell . debian/heap-size)
-CP = cp -fpR
 
-configure: configure-stamp
-configure-stamp:
+# MLton compiles optimized, debug, and pic versions on its own.
+DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR)
+
+DEB_MAKE_CLEAN_TARGET   = clean clean-svn
+DEB_MAKE_BUILD_TARGET   = all RUNTIME_ARGS="fixed-heap $(HEAPSIZE)" VERSION=$(DEB_VERSION)
+DEB_MAKE_INSTALL_TARGET = install-no-strip DESTDIR=$(CURDIR)/debian/tmp/ PREFIX=/usr MAN_PREFIX_EXTRA=/share
+DEB_MAKE_CHECK_TARGET   = check
+
+# Useful when inspecting build logs
+common-configure-arch::
 	free
-	make VERSION=$(VERSION) RELEASE=1 version
-	touch configure-stamp
 
-build: configure-stamp build-stamp
-build-stamp:
-	$(MAKE) RUNTIME_ARGS="fixed-heap $(HEAPSIZE)"
-	if dpkg-architecture -ihurd-any; then true; else ./bin/regression; fi
-	touch build-stamp
-
-clean:
-	rm -rf build-stamp configure-stamp debian/mlton debian/substvars
-	$(MAKE) clean clean-svn
-
-BUILDDIR = $(CURDIR)/debian/mlton
-install: build
-	$(MAKE) install post-install-debian DESTDIR=$(BUILDDIR) \
-		PREFIX=/usr MAN_PREFIX_EXTRA=/share
-
-# Build architecture-independent files here.
-binary-indep: build install
-# We have nothing to do by default.
-
-# Build architecture-dependent files here.
-binary-arch: build install
-	# dh_installdeb
-	mkdir -p $(BUILDDIR)/DEBIAN
-	# dh_shlibdeps
-	dpkg-shlibdeps \
-		-e$(BUILDDIR)/usr/bin/mllex \
-		-e$(BUILDDIR)/usr/bin/mlnlffigen \
-		-e$(BUILDDIR)/usr/bin/mlprof \
-		-e$(BUILDDIR)/usr/bin/mlyacc \
-		-e$(BUILDDIR)/usr/lib/mlton/mlton-compile 
-	# dh_gencontrol
-	dpkg-gencontrol -isp -P$(BUILDDIR)
-	# dh_md5sums
-	cd $(BUILDDIR) && \
-		find * -type f ! -regex '^DEBIAN/.*' -print0 | \
-			xargs -r0 md5sum >DEBIAN/md5sums
-	# dh_builddeb
-	dpkg-deb --build $(BUILDDIR) ../
-
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+# Remove empty directories to appease lintian
+common-install-arch::
+	find path/to/base/dir -type d -empty -delete

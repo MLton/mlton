@@ -1,3 +1,13 @@
+mlton (20091028) unstable; urgency=low
+
+  * Added hurd memory-layout definition for mlnlffigen.
+  * Use gcc-4.4; it works around #552314 on mips.
+  * Switch to using cdbs and debhelper.
+  * Appease lintian by (hyphens in manual, licence file, empty directories)
+  * Set the Homepage field
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Wed, 28 Oct 2009 15:48:22 +0100
+
 mlton (20091022) unstable; urgency=low
 
   * Added missing hurd variant to mlton-stubs bootstrap library.
