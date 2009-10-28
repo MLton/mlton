@@ -6,4 +6,4 @@ Abstract: This document describes how write lexer specification files for
 Section: Programming
 
 Format: PDF
-Files: /usr/share/doc/mlton/mllex.pdf
+Files: /usr/share/doc/mlton/mllex.pdf.gz

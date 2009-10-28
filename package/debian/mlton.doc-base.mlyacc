@@ -6,4 +6,4 @@ Abstract: This document describes how to write parser specification files for
 Section: Programming
 
 Format: PDF
-Files: /usr/share/doc/mlton/mlyacc.pdf
+Files: /usr/share/doc/mlton/mlyacc.pdf.gz
