@@ -156,6 +156,14 @@ for f in *.sml; do
                 ;;
                 esac
         ;;
+        hurd)
+                # Work-around hurd bug (http://bugs.debian.org/551470)
+                case "$f" in
+                mutex|prodcons|signals|signals2|suspend|timeout)
+                        continue
+                ;;
+                esac
+        ;;
         mingw)
                 case "$f" in
                 cmdline|command-line|echo|filesys|posix-exit|signals|signals2|socket|suspend|textio.2|unixpath|world*)
