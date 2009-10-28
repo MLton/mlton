@@ -20,4 +20,4 @@ common-configure-arch::
 
 # Remove empty directories to appease lintian
 common-install-arch::
-	find path/to/base/dir -type d -empty -delete
+	find $(CURDIR)/debian/tmp -type d -empty -delete
