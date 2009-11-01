@@ -122,7 +122,7 @@
       <ComponentGroupRef Id='component.wget' />
     </Feature>
 
-    <Feature Id='7Zip' Title='7Zip' Description='A command-line tool for decompressing files.' Level='10' AllowAdvertise='no'>
+    <Feature Id='zip7' Title='7Zip' Description='A command-line tool for decompressing files.' Level='10' AllowAdvertise='no'>
       <ComponentRef Id='component.path' />
       <ComponentGroupRef Id='component.7zip' />
     </Feature>
