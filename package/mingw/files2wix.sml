@@ -6,11 +6,9 @@ val suffix = "\
    \  </Fragment>\n\
    \</Wix>\n"
 
-fun tail s =
-    if String.size s < 60 then s else
-    String.extract (s, String.size s - 60, NONE)
-fun escape c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
-val escape = tail o CharVector.map escape
+fun alnum c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
+fun escape s = Word32.toString (MLton.hash s) ^ "." ^ 
+               (CharVector.map alnum (#file (OS.Path.splitDirFile s)))
 
 fun dirEntry path =
    let
