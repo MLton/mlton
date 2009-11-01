@@ -44,7 +44,7 @@ self64.lst:	self32.lst
 	cd staging; find * -type f | grep -v self > ../$@.tmp
 	mv $@.tmp $@
 
-%.7z:	dl/%.url
+dl/%.7z:	dl/%.url
 	wget -c -O $@.tmp `cat $<`
 	mv $@.tmp $@
 

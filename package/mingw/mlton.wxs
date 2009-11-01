@@ -102,7 +102,7 @@
       <Feature Id='MinGW64' Title='MinGW64' Description='The minimalist GNU for Windows C compiler toolchain, targetting Win64.' Level='10' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
         <ComponentGroupRef Id='component.mingw64' />
       </Feature>
-      <Feature Id='GMP64' Title='GMP64' Description='An arbitrary precision integer artihmetic library.' Level='1' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
+      <Feature Id='GMP64' Title='GMP64' Description='An arbitrary precision integer artihmetic library.' Level='10' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
         <ComponentGroupRef Id='component.gmp64' />
       </Feature>
       <Feature Id='dlfcn64' Title='Dlfcn64' Description='An implementation of the POSIX dynamic linking loader API for Windows 64.' Level='10' ConfigurableDirectory='INSTALLDIR' AllowAdvertise='no'>
