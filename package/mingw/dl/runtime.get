@@ -1,4 +1,0 @@
-. ../dl/mirrors
-f=mingwrt-3.15.2-mingw32-dev.tar.gz
-get "$MINGW" "$f"
-gzip -dc "$f"

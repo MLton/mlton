@@ -1,5 +1,5 @@
 MLTON=../../build/bin/mlton
-PKG=self32 self64 mingw32 mingw64 gmp32 gmp64 dlfcn32 dlfcn64 msys wget 7z
+PKG=self32 self64 mingw32 mingw64 gmp32 gmp64 dlfcn32 dlfcn64 msys wget 7zip
 
 PKG_LST=$(patsubst %,%.lst,$(PKG))
 PKG_WXS=$(patsubst %,%.wxs,$(PKG))
@@ -44,9 +44,17 @@ self64.lst:	self32.lst
 	cd staging; find * -type f | grep -v self > ../$@.tmp
 	mv $@.tmp $@
 
-%.lst:	dl/%.get self64.lst
-	cd staging; . ../$< | tar --exclude postinstall -t -k | sed 's@^\./@@' > ../$@.tmp
-	cd staging; . ../$< | tar -x
+%.7z:	dl/%.url
+	wget -c -O $@.tmp `cat $<`
+	mv $@.tmp $@
+
+%.lst:	dl/%.7z self64.lst
+	rm -rf staging.tmp
+	mkdir staging.tmp
+	cd staging.tmp; 7z x ../$<
+	cd staging.tmp; find . | sed 's@^\./@@' > $@.tmp
+	rm -rf staging.tmp
+	cd staging; 7z x ../$<
 	mv $@.tmp $@
 
 %.wxs:	%.lst

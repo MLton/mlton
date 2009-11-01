@@ -1,4 +1,0 @@
-. ../dl/mirrors
-f=gmp-4.3.1-static.tar.bz2
-get "$REBUILT" "$f"
-bzip2 -dc "$f"

@@ -1,4 +1,0 @@
-. ../dl/mirrors
-f=gcc-core-3.4.5-20060117-3.tar.gz
-get "$MINGW" "$f"
-gzip -dc "$f"

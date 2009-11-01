@@ -1,4 +1,0 @@
-. ../dl/mirrors
-f=gdb-6.8-mingw-3.tar.bz2
-get "$MINGW" "$f"
-bzip2 -dc "$f"
