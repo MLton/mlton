@@ -1,5 +1,5 @@
 MLTON=../../build/bin/mlton
-PKG=self runtime w32api binutils gcc gmp msys gdb dlfcn wget self64 gmp64 mingw64
+PKG=self32 self64 mingw32 mingw64 gmp32 gmp64 dlfcn32 dlfcn64 msys wget 7z
 
 PKG_LST=$(patsubst %,%.lst,$(PKG))
 PKG_WXS=$(patsubst %,%.wxs,$(PKG))
@@ -17,7 +17,7 @@ clean:
 %.exe:		%.sml
 	$(MLTON) $<
 
-self.lst:	files2cmp.exe
+self32.lst:	files2cmp.exe
 	rm -rf staging
 	$(MAKE) -C ../.. PREFIX= install
 	mv ../../install staging
@@ -25,7 +25,7 @@ self.lst:	files2cmp.exe
 	cd staging; find * -type f > ../$@.tmp
 	mv $@.tmp $@
 
-self64.lst:	self.lst
+self64.lst:	self32.lst
 	rm -rf ../../runtime.x64
 	cp -a ../../runtime ../../runtime.x64
 	$(MAKE) -C ../../runtime.x64 TARGET=x86_64-w64-mingw32 TARGET_ARCH=amd64 TARGET_OS=mingw clean all
@@ -41,10 +41,10 @@ self64.lst:	self.lst
 	./staging/mlton -target x86_64-w64-mingw32 -build-constants true > staging/w64-constants.c
 	./staging/mlton -target x86_64-w64-mingw32 -verbose 1 staging/w64-constants.c
 	./staging/w64-constants > staging/lib/mlton/x86_64-w64-mingw32/constants
-	cd staging; find lib/mlton/x86_64-w64-mingw32 lib/mlton/sml/basis/config/c/amd64-mingw -type f > ../$@.tmp
+	cd staging; find * -type f | grep -v self > ../$@.tmp
 	mv $@.tmp $@
 
-%.lst:	dl/%.get self.lst
+%.lst:	dl/%.get self64.lst
 	cd staging; . ../$< | tar --exclude postinstall -t -k | sed 's@^\./@@' > ../$@.tmp
 	cd staging; . ../$< | tar -x
 	mv $@.tmp $@
