@@ -17,7 +17,7 @@ clean:
 %.exe:		%.sml
 	$(MLTON) $<
 
-self32.lst:	files2cmp.exe
+self32.lst:
 	rm -rf staging
 	$(MAKE) -C ../.. PREFIX= install
 	mv ../../install staging
@@ -57,7 +57,7 @@ dl/%.7z:	dl/%.url
 	cd staging; 7z x ../$<
 	mv $@.tmp $@
 
-%.wxs:	%.lst
+%.wxs:	%.lst files2cmp.exe
 	./files2cmp $(*F) < $< > $@
 
 # This has to happen after everything else is unpacked; depend on PKG_LST
