@@ -1,3 +1,14 @@
+mlton (20091101) unstable; urgency=low
+
+  * The mips saga continues
+   * gcc-4.4 miscompiles code
+   * gcc-4.3 outputs bad branch statements
+   * => gcc-4.1 might work!
+  * Don't override gcc version on any architecture but mips[el]
+  * Change dependencies to require gcc-4.1 only on mips[el]
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sun, 01 Nov 2009 18:38:37 +0100
+
 mlton (20091029) unstable; urgency=low
 
   * Bump the heap-size up a bit to 800m (850m for align8) -> fixes s390.
