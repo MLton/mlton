@@ -1,3 +1,13 @@
+mlton (20091029) unstable; urgency=low
+
+  * Bump the heap-size up a bit to 800m (850m for align8) -> fixes s390.
+  * Without a porter box it's hard to find the cause of mips(el) build failure
+   * One likely in the gcc changelog is an ABI change in gcc 4.4
+   * Apparently the packed attribute behaves differently now
+   * Since the runtime uses this attribute, rebuild it using gcc 4.4 as well
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sun, 01 Nov 2009 07:19:14 +0100
+
 mlton (20091028) unstable; urgency=low
 
   * Added hurd memory-layout definition for mlnlffigen.

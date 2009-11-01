@@ -2,10 +2,10 @@
 
 # MLton versions around 20091019 require 650m and 1.35g to build.
 # Earlier MLton versions (20070812)require slightly more.
-# The heap size needs to leave about 300m of physical RAM free.
+# The heap size needs to leave about 200m of physical RAM free.
 
 # Plan:
-#  32-bit builds use 700m or 1.5g (for 1GB and >= 2GB)
+#  32-bit builds use 800m or 1.5g (for 1GB and >= 2GB)
 #  64-bit builds use 1.7g or 3g   (for 2GB and >= 4GB)
 
 # Unfortunately, the debian buildds don't have that much memory
@@ -37,32 +37,32 @@
 #   => 1.5g
 # mips           -  1g (ball)
 #                -1.4g (mayr)
-#   => 700m heap
+#   => 800m heap
 # mipsel         -  1g (mayer)
 #                -0.5g (rem)                   UNUSABLE / black-listed
-#   => 700m heap
+#   => 800m heap
 # powerpc        -0.3g (voltaire)              UNUSABLE / black-listed
 #                -0.5g (malo)                  UNUSABLE / black-listed
 #                -  3g (praetorius)
 #   => 1.5g heap
 # s390           - ??? (31)
 #                -  1g (lxdebian) ... but fast swap?
-#   => 700m
+#   => 850m
 # sparc          -  2g (schroeder, lebrun, spontini)
 #   => 1.5g heap
 
 if dpkg-architecture -ealpha;          then result=3g;    fi
 if dpkg-architecture -eamd64;          then result=1.7g;  fi
 if dpkg-architecture -ehppa;           then result=1.5g;  fi
-if dpkg-architecture -ehurd-i386;      then result=700m;  fi
+if dpkg-architecture -ehurd-i386;      then result=800m;  fi
 if dpkg-architecture -ei386;           then result=1.5g;  fi
 if dpkg-architecture -eia64;           then result=3g;    fi
 if dpkg-architecture -ekfreebsd-amd64; then result=1.7g;  fi
 if dpkg-architecture -ekfreebsd-i386;  then result=1.5g;  fi
-if dpkg-architecture -emips;           then result=700m;  fi
-if dpkg-architecture -emipsel;         then result=700m;  fi
+if dpkg-architecture -emips;           then result=800m;  fi
+if dpkg-architecture -emipsel;         then result=800m;  fi
 if dpkg-architecture -epowerpc;        then result=1.5g;  fi
-if dpkg-architecture -es390;           then result=700m;  fi
+if dpkg-architecture -es390;           then result=850m;  fi
 if dpkg-architecture -esparc;          then result=1.5g;  fi
 
 # Default to more
