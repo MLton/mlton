@@ -53,7 +53,7 @@ SOURCES :=			\
 	$(FILE)			\
 	upgrade-basis.sml	\
 	$(FRONT_END_SOURCES)	\
-	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE); fi))
+	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE) | grep -v " "; fi))
 
 .PHONY: all
 all: $(AOUT)
