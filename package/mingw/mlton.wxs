@@ -9,7 +9,7 @@
       Comments='MLton is an open-source, whole-program, optimizing Standard ML compiler.' Manufacturer='MLton.org'
       InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
-    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="high" DiskPrompt="CD-ROM #1" />
+    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="none" DiskPrompt="CD-ROM #1" />
     <Property Id='DiskPrompt' Value="MLton Installation CD [1]" />
     <Property Id="ARPPRODUCTICON" Value="mlton.ico" />
     <Icon Id="mlton.ico" SourceFile="mlton.ico" />

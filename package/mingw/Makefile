@@ -5,6 +5,10 @@ PKG_LST=$(patsubst %,%.lst,$(PKG))
 PKG_WXS=$(patsubst %,%.wxs,$(PKG))
 PKG_WIXOBJ=$(patsubst %,%.wixobj,$(PKG))
 
+MLton.exe:	MLton.msi
+	7z a data.7z -mx=9 $<
+	cat 7zS.sfx MLton.conf data.7z > $@
+
 MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -cultures:en-us -ext WixUIExtension -out $@ $^
 
