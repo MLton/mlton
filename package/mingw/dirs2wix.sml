@@ -10,8 +10,9 @@ val suffix = "\
 
 fun hash (c, w) = w * 0w5746711073709751657 + Word64.fromInt (Char.ord c)
 fun alnum c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
+fun trim s = if String.size s > 40 then String.sub (s, 0, 40) else s
 fun escape s = Word64.toString (foldl hash 0w0 (explode s)) ^ "." ^ 
-               (CharVector.map alnum (#file (OS.Path.splitDirFile s)))
+               trim (CharVector.map alnum (#file (OS.Path.splitDirFile s)))
 
 val depth = ref 3
 fun pad () = CharVector.tabulate (!depth * 2, fn _ => #" ")
