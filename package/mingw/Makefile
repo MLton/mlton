@@ -53,7 +53,7 @@ dl/%.7z:	dl/%.url
 	rm -rf staging.tmp
 	mkdir staging.tmp
 	cd staging.tmp; 7z x ../$<
-	cd staging.tmp; find . | sed 's@^\./@@' > ../$@.tmp
+	cd staging.tmp; find * -type f | sed 's@^\./@@' > ../$@.tmp
 	rm -rf staging.tmp
 	cd staging; 7z x ../$<
 	mv $@.tmp $@
