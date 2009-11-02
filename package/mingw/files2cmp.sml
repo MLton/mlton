@@ -14,7 +14,8 @@ val suffix = "\
    \  </Fragment>\n\
    \</Wix>\n"
 
-fun hash (c, w) = w * 0w5746711073709751657 + Word64.fromInt (Char.ord c)
+fun slashes c = if c = #"\\" then #"/" else c
+fun hash (c, w) = w * 0w5746711073709751657 + Word64.fromInt (Char.ord (slashes c))
 fun alnum c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
 fun trim s = if String.size s > 40 then String.substring (s, 0, 40) else s
 fun escape s = Word64.toString (foldl hash 0w0 (explode s)) ^ "." ^ 
