@@ -19,11 +19,12 @@ MLton-$(VERSION).exe:	data.7z
 	cat 7zS.sfx MLton.conf data.7z > $@
 
 data.7z:	MLton.msi
-	7z a data.7z -mx=9 $<
+	rm -f $@
+	7z a $@ -mx9 -mmt $<
 
 .INTERMEDIATE: MLton.msi
 MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
-	light -cultures:en-us -ext WixUIExtension -out $@ $^
+	light -dcl:none -cultures:en-us -ext WixUIExtension -out $@ $^
 MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -dcl:high -cultures:en-us -ext WixUIExtension -out $@ $^
 
@@ -36,7 +37,6 @@ clean:
 %.exe:		%.sml
 	$(MLTON) $<
 
-.PHONY: mlton.wxs
 mlton.wxs:	mlton.wxs.in guid.exe
 	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" \
 	< $< > $@

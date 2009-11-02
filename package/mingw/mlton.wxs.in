@@ -21,7 +21,7 @@
       <RemoveExistingProducts After='InstallFinalize'/>
     </InstallExecuteSequence>
 
-    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="none" />
+    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' />
     <Property Id='DiskPrompt' Value="MLton Installation CD [1]" />
     <Property Id="ARPPRODUCTICON" Value="mlton.ico" />
     <Icon Id="mlton.ico" SourceFile="mlton.ico" />
