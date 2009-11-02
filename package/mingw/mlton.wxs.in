@@ -18,6 +18,7 @@
     <CustomAction Id='NoDowngrade' Error='A newer version of MLton is already installed. If you want to downgrade, remove the newer version manually and try again.' />
     <InstallExecuteSequence>
       <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+      <RemoveExistingProducts After='InstallFinalize'/>
     </InstallExecuteSequence>
 
     <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="none" />
