@@ -48,14 +48,14 @@
       <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
 
-    <DirectoryRef Id='dir.5CF63DEB372EF117.mlton'>
+    <DirectoryRef Id='dir.notlm.5CF63DEB372EF117'>
       <Component Id='component.documentation' Guid='1E019F99-0424-8133-D4F6-C7DDA0882798'>
         <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\docs' Type='string' Value='' KeyPath='yes' />
         <Shortcut Id='start_docs' Directory='ProgramMenuDir' Name='Documentation' Description='The MLton documentation folder'/>
       </Component>
     </DirectoryRef>
 
-    <DirectoryRef Id='dir.7746DD2CF59E4101.bin'>
+    <DirectoryRef Id='dir.nib.7746DD2CF59E4101'>
       <Component Id='component.path' Guid='5B06C123-B426-3D4D-BE48-4D07BAD8A6BA'>
         <RegistryValue Root='HKCU' Key='SOFTWARE\MLton.org\MLton\path' Type='string' Value='' KeyPath='yes' />
         <Environment Id='env.path' Name='PATH' Action='set' Part='last' System='yes' Value='[dir.bin]' />
