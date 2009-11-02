@@ -6,11 +6,14 @@ PKG_WXS=$(patsubst %,%.wxs,$(PKG))
 PKG_WIXOBJ=$(patsubst %,%.wixobj,$(PKG))
 
 ifeq (,$(VERSION))
-all:
-	@echo Specific a release VERSION.
-else
-all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
+VERSION := $(shell date +%Y%m%d)
 endif
+
+# Windows versions have to be (0-255).(0-255).(0-65536)
+# So lets just use YY.MM.DD for the version (leading 0s stripped)
+WINVERSION := $(shell echo $(VERSION) | sed -r 's/20(..)(..)(..)/\1.\2.\3/;s/0*([1-9]+)/\1/g')
+
+all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
 
 MLton-$(VERSION).exe:	data.7z
 	cat 7zS.sfx MLton.conf data.7z > $@
@@ -35,7 +38,8 @@ clean:
 
 .PHONY: mlton.wxs
 mlton.wxs:	mlton.wxs.in guid.exe
-	sed "s/@VERSION@/$(VERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" < $< > $@
+	sed "s/@VERSION@/$(WINVERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" \
+	< $< > $@
 
 self32.lst:
 	rm -rf staging
