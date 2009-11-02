@@ -6,8 +6,9 @@ val suffix = "\
    \  </Fragment>\n\
    \</Wix>\n"
 
+fun hash (c, w) = w * 0w5746711073709751657 + Word64.fromInt (Char.ord c)
 fun alnum c = if Char.isAlphaNum c orelse c = #"." then c else #"_"
-fun escape s = Word32.toString (MLton.hash s) ^ "." ^ 
+fun escape s = Word64.toString (foldl hash 0w0 (explode s)) ^ "." ^ 
                (CharVector.map alnum (#file (OS.Path.splitDirFile s)))
 
 fun dirEntry path =
