@@ -5,15 +5,24 @@ PKG_LST=$(patsubst %,%.lst,$(PKG))
 PKG_WXS=$(patsubst %,%.wxs,$(PKG))
 PKG_WIXOBJ=$(patsubst %,%.wixobj,$(PKG))
 
-MLton.exe:	data.7z
+ifeq (,$(VERSION))
+all:
+	@echo Specific a release VERSION.
+else
+all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
+endif
+
+MLton-$(VERSION).exe:	data.7z
 	cat 7zS.sfx MLton.conf data.7z > $@
 
-.PRECIOUS: data.7z
 data.7z:	MLton.msi
 	7z a data.7z -mx=9 $<
 
+.INTERMEDIATE: MLton.msi
 MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -cultures:en-us -ext WixUIExtension -out $@ $^
+MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
+	light -dcl:high -cultures:en-us -ext WixUIExtension -out $@ $^
 
 clean:
 	rm -rf staging MLton.msi *.wixpdb *.wixobj *.exe $(PKG_WXS) $(PKG_LST) files.wxs dirs.wxs
@@ -23,6 +32,10 @@ clean:
 
 %.exe:		%.sml
 	$(MLTON) $<
+
+.PHONY: mlton.wxs
+mlton.wxs:	mlton.wxs.in guid.exe
+	sed "s/@VERSION@/$(VERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" < $< > $@
 
 self32.lst:
 	rm -rf staging

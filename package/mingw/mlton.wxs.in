@@ -1,15 +1,26 @@
 <?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-  <Product Name='MLton' Id='E78E6DFD-5738-B137-DD2A-EA81A1A841EC'
+  <Product Name='MLton @VERSION@' Id='@GUID@'
     UpgradeCode='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'
-    Language='1033' Codepage='1252' Version='1.0' Manufacturer='MLton.org'>
+    Language='1033' Codepage='1252' Version='@VERSION@' Manufacturer='MLton.org'>
 
     <Package Id='*' Keywords='Installer'
-      Description="MLton Installer"
+      Description="MLton Installer v@VERSION@"
       Comments='MLton is an open-source, whole-program, optimizing Standard ML compiler.' Manufacturer='MLton.org'
       InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
-    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="none" DiskPrompt="CD-ROM #1" />
+    <Upgrade Id='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'>
+      <UpgradeVersion OnlyDetect='yes' Property='NEWERFOUND'
+       Minimum='@VERSION@' IncludeMinimum='no' />
+      <UpgradeVersion OnlyDetect='no' Property='PREVIOUSFOUND'
+       Maximum='@VERSION@' IncludeMaximum='no' />
+    </Upgrade>
+    <CustomAction Id='NoDowngrade' Error='A newer version of MLton is already installed. If you want to downgrade, remove the newer version manually and try again.' />
+    <InstallExecuteSequence>
+      <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+    </InstallExecuteSequence>
+
+    <Media Id='1' Cabinet='MLton.cab' EmbedCab='yes' CompressionLevel="none" />
     <Property Id='DiskPrompt' Value="MLton Installation CD [1]" />
     <Property Id="ARPPRODUCTICON" Value="mlton.ico" />
     <Icon Id="mlton.ico" SourceFile="mlton.ico" />
