@@ -32,14 +32,43 @@ fun dirEntry path =
    end 
 and guid path = 
    let
-      val w32 = Word32.fromLarge o Word.toLarge o MLton.Random.rand
-      val w16 = Word16.fromLarge o Word.toLarge o MLton.Random.rand
+      val md5sum = 
+         MLton.Process.create {
+            args = ["staging/" ^ path],
+            env = NONE,
+            path = "md5sum",
+            stdin  = MLton.Process.Param.null,
+            stderr = MLton.Process.Param.self,
+            stdout = MLton.Process.Param.pipe
+         }
+      val input = MLton.Process.Child.textIn (MLton.Process.getStdout md5sum)
+      val md5 =
+         case TextIO.inputLine input of
+            NONE => raise Fail "md5sum provided no hash"
+          | SOME s => s
+      val _ = MLton.Process.reap md5sum
+      
+      (* Compute the GUID as the combiniation of content hash + path hash *)
+      val pathHash = foldl hash 0w0 (explode path)
+      val contentHash = valOf (Word64.fromString (String.substring (md5, 0, 16)))
+      val xor = Word64.xorb (pathHash, contentHash)
+      
       val zero = "00000000"
       fun pad i s = String.substring (zero, 0, i - String.size s) ^ s 
-      val w32 = pad 8 o Word32.toString o w32
-      val w16 = pad 4 o Word16.toString o w16
+      val c32 = pad 8 o Word32.toString o Word32.fromLarge o Word64.toLarge
+      val c16 = pad 4 o Word16.toString o Word16.fromLarge o Word64.toLarge
+      fun s32 i = String.substring (md5, i, 8)
+      fun s16 i = String.substring (md5, i, 4)
+      val s = Word64.>>
+      
+      val a32 = c32 (s (xor, 0w32))
+      val b16 = c16 (s (xor, 0w16))
+      val c16 = c16 xor
+      val d16 = s16 16
+      val e16 = s16 20
+      val f32 = s32 24
    in
-      w32 () ^"-"^ w16 () ^"-"^ w16 () ^"-"^ w16 () ^"-"^ w16 () ^ w32 ()
+      concat [a32, "-", b16, "-", c16, "-", d16, "-", e16, f32 ]
    end
 
 fun tail path = String.substring (path, 0, String.size path - 1)
@@ -55,4 +84,3 @@ val () = MLton.Random.srand (Word.fromLargeInt (Time.toNanoseconds (Time.now ())
 val () = print prefix
 val () = loop ()
 val () = print suffix
- 
