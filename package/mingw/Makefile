@@ -90,5 +90,5 @@ dirs.wxs:	dirs2wix.exe $(PKG_LST)
 	cd staging; find * -type d | ../dirs2wix > ../$@.tmp
 	mv $@.tmp $@
 files.wxs:	files2wix.exe $(PKG_LST)
-	cat $(PKG_LST) | sort | uniq | ./files2wix > ./$@.tmp
+	cat $(PKG_LST) | sort | uniq | ./files2wix `which md5sum` > ./$@.tmp
 	mv $@.tmp $@

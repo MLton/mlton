@@ -1,3 +1,9 @@
+val md5sum =
+   case CommandLine.arguments () of
+      [md5sum] => md5sum
+    | _ => (print "Specify path to md5sum executable\n"; 
+            OS.Process.exit OS.Process.failure)
+
 val prefix = "\
    \<?xml version='1.0' encoding='windows-1252'?>\n\
    \<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>\n\
@@ -36,7 +42,7 @@ and guid path =
          MLton.Process.create {
             args = ["staging/" ^ path],
             env = NONE,
-            path = "md5sum",
+            path = md5sum,
             stdin  = MLton.Process.Param.null,
             stderr = MLton.Process.Param.self,
             stdout = MLton.Process.Param.pipe
