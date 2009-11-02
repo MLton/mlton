@@ -38,7 +38,7 @@ clean:
 
 .PHONY: mlton.wxs
 mlton.wxs:	mlton.wxs.in guid.exe
-	sed "s/@VERSION@/$(WINVERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" \
+	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" \
 	< $< > $@
 
 self32.lst:
