@@ -28,9 +28,14 @@ MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -dcl:high -cultures:en-us -ext WixUIExtension -out $@ $^
 
+.PHONY: clean distclean
 clean:
-	rm -rf staging MLton.msi *.wixpdb *.wixobj *.exe $(PKG_WXS) $(PKG_LST) files.wxs dirs.wxs
-
+	rm -rf staging MLton.msi *.wixpdb *.wixobj *.wxs
+	rm -f guid.exe files2cmp.exe dirs2wix.exe files2wix.exe
+	rm -f $(PKG_LST)
+distclean:	clean
+	rm -f MLton-*.exe MLton-*.msi dl/*.7z
+	
 %.wixobj:	%.wxs
 	candle -ext WixUIExtension $<
 
