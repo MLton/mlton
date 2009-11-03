@@ -18,19 +18,20 @@ all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
 MLton-$(VERSION).exe:	7zS.sfx MLton.conf data.7z
 	cat $^ > $@
 
-data.7z:	staging/MLton-$(VERSION).msi
+data.7z:	7z/MLton-$(VERSION).msi
 	rm -f $@
-	cd staging; 7z a ../$@ -mx9 -mmt $(<F)
+	cd 7z; 7z a ../$@ -mx9 -mmt $(<F)
 
 .INTERMEDIATE: MLton.msi
-staging/MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
+7z/MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
+	mkdir -p $(@D)
 	light -dcl:none -cultures:en-us -ext WixUIExtension -out $@ $^
 MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -dcl:high -cultures:en-us -ext WixUIExtension -out $@ $^
 
 .PHONY: clean distclean
 clean:
-	rm -rf staging MLton.msi data.7z *.wixpdb *.wixobj *.wxs
+	rm -rf staging 7z MLton.conf data.7z *.wixpdb *.wixobj *.wxs
 	rm -f guid.exe files2cmp.exe dirs2wix.exe files2wix.exe
 	rm -f $(PKG_LST)
 distclean:	clean
