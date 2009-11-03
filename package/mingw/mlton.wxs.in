@@ -1,23 +1,27 @@
 <?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-  <Product Name='MLton @VERSION@' Id='@GUID@'
+  <Product Name='MLton @VERSION@' Id='@GUID1@'
     UpgradeCode='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'
     Language='1033' Codepage='1252' Version='@WINVERSION@' Manufacturer='MLton.org'>
 
-    <Package Id='*' Keywords='Installer'
+    <Package Id='@GUID2@' Keywords='Installer'
       Description="MLton Installer @VERSION@"
       Comments='MLton is an open-source, whole-program, optimizing Standard ML compiler.' Manufacturer='MLton.org'
       InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
     <Upgrade Id='C353A6D5-4A30-D7CF-62E2-04D98AF8A864'>
+      <UpgradeVersion OnlyDetect='yes' Property='BADFOUND'
+       Maximum='9.11.2' IncludeMaximum='yes' />
       <UpgradeVersion OnlyDetect='yes' Property='NEWERFOUND'
        Minimum='@WINVERSION@' IncludeMinimum='no' />
       <UpgradeVersion OnlyDetect='no' Property='PREVIOUSFOUND'
        Maximum='@WINVERSION@' IncludeMaximum='no' />
     </Upgrade>
     <CustomAction Id='NoDowngrade' Error='A newer version of MLton is already installed. If you want to downgrade, remove the newer version manually and try again.' />
+    <CustomAction Id='BrokenVersion' Error='The version of MLton installed on this machine cannot be upgraded. Please manually remove it and run the installer again.' />
     <InstallExecuteSequence>
       <Custom Action='NoDowngrade' After='FindRelatedProducts'>NEWERFOUND</Custom>
+      <Custom Action='BrokenVersion' After='FindRelatedProducts'>BADFOUND</Custom>
       <RemoveExistingProducts After='InstallFinalize'/>
     </InstallExecuteSequence>
 

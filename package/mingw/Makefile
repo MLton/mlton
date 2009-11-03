@@ -43,7 +43,8 @@ distclean:	clean
 	$(MLTON) $<
 
 mlton.wxs:	mlton.wxs.in guid.exe
-	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g;s/@GUID@/`./guid $(VERSION)`/g" \
+	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g" | \
+	sed "s/@GUID1@/`./guid $(VERSION).1`/g;s/@GUID2@/`./guid $(VERSION).2`/g" \
 	< $< > $@
 
 self32.lst:
@@ -95,5 +96,5 @@ dirs.wxs:	dirs2wix.exe $(PKG_LST)
 	cd staging; find * -type d | ../dirs2wix > ../$@.tmp
 	mv $@.tmp $@
 files.wxs:	files2wix.exe $(PKG_LST)
-	cat $(PKG_LST) | sort | uniq | ./files2wix `which md5sum` > ./$@.tmp
+	cat $(PKG_LST) | sort | uniq | ./files2wix > ./$@.tmp
 	mv $@.tmp $@
