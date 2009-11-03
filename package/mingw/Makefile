@@ -30,7 +30,7 @@ MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 
 .PHONY: clean distclean
 clean:
-	rm -rf staging MLton.msi *.wixpdb *.wixobj *.wxs
+	rm -rf staging MLton.msi data.7z *.wixpdb *.wixobj *.wxs
 	rm -f guid.exe files2cmp.exe dirs2wix.exe files2wix.exe
 	rm -f $(PKG_LST)
 distclean:	clean
