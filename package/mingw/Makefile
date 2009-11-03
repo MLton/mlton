@@ -15,8 +15,8 @@ WINVERSION := $(shell echo $(VERSION) | sed -r 's/20(..)(..)(..)/\1.\2.\3/;s/0*(
 
 all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
 
-MLton-$(VERSION).exe:	data.7z
-	cat 7zS.sfx MLton.conf data.7z > $@
+MLton-$(VERSION).exe:	7zS.sfx MLton.conf data.7z
+	cat $^ > $@
 
 data.7z:	staging/MLton-$(VERSION).msi
 	rm -f $@
@@ -42,7 +42,11 @@ distclean:	clean
 %.exe:		%.sml
 	$(MLTON) $<
 
+# Cannot use a pattern rule b/c %.wxs already exists.
 mlton.wxs:	mlton.wxs.in guid.exe
+	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g" < $< | \
+	sed "s/@GUID1@/`./guid $(VERSION).1`/g;s/@GUID2@/`./guid $(VERSION).2`/g" > $@
+MLton.conf:	MLton.conf.in guid.exe
 	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g" < $< | \
 	sed "s/@GUID1@/`./guid $(VERSION).1`/g;s/@GUID2@/`./guid $(VERSION).2`/g" > $@
 

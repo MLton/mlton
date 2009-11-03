@@ -1,3 +1,3 @@
 ;!@Install@!UTF-8!
-ExecuteFile="MLton.msi"
+ExecuteFile="MLton-@VERSION@.msi"
 ;!@InstallEnd@!
