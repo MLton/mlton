@@ -43,9 +43,8 @@ distclean:	clean
 	$(MLTON) $<
 
 mlton.wxs:	mlton.wxs.in guid.exe
-	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g" | \
-	sed "s/@GUID1@/`./guid $(VERSION).1`/g;s/@GUID2@/`./guid $(VERSION).2`/g" \
-	< $< > $@
+	sed "s/@VERSION@/$(VERSION)/g;s/@WINVERSION@/$(WINVERSION)/g" < $< | \
+	sed "s/@GUID1@/`./guid $(VERSION).1`/g;s/@GUID2@/`./guid $(VERSION).2`/g" > $@
 
 self32.lst:
 	rm -rf staging
