@@ -65,7 +65,7 @@ and guid path =
           | SOME s => s
       val _ = MLton.Process.reap guid
    in
-      out
+      String.substring (out, 0, 36)
    end
 
 fun tail path = String.substring (path, 0, String.size path - 1)
