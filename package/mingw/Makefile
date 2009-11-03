@@ -18,12 +18,12 @@ all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
 MLton-$(VERSION).exe:	data.7z
 	cat 7zS.sfx MLton.conf data.7z > $@
 
-data.7z:	MLton.msi
+data.7z:	staging/MLton-$(VERSION).msi
 	rm -f $@
-	7z a $@ -mx9 -mmt $<
+	cd staging; 7z a ../$@ -mx9 -mmt $(<F)
 
 .INTERMEDIATE: MLton.msi
-MLton.msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
+staging/MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -dcl:none -cultures:en-us -ext WixUIExtension -out $@ $^
 MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 	light -dcl:high -cultures:en-us -ext WixUIExtension -out $@ $^
