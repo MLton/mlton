@@ -53,7 +53,7 @@ and guid path =
          MLton.Process.create {
             args = [path],
             env = NONE,
-            path = "./guid",
+            path = "guid.exe",
             stdin  = MLton.Process.Param.null,
             stderr = MLton.Process.Param.self,
             stdout = MLton.Process.Param.pipe

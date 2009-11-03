@@ -94,6 +94,6 @@ dl/%.7z:	dl/%.url
 dirs.wxs:	dirs2wix.exe $(PKG_LST)
 	cd staging; find * -type d | ../dirs2wix > ../$@.tmp
 	mv $@.tmp $@
-files.wxs:	files2wix.exe $(PKG_LST)
+files.wxs:	files2wix.exe guid.exe $(PKG_LST)
 	cat $(PKG_LST) | sort | uniq | ./files2wix > ./$@.tmp
 	mv $@.tmp $@
