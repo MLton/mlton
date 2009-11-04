@@ -9,7 +9,7 @@ HEAPSIZE := $(shell . debian/heap-size)
 ifeq (,$(findstring mips, $(DEB_HOST_ARCH_CPU)))
 CC := gcc
 else
-CC := gcc-4.1
+CC := gcc-4.4
 endif
 
 # MLton compiles optimized, debug, and pic versions on its own.

@@ -8,7 +8,7 @@ diff -Nur -x '*.orig' -x '*~' mlton/bin/mlton-script mlton.new/bin/mlton-script
 -gcc='gcc'
 +case "$HOST_ARCH" in
 +mips*)
-+        gcc='gcc-4.1'
++        gcc='gcc-4.4'
 +;;
 +*)
 +        gcc='gcc'

@@ -1,3 +1,12 @@
+mlton (20091104) unstable; urgency=low
+
+  * Two more regressions disabled on hurd (thread2 and world5)
+  * Switch mips back to gcc-4.4
+   * Found the cause of the segfault: fpclassify is broken on mips
+   * Disable its on linux/mips and use the MLton IEEE work-around code
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Wed, 04 Nov 2009 12:04:36 +0100
+
 mlton (20091101) unstable; urgency=low
 
   * The mips saga continues
