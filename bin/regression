@@ -159,7 +159,7 @@ for f in *.sml; do
         hurd)
                 # Work-around hurd bug (http://bugs.debian.org/551470)
                 case "$f" in
-                mutex|prodcons|signals|signals2|suspend|timeout)
+                mutex|prodcons|signals|signals2|suspend|thread2|timeout|world5)
                         continue
                 ;;
                 esac
