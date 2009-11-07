@@ -6,14 +6,8 @@ include /usr/share/cdbs/1/rules/simple-patchsys.mk
 
 HEAPSIZE := $(shell . debian/heap-size)
 	
-ifeq (,$(findstring mips, $(DEB_HOST_ARCH_CPU)))
-CC := gcc
-else
-CC := gcc-4.4
-endif
-
 # MLton compiles optimized, debug, and pic versions on its own.
-DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR) CC="$(CC) -std=gnu99"
+DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR)
 
 # The MLton guide is html. Don't compress example .sml files.
 DEB_COMPRESS_EXCLUDE = mlton/guide .sml

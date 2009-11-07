@@ -1,3 +1,12 @@
+mlton (20091107) unstable; urgency=low
+
+  * gcc-4.4 miscompiles more than just fpclassify. It is unusable.
+  * gcc-4.1 ICEs so also not an option.
+  * => on mips we must use gcc-4.3, despite an off-by-one bug in branch generation
+  * Using -fPIC to compile changes the assembler enough to get past #552341
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sat, 07 Nov 2009 17:26:11 +0100
+
 mlton (20091104) unstable; urgency=low
 
   * Two more regressions disabled on hurd (thread2 and world5)
