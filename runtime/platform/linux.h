@@ -36,11 +36,7 @@
 #else
 #define HAS_FEROUND TRUE
 #endif
-#if defined(__mips__)
-#define HAS_FPCLASSIFY FALSE
-#else
 #define HAS_FPCLASSIFY TRUE
-#endif
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK TRUE
