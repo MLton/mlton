@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2009 Matthew Fluet.
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -13,7 +14,7 @@ MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	gzip -dc MLRISC.tgz | tar xf -
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC
-	patch -s -p0 < MLRISC.patch
+	patch -s -d MLRISC -p1 < MLRISC.patch
 
 .PHONY: clean
 clean:

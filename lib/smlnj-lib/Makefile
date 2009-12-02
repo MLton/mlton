@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2009 Matthew Fluet.
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -14,7 +15,7 @@ smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	chmod -R a+r smlnj-lib
 	chmod -R g-s smlnj-lib
 	rm -f smlnj-lib/HTML/.cvsignore
-	patch -s -p0 < smlnj-lib.patch
+	patch -s -d smlnj-lib -p1 < smlnj-lib.patch
 	mv smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
 
 .PHONY: clean
