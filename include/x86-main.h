@@ -1,4 +1,5 @@
-/* Copyright (C) 2000-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2009 Matthew Fluet.
+ * Copyright (C) 2000-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -11,8 +12,8 @@
 #include "common-main.h"
 
 /* Globals */
-PRIVATE Word32 applyFFTemp;
-PRIVATE Word32 applyFFTemp2;
+PRIVATE Word32 applyFFTempFun;
+PRIVATE Word32 applyFFTempArg;
 PRIVATE Word32 checkTemp;
 PRIVATE Word32 cReturnTemp[16];
 PRIVATE Pointer c_stackP;

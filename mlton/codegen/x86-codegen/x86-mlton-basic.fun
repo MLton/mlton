@@ -175,20 +175,20 @@ struct
                     size = pointerSize,
                     class = Classes.StaticNonTemp}
   
-  val applyFFTemp = Label.fromString "applyFFTemp"
-  val applyFFTempContents 
-    = makeContents {base = Immediate.label applyFFTemp,
+  val applyFFTempFun = Label.fromString "applyFFTempFun"
+  val applyFFTempFunContents
+    = makeContents {base = Immediate.label applyFFTempFun,
                     size = wordSize,
                     class = Classes.StaticTemp}
-  val applyFFTempContentsOperand
-    = Operand.memloc applyFFTempContents
-  val applyFFTemp2 = Label.fromString "applyFFTemp2"
-  val applyFFTemp2Contents 
-    = makeContents {base = Immediate.label applyFFTemp2,
+  val applyFFTempFunContentsOperand
+    = Operand.memloc applyFFTempFunContents
+  val applyFFTempArg = Label.fromString "applyFFTempArg"
+  val applyFFTempArgContents
+    = makeContents {base = Immediate.label applyFFTempArg,
                     size = wordSize,
                     class = Classes.StaticTemp}
-  val applyFFTemp2ContentsOperand
-    = Operand.memloc applyFFTemp2Contents
+  val applyFFTempArgContentsOperand
+    = Operand.memloc applyFFTempArgContents
 
   val realTemp1D = Label.fromString "realTemp1D"
   val realTemp1ContentsD
