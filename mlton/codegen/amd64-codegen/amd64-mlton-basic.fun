@@ -186,7 +186,7 @@ struct
   val applyFFTempFunContents 
     = makeContents {base = Immediate.label applyFFTempFun,
                     size = wordSize,
-                    class = Classes.CArg}
+                    class = Classes.CStatic}
   val applyFFTempFunContentsOperand
     = Operand.memloc applyFFTempFunContents
   val applyFFTempRegArg = Label.fromString "applyFFTempRegArg"
