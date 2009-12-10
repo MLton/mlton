@@ -344,9 +344,7 @@ fun makeOptions {usage} =
         (fn s =>
          (case Regexp.fromString s of
              SOME (re,_) => let val re = Regexp.compileDFA re
-                            in
-                               List.push (diagPasses, re)
-                               ; List.push (keepPasses, re)
+                            in List.push (diagPasses, re)
                             end
            | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
        let
