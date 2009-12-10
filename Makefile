@@ -187,7 +187,7 @@ profiled:
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
 		sed "s/mlton-compile/mlton-compile.$$t/" 		\
-			<"$(MLTON)" | 					\
+			<"$(MLTON)" 					\
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
 	done
