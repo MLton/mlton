@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-(* This pass must happen before polymorphic equality is implemented becuase
+(* This pass must happen before polymorphic equality is implemented because
  * 1. it will make polymorphic equality faster because some types are simpler
  * 2. it removes uses of polymorphic equality that must return true
  *
@@ -32,12 +32,12 @@
  *   Useful: otherwise
  * This pass also removes Useless and Transparent constructors.
  *
- * We must keep track of Transparent consturctors whose argument type
+ * We must keep track of Transparent constructors whose argument type
  * uses Tycon.array because of datatypes like the following:
- *   datatype t = T of t vector
+ *   datatype t = T of t array
  * Such a datatype has Cardinality.Many, but we cannot eliminate
  * the datatype and replace the lhs by the rhs, i.e. we must keep the
- * circularity around .
+ * circularity around.
  * Must do similar things for vectors.
  * 
  * Also, to eliminate as many Transparent constructors as possible, for
@@ -123,15 +123,15 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
       val conRep = ! o #rep o conInfo
       val conArgs = #args o conInfo
       fun setConRep (con, r) = #rep (conInfo con) := r
+      val setConRep =
+         Trace.trace2
+         ("SimplifyTypes.setConRep", Con.layout, ConRep.layout, Unit.layout)
+         setConRep
       val conIsUseful = ConRep.isUseful o conRep
       val conIsUseful =
          Trace.trace 
          ("SimplifyTypes.conIsUseful", Con.layout, Bool.layout) 
          conIsUseful
-      val setConRep =
-         Trace.trace2 
-         ("SimplifyTypes.setConRep", Con.layout, ConRep.layout, Unit.layout)
-         setConRep
       (* Initialize conInfo *)
       val _ =
          Vector.foreach
@@ -271,10 +271,10 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
       in
          fun typeCardinality t =
             case dest t of
-               Ref t => pointerCardinality t
-             | Weak t => pointerCardinality t
+               Datatype tycon => tyconCardinality tycon
+             | Ref t => pointerCardinality t
              | Tuple ts => tupleCardinality ts
-             | Datatype tycon => tyconCardinality tycon
+             | Weak t => pointerCardinality t
              | _ => Many
          and pointerCardinality (t: Type.t) =
             case typeCardinality t of
@@ -293,7 +293,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
               ; One))
       end
       fun conCardinality {args, con = _} = tupleCardinality args
-      (* Compute the tycon cardinalitues with a fixed point,
+      (* Compute the tycon cardinalities with a fixed point,
        * initially assuming every datatype tycon cardinality is Zero.
        *)
       val _ =
@@ -423,7 +423,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                 | _ => false
          in loop ty
          end
-      (* Keep the circular transparent cons, ditch the rest. *)
+      (* Keep the circular transparent tycons, ditch the rest. *)
       val datatypes =
          List.fold
          (unary, datatypes, fn ({tycon, con, args}, accum) =>
@@ -451,11 +451,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
               val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
               open Type
            in case dest t of
-              Tuple ts => Type.tuple (keepSimplifyTypes ts)
-            | Array t => array (simplifyType t)
-            | Vector t => vector (simplifyType t)
-            | Ref t => reff (simplifyType t)
-            | Weak t => weak (simplifyType t)
+              Array t => array (simplifyType t)
             | Datatype tycon => 
                  (case tyconReplacement tycon of
                      SOME t =>
@@ -466,6 +462,10 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
                            t
                         end
                    | NONE => t)
+            | Ref t => reff (simplifyType t)
+            | Tuple ts => Type.tuple (keepSimplifyTypes ts)
+            | Vector t => vector (simplifyType t)
+            | Weak t => weak (simplifyType t)
             | _ => t
            end))
       val simplifyType =
