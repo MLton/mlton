@@ -114,6 +114,7 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
              before messageStr (verb, concat [name, " finished in ", done ()]))
             handle e =>
                (messageStr (verb, concat [name, " raised in ", done ()])
+                ; messageStr (verb, concat [name, " raised: ", Exn.name e])
                 ; (case Exn.history e of
                       [] => ()
                     | history =>
