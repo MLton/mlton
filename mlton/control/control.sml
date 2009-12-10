@@ -343,7 +343,7 @@ fun pass {display: 'a display,
       result
    end
 
-(* Code for diagnosing a pass. *)
+(* Code for profiling a pass. *)
 val pass =
    fn z as {name, ...} =>
    if MLton.Profile.isOn
@@ -353,11 +353,11 @@ val pass =
            else let
                    open MLton.Profile
                    val d = Data.malloc ()
-                   val result = withData (d, fn () => pass z)
-                   val _ = Data.write (d, concat [!inputFile, ".", name, ".mlmon"])
-                   val _ = Data.free d
                 in
-                   result
+                   Exn.finally
+                   (fn () => withData (d, fn () => pass z),
+                    fn () => (Data.write (d, concat [!inputFile, ".", name, ".mlmon"])
+                              ; Data.free d))
                 end
    else pass z
 
