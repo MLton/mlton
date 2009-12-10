@@ -409,19 +409,25 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
       fun containsTycon (ty: Type.t, tyc: Tycon.t): bool =
          let
             datatype z = datatype Type.dest
-            fun loop t =
-               case Type.dest t of
-                  Array t => loop t
-                | Datatype tyc' =>
-                     (case tyconReplacement tyc' of
-                         NONE => Tycon.equals (tyc, tyc')
-                       | SOME t => loop t)
-                | Tuple ts => Vector.exists (ts, loop)
-                | Ref t => loop t
-                | Vector t => loop t
-                | Weak t => loop t
-                | _ => false
-         in loop ty
+            val {get = containsTycon, destroy = destroyContainsTycon} =
+               Property.destGet
+               (Type.plist,
+                Property.initRec
+                (fn (t, containsTycon) =>
+                 case Type.dest t of
+                    Array t => containsTycon t
+                  | Datatype tyc' =>
+                       (case tyconReplacement tyc' of
+                           NONE => Tycon.equals (tyc, tyc')
+                         | SOME t => containsTycon t)
+                  | Tuple ts => Vector.exists (ts, containsTycon)
+                  | Ref t => containsTycon t
+                  | Vector t => containsTycon t
+                  | Weak t => containsTycon t
+                  | _ => false))
+            val res = containsTycon ty
+            val () = destroyContainsTycon ()
+         in res
          end
       (* Keep the circular transparent tycons, ditch the rest. *)
       val datatypes =
