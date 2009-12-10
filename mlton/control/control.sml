@@ -305,6 +305,47 @@ fun maybeSaveToFile ({name: string, suffix: string},
       then ()
    else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
 
+(* Code for diagnosing a pass. *)
+val wrapDiagnosing =
+   fn {name: string,
+       thunk: unit -> 'a} =>
+   if not (List.exists (!diagPasses, fn re =>
+                        Regexp.Compiled.matchesAll (re, name)))
+      then thunk
+   else fn () =>
+        let
+           val result = ref NONE
+           val _ =
+              saveToFile
+              ({suffix = concat [name, ".diagnostic"]}, No, (),
+               Layouts (fn ((), disp) =>
+                        (diagnosticWriter := SOME disp
+                         ; result := SOME (thunk ())
+                         ; diagnosticWriter := NONE)))
+        in
+           valOf (!result)
+        end
+
+(* Code for profiling a pass. *)
+val wrapProfiling =
+   fn {name: string,
+       thunk: unit -> 'a} =>
+   if MLton.Profile.isOn
+      then if not (List.exists (!profPasses, fn re =>
+                                Regexp.Compiled.matchesAll (re, name)))
+              then thunk
+           else fn () =>
+                let
+                   open MLton.Profile
+                   val d = Data.malloc ()
+                in
+                   Exn.finally
+                   (fn () => withData (d, thunk),
+                    fn () => (Data.write (d, concat [!inputFile, ".", name, ".mlmon"])
+                              ; Data.free d))
+                end
+   else thunk
+
 fun pass {display: 'a display,
           name: string,
           suffix: string,
@@ -312,23 +353,9 @@ fun pass {display: 'a display,
           style: style,
           thunk: unit -> 'a}: 'a =
    let
-      val result = 
-         if not (List.exists (!diagPasses, fn re =>
-                              Regexp.Compiled.matchesAll (re, name)))
-            then trace (Pass, name) thunk ()
-         else
-            let
-               val result = ref NONE
-               val _ =
-                  saveToFile
-                  ({suffix = concat [name, ".diagnostic"]}, No, (),
-                   Layouts (fn ((), disp) =>
-                            (diagnosticWriter := SOME disp
-                             ; result := SOME (trace (Pass, name) thunk ())
-                             ; diagnosticWriter := NONE)))
-            in
-               valOf (!result)
-            end
+      val thunk = wrapDiagnosing {name = name, thunk = thunk}
+      val thunk = wrapProfiling {name = name, thunk = thunk}
+      val result = trace (Pass, name) thunk ()
       val verb = Detail
       val _ = message (verb, fn () => Layout.str (concat [name, " stats"]))
       val _ = indent ()
@@ -343,24 +370,6 @@ fun pass {display: 'a display,
    in
       result
    end
-
-(* Code for profiling a pass. *)
-val pass =
-   fn z as {name, ...} =>
-   if MLton.Profile.isOn
-      then if not (List.exists (!profPasses, fn re =>
-                                Regexp.Compiled.matchesAll (re, name)))
-              then pass z
-           else let
-                   open MLton.Profile
-                   val d = Data.malloc ()
-                in
-                   Exn.finally
-                   (fn () => withData (d, fn () => pass z),
-                    fn () => (Data.write (d, concat [!inputFile, ".", name, ".mlmon"])
-                              ; Data.free d))
-                end
-   else pass z
 
 fun passTypeCheck {display: 'a display,
                    name: string,
