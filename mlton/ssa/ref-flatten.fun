@@ -705,42 +705,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
        *)
       val {get = tyconSize: Tycon.t -> Size.t, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
-      val {get = typeSize: Type.t -> Size.t, ...} =
-         Property.get (Type.plist,
-                       Property.initRec
-                       (fn (t, typeSize) =>
-                        let
-                           val s = Size.new ()
-                           fun dependsOn (t: Type.t): unit =
-                              Size.<= (typeSize t, s)
-                           datatype z = datatype Type.dest
-                           val () =
-                              case Type.dest t of
-                                 CPointer => ()
-                               | Datatype tc => Size.<= (tyconSize tc, s)
-                               | IntInf => Size.makeTop s
-                               | Object {args, con, ...} =>
-                                    if ObjectCon.isVector con
-                                       then Size.makeTop s
-                                    else Prod.foreach (args, dependsOn)
-                               | Real _ => ()
-                               | Thread => Size.makeTop s
-                               | Weak _ => ()
-                               | Word _ => ()
-                        in
-                           s
-                        end))
-      val () =
-         Vector.foreach
-         (datatypes, fn Datatype.T {cons, tycon} =>
-          let
-             val s = tyconSize tycon
-             fun dependsOn (t: Type.t): unit = Size.<= (typeSize t, s)
-             val () = Vector.foreach (cons, fn {args, ...} =>
-                                      Prod.foreach (args, dependsOn))
-          in
-             ()
-          end)
       (* Force (mutually) recursive datatypes to top. *)
       val {get = nodeTycon: unit Node.t -> Tycon.t, 
            set = setNodeTycon, ...} =
@@ -799,6 +763,42 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                           then doit ()
                        else ()
               | _ => doit ()
+          end)
+      val {get = typeSize: Type.t -> Size.t, ...} =
+         Property.get (Type.plist,
+                       Property.initRec
+                       (fn (t, typeSize) =>
+                        let
+                           val s = Size.new ()
+                           fun dependsOn (t: Type.t): unit =
+                              Size.<= (typeSize t, s)
+                           datatype z = datatype Type.dest
+                           val () =
+                              case Type.dest t of
+                                 CPointer => ()
+                               | Datatype tc => Size.<= (tyconSize tc, s)
+                               | IntInf => Size.makeTop s
+                               | Object {args, con, ...} =>
+                                    if ObjectCon.isVector con
+                                       then Size.makeTop s
+                                    else Prod.foreach (args, dependsOn)
+                               | Real _ => ()
+                               | Thread => Size.makeTop s
+                               | Weak _ => ()
+                               | Word _ => ()
+                        in
+                           s
+                        end))
+      val () =
+         Vector.foreach
+         (datatypes, fn Datatype.T {cons, tycon} =>
+          let
+             val s = tyconSize tycon
+             fun dependsOn (t: Type.t): unit = Size.<= (typeSize t, s)
+             val () = Vector.foreach (cons, fn {args, ...} =>
+                                      Prod.foreach (args, dependsOn))
+          in
+             ()
           end)
       fun typeIsLarge (t: Type.t): bool =
          Size.isTop (typeSize t)
