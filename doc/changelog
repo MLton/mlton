@@ -62,7 +62,10 @@ Summary:
     * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col "file.grm" *) directives in output.
 
-* 2009-12-9
+* 2009-12-11
+  - Fixed performance bug in ref flatten SSA2 optimization.
+
+* 2009-12-09
   - Fixed performance bug in simplify types SSA optimization.
 
 * 2009-12-02

@@ -766,35 +766,22 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
          (datatypes, fn Datatype.T {cons, tycon} =>
           let
              val n = tyconNode tycon
-             fun dependsOn (t: Type.t): unit = 
-                let 
-                   datatype z = datatype Type.dest
-                   fun loop t =
-                      case Type.dest t of
-                         CPointer => ()
-                       | Datatype tc => 
-                            let
-                               val m = tyconNode tc
-                               val e = {from = n, to = m}
-                            in
-                               (* Avoid redundant edges. *)
-                               if Node.hasEdge e then ()
-                               else 
-                                  (ignore o Graph.addEdge)
-                                  (graph, {from = n, to = tyconNode tc})
-                            end
-                       | IntInf => ()
-                       | Object {args, ...} =>
-                            Prod.foreach (args, loop)
-                       | Real _ => ()
-                       | Thread => ()
-                       | Weak _ => ()
-                       | Word _ => ()
-                in 
-                   loop t
-                end
+             datatype z = datatype Type.dest
+             val {get = dependsOn, destroy = destroyDependsOn} =
+                Property.destGet
+                (Type.plist,
+                 Property.initRec
+                 (fn (t, dependsOn) =>
+                  case Type.dest t of
+                     Datatype tc =>
+                        (ignore o Graph.addEdge)
+                        (graph, {from = n, to = tyconNode tc})
+                   | Object {args, ...} =>
+                        Prod.foreach (args, dependsOn)
+                   | _ => ()))
              val () = Vector.foreach (cons, fn {args, ...} =>
                                       Prod.foreach (args, dependsOn))
+             val () = destroyDependsOn ()
           in
              ()
           end)
