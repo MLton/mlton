@@ -214,45 +214,34 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
           end)
       (* Build the dependents for each tycon. *)
       val _ =
-         let
-            val _ =
-               Vector.foreach
-               (datatypes, fn Datatype.T {tycon, cons} =>
-                let
-                   val {get = isDependent, set = setDependent, destroy} =
-                      Property.destGetSet (Tycon.plist, Property.initConst false)
-                   fun setTypeDependents t =
-                      let
-                         datatype z = datatype Type.dest
-                      in
-                         case Type.dest t of
-                            Array t => setTypeDependents t
-                          | CPointer => ()
-                          | Datatype tycon' =>
-                               if isDependent tycon'
-                                  then ()
-                               else (setDependent (tycon', true)
-                                     ; List.push (#dependents
-                                                  (tyconInfo tycon'),
-                                                  tycon))
-                          | IntInf => ()
-                          | Real _ => ()
-                          | Ref t => setTypeDependents t
-                          | Thread => ()
-                          | Tuple ts => Vector.foreach (ts, setTypeDependents)
-                          | Vector t => setTypeDependents t
-                          | Weak t => setTypeDependents t
-                          | Word _ => ()
-                      end
-                   val _ =
-                      Vector.foreach (cons, fn {args, ...} =>
-                                      Vector.foreach (args, setTypeDependents))
-                   val _ = destroy ()
-                in ()
-                end)
-         in ()
-         end
-
+         Vector.foreach
+         (datatypes, fn Datatype.T {tycon, cons} =>
+          let
+             datatype z = datatype Type.dest
+             val {get = setTypeDependents, destroy = destroyTypeDependents} =
+                Property.destGet
+                (Type.plist,
+                 Property.initRec
+                 (fn (t, setTypeDependents) =>
+                  case Type.dest t of
+                     Array t => setTypeDependents t
+                   | CPointer => ()
+                   | Datatype tycon' =>
+                        List.push (#dependents (tyconInfo tycon'), tycon)
+                   | IntInf => ()
+                   | Real _ => ()
+                   | Ref t => setTypeDependents t
+                   | Thread => ()
+                   | Tuple ts => Vector.foreach (ts, setTypeDependents)
+                   | Vector t => setTypeDependents t
+                   | Weak t => setTypeDependents t
+                   | Word _ => ()))
+             val _ =
+                Vector.foreach (cons, fn {args, ...} =>
+                                Vector.foreach (args, setTypeDependents))
+             val _ = destroyTypeDependents ()
+          in ()
+          end)
       (* diagnostic *)
       val _ =
          Control.diagnostics
