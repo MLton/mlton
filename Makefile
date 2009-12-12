@@ -408,6 +408,13 @@ move-docs:	install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
 
+.PHONY: release
+release: version
+	tar cvzf ../mlton-$(VERSION).tar.gz \
+		--exclude .svn --exclude packaging \
+		--transform "s@^@mlton-$(VERSION)/@" \
+		*
+
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd
 freebsd:

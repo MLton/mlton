@@ -1,4 +1,4 @@
-mlton (20091212~svn-r7382) unstable; urgency=low
+mlton (20091212~svn-r7383) unstable; urgency=low
 
   * New snapshot from svn/HEAD
    * Works around incompatible change to 'patch' (closes: #560623)
