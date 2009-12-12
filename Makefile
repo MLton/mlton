@@ -411,7 +411,7 @@ move-docs:	install-docs install-no-docs
 .PHONY: release
 release: version
 	tar cvzf ../mlton-$(VERSION).tar.gz \
-		--exclude .svn --exclude packaging \
+		--exclude .svn --exclude package \
 		--transform "s@^@mlton-$(VERSION)/@" \
 		*
 
