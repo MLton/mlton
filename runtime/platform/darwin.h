@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE
+
 #include <fenv.h>
 #include <inttypes.h>
 #include <stdint.h>
