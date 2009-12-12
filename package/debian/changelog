@@ -1,3 +1,19 @@
+mlton (20091212~svn-r7382) unstable; urgency=low
+
+  * New snapshot from svn/HEAD
+   * Works around incompatible change to 'patch' (closes: #560623)
+  * Use a version number that reflects the snapshot nature (closes: #559014)
+   * Both upstream and debian packaging live in the same svn repository
+    * Prune the packaging folder from snapshots as well as releases
+   * For release versions use 20YYMMDD-rXXX, where
+    * 20YYMMDD is the name of the release soruce tarball
+    * XXX is the svn version of the packaging used
+   * For snapshots use 20YYMMDD~svn-rXXX, where
+    * 20YYMMDD is the date the snapshot was made
+    * XXX is the svn version of the packaging and source used
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sat, 12 Dec 2009 02:37:12 +0100
+
 mlton (20091107) unstable; urgency=low
 
   * gcc-4.4 miscompiles more than just fpclassify. It is unusable.
