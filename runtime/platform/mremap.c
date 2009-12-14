@@ -29,14 +29,6 @@ void *GC_mremap (void *base, size_t oldLength, size_t newLength) {
     return base;
   }
   
-  /* Prefer a moving remap -> it results in less mmapped regions */
-  alloc = GC_mmapAnon(0, newLength);
-  if (alloc != (void*)-1) {
-    memcpy(alloc, base, oldLength);
-    GC_release(base, oldLength);
-    return alloc;
-  }
-  
   growth = newLength-oldLength;
   
   if (cacheAddress   == base      && 
@@ -103,6 +95,14 @@ GC_mremap_cached:
   
   /* Is there enough free space? */
   if (cacheTailSize + cacheHeadSize < growth) {
+    /* No, there's not. Try to move it instead. */
+    alloc = GC_mmapAnon(0, newLength);
+    if (alloc != (void*)-1) {
+      memcpy(alloc, base, oldLength);
+      GC_release(base, oldLength);
+      return alloc;
+    }
+    /* Failed even to move it */
     return (void*)-1;
   }
   
@@ -115,6 +115,7 @@ GC_mremap_cached:
     tail = (char*)base + oldLength;
     alloc = GC_extendTail(tail, growth);
     if (alloc != tail) {
+      /* This shouldn't happen; we tested for the memory! */
       if (alloc != (void*)-1)
         GC_release(alloc, growth);
       return (void*)-1;
@@ -126,6 +127,7 @@ GC_mremap_cached:
     tail = (char*)base + oldLength;
     alloc = GC_extendTail(tail, cacheTailSize);
     if (alloc != tail) {
+      /* This shouldn't happen; we tested for the memory! */
       if (alloc != (void*)-1)
         GC_release(alloc, cacheTailSize);
       return (void*)-1;
@@ -137,6 +139,7 @@ GC_mremap_cached:
   head = (char*)base - (growth-cacheTailSize);
   alloc = GC_extendHead(head, growth-cacheTailSize);
   if (alloc != head) {
+    /* This shouldn't happen; we tested for the memory! */
     if (alloc != (void*)-1)
       GC_release(alloc, growth-cacheTailSize);
     if (cacheTailSize > 0)
