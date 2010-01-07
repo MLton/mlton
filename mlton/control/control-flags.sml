@@ -975,6 +975,8 @@ val target = control {name = "target",
 
 structure Target =
    struct
+      open Target
+      
       datatype arch = datatype MLton.Platform.Arch.t
          
       val arch = control {name = "target arch",
@@ -1028,6 +1030,8 @@ fun mlbPathMap () =
       (List.concat
           [[{var = "LIB_MLTON_DIR",
              path = !libDir},
+            {var = "TARGET",
+             path = Target.toString (!target)},
             {var = "TARGET_ARCH",
              path = String.toLower (MLton.Platform.Arch.toString
                                     (!Target.arch))},
