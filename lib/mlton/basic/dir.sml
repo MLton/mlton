@@ -54,11 +54,15 @@ fun fold (d: t, a: 'a, f: string * 'a -> 'a): 'a =
 
 fun ls d =
    fold (d, ([], []), fn (x, (dirs, files)) =>
-         if FS.isLink x
+      let
+         val file = OS.Path.joinDirFile { dir=d, file=x }
+      in
+         if FS.isLink file
             then (dirs, files)
-         else if isDir x
+         else if isDir file
                  then (x :: dirs, files)
-              else (dirs, x :: files))
+              else (dirs, x :: files)
+      end)
 
 val lsDirs = #1 o ls
 val lsFiles = #2 o ls
