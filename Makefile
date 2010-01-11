@@ -26,7 +26,6 @@ else
 EXE :=
 endif
 MLBPATHMAP := $(LIB)/mlb-path-map
-TARGETMAP := $(LIB)/target-map
 SPEC := package/rpm/mlton.spec
 LEX := mllex
 PROF := mlprof
@@ -59,7 +58,7 @@ all:
 
 .PHONY: all-no-docs
 all-no-docs:
-	$(MAKE) dirs runtime compiler basis-no-check script mlbpathmap targetmap constants libraries tools
+	$(MAKE) dirs runtime compiler basis-no-check script mlbpathmap constants libraries tools
 # Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
 # We also want to re-run the just-built tools (mllex and mlyacc)
 # because they may be better than those that were used for the first
@@ -109,9 +108,9 @@ compiler:
 .PHONY: constants
 constants:
 	@echo 'Creating constants file.'
-	"$(BIN)/mlton" -build-constants true >tmp.c
-	"$(BIN)/mlton" -output tmp tmp.c
-	./tmp >"$(LIB)/$(TARGET)/constants"
+	"$(BIN)/mlton" -target "$(TARGET)" -build-constants true >tmp.c
+	"$(BIN)/mlton" -target "$(TARGET)" -output tmp tmp.c
+	./tmp >"$(LIB)/targets/$(TARGET)/constants"
 	rm -f tmp tmp.exe tmp.c
 
 .PHONY: debugged
@@ -123,7 +122,9 @@ debugged:
 
 .PHONY: dirs
 dirs:
-	mkdir -p "$(BIN)" "$(LIB)/$(TARGET)/include" "$(INC)"
+	mkdir -p "$(BIN)" "$(INC)"
+	mkdir -p "$(LIB)/targets/$(TARGET)/include"
+	mkdir -p "$(LIB)/targets/$(TARGET)/sml"
 
 .PHONY: docs
 docs: dirs
@@ -177,7 +178,7 @@ polyml-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" polyml-mlton
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: profiled
@@ -197,11 +198,11 @@ runtime:
 	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
 	$(CP) include/*.h "$(INC)/"
-	$(CP) runtime/*.a "$(LIB)/$(TARGET)/"
-	$(CP) runtime/gen/sizes "$(LIB)/$(TARGET)/"
-	mkdir -p "$(SRC)/basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)"
-	$(CP) runtime/gen/c-types.sml \
-		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+	$(CP) runtime/*.a "$(LIB)/targets/$(TARGET)/"
+	$(CP) runtime/gen/sizes "$(LIB)/targets/$(TARGET)/"
+	$(CP) runtime/gen/c-types.sml "$(LIB)/targets/$(TARGET)/sml/"
+	echo "$(TARGET_OS)" > "$(LIB)/targets/$(TARGET)/os"
+	echo "$(TARGET_ARCH)" > "$(LIB)/targets/$(TARGET)/arch"
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
 ifeq ($(OMIT_BYTECODE), yes)
@@ -209,7 +210,7 @@ else
 	$(CP) runtime/bytecode/opcodes "$(LIB)/"
 endif
 	$(CP) runtime/*.h "$(INC)/"
-	mv "$(INC)/c-types.h" "$(LIB)/$(TARGET)/include"
+	mv "$(INC)/c-types.h" "$(LIB)/targets/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
@@ -218,7 +219,7 @@ ifeq ($(OMIT_BYTECODE), yes)
 else
 	$(CP) runtime/bytecode/interpret.h "$(INC)"
 endif
-	for x in "$(LIB)"/"$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
+	for x in "$(LIB)/targets/$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script
 script:
@@ -235,7 +236,7 @@ smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
-	$(MAKE) script basis-no-check mlbpathmap targetmap constants libraries-no-check
+	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: smlnj-mlton-dual
@@ -245,14 +246,6 @@ smlnj-mlton-dual:
 .PHONY: smlnj-mlton-quad
 smlnj-mlton-quad:
 	$(MAKE) SMLNJ_CM_SERVERS_NUM=4 smlnj-mlton
-
-.PHONY: targetmap
-targetmap:
-	touch "$(TARGETMAP)"
-	( echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)';		\
-          sed '/$(TARGET)/d' <"$(TARGETMAP)" )			\
-		>>"$(TARGETMAP).tmp"
-	mv "$(TARGETMAP).tmp" "$(TARGETMAP)"
 
 .PHONY: traced
 traced:

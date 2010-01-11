@@ -22,7 +22,7 @@ in
          config/bind/real-top.sml 
          config/bind/word-top.sml 
       in ann "forceUsed" in
-         config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+         $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       end end
    in
       structure C_Char

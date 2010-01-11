@@ -100,25 +100,41 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
                         target: string} list =
    Promise.lazy
    (fn () =>
-    List.map
-    (File.lines (OS.Path.joinDirFile {dir = !Control.libDir,
-                                      file = "target-map"}),
-     fn line =>
-     case String.tokens (line, Char.isSpace) of
-        [target, arch, os] =>
-           let
-              val arch =
-                 case MLton.Platform.Arch.fromString arch of
-                    NONE => Error.bug (concat ["strange arch: ", arch])
-                  | SOME a => a
-              val os =
-                 case MLton.Platform.OS.fromString os of
-                    NONE => Error.bug (concat ["strange os: ", os])
-                  | SOME os => os
-           in
-              {arch = arch, os = os, target = target}
-           end
-      | _ => Error.bug (concat ["strange target mapping: ", line])))
+    let
+       val targetsDir =
+          OS.Path.mkAbsolute { path = "targets",
+                               relativeTo = !Control.libDir }
+       val potentialTargets = Dir.lsDirs targetsDir
+       fun targetMap target =
+          let
+             val targetDir =
+                OS.Path.mkAbsolute { path = target,
+                                     relativeTo = targetsDir }
+             val osFile =
+                OS.Path.joinDirFile { dir = targetDir,
+                                      file = "os" }
+             val archFile =
+                OS.Path.joinDirFile { dir = targetDir,
+                                      file = "arch" }
+             val os   = File.contents osFile
+             val arch = File.contents archFile
+             val os   = List.first (String.tokens (os,   Char.isSpace))
+             val arch = List.first (String.tokens (arch, Char.isSpace))
+             val os =
+                case MLton.Platform.OS.fromString os of
+                   NONE => Error.bug (concat ["strange os: ", os])
+                 | SOME os => os
+             val arch =
+                case MLton.Platform.Arch.fromString arch of
+                   NONE => Error.bug (concat ["strange arch: ", arch])
+                 | SOME a => a
+          in
+             SOME { arch = arch, os = os, target = target }
+          end
+          handle _ => NONE
+    in
+       List.keepAllMap (potentialTargets, targetMap)
+    end)
 
 fun setTargetType (target: string, usage): unit =
    case List.peek (targetMap (), fn {target = t, ...} => target = t) of
@@ -832,7 +848,13 @@ fun commandLine (args: string list): unit =
          case target of
             Cross s => s
           | Self => "self"
-      val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
+      val targetsDir =
+         OS.Path.mkAbsolute { path = "targets",
+                              relativeTo = !libDir }
+      val targetDir =
+         OS.Path.mkAbsolute { path = targetStr,
+                              relativeTo = targetsDir }
+      val () = libTargetDir := targetDir
       val targetArch = !Target.arch
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !Target.os

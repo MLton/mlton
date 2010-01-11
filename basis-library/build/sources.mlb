@@ -29,7 +29,7 @@ in
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/header/header-$(HEADER_WORD).sml
       ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
    end end
    ../integer/int-inf0.sml
    local
@@ -123,7 +123,7 @@ in
    in ann "forceUsed" in
       ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
    end end
@@ -156,7 +156,7 @@ in
    in ann "forceUsed" in
       ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
    end end
@@ -217,7 +217,7 @@ in
    in ann "forceUsed" in
       ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
    end end

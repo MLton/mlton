@@ -51,7 +51,7 @@ in
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/header/header-$(HEADER_WORD).sml
       ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/errno.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
