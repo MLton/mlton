@@ -25,6 +25,12 @@ ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   FLAGS += -default-ann 'warnUnused true'
   # FLAGS += -type-check true
 else
+# We're compiling MLton with an older version of itself. 
+# Use "-align 8" for amd64 to avoid GMP/mul_2exp segfault with a
+# mis-aligned limb when compiling with <= 20070826.
+ifeq (amd64,$(findstring $(HOST_ARCH), amd64))
+  FLAGS += -align 8
+endif
 ifneq (,$(findstring $(HOST_OS), cygwin mingw))
   # The stubs don't work on Cygwin or MinGW, since they define spawn
   # in terms of fork, and fork doesn't work on Cygwin or MinGW.  So,
