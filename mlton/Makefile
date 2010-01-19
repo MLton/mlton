@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2010 Matthew Fluet.
+ # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -99,7 +100,7 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 		mlton -stop f mlton.mlb |					\
 			grep -v 'mlb$$' |					\
 			grep -v 'sml/basis' | 					\
-			grep -v 'mlton-stubs' |					\
+			grep -v 'targets' | 					\
 			grep -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
