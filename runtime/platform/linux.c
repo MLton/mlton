@@ -13,50 +13,50 @@
 #define EIP     14
 #endif
 
-static void catcher (__attribute__ ((unused)) int sig, 
-                     __attribute__ ((unused)) siginfo_t* sip, 
-                     void* mystery) {
+static void catcher (__attribute__ ((unused)) int signo,
+                     __attribute__ ((unused)) siginfo_t* info,
+                     void* context) {
 #if (defined (__x86_64__))
 #define REG_INDEX(NAME) (offsetof(struct sigcontext, NAME) / sizeof(greg_t))
 #ifndef REG_RIP
 #define REG_RIP REG_INDEX(rip) /* seems to be 16 */
 #endif
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_RIP]);
 #elif (defined (__alpha__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_pc));
 #elif (defined (__hppa__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
 #elif (defined(__ia64__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->_u._mc.sc_ip);
 #elif (defined (__ppc__)) || (defined (__powerpc__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.regs->nip);
 #elif (defined (__sparc__))
-        struct sigcontext* scp = (struct sigcontext*)mystery;
+        struct sigcontext* scp = (struct sigcontext*)context;
 #if __WORDSIZE == 64
         GC_handleSigProf ((code_pointer) scp->sigc_regs.tpc);
 #else
         GC_handleSigProf ((code_pointer) scp->si_regs.pc);
 #endif
 #elif (defined (__mips__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
 #ifdef __UCLIBC__
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gpregs[CTX_EPC]);
 #else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.pc);
 #endif
 #elif (defined (__i386__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[EIP]);
 #elif (defined (__arm__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.arm_pc);
 #elif (defined (__s390__))
-        ucontext_t* ucp = (ucontext_t*)mystery;
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.psw.addr);
 #else
 #error Profiling handler is missing for this architecture

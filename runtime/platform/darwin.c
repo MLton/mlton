@@ -17,9 +17,10 @@ void GC_displayMem (void) {
         (void)system (buffer);
 }
 
-static void catcher (__attribute__ ((unused)) int sig,  
-                     __attribute__ ((unused)) siginfo_t *sip, 
-                     ucontext_t *ucp) {
+static void catcher (__attribute__ ((unused)) int signo,
+                     __attribute__ ((unused)) siginfo_t* info,
+                     void* context) {
+        ucontext_t* ucp = (ucontext_t*)context;
 #if (defined(__powerpc__) || defined(__ppc__))
 #if __DARWIN_UNIX03
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.__srr0);

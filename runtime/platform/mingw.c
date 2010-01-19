@@ -330,7 +330,7 @@ int setitimer (int which,
 
 }
 
-static void catcher(__attribute__ ((unused)) int sig) {
+static void catcher(__attribute__ ((unused)) int signo) {
         CONTEXT context;
         context.ContextFlags = CONTEXT_CONTROL;
 

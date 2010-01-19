@@ -76,9 +76,10 @@ void GC_displayMem (void) {
         system (buffer);
 }
 
-static void catcher (__attribute__ ((unused)) int sig,
-                     __attribute__ ((unused)) siginfo_t *sip,
-                     ucontext_t *ucp) {
+static void catcher (__attribute__ ((unused)) int signo,
+                     __attribute__ ((unused)) siginfo_t* info,
+                     void* context) {
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_PC]);
 }
 

@@ -82,10 +82,10 @@ void GC_displayMem (void) {
 }
 
 
-static void catcher (__attribute__ ((unused)) int sig,
-                     __attribute__ ((unused)) siginfo_t* sip,
-                     void* mystery) {
-        ucontext_t* ucp = (ucontext_t*)mystery;
+static void catcher (__attribute__ ((unused)) int signo,
+                     __attribute__ ((unused)) siginfo_t* info,
+                     void* context) {
+        ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) (ucp->uc_link));
 }
 
