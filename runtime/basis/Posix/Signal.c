@@ -6,21 +6,12 @@ static void handler (int signum) {
   GC_handler (&gcState, signum);
 }
 
-enum {
-#if (defined (SA_ONSTACK))
-  SA_FLAGS = SA_ONSTACK,
-#else
-  SA_FLAGS = 0,
-#endif
-};
-
 C_Errno_t(C_Int_t) Posix_Signal_default (C_Signal_t signum) {
   struct sigaction sa;
 
   sigdelset (GC_getSignalsHandledAddr (&gcState), signum);
   memset (&sa, 0, sizeof(sa));
   sa.sa_handler = SIG_DFL;
-  sa.sa_flags = SA_FLAGS;
   return sigaction (signum, &sa, NULL);
 }
 
@@ -28,7 +19,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isDefault (C_Int_t signum, Ref(C_Int_t) isDef) {
   int res;
   struct sigaction sa;
 
-  sa.sa_flags = SA_FLAGS;
+  memset (&sa, 0, sizeof(sa));
   res = sigaction (signum, NULL, &sa);
   *((C_Int_t*)isDef) = sa.sa_handler == SIG_DFL;
   return res;
@@ -40,7 +31,6 @@ C_Errno_t(C_Int_t) Posix_Signal_ignore (C_Signal_t signum) {
   sigdelset (GC_getSignalsHandledAddr (&gcState), signum);
   memset (&sa, 0, sizeof(sa));
   sa.sa_handler = SIG_IGN;
-  sa.sa_flags = SA_FLAGS;
   return sigaction (signum, &sa, NULL);
 }
 
@@ -48,7 +38,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(C_Int_t) isIgn) {
   int res;
   struct sigaction sa;
 
-  sa.sa_flags = SA_FLAGS;
+  memset (&sa, 0, sizeof(sa));
   res = sigaction (signum, NULL, &sa);
   *((C_Int_t*)isIgn) = sa.sa_handler == SIG_IGN;
   return res;
@@ -63,8 +53,10 @@ C_Errno_t(C_Int_t) Posix_Signal_handlee (C_Int_t signum) {
    * s->signalsPending (else there is a race condition).
    */
   sigfillset (&sa.sa_mask);
+#if HAS_SIGALTSTACK
+  sa.sa_flags = SA_ONSTACK;
+#endif
   sa.sa_handler = handler;
-  sa.sa_flags = SA_FLAGS;
   return sigaction (signum, &sa, NULL);
 }
 
