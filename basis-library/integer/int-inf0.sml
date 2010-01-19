@@ -431,7 +431,7 @@ structure IntInf =
                let
                   val ok =
                      SeqIndex.> (Vector.length v, 1) andalso
-                     W.<= (V.subUnsafe (v, 0), 0w1)
+                     MPLimb.<= (V.subUnsafe (v, 0), 0w1)
                in
                   if ok then SOME (Prim.fromVector v) else NONE
                end
