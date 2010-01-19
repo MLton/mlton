@@ -15,17 +15,17 @@ fun print s = let open TextIO
 val sleep = sleep o Time.fromSeconds
 
 val _ =
+   List.foreach
+   ([(hup, "Got a hup."),
+     (int, "You can't int me you loser."),
+     (term, "Don't even try to term me.")],
+    fn (signal, msg) =>
+    setHandler (signal, Handler.simple (fn () => print msg)))
+
+val _ =
    case fork () of
       NONE =>
-         let
-            val _ =
-               List.foreach
-               ([(hup, "Got a hup."),
-                 (int, "You can't int me you loser."),
-                 (term, "Don't even try to term me.")],
-                fn (signal, msg) =>
-                setHandler (signal, Handler.simple (fn () => print msg)))
-            fun loop' () = (sleep 1; loop' ())
+         let fun loop' () = loop' ()
          in loop' ()
          end
     | SOME pid =>

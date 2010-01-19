@@ -25,7 +25,7 @@ val _ =
                  (term, "Don't even try to term me.")],
                 fn (signal, msg) =>
                 setHandler (signal, Handler.simple (fn () => print msg)))
-            fun loop' () = (sleep 1; loop' ())
+            fun loop' () = loop' ()
          in loop' ()
          end
     | SOME pid =>

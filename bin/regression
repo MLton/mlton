@@ -91,7 +91,7 @@ fi
 cont='callcc.sml callcc2.sml callcc3.sml once.sml'
 flatArray='finalize.sml flat-array.sml flat-array.2.sml'
 intInf='conv.sml conv2.sml fixed-integer.sml harmonic.sml int-inf.*.sml slow.sml slower.sml smith-normal-form.sml'
-signal='finalize.sml signals.sml signals2.sml suspend.sml weak.sml'
+signal='finalize.sml signals.sml signals2.sml signals3.sml signals4.sml suspend.sml weak.sml'
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
@@ -159,14 +159,14 @@ for f in *.sml; do
         hurd)
                 # Work-around hurd bug (http://bugs.debian.org/551470)
                 case "$f" in
-                mutex|prodcons|signals|signals2|suspend|thread2|timeout|world5)
+                mutex|prodcons|signals|signals2|signals3|signals4|suspend|thread2|timeout|world5)
                         continue
                 ;;
                 esac
         ;;
         mingw)
                 case "$f" in
-                cmdline|command-line|echo|filesys|posix-exit|signals|signals2|socket|suspend|textio.2|unixpath|world*)
+                cmdline|command-line|echo|filesys|posix-exit|signals|signals2|signals3|signals4|socket|suspend|textio.2|unixpath|world*)
                         continue
                 ;;
                 esac
