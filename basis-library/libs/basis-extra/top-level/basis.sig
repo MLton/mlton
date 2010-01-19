@@ -717,10 +717,16 @@ signature BASIS_EXTRA =
       sharing type Word64Array2.vector = Word64Vector.vector
       sharing type MLton.BinIO.instream = BinIO.instream
       sharing type MLton.BinIO.outstream = BinIO.outstream
+      sharing type MLton.CharArray.t = CharArray.array
+      sharing type MLton.CharArray.elem = CharArray.elem
+      sharing type MLton.CharVector.t = CharVector.vector
+      sharing type MLton.CharVector.elem = CharVector.elem
       sharing type MLton.TextIO.instream = TextIO.instream
       sharing type MLton.TextIO.outstream = TextIO.outstream
       sharing type MLton.Word8Array.t = Word8Array.array
+      sharing type MLton.Word8Array.elem = Word8Array.elem
       sharing type MLton.Word8Vector.t = Word8Vector.vector
+      sharing type MLton.Word8Vector.elem = Word8Vector.elem
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
