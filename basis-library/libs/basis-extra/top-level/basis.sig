@@ -809,6 +809,7 @@ signature BASIS_EXTRA =
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
    
+   where type MLton.Pointer.t = MLton.Pointer.t
    where type 'a MLton.Thread.t = 'a MLton.Thread.t
    where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
 

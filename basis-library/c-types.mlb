@@ -14,6 +14,7 @@ ann
 in
    local
       basis.mlb
+      mlton.mlb
       local
          config/choose-int.sml
          config/choose-real.sml
@@ -25,6 +26,16 @@ in
       in ann "forceUsed" in
          $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       end end
+      local
+         local
+            primitive/primitive.mlb
+         in
+            structure Primitive
+         end
+      in
+         c/pointer.sig
+         c/pointer.sml
+      end
    in
       structure C_Char
       structure C_SChar
@@ -77,5 +88,6 @@ in
       structure C_UIntptr
       functor C_UIntptr_ChooseWordN
 
+      structure C_Pointer
    end
 end
