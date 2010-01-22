@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -242,23 +243,23 @@ structure Pointer =
       type pointer = t
 
       val add =
-         _prim "CPointer_add": pointer * C_Size.word -> pointer;
+         _prim "CPointer_add": t * C_Ptrdiff.t -> t;
       val sub =
-         _prim "CPointer_sub": pointer * C_Size.word -> pointer;
+         _prim "CPointer_sub": t * C_Ptrdiff.t -> t;
       val diff =
-         _prim "CPointer_diff": pointer * pointer -> C_Size.word;
-      val < = _prim "CPointer_lt": pointer * pointer -> bool;
+         _prim "CPointer_diff": t * t -> C_Ptrdiff.t;
+      val < = _prim "CPointer_lt": t * t -> bool;
       local
-         structure S = IntegralComparisons(type t = pointer
+         structure S = IntegralComparisons(type t = t
                                            val < = <)
       in
          open S
       end
 
       val fromWord =
-         _prim "CPointer_fromWord": C_Size.word -> pointer;
+         _prim "CPointer_fromWord": C_Size.t -> t;
       val toWord =
-         _prim "CPointer_toWord": pointer -> C_Size.word;
+         _prim "CPointer_toWord": t -> C_Size.t;
 
       val null: t = fromWord 0w0
 

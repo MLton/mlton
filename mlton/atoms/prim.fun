@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1223,9 +1223,9 @@ fun 'a checkApp (prim: 'a t,
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
        | CPointer_add =>
-            noTargs (fn () => (twoArgs (cpointer, csize), cpointer))
+            noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
        | CPointer_diff =>
-            noTargs (fn () => (twoArgs (cpointer, cpointer), csize))
+            noTargs (fn () => (twoArgs (cpointer, cpointer), cptrdiff))
        | CPointer_equal =>
             noTargs (fn () => (twoArgs (cpointer, cpointer), bool))
        | CPointer_fromWord => noTargs (fn () => (oneArg (csize), cpointer))
@@ -1249,7 +1249,7 @@ fun 'a checkApp (prim: 'a t,
        | CPointer_setWord s =>
             noTargs (fn () => (threeArgs (cpointer, cptrdiff, word s), unit))
        | CPointer_sub =>
-            noTargs (fn () => (twoArgs (cpointer, csize), cpointer))
+            noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
        | CPointer_toWord => noTargs (fn () => (oneArg cpointer, csize))
        | Exn_extra => oneTarg (fn t => (oneArg exn, t))
        | Exn_name => noTargs (fn () => (oneArg exn, string))
@@ -2021,7 +2021,7 @@ fun ('a, 'b) apply (p: 'a t,
                              datatype z = datatype ApplyResult.t
                           in
                              case p of
-                                CPointer_diff => word (WordX.zero (WordSize.cpointer ()))
+                                CPointer_diff => word (WordX.zero (WordSize.cptrdiff ()))
                               | CPointer_equal => t
                               | CPointer_lt => f
                               | IntInf_compare =>

@@ -1,4 +1,5 @@
-(* Copyright (C) 2003-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 2003-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -10,11 +11,15 @@ struct
 
 open Primitive.MLton.Pointer
 
-val sizeofPointer = Word.div (Word.fromInt C_Size.wordSize, 0w8)
+val sizeofPointer =
+   Word.div (Word.fromInt C_Size.wordSize, 0w8)
 
-val add = fn (p, t) => add (p, C_Size.fromWord t)
-val sub = fn (p, t) => sub (p, C_Size.fromWord t)
-val diff = fn (p, p') => C_Size.toWord (diff (p, p'))
+val add = fn (p, t) =>
+   add (p, C_Ptrdiff.fromLarge (Word.toLargeIntX t))
+val sub = fn (p, t) =>
+   sub (p, C_Ptrdiff.fromLarge (Word.toLargeIntX t))
+val diff = fn (p, p') =>
+   Word.fromLargeInt (C_Ptrdiff.toLarge (diff (p, p')))
 
 local
    fun wrap f (p, i) =

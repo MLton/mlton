@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -559,6 +559,7 @@ fun checkPrimApp {args, prim, result} =
 
       val cint = word (WordSize.cint ())
       val csize = word (WordSize.csize ())
+      val cptrdiff = word (WordSize.cptrdiff ())
       val shiftArg = word WordSize.shiftArg
 
       val or = fn (p1, p2) => fn t => p1 t orelse p2 t
@@ -587,12 +588,12 @@ fun checkPrimApp {args, prim, result} =
       fun wordShift s = done ([wordOrBitsOrSeq s, shiftArg], SOME (wordOrBitsOrSeq s))
    in
       case Prim.name prim of
-         CPointer_add => done ([cpointer, csize], SOME cpointer)
-       | CPointer_diff => done ([cpointer, cpointer], SOME csize)
+         CPointer_add => done ([cpointer, cptrdiff], SOME cpointer)
+       | CPointer_diff => done ([cpointer, cpointer], SOME cptrdiff)
        | CPointer_equal => done ([cpointer, cpointer], SOME bool)
        | CPointer_fromWord => done ([csize], SOME cpointer)
        | CPointer_lt => done ([cpointer, cpointer], SOME bool)
-       | CPointer_sub => done ([cpointer, csize], SOME cpointer)
+       | CPointer_sub => done ([cpointer, cptrdiff], SOME cpointer)
        | CPointer_toWord => done ([cpointer], SOME csize)
        | FFI f => done (Vector.toListMap (CFunction.args f, 
                                           fn t' => fn t => equals (t', t)),
