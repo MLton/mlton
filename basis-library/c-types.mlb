@@ -88,6 +88,7 @@ in
       structure C_UIntptr
       functor C_UIntptr_ChooseWordN
 
+      signature C_POINTER
       structure C_Pointer
    end
 end
