@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
 Build-Depends: mlton (>= 20070826), htmldoc, libgmp3-dev (>= 4.0.1), texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52)
-Standards-Version: 3.8.3.0
+Standards-Version: 3.8.4.0
 
 Package: mlton
 Architecture: alpha amd64 hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
