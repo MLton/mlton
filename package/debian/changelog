@@ -1,4 +1,4 @@
-mlton (20100205~svn-r7409) unstable; urgency=low
+mlton (20100205~svn-r7410) unstable; urgency=low
 
   * New snapshot from svn/HEAD
    * Split targets into sub-folder
@@ -6,6 +6,7 @@ mlton (20100205~svn-r7409) unstable; urgency=low
   * Add a debian/watch file for lintian
   * Correct spelling errors in the manual page
   * Updated to policy 3.8.4.0 (no changes)
+  * Removed -fPIC work-around for mips (closes: #552314)
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Fri, 05 Feb 2010 17:13:06 +0100
 
