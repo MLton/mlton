@@ -11,47 +11,36 @@
 # Unfortunately, the debian buildds don't have that much memory
 # alpha          -  4g (goedel)
 #                -  8g (goetz)
-#   => 3g heap
 # amd64          -  1g (nautilus)              UNUSABLE / black-listed
 #                -  2g (excelsior, brahms)
-#   => 1.7g
+# armel          - 64g (sparta) ... but qemu only manages 1g
 # hppa           -  8g (paer)
 #                -3.5g (penalosa, peri)
-#   => 1.5g heap
 # hurd-i386
 #                -400m (rossini)               UNUSABLE / black-listed
 #                - 1g- (bach)                  UNUSABLE / black-listed
 #                - 1g+ (mozart)
-#   => 650m heap
 # i386           - 16g (murphy)
 #                -  4g (puccini)
-#   => 1.5g heap
 # ia64           - 12g (mundy)
 #                -  4g (caballero)
-#   => 3g heap
 # kfreebsd-amd64 -  2g (himalia2)
 #                -1.5g (fano)                  UNUSABLE / black-listed
-#   => 1.7g heap
 # kfreebsd-i386  -  2g (himalia1)
 #                -  1g (finzi)                 black-listed
-#   => 1.5g
 # mips           -  1g (ball)
 #                -1.4g (mayr)
-#   => 800m heap
 # mipsel         -  1g (mayer)
 #                -0.5g (rem)                   UNUSABLE / black-listed
-#   => 800m heap
 # powerpc        -0.3g (voltaire)              UNUSABLE / black-listed
 #                -0.5g (malo)                  UNUSABLE / black-listed
 #                -  3g (praetorius)
-#   => 1.5g heap
 # s390           - ??? (31)
 #                -  1g (lxdebian) ... but fast swap?
-#   => 850m
 # sparc          -  2g (schroeder, lebrun, spontini)
-#   => 1.5g heap
 
 if dpkg-architecture -ealpha;          then result=3g;    fi
+if dpkg-architecture -earmel;          then result=800m;  fi
 if dpkg-architecture -eamd64;          then result=1.7g;  fi
 if dpkg-architecture -ehppa;           then result=1.5g;  fi
 if dpkg-architecture -ehurd-i386;      then result=800m;  fi

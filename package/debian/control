@@ -6,7 +6,7 @@ Build-Depends: mlton (>= 20070826), htmldoc, libgmp3-dev (>= 4.0.1), texlive-lat
 Standards-Version: 3.8.4.0
 
 Package: mlton
-Architecture: alpha amd64 hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
+Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp3-dev (>= 4.0.1)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML

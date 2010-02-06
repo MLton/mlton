@@ -1,6 +1,7 @@
-mlton (20100206~svn-r7411) unstable; urgency=low
+mlton (20100206~svn-r7412) unstable; urgency=low
 
   * Restored -fPIC work-around and reopened #552314.
+  * Got a qemu-linux-user with 1G of RAM to work => added armel target.
 
  -- Wesley W. Terpstra <terpstra@carrot.lan.lan>  Sat, 06 Feb 2010 11:16:31 +0100
 
