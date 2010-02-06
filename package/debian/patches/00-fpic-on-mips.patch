@@ -1,0 +1,25 @@
+diff -Nur -x '*.orig' -x '*~' mlton/bin/mlton-script mlton.new/bin/mlton-script
+--- mlton/bin/mlton-script	2009-11-07 17:29:05.000000000 +0100
++++ mlton.new/bin/mlton-script	2009-11-07 17:31:43.000000000 +0100
+@@ -115,6 +115,7 @@
+         -target-cc-opt openbsd '-I/usr/local/include'            \
+         -target-cc-opt aix '-maix64'                             \
+         -target-cc-opt ia64 "$ia64hpux -mtune=itanium2"          \
++        -target-cc-opt mips '-fPIC'                              \
+         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+         -target-cc-opt x86                                       \
+                 '-m32
+diff -Nur -x '*.orig' -x '*~' mlton/runtime/Makefile mlton.new/runtime/Makefile
+--- mlton/runtime/Makefile	2009-11-01 18:36:04.000000000 +0100
++++ mlton.new/runtime/Makefile	2009-11-07 17:31:14.000000000 +0100
+@@ -84,6 +84,10 @@
+ AR := ar -X 64 rc
+ endif
+ 
++ifeq ($(TARGET_ARCH), mips)
++FLAGS += -fPIC
++endif
++
+ ifeq ($(TARGET_ARCH), sparc)
+ FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
+ endif
