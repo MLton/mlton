@@ -13,7 +13,7 @@
 #                -  8g (goetz)
 # amd64          -  1g (nautilus)              UNUSABLE / black-listed
 #                -  2g (excelsior, brahms)
-# armel          - 64g (sparta) ... but qemu only manages 1g
+# armel          - 64g (sparta)
 # hppa           -  8g (paer)
 #                -3.5g (penalosa, peri)
 # hurd-i386
@@ -40,8 +40,8 @@
 # sparc          -  2g (schroeder, lebrun, spontini)
 
 if dpkg-architecture -ealpha;          then result=3g;    fi
-if dpkg-architecture -earmel;          then result=800m;  fi
 if dpkg-architecture -eamd64;          then result=1.7g;  fi
+if dpkg-architecture -earmel;          then result=850m;  fi
 if dpkg-architecture -ehppa;           then result=1.5g;  fi
 if dpkg-architecture -ehurd-i386;      then result=800m;  fi
 if dpkg-architecture -ei386;           then result=1.5g;  fi
