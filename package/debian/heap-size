@@ -55,7 +55,7 @@ if dpkg-architecture -es390;           then result="fixed-heap 850m";  fi
 if dpkg-architecture -esparc;          then result="fixed-heap 1.5g";  fi
 
 # Warn by default
-if test -z "$result"; echo "Warning: Unknown architecture." >&2; fi
+if test -z "$result"; then echo "Warning: Unknown architecture." >&2; fi
 
 # Allow buildd admin to override heap-size with environment variable
 if test -n "$DEB_BUILD_HEAP"; then result="$DEB_BUILD_HEAP"; fi
