@@ -1,3 +1,11 @@
+mlton (20100206~svn-r7414) unstable; urgency=low
+
+  * s390 and hurd need fixed-heap to stop thrashing on resize
+  * qemu'd armel needs max-heap to work-around mmap emulation problems
+   => heap-size must choose {fixed/max}-heap
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 08 Feb 2010 20:22:20 +0100
+
 mlton (20100206~svn-r7412) unstable; urgency=low
 
   * Restored -fPIC work-around and reopened #552314.

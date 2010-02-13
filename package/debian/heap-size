@@ -39,23 +39,23 @@
 #                -  1g (lxdebian) ... but fast swap?
 # sparc          -  2g (schroeder, lebrun, spontini)
 
-if dpkg-architecture -ealpha;          then result=3g;    fi
-if dpkg-architecture -eamd64;          then result=1.7g;  fi
-if dpkg-architecture -earmel;          then result=850m;  fi
-if dpkg-architecture -ehppa;           then result=1.5g;  fi
-if dpkg-architecture -ehurd-i386;      then result=800m;  fi
-if dpkg-architecture -ei386;           then result=1.5g;  fi
-if dpkg-architecture -eia64;           then result=3g;    fi
-if dpkg-architecture -ekfreebsd-amd64; then result=1.7g;  fi
-if dpkg-architecture -ekfreebsd-i386;  then result=1.5g;  fi
-if dpkg-architecture -emips;           then result=800m;  fi
-if dpkg-architecture -emipsel;         then result=800m;  fi
-if dpkg-architecture -epowerpc;        then result=1.5g;  fi
-if dpkg-architecture -es390;           then result=850m;  fi
-if dpkg-architecture -esparc;          then result=1.5g;  fi
+if dpkg-architecture -ealpha;          then result="fixed-heap 3g";    fi
+if dpkg-architecture -eamd64;          then result="fixed-heap 1.7g";  fi
+if dpkg-architecture -earmel;          then result="max-heap   850m";  fi
+if dpkg-architecture -ehppa;           then result="fixed-heap 1.5g";  fi
+if dpkg-architecture -ehurd-i386;      then result="fixed-heap 800m";  fi
+if dpkg-architecture -ei386;           then result="fixed-heap 1.5g";  fi
+if dpkg-architecture -eia64;           then result="fixed-heap 3g";    fi
+if dpkg-architecture -ekfreebsd-amd64; then result="fixed-heap 1.7g";  fi
+if dpkg-architecture -ekfreebsd-i386;  then result="fixed-heap 1.5g";  fi
+if dpkg-architecture -emips;           then result="fixed-heap 800m";  fi
+if dpkg-architecture -emipsel;         then result="fixed-heap 800m";  fi
+if dpkg-architecture -epowerpc;        then result="fixed-heap 1.5g";  fi
+if dpkg-architecture -es390;           then result="fixed-heap 850m";  fi
+if dpkg-architecture -esparc;          then result="fixed-heap 1.5g";  fi
 
-# Default to more
-if test -z "$result"; then result=2g; echo "Warning: Unknown architecture." >&2; fi
+# Warn by default
+if test -z "$result"; echo "Warning: Unknown architecture." >&2; fi
 
 # Allow buildd admin to override heap-size with environment variable
 if test -n "$DEB_BUILD_HEAP"; then result="$DEB_BUILD_HEAP"; fi
