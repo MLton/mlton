@@ -48,10 +48,10 @@ src/yacc.lex.sml: src/yacc.lex
 		$(MLLEX) src/yacc.lex && \
 		chmod -w src/yacc.lex.sml
 
-src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
-	rm -f src/yacc.grm.* && \
-		$(MLYACC) src/yacc.grm && \
-		chmod -w src/yacc.grm.*
+src/%.grm.sig src/%.grm.sml: src/%.grm
+	rm -f $<.* 
+	$(MLYACC) $<
+	chmod -w $<.*
 
 doc/mlyacc.ps:
 	$(MAKE) -C doc mlyacc.ps
