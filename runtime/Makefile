@@ -217,6 +217,15 @@ BASISHFILES :=							\
 	$(shell find basis -type f | grep '\.h$$')
 BASISCFILES :=							\
 	$(shell find basis -type f | grep '\.c$$')
+GDTOACFILES :=									\
+	dmisc.c    g__fmt.c   misc.c     strtoIdd.c  strtopdd.c  strtorf.c	\
+	dtoa.c     gmisc.c    smisc.c    strtoIf.c   strtopf.c   strtorQ.c	\
+	g_ddfmt.c  g_Qfmt.c   strtod.c   strtoIg.c   strtopQ.c   strtorx.c	\
+	g_dfmt.c   g_xfmt.c   strtodg.c  strtoIQ.c   strtopx.c   strtorxL.c	\
+	gdtoa.c    g_xLfmt.c  strtodI.c  strtoIx.c   strtopxL.c  sum.c		\
+	gethex.c   hd_init.c  strtof.c   strtoIxL.c  strtord.c   ulp.c		\
+	g_ffmt.c   hexnan.c   strtoId.c  strtopd.c   strtordd.c
+GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
 
 HFILES :=							\
 	cenv.h							\
@@ -240,6 +249,10 @@ PIC_OBJS := 							\
 	gc-pic.o						\
 	platform-pic.o						\
 	platform/$(TARGET_OS)-pic.o
+
+GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
+GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
+GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
 OMIT_BYTECODE := no
 ifeq ($(OMIT_BYTECODE), yes)
@@ -272,34 +285,7 @@ endif
 
 all: $(ALL)
 
-libgdtoa.a: gdtoa/arith.h
-	cd gdtoa && 						\
-		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)		\
-			-w -O1 -c -DINFNAN_CHECK 		\
-			*.c
-	$(RM) gdtoa/arithchk.o
-	$(AR) libgdtoa.a gdtoa/*.o
-	$(RANLIB) libgdtoa.a
-
-libgdtoa-gdb.a: gdtoa/arith.h
-	cd gdtoa && 						\
-		$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS)		\
-			-w -O1 -c -DINFNAN_CHECK 		\
-			*.c
-	$(RM) gdtoa/arithchk.o
-	$(AR) libgdtoa-gdb.a gdtoa/*.o
-	$(RANLIB) libgdtoa-gdb.a
-
-libgdtoa-pic.a: gdtoa/arith.h
-	cd gdtoa && 						\
-		$(CC) $(PICCFLAGS) $(PICWARNCFLAGS)		\
-			-w -O1 -c -DINFNAN_CHECK 		\
-			*.c
-	$(RM) gdtoa/arithchk.o
-	$(AR) libgdtoa-pic.a gdtoa/*.o
-	$(RANLIB) libgdtoa-pic.a
-
-gdtoa/arithchk.c:
+$(GDTOACFILES):
 	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 	patch -s -p0 <gdtoa-patch.internal
@@ -311,18 +297,13 @@ gdtoa/arithchk.out: gdtoa/arithchk.c
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
 
+libgdtoa.a:	$(GDTOA_OBJS)
+libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
+libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
+
 libmlton.a: $(OBJS)
-	$(AR) libmlton.a $(OBJS)
-	$(RANLIB) libmlton.a
-
 libmlton-gdb.a: $(DEBUG_OBJS)
-	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
-	$(RANLIB) libmlton-gdb.a
-
 libmlton-pic.a: $(PIC_OBJS)
-	$(AR) libmlton-pic.a $(PIC_OBJS)
-	$(RANLIB) libmlton-pic.a
-
 
 basis.c: $(BASISCFILES)
 	rm -f basis.c
@@ -415,13 +396,21 @@ basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
 basis/System/Date.o: basis/System/Date.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
 
+%.a:
+	rm -f $@
+	$(AR) $@ $^
+	$(RANLIB) $@
 
+gdtoa/%-pic.o:	gdtoa/%.c gdtoa/arith.h
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+gdtoa/%-gdb.o:	gdtoa/%.c gdtoa/arith.h
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+gdtoa/%.o:	gdtoa/%.c gdtoa/arith.h
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 %-pic.o: %.c $(HFILES)
 	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
-
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
-
 %.o: %.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
