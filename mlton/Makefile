@@ -72,14 +72,10 @@ control/version.sml: control/version_sml.src
 		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
 		control/version.sml
 
-front-end/ml.lex.sml: front-end/ml.lex
-	$(MAKE) -C front-end ml.lex.sml
-front-end/ml.grm.sig front-end/ml.grm.sml: front-end/ml.grm
-	$(MAKE) -C front-end ml.grm.sig ml.grm.sml
-front-end/mlb.lex.sml: front-end/mlb.lex
-	$(MAKE) -C front-end mlb.lex.sml
-front-end/mlb.grm.sig front-end/mlb.grm.sml: front-end/mlb.grm
-	$(MAKE) -C front-end mlb.grm.sig mlb.grm.sml
+front-end/%.lex.sml: front-end/%.lex
+	$(MAKE) -C front-end $(@F)
+front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
+	$(MAKE) -C front-end $(<F).sig $(<F).sml
 
 # Pass $(PATH) to upgrade-basis because it is run via
 # #!/usr/bin/env bash, which resets the path.
