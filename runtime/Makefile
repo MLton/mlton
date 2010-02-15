@@ -285,11 +285,14 @@ endif
 
 all: $(ALL)
 
-$(GDTOACFILES):
+gdtoa/arithchk.c:	gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
 	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 	patch -s -p0 <gdtoa-patch.internal
 	patch -s -p0 <gdtoa-patch.mlton
+
+$(GDTOACFILES): gdtoa/arithchk.c
+	@touch $@
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
 	cd gdtoa && $(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -O1 -o arithchk.out arithchk.c
@@ -309,22 +312,24 @@ basis.c: $(BASISCFILES)
 	rm -f basis.c
 	cat $(BASISCFILES) >> basis.c
 
-gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h util.o
+gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types
+	@touch $@
+gen/gen-types:	gen/gen-types.c util.h util.o
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
 	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
 	cd gen && ./gen-types
-	rm -f gen/gen-types$(EXE)
 
-c-types.h ml-types.h: gen/c-types.h gen/ml-types.h
-	rm -f c-types.h ml-types.h
-	cp gen/c-types.h c-types.h
-	cp gen/ml-types.h ml-types.h
+c-types.h: gen/c-types.h
+	cp $< $@
+ml-types.h:	gen/ml-types.h
+	cp $< $@
 
-gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
+gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi
+	@touch $@
+gen/gen-basis-ffi:	gen/gen-basis-ffi.sml gen/basis-ffi.def
 	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
 	rm -f gen/basis-ffi.h gen/basis-ffi.sml
 	cd gen && ./gen-basis-ffi
-	rm -f gen/gen-basis-ffi
 
 basis-ffi.h: gen/basis-ffi.h
 	rm -f basis-ffi.h
@@ -336,7 +341,7 @@ gen/sizes: gen/gen-sizes.c libmlton.a
 	cd gen && ./gen-sizes
 	rm -f gen/gen-sizes$(EXE)
 
-bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
+bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h $(BASISHFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
 	rm -f bytecode/opcodes
 	cd bytecode && ./print-opcodes > opcodes
@@ -439,8 +444,8 @@ flags:
 clean:
 	../bin/clean
 
-.PHONY: gdtoa-patch
-gdtoa-patch:
+.PHONY: rebuild-gdtoa-patch
+rebuild-gdtoa-patch:
 	cd gdtoa && $(MAKE) clean && rm -f *~ *.orig
 	mv gdtoa gdtoa-new
 	gzip -dc gdtoa.tgz | tar xf -
