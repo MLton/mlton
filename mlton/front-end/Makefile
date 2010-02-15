@@ -39,22 +39,12 @@ all: ml.lex.sml ml.grm.sig ml.grm.sml mlb.lex.sml mlb.grm.sig mlb.grm.sml
 clean:
 	../../bin/clean
 
-ml.lex.sml: ml.lex
-	rm -f ml.lex.sml
-	$(MLLEX) ml.lex
-	chmod -w ml.lex.sml
+%.lex.sml: %.lex
+	rm -f $@
+	$(MLLEX) $<
+	chmod -w $@
 
-ml.grm.sig ml.grm.sml: ml.grm
-	rm -f ml.grm.*
-	$(MLYACC) ml.grm
-	chmod -w ml.grm.*
-
-mlb.lex.sml: mlb.lex
-	rm -f mlb.lex.sml
-	$(MLLEX) mlb.lex
-	chmod -w mlb.lex.sml
-
-mlb.grm.sig mlb.grm.sml: mlb.grm
-	rm -f mlb.grm.*
-	$(MLYACC) mlb.grm
-	chmod -w mlb.grm.*
+%.grm.sig %.grm.sml: %.grm
+	rm -f $<.*
+	$(MLYACC) $<
+	chmod -w $<.*
