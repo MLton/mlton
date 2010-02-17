@@ -1,0 +1,8 @@
+cint = 4
+cpointer = 8
+cptrdiff = 8
+csize = 8
+header = 8
+mplimb = 8
+objptr = 8
+seqIndex = 8

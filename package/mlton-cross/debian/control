@@ -1,0 +1,136 @@
+Source: mlton-cross
+Section: devel
+Priority: optional
+Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
+Build-Depends: mlton (= 20100206~svn-r7414), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf
+Standards-Version: 3.8.4.0
+
+Package: mlton-target-i586-mingw32msvc
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414)
+Recommends: gcc-mingw32, mingw32-runtime
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target i586-mingw32msvc to MLton.
+ Executables compiled with this option (on any system) will target
+ windows mingw win32.
+ 
+Package: mlton-target-amd64-mingw32msvc
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414)
+Recommends: gcc-mingw32, mingw-w64
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target amd64-mingw32msvc to MLton.
+ Executables compiled with this option (on any system) will target
+ windows mingw win64.
+
+Package: mlton-target-alpha-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-alpha-linux-gnu | c-compiler-alpha-linux-gnu, libc6.1-dev-alpha-cross, libgmp3-dev-alpha-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target alpha-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux alpha.
+
+Package: mlton-target-x86-64-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-x86-64-linux-gnu | c-compiler-x86-64-linux-gnu, libc6-dev-amd64-cross, libgmp3-dev-amd64-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target x86_64-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux amd64.
+
+Package: mlton-target-arm-linux-gnueabi
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-arm-linux-gnueabi | c-compiler-arm-linux-gnueabi, libc6-dev-armel-cross, libgmp3-dev-armel-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target arm-linux-gnueabi to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux armel.
+
+Package: mlton-target-hppa-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-hppa-linux-gnu | c-compiler-hppa-linux-gnu, libc6-dev-hppa-cross, libgmp3-dev-hppa-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target hppa-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux hppa.
+
+Package: mlton-target-i486-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-i486-linux-gnu | c-compiler-i486-linux-gnu, libc6-dev-i386-cross, libgmp3-dev-i386-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target i486-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux i386.
+
+Package: mlton-target-ia64-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-ia64-linux-gnu | c-compiler-ia64-linux-gnu, libc6.1-dev-ia64-cross, libgmp3-dev-ia64-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target ia64-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux ia64.
+
+Package: mlton-target-mips-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-mips-linux-gnu | c-compiler-mips-linux-gnu, libc6-dev-mips-cross, libgmp3-dev-mips-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target mips-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux mips.
+
+Package: mlton-target-mipsel-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-mipsel-linux-gnu | c-compiler-mipsel-linux-gnu, libc6-dev-mipsel-cross, libgmp3-dev-mipsel-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target mipsel-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux mipsel.
+
+Package: mlton-target-powerpc-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-powerpc-linux-gnu | c-compiler-powerpc-linux-gnu, libc6-dev-powerpc-cross, libgmp3-dev-powerpc-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target powerpc-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux powerpc.
+
+Package: mlton-target-s390-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-s390-linux-gnu | c-compiler-s390-linux-gnu, libc6-dev-s390-cross, libgmp3-dev-s390-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target s390-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux s390.
+
+Package: mlton-target-sparc-linux-gnu
+Architecture: all
+Depends: mlton (= 20100206~svn-r7414), emdebian-tools
+Recommends: gcc-4.4-sparc-linux-gnu | c-compiler-sparc-linux-gnu, libc6-dev-sparc-cross, libgmp3-dev-sparc-cross
+Homepage: http://mlton.org/
+Description: Cross-compiler support files for MLton
+ This package adds support for -target sparc-linux-gnu to MLton.
+ Executables compiled with this option (on any system) will target
+ debian linux sparc.

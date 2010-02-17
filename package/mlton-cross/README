@@ -1,0 +1,22 @@
+mlton-cross
+-----------
+
+These packages add cross-compilation support to MLton.
+To use them, you will also need a cross-compiling gcc toolchain.
+
+For example, to setup a debian armel target, run:
+	apt-get install mlton-target-arm-linux-gnueabi
+	apt-cross -a armel -i libc6-dev libgmp3-dev
+	apt-get install gcc-4.4-arm-linux-gnueabi
+For an ia64 target:
+	apt-get install mlton-target-ia64-linux-gnu
+	apt-cross -a ia64 -i libc6.1-dev libgmp3-dev
+	apt-get install gcc-4.4-ia64-linux-gnu
+
+To use MLton to compile SML for armel/ia64, run:
+	mlton -target arm-linux-gnueabi myproject.mlb
+	mlton -target ia64-linux-gnu myproject.mlb
+
+Toolchains for win32/win64 should already be installed via dependencies.
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>, Sun, 14 Feb 2010 03:47:12 +0200
