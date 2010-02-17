@@ -1,0 +1,8 @@
+# These may be binaries, but they ARE arch independent packages.
+# You can use them from any architecture to compile to the target.
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libgdtoa-gdb.a
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libgdtoa-pic.a
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libgdtoa.a
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libmlton-gdb.a
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libmlton-pic.a
+mlton-target-arm-linux-gnueabi: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/arm-linux-gnueabi/libmlton.a
