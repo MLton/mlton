@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2010 Matthew Fluet.
+ # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -191,6 +192,17 @@ OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
 DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 PICWARNCFLAGS := $(WARNCFLAGS)  -Wdisabled-optimization $(OPTWARNFLAGS)
 
+
+GDTOACFILES :=									\
+	dmisc.c    g__fmt.c   misc.c     strtoIdd.c  strtopdd.c  strtorf.c	\
+	dtoa.c     gmisc.c    smisc.c    strtoIf.c   strtopf.c   strtorQ.c	\
+	g_ddfmt.c  g_Qfmt.c   strtod.c   strtoIg.c   strtopQ.c   strtorx.c	\
+	g_dfmt.c   g_xfmt.c   strtodg.c  strtoIQ.c   strtopx.c   strtorxL.c	\
+	gdtoa.c    g_xLfmt.c  strtodI.c  strtoIx.c   strtopxL.c  sum.c		\
+	gethex.c   hd_init.c  strtof.c   strtoIxL.c  strtord.c   ulp.c		\
+	g_ffmt.c   hexnan.c   strtoId.c  strtopd.c   strtordd.c
+GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
+
 UTILHFILES :=							\
 	util.h							\
 	$(shell find util -type f | grep '\.h$$')
@@ -200,6 +212,8 @@ UTILCFILES :=							\
 PLATFORMHFILES :=						\
 	platform.h						\
 	$(shell find platform -type f | grep '\.h$$')
+PLATFORMCFILES :=						\
+	$(shell find platform -type f | grep '\.c$$')
 
 GCHFILES :=							\
 	gc.h							\
@@ -217,15 +231,6 @@ BASISHFILES :=							\
 	$(shell find basis -type f | grep '\.h$$')
 BASISCFILES :=							\
 	$(shell find basis -type f | grep '\.c$$')
-GDTOACFILES :=									\
-	dmisc.c    g__fmt.c   misc.c     strtoIdd.c  strtopdd.c  strtorf.c	\
-	dtoa.c     gmisc.c    smisc.c    strtoIf.c   strtopf.c   strtorQ.c	\
-	g_ddfmt.c  g_Qfmt.c   strtod.c   strtoIg.c   strtopQ.c   strtorx.c	\
-	g_dfmt.c   g_xfmt.c   strtodg.c  strtoIQ.c   strtopx.c   strtorxL.c	\
-	gdtoa.c    g_xLfmt.c  strtodI.c  strtoIx.c   strtopxL.c  sum.c		\
-	gethex.c   hd_init.c  strtof.c   strtoIxL.c  strtord.c   ulp.c		\
-	g_ffmt.c   hexnan.c   strtoId.c  strtopd.c   strtordd.c
-GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
 
 HFILES :=							\
 	cenv.h							\
@@ -234,46 +239,34 @@ HFILES :=							\
 	$(GCHFILES)						\
 	$(BASISHFILES)
 
-OBJS := 							\
-	util.o							\
-	gc.o							\
-	platform.o						\
-	platform/$(TARGET_OS).o
-DEBUG_OBJS := 							\
-	util-gdb.o						\
-	gc-gdb.o						\
-	platform-gdb.o						\
-	platform/$(TARGET_OS)-gdb.o
-PIC_OBJS := 							\
-	util-pic.o						\
-	gc-pic.o						\
-	platform-pic.o						\
-	platform/$(TARGET_OS)-pic.o
 
 GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
 GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
 GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
+
+OBJS := 							\
+	util.o							\
+	platform.o						\
+	platform/$(TARGET_OS).o					\
+	gc.o
+
 OMIT_BYTECODE := no
 ifeq ($(OMIT_BYTECODE), yes)
 else
   OBJS += bytecode/interpret.o
-  DEBUG_OBJS += bytecode/interpret-gdb.o
-  PIC_OBJS += bytecode/interpret-pic.o
 endif
 
 ifeq ($(COMPILE_FAST), yes)
   OBJS += basis.o
-  DEBUG_OBJS += basis-gdb.o
-  PIC_OBJS += basis-pic.o
 else
   OBJS += 							\
 	$(foreach f, $(basename $(BASISCFILES)), $(f).o)
-  DEBUG_OBJS += 						\
-	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)
-  PIC_OBJS += 						\
-	$(foreach f, $(basename $(BASISCFILES)), $(f)-pic.o)
 endif
+
+DEBUG_OBJS := $(patsubst %.o,%-gdb.o,$(OBJS))
+PIC_OBJS   := $(patsubst %.o,%-pic.o,$(OBJS))
+
 
 ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
        libmlton.a libmlton-gdb.a libmlton-pic.a
@@ -285,7 +278,8 @@ endif
 
 all: $(ALL)
 
-gdtoa/arithchk.c:	gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
+
+gdtoa/arithchk.c: gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
 	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 	patch -s -p0 <gdtoa-patch.internal
@@ -300,85 +294,84 @@ gdtoa/arithchk.out: gdtoa/arithchk.c
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
 
-libgdtoa.a:	$(GDTOA_OBJS)
+gdtoa/%-pic.o: gdtoa/%.c gdtoa/arith.h
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+
+libgdtoa.a:     $(GDTOA_OBJS)
 libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
 libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
-
-libmlton.a: $(OBJS)
-libmlton-gdb.a: $(DEBUG_OBJS)
-libmlton-pic.a: $(PIC_OBJS)
-
-basis.c: $(BASISCFILES)
-	rm -f basis.c
-	cat $(BASISCFILES) >> basis.c
-
-gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types
-	@touch $@
-gen/gen-types:	gen/gen-types.c util.h util.o
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
-	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
-	cd gen && ./gen-types
-
-c-types.h: gen/c-types.h
-	cp $< $@
-ml-types.h:	gen/ml-types.h
-	cp $< $@
-
-gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi
-	@touch $@
-gen/gen-basis-ffi:	gen/gen-basis-ffi.sml gen/basis-ffi.def
-	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
-	rm -f gen/basis-ffi.h gen/basis-ffi.sml
-	cd gen && ./gen-basis-ffi
-
-basis-ffi.h: gen/basis-ffi.h
-	rm -f basis-ffi.h
-	cp gen/basis-ffi.h basis-ffi.h
-
-gen/sizes: gen/gen-sizes.c libmlton.a
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-sizes -I. -L. -lmlton gen/gen-sizes.c util.o
-	rm -f gen/sizes
-	cd gen && ./gen-sizes
-	rm -f gen/gen-sizes$(EXE)
-
-bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h $(BASISHFILES)
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
-	rm -f bytecode/opcodes
-	cd bytecode && ./print-opcodes > opcodes
-	rm -f bytecode/print-opcodes$(EXE)
 
 
 util-pic.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
-
 util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
-
-util.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
+util.o:     util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
+
+c-types.h: gen/c-types.h
+	cp $< $@
+ml-types.h: gen/ml-types.h
+	cp $< $@
+gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types
+	@touch $@
+gen/gen-types: gen/gen-types.c util.h util.o
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
+	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
+	cd gen && ./gen-types
+
+basis-ffi.h: gen/basis-ffi.h
+	cp $< $@
+gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi
+	@touch $@
+gen/gen-basis-ffi: gen/gen-basis-ffi.sml gen/basis-ffi.def
+	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
+	rm -f gen/basis-ffi.h gen/basis-ffi.sml
+	cd gen && ./gen-basis-ffi
+
+gen/sizes: gen/gen-sizes
+	@touch $@
+gen/gen-sizes: gen/gen-sizes.c libmlton.a $(HFILES)
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -I. -o gen/gen-sizes gen/gen-sizes.c -L. -lmlton
+	rm -f gen/sizes
+	cd gen && ./gen-sizes
+
+platform/$(TARGET_OS)-pic.o: $(PLATFORMCFILES)
+platform/$(TARGET_OS)-gdb.o: $(PLATFORMCFILES)
+platform/$(TARGET_OS).o: $(PLATFORMCFILES)
 
 gc-pic.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(PICCFLAGS) $(GCPICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
-
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
-
 gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 ## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
 bytecode/interpret-pic.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(PICCFLAGS) $(GCPICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
+bytecode/opcodes: bytecode/print-opcodes
+	@touch $@
+bytecode/print-opcodes: bytecode/print-opcodes.c bytecode/opcode.h $(HFILES)
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
+	rm -f bytecode/opcodes
+	cd bytecode && ./print-opcodes > opcodes
+
+basis.c: $(BASISCFILES)
+	rm -f basis.c
+	cat $(BASISCFILES) >> basis.c
 
 ## Needs -Wno-float-equal for Real<N>_equal;
-## needs -Wno-format-nonliteralfor Date_strfTime;
+## needs -Wno-format-nonliteral for Date_strfTime;
 ## needs -Wno-redundant-decls for 'extern struct GC_state gcState'.
 basis-pic.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
@@ -393,7 +386,7 @@ basis/Real/Real-gdb.o: basis/Real/Real.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 basis/Real/Real.o: basis/Real/Real.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-## Needs -Wno-format-nonliteralfor Date_strfTime.
+## Needs -Wno-format-nonliteral for Date_strfTime.
 basis/System/Date-pic.o: basis/System/Date.c $(HFILES)
 	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
 basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
@@ -401,23 +394,22 @@ basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
 basis/System/Date.o: basis/System/Date.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
 
-%.a:
-	rm -f $@
-	$(AR) $@ $^
-	$(RANLIB) $@
+libmlton.a: $(OBJS)
+libmlton-gdb.a: $(DEBUG_OBJS)
+libmlton-pic.a: $(PIC_OBJS)
 
-gdtoa/%-pic.o:	gdtoa/%.c gdtoa/arith.h
-	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%-gdb.o:	gdtoa/%.c gdtoa/arith.h
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%.o:	gdtoa/%.c gdtoa/arith.h
-	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+
 %-pic.o: %.c $(HFILES)
 	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 %.o: %.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
+
+%.a:
+	rm -f $@
+	$(AR) $@ $^
+	$(RANLIB) $@
 
 
 .PHONY: flags
@@ -437,12 +429,12 @@ flags:
 	echo OPTWARNFLAGS = $(OPTWARNFLAGS)
 	echo DEBUGWARNFLAGS = $(DEBUGWARNFLAGS)
 	echo OBJS = $(OBJS)
-	echo DEBUG_OBJS = $(DEBUG_OBJS)
 
 
 .PHONY: clean
 clean:
 	../bin/clean
+
 
 .PHONY: rebuild-gdtoa-patch
 rebuild-gdtoa-patch:
