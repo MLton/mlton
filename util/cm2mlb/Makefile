@@ -24,7 +24,7 @@ all: $(CM2MLB_HEAP)
 
 $(CM2MLB_HEAP): cm2mlb.cm cm2mlb.sml gen-mlb.sml cm2mlb-map
 	rm -f $(CM2MLB_HEAP)
-	# $(ML_BUILD) $(ML_BUILD_FLAGS) $(CM2MLB_CM) CM2MLB.main $(CM2MLB_HEAP)
+# 	$(ML_BUILD) $(ML_BUILD_FLAGS) $(CM2MLB_CM) CM2MLB.main $(CM2MLB_HEAP)
 	(									\
 		echo 'if (CM.make "cm2mlb.cm") handle _ => false';		\
 		echo '   then ()';						\
