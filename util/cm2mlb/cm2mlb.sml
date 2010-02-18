@@ -17,7 +17,7 @@
  * the root directory of the SML/NJ installation.  You may need to be root in
  * order to do these.
  * 1. From the SML/NJ REPL:
- *      CM.make "sources.cm";
+ *      CM.make "cm2mlb.cm";
  *      CM2MLB.export ();
  * 2. ln -s <smlnj>/bin/.run-sml <smlnj>/bin/cm2mlb
  * 3. mv cm2mlb.x86-linux <smlnj>/bin/.heap

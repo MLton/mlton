@@ -1,4 +1,4 @@
-Group
+Library
         structure CM2MLB
 is
         $/pgraph.cm
