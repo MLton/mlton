@@ -24,8 +24,13 @@ all: $(CM2MLB_HEAP)
 
 $(CM2MLB_HEAP): cm2mlb.cm cm2mlb.sml gen-mlb.sml cm2mlb-map
 	rm -f $(CM2MLB_HEAP)
-	$(ML_BUILD) $(ML_BUILD_FLAGS) $(CM2MLB_CM) CM2MLB.main $(CM2MLB_HEAP)
-	touch $(CM2MLB_HEAP)
+	# $(ML_BUILD) $(ML_BUILD_FLAGS) $(CM2MLB_CM) CM2MLB.main $(CM2MLB_HEAP)
+	(									\
+		echo 'if (CM.make "cm2mlb.cm") handle _ => false';		\
+		echo '   then ()';						\
+		echo '   else OS.Process.exit OS.Process.failure;'; 		\
+		echo 'CM2MLB.export();'						\
+	) | sml
 
 .PHONY: clean
 clean:
