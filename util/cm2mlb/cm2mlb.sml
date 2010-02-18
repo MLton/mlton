@@ -206,7 +206,7 @@ struct
                               outstream = out};
                   TextIO.output (out, "end\n")
                end
-          | NONE => ()
+          | NONE => die ("CM.Graph.graph " ^ sources ^ " failed") 
       end
 
    fun usage msg =
@@ -238,7 +238,7 @@ struct
              | _ => usage "wrong number of arguments"
       in
          loop args handle e => die (concat ["cm2mlb failed: ", General.exnMessage e])
-         ; 0
+         ; OS.Process.success
       end
 
    fun export () =
