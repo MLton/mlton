@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2010 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -5994,6 +5995,15 @@ struct
                         registerAllocation = registerAllocation}
                      end)
 
+            val availCalleeSaveXmmRegisters =
+               List.keepAll
+               (XmmRegister.calleeSaveRegisters,
+                fn calleeSaveReg =>
+                List.forall
+                (#xmmreserved registerAllocation,
+                 fn reservedReg =>
+                 not (XmmRegister.coincide (reservedReg, calleeSaveReg))))
+
             val {assembly = assembly_xmmshuffle,
                  registerAllocation, ...}
               = if !Control.Native.shuffle then 
@@ -6006,12 +6016,17 @@ struct
                                             andalso
                                             (not o ClassSet.contains)
                                             (cargClasses,
-                                             MemLoc.class memloc)),
+                                             MemLoc.class memloc))
+                                           andalso
+                                           List.exists
+                                           (availCalleeSaveXmmRegisters,
+                                            fn calleeSaveReg =>
+                                            Size.eq (XmmRegister.size register,
+                                                     XmmRegister.size calleeSaveReg)),
                               registerAllocation = registerAllocation},
                  {assembly = AppendList.empty, 
-                  registerAllocation = registerAllocation,
-                  saves = []},
-                 fn ({memloc, ...}, {assembly, registerAllocation, saves})
+                  registerAllocation = registerAllocation},
+                 fn ({memloc, ...}, {assembly, registerAllocation})
                   => let
                        val {assembly = assembly_shuffle,
                             registerAllocation, ...} 
@@ -6022,19 +6037,26 @@ struct
                                             size = MemLoc.size memloc,
                                             move = true,
                                             supports = [],
-                                            saves = saves,
+                                            saves = [],
                                             force = XmmRegister.calleeSaveRegisters,
                                             registerAllocation
                                             = registerAllocation}
                      in
                        {assembly = AppendList.append (assembly,
                                                       assembly_shuffle),
-                        registerAllocation = registerAllocation,
-                        saves = saves}
+                        registerAllocation = registerAllocation}
                      end)
                 else {assembly = AppendList.empty,
-                      registerAllocation = registerAllocation,
-                      saves = []}
+                      registerAllocation = registerAllocation}
+
+            val availCalleeSaveRegisters =
+               List.keepAll
+               (Register.calleeSaveRegisters,
+                fn calleeSaveReg =>
+                List.forall
+                (#reserved registerAllocation,
+                 fn reservedReg =>
+                 not (Register.coincide (reservedReg, calleeSaveReg))))
 
             val {assembly = assembly_shuffle,
                  registerAllocation, ...}
@@ -6048,12 +6070,17 @@ struct
                                             andalso
                                             (not o ClassSet.contains)
                                             (cargClasses,
-                                             MemLoc.class memloc)),
+                                             MemLoc.class memloc))
+                                           andalso
+                                           List.exists
+                                           (availCalleeSaveRegisters,
+                                            fn calleeSaveReg =>
+                                            Size.eq (Register.size register,
+                                                     Register.size calleeSaveReg)),
                               registerAllocation = registerAllocation},
                  {assembly = AppendList.empty, 
-                  registerAllocation = registerAllocation,
-                  saves = []},
-                 fn ({memloc, ...}, {assembly, registerAllocation, saves})
+                  registerAllocation = registerAllocation},
+                 fn ({memloc, ...}, {assembly, registerAllocation})
                   => let
                        val {assembly = assembly_shuffle,
                             registerAllocation, ...} 
@@ -6066,19 +6093,17 @@ struct
                                             size = MemLoc.size memloc,
                                             move = true,
                                             supports = [],
-                                            saves = saves,
+                                            saves = [],
                                             force = Register.calleeSaveRegisters,
                                             registerAllocation
                                             = registerAllocation}
                      in
                        {assembly = AppendList.append (assembly,
                                                       assembly_shuffle),
-                        registerAllocation = registerAllocation,
-                        saves = saves}
+                        registerAllocation = registerAllocation}
                      end)
                 else {assembly = AppendList.empty,
-                      registerAllocation = registerAllocation,
-                      saves = []}
+                      registerAllocation = registerAllocation}
 
             val registerAllocation
               = xmmvalueMap {map = fn value as {register,

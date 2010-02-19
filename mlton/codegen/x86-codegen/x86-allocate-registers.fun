@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -5864,6 +5865,15 @@ struct
                         registerAllocation = registerAllocation}
                      end)
 
+            val availCalleeSaveRegisters =
+               List.keepAll
+               (Register.calleeSaveRegisters,
+                fn calleeSaveReg =>
+                List.forall
+                (#reserved registerAllocation,
+                 fn reservedReg =>
+                 not (Register.coincide (reservedReg, calleeSaveReg))))
+
             val {assembly = assembly_shuffle,
                  registerAllocation, ...}
               = if !Control.Native.shuffle then 
@@ -5872,12 +5882,17 @@ struct
                                         => List.contains
                                            (Register.callerSaveRegisters,
                                             register,
-                                            Register.eq),
+                                            Register.eq)
+                                           andalso
+                                           List.exists
+                                           (availCalleeSaveRegisters,
+                                            fn calleeSaveReg =>
+                                            Size.eq (Register.size register,
+                                                     Register.size calleeSaveReg)),
                               registerAllocation = registerAllocation},
                  {assembly = AppendList.empty, 
-                  registerAllocation = registerAllocation,
-                  saves = []},
-                 fn ({memloc, ...}, {assembly, registerAllocation, saves})
+                  registerAllocation = registerAllocation},
+                 fn ({memloc, ...}, {assembly, registerAllocation})
                   => let
                        val {assembly = assembly_shuffle,
                             registerAllocation, ...} 
@@ -5890,19 +5905,17 @@ struct
                                             size = MemLoc.size memloc,
                                             move = true,
                                             supports = [],
-                                            saves = saves,
+                                            saves = [],
                                             force = Register.calleeSaveRegisters,
                                             registerAllocation
                                             = registerAllocation}
                      in
                        {assembly = AppendList.append (assembly,
                                                       assembly_shuffle),
-                        registerAllocation = registerAllocation,
-                        saves = saves}
+                        registerAllocation = registerAllocation}
                      end)
                 else {assembly = AppendList.empty,
-                      registerAllocation = registerAllocation,
-                      saves = []}
+                      registerAllocation = registerAllocation}
 
             val registerAllocation
               = valueMap {map = fn value as {register,
