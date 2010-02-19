@@ -65,7 +65,7 @@ signature AMD64 =
         val allReg : reg list
 
         datatype part
-          = R| E | X | L
+          = R | E | X | L
 
         datatype t = T of {reg: reg, part: part}
         val all : t list
