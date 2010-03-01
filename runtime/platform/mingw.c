@@ -774,8 +774,9 @@ static void setSysname (struct utsname *buf) {
         /* Call GetNativeSystemInfo if supported or GetSystemInfo otherwise. */
         SYSTEM_INFO si;
         void (WINAPI *pGNSI)(LPSYSTEM_INFO);
-        pGNSI = (PVOID) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-                                       "GetNativeSystemInfo");
+        pGNSI = (void(WINAPI *)(LPSYSTEM_INFO))
+                GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
+                               "GetNativeSystemInfo");
         if (NULL != pGNSI)
           pGNSI(&si);
         else
@@ -785,10 +786,10 @@ static void setSysname (struct utsname *buf) {
         osv.dwOSVersionInfoSize = sizeof (osv);
         /* Try to get extended information in order to be able to match the O.S. more
            precisely using osv.wProductType */
-        if (! GetVersionEx ((OSVERSIONINFO *) &osv)) {
+        if (! GetVersionEx ((OSVERSIONINFO *)(void*) &osv)) {
           ZeroMemory(&osv, sizeof(OSVERSIONINFOEX));
           osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-          GetVersionEx((OSVERSIONINFO *) &osv);
+          GetVersionEx((OSVERSIONINFO *)(void*) &osv);
         }
         switch (osv.dwPlatformId) {
         case VER_PLATFORM_WIN32_NT:
