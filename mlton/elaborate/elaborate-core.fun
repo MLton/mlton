@@ -1657,6 +1657,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   {con = con, name = name}))
                 in
                    {cons = cons,
+                    kind = kind,
                     makeCons = makeCons,
                     name = name,
                     tycon = tycon,
@@ -1666,7 +1667,7 @@ fun elaborateDec (d, {env = E, nest}) =
             val (dbs, strs) =
                (Vector.unzip o Vector.map)
                (datatypes,
-                fn {cons, makeCons, name, tycon, tyvars} =>
+                fn {cons, kind, makeCons, name, tycon, tyvars} =>
                 let
                    val resultType: Type.t =
                       Type.con (tycon, Vector.map (tyvars, Type.var))
@@ -1692,9 +1693,7 @@ fun elaborateDec (d, {env = E, nest}) =
                            (scheme, {arg = arg, con = con})
                         end))
                    val typeStr =
-                      TypeStr.data (tycon,
-                                    Kind.Arity (Vector.length tyvars),
-                                    makeCons schemes)
+                      TypeStr.data (tycon, kind, makeCons schemes)
                 in
                    ({cons = datatypeCons,
                      tycon = tycon,
@@ -1723,7 +1722,7 @@ fun elaborateDec (d, {env = E, nest}) =
                           | Never => ()
                           | Sometimes =>
                                if Vector.forall
-                                  (cons, fn {arg, con, ...} =>
+                                  (cons, fn {arg, ...} =>
                                    case arg of
                                       NONE => true
                                     | SOME ty =>

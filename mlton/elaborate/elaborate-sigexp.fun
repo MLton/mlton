@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -183,28 +184,31 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 fun elaborateDatBind (datBind: DatBind.t, E): unit =
    let
       val DatBind.T {datatypes, ...} = DatBind.node datBind
-      val change = ref false
       (* Build enough of an interface so that that the constructor argument
        * types can be elaborated.
        *)
-      val tycons =
+      val datatypes =
          Vector.map
-         (datatypes, fn {tycon = name, tyvars, ...} =>
+         (datatypes, fn {cons, tycon = name, tyvars} =>
           let
              val kind = Kind.Arity (Vector.length tyvars)
              val tycon = Tycon.make {hasCons = true, kind = kind}
              val _ =
-                Env.extendTycon (E, name, TypeStr.data (tycon, kind, Cons.empty))
+                Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
           in
-             tycon
+             {cons = cons,
+              kind = kind,
+              name = name,
+              tycon = tycon,
+              tyvars = tyvars}
           end)
-      fun elabAll (): unit =
-         Vector.foreach2
-         (tycons, datatypes, fn (tycon, {cons, tycon = astTycon, tyvars, ...}) =>
+      val datatypes =
+         Vector.map
+         (datatypes, fn {cons, kind, name, tycon, tyvars, ...} =>
           let
              val resultType: Atype.t =
-                Atype.con (astTycon, Vector.map (tyvars, Atype.var))
-             val (cons, conArgs) =
+                Atype.con (name, Vector.map (tyvars, Atype.var))
+             val (consSchemes, consArgs) =
                 Vector.unzip
                 (Vector.map
                  (cons, fn (name, arg) =>
@@ -213,16 +217,46 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                         case arg of
                            NONE => (fn _ => NONE, resultType)
                          | SOME t =>
-                              (fn s =>
-                               SOME (#1 (Type.deArrow (Scheme.ty s))),
-                               Atype.arrow (t, resultType))
+                           (fn s => SOME (#1 (Type.deArrow (Scheme.ty s))),
+                            Atype.arrow (t, resultType))
                      val scheme = elaborateScheme (tyvars, ty, E)
                   in
                      ({name = name,
                        scheme = scheme},
-                      makeArg scheme)
+                      {con = name,
+                       arg = makeArg scheme})
                   end))
+          in
+             {consArgs = consArgs,
+              consSchemes = consSchemes,
+              kind = kind,
+              name = name,
+              tycon = tycon,
+              tyvars = tyvars}
+          end)
+      val _ = Env.allowDuplicates := true
+      val _ =
+         Vector.foreach
+         (datatypes, fn {consSchemes, kind, name, tycon, ...} =>
+          let
              val _ =
+                Vector.foreach
+                (consSchemes, fn {name, scheme} =>
+                 Env.extendCon (E, name, scheme))
+             val _ =
+                Env.extendTycon
+                (E, name, TypeStr.data (tycon, kind, Cons.T consSchemes))
+          in
+             ()
+          end)
+      val _ = Env.allowDuplicates := false
+      (* Maximize equality *)
+      val change = ref false
+      fun loop () =
+         let
+            val _ =
+               Vector.foreach
+               (datatypes, fn {consArgs, tycon, tyvars, ...} =>
                 let
                    val r = Tycon.admitsEquality tycon
                    datatype z = datatype AdmitsEquality.t
@@ -232,7 +266,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                     | Never => ()
                     | Sometimes =>
                          if Vector.forall
-                            (conArgs, fn arg =>
+                            (consArgs, fn {arg, ...} =>
                              case arg of
                                 NONE => true
                               | SOME ty =>
@@ -240,33 +274,13 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                                    (Scheme.make (tyvars, ty)))
                             then ()
                          else (r := Never; change := true)
-                end
-             val _ = Vector.foreach (cons, fn {name, scheme} =>
-                                     Env.extendCon (E, name, scheme))
-             val _ = Env.allowDuplicates := true
-             val _ =
-                Env.extendTycon
-                (E, astTycon,
-                 TypeStr.data (tycon, Kind.Arity (Vector.length tyvars),
-                               Cons.T cons))
-          in
-             ()
-          end) 
-      (* We don't want to re-elaborate the datatypes if there has been a type
-       * error, because that will cause duplicate error messages.
-       *)
-     val numErrors = !Control.numErrors
-      (* Maximize equality. *)
-      fun loop (): unit =
-         let
-            val _ = elabAll ()
+                end)
          in
-            if !change andalso numErrors = !Control.numErrors
+            if !change
                then (change := false; loop ())
             else ()
          end
       val _ = loop ()
-      val _ = Env.allowDuplicates := false
    in
       ()
    end
