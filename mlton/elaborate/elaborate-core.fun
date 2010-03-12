@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1662,85 +1662,84 @@ fun elaborateDec (d, {env = E, nest}) =
                     tycon = tycon,
                     tyvars = tyvars}
                 end)
-            val change = ref false
-            fun elabAll () =
-               (elabTypBind withtypes
-                ; (Vector.map
-                   (datatypes,
-                    fn {cons, makeCons, name, tycon, tyvars} =>
-                    let
-                       val resultType: Type.t =
-                          Type.con (tycon, Vector.map (tyvars, Type.var))
-                       val (schemes, datatypeCons) =
-                          Vector.unzip
-                          (Vector.map
-                           (cons, fn {arg, con, ...} =>
-                            let
-                               val (arg, ty) =
-                                  case arg of
-                                     NONE => (NONE, resultType)
-                                   | SOME t =>
-                                        let
-                                           val t = elabType t
-                                        in
-                                           (SOME t, Type.arrow (t, resultType))
-                                        end
-                               val scheme =
-                                  Scheme.make {canGeneralize = true,
-                                               ty = ty,
-                                               tyvars = tyvars}
-                            in
-                               (scheme, {arg = arg, con = con})
-                            end))
-                       val _ =
-                          let
-                             val r = TypeEnv.tyconAdmitsEquality tycon
-                             datatype z = datatype AdmitsEquality.t
-                          in
-                             case !r of
-                                Always => Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
-                              | Never => ()
-                              | Sometimes =>
-                                   if Vector.forall
-                                      (datatypeCons, fn {arg, ...} =>
-                                       case arg of
-                                          NONE => true
-                                        | SOME ty =>
-                                             Scheme.admitsEquality
-                                             (Scheme.make {canGeneralize = true,
-                                                           ty = ty,
-                                                           tyvars = tyvars}))
-                                      then ()
-                                   else (r := Never; change := true)
-                          end
-                    val typeStr =
-                       TypeStr.data (tycon,
-                                     Kind.Arity (Vector.length tyvars),
-                                     makeCons schemes)
-                    val _ =
-                       Env.extendTycon (E, name, typeStr,
-                                        {forceUsed = false, isRebind = true})
-                 in
-                    ({cons = datatypeCons,
-                      tycon = tycon,
-                      tyvars = tyvars},
-                     {tycon = name,
-                      typeStr = typeStr})
-                 end)))
-            (* We don't want to re-elaborate the datatypes if there has been a
-             * type error, because that will cause duplicate error messages.
-             *)
-            val numErrors = !Control.numErrors
+            val _ = elabTypBind withtypes
+            val (dbs, strs) =
+               (Vector.unzip o Vector.map)
+               (datatypes,
+                fn {cons, makeCons, name, tycon, tyvars} =>
+                let
+                   val resultType: Type.t =
+                      Type.con (tycon, Vector.map (tyvars, Type.var))
+                   val (schemes, datatypeCons) =
+                      Vector.unzip
+                      (Vector.map
+                       (cons, fn {arg, con, ...} =>
+                        let
+                           val (arg, ty) =
+                              case arg of
+                                 NONE => (NONE, resultType)
+                               | SOME t =>
+                                    let
+                                       val t = elabType t
+                                    in
+                                       (SOME t, Type.arrow (t, resultType))
+                                    end
+                           val scheme =
+                              Scheme.make {canGeneralize = true,
+                                           ty = ty,
+                                           tyvars = tyvars}
+                        in
+                           (scheme, {arg = arg, con = con})
+                        end))
+                   val typeStr =
+                      TypeStr.data (tycon,
+                                    Kind.Arity (Vector.length tyvars),
+                                    makeCons schemes)
+                in
+                   ({cons = datatypeCons,
+                     tycon = tycon,
+                     tyvars = tyvars},
+                    {tycon = name,
+                     typeStr = typeStr})
+                end)
+            val _ =
+               Vector.map
+               (strs, fn {tycon, typeStr} =>
+                Env.extendTycon (E, tycon, typeStr,
+                                 {forceUsed = false, isRebind = true}))
             (* Maximize equality. *)
+            val change = ref false
             fun loop () =
                let
-                  val res = elabAll ()
+                  val _ =
+                     Vector.foreach
+                     (dbs, fn {cons, tycon, tyvars} =>
+                      let
+                         val r = TypeEnv.tyconAdmitsEquality tycon
+                         datatype z = datatype AdmitsEquality.t
+                      in
+                         case !r of
+                            Always => Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
+                          | Never => ()
+                          | Sometimes =>
+                               if Vector.forall
+                                  (cons, fn {arg, con, ...} =>
+                                   case arg of
+                                      NONE => true
+                                    | SOME ty =>
+                                         Scheme.admitsEquality
+                                         (Scheme.make {canGeneralize = true,
+                                                       ty = ty,
+                                                       tyvars = tyvars}))
+                                  then ()
+                               else (r := Never; change := true)
+                      end)
                in
-                  if !change andalso numErrors = !Control.numErrors
+                  if !change
                      then (change := false; loop ())
-                  else res
+                  else ()
                end
-            val (dbs, strs) = Vector.unzip (loop ())
+            val _ = loop ()
          in
             (Decs.single (Cdec.Datatype dbs), strs)
          end

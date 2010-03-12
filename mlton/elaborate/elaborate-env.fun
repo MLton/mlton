@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -2039,7 +2039,7 @@ val extend:
                case uses of
                   New => newUses ()
                 | Old u => u
-                | Rebind => Error.bug "ElaborateEnv.extend.rebind.new"
+                | Rebind => Error.bug "ElaborateEnv.extend.rebind.new: Rebind"
          in
             {domain = domain,
              range = range,

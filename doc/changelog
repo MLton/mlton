@@ -62,6 +62,10 @@ Summary:
     * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col "file.grm" *) directives in output.
 
+* 2010-03-12
+  - Fixed bug in elaboration of datatype declarations with withtype
+    bindings.
+
 * 2009-12-11
   - Fixed performance bug in ref flatten SSA2 optimization.
 
