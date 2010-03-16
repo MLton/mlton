@@ -50,7 +50,6 @@ structure Dexp =
       in
          val add = mk Prim.wordAdd
          val andb = mk Prim.wordAndb
-         val lshift = mk Prim.wordLshift
          val rshift = mk (fn s => Prim.wordRshift (s, {signed = false}))
          val xorb = mk Prim.wordXorb
       end
@@ -163,17 +162,17 @@ structure Hash =
             wordBytes
          end
 
-      (* Jenkins One-at-a-time hash
-       * http://en.wikipedia.org/wiki/Hash_table
-       *) 
 (*
+      (* Jenkins hash function
+       * http://en.wikipedia.org/wiki/Jenkins_hash_function  (20100315)
+       *) 
       val {stateTy, init, wordBytes, fini} =
          let
             val stateWordSize = resWordSize
             val stateTy = Type.word stateWordSize
             val workWordSize = resWordSize
             val workTy = Type.word workWordSize
-               
+
             local
                fun mk prim =
                   fn (w1, w2) => prim (w1, w2, stateWordSize)
@@ -246,8 +245,9 @@ structure Hash =
              fini = fini}
          end
 *)
-      (* Modifed FNV
-       * http://home.comcast.net/~bretm/hash/6.html
+
+      (* FNV-1a hash function
+       * http://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function  (20100315)
        *)
       val {stateTy, init, wordBytes, fini} =
          let
@@ -260,14 +260,14 @@ structure Hash =
                fun mk prim =
                   fn (w1, w2) => prim (w1, w2, stateWordSize)
             in
-               val add = mk Dexp.add
-               val lshift = mk Dexp.lshift
                val mul = mk (fn (w1,w2,s) => Dexp.mul (w1,w2,s,{signed = false}))
-               val rshift = mk Dexp.rshift
                val xorb = mk Dexp.xorb
             end
 
-            fun init () = Dexp.word (WordX.fromIntInf (2166136261, stateWordSize))
+            val fnv_prime = WordX.fromIntInf (16777619, stateWordSize)
+            val fnv_offset_bias = WordX.fromIntInf (2166136261, stateWordSize)
+
+            fun init () = Dexp.word fnv_offset_bias
             fun combByte (hexp, wexp) =
                let
                   val h0 = Var.newNoname ()
@@ -287,7 +287,7 @@ structure Hash =
                let
                   val h0 = Var.newNoname ()
                   val dh0 = Dexp.var (h0, stateTy)
-                  val p = Dexp.word (WordX.fromIntInf (16777619, stateWordSize))
+                  val p = Dexp.word fnv_prime
                   val h1 = Var.newNoname ()
                   val dh1 = Dexp.var (h1, stateTy)
                in
@@ -302,30 +302,7 @@ structure Hash =
                 workWordSize = workWordSize,
                 combByte = combByte,
                 mix = mix}
-            fun fini hexp =
-               let
-                  val h0 = Var.newNoname ()
-                  val dh0 = Dexp.var (h0, stateTy)
-                  val h1 = Var.newNoname ()
-                  val dh1 = Dexp.var (h1, stateTy)
-                  val h2 = Var.newNoname ()
-                  val dh2 = Dexp.var (h2, stateTy)
-                  val h3 = Var.newNoname ()
-                  val dh3 = Dexp.var (h3, stateTy)
-                  val h4 = Var.newNoname ()
-                  val dh4 = Dexp.var (h4, stateTy)
-                  val h5 = Var.newNoname ()
-                  val dh5 = Dexp.var (h5, stateTy)
-               in
-                  Dexp.lett
-                  {decs = [{var = h0, exp = hexp},
-                           {var = h1, exp = add (dh0, lshift (dh0, Dexp.shiftInt 13))},
-                           {var = h2, exp = xorb (dh1, rshift (dh1, Dexp.shiftInt 7))},
-                           {var = h3, exp = add (dh2, lshift (dh2, Dexp.shiftInt 3))},
-                           {var = h4, exp = xorb (dh3, rshift (dh3, Dexp.shiftInt 17))},
-                           {var = h5, exp = add (dh4, lshift (dh4, Dexp.shiftInt 5))}],
-                   body = dh5}
-               end
+            fun fini hexp = hexp
          in
             {stateTy = stateTy,
              init = init,
