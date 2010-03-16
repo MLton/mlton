@@ -1285,7 +1285,7 @@ fun 'a checkApp (prim: 'a t,
        | MLton_eq => oneTarg (fn t => (twoArgs (t, t), bool))
        | MLton_equal => oneTarg (fn t => (twoArgs (t, t), bool))
        | MLton_halt => noTargs (fn () => (oneArg cint, unit))
-       | MLton_hash => oneTarg (fn t => (twoArgs (seqIndex, t), word32))
+       | MLton_hash => oneTarg (fn t => (oneArg t, word32))
        | MLton_handlesSignals => noTargs (fn () => (noArgs, bool))
        | MLton_installSignalHandler => noTargs (fn () => (noArgs, unit))
        | MLton_serialize => oneTarg (fn t => (oneArg t, word8Vector))
@@ -1418,7 +1418,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)
        | MLton_equal => one (arg 0)
-       | MLton_hash => one (arg 1)
+       | MLton_hash => one (arg 0)
        | MLton_serialize => one (arg 0)
        | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)

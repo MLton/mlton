@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -39,14 +40,7 @@ fun size x =
 val debug = Primitive.Controls.debug
 val eq = Primitive.MLton.eq
 val equal = Primitive.MLton.equal
-local
-   fun hash_param depth x = 
-      if Int.< (depth, 0)
-         then raise Domain
-      else Primitive.MLton.hash (SeqIndex.fromInt depth, x)
-in
-   fun hash x = hash_param 0xF x
-end
+val hash = Primitive.MLton.hash
 (* val errno = Primitive.errno *)
 val safe = Primitive.Controls.safe
 
