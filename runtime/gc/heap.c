@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -203,19 +203,28 @@ bool createHeap (GC_state s, GC_heap h,
     fprintf (stderr, "createHeap  desired size = %s  min size = %s\n",
              uintmaxToCommaString(desiredSize),
              uintmaxToCommaString(minSize));
-  assert (isHeapInit (h));
   if (desiredSize < minSize)
     desiredSize = minSize;
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
-  assert (0 == h->size and NULL == h->start);
-  /* mmap toggling back and forth between high and low addresses to
-   * decrease the chance of virtual memory fragmentation causing an mmap
-   * to fail.  This is important for large heaps.
-   * Note that the loop always trys a NULL address last.
+  assert (isHeapInit (h) and NULL == h->start);
+  /* Biased binary search (between minSize and desiredSize) for a
+   * successful mmap.
+   * Toggle back and forth between high and low addresses to decrease
+   * the chance of virtual memory fragmentation; important for large
+   * heaps.
+   * Always try a NULL address last.
    */
-  newSize = desiredSize;
-  do {
+  size_t lowSize = minSize;
+  size_t highSize = desiredSize;
+  newSize = highSize;
+  while (lowSize <= highSize) {
+    pointer newStart;
+
+    newWithMapsSize = newSize + sizeofCardMapAndCrossMap (s, newSize);
+
+    assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
+
     const unsigned int countLog2 = 5;
     const unsigned int count = 0x1 << countLog2;
     const size_t step = (size_t)0x1 << (ADDRESS_BITS - countLog2);
@@ -224,19 +233,9 @@ bool createHeap (GC_state s, GC_heap h,
 #else
     const size_t address_end = (size_t)0x1 << ADDRESS_BITS;
 #endif
-
     static bool direction = TRUE;
-    unsigned int i;
-
-    newWithMapsSize = newSize + sizeofCardMapAndCrossMap (s, newSize);
-
-    assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
-
-    for (i = 1; i <= count; i++) {
-      size_t address;
-      pointer newStart;
-
-      address = (size_t)i * step;
+    for (unsigned int i = 1; i <= count; i++) {
+      size_t address = (size_t)i * step;
       if (direction)
         address = address_end - address;
       /* Always use 0 in the last step. */
@@ -261,11 +260,10 @@ bool createHeap (GC_state s, GC_heap h,
         return TRUE;
       }
     }
-    size_t backoff;
-    backoff = (newSize - minSize) / 16;
-    if (0 == backoff)
-      backoff = 1;
-    backoff = align (backoff, s->sysvals.pageSize);
+    size_t prevSize = newSize;
+    highSize = newSize - s->sysvals.pageSize;
+    const size_t factor = 16;
+    newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Creating heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
@@ -273,16 +271,10 @@ bool createHeap (GC_state s, GC_heap h,
                uintmaxToCommaString (newWithMapsSize - newSize));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (backoff),
+               uintmaxToCommaString (newSize - prevSize),
                uintmaxToCommaString (minSize));
     }
-    size_t nextSize = newSize - backoff;
-    if (nextSize < minSize and minSize < newSize) {
-      newSize = minSize;
-    } else {
-      newSize = nextSize;
-    }
-  } while (newSize >= minSize);
+  }
   return FALSE;
 }
 
@@ -311,8 +303,6 @@ bool remapHeap (GC_state s, GC_heap h,
                 size_t minSize) {
   size_t newSize;
   size_t newWithMapsSize;
-  size_t origSize;
-  size_t origWithMapsSize;
 
 #if not HAS_REMAP
   return FALSE;
@@ -325,17 +315,21 @@ bool remapHeap (GC_state s, GC_heap h,
   assert (desiredSize >= h->size);
   minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
-  origSize = h->size;
-  origWithMapsSize = origSize + sizeofCardMapAndCrossMap (s, origSize);
-  newSize = desiredSize;
-  do {
+
+  /* Biased binary search (between minSize and desiredSize) for a
+   * successful mremap.
+   */
+  size_t lowSize = minSize;
+  size_t highSize = desiredSize;
+  newSize = highSize;
+  while (lowSize <= highSize) {
     pointer newStart;
 
     newWithMapsSize = newSize + sizeofCardMapAndCrossMap (s, newSize);
 
     assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
-    newStart = GC_mremap (h->start, origWithMapsSize, newWithMapsSize);
+    newStart = GC_mremap (h->start, h->withMapsSize, newWithMapsSize);
     unless ((void*)-1 == newStart) {
       h->start = newStart;
       h->size = newSize;
@@ -351,11 +345,10 @@ bool remapHeap (GC_state s, GC_heap h,
                  uintmaxToCommaString(h->withMapsSize - h->size));
       return TRUE;
     }
-    size_t backoff;
-    backoff = (newSize - minSize) / 16;
-    if (0 == backoff)
-      backoff = 1;
-    backoff = align (backoff, s->sysvals.pageSize);
+    size_t prevSize = newSize;
+    highSize = newSize - s->sysvals.pageSize;
+    const size_t factor = 16;
+    newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Remapping heap to size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
@@ -363,16 +356,10 @@ bool remapHeap (GC_state s, GC_heap h,
                uintmaxToCommaString (newWithMapsSize - newSize));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (backoff),
+               uintmaxToCommaString (newSize - prevSize),
                uintmaxToCommaString (minSize));
     }
-    size_t nextSize = newSize - backoff;
-    if (nextSize < minSize and minSize < newSize) {
-      newSize = minSize;
-    } else {
-      newSize = nextSize;
-    }
-  } while (newSize >= minSize);
+  }
   return FALSE;
 }
 
