@@ -392,8 +392,8 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   }
   if (minSize <= s->heap.size) {
     useCurrent = TRUE;
-    /* Demand real growth from remapHeap and/or createHeap. */
-    minSize = (desiredSize / 2) + (s->heap.size / 2);
+    /* Demand proper growth from remapHeap and/or createHeap. */
+    minSize = s->heap.size + s->sysvals.pageSize;
   } else {
     useCurrent = FALSE;
   }
