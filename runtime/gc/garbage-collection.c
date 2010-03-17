@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -117,14 +117,14 @@ void performGC (GC_state s,
              uintmaxToCommaString(s->heap.size),
              uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
     fprintf (stderr, 
-             "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
-             uintmaxToCommaString(nurserySize),
-             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
-    fprintf (stderr, 
-             "[GC:\tand old-gen of size %s bytes (%.1f%% of heap),]\n",
+             "[GC:\twith old-gen of size %s bytes (%.1f%% of heap),]\n",
              uintmaxToCommaString(s->heap.oldGenSize),
              100.0 * ((double)(s->heap.oldGenSize) / (double)(s->heap.size)));
-    fprintf (stderr, 
+    fprintf (stderr,
+             "[GC:\tand nursery of size %s bytes (%.1f%% of heap),]\n",
+             uintmaxToCommaString(nurserySize),
+             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
+    fprintf (stderr,
              "[GC:\tand nursery using %s bytes (%.1f%% of heap, %.1f%% of nursery).]\n",
              uintmaxToCommaString(nurseryUsed),
              100.0 * ((double)(nurseryUsed) / (double)(s->heap.size)),
@@ -171,13 +171,13 @@ void performGC (GC_state s,
              uintmaxToCommaString(s->heap.size),
              uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
     fprintf (stderr, 
-             "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
-             uintmaxToCommaString(nurserySize),
-             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
-    fprintf (stderr, 
-             "[GC:\tand old-gen of size %s bytes (%.1f%% of heap).]\n",
+             "[GC:\twith old-gen of size %s bytes (%.1f%% of heap),]\n",
              uintmaxToCommaString(s->heap.oldGenSize),
              100.0 * ((double)(s->heap.oldGenSize) / (double)(s->heap.size)));
+    fprintf (stderr,
+             "[GC:\tand nursery of size %s bytes (%.1f%% of heap).]\n",
+             uintmaxToCommaString(nurserySize),
+             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
   }
   /* Send a GC signal. */
   if (s->signalsInfo.gcSignalHandled
