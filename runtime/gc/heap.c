@@ -170,7 +170,7 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keepSize) {
     keepWithMapsSize = keepSize + sizeofCardMapAndCrossMap (s, keepSize);
     if (DEBUG or s->controls.messages) {
       fprintf (stderr,
-               "[GC: Shrinking heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map),]\n",
+               "[GC: Shrinking heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map)]\n",
                (uintptr_t)(h->start),
                uintmaxToCommaString(h->size),
                uintmaxToCommaString(h->withMapsSize - h->size));
@@ -179,6 +179,7 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keepSize) {
                uintmaxToCommaString(keepSize),
                uintmaxToCommaString(keepWithMapsSize - keepSize));
     }
+    assert (isAligned (keepWithMapsSize, s->sysvals.pageSize));
     assert (keepWithMapsSize <= h->withMapsSize);
     GC_release (h->start + keepWithMapsSize, h->withMapsSize - keepWithMapsSize);
     h->size = keepSize;
@@ -261,17 +262,18 @@ bool createHeap (GC_state s, GC_heap h,
       }
     }
     size_t prevSize = newSize;
+    size_t prevWithMapsSize = newWithMapsSize;
     highSize = newSize - s->sysvals.pageSize;
     const size_t factor = 16;
     newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
                "[GC: Creating heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
-               uintmaxToCommaString (newSize),
-               uintmaxToCommaString (newWithMapsSize - newSize));
+               uintmaxToCommaString (prevSize),
+               uintmaxToCommaString (prevWithMapsSize - prevSize));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (newSize - prevSize),
+               uintmaxToCommaString (prevSize - newSize),
                uintmaxToCommaString (minSize));
     }
   }
@@ -331,32 +333,47 @@ bool remapHeap (GC_state s, GC_heap h,
 
     newStart = GC_mremap (h->start, h->withMapsSize, newWithMapsSize);
     unless ((void*)-1 == newStart) {
+      pointer origStart = h->start;
+      size_t origSize = h->size;
+      size_t origWithMapsSize = h->withMapsSize;
       h->start = newStart;
       h->size = newSize;
       h->withMapsSize = newWithMapsSize;
       if (h->size > s->cumulativeStatistics.maxHeapSize)
         s->cumulativeStatistics.maxHeapSize = h->size;
       assert (minSize <= h->size and h->size <= desiredSize);
-      if (DEBUG or s->controls.messages)
+      if (DEBUG or s->controls.messages) {
         fprintf (stderr,
-                 "[GC: Remapped heap at "FMTPTR" to size %s bytes (+ %s bytes card/cross map).]\n",
+                 "[GC: Remapped heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map)]\n",
+                 (uintptr_t)origStart,
+                 uintmaxToCommaString(origSize),
+                 uintmaxToCommaString(origWithMapsSize - origSize));
+        fprintf (stderr,
+                 "[GC:\tto heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map).]\n",
                  (uintptr_t)(h->start),
                  uintmaxToCommaString(h->size),
                  uintmaxToCommaString(h->withMapsSize - h->size));
+      }
       return TRUE;
     }
     size_t prevSize = newSize;
+    size_t prevWithMapsSize = newWithMapsSize;
     highSize = newSize - s->sysvals.pageSize;
     const size_t factor = 16;
     newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
-               "[GC: Remapping heap to size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
-               uintmaxToCommaString (newSize),
-               uintmaxToCommaString (newWithMapsSize - newSize));
+               "[GC: Remapping heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map)]\n",
+               (uintptr_t)(h->start),
+               uintmaxToCommaString (h->size),
+               uintmaxToCommaString (h->withMapsSize - h->size));
+      fprintf (stderr,
+               "[GC:\tto heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
+               uintmaxToCommaString (prevSize),
+               uintmaxToCommaString (prevWithMapsSize - prevSize));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (newSize - prevSize),
+               uintmaxToCommaString (prevSize - newSize),
                uintmaxToCommaString (minSize));
     }
   }
@@ -386,9 +403,13 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
              uintmaxToCommaString(s->heap.size),
              uintmaxToCommaString(s->heap.withMapsSize - s->heap.size));
     fprintf (stderr,
-             "[GC:\tto desired size of %s bytes and minimum size of %s bytes.]\n",
+             "[GC:\tto desired size of %s bytes (+ %s bytes card/cross map)]\n",
              uintmaxToCommaString(desiredSize),
-             uintmaxToCommaString(minSize));
+             uintmaxToCommaString(sizeofCardMapAndCrossMap (s, desiredSize)));
+    fprintf (stderr,
+             "[GC:\tand minimum size of %s bytes (+ %s bytes card/cross map).]\n",
+             uintmaxToCommaString(minSize),
+             uintmaxToCommaString(sizeofCardMapAndCrossMap (s, minSize)));
   }
   if (minSize <= s->heap.size) {
     useCurrent = TRUE;
@@ -450,18 +471,18 @@ copy:
 
     if (DEBUG or s->controls.messages) {
       fprintf (stderr,
-               "[GC: Writing %s bytes of heap at "FMTPTR" to disk.]\n",
-               uintmaxToCommaString(liveSize),
-               (uintptr_t)curHeapp->start);
+               "[GC: Writing heap at "FMTPTR" of size %s bytes to disk.]\n",
+               (uintptr_t)curHeapp->start,
+               uintmaxToCommaString(liveSize));
     }
     data = GC_diskBack_write (curHeapp->start, liveSize);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
       if (DEBUG or s->controls.messages) {
         fprintf (stderr,
-                 "[GC: Reading %s bytes of heap to "FMTPTR" from disk.]\n",
-                 uintmaxToCommaString(liveSize),
-                 (uintptr_t)(curHeapp->start));
+                 "[GC: Reading heap to "FMTPTR" of size %s bytes from disk.]\n",
+                 (uintptr_t)(curHeapp->start),
+                 uintmaxToCommaString(liveSize));
       }
       GC_diskBack_read (data, curHeapp->start, liveSize);
       GC_diskBack_close (data);
