@@ -217,6 +217,7 @@ bool createHeap (GC_state s, GC_heap h,
    * heaps.
    * Always try a NULL address last.
    */
+  size_t factor = 16;
   size_t lowSize = minSize;
   size_t highSize = desiredSize;
   newSize = highSize;
@@ -227,26 +228,26 @@ bool createHeap (GC_state s, GC_heap h,
 
     assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
-    const unsigned int countLog2 = 5;
-    const unsigned int count = 0x1 << countLog2;
-    const size_t step = (size_t)0x1 << (ADDRESS_BITS - countLog2);
+    const unsigned int addressCountLog2 = 5;
+    const unsigned int addressCount = 0x1 << addressCountLog2;
+    const size_t addressStep = (size_t)0x1 << (ADDRESS_BITS - addressCountLog2);
 #if ADDRESS_BITS == POINTER_BITS
-    const size_t address_end = 0;
+    const size_t addressHigh = 0;
 #else
-    const size_t address_end = (size_t)0x1 << ADDRESS_BITS;
+    const size_t addressHigh = (size_t)0x1 << ADDRESS_BITS;
 #endif
-    static bool direction = TRUE;
-    for (unsigned int i = 1; i <= count; i++) {
-      size_t address = (size_t)i * step;
-      if (direction)
-        address = address_end - address;
+    static bool addressScanDir = TRUE;
+    for (unsigned int i = 1; i <= addressCount; i++) {
+      size_t address = (size_t)i * addressStep;
+      if (addressScanDir)
+        address = addressHigh - address;
       /* Always use 0 in the last step. */
-      if (i == count)
+      if (i == addressCount)
         address = 0;
 
       newStart = GC_mmapAnon ((pointer)address, newWithMapsSize);
       unless ((void*)-1 == newStart) {
-        direction = not direction;
+        addressScanDir = not addressScanDir;
         h->start = newStart;
         h->size = newSize;
         h->withMapsSize = newWithMapsSize;
@@ -265,7 +266,6 @@ bool createHeap (GC_state s, GC_heap h,
     size_t prevSize = newSize;
     size_t prevWithMapsSize = newWithMapsSize;
     highSize = newSize - s->sysvals.pageSize;
-    const size_t factor = 16;
     newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
     if (s->controls.messages) {
       fprintf (stderr,
