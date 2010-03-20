@@ -218,9 +218,11 @@ bool createHeap (GC_state s, GC_heap h,
    * Always try a NULL address last.
    */
   size_t factor = 16;
+  const size_t maxFactor = s->sysvals.pageSize;
   size_t lowSize = minSize;
   size_t highSize = desiredSize;
   newSize = highSize;
+  unsigned int loopCount = 0;
   while (lowSize <= highSize) {
     pointer newStart;
 
@@ -276,6 +278,10 @@ bool createHeap (GC_state s, GC_heap h,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
                uintmaxToCommaString (prevSize - newSize),
                uintmaxToCommaString (minSize));
+    }
+    if (factor < maxFactor
+        and ++loopCount % 64 == 0) {
+      factor += factor;
     }
   }
   return FALSE;
