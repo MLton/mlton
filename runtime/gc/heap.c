@@ -134,6 +134,7 @@ size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
            uintmaxToCommaString(s->controls.maxHeap));
   }
   resSize = invertSizeofCardMapAndCrossMap (s, resWithMapsSize);
+  assert (isAligned (resSize, s->sysvals.pageSize));
   if (DEBUG_RESIZING)
     fprintf (stderr, "%s = sizeofHeapDesired (%s, %s)\n",
              uintmaxToCommaString(resSize),
@@ -395,6 +396,8 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   pointer origStart;
   size_t liveSize;
 
+  assert (isAligned (desiredSize, s->sysvals.pageSize));
+  assert (isAligned (minSize, s->sysvals.pageSize));
   assert (desiredSize >= s->heap.size);
   if (DEBUG_RESIZING or s->controls.messages) {
     fprintf (stderr,
@@ -516,7 +519,9 @@ void resizeHeap (GC_state s, size_t minSize) {
              uintmaxToCommaString(minSize),
              uintmaxToCommaString(s->heap.size));
   desiredSize = sizeofHeapDesired (s, minSize, s->heap.size);
+  assert (isAligned (desiredSize, s->sysvals.pageSize));
   assert (minSize <= desiredSize);
+  minSize = align (minSize, s->sysvals.pageSize);
   if (desiredSize <= s->heap.size) {
     shrinkHeap (s, &s->heap, desiredSize);
   } else {
