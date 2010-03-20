@@ -304,12 +304,14 @@ bool createHeapSecondary (GC_state s, size_t desiredSize) {
 bool remapHeap (GC_state s, GC_heap h,
                 size_t desiredSize,
                 size_t minSize) {
-  size_t newSize;
-  size_t newWithMapsSize;
-
 #if not HAS_REMAP
   return FALSE;
 #endif
+
+  size_t newSize;
+  size_t newWithMapsSize;
+  int result;
+
   if (DEBUG_MEM)
     fprintf (stderr, "remapHeap  desired size = %s  min size = %s\n",
              uintmaxToCommaString(desiredSize),
@@ -322,9 +324,11 @@ bool remapHeap (GC_state s, GC_heap h,
   /* Biased binary search (between minSize and desiredSize) for a
    * successful mremap.
    */
+  size_t factor = 16;
   size_t lowSize = minSize;
   size_t highSize = desiredSize;
   newSize = highSize;
+  result = FALSE;
   while (lowSize <= highSize) {
     pointer newStart;
 
@@ -333,7 +337,7 @@ bool remapHeap (GC_state s, GC_heap h,
     assert (isAligned (newWithMapsSize, s->sysvals.pageSize));
 
     newStart = GC_mremap (h->start, h->withMapsSize, newWithMapsSize);
-    unless ((void*)-1 == newStart) {
+    if ((void*)-1 != newStart) {
       pointer origStart = h->start;
       size_t origSize = h->size;
       size_t origWithMapsSize = h->withMapsSize;
@@ -355,30 +359,38 @@ bool remapHeap (GC_state s, GC_heap h,
                  uintmaxToCommaString(h->size),
                  uintmaxToCommaString(h->withMapsSize - h->size));
       }
-      return TRUE;
-    }
-    size_t prevSize = newSize;
-    size_t prevWithMapsSize = newWithMapsSize;
-    highSize = newSize - s->sysvals.pageSize;
-    const size_t factor = 16;
-    newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
-    if (s->controls.messages) {
-      fprintf (stderr,
-               "[GC: Remapping heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map)]\n",
-               (uintptr_t)(h->start),
-               uintmaxToCommaString (h->size),
-               uintmaxToCommaString (h->withMapsSize - h->size));
-      fprintf (stderr,
-               "[GC:\tto heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
-               uintmaxToCommaString (prevSize),
-               uintmaxToCommaString (prevWithMapsSize - prevSize));
-      fprintf (stderr,
-               "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (prevSize - newSize),
-               uintmaxToCommaString (minSize));
+      lowSize = newSize + s->sysvals.pageSize;
+      newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
+      result = TRUE;
+    } else {
+      size_t prevSize = newSize;
+      size_t prevWithMapsSize = newWithMapsSize;
+      highSize = newSize - s->sysvals.pageSize;
+      newSize = align((factor-1) * (highSize / factor) + (lowSize / factor), s->sysvals.pageSize);
+      if (s->controls.messages) {
+        fprintf (stderr,
+                 "[GC: Remapping heap at "FMTPTR" of size %s bytes (+ %s bytes card/cross map)]\n",
+                 (uintptr_t)(h->start),
+                 uintmaxToCommaString (h->size),
+                 uintmaxToCommaString (h->withMapsSize - h->size));
+        fprintf (stderr,
+                 "[GC:\tto heap of size %s bytes (+ %s bytes card/cross map) cannot be satisfied,]\n",
+                 uintmaxToCommaString (prevSize),
+                 uintmaxToCommaString (prevWithMapsSize - prevSize));
+        if (result) {
+          fprintf (stderr,
+                   "[GC:\tbacking off by %s bytes.]\n",
+                   uintmaxToCommaString (prevSize - newSize));
+        } else {
+          fprintf (stderr,
+                   "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
+                   uintmaxToCommaString (prevSize - newSize),
+                   uintmaxToCommaString (minSize));
+        }
+      }
     }
   }
-  return FALSE;
+  return result;
 }
 
 enum {
