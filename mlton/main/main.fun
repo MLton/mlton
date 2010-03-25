@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -288,6 +289,7 @@ fun makeOptions {usage} =
                   case cg of
                      Native => if hasNativeCodegen () then SOME "native" else NONE
                    | Explicit cg => if hasCodegen cg
+                                       andalso cg <> Bytecode
                                        then SOME (Control.Codegen.toString cg)
                                     else NONE),
                  "|"),
@@ -1022,6 +1024,12 @@ fun commandLine (args: string list): unit =
                                 MLton.Platform.Arch.toString targetArch,
                                 " target"])
          else ()
+      val _ =
+         if !codegen = Bytecode
+            then Out.output
+                 (Out.error,
+                  "Warning: bytecode codegen is deprecated.  Use native or C codegen.\n")
+         else ()
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
                                          Cygwin => true
@@ -1441,6 +1449,10 @@ fun commandLine (args: string list): unit =
                                    compile = Compile.compileMLB}
                   fun compileCM (file: File.t) =
                      let
+                        val _ =
+                           Out.output
+                           (Out.error,
+                            "Warning: .cm input files are deprecated.  Use .mlb input files.\n")
                         val files = CM.cm {cmfile = file}
                      in
                         compileSML files
