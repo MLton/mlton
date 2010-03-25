@@ -317,28 +317,34 @@ c-types.h: gen/c-types.h
 	cp $< $@
 ml-types.h: gen/ml-types.h
 	cp $< $@
-gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types
+gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.stamp
 	@touch $@
-gen/gen-types: gen/gen-types.c util.h util.o
+gen/gen-types.stamp: gen/gen-types.c util.h util.o
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
-	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
+	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h gen/gen-types.stamp
 	cd gen && ./gen-types
+	rm -f gen/gen-types$(EXE) gen/gen-types
+	touch $@
 
 basis-ffi.h: gen/basis-ffi.h
 	cp $< $@
-gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi
+gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.stamp
 	@touch $@
-gen/gen-basis-ffi: gen/gen-basis-ffi.sml gen/basis-ffi.def
+gen/gen-basis-ffi.stamp: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
-	rm -f gen/basis-ffi.h gen/basis-ffi.sml
+	rm -f gen/basis-ffi.h gen/basis-ffi.sml gen/gen-basis-ffi.stamp
 	cd gen && ./gen-basis-ffi
+	rm -f gen/gen-basis-ffi
+	touch $@
 
-gen/sizes: gen/gen-sizes
+gen/sizes: gen/gen-sizes.stamp
 	@touch $@
-gen/gen-sizes: gen/gen-sizes.c libmlton.a $(HFILES)
+gen/gen-sizes.stamp: gen/gen-sizes.c libmlton.a $(HFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -I. -o gen/gen-sizes gen/gen-sizes.c -L. -lmlton
 	rm -f gen/sizes
 	cd gen && ./gen-sizes
+	rm -f gen/gen-sizes$(EXE) gen/gen-sizes
+	touch $@
 
 platform/$(TARGET_OS)-pic.o: $(PLATFORMCFILES)
 platform/$(TARGET_OS)-gdb.o: $(PLATFORMCFILES)
