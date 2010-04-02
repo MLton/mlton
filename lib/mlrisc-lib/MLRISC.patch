@@ -1,6 +1,6 @@
 diff -N -C 2 -r MLRISC/Doc/html/mltex2html MLRISC-mlton/Doc/html/mltex2html
-*** MLRISC/Doc/html/mltex2html	Thu Jun  1 13:34:03 2000
---- MLRISC-mlton/Doc/html/mltex2html	Fri May 18 16:14:03 2007
+*** MLRISC/Doc/html/mltex2html	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/Doc/html/mltex2html	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,3 ****
 ! #!/usr/local/bin/perl
@@ -11,8 +11,8 @@ diff -N -C 2 -r MLRISC/Doc/html/mltex2html MLRISC-mlton/Doc/html/mltex2html
   #
   # This tool generates HTML pages in my own format given a stylized Latex file.
 diff -N -C 2 -r MLRISC/README.mlton MLRISC-mlton/README.mlton
-*** MLRISC/README.mlton	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/README.mlton	Fri May  9 18:01:23 2008
+*** MLRISC/README.mlton	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/README.mlton	2009-10-02 09:51:07.000000000 -0400
 ***************
 *** 0 ****
 --- 1,8 ----
@@ -25,8 +25,8 @@ diff -N -C 2 -r MLRISC/README.mlton MLRISC-mlton/README.mlton
 +  * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 +  * eliminate {{{where <str> = <str>}}}: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
 diff -N -C 2 -r MLRISC/Tools/Parser/mdl.grm.desc MLRISC-mlton/Tools/Parser/mdl.grm.desc
-*** MLRISC/Tools/Parser/mdl.grm.desc	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/Tools/Parser/mdl.grm.desc	Fri May 18 16:14:02 2007
+*** MLRISC/Tools/Parser/mdl.grm.desc	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/Tools/Parser/mdl.grm.desc	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 0 ****
 --- 1,28165 ----
@@ -28196,8 +28196,8 @@ diff -N -C 2 -r MLRISC/Tools/Parser/mdl.grm.desc MLRISC-mlton/Tools/Parser/mdl.g
 + 16352 of 19587 action table entries left after compaction
 + 2182 goto table entries
 diff -N -C 2 -r MLRISC/aliasing/pointsTo.sig MLRISC-mlton/aliasing/pointsTo.sig
-*** MLRISC/aliasing/pointsTo.sig	Thu Dec  7 22:11:42 2000
---- MLRISC-mlton/aliasing/pointsTo.sig	Fri May 18 16:14:00 2007
+*** MLRISC/aliasing/pointsTo.sig	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/aliasing/pointsTo.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,23 ****
   
@@ -28243,8 +28243,8 @@ diff -N -C 2 -r MLRISC/aliasing/pointsTo.sig MLRISC-mlton/aliasing/pointsTo.sig
   
      val reset    : (unit -> C.cell) -> unit
 diff -N -C 2 -r MLRISC/aliasing/pointsTo.sml MLRISC-mlton/aliasing/pointsTo.sml
-*** MLRISC/aliasing/pointsTo.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/aliasing/pointsTo.sml	Fri May 18 16:14:00 2007
+*** MLRISC/aliasing/pointsTo.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/aliasing/pointsTo.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 11,24 ****
   
@@ -28299,8 +28299,8 @@ diff -N -C 2 -r MLRISC/aliasing/pointsTo.sml MLRISC-mlton/aliasing/pointsTo.sml
        | greaterKind _ = true
   
 diff -N -C 2 -r MLRISC/alpha/backpatch/alphaJumps.sml MLRISC-mlton/alpha/backpatch/alphaJumps.sml
-*** MLRISC/alpha/backpatch/alphaJumps.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/alpha/backpatch/alphaJumps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/backpatch/alphaJumps.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/alpha/backpatch/alphaJumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,13 ****
   functor AlphaJumps
@@ -28378,8 +28378,8 @@ diff -N -C 2 -r MLRISC/alpha/backpatch/alphaJumps.sml MLRISC-mlton/alpha/backpat
     ) : SDI_JUMPS = 
   struct
 diff -N -C 2 -r MLRISC/alpha/emit/alphaAsm.sml MLRISC-mlton/alpha/emit/alphaAsm.sml
-*** MLRISC/alpha/emit/alphaAsm.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/alpha/emit/alphaAsm.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/emit/alphaAsm.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/emit/alphaAsm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,16 ****
   
@@ -28480,8 +28480,8 @@ diff -N -C 2 -r MLRISC/alpha/emit/alphaAsm.sml MLRISC-mlton/alpha/emit/alphaAsm.
                          ) : INSTRUCTION_EMITTER =
   struct
 diff -N -C 2 -r MLRISC/alpha/emit/alphaMC.sml MLRISC-mlton/alpha/emit/alphaMC.sml
-*** MLRISC/alpha/emit/alphaMC.sml	Wed Mar  5 21:17:28 2008
---- MLRISC-mlton/alpha/emit/alphaMC.sml	Fri May  9 11:57:19 2008
+*** MLRISC/alpha/emit/alphaMC.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/emit/alphaMC.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,11 ****
   
@@ -28524,8 +28524,8 @@ diff -N -C 2 -r MLRISC/alpha/emit/alphaMC.sml MLRISC-mlton/alpha/emit/alphaMC.sm
          in loc := i + 1; CodeString.update(i,Word8.fromLargeWord w) end
      
 diff -N -C 2 -r MLRISC/alpha/flowgraph/alphaGasPseudoOps.sml MLRISC-mlton/alpha/flowgraph/alphaGasPseudoOps.sml
-*** MLRISC/alpha/flowgraph/alphaGasPseudoOps.sml	Wed Nov 21 12:41:49 2001
---- MLRISC-mlton/alpha/flowgraph/alphaGasPseudoOps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/flowgraph/alphaGasPseudoOps.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/flowgraph/alphaGasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   functor AlphaGasPseudoOps 
@@ -28560,8 +28560,8 @@ diff -N -C 2 -r MLRISC/alpha/flowgraph/alphaGasPseudoOps.sml MLRISC-mlton/alpha/
       ) : PSEUDO_OPS_BASIS = 
   
 diff -N -C 2 -r MLRISC/alpha/instructions/alphaInstr.sml MLRISC-mlton/alpha/instructions/alphaInstr.sml
-*** MLRISC/alpha/instructions/alphaInstr.sml	Wed Jan 23 23:45:18 2002
---- MLRISC-mlton/alpha/instructions/alphaInstr.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/instructions/alphaInstr.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/instructions/alphaInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -28585,8 +28585,8 @@ diff -N -C 2 -r MLRISC/alpha/instructions/alphaInstr.sml MLRISC-mlton/alpha/inst
      structure T : MLTREE
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/alpha/instructions/alphaProps.sml MLRISC-mlton/alpha/instructions/alphaProps.sml
-*** MLRISC/alpha/instructions/alphaProps.sml	Mon Mar 11 21:56:23 2002
---- MLRISC-mlton/alpha/instructions/alphaProps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/instructions/alphaProps.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/instructions/alphaProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,12 ****
   functor AlphaProps
@@ -28643,8 +28643,8 @@ diff -N -C 2 -r MLRISC/alpha/instructions/alphaProps.sml MLRISC-mlton/alpha/inst
       ):INSN_PROPERTIES =
   struct
 diff -N -C 2 -r MLRISC/alpha/mltree/alpha.sml MLRISC-mlton/alpha/mltree/alpha.sml
-*** MLRISC/alpha/mltree/alpha.sml	Thu Aug 28 16:59:15 2003
---- MLRISC-mlton/alpha/mltree/alpha.sml	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/mltree/alpha.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/mltree/alpha.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 12,20 ****
   functor Alpha
@@ -29091,8 +29091,8 @@ diff -N -C 2 -r MLRISC/alpha/mltree/alpha.sml MLRISC-mlton/alpha/mltree/alpha.sm
                     | _ => (cond,e1,e2)
             in  case cond of
 diff -N -C 2 -r MLRISC/alpha/mltree/alphaPseudoInstr.sig MLRISC-mlton/alpha/mltree/alphaPseudoInstr.sig
-*** MLRISC/alpha/mltree/alphaPseudoInstr.sig	Thu Jul 19 15:35:20 2001
---- MLRISC-mlton/alpha/mltree/alphaPseudoInstr.sig	Fri May 18 16:14:03 2007
+*** MLRISC/alpha/mltree/alphaPseudoInstr.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/alpha/mltree/alphaPseudoInstr.sig	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 5,12 ****
      structure I : ALPHAINSTR
@@ -29142,8 +29142,8 @@ diff -N -C 2 -r MLRISC/alpha/mltree/alphaPseudoInstr.sig MLRISC-mlton/alpha/mltr
     
      type reduceOpnd = I.operand -> CB.cell
 diff -N -C 2 -r MLRISC/amd64/amd64.mdl MLRISC-mlton/amd64/amd64.mdl
-*** MLRISC/amd64/amd64.mdl	Thu Mar  5 15:34:32 2009
---- MLRISC-mlton/amd64/amd64.mdl	Wed Apr  1 15:35:23 2009
+*** MLRISC/amd64/amd64.mdl	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/amd64.mdl	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 578,582 ****
             let val n = size fbinOp
@@ -29197,8 +29197,8 @@ diff -N -C 2 -r MLRISC/amd64/amd64.mdl MLRISC-mlton/amd64/amd64.mdl
                | _ => ``<binOp>\t<src>, <dst>''
                )
 diff -N -C 2 -r MLRISC/amd64/amd64MC.sml MLRISC-mlton/amd64/amd64MC.sml
-*** MLRISC/amd64/amd64MC.sml	Tue May 29 16:02:35 2007
---- MLRISC-mlton/amd64/amd64MC.sml	Tue Aug 14 10:16:36 2007
+*** MLRISC/amd64/amd64MC.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/amd64MC.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 1,7 ****
   functor AMD64MCEmitter
@@ -29371,8 +29371,8 @@ diff -N -C 2 -r MLRISC/amd64/amd64MC.sml MLRISC-mlton/amd64/amd64MC.sml
   	     | I.TESTQ{lsrc, rsrc} => test(64, rsrc, lsrc)
   	     | I.TESTL{lsrc, rsrc} => test(32, rsrc, lsrc)
 diff -N -C 2 -r MLRISC/amd64/amd64MCFn.sml MLRISC-mlton/amd64/amd64MCFn.sml
-*** MLRISC/amd64/amd64MCFn.sml	Wed Oct  1 21:39:14 2008
---- MLRISC-mlton/amd64/amd64MCFn.sml	Wed Apr  1 16:41:36 2009
+*** MLRISC/amd64/amd64MCFn.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/amd64MCFn.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 6,11 ****
   functor AMD64MCFn(
@@ -29442,8 +29442,8 @@ diff -N -C 2 -r MLRISC/amd64/amd64MCFn.sml MLRISC-mlton/amd64/amd64MCFn.sml
   (*    structure AsmEmitter : INSTRUCTION_EMITTER where I = Instr*)
     ) : MC_EMIT = 
 diff -N -C 2 -r MLRISC/amd64/backpatch/amd64Jumps.sml MLRISC-mlton/amd64/backpatch/amd64Jumps.sml
-*** MLRISC/amd64/backpatch/amd64Jumps.sml	Tue May 29 16:02:35 2007
---- MLRISC-mlton/amd64/backpatch/amd64Jumps.sml	Tue Aug 14 10:16:36 2007
+*** MLRISC/amd64/backpatch/amd64Jumps.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/backpatch/amd64Jumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,12 ****
   functor AMD64Jumps
@@ -29565,8 +29565,8 @@ diff -N -C 2 -r MLRISC/amd64/backpatch/amd64Jumps.sml MLRISC-mlton/amd64/backpat
   	   | I.POP opnd =>  operand opnd
   	   | _ => false
 diff -N -C 2 -r MLRISC/amd64/emit/amd64Asm.sml MLRISC-mlton/amd64/emit/amd64Asm.sml
-*** MLRISC/amd64/emit/amd64Asm.sml	Mon Nov 24 16:47:06 2008
---- MLRISC-mlton/amd64/emit/amd64Asm.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/amd64/emit/amd64Asm.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/emit/amd64Asm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,16 ****
   
@@ -29757,8 +29757,8 @@ diff -N -C 2 -r MLRISC/amd64/emit/amd64Asm.sml MLRISC-mlton/amd64/emit/amd64Asm.
              ( emit_binaryOp binOp; 
                emit "\t%cl, "; 
 diff -N -C 2 -r MLRISC/amd64/flowgraph/amd64-darwin-pseudo-ops.sml MLRISC-mlton/amd64/flowgraph/amd64-darwin-pseudo-ops.sml
-*** MLRISC/amd64/flowgraph/amd64-darwin-pseudo-ops.sml	Tue Sep 18 23:14:56 2007
---- MLRISC-mlton/amd64/flowgraph/amd64-darwin-pseudo-ops.sml	Fri May  9 17:00:59 2008
+*** MLRISC/amd64/flowgraph/amd64-darwin-pseudo-ops.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/flowgraph/amd64-darwin-pseudo-ops.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 8,12 ****
   
@@ -29793,8 +29793,8 @@ diff -N -C 2 -r MLRISC/amd64/flowgraph/amd64-darwin-pseudo-ops.sml MLRISC-mlton/
   
     ) : PSEUDO_OPS_BASIS = struct
 diff -N -C 2 -r MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml MLRISC-mlton/amd64/flowgraph/amd64GasPseudoOps.sml
-*** MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml	Tue Sep 18 14:30:40 2007
---- MLRISC-mlton/amd64/flowgraph/amd64GasPseudoOps.sml	Fri May  9 16:32:13 2008
+*** MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/flowgraph/amd64GasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,11 ****
   functor AMD64GasPseudoOps (
@@ -29829,8 +29829,8 @@ diff -N -C 2 -r MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml MLRISC-mlton/amd64/
     ) : PSEUDO_OPS_BASIS =  struct
       structure T = T
 diff -N -C 2 -r MLRISC/amd64/instructions/amd64CompInstrExt.sml MLRISC-mlton/amd64/instructions/amd64CompInstrExt.sml
-*** MLRISC/amd64/instructions/amd64CompInstrExt.sml	Mon Nov 24 16:47:06 2008
---- MLRISC-mlton/amd64/instructions/amd64CompInstrExt.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/amd64/instructions/amd64CompInstrExt.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64CompInstrExt.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 8,16 ****
   signature AMD64COMP_INSTR_EXT = sig
@@ -29960,8 +29960,8 @@ diff -N -C 2 -r MLRISC/amd64/instructions/amd64CompInstrExt.sml MLRISC-mlton/amd
      ) : AMD64COMP_INSTR_EXT = 
   struct
 diff -N -C 2 -r MLRISC/amd64/instructions/amd64Instr.sml MLRISC-mlton/amd64/instructions/amd64Instr.sml
-*** MLRISC/amd64/instructions/amd64Instr.sml	Mon Nov 24 16:47:06 2008
---- MLRISC-mlton/amd64/instructions/amd64Instr.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/amd64/instructions/amd64Instr.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Instr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -29985,8 +29985,8 @@ diff -N -C 2 -r MLRISC/amd64/instructions/amd64Instr.sml MLRISC-mlton/amd64/inst
      structure T : MLTREE
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.peep MLRISC-mlton/amd64/instructions/amd64Peephole.peep
-*** MLRISC/amd64/instructions/amd64Peephole.peep	Tue Oct  2 18:26:36 2007
---- MLRISC-mlton/amd64/instructions/amd64Peephole.peep	Fri May  9 11:57:20 2008
+*** MLRISC/amd64/instructions/amd64Peephole.peep	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Peephole.peep	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 21,25 ****
      (structure Instr : AMD64INSTR
@@ -30021,8 +30021,8 @@ diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.peep MLRISC-mlton/amd64/
      ) : PEEPHOLE =
   struct
 diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.sml MLRISC-mlton/amd64/instructions/amd64Peephole.sml
-*** MLRISC/amd64/instructions/amd64Peephole.sml	Tue May 29 16:53:56 2007
---- MLRISC-mlton/amd64/instructions/amd64Peephole.sml	Mon Aug 20 14:45:28 2007
+*** MLRISC/amd64/instructions/amd64Peephole.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Peephole.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 13,17 ****
   
@@ -30057,8 +30057,8 @@ diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.sml MLRISC-mlton/amd64/i
                        ): PEEPHOLE =
   struct
 diff -N -C 2 -r MLRISC/amd64/instructions/amd64Props.sml MLRISC-mlton/amd64/instructions/amd64Props.sml
-*** MLRISC/amd64/instructions/amd64Props.sml	Mon Nov 24 16:47:06 2008
---- MLRISC-mlton/amd64/instructions/amd64Props.sml	Wed Apr  1 16:42:08 2009
+*** MLRISC/amd64/instructions/amd64Props.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Props.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 16,23 ****
   functor AMD64Props (
@@ -30542,8 +30542,8 @@ diff -N -C 2 -r MLRISC/amd64/instructions/amd64Props.sml MLRISC-mlton/amd64/inst
              (* end case *))
            | I.FSQRTS _ => 32
 diff -N -C 2 -r MLRISC/amd64/mltree/amd64-gen.sml MLRISC-mlton/amd64/mltree/amd64-gen.sml
-*** MLRISC/amd64/mltree/amd64-gen.sml	Thu Mar  5 16:12:59 2009
---- MLRISC-mlton/amd64/mltree/amd64-gen.sml	Wed Apr  1 15:35:23 2009
+*** MLRISC/amd64/mltree/amd64-gen.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/mltree/amd64-gen.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,13 ****
   functor AMD64Gen (
@@ -30711,8 +30711,8 @@ diff -N -C 2 -r MLRISC/amd64/mltree/amd64-gen.sml MLRISC-mlton/amd64/mltree/amd6
   		(case ty 
   		  of 8 => test(ty, I.TESTB, a, b, an)
 diff -N -C 2 -r MLRISC/amd64/ra/amd64RegAlloc.sml MLRISC-mlton/amd64/ra/amd64RegAlloc.sml
-*** MLRISC/amd64/ra/amd64RegAlloc.sml	Fri Apr 18 20:31:01 2008
---- MLRISC-mlton/amd64/ra/amd64RegAlloc.sml	Fri May  9 14:29:10 2008
+*** MLRISC/amd64/ra/amd64RegAlloc.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/ra/amd64RegAlloc.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,19 ****
         structure I : AMD64INSTR
@@ -30816,8 +30816,8 @@ diff -N -C 2 -r MLRISC/amd64/ra/amd64RegAlloc.sml MLRISC-mlton/amd64/ra/amd64Reg
                    val deadRegs = deadRegs
                    val affectedBlocks = affectedBlocks
 diff -N -C 2 -r MLRISC/amd64/ra/amd64SpillInstr.sml MLRISC-mlton/amd64/ra/amd64SpillInstr.sml
-*** MLRISC/amd64/ra/amd64SpillInstr.sml	Mon Feb 25 02:46:19 2008
---- MLRISC-mlton/amd64/ra/amd64SpillInstr.sml	Fri May  9 17:03:53 2008
+*** MLRISC/amd64/ra/amd64SpillInstr.sml	2010-02-03 11:40:46.000000000 -0500
+--- MLRISC-mlton/amd64/ra/amd64SpillInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,12 ****
   functor AMD64SpillInstr (
@@ -30958,13 +30958,13 @@ diff -N -C 2 -r MLRISC/amd64/ra/amd64SpillInstr.sml MLRISC-mlton/amd64/ra/amd64S
   		     | multBinOp _ = false
   		   in
 ***************
-*** 601,605 ****
+*** 610,614 ****
                      end
                   (* treat bitwise operators differently, as they require that their source operand is 16-byte aligned *)
 ! 		 | I.FBINOP {binOp=binOp as (I.XORPS | I.XORPD | I.ANDPS | I.ANDPD | I.ORPS | I.ORPD), src, dst} => if CB.sameColor (r, dst)
                      then {code=[I.fmove {fmvOp=fmvOp, src=spillLoc, dst=I.FDirect dst},
   			       mark (I.FBINOP {binOp=binOp, src=src, dst=dst}, an)], 
---- 667,741 ----
+--- 676,750 ----
                      end
                   (* treat bitwise operators differently, as they require that their source operand is 16-byte aligned *)
 ! 		 | I.FBINOP {binOp=binOp as (I.XORPS), src, dst} => if CB.sameColor (r, dst)
@@ -31041,8 +31041,8 @@ diff -N -C 2 -r MLRISC/amd64/ra/amd64SpillInstr.sml MLRISC-mlton/amd64/ra/amd64S
                      then {code=[I.fmove {fmvOp=fmvOp, src=spillLoc, dst=I.FDirect dst},
   			       mark (I.FBINOP {binOp=binOp, src=src, dst=dst}, an)], 
 diff -N -C 2 -r MLRISC/backpatch/backpatch.sml MLRISC-mlton/backpatch/backpatch.sml
-*** MLRISC/backpatch/backpatch.sml	Mon Mar 11 21:56:23 2002
---- MLRISC-mlton/backpatch/backpatch.sml	Fri May 18 16:13:59 2007
+*** MLRISC/backpatch/backpatch.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/backpatch/backpatch.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 9,19 ****
   functor BBSched2
@@ -31101,8 +31101,8 @@ diff -N -C 2 -r MLRISC/backpatch/backpatch.sml MLRISC-mlton/backpatch/backpatch.
       ) = 
   struct
 diff -N -C 2 -r MLRISC/backpatch/sdi-jumps.sig MLRISC-mlton/backpatch/sdi-jumps.sig
-*** MLRISC/backpatch/sdi-jumps.sig	Thu Dec  7 22:11:42 2000
---- MLRISC-mlton/backpatch/sdi-jumps.sig	Fri May 18 16:13:59 2007
+*** MLRISC/backpatch/sdi-jumps.sig	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/backpatch/sdi-jumps.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,12 ****
     structure I : INSTRUCTIONS
@@ -31117,8 +31117,8 @@ diff -N -C 2 -r MLRISC/backpatch/sdi-jumps.sig MLRISC-mlton/backpatch/sdi-jumps.
   
     val branchDelayedArch : bool
 diff -N -C 2 -r MLRISC/backpatch/spanDep.sml MLRISC-mlton/backpatch/spanDep.sml
-*** MLRISC/backpatch/spanDep.sml	Thu Oct 10 09:48:48 2002
---- MLRISC-mlton/backpatch/spanDep.sml	Fri May 18 16:13:59 2007
+*** MLRISC/backpatch/spanDep.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/backpatch/spanDep.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 10,25 ****
   functor SpanDependencyResolution
@@ -31231,8 +31231,8 @@ diff -N -C 2 -r MLRISC/backpatch/spanDep.sml MLRISC-mlton/backpatch/spanDep.sml
                             D.enableDelaySlot{n=true,nop=false,instr=jmp}
                     |  _ => jmp
 diff -N -C 2 -r MLRISC/backpatch/vlBackPatch.sml MLRISC-mlton/backpatch/vlBackPatch.sml
-*** MLRISC/backpatch/vlBackPatch.sml	Mon Mar 11 21:56:23 2002
---- MLRISC-mlton/backpatch/vlBackPatch.sml	Fri May 18 16:13:59 2007
+*** MLRISC/backpatch/vlBackPatch.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/backpatch/vlBackPatch.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 27,38 ****
     (structure CodeString : CODE_STRING
@@ -31278,8 +31278,8 @@ diff -N -C 2 -r MLRISC/backpatch/vlBackPatch.sml MLRISC-mlton/backpatch/vlBackPa
   struct 
     structure I   = Jumps.I
 diff -N -C 2 -r MLRISC/block-placement/block-placement.sml MLRISC-mlton/block-placement/block-placement.sml
-*** MLRISC/block-placement/block-placement.sml	Tue May 15 18:20:40 2007
---- MLRISC-mlton/block-placement/block-placement.sml	Fri May 18 16:13:59 2007
+*** MLRISC/block-placement/block-placement.sml	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/block-placement/block-placement.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 6,13 ****
   functor BlockPlacement 
@@ -31303,8 +31303,8 @@ diff -N -C 2 -r MLRISC/block-placement/block-placement.sml MLRISC-mlton/block-pl
   
   struct
 diff -N -C 2 -r MLRISC/block-placement/check-placement-fn.sml MLRISC-mlton/block-placement/check-placement-fn.sml
-*** MLRISC/block-placement/check-placement-fn.sml	Fri Mar 22 10:59:28 2002
---- MLRISC-mlton/block-placement/check-placement-fn.sml	Fri May 18 16:13:59 2007
+*** MLRISC/block-placement/check-placement-fn.sml	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/block-placement/check-placement-fn.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 10,15 ****
   
@@ -31342,8 +31342,8 @@ diff -N -C 2 -r MLRISC/block-placement/check-placement-fn.sml MLRISC-mlton/block
   		      if adjacentNodes(src, dst)
   			then ()
 diff -N -C 2 -r MLRISC/block-placement/jump-chain-elim-fn.sml MLRISC-mlton/block-placement/jump-chain-elim-fn.sml
-*** MLRISC/block-placement/jump-chain-elim-fn.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/block-placement/jump-chain-elim-fn.sml	Fri May 18 16:13:59 2007
+*** MLRISC/block-placement/jump-chain-elim-fn.sml	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/block-placement/jump-chain-elim-fn.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 13,18 ****
   
@@ -31364,8 +31364,8 @@ diff -N -C 2 -r MLRISC/block-placement/jump-chain-elim-fn.sml MLRISC-mlton/block
   
     (* Control flag that when set true allows jumps to labels outside
 diff -N -C 2 -r MLRISC/block-placement/weighted-block-placement-fn.sml MLRISC-mlton/block-placement/weighted-block-placement-fn.sml
-*** MLRISC/block-placement/weighted-block-placement-fn.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/block-placement/weighted-block-placement-fn.sml	Fri May 18 16:13:59 2007
+*** MLRISC/block-placement/weighted-block-placement-fn.sml	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/block-placement/weighted-block-placement-fn.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 13,18 ****
   
@@ -31386,8 +31386,8 @@ diff -N -C 2 -r MLRISC/block-placement/weighted-block-placement-fn.sml MLRISC-ml
   
     ) : BLOCK_PLACEMENT = struct
 diff -N -C 2 -r MLRISC/c-call/archs/sparc-c-call-fn.sml MLRISC-mlton/c-call/archs/sparc-c-call-fn.sml
-*** MLRISC/c-call/archs/sparc-c-call-fn.sml	Thu Sep 18 01:06:40 2008
---- MLRISC-mlton/c-call/archs/sparc-c-call-fn.sml	Thu Sep 18 17:00:16 2008
+*** MLRISC/c-call/archs/sparc-c-call-fn.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/archs/sparc-c-call-fn.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 78,84 ****
   
@@ -31447,8 +31447,8 @@ diff -N -C 2 -r MLRISC/c-call/archs/sparc-c-call-fn.sml MLRISC-mlton/c-call/arch
   		  SOME (SparcCSizes.sizeOfTy retTy)
   	      | _ => NONE
 diff -N -C 2 -r MLRISC/c-call/archs/sparc-c-sizes.sml MLRISC-mlton/c-call/archs/sparc-c-sizes.sml
-*** MLRISC/c-call/archs/sparc-c-sizes.sml	Fri Aug 15 13:50:42 2008
---- MLRISC-mlton/c-call/archs/sparc-c-sizes.sml	Mon Aug 18 16:31:29 2008
+*** MLRISC/c-call/archs/sparc-c-sizes.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/archs/sparc-c-sizes.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,19 ****
   
@@ -31485,8 +31485,8 @@ diff -N -C 2 -r MLRISC/c-call/archs/sparc-c-sizes.sml MLRISC-mlton/c-call/archs/
         | sizeOfTy (Ty.C_ARRAY (t, n)) = let val {sz=s, align=a} = sizeOfTy t in {sz=n * s, align=a} end
         | sizeOfTy (Ty.C_STRUCT l) =
 diff -N -C 2 -r MLRISC/c-call/archs/x86-64-svid-fn.sml MLRISC-mlton/c-call/archs/x86-64-svid-fn.sml
-*** MLRISC/c-call/archs/x86-64-svid-fn.sml	Thu Sep 18 01:06:40 2008
---- MLRISC-mlton/c-call/archs/x86-64-svid-fn.sml	Thu Sep 18 17:00:16 2008
+*** MLRISC/c-call/archs/x86-64-svid-fn.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/archs/x86-64-svid-fn.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 76,80 ****
       val callerSaveRegs =  [C.rax, C.rcx, C.rdx, C.rsi, C.rdi, C.r8, C.r9, C.r10, C.r11]
@@ -31554,8 +31554,8 @@ diff -N -C 2 -r MLRISC/c-call/archs/x86-64-svid-fn.sml MLRISC-mlton/c-call/archs
   	   if (szBOfCTy cTy > 2*8 orelse containsUnalignedFields cTy)
   	      then List.tabulate (szBOfCTy cTy div 8, fn _ => (8*8, STK, 8))
 diff -N -C 2 -r MLRISC/c-call/archs/x86-svid-fn.sml MLRISC-mlton/c-call/archs/x86-svid-fn.sml
-*** MLRISC/c-call/archs/x86-svid-fn.sml	Thu Sep 18 01:06:40 2008
---- MLRISC-mlton/c-call/archs/x86-svid-fn.sml	Thu Sep 18 17:00:16 2008
+*** MLRISC/c-call/archs/x86-svid-fn.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/archs/x86-svid-fn.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 69,74 ****
   
@@ -31609,8 +31609,8 @@ diff -N -C 2 -r MLRISC/c-call/archs/x86-svid-fn.sml MLRISC-mlton/c-call/archs/x8
   		  | "stdcall" => true
   		  | conv => raise Fail (concat [
 diff -N -C 2 -r MLRISC/c-call/gen/c-call-gen-fn.sml MLRISC-mlton/c-call/gen/c-call-gen-fn.sml
-*** MLRISC/c-call/gen/c-call-gen-fn.sml	Thu Sep 18 01:06:40 2008
---- MLRISC-mlton/c-call/gen/c-call-gen-fn.sml	Thu Sep 18 17:16:07 2008
+*** MLRISC/c-call/gen/c-call-gen-fn.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/gen/c-call-gen-fn.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 92,99 ****
       fun writeLoc arg (off, loc, stms) = (
@@ -31855,8 +31855,8 @@ diff -N -C 2 -r MLRISC/c-call/gen/c-call-gen-fn.sml MLRISC-mlton/c-call/gen/c-ca
                 (* expression to stack (fpr) *)
   		val tmp = C.newFreg ()
 diff -N -C 2 -r MLRISC/c-call/gen/c-call-sig.sml MLRISC-mlton/c-call/gen/c-call-sig.sml
-*** MLRISC/c-call/gen/c-call-sig.sml	Thu Sep 18 01:06:40 2008
---- MLRISC-mlton/c-call/gen/c-call-sig.sml	Thu Sep 18 17:11:11 2008
+*** MLRISC/c-call/gen/c-call-sig.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/gen/c-call-sig.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 4,8 ****
       structure T : MLTREE
@@ -31891,8 +31891,8 @@ diff -N -C 2 -r MLRISC/c-call/gen/c-call-sig.sml MLRISC-mlton/c-call/gen/c-call-
   
       datatype c_arg = datatype Gen.c_arg
 diff -N -C 2 -r MLRISC/c-call/gen/c-type.sml MLRISC-mlton/c-call/gen/c-type.sml
-*** MLRISC/c-call/gen/c-type.sml	Tue Jul 29 19:03:25 2008
---- MLRISC-mlton/c-call/gen/c-type.sml	Mon Aug 18 16:17:40 2008
+*** MLRISC/c-call/gen/c-type.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/c-call/gen/c-type.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 43,48 ****
       (* eliminate aggregates in a C type *)
@@ -31909,8 +31909,8 @@ diff -N -C 2 -r MLRISC/c-call/gen/c-type.sml MLRISC-mlton/c-call/gen/c-type.sml
   	 | C_ARRAY (cTy, n) => List.tabulate (n, fn _ => cTy)
   	 | cTy => [cTy])
 diff -N -C 2 -r MLRISC/c-calls/c-types.sml MLRISC-mlton/c-calls/c-types.sml
-*** MLRISC/c-calls/c-types.sml	Tue May 27 18:48:15 2008
---- MLRISC-mlton/c-calls/c-types.sml	Tue Jun 17 08:46:11 2008
+*** MLRISC/c-calls/c-types.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/c-calls/c-types.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 43,48 ****
       (* eliminate aggregates in a C type *)
@@ -31927,8 +31927,8 @@ diff -N -C 2 -r MLRISC/c-calls/c-types.sml MLRISC-mlton/c-calls/c-types.sml
   	 | C_ARRAY (cTy, n) => List.tabulate (n, fn _ => cTy)
   	 | cTy => [cTy])
 diff -N -C 2 -r MLRISC/c-calls/unimplemented-c-calls.sml MLRISC-mlton/c-calls/unimplemented-c-calls.sml
-*** MLRISC/c-calls/unimplemented-c-calls.sml	Wed Jul 28 18:23:13 2004
---- MLRISC-mlton/c-calls/unimplemented-c-calls.sml	Fri May 18 16:13:59 2007
+*** MLRISC/c-calls/unimplemented-c-calls.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/c-calls/unimplemented-c-calls.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 7,11 ****
   functor UnimplementedCCallsFn
@@ -31962,22 +31962,9 @@ diff -N -C 2 -r MLRISC/c-calls/unimplemented-c-calls.sml MLRISC-mlton/c-calls/un
 !                                                 and type T.stm = T.stm =
   struct
       structure T = T
-diff -N -C 2 -r MLRISC/cm/15385.pre MLRISC-mlton/cm/15385.pre
-*** MLRISC/cm/15385.pre	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/cm/15385.pre	Wed Apr  1 16:32:53 2009
-***************
-*** 0 ****
---- 1,7 ----
-+ 
-+ ann
-+   "nonexhaustiveMatch warn" "redundantMatch warn"
-+   "sequenceNonUnit ignore"
-+   "warnUnused false" "forceUsed"
-+ in
-+ 
 diff -N -C 2 -r MLRISC/cm/proxyLib.cm MLRISC-mlton/cm/proxyLib.cm
-*** MLRISC/cm/proxyLib.cm	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/cm/proxyLib.cm	Mon Aug 18 16:08:27 2008
+*** MLRISC/cm/proxyLib.cm	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/cm/proxyLib.cm	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -32043,8 +32030,8 @@ diff -N -C 2 -r MLRISC/cm/proxyLib.cm MLRISC-mlton/cm/proxyLib.cm
 + bind:(anchor:VLIW.cm value:.)
 + )
 diff -N -C 2 -r MLRISC/emit/cfgEmit.sml MLRISC-mlton/emit/cfgEmit.sml
-*** MLRISC/emit/cfgEmit.sml	Wed May 15 09:02:06 2002
---- MLRISC-mlton/emit/cfgEmit.sml	Fri May 18 16:13:59 2007
+*** MLRISC/emit/cfgEmit.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/emit/cfgEmit.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 14,20 ****
   functor CFGEmit
@@ -32088,8 +32075,8 @@ diff -N -C 2 -r MLRISC/emit/cfgEmit.sml MLRISC-mlton/emit/cfgEmit.sml
   struct
     structure CFG = CFG
 diff -N -C 2 -r MLRISC/flowgraph/buildFlowgraph.sml MLRISC-mlton/flowgraph/buildFlowgraph.sml
-*** MLRISC/flowgraph/buildFlowgraph.sml	Wed May 15 09:02:06 2002
---- MLRISC-mlton/flowgraph/buildFlowgraph.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/buildFlowgraph.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/buildFlowgraph.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 10,16 ****
      structure I   : INSTRUCTIONS
@@ -32174,8 +32161,8 @@ diff -N -C 2 -r MLRISC/flowgraph/buildFlowgraph.sml MLRISC-mlton/flowgraph/build
     ) : CONTROL_FLOWGRAPH_GEN =
   struct
 diff -N -C 2 -r MLRISC/flowgraph/cfg.sml MLRISC-mlton/flowgraph/cfg.sml
-*** MLRISC/flowgraph/cfg.sml	Wed May 15 09:02:06 2002
---- MLRISC-mlton/flowgraph/cfg.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/cfg.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/cfg.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 11,16 ****
      (structure I : INSTRUCTIONS
@@ -32260,8 +32247,8 @@ diff -N -C 2 -r MLRISC/flowgraph/cfg.sml MLRISC-mlton/flowgraph/cfg.sml
           |  _ => true
   
 diff -N -C 2 -r MLRISC/flowgraph/cfgCountCopies.sml MLRISC-mlton/flowgraph/cfgCountCopies.sml
-*** MLRISC/flowgraph/cfgCountCopies.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/flowgraph/cfgCountCopies.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/cfgCountCopies.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/cfgCountCopies.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 5,12 ****
   functor CFGCountCopies
@@ -32290,8 +32277,8 @@ diff -N -C 2 -r MLRISC/flowgraph/cfgCountCopies.sml MLRISC-mlton/flowgraph/cfgCo
       ) : CFG_OPTIMIZATION =
   struct
 diff -N -C 2 -r MLRISC/flowgraph/cfgExpandCopies.sml MLRISC-mlton/flowgraph/cfgExpandCopies.sml
-*** MLRISC/flowgraph/cfgExpandCopies.sml	Tue Jan 15 17:10:06 2002
---- MLRISC-mlton/flowgraph/cfgExpandCopies.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/cfgExpandCopies.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/cfgExpandCopies.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,13 ****
   functor CFGExpandCopies
@@ -32312,8 +32299,8 @@ diff -N -C 2 -r MLRISC/flowgraph/cfgExpandCopies.sml MLRISC-mlton/flowgraph/cfgE
      ) : CFG_OPTIMIZATION =
     struct
 diff -N -C 2 -r MLRISC/flowgraph/cfgPeephole.sml MLRISC-mlton/flowgraph/cfgPeephole.sml
-*** MLRISC/flowgraph/cfgPeephole.sml	Wed Sep 19 14:31:19 2001
---- MLRISC-mlton/flowgraph/cfgPeephole.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/cfgPeephole.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/cfgPeephole.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 4,9 ****
   functor CFGPeephole
@@ -32334,8 +32321,8 @@ diff -N -C 2 -r MLRISC/flowgraph/cfgPeephole.sml MLRISC-mlton/flowgraph/cfgPeeph
     ) : CFG_OPTIMIZATION =
   struct
 diff -N -C 2 -r MLRISC/flowgraph/printFlowgraph.sml MLRISC-mlton/flowgraph/printFlowgraph.sml
-*** MLRISC/flowgraph/printFlowgraph.sml	Thu Mar  7 15:04:13 2002
---- MLRISC-mlton/flowgraph/printFlowgraph.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/printFlowgraph.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/printFlowgraph.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 6,12 ****
   sig
@@ -32419,8 +32406,8 @@ diff -N -C 2 -r MLRISC/flowgraph/printFlowgraph.sml MLRISC-mlton/flowgraph/print
      ) : PRINT_FLOWGRAPH =
   struct
 diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops-big.sml MLRISC-mlton/flowgraph/pseudo-ops-big.sml
-*** MLRISC/flowgraph/pseudo-ops-big.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/flowgraph/pseudo-ops-big.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/pseudo-ops-big.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/pseudo-ops-big.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,13 ****
   functor PseudoOpsBig
@@ -32456,8 +32443,8 @@ diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops-big.sml MLRISC-mlton/flowgraph/pseud
        val  icache_alignment : int	(* cache line size *)
        val max_alignment : int option	(* maximum alignment for internal labels *)
 diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops-little.sml MLRISC-mlton/flowgraph/pseudo-ops-little.sml
-*** MLRISC/flowgraph/pseudo-ops-little.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/flowgraph/pseudo-ops-little.sml	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/pseudo-ops-little.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/pseudo-ops-little.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,13 ****
   functor PseudoOpsLittle
@@ -32493,8 +32480,8 @@ diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops-little.sml MLRISC-mlton/flowgraph/ps
        val icache_alignment : int		(* cache line size *)
        val max_alignment : int option	(* maximum alignment for internal labels *)
 diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops.sig MLRISC-mlton/flowgraph/pseudo-ops.sig
-*** MLRISC/flowgraph/pseudo-ops.sig	Thu Nov 22 08:25:12 2001
---- MLRISC-mlton/flowgraph/pseudo-ops.sig	Fri May 18 16:13:59 2007
+*** MLRISC/flowgraph/pseudo-ops.sig	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/flowgraph/pseudo-ops.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 9,13 ****
   signature PSEUDO_OPS = sig
@@ -32529,8 +32516,8 @@ diff -N -C 2 -r MLRISC/flowgraph/pseudo-ops.sig MLRISC-mlton/flowgraph/pseudo-op
   
     type pseudo_op = (T.labexp, Client.pseudo_op) PseudoOpsBasisTyp.pseudo_op
 diff -N -C 2 -r MLRISC/frequencies/compute-freqs-fn.sml MLRISC-mlton/frequencies/compute-freqs-fn.sml
-*** MLRISC/frequencies/compute-freqs-fn.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/frequencies/compute-freqs-fn.sml	Fri May 18 16:13:59 2007
+*** MLRISC/frequencies/compute-freqs-fn.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/frequencies/compute-freqs-fn.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 41,47 ****
     (***** Representation of equations *****)
@@ -32549,8 +32536,8 @@ diff -N -C 2 -r MLRISC/frequencies/compute-freqs-fn.sml MLRISC-mlton/frequencies
   
       val zero = {c = 0.0, terms = []}
 diff -N -C 2 -r MLRISC/gc-safety/gc-cells.sig MLRISC-mlton/gc-safety/gc-cells.sig
-*** MLRISC/gc-safety/gc-cells.sig	Thu Jul 19 15:35:20 2001
---- MLRISC-mlton/gc-safety/gc-cells.sig	Fri May 18 16:13:59 2007
+*** MLRISC/gc-safety/gc-cells.sig	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/gc-safety/gc-cells.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 9,13 ****
      structure C  : CELLS
@@ -32574,8 +32561,8 @@ diff -N -C 2 -r MLRISC/gc-safety/gc-cells.sig MLRISC-mlton/gc-safety/gc-cells.si
   
      (* Generate a virtual register and update the gc info at the same time. *)
 diff -N -C 2 -r MLRISC/graphs/bigraph.sig MLRISC-mlton/graphs/bigraph.sig
-*** MLRISC/graphs/bigraph.sig	Thu Jun  1 13:34:03 2000
---- MLRISC-mlton/graphs/bigraph.sig	Fri May 18 16:13:59 2007
+*** MLRISC/graphs/bigraph.sig	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/graphs/bigraph.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 10,15 ****
      include GRAPH
@@ -32599,8 +32586,8 @@ diff -N -C 2 -r MLRISC/graphs/bigraph.sig MLRISC-mlton/graphs/bigraph.sig
   end
   
 diff -N -C 2 -r MLRISC/graphs/digraph.sml MLRISC-mlton/graphs/digraph.sml
-*** MLRISC/graphs/digraph.sml	Fri Sep  5 16:34:27 2003
---- MLRISC-mlton/graphs/digraph.sml	Fri May 18 16:13:59 2007
+*** MLRISC/graphs/digraph.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/graphs/digraph.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,12 ****
    *)
@@ -32641,8 +32628,8 @@ diff -N -C 2 -r MLRISC/graphs/digraph.sml MLRISC-mlton/graphs/digraph.sml
   sig include GRAPH_IMPLEMENTATION 
   
 diff -N -C 2 -r MLRISC/graphs/graph.sig MLRISC-mlton/graphs/graph.sig
-*** MLRISC/graphs/graph.sig	Fri Mar  1 15:05:07 2002
---- MLRISC-mlton/graphs/graph.sig	Fri May 18 16:13:59 2007
+*** MLRISC/graphs/graph.sig	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/graphs/graph.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 26,31 ****
      type 'e edge = node_id * node_id * 'e
@@ -32666,8 +32653,8 @@ diff -N -C 2 -r MLRISC/graphs/graph.sig MLRISC-mlton/graphs/graph.sig
      val unimplemented : 'a -> 'b
   
 diff -N -C 2 -r MLRISC/hppa/backpatch/hppaDelaySlotProps.sml MLRISC-mlton/hppa/backpatch/hppaDelaySlotProps.sml
-*** MLRISC/hppa/backpatch/hppaDelaySlotProps.sml	Thu Dec  6 20:45:32 2001
---- MLRISC-mlton/hppa/backpatch/hppaDelaySlotProps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/backpatch/hppaDelaySlotProps.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/backpatch/hppaDelaySlotProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 5,9 ****
   functor HppaDelaySlots
@@ -32716,8 +32703,8 @@ diff -N -C 2 -r MLRISC/hppa/backpatch/hppaDelaySlotProps.sml MLRISC-mlton/hppa/b
         | delaySlotCandidate{jmp=I.ANNOTATION{i,...},delaySlot} = 
              delaySlotCandidate{jmp=i,delaySlot=delaySlot}
 diff -N -C 2 -r MLRISC/hppa/backpatch/hppaJumps.sml MLRISC-mlton/hppa/backpatch/hppaJumps.sml
-*** MLRISC/hppa/backpatch/hppaJumps.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/hppa/backpatch/hppaJumps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/backpatch/hppaJumps.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/backpatch/hppaJumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,13 ****
   functor HppaJumps
@@ -32803,8 +32790,8 @@ diff -N -C 2 -r MLRISC/hppa/backpatch/hppaJumps.sml MLRISC-mlton/hppa/backpatch/
     ) : SDI_JUMPS =				
   struct
 diff -N -C 2 -r MLRISC/hppa/emit/hppaAsm.sml MLRISC-mlton/hppa/emit/hppaAsm.sml
-*** MLRISC/hppa/emit/hppaAsm.sml	Sat May 18 13:21:53 2002
---- MLRISC-mlton/hppa/emit/hppaAsm.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/emit/hppaAsm.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/emit/hppaAsm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,16 ****
   
@@ -32913,8 +32900,8 @@ diff -N -C 2 -r MLRISC/hppa/emit/hppaAsm.sml MLRISC-mlton/hppa/emit/hppaAsm.sml
                         ) : INSTRUCTION_EMITTER =
   struct
 diff -N -C 2 -r MLRISC/hppa/emit/hppaMC.sml MLRISC-mlton/hppa/emit/hppaMC.sml
-*** MLRISC/hppa/emit/hppaMC.sml	Wed Mar  5 21:17:28 2008
---- MLRISC-mlton/hppa/emit/hppaMC.sml	Fri May  9 11:57:19 2008
+*** MLRISC/hppa/emit/hppaMC.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/emit/hppaMC.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,11 ****
   
@@ -32957,8 +32944,8 @@ diff -N -C 2 -r MLRISC/hppa/emit/hppaMC.sml MLRISC-mlton/hppa/emit/hppaMC.sml
          in loc := i + 1; CodeString.update(i,Word8.fromLargeWord w) end
      
 diff -N -C 2 -r MLRISC/hppa/flowgraph/hppaGasPseudoOps.sml MLRISC-mlton/hppa/flowgraph/hppaGasPseudoOps.sml
-*** MLRISC/hppa/flowgraph/hppaGasPseudoOps.sml	Wed Nov 21 12:41:49 2001
---- MLRISC-mlton/hppa/flowgraph/hppaGasPseudoOps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/flowgraph/hppaGasPseudoOps.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/flowgraph/hppaGasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   functor HppaGasPseudoOps 
@@ -32993,8 +32980,8 @@ diff -N -C 2 -r MLRISC/hppa/flowgraph/hppaGasPseudoOps.sml MLRISC-mlton/hppa/flo
       ) : PSEUDO_OPS_BASIS = 
   
 diff -N -C 2 -r MLRISC/hppa/instructions/hppaInstr.sml MLRISC-mlton/hppa/instructions/hppaInstr.sml
-*** MLRISC/hppa/instructions/hppaInstr.sml	Wed Jan 23 23:45:18 2002
---- MLRISC-mlton/hppa/instructions/hppaInstr.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/instructions/hppaInstr.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/instructions/hppaInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -33018,8 +33005,8 @@ diff -N -C 2 -r MLRISC/hppa/instructions/hppaInstr.sml MLRISC-mlton/hppa/instruc
      structure T : MLTREE
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/hppa/instructions/hppaProps.sml MLRISC-mlton/hppa/instructions/hppaProps.sml
-*** MLRISC/hppa/instructions/hppaProps.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/hppa/instructions/hppaProps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/instructions/hppaProps.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/instructions/hppaProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,12 ****
   functor HppaProps
@@ -33096,8 +33083,8 @@ diff -N -C 2 -r MLRISC/hppa/instructions/hppaProps.sml MLRISC-mlton/hppa/instruc
   	| trapi(_, d, u) = (d, u)
       in
 diff -N -C 2 -r MLRISC/hppa/mltree/hppa.sml MLRISC-mlton/hppa/mltree/hppa.sml
-*** MLRISC/hppa/mltree/hppa.sml	Wed Nov 17 15:07:35 2004
---- MLRISC-mlton/hppa/mltree/hppa.sml	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/mltree/hppa.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/mltree/hppa.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 15,26 ****
   functor Hppa
@@ -33338,8 +33325,8 @@ diff -N -C 2 -r MLRISC/hppa/mltree/hppa.sml MLRISC-mlton/hppa/mltree/hppa.sml
   
      fun error msg = MLRiscErrorMsg.error("Hppa",msg)
 diff -N -C 2 -r MLRISC/hppa/mltree/hppaMillicode.sig MLRISC-mlton/hppa/mltree/hppaMillicode.sig
-*** MLRISC/hppa/mltree/hppaMillicode.sig	Thu Jul 19 15:35:20 2001
---- MLRISC-mlton/hppa/mltree/hppaMillicode.sig	Fri May 18 16:14:03 2007
+*** MLRISC/hppa/mltree/hppaMillicode.sig	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/hppa/mltree/hppaMillicode.sig	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   signature HPPA_MILLICODE = sig
@@ -33363,8 +33350,8 @@ diff -N -C 2 -r MLRISC/hppa/mltree/hppaMillicode.sig MLRISC-mlton/hppa/mltree/hp
   
     val divu : {rs:CB.cell, rt:CB.cell, rd:CB.cell} -> I.instruction list
 diff -N -C 2 -r MLRISC/instructions/insnProps.sig MLRISC-mlton/instructions/insnProps.sig
-*** MLRISC/instructions/insnProps.sig	Mon Mar 11 21:56:23 2002
---- MLRISC-mlton/instructions/insnProps.sig	Fri May 18 16:13:59 2007
+*** MLRISC/instructions/insnProps.sig	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/instructions/insnProps.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 8,12 ****
      structure I : INSTRUCTIONS
@@ -33379,8 +33366,8 @@ diff -N -C 2 -r MLRISC/instructions/insnProps.sig MLRISC-mlton/instructions/insn
   
         (* classify instructions *)
 diff -N -C 2 -r MLRISC/instructions/instructions.sig MLRISC-mlton/instructions/instructions.sig
-*** MLRISC/instructions/instructions.sig	Tue Jan 15 10:23:15 2002
---- MLRISC-mlton/instructions/instructions.sig	Fri May 18 16:13:59 2007
+*** MLRISC/instructions/instructions.sig	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/instructions/instructions.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -33404,8 +33391,8 @@ diff -N -C 2 -r MLRISC/instructions/instructions.sig MLRISC-mlton/instructions/i
      type operand             (* operands supported by architecture *)
      type addressing_mode                        (* addressing mode *)
 diff -N -C 2 -r MLRISC/instructions/mlriscAnnotations.sig MLRISC-mlton/instructions/mlriscAnnotations.sig
-*** MLRISC/instructions/mlriscAnnotations.sig	Fri Mar  1 08:07:58 2002
---- MLRISC-mlton/instructions/mlriscAnnotations.sig	Fri May 18 16:13:59 2007
+*** MLRISC/instructions/mlriscAnnotations.sig	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/instructions/mlriscAnnotations.sig	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 16,20 ****
   sig
@@ -33429,8 +33416,8 @@ diff -N -C 2 -r MLRISC/instructions/mlriscAnnotations.sig MLRISC-mlton/instructi
   
       (* 
 diff -N -C 2 -r MLRISC/library/dynamic-array.sml MLRISC-mlton/library/dynamic-array.sml
-*** MLRISC/library/dynamic-array.sml	Fri Sep  5 16:34:27 2003
---- MLRISC-mlton/library/dynamic-array.sml	Fri May 18 16:13:59 2007
+*** MLRISC/library/dynamic-array.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/library/dynamic-array.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 6,10 ****
   
@@ -33471,8 +33458,8 @@ diff -N -C 2 -r MLRISC/library/dynamic-array.sml MLRISC-mlton/library/dynamic-ar
         val fromArray : 'a Array.array * 'a * int -> 'a array
         val baseArray : 'a array -> 'a Array.array
 diff -N -C 2 -r MLRISC/library/hash-array.sml MLRISC-mlton/library/hash-array.sml
-*** MLRISC/library/hash-array.sml	Fri Sep  5 16:34:27 2003
---- MLRISC-mlton/library/hash-array.sml	Fri May 18 16:13:59 2007
+*** MLRISC/library/hash-array.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/library/hash-array.sml	2009-10-02 09:51:25.000000000 -0400
 ***************
 *** 6,10 ****
   
@@ -33513,8 +33500,8 @@ diff -N -C 2 -r MLRISC/library/hash-array.sml MLRISC-mlton/library/hash-array.sm
            val array' : int * (int -> 'a) -> 'a array
            val array'': int * (int -> 'a) -> 'a array
 diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
-*** MLRISC/mlb/ALPHA.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/ALPHA.mlb	Tue Jun 16 10:57:31 2009
+*** MLRISC/mlb/ALPHA.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/ALPHA.mlb	2010-04-02 15:08:16.000000000 -0400
 ***************
 *** 0 ****
 --- 1,474 ----
@@ -33993,8 +33980,8 @@ diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/AMD64-Peephole.mlb MLRISC-mlton/mlb/AMD64-Peephole.mlb
-*** MLRISC/mlb/AMD64-Peephole.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/AMD64-Peephole.mlb	Tue Jun 16 10:57:32 2009
+*** MLRISC/mlb/AMD64-Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/AMD64-Peephole.mlb	2010-04-02 15:08:17.000000000 -0400
 ***************
 *** 0 ****
 --- 1,60 ----
@@ -34059,11 +34046,11 @@ diff -N -C 2 -r MLRISC/mlb/AMD64-Peephole.mlb MLRISC-mlton/mlb/AMD64-Peephole.ml
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
-*** MLRISC/mlb/AMD64.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/AMD64.mlb	Tue Jun 16 10:57:31 2009
+*** MLRISC/mlb/AMD64.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/AMD64.mlb	2010-04-02 15:08:16.000000000 -0400
 ***************
 *** 0 ****
---- 1,668 ----
+--- 1,670 ----
 + 
 + ann
 +   "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -34591,24 +34578,31 @@ diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 +       signature gs_79 = ARCH_SPILL_INSTR
 +    end
 +    local
-+       signature AMD64INSN_PROPERTIES = gs_41
-+       signature AMD64INSTR = gs_16
-+       functor AMD64Instr = gs_17
-+       functor AMD64Props = gs_42
-+       signature ARCH_SPILL_INSTR = gs_79
-+       structure CellsBasis = gs_5
-+       signature MLRISC_ERROR_MSG = gs_12
-+       structure MLRiscErrorMsg = gs_13
-+       ../amd64/ra/amd64SpillInstr.sml
++       open l9
 +    in
-+       functor gs_80 = AMD64SpillInstr
++       structure gs_80 = MLRiscAnnotations
 +    end
 +    local
 +       signature AMD64INSN_PROPERTIES = gs_41
 +       signature AMD64INSTR = gs_16
 +       functor AMD64Instr = gs_17
 +       functor AMD64Props = gs_42
-+       functor AMD64SpillInstr = gs_80
++       signature ARCH_SPILL_INSTR = gs_79
++       structure Annotations = gs_9
++       structure CellsBasis = gs_5
++       signature MLRISC_ERROR_MSG = gs_12
++       structure MLRiscAnnotations = gs_80
++       structure MLRiscErrorMsg = gs_13
++       ../amd64/ra/amd64SpillInstr.sml
++    in
++       functor gs_81 = AMD64SpillInstr
++    end
++    local
++       signature AMD64INSN_PROPERTIES = gs_41
++       signature AMD64INSTR = gs_16
++       functor AMD64Instr = gs_17
++       functor AMD64Props = gs_42
++       functor AMD64SpillInstr = gs_81
 +       structure Annotations = gs_9
 +       structure Array = gs_74
 +       signature CFG_OPTIMIZATION = gs_62
@@ -34635,33 +34629,28 @@ diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 +       functor RegisterAllocator = gs_66
 +       ../amd64/ra/amd64RegAlloc.sml
 +    in
-+       functor gs_81 = AMD64RegAlloc
++       functor gs_82 = AMD64RegAlloc
 +    end
 +    local
 +       open l9
 +    in
-+       functor gs_82 = MLTreeGen
++       functor gs_83 = MLTreeGen
 +    end
 +    local
 +       open l9
 +    in
-+       functor gs_83 = MLTreeSize
++       functor gs_84 = MLTreeSize
 +    end
 +    local
 +       open l4
 +    in
-+       structure gs_84 = IntInf
++       structure gs_85 = IntInf
 +    end
 +    local
 +       open l34
 +    in
-+       signature gs_85 = PROBABILITY
-+       structure gs_86 = Probability
-+    end
-+    local
-+       open l9
-+    in
-+       structure gs_87 = MLRiscAnnotations
++       signature gs_86 = PROBABILITY
++       structure gs_87 = Probability
 +    end
 +    local
 +       open l4
@@ -34686,20 +34675,20 @@ diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 +       structure CellsBasis = gs_5
 +       structure Int32 = gs_8
 +       structure Int64 = gs_7
-+       structure IntInf = gs_84
++       structure IntInf = gs_85
 +       structure Label = gs_6
 +       structure List = gs_38
 +       structure ListPair = gs_88
 +       signature MLRISC_ERROR_MSG = gs_12
-+       structure MLRiscAnnotations = gs_87
++       structure MLRiscAnnotations = gs_80
 +       structure MLRiscErrorMsg = gs_13
 +       signature MLTREECOMP = gs_89
 +       signature MLTREE_EXTENSION_COMP = gs_90
 +       signature MLTREE_UTILS = gs_91
-+       functor MLTreeGen = gs_82
-+       functor MLTreeSize = gs_83
-+       signature PROBABILITY = gs_85
-+       structure Probability = gs_86
++       functor MLTreeGen = gs_83
++       functor MLTreeSize = gs_84
++       signature PROBABILITY = gs_86
++       structure Probability = gs_87
 +       functor Shuffle = gs_26
 +       structure Word = gs_24
 +       structure Word32 = gs_20
@@ -34724,17 +34713,17 @@ diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 +    functor AMD64MCFn = gs_29
 +    functor AMD64Opcodes = gs_18
 +    functor AMD64Props = gs_42
-+    functor AMD64RegAlloc = gs_81
++    functor AMD64RegAlloc = gs_82
 +    signature AMD64SHUFFLE = gs_27
 +    functor AMD64Shuffle = gs_28
-+    functor AMD64SpillInstr = gs_80
++    functor AMD64SpillInstr = gs_81
 + end
 + end
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-sparc.mlb MLRISC-mlton/mlb/CCall-sparc.mlb
-*** MLRISC/mlb/CCall-sparc.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/CCall-sparc.mlb	Tue Jun 16 10:57:33 2009
+*** MLRISC/mlb/CCall-sparc.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/CCall-sparc.mlb	2010-04-02 15:08:17.000000000 -0400
 ***************
 *** 0 ****
 --- 1,118 ----
@@ -34857,8 +34846,8 @@ diff -N -C 2 -r MLRISC/mlb/CCall-sparc.mlb MLRISC-mlton/mlb/CCall-sparc.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-x86-64.mlb MLRISC-mlton/mlb/CCall-x86-64.mlb
-*** MLRISC/mlb/CCall-x86-64.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/CCall-x86-64.mlb	Tue Jun 16 10:57:33 2009
+*** MLRISC/mlb/CCall-x86-64.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/CCall-x86-64.mlb	2010-04-02 15:08:18.000000000 -0400
 ***************
 *** 0 ****
 --- 1,125 ----
@@ -34988,8 +34977,8 @@ diff -N -C 2 -r MLRISC/mlb/CCall-x86-64.mlb MLRISC-mlton/mlb/CCall-x86-64.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-x86.mlb MLRISC-mlton/mlb/CCall-x86.mlb
-*** MLRISC/mlb/CCall-x86.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/CCall-x86.mlb	Tue Jun 16 10:57:34 2009
+*** MLRISC/mlb/CCall-x86.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/CCall-x86.mlb	2010-04-02 15:08:19.000000000 -0400
 ***************
 *** 0 ****
 --- 1,155 ----
@@ -35149,8 +35138,8 @@ diff -N -C 2 -r MLRISC/mlb/CCall-x86.mlb MLRISC-mlton/mlb/CCall-x86.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall.mlb MLRISC-mlton/mlb/CCall.mlb
-*** MLRISC/mlb/CCall.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/CCall.mlb	Tue Jun 16 10:57:32 2009
+*** MLRISC/mlb/CCall.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/CCall.mlb	2010-04-02 15:08:17.000000000 -0400
 ***************
 *** 0 ****
 --- 1,96 ----
@@ -35251,8 +35240,8 @@ diff -N -C 2 -r MLRISC/mlb/CCall.mlb MLRISC-mlton/mlb/CCall.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
-*** MLRISC/mlb/Control.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/Control.mlb	Tue Jun 16 10:57:34 2009
+*** MLRISC/mlb/Control.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/Control.mlb	2010-04-02 15:08:19.000000000 -0400
 ***************
 *** 0 ****
 --- 1,104 ----
@@ -35361,8 +35350,8 @@ diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
-*** MLRISC/mlb/Graphs.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/Graphs.mlb	Tue Jun 16 10:57:34 2009
+*** MLRISC/mlb/Graphs.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/Graphs.mlb	2010-04-02 15:08:19.000000000 -0400
 ***************
 *** 0 ****
 --- 1,708 ----
@@ -36075,8 +36064,8 @@ diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
-*** MLRISC/mlb/HPPA.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/HPPA.mlb	Tue Jun 16 10:57:35 2009
+*** MLRISC/mlb/HPPA.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/HPPA.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,492 ----
@@ -36573,8 +36562,8 @@ diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
-*** MLRISC/mlb/IA32-Peephole.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/IA32-Peephole.mlb	Tue Jun 16 10:57:35 2009
+*** MLRISC/mlb/IA32-Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/IA32-Peephole.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,60 ----
@@ -36639,8 +36628,8 @@ diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
-*** MLRISC/mlb/IA32.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/IA32.mlb	Tue Jun 16 10:57:35 2009
+*** MLRISC/mlb/IA32.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/IA32.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,800 ----
@@ -37445,8 +37434,8 @@ diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
-*** MLRISC/mlb/Lib.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/Lib.mlb	Tue Jun 16 10:57:35 2009
+*** MLRISC/mlb/Lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/Lib.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,263 ----
@@ -37714,8 +37703,8 @@ diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
-*** MLRISC/mlb/MLRISC.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/MLRISC.mlb	Tue Jun 16 10:57:36 2009
+*** MLRISC/mlb/MLRISC.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/MLRISC.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,1746 ----
@@ -39466,8 +39455,8 @@ diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
-*** MLRISC/mlb/MLTREE.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/MLTREE.mlb	Tue Jun 16 10:57:36 2009
+*** MLRISC/mlb/MLTREE.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/MLTREE.mlb	2010-04-02 15:08:20.000000000 -0400
 ***************
 *** 0 ****
 --- 1,209 ----
@@ -39681,8 +39670,8 @@ diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
-*** MLRISC/mlb/PPC.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/PPC.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlb/PPC.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/PPC.mlb	2010-04-02 15:08:21.000000000 -0400
 ***************
 *** 0 ****
 --- 1,573 ----
@@ -40260,8 +40249,8 @@ diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
-*** MLRISC/mlb/Peephole.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/Peephole.mlb	Tue Jun 16 10:57:36 2009
+*** MLRISC/mlb/Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/Peephole.mlb	2010-04-02 15:08:21.000000000 -0400
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -40327,8 +40316,8 @@ diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
-*** MLRISC/mlb/RA.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/RA.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlb/RA.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/RA.mlb	2010-04-02 15:08:21.000000000 -0400
 ***************
 *** 0 ****
 --- 1,152 ----
@@ -40485,8 +40474,8 @@ diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
-*** MLRISC/mlb/SPARC.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/SPARC.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlb/SPARC.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/SPARC.mlb	2010-04-02 15:08:22.000000000 -0400
 ***************
 *** 0 ****
 --- 1,538 ----
@@ -41029,8 +41018,8 @@ diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/StagedAlloc.mlb MLRISC-mlton/mlb/StagedAlloc.mlb
-*** MLRISC/mlb/StagedAlloc.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/StagedAlloc.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlb/StagedAlloc.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/StagedAlloc.mlb	2010-04-02 15:08:22.000000000 -0400
 ***************
 *** 0 ****
 --- 1,91 ----
@@ -41126,8 +41115,8 @@ diff -N -C 2 -r MLRISC/mlb/StagedAlloc.mlb MLRISC-mlton/mlb/StagedAlloc.mlb
 + 
 + end
 diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
-*** MLRISC/mlb/Visual.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlb/Visual.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlb/Visual.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlb/Visual.mlb	2010-04-02 15:08:22.000000000 -0400
 ***************
 *** 0 ****
 --- 1,252 ----
@@ -41383,10 +41372,9 @@ diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 + end
 + 
 + end
-Binary files MLRISC/mlrisc-lib and MLRISC-mlton/mlrisc-lib differ
 diff -N -C 2 -r MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
-*** MLRISC/mlrisc-lib.mlb	Wed Dec 31 18:00:00 1969
---- MLRISC-mlton/mlrisc-lib.mlb	Tue Jun 16 10:57:37 2009
+*** MLRISC/mlrisc-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- MLRISC-mlton/mlrisc-lib.mlb	2010-04-02 15:08:22.000000000 -0400
 ***************
 *** 0 ****
 --- 1,24 ----
@@ -41415,8 +41403,8 @@ diff -N -C 2 -r MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
 + mlb/Visual.mlb
 + in end
 diff -N -C 2 -r MLRISC/mltree/instr-gen.sig MLRISC-mlton/mltree/instr-gen.sig
-*** MLRISC/mltree/instr-gen.sig	Fri Aug 24 12:48:53 2001
---- MLRISC-mlton/mltree/instr-gen.sig	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/instr-gen.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/instr-gen.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 9,14 ****
      structure CFG : CONTROL_FLOW_GRAPH 
@@ -41454,8 +41442,8 @@ diff -N -C 2 -r MLRISC/mltree/instr-gen.sig MLRISC-mlton/mltree/instr-gen.sig
   
      (* 
 diff -N -C 2 -r MLRISC/mltree/instr-gen.sml MLRISC-mlton/mltree/instr-gen.sml
-*** MLRISC/mltree/instr-gen.sml	Wed Sep 19 14:31:19 2001
---- MLRISC-mlton/mltree/instr-gen.sml	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/instr-gen.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/instr-gen.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 5,11 ****
      (structure I      : INSTRUCTIONS
@@ -41498,8 +41486,8 @@ diff -N -C 2 -r MLRISC/mltree/instr-gen.sml MLRISC-mlton/mltree/instr-gen.sml
      ) : INSTR_GEN =
   struct
 diff -N -C 2 -r MLRISC/mltree/mltree-check-ty.sml MLRISC-mlton/mltree/mltree-check-ty.sml
-*** MLRISC/mltree/mltree-check-ty.sml	Thu May 29 01:38:23 2008
---- MLRISC-mlton/mltree/mltree-check-ty.sml	Mon Aug 18 16:14:44 2008
+*** MLRISC/mltree/mltree-check-ty.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-check-ty.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 102,106 ****
      and checkCCexpB cce = (case cce
@@ -41520,8 +41508,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-check-ty.sml MLRISC-mlton/mltree/mltree-che
   	     checkCCexpB cce1 andalso checkCCexpB cce2
   	   | T.CMP (ty, _, e1, e2) => ty = checkRexp e1 andalso ty = checkRexp e2
 diff -N -C 2 -r MLRISC/mltree/mltree-gen.sig MLRISC-mlton/mltree/mltree-gen.sig
-*** MLRISC/mltree/mltree-gen.sig	Wed Sep 19 14:31:19 2001
---- MLRISC-mlton/mltree/mltree-gen.sig	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-gen.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-gen.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 10,15 ****
   
@@ -41557,8 +41545,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-gen.sig MLRISC-mlton/mltree/mltree-gen.sig
   
      val condOf : T.ccexp -> T.Basis.cond
 diff -N -C 2 -r MLRISC/mltree/mltree-mult.sig MLRISC-mlton/mltree/mltree-mult.sig
-*** MLRISC/mltree/mltree-mult.sig	Wed Sep 19 14:31:19 2001
---- MLRISC-mlton/mltree/mltree-mult.sig	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-mult.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-mult.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 9,13 ****
      structure T : MLTREE
@@ -41573,8 +41561,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-mult.sig MLRISC-mlton/mltree/mltree-mult.si
   
      exception TooComplex
 diff -N -C 2 -r MLRISC/mltree/mltree-mult.sml MLRISC-mlton/mltree/mltree-mult.sml
-*** MLRISC/mltree/mltree-mult.sml	Thu Aug 28 16:59:15 2003
---- MLRISC-mlton/mltree/mltree-mult.sml	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-mult.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-mult.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 9,13 ****
      structure T : MLTREE
@@ -41628,8 +41616,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-mult.sml MLRISC-mlton/mltree/mltree-mult.sm
     ) : MLTREE_MULT_DIV =
   struct
 diff -N -C 2 -r MLRISC/mltree/mltree-simplify.in MLRISC-mlton/mltree/mltree-simplify.in
-*** MLRISC/mltree/mltree-simplify.in	Fri Mar 29 13:09:48 2002
---- MLRISC-mlton/mltree/mltree-simplify.in	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-simplify.in	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-simplify.in	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 15,20 ****
   functor MLTreeSimplifier
@@ -41665,8 +41653,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-simplify.in MLRISC-mlton/mltree/mltree-simp
      (* Extension *)
      val sext : T.rewriter -> T.sext -> T.sext
 diff -N -C 2 -r MLRISC/mltree/mltree-simplify.sml MLRISC-mlton/mltree/mltree-simplify.sml
-*** MLRISC/mltree/mltree-simplify.sml	Fri Mar 29 13:09:48 2002
---- MLRISC-mlton/mltree/mltree-simplify.sml	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-simplify.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-simplify.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 10,14 ****
   
@@ -41701,8 +41689,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-simplify.sml MLRISC-mlton/mltree/mltree-sim
   
   (*#line 20.4 "mltree-simplify.in"*)
 diff -N -C 2 -r MLRISC/mltree/mltree-utils.sml MLRISC-mlton/mltree/mltree-utils.sml
-*** MLRISC/mltree/mltree-utils.sml	Sat Oct 30 11:02:13 2004
---- MLRISC-mlton/mltree/mltree-utils.sml	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree-utils.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree-utils.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 519,525 ****
         and oper(T.OPER{name,...}) = name 
@@ -41722,8 +41710,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree-utils.sml MLRISC-mlton/mltree/mltree-utils.
           | parenRexp e = "("^rexp e^")"
   
 diff -N -C 2 -r MLRISC/mltree/mltree.sig MLRISC-mlton/mltree/mltree.sig
-*** MLRISC/mltree/mltree.sig	Fri Mar 29 13:09:48 2002
---- MLRISC-mlton/mltree/mltree.sig	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 31,34 ****
 --- 31,38 ----
@@ -41812,8 +41800,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree.sig MLRISC-mlton/mltree/mltree.sig
     (*
      * Useful type abbreviations for working for MLTree.
 diff -N -C 2 -r MLRISC/mltree/mltree.sml MLRISC-mlton/mltree/mltree.sml
-*** MLRISC/mltree/mltree.sml	Wed Sep 17 16:28:41 2003
---- MLRISC-mlton/mltree/mltree.sml	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltree.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltree.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 33,36 ****
 --- 33,40 ----
@@ -41842,8 +41830,8 @@ diff -N -C 2 -r MLRISC/mltree/mltree.sml MLRISC-mlton/mltree/mltree.sml
          and rext   = (stm, rexp, fexp, ccexp) Extension.rx
          and fext   = (stm, rexp, fexp, ccexp) Extension.fx
 diff -N -C 2 -r MLRISC/mltree/mltreecomp.sig MLRISC-mlton/mltree/mltreecomp.sig
-*** MLRISC/mltree/mltreecomp.sig	Wed Nov 21 13:00:08 2001
---- MLRISC-mlton/mltree/mltreecomp.sig	Fri May 18 16:13:59 2007
+*** MLRISC/mltree/mltreecomp.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/mltree/mltreecomp.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 10,18 ****
   sig
@@ -41975,8 +41963,8 @@ diff -N -C 2 -r MLRISC/mltree/mltreecomp.sig MLRISC-mlton/mltree/mltreecomp.sig
   
      type instrStream = (I.instruction, I.C.cellset, CFG.cfg) TS.stream  
 diff -N -C 2 -r MLRISC/omit-frameptr/omit-frame-pointer.sig MLRISC-mlton/omit-frameptr/omit-frame-pointer.sig
-*** MLRISC/omit-frameptr/omit-frame-pointer.sig	Wed Sep 19 14:31:19 2001
---- MLRISC-mlton/omit-frameptr/omit-frame-pointer.sig	Fri May 18 16:13:59 2007
+*** MLRISC/omit-frameptr/omit-frame-pointer.sig	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/omit-frameptr/omit-frame-pointer.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 3,7 ****
   signature OMIT_FRAME_POINTER = sig
@@ -41996,8 +41984,8 @@ diff -N -C 2 -r MLRISC/omit-frameptr/omit-frame-pointer.sig MLRISC-mlton/omit-fr
     
     (* idelta is the intial displacement between the fp and sp. *)
 diff -N -C 2 -r MLRISC/ppc/backpatch/ppcDelaySlots.sml MLRISC-mlton/ppc/backpatch/ppcDelaySlots.sml
-*** MLRISC/ppc/backpatch/ppcDelaySlots.sml	Thu Dec  7 22:11:42 2000
---- MLRISC-mlton/ppc/backpatch/ppcDelaySlots.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/backpatch/ppcDelaySlots.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/backpatch/ppcDelaySlots.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,11 ****
   
@@ -42018,8 +42006,8 @@ diff -N -C 2 -r MLRISC/ppc/backpatch/ppcDelaySlots.sml MLRISC-mlton/ppc/backpatc
                        ) : DELAY_SLOT_PROPERTIES =
   struct
 diff -N -C 2 -r MLRISC/ppc/backpatch/ppcJumps.sml MLRISC-mlton/ppc/backpatch/ppcJumps.sml
-*** MLRISC/ppc/backpatch/ppcJumps.sml	Fri Sep 24 16:21:31 2004
---- MLRISC-mlton/ppc/backpatch/ppcJumps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/backpatch/ppcJumps.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/backpatch/ppcJumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,6 ****
   functor PPCJumps 
@@ -42155,8 +42143,8 @@ diff -N -C 2 -r MLRISC/ppc/backpatch/ppcJumps.sml MLRISC-mlton/ppc/backpatch/ppc
   	    (*esac*))
   	 | I.ROTATEI{sh, ...} => error "sdiSize:ROTATE"
 diff -N -C 2 -r MLRISC/ppc/c-calls/ppc-macosx.sml MLRISC-mlton/ppc/c-calls/ppc-macosx.sml
-*** MLRISC/ppc/c-calls/ppc-macosx.sml	Thu Feb 10 17:54:06 2005
---- MLRISC-mlton/ppc/c-calls/ppc-macosx.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/c-calls/ppc-macosx.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/c-calls/ppc-macosx.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 278,282 ****
   		  | CTy.C_long_double =>
@@ -42187,8 +42175,8 @@ diff -N -C 2 -r MLRISC/ppc/c-calls/ppc-macosx.sml MLRISC-mlton/ppc/c-calls/ppc-m
   	      | _ => error (concat [
   		    "unknown calling convention \"",
 diff -N -C 2 -r MLRISC/ppc/emit/ppcAsm.sml MLRISC-mlton/ppc/emit/ppcAsm.sml
-*** MLRISC/ppc/emit/ppcAsm.sml	Thu Aug  5 17:19:45 2004
---- MLRISC-mlton/ppc/emit/ppcAsm.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/emit/ppcAsm.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/emit/ppcAsm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,16 ****
   
@@ -42293,8 +42281,8 @@ diff -N -C 2 -r MLRISC/ppc/emit/ppcAsm.sml MLRISC-mlton/ppc/emit/ppcAsm.sml
                        ) : INSTRUCTION_EMITTER =
   struct
 diff -N -C 2 -r MLRISC/ppc/emit/ppcMC.sml MLRISC-mlton/ppc/emit/ppcMC.sml
-*** MLRISC/ppc/emit/ppcMC.sml	Wed Mar  5 21:17:28 2008
---- MLRISC-mlton/ppc/emit/ppcMC.sml	Fri May  9 11:57:18 2008
+*** MLRISC/ppc/emit/ppcMC.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/emit/ppcMC.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,11 ****
   
@@ -42389,8 +42377,8 @@ diff -N -C 2 -r MLRISC/ppc/emit/ppcMC.sml MLRISC-mlton/ppc/emit/ppcMC.sml
                | _ => a_form {opcd=opcd, frt=ft, fra=fa, frb=fb, frc=0wx0, xo=xo, 
                     rc=Rc}
 diff -N -C 2 -r MLRISC/ppc/flowgraph/ppcDarwinPseudoOps.sml MLRISC-mlton/ppc/flowgraph/ppcDarwinPseudoOps.sml
-*** MLRISC/ppc/flowgraph/ppcDarwinPseudoOps.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/ppc/flowgraph/ppcDarwinPseudoOps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/flowgraph/ppcDarwinPseudoOps.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/flowgraph/ppcDarwinPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 8,12 ****
   functor PPCDarwinPseudoOps (
@@ -42425,8 +42413,8 @@ diff -N -C 2 -r MLRISC/ppc/flowgraph/ppcDarwinPseudoOps.sml MLRISC-mlton/ppc/flo
     ) : PSEUDO_OPS_BASIS = struct
   
 diff -N -C 2 -r MLRISC/ppc/flowgraph/ppcGasPseudoOps.sml MLRISC-mlton/ppc/flowgraph/ppcGasPseudoOps.sml
-*** MLRISC/ppc/flowgraph/ppcGasPseudoOps.sml	Wed Nov 21 12:41:49 2001
---- MLRISC-mlton/ppc/flowgraph/ppcGasPseudoOps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/flowgraph/ppcGasPseudoOps.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/flowgraph/ppcGasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,6 ****
   functor PPCGasPseudoOps 
@@ -42463,8 +42451,8 @@ diff -N -C 2 -r MLRISC/ppc/flowgraph/ppcGasPseudoOps.sml MLRISC-mlton/ppc/flowgr
   
   struct
 diff -N -C 2 -r MLRISC/ppc/instructions/ppcCompInstrExt.sml MLRISC-mlton/ppc/instructions/ppcCompInstrExt.sml
-*** MLRISC/ppc/instructions/ppcCompInstrExt.sml	Fri Aug  6 15:38:58 2004
---- MLRISC-mlton/ppc/instructions/ppcCompInstrExt.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/instructions/ppcCompInstrExt.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/instructions/ppcCompInstrExt.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 10,18 ****
     sig
@@ -42595,8 +42583,8 @@ diff -N -C 2 -r MLRISC/ppc/instructions/ppcCompInstrExt.sml MLRISC-mlton/ppc/ins
     ) : PPCCOMP_INSTR_EXT =  struct
   
 diff -N -C 2 -r MLRISC/ppc/instructions/ppcInstr.sml MLRISC-mlton/ppc/instructions/ppcInstr.sml
-*** MLRISC/ppc/instructions/ppcInstr.sml	Wed Jul 14 13:38:08 2004
---- MLRISC-mlton/ppc/instructions/ppcInstr.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/instructions/ppcInstr.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/instructions/ppcInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -42620,8 +42608,8 @@ diff -N -C 2 -r MLRISC/ppc/instructions/ppcInstr.sml MLRISC-mlton/ppc/instructio
      structure T : MLTREE
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/ppc/instructions/ppcProps.sml MLRISC-mlton/ppc/instructions/ppcProps.sml
-*** MLRISC/ppc/instructions/ppcProps.sml	Tue Jul 13 14:05:30 2004
---- MLRISC-mlton/ppc/instructions/ppcProps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/instructions/ppcProps.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/instructions/ppcProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,11 ****
   functor PPCProps
@@ -42678,8 +42666,8 @@ diff -N -C 2 -r MLRISC/ppc/instructions/ppcProps.sml MLRISC-mlton/ppc/instructio
       ) : INSN_PROPERTIES = 
   struct
 diff -N -C 2 -r MLRISC/ppc/mltree/ppc.sml MLRISC-mlton/ppc/mltree/ppc.sml
-*** MLRISC/ppc/mltree/ppc.sml	Mon Dec 13 14:09:39 2004
---- MLRISC-mlton/ppc/mltree/ppc.sml	Fri May 18 16:14:03 2007
+*** MLRISC/ppc/mltree/ppc.sml	2010-02-03 11:40:41.000000000 -0500
+--- MLRISC-mlton/ppc/mltree/ppc.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 11,18 ****
   functor PPC
@@ -43004,8 +42992,8 @@ diff -N -C 2 -r MLRISC/ppc/mltree/ppc.sml MLRISC-mlton/ppc/mltree/ppc.sml
                      | _ => (immedOpnd unsigned16, I.CMPL)
                     val (opndA, opndB) = opnds(e1, e2)
 diff -N -C 2 -r MLRISC/ra/arch-spill-instr.sig MLRISC-mlton/ra/arch-spill-instr.sig
-*** MLRISC/ra/arch-spill-instr.sig	Wed Jan 23 23:45:18 2002
---- MLRISC-mlton/ra/arch-spill-instr.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/arch-spill-instr.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/arch-spill-instr.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 11,15 ****
   signature ARCH_SPILL_INSTR = sig
@@ -43029,8 +43017,8 @@ diff -N -C 2 -r MLRISC/ra/arch-spill-instr.sig MLRISC-mlton/ra/arch-spill-instr.
     
     val spillToEA :
 diff -N -C 2 -r MLRISC/ra/chaitin-spillheur2.sml MLRISC-mlton/ra/chaitin-spillheur2.sml
-*** MLRISC/ra/chaitin-spillheur2.sml	Thu Mar 21 16:01:11 2002
---- MLRISC-mlton/ra/chaitin-spillheur2.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/chaitin-spillheur2.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/chaitin-spillheur2.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 36,40 ****
               let fun loop([], savings) = 
@@ -43073,8 +43061,8 @@ diff -N -C 2 -r MLRISC/ra/chaitin-spillheur2.sml MLRISC-mlton/ra/chaitin-spillhe
                               dst, src, cost, ...}::mvs, savings) = 
                       let fun add(c,[]) = [(c,cost)]
 diff -N -C 2 -r MLRISC/ra/chow-hennessy-spillheur2.sml MLRISC-mlton/ra/chow-hennessy-spillheur2.sml
-*** MLRISC/ra/chow-hennessy-spillheur2.sml	Thu Mar 21 16:01:11 2002
---- MLRISC-mlton/ra/chow-hennessy-spillheur2.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/chow-hennessy-spillheur2.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/chow-hennessy-spillheur2.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 33,37 ****
               let fun loop([], savings) = 
@@ -43117,8 +43105,8 @@ diff -N -C 2 -r MLRISC/ra/chow-hennessy-spillheur2.sml MLRISC-mlton/ra/chow-henn
                               dst, src, cost, ...}::mvs, savings) = 
                       let fun add(c,[]) = [(c,cost)]
 diff -N -C 2 -r MLRISC/ra/cluster-ra.sml MLRISC-mlton/ra/cluster-ra.sml
-*** MLRISC/ra/cluster-ra.sml	Thu Sep 26 14:06:50 2002
---- MLRISC-mlton/ra/cluster-ra.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/cluster-ra.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/cluster-ra.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 15,25 ****
   functor ClusterRA
@@ -43177,8 +43165,8 @@ diff -N -C 2 -r MLRISC/ra/cluster-ra.sml MLRISC-mlton/ra/cluster-ra.sml
      ) : RA_FLOWGRAPH =
   struct
 diff -N -C 2 -r MLRISC/ra/mem-ra.sml MLRISC-mlton/ra/mem-ra.sml
-*** MLRISC/ra/mem-ra.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/ra/mem-ra.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/mem-ra.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/mem-ra.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 52,56 ****
   	| collectMoves(NODE{movelist, color, ...}::ns, mv') = let
@@ -43236,8 +43224,8 @@ diff -N -C 2 -r MLRISC/ra/mem-ra.sml MLRISC-mlton/ra/mem-ra.sml
                             pinned, total) = 
                    moveSavings(mvs, pinned, total)
 diff -N -C 2 -r MLRISC/ra/ra-core.sig MLRISC-mlton/ra/ra-core.sig
-*** MLRISC/ra/ra-core.sig	Thu Mar  7 15:04:13 2002
---- MLRISC-mlton/ra/ra-core.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-core.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-core.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 12,16 ****
   sig
@@ -43271,8 +43259,8 @@ diff -N -C 2 -r MLRISC/ra/ra-core.sig MLRISC-mlton/ra/ra-core.sig
      structure BM : RA_BITMATRIX
      structure MV : RA_PRIORITY_QUEUE where type elem = G.move
 diff -N -C 2 -r MLRISC/ra/ra-core.sml MLRISC-mlton/ra/ra-core.sml
-*** MLRISC/ra/ra-core.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/ra/ra-core.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-core.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-core.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 164,168 ****
     let fun pr s = TextIO.output(stream, s)
@@ -43406,8 +43394,8 @@ diff -N -C 2 -r MLRISC/ra/ra-core.sml MLRISC-mlton/ra/ra-core.sml
                                src, dst, ...}::mvs, pref) =
                     let val src as NODE{number=s,...} = chase src
 diff -N -C 2 -r MLRISC/ra/ra-deadCodeE.sml MLRISC-mlton/ra/ra-deadCodeE.sml
-*** MLRISC/ra/ra-deadCodeE.sml	Thu Oct 11 22:54:43 2001
---- MLRISC-mlton/ra/ra-deadCodeE.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-deadCodeE.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-deadCodeE.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 7,13 ****
    *)
@@ -43426,8 +43414,8 @@ diff -N -C 2 -r MLRISC/ra/ra-deadCodeE.sml MLRISC-mlton/ra/ra-deadCodeE.sml
       val cellkind : CellsBasis.cellkind -> bool
         (* Dead registers are stored here. *)
 diff -N -C 2 -r MLRISC/ra/ra-flowgraph.sig MLRISC-mlton/ra/ra-flowgraph.sig
-*** MLRISC/ra/ra-flowgraph.sig	Thu Mar  7 15:04:13 2002
---- MLRISC-mlton/ra/ra-flowgraph.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-flowgraph.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-flowgraph.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 13,20 ****
      structure I     : INSTRUCTIONS
@@ -43472,8 +43460,8 @@ diff -N -C 2 -r MLRISC/ra/ra-flowgraph.sig MLRISC-mlton/ra/ra-flowgraph.sig
   
      type flowgraph
 diff -N -C 2 -r MLRISC/ra/ra-graph.sig MLRISC-mlton/ra/ra-graph.sig
-*** MLRISC/ra/ra-graph.sig	Thu Mar  7 15:04:13 2002
---- MLRISC-mlton/ra/ra-graph.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-graph.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-graph.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 12,16 ****
   
@@ -43491,8 +43479,8 @@ diff -N -C 2 -r MLRISC/ra/ra-graph.sig MLRISC-mlton/ra/ra-graph.sig
     (*
      * The following are the data structures used in the register allocator.
 diff -N -C 2 -r MLRISC/ra/ra-spill-with-renaming.sml MLRISC-mlton/ra/ra-spill-with-renaming.sml
-*** MLRISC/ra/ra-spill-with-renaming.sml	Thu Oct 11 22:54:43 2001
---- MLRISC-mlton/ra/ra-spill-with-renaming.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-spill-with-renaming.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-spill-with-renaming.sml	2009-10-02 10:50:19.000000000 -0400
 ***************
 *** 80,93 ****
    *)
@@ -43531,15 +43519,15 @@ diff -N -C 2 -r MLRISC/ra/ra-spill-with-renaming.sml MLRISC-mlton/ra/ra-spill-wi
   
      structure I      = InsnProps.I
 ***************
-*** 573,576 ****
+*** 585,588 ****
      end
   end
 - 
 - end (* local *)
---- 572,573 ----
+--- 584,585 ----
 diff -N -C 2 -r MLRISC/ra/ra-spill.sig MLRISC-mlton/ra/ra-spill.sig
-*** MLRISC/ra/ra-spill.sig	Wed Jan 23 23:45:18 2002
---- MLRISC-mlton/ra/ra-spill.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-spill.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-spill.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 8,16 ****
   
@@ -43590,8 +43578,8 @@ diff -N -C 2 -r MLRISC/ra/ra-spill.sig MLRISC-mlton/ra/ra-spill.sig
      type copyInstr =
             (CB.cell list * CB.cell list) * I.instruction -> I.instruction list
 diff -N -C 2 -r MLRISC/ra/ra-spill.sml MLRISC-mlton/ra/ra-spill.sml
-*** MLRISC/ra/ra-spill.sml	Tue Aug  6 08:33:17 2002
---- MLRISC-mlton/ra/ra-spill.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-spill.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-spill.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 49,64 ****
    *)
@@ -43634,8 +43622,8 @@ diff -N -C 2 -r MLRISC/ra/ra-spill.sml MLRISC-mlton/ra/ra-spill.sml
 - end (* local *)
 --- 451,452 ----
 diff -N -C 2 -r MLRISC/ra/ra-spillheur.sig MLRISC-mlton/ra/ra-spillheur.sig
-*** MLRISC/ra/ra-spillheur.sig	Thu Jun  1 13:34:03 2000
---- MLRISC-mlton/ra/ra-spillheur.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra-spillheur.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra-spillheur.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 4,8 ****
   signature RA_SPILL_HEURISTICS =
@@ -43669,8 +43657,8 @@ diff -N -C 2 -r MLRISC/ra/ra-spillheur.sig MLRISC-mlton/ra/ra-spillheur.sig
   
      exception NoCandidate
 diff -N -C 2 -r MLRISC/ra/ra.sig MLRISC-mlton/ra/ra.sig
-*** MLRISC/ra/ra.sig	Thu Jul 19 15:35:20 2001
---- MLRISC-mlton/ra/ra.sig	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra.sig	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra.sig	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 10,16 ****
      structure C : CELLS
@@ -43703,8 +43691,8 @@ diff -N -C 2 -r MLRISC/ra/ra.sig MLRISC-mlton/ra/ra.sig
   
      type getreg = { pref  : CB.cell_id list,
 diff -N -C 2 -r MLRISC/ra/ra.sml MLRISC-mlton/ra/ra.sml
-*** MLRISC/ra/ra.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/ra/ra.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/ra.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/ra.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 38,44 ****
    *)
@@ -43724,8 +43712,8 @@ diff -N -C 2 -r MLRISC/ra/ra.sml MLRISC-mlton/ra/ra.sml
   struct
   
 diff -N -C 2 -r MLRISC/ra/region-based-ra.sml MLRISC-mlton/ra/region-based-ra.sml
-*** MLRISC/ra/region-based-ra.sml	Thu Mar  7 15:16:28 2002
---- MLRISC-mlton/ra/region-based-ra.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/region-based-ra.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/region-based-ra.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 5,12 ****
    *)
@@ -43746,8 +43734,8 @@ diff -N -C 2 -r MLRISC/ra/region-based-ra.sml MLRISC-mlton/ra/region-based-ra.sm
      ) : RA =
   struct
 diff -N -C 2 -r MLRISC/ra/risc-ra.sml MLRISC-mlton/ra/risc-ra.sml
-*** MLRISC/ra/risc-ra.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/ra/risc-ra.sml	Fri May 18 16:13:59 2007
+*** MLRISC/ra/risc-ra.sml	2010-02-03 11:40:42.000000000 -0500
+--- MLRISC-mlton/ra/risc-ra.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 5,20 ****
    *)
@@ -43859,8 +43847,8 @@ diff -N -C 2 -r MLRISC/ra/risc-ra.sml MLRISC-mlton/ra/risc-ra.sml
             (structure Flowgraph = CFG
              structure Asm = Asm
 diff -N -C 2 -r MLRISC/sparc/backpatch/sparcDelaySlotProps.sml MLRISC-mlton/sparc/backpatch/sparcDelaySlotProps.sml
-*** MLRISC/sparc/backpatch/sparcDelaySlotProps.sml	Wed Jan  9 13:44:22 2002
---- MLRISC-mlton/sparc/backpatch/sparcDelaySlotProps.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/backpatch/sparcDelaySlotProps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/backpatch/sparcDelaySlotProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   functor SparcDelaySlots
@@ -43905,8 +43893,8 @@ diff -N -C 2 -r MLRISC/sparc/backpatch/sparcDelaySlotProps.sml MLRISC-mlton/spar
         | delaySlotCandidate{jmp=I.ANNOTATION{i,...},delaySlot} = 
              delaySlotCandidate{jmp=i,delaySlot=delaySlot}
 diff -N -C 2 -r MLRISC/sparc/backpatch/sparcJumps.sml MLRISC-mlton/sparc/backpatch/sparcJumps.sml
-*** MLRISC/sparc/backpatch/sparcJumps.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/sparc/backpatch/sparcJumps.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/backpatch/sparcJumps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/backpatch/sparcJumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,11 ****
   functor SparcJumps
@@ -44078,8 +44066,8 @@ diff -N -C 2 -r MLRISC/sparc/backpatch/sparcJumps.sml MLRISC-mlton/sparc/backpat
   	    expandImm(i,I.JMP{r=r,i=I.REG C.asmTmpR,labs=labs,nop=nop})
   	| (I.Ticc{t,cc,r,i},12) =>
 diff -N -C 2 -r MLRISC/sparc/c-calls/sparc-c-calls.sml MLRISC-mlton/sparc/c-calls/sparc-c-calls.sml
-*** MLRISC/sparc/c-calls/sparc-c-calls.sml	Wed Jul 28 16:06:59 2004
---- MLRISC-mlton/sparc/c-calls/sparc-c-calls.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/c-calls/sparc-c-calls.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/c-calls/sparc-c-calls.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 106,118 ****
   
@@ -44353,8 +44341,8 @@ diff -N -C 2 -r MLRISC/sparc/c-calls/sparc-c-calls.sml MLRISC-mlton/sparc/c-call
   		[T.GPR (T.REG (64, oreg 0))]
   
 diff -N -C 2 -r MLRISC/sparc/emit/sparcAsm.sml MLRISC-mlton/sparc/emit/sparcAsm.sml
-*** MLRISC/sparc/emit/sparcAsm.sml	Tue Aug  5 17:40:13 2008
---- MLRISC-mlton/sparc/emit/sparcAsm.sml	Thu Aug 14 16:53:53 2008
+*** MLRISC/sparc/emit/sparcAsm.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/emit/sparcAsm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,16 ****
   
@@ -44455,8 +44443,8 @@ diff -N -C 2 -r MLRISC/sparc/emit/sparcAsm.sml MLRISC-mlton/sparc/emit/sparcAsm.
   
   (*#line 466.21 "sparc/sparc.mdl"*)
 diff -N -C 2 -r MLRISC/sparc/emit/sparcMC.sml MLRISC-mlton/sparc/emit/sparcMC.sml
-*** MLRISC/sparc/emit/sparcMC.sml	Wed Mar  5 21:17:28 2008
---- MLRISC-mlton/sparc/emit/sparcMC.sml	Fri May  9 11:57:19 2008
+*** MLRISC/sparc/emit/sparcMC.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/emit/sparcMC.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,11 ****
   
@@ -44499,8 +44487,8 @@ diff -N -C 2 -r MLRISC/sparc/emit/sparcMC.sml MLRISC-mlton/sparc/emit/sparcMC.sm
          in loc := i + 1; CodeString.update(i,Word8.fromLargeWord w) end
      
 diff -N -C 2 -r MLRISC/sparc/flowgraph/sparcGasPseudoOps.sml MLRISC-mlton/sparc/flowgraph/sparcGasPseudoOps.sml
-*** MLRISC/sparc/flowgraph/sparcGasPseudoOps.sml	Wed Nov 21 12:41:49 2001
---- MLRISC-mlton/sparc/flowgraph/sparcGasPseudoOps.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/flowgraph/sparcGasPseudoOps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/flowgraph/sparcGasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   functor SparcGasPseudoOps 
@@ -44535,8 +44523,8 @@ diff -N -C 2 -r MLRISC/sparc/flowgraph/sparcGasPseudoOps.sml MLRISC-mlton/sparc/
       ) : PSEUDO_OPS_BASIS = 
   
 diff -N -C 2 -r MLRISC/sparc/instructions/sparcInstr.sml MLRISC-mlton/sparc/instructions/sparcInstr.sml
-*** MLRISC/sparc/instructions/sparcInstr.sml	Wed Jan 23 23:45:18 2002
---- MLRISC-mlton/sparc/instructions/sparcInstr.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/instructions/sparcInstr.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/instructions/sparcInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -44573,8 +44561,8 @@ diff -N -C 2 -r MLRISC/sparc/instructions/sparcInstr.sml MLRISC-mlton/sparc/inst
      | ANNOTATION of {i:instruction, a:Annotations.annotation}
      | INSTR of instr
 diff -N -C 2 -r MLRISC/sparc/instructions/sparcProps.sml MLRISC-mlton/sparc/instructions/sparcProps.sml
-*** MLRISC/sparc/instructions/sparcProps.sml	Mon Mar 11 21:56:23 2002
---- MLRISC-mlton/sparc/instructions/sparcProps.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/instructions/sparcProps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/instructions/sparcProps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,11 ****
   functor SparcProps
@@ -44631,8 +44619,8 @@ diff -N -C 2 -r MLRISC/sparc/instructions/sparcProps.sml MLRISC-mlton/sparc/inst
      ) : INSN_PROPERTIES =
   struct
 diff -N -C 2 -r MLRISC/sparc/instructions/sparccomp-instr-ext.sml MLRISC-mlton/sparc/instructions/sparccomp-instr-ext.sml
-*** MLRISC/sparc/instructions/sparccomp-instr-ext.sml	Tue Aug  5 17:40:13 2008
---- MLRISC-mlton/sparc/instructions/sparccomp-instr-ext.sml	Thu Aug 14 16:53:52 2008
+*** MLRISC/sparc/instructions/sparccomp-instr-ext.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/instructions/sparccomp-instr-ext.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 8,17 ****
   signature SPARCCOMP_INSTR_EXT = sig
@@ -44763,8 +44751,8 @@ diff -N -C 2 -r MLRISC/sparc/instructions/sparccomp-instr-ext.sml MLRISC-mlton/s
     ) : SPARCCOMP_INSTR_EXT = 
   struct
 diff -N -C 2 -r MLRISC/sparc/mltree/sparc.sml MLRISC-mlton/sparc/mltree/sparc.sml
-*** MLRISC/sparc/mltree/sparc.sml	Thu Aug 28 16:59:15 2003
---- MLRISC-mlton/sparc/mltree/sparc.sml	Fri May 18 16:14:02 2007
+*** MLRISC/sparc/mltree/sparc.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/sparc/mltree/sparc.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 15,24 ****
   functor Sparc
@@ -45142,8 +45130,8 @@ diff -N -C 2 -r MLRISC/sparc/mltree/sparc.sml MLRISC-mlton/sparc/mltree/sparc.sm
                     | _ => (cond,a,b)
             in  if V9 then
 diff -N -C 2 -r MLRISC/visualization/cfgViewer.sml MLRISC-mlton/visualization/cfgViewer.sml
-*** MLRISC/visualization/cfgViewer.sml	Tue Jul  9 11:00:15 2002
---- MLRISC-mlton/visualization/cfgViewer.sml	Fri May 18 16:13:59 2007
+*** MLRISC/visualization/cfgViewer.sml	2010-02-03 11:40:45.000000000 -0500
+--- MLRISC-mlton/visualization/cfgViewer.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 2,9 ****
      (structure CFG : CONTROL_FLOW_GRAPH
@@ -45169,8 +45157,8 @@ diff -N -C 2 -r MLRISC/visualization/cfgViewer.sml MLRISC-mlton/visualization/cf
   struct
      structure CFG = CFG
 diff -N -C 2 -r MLRISC/x86/backpatch/x86Jumps.sml MLRISC-mlton/x86/backpatch/x86Jumps.sml
-*** MLRISC/x86/backpatch/x86Jumps.sml	Wed Jan  9 13:44:22 2002
---- MLRISC-mlton/x86/backpatch/x86Jumps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/backpatch/x86Jumps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/backpatch/x86Jumps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,12 ****
   functor X86Jumps
@@ -45286,8 +45274,8 @@ diff -N -C 2 -r MLRISC/x86/backpatch/x86Jumps.sml MLRISC-mlton/x86/backpatch/x86
   	   | I.POP opnd =>  operand opnd
   	   | I.FSTPT opnd => operand opnd
 diff -N -C 2 -r MLRISC/x86/c-calls/ia32-svid.sml MLRISC-mlton/x86/c-calls/ia32-svid.sml
-*** MLRISC/x86/c-calls/ia32-svid.sml	Mon Feb 13 16:17:29 2006
---- MLRISC-mlton/x86/c-calls/ia32-svid.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/c-calls/ia32-svid.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/c-calls/ia32-svid.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 400,404 ****
   	 *)
@@ -45303,8 +45291,8 @@ diff -N -C 2 -r MLRISC/x86/c-calls/ia32-svid.sml MLRISC-mlton/x86/c-calls/ia32-s
   		  | "stdcall" => true
   		  | conv => error (concat [
 diff -N -C 2 -r MLRISC/x86/emit/x86Asm.sml MLRISC-mlton/x86/emit/x86Asm.sml
-*** MLRISC/x86/emit/x86Asm.sml	Tue Dec  2 20:36:43 2008
---- MLRISC-mlton/x86/emit/x86Asm.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/x86/emit/x86Asm.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/x86/emit/x86Asm.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,19 ****
   
@@ -45506,8 +45494,8 @@ diff -N -C 2 -r MLRISC/x86/emit/x86Asm.sml MLRISC-mlton/x86/emit/x86Asm.sml
              ( emit_binaryOp binOp; 
                emit "\t%cl, "; 
 diff -N -C 2 -r MLRISC/x86/flowgraph/x86-darwin-pseudo-ops.sml MLRISC-mlton/x86/flowgraph/x86-darwin-pseudo-ops.sml
-*** MLRISC/x86/flowgraph/x86-darwin-pseudo-ops.sml	Tue Sep 18 23:14:56 2007
---- MLRISC-mlton/x86/flowgraph/x86-darwin-pseudo-ops.sml	Fri May  9 17:01:38 2008
+*** MLRISC/x86/flowgraph/x86-darwin-pseudo-ops.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/flowgraph/x86-darwin-pseudo-ops.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 8,12 ****
   
@@ -45542,8 +45530,8 @@ diff -N -C 2 -r MLRISC/x86/flowgraph/x86-darwin-pseudo-ops.sml MLRISC-mlton/x86/
   
     ) : PSEUDO_OPS_BASIS = struct
 diff -N -C 2 -r MLRISC/x86/flowgraph/x86GasPseudoOps.sml MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml
-*** MLRISC/x86/flowgraph/x86GasPseudoOps.sml	Tue Jan 15 10:16:39 2002
---- MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/flowgraph/x86GasPseudoOps.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,10 ****
   functor X86GasPseudoOps 
@@ -45578,8 +45566,8 @@ diff -N -C 2 -r MLRISC/x86/flowgraph/x86GasPseudoOps.sml MLRISC-mlton/x86/flowgr
       ) : PSEUDO_OPS_BASIS = 
   
 diff -N -C 2 -r MLRISC/x86/instructions/x86Instr.sml MLRISC-mlton/x86/instructions/x86Instr.sml
-*** MLRISC/x86/instructions/x86Instr.sml	Tue Dec  2 20:36:43 2008
---- MLRISC-mlton/x86/instructions/x86Instr.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/x86/instructions/x86Instr.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Instr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
   sig
@@ -45603,8 +45591,8 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Instr.sml MLRISC-mlton/x86/instructio
      structure T : MLTREE
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.peep MLRISC-mlton/x86/instructions/x86Peephole.peep
-*** MLRISC/x86/instructions/x86Peephole.peep	Thu Feb  7 15:05:19 2002
---- MLRISC-mlton/x86/instructions/x86Peephole.peep	Mon Aug 20 14:45:28 2007
+*** MLRISC/x86/instructions/x86Peephole.peep	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Peephole.peep	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 21,25 ****
      (structure Instr : X86INSTR
@@ -45639,8 +45627,8 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.peep MLRISC-mlton/x86/instru
      ) : PEEPHOLE =
   struct
 diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.sml MLRISC-mlton/x86/instructions/x86Peephole.sml
-*** MLRISC/x86/instructions/x86Peephole.sml	Thu Feb 21 18:15:55 2002
---- MLRISC-mlton/x86/instructions/x86Peephole.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/instructions/x86Peephole.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Peephole.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 13,17 ****
   
@@ -45675,8 +45663,8 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.sml MLRISC-mlton/x86/instruc
                      ): PEEPHOLE =
   struct
 diff -N -C 2 -r MLRISC/x86/instructions/x86Props.sml MLRISC-mlton/x86/instructions/x86Props.sml
-*** MLRISC/x86/instructions/x86Props.sml	Thu Mar 21 16:01:11 2002
---- MLRISC-mlton/x86/instructions/x86Props.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/instructions/x86Props.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Props.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 6,11 ****
   functor X86Props
@@ -45784,8 +45772,8 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Props.sml MLRISC-mlton/x86/instructio
   	| I.POP arg	      => (C.stackptrR::operandDef arg, [C.stackptrR])
   	| I.PUSHFD	      => espOnly()
 diff -N -C 2 -r MLRISC/x86/instructions/x86comp-instr-ext.sml MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml
-*** MLRISC/x86/instructions/x86comp-instr-ext.sml	Tue Dec  2 20:36:43 2008
---- MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml	Tue Dec 23 12:03:45 2008
+*** MLRISC/x86/instructions/x86comp-instr-ext.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 7,15 ****
   signature X86COMP_INSTR_EXT = sig
@@ -45915,8 +45903,8 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86comp-instr-ext.sml MLRISC-mlton/x86/i
      ) : X86COMP_INSTR_EXT = 
   struct
 diff -N -C 2 -r MLRISC/x86/mltree/x86-fp.sml MLRISC-mlton/x86/mltree/x86-fp.sml
-*** MLRISC/x86/mltree/x86-fp.sml	Mon Oct 25 22:59:52 2004
---- MLRISC-mlton/x86/mltree/x86-fp.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/mltree/x86-fp.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/mltree/x86-fp.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 54,58 ****
    *) 
@@ -46106,8 +46094,8 @@ diff -N -C 2 -r MLRISC/x86/mltree/x86-fp.sml MLRISC-mlton/x86/mltree/x86-fp.sml
 - end (* local *)
 --- 1758,1759 ----
 diff -N -C 2 -r MLRISC/x86/mltree/x86.sml MLRISC-mlton/x86/mltree/x86.sml
-*** MLRISC/x86/mltree/x86.sml	Wed Nov 17 15:07:35 2004
---- MLRISC-mlton/x86/mltree/x86.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/mltree/x86.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/mltree/x86.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 33,49 ****
    * -- Allen
@@ -46312,8 +46300,8 @@ diff -N -C 2 -r MLRISC/x86/mltree/x86.sml MLRISC-mlton/x86/mltree/x86.sml
 - end (* local *)
 --- 2079,2080 ----
 diff -N -C 2 -r MLRISC/x86/omit-frameptr/x86omit-frameptr.sml MLRISC-mlton/x86/omit-frameptr/x86omit-frameptr.sml
-*** MLRISC/x86/omit-frameptr/x86omit-frameptr.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/x86/omit-frameptr/x86omit-frameptr.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/omit-frameptr/x86omit-frameptr.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/omit-frameptr/x86omit-frameptr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 11,16 ****
   functor X86OmitFramePointer (
@@ -46372,8 +46360,8 @@ diff -N -C 2 -r MLRISC/x86/omit-frameptr/x86omit-frameptr.sml MLRISC-mlton/x86/o
       val memRegBase : CellsBasis.cell option): OMIT_FRAME_POINTER = 
   struct
 diff -N -C 2 -r MLRISC/x86/ra/x86RA.sml MLRISC-mlton/x86/ra/x86RA.sml
-*** MLRISC/x86/ra/x86RA.sml	Thu May 22 17:46:30 2003
---- MLRISC-mlton/x86/ra/x86RA.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/ra/x86RA.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/ra/x86RA.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 110,120 ****
   functor X86RA 
@@ -46483,8 +46471,8 @@ diff -N -C 2 -r MLRISC/x86/ra/x86RA.sml MLRISC-mlton/x86/ra/x86RA.sml
                val deadRegs = deadRegs
                val affectedBlocks = affectedBlocks
 diff -N -C 2 -r MLRISC/x86/ra/x86Rewrite.sig MLRISC-mlton/x86/ra/x86Rewrite.sig
-*** MLRISC/x86/ra/x86Rewrite.sig	Thu Jul 19 15:35:20 2001
---- MLRISC-mlton/x86/ra/x86Rewrite.sig	Fri May 18 16:14:03 2007
+*** MLRISC/x86/ra/x86Rewrite.sig	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/ra/x86Rewrite.sig	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 1,5 ****
   signature X86REWRITE = sig
@@ -46508,8 +46496,8 @@ diff -N -C 2 -r MLRISC/x86/ra/x86Rewrite.sig MLRISC-mlton/x86/ra/x86Rewrite.sig
     val rewriteUse : I.instruction * CB.cell * CB.cell -> I.instruction
     val rewriteDef : I.instruction * CB.cell * CB.cell -> I.instruction
 diff -N -C 2 -r MLRISC/x86/ra/x86SpillInstr.sml MLRISC-mlton/x86/ra/x86SpillInstr.sml
-*** MLRISC/x86/ra/x86SpillInstr.sml	Fri Oct 14 11:28:24 2005
---- MLRISC-mlton/x86/ra/x86SpillInstr.sml	Fri May 18 16:14:03 2007
+*** MLRISC/x86/ra/x86SpillInstr.sml	2010-02-03 11:40:43.000000000 -0500
+--- MLRISC-mlton/x86/ra/x86SpillInstr.sml	2009-10-02 09:51:35.000000000 -0400
 ***************
 *** 9,13 ****
    *)
@@ -46581,8 +46569,8 @@ diff -N -C 2 -r MLRISC/x86/ra/x86SpillInstr.sml MLRISC-mlton/x86/ra/x86SpillInst
   	   | multBinOp _ = false
   	in
 diff -N -C 2 -r MLRISC/x86/x86.mdl MLRISC-mlton/x86/x86.mdl
-*** MLRISC/x86/x86.mdl	Tue Dec  2 20:36:43 2008
---- MLRISC-mlton/x86/x86.mdl	Tue Dec 23 12:03:45 2008
+*** MLRISC/x86/x86.mdl	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/x86/x86.mdl	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 579,583 ****
             let val n = size fbinOp
@@ -46629,8 +46617,8 @@ diff -N -C 2 -r MLRISC/x86/x86.mdl MLRISC-mlton/x86/x86.mdl
                | _ => ``<binOp>\t<src>, <dst>''
                )
 diff -N -C 2 -r MLRISC/x86/x86MC.sml MLRISC-mlton/x86/x86MC.sml
-*** MLRISC/x86/x86MC.sml	Tue Feb 20 18:16:44 2007
---- MLRISC-mlton/x86/x86MC.sml	Wed Apr  1 16:41:15 2009
+*** MLRISC/x86/x86MC.sml	2010-02-03 11:40:44.000000000 -0500
+--- MLRISC-mlton/x86/x86MC.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 9,17 ****
   functor X86MCEmitter

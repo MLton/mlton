@@ -1,6 +1,6 @@
 diff -N -C 2 -r smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls-lib.mlb
-*** smlnj-lib/Controls/controls-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Controls/controls-lib.mlb	Tue Jun 16 11:20:52 2009
+*** smlnj-lib/Controls/controls-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Controls/controls-lib.mlb	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,170 ----
@@ -175,8 +175,8 @@ diff -N -C 2 -r smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/con
 + 
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-attrs-fn.sml smlnj-lib-mlton/HTML/html-attrs-fn.sml
-*** smlnj-lib/HTML/html-attrs-fn.sml	Thu May 22 17:46:30 2003
---- smlnj-lib-mlton/HTML/html-attrs-fn.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/HTML/html-attrs-fn.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/HTML/html-attrs-fn.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 90,106 ****
   		      Err.badAttrVal ctx (attrName, attrValToString attrVal);
@@ -306,8 +306,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-attrs-fn.sml smlnj-lib-mlton/HTML/html-attrs
   	  in
   	    get
 diff -N -C 2 -r smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-elements-fn.sml
-*** smlnj-lib/HTML/html-elements-fn.sml	Sun Nov  6 13:36:15 2005
---- smlnj-lib-mlton/HTML/html-elements-fn.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/HTML/html-elements-fn.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/HTML/html-elements-fn.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 145,149 ****
      *)
@@ -323,8 +323,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-el
   	    | isNameChar c = (Char.isAlphaNum c)
   	  in
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.desc
-*** smlnj-lib/HTML/html-gram.desc	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.desc	Tue Jun 16 11:20:52 2009
+*** smlnj-lib/HTML/html-gram.desc	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.desc	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,6055 ----
@@ -6384,8 +6384,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.des
 + 398 of 2987 action table entries left after compaction
 + 788 goto table entries
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
-*** smlnj-lib/HTML/html-gram.sig	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.sig	Tue Jun 16 11:20:52 2009
+*** smlnj-lib/HTML/html-gram.sig	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.sig	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,140 ----
@@ -6530,8 +6530,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
 + sharing type ParserData.svalue = Tokens.svalue
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
-*** smlnj-lib/HTML/html-gram.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-gram.sml	Tue Jun 16 11:20:52 2009
+*** smlnj-lib/HTML/html-gram.sml	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.sml	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,2477 ----
@@ -9013,8 +9013,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
 + end
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
-*** smlnj-lib/HTML/html-lex.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-lex.sml	Tue Jun 16 11:20:52 2009
+*** smlnj-lib/HTML/html-lex.sml	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-lex.sml	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,670 ----
@@ -9689,8 +9689,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 +   end
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
-*** smlnj-lib/HTML/html-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HTML/html-lib.mlb	Tue Jun 16 11:20:53 2009
+*** smlnj-lib/HTML/html-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,298 ----
@@ -9993,8 +9993,8 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 + 
 + end
 diff -N -C 2 -r smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/hash-cons-lib.mlb
-*** smlnj-lib/HashCons/hash-cons-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	Tue Jun 16 11:20:53 2009
+*** smlnj-lib/HashCons/hash-cons-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2010-04-02 15:08:32.000000000 -0400
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -10143,8 +10143,8 @@ diff -N -C 2 -r smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/ha
 + 
 + end
 diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
-*** smlnj-lib/INet/inet-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/INet/inet-lib.mlb	Tue Jun 16 11:20:53 2009
+*** smlnj-lib/INet/inet-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/INet/inet-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -10293,8 +10293,8 @@ diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 + 
 + end
 diff -N -C 2 -r smlnj-lib/JSON/json-lib.mlb smlnj-lib-mlton/JSON/json-lib.mlb
-*** smlnj-lib/JSON/json-lib.mlb	Sat May 10 08:45:04 2008
---- smlnj-lib-mlton/JSON/json-lib.mlb	Tue Jun 16 11:20:53 2009
+*** smlnj-lib/JSON/json-lib.mlb	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/JSON/json-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 1,47 ****
 - (* json-lib.mlb
@@ -10363,7 +10363,7 @@ diff -N -C 2 -r smlnj-lib/JSON/json-lib.mlb smlnj-lib-mlton/JSON/json-lib.mlb
 !     end
 !   basis l8 = 
 !     bas
-!       (* $/ml-lpt-lib.cm =??=> *) /Users/fluet/devel/smlnj/smlnj-110.70/lib/ml-lpt-lib.cm/ml-lpt-lib.mlb
+!       (* $/ml-lpt-lib.cm =??=> *) /Users/mtf/devel/smlnj/smlnj-110.72/lib/ml-lpt-lib.cm/ml-lpt-lib.mlb
 !     end
 ! in
 ! local
@@ -10522,8 +10522,8 @@ diff -N -C 2 -r smlnj-lib/JSON/json-lib.mlb smlnj-lib-mlton/JSON/json-lib.mlb
   
   end
 diff -N -C 2 -r smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
-*** smlnj-lib/PP/pp-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/PP/pp-lib.mlb	Tue Jun 16 11:20:54 2009
+*** smlnj-lib/PP/pp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/PP/pp-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,212 ----
@@ -10740,8 +10740,8 @@ diff -N -C 2 -r smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 + 
 + end
 diff -N -C 2 -r smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
-*** smlnj-lib/README.mlton	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/README.mlton	Fri May 18 16:13:58 2007
+*** smlnj-lib/README.mlton	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/README.mlton	2009-10-02 09:51:07.000000000 -0400
 ***************
 *** 0 ****
 --- 1,15 ----
@@ -10761,8 +10761,8 @@ diff -N -C 2 -r smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
 +  * {{{HTML/html-elements-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
 +  * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
 diff -N -C 2 -r smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/reactive-lib.mlb
-*** smlnj-lib/Reactive/reactive-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Reactive/reactive-lib.mlb	Tue Jun 16 11:20:54 2009
+*** smlnj-lib/Reactive/reactive-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Reactive/reactive-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,71 ----
@@ -10838,8 +10838,8 @@ diff -N -C 2 -r smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/rea
 + 
 + end
 diff -N -C 2 -r smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-lib.mlb
-*** smlnj-lib/RegExp/regexp-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/RegExp/regexp-lib.mlb	Tue Jun 16 11:20:54 2009
+*** smlnj-lib/RegExp/regexp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/RegExp/regexp-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,235 ----
@@ -11079,8 +11079,8 @@ diff -N -C 2 -r smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-li
 + 
 + end
 diff -N -C 2 -r smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
-*** smlnj-lib/Unix/unix-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Unix/unix-lib.mlb	Tue Jun 16 11:20:54 2009
+*** smlnj-lib/Unix/unix-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Unix/unix-lib.mlb	2010-04-02 15:08:33.000000000 -0400
 ***************
 *** 0 ****
 --- 1,45 ----
@@ -11130,8 +11130,8 @@ diff -N -C 2 -r smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
 + 
 + end
 diff -N -C 2 -r smlnj-lib/Util/bit-array.sml smlnj-lib-mlton/Util/bit-array.sml
-*** smlnj-lib/Util/bit-array.sml	Fri Sep  5 16:34:27 2003
---- smlnj-lib-mlton/Util/bit-array.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/bit-array.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/Util/bit-array.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 48,52 ****
            *)
@@ -11148,8 +11148,8 @@ diff -N -C 2 -r smlnj-lib/Util/bit-array.sml smlnj-lib-mlton/Util/bit-array.sml
             datatype vector = BA of {nbits : int, bits : W8A.array}
         
 diff -N -C 2 -r smlnj-lib/Util/engine.mlton.sml smlnj-lib-mlton/Util/engine.mlton.sml
-*** smlnj-lib/Util/engine.mlton.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Util/engine.mlton.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/engine.mlton.sml	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Util/engine.mlton.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 0 ****
 --- 1,99 ----
@@ -11253,8 +11253,8 @@ diff -N -C 2 -r smlnj-lib/Util/engine.mlton.sml smlnj-lib-mlton/Util/engine.mlto
 + 
 + end
 diff -N -C 2 -r smlnj-lib/Util/graph-scc-fn.sml smlnj-lib-mlton/Util/graph-scc-fn.sml
-*** smlnj-lib/Util/graph-scc-fn.sml	Thu Aug  4 21:26:29 2005
---- smlnj-lib-mlton/Util/graph-scc-fn.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/graph-scc-fn.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/Util/graph-scc-fn.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 9,13 ****
    *) 
@@ -11269,8 +11269,8 @@ diff -N -C 2 -r smlnj-lib/Util/graph-scc-fn.sml smlnj-lib-mlton/Util/graph-scc-f
     struct
       structure Nd = Nd
 diff -N -C 2 -r smlnj-lib/Util/real-order-stats.sml smlnj-lib-mlton/Util/real-order-stats.sml
-*** smlnj-lib/Util/real-order-stats.sml	Wed Dec 15 23:37:04 2004
---- smlnj-lib-mlton/Util/real-order-stats.sml	Mon Oct 29 14:32:33 2007
+*** smlnj-lib/Util/real-order-stats.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/Util/real-order-stats.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 24,28 ****
   end = struct
@@ -11336,8 +11336,8 @@ diff -N -C 2 -r smlnj-lib/Util/real-order-stats.sml smlnj-lib-mlton/Util/real-or
   	end
   
 diff -N -C 2 -r smlnj-lib/Util/redblack-map-fn.sml smlnj-lib-mlton/Util/redblack-map-fn.sml
-*** smlnj-lib/Util/redblack-map-fn.sml	Tue Jan 30 09:00:09 2007
---- smlnj-lib-mlton/Util/redblack-map-fn.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/redblack-map-fn.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/Util/redblack-map-fn.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 21,25 ****
    *)
@@ -11352,8 +11352,8 @@ diff -N -C 2 -r smlnj-lib/Util/redblack-map-fn.sml smlnj-lib-mlton/Util/redblack
     struct
   
 diff -N -C 2 -r smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack-set-fn.sml
-*** smlnj-lib/Util/redblack-set-fn.sml	Tue Jan 30 08:49:42 2007
---- smlnj-lib-mlton/Util/redblack-set-fn.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/redblack-set-fn.sml	2009-10-02 09:51:26.000000000 -0400
+--- smlnj-lib-mlton/Util/redblack-set-fn.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 21,25 ****
    *)
@@ -11368,8 +11368,8 @@ diff -N -C 2 -r smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack
     struct
   
 diff -N -C 2 -r smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
-*** smlnj-lib/Util/smlnj-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Util/smlnj-lib.mlb	Tue Jun 16 11:20:55 2009
+*** smlnj-lib/Util/smlnj-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Util/smlnj-lib.mlb	2010-04-02 15:08:34.000000000 -0400
 ***************
 *** 0 ****
 --- 1,1108 ----
@@ -12482,8 +12482,8 @@ diff -N -C 2 -r smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
 + 
 + end
 diff -N -C 2 -r smlnj-lib/Util/time-limit.mlb smlnj-lib-mlton/Util/time-limit.mlb
-*** smlnj-lib/Util/time-limit.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Util/time-limit.mlb	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/time-limit.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Util/time-limit.mlb	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 0 ****
 --- 1,16 ----
@@ -12504,8 +12504,8 @@ diff -N -C 2 -r smlnj-lib/Util/time-limit.mlb smlnj-lib-mlton/Util/time-limit.ml
 + 
 + end
 diff -N -C 2 -r smlnj-lib/Util/time-limit.mlton.sml smlnj-lib-mlton/Util/time-limit.mlton.sml
-*** smlnj-lib/Util/time-limit.mlton.sml	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/Util/time-limit.mlton.sml	Fri May 18 16:14:00 2007
+*** smlnj-lib/Util/time-limit.mlton.sml	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/Util/time-limit.mlton.sml	2009-10-02 09:51:26.000000000 -0400
 ***************
 *** 0 ****
 --- 1,24 ----
@@ -12534,8 +12534,8 @@ diff -N -C 2 -r smlnj-lib/Util/time-limit.mlton.sml smlnj-lib-mlton/Util/time-li
 +        | Engine.TimeOut _ => raise TimeOut
 + end
 diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
-*** smlnj-lib/smlnj-lib.mlb	Wed Dec 31 18:00:00 1969
---- smlnj-lib-mlton/smlnj-lib.mlb	Tue Jun 16 11:20:46 2009
+*** smlnj-lib/smlnj-lib.mlb	1969-12-31 19:00:00.000000000 -0500
+--- smlnj-lib-mlton/smlnj-lib.mlb	2009-10-02 09:51:07.000000000 -0400
 ***************
 *** 0 ****
 --- 1,13 ----
@@ -12552,15 +12552,3 @@ diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 +    Util/time-limit.mlb
 + in
 + end
-diff -N -C 2 -r smlnj-lib/Doc/config.sh smlnj-lib-mlton/Doc/config.sh
-*** smlnj-lib/Doc/config.sh	2007-05-10 23:39:48.000000000 +0200
---- smlnj-lib-mlton/Doc/config.sh	2009-10-15 21:54:08.000000000 +0200
-***************
-*** 1,3 ****
-! #!/bin/sh
-  #
-  # This script creates the Makefile for building the documentation.  You
---- 1,3 ----
-! #! /bin/bash
-  #
-  # This script creates the Makefile for building the documentation.  You
