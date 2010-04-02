@@ -12,7 +12,7 @@ diff -N -C 2 -r MLRISC/Doc/html/mltex2html MLRISC-mlton/Doc/html/mltex2html
   # This tool generates HTML pages in my own format given a stylized Latex file.
 diff -N -C 2 -r MLRISC/README.mlton MLRISC-mlton/README.mlton
 *** MLRISC/README.mlton	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/README.mlton	2009-10-02 09:51:07.000000000 -0400
+--- MLRISC-mlton/README.mlton	2010-04-02 15:25:14.000000000 -0400
 ***************
 *** 0 ****
 --- 1,8 ----
@@ -20,7 +20,7 @@ diff -N -C 2 -r MLRISC/README.mlton MLRISC-mlton/README.mlton
 + deriving the {{{.mlb}}} file from the {{{.cm}}} files:
 +  * eliminate or-patterns: Duplicate the whole match ({{{p => e}}}) at each of the patterns.
 +  * eliminate vector constants: Change {{{#[}}} to {{{Vector.fromList [}}}.
-+  * eliminate {{{withtype}}} in signatures
++  * eliminate {{{withtype}}} in signatures.
 +  * eliminate sequential {{{withtype}}} expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 +  * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 +  * eliminate {{{where <str> = <str>}}}: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
@@ -33501,7 +33501,7 @@ diff -N -C 2 -r MLRISC/library/hash-array.sml MLRISC-mlton/library/hash-array.sm
            val array'': int * (int -> 'a) -> 'a array
 diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 *** MLRISC/mlb/ALPHA.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/ALPHA.mlb	2010-04-02 15:08:16.000000000 -0400
+--- MLRISC-mlton/mlb/ALPHA.mlb	2010-04-02 16:08:55.000000000 -0400
 ***************
 *** 0 ****
 --- 1,474 ----
@@ -33981,7 +33981,7 @@ diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/AMD64-Peephole.mlb MLRISC-mlton/mlb/AMD64-Peephole.mlb
 *** MLRISC/mlb/AMD64-Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/AMD64-Peephole.mlb	2010-04-02 15:08:17.000000000 -0400
+--- MLRISC-mlton/mlb/AMD64-Peephole.mlb	2010-04-02 16:08:56.000000000 -0400
 ***************
 *** 0 ****
 --- 1,60 ----
@@ -34047,7 +34047,7 @@ diff -N -C 2 -r MLRISC/mlb/AMD64-Peephole.mlb MLRISC-mlton/mlb/AMD64-Peephole.ml
 + end
 diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 *** MLRISC/mlb/AMD64.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/AMD64.mlb	2010-04-02 15:08:16.000000000 -0400
+--- MLRISC-mlton/mlb/AMD64.mlb	2010-04-02 16:08:56.000000000 -0400
 ***************
 *** 0 ****
 --- 1,670 ----
@@ -34723,7 +34723,7 @@ diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-sparc.mlb MLRISC-mlton/mlb/CCall-sparc.mlb
 *** MLRISC/mlb/CCall-sparc.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/CCall-sparc.mlb	2010-04-02 15:08:17.000000000 -0400
+--- MLRISC-mlton/mlb/CCall-sparc.mlb	2010-04-02 16:08:57.000000000 -0400
 ***************
 *** 0 ****
 --- 1,118 ----
@@ -34847,7 +34847,7 @@ diff -N -C 2 -r MLRISC/mlb/CCall-sparc.mlb MLRISC-mlton/mlb/CCall-sparc.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-x86-64.mlb MLRISC-mlton/mlb/CCall-x86-64.mlb
 *** MLRISC/mlb/CCall-x86-64.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/CCall-x86-64.mlb	2010-04-02 15:08:18.000000000 -0400
+--- MLRISC-mlton/mlb/CCall-x86-64.mlb	2010-04-02 16:08:57.000000000 -0400
 ***************
 *** 0 ****
 --- 1,125 ----
@@ -34978,7 +34978,7 @@ diff -N -C 2 -r MLRISC/mlb/CCall-x86-64.mlb MLRISC-mlton/mlb/CCall-x86-64.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall-x86.mlb MLRISC-mlton/mlb/CCall-x86.mlb
 *** MLRISC/mlb/CCall-x86.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/CCall-x86.mlb	2010-04-02 15:08:19.000000000 -0400
+--- MLRISC-mlton/mlb/CCall-x86.mlb	2010-04-02 16:08:58.000000000 -0400
 ***************
 *** 0 ****
 --- 1,155 ----
@@ -35139,7 +35139,7 @@ diff -N -C 2 -r MLRISC/mlb/CCall-x86.mlb MLRISC-mlton/mlb/CCall-x86.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/CCall.mlb MLRISC-mlton/mlb/CCall.mlb
 *** MLRISC/mlb/CCall.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/CCall.mlb	2010-04-02 15:08:17.000000000 -0400
+--- MLRISC-mlton/mlb/CCall.mlb	2010-04-02 16:08:56.000000000 -0400
 ***************
 *** 0 ****
 --- 1,96 ----
@@ -35241,7 +35241,7 @@ diff -N -C 2 -r MLRISC/mlb/CCall.mlb MLRISC-mlton/mlb/CCall.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 *** MLRISC/mlb/Control.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/Control.mlb	2010-04-02 15:08:19.000000000 -0400
+--- MLRISC-mlton/mlb/Control.mlb	2010-04-02 16:08:58.000000000 -0400
 ***************
 *** 0 ****
 --- 1,104 ----
@@ -35351,7 +35351,7 @@ diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 *** MLRISC/mlb/Graphs.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/Graphs.mlb	2010-04-02 15:08:19.000000000 -0400
+--- MLRISC-mlton/mlb/Graphs.mlb	2010-04-02 16:08:58.000000000 -0400
 ***************
 *** 0 ****
 --- 1,708 ----
@@ -36065,7 +36065,7 @@ diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 *** MLRISC/mlb/HPPA.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/HPPA.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/HPPA.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,492 ----
@@ -36563,7 +36563,7 @@ diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 *** MLRISC/mlb/IA32-Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/IA32-Peephole.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/IA32-Peephole.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,60 ----
@@ -36629,7 +36629,7 @@ diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 *** MLRISC/mlb/IA32.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/IA32.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/IA32.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,800 ----
@@ -37435,7 +37435,7 @@ diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 *** MLRISC/mlb/Lib.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/Lib.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/Lib.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,263 ----
@@ -37704,7 +37704,7 @@ diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 *** MLRISC/mlb/MLRISC.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/MLRISC.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/MLRISC.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,1746 ----
@@ -39456,7 +39456,7 @@ diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 *** MLRISC/mlb/MLTREE.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/MLTREE.mlb	2010-04-02 15:08:20.000000000 -0400
+--- MLRISC-mlton/mlb/MLTREE.mlb	2010-04-02 16:08:59.000000000 -0400
 ***************
 *** 0 ****
 --- 1,209 ----
@@ -39671,7 +39671,7 @@ diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 *** MLRISC/mlb/PPC.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/PPC.mlb	2010-04-02 15:08:21.000000000 -0400
+--- MLRISC-mlton/mlb/PPC.mlb	2010-04-02 16:09:00.000000000 -0400
 ***************
 *** 0 ****
 --- 1,573 ----
@@ -40250,7 +40250,7 @@ diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 *** MLRISC/mlb/Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/Peephole.mlb	2010-04-02 15:08:21.000000000 -0400
+--- MLRISC-mlton/mlb/Peephole.mlb	2010-04-02 16:09:00.000000000 -0400
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -40317,7 +40317,7 @@ diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 *** MLRISC/mlb/RA.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/RA.mlb	2010-04-02 15:08:21.000000000 -0400
+--- MLRISC-mlton/mlb/RA.mlb	2010-04-02 16:09:00.000000000 -0400
 ***************
 *** 0 ****
 --- 1,152 ----
@@ -40475,7 +40475,7 @@ diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 *** MLRISC/mlb/SPARC.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/SPARC.mlb	2010-04-02 15:08:22.000000000 -0400
+--- MLRISC-mlton/mlb/SPARC.mlb	2010-04-02 16:09:01.000000000 -0400
 ***************
 *** 0 ****
 --- 1,538 ----
@@ -41019,7 +41019,7 @@ diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/StagedAlloc.mlb MLRISC-mlton/mlb/StagedAlloc.mlb
 *** MLRISC/mlb/StagedAlloc.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/StagedAlloc.mlb	2010-04-02 15:08:22.000000000 -0400
+--- MLRISC-mlton/mlb/StagedAlloc.mlb	2010-04-02 16:09:01.000000000 -0400
 ***************
 *** 0 ****
 --- 1,91 ----
@@ -41116,7 +41116,7 @@ diff -N -C 2 -r MLRISC/mlb/StagedAlloc.mlb MLRISC-mlton/mlb/StagedAlloc.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 *** MLRISC/mlb/Visual.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlb/Visual.mlb	2010-04-02 15:08:22.000000000 -0400
+--- MLRISC-mlton/mlb/Visual.mlb	2010-04-02 16:09:01.000000000 -0400
 ***************
 *** 0 ****
 --- 1,252 ----
@@ -41374,7 +41374,7 @@ diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 + end
 diff -N -C 2 -r MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
 *** MLRISC/mlrisc-lib.mlb	1969-12-31 19:00:00.000000000 -0500
---- MLRISC-mlton/mlrisc-lib.mlb	2010-04-02 15:08:22.000000000 -0400
+--- MLRISC-mlton/mlrisc-lib.mlb	2010-04-02 16:09:01.000000000 -0400
 ***************
 *** 0 ****
 --- 1,24 ----
