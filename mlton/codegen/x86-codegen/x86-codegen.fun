@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,9 +60,6 @@ struct
   structure x86AllocateRegisters
     = x86AllocateRegisters (structure x86 = x86
                             structure x86MLton = x86MLton)
-
-  structure x86Validate
-    = x86Validate (structure x86 = x86)
 
   open x86
   fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
@@ -433,19 +430,12 @@ struct
                     *)
                    liveness = not isMain}
 
-              val _ =
-                 Assert.assert
-                 ("x86CodeGen.outputChunk", fn () => 
-                  x86Validate.validate {assembly = allocated_assembly})
-
-              val validated_assembly = allocated_assembly
-
               val _ = Vector.foreach (blocks, Label.clear o Machine.Block.label)
               val _ = x86.Immediate.clearAll ()
               val _ = x86.MemLoc.clearAll ()
             in
               List.fold
-              (validated_assembly,
+              (allocated_assembly,
                if isMain then 30 else 0,
                fn (block, n)
                 => List.fold
@@ -482,7 +472,6 @@ struct
               ; x86Simplify.simplify_totals ()
               ; x86GenerateTransfers.generateTransfers_totals ()
               ; x86AllocateRegisters.allocateRegisters_totals ()
-              ; x86Validate.validate_totals ()
             end
 
         val outputAssembly =

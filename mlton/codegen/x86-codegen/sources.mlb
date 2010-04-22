@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -41,8 +42,6 @@ local
    x86-simplify.fun
    x86-translate.sig
    x86-translate.fun
-   x86-validate.sig
-   x86-validate.fun
    x86-codegen.sig
    x86-codegen.fun
 in

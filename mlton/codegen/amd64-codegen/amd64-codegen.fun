@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009-2010 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,9 +60,6 @@ struct
   structure amd64AllocateRegisters
     = amd64AllocateRegisters (structure amd64 = amd64
                             structure amd64MLton = amd64MLton)
-
-  structure amd64Validate
-    = amd64Validate (structure amd64 = amd64)
 
   open amd64
   fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
@@ -414,19 +411,12 @@ struct
                     *)
                    liveness = not isMain}
 
-              val _ =
-                 Assert.assert
-                 ("amd64CodeGen.outputChunk", fn () => 
-                  amd64Validate.validate {assembly = allocated_assembly})
-
-              val validated_assembly = allocated_assembly
-
               val _ = Vector.foreach (blocks, Label.clear o Machine.Block.label)
               val _ = amd64.Immediate.clearAll ()
               val _ = amd64.MemLoc.clearAll ()
             in
               List.fold
-              (validated_assembly,
+              (allocated_assembly,
                if isMain then 30 else 0,
                fn (block, n)
                 => List.fold
@@ -463,7 +453,6 @@ struct
               ; amd64Simplify.simplify_totals ()
               ; amd64GenerateTransfers.generateTransfers_totals ()
               ; amd64AllocateRegisters.allocateRegisters_totals ()
-              ; amd64Validate.validate_totals ()
             end
 
         val outputAssembly =
