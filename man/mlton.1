@@ -1,10 +1,9 @@
-.TH mlton 1 "June 23, 2009"
+.TH mlton 1 "April 6, 2010"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
 .SH SYNOPSIS
-\fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBcm\fP|\fBmlb\fP|\fBo\fP|\fBsml\fP} 
-[file\fB.\fP{\fBc\fP|\fBo\fP|\fBs\fP|\fBS\fP} ...]\fR
+\fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBmlb\fP|\fBo\fP|\fBsml\fP} [file\fB.\fP{\fBc\fP|\fBo\fP|\fBs\fP|\fBS\fP} ...]\fR
 .SH DESCRIPTION
 .PP
 \fBMLton\fP is run from the command line with a collection of options
@@ -22,11 +21,6 @@ the complete SML program described by the basis \fBfoo.mlb\fP, which
 may specify both SML files and additional bases.  See the \fBMLton
 Guide\fP for details.
 
-\fBMLton\fP also supports a limited subset of SML/NJ Compilation
-Manager (CM) files.  For example, \fBmlton foo.cm\fP will compile the
-complete SML program consisting of the concatenation of all the SML
-files referred to (either directly or indirectly) by \fBfoo.cm\fP.
-
 \fBMLton\fP's compile-time options control the name of the output
 file, the verbosity of compile-time messages, and whether or not
 certain optimizations are performed.  They also can specify
@@ -34,7 +28,7 @@ which intermediate files are saved and can stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the generated files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
-The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, \fB.s\fP, and \fB.sml\fP.
+The possibilities are \fB.c\fP, \fB.mlb\fP, \fB.o\fP, \fB.s\fP, and \fB.sml\fP.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.
@@ -58,8 +52,8 @@ Pass \fIoption\fP to \fBgcc\fP when assembling.
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
-\fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBbytecode\fP}\fP\fR
-Generate native code, C code, or byte code.  With \fB\-codegen
+\fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP}\fP\fR
+Generate native code or C code.  With \fB\-codegen
 native\fP (\fB\-codegen x86\fP or \fB\-codegen amd64\fP), \fBMLton\fP
 typically compiles more quickly and generates better code.
 
@@ -230,7 +224,7 @@ of each use.
 \fB\-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBtc\fP}\fP\fR
 Specify when to stop.
 .in +.5i
-\fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
+\fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.mlb\fP)
 .br
 \fBg\fP    generated \fB.c\fP and \fB.s\fP files
 .br
