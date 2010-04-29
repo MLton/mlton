@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
 Build-Depends: mlton (= 20100206~svn-r7414), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf
-Standards-Version: 3.8.4.0
+Standards-Version: 3.8.4
 
 Package: mlton-target-i586-mingw32msvc
 Architecture: all

@@ -1,3 +1,12 @@
+mlton (20100429~svn-r7452) unstable; urgency=low
+
+  * New snapshot from svn/HEAD
+   * Includes fixes for PIC codegen on x86
+   * Better handling of memory exhaustion
+  * Switch to using quilt source format
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Thu, 29 Apr 2010 18:41:33 +0200
+
 mlton (20100206~svn-r7414) unstable; urgency=low
 
   * s390 and hurd need fixed-heap to stop thrashing on resize

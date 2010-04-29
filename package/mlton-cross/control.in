@@ -2,7 +2,7 @@ Source: mlton-cross
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (= VERSION), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf
+Build-Depends: mlton (= VERSION), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf, wget
 Standards-Version: 3.8.4.0
 
 Package: mlton-target-i586-mingw32msvc

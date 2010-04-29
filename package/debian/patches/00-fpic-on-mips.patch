@@ -1,3 +1,9 @@
+Description: Work around for broken mips(el) gcc codegen
+Author: Wesley W. Terpstra (Debian) <terpstra@debian.org>
+Bug-Debian: http://bugs.debian.org/552314
+Forwarded: no
+Last-Update: 2010-04-29
+
 diff -Nur -x '*.orig' -x '*~' mlton/bin/mlton-script mlton.new/bin/mlton-script
 --- mlton/bin/mlton-script	2009-11-07 17:29:05.000000000 +0100
 +++ mlton.new/bin/mlton-script	2009-11-07 17:31:43.000000000 +0100
