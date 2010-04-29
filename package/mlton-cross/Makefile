@@ -1,5 +1,5 @@
-VERSION=20100206~svn
-REVISION=r7414
+VERSION=20100429~svn
+REVISION=r7452
 MIRROR=http://ftp.de.debian.org/debian
 
 TARGETS=alpha amd64 armel hppa i386 ia64 mips mipsel powerpc s390 sparc
