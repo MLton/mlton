@@ -2,7 +2,7 @@ Source: mlton
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (>= 20070826), htmldoc, libgmp3-dev (>= 4.0.1), texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52)
+Build-Depends: mlton (>= 20070826), htmldoc, libgmp3-dev (>= 4.0.1), texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt
 Standards-Version: 3.8.4
 
 Package: mlton
