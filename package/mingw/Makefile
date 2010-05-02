@@ -55,7 +55,7 @@ self32.lst:
 	rm -rf staging
 	$(MAKE) -C ../.. PREFIX= install
 	mv ../../install staging
-	rm staging/lib/mlton/self/*-gdb.a
+	rm staging/lib/mlton/targets/self/*-gdb.a
 	cd staging; find * -type f > ../$@.tmp
 	mv $@.tmp $@
 
@@ -63,18 +63,19 @@ self64.lst:	self32.lst
 	rm -rf ../../runtime.x64
 	cp -a ../../runtime ../../runtime.x64
 	$(MAKE) -C ../../runtime.x64 TARGET=x86_64-w64-mingw32 TARGET_ARCH=amd64 TARGET_OS=mingw clean all
-	mkdir -p staging/lib/mlton/sml/basis/config/c/amd64-mingw
-	cp ../../runtime.x64/gen/c-types.sml staging/lib/mlton/sml/basis/config/c/amd64-mingw
-	mkdir -p staging/lib/mlton/x86_64-w64-mingw32/include
-	cp ../../runtime.x64/gen/c-types.h staging/lib/mlton/x86_64-w64-mingw32/include
-	cp ../../runtime.x64/gen/sizes ../../runtime.x64/*.a staging/lib/mlton/x86_64-w64-mingw32
-	echo "x86_64-w64-mingw32 amd64 mingw" >> staging/lib/mlton/target-map
-	rm staging/lib/mlton/x86_64-w64-mingw32/*-gdb.a
+	mkdir -p staging/lib/mlton/targets/x86_64-w64-mingw32/sml
+	cp ../../runtime.x64/gen/c-types.sml staging/lib/mlton/targets/x86_64-w64-mingw32/sml
+	mkdir -p staging/lib/mlton/targets/x86_64-w64-mingw32/include
+	cp ../../runtime.x64/gen/c-types.h staging/lib/mlton/targets/x86_64-w64-mingw32/include
+	cp ../../runtime.x64/gen/sizes ../../runtime.x64/*.a staging/lib/mlton/targets/x86_64-w64-mingw32
+	echo "amd64" >staging/lib/mlton/targets/x86_64-w64-mingw32/arch
+	echo "mingw" >staging/lib/mlton/targets/x86_64-w64-mingw32/os
+	rm staging/lib/mlton/targets/x86_64-w64-mingw32/*-gdb.a
 	rm -rf ../../runtime.x64
 	sed "s@'/lib/mlton'@\`cd \"\$$dir/lib/mlton\" \&\& pwd\`@" < staging/bin/mlton > staging/mlton
 	./staging/mlton -target x86_64-w64-mingw32 -build-constants true > staging/w64-constants.c
 	./staging/mlton -target x86_64-w64-mingw32 -verbose 1 staging/w64-constants.c
-	./staging/w64-constants > staging/lib/mlton/x86_64-w64-mingw32/constants
+	./staging/w64-constants > staging/lib/mlton/targets/x86_64-w64-mingw32/constants
 	cd staging; find * -type f | grep -v self > ../$@.tmp
 	mv $@.tmp $@
 
