@@ -44,7 +44,7 @@ source file."
                  (marker (save-excursion
                            (find-file file)
                            (goto-line line)
-                           (forward-char (sub1 col))
+                           (forward-char (- col 1))
                            (set-marker (make-marker) (point)))))
             (beginning-of-line)
             (forward-line)
@@ -72,9 +72,9 @@ source file."
    "\\(\\([-a-zA-Z0-9/.]\\)+\\)\\(\\.\\)\\(\\(cm\\)\\|\\(fun\\)\\|\\(grm\\)\\|\\(lex\\)\\|\\(mlb\\)\\|\\(sig\\)\\|\\(sml\\)\\|\\(ML\\)\\)")
 
 (defmacro save-buffer-excursion (&rest exps)
-  (` (let ((old-buffer (current-buffer)))
-       (,@ exps)
-       (set-buffer old-buffer))))
+  `(let ((old-buffer (current-buffer)))
+     (,@ exps)
+     (set-buffer old-buffer)))
 
 (defun sml-save-buffers ()
   (save-buffer-excursion
