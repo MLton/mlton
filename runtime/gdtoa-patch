@@ -311,6 +311,15 @@ diff -u gdtoa.orig/gdtoa.h gdtoa/gdtoa.h
 diff -u gdtoa.orig/gdtoaimp.h gdtoa/gdtoaimp.h
 --- gdtoa.orig/gdtoaimp.h	2000-11-02 15:09:01 +0000
 +++ gdtoa/gdtoaimp.h	2008-10-04 02:24:16 +0000
+@@ -267,7 +267,7 @@
+ Exactly one of IEEE_8087, IEEE_MC68k, VAX, or IBM should be defined.
+ #endif
+ 
+-typedef union { double d; ULong L[2]; } U;
++typedef union { double d; ULong L[2]; } __attribute__((__may_alias__)) U;
+ 
+ #ifdef YES_ALIAS
+ #define dval(x) x
 @@ -502,6 +502,7 @@
  #define g__fmt g__fmt_D2A
  #define gethex gethex_D2A

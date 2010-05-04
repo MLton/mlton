@@ -10,7 +10,7 @@ static inline bool isBigEndian(void) {
   union {
     uint16_t x;
     uint8_t y;
-  } z;
+  } __attribute__((__may_alias__)) z;
 
   /* gcc optimizes the following code to just return the result. */
   z.x = 0xABCDU;

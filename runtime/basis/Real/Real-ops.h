@@ -27,7 +27,7 @@
   typedef volatile union {                                              \
     Real##size##_t r;                                                   \
     Word32_t ws[sizeof(Real##size##_t) / sizeof(Word32_t)];             \
-  } Real##size##OrWord32s;                                              \
+  } __attribute__((__may_alias__)) Real##size##OrWord32s;               \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Real##size##_t Real##size##_fetch (Ref(Real##size##_t) rp) {          \
     Real##size##OrWord32s u;                                            \

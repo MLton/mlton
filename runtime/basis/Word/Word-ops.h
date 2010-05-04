@@ -47,7 +47,7 @@ compare (U##size, name, op)
   typedef volatile union {                                              \
     Word##size##_t w;                                                   \
     Word32_t ws[sizeof(Word##size##_t) / sizeof(Word32_t)];             \
-  } Word##size##OrWord32s;                                              \
+  } __attribute__((__may_alias__)) Word##size##OrWord32s;               \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##size##_t Word##size##_fetch (Ref(Word##size##_t) wp) {          \
     Word##size##OrWord32s u;                                            \
