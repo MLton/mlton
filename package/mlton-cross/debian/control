@@ -2,12 +2,12 @@ Source: mlton-cross
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (= 20100429~svn-r7452), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf, wget
+Build-Depends: mlton (= 20100504~svn-r7459), binfmt-support, wine-unstable, mingw-w64, gcc-mingw32, debhelper (>= 7.0.0), cdbs (>= 0.4.52), autoconf, wget
 Standards-Version: 3.8.4.0
 
 Package: mlton-target-i586-mingw32msvc
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), ${misc:Depends}
 Recommends: gcc-mingw32, mingw32-runtime
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on i586-mingw32msvc
@@ -17,7 +17,7 @@ Description: Cross-compiler support files for MLton on i586-mingw32msvc
  
 Package: mlton-target-amd64-mingw32msvc
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), ${misc:Depends}
 Recommends: gcc-mingw32, mingw-w64
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on amd64-mingw32msvc
@@ -27,7 +27,7 @@ Description: Cross-compiler support files for MLton on amd64-mingw32msvc
 
 Package: mlton-target-alpha-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-alpha-linux-gnu | c-compiler-alpha-linux-gnu, libc6.1-dev-alpha-cross, libgmp3-dev-alpha-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on alpha-linux-gnu
@@ -37,7 +37,7 @@ Description: Cross-compiler support files for MLton on alpha-linux-gnu
 
 Package: mlton-target-x86-64-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-x86-64-linux-gnu | c-compiler-x86-64-linux-gnu, libc6-dev-amd64-cross, libgmp3-dev-amd64-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on x86_64-linux-gnu
@@ -47,7 +47,7 @@ Description: Cross-compiler support files for MLton on x86_64-linux-gnu
 
 Package: mlton-target-arm-linux-gnueabi
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-arm-linux-gnueabi | c-compiler-arm-linux-gnueabi, libc6-dev-armel-cross, libgmp3-dev-armel-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on arm-linux-gnueabi
@@ -57,7 +57,7 @@ Description: Cross-compiler support files for MLton on arm-linux-gnueabi
 
 Package: mlton-target-hppa-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-hppa-linux-gnu | c-compiler-hppa-linux-gnu, libc6-dev-hppa-cross, libgmp3-dev-hppa-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on hppa-linux-gnu
@@ -67,7 +67,7 @@ Description: Cross-compiler support files for MLton on hppa-linux-gnu
 
 Package: mlton-target-i486-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-i486-linux-gnu | c-compiler-i486-linux-gnu, libc6-dev-i386-cross, libgmp3-dev-i386-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on i486-linux-gnu
@@ -77,7 +77,7 @@ Description: Cross-compiler support files for MLton on i486-linux-gnu
 
 Package: mlton-target-ia64-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-ia64-linux-gnu | c-compiler-ia64-linux-gnu, libc6.1-dev-ia64-cross, libgmp3-dev-ia64-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on ia64-linux-gnu
@@ -87,7 +87,7 @@ Description: Cross-compiler support files for MLton on ia64-linux-gnu
 
 Package: mlton-target-mips-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-mips-linux-gnu | c-compiler-mips-linux-gnu, libc6-dev-mips-cross, libgmp3-dev-mips-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on mips-linux-gnu
@@ -97,7 +97,7 @@ Description: Cross-compiler support files for MLton on mips-linux-gnu
 
 Package: mlton-target-mipsel-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-mipsel-linux-gnu | c-compiler-mipsel-linux-gnu, libc6-dev-mipsel-cross, libgmp3-dev-mipsel-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on mipsel-linux-gnu
@@ -107,7 +107,7 @@ Description: Cross-compiler support files for MLton on mipsel-linux-gnu
 
 Package: mlton-target-powerpc-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-powerpc-linux-gnu | c-compiler-powerpc-linux-gnu, libc6-dev-powerpc-cross, libgmp3-dev-powerpc-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on powerpc-linux-gnu
@@ -117,7 +117,7 @@ Description: Cross-compiler support files for MLton on powerpc-linux-gnu
 
 Package: mlton-target-s390-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-s390-linux-gnu | c-compiler-s390-linux-gnu, libc6-dev-s390-cross, libgmp3-dev-s390-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on s390-linux-gnu
@@ -127,7 +127,7 @@ Description: Cross-compiler support files for MLton on s390-linux-gnu
 
 Package: mlton-target-sparc-linux-gnu
 Architecture: all
-Depends: mlton (= 20100429~svn-r7452), emdebian-tools, ${misc:Depends}
+Depends: mlton (= 20100504~svn-r7459), emdebian-tools, ${misc:Depends}
 Recommends: gcc-4.4-sparc-linux-gnu | c-compiler-sparc-linux-gnu, libc6-dev-sparc-cross, libgmp3-dev-sparc-cross
 Homepage: http://mlton.org/
 Description: Cross-compiler support files for MLton on sparc-linux-gnu
