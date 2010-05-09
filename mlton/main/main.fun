@@ -203,10 +203,13 @@ fun makeOptions {usage} =
             Control.Elaborate.Bad =>
                usage (concat ["invalid -", flag, " flag: ", s])
           | Control.Elaborate.Deprecated ids =>
-               Out.output
-               (Out.error,
-                concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
-                        List.toString Control.Elaborate.Id.name ids, ".\n"])
+               if !Control.warnDeprecated
+                  then
+                     Out.output
+                     (Out.error,
+                      concat ["Warning: ", "deprecated annotation: ", s, ", use ",
+                              List.toString Control.Elaborate.Id.name ids, ".\n"])
+               else ()
           | Control.Elaborate.Good () => ()
           | Control.Elaborate.Other =>
                usage (concat ["invalid -", flag, " flag: ", s])
@@ -804,6 +807,9 @@ fun makeOptions {usage} =
        (Expert, "warn-ann", " {true|false}",
         "unrecognized annotation warnings",
         boolRef warnAnn),
+       (Expert, "warn-deprecated", " {true|false}",
+        "deprecated feature warnings",
+        boolRef warnDeprecated),
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
         SpaceString
         (fn s =>
@@ -1026,9 +1032,11 @@ fun commandLine (args: string list): unit =
          else ()
       val _ =
          if !codegen = Bytecode
-            then Out.output
-                 (Out.error,
-                  "Warning: bytecode codegen is deprecated.  Use native or C codegen.\n")
+            andalso !Control.warnDeprecated
+            then
+               Out.output
+               (Out.error,
+                "Warning: bytecode codegen is deprecated.  Use native or C codegen.\n")
          else ()
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
@@ -1450,9 +1458,12 @@ fun commandLine (args: string list): unit =
                   fun compileCM (file: File.t) =
                      let
                         val _ =
-                           Out.output
-                           (Out.error,
-                            "Warning: .cm input files are deprecated.  Use .mlb input files.\n")
+                           if !Control.warnDeprecated
+                              then
+                                 Out.output
+                                 (Out.error,
+                                  "Warning: .cm input files are deprecated.  Use .mlb input files.\n")
+                           else ()
                         val files = CM.cm {cmfile = file}
                      in
                         compileSML files

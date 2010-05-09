@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -220,13 +221,16 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                          let
                             val (ids, args) = List.unzip alts
                             val () =
-                               let open Layout
-                               in
-                                  Control.warning
-                                  (reg, seq [str "deprecated annotation: ", str ann, str ", use ",
-                                             List.layout (str o Control.Elaborate.Id.name) ids],
-                                   empty)
-                               end
+                               if !Control.warnDeprecated
+                                  then
+                                     let open Layout
+                                     in
+                                        Control.warning
+                                        (reg, seq [str "deprecated annotation: ", str ann, str ", use ",
+                                                   List.layout (str o Control.Elaborate.Id.name) ids],
+                                         empty)
+                                     end
+                               else ()
                             val restores =
                                List.map (args, Args.processAnn)
                          in
