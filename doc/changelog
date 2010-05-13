@@ -62,6 +62,13 @@ Summary:
     * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col "file.grm" *) directives in output.
 
+* 2010-05-12
+  - Fixed bug in the mark-compact garbage collector where the C
+    library's memcpy was used to move objects during the compaction
+    phase; this could lead to heap corruption and segmentation faults
+    with newer versions of gcc and/or glibc, which assume that src and
+    dst in a memcpy do not overlap.
+
 * 2010-03-12
   - Fixed bug in elaboration of datatype declarations with withtype
     bindings.

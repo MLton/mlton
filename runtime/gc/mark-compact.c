@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -310,9 +311,9 @@ unmark:
       *headerp = header & ~MARK_MASK;
       /* slide */
       if (DEBUG_MARK_COMPACT)
-        fprintf (stderr, "sliding "FMTPTR" down %"PRIuMAX"\n",
-                 (uintptr_t)front, (uintmax_t)gap);
-      GC_memcpy (front, front - gap, size);
+        fprintf (stderr, "sliding "FMTPTR" down %"PRIuMAX" to "FMTPTR"\n",
+                 (uintptr_t)front, (uintmax_t)gap, (uintptr_t)(front - gap));
+      GC_memmove (front, front - gap, size);
       gap += skipGap;
       front += size + skipFront;
       goto updateObject;
