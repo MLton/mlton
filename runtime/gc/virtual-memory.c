@@ -26,8 +26,6 @@ static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
   assert (isAligned ((size_t)src, sizeof(unsigned int)));
   assert (isAligned ((size_t)dst, sizeof(unsigned int)));
   assert (isAligned (size, sizeof(unsigned int)));
-  if (src == dst)
-    return;
   assert (! (src <= dst and dst < src + size));
   assert (! (dst <= src and src < dst + size));
   memcpy (dst, src, size);
