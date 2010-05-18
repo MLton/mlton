@@ -68,7 +68,7 @@ all: $(AOUT)
 control/version.sml: control/version_sml.src
 	cat control/version_sml.src |						\
 		sed "s/MLTONVERSION/$${VERSION:-r`svnversion||echo unknown`}/" |\
-		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`date`\2/" |		\
+		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`LANG=C date`\2/" |		\
 		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
 		control/version.sml
 
