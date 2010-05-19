@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -68,12 +69,14 @@ val gcFields =
 val gcFieldsOffsets =
    List.map (gcFields, fn s =>
              {name = s ^ "_Offset",
-              value = concat ["offsetof (struct GC_state, ", s, ")"],
+              value = concat ["(", Ffi.CType.toString Ffi.CType.Word32 ,")",
+                              "(offsetof (struct GC_state, ", s, "))"],
               ty = ConstType.Word WordSize.word32})
 val gcFieldsSizes =
    List.map (gcFields, fn s =>
              {name = s ^ "_Size",
-              value = concat ["sizeof (gcState.", s, ")"],
+              value = concat ["(", Ffi.CType.toString Ffi.CType.Word32 ,")",
+                              "(sizeof (gcState.", s, "))"],
               ty = ConstType.Word WordSize.word32})
 
 fun build (constants, out) =
