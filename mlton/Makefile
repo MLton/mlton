@@ -175,6 +175,7 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 		mlton -stop f mlton.mlb |					\
 			grep -v 'mlb$$' |					\
 			grep -v 'sml/basis' | 					\
+			grep -v 'targets' | 					\
 			grep -v 'mlton-stubs' |					\
 			grep -v 'mlyacc' |					\
 			grep -v 'call-main.sml';				\
