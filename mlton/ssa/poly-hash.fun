@@ -166,7 +166,10 @@ structure Hash =
       (* Jenkins hash function
        * http://en.wikipedia.org/wiki/Jenkins_hash_function  (20100315)
        *) 
-      val {stateTy, init, wordBytes, fini} =
+      val {stateTy: Type.t,
+           init: unit -> Dexp.t,
+           wordBytes: Dexp.t * Dexp.t * WordSize.t -> Dexp.t,
+           fini: Dexp.t -> Dexp.t} =
          let
             val stateWordSize = resWordSize
             val stateTy = Type.word stateWordSize
@@ -249,7 +252,10 @@ structure Hash =
       (* FNV-1a hash function
        * http://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function  (20100315)
        *)
-      val {stateTy, init, wordBytes, fini} =
+      val {stateTy: Type.t,
+           init: unit -> Dexp.t,
+           wordBytes: Dexp.t * Dexp.t * WordSize.t -> Dexp.t,
+           fini: Dexp.t -> Dexp.t} =
          let
             val stateWordSize = resWordSize
             val stateTy = Type.word stateWordSize
