@@ -5,7 +5,7 @@
 
 
 
-<title>Bugs200907XX - MLton Standard ML Compiler (SML Compiler)</title>
+<title>MLYacc - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -37,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      Bugs200907XX
+      MLYacc
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -55,11 +55,35 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are the known bugs in <a href="Release20070826">MLton 20070826</a>, listed in reverse chronological order of date reported. </div>
+MLYacc is a parser generator for <a href="StandardML">Standard ML</a> modeled after the Yacc parser generator. <p>
+A version of MLYacc, ported from the <a href="SMLNJ">SML/NJ</a> sources, is distributed with MLton. 
+</p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="MLLex">MLLex</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href = "References#TarditiAppel00">TarditiAppel00</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href = "References#Price09">Price09</a> 
+</p>
+</li>
+</ul>
+
+</div>
 
 
 
 <p>
 <hr>
-Last edited on 2009-06-19 14:50:24 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-13 19:32:23 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

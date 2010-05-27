@@ -71,7 +71,7 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
    <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> + : int * int -&gt; int
 <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
- Grammar on page 14 of the Definition does not allow it. 
+ The grammar on page 14 of the Definition does not allow it. Recent versions of SML/NJ do give a warning. 
 </p>
 </li>
     <li class="gap">
@@ -89,7 +89,7 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> = = <B><FONT COLOR="#5F9EA0">13</FONT></B>
 </PRE>
- This is explicitly forbidden on page 5 of the Definition. 
+ This is explicitly forbidden on page 5 of the Definition. Recent versions of SML/NJ do give a warning. 
 </p>
 </li>
     <li class="gap">
@@ -183,7 +183,7 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
       </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u
    </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
- These are disallowed by rule 78 of the Definition. 
+ These are disallowed by rule 78 of the Definition.  Recent versions of SML/NJ correctly disallow sharing constraints between type abbreviations in signatures. 
 </p>
 </li>
     <li class="gap">
@@ -220,8 +220,8 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
 <p>
  SML/NJ does not expand the <tt>withtype</tt> derived form as described by the Definition.  According to page 55 of the Definition, the type bindings of a <tt>withtype</tt> declaration are substituted simultaneously in the connected datatype.  Consider the following program. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
-</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real </FONT></B>;
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
     <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
   </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
 </FONT></B><B><FONT COLOR="#A020F0">withtype</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int
@@ -229,17 +229,21 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
 </FONT></B></PRE>
  According to the Definition, it should be expanded to the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
-</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real </FONT></B>;
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
     <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
-  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>;
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u 
 </FONT></B></PRE>
- However, SML/NJ expands <tt>withtype</tt> bindings sequentially, meaning that earlier bindings are expanded within later ones.  Hence, the above program is expanded to the following. 
+ However, SML/NJ expands <tt>withtype</tt> bindings sequentially, meaning that earlier bindings are expanded within later ones. Hence,  the above program is expanded to the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
-</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real </FONT></B>;
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
     <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
-  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>;
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
 </FONT></B></PRE>
  
 </p>
@@ -320,12 +324,32 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="Definition
 </li>
     <li class="gap">
 <p>
- SML/NJ disallows polymorphic generalization of refutable patterns.  For example, SML/NJ disallows the following. 
+ SML/NJ disallows polymorphic generalization of refutable patterns. For example, SML/NJ disallows the following. 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> [x] = [[]]
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = (<B><FONT COLOR="#5F9EA0">1</FONT></B> :: x, <B><FONT COLOR="#BC8F8F">&quot;one&quot;</FONT></B> :: x)
 </PRE>
+ Recent versions of SML/NJ correctly allow polymorphic generalization of refutable patterns. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ uses an overly restrictive context for type inference.  For example, SML/NJ rejects both of the following. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S =
+<B><FONT COLOR="#0000FF">struct</FONT></B>
+  <B><FONT COLOR="#A020F0">val</FONT></B> z = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x) []
+  <B><FONT COLOR="#A020F0">val</FONT></B> y = z :: [true] :: nil
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
  
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> z : bool list <B><FONT COLOR="#0000FF">end</FONT></B> =
+<B><FONT COLOR="#0000FF">struct</FONT></B>
+  <B><FONT COLOR="#A020F0">val</FONT></B> z = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x) []
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ These structures are allowed by the Definition. 
 </p>
 </li>
 
@@ -377,5 +401,5 @@ OS.Path.toString (OS.Path.fromString <B><FONT COLOR="#BC8F8F">&quot;\\usr\\local
 
 <p>
 <hr>
-Last edited on 2008-11-14 11:26:00 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2010-05-20 18:27:00 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

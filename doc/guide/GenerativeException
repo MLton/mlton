@@ -127,11 +127,22 @@ If exceptions weren't generative, then each call <tt>f&nbsp;()</tt> would yield 
 <p>
 The <tt>exn</tt> type is effectively a <a href="UniversalType">universal type</a>. 
 </p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="GenerativeDatatype">GenerativeDatatype</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2008-11-24 10:59:36 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2010-03-02 15:11:39 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

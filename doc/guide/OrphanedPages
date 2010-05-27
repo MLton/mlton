@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
+Pages that are not linked to by any other page. <p>
 <ol>
 <li>
 <a href="Index">Index</a></li>
@@ -65,11 +65,22 @@ Pages that no other page links to.   Also see <a href="WantedPages">WantedPages<
 
  
 </p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="WantedPages">WantedPages</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2004-11-09 14:46:17 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2010-03-02 15:11:43 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

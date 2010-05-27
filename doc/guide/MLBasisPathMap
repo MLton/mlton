@@ -59,7 +59,7 @@ An <a href="MLBasis">ML Basis</a> <em>path map</em> describes a map from ML Basi
 The format of an <tt>mlb-path-map</tt> file is a sequence of lines; each line consists of two, white-space delimited tokens.  The first token is a path variable <tt>VAR</tt> and the second token is the path to which the variable is mapped.  The path may include path variables, which are recursively expanded. 
 </p>
 <p>
-The mapping from path variables to paths is initialized by reading a system-wide configuration file: <tt>/usr/lib/mlton/mlb-path-map</tt>. Additional path maps can be specified with <tt>-mlb-path-map</tt> (see <a href="CompileTimeOptions">CompileTimeOptions</a>).  Configuration files are processed from first to last and from top to bottom, later mappings take precedence over earlier mappings. 
+The mapping from path variables to paths is initialized by reading a system-wide configuration file: <tt>/usr/lib/mlton/mlb-path-map</tt>. Additional path maps can be specified with <tt>-mlb-path-map</tt> and individual path variable mappings can be specified with <tt>-mlb-path-var</tt> (see <a href="CompileTimeOptions">CompileTimeOptions</a>).  Configuration files are processed from first to last and from top to bottom, later mappings take precedence over earlier mappings. 
 </p>
 <p>
 The compiler and system-wide configuration file makes the following path  variables available. 
@@ -80,7 +80,7 @@ Description</td>
 <td>
 <tt>SML_LIB</tt></td>
 <td>
-path to system-wide libaries, usually <tt>/usr/lib/mlton/sml</tt></td>
+path to system-wide libraries, usually <tt>/usr/lib/mlton/sml</tt></td>
 </tr>
  <tr>
 <td>
@@ -104,5 +104,5 @@ string representation of target operating system</td>
 
 <p>
 <hr>
-Last edited on 2006-04-23 21:06:47 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-06 17:43:43 by <span title="129.21.75.73"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

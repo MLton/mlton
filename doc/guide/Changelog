@@ -119,6 +119,34 @@ Summary:
     * Eliminated top-level 'type int = Int.int' in output.
     * Include (*#line line:col &quot;file.grm&quot; *) directives in output.
 
+* 2010-05-12
+  - Fixed bug in the mark-compact garbage collector where the C
+    library's memcpy was used to move objects during the compaction
+    phase; this could lead to heap corruption and segmentation faults
+    with newer versions of gcc and/or glibc, which assume that src and
+    dst in a memcpy do not overlap.
+
+* 2010-03-12
+  - Fixed bug in elaboration of datatype declarations with withtype
+    bindings.
+
+* 2009-12-11
+  - Fixed performance bug in ref flatten SSA2 optimization.
+
+* 2009-12-09
+  - Fixed performance bug in simplify types SSA optimization.
+
+* 2009-12-02
+  - Fixed bug in amd64 codegen register allocation of indirect C calls.
+
+* 2009-09-17
+  - Fixed bug in IntInf.scan and IntInf.fromString where leading
+    spaces were only accepted if the stream had an explicit sign
+    character.
+
+* 2009-07-10
+  - Added combine conversions SSA optimization.
+
 * 2009-06-09
    - Removed deprecated command line switch -show-anns {false, true}.
 

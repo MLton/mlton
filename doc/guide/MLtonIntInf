@@ -71,6 +71,7 @@ urchinTracker();
          <FONT COLOR="#B8860B">Big</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> BigWord.word vector
        </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Small</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> SmallInt.int
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> rep: t -&gt; rep
+      <B><FONT COLOR="#A020F0">val</FONT></B> fromRep : rep -&gt; t
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -130,6 +131,12 @@ the underlying representation of an <tt>IntInf.int</tt>.
 returns the underlying representation of <tt>i</tt>. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <tt>fromRep&nbsp;r</tt>  <br>
+converts from the underlying representation back to <tt>i</tt>.   If the input is not identical to the result of <tt>rep</tt>, the result is undefined. 
+</p>
+</li>
 </ul>
 
 </div>
@@ -138,5 +145,5 @@ returns the underlying representation of <tt>i</tt>.
 
 <p>
 <hr>
-Last edited on 2007-08-23 13:54:34 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-09-11 15:13:38 by <span title="ottawa.dvs.informatik.tu-darmstadt.de"><a href="WesleyTerpstra">WesleyTerpstra</a></span>.
 </body></html>

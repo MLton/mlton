@@ -165,7 +165,7 @@ it removes uses of polymorphic equality that must return true
 <p>
 We must keep track of <tt>Transparent</tt> constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t array
 </FONT></B></PRE>
  Such a datatype has <tt>Cardinality.Many</tt>, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
 </p>
@@ -190,5 +190,5 @@ Also, to eliminate as many <tt>Transparent</tt> constructors as possible, for so
 
 <p>
 <hr>
-Last edited on 2009-06-19 14:47:43 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-12-11 14:54:29 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

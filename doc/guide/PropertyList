@@ -137,7 +137,7 @@ Of course, a serious implementation of property lists would have to handle dupli
 </p>
 <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
 <p>
-MLton relies heavily on property lists for attaching information to syntax tree nodes in its intermediate languages.  See  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.sig</a>  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.fun</a>. 
+MLton relies heavily on property lists for attaching information to syntax tree nodes in its intermediate languages.  See  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.fun</a>. 
 </p>
 <p>
 The <a href="MLRISCLibrary">MLRISCLibrary</a> <a href = "References#LeungGeorge98">uses property lists extensively</a>. 
@@ -148,5 +148,5 @@ The <a href="MLRISCLibrary">MLRISCLibrary</a> <a href = "References#LeungGeorge9
 
 <p>
 <hr>
-Last edited on 2007-08-23 13:55:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-03-02 15:17:55 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

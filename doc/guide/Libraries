@@ -87,7 +87,7 @@ In theory every strictly conforming Standard ML program should run on MLton.  Ho
 
     <li>
 <p>
- Lex-like lexer generator: <a class="nonexistent" href="MLLex">MLLex</a> - distributed with MLton. 
+ Lex-like lexer generator: <a href="MLLex">MLLex</a> - distributed with MLton. 
 </p>
 </li>
     <li>
@@ -159,7 +159,7 @@ In theory every strictly conforming Standard ML program should run on MLton.  Ho
 </li>
     <li>
 <p>
- Yacc-like parser generator: <a class="nonexistent" href="MLYacc">MLYacc</a> - distributed with MLton. 
+ Yacc-like parser generator: <a href="MLYacc">MLYacc</a> - distributed with MLton. 
 </p>
 </li>
 

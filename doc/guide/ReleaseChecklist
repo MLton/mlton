@@ -268,6 +268,11 @@ This ensures that the guide distributed with the release looks updated for the r
  Clear <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a>. 
 </p>
 </li>
+    <li>
+<p>
+ Clear <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> 
+</p>
+</li>
 
     </ul>
 
@@ -550,5 +555,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2009-06-22 17:44:32 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-07-31 14:52:38 by <span title="173.86.192.189"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

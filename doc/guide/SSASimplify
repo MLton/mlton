@@ -63,6 +63,11 @@ The following optimization passes are implemented:
 
     <li>
 <p>
+ <a href="CombineConversions">CombineConversions</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="CommonArg">CommonArg</a> 
 </p>
 </li>
@@ -161,6 +166,11 @@ The following implementation pass is implemented:
  <a href="PolyEqual">PolyEqual</a> 
 </p>
 </li>
+    <li>
+<p>
+ <a href="PolyHash">PolyHash</a> 
+</p>
+</li>
 
     </ul>
 
@@ -229,5 +239,5 @@ The optimization passes can be controlled from the command-line by the options:
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:53:58 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-08-02 21:41:23 by <span title="173.86.192.189"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

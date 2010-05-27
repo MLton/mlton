@@ -179,7 +179,7 @@ The left and right application operators are related to operators that could be 
  
 </p>
 <p>
-As you can see, the left and right piping operators, &gt;| and |&lt;, are the same as the right and left application operators, respectively, except the associativities are reversed and the binding strength is lower. They are useful for piping data trough a sequence of operations. In general, 
+As you can see, the left and right piping operators, &gt;| and |&lt;, are the same as the right and left application operators, respectively, except the associativities are reversed and the binding strength is lower. They are useful for piping data through a sequence of operations. In general, 
 <pre>  x &gt;| f1 &gt;| ... &gt;| fN
 = fN (... (f1 x) ...)
 = (fN o ... o f1) x </pre>and 
@@ -239,5 +239,5 @@ The closest approximation of Haskell's <tt>x&nbsp;`f`&nbsp;y</tt> syntax achieva
 
 <p>
 <hr>
-Last edited on 2007-08-26 19:59:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-10-22 12:20:45 by <span title="cpe-76-190-146-39.neo.res.rr.com">RanAriGur</span>.
 </body></html>

@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC Library</a>  is a framework for retargetable and optimizing compiler back ends.  The MLRISC Library is distributed with SML/NJ. Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20090618, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.70. 
+As of 20100402, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.72. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -273,5 +273,5 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2009-06-18 21:22:50 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-02 19:28:52 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

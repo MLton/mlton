@@ -89,6 +89,18 @@ Optimizations:
  deep equality always does an <tt>MLton_eq</tt> test first 
 </p>
 </li>
+    <li class="gap">
+<p>
+ If one argument to <tt>=</tt> is a constant and the type will get translated to  an <tt>IntOrPointer</tt>, then just use <tt>eq</tt> instead of the full equality.  This is  important for implementing code like the following efficiently:  
+<pre>if x = 0  ...    (where x is an IntInf.int)
+</pre>
+</p>
+</li>
+    <li class="gap">
+<p>
+ Also convert pointer equality on scalar types to type specific primitives. 
+</p>
+</li>
 </ul>
 
 </div>
@@ -97,5 +109,5 @@ Optimizations:
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:07:04 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-07-11 17:10:54 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

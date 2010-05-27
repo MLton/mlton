@@ -64,11 +64,44 @@ For example, an <tt>(int&nbsp;*&nbsp;int)&nbsp;ref</tt> is represented by a 2 wo
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+There are some performance issues with the deep flatten pass, where it consumes an excessive amount of memory. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2005-April/026990.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2005-April/026990.html</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+A number of applications require compilation with '-drop-pass deepFlatten' to avoid exceeding available memory.  It is often asked whether the deep flatten pass usually has a significant impact on performance.  The standard benchmark suite was run with and without the deep flatten pass enabled when the pass was first introduced: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2004-August/025760.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-August/025760.html</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+The conclusion is that it does not have a significant impact.  However, these are micro benchmarks; other applications may derive greater benefit from the pass. 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:43:24 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-12-14 16:31:55 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

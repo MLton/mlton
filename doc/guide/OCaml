@@ -79,7 +79,7 @@ Here's a comparison of some aspects of the OCaml and SML languages.
 </li>
         <li class="gap">
 <p>
- Andreas Rossberg has a   <a class="external" href="http://www.ps.uni-sb.de/~rossberg/SMLvsOcaml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">side-by-side comparison</a>   of the syntax of SML and OCaml. 
+ Andreas Rossberg has a   <a class="external" href="http://www.mpi-sws.org/~rossberg/sml-vs-ocaml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">side-by-side comparison</a>   of the syntax of SML and OCaml. 
 </p>
 </li>
 
@@ -227,5 +227,5 @@ Here's a comparison of some aspects of OCaml and MLton.
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:23:05 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2009-09-20 00:47:19 by <span title="v129-22-126-87.VCLIENT.CWRU.Edu">RanAriGur</span>.
 </body></html>

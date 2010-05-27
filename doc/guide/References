@@ -83,12 +83,17 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
+ <a id="Appel98"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521582741"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Modern Compiler Implementation in ML</a>  (<a class="external" href="http://www.addall.com/New/submitNew.cgi?query=0-521-58274-1&amp;type=ISBN&amp;location=10000&amp;state=&amp;dispCurr=USD"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521582741  Andrew W. Appel.  Cambridge University Press, 1998. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <a id="AppelJim97"></a>  Shrinking Lambda Expressions in Linear Time.  Andrew Appel and Trevor Jim.  <a href="#JFP">JFP</a> 1997.   
 </p>
 </li>
     <li class="gap">
 <p>
- <a id="Appel98"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521582741"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Modern Compiler Implementation in ML</a>  (<a class="external" href="http://www.addall.com/New/submitNew.cgi?query=0-521-58274-1&amp;type=ISBN&amp;location=10000&amp;state=&amp;dispCurr=USD"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521582741  Andrew W. Appel.  Cambridge University Press, 1998. 
+ <a id="AppelEtAl94"></a>  <a class="external" href="http://www.smlnj.org/doc/ML-Lex/manual.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A lexical analyzer generator for Standard ML. Version 1.6.0</a>  Andrew W. Appel, James S. Mattson, and David R. Tarditi.  1994 
 </p>
 </li>
 
@@ -793,6 +798,11 @@ urchinTracker();
 
     <li class="gap">
 <p>
+ <a id="Price09"></a>  <a class="external" href="http://rogerprice.org/#UG"><img src="moin-www.png" alt="[WWW]" height="11" width="11">User’s Guide to ML-Lex and ML-Yacc</a>  Roger Price.  2009. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <a id="Pucella98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/pucella98reactive.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Reactive Programming in Standard ML</a>.  Riccardo R. Puccella.  1998.  <a href="#ICCL">ICCL</a> 1998. 
 </p>
 </li>
@@ -965,6 +975,11 @@ urchinTracker();
     <ul>
 
     <li>
+<p>
+ <a id="TarditiAppel00"></a>  <a class="external" href="http://www.smlnj.org/doc/ML-Yacc/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML-Yacc User's Manual. Version 2.4</a>  David R. Tarditi and Andrew W. Appel. 2000. 
+</p>
+</li>
+    <li class="gap">
 <p>
  <a id="TarditiEtAl90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/tarditi90no.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">No Assembly Required: Compiling Standard ML to C</a>.  David Tarditi, Peter Lee, and Anurag Acharya. 1990. 
 </p>
@@ -1291,5 +1306,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2008-10-03 16:12:19 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-02 20:05:16 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

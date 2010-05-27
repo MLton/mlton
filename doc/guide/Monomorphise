@@ -61,20 +61,24 @@ Monomorphisation eliminates polymorphic values and datatype declarations by dupl
 </p>
 <p>
 Consider the following <a href="XML">XML</a> program.  
-<pre>datatype 'a t = T of 'a
-fun 'a f (x: 'a) = T x
-val a = f 1
-val b = f 2
-val z = f (3, 4)
-</pre> The result of monomorphising this program is the following <a href="SXML">SXML</a> program:  
-<pre>datatype t1 = T1 of int
-datatype t2 = T2 of int * int
-fun f1 (x: t1) = T1 x
-fun f2 (x: t2) = T2 x
-val a = f1 1
-val b = f1 2
-val z = f2 (3, 4)
-</pre>
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> f (x: 'a) = T x
+<B><FONT COLOR="#A020F0">val</FONT></B> a = f <B><FONT COLOR="#5F9EA0">1</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> b = f <B><FONT COLOR="#5F9EA0">2</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> z = f (<B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>)
+</PRE>
+  The result of monomorphising this program is the following <a href="SXML">SXML</a> program:  
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t1 </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T1</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t2 </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T2</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * int
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f1 (x: t1) = T1 x
+<B><FONT COLOR="#A020F0">fun</FONT></B> f2 (x: t2) = T2 x
+<B><FONT COLOR="#A020F0">val</FONT></B> a = f1 <B><FONT COLOR="#5F9EA0">1</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> b = f1 <B><FONT COLOR="#5F9EA0">2</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> z = f2 (<B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>)
+</PRE>
+ 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/xml/monomorphise.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/xml/monomorphise.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
@@ -86,31 +90,40 @@ As with variables, the monomorphiser records all of the type at which constructo
 </p>
 <p>
 The monomorphiser duplicates all of the functions declared in a <tt>fun</tt> declaration as a unit.  Consider the following program 
-<pre>fun 'a f (x: 'a) = g x
-and g (y: 'a) = f y
-val a = f 13
-val b = g 14
-val c = f (1, 2)</pre>and its monomorphisation 
-<pre>fun f1 (x: int) = g1 x
-and g1 (y: int) = f1 y
-fun f2 (x : int * int) = g2 x
-and g2 (y : int * int) = f2 y
-val a = f1 13
-val b = g1 14
-val c = f2 (1, 2)
-</pre>
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> f (x: 'a) = g x
+<B><FONT COLOR="#A020F0">and</FONT></B> g (y: 'a) = f y
+<B><FONT COLOR="#A020F0">val</FONT></B> a = f <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> b = g <B><FONT COLOR="#5F9EA0">14</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> c = f (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>)
+</PRE>
+ and its monomorphisation 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> f1 (x: int) = g1 x
+<B><FONT COLOR="#A020F0">and</FONT></B> g1 (y: int) = f1 y
+<B><FONT COLOR="#A020F0">fun</FONT></B> f2 (x : int * int) = g2 x
+<B><FONT COLOR="#A020F0">and</FONT></B> g2 (y : int * int) = f2 y
+<B><FONT COLOR="#A020F0">val</FONT></B> a = f1 <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> b = g1 <B><FONT COLOR="#5F9EA0">14</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> c = f2 (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>)
+</PRE>
+ 
 </p>
 <h2 id="head-d9df837d9182159c3848b74ca46f0a57ec960cdb">Pathological datatype declarations</h2>
 <p>
 SML allows a pathological polymorphic datatype declaration in which recursive uses of the defined type constructor are applied to different type arguments than the definition.  This has been disallowed by others on type theoretic grounds.  A canonical example is the following. 
-<pre>datatype 'a t = A of 'a | B of ('a * 'a) t
-val z : int t = B (B (A ((1, 2), (3, 4))))
-</pre>The presence of the recursion in the datatype declaration might appear to cause the need for the monomorphiser to create an infinite number of types.  However, due to the absence of polymorphic recursion in SML, there are in fact only a finite number of instances of such types in any given program.  The monomorphiser translates the above program to the following one. 
-<pre>datatype t1 = B1 of t2
-datatype t2 = B2 of t3
-datatype t3 = A3 of (int * int) * (int * int)
-val z : int t = B1 (B2 (A3 ((1, 2), (3, 4))))
-</pre>It is crucial that the monomorphiser be allowed to drop unused constructors from datatype declarations in order for the translation to terminate. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ('a * 'a) t
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> z : int t = B (B (A ((<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>), (<B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>))))
+</PRE>
+ The presence of the recursion in the datatype declaration might appear to cause the need for the monomorphiser to create an infinite number of types.  However, due to the absence of polymorphic recursion in SML, there are in fact only a finite number of instances of such types in any given program.  The monomorphiser translates the above program to the following one. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t1 </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B1</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t2
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t2 </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B2</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t3
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t3 </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A3</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> (int * int) * (int * int)
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> z : int t = B1 (B2 (A3 ((<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>), (<B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>))))
+</PRE>
+ It is crucial that the monomorphiser be allowed to drop unused constructors from datatype declarations in order for the translation to terminate. 
 </p>
 </div>
 
@@ -118,5 +131,5 @@ val z : int t = B1 (B2 (A3 ((1, 2), (3, 4))))
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:37:05 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-12-18 11:00:50 by <span title="58.211.218.74">BaojianHua</span>.
 </body></html>

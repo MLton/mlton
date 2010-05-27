@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Refflatten is an optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+RefFlatten is an optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
 This pass flattens a <tt>ref</tt> cell into its containing object. The idea is to replace, where possible, a type like 
 <pre>   (int ref * real)
@@ -103,5 +103,5 @@ RefFlatten is safe for space.  The idea is to prevent a <tt>ref</tt> being flatt
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:07:14 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-12-11 14:55:23 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

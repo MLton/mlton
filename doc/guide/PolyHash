@@ -5,7 +5,7 @@
 
 
 
-<title>ManualPage - MLton Standard ML Compiler (SML Compiler)</title>
+<title>PolyHash - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -37,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      ManualPage
+      PolyHash
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -55,32 +55,29 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton is run from the command line with a collection of options followed by a file name and a list of files to compile, assemble, and link with. 
-<pre>mlton [option ...] file.{c|mlb|o|sml} [file.{c|o|s|S} ...]
-</pre>The simplest case is to run <tt>mlton&nbsp;foo.sml</tt>, where <tt>foo.sml</tt> contains a valid SML program, in which case MLton compiles the program to produce an executable <tt>foo</tt>.  Since MLton does not support separate compilation, the program must be the entire program you wish to compile.  However, the program may refer to signatures and structures defined in the <a href="BasisLibrary">Basis Library</a>. <p>
-Larger programs, spanning many files, can be compiled with the  <a href="MLBasis">ML Basis system</a>.  In this case, <tt>mlton&nbsp;foo.mlb</tt> will compile the complete SML program described by the basis <tt>foo.mlb</tt>, which may specify both SML files and additional bases. 
-</p>
-<h2 id="head-3f170caead65df254d786032a409a6f6d204bca6">Next Steps</h2>
-
-    <ul>
-
-    <li>
+PolyHash is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
- <a href="CompileTimeOptions">CompileTimeOptions</a> 
+This pass implements polymorphic, structural hashing. 
 </p>
-</li>
-    <li>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/poly-hash.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">poly-hash.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/poly-hash.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">poly-hash.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
- <a href="RunTimeOptions">RunTimeOptions</a> 
+For each datatype, tycon, and vector type, it builds and equality function and translates calls to <tt>MLton_hash</tt> into calls to that function. 
 </p>
-</li>
-</ul>
-
+<p>
+For tuples, it does the equality test inline; i.e., it does not create a separate equality function for each tuple type. 
+</p>
+<p>
+All equality functions are created only if necessary, i.e., if equality is actually used at a type. 
+</p>
+<p>
+Optimizations: 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2010-04-06 17:48:05 by <span title="129.21.75.73"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-07-11 17:13:45 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

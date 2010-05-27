@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are the places where MLton deviates from  <a href="DefinitionOfStandardML">The Definition of Standard ML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the three deviations listed here are the only known deviations, and we have no plans to fix them.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
+Here are the places where MLton deviates from  <a href="DefinitionOfStandardML">The Definition of Standard ML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the four deviations listed here are the only known deviations, and we have no plans to fix them.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
 We don't plan to fix these bugs because one of them (parsing nested cases) has historically never been accepted by any SML compiler, while the other three clearly indicate problems in the Definition. 
 </p>
 
@@ -146,5 +146,5 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:07:38 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-10-23 04:21:00 by <span title="v129-22-124-241.VCLIENT.CWRU.Edu">RanAriGur</span>.
 </body></html>

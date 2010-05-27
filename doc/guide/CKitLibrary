@@ -14,8 +14,6 @@
 <link rel="Start" href="Home">
 
 
-<link rel="Appendix" title="ckit-lib.patch" href="http://mlton.org/pages/CKitLibrary/attachments/ckit-lib.patch">
-<link rel="Appendix" title="ckit-lib.tgz" href="http://mlton.org/pages/CKitLibrary/attachments/ckit-lib.tgz">
 </head>
 
 <body lang="en" dir="ltr">
@@ -58,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.smlnj.org/doc/ckit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit Library</a> is a C front end written in SML that translates C source code (after preprocessing) into abstract syntax represented as a set of SML datatypes.  The ckit Library is distributed with SML/NJ.  Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20090618, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.70. 
+As of 20100402, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.72. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -112,6 +110,11 @@ The following changes were made to the ckit Library, in addition to deriving the
     <li>
 <p>
  <tt>parser/parse-tree.sml</tt> (modified): Rewrote use of (sequential) <tt>withtype</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>parser/grammar/c.lex.sml</tt> (modified): Rewrote use of vector literal. 
 </p>
 </li>
     <li>
@@ -180,5 +183,5 @@ The following changes were made to the ckit Library, in addition to deriving the
 
 <p>
 <hr>
-Last edited on 2009-06-18 21:17:48 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-02 19:22:13 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

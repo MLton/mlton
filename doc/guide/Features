@@ -349,12 +349,12 @@ For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or m
 </li>
     <li>
 <p>
- <a class="nonexistent" href="MLLex">MLLex</a> lexer generator 
+ <a href="MLLex">MLLex</a> lexer generator 
 </p>
 </li>
     <li>
 <p>
- <a class="nonexistent" href="MLYacc">MLYacc</a> parser generator 
+ <a href="MLYacc">MLYacc</a> parser generator 
 </p>
 </li>
     <li>

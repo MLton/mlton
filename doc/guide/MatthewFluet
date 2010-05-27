@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Matthew Fluet ( <a class="external" href="mailto:Matthew.Fluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">Matthew.Fluet@acm.org</a> , <a class="external" href="http://ttic.uchicago.edu/~fluet"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://ttic.uchicago.edu/~fluet</a> ) is an Assistant Research Professor at the <a class="external" href="http://www.tti-c.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Toyota Technological Institute at Chicago</a>. <hr>
+Matthew Fluet ( <a class="external" href="mailto:Matthew.Fluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">Matthew.Fluet@acm.org</a> , <a class="external" href="http://www.cs.rit.edu/~mtf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.cs.rit.edu/~mtf</a> ) is an Assistant Professor at the <a class="external" href="http://www.rit.edu"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Rochester Institute of Technology</a>. <hr>
  <p>
 Current MLton projects: 
 </p>
@@ -171,7 +171,7 @@ Misc. and underspecified TODOs:
 
     <li>
 <p>
- <tt>MST_DONTWAIT</tt> isn't Posix 
+ <tt>MSG_DONTWAIT</tt> isn't Posix 
 </p>
 </li>
     <li>
@@ -310,23 +310,6 @@ Misc. and underspecified TODOs:
 </li>
     <li>
 <p>
- The <tt>{x86,amd64}Validate</tt> modules are no longer helpful. Consider eliminating them. 
-</p>
-</li>
-
-            <ul>
-
-            <li>
-<p>
- <a href="http://mlton.org/pipermail/mlton/2008-September/030364.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2008-September/030364.html</a> 
-</p>
-</li>
-
-            </ul>
-
-
-    <li>
-<p>
  PolySpace bug: <a href="Redundant">Redundant</a> optimization (company won't release sample code) 
 </p>
 </li>
@@ -393,28 +376,6 @@ Misc. and underspecified TODOs:
 
     <li>
 <p>
- Optimize <tt>Word{S,U}&lt;N&gt;_extdToWord&lt;M&gt;</tt> conversions 
-</p>
-</li>
-
-            <ul>
-
-            <li>
-<p>
- <a href="http://mlton.org/pipermail/mlton-user/2009-January/001506.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-January/001506.html</a> 
-</p>
-</li>
-            <li>
-<p>
- <a href="http://mlton.org/pipermail/mlton/2009-January/030505.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-January/030505.html</a> 
-</p>
-</li>
-
-            </ul>
-
-
-    <li>
-<p>
  Implement more 64bit primops in x86 codegen 
 </p>
 </li>
@@ -471,23 +432,6 @@ Misc. and underspecified TODOs:
 
     <li>
 <p>
- ReactiveSystems performance bug: <a href="SimplifyTypes">SimplifyTypes</a> optimization, <a href="RefFlatten">RefFlatten</a> optimization 
-</p>
-</li>
-
-            <ul>
-
-            <li>
-<p>
- <a href="http://mlton.org/pipermail/mlton-user/2009-June/001542.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton-user/2009-June/001542.html</a> 
-</p>
-</li>
-
-            </ul>
-
-
-    <li>
-<p>
  eliminate <tt>-build-constants</tt> 
 </p>
 </li>
@@ -514,6 +458,45 @@ Misc. and underspecified TODOs:
  similar to <tt>gen-sizes.c</tt> and <tt>sizes</tt> 
 </p>
 </li>
+
+            </ul>
+
+
+    <li>
+<p>
+ eliminate "Windows hacks" for Cygwin from <tt>Path</tt> module 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-July/030606.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-July/030606.html</a> 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ extend IL type checkers to check for empty property lists 
+</p>
+</li>
+    <li>
+<p>
+ make (unsafe) <tt>IntInf</tt> conversions into primitives 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pipermail/mlton/2009-July/030622.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-July/030622.html</a> 
+</p>
+</li>
 </ul>
 
 </ul>
@@ -524,5 +507,5 @@ Misc. and underspecified TODOs:
 
 <p>
 <hr>
-Last edited on 2009-06-22 01:40:55 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-02 20:55:52 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

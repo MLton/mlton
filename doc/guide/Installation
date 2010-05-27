@@ -67,7 +67,7 @@ Installation of MLton creates the following files and directories.
     <li>
 <p>
  <tt>/usr/bin/mllex</tt>  <br>
-The <a class="nonexistent" href="MLLex">MLLex</a> lexer generator. 
+The <a href="MLLex">MLLex</a> lexer generator. 
 </p>
 </li>
     <li class="gap">
@@ -91,7 +91,7 @@ A script to call the compiler.  This script may be moved anywhere,  however, it 
     <li class="gap">
 <p>
  <tt>/usr/bin/mlyacc</tt>  <br>
-The <a class="nonexistent" href="MLYacc">MLYacc</a> parser generator. 
+The <a href="MLYacc">MLYacc</a> parser generator. 
 </p>
 </li>
     <li class="gap">

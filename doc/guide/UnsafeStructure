@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ. 
+This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ, with a few extract operations for Pack{Word,Real}. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> UNSAFE_MONO_ARRAY =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -85,6 +85,28 @@ This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ.
          <B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> CharArray: UNSAFE_MONO_ARRAY
       <B><FONT COLOR="#0000FF">structure</FONT></B> CharVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> IntArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> IntVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int8Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int8Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int16Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int16Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int32Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int32Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int64Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Int64Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> IntInfArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> IntInfVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeIntArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeIntVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeRealArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeRealVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeWordArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeWordVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> RealArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> RealVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Real32Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Real32Vector: UNSAFE_MONO_VECTOR
       <B><FONT COLOR="#0000FF">structure</FONT></B> Real64Array: UNSAFE_MONO_ARRAY
       <B><FONT COLOR="#0000FF">structure</FONT></B> Vector:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -92,6 +114,25 @@ This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ.
          <B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Word8Array: UNSAFE_MONO_ARRAY
       <B><FONT COLOR="#0000FF">structure</FONT></B> Word8Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word16Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word16Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word32Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word32Vector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word64Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word64Vector: UNSAFE_MONO_VECTOR
+
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackReal32Big : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackReal32Little : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackReal64Big : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackReal64Little : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackRealBig : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackRealLittle : PACK_REAL
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord16Big : PACK_WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord16Little : PACK_WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord32Big : PACK_WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord32Little : PACK_WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord64Big : PACK_WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> PackWord64Little : PACK_WORD
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -103,5 +144,5 @@ This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ.
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:29:31 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-09-11 16:43:43 by <span title="ottawa.dvs.informatik.tu-darmstadt.de"><a href="WesleyTerpstra">WesleyTerpstra</a></span>.
 </body></html>

@@ -114,17 +114,17 @@ Fortunately, there is a solution to these problems.
 </p>
 <h2 id="head-02713f1aab596f254ab1dd3551f0c5a015b6e40b">Advanced implementation</h2>
 <p>
-Using <a href="Fold">Fold</a> one can define a family of <tt>makeUpdate&lt;N&gt;</tt> functions and single <em>update</em> operator <tt>U</tt> so that one can define a functional record update function for any record type simply by specifying a (trivial) isomorphism between that type and a <a href="ProductType">product type</a>.  For example, suppose that we would like to do functional record update on records with fields <tt>a</tt> and <tt>b</tt>.  Then one defines a function <tt>updateAB</tt> as follows. 
+Using <a href="Fold">Fold</a> one can define a family of <tt>makeUpdate&lt;N&gt;</tt> functions and single <em>update</em> operator <tt>U</tt> so that one can define a functional record update function for any record type simply by specifying a (trivial) isomorphism between that type and function argument list.  For example, suppose that we would like to do functional record update on records with fields <tt>a</tt> and <tt>b</tt>.  Then one defines a function <tt>updateAB</tt> as follows. 
 </p>
 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> updateAB =
    <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> p2r (v1 &amp; v2) = {a = v1, b = v2}
-      <B><FONT COLOR="#A020F0">fun</FONT></B> r2p {a = v1, b = v2} = (v1 &amp; v2)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> from v1 v2 = {a = v1, b = v2}
+      <B><FONT COLOR="#A020F0">fun</FONT></B> to f {a = v1, b = v2} = f v1 v2
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      makeUpdate2 (p2r, p2r, r2p)
+      makeUpdate2 (from, from, to)
    <B><FONT COLOR="#A020F0">end</FONT></B>
    z
 </PRE>
@@ -132,15 +132,15 @@ Using <a href="Fold">Fold</a> one can define a family of <tt>makeUpdate&lt;N&gt;
  
 </p>
 <p>
-The functions <tt>p2r</tt> (think <em>product to record</em>) and <tt>r2p</tt> (think <em>record to product</em>) specify an isomorphism between  <tt>a,b</tt> records and binary products.  There is a second use of <tt>p2r</tt> to work around the lack of <a href="FirstClassPolymorphism">first-class polymorphism</a> in SML. 
+The functions <tt>from</tt> (think <em>from function arguments</em>) and <tt>to</tt> (think <em>to function arguements</em>) specify an isomorphism between  <tt>a,b</tt> records and function arguments.  There is a second use of <tt>from</tt> to work around the lack of <a href="FirstClassPolymorphism">first-class polymorphism</a> in SML. 
 </p>
 <p>
 With the definition of <tt>updateAB</tt> in place, the following expressions are valid. 
 </p>
 
 <pre class=code>
-updateAB {a = <B><FONT COLOR="#5F9EA0">13</FONT></B>, b = <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>} (U#b <B><FONT COLOR="#BC8F8F">&quot;goodbye&quot;</FONT></B>) $
-updateAB {a = <B><FONT COLOR="#5F9EA0">13.5</FONT></B>, b = true} (U#b false) (U#a <B><FONT COLOR="#5F9EA0">12.5</FONT></B>) $
+updateAB {a = <B><FONT COLOR="#5F9EA0">13</FONT></B>, b = <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>} (set#b <B><FONT COLOR="#BC8F8F">&quot;goodbye&quot;</FONT></B>) $
+updateAB {a = <B><FONT COLOR="#5F9EA0">13.5</FONT></B>, b = true} (set#b false) (set#a <B><FONT COLOR="#5F9EA0">12.5</FONT></B>) $
 </PRE>
 <p>
  
@@ -153,10 +153,10 @@ As another example, suppose that we would like to do functional record update on
 <B><FONT COLOR="#A020F0">val</FONT></B> updateBCD =
    <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> p2r (v1 &amp; v2 &amp; v3) = {b = v1, c = v2, d = v3}
-      <B><FONT COLOR="#A020F0">fun</FONT></B> r2p {b = v1, c = v2, d = v3} = (v1 &amp; v2 &amp; v3)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> from v1 v2 v3 = {b = v1, c = v2, d = v3}
+      <B><FONT COLOR="#A020F0">fun</FONT></B> to f {b = v1, c = v2, d = v3} = f v1 v2 v3
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      makeUpdate3 (p2r, p2r, r2p)
+      makeUpdate3 (from, from, to)
    <B><FONT COLOR="#A020F0">end</FONT></B>
    z
 </PRE>
@@ -168,13 +168,13 @@ With the definition of <tt>updateBCD</tt> in place, the following expression is 
 </p>
 
 <pre class=code>
-updateBCD {b = <B><FONT COLOR="#5F9EA0">1</FONT></B>, c = <B><FONT COLOR="#5F9EA0">2</FONT></B>, d = <B><FONT COLOR="#5F9EA0">3</FONT></B>} (U#c <B><FONT COLOR="#5F9EA0">4</FONT></B>) (U#c <B><FONT COLOR="#5F9EA0">5</FONT></B>) $
+updateBCD {b = <B><FONT COLOR="#5F9EA0">1</FONT></B>, c = <B><FONT COLOR="#5F9EA0">2</FONT></B>, d = <B><FONT COLOR="#5F9EA0">3</FONT></B>} (set#c <B><FONT COLOR="#5F9EA0">4</FONT></B>) (set#c <B><FONT COLOR="#5F9EA0">5</FONT></B>) $
 </PRE>
 <p>
  
 </p>
 <p>
-Note that not all fields need be updated and that the same field may be updated multiple times.  Further note that the same <tt>U</tt> operator is used for all update functions (in the above, for both <tt>updateAB</tt> and <tt>updateBCD</tt>). 
+Note that not all fields need be updated and that the same field may be updated multiple times.  Further note that the same <tt>set</tt> operator is used for all update functions (in the above, for both <tt>updateAB</tt> and <tt>updateBCD</tt>). 
 </p>
 <p>
 In general, to define a functional-record-update function on records with fields <tt>f1</tt>, <tt>f2</tt>, ..., <tt>fN</tt>, use the following template. 
@@ -184,10 +184,10 @@ In general, to define a functional-record-update function on records with fields
 <B><FONT COLOR="#A020F0">val</FONT></B> update =
    <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
    <B><FONT COLOR="#A020F0">let</FONT></B> 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> p2r (v1 &amp; v2 &amp; ... &amp; vn) = {f1 = v1, f2 = v2, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn}
-      <B><FONT COLOR="#A020F0">fun</FONT></B> r2p {f1 = v1, f2 = v2, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn} = (v1 &amp; v2 &amp; ... &amp; vn)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> from v1 v2 ... vn = {f1 = v1, f2 = v2, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn}
+      <B><FONT COLOR="#A020F0">fun</FONT></B> to f {f1 = v1, f2 = v2, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn} = v1 v2 ... vn
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      makeUpdateN (p2r, p2r, r2p)
+      makeUpdateN (from, from, to)
    <B><FONT COLOR="#A020F0">end</FONT></B>
    z
 </PRE>
@@ -197,18 +197,8 @@ In general, to define a functional-record-update function on records with fields
 <p>
 With this, one can update a record as follows. 
 <pre class=code>
-update {f1 = v1, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn} (U#fi1 vi1) ... (U#fim vim) $
+update {f1 = v1, ..., <B><FONT COLOR="#A020F0">fn</FONT></B> = vn} (set#fi1 vi1) ... (set#fim vim) $
 </PRE>
- 
-</p>
-<p>
-If <tt>makeUpdateN</tt> is not already defined for the desired <tt>N</tt>, a generic <tt>makeUpdate</tt> function and special value, <tt>A</tt>, is defined so that one can use the following for <tt>makeUpdateN</tt>, where <tt>A</tt> is repeated <tt>N</tt> times. 
-</p>
-
-<pre class=code>
-makeUpdate A ... A $
-</PRE>
-<p>
  
 </p>
 <h2 id="head-f7b6e4357c7be44d1408bdf8f0ac43469123a056">The FunctionalRecordUpdate structure</h2>
@@ -219,45 +209,50 @@ Here is the implementation of functional record update.
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> FunctionalRecordUpdate =
    <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('x, 'y) u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">X</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'x </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Y</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'y
+      <B><FONT COLOR="#A020F0">local</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> next g (f, z) x = g (f x, z)
+         <B><FONT COLOR="#A020F0">fun</FONT></B> f1 (f, z) x = f (z x)
+         <B><FONT COLOR="#A020F0">fun</FONT></B> f2  z = next f1  z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> f3  z = next f2  z
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> makeUpdate =
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
-         Fold.fold
-         (((), (),
-           <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f o X,
-           <B><FONT COLOR="#A020F0">fn</FONT></B> (a, u) =&gt; <B><FONT COLOR="#A020F0">case</FONT></B> u <B><FONT COLOR="#A020F0">of</FONT></B> X x =&gt; x | _ =&gt; a),
-          <B><FONT COLOR="#A020F0">fn</FONT></B> (p, up, _, _) =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> (p2r, p2r', r2p) =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> r =&gt;
-          Fold.fold ((p2r' (p id), up, r2p r),
-                     <B><FONT COLOR="#A020F0">fn</FONT></B> (_, _, p) =&gt; p2r p))
-         z
-         
-      <B><FONT COLOR="#A020F0">val</FONT></B> A =
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
-         Fold.step0
-         (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, _, p, up) =&gt;
-          (p, up, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; p (f o X) &amp; (f o Y),
-           <B><FONT COLOR="#A020F0">fn</FONT></B> (a &amp; b, u) =&gt;
-           (<B><FONT COLOR="#A020F0">case</FONT></B> u <B><FONT COLOR="#A020F0">of</FONT></B> X x =&gt; up (a, x) | _ =&gt; a)
-           &amp; (<B><FONT COLOR="#A020F0">case</FONT></B> u <B><FONT COLOR="#A020F0">of</FONT></B> Y y =&gt; y | _ =&gt; b)))
-         z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> c0  from = from
+         <B><FONT COLOR="#A020F0">fun</FONT></B> c1  from = c0  from f1
+         <B><FONT COLOR="#A020F0">fun</FONT></B> c2  from = c1  from f2
+         <B><FONT COLOR="#A020F0">fun</FONT></B> c3  from = c2  from f3
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate2 z = makeUpdate A A $ z
-      <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate3 z = makeUpdate A A A $ z
-      <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate4 z = makeUpdate A A A A $ z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate cX (from, from', to) record =
+            <B><FONT COLOR="#A020F0">let</FONT></B>
+               <B><FONT COLOR="#A020F0">fun</FONT></B> ops () = cX from'
+               <B><FONT COLOR="#A020F0">fun</FONT></B> vars f = to f record
+            <B><FONT COLOR="#A020F0">in</FONT></B>
+               Fold.fold ((vars, ops), <B><FONT COLOR="#A020F0">fn</FONT></B> (vars, _) =&gt; vars from)
+            <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">in</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate0  z = makeUpdate c0  z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate1  z = makeUpdate c1  z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate2  z = makeUpdate c2  z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> makeUpdate3  z = makeUpdate c3  z
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> U s v = Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (r, up, p) =&gt; (r, up, up (p, s r v)))
+         <B><FONT COLOR="#A020F0">fun</FONT></B> upd z = Fold.step2 (<B><FONT COLOR="#A020F0">fn</FONT></B> (s, f, (vars, ops)) =&gt; (<B><FONT COLOR="#A020F0">fn</FONT></B> out =&gt; vars (s (ops ()) (out, f)), ops)) z
+         <B><FONT COLOR="#A020F0">fun</FONT></B> set z = Fold.step2 (<B><FONT COLOR="#A020F0">fn</FONT></B> (s, v, (vars, ops)) =&gt; (<B><FONT COLOR="#A020F0">fn</FONT></B> out =&gt; vars (s (ops ()) (out, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; v)), ops)) z
+      <B><FONT COLOR="#A020F0">end</FONT></B>
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
 </p>
 <p>
-The idea of <tt>makeUpdate</tt> is to inductively build the update function for n-ary product types.  Each <tt>A</tt> supplied to <tt>makeUpdate</tt> adds one more level to the product.  When finished with its arguments, <tt>makeUpdate</tt> begins a second fold, this time to process a variable number of <tt>U</tt> steps.  The second fold begins by converting the supplied record to a product, using the supplied isomorphism (<tt>p2r'</tt>).  Each step works by selecting a "path",  <tt>s&nbsp;r&nbsp;v</tt>), from the inductively constructed product, reformatted by the supplied isomorphism to look like a record.  Then, the inductively constructed update function is applied to the record-as-product and the path <tt>up&nbsp;(p,&nbsp;s&nbsp;r&nbsp;v)</tt> to yield a new record-as-product. Finally, at the end of the fold, the product is converted back to a record using the supplied isomorphism (<tt>p2r</tt>). 
+The idea of <tt>makeUpdate</tt> is to build a record of functions which  can replace the contents of one argument out of a list of arguments. The functions <tt>fX</tt> replace the 0th, 1st, ... argument with their argument <tt>z</tt>. The <tt>cX</tt> functions pass the first X <tt>f</tt> functions to the record constructor. 
+</p>
+<p>
+The <tt>#field</tt> notation of Standard ML allows us to select the map function which replaces the corresponding argument. By converting the record to an argument list, feeding that list through the selected map function and piping the list into the record constructor, functional record update is achieved. 
 </p>
 <h2 id="head-12c4ffe1d987164a4bedf6ab2aac597a113e181c">Efficiency</h2>
 <p>
 With MLton, the efficiency of this approach is as good as one would expect with the special syntax.  Namely a sequence of updates will be optimized into a single record construction that copies the unchanged fields and fills in the changed fields with their new values. 
+</p>
+<p>
+Before Sep 14, 2009, this page advocated an alternative implementation of FunctionalRecordUpdate. However, the old structure caused exponentially increasing compile times. We advise you to switch to the newer version. 
 </p>
 <h2 id="head-76c74bd071dd73f01696fddbbffc77712a479faf">Applications</h2>
 <p>
@@ -269,5 +264,5 @@ Functional record update can be used to implement labelled <a href="OptionalArgu
 
 <p>
 <hr>
-Last edited on 2009-01-08 12:30:02 by <span title="otaku.housemarque.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2009-09-14 20:23:55 by <span title="ottawa.dvs.informatik.tu-darmstadt.de"><a href="WesleyTerpstra">WesleyTerpstra</a></span>.
 </body></html>

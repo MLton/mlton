@@ -110,22 +110,26 @@ This pass moves all <tt>datatype</tt> declarations to the top level.
 </p>
 <p>
 Unfortunately, the <tt>datatype</tt> declaration can not be immediately moved to the top level, because that would leave <tt>'a</tt> free. 
-<pre>datatype 'b t = T of 'a * 'b
-fun 'a f (x: 'a) =
-   let 
-      val y: int t = T (x, 1)
-   in 
-      13
-   end
-</pre>In order to safely move <tt>datatype</tt>s, this pass must close them, as well as add any free type variables as extra arguments to the type constructor.  For example, the above program would be translated to the following. 
-<pre>datatype ('a, 'b) t = T of 'a * 'b
-fun 'a f (x: 'a) = 
-   let 
-      val y: ('a, int) t = T (x, 1)
-   in 
-      13
-   end
-</pre>
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'b t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> f (x: 'a) =
+   <B><FONT COLOR="#A020F0">let</FONT></B> 
+      <B><FONT COLOR="#A020F0">val</FONT></B> y: int t = T (x, <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+   <B><FONT COLOR="#A020F0">in</FONT></B> 
+      <B><FONT COLOR="#5F9EA0">13</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+ In order to safely move <tt>datatype</tt>s, this pass must close them, as well as add any free type variables as extra arguments to the type constructor.  For example, the above program would be translated to the following. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> f (x: 'a) = 
+   <B><FONT COLOR="#A020F0">let</FONT></B> 
+      <B><FONT COLOR="#A020F0">val</FONT></B> y: ('a * int) t = T (x, <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+   <B><FONT COLOR="#A020F0">in</FONT></B> 
+      <B><FONT COLOR="#5F9EA0">13</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+ 
 </p>
 <h2 id="head-53d5b31ac8da1ff19a82453fd040f529e241f6cd">Historical Notes</h2>
 <p>
@@ -137,5 +141,5 @@ The Defunctorize pass originally eliminated  <a href="StandardML">Standard ML</a
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:40:00 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-12-18 11:24:10 by <span title="cpe-67-240-162-90.rochester.res.rr.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

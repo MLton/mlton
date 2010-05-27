@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Constant propagation is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+ConstantPropagation is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
 This is whole-program constant propagation, even through data structures.  It also performs globalization of (small) values computed once. 
 </p>
@@ -70,5 +70,5 @@ Uses <a href="Multi">Multi</a>.
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:30:40 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2009-08-02 21:45:51 by <span title="173.86.192.189"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

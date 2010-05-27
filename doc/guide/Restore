@@ -82,7 +82,7 @@ The main deviation is the calculation of liveness of the violating variables, wh
 This is "optimized" for restoration of functions with small numbers of violating variables -- use bool vectors to represent sets of violating variables. 
 </p>
 <p>
-Also, we use a Promise.t to suspend part of the dominance frontier computation. 
+Also, we use a <tt>Promise.t</tt> to suspend part of the dominance frontier computation. 
 </p>
 </div>
 
@@ -90,5 +90,5 @@ Also, we use a Promise.t to suspend part of the dominance frontier computation.
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:34:12 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-03-02 15:18:03 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

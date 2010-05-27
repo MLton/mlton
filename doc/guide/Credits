@@ -250,7 +250,7 @@ We have also benefited from other software development tools and used code from 
 </li>
     <li class="gap">
 <p>
- MLton's implementation of mllex, mlyacc,   the <a href="CKitLibrary">ckit Library</a>,   the <a href="MLRISCLibrary">MLRISC Library</a>,   the <a href="SMLNJLibrary">SML/NJ Library</a>,   <a href="ConcurrentML">Concurrent ML</a>,   mlnlffigen and <a href="MLNLFFI">ML-NLFFI</a>   are modified versions of code from SML/NJ. 
+ MLton's implementation of <a href="MLLex"> mllex</a>, <a href="MLYacc"> mlyacc</a>,   the <a href="CKitLibrary">ckit Library</a>,   the <a href="MLRISCLibrary">MLRISC Library</a>,   the <a href="SMLNJLibrary">SML/NJ Library</a>,   <a href="ConcurrentML">Concurrent ML</a>,   mlnlffigen and <a href="MLNLFFI">ML-NLFFI</a>   are modified versions of code from SML/NJ. 
 </p>
 </li>
 </ul>
@@ -261,5 +261,5 @@ We have also benefited from other software development tools and used code from 
 
 <p>
 <hr>
-Last edited on 2009-06-18 23:23:18 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-07 17:33:02 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

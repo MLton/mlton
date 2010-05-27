@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.mlb</tt>, <tt>.o</tt>, <tt>.s</tt>, and <tt>.sml</tt>. <p>
+MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.mlb</tt>, <tt>.o</tt>, <tt>.s</tt>, and <tt>.sml</tt>. <p>
 With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a number of choices (e.g. <tt>{true|false}</tt>), the first value listed is the default. 
 </p>
 <h2 id="head-6bf5da9c080bee3a8142586c412aa39971137eee">Options</h2>
@@ -82,8 +82,8 @@ Pass <em>option</em> to <tt>gcc</tt> when compiling C code.
 </li>
     <li class="gap">
 <p>
- <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}</tt>  <br>
-Generate native code, byte code, or C code.  With  <tt>-codegen&nbsp;native</tt> (<tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>), MLton typically  compiles more quickly and generates better code. 
+ <tt>-codegen&nbsp;{native|x86|amd64|c}</tt>  <br>
+Generate native code or C code.  With  <tt>-codegen&nbsp;native</tt> (<tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>), MLton typically  compiles more quickly and generates better code. 
 </p>
 </li>
     <li class="gap">
@@ -260,7 +260,7 @@ Specify when to stop.
 <td>
  <tt>f</tt> </td>
 <td>
- list of files on stdout (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
+ list of files on stdout (only makes sense when input is <tt>foo.mlb</tt>) </td>
 </tr>
  <tr>
 <td>
@@ -355,5 +355,5 @@ How verbose to be about what passes are running.  The default is  <tt>0</tt>.
 
 <p>
 <hr>
-Last edited on 2009-06-23 16:01:50 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-04-06 17:50:15 by <span title="129.21.75.73"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

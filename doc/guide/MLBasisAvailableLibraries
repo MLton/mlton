@@ -91,7 +91,7 @@ The <a href="UnsafeStructure">Unsafe</a> structure and signature.
     <li class="gap">
 <p>
  <tt>$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb</tt>  <br>
-Modules used by parsers built with <a class="nonexistent" href="MLYacc">MLYacc</a>. 
+Modules used by parsers built with <a href="MLYacc">MLYacc</a>. 
 </p>
 </li>
     <li class="gap">
