@@ -180,7 +180,7 @@ for f in *.sml; do
         echo "testing $f"
         unset extraFlags
         case "$f" in
-        exnHistory*)
+        exn-history*)
                 extraFlags[${#extraFlags[@]}]="-const"
                 extraFlags[${#extraFlags[@]}]="Exn.keepHistory true"
         ;;
