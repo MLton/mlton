@@ -35,7 +35,6 @@
 
 #define HAS_FEROUND FALSE
 #define HAS_FPCLASSIFY TRUE
-#define HAS_MSG_DONTWAIT FALSE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SIGNBIT TRUE
@@ -43,8 +42,11 @@
 #define HAS_TIME_PROFILING FALSE
 
 #ifndef MSG_DONTWAIT
+#define HAS_MSG_DONTWAIT FALSE
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
+#else
+#define HAS_MSG_DONTWAIT TRUE
 #endif
 
 #define SPAWN_MODE _P_NOWAIT

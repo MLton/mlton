@@ -3,7 +3,9 @@
 #include "platform.h"
 
 #include "mmap.c"
+#if not HAS_MSG_DONTWAIT
 #include "recv.nonblock.c"
+#endif
 #include "windows.c"
 #include "mremap.c"
 
