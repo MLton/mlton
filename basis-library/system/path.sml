@@ -24,42 +24,18 @@ infix 9 sub
 val op sub = String.sub
 val substring = String.extract
 
-(* Testing commands in both cygwin and mingw reveal that BOTH treat
- * paths exactly the same, and they also match newer windows console
- * commands (for example command.com and cmd.exe).
- * 
- * There is one exception: both cygwin and mingw treat /foo\bar
- * differently from \foo\bar; there is a special root for '/'.
- * This is so that cygwin and msys can fake a Unix directory tree.
- * 
- * Normal windows commands do not do this. Both msys and cygwin do it
- * differently. The msys(mingw) approach is for the shell(bash) to
- * translate the path before calling the command, eg: foo /usr will
- * run foo with arguement "c:/msys/1.0/". Under cygwin, the path is
- * passed through as stated and the program has to deal with it. Thus,
- * for mingw we can (and should) ignore the issue and thus the mlton
- * compiled application is identical to a windows app. However, under
- * cygwin, we need to track /* as a special volume.
- *)
 val isWindows = 
    let 
       open Primitive.MLton.Platform.OS 
    in 
-      host = MinGW orelse host = Cygwin
-   end
-
-val volumeHack =
-   let
-      open Primitive.MLton.Platform.OS
-   in
-      host = Cygwin
+      host = MinGW
    end
 
 (* the path separator used in canonical paths *)
 val slash = if isWindows then "\\" else "/"
 
-(* newer windows commands treat both / and \ as path separators
- * try echo sdfsdf > foo/bar under windows command.com -- it works
+(* MinGW and newer Windows commands treat both / and \ as path
+ * separators.
  * 
  * Sadly this means that toString o fromString is not the identity
  * b/c foo/bar -> foo\bar. However, there's nothing else one can do!
@@ -68,13 +44,9 @@ val slash = if isWindows then "\\" else "/"
 fun isslash c = c = #"/" orelse (isWindows andalso c = #"\\")
 fun iscolon c = c = #":"
 
-(* Under cygwin, the special volume "/" denotes the cygwin pseudo-root
- *)
 fun isVolumeName v =
    (isWindows andalso size v = 2 andalso 
     Char.isAlpha (v sub 0) andalso iscolon (v sub 1))
-   orelse
-   (volumeHack andalso v = "/")
 
 fun volumeMatch (root, relative) =
    relative = ""
@@ -107,10 +79,7 @@ fun fromString s =
       val (vol, rest) = (* 4:foo has a volume of "4:" even tho invalid *)
          if isWindows andalso size s >= 2 andalso iscolon (s sub 1)
             then (substring (s, 0, SOME 2), substring (s, 2, NONE))
-         else 
-            if volumeHack andalso size s >= 1 andalso s sub 0 = #"/"
-               then ("/", s)
-            else ("", s)
+         else ("", s)
       val (isAbs, arcs) =
          case (String.fields isslash rest) of
             "" :: [] => (false, [])
@@ -139,7 +108,7 @@ fun toString {arcs, isAbs, vol} =
       then raise InvalidArc
    else 
       concat [vol,
-              if isAbs andalso (not volumeHack orelse vol <> "/")
+              if isAbs
                  then slash
               else "",
               String.concatWith slash arcs]
@@ -317,7 +286,7 @@ fun toUnixPath s =
       let
          val {arcs, isAbs, vol} = fromString s
       in
-         if vol <> "" andalso not (volumeHack andalso vol = "/") 
+         if vol <> "" 
             then raise Path 
          else (if isAbs then "/" else "") ^ String.concatWith "/" arcs
       end
