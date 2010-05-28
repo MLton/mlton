@@ -536,10 +536,6 @@ int lstat (const char *file_name, struct stat *buf) {
         return stat (file_name, buf);
 }
 
-int mkdir2 (const char *pathname, mode_t mode) {
-        return mkdir (pathname, mode);
-}
-
 __attribute__ ((noreturn))
 int mkfifo (__attribute__ ((unused)) const char *pathname,
             __attribute__ ((unused)) mode_t mode) {

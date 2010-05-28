@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2010 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -142,8 +143,6 @@ PRIVATE __attribute__ ((noreturn)) void MLton_heapCheckTooLarge (void);
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
-
-PRIVATE int mkdir2 (const char *pathname, mode_t mode);
 
 /* ---------------------------------------------------------------- */
 /*                        Garbage Collector                         */

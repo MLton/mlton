@@ -5,7 +5,6 @@
 #include <sys/vminfo.h>
 
 #include "diskBack.unix.c"
-#include "mkdir2.c"
 #include "mmap-protect.c"
 #include "nonwin.c"
 #include "recv.nonblock.c"

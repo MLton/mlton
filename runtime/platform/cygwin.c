@@ -2,7 +2,6 @@
 
 #include "platform.h"
 
-#include "mkdir2.c"
 #include "mmap.c"
 #include "recv.nonblock.c"
 #include "windows.c"
