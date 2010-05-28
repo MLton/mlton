@@ -1,7 +1,7 @@
 #include "platform.h"
 
 #include "diskBack.unix.c"
-#include "displayMem.linux.c"
+#include "displayMem.proc.c"
 #include "mmap-protect.c"
 #include "nonwin.c"
 #include "sysctl.c"
