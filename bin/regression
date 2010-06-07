@@ -151,7 +151,7 @@ for f in *.sml; do
         case `host-os` in
         cygwin)
                 case "$f" in
-                socket|textio.2)
+                textio.2)
                         continue
                 ;;
                 esac
