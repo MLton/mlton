@@ -3,15 +3,20 @@ programming language.  MLton has the following features.
 
   + Portability.  
    Runs on the following platforms.
-   o AMD64: FreeBSD, Linux (Debian, Fedora, ...).
-   o IA64: HPUX (11.11 and above).
+   o ARM: Linux (Debian)
+   o Alpha: Linux (Debian)
+   o AMD64: FreeBSD, Linux (Debian, Fedora, ...), Solaris (10 and
+      above).
    o HPPA: HPUX (11.11 and above), Linux (Debian).
+   o IA64: HPUX (11.11 and above), Linux (Debian).
    o PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian,
       Fedora, ...).
    o PowerPC64: AIX (5.2 and above).
+   o S390: Linux (Debian).
    o Sparc: Linux (Debian), Solaris (8 and above).
    o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian,
-      Fedora, ...), MinGW/Windows, NetBSD, OpenBSD.
+      Fedora, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and
+      above).
   + Robustness.
    o Supports the full SML 97 language as given in The Definition 
       of Standard ML (Revised).
