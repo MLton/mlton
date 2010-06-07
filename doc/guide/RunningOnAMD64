@@ -55,14 +55,32 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on the AMD64 (x86-64) architecture. <p>
-On AMD64, MLton supports native code generation (<tt>-codegen&nbsp;native</tt> or <tt>-codegen&nbsp;amd64</tt>). 
+MLton runs fine on the AMD64 (x86-64) architecture. <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
+
+    <ul>
+
+    <li>
+<p>
+ When compiling for AMD64, MLton targets the 64-bit ABI. 
 </p>
+</li>
+    <li class="gap">
+<p>
+ On AMD64, MLton supports native code generation (<tt>-codegen&nbsp;native</tt> or <tt>-codegen&nbsp;amd64</tt>). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ When compiling for AMD64, MLton uses <tt>-align&nbsp;8</tt> by default.  Using <tt>-align&nbsp;4</tt> may be incompatible with optimized builds of the <a href="GnuMP">GnuMP</a> library, which assume 8-byte alignment.  (See the thread at <a class="external" href="http://mlton.org/pipermail/mlton/2009-October/030674.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2009-October/030674.html</a> for more details.) 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2009-06-18 22:53:17 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-31 19:56:08 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

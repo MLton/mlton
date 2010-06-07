@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+MLton runs fine on Solaris. <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
 
     <ul>
 
@@ -69,9 +69,17 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
  Making the documentation requires that you install <tt>latex</tt>  and <tt>dvips</tt>, which are available in the <tt>tetex</tt> package. 
 </p>
 </li>
-    <li class="gap">
+
+    </ul>
+
+
+<h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+
+    <ul>
+
+    <li>
 <p>
- Bootstrapping is so slow as to be impractical (many hours on a  500MHz UltraSparc).  For this reason, we strongly recommend building  with a Linux to Solaris <a href="CrossCompiling">cross compiler</a>. 
+ Bootstrapping on the <a href="RunningOnSparc">Sparc architecture</a> is so slow as to be impractical (many hours on a  500MHz UltraSparc).  For this reason, we strongly recommend building  with a <a href="CrossCompiling">cross compiler</a>. 
 </p>
 </li>
 
@@ -84,7 +92,17 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 
     <li>
 <p>
+ <a href="RunningOnAMD64">RunningOnAMD64</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="RunningOnSparc">RunningOnSparc</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnX86">RunningOnX86</a> 
 </p>
 </li>
 </ul>
@@ -95,5 +113,5 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 
 <p>
 <hr>
-Last edited on 2009-06-18 23:11:28 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-01 01:02:46 by <span title="cpe-74-65-8-152.rochester.res.rr.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

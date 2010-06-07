@@ -69,6 +69,40 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li>
 <p>
+ <a href="RunningOnARM">ARM</a>: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ <a href="RunningOnAlpha">Alpha</a>: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
  <a href="RunningOnAMD64">AMD64</a>: 
 </p>
 </li>
@@ -77,12 +111,22 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
+ <a href="RunningOnDarwin">Darwin</a> (Mac OS X) 
+</p>
+</li>
+            <li>
+<p>
  <a href="RunningOnFreeBSD">FreeBSD</a>  
 </p>
 </li>
             <li>
 <p>
  <a href="RunningOnLinux">Linux</a> (Debian, Fedora, ...) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnSolaris">Solaris</a> (10 and above) 
 </p>
 </li>
 
@@ -122,6 +166,11 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
             <li>
 <p>
  <a href="RunningOnHPUX">HPUX</a> (11.11 and above) 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian) 
 </p>
 </li>
 
@@ -174,6 +223,23 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li class="gap">
 <p>
+ <a href="RunningOnS390">S390</a> 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
  <a href="RunningOnSparc">Sparc</a> 
 </p>
 </li>
@@ -187,7 +253,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
- <a href="RunningOnSolaris">Solaris</a> 
+ <a href="RunningOnSolaris">Solaris</a> (8 and above) 
 </p>
 </li>
 
@@ -235,6 +301,11 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
             <li>
 <p>
  <a href="RunningOnOpenBSD">OpenBSD</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnSolaris">Solaris</a> (10 and above) 
 </p>
 </li>
 
@@ -359,7 +430,7 @@ For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or m
 </li>
     <li>
 <p>
- <a class="nonexistent" href="MLNLFFIGEN">ML-NLFFIGEN</a> 
+ <a href="MLNLFFIGen">MLNLFFIGen</a> foreign-function-interface generator 
 </p>
 </li>
 
@@ -470,5 +541,5 @@ MLton has a facility for saving the entire state of a computation to a file and 
 
 <p>
 <hr>
-Last edited on 2009-06-22 16:02:38 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-07 20:08:54 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

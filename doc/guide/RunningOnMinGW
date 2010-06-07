@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, a library for porting Unix applications to Windows.  Some library functionality is missing or changed. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, a library for porting Unix applications to Windows.  Some library functionality is missing or changed. <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
 
     <ul>
 
@@ -81,7 +81,15 @@ MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png
         </ul>
 
 
-    <li class="gap">
+
+    </ul>
+
+
+<h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+
+    <ul>
+
+    <li>
 <p>
  Many functions are unimplemented and will <tt>raise&nbsp;SysErr</tt>. 
 </p>
@@ -419,5 +427,5 @@ MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png
 
 <p>
 <hr>
-Last edited on 2007-12-17 16:36:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-31 19:56:31 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -55,13 +55,13 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on the PowerPC64 architecture. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+MLton runs fine on the PowerPC64 architecture. <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
 
     <ul>
 
     <li>
 <p>
- When compiling for PowerPC64, MLton targets the 64-bit PowerPC  architecture. 
+ When compiling for PowerPC64, MLton targets the 64-bit PowerPC architecture. 
 </p>
 </li>
     <li class="gap">
@@ -82,5 +82,5 @@ MLton runs fine on the PowerPC64 architecture. <h2 id="head-b05203cf89b60eb36609
 
 <p>
 <hr>
-Last edited on 2009-06-18 22:30:05 by <span title="c-67-165-143-160.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-31 19:56:37 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

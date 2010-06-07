@@ -55,9 +55,19 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>. <p>
-MLton is available as a <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">port</a>. 
+MLton runs fine on <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>. <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
+
+    <ul>
+
+    <li>
+<p>
+ MLton is available as a <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>  <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">port</a>. 
 </p>
+</li>
+
+    </ul>
+
+
 <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
 
     <ul>
@@ -83,5 +93,5 @@ MLton is available as a <a class="external" href="http://www.freebsd.org/"><img 
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:19:56 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-31 19:56:20 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

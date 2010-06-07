@@ -55,12 +55,18 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on Darwin (and on Mac OS X). 
+MLton runs fine on Darwin (and on Mac OS X). <h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
+
     <ul>
 
     <li>
 <p>
- MLton requires the <a href="GnuMP">GnuMP</a> library, which is available via  <a class="external" href="http://fink.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fink</a> or <a class="external" href="http://macports.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a>. 
+ MLton requires the <a href="GnuMP">GnuMP</a> library, which is available via  <a class="external" href="http://www.finkproject.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fink</a> or <a class="external" href="http://www.macports.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a>. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ For Intel-based Macs, MLton targets the <a href="RunningOnAMD64">AMD64 architecture</a> on Darwin 10 (Mac OS X Snow Leopard) and higher and targets the <a href="RunningOnX86">x86 architecture</a> on Darwin 8 (Mac OS X Tiger) and Darwin 9 (Mac OS X Leopard). 
 </p>
 </li>
 
@@ -86,6 +92,11 @@ MLton runs fine on Darwin (and on Mac OS X).
 
     <li>
 <p>
+ <a href="RunningOnAMD64">RunningOnAMD64</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="RunningOnPowerPC">RunningOnPowerPC</a> 
 </p>
 </li>
@@ -102,5 +113,5 @@ MLton runs fine on Darwin (and on Mac OS X).
 
 <p>
 <hr>
-Last edited on 2007-08-13 19:03:38 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-05-31 19:56:17 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

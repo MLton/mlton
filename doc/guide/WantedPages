@@ -58,8 +58,6 @@ urchinTracker();
 Pages that don't exist and the pages that link to them. <p>
 <ol>
 <li>
-<a class="nonexistent" href="Bugs201006XX">Bugs201006XX</a>: <a href="Release201006XX">Release201006XX</a></li>
-<li>
 <a class="nonexistent" href="CCodegen">CCodegen</a>: <a href="Chunkify">Chunkify</a></li>
 <li>
 <a class="nonexistent" href="Codegen">Codegen</a>: <a href="Machine">Machine</a></li>
@@ -75,8 +73,6 @@ Pages that don't exist and the pages that link to them. <p>
 <a class="nonexistent" href="LambdaLift">LambdaLift</a>: <a href="SXMLSimplify">SXMLSimplify</a></li>
 <li>
 <a class="nonexistent" href="MLDoc">MLDoc</a>: <a href="Libraries">Libraries</a></li>
-<li>
-<a class="nonexistent" href="MLNLFFIGEN">MLNLFFIGEN</a>: <a href="Features">Features</a></li>
 <li>
 <a class="nonexistent" href="SimplyTyped">SimplyTyped</a>: <a href="IntermediateLanguage">IntermediateLanguage</a>, <a href="SSA">SSA</a>, <a href="SSA2">SSA2</a></li>
 <li>
