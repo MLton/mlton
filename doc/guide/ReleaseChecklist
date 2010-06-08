@@ -129,7 +129,7 @@ urchinTracker();
 </li>
             <li>
 <p>
- Comment out lists and attachment links under <tt>YYYYMM??&nbsp;binary&nbsp;packages</tt> and <tt>YYYYMM??&nbsp;bsources</tt>. 
+ Comment out lists and attachment links under <tt>YYYYMM??&nbsp;binary&nbsp;packages</tt> and <tt>YYYYMM??&nbsp;sources</tt>. 
 </p>
 </li>
             <li>
@@ -555,5 +555,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2009-07-31 14:52:38 by <span title="173.86.192.189"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-08 14:25:52 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

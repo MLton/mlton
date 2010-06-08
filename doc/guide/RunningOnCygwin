@@ -72,6 +72,11 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
  Cygwin's <tt>mmap</tt> emulation is less than perfect.  Sometimes it  interacts badly with <tt>Posix.Process.fork</tt>. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ The <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-MLTONWIKIVERSION-release/regression/socket.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">socket.sml</a> regression test fails.  We suspect this is not a   bug and is simply due to our test relying on a certain   behavior when connecting to a socket that has not yet   accepted, which is handled differently on OpenBSD than other   platforms.  Any help in understanding and resolving this issue   is appreciated. 
+</p>
+</li>
 
     </ul>
 
@@ -93,5 +98,5 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
 
 <p>
 <hr>
-Last edited on 2009-06-23 14:48:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-07 21:29:55 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

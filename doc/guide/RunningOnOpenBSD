@@ -61,7 +61,7 @@ MLton runs fine on <a class="external" href="http://www.openbsd.org/"><img src="
 
     <li>
 <p>
- Our socket regression test fails.  We suspect this is not a   bug and is simply due to our test relying on a certain   behavior when connecting to a socket that has not yet   accepted, which is handled differently on OpenBSD than other   platforms.  Any help in understanding and resolving this issue   is appreciated. 
+ The <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-MLTONWIKIVERSION-release/regression/socket.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">socket.sml</a> regression test fails.  We suspect this is not a   bug and is simply due to our test relying on a certain   behavior when connecting to a socket that has not yet   accepted, which is handled differently on OpenBSD than other   platforms.  Any help in understanding and resolving this issue   is appreciated. 
 </p>
 </li>
 </ul>
@@ -72,5 +72,5 @@ MLton runs fine on <a class="external" href="http://www.openbsd.org/"><img src="
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:20:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-07 21:30:30 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -384,8 +384,8 @@ MLton takes advantage of whole-program compilation to perform very  aggressive d
 </li>
     <li class="gap">
 <p>
- Native integers, reals, and words.  <br>
-In MLton, integers and words are 32 bits and arithmetic does not  have any overhead due to tagging or boxing.  Also, reals are stored  unboxed, avoiding any overhead due to boxing. 
+ Untagged and unboxed native integers, reals, and words.  <br>
+In MLton, integers and words are 8 bits, 16 bits, 32 bits, and 64 bits and arithmetic does not  have any overhead due to tagging or boxing.  Also, reals (32-bit and 64-bit) are stored  unboxed, avoiding any overhead due to boxing. 
 </p>
 </li>
     <li class="gap">
@@ -402,7 +402,7 @@ In MLton, an array (or vector) of integers, reals, or words uses the  natural C-
     <li class="gap">
 <p>
  Fast arbitrary precision arithmetic (<tt>IntInf</tt>) based on the <a href="GnuMP">GnuMP</a>.  <br>
-For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or more faster than Poly/ML or SML/NJ.   
+For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or more faster than Poly/ML or SML/NJ. 
 </p>
 </li>
 
@@ -541,5 +541,5 @@ MLton has a facility for saving the entire state of a computation to a file and 
 
 <p>
 <hr>
-Last edited on 2010-06-07 20:08:54 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-08 14:13:42 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

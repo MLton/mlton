@@ -55,7 +55,10 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here you can download the latest public release of MLton, version 20070826.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+<p>
+This is an archived public release of MLton, version 20070826. 
+</p>
+<h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
 
         <ul>
 
@@ -504,5 +507,5 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 
 <p>
 <hr>
-Last edited on 2009-06-15 15:42:56 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2010-06-08 14:35:09 by <span title="fenrir.cs.rit.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

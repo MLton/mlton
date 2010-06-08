@@ -69,7 +69,7 @@ There are 351 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Bugs20041109">Bugs20041109</a>
 <br><a href="Bugs20051202">Bugs20051202</a>
 <br><a href="Bugs20070826">Bugs20070826</a>
-<br><a href="Bugs201006XX">Bugs201006XX</a>
+<br><a href="Bugs20100608">Bugs20100608</a>
 <a name="C"><h3>C</h3></a><a href="CallGraph">CallGraph</a>
 <br><a href="CallingFromCToSML">CallingFromCToSML</a>
 <br><a href="CallingFromSMLToC">CallingFromSMLToC</a>
@@ -282,7 +282,7 @@ There are 351 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Release20041109">Release20041109</a>
 <br><a href="Release20051202">Release20051202</a>
 <br><a href="Release20070826">Release20070826</a>
-<br><a href="Release201006XX">Release201006XX</a>
+<br><a href="Release20100608">Release20100608</a>
 <br><a href="ReleaseChecklist">ReleaseChecklist</a>
 <br><a href="RemoveUnused">RemoveUnused</a>
 <br><a href="Restore">Restore</a>
