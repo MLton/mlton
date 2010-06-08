@@ -3,14 +3,14 @@ programming language.  MLton has the following features.
 
   + Portability.  
    Runs on the following platforms.
-   o ARM: Linux (Debian)
-   o Alpha: Linux (Debian)
-   o AMD64: FreeBSD, Linux (Debian, Fedora, ...), Solaris (10 and
-      above).
+   o ARM: Linux (Debian).
+   o Alpha: Linux (Debian).
+   o AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, ...),
+      Solaris (10 and above).
    o HPPA: HPUX (11.11 and above), Linux (Debian).
    o IA64: HPUX (11.11 and above), Linux (Debian).
    o PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian,
-      Fedora, ...).
+      Fedora).
    o PowerPC64: AIX (5.2 and above).
    o S390: Linux (Debian).
    o Sparc: Linux (Debian), Solaris (8 and above).
@@ -39,11 +39,11 @@ programming language.  MLton has the following features.
    o Source-level profiling for both time and allocation.
    o MLLex lexer generator.
    o MLYacc parser generator.
-   o ML-NLFFIGEN.
+   o ML-NLFFIGEN foreign-function-interface generator.
   + Extensions.
    o A simple and fast C FFI that supports calling from SML to C and 
       from C to SML.
-   o ML Basis system for programming in the very large.
+   o The ML Basis system for programming in the very large.
    o Libraries for continuations, finalization, interval timers,
       random numbers, resource limits, resource usage, signal
       handlers, object size, system logging, threads, weak pointers,
@@ -66,6 +66,6 @@ doc directory contents:
         examples/               example SML programs
         guide/                  HTML MLton guide (copy of the MLton wiki)
         license/                license information
-        mllex.pd                user guide for mllex lexer generator
+        mllex.pdf               user guide for mllex lexer generator
         mlton-guide.pdf         PDF version of MLton guide
         mlyacc.pdf              user guide for mlyacc parser generator
