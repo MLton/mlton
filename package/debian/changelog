@@ -1,3 +1,9 @@
+mlton (20100608-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Fri, 11 Jun 2010 16:11:59 +0200
+
 mlton (20100504~svn-r7459) unstable; urgency=low
 
   * New snapshot from svn/HEAD
