@@ -1,6 +1,8 @@
 mlton (20100608-1) unstable; urgency=low
 
   * New upstream release
+  * Removed the mips -fPIC work-around
+   * Filing a new gcc bug report upstream
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Fri, 11 Jun 2010 16:11:59 +0200
 
