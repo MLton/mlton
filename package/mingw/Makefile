@@ -6,12 +6,12 @@ PKG_WXS=$(patsubst %,%.wxs,$(PKG))
 PKG_WIXOBJ=$(patsubst %,%.wixobj,$(PKG))
 
 ifeq (,$(VERSION))
-VERSION := $(shell date +%Y%m%d)
+VERSION := $(shell date +%Y%m%d)-1
 endif
 
 # Windows versions have to be (0-255).(0-255).(0-65536)
 # So lets just use YY.MM.DD for the version (leading 0s stripped)
-WINVERSION := $(shell echo $(VERSION) | sed -r 's/20(..)(..)(..)/\1.\2.\3/;s/0*([1-9]+)/\1/g')
+WINVERSION := $(shell echo $(VERSION) | sed -r 's/20([0-9][0-9])([0-9][0-9])([0-9][0-9])-([0-9]+)/\1.\2.\3.\4/;s/0*([1-9]+)/\1/g')
 
 all:	MLton-$(VERSION).exe MLton-$(VERSION).msi
 
