@@ -1,9 +1,7 @@
 # These may be binaries, but they ARE arch independent packages.
 # You can use them from any architecture to compile to the target.
-mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libgdtoa-gdb.a
 mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libgdtoa-pic.a
 mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libgdtoa.a
-mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libmlton-gdb.a
 mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libmlton-pic.a
 mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libmlton.a
 mlton-target-i586-mingw32msvc: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/i586-mingw32msvc/libgmp.a
