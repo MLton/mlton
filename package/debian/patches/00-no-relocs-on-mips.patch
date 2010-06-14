@@ -1,0 +1,18 @@
+Description: Work around for broken mips(el) gcc codegen
+Author: Wesley W. Terpstra (Debian) <terpstra@debian.org>
+Bug-Debian: http://bugs.debian.org/552314
+Bug: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44537
+Forwarded: no
+Last-Update: 2010-06-14
+
+diff -Nur -x '*.orig' -x '*~' mlton/bin/mlton-script mlton.new/bin/mlton-script
+--- mlton/bin/mlton-script	2009-11-07 17:29:05.000000000 +0100
++++ mlton.new/bin/mlton-script	2009-11-07 17:31:43.000000000 +0100
+@@ -115,6 +115,7 @@
+         -target-cc-opt openbsd '-I/usr/local/include'            \
+         -target-cc-opt aix '-maix64'                             \
+         -target-cc-opt ia64 "$ia64hpux -mtune=itanium2"          \
++        -target-cc-opt mips '-mno-explicit-relocs'               \
+         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+         -target-cc-opt x86                                       \
+                 '-m32
