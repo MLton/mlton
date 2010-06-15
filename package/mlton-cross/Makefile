@@ -90,10 +90,13 @@ mingw64:	mingw64.staging/runtime/gmp.h constants.c
 	rm -rf $@.tmp $@
 	mkdir -p $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/include
 	mkdir -p $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/sml
+	# work-around bug #569914:
+	cp win64/getopt.h mingw64.staging/runtime/
 	# work-around wine not yet supporting 64-bit
 	make -C mingw64.staging/runtime TARGET=amd64-mingw32msvc TARGET_ARCH=amd64 TARGET_OS=mingw gdtoa/arithchk.out util.o
 	cp win64/*types* mingw64.staging/runtime/gen
 	cp win64/arith.h mingw64.staging/runtime/gdtoa
+	touch mingw64.staging/runtime/gen/gen-types.stamp
 	make -C mingw64.staging/runtime TARGET=amd64-mingw32msvc TARGET_ARCH=amd64 TARGET_OS=mingw libmlton.a
 	cp win64/sizes mingw64.staging/runtime/gen
 	# end of work-around
