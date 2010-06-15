@@ -1,8 +1,9 @@
-VERSION=20100504~svn
-REVISION=r7459
 MIRROR=http://ftp.de.debian.org/debian
-
 TARGETS=alpha amd64 armel hppa i386 ia64 mips mipsel powerpc s390 sparc
+
+FULL_VERSION := $(shell dpkg-parsechangelog | grep ^Version | cut -d" " -f2)
+VERSION      := $(shell echo "$(FULL_VERSION)" | cut -d- -f1)
+REVISION     := $(shell echo "$(FULL_VERSION)" | cut -d- -f2)
 
 all:	debian/control $(patsubst %,cross-%,$(TARGETS)) mingw32 mingw64
 
@@ -25,7 +26,7 @@ install:
 	cp -a mingw32/* $(DESTDIR)/mlton-target-i586-mingw32msvc/
 	cp -a mingw64/* $(DESTDIR)/mlton-target-amd64-mingw32msvc/
 
-debian/control:	control.in
+debian/control:	control.in Makefile
 	sed 's/VERSION/$(VERSION)-$(REVISION)/g' < $< > $@.tmp
 	mv $@.tmp $@
 
