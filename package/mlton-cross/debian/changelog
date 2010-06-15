@@ -4,6 +4,7 @@ mlton-cross (20100608-2) unstable; urgency=low
    * Skipping version 20100608-1 which didn't build on mips
   * Build-depend on wget (closes: #573655)
   * Switch to quilt source format
+  * Include a debian watch file
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Tue, 15 Jun 2010 16:07:23 +0200
 
