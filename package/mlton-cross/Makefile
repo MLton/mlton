@@ -99,6 +99,7 @@ mingw64:	mingw64.staging/runtime/gmp.h constants.c
 	touch mingw64.staging/runtime/gen/gen-types.stamp
 	make -C mingw64.staging/runtime TARGET=amd64-mingw32msvc TARGET_ARCH=amd64 TARGET_OS=mingw libmlton.a
 	cp win64/sizes mingw64.staging/runtime/gen
+	touch mingw64.staging/runtime/gen/gen-sizes.stamp
 	# end of work-around
 	make -C mingw64.staging/runtime TARGET=amd64-mingw32msvc TARGET_ARCH=amd64 TARGET_OS=mingw OMIT_BYTECODE=yes
 	cp mingw64.staging/runtime/gen/sizes mingw64.staging/runtime/*.a mingw64.staging/gmp.dest/usr/local/lib/libgmp.a $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc
@@ -107,9 +108,9 @@ mingw64:	mingw64.staging/runtime/gmp.h constants.c
 	cp mingw64.staging/runtime/gen/c-types.sml $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/sml
 	echo mingw > $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/os
 	echo amd64 > $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/arch
-	amd64-mingw32msvc-gcc -std=gnu99 -m64 -o mingw64.staging/constants -O1 -w -I /usr/lib/mlton/include -I $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/include -L $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc constants.c -lmlton -lgmp -lgdtoa -lgmp -lm
-	# another no win64 work-around
+	# another no win64 wine work-around
 	cp win64/constants $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/constants
+	#amd64-mingw32msvc-gcc -std=gnu99 -m64 -o mingw64.staging/constants -O1 -w -I /usr/lib/mlton/include -I $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/include -L $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc constants.c -lmlton -lgmp -lgdtoa -lgmp -lm
 	#./mingw64.staging/constants > $@.tmp/usr/lib/mlton/targets/amd64-mingw32msvc/constants
 	mv $@.tmp $@
 
