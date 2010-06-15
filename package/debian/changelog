@@ -1,7 +1,7 @@
 mlton (20100608-2) unstable; urgency=low
 
   * Added a new '-mno-explicit-relocs' mips work-around.
-   * Bug filed with gcc upstream: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44537
+   * Bug filed with gcc upstream (#44537)
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Mon, 14 Jun 2010 18:28:58 +0200
 
