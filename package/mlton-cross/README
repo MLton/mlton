@@ -10,11 +10,9 @@ First add this source to your /etc/apt/sources.list:
 ... and run: apt-get update
 
 To setup a debian armel target, run:
-	apt-get install apt-cross
 	apt-cross -v -v -a armel -i libgmp3-dev libc6-dev
 	apt-get install gcc-4.4-arm-linux-gnueabi
 For an ia64 target:
-	apt-get install apt-cross
 	apt-cross -v -v -a ia64 -i libgmp3-dev libc6.1-dev
 	apt-get install gcc-4.4-ia64-linux-gnu
 
