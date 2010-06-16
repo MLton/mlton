@@ -6,12 +6,12 @@ To use them, you will also need a cross-compiling gcc toolchain.
 
 For example, to setup a debian armel target, run:
 	apt-get install mlton-target-arm-linux-gnueabi
-	apt-cross -a armel -i libc6-dev libgmp3-dev
 	apt-get install gcc-4.4-arm-linux-gnueabi
+	apt-cross -a armel -i libgmp3-dev
 For an ia64 target:
 	apt-get install mlton-target-ia64-linux-gnu
-	apt-cross -a ia64 -i libc6.1-dev libgmp3-dev
 	apt-get install gcc-4.4-ia64-linux-gnu
+	apt-cross -a ia64 -i libgmp3-dev
 
 To use MLton to compile SML for armel/ia64, run:
 	mlton -target arm-linux-gnueabi myproject.mlb

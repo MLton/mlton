@@ -5,18 +5,20 @@ FULL_VERSION := $(shell dpkg-parsechangelog | grep ^Version | cut -d" " -f2)
 VERSION      := $(shell echo "$(FULL_VERSION)" | cut -d- -f1)
 REVISION     := $(shell echo "$(FULL_VERSION)" | cut -d- -f2)
 
+GMP_VERSION := $(shell dpkg-query -s libgmp3-dev | grep ^Version | cut -d" " -f2 | cut -d: -f2 | cut -d- -f1)
+
 all:	debian/control $(patsubst %,cross-%,$(TARGETS)) mingw32 mingw64
 
 clean:
-	rm -rf gmp mlton mingw* cross-* constants.c
+	rm -rf gmp mlton mingw* cross-* constants.c *.tmp *~
 
 distclean:	clean
-	rm -rf gmp* *.deb mlton_*.orig.tar.gz *.tmp *~
+	rm -f *.deb *.gz
 
-release:	distclean
+release:	clean
 	tar cvzf ../mlton-cross_$(VERSION).orig.tar.gz \
-		--exclude .svn --exclude debian \
-		--transform "s@^@mlton-cross-$(VERSION)/@" \
+	  --exclude .svn --exclude debian --exclude \*.deb --exclude \*.gz \
+	  --transform "s@^@mlton-cross-$(VERSION)/@" \
                                       *
 
 install:
@@ -44,9 +46,14 @@ mlton:	mlton_$(VERSION).orig.tar.gz
 	rm -rf $@.tmp
 	touch $@
 
-gmp:
-	apt-get source libgmp3-dev
-	mv gmp-* gmp
+.PRECIOUS: gmp_$(GMP_VERSION).orig.tar.gz
+gmp_$(GMP_VERSION).orig.tar.gz:
+	rm -f $@ $@.tmp
+	wget -O $@.tmp "$(MIRROR)/pool/main/g/gmp/$@"
+	mv $@.tmp $@
+
+gmp:	gmp_$(GMP_VERSION).orig.tar.gz
+	tar xvzf $< --transform "s@^gmp[^/]*@gmp@"
 	cd gmp; patch -p1 < ../fix-gmp-win64.patch
 	cd gmp; autoconf
 
