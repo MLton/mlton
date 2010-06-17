@@ -1,3 +1,11 @@
+mlton-cross (20100608-3) unstable; urgency=low
+
+  * Downgrade priority to extra
+   * mlton-cross depends on apt-cross which is extra
+  * Build-depend wine instead of wine-unstable
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Thu, 17 Jun 2010 21:18:32 +0200
+
 mlton-cross (20100608-2) unstable; urgency=low
 
   * New upstream release
