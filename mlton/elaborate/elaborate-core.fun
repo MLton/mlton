@@ -2097,31 +2097,32 @@ fun elaborateDec (d, {env = E, nest}) =
                                       pats = pats}
                                   end))
                              val numArgs =
-                                Vector.length (#pats (Vector.sub (rs, 0)))
+                                Vector.fold
+                                (rs, Vector.length (#pats (Vector.sub (rs, 0))),
+                                 fn (r,numArgs) =>
+                                 Int.max (Vector.length (#pats r), numArgs))
                              val argTypes =
                                 Vector.tabulate
                                 (numArgs, fn i =>
                                  let
-                                    val t =
-                                       Cpat.ty
-                                       (#pat (Vector.sub
-                                              (#pats (Vector.sub (rs, 0)),
-                                               i)))
+                                    val t = Type.new ()
                                     val _ =
                                        Vector.foreach
                                        (rs, fn {pats, ...} =>
-                                        let
-                                           val {pat, region} =
-                                              Vector.sub (pats, i)
-                                        in
-                                           unify
-                                           (t, Cpat.ty pat, fn (l1, l2) =>
-                                            (region,
-                                             str "function with argument of different types",
-                                             align [seq [str "argument: ", l2],
-                                                    seq [str "previous: ", l1],
-                                                    lay ()]))
-                                        end)
+                                        if Vector.length pats > i
+                                           then let
+                                                   val {pat, region} =
+                                                      Vector.sub (pats, i)
+                                                in
+                                                   unify
+                                                   (t, Cpat.ty pat, fn (l1, l2) =>
+                                                    (region,
+                                                     str "function with argument of different types",
+                                                     align [seq [str "argument: ", l2],
+                                                            seq [str "previous: ", l1],
+                                                            lay ()]))
+                                                end
+                                        else ())
                                  in
                                     t
                                  end)
