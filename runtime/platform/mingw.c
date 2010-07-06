@@ -1308,26 +1308,75 @@ void MLton_fixSocketErrno (void) {
         }
 }
 
-/* The default strerror() does not know extended error codes. */
-char *MLton_strerror(int code) {
-        static char buffer[512];
-        
-        /* Windows specific strerror */
-        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 
-                          0,      /* Not used for FROM_SYSTEM */
-                          code,   /* The status code to look up */
-                          0,      /* Use the default language */
-                          buffer, /* Write the message to here */
-                          sizeof(buffer)-1,
-                          0) == 0) {
-                strcpy(buffer, "Unknown error");
+static const char *MLton_strerrorExtension(int code) {
+        switch (code) {
+        case EINTR:           return "Interrupted function call";
+        case EBADF:           return "Bad file descriptor";
+        case EACCES:          return "Permission denied";
+        case EFAULT:          return "Bad address";
+        case EINVAL:          return "Invalid argument";
+        case EMFILE:          return "Too many open files";
+        case EAGAIN:          return "Resource temporarily unavailable";
+        case EINPROGRESS:     return "Operation in progress";
+        case EALREADY:        return "Connection already in progress";
+        case ENOTSOCK:        return "Not a socket";
+        case EDESTADDRREQ:    return "Destination address required";
+        case EMSGSIZE:        return "Message too long";
+        case EPROTOTYPE:      return "Protocol wrong type for socket";
+        case ENOPROTOOPT:     return "Protocol not available";
+        case EPROTONOSUPPORT: return "Protocol not supported";
+        case ESOCKTNOSUPPORT: return "Socket type not supported";
+        case EOPNOTSUPP:      return "Operation not supported on socket";
+        case EPFNOSUPPORT:    return "Protocol family not supported";
+        case EAFNOSUPPORT:    return "Address family not supported";
+        case EADDRINUSE:      return "Address already in use";
+        case EADDRNOTAVAIL:   return "Address not available";
+        case ENETDOWN:        return "Network is down";
+        case ENETUNREACH:     return "Network unreachable";
+        case ENETRESET:       return "Connection aborted by network";
+        case ECONNABORTED:    return "Connection aborted";
+        case ECONNRESET:      return "Connection reset";
+        case ENOBUFS:         return "No buffer space available";
+        case EISCONN:         return "Socket is connected";
+        case ENOTCONN:        return "The socket is not connected";
+        case ESHUTDOWN:       return "Cannot send after transport endpoint shutdown";
+        case ETIMEDOUT:       return "Connection timed out";
+        case ECONNREFUSED:    return "Connection refused";
+        case ELOOP:           return "Too many levels of symbolic links";
+        case ENAMETOOLONG:    return "Filename too long";
+        case EHOSTDOWN:       return "Host is down";
+        case EHOSTUNREACH:    return "Host is unreachable";
+        case ENOTEMPTY:       return "Directory not empty";
+        case EDQUOT:          return "Disk quota exceeded";
+        case ESTALE:          return "Stale file handle";
+        case EREMOTE:         return "Object is remote";
+        case EUSERS:          return "Too many users";
+        case ECANCELED:       return "Operation canceled";
+        default:              return "Unknown error";
         }
+}
+
+/* MinGW strerror works for all system-defined errno values.
+ * However, platform/mingw.h adds some missing POSIX networking error codes.
+ * It defines these codes as their closest-equivalent winsock error code.
+ * To report network errors, MLton_fixSocketErrno maps winsock errors to 
+ * their closest POSIX errno value.
+ * 
+ * This function must handle the winsock errno values we have added.
+ * FormatMessage doesn't return the POSIX string for errors, and it uses
+ * the current locale's language. The MinGW strerror is always English.
+ * 
+ * Thus, we just make a big English table to augment strerror.
+ * The descriptions are taken from man errno(3).
+ */
+char *MLton_strerror(int code) {
+        static char buffer[80];
         
-        /* Cut message at EOL */
-        for (int i = 0; buffer[i]; ++i)
-                if (buffer[i] == '\n' || buffer[i] == '\r')
-                        buffer[i] = 0;
-        
+#undef strerror
+        if (code < sys_nerr) return strerror(code);
+#define strerror MLton_strerror
+
+        strcpy(buffer, MLton_strerrorExtension(code));
         return buffer;
 }
 
