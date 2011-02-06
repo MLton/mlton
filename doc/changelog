@@ -1,3 +1,13 @@
+Here are the changes from version 2010608 to version YYYYMMDD.
+
+* 2011-02-05
+   - Fixed bug in amd64 codegen calling convention for varargs C calls.
+
+* 2011-01-17
+   - Fixed bug in comment-handling in lexer for mlyacc's input language.
+
+--------------------------------------------------------------------------------
+
 Here are the changes from version 20070826 to version 20100608.
 
 Summary:

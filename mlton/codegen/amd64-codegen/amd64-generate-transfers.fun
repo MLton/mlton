@@ -1357,6 +1357,31 @@ struct
                                     size = pointerSize})),
                                  size_stack_args + 32)
                            else (setup_args, size_stack_args)
+                     (* SysV ABI AMD64 requires %rax set to the number
+                      * of xmms registers passed for varags functions;
+                      * since %rax is caller-save, we conservatively 
+                      * set %rax for all functions (not just varargs).
+                      *)
+                     val (reg_args, setup_args) =
+                        if not win64
+                           then let
+                                   val mem = applyFFTempRegArg 8
+                                   val reg = Register.rax
+                                in
+                                   ((mem,reg) :: reg_args,
+                                    AppendList.append
+                                    (setup_args,
+                                     AppendList.fromList
+                                     [Assembly.instruction_mov
+                                      {src = Operand.immediate_int (List.length xmmreg_args),
+                                       dst = Operand.memloc mem,
+                                       size = Size.QUAD},
+                                      Assembly.directive_cache
+                                      {caches = [{register = reg,
+                                                  memloc = mem,
+                                                  reserve = true}]}]))
+                                end
+                        else (reg_args, setup_args)
                      (*
                      val reserve_args =
                         AppendList.fromList
