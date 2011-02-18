@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2011 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -60,6 +60,7 @@ signature REAL =
       val input: In0.t -> t
       val inverse: t -> t
       val isFinite: t -> bool
+      val isNan: t -> bool
       val layout: t -> Layout.t
       val ln: t -> t
       val log2: t -> t
