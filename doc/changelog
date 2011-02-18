@@ -1,5 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2011-02-17
+   - Fixed bug in translation from SSA2 to RSSA with weak pointers.
+
 * 2011-02-05
    - Fixed bug in amd64 codegen calling convention for varargs C calls.
 
