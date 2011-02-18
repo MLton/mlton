@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2011 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -299,11 +299,10 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                                      Exp.layout exp]) (!removes)])
                    end);
                   List.foreach 
-                  (!removes, fn {var, exp, hash} =>
+                  (!removes, fn {var, hash, ...} =>
                    HashSet.remove
-                   (table, hash, fn {var = var', exp = exp', ...} =>
-                    Var.equals (var, var') andalso 
-                    Exp.equals (exp, exp')));
+                   (table, hash, fn {var = var', ...} =>
+                    Var.equals (var, var')));
                   diag "removed"
                end
             val _ =
