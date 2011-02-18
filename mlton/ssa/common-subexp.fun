@@ -17,7 +17,7 @@ open Exp Transfer
 fun eliminate (Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of control-flow specific cse's,
-       * arguments, and in-degree of blocks. 
+       * arguments, and in-degree of blocks.
        *)
       val {get = labelInfo: Label.t -> {add: (Var.t * Exp.t) list ref,
                                         args: (Var.t * Type.t) vector,
@@ -33,7 +33,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
          Property.getSetOnce (Var.plist, Property.initConst NONE)
       (* Keep track of the variable that holds the length of arrays (and
        * vectors and strings).
-       *) 
+       *)
       val {get = getLength: Var.t -> Var.t option, set = setLength, ...} =
          Property.getSetOnce (Var.plist, Property.initConst NONE)
       fun canonVar x =
@@ -52,8 +52,8 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
           | Const _ => e
           | PrimApp {prim, targs, args} =>
                let
-                  fun doit args = 
-                     PrimApp {prim = prim, 
+                  fun doit args =
+                     PrimApp {prim = prim,
                               targs = targs,
                               args = args}
                   val args = canonVars args
@@ -86,7 +86,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                           | IntInf_xorb => true
                           | _ => false)
                         then
-                           let 
+                           let
                               val (a0, a1) = canon2 ()
                            in doit (Vector.new3 (a0, a1, arg 2))
                            end
@@ -103,7 +103,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
          HashSet.new {hash = #hash}
       fun lookup (var, exp, hash) =
          HashSet.lookupOrInsert
-         (table, hash, 
+         (table, hash,
           fn {exp = exp', ...} => Exp.equals (exp, exp'),
           fn () => {exp = exp,
                     hash = hash,
@@ -113,9 +113,9 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
       (* The hash-cons'ing of globals in ConstantPropagation ensures
        *  that each global is unique.
        *)
-      val _ = 
+      val _ =
          Vector.foreach
-         (globals, fn Statement.T {var, exp, ...} => 
+         (globals, fn Statement.T {var, exp, ...} =>
           let
              val exp = canon exp
              val _ = lookup (valOf var, exp, Exp.hash exp)
@@ -138,15 +138,25 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                       display (seq [Label.layout label, str ": ", str s])
                     end)
                   val _ = diag "started"
-                  val removes = ref []
+                  val remove = ref []
                   val {add, ...} = labelInfo label
+                  val _ = Control.diagnostics
+                          (fn display =>
+                           let open Layout
+                           in
+                              display (seq [str "add: ",
+                                            List.layout (fn (var,exp) =>
+                                                         seq [Var.layout var,
+                                                              str ": ",
+                                                              Exp.layout exp]) (!add)])
+                           end)
                   val _ = List.foreach
                           (!add, fn (var, exp) =>
                            let
                              val hash = Exp.hash exp
                              val elem as {var = var', ...} = lookup (var, exp, hash)
                              val _ = if Var.equals(var, var')
-                                       then List.push (removes, elem)
+                                       then List.push (remove, elem)
                                        else ()
                            in
                              ()
@@ -165,18 +175,18 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                       in
                          case var of
                             NONE => keep ()
-                          | SOME var => 
+                          | SOME var =>
                                let
                                   fun replace var' =
                                      (setReplace (var, SOME var'); NONE)
                                   fun doit () =
                                      let
                                         val hash = Exp.hash exp
-                                        val elem as {var = var', ...} = 
+                                        val elem as {var = var', ...} =
                                            lookup (var, exp, hash)
                                      in
                                         if Var.equals(var, var')
-                                          then (List.push (removes, elem)
+                                          then (List.push (remove, elem)
                                                 ; keep ())
                                           else replace var'
                                      end
@@ -216,14 +226,15 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                   val _ = diag "statements"
                   val transfer = Transfer.replaceVar (transfer, canonVar)
                   val transfer =
-                     case transfer of 
+                     case transfer of
                         Arith {prim, args, overflow, success, ...} =>
                            let
                               val {args = succArgs,
                                    inDeg = succInDeg,
-                                   add = succAdd, ...} = 
+                                   add = succAdd, ...} =
                                  labelInfo success
-                              val {inDeg = overInDeg, add = overAdd, ...} =
+                              val {inDeg = overInDeg,
+                                   add = overAdd, ...} =
                                  labelInfo overflow
                               val exp = canon (PrimApp {prim = prim,
                                                         targs = Vector.new0 (),
@@ -241,7 +252,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                              then let
                                                      val (var', _) =
                                                         Vector.sub (succArgs, 0)
-                                                  in 
+                                                  in
                                                      setReplace (var', SOME var)
                                                   end
                                           else ()
@@ -251,7 +262,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                              then let
                                                      val (var, _) =
                                                         Vector.sub (succArgs, 0)
-                                                  in 
+                                                  in
                                                      List.push
                                                      (succAdd, (var, exp))
                                                   end
@@ -284,26 +295,27 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                        label = label,
                                        statements = statements,
                                        transfer = transfer}
+                  val _ = List.push (blocks, block)
+                  val _ = Vector.foreach (children, loop)
+                  val _ = diag "children"
+                  val _ = Control.diagnostics
+                          (fn display =>
+                           let open Layout
+                           in
+                              display (seq [str "remove: ",
+                                            List.layout (fn {var,exp,...} =>
+                                                         seq [Var.layout var,
+                                                              str ": ",
+                                                              Exp.layout exp]) (!remove)])
+                           end)
+                  val _ = List.foreach
+                          (!remove, fn {var, hash, ...} =>
+                           HashSet.remove
+                           (table, hash, fn {var = var', ...} =>
+                            Var.equals (var, var')))
+                  val _ = diag "removed"
                in
-                  List.push (blocks, block) ;
-                  Vector.foreach (children, loop) ;
-                  diag "children";
-                  Control.diagnostics
-                  (fn display =>
-                   let open Layout
-                   in
-                     display (seq [str "removes: ",
-                                   List.layout (fn {var,exp,...} => 
-                                                seq [Var.layout var,
-                                                     str ": ",
-                                                     Exp.layout exp]) (!removes)])
-                   end);
-                  List.foreach 
-                  (!removes, fn {var, hash, ...} =>
-                   HashSet.remove
-                   (table, hash, fn {var = var', ...} =>
-                    Var.equals (var, var')));
-                  diag "removed"
+                  ()
                end
             val _ =
               Control.diagnostics
@@ -326,7 +338,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
       val shrink = shrinkFunction {globals = globals}
       val functions =
          List.revMap
-         (functions, fn f => 
+         (functions, fn f =>
           let
              val {args, blocks, mayInline, name, raises, returns, start} =
                 Function.dest f
@@ -339,7 +351,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
              val _ =
                 Vector.foreach
                 (blocks, fn Block.T {transfer, ...} =>
-                 Transfer.foreachLabel (transfer, fn label' => 
+                 Transfer.foreachLabel (transfer, fn label' =>
                                         Int.inc (#inDeg (labelInfo label'))))
              val blocks = doitTree (Function.dominatorTree f)
           in
@@ -351,7 +363,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                    returns = returns,
                                    start = start})
           end)
-      val program = 
+      val program =
          Program.T {datatypes = datatypes,
                     globals = globals,
                     functions = functions,
