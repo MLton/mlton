@@ -737,7 +737,7 @@ fun makeOptions {usage} =
                    Result.Yes () => ()
                  | Result.No s' => usage (concat ["invalid -ssa2-passes arg: ", s']))
           | NONE => Error.bug "ssa2 optimization passes missing")),
-       (Normal, "stop", " {f|g|o|sml|tc}", "when to stop",
+       (Normal, "stop", " {f|g|o|tc}", "when to stop",
         SpaceString
         (fn s =>
          stop := (case s of
