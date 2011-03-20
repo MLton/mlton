@@ -179,7 +179,6 @@ WARNCFLAGS += -Wmissing-format-attribute
 # WARNCFLAGS += -Wpadded
 WARNCFLAGS += -Wredundant-decls
 WARNCFLAGS += -Wnested-externs
-WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
 WARNCFLAGS += $(WARNFLAGS)
 

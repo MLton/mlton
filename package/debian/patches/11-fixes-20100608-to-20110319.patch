@@ -675,3 +675,15 @@ Index: lib/mlton/basic/dir.sml
        in
           if FS.isLink file
              then (dirs, files)
+Index: runtime/Makefile
+===================================================================
+--- mlton.orig/runtime/Makefile	(revision 7509)
++++ mlton/runtime/Makefile	(working copy)
+@@ -179,7 +179,6 @@
+ # WARNCFLAGS += -Wpadded
+ WARNCFLAGS += -Wredundant-decls
+ WARNCFLAGS += -Wnested-externs
+-WARNCFLAGS += -Wlong-long
+ # WARNCFLAGS += -Wunreachable-code
+ WARNCFLAGS += $(WARNFLAGS)
+ 
