@@ -663,3 +663,15 @@ Index: bin/mlton-script
          -target-link-opt mingw                                   \
                  '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
          -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
+Index: lib/mlton/basic/dir.sml
+===================================================================
+--- mlton.orig/lib/mlton/basic/dir.sml	(revision 7509)
++++ mlton/lib/mlton/basic/dir.sml	(working copy)
+@@ -56,6 +56,7 @@
+    fold (d, ([], []), fn (x, (dirs, files)) =>
+       let
+          val file = OS.Path.joinDirFile { dir=d, file=x }
++         val file = FS.realPath file
+       in
+          if FS.isLink file
+             then (dirs, files)
