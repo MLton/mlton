@@ -1,2 +1,2 @@
 # This is a part of the wiki manual
-mlton: extra-license-file usr/share/doc/mlton/guide/License
+mlton-doc: extra-license-file usr/share/doc/mlton/guide/License

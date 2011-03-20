@@ -60,7 +60,7 @@ Package: mlton-basis
 Architecture: all
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Tools package
+Description: Optimizing compiler for Standard ML - Basis package
  MLton is a whole-program optimizing compiler
  for Standard ML.  MLton generates standalone 
  executables with excellent runtime performance,
@@ -73,6 +73,7 @@ Description: Optimizing compiler for Standard ML - Tools package
  This package includes the cross-platform basis.
 
 Package: mlton-doc
+Section: doc
 Architecture: all
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
@@ -102,4 +103,4 @@ Description: Optimizing compiler for Standard ML - Complete package
  multiprecision library, and lots of useful
  libraries.
  .
- This package depends on all MLton packages.
+ This meta-package depends on all MLton packages.
