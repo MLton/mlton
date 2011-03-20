@@ -10,7 +10,7 @@ HEAPSIZE := $(shell . debian/heap-size)
 DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR)
 
 # The MLton guide is html. Don't compress example .sml files.
-DEB_COMPRESS_EXCLUDE = mlton/guide .sml
+DEB_COMPRESS_EXCLUDE_ALL = mlton/guide .sml
 
 DEB_MAKE_CLEAN_TARGET   = clean clean-svn
 DEB_MAKE_BUILD_TARGET   = all RUNTIME_ARGS="$(HEAPSIZE)"
@@ -21,8 +21,13 @@ DEB_MAKE_CHECK_TARGET   = check
 common-configure-arch::
 	free
 
-# Remove licenses and empty directories to appease lintian
+# Move MLton target to per-architecture path
 common-install-arch::
+	mv $(CURDIR)/debian/tmp/usr/lib/mlton/targets/self $(CURDIR)/debian/tmp/usr/lib/mlton/targets/$(DEB_HOST_GNU_TYPE)
+	ln -s /usr/lib/mlton/targets/$(DEB_HOST_GNU_TYPE) $(CURDIR)/debian/tmp/usr/lib/mlton/targets/self
+
+# Remove licenses and empty directories to appease lintian
+common-install-indep::
 	find $(CURDIR)/debian/tmp -type d -empty -delete
 	rm -rf $(CURDIR)/debian/tmp/usr/share/doc/mlton/license
 	if test -n "$(DEB_ISNATIVE)"; then mv \

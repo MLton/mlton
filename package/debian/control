@@ -3,12 +3,12 @@ Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
 Build-Depends: mlton (>= 20070826), htmldoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt
-Standards-Version: 3.8.4
+Standards-Version: 3.9.1
 
 Package: mlton-compiler
 Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${binary:Version}), mlton-runtime (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime (= ${binary:Version})
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Compiler package
  MLton is a whole-program optimizing compiler
@@ -42,6 +42,7 @@ Description: Optimizing compiler for Standard ML - Tools package
 Package: mlton-runtime
 Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: allowed
+Depends: ${misc:Depends}
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Runtime package
  MLton is a whole-program optimizing compiler
@@ -57,6 +58,7 @@ Description: Optimizing compiler for Standard ML - Runtime package
 
 Package: mlton-basis
 Architecture: all
+Depends: ${misc:Depends}
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Tools package
  MLton is a whole-program optimizing compiler
@@ -72,6 +74,7 @@ Description: Optimizing compiler for Standard ML - Tools package
 
 Package: mlton-doc
 Architecture: all
+Depends: ${misc:Depends}
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Documentation package
  MLton is a whole-program optimizing compiler
@@ -87,7 +90,7 @@ Description: Optimizing compiler for Standard ML - Documentation package
 
 Package: mlton
 Architecture: all
-Depends: mlton-compiler, mlton-tools, mlton-doc
+Depends: ${misc:Depends}, mlton-compiler, mlton-tools, mlton-doc
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Complete package
  MLton is a whole-program optimizing compiler

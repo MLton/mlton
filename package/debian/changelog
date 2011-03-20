@@ -5,6 +5,7 @@ mlton (20100608-3) unstable; urgency=low
   * Split package into compiler, runtime, basis, tools, and doc
    * Use multiarch to support cross-compiling
    * Eliminates the need for a mlton-cross package
+  * Updated standards version (no changes needed)
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sun, 20 Mar 2011 14:05:32 +0100
 
