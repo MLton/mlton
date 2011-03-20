@@ -19,7 +19,7 @@ Description: Optimizing compiler for Standard ML - Compiler package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
-
+ .
  This package includes the compiler itself.
 
 Package: mlton-tools
@@ -36,7 +36,7 @@ Description: Optimizing compiler for Standard ML - Tools package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
- 
+ .
  This package includes tools which autogenerate SML.
 
 Package: mlton-runtime
@@ -52,7 +52,7 @@ Description: Optimizing compiler for Standard ML - Runtime package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
-
+ .
  This package includes target-specific files.
 
 Package: mlton-basis
@@ -67,7 +67,7 @@ Description: Optimizing compiler for Standard ML - Tools package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
- 
+ .
  This package includes the cross-platform basis.
 
 Package: mlton-doc
@@ -82,7 +82,7 @@ Description: Optimizing compiler for Standard ML - Documentation package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
- 
+ .
  This package includes non-man-page documentation.
 
 Package: mlton
@@ -98,5 +98,5 @@ Description: Optimizing compiler for Standard ML - Complete package
  a fast C FFI, an interface to the GNU
  multiprecision library, and lots of useful
  libraries.
- 
+ .
  This package depends on all MLton packages.
