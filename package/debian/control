@@ -58,6 +58,7 @@ Description: Optimizing compiler for Standard ML - Runtime package
 
 Package: mlton-basis
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Basis package
@@ -75,6 +76,7 @@ Description: Optimizing compiler for Standard ML - Basis package
 Package: mlton-doc
 Section: doc
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - Documentation package
@@ -103,4 +105,4 @@ Description: Optimizing compiler for Standard ML - Complete package
  multiprecision library, and lots of useful
  libraries.
  .
- This meta-package depends on all MLton packages.
+ This metapackage depends on all MLton packages.

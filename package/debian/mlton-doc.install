@@ -6,5 +6,4 @@ usr/share/doc/mlton/ckit-lib
 usr/share/doc/mlton/mlnlffi-lib
 usr/share/doc/mlton/mlrisc-lib
 usr/share/doc/mlton/smlnj-lib
-usr/share/doc/mlton/mllex.pdf.gz
-usr/share/doc/mlton/mlyacc.pdf.gz
+usr/share/doc/mlton/mlton-guide.pdf

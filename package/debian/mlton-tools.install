@@ -2,7 +2,9 @@ usr/bin/mllex
 usr/bin/mlyacc
 usr/bin/mlprof
 usr/bin/mlnlffigen
-/usr/share/man/man1/mllex.1.gz
-/usr/share/man/man1/mlyacc.1.gz
-/usr/share/man/man1/mlprof.1.gz
-/usr/share/man/man1/mlnlffigen.1.gz
+usr/share/man/man1/mllex.1.gz
+usr/share/man/man1/mlyacc.1.gz
+usr/share/man/man1/mlprof.1.gz
+usr/share/man/man1/mlnlffigen.1.gz
+usr/share/doc/mlton/mllex.pdf
+usr/share/doc/mlton/mlyacc.pdf
