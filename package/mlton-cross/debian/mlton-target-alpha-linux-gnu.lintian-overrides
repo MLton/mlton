@@ -1,8 +1,0 @@
-# These may be binaries, but they ARE arch independent packages.
-# You can use them from any architecture to compile to the target.
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libgdtoa-gdb.a
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libgdtoa-pic.a
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libgdtoa.a
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libmlton-gdb.a
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libmlton-pic.a
-mlton-target-alpha-linux-gnu: arch-independent-package-contains-binary-or-object ./usr/lib/mlton/targets/alpha-linux-gnu/libmlton.a
