@@ -56,6 +56,7 @@ fun ls d =
    fold (d, ([], []), fn (x, (dirs, files)) =>
       let
          val file = OS.Path.joinDirFile { dir=d, file=x }
+         val file = FS.realPath file
       in
          if FS.isLink file
             then (dirs, files)
