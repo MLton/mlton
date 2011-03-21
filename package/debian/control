@@ -5,12 +5,12 @@ Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
 Build-Depends: mlton (>= 20070826), htmldoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt
 Standards-Version: 3.9.1
 
-Package: mlton-compiler
-Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
+Package: mlton
+Architecture: all
 Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime (= ${binary:Version})
+Depends: ${misc:Depends}, mlton-compiler (= ${source:Version}), mlton-tools (= ${source:Version}), mlton-doc (= ${source:Version})
 Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Compiler package
+Description: Optimizing compiler for Standard ML
  MLton is a whole-program optimizing compiler
  for Standard ML.  MLton generates standalone 
  executables with excellent runtime performance,
@@ -20,48 +20,14 @@ Description: Optimizing compiler for Standard ML - Compiler package
  multiprecision library, and lots of useful
  libraries.
  .
- This package includes the compiler itself.
-
-Package: mlton-tools
-Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
-Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Tools package
- MLton is a whole-program optimizing compiler
- for Standard ML.  MLton generates standalone 
- executables with excellent runtime performance,
- is SML 97 compliant, and has a complete basis
- library.  MLton has source-level profiling,
- a fast C FFI, an interface to the GNU
- multiprecision library, and lots of useful
- libraries.
- .
- This package includes tools which autogenerate SML.
-
-Package: mlton-runtime
-Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
-Multi-Arch: allowed
-Depends: ${misc:Depends}
-Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Runtime package
- MLton is a whole-program optimizing compiler
- for Standard ML.  MLton generates standalone 
- executables with excellent runtime performance,
- is SML 97 compliant, and has a complete basis
- library.  MLton has source-level profiling,
- a fast C FFI, an interface to the GNU
- multiprecision library, and lots of useful
- libraries.
- .
- This package includes target-specific files.
+ This metapackage depends on all MLton packages.
 
 Package: mlton-basis
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Basis package
+Description: Optimizing compiler for Standard ML - basis library
  MLton is a whole-program optimizing compiler
  for Standard ML.  MLton generates standalone 
  executables with excellent runtime performance,
@@ -79,7 +45,7 @@ Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
 Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Documentation package
+Description: Optimizing compiler for Standard ML - documentation
  MLton is a whole-program optimizing compiler
  for Standard ML.  MLton generates standalone 
  executables with excellent runtime performance,
@@ -91,11 +57,12 @@ Description: Optimizing compiler for Standard ML - Documentation package
  .
  This package includes non-man-page documentation.
 
-Package: mlton
-Architecture: all
-Depends: ${misc:Depends}, mlton-compiler, mlton-tools, mlton-doc
+Package: mlton-compiler
+Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime-native (= ${binary:Version}) | mlton-runtime
 Homepage: http://mlton.org/
-Description: Optimizing compiler for Standard ML - Complete package
+Description: Optimizing compiler for Standard ML - compiler
  MLton is a whole-program optimizing compiler
  for Standard ML.  MLton generates standalone 
  executables with excellent runtime performance,
@@ -105,4 +72,276 @@ Description: Optimizing compiler for Standard ML - Complete package
  multiprecision library, and lots of useful
  libraries.
  .
- This metapackage depends on all MLton packages.
+ This package includes the compiler itself.
+
+Package: mlton-tools
+Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - tools
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package includes tools which autogenerate SML.
+
+Package: mlton-runtime-native
+Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
+Depends: ${misc:Depends}, mlton-runtime-alpha-gnu-linux [alpha] | mlton-runtime-x86-64-linux-gnu [amd64] | mlton-runtime-arm-linux-gnueabi [armel] | mlton-runtime-hppa-linux-gnu [hppa] | mlton-runtime-i486-gnu [hurd-i386] | mlton-runtime-i486-linux-gnu [i386] | mlton-runtime-ia64-linux-gnu [ia64] | mlton-runtime-i486-kfreebsd-gnu [kfreebsd-i386] | mlton-runtime-x86-64-kfreebsd-gnu [kfreebsd-amd64] | mlton-runtime-mips-linux-gnu [mips] | mlton-runtime-mips-linux-gnu [mipsel] | mlton-runtime-powerpc-linux-gnu [powerpc] | mlton-runtime-s390-linux-gnu [s390] | mlton-runtime-sparc-linux-gnu [sparc]
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - native runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This metapackage depends on native target libraries.
+
+Package: mlton-runtime-alpha-linux-gnu
+Architecture: alpha
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - alpha runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides alpha target libraries.
+
+Package: mlton-runtime-x86-64-linux-gnu
+Architecture: amd64
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - amd64 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides x86-64 target libraries.
+
+Package: mlton-runtime-arm-linux-gnueabi
+Architecture: armel
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - armel runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides arm target libraries.
+
+Package: mlton-runtime-hppa-linux-gnu
+Architecture: hppa
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - hppa runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides hppa target libraries.
+
+Package: mlton-runtime-i486-gnu
+Architecture: hurd-i386
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - hurd-i386 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides hurd i486 target libraries.
+
+Package: mlton-runtime-i486-linux-gnu
+Architecture: i386
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - i386 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides i486 target libraries.
+
+Package: mlton-runtime-ia64-linux-gnu
+Architecture: ia64
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - ia64 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides ia64 target libraries.
+
+Package: mlton-runtime-i486-kfreebsd-gnu
+Architecture: kfreebsd-i386
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - kfreebsd-i386 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides kfreebsd i386 target libraries.
+
+Package: mlton-runtime-x86-64-kfreebsd-gnu
+Architecture: kfreebsd-amd64
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - kfreebsd-amd64 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides kfreebsd amd64 target libraries.
+
+Package: mlton-runtime-mips-linux-gnu
+Architecture: mips
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - mips runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides mips target libraries.
+
+Package: mlton-runtime-mipsel-linux-gnu
+Architecture: mipsel
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - mipsel runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides mipsel target libraries.
+
+Package: mlton-runtime-powerpc-linux-gnu
+Architecture: powerpc
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - powerpc runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides powerpc target libraries.
+
+Package: mlton-runtime-s390-linux-gnu
+Architecture: s390
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - s390 runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides s390 target libraries.
+
+Package: mlton-runtime-sparc-linux-gnu
+Architecture: sparc
+Depends: ${misc:Depends}
+Provides: mlton-runtime
+Homepage: http://mlton.org/
+Description: Optimizing compiler for Standard ML - sparc runtime libraries
+ MLton is a whole-program optimizing compiler
+ for Standard ML.  MLton generates standalone 
+ executables with excellent runtime performance,
+ is SML 97 compliant, and has a complete basis
+ library.  MLton has source-level profiling,
+ a fast C FFI, an interface to the GNU
+ multiprecision library, and lots of useful
+ libraries.
+ .
+ This package provides sparc target libraries.
+
