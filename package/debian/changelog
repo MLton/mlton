@@ -2,6 +2,7 @@ mlton (20100608-4) unstable; urgency=low
 
   * Add missing install file for sparc runtime
   * Make the self target symlink relative
+  * Added Replaces and Breaks the old version for smooth upgrades
   * Previous build needed manual uploads, so buildd rebuild needed
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Fri, 01 Apr 2011 20:49:10 +0200

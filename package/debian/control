@@ -26,6 +26,8 @@ Package: mlton-basis
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
+Breaks: mlton (<< 20100608-3)
+Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - basis library
  MLton is a whole-program optimizing compiler
@@ -44,6 +46,8 @@ Section: doc
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}
+Breaks: mlton (<< 20100608-3)
+Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - documentation
  MLton is a whole-program optimizing compiler
@@ -61,6 +65,8 @@ Package: mlton-compiler
 Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime-native (= ${binary:Version}) | mlton-runtime
+Breaks: mlton (<< 20100608-3)
+Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - compiler
  MLton is a whole-program optimizing compiler
@@ -78,6 +84,8 @@ Package: mlton-tools
 Architecture: alpha amd64 armel hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Breaks: mlton (<< 20100608-3)
+Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - tools
  MLton is a whole-program optimizing compiler
