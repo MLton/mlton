@@ -6,7 +6,6 @@ mlton (20100608-4) unstable; urgency=low
   * Previous build needed manual uploads, so buildd rebuild needed
   * Still needing bootstrap:
    * mips(el) gcc bug still unresolved and no-explicit-relocs fails too
-   * kfreebsd-i386 and hurd buildds are dead -> deferred
 
  -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Fri, 01 Apr 2011 22:57:25 +0200
 
