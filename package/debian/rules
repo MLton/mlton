@@ -24,7 +24,7 @@ common-configure-arch::
 # Move MLton target to per-architecture path
 common-install-arch::
 	mv $(CURDIR)/debian/tmp/usr/lib/mlton/targets/self $(CURDIR)/debian/tmp/usr/lib/mlton/targets/$(DEB_HOST_GNU_TYPE)
-	ln -s /usr/lib/mlton/targets/$(DEB_HOST_GNU_TYPE) $(CURDIR)/debian/tmp/usr/lib/mlton/targets/self
+	ln -s $(DEB_HOST_GNU_TYPE) $(CURDIR)/debian/tmp/usr/lib/mlton/targets/self
 
 # Remove licenses and empty directories to appease lintian
 common-install-indep::
