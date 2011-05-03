@@ -25,7 +25,7 @@ fun deadCode {prog} =
                                          then escape true
                                       else ())
            ; false))
-      fun decIsWild (d: Dec.t): bool =
+      fun decIsWildOrUnit (d: Dec.t): bool =
          case d of
             Val {rvbs, vbs, ...} =>
                0 = Vector.length rvbs
@@ -66,7 +66,7 @@ fun deadCode {prog} =
           in
              if deadCode
                 then List.fold (rev decs, [], fn (dec, decs) =>
-                                if decIsWild dec orelse decIsNeeded dec
+                                if decIsWildOrUnit dec orelse decIsNeeded dec
                                    then (useDec dec; dec :: decs)
                                    else decs)
                 else (List.foreach (decs, useDec)
