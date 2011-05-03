@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2011 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -556,7 +556,21 @@ val elaboratePat:
                             case constraint of
                                NONE => Type.new ()
                              | SOME t => elaborateType (t, Lookup.fromEnv E)
-                         val x = bindToType (x, t)
+                         val xc = Avid.toCon (Avid.fromVar x)
+                         val x =
+                            case Env.peekLongcon (E, Ast.Longcon.short xc) of
+                               NONE => bindToType (x, t)
+                             | SOME _ =>
+                                  let
+                                     val _ =
+                                        Control.error
+                                        (region,
+                                         seq [str "constructor can not be redefined by as: ",
+                                              Avar.layout x],
+                                         seq [str "in: ", lay ()])
+                                  in
+                                     Var.fromAst x
+                                  end
                          val pat' = loop pat
                          val _ =
                             unifyPatternConstraint (Cpat.ty pat',

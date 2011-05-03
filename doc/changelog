@@ -1,5 +1,9 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2011-05-03
+   - Fixed a bug with the treatment of as-patterns, which should not
+     allow the redefinition of constructor status.
+
 * 2011-02-18
    - Fixed bug with treatment of nan in common subexpression
      elimination SSA optimization.
