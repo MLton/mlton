@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -43,7 +44,6 @@ fun deadCode {prog} =
           | Val {rvbs, vbs, ...} =>
                Vector.exists (rvbs, varIsUsed o #var)
                orelse Vector.exists (vbs, patVarIsUsed o #pat)
-               orelse decIsWild d
       fun useVar x = setVarIsUsed (x, true)
       fun useExp (e: Exp.t): unit = Exp.foreachVar (e, useVar)
       fun useLambda (l: Lambda.t): unit =
