@@ -88,11 +88,32 @@ state sml_simple
  */
 state sml_string
 {
+  /\\\\(\s|\n)/ {
+    language_print ($0);
+    call (sml_string_gap);
+  }
+
   /\\\\./ {
     language_print ($0);
   }
 
   /\"/ {
+    language_print ($0);
+    return;
+  }
+
+  LANGUAGE_SPECIALS {
+    language_print ($0);
+  }
+}
+
+state sml_string_gap
+{
+  /(\s|\n)/ {
+    language_print ($0);
+  }
+
+  /\\\\/ {
     language_print ($0);
     return;
   }

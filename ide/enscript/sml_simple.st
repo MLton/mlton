@@ -77,11 +77,28 @@ state sml_simple extends HighlightEntry
  */
 state sml_string extends Highlight
 {
+  /\\\\(\s|\n)/ {
+    language_print ($0);
+    call (sml_string_gap);
+  }
+
   /\\\\./ {
     language_print ($0);
   }
 
   /\"/ {
+    language_print ($0);
+    return;
+  }
+}
+
+state sml_string_gap extends Highlight
+{
+  /(\s|\n)/ {
+    language_print ($0);
+  }
+
+  /\\\\/ {
     language_print ($0);
     return;
   }
