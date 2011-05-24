@@ -5,7 +5,7 @@ Standard ML Lexer for Pygments.
 
 import re
 
-from pygments.lexer import RegexLexer, bygroups, include
+from pygments.lexer import RegexLexer, bygroups
 from pygments.token import *
 
 
@@ -45,10 +45,10 @@ class StandardMLLexer(RegexLexer):
         ## Modules
     ]
 
-    alphanumid_re = r'[a-zA-Z][a-zA-Z0-9_\']*'
-    symbolicid_re = r'[!%&$#+\-/:<=>?@\\~`^|*]+'
-    long_id_re = r'((%s\.)*)((%s)|(%s))' % (alphanumid_re, alphanumid_re, symbolicid_re)
-    primed_alphanumid_re = r'\'[a-zA-Z0-9_\']*'
+    alphanumid_re = r"[a-zA-Z][a-zA-Z0-9_']*"
+    symbolicid_re = r"[!%&$#+\-/:<=>?@\\~`^|*]+"
+    long_id_re = r"((%s\.)*)((%s)|(%s))" % (alphanumid_re, alphanumid_re, symbolicid_re)
+    primed_alphanumid_re = r"'[a-zA-Z0-9_']*"
 
     def long_id_callback(self, match):
         strids = match.group(1)
@@ -90,10 +90,6 @@ class StandardMLLexer(RegexLexer):
             (r'\s+', Whitespace),
             (r'\(\*', Comment.Multiline, 'comment'),
 
-            (long_id_re, long_id_callback),
-            (r'(%s)' % '|'.join([re.escape(z) for z in nonid_reserved]), Punctuation),
-            (primed_alphanumid_re, Name),
-
             (r'~?[0-9]+\.[0-9]+((e|E)~?[0-9]+)?', Number.Float),
             (r'~?[0-9]+(e|E)~?[0-9]+', Number.Float),
             (r'0wx[0-9a-fA-F]+', Number.Hex),
@@ -102,7 +98,11 @@ class StandardMLLexer(RegexLexer):
             (r'~?[0-9]+', Number.Integer),
 
             (r'"', String, 'string'),
-            (r'(#)(")', bygroups(Text, String), 'string'),
+            (r'(#)(")', bygroups(Punctuation, String), 'string'),
+
+            (long_id_re, long_id_callback),
+            (r'(%s)' % '|'.join([re.escape(z) for z in nonid_reserved]), Punctuation),
+            (primed_alphanumid_re, Name),
 
             (r'.', Error, 'error')
         ],
