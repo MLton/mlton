@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -42,6 +43,8 @@ bool invariantForGC (GC_state s) {
 
       assert (layout->size <= s->maxFrameSize);
       offsets = layout->offsets;
+      for (unsigned int j = 0; j < offsets[0]; ++j)
+        assert (offsets[j + 1] < layout->size);
     }
   }
   /* Generational */
