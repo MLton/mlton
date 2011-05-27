@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2010 Matthew Fluet.
+/* Copyright (C) 2009-2011 Matthew Fluet.
  * Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -41,7 +41,7 @@ size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
   size_t liveMapsSize, liveWithMapsSize;
   size_t currentMapsSize, currentWithMapsSize;
   size_t resSize, resWithMapsSize;
-  size_t syslimSize, syslimMapsSize, syslimWithMapsSize;
+  size_t syslimSize, __attribute__ ((unused)) syslimMapsSize, syslimWithMapsSize;
   double ratio;
 
   syslimWithMapsSize = alignDown (SIZE_MAX, s->sysvals.pageSize);
@@ -553,12 +553,11 @@ void resizeHeap (GC_state s, size_t minSize) {
  */
 void resizeHeapSecondary (GC_state s) {
   size_t primarySize, primaryWithMapsSize;
-  size_t secondarySize, secondaryWithMapsSize;
+  size_t secondarySize;
 
   primarySize = s->heap.size;
   primaryWithMapsSize = s->heap.withMapsSize;
   secondarySize = s->secondaryHeap.size;
-  secondaryWithMapsSize = s->secondaryHeap.withMapsSize;
   if (DEBUG_RESIZING)
     fprintf (stderr, "secondaryHeapResize\n");
   if (0 == secondarySize)

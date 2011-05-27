@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -35,7 +36,7 @@ void GC_copyCurrentThread (GC_state s) {
   GC_thread fromThread;
   GC_stack fromStack;
   GC_thread toThread;
-  GC_stack toStack;
+  GC_stack __attribute__ ((unused)) toStack;
 
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_copyCurrentThread\n");
@@ -57,7 +58,7 @@ pointer GC_copyThread (GC_state s, pointer p) {
   GC_thread fromThread;
   GC_stack fromStack;
   GC_thread toThread;
-  GC_stack toStack;
+  GC_stack __attribute__ ((unused)) toStack;
 
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_copyThread ("FMTPTR")\n", (uintptr_t)p);

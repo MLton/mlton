@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -76,7 +77,6 @@ void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
 
 void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   uint32_t i;
-  GC_profileData p;
   GC_sourceIndex sourceIndex;
   uint32_t *sourceSeq;
 
@@ -84,7 +84,6 @@ void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
     fprintf (stderr, "enterForProfiling ("FMTSSI")\n", sourceSeqIndex);
   assert (s->profiling.stack);
   assert (sourceSeqIndex < s->sourceMaps.sourceSeqsLength);
-  p = s->profiling.data;
   sourceSeq = s->sourceMaps.sourceSeqs[sourceSeqIndex];
   for (i = 1; i <= sourceSeq[0]; i++) {
     sourceIndex = sourceSeq[i];
@@ -123,10 +122,8 @@ void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i) {
 }
 
 void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
-  GC_profileData p;
   GC_profileStack ps;
 
-  p = s->profiling.data;
   ps = getProfileStackInfo (s, i);
   assert (ps->numOccurrences > 0);
   ps->numOccurrences--;
@@ -136,7 +133,6 @@ void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
 
 void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   int32_t i;
-  GC_profileData p;
   GC_sourceIndex sourceIndex;
   uint32_t *sourceSeq;
 
@@ -144,7 +140,6 @@ void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
     fprintf (stderr, "leaveForProfiling ("FMTSSI")\n", sourceSeqIndex);
   assert (s->profiling.stack);
   assert (sourceSeqIndex < s->sourceMaps.sourceSeqsLength);
-  p = s->profiling.data;
   sourceSeq = s->sourceMaps.sourceSeqs[sourceSeqIndex];
   for (i = sourceSeq[0]; i > 0; i--) {
     sourceIndex = sourceSeq[i];

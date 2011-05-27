@@ -104,7 +104,7 @@ C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how) {
 }
 
 void Posix_Signal_sigsuspend (void) {
-  int res;
+  int __attribute__ ((unused)) res;
 
   res = sigsuspend (&Posix_Signal_sigset);
   assert (-1 == res);

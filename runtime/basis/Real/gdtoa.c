@@ -14,10 +14,8 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig,
   int i;
   ULong L[1];
   char *result;
-  ULong sign;
 
   memcpy(L, &f, sizeof(Real32_t));
-  sign = L[0] & 0x80000000L;
   bits[0] = L[0] & 0x7fffff;
   if (0 != (ex = (L[0] >> 23) & 0xff))
     bits[0] |= 0x800000;
@@ -40,7 +38,6 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig,
   int i;
   ULong L[2];
   char *result;
-  ULong sign;
   int x0, x1;
 
   if (isBigEndian()) {
@@ -51,7 +48,6 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig,
     x1 = 0;
   }
   memcpy(L, &d, sizeof(Real64_t));
-  sign = L[x0] & 0x80000000L;
   bits[0] = L[x1];
   bits[1] = L[x0] & 0xfffff;
   if (0 != (ex = (L[x0] >> 20) & 0x7ff))
