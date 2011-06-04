@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -110,8 +111,6 @@ structure Backend = Backend (structure Ssa = Ssa2
                              structure Machine = Machine
                              fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Ffi = Ffi
-                               structure Machine = Machine)
-structure Bytecode = Bytecode (structure CCodegen = CCodegen
                                structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
@@ -682,8 +681,7 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          end
       val codegenImplementsPrim =
          case !Control.codegen of
-            Control.Bytecode => Bytecode.implementsPrim
-          | Control.CCodegen => CCodegen.implementsPrim
+            Control.CCodegen => CCodegen.implementsPrim
           | Control.x86Codegen => x86Codegen.implementsPrim
           | Control.amd64Codegen => amd64Codegen.implementsPrim
       val machine =
@@ -725,11 +723,7 @@ fun compile {input: MLBString.t, outputC, outputS}: unit =
           ; Machine.Label.printNameAlphaNumeric := true)
       val () =
          case !Control.codegen of
-            Control.Bytecode =>
-               Control.trace (Control.Top, "bytecode gen")
-               Bytecode.output {program = machine,
-                                outputC = outputC}
-          | Control.CCodegen =>
+            Control.CCodegen =>
                (clearNames ()
                 ; (Control.trace (Control.Top, "C code gen")
                    CCodegen.output {program = machine,

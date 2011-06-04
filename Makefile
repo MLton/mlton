@@ -1,4 +1,4 @@
-## Copyright (C) 2009 Matthew Fluet.
+## Copyright (C) 2009,2011 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -205,20 +205,12 @@ runtime:
 	echo "$(TARGET_ARCH)" > "$(LIB)/targets/$(TARGET)/arch"
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
-ifeq ($(OMIT_BYTECODE), yes)
-else
-	$(CP) runtime/bytecode/opcodes "$(LIB)/"
-endif
 	$(CP) runtime/*.h "$(INC)/"
 	mv "$(INC)/c-types.h" "$(LIB)/targets/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
-ifeq ($(OMIT_BYTECODE), yes)
-else
-	$(CP) runtime/bytecode/interpret.h "$(INC)"
-endif
 	for x in "$(LIB)/targets/$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script

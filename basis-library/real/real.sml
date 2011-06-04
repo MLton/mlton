@@ -1,4 +1,5 @@
-(* Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -20,16 +21,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
 
       local
          open Prim
-         val isBytecode = MLton.Codegen.isBytecode
       in
-         val *+ =
-            if isBytecode
-               then fn (r1, r2, r3) => r1 * r2 + r3
-            else *+
-         val *- =
-            if isBytecode
-               then fn (r1, r2, r3) => r1 * r2 - r3
-            else *-
+         val op *+ = op *+
+         val op *- = op *-
          val op * = op *
          val op + = op +
          val op - = op -

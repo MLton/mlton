@@ -290,7 +290,6 @@ fun makeOptions {usage} =
                   case cg of
                      Native => if hasNativeCodegen () then SOME "native" else NONE
                    | Explicit cg => if hasCodegen cg
-                                       andalso cg <> Bytecode
                                        then SOME (Control.Codegen.toString cg)
                                     else NONE),
                  "|"),
@@ -1028,14 +1027,6 @@ fun commandLine (args: string list): unit =
                                 MLton.Platform.Arch.toString targetArch,
                                 " target"])
          else ()
-      val _ =
-         if !codegen = Bytecode
-            andalso !Control.warnDeprecated
-            then
-               Out.output
-               (Out.error,
-                "Warning: bytecode codegen is deprecated.  Use native or C codegen.\n")
-         else ()
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
                                          Cygwin => true
@@ -1047,7 +1038,6 @@ fun commandLine (args: string list): unit =
          (case !explicitChunk of
              NONE => (case !codegen of
                          amd64Codegen => ChunkPerFunc
-                       | Bytecode => OneChunk
                        | CCodegen => Coalesce {limit = 4096}
                        | x86Codegen => ChunkPerFunc
                        )
@@ -1074,10 +1064,6 @@ fun commandLine (args: string list): unit =
       val _ = elaborateOnly := (stop = Place.TypeCheck
                                 andalso not (warnMatch)
                                 andalso not (!keepDefUse))
-      val _ =
-         if !codegen = Bytecode andalso !profile = ProfileTimeLabel
-            then usage (concat ["bytecode codegen doesn't support -profile time-label\n"])
-         else ()
       val _ =
          case targetOS of
             Darwin => ()

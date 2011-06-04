@@ -1,4 +1,4 @@
-## Copyright (C) 2010 Matthew Fluet.
+## Copyright (C) 2010-2011 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -220,9 +220,6 @@ GCHFILES :=							\
 GCCFILES :=							\
 	$(shell find gc -type f | grep '\.c$$')
 
-BYTECODEHFILES :=						\
-	$(shell find bytecode -type f | grep '\.h$$')
-
 BASISHFILES :=							\
 	ml-types.h						\
 	c-types.h						\
@@ -250,12 +247,6 @@ OBJS := 							\
 	platform/$(TARGET_OS).o					\
 	gc.o
 
-OMIT_BYTECODE := no
-ifeq ($(OMIT_BYTECODE), yes)
-else
-  OBJS += bytecode/interpret.o
-endif
-
 ifeq ($(COMPILE_FAST), yes)
   OBJS += basis.o
 else
@@ -270,10 +261,6 @@ PIC_OBJS   := $(patsubst %.o,%-pic.o,$(OBJS))
 ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
        libmlton.a libmlton-gdb.a libmlton-pic.a
 ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
-ifeq ($(OMIT_BYTECODE), yes)
-else
-  ALL += bytecode/opcodes
-endif
 
 all: $(ALL)
 
@@ -355,21 +342,6 @@ gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
-
-## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
-bytecode/interpret-pic.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(PICCFLAGS) $(GCPICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-
-bytecode/opcodes: bytecode/print-opcodes
-	@touch $@
-bytecode/print-opcodes: bytecode/print-opcodes.c bytecode/opcode.h $(HFILES)
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
-	rm -f bytecode/opcodes
-	cd bytecode && ./print-opcodes > opcodes
 
 basis.c: $(BASISCFILES)
 	rm -f basis.c

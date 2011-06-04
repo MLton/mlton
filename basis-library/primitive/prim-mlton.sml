@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010-2011 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -62,17 +62,15 @@ structure CallStack =
 
 structure Codegen =
    struct
-      datatype t = Bytecode | C | x86 | amd64
+      datatype t = amd64 | C | x86
 
       val codegen =
          case _build_const "MLton_Codegen_codegen": Int32.int; of
-            0 => Bytecode
-          | 1 => C
-          | 2 => x86
-          | 3 => amd64
+            0 => C
+          | 1 => x86
+          | 2 => amd64
           | _ => raise Primitive.Exn.Fail8 "MLton_Codegen_codegen"
 
-      val isBytecode = codegen = Bytecode
       val isC = codegen = C
       val isX86 = codegen = x86
       val isAmd64 = codegen = amd64

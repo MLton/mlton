@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2011 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -37,8 +37,7 @@ signature CONTROL_FLAGS =
       structure Codegen:
          sig
             datatype t =
-               Bytecode
-             | CCodegen
+               CCodegen
              | x86Codegen
              | amd64Codegen
             val all: t list
