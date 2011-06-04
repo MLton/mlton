@@ -265,13 +265,16 @@ ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 all: $(ALL)
 
 
-gdtoa/arithchk.c: gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
+gdtoa/README: gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
 	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 	patch -s -p0 <gdtoa-patch.internal
 	patch -s -p0 <gdtoa-patch.mlton
 
-$(GDTOACFILES): gdtoa/arithchk.c
+$(GDTOACFILES): gdtoa/README
+	@touch $@
+
+gdtoa/arithchk.c: gdtoa/README
 	@touch $@
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
@@ -280,11 +283,20 @@ gdtoa/arithchk.out: gdtoa/arithchk.c
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
 
-gdtoa/%-pic.o: gdtoa/%.c gdtoa/arith.h
+gdtoa/qnan.c: gdtoa/README
+	@touch $@
+
+gdtoa/qnan.out: gdtoa/arith.h gdtoa/qnan.c
+	cd gdtoa && $(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -O1 -o qnan.out qnan.c
+
+gdtoa/gd_qnan.h: gdtoa/qnan.out
+	cd gdtoa && ./qnan.out >gd_qnan.h
+
+gdtoa/%-pic.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
 	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h
+gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h
+gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 
 libgdtoa.a:     $(GDTOA_OBJS)
