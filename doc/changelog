@@ -1,5 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2011-06-04
+   - Remove support for .cm files as input.
+
 * 2011-05-03
    - Fixed a bug with the treatment of as-patterns, which should not
      allow the redefinition of constructor status.

@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010-2011 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,11 +16,10 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = CM | Files | Generated | MLB | O | OUT | SML | TypeCheck
+      datatype t = Files | Generated | MLB | O | OUT | SML | TypeCheck
 
       val toInt: t -> int =
-         fn CM => 1
-          | MLB => 1
+         fn MLB => 1
           | SML => 1
           | Files => 2
           | TypeCheck => 4
@@ -29,8 +28,7 @@ structure Place =
           | OUT => 7
 
       val toString =
-         fn CM => "cm"
-          | Files => "files"
+         fn Files => "files"
           | SML => "sml"
           | MLB => "mlb"
           | Generated => "g"
@@ -828,7 +826,7 @@ fun makeOptions {usage} =
    end
 
 val mainUsage =
-   "mlton [option ...] file.{c|cm|mlb|o|sml} [file.{c|o|s|S} ...]"
+   "mlton [option ...] file.{c|mlb|o|sml} [file.{c|o|s|S} ...]"
 
 val {parse, usage} =
    Popt.makeUsage {mainUsage = mainUsage,
@@ -1151,7 +1149,6 @@ fun commandLine (args: string list): unit =
                   datatype z = datatype Place.t
                in
                   loop [(".mlb", MLB, false),
-                        (".cm", CM, false),
                         (".sml", SML, false),
                         (".c", Generated, true),
                         (".o", O, true)]
@@ -1455,23 +1452,9 @@ fun commandLine (args: string list): unit =
                      mkCompileSrc {listFiles = Compile.sourceFilesMLB,
                                    elaborate = Compile.elaborateMLB,
                                    compile = Compile.compileMLB}
-                  fun compileCM (file: File.t) =
-                     let
-                        val _ =
-                           if !Control.warnDeprecated
-                              then
-                                 Out.output
-                                 (Out.error,
-                                  "Warning: .cm input files are deprecated.  Use .mlb input files.\n")
-                           else ()
-                        val files = CM.cm {cmfile = file}
-                     in
-                        compileSML files
-                     end
                   fun compile () =
                      case start of
-                        Place.CM => compileCM input
-                      | Place.SML => compileSML [input]
+                        Place.SML => compileSML [input]
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)

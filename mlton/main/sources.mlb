@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2011 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -13,7 +13,6 @@ local
    ../atoms/sources.mlb
    ../backend/sources.mlb
    ../closure-convert/sources.mlb
-   ../cm/sources.mlb
    ../codegen/sources.mlb
    ../control/sources.mlb
    ../core-ml/sources.mlb
