@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -123,35 +124,46 @@ fun 'a analyze
 
                end
           | Case {test, cases, default, ...} =>
-               let val test = value test
+               let
+                  val test = value test
+                  fun ensureSize (w, s) =
+                     if WordSize.equals (s, WordX.size w)
+                        then ()
+                     else Error.bug (concat ["Analyze.loopTransfer: Case:",
+                                             WordX.toString w,
+                                             " must be size ",
+                                             WordSize.toString s])
                   fun ensureNullary j =
                      if 0 = Vector.length (labelValues j)
                         then ()
                      else Error.bug (concat ["Analyze2.loopTransfer: Case:",
                                              Label.toString j,
                                              " must be nullary"])
-                  fun doit (s, cs, filter: 'a * 'b -> unit) =
-                     (filter (test, s)
-                      ; Vector.foreach (cs, fn (_, j) => ensureNullary j))
+                  fun doitWord (s, cs) =
+                     (ignore (filterWord (test, s))
+                      ; Vector.foreach (cs, fn (w, j) =>
+                                        (ensureSize (w, s)
+                                         ; ensureNullary j)))
+                  fun doitCon cs =
+                     Vector.foreach
+                     (cs, fn (c, j) =>
+                      let
+                         val v = labelValues j
+                         val variant =
+                            case Vector.length v of
+                               0 => NONE
+                             | 1 => SOME (Vector.sub (v, 0))
+                             | _ => Error.bug "Analyze2.loopTransfer: Case:conApp with >1 arg"
+                      in
+                         filter {con = c,
+                                 test = test,
+                                 variant = variant}
+                      end)
                   datatype z = datatype Cases.t
                   val _ =
                      case cases of
-                        Con cases =>
-                           Vector.foreach
-                           (cases, fn (c, j) =>
-                            let
-                               val v = labelValues j
-                               val variant =
-                                  case Vector.length v of
-                                     0 => NONE
-                                   | 1 => SOME (Vector.sub (v, 0))
-                                   | _ => Error.bug "Analyze2.loopTransfer: Case:conApp with >1 arg"
-                            in
-                               filter {con = c,
-                                       test = test,
-                                       variant = variant}
-                            end)
-                      | Word (s, cs) => doit (s, cs, filterWord)
+                        Con cs => doitCon cs
+                      | Word (s, cs) => doitWord (s, cs)
                   val _ = Option.app (default, ensureNullary)
                in ()
                end
