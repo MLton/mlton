@@ -1,6 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
 * 2011-06-10
+   - Fixed bug in translation from SSA2 to RSSA with case expressions
+     over non-primitive-sized words.
    - Fixed bug in SSA/SSA2 type checking of case expressions over
      words.
 

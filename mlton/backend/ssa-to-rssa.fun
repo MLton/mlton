@@ -599,12 +599,18 @@ fun updateCard (addr: Operand.t): Statement.t list =
              src = Operand.word (WordX.one cardElemSize)}]
    end
 
+fun convertWordSize (ws: WordSize.t): WordSize.t =
+   WordSize.roundUpToPrim ws
+
+fun convertWordX (w: WordX.t): WordX.t =
+   WordX.resize (w, convertWordSize (WordX.size w))
+
 fun convertConst (c: Const.t): Const.t =
    let
       datatype z = datatype Const.t
    in
       case c of
-         Word w => Word (WordX.resize (w, WordSize.roundUpToPrim (WordX.size w)))
+         Word w => Word (convertWordX w)
        | _ => c
    end
 
@@ -688,16 +694,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                 (ss, t)
                              end
                         | _ => Error.bug "SsaToRssa.translateCase: strange type"))
-          | S.Cases.Word (s, cs) =>
-               ([],
-                Switch
-                (Switch.T
-                 {cases = (QuickSort.sortVector
-                           (cs, fn ((w, _), (w', _)) =>
-                            WordX.le (w, w', {signed = false}))),
-                  default = default,
-                  size = s,
-                  test = varOp test}))
+          | S.Cases.Word (s, cases) =>
+               let
+                  val cases =
+                     QuickSort.sortVector
+                     (Vector.map (cases, fn (w, l) => (convertWordX w, l)),
+                      fn ((w, _), (w', _)) => WordX.le (w, w', {signed = false}))
+               in
+                  ([],
+                   Switch
+                   (Switch.T
+                    {cases = cases,
+                     default = default,
+                     size = convertWordSize s,
+                     test = varOp test}))
+               end
       fun eta (l: Label.t, kind: Kind.t): Label.t =
          let
             val {args, ...} = labelInfo l
