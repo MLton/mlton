@@ -48,7 +48,7 @@ fun checkScopes (program as
          end
 
       val (bindTycon, getTycon, getTycon', _) = make' (Tycon.layout, Tycon.plist)
-      val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
+      val (bindCon, getCon, _) = make (Con.layout, Con.plist)
       val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
       fun getVars xs = Vector.foreach (xs, getVar)
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
@@ -108,16 +108,19 @@ fun checkScopes (program as
           | Call {func, args, ...} => (getFunc func; getVars args)
           | Case {test, cases, default, ...} =>
                let
-                  fun doitWord (ws, cases) =
+                  fun doit (cases: ('a * 'b) vector,
+                            equals: 'a * 'a -> bool,
+                            hash: 'a -> word,
+                            numExhaustiveCases: IntInf.t) =
                      let
-                        val table = HashSet.new {hash = WordX.hash}
+                        val table = HashSet.new {hash = hash}
                         val _ =
                            Vector.foreach
                            (cases, fn (x, _) =>
                             let
                                val _ =
                                   HashSet.insertIfNew
-                                  (table, WordX.hash x, fn y => WordX.equals (x, y),
+                                  (table, hash x, fn y => equals (x, y),
                                    fn () => x,
                                    fn _ => Error.bug "Ssa.TypeCheck.loopTransfer: redundant branch in case")
                             in
@@ -125,37 +128,23 @@ fun checkScopes (program as
                             end)
                         val numCases = Int.toIntInf (Vector.length cases)
                      in
-                        case (IntInf.equals (numCases, WordSize.cardinality ws), isSome default) of
+                        case (IntInf.equals (numCases, numExhaustiveCases), isSome default) of
                            (true, true) =>
                               Error.bug "Ssa.TypeCheck.loopTransfer: exhaustive case has default"
                          | (false, false) =>
                               Error.bug "Ssa.TypeCheck.loopTransfer: non-exhaustive case has no default"
                          | _ => ()
                      end
+                  fun doitWord (ws, cases) =
+                     doit (cases, WordX.equals, WordX.hash, WordSize.cardinality ws)
                   fun doitCon cases =
                      let
-                        val numCons = 
+                        val numExhaustiveCases =
                            case Type.dest (getVar' test) of
-                              Type.Datatype t => getTycon' t
+                              Type.Datatype t => Int.toIntInf (getTycon' t)
                             | _ => Error.bug "Ssa.TypeCheck.loopTransfer: case test is not a datatype"
-                        val cons = Array.array (numCons, false)
-                        val _ =
-                           Vector.foreach
-                           (cases, fn (con, _) =>
-                            let
-                               val i = getCon' con
-                            in
-                               if Array.sub (cons, i)
-                                  then Error.bug "Ssa.TypeCheck.loopTransfer: redundant branch in case"
-                               else Array.update (cons, i, true)
-                            end)
                      in
-                        case (Array.forall (cons, fn b => b), isSome default) of
-                           (true, true) =>
-                              Error.bug "Ssa.TypeCheck.loopTransfer: exhaustive case has default"
-                         | (false, false) =>
-                              Error.bug "Ssa.TypeCheck.loopTransfer: non-exhaustive case has no default"
-                         | _ => ()
+                        doit (cases, Con.equals, Con.hash, numExhaustiveCases)
                      end
                   val _ = getVar test
                   val _ =
@@ -212,11 +201,11 @@ fun checkScopes (program as
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {tycon, cons} =>
                (bindTycon (tycon, Vector.length cons)
-                ; Vector.foreachi (cons, fn (i, {con, ...}) => 
-                                   bindCon (con, i))))
+                ; Vector.foreach (cons, fn {con, ...} =>
+                                  bindCon con)))
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {cons, ...} =>
-               Vector.foreach (cons, fn {args, ...} => 
+               Vector.foreach (cons, fn {args, ...} =>
                                Vector.foreach (args, loopType)))
       val _ = Vector.foreach (globals, loopStatement)
       val _ = List.foreach (functions, bindFunc o Function.name)
