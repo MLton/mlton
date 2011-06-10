@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2011 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -132,27 +132,29 @@ fun checkScopes (program as
           | Call {func, args, ...} => (getFunc func; getVars args)
           | Case {test, cases, default, ...} =>
                let
-                  fun doit (cases: ('a * 'b) vector,
-                            equals: 'a * 'a -> bool,
-                            toWord: 'a -> word): unit =
+                  fun doitWord (ws, cases) =
                      let
-                        val table = HashSet.new {hash = toWord}
+                        val table = HashSet.new {hash = WordX.hash}
                         val _ =
                            Vector.foreach
                            (cases, fn (x, _) =>
                             let
-                               val _ = 
+                               val _ =
                                   HashSet.insertIfNew
-                                  (table, toWord x, fn y => equals (x, y),
-                                   fn () => x, 
-                                   fn _ => Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case")
+                                  (table, WordX.hash x, fn y => WordX.equals (x, y),
+                                   fn () => x,
+                                   fn _ => Error.bug "Ssa2.TypeCheck.loopTransfer: redundant branch in case")
                             in
                                ()
                             end)
+                        val numCases = Int.toIntInf (Vector.length cases)
                      in
-                        if isSome default
-                           then ()
-                        else Error.bug "Ssa2.TypeCheck2.loopTransfer: case has no default"
+                        case (IntInf.equals (numCases, WordSize.cardinality ws), isSome default) of
+                           (true, true) =>
+                              Error.bug "Ssa2.TypeCheck.loopTransfer: exhaustive case has default"
+                         | (false, false) =>
+                              Error.bug "Ssa2.TypeCheck.loopTransfer: non-exhaustive case has no default"
+                         | _ => ()
                      end
                   fun doitCon cases =
                      let
@@ -186,8 +188,7 @@ fun checkScopes (program as
                   val _ =
                      case cases of
                         Cases.Con cs => doitCon cs 
-                      | Cases.Word (_, cs) =>
-                           doit (cs, WordX.equals, Word.fromIntInf o WordX.toIntInf)
+                      | Cases.Word (ws, cs) => doitWord (ws, cs)
                in
                   ()
                end

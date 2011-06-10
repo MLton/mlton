@@ -1,5 +1,9 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2011-06-10
+   - Fixed bug in SSA/SSA2 type checking of case expressions over
+     words.
+
 * 2011-06-04
    - Remove bytecode codegen.
    - Remove support for .cm files as input.
