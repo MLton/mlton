@@ -270,6 +270,7 @@ gdtoa/README: gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
 	patch -s -p0 <gdtoa-patch
 	patch -s -p0 <gdtoa-patch.internal
 	patch -s -p0 <gdtoa-patch.mlton
+	@touch $@
 
 $(GDTOACFILES): gdtoa/README
 	@touch $@
