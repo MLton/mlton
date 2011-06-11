@@ -1,30 +1,45 @@
-$SMLNJ-BASIS           $(SML_LIB)/basis
-$basis.cm              $(SML_LIB)/basis
-$basis.cm/basis.cm     $(SML_LIB)/basis/basis.mlb
+# Standard ML Basis Library
+$SMLNJ-BASIS                            $(SML_LIB)/basis
+$basis.cm                               $(SML_LIB)/basis
+$basis.cm/basis.cm                      $(SML_LIB)/basis/basis.mlb
 
-$SMLNJ-ML-YACC-LIB                    $(SML_LIB)/mlyacc-lib
-$SMLNJ-ML-YACC-LIB/ml-yacc-lib.cm     $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
-$ml-yacc-lib.cm                       $(SML_LIB)/mlyacc-lib
-$ml-yacc-lib.cm/ml-yacc-lib.cm        $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+#####
 
-$cml            $(SML_LIB)/cml
-$cml/cml.cm     $(SML_LIB)/cml/cml.mlb
+# ckit Library
+$ckit-lib.cm                            $(SML_LIB)/ckit-lib
+$ckit-lib.cm/ckit-lib.cm                $(SML_LIB)/ckit-lib/ckit-lib.mlb
 
-$c          $(SML_LIB)/mlnlffi-lib
-$c/c.cm     $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
+# CML Library
+$cml                                    $(SML_LIB)/cml
+$cml/cml.cm                             $(SML_LIB)/cml/cml.mlb
 
-$SMLNJ-LIB            $(SML_LIB)/smlnj-lib
-$controls-lib.cm      $(SML_LIB)/smlnj-lib/Controls
-$hash-cons-lib.cm     $(SML_LIB)/smlnj-lib/HashCons
-$html-lib.cm          $(SML_LIB)/smlnj-lib/HTML
-$inet-lib.cm          $(SML_LIB)/smlnj-lib/INet
-$pp-lib.cm            $(SML_LIB)/smlnj-lib/PP
-$reactive-lib.cm      $(SML_LIB)/smlnj-lib/Reactive
-$regexp-lib.cm        $(SML_LIB)/smlnj-lib/RegExp
-$smlnj-lib.cm         $(SML_LIB)/smlnj-lib/Util
-$unix-lib.cm          $(SML_LIB)/smlnj-lib/Unix
+# MLLPT Library
+$ml-lpt-lib.cm                          $(SML_LIB)/mllpt-lib
+$ml-lpt-lib.cm/ml-lpt-lib.cm            $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
 
-$ckit-lib.cm                 $(SML_LIB)/ckit-lib
-$ckit-lib.cm/ckit-lib.cm     $(SML_LIB)/ckit-lib/ckit-lib.mlb
+# MLNLFFI Library
+$c                                      $(SML_LIB)/mlnlffi-lib
+$c/c.cm                                 $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
 
-$SMLNJ-MLRISC     $(SML_LIB)/mlrisc-lib/mlb
+# MLRISC Library
+$SMLNJ-MLRISC                           $(SML_LIB)/mlrisc-lib/mlb
+
+# MLYacc Library
+$SMLNJ-ML-YACC-LIB                      $(SML_LIB)/mlyacc-lib
+$SMLNJ-ML-YACC-LIB/ml-yacc-lib.cm       $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+$ml-yacc-lib.cm                         $(SML_LIB)/mlyacc-lib
+$ml-yacc-lib.cm/ml-yacc-lib.cm          $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+
+# SMLNJ Library
+$SMLNJ-LIB                              $(SML_LIB)/smlnj-lib
+$controls-lib.cm                        $(SML_LIB)/smlnj-lib/Controls
+$hash-cons-lib.cm                       $(SML_LIB)/smlnj-lib/HashCons
+$html-lib.cm                            $(SML_LIB)/smlnj-lib/HTML
+$html4-lib.cm                           $(SML_LIB)/smlnj-lib/HTML4
+$inet-lib.cm                            $(SML_LIB)/smlnj-lib/INet
+$json-lib.cm                            $(SML_LIB)/smlnj-lib/JSON
+$pp-lib.cm                              $(SML_LIB)/smlnj-lib/PP
+$reactive-lib.cm                        $(SML_LIB)/smlnj-lib/Reactive
+$regexp-lib.cm                          $(SML_LIB)/smlnj-lib/RegExp
+$smlnj-lib.cm                           $(SML_LIB)/smlnj-lib/Util
+$unix-lib.cm                            $(SML_LIB)/smlnj-lib/Unix

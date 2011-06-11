@@ -83,6 +83,7 @@ struct
                      List.mapPartial
                      (fn line =>
                       if CharVector.all Char.isSpace line
+                         orelse CharVector.sub (line, 0) = #"#"
                          then NONE
                          else 
                             case String.tokens Char.isSpace line of
@@ -189,7 +190,7 @@ struct
                                else concat ["(* ", cmLibOSString, " ===> *) ", mlbLibDef ()]
                       in
                          concat 
-                         ["  basis ", bid, " = \n",
+                         ["  basis ", bid, " =\n",
                           "    bas\n",
                           "      ", mlbLib, "\n",
                           "    end\n"]
