@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2011 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -465,8 +465,18 @@ fun shrinkFunction {globals: Statement.t vector} =
                                              Goto {canMove = canMove',
                                                    dst = m,
                                                    args = ps}
-                                        | Bug => Bug
-                                        | Case _ =>
+                                        | Bug =>
+                                             if (case returns of
+                                                    NONE => true
+                                                  | SOME ts =>
+                                                       Vector.equals
+                                                       (ts, args, fn (t, (_, t')) =>
+                                                        Type.equals (t, t')))
+                                                then Bug
+                                             else Goto {canMove = canMove',
+                                                        dst = m,
+                                                        args = ps}
+                                       | Case _ =>
                                              Goto {canMove = canMove',
                                                    dst = m,
                                                    args = ps}

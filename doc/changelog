@@ -1,5 +1,10 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2011-06-14
+   - Fixed bug in SSA/SSA2 shrinker that could erroneously turn a
+     non-tail function call with a Bug transfer as its continuation
+     into a tail function call.
+
 * 2011-06-10
    - Fixed bug in translation from SSA2 to RSSA with case expressions
      over non-primitive-sized words.
