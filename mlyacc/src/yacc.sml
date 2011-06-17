@@ -781,7 +781,7 @@ precedences of the rule and the terminal are equal.
     in  let val result = TextIO.openOut (spec ^ ".sml")
             val sigs = TextIO.openOut (spec ^ ".sig")
             val specFile = OS.Path.file spec
-            val resultFile = OS.Path.file result
+            val resultFile = specFile ^ ".sml"
             val line = ref 1
             val col = ref 0
             val pr = fn s => TextIO.output(result,s)
