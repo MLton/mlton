@@ -1,3 +1,6 @@
+(* Modified by Matthew Fluet on 2011-06-17.
+ * Use simple file name (rather than absolute paths) in line directives in output.
+ *)
 (* Modified by Vesa Karvonen on 2007-12-19.
  * Create line directives in output.
  *)
@@ -295,7 +298,7 @@ structure LexGen: LEXGEN =
    val OutFile = ref ""
    fun fmtLineDir {line, col} file =
        String.concat ["(*#line ", Int.toString line, ".", Int.toString (col+1),
-                      " \"", OS.FileSys.fullPath file, "\"*)"]
+                      " \"", file, "\"*)"]
    val sayPos =
     fn SOME pos => say (fmtLineDir pos (!InFile))
      | NONE => (say (fmtLineDir {line = !LexOutLine, col = 0} (!OutFile));
@@ -1284,7 +1287,7 @@ val skel_mid2 =
 
 fun lexGen(infile) =
     let val outfile = infile ^ ".sml"
-        val () = (InFile := infile; OutFile := outfile)
+        val () = (InFile := OS.Path.file infile; OutFile := OS.Path.file outfile)
       fun PrintLexer (ends) =
     let val sayln = fn x => (say x; say "\n")
      in case !ArgCode

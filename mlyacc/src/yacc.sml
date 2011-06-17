@@ -1,3 +1,6 @@
+(* Modified by Matthew Fluet on 2011-06-17.
+ * Use simple file name (rather than absolute paths) in line directives in output.
+ *)
 (* Modified by Vesa Karvonen on 2007-12-18.
  * Create line directives in output.
  *)
@@ -777,8 +780,8 @@ precedences of the rule and the terminal are equal.
 
     in  let val result = TextIO.openOut (spec ^ ".sml")
             val sigs = TextIO.openOut (spec ^ ".sig")
-            val specPath = OS.FileSys.fullPath spec
-            val resultPath = OS.FileSys.fullPath (spec ^ ".sml")
+            val specFile = OS.Path.file spec
+            val resultFile = OS.Path.file result
             val line = ref 1
             val col = ref 0
             val pr = fn s => TextIO.output(result,s)
@@ -793,8 +796,8 @@ precedences of the rule and the terminal are equal.
                String.concat ["(*#line ", Int.toString line, ".",
                               Int.toString (col+1), " \"", path, "\"*)"]
             val fmtPos =
-               fn NONE => (fmtLineDir {line = !line, col = 0} resultPath) ^ "\n"
-                | SOME pos => fmtLineDir pos specPath
+               fn NONE => (fmtLineDir {line = !line, col = 0} resultFile) ^ "\n"
+                | SOME pos => fmtLineDir pos specFile
             val termvoid = makeUniqueId "VOID"
             val ntvoid = makeUniqueId "ntVOID"
             val hasType = fn s => case symbolType s
