@@ -1,3 +1,12 @@
+mlton (20100608-5) unstable; urgency=low
+
+  * Newest gcc and binutils fix mips[el] jump problem
+   * Uploaded mips[el] bootstrap packages as 20100608-4
+   * Build-Depend on newest gcc and binutils
+   * Removed explicit-relocs patch
+
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sun, 08 May 2011 11:56:34 +0200
+
 mlton (20100608-4) unstable; urgency=low
 
   * Add missing install file for sparc runtime
