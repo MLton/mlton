@@ -4306,8 +4306,11 @@ Index: mlton/main/main.fun
            | SML => "sml"
            | MLB => "mlb"
            | Generated => "g"
-@@ -190,6 +188,7 @@
+@@ -190,8 +188,10 @@
+       case !Control.Target.arch of
+          Alpha => true
         | AMD64 => true
++       | ARM => true
         | HPPA => true
         | IA64 => true
 +       | MIPS => true

@@ -186,6 +186,7 @@ fun defaultAlignIs8 () =
       case !Control.Target.arch of
          Alpha => true
        | AMD64 => true
+       | ARM => true
        | HPPA => true
        | IA64 => true
        | MIPS => true
