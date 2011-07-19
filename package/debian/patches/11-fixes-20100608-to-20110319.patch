@@ -3,16 +3,16 @@ Author: Wesley W. Terpstra (Debian) <terpstra@debian.org>
 Forwarded: no
 Last-Update: 2011-03-20
 
-Index: regression/common-subexp0.ok
+Index: mlton-20100608/regression/common-subexp0.ok
 ===================================================================
---- mlton.orig/regression/common-subexp0.ok	(.../tags/on-20100608-release)	(revision 0)
-+++ mlton/regression/common-subexp0.ok	(.../trunk)	(revision 7506)
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ mlton-20100608/regression/common-subexp0.ok	2011-07-19 11:34:28.000000000 +0000
 @@ -0,0 +1 @@
 +nan
-Index: regression/weak.3.sml
+Index: mlton-20100608/regression/weak.3.sml
 ===================================================================
---- mlton.orig/regression/weak.3.sml	(.../tags/on-20100608-release)	(revision 0)
-+++ mlton/regression/weak.3.sml	(.../trunk)	(revision 7506)
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ mlton-20100608/regression/weak.3.sml	2011-07-19 11:34:28.000000000 +0000
 @@ -0,0 +1,23 @@
 +fun find cache x =
 +   case (List.find (fn (y,_) => x = y) (!cache)) of
@@ -37,27 +37,27 @@ Index: regression/weak.3.sml
 +                 end
 +
 +val _ = List.app (fn x => print (concat [Int.toString (lookup x), "\n"])) [5,4,3,2,1]
-Index: regression/weak.3.ok
+Index: mlton-20100608/regression/weak.3.ok
 ===================================================================
---- mlton.orig/regression/weak.3.ok	(.../tags/on-20100608-release)	(revision 0)
-+++ mlton/regression/weak.3.ok	(.../trunk)	(revision 7506)
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ mlton-20100608/regression/weak.3.ok	2011-07-19 11:34:28.000000000 +0000
 @@ -0,0 +1,5 @@
 +6
 +5
 +4
 +3
 +2
-Index: regression/common-subexp0.sml
+Index: mlton-20100608/regression/common-subexp0.sml
 ===================================================================
---- mlton.orig/regression/common-subexp0.sml	(.../tags/on-20100608-release)	(revision 0)
-+++ mlton/regression/common-subexp0.sml	(.../trunk)	(revision 7506)
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ mlton-20100608/regression/common-subexp0.sml	2011-07-19 11:34:28.000000000 +0000
 @@ -0,0 +1,2 @@
 +val x = !(ref 0.0) / !(ref 0.0)
 +val _ = print (concat [Real.toString x, "\n"])
-Index: regression/real-basic.x86-mingw.ok
+Index: mlton-20100608/regression/real-basic.x86-mingw.ok
 ===================================================================
---- mlton.orig/regression/real-basic.x86-mingw.ok	(.../tags/on-20100608-release)	(revision 0)
-+++ mlton/regression/real-basic.x86-mingw.ok	(.../trunk)	(revision 7506)
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ mlton-20100608/regression/real-basic.x86-mingw.ok	2011-07-19 11:34:28.000000000 +0000
 @@ -0,0 +1,32 @@
 +Real32
 +  Reported
@@ -91,15 +91,27 @@ Index: regression/real-basic.x86-mingw.ok
 +    max exponent: 1024
 +    min exponent: ~1074
 +    min denormal: ~1074
-Index: runtime/platform/mingw.c
+Index: mlton-20100608/runtime/platform/mingw.c
 ===================================================================
---- mlton.orig/runtime/platform/mingw.c	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/runtime/platform/mingw.c	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/runtime/platform/mingw.c	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/runtime/platform/mingw.c	2011-07-19 11:34:28.000000000 +0000
 @@ -1308,26 +1308,75 @@
          }
  }
  
 -/* The default strerror() does not know extended error codes. */
+-char *MLton_strerror(int code) {
+-        static char buffer[512];
+-        
+-        /* Windows specific strerror */
+-        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 
+-                          0,      /* Not used for FROM_SYSTEM */
+-                          code,   /* The status code to look up */
+-                          0,      /* Use the default language */
+-                          buffer, /* Write the message to here */
+-                          sizeof(buffer)-1,
+-                          0) == 0) {
+-                strcpy(buffer, "Unknown error");
 +static const char *MLton_strerrorExtension(int code) {
 +        switch (code) {
 +        case EINTR:           return "Interrupted function call";
@@ -145,7 +157,7 @@ Index: runtime/platform/mingw.c
 +        case EUSERS:          return "Too many users";
 +        case ECANCELED:       return "Operation canceled";
 +        default:              return "Unknown error";
-+        }
+         }
 +}
 +
 +/* MinGW strerror works for all system-defined errno values.
@@ -161,21 +173,9 @@ Index: runtime/platform/mingw.c
 + * Thus, we just make a big English table to augment strerror.
 + * The descriptions are taken from man errno(3).
 + */
- char *MLton_strerror(int code) {
--        static char buffer[512];
++char *MLton_strerror(int code) {
 +        static char buffer[80];
          
--        /* Windows specific strerror */
--        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 
--                          0,      /* Not used for FROM_SYSTEM */
--                          code,   /* The status code to look up */
--                          0,      /* Use the default language */
--                          buffer, /* Write the message to here */
--                          sizeof(buffer)-1,
--                          0) == 0) {
--                strcpy(buffer, "Unknown error");
--        }
--        
 -        /* Cut message at EOL */
 -        for (int i = 0; buffer[i]; ++i)
 -                if (buffer[i] == '\n' || buffer[i] == '\r')
@@ -189,10 +189,10 @@ Index: runtime/platform/mingw.c
          return buffer;
  }
  
-Index: mlton/atoms/real-x.fun
+Index: mlton-20100608/mlton/atoms/real-x.fun
 ===================================================================
---- mlton.orig/mlton/atoms/real-x.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/atoms/real-x.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/atoms/real-x.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/atoms/real-x.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -1,4 +1,4 @@
 -(* Copyright (C) 2009 Matthew Fluet.
 +(* Copyright (C) 2009,2011 Matthew Fluet.
@@ -233,10 +233,10 @@ Index: mlton/atoms/real-x.fun
           end
      | _ => false
  
-Index: mlton/main/main.fun
+Index: mlton-20100608/mlton/main/main.fun
 ===================================================================
---- mlton.orig/mlton/main/main.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/main/main.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/main/main.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/main/main.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -737,7 +737,7 @@
                     Result.Yes () => ()
                   | Result.No s' => usage (concat ["invalid -ssa2-passes arg: ", s']))
@@ -246,10 +246,10 @@ Index: mlton/main/main.fun
          SpaceString
          (fn s =>
           stop := (case s of
-Index: mlton/ssa/common-subexp.fun
+Index: mlton-20100608/mlton/ssa/common-subexp.fun
 ===================================================================
---- mlton.orig/mlton/ssa/common-subexp.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/ssa/common-subexp.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/ssa/common-subexp.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/ssa/common-subexp.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -1,4 +1,4 @@
 -(* Copyright (C) 2009 Matthew Fluet.
 +(* Copyright (C) 2009,2011 Matthew Fluet.
@@ -477,10 +477,10 @@ Index: mlton/ssa/common-subexp.fun
           Program.T {datatypes = datatypes,
                      globals = globals,
                      functions = functions,
-Index: mlton/backend/ssa-to-rssa.fun
+Index: mlton-20100608/mlton/backend/ssa-to-rssa.fun
 ===================================================================
---- mlton.orig/mlton/backend/ssa-to-rssa.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/backend/ssa-to-rssa.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/backend/ssa-to-rssa.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/backend/ssa-to-rssa.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -1,4 +1,4 @@
 -(* Copyright (C) 2009 Matthew Fluet.
 +(* Copyright (C) 2009,2011 Matthew Fluet.
@@ -498,10 +498,10 @@ Index: mlton/backend/ssa-to-rssa.fun
                                 | Weak_new =>
                                      ifIsWeakPointer
                                      (ty,
-Index: mlton/elaborate/elaborate-core.fun
+Index: mlton-20100608/mlton/elaborate/elaborate-core.fun
 ===================================================================
---- mlton.orig/mlton/elaborate/elaborate-core.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/elaborate/elaborate-core.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/elaborate/elaborate-core.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/elaborate/elaborate-core.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -2097,31 +2097,32 @@
                                        pats = pats}
                                    end))
@@ -553,10 +553,10 @@ Index: mlton/elaborate/elaborate-core.fun
                                   in
                                      t
                                   end)
-Index: mlton/codegen/amd64-codegen/amd64-generate-transfers.fun
+Index: mlton-20100608/mlton/codegen/amd64-codegen/amd64-generate-transfers.fun
 ===================================================================
---- mlton.orig/mlton/codegen/amd64-codegen/amd64-generate-transfers.fun	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlton/codegen/amd64-codegen/amd64-generate-transfers.fun	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlton/codegen/amd64-codegen/amd64-generate-transfers.fun	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlton/codegen/amd64-codegen/amd64-generate-transfers.fun	2011-07-19 11:34:28.000000000 +0000
 @@ -1357,6 +1357,31 @@
                                      size = pointerSize})),
                                   size_stack_args + 32)
@@ -589,10 +589,10 @@ Index: mlton/codegen/amd64-codegen/amd64-generate-transfers.fun
                       (*
                       val reserve_args =
                          AppendList.fromList
-Index: doc/changelog
+Index: mlton-20100608/doc/changelog
 ===================================================================
---- mlton.orig/doc/changelog	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/doc/changelog	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/doc/changelog	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/doc/changelog	2011-07-19 11:34:28.000000000 +0000
 @@ -1,3 +1,20 @@
 +Here are the changes from version 2010608 to version YYYYMMDD.
 +
@@ -614,10 +614,10 @@ Index: doc/changelog
  Here are the changes from version 20070826 to version 20100608.
  
  Summary:
-Index: lib/mlton/basic/real.sig
+Index: mlton-20100608/lib/mlton/basic/real.sig
 ===================================================================
---- mlton.orig/lib/mlton/basic/real.sig	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/lib/mlton/basic/real.sig	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/lib/mlton/basic/real.sig	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/lib/mlton/basic/real.sig	2011-07-19 11:34:28.000000000 +0000
 @@ -1,4 +1,4 @@
 -(* Copyright (C) 2009 Matthew Fluet.
 +(* Copyright (C) 2009,2011 Matthew Fluet.
@@ -632,10 +632,10 @@ Index: lib/mlton/basic/real.sig
        val layout: t -> Layout.t
        val ln: t -> t
        val log2: t -> t
-Index: mlyacc/src/yacc.lex
+Index: mlton-20100608/mlyacc/src/yacc.lex
 ===================================================================
---- mlton.orig/mlyacc/src/yacc.lex	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/mlyacc/src/yacc.lex	(.../trunk)	(revision 7506)
+--- mlton-20100608.orig/mlyacc/src/yacc.lex	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/mlyacc/src/yacc.lex	2011-07-19 11:34:28.000000000 +0000
 @@ -75,11 +75,11 @@
  qualid ={id}".";
  %%
@@ -651,11 +651,11 @@ Index: mlyacc/src/yacc.lex
  <INITIAL>"%%"    => (YYBEGIN A; HEADER (concat (rev (!text)),pos yypos,pos yypos));
  <INITIAL,CODE,COMMENT,F,EMPTYCOMMENT>{eol}  => (Add yytext; incLineNum yypos; continue());
  <INITIAL>.       => (Add yytext; continue());
-Index: bin/mlton-script
+Index: mlton-20100608/bin/mlton-script
 ===================================================================
---- mlton.orig/bin/mlton-script	(.../tags/on-20100608-release)	(revision 7506)
-+++ mlton/bin/mlton-script	(.../trunk)	(revision 7506)
-@@ -132,6 +132,7 @@
+--- mlton-20100608.orig/bin/mlton-script	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/bin/mlton-script	2011-07-19 11:34:28.000000000 +0000
+@@ -131,6 +131,7 @@
          -target-link-opt freebsd '-L/usr/local/lib/'             \
          -target-link-opt aix '-maix64'                           \
          -target-link-opt ia64 "$ia64hpux"                        \
@@ -663,10 +663,10 @@ Index: bin/mlton-script
          -target-link-opt mingw                                   \
                  '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
          -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
-Index: lib/mlton/basic/dir.sml
+Index: mlton-20100608/lib/mlton/basic/dir.sml
 ===================================================================
---- mlton.orig/lib/mlton/basic/dir.sml	(revision 7509)
-+++ mlton/lib/mlton/basic/dir.sml	(working copy)
+--- mlton-20100608.orig/lib/mlton/basic/dir.sml	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/lib/mlton/basic/dir.sml	2011-07-19 11:34:28.000000000 +0000
 @@ -56,6 +56,7 @@
     fold (d, ([], []), fn (x, (dirs, files)) =>
        let
@@ -675,10 +675,10 @@ Index: lib/mlton/basic/dir.sml
        in
           if FS.isLink file
              then (dirs, files)
-Index: runtime/Makefile
+Index: mlton-20100608/runtime/Makefile
 ===================================================================
---- mlton.orig/runtime/Makefile	(revision 7509)
-+++ mlton/runtime/Makefile	(working copy)
+--- mlton-20100608.orig/runtime/Makefile	2011-07-19 11:34:22.000000000 +0000
++++ mlton-20100608/runtime/Makefile	2011-07-19 11:34:28.000000000 +0000
 @@ -179,7 +179,6 @@
  # WARNCFLAGS += -Wpadded
  WARNCFLAGS += -Wredundant-decls
