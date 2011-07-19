@@ -4,8 +4,14 @@ mlton (20100608-5) unstable; urgency=low
    * Uploaded mips[el] bootstrap packages as 20100608-4
    * Build-Depend on newest gcc and binutils
    * Removed explicit-relocs patch
+  * Include a diffs to current release head
+   * Necessary for 8-bit aligned MIPS read/writes
+   * Increase heap-size for mips post-alignment
+  * Building armel on debian buildd instead of qemu
+   * Heap-size 1.2g on 1.5g machines
+  * Added armhf port
 
- -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Sun, 08 May 2011 11:56:34 +0200
+ -- Wesley W. Terpstra (Debian) <terpstra@debian.org>  Tue, 19 Jul 2011 12:29:52 +0200
 
 mlton (20100608-4) unstable; urgency=low
 
