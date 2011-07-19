@@ -188,6 +188,7 @@ fun defaultAlignIs8 () =
        | AMD64 => true
        | HPPA => true
        | IA64 => true
+       | MIPS => true
        | Sparc => true
        | S390 => true
        | _ => false
