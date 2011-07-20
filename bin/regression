@@ -249,7 +249,7 @@ for f in *.sml; do
                                 compare="$newcompare"
 			fi
                         if ! diff "$compare" "$tmp"; then
-                                echo "difference with ${flags[*]} ${extraFlags[*]}"
+                                echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
                         fi
                 fi
         fi
