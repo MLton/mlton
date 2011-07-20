@@ -100,6 +100,10 @@ const C_Int_t Posix_ProcEnv_SC_OPEN_MAX = _SC_OPEN_MAX;
 #define _SC_ADVISORY_INFO -1
 #endif
 const C_Int_t Posix_ProcEnv_SC_ADVISORY_INFO = _SC_ADVISORY_INFO;
+#ifndef _SC_AVPHYS_PAGES
+#define _SC_AVPHYS_PAGES -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_AVPHYS_PAGES = _SC_AVPHYS_PAGES;
 #ifndef _SC_BARRIERS
 #define _SC_BARRIERS -1
 #endif
@@ -152,6 +156,18 @@ const C_Int_t Posix_ProcEnv_SC_MESSAGE_PASSING = _SC_MESSAGE_PASSING;
 #define _SC_MONOTONIC_CLOCK -1
 #endif
 const C_Int_t Posix_ProcEnv_SC_MONOTONIC_CLOCK = _SC_MONOTONIC_CLOCK;
+#ifndef _SC_NPROCESSORS_CONF
+#define _SC_NPROCESSORS_CONF -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_NPROCESSORS_CONF = _SC_NPROCESSORS_CONF;
+#ifndef _SC_NPROCESSORS_ONLN
+#define _SC_NPROCESSORS_ONLN -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_NPROCESSORS_ONLN = _SC_NPROCESSORS_ONLN;
+#ifndef _SC_PHYS_PAGES
+#define _SC_PHYS_PAGES -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_PHYS_PAGES = _SC_PHYS_PAGES;
 #ifndef _SC_PRIORITIZED_IO
 #define _SC_PRIORITIZED_IO -1
 #endif

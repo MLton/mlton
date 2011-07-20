@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2011 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -121,6 +122,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
                (Prim.SC_ARG_MAX,"ARG_MAX") ::?
                (Prim.SC_ASYNCHRONOUS_IO,"ASYNCHRONOUS_IO") ::?
                (Prim.SC_ATEXIT_MAX,"ATEXIT_MAX") ::?
+               (Prim.SC_AVPHYS_PAGES,"AVPHYS_PAGES") ::?
                (Prim.SC_BARRIERS,"BARRIERS") ::?
                (Prim.SC_BC_BASE_MAX,"BC_BASE_MAX") ::?
                (Prim.SC_BC_DIM_MAX,"BC_DIM_MAX") ::?
@@ -151,9 +153,12 @@ structure PosixProcEnv: POSIX_PROC_ENV =
                (Prim.SC_MQ_OPEN_MAX,"MQ_OPEN_MAX") ::?
                (Prim.SC_MQ_PRIO_MAX,"MQ_PRIO_MAX") ::?
                (Prim.SC_NGROUPS_MAX,"NGROUPS_MAX") ::?
+               (Prim.SC_NPROCESSORS_CONF,"NPROCESSORS_CONF") ::?
+               (Prim.SC_NPROCESSORS_ONLN,"NPROCESSORS_ONLN") ::?
                (Prim.SC_OPEN_MAX,"OPEN_MAX") ::?
                (Prim.SC_PAGESIZE,"PAGESIZE") ::?
                (Prim.SC_PAGE_SIZE,"PAGE_SIZE") ::?
+               (Prim.SC_PHYS_PAGES,"PHYS_PAGES") ::?
                (Prim.SC_PRIORITIZED_IO,"PRIORITIZED_IO") ::?
                (Prim.SC_PRIORITY_SCHEDULING,"PRIORITY_SCHEDULING") ::?
                (Prim.SC_RAW_SOCKETS,"RAW_SOCKETS") ::?
