@@ -1,5 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2012-02-24
+   - Fixed bug in redundant SSA optimization.
+
 * 2011-06-14
    - Fixed bug in SSA/SSA2 shrinker that could erroneously turn a
      non-tail function call with a Bug transfer as its continuation
