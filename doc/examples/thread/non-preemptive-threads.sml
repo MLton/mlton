@@ -41,22 +41,22 @@ structure Thread:
       local
          val threads: Thread.Runnable.t Queue.t = Queue.new ()
       in
-         fun ready (t: Thread.Runnable.t) : unit = 
+         fun ready (t: Thread.Runnable.t) : unit =
             Queue.enque(threads, t)
          fun next () : Thread.Runnable.t =
             case Queue.deque threads of
                NONE => valOf (!topLevel)
              | SOME t => t
       end
-   
+
       fun 'a exit (): 'a = switch (fn _ => next ())
-      
+
       fun new (f: unit -> unit): Thread.Runnable.t =
          Thread.prepare
          (Thread.new (fn () => ((f () handle _ => exit ())
                                 ; exit ())),
           ())
-         
+
       fun schedule t = (ready t; next ())
 
       fun yield (): unit = switch (fn t => schedule (Thread.prepare (t, ())))

@@ -7,7 +7,7 @@ fun 'a printSize (name: string, value: 'a): unit=
 
 val l = [1, 2, 3, 4]
 
-val _ = 
+val _ =
    (
     printSize ("an int list of length 4", l)
     ; printSize ("a string of length 10", "0123456789")
@@ -26,7 +26,7 @@ val _ =
 val _ = if 10 = foldl (op +) 0 l
            then ()
         else raise Fail "bug"
-   
+
 local
    open MLton.Cont
 in
