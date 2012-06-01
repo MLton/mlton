@@ -1,5 +1,13 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2012-06-01
+   - Fixed bug in elaboration that erroneously rejected the following:
+	 datatype ('a, ''a) t = T
+	 type ('a, ''a) u = unit
+     and erroneously accepted the following:
+	 fun f (x: 'a) : ''a = x
+	 fun g (x: 'a) : ''a = if x = x then x else x
+
 * 2012-02-24
    - Fixed bug in redundant SSA optimization.
 
