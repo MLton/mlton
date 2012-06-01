@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2011 Matthew Fluet.
+(* Copyright (C) 2009-2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -510,8 +510,7 @@ val elaboratePat:
                                                  (instance, Type.arrow types,
                                                   fn _ =>
                                                   (region,
-                                                   str "constant constructor\
-                                                       \ applied to argument",
+                                                   str "constant constructor applied to argument",
                                                    seq [str "in: ", lay ()]))
                                            in
                                               types
@@ -1927,10 +1926,10 @@ fun elaborateDec (d, {env = E, nest}) =
                                  (let
                                      open Layout
                                   in
-                                     seq [seq (List.separate
-                                               (Vector.toListMap
-                                                (pats, Apat.layoutDelimit),
-                                                str " ")),
+                                     seq [Apat.layoutFlatApp pats,
+                                          case resultType of
+                                             NONE => empty
+                                           | SOME rt => seq [str ": ", Atype.layout rt],
                                           str " = ",
                                           Aexp.layout body]
                                   end)
@@ -1982,7 +1981,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                           Control.error
                                           (region,
                                            seq [str "function defined with different numbers of arguments"],
-                                           align [one lay0, one layN])
+                                           align [one lay0, one layN, lay ()])
                                        end)
                                 val diff =
                                    Vector.fold
@@ -2003,8 +2002,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                             (region,
                                              seq [str "function defined with multiple names: ",
                                                   seq (Layout.separateRight
-                                                       (List.map (diff,
-                                                                  Avar.layout),
+                                                       (List.map (diff, Avar.layout),
                                                         ", "))],
                                              lay ())
                                          end
@@ -2103,7 +2101,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                            align
                                            [seq [str "result type: ", l1],
                                             seq [str "expression:  ", l2],
-                                            lay ()])))
+                                            seq [str "in: ", lay ()]])))
                                   in
                                      {body = body,
                                       bodyRegion = bodyRegion,
@@ -3188,8 +3186,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                        f (Aexp.region e,
                                                           str "sequence expression not of type unit",
                                                           align [seq [str "type: ", Type.layoutPrettyBracket ty],
-                                                                 seq [str "in: ",
-                                                                      approximate (Aexp.layout e)]])
+                                                                 seq [str "in: ", approximate (Aexp.layout e)]])
                                                     end
                                          end))
                          in
