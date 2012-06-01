@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -507,10 +507,10 @@ and layoutFb clauses =
 
 and layoutClause ({pats, resultType, body}) =
    mayAlign [seq [maybeConstrain (Pat.layoutFlatApp pats,
-                            resultType),
-             str " ="],
-         layoutExpF body] (* this has to be layoutExpF in case body
-                           is a case expression *)
+                                  resultType),
+                  str " ="],
+             layoutExpF body] (* this has to be layoutExpF in case body
+                                 is a case expression *)
 
 fun checkSyntaxExp (e: exp): unit =
    let
