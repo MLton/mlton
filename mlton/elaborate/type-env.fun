@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2010,2012 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -673,13 +673,13 @@ structure Type =
                               (let
                                   val r = ref (Char.toInt #"a")
                                in
-                                  fn _ =>
+                                  fn v =>
                                   let
                                      val n = !r
                                      val l =
                                         simple
                                         (str (concat
-                                              ["'",
+                                              [if Tyvar.isEquality v then "''" else "'",
                                                if n > Char.toInt #"z" 
                                                   then concat ["a", Int.toString (n - Char.toInt #"z")]
                                                else Char.toString (Char.fromInt n )]))
