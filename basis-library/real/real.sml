@@ -218,13 +218,13 @@ functor Real (structure W: WORD_EXTRA
          else ~ x
 
       local
-         datatype z = datatype IEEEReal.real_order
+         structure I = IEEEReal
       in
          fun compareReal (x, y) =
-            if x < y then LESS
-            else if x > y then GREATER
-            else if x == y then EQUAL
-            else UNORDERED
+            if x < y then I.LESS
+            else if x > y then I.GREATER
+            else if x == y then I.EQUAL
+            else I.UNORDERED
       end
 
       local
