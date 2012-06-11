@@ -11,6 +11,11 @@ struct
 
 open S
 
+structure P = Pervasive
+structure PR32 = P.Real32
+structure PR64 = P.Real64
+structure PIR = P.IEEEReal
+
 datatype z = datatype RealSize.t
 
 datatype t =
@@ -60,15 +65,13 @@ fun equals (r, r') =
          let
             open Real32
          in
-            (equals (r, r') andalso signBit r = signBit r')
-            (* orelse (isNan r andalso isNan r') *)
+            equals (r, r') andalso signBit r = signBit r'
          end
     | (Real64 r, Real64 r') =>
          let
             open Real64
          in
-            (equals (r, r') andalso signBit r = signBit r')
-            (* orelse (isNan r andalso isNan r') *)
+            equals (r, r') andalso signBit r = signBit r'
          end
     | _ => false
 
@@ -80,11 +83,6 @@ fun toString r =
 val layout = Layout.str o toString
 
 val hash = String.hash o toString
-
-structure P = Pervasive
-structure PR32 = P.Real32
-structure PR64 = P.Real64
-structure PIR = P.IEEEReal
 
 (* Disable constant folding when it might change the results. *)
 fun disableCF () =
@@ -137,7 +135,7 @@ val r64 =
        tag = Real64}
 
 local
-   fun doit (R {compareReal, signBit, isNan, tag, ...}) (f, arg) =
+   fun doit (R {compareReal, signBit, tag, ...}) (f, arg) =
        if disableCF ()
           then NONE
        else
@@ -154,9 +152,8 @@ local
                 val max = f arg
                 val () = PIR.setRoundingMode old
              in
-                if PIR.EQUAL = compareReal (min, max)
-                   andalso signBit min = signBit max
-                   orelse isNan min andalso isNan max
+                if (PIR.EQUAL = compareReal (min, max)
+                    andalso signBit min = signBit max)
                    then SOME (tag min)
                 else NONE
              end
@@ -282,11 +279,14 @@ in
 end
 
 local
-   fun doit (R {bits, update, subArr, tag, ...}) w = let
+   fun doit (R {bits, update, subArr, tag, isNan, ...}) w = let
       val a = P.Word8Array.array (Bytes.toInt (Bits.toBytes bits), 0w0)
+      val () = update (a, 0, P.LargeWord.fromLargeInt (WordX.toIntInf w))
+      val r = subArr (a, 0)
    in
-      update (a, 0, P.LargeWord.fromLargeInt (WordX.toIntInf w))
-    ; SOME (tag (subArr (a, 0)))
+      if isNan r
+         then NONE
+      else SOME (tag r)
    end handle _ => NONE
 in
    fun castFromWord w =
