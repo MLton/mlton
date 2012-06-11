@@ -31,16 +31,9 @@
 
 // As of 20080807, MinGW has a broken fesetround. Use the runtime's.
 #define HAS_FEROUND FALSE
-// As of 20051104, MinGW has fpclassify, but it is broken.  In particular, it
-// classifies subnormals as normals.  So, we disable it here, which causes the
-// runtime to use our own version.
-#define HAS_FPCLASSIFY FALSE
-#define HAS_FPCLASSIFY32 FALSE
-#define HAS_FPCLASSIFY64 FALSE
 #define HAS_MSG_DONTWAIT FALSE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK FALSE
-#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING TRUE
 

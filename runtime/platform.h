@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Matthew Fluet.
+/* Copyright (C) 2010,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,10 +23,6 @@
 #error MLton_Platform_OS_host not defined
 #endif
 
-#ifndef HAS_FPCLASSIFY
-#error HAS_FPCLASSIFY not defined
-#endif
-
 #ifndef HAS_FEROUND
 #error HAS_FEROUND not defined
 #endif
@@ -41,10 +37,6 @@
 
 #ifndef HAS_SIGALTSTACK
 #error HAS_SIGALTSTACK not defined
-#endif
-
-#ifndef HAS_SIGNBIT
-#error HAS_SIGNBIT not defined
 #endif
 
 #ifndef HAS_SPAWN
@@ -63,30 +55,6 @@
 #define EXECVE execve
 #endif
 
-
-/* Because HAS_FPCLASSIFY is unset, the runtime will provide it's own
- * implementation. It doesn't matter much what the values are, because
- * the runtime doesn't depend on the bit representation; it just returns
- * these values. Therefore, prefer to keep the system's own values, but
- * if they don't exist, setup our own.
- */
-#if not HAS_FPCLASSIFY
-#ifndef FP_INFINITE
-#define FP_INFINITE 1
-#endif
-#ifndef FP_NAN
-#define FP_NAN 0
-#endif
-#ifndef FP_NORMAL
-#define FP_NORMAL 4
-#endif
-#ifndef FP_SUBNORMAL
-#define FP_SUBNORMAL 3
-#endif
-#ifndef FP_ZERO
-#define FP_ZERO 2
-#endif
-#endif
 
 #define FE_NOSUPPORT -1
 

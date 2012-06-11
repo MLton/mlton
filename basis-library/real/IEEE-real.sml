@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -23,27 +24,6 @@ structure IEEEReal: IEEE_REAL_EXTRA =
        | NORMAL
        | SUBNORMAL
        | ZERO
-
-      fun mkClass class x =
-         let
-            val i = class x
-            open Prim.FloatClass
-         in
-            (* order here is chosen based on putting the more
-             * commonly used classes at the front.  
-             *)
-            if i = FP_NORMAL
-               then NORMAL
-            else if i = FP_ZERO
-               then ZERO
-            else if i = FP_INFINITE
-               then INF
-            else if i = FP_NAN
-               then NAN
-            else if i = FP_SUBNORMAL
-               then SUBNORMAL
-            else raise Fail "Real_class returned bogus integer"
-         end
 
       structure RoundingMode =
          struct

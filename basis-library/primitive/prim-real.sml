@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,6 +15,7 @@ signature PRIM_REAL =
       type t = real
 
       val realSize: Primitive.Int32.int
+      val exponentBias : Primitive.Int32.int
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
 
@@ -106,6 +108,7 @@ structure Real32 : PRIM_REAL =
       open Real32
 
       val realSize : Int32.int = 32
+      val exponentBias : Int32.int = 127
       val precision : Int32.int = 24
       val radix : Int32.int = 2
 
@@ -192,15 +195,12 @@ structure Real32 =
       end
    end
 
-structure Real64 : sig 
-                     include PRIM_REAL  
-                     val castFromWord64 : Word64.word -> real
-                     val castToWord64 : real -> Word64.word
-                   end =
+structure Real64 : PRIM_REAL =
    struct
       open Real64
 
       val realSize : Int32.int = 64
+      val exponentBias : Int32.int = 1023
       val precision : Int32.int = 53
       val radix : Int32.int = 2
 
@@ -276,9 +276,6 @@ structure Real64 : sig
       val toWord16Unsafe = _prim "Real64_rndToWordU16": real -> Word16.word;
       val toWord32Unsafe = _prim "Real64_rndToWordU32": real -> Word32.word;
       val toWord64Unsafe = _prim "Real64_rndToWordU64": real -> Word64.word;
-
-      val castFromWord64 = _prim "Word64_castToReal64": Word64.t -> real;
-      val castToWord64 = _prim "Real64_castToWord64": real -> Word64.t;
    end
 structure Real64 =
    struct

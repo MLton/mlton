@@ -34,10 +34,8 @@
 #define MLton_Platform_OS_host "cygwin"
 
 #define HAS_FEROUND FALSE
-#define HAS_FPCLASSIFY TRUE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK FALSE
-#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
 

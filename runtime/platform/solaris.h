@@ -42,7 +42,6 @@
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
-#define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 
@@ -92,19 +91,12 @@ int fegetround(void);
 int fesetround(int rounding_mode);
 #endif
 
-#undef fpclassify64
-#define fpclassify64 MLton_fpclassify64
-int fpclassify64 (double d);
-
 #define FE_TONEAREST  0
 #define FE_DOWNWARD   1
 #define FE_UPWARD     2
 #define FE_TOWARDZERO 3
 
 #define HAS_FEROUND      TRUE
-#define HAS_FPCLASSIFY   FALSE
-#define HAS_FPCLASSIFY32 FALSE
-#define HAS_FPCLASSIFY64 TRUE
 
 /* These are not predefined on Solaris 8. */
 #ifndef NAN

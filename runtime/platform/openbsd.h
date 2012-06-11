@@ -28,20 +28,13 @@
 #include <utime.h>
 
 #define HAS_FEROUND FALSE
-#define HAS_FPCLASSIFY FALSE
-#define HAS_FPCLASSIFY32 FALSE
-#define HAS_FPCLASSIFY64 FALSE
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
-#define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 
 #define MLton_Platform_OS_host "openbsd"
-
-int fpclassify32 (float f);
-int fpclassify64 (double d);
 
 /* #ifndef PRIu8 */
 /* #define PRIu8 "hhu" */

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -33,7 +34,6 @@ local
 
       val () = check (R1.abs, R2.abs)
       val () = check (R1.+, R2.add)
-      val () = check (R1.class, R2.class)
       val () = check (R1./, R2.div)
       val () = check (R1.==, R2.equal)
       val () = check (R1.frexp, R2.frexp)
@@ -41,16 +41,12 @@ local
       val () = check (R1.ldexp, R2.ldexp)
       val () = check (R1.<=, R2.le)
       val () = check (R1.<, R2.lt)
-      val () = check (fn () => R1.maxFinite, R2.maxFiniteGet)
-      val () = check (fn () => R1.minNormalPos, R2.minNormalPosGet)
-      val () = check (fn () => R1.minPos, R2.minPosGet)
       val () = check (R1.modf, R2.modf)
       val () = check (R1.*, R2.mul)
       val () = check (R1.*+, R2.muladd)
       val () = check (R1.*-, R2.mulsub)
       val () = check (R1.~, R2.neg)
       val () = check (R1.round, R2.round)
-      val () = check (R1.signBit, R2.signBit)
       val () = check (R1.strto, R2.strto)
       val () = check (R1.-, R2.sub)
    end
@@ -79,7 +75,6 @@ local
 
       val () = check (R1.abs, R2.abs)
       val () = check (R1.+, R2.add)
-      val () = check (R1.class, R2.class)
       val () = check (R1./, R2.div)
       val () = check (R1.==, R2.equal)
       val () = check (R1.frexp, R2.frexp)
@@ -87,16 +82,12 @@ local
       val () = check (R1.ldexp, R2.ldexp)
       val () = check (R1.<=, R2.le)
       val () = check (R1.<, R2.lt)
-      val () = check (fn () => R1.maxFinite, R2.maxFiniteGet)
-      val () = check (fn () => R1.minNormalPos, R2.minNormalPosGet)
-      val () = check (fn () => R1.minPos, R2.minPosGet)
       val () = check (R1.modf, R2.modf)
       val () = check (R1.*, R2.mul)
       val () = check (R1.*+, R2.muladd)
       val () = check (R1.*-, R2.mulsub)
       val () = check (R1.~, R2.neg)
       val () = check (R1.round, R2.round)
-      val () = check (R1.signBit, R2.signBit)
       val () = check (R1.strto, R2.strto)
       val () = check (R1.-, R2.sub)
    end

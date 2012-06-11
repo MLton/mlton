@@ -10,31 +10,6 @@
 #include "recv.nonblock.c"
 #include "use-mmap.c"
 
-int fpclassify64 (double d)
-{
-        int c;
-        c = class (d);
-        switch (c) {
-        case FP_PLUS_NORM:
-        case FP_MINUS_NORM:
-                return FP_NORMAL;
-        case FP_PLUS_ZERO:
-        case FP_MINUS_ZERO:
-                return FP_ZERO;
-        case FP_PLUS_INF:
-        case FP_MINUS_INF:
-                return FP_INFINITE;
-        case FP_PLUS_DENORM:
-        case FP_MINUS_DENORM:
-                return FP_SUBNORMAL;
-        case FP_SNAN:
-        case FP_QNAN:
-                return FP_NAN;
-        default:
-                die ("Real_class error: invalid class %d\n", c);
-        }
-}
-
 size_t GC_pageSize (void) {
         long pageSize;
 

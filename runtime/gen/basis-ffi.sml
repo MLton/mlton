@@ -44,14 +44,6 @@ end
 end
 structure IEEEReal = 
 struct
-structure FloatClass = 
-struct
-val FP_INFINITE = _const "IEEEReal_FloatClass_FP_INFINITE" : C_Int.t;
-val FP_NAN = _const "IEEEReal_FloatClass_FP_NAN" : C_Int.t;
-val FP_NORMAL = _const "IEEEReal_FloatClass_FP_NORMAL" : C_Int.t;
-val FP_SUBNORMAL = _const "IEEEReal_FloatClass_FP_SUBNORMAL" : C_Int.t;
-val FP_ZERO = _const "IEEEReal_FloatClass_FP_ZERO" : C_Int.t;
-end
 val getRoundingMode = _import "IEEEReal_getRoundingMode" private : unit -> C_Int.t;
 structure RoundingMode = 
 struct
@@ -919,7 +911,6 @@ type t = Real32.t
 val abs = _import "Real32_abs" private : Real32.t -> Real32.t;
 val add = _import "Real32_add" private : Real32.t * Real32.t -> Real32.t;
 val castToWord32 = _import "Real32_castToWord32" private : Real32.t -> Word32.t;
-val class = _import "Real32_class" private : Real32.t -> C_Int.t;
 val div = _import "Real32_div" private : Real32.t * Real32.t -> Real32.t;
 val equal = _import "Real32_equal" private : Real32.t * Real32.t -> Bool.t;
 val fetch = _import "Real32_fetch" private : (Real32.t) ref -> Real32.t;
@@ -948,9 +939,6 @@ val sqrt = _import "Real32_Math_sqrt" private : Real32.t -> Real32.t;
 val tan = _import "Real32_Math_tan" private : Real32.t -> Real32.t;
 val tanh = _import "Real32_Math_tanh" private : Real32.t -> Real32.t;
 end
-val (maxFiniteGet, maxFiniteSet) = _symbol "Real32_maxFinite" private : (unit -> (Real32.t)) * ((Real32.t) -> unit);
-val (minNormalPosGet, minNormalPosSet) = _symbol "Real32_minNormalPos" private : (unit -> (Real32.t)) * ((Real32.t) -> unit);
-val (minPosGet, minPosSet) = _symbol "Real32_minPos" private : (unit -> (Real32.t)) * ((Real32.t) -> unit);
 val modf = _import "Real32_modf" private : Real32.t * (Real32.t) ref -> Real32.t;
 val move = _import "Real32_move" private : (Real32.t) ref * (Real32.t) ref -> unit;
 val mul = _import "Real32_mul" private : Real32.t * Real32.t -> Real32.t;
@@ -968,7 +956,6 @@ val rndToWordU32 = _import "Real32_rndToWordU32" private : Real32.t -> Word32.t;
 val rndToWordU64 = _import "Real32_rndToWordU64" private : Real32.t -> Word64.t;
 val rndToWordU8 = _import "Real32_rndToWordU8" private : Real32.t -> Word8.t;
 val round = _import "Real32_round" private : Real32.t -> Real32.t;
-val signBit = _import "Real32_signBit" private : Real32.t -> C_Int.t;
 val store = _import "Real32_store" private : (Real32.t) ref * Real32.t -> unit;
 val strto = _import "Real32_strto" private : NullString8.t * C_Int.t -> Real32.t;
 val sub = _import "Real32_sub" private : Real32.t * Real32.t -> Real32.t;
@@ -979,7 +966,6 @@ type t = Real64.t
 val abs = _import "Real64_abs" private : Real64.t -> Real64.t;
 val add = _import "Real64_add" private : Real64.t * Real64.t -> Real64.t;
 val castToWord64 = _import "Real64_castToWord64" private : Real64.t -> Word64.t;
-val class = _import "Real64_class" private : Real64.t -> C_Int.t;
 val div = _import "Real64_div" private : Real64.t * Real64.t -> Real64.t;
 val equal = _import "Real64_equal" private : Real64.t * Real64.t -> Bool.t;
 val fetch = _import "Real64_fetch" private : (Real64.t) ref -> Real64.t;
@@ -1008,9 +994,6 @@ val sqrt = _import "Real64_Math_sqrt" private : Real64.t -> Real64.t;
 val tan = _import "Real64_Math_tan" private : Real64.t -> Real64.t;
 val tanh = _import "Real64_Math_tanh" private : Real64.t -> Real64.t;
 end
-val (maxFiniteGet, maxFiniteSet) = _symbol "Real64_maxFinite" private : (unit -> (Real64.t)) * ((Real64.t) -> unit);
-val (minNormalPosGet, minNormalPosSet) = _symbol "Real64_minNormalPos" private : (unit -> (Real64.t)) * ((Real64.t) -> unit);
-val (minPosGet, minPosSet) = _symbol "Real64_minPos" private : (unit -> (Real64.t)) * ((Real64.t) -> unit);
 val modf = _import "Real64_modf" private : Real64.t * (Real64.t) ref -> Real64.t;
 val move = _import "Real64_move" private : (Real64.t) ref * (Real64.t) ref -> unit;
 val mul = _import "Real64_mul" private : Real64.t * Real64.t -> Real64.t;
@@ -1028,7 +1011,6 @@ val rndToWordU32 = _import "Real64_rndToWordU32" private : Real64.t -> Word32.t;
 val rndToWordU64 = _import "Real64_rndToWordU64" private : Real64.t -> Word64.t;
 val rndToWordU8 = _import "Real64_rndToWordU8" private : Real64.t -> Word8.t;
 val round = _import "Real64_round" private : Real64.t -> Real64.t;
-val signBit = _import "Real64_signBit" private : Real64.t -> C_Int.t;
 val store = _import "Real64_store" private : (Real64.t) ref * Real64.t -> unit;
 val strto = _import "Real64_strto" private : NullString8.t * C_Int.t -> Real64.t;
 val sub = _import "Real64_sub" private : Real64.t * Real64.t -> Real64.t;

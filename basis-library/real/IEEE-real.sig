@@ -34,6 +34,5 @@ signature IEEE_REAL_EXTRA =
    sig
       include IEEE_REAL
 
-      val mkClass: ('a -> C_Int.t) -> 'a -> float_class
       val withRoundingMode: rounding_mode * (unit -> 'a) -> 'a
    end

@@ -31,20 +31,14 @@
 #include <utime.h>
 
 #define HAS_FEROUND TRUE
-#define HAS_FPCLASSIFY FALSE
-#define HAS_FPCLASSIFY32 FALSE
-#define HAS_FPCLASSIFY64 TRUE
 #define HAS_MSG_DONTWAIT FALSE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
-#define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING FALSE
 
 #define MLton_Platform_OS_host "aix"
-
-int fpclassify64(double d);
 
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000

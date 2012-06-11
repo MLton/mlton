@@ -1,4 +1,4 @@
-(* Copyright (C) 2011 Matthew Fluet.
+(* Copyright (C) 2011,2012 Matthew Fluet.
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -6,7 +6,13 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Real (R: PRE_REAL): REAL_EXTRA =
+functor Real (structure W: WORD_EXTRA
+              structure R:
+                 sig
+                    include PRE_REAL
+                    val castToWord: real -> W.word
+                    val castFromWord: W.word -> real
+                 end): REAL_EXTRA =
    struct
       structure MLton = Primitive.MLton
       structure Prim = R
@@ -18,6 +24,76 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       end
       infix 4 == != ?=
       type real = R.real
+
+      local
+         open Prim
+      in
+         val realSize = Int32.toInt realSize
+         val exponentBias = Int32.toInt exponentBias
+         val precision = Int32.toInt precision
+         val radix = Int32.toInt radix
+      end
+
+      val signBits = Word.one
+      val exponentSignificandBits = Word.- (Word.fromInt realSize, signBits)
+      val significandBits = Word.- (Word.fromInt precision, Word.one)
+      val exponentBits = Word.- (exponentSignificandBits, significandBits)
+
+      local
+         val mkMask : Word.word -> W.word =
+            fn b => W.notb (W.<< (W.notb W.zero, b))
+      in
+         val signMask =
+            W.<< (mkMask signBits, exponentSignificandBits)
+         val exponentMask =
+            W.<< (mkMask exponentBits, significandBits)
+         val significandMask =
+            mkMask significandBits
+      end
+
+      val class : real -> float_class =
+         fn r =>
+         let
+            val w = R.castToWord r
+         in
+            if W.andb (w, exponentMask) = exponentMask
+               then if W.andb (w, significandMask) = W.zero
+                       then IEEEReal.INF
+                    else IEEEReal.NAN
+            else if W.andb (w, exponentMask) = W.zero
+               then if W.andb (w, significandMask) = W.zero
+                       then IEEEReal.ZERO
+                    else IEEEReal.SUBNORMAL
+            else IEEEReal.NORMAL
+         end
+
+      val toBits : real -> {sign: bool, exponent: W.word, significand: W.word} =
+         fn r =>
+         let
+            val w = R.castToWord r
+            val significand =
+               W.andb (w, significandMask)
+            val exponent =
+               W.>> (W.andb (w, exponentMask), significandBits)
+            val sign =
+               W.andb (w, signMask) = signMask
+         in
+            {sign = sign,
+             exponent = exponent,
+             significand = significand}
+         end
+
+      val fromBits : {sign: bool, exponent: W.word, significand: W.word} -> real =
+         fn {sign, exponent, significand} =>
+         let
+            val w =
+               W.orb (if sign then W.<< (W.one, exponentSignificandBits) else W.zero,
+                      W.orb (W.andb (W.<< (exponent, significandBits), exponentMask),
+                             W.andb (significand, significandMask)))
+            val r = R.castFromWord w
+         in
+            r
+         end
 
       local
          open Prim
@@ -34,16 +110,6 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          val op >= = op >=
          val ~ = ~
          val abs = abs
-
-         val maxFinite = maxFinite
-         val minNormalPos = minNormalPos
-         val minPos = minPos
-
-         val realSize = Int32.toInt realSize
-         val precision = Int32.toInt precision
-         val radix = Int32.toInt radix
-
-         val signBit = fn r => signBit r <> 0
       end
 
       local
@@ -85,29 +151,22 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          val fromLarge = S.f
       end
 
-      val zero = R.fromInt32Unsafe 0
-      val one = R.fromInt32Unsafe 1
-      val two = R.fromInt32Unsafe 2
-
-      val half = one / two
-      val negOne = ~ one
-
-      val posInf = one / zero
-      val negInf = ~one / zero
+      val negInf = R.castFromWord (W.orb (signMask, exponentMask))
+      val negOne = R.castFromWord (W.orb (signMask, W.<< (W.fromInt exponentBias, significandBits)))
+      val negZero = R.castFromWord signMask
+      val zero = R.castFromWord W.zero
+      val minPos = R.castFromWord W.one
+      val minNormalPos = R.castFromWord (W.<< (W.one, significandBits))
+      val half = R.castFromWord (W.<< (W.- (W.fromInt exponentBias, W.one), significandBits))
+      val one = R.castFromWord (W.<< (W.fromInt exponentBias, significandBits))
+      val two = R.castFromWord (W.<< (W.+ (W.fromInt exponentBias, W.one), significandBits))
+      val maxFinite = R.castFromWord (W.- (exponentMask, W.one))
+      val posInf = R.castFromWord exponentMask
 
       val nan = posInf + negInf
+      val posNan = R.castFromWord (W.andb (R.castToWord nan, W.notb signMask))
+      val negNan = R.castFromWord (W.orb (R.castToWord nan, signMask))
 
-      val class = IEEEReal.mkClass R.class
-
-      val abs =
-         if MLton.Codegen.isX86 orelse MLton.Codegen.isAmd64
-            then abs
-         else
-            fn x =>
-            case class x of
-               INF => posInf
-             | NAN => x
-             | _ => if signBit x then ~x else x
 
       fun isFinite r =
          abs r <= maxFinite
@@ -149,6 +208,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          else if x == zero then 0
          else raise Domain
 
+      val signBit = #sign o toBits
+
       fun sameSign (x, y) = signBit x = signBit y
 
       fun copySign (x, y) =
@@ -180,6 +241,14 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
 
       fun unordered (x, y) = isNan x orelse isNan y
 
+      (* nextAfter for subnormal and normal values works by converting
+       * the real to a word of equivalent size and doing an increment
+       * or decrement on the word.  Because of the way IEEE floating
+       * point numbers are represented, word {de,in}crement
+       * automatically does the right thing at the boundary between
+       * normals and denormals.  Also, convienently,
+       * maxFinite+1 = posInf and minFinite-1 = negInf.
+       *)
       val nextAfter: real * real -> real =
          fn (r, t) =>
          case (class r, class t) of
@@ -192,9 +261,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                if r == t then
                   r
                else if (r > t) = (r > zero) then
-                  R.nextAfterDown r
+                  R.castFromWord (W.- (R.castToWord r, W.one))
                else
-                  R.nextAfterUp r
+                  R.castFromWord (W.+ (R.castToWord r, W.one))
 
       local
          val one = One.make (fn () => ref (0 : C_Int.t))
@@ -345,10 +414,10 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          in
             SOME (case class of
                      INF => if sign then negInf else posInf
-                   | NAN => nan
+                   | NAN => if sign then negNan else posNan
                    | NORMAL => doit ()
                    | SUBNORMAL => doit ()
-                   | ZERO => if sign then ~ zero else zero)
+                   | ZERO => if sign then negZero else zero)
             handle Bad => NONE
          end
 
@@ -400,7 +469,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
           | NAN => {class = NAN,
                     digits = [],
                     exp = 0,
-                    sign = false}
+                    sign = signBit x}
           | ZERO => {class = ZERO,
                      digits = [],
                      exp = 0,
@@ -598,7 +667,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             in
                fn x =>
                case class x of
-                  NAN => "nan"
+                  NAN => (* if signBit x then "~nan" else *) "nan"
                 | INF => if x > zero then "inf" else "~inf"
                 | _ => doit x
             end
@@ -1005,7 +1074,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                             if isNeg x
                                then if isNeg y
                                        then if isOddInt y
-                                               then ~ zero
+                                               then negZero
                                             else zero
                                     else if isOddInt y
                                             then negInf
@@ -1050,28 +1119,21 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          end
    end
 
-(* All of the Real{32,64}.nextAfter{Down,Up} functions work by
- * converting the real to a word of equivalent size and doing an
- * increment or decrement on the word.  This works because the SML
- * Basis Library code that calls these functions handles all the
- * special cases (nans and infs).  Also, because of the way IEEE
- * floating point numbers are represented, word {de,in}crement
- * automatically does the right thing at the boundary between normals
- * and denormals.  Also, convienently, maxFinite+1 = posInf and
- * minFinite-1 = negInf.
- *)
-
-structure Real32 = Real (open Primitive.Real32
-                         local open Primitive.PackReal32 in
-                            fun nextAfterDown r =
-                               castFromWord (Word32.- (castToWord r, 0wx1))
-                            fun nextAfterUp r =
-                               castFromWord (Word32.+ (castToWord r, 0wx1))
-                         end)
-structure Real64 = Real (open Primitive.Real64
-                         local open Primitive.PackReal64 in
-                            fun nextAfterDown r =
-                               castFromWord (Word64.- (castToWord r, 0wx1))
-                            fun nextAfterUp r =
-                               castFromWord (Word64.+ (castToWord r, 0wx1))
-                         end)
+structure Real32 = Real (structure W = Word32
+                         structure R =
+                            struct
+                               open Primitive.Real32
+                               local open Primitive.PackReal32 in
+                                  val castToWord = castToWord
+                                  val castFromWord = castFromWord
+                               end
+                            end)
+structure Real64 = Real (structure W = Word64
+                         structure R =
+                            struct
+                               open Primitive.Real64
+                               local open Primitive.PackReal64 in
+                                  val castToWord = castToWord
+                                  val castFromWord = castFromWord
+                               end
+                            end)

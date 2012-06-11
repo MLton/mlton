@@ -23,19 +23,10 @@ signature PRE_REAL =
       val ~ : real -> real
       val abs: real -> real
 
-      val maxFinite: real
-      val minNormalPos: real
-      val minPos: real
-
       val realSize: Primitive.Int32.int
+      val exponentBias: Primitive.Int32.int
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
-
-      val class: real -> C_Int.t
-      val signBit: real -> C_Int.t
-
-      val nextAfterDown: real -> real
-      val nextAfterUp: real -> real
 
       val frexp: real * C_Int.int ref -> real
       val ldexp: real * C_Int.int -> real

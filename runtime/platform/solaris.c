@@ -40,31 +40,6 @@ int fesetround (int mode) {
 }
 #endif /* __sparc__ */
 
-int fpclassify64 (double d) {
-        fpclass_t c;
-
-        c = fpclass (d);
-        switch (c) {
-        case FP_SNAN:
-        case FP_QNAN:
-                return FP_NAN;
-        case FP_NINF:
-        case FP_PINF:
-                return FP_INFINITE;
-        case FP_NDENORM:
-        case FP_PDENORM:
-                return FP_SUBNORMAL;
-        case FP_NZERO:
-        case FP_PZERO:
-                return FP_ZERO;
-        case FP_NNORM:
-        case FP_PNORM:
-                return FP_NORMAL;
-        default:
-                die ("Real_class error: invalid class %d\n", c);
-        }
-}
-
 /* ------------------------------------------------- */
 /*                        GC                         */
 /* ------------------------------------------------- */
