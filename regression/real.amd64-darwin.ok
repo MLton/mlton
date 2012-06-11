@@ -382,8 +382,8 @@ inf inf true
 ~inf ~inf true
 nan nan true
 nan nan true
-~nan nan false
-~nan nan false
+~nan nan true
+~nan nan true
 0.0 0.0 true
 0.0 0.0 true
 0.0 0.0 true
@@ -9319,8 +9319,8 @@ inf inf true
 ~inf ~inf true
 nan nan true
 nan nan true
-~nan nan false
-~nan nan false
+~nan nan true
+~nan nan true
 0.0 0.0 true
 0.0 0.0 true
 0.0 0.0 true
