@@ -572,49 +572,45 @@ functor Real (structure W: WORD_EXTRA
                concat [sign, whole, frac, "E", exp]
             end
          fun gen (x: real, n: int): string =
-            case class x of
-               INF => if x > zero then "inf" else "~inf"
-             | NAN => "nan"
-             | _ =>
-                  let
-                     val (prefix, x) =
-                        if x < zero
-                           then ("~", ~ x)
-                        else ("", x)
-                     val ss = Substring.full (sci (x, Int.- (n, 1)))
-                     fun isE c = c = #"E"
-                     fun isZero c = c = #"0"
-                     val expS =
-                        Substring.string (Substring.taker (not o isE) ss)
-                     val exp = valOf (Int.fromString expS)
-                     val man =
-                        String.translate
-                        (fn #"." => "" | c => str c)
-                        (Substring.string (Substring.dropr isZero
-                                           (Substring.takel (not o isE) ss)))
-                     val manSize = String.size man
-                     fun zeros i = CharVector.tabulate (i, fn _ => #"0")
-                     fun dotAt i =
-                        concat [String.substring (man, 0, i),
-                                ".", String.extract (man, i, NONE)]
-                     fun sci () = concat [prefix,
-                                          if manSize = 1 then man else dotAt 1,
-                                          "E", expS]
-                     val op - = Int.-
-                     val op + = Int.+
-                     val ~ = Int.~
-                     val op >= = Int.>=
-                  in
-                     if exp >= (if manSize = 1 then 3 else manSize + 3)
-                        then sci ()
-                     else if exp >= manSize - 1
-                        then concat [prefix, man, zeros (exp - (manSize - 1))]
-                     else if exp >= 0
-                        then concat [prefix, dotAt (exp + 1)]
-                     else if exp >= (if manSize = 1 then ~2 else ~3)
-                        then concat [prefix, "0.", zeros (~exp - 1), man]
-                     else sci ()
-                  end
+            let
+               val (prefix, x) =
+                  if x < zero
+                     then ("~", ~ x)
+                  else ("", x)
+               val ss = Substring.full (sci (x, Int.- (n, 1)))
+               fun isE c = c = #"E"
+               fun isZero c = c = #"0"
+               val expS =
+                  Substring.string (Substring.taker (not o isE) ss)
+               val exp = valOf (Int.fromString expS)
+               val man =
+                  String.translate
+                  (fn #"." => "" | c => str c)
+                  (Substring.string (Substring.dropr isZero
+                                     (Substring.takel (not o isE) ss)))
+               val manSize = String.size man
+               fun zeros i = CharVector.tabulate (i, fn _ => #"0")
+               fun dotAt i =
+                  concat [String.substring (man, 0, i),
+                          ".", String.extract (man, i, NONE)]
+               fun sci () = concat [prefix,
+                                    if manSize = 1 then man else dotAt 1,
+                                    "E", expS]
+               val op - = Int.-
+               val op + = Int.+
+               val ~ = Int.~
+               val op >= = Int.>=
+            in
+               if exp >= (if manSize = 1 then 3 else manSize + 3)
+                  then sci ()
+               else if exp >= manSize - 1
+                  then concat [prefix, man, zeros (exp - (manSize - 1))]
+               else if exp >= 0
+                  then concat [prefix, dotAt (exp + 1)]
+               else if exp >= (if manSize = 1 then ~2 else ~3)
+                  then concat [prefix, "0.", zeros (~exp - 1), man]
+               else sci ()
+            end
       in
          fun fmt spec =
             let
