@@ -1,5 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2012-06-11
+   - Fixed bugs in REAL.copySign, REAL.signBit, and REAL.{to,from}Decimal.
+
 * 2012-06-01
    - Fixed bug in elaboration that erroneously rejected the following:
 	 datatype ('a, ''a) t = T
