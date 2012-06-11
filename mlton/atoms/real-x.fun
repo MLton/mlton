@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011-2012 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -46,8 +46,13 @@ fun make (r: string, s: RealSize.t): t option =
  * Must check the sign bit, since Real{32,64}.== ignores the sign of
  * zeros; the difference between 0.0 and ~0.0 is observable by
  * programs that examine the sign bit.
- * Must check for nan, since Real{32,64}.== returns false for any
- * comparison with nan values.
+ * Should check for nan, since Real{32,64}.== returns false for any
+ * comparison with nan values.  Ideally, should use bit-wise equality
+ * since there are multiple representations for nan.  However, SML/NJ
+ * doesn't support the PackReal structures that would be required to
+ * compare real values as bit patterns.  Conservatively return
+ * 'false'; constant-propagation and common-subexpression elimination
+ * will not combine nan values.
  *)
 fun equals (r, r') =
    case (r, r') of
@@ -56,14 +61,14 @@ fun equals (r, r') =
             open Real32
          in
             (equals (r, r') andalso signBit r = signBit r')
-            orelse (isNan r andalso isNan r')
+            (* orelse (isNan r andalso isNan r') *)
          end
     | (Real64 r, Real64 r') =>
          let
             open Real64
          in
             (equals (r, r') andalso signBit r = signBit r')
-            orelse (isNan r andalso isNan r')
+            (* orelse (isNan r andalso isNan r') *)
          end
     | _ => false
 
