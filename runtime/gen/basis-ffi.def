@@ -748,7 +748,6 @@ Socket.AF.INET = _const : C_Int.t
 Socket.AF.INET6 = _const : C_Int.t
 Socket.AF.UNIX = _const : C_Int.t
 Socket.AF.UNSPEC = _const : C_Int.t
-Socket.Ctl.FIONBIO = _const : C_Int.t
 Socket.Ctl.FIONREAD = _const : C_Int.t
 Socket.Ctl.SIOCATMARK = _const : C_Int.t
 Socket.Ctl.SOL_SOCKET = _const : C_Int.t

@@ -1030,7 +1030,6 @@ val close = _import "Socket_close" private : C_Sock.t -> (C_Int.t) C_Errno.t;
 val connect = _import "Socket_connect" private : C_Sock.t * (Word8.t) vector * C_Socklen.t -> (C_Int.t) C_Errno.t;
 structure Ctl = 
 struct
-val FIONBIO = _const "Socket_Ctl_FIONBIO" : C_Int.t;
 val FIONREAD = _const "Socket_Ctl_FIONREAD" : C_Int.t;
 val getIOCtl = _import "Socket_Ctl_getIOCtl" private : C_Sock.t * C_Int.t * (Word8.t) array -> (C_Int.t) C_Errno.t;
 val getPeerName = _import "Socket_Ctl_getPeerName" private : C_Sock.t * (Word8.t) array * (C_Socklen.t) ref -> (C_Int.t) C_Errno.t;

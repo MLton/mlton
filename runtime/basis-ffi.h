@@ -852,7 +852,6 @@ PRIVATE extern const C_Int_t Socket_AF_UNSPEC;
 PRIVATE C_Errno_t(C_Int_t) Socket_bind(C_Sock_t,Vector(Word8_t),C_Socklen_t);
 PRIVATE C_Errno_t(C_Int_t) Socket_close(C_Sock_t);
 PRIVATE C_Errno_t(C_Int_t) Socket_connect(C_Sock_t,Vector(Word8_t),C_Socklen_t);
-PRIVATE extern const C_Int_t Socket_Ctl_FIONBIO;
 PRIVATE extern const C_Int_t Socket_Ctl_FIONREAD;
 PRIVATE C_Errno_t(C_Int_t) Socket_Ctl_getIOCtl(C_Sock_t,C_Int_t,Array(Word8_t));
 PRIVATE C_Errno_t(C_Int_t) Socket_Ctl_getPeerName(C_Sock_t,Array(Word8_t),Ref(C_Socklen_t));
