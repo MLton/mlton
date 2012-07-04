@@ -307,7 +307,7 @@ void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
   profileWrite (s, p, (const char*)fileName);
 }
 
-void setProfTimer (long usec) {
+void setProfTimer (suseconds_t usec) {
   struct itimerval iv;
 
   iv.it_interval.tv_sec = 0;

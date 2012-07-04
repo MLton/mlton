@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,8 +15,8 @@ void rusagePlusMax (struct rusage *ru1,
                     struct rusage *ru2,
                     struct rusage *ru) {
   const int       million = 1000000;
-  time_t          sec,
-                  usec;
+  time_t          sec;
+  suseconds_t     usec;
 
   sec = ru1->ru_utime.tv_sec + ru2->ru_utime.tv_sec;
   usec = ru1->ru_utime.tv_usec + ru2->ru_utime.tv_usec;
@@ -36,8 +37,8 @@ void rusageMinusMax (struct rusage *ru1,
                      struct rusage *ru2,
                      struct rusage *ru) {
   const int       million = 1000000;
-  time_t          sec,
-                  usec;
+  time_t          sec;
+  suseconds_t     usec;
 
   sec = (ru1->ru_utime.tv_sec - ru2->ru_utime.tv_sec) - 1;
   usec = ru1->ru_utime.tv_usec + million - ru2->ru_utime.tv_usec;
