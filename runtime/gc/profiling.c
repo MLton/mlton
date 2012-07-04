@@ -1,4 +1,4 @@
-/* Copyright (C) 2011 Matthew Fluet.
+/* Copyright (C) 2011-2012 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -63,16 +63,14 @@ void addToStackForProfiling (GC_state s, GC_profileMasterIndex i) {
 }
 
 void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
-  GC_profileData p;
   GC_profileStack ps;
 
-  p = s->profiling.data;
   ps = getProfileStackInfo (s, i);
-  if (0 == ps->numOccurrences) {
-    ps->lastTotal = p->total;
-    ps->lastTotalGC = p->totalGC;
-  }
+  // assert (ps->numOccurrences >= 0);
   ps->numOccurrences++;
+  if (1 == ps->numOccurrences) {
+    addToStackForProfiling (s, i);
+  }
 }
 
 void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
