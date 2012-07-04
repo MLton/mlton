@@ -22,25 +22,25 @@ compare (U##size, name, op)
 #define rol(size)                                                       \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##size Word##size##_rol (Word##size w1, Word32 w2) {              \
-    return (w1 >> (size - w2)) | (w1 << w2);                            \
+    return (Word##size)(w1 >> (size - w2)) | (Word##size)(w1 << w2);    \
   }
 
 #define ror(size)                                                       \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##size Word##size##_ror (Word##size w1, Word32 w2) {              \
-    return (w1 >> w2) | (w1 << (size - w2));                            \
+    return (Word##size)(w1 >> w2) | (Word##size)(w1 << (size - w2));    \
   }                                                                     \
 
 #define shift(kind, name, op)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w1, Word32 w2) {           \
-    return w1 op w2;                                                    \
+    return (Word##kind)(w1 op w2);                                      \
   }
 
 #define unary(kind, name, op)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w) {                       \
-    return op w;                                                        \
+    return (Word##kind)(op w);                                          \
   }
 
 #define misaligned(size)                                                \
