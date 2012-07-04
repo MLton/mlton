@@ -1,6 +1,3 @@
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-
 #include "platform.h"
 
 static struct servent *NetHostDB_servent;
