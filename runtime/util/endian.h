@@ -15,7 +15,7 @@ static inline bool isBigEndian(void) {
   if (y == 0xAB) return TRUE; /* big endian */
   if (y == 0xCD) return FALSE; /* little endian */
   die ("Could not detect endian --- neither big nor little!\n");
-  return 0;
+  // return 0;
 }
 
 static inline bool isLittleEndian(void) {
