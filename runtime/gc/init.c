@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -275,21 +275,21 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.mayProcessAtMLton = TRUE;
   s->controls.messages = FALSE;
   s->controls.oldGenArraySize = 0x100000;
-  s->controls.ratios.copy = 4.0;
-  s->controls.ratios.copyGenerational = 4.0;
-  s->controls.ratios.grow = 8.0;
-  s->controls.ratios.hashCons = 0.0;
-  s->controls.ratios.live = 8.0;
-  s->controls.ratios.markCompact = 1.04;
-  s->controls.ratios.markCompactGenerational = 8.0;
-  s->controls.ratios.nursery = 10.0;
-  s->controls.ratios.ramSlop = 0.5;
-  s->controls.ratios.stackCurrentGrow = 2.0;
-  s->controls.ratios.stackCurrentMaxReserved = 32.0;
-  s->controls.ratios.stackCurrentPermitReserved = 4.0;
-  s->controls.ratios.stackCurrentShrink = 0.5;
-  s->controls.ratios.stackMaxReserved = 8.0;
-  s->controls.ratios.stackShrink = 0.5;
+  s->controls.ratios.copy = 4.0f;
+  s->controls.ratios.copyGenerational = 4.0f;
+  s->controls.ratios.grow = 8.0f;
+  s->controls.ratios.hashCons = 0.0f;
+  s->controls.ratios.live = 8.0f;
+  s->controls.ratios.markCompact = 1.04f;
+  s->controls.ratios.markCompactGenerational = 8.0f;
+  s->controls.ratios.nursery = 10.0f;
+  s->controls.ratios.ramSlop = 0.5f;
+  s->controls.ratios.stackCurrentGrow = 2.0f;
+  s->controls.ratios.stackCurrentMaxReserved = 32.0f;
+  s->controls.ratios.stackCurrentPermitReserved = 4.0f;
+  s->controls.ratios.stackCurrentShrink = 0.5f;
+  s->controls.ratios.stackMaxReserved = 8.0f;
+  s->controls.ratios.stackShrink = 0.5f;
   s->controls.summary = FALSE;
   s->cumulativeStatistics.bytesAllocated = 0;
   s->cumulativeStatistics.bytesCopied = 0;
