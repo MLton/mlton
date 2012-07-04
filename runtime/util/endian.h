@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -7,15 +8,12 @@
  */
 
 static inline bool isBigEndian(void) {
-  union {
-    uint16_t x;
-    uint8_t y;
-  } __attribute__((__may_alias__)) z;
-
+  uint16_t x = 0xABCDU;
+  uint8_t y = 0;
   /* gcc optimizes the following code to just return the result. */
-  z.x = 0xABCDU;
-  if (z.y == 0xAB) return TRUE; /* big endian */
-  if (z.y == 0xCD) return FALSE; /* little endian */
+  memcpy(&y, &x, sizeof(uint8_t));
+  if (y == 0xAB) return TRUE; /* big endian */
+  if (y == 0xCD) return FALSE; /* little endian */
   die ("Could not detect endian --- neither big nor little!\n");
   return 0;
 }
