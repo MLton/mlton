@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -370,11 +371,4 @@ void dfsMarkWithoutHashConsWithLinkWeaks (GC_state s, objptr *opp) {
 
   p = objptrToPointer (*opp, s->heap.start);
   dfsMarkByMode (s, p, MARK_MODE, FALSE, TRUE);
-}
-
-void dfsUnmark (GC_state s, objptr *opp) {
-  pointer p;
-
-  p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, UNMARK_MODE, FALSE, FALSE);
 }

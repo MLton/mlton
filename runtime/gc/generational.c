@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -59,9 +59,11 @@ GC_crossMapIndex sizeToCrossMapIndex (size_t z) {
   return (GC_crossMapIndex)z >> CARD_SIZE_LOG2;
 }
 
+#if ASSERT
 bool isCardMarked (GC_state s, pointer p) {
   return (*pointerToCardMapAddr (s, p) != 0x0);
 }
+#endif
 
 void markCard (GC_state s, pointer p) {
   if (DEBUG_CARD_MARKING)
@@ -99,6 +101,7 @@ void setCardMapAbsolute (GC_state s) {
              (uintptr_t)s->generationalMaps.cardMapAbsolute);
 }
 
+#if ASSERT
 pointer getCrossMapCardStart (GC_state s, pointer p) {
   /* The p - 1 is so that a pointer to the beginning of a card falls
    * into the index for the previous crossMap entry.
@@ -108,6 +111,7 @@ pointer getCrossMapCardStart (GC_state s, pointer p) {
     ? s->heap.start
     : (p - 1) - ((uintptr_t)(p - 1) % CARD_SIZE);
 }
+#endif
 
 size_t sizeofCardMap (GC_state s, size_t heapSize) {
   unless (s->mutatorMarksCards) {

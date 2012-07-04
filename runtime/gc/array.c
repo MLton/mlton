@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -47,9 +48,11 @@ GC_arrayCounter getArrayCounter (pointer a) {
   return *(getArrayCounterp (a));
 }
 
+
+#if ASSERT
 pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
-                                  GC_arrayCounter arrayIndex,
-                                  uint32_t objptrIndex) {
+                                 GC_arrayCounter arrayIndex,
+                                 uint32_t objptrIndex) {
   GC_header header;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
@@ -64,3 +67,4 @@ pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
     + bytesNonObjptrs
     + (objptrIndex * OBJPTR_SIZE);
 }
+#endif

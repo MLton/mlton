@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -21,8 +22,11 @@ struct GC_forwardState {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
+#if ASSERT
 static inline bool isPointerInToSpace (GC_state s, pointer p);
 static inline bool isObjptrInToSpace (GC_state s, objptr op);
+#endif
+
 static inline void forwardObjptr (GC_state s, objptr *opp);
 static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp);
 static inline void forwardInterGenerationalObjptrs (GC_state s);

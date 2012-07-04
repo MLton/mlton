@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -17,11 +18,11 @@ void displayStack (__attribute__ ((unused)) GC_state s,
 }
 
 
+#if ASSERT
 bool isStackEmpty (GC_stack stack) {
   return 0 == stack->used;
 }
 
-#if ASSERT
 bool isStackReservedAligned (GC_state s, size_t reserved) {
   return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved,
                     s->alignment);
@@ -79,13 +80,6 @@ GC_frameIndex getCachedStackTopFrameIndex (GC_state s) {
     getFrameIndexFromReturnAddress
     (s, *((GC_returnAddress*)(s->stackTop - GC_RETURNADDRESS_SIZE)));
   return res;
-}
-
-GC_frameLayout getCachedStackTopFrameLayout (GC_state s) {
-  GC_frameLayout layout;
-
-  layout = getFrameLayoutFromFrameIndex (s, getCachedStackTopFrameIndex (s));
-  return layout;
 }
 
 GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack) {

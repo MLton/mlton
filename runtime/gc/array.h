@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -50,9 +51,12 @@ static inline GC_arrayLength* getArrayLengthp (pointer a);
 static inline GC_arrayLength getArrayLength (pointer a);
 static inline GC_arrayCounter* getArrayCounterp (pointer a);
 static inline GC_arrayCounter getArrayCounter (pointer a);
+
+#if ASSERT
 static inline pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
                                                GC_arrayCounter arrayIndex,
                                                uint32_t objptrIndex);
+#endif
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

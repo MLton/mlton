@@ -152,10 +152,6 @@ void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   }
 }
 
-void leaveFrameForProfiling (GC_state s, GC_frameIndex i) {
-  leaveForProfiling (s, s->sourceMaps.frameSources[i]);
-}
-
 void GC_profileLeave (GC_state s) {
   leaveForProfiling (s, getCachedStackTopFrameSourceSeqIndex (s));
 }

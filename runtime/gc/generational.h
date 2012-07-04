@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -67,13 +67,17 @@ static inline GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p);
 
 static inline GC_crossMapIndex sizeToCrossMapIndex (size_t z);
 
+#if ASSERT
 static inline bool isCardMarked (GC_state s, pointer p);
+#endif
 static inline void markCard (GC_state s, pointer p);
 static inline void markIntergenerationalPointer (GC_state s, pointer *pp);
 static inline void markIntergenerationalObjptr (GC_state s, objptr *opp);
 
 static inline void setCardMapAbsolute (GC_state s);
+#if ASSERT
 static inline pointer getCrossMapCardStart (GC_state s, pointer p);
+#endif
 
 static inline size_t sizeofCardMap (GC_state s, size_t heapSize);
 static inline GC_cardMapIndex lenofCardMap (GC_state s, size_t cardMapSize);

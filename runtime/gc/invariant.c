@@ -1,4 +1,4 @@
-/* Copyright (C) 2011 Matthew Fluet.
+/* Copyright (C) 2011-2012 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,6 +7,7 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if ASSERT
 void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
   assert (isObjptrInFromSpace (s, *opp));
   unless (isObjptrInFromSpace (s, *opp))
@@ -29,7 +30,6 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
   }
 }
 
-#if ASSERT
 bool invariantForGC (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "invariantForGC\n");

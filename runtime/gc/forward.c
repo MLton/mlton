@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,6 +7,7 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if ASSERT
 bool isPointerInToSpace (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->forwardState.toStart <= p and p < s->forwardState.toLimit));
@@ -19,6 +21,7 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
   p = objptrToPointer (op, s->forwardState.toStart);
   return isPointerInToSpace (s, p);
 }
+#endif
 
 /* forward (s, opp)
  * Forwards the object pointed to by *opp and updates *opp to point to

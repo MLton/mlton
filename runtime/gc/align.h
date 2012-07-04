@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,6 +10,7 @@
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 static inline size_t alignWithExtra (GC_state s, size_t bytes, size_t extra);
+
 #if ASSERT
 static inline bool isFrontierAligned (GC_state s, pointer p);
 #endif
