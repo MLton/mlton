@@ -128,7 +128,7 @@ size_t sizeofCardMap (GC_state s, size_t heapSize) {
   return cardMapSize;
 }
 
-GC_cardMapIndex lenofCardMap (__attribute__ ((unused)) GC_state s, size_t cardMapSize) {
+GC_cardMapIndex lenofCardMap (ARG_USED_FOR_ASSERT GC_state s, size_t cardMapSize) {
   GC_cardMapIndex cardMapLength;
 
   assert (isAligned (cardMapSize, s->sysvals.pageSize));
@@ -154,7 +154,7 @@ size_t sizeofCrossMap (GC_state s, size_t heapSize) {
   return crossMapSize;
 }
 
-GC_crossMapIndex lenofCrossMap (__attribute__ ((unused)) GC_state s, size_t crossMapSize) {
+GC_crossMapIndex lenofCrossMap (ARG_USED_FOR_ASSERT GC_state s, size_t crossMapSize) {
   GC_crossMapIndex crossMapLength;
 
   assert (isAligned (crossMapSize, s->sysvals.pageSize));

@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -95,9 +96,9 @@ void freeHashTable (GC_objectHashTable t) {
   free (t);
 }
 
-pointer insertHashTableElem (__attribute__ ((unused)) GC_state s, 
-                             GC_objectHashTable t, 
-                             GC_hash hash, pointer object, 
+pointer insertHashTableElem (GC_state s,
+                             GC_objectHashTable t,
+                             GC_hash hash, pointer object,
                              pointer max, bool mightBeThere) {
   static bool init = FALSE;
   static uint64_t mult; // magic multiplier for hashing

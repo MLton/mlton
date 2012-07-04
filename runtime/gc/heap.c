@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2011 Matthew Fluet.
+/* Copyright (C) 2009-2012 Matthew Fluet.
  * Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -41,7 +41,8 @@ size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
   size_t liveMapsSize, liveWithMapsSize;
   size_t currentMapsSize, currentWithMapsSize;
   size_t resSize, resWithMapsSize;
-  size_t syslimSize, __attribute__ ((unused)) syslimMapsSize, syslimWithMapsSize;
+  size_t syslimSize, syslimWithMapsSize;
+  LOCAL_USED_FOR_ASSERT size_t syslimMapsSize;
   double ratio;
 
   syslimWithMapsSize = alignDown (SIZE_MAX, s->sysvals.pageSize);

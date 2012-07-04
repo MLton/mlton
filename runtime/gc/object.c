@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -93,7 +94,7 @@ void splitHeader(GC_state s, GC_header header,
  * If p points at the beginning of an object, then advanceToObjectData
  * returns a pointer to the start of the object data.
  */
-pointer advanceToObjectData (__attribute__ ((unused)) GC_state s, pointer p) {
+pointer advanceToObjectData (ARG_USED_FOR_ASSERT GC_state s, pointer p) {
   GC_header header;
   pointer res;
 

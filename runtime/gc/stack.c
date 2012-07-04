@@ -38,7 +38,7 @@ size_t sizeofStackSlop (GC_state s) {
 
 
 /* Pointer to the bottommost word in use on the stack. */
-pointer getStackBottom (__attribute__ ((unused)) GC_state s, GC_stack stack) {
+pointer getStackBottom (ARG_USED_FOR_ASSERT GC_state s, GC_stack stack) {
   pointer res;
 
   res = ((pointer)stack) + sizeof (struct GC_stack);
@@ -118,8 +118,7 @@ size_t alignStackReserved (GC_state s, size_t reserved) {
   return res;
 }
 
-size_t sizeofStackWithHeader (__attribute__ ((unused)) GC_state s,
-                              size_t reserved) {
+size_t sizeofStackWithHeader (ARG_USED_FOR_ASSERT GC_state s, size_t reserved) {
   size_t res;
 
   assert (isStackReservedAligned (s, reserved));

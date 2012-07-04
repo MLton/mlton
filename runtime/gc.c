@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,6 +11,14 @@
 #define MLTON_GC_INTERNAL_FUNCS
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
+
+#if ASSERT
+#define ARG_USED_FOR_ASSERT
+#define LOCAL_USED_FOR_ASSERT
+#else
+#define ARG_USED_FOR_ASSERT  __attribute__ ((unused))
+#define LOCAL_USED_FOR_ASSERT  __attribute__ ((unused))
+#endif
 
 #include "gc/virtual-memory.c"
 #include "gc/align.c"

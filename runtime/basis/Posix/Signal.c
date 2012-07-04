@@ -103,8 +103,14 @@ C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how) {
   return sigprocmask (how, &Posix_Signal_sigset, &Posix_Signal_sigset);
 }
 
+#if ASSERT
+#define LOCAL_USED_FOR_ASSERT
+#else
+#define LOCAL_USED_FOR_ASSERT  __attribute__ ((unused))
+#endif
+
 void Posix_Signal_sigsuspend (void) {
-  int __attribute__ ((unused)) res;
+  LOCAL_USED_FOR_ASSERT int res;
 
   res = sigsuspend (&Posix_Signal_sigset);
   assert (-1 == res);

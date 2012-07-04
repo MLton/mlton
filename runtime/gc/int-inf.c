@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005, 2007-2008 Henry Cejtin, Matthew Fluet,
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2005, 2007-2008 Henry Cejtin, Matthew Fluet,
  *    Suresh Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -96,7 +97,7 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
  * Initialize an __mpz_struct to use the space provided by the heap.
  */
 void initIntInfRes (GC_state s, __mpz_struct *res,
-                    __attribute__ ((unused)) size_t bytes) {
+                    ARG_USED_FOR_ASSERT size_t bytes) {
   GC_intInf bp;
   size_t nlimbs;
 
