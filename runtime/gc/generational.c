@@ -29,9 +29,9 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t%"PRIuMAX"  "FMTCME"  "FMTCME"\n",
+        fprintf (stderr, "\t%"PRIuMAX"  "FMTCME"  %"PRIuMAX"\n",
                  (uintmax_t)i, generational->crossMap[i],
-                 CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]);
+                 (uintmax_t)(CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]));
     fprintf (stderr, "\n");
   }
 }
@@ -310,7 +310,7 @@ bool isCrossMapOk (GC_state s) {
 loopObjects:
   assert (front <= back);
   cardStart = getCrossMapCardStart (s, front);
-  cardIndex = sizeToCardMapIndex (cardStart - s->heap.start);
+  cardIndex = sizeToCardMapIndex ((size_t)(cardStart - s->heap.start));
   map[cardIndex] = (GC_crossMapElem)((front - cardStart) / CROSS_MAP_OFFSET_SCALE);
   if (front < back) {
     front += sizeofObject (s, advanceToObjectData (s, front));
@@ -343,7 +343,7 @@ void updateCrossMap (GC_state s) {
     cardIndex = 0;
     objectStart = alignFrontier (s, objectStart);
   } else
-    cardIndex = sizeToCardMapIndex (objectStart - 1 - s->heap.start);
+    cardIndex = sizeToCardMapIndex ((size_t)(objectStart - s->heap.start) - 1);
   cardStart = s->heap.start + cardMapIndexToSize (cardIndex);
   cardEnd = cardStart + CARD_SIZE;
 loopObjects:
@@ -369,13 +369,13 @@ loopObjects:
      */
     size_t offset;
 
-    offset = (objectStart - cardStart) / CROSS_MAP_OFFSET_SCALE;
+    offset = (size_t)(objectStart - cardStart) / CROSS_MAP_OFFSET_SCALE;
     assert (offset < CROSS_MAP_EMPTY);
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "crossMap[%"PRIuMAX"] = %"PRIuMAX"\n",
                (uintmax_t)cardIndex, (uintmax_t)offset);
     s->generationalMaps.crossMap[cardIndex] = (GC_crossMapElem)offset;
-    cardIndex = sizeToCardMapIndex (nextObject - 1 - s->heap.start);
+    cardIndex = sizeToCardMapIndex ((size_t)(nextObject - s->heap.start) - 1);
     cardStart = s->heap.start + cardMapIndexToSize (cardIndex);
     cardEnd = cardStart + CARD_SIZE;
   }

@@ -51,7 +51,7 @@ GC_objectHashTable allocHashTable (GC_state s) {
     regionStart = s->heap.start + s->heap.oldGenSize;
     regionEnd = s->heap.nursery;
   }
-  elementsLengthMax = (regionEnd - regionStart) / sizeof (*(t->elements));
+  elementsLengthMax = (uint32_t)((size_t)(regionEnd - regionStart) / sizeof (*(t->elements)));
   if (DEBUG_SHARE)
     fprintf (stderr, "elementsLengthMax = %"PRIu32"\n", elementsLengthMax);
   t->elementsLengthMax = 64;  // some small power of two
@@ -119,8 +119,8 @@ pointer insertHashTableElem (GC_state s,
              boolToString (mightBeThere));
   if (! init) {
     init = TRUE;
-    mult = floor (((sqrt (5.0) - 1.0) / 2.0)
-                  * (double)0x100000000llu);
+    double dmult = floor (((sqrt (5.0) - 1.0) / 2.0) * (double)0x100000000llu);
+    mult = (uint64_t)dmult;
   }
   slot = (uint32_t)(mult * (uint64_t)hash) >> (32 - t->elementsLengthMaxLog2);
   probe = (1 == slot % 2) ? slot : slot - 1;
@@ -265,7 +265,7 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
   if (countBytesHashConsed and res != object) {
     size_t amount;
 
-    amount = max - object;
+    amount = (size_t)(max - object);
     if (ARRAY_TAG == tag)
       amount += GC_ARRAY_HEADER_SIZE;
     else

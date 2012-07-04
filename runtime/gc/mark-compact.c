@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Matthew Fluet.
+/* Copyright (C) 2010,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -354,7 +354,7 @@ unmark:
   }
   assert (FALSE);
 done:
-  s->heap.oldGenSize = front - gap - s->heap.start;
+  s->heap.oldGenSize = (size_t)((front - gap) - s->heap.start);
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "oldGenSize = %"PRIuMAX"\n",
              (uintmax_t)s->heap.oldGenSize);

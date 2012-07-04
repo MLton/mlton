@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -20,7 +21,7 @@ void GC_pack (GC_state s) {
    * do a minor GC to make all objects contiguous.
    */
   performGC (s, 0, 0, TRUE, FALSE);
-  keep = s->heap.oldGenSize * 1.1;
+  keep = (size_t)(s->heap.oldGenSize * 1.1);
   if (keep <= s->heap.size) {
     shrinkHeap (s, &s->heap, keep);
     setCardMapAndCrossMap (s);

@@ -48,7 +48,7 @@ bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery) {
 
   total =
     s->heap.oldGenSize + oldGen 
-    + (s->canMinor ? 2 : 1) * (s->limitPlusSlop - s->heap.nursery);
+    + (s->canMinor ? 2 : 1) * (size_t)(s->limitPlusSlop - s->heap.nursery);
   res = 
     (total <= s->heap.size) 
     and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));

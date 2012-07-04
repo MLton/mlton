@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Matthew Fluet.
+/* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -30,7 +30,7 @@ void displayGCState (GC_state s, FILE *stream) {
 }
 
 size_t sizeofGCStateCurrentStackUsed (GC_state s) {
-  return s->stackTop - s->stackBottom;
+  return (size_t)(s->stackTop - s->stackBottom);
 }
 
 void setGCStateCurrentThreadAndStack (GC_state s) {
@@ -67,7 +67,7 @@ void setGCStateCurrentHeap (GC_state s,
   assert (isFrontierAligned (s, s->limitPlusSlop - nurserySize));
   nursery = s->limitPlusSlop - nurserySize;
   genNursery = alignFrontier (s, s->limitPlusSlop - (nurserySize / 2));
-  genNurserySize = s->limitPlusSlop - genNursery;
+  genNurserySize = (size_t)(s->limitPlusSlop - genNursery);
   if (/* The mutator marks cards. */
       s->mutatorMarksCards
       /* There is enough space in the generational nursery. */

@@ -197,10 +197,10 @@ checkCard:
      */
     objectStart = foreachObjptrInRange (s, objectStart, &cardEnd,
                                         forwardObjptrIfInNursery, FALSE);
-    s->cumulativeStatistics.bytesScannedMinor += objectStart - lastObject;
+    s->cumulativeStatistics.bytesScannedMinor += (uintmax_t)(objectStart - lastObject);
     if (objectStart == oldGenEnd)
       goto done;
-    cardIndex = sizeToCardMapIndex (objectStart - oldGenStart);
+    cardIndex = sizeToCardMapIndex ((size_t)(objectStart - oldGenStart));
     cardStart = oldGenStart + cardMapIndexToSize (cardIndex);
     goto checkCard;
   } else {

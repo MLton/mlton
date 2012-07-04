@@ -93,8 +93,8 @@ static inline void setFrontier (GC_state s, pointer p,
                                 ARG_USED_FOR_ASSERT size_t bytes) {
   p = alignFrontier (s, p);
   assert ((size_t)(p - s->frontier) <= bytes);
-  GC_profileAllocInc (s, p - s->frontier);
-  s->cumulativeStatistics.bytesAllocated += p - s->frontier;
+  GC_profileAllocInc (s, (size_t)(p - s->frontier));
+  s->cumulativeStatistics.bytesAllocated += (size_t)(p - s->frontier);
   s->frontier = p;
   assert (s->frontier <= s->limitPlusSlop);
 }

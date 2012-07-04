@@ -59,10 +59,10 @@ uintmax_t rusageTime (struct rusage *ru) {
   uintmax_t result;
 
   result = 0;
-  result += 1000 * ru->ru_utime.tv_sec;
-  result += 1000 * ru->ru_stime.tv_sec;
-  result += ru->ru_utime.tv_usec / 1000;
-  result += ru->ru_stime.tv_usec / 1000;
+  result += 1000 * (uintmax_t)ru->ru_utime.tv_sec;
+  result += 1000 * (uintmax_t)ru->ru_stime.tv_sec;
+  result += (uintmax_t)ru->ru_utime.tv_usec / 1000;
+  result += (uintmax_t)ru->ru_stime.tv_usec / 1000;
   return result;
 }
 

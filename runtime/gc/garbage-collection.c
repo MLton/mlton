@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2010 Matthew Fluet.
+/* Copyright (C) 2009-2010,2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -104,8 +104,8 @@ void performGC (GC_state s,
   enterGC (s);
   s->cumulativeStatistics.numGCs++;
   if (DEBUG or s->controls.messages) {
-    size_t nurserySize = s->heap.size - (s->heap.nursery - s->heap.start);
-    size_t nurseryUsed = s->frontier - s->heap.nursery;
+    size_t nurserySize = s->heap.size - ((size_t)(s->heap.nursery - s->heap.start));
+    size_t nurseryUsed = (size_t)(s->frontier - s->heap.nursery);
     fprintf (stderr, 
              "[GC: Starting gc #%s; requesting %s nursery bytes and %s old-gen bytes,]\n",
              uintmaxToCommaString(s->cumulativeStatistics.numGCs),
@@ -160,7 +160,7 @@ void performGC (GC_state s,
   } else
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
   if (DEBUG or s->controls.messages) {
-    size_t nurserySize = s->heap.size - (s->heap.nursery - s->heap.start);
+    size_t nurserySize = s->heap.size - (size_t)(s->heap.nursery - s->heap.start);
     fprintf (stderr, 
              "[GC: Finished gc #%s; time %s ms,]\n",
              uintmaxToCommaString(s->cumulativeStatistics.numGCs),

@@ -65,7 +65,7 @@ size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
 
   if (ratio >= s->controls.ratios.live + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM with desired ratios.live. */
-    resWithMapsSize = liveWithMapsSize * s->controls.ratios.live;
+    resWithMapsSize = (size_t)(liveWithMapsSize * s->controls.ratios.live);
     /* If the heap is currently close in size to what we want, leave
      * it alone.  Favor growing over shrinking.
      */
@@ -85,7 +85,7 @@ size_t sizeofHeapDesired (GC_state s, size_t liveSize, size_t currentSize) {
     resWithMapsSize = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
   } else if (ratio >= s->controls.ratios.copy + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM. */
-    resWithMapsSize = s->sysvals.ram - s->controls.ratios.grow * liveWithMapsSize;
+    resWithMapsSize = s->sysvals.ram - (size_t)(s->controls.ratios.grow * liveWithMapsSize);
     /* If the heap isn't too much smaller than what we want, leave it
      * alone.  On the other hand, if it is bigger we want to leave
      * resWithMapsSize as is so that the heap is shrunk, to try to

@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -81,7 +82,7 @@ void majorCheneyCopyGC (GC_state s) {
   foreachGlobalObjptr (s, forwardObjptr);
   foreachObjptrInRange (s, toStart, &s->forwardState.back, forwardObjptr, TRUE);
   updateWeaksForCheneyCopy (s);
-  s->secondaryHeap.oldGenSize = s->forwardState.back - s->secondaryHeap.start;
+  s->secondaryHeap.oldGenSize = (size_t)(s->forwardState.back - s->secondaryHeap.start);
   bytesCopied = s->secondaryHeap.oldGenSize;
   s->cumulativeStatistics.bytesCopied += bytesCopied;
   swapHeapsForCheneyCopy (s);
@@ -107,7 +108,7 @@ void minorCheneyCopyGC (GC_state s) {
     fprintf (stderr, "minorGC  nursery = "FMTPTR"  frontier = "FMTPTR"\n",
              (uintptr_t)s->heap.nursery, (uintptr_t)s->frontier);
   assert (invariantForGC (s));
-  bytesAllocated = s->frontier - s->heap.nursery;
+  bytesAllocated = (size_t)(s->frontier - s->heap.nursery);
   if (bytesAllocated == 0)
     return;
   s->cumulativeStatistics.bytesAllocated += bytesAllocated;
@@ -140,7 +141,7 @@ void minorCheneyCopyGC (GC_state s) {
     foreachObjptrInRange (s, s->forwardState.toStart, &s->forwardState.back, 
                           forwardObjptrIfInNursery, TRUE);
     updateWeaksForCheneyCopy (s);
-    bytesCopied = s->forwardState.back - s->forwardState.toStart;
+    bytesCopied = (size_t)(s->forwardState.back - s->forwardState.toStart);
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
     s->lastMajorStatistics.numMinorGCs++;
