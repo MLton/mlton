@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -55,11 +56,15 @@
 // #include <wchar.h>
 // #include <wctype.h>
 
+#include <gmp.h>
+
+
 #define COMPILE_TIME_ASSERT(name, x) \
         typedef int _COMPILE_TIME_ASSERT___##name[(x) ? 1 : -1]
 COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
 COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
 COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
+
 
 #if (defined (__APPLE_CC__))
 #define __Darwin__
@@ -120,6 +125,7 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #error unknown platform arch
 #endif
 
+
 #ifndef POINTER_BITS
 #if UINTPTR_MAX == UINT32_MAX
 #define POINTER_BITS 32
@@ -134,9 +140,6 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #define ADDRESS_BITS POINTER_BITS
 #endif
 
-#include "gmp.h"
-#include "export.h"
-
 COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_voidStar,
                     sizeof(uintptr_t) == sizeof(void*));
 COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t,
@@ -147,5 +150,7 @@ COMPILE_TIME_ASSERT(sizeof_voidStar__is__pointer_bits,
                     sizeof(void*)*CHAR_BIT == POINTER_BITS);
 COMPILE_TIME_ASSERT(address_bits__lte__pointer_bits,
                     ADDRESS_BITS <= POINTER_BITS);
+
+#include "export.h"
 
 #endif /* _MLTON_CENV_H_ */
