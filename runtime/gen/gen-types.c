@@ -1,4 +1,5 @@
-/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -230,24 +231,6 @@ static const char* mlTypesHStd[] = {
   else                                     \
   systype(t, "Int", name);                 \
   } while (0)
-#define ptrtype(t, name)                            \
-  do {                                              \
-  writeString (cTypesHFd, "typedef");               \
-  writeString (cTypesHFd, " /* ");                  \
-  writeString (cTypesHFd, #t);                      \
-  writeString (cTypesHFd, " */ ");                  \
-  writeString (cTypesHFd, "Pointer");               \
-  writeString (cTypesHFd, " ");                     \
-  writeString (cTypesHFd, "C_");                    \
-  writeString (cTypesHFd, name);                    \
-  writeString (cTypesHFd, "_t;");                   \
-  writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure C_");        \
-  writeString (cTypesSMLFd, name);                  \
-  writeString (cTypesSMLFd, " = Pointer");          \
-  writeNewline (cTypesSMLFd);                       \
-  } while (0)
-#undef ptrtype
 #define ptrtype(t, name)                            \
   do {                                              \
   systype(t, "Word", name);                         \
