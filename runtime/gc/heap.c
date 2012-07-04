@@ -308,12 +308,17 @@ bool createHeapSecondary (GC_state s, size_t desiredSize) {
 
 /* remapHeap (s, h, desiredSize, minSize)
  */
+#if not HAS_REMAP
+bool remapHeap (__attribute__ ((unused)) GC_state s,
+                __attribute__ ((unused)) GC_heap h,
+                __attribute__ ((unused)) size_t desiredSize,
+                __attribute__ ((unused)) size_t minSize) {
+  return FALSE;
+}
+#else
 bool remapHeap (GC_state s, GC_heap h,
                 size_t desiredSize,
                 size_t minSize) {
-#if not HAS_REMAP
-  return FALSE;
-#endif
 
   size_t newSize;
   size_t newWithMapsSize;
@@ -399,6 +404,7 @@ bool remapHeap (GC_state s, GC_heap h,
   }
   return result;
 }
+#endif
 
 enum {
   COPY_CHUNK_SIZE = 0x2000000, /* 32M */
