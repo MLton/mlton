@@ -130,7 +130,7 @@ void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
 }
 
 void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
-  int32_t i;
+  uint32_t i;
   GC_sourceIndex sourceIndex;
   uint32_t *sourceSeq;
 
