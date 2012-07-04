@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -23,7 +24,7 @@ struct GC_state {
   bool amInGC;
   bool amOriginal;
   char **atMLtons; /* Initial @MLton args, processed before command line. */
-  uint32_t atMLtonsLength;
+  int atMLtonsLength;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   struct GC_callStackState callStackState;
