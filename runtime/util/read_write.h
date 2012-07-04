@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -50,7 +51,7 @@ static inline void writeString (FILE *f, const char* s) {
   fwrite_safe (s, 1, strlen(s), f);
 }
 
-#define BUF_SIZE 81
+#define BUF_SIZE 64
 static inline void writeUint32U (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
 
@@ -75,15 +76,10 @@ static inline void writeUint32X (FILE *f, uint32_t u) {
 static inline void writeUintmaxX (FILE *f, uintmax_t u) {
   static char buf[BUF_SIZE];
 
-  if (sizeof(uintmax_t) == 4) {
-    snprintf (buf, BUF_SIZE, "0x%08"PRIxMAX, u);
-  } else if (sizeof(uintmax_t) == 8) {
-    snprintf (buf, BUF_SIZE, "0x%016"PRIxMAX, u);
-  } else {
-    snprintf (buf, BUF_SIZE, "0x%"PRIxMAX, u);
-  }
+  snprintf (buf, BUF_SIZE, "0x%0*"PRIxMAX, (int)(2 * sizeof(uintmax_t)), u);
   writeString (f, buf);
 }
+#undef BUF_SIZE
 
 static inline void writeNewline (FILE *f) {
   writeString (f, "\n");
@@ -93,4 +89,3 @@ static inline void writeStringWithNewline (FILE *f, const char* s) {
   writeString (f, s);
   writeNewline (f);
 }
-#undef BUF_SIZE
