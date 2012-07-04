@@ -1030,14 +1030,12 @@ val close = _import "Socket_close" private : C_Sock.t -> (C_Int.t) C_Errno.t;
 val connect = _import "Socket_connect" private : C_Sock.t * (Word8.t) vector * C_Socklen.t -> (C_Int.t) C_Errno.t;
 structure Ctl = 
 struct
-val FIONREAD = _const "Socket_Ctl_FIONREAD" : C_Int.t;
-val getIOCtl = _import "Socket_Ctl_getIOCtl" private : C_Sock.t * C_Int.t * (Word8.t) array -> (C_Int.t) C_Errno.t;
+val getATMARK = _import "Socket_Ctl_getATMARK" private : C_Sock.t * (C_Int.t) ref -> (C_Int.t) C_Errno.t;
+val getNREAD = _import "Socket_Ctl_getNREAD" private : C_Sock.t * (C_Int.t) ref -> (C_Int.t) C_Errno.t;
 val getPeerName = _import "Socket_Ctl_getPeerName" private : C_Sock.t * (Word8.t) array * (C_Socklen.t) ref -> (C_Int.t) C_Errno.t;
 val getSockName = _import "Socket_Ctl_getSockName" private : C_Sock.t * (Word8.t) array * (C_Socklen.t) ref -> (C_Int.t) C_Errno.t;
 val getSockOpt = _import "Socket_Ctl_getSockOpt" private : C_Sock.t * C_Int.t * C_Int.t * (Word8.t) array * (C_Socklen.t) ref -> (C_Int.t) C_Errno.t;
-val setIOCtl = _import "Socket_Ctl_setIOCtl" private : C_Sock.t * C_Int.t * (Word8.t) vector -> (C_Int.t) C_Errno.t;
 val setSockOpt = _import "Socket_Ctl_setSockOpt" private : C_Sock.t * C_Int.t * C_Int.t * (Word8.t) vector * C_Socklen.t -> (C_Int.t) C_Errno.t;
-val SIOCATMARK = _const "Socket_Ctl_SIOCATMARK" : C_Int.t;
 val SO_ACCEPTCONN = _const "Socket_Ctl_SO_ACCEPTCONN" : C_Int.t;
 val SO_BROADCAST = _const "Socket_Ctl_SO_BROADCAST" : C_Int.t;
 val SO_DEBUG = _const "Socket_Ctl_SO_DEBUG" : C_Int.t;

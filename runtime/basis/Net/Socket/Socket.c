@@ -168,28 +168,6 @@ Socket_Ctl_setSockOpt (C_Sock_t s, C_Int_t level, C_Int_t optname,
   return out;
 }
 
-C_Errno_t(C_Int_t) 
-Socket_Ctl_getIOCtl (C_Sock_t s, C_Int_t request, Array(Word8_t) argp) {
-  int out;
-  
-  MLton_initSockets ();
-  out = ioctl (s, request, (void*)argp);
-  if (out == -1) MLton_fixSocketErrno ();
-  
-  return out;
-}
-
-C_Errno_t(C_Int_t) 
-Socket_Ctl_setIOCtl (C_Sock_t s, C_Int_t request, Vector(Word8_t) argp) {
-  int out;
-  
-  MLton_initSockets ();
-  out = ioctl (s, request, (const void*)argp);
-  if (out == -1) MLton_fixSocketErrno ();
-  
-  return out;
-}
-
 C_Errno_t(C_Int_t) Socket_Ctl_getPeerName (C_Sock_t s, Array(Word8_t) name, Ref(C_Socklen_t) namelen) {
   int out;
   
@@ -207,5 +185,25 @@ C_Errno_t(C_Int_t) Socket_Ctl_getSockName (C_Sock_t s, Array(Word8_t) name, Ref(
   out = getsockname (s, (struct sockaddr*)name, (socklen_t*)namelen);
   if (out == -1) MLton_fixSocketErrno ();
   
+  return out;
+}
+
+C_Errno_t(C_Int_t)
+Socket_Ctl_getNREAD (C_Sock_t s, Ref(C_Int_t) argp) {
+  int out;
+
+  out = ioctl (s, FIONREAD, &argp);
+  if (out == -1) MLton_fixSocketErrno ();
+
+  return out;
+}
+
+C_Errno_t(C_Int_t)
+Socket_Ctl_getATMARK (C_Sock_t s, Ref(C_Int_t) argp) {
+  int out;
+
+  out = ioctl (s, SIOCATMARK, &argp);
+  if (out == -1) MLton_fixSocketErrno ();
+
   return out;
 }

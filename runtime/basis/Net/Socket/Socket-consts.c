@@ -37,5 +37,3 @@ const C_Int_t Socket_SOCK_DGRAM = SOCK_DGRAM;
 const C_Int_t Socket_SOCK_RAW = SOCK_RAW;
 const C_Int_t Socket_SOCK_SEQPACKET = SOCK_SEQPACKET;
 const C_Int_t Socket_SOCK_STREAM = SOCK_STREAM;
-const C_Int_t Socket_Ctl_FIONREAD = FIONREAD;
-const C_Int_t Socket_Ctl_SIOCATMARK = SIOCATMARK;

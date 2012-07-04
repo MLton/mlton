@@ -191,10 +191,5 @@ signature SOCKET_EXTRA =
           val setSockOptInt: level * optname -> ('af, 'sock_type) sock * C_Int.int -> unit
           val getSockOptBool: level * optname -> ('af, 'sock_type) sock -> bool
           val setSockOptBool: level * optname -> ('af, 'sock_type) sock * bool -> unit
-
-          val getIOCtlInt: request -> ('af, 'sock_type) sock -> C_Int.int
-          (* val setIOCtlInt: request -> ('af, 'sock_type) sock * C_Int.int -> unit *)
-          val getIOCtlBool: request -> ('af, 'sock_type) sock -> bool
-          (* val setIOCtlBool: request -> ('af, 'sock_type) sock * bool -> unit *)
        end
   end

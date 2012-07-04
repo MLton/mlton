@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -283,37 +284,17 @@ structure CtlExtra =
                   in
                      ()
                   end
-               fun getIOCtl (request: request) s : 'a =
-                  let
-                     val optval = Array.array (optlen, 0wx0)
-                     val () =
-                        Syscall.simple
-                        (fn () =>
-                         Prim.Ctl.getIOCtl (Sock.toRep s, request, optval))
-                  in
-                     unmarshal optval
-                  end
-               fun setIOCtl (request: request) (s, optval: 'a) : unit =
-                  let
-                     val optval = marshal optval
-                     val () =
-                        Syscall.simple
-                        (fn () =>
-                         Prim.Ctl.setIOCtl (Sock.toRep s, request, optval))
-                  in
-                     ()
-                  end
             in
-               (getSockOpt, getIOCtl, setSockOpt, setIOCtl)
+               (getSockOpt, setSockOpt)
             end
       in
-         val (getSockOptInt, getIOCtlInt, setSockOptInt, _) =
+         val (getSockOptInt, setSockOptInt) =
             make (intLen, marshalInt, unmarshalInt)
-         val (getSockOptBool, getIOCtlBool, setSockOptBool, _) =
+         val (getSockOptBool, setSockOptBool) =
             make (boolLen, marshalBool, unmarshalBool)
-         val (getSockOptSize, getIOCtlSize, setSockOptSize, _) =
+         val (getSockOptSize, setSockOptSize) =
             make (sizeLen, marshalSize, unmarshalSize)
-         val (getSockOptOptTime, _, setSockOptOptTime, _) =
+         val (getSockOptOptTime, setSockOptOptTime) =
             make (optTimeLen, marshalOptTime, unmarshalOptTime)
       end
 
@@ -357,8 +338,20 @@ structure CtlExtra =
          fun getPeerName s = getName (s, Prim.Ctl.getPeerName)
          fun getSockName s = getName (s, Prim.Ctl.getSockName)
       end
-      val getNREAD = getIOCtlSize Prim.Ctl.FIONREAD
-      val getATMARK = getIOCtlBool Prim.Ctl.SIOCATMARK
+      fun getNREAD s =
+         let
+            val argp = ref (C_Int.fromInt ~1)
+            val () = Syscall.simple (fn () => Prim.Ctl.getNREAD (Sock.toRep s, argp))
+         in
+            C_Int.toInt (!argp)
+         end
+      fun getATMARK s =
+         let
+            val argp = ref (C_Int.fromInt ~1)
+            val () = Syscall.simple (fn () => Prim.Ctl.getATMARK (Sock.toRep s, argp))
+         in
+            if C_Int.toInt (!argp) = 0 then false else true
+         end
    end
 
 structure Ctl =
