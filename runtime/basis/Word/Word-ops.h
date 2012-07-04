@@ -44,36 +44,20 @@ compare (U##size, name, op)
   }
 
 #define misaligned(size)                                                \
-  typedef volatile union {                                              \
-    Word##size##_t w;                                                   \
-    Word32_t ws[sizeof(Word##size##_t) / sizeof(Word32_t)];             \
-  } __attribute__((__may_alias__)) Word##size##OrWord32s;               \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##size##_t Word##size##_fetch (Ref(Word##size##_t) wp) {          \
-    Word##size##OrWord32s u;                                            \
-    Word32_t *wsp;                                                      \
-    wsp = (Word32_t*)wp;                                                \
-    u.ws[0] = wsp[0];                                                   \
-    if ((sizeof(Word##size##_t) / sizeof(Word32_t)) > 1)                \
-      u.ws[1] = wsp[1];                                                 \
-    return u.w;                                                         \
+    Word##size##_t w;                                                   \
+    memcpy(&w, wp, sizeof(Word##size##_t));                             \
+    return w;                                                           \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   void Word##size##_store (Ref(Word##size##_t) wp, Word##size##_t w) {  \
-    Word##size##OrWord32s u;                                            \
-    Word32_t *wsp;                                                      \
-    wsp = (Word32_t*)wp;                                                \
-    u.w = w;                                                            \
-    wsp[0] = u.ws[0];                                                   \
-    if ((sizeof(Word##size##_t) / sizeof(Word32_t)) > 1)                \
-      wsp[1] = u.ws[1];                                                 \
+    memcpy(wp, &w, sizeof(Word##size##_t));                             \
     return;                                                             \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   void Word##size##_move (Ref(Word##size##_t) dst, Ref(Word##size##_t) src) { \
-    Word##size##_t w;                                                   \
-    w = Word##size##_fetch (src);                                       \
-    Word##size##_store (dst, w);                                        \
+    memcpy(dst, src, sizeof(Word##size##_t));                           \
     return;                                                             \
   }
 
