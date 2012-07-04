@@ -8,16 +8,12 @@
 #include "nonwin.c"
 #include "use-mmap.c"
 
-#ifndef EIP
-#define EIP     14
-#endif
-
 static void catcher (__attribute__ ((unused)) int signo,
                      __attribute__ ((unused)) siginfo_t* info,
                      void* context) {
 #if (defined (__x86_64__))
-#define REG_INDEX(NAME) (offsetof(struct sigcontext, NAME) / sizeof(greg_t))
 #ifndef REG_RIP
+#define REG_INDEX(NAME) (offsetof(struct sigcontext, NAME) / sizeof(greg_t))
 #define REG_RIP REG_INDEX(rip) /* seems to be 16 */
 #endif
         ucontext_t* ucp = (ucontext_t*)context;
@@ -49,6 +45,9 @@ static void catcher (__attribute__ ((unused)) int signo,
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.pc);
 #endif
 #elif (defined (__i386__))
+#ifndef EIP
+#define EIP     14
+#endif
         ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[EIP]);
 #elif (defined (__arm__))
