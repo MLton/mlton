@@ -76,9 +76,6 @@ unary (size, notb, ~)                           \
 /* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
  * because the gcc optimizer sometimes produces incorrect results       \
  * when one of the arguments is a constant.                             \
- * WordS<N>_quot and WordS<N>_rem can be inlined with the               \
- * bytecode-codegen, since they will be used in a context where the     \
- * arguments are variables.                                             \
  */                                                                     \
 MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, quot, /))              \
 MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, rem, %))               \
