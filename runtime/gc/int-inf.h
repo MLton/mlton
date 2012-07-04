@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,31 +12,28 @@
 /* Layout of intInfs.  
  * Note, the value passed around is a pointer to the obj member.
  */
+struct GC_intInf_obj {
+  mp_limb_t isneg;
+  mp_limb_t limbs[1];
+};
 typedef struct GC_intInf {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
-  union {
-    struct {
-      mp_limb_t isneg;
-      mp_limb_t limbs[1];
-    } body;
-    pointerAux _p; /* alignment */
-  } obj;
+  struct GC_intInf_obj obj;
 } __attribute__ ((packed)) *GC_intInf;
 
 COMPILE_TIME_ASSERT(GC_intInf__obj_packed,
-                    offsetof(struct GC_intInf, obj) == 
-                    sizeof(GC_arrayCounter) 
-                    + sizeof(GC_arrayLength) 
+                    offsetof(struct GC_intInf, obj) ==
+                    sizeof(GC_arrayCounter)
+                    + sizeof(GC_arrayLength)
                     + sizeof(GC_header));
-COMPILE_TIME_ASSERT(GC_intInf__obj_body_isneg_packed,
-                    offsetof(struct GC_intInf, obj.body.isneg) == 
-                    offsetof(struct GC_intInf, obj));
-COMPILE_TIME_ASSERT(GC_intInf__obj_body_limbs_packed,
-                    offsetof(struct GC_intInf, obj.body.limbs) == 
-                    offsetof(struct GC_intInf, obj) 
-                    + sizeof(mp_limb_t));
+COMPILE_TIME_ASSERT(GC_intInf_obj__isneg_packed,
+                    offsetof(struct GC_intInf_obj, isneg) ==
+                    0);
+COMPILE_TIME_ASSERT(GC_intInf_obj__limbs_packed,
+                    offsetof(struct GC_intInf_obj, limbs) ==
+                    0 + sizeof(mp_limb_t));
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
