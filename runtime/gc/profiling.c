@@ -272,7 +272,7 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
     break;
   case PROFILE_NONE:
     die ("impossible PROFILE_NONE");
-    break;
+    // break;
   case PROFILE_TIME_FIELD:
     kind = "time\n";
     break;
@@ -448,7 +448,7 @@ void initProfiling (GC_state s) {
       break;
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");
-      break;
+      // break;
     case PROFILE_TIME_FIELD:
     case PROFILE_TIME_LABEL:
       initProfilingTime (s);
