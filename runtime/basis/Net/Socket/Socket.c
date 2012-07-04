@@ -61,7 +61,7 @@ C_Errno_t(C_Int_t) Socket_listen (C_Sock_t s, C_Int_t backlog) {
 C_Errno_t(C_SSize_t) 
 Socket_recv (C_Sock_t s, Array(Word8_t) msg, 
              C_Int_t start, C_Size_t len, C_Int_t flags) {
-  int out;
+  ssize_t out;
   
   MLton_initSockets ();
   out = MLton_recv (s, (void*)((char *)msg + start), len, flags);
@@ -74,7 +74,7 @@ C_Errno_t(C_SSize_t)
 Socket_recvFrom (C_Sock_t s, Array(Word8_t) msg, 
                  C_Int_t start, C_Size_t len, C_Int_t flags,
                  Array(Word8_t) addr, Ref(C_Socklen_t) addrlen) {
-  int out;
+  ssize_t out;
   
   MLton_initSockets ();
   out = MLton_recvfrom (s, (void*)((char *)msg + start), len, flags,
@@ -87,7 +87,7 @@ Socket_recvFrom (C_Sock_t s, Array(Word8_t) msg,
 static inline C_Errno_t(C_SSize_t)
 Socket_send (C_Sock_t s, Pointer msg, 
              C_Int_t start, C_Size_t len, C_Int_t flags) {
-  int out;
+  ssize_t out;
   
   MLton_initSockets ();
   out = send (s, (void*)((char *)msg + start), len, flags);
@@ -111,7 +111,7 @@ static inline C_Errno_t(C_SSize_t)
 Socket_sendTo (C_Sock_t s, Pointer msg, 
                C_Int_t start, C_Size_t len, C_Int_t flags,
                Vector(Word8_t) addr, C_Socklen_t addrlen) {
-  int out;
+  ssize_t out;
   
   MLton_initSockets ();
   out = sendto (s, (void*)((char *)msg + start), len, flags,
