@@ -114,7 +114,6 @@ void minorCheneyCopyGC (GC_state s) {
   s->cumulativeStatistics.bytesAllocated += bytesAllocated;
   if (not s->canMinor) {
     s->heap.oldGenSize += bytesAllocated;
-    bytesCopied = 0;
   } else {
     if (detailedGCTime (s))
       startTiming (&ru_start);

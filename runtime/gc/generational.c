@@ -305,7 +305,6 @@ bool isCrossMapOk (GC_state s) {
   map = GC_mmapAnon_safe (NULL, mapSize);
   memset (map, CROSS_MAP_EMPTY, mapSize);
   back = s->heap.start + s->heap.oldGenSize;
-  cardIndex = 0;
   front = alignFrontier (s, s->heap.start);
 loopObjects:
   assert (front <= back);

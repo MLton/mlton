@@ -262,7 +262,6 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
     fprintf (stderr, "profileWrite("FMTPTR",%s)\n", (uintptr_t)p, fileName);
   f = fopen_safe (fileName, "wb");
   writeString (f, "MLton prof\n");
-  kind = "";
   switch (s->profiling.kind) {
   case PROFILE_ALLOC:
     kind = "alloc\n";
@@ -280,6 +279,7 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
     kind = "time\n";
     break;
   default:
+    kind = "";
     assert (FALSE);
   }
   writeString (f, kind);
