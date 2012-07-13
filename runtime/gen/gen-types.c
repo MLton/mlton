@@ -269,6 +269,8 @@ static const char* mlTypesHStd[] = {
   writeString (cTypesSMLFd, bt);                    \
   writeString (cTypesSMLFd, "N (A)");               \
   writeNewline (cTypesSMLFd);                       \
+  free (btLower);                                   \
+  free (btUpper);                                   \
   } while (0)
 
 static const char* mlTypesHSuffix[] = {
