@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2012 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -27,4 +27,6 @@ signature ELABORATE_CORE =
       val elaborateDec: Ast.Dec.t * {env: Env.t, nest: string list} -> Decs.t
       val reportSequenceNonUnit: unit -> unit
       val reportUndeterminedTypes: unit -> unit
+      val reportUnresolvedFlexRecords: unit -> unit
+      val resolveOverloads: unit -> unit
    end

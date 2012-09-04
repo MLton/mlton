@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2011 Matthew Fluet.
+(* Copyright (C) 2009-2012 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -80,6 +80,14 @@ signature CONTROL_FLAGS =
                      Default
                    | Ignore
                end
+            structure ResolveScope :
+               sig
+                  datatype t =
+                     Dec
+                   | Strdec
+                   | Topdec
+                   | Program
+               end
 
             type ('args, 'st) t
 
@@ -96,6 +104,7 @@ signature CONTROL_FLAGS =
             val nonexhaustiveExnMatch: (DiagDI.t,DiagDI.t) t
             val nonexhaustiveMatch: (DiagEIW.t,DiagEIW.t) t
             val redundantMatch: (DiagEIW.t,DiagEIW.t) t
+            val resolveScope: (ResolveScope.t,ResolveScope.t) t
             val sequenceNonUnit: (DiagEIW.t,DiagEIW.t) t
             val warnUnused: (bool,bool) t
 

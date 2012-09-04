@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2012 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,6 +11,12 @@ functor ElaborateModules (S: ELABORATE_MODULES_STRUCTS): ELABORATE_MODULES =
 struct
 
 open S
+
+local
+   open Control.Elaborate
+in
+   val resolveScope = fn () => current resolveScope
+end
 
 local
    open Ast
@@ -94,41 +101,49 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
           let
              val d = Strdec.coalesce d
              val elabStrdec = fn d => elabStrdec (d, nest)
+             val decs =
+                case Strdec.node d of
+                   Strdec.Core d => (* rule 56 *)
+                      ElaborateCore.elaborateDec
+                      (d, {env = E, nest = nest})
+                 | Strdec.Local (d, d') => (* rule 58 *)
+                      Env.localModule (E,
+                                       fn () => elabStrdec d,
+                                       fn d => Decs.append (d, elabStrdec d'))
+                 | Strdec.Seq ds => (* rule 60 *)
+                      List.fold
+                      (ds, Decs.empty, fn (d, decs) =>
+                       Decs.append (decs, elabStrdec d))
+                 | Strdec.Structure strbinds => (* rules 57, 61 *)
+                      let
+                         val strbinds =
+                            Vector.map
+                            (strbinds, fn {name, def, constraint} =>
+                             let
+                                val nest = Strid.toString name :: nest
+                                val (decs', S) = elabStrexp (def, nest)
+                                val (decs'', S) =
+                                   elabSigexpConstraint (constraint, S, nest)
+                             in
+                                {decs = Decs.append (decs', decs''),
+                                 name = name,
+                                 S = S}
+                             end)
+                         val () =
+                            Vector.foreach
+                            (strbinds, fn {name, S, ...} =>
+                             Option.app (S, fn S => Env.extendStrid (E, name, S)))
+                       in
+                          Decs.appendsV (Vector.map (strbinds, #decs))
+                       end
+             val () =
+                case resolveScope () of
+                   Control.Elaborate.ResolveScope.Strdec =>
+                      (ElaborateCore.reportUnresolvedFlexRecords ()
+                       ; ElaborateCore.resolveOverloads ())
+                 | _ => ()
           in
-             case Strdec.node d of
-                Strdec.Core d => (* rule 56 *)
-                   ElaborateCore.elaborateDec
-                   (d, {env = E, nest = nest})
-              | Strdec.Local (d, d') => (* rule 58 *)
-                   Env.localModule (E,
-                                    fn () => elabStrdec d,
-                                    fn d => Decs.append (d, elabStrdec d'))
-              | Strdec.Seq ds => (* rule 60 *)
-                   List.fold
-                   (ds, Decs.empty, fn (d, decs) =>
-                    Decs.append (decs, elabStrdec d))
-              | Strdec.Structure strbinds => (* rules 57, 61 *)
-                   let
-                      val strbinds =
-                         Vector.map
-                         (strbinds, fn {name, def, constraint} =>
-                          let
-                             val nest = Strid.toString name :: nest
-                             val (decs', S) = elabStrexp (def, nest)
-                             val (decs'', S) =
-                                elabSigexpConstraint (constraint, S, nest)
-                          in
-                             {decs = Decs.append (decs', decs''),
-                              name = name,
-                              S = S}
-                          end)
-                      val () =
-                         Vector.foreach
-                         (strbinds, fn {name, S, ...} =>
-                          Option.app (S, fn S => Env.extendStrid (E, name, S)))
-                    in
-                       Decs.appendsV (Vector.map (strbinds, #decs))
-                    end
+             decs
           end) arg
       and elabStrexp (arg: Strexp.t * string list): Decs.t * Structure.t option =
          Trace.traceInfo' (elabStrexpInfo,
@@ -227,55 +242,64 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                            Topdec.layout, 
                            Decs.layout)
          (fn (d: Topdec.t) =>
-          case Topdec.node d of
-             Topdec.Signature sigbinds =>
-                let
-                   val sigbinds =
-                      Vector.map
-                      (sigbinds, fn (sigid, sigexp) =>
-                       (sigid, elabSigexp sigexp))
-                   val () =
-                      Vector.foreach
-                      (sigbinds, fn (sigid, I) =>
-                       Option.app (I, fn I => Env.extendSigid (E, sigid, I)))
-                in
-                   Decs.empty
-                end
-           | Topdec.Strdec d => elabStrdec (d, [])
-           | Topdec.Functor funbinds =>
-                (* Rules 85, 86. Appendix A, p.58 *)
-                let
-                   val funbinds =
-                      Vector.map
-                      (funbinds, fn {arg, body, name, result} =>
-                       {closure = elabFunctor {arg = arg,
-                                               body = body,
-                                               name = name,
-                                               result = result},
-                        name = name})
-                   val () =
-                      Vector.foreach (funbinds, fn {closure, name} =>
-                                      Option.app
-                                      (closure, fn closure =>
-                                       Env.extendFctid (E, name, closure)))
-                   (* Check for errors here so that we don't report duplicate
-                    * errors when re-elaborating the functor body.
-                    *)
-                   val () = Control.checkForErrors "elaborate"
-                in
-                   Decs.empty
-                end
-                ) arg
-      val elabTopdec =
-         fn d =>
-         let
-            val res = elabTopdec d
+          let
+             val decs =
+                case Topdec.node d of
+                   Topdec.Signature sigbinds =>
+                      let
+                         val sigbinds =
+                            Vector.map
+                            (sigbinds, fn (sigid, sigexp) =>
+                             (sigid, elabSigexp sigexp))
+                         val () =
+                            Vector.foreach
+                            (sigbinds, fn (sigid, I) =>
+                             Option.app (I, fn I => Env.extendSigid (E, sigid, I)))
+                      in
+                         Decs.empty
+                      end
+                 | Topdec.Strdec d => elabStrdec (d, [])
+                 | Topdec.Functor funbinds =>
+                      (* Rules 85, 86. Appendix A, p.58 *)
+                      let
+                         val funbinds =
+                            Vector.map
+                            (funbinds, fn {arg, body, name, result} =>
+                             {closure = elabFunctor {arg = arg,
+                                                     body = body,
+                                                     name = name,
+                                                     result = result},
+                              name = name})
+                         val () =
+                            Vector.foreach (funbinds, fn {closure, name} =>
+                                            Option.app
+                                            (closure, fn closure =>
+                                             Env.extendFctid (E, name, closure)))
+                         (* Check for errors here so that we don't report duplicate
+                          * errors when re-elaborating the functor body.
+                          *)
+                         val () = Control.checkForErrors "elaborate"
+                      in
+                         Decs.empty
+                      end
+            val () =
+               case resolveScope () of
+                  Control.Elaborate.ResolveScope.Topdec =>
+                     (ElaborateCore.reportUnresolvedFlexRecords ()
+                      ; ElaborateCore.resolveOverloads ())
+                | _ => ()
             val _ = ElaborateCore.reportUndeterminedTypes ()
             val _ = ElaborateCore.reportSequenceNonUnit ()
-         in
-            res
-         end
+          in
+             decs
+          end) arg
    in
       elabTopdec topdec
    end
+
+val reportSequenceNonUnit = ElaborateCore.reportSequenceNonUnit
+val reportUndeterminedTypes = ElaborateCore.reportUndeterminedTypes
+val reportUnresolvedFlexRecords = ElaborateCore.reportUnresolvedFlexRecords
+val resolveOverloads = ElaborateCore.resolveOverloads
+
 end
