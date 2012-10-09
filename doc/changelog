@@ -1,5 +1,10 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2012-10-09
+   - Fixed bug in elaboration that erroneously accepted the following:
+         signature S = sig structure A : sig type t end
+                                 and B : sig type t end where type t = A.t end
+
 * 2012-06-11
    - Fixed bugs in REAL.copySign, REAL.signBit, and REAL.{to,from}Decimal.
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010,2012 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -449,13 +449,20 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 end
            | Spec.Structure ss =>
                 (* rules 74, 84 *)
-                Vector.foreach
-                (ss, fn (strid, sigexp) =>
-                 Env.extendStrid
-                 (E, strid,
-                  case elaborateSigexp (sigexp, {isTop = false}) of
-                     NONE => Interface.empty
-                   | SOME I => I))
+                let
+                   val ss =
+                      Vector.map
+                      (ss, fn (strid, sigexp) =>
+                       (strid,
+                        case elaborateSigexp (sigexp, {isTop = false}) of
+                           NONE => Interface.empty
+                         | SOME I => I))
+                in
+                   Vector.foreach
+                   (ss, fn (strid, I) =>
+                    Env.extendStrid
+                    (E, strid, I))
+                end
            | Spec.Type typedescs =>
                 (* rule 69 *)
                 elaborateTypedescs (typedescs, {equality = false}, E)
