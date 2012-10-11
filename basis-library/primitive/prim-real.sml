@@ -59,6 +59,9 @@ signature PRIM_REAL =
       val ldexp: real * C_Int.t -> real
       val modf: real * real ref -> real
       val round: real -> real
+      val realCeil: real -> real
+      val realFloor: real -> real
+      val realTrunc: real -> real
       val strto: Primitive.NullString8.t * C_Int.t -> real
 
       (* Integer to float; depends on rounding mode. *)
@@ -147,6 +150,9 @@ structure Real32 : PRIM_REAL =
       val ldexp = _prim "Real32_ldexp": real * C_Int.t -> real;
       val modf = _import "Real32_modf" private: real * real ref -> real;
       val round = _prim "Real32_round": real -> real;
+      val realCeil = _import "Real32_realCeil" private: real -> real;
+      val realFloor = _import "Real32_realFloor" private: real -> real;
+      val realTrunc = _import "Real32_realTrunc" private: real -> real;
       val strto = _import "Real32_strto" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal32": Int8.int -> real;
@@ -234,6 +240,9 @@ structure Real64 : PRIM_REAL =
       val ldexp = _prim "Real64_ldexp": real * C_Int.t -> real;
       val modf = _import "Real64_modf" private: real * real ref -> real;
       val round = _prim "Real64_round": real -> real;
+      val realCeil = _import "Real64_realCeil" private: real -> real;
+      val realFloor = _import "Real64_realFloor" private: real -> real;
+      val realTrunc = _import "Real64_realTrunc" private: real -> real;
       val strto = _import "Real64_strto" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal64": Int8.int -> real;

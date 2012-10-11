@@ -330,22 +330,14 @@ functor Real (structure W: WORD_EXTRA
          else if isNan x then raise Div
          else raise Overflow
 
-      fun roundReal (x: real, m: rounding_mode): real =
-         IEEEReal.withRoundingMode (m, fn () => R.round x)
-
-      local
-         fun round mode x =
-            case class x of
-               INF => x
-             | NAN => x
-             | _ => roundReal (x, mode)
-      in
-         val realCeil = round TO_POSINF
-         val realFloor = round TO_NEGINF
-         val realRound = round TO_NEAREST
-         val realTrunc = round TO_ZERO
-      end
-
+      val realCeil = R.realCeil
+      val realFloor = R.realFloor
+      val realTrunc = R.realTrunc
+      
+      (* Unfortunately, libc round ties to zero instead of even values. *)
+      (* Fortunately, if any rounding mode is supported, it's TO_NEAREST. *)
+      val realRound = fn r => IEEEReal.withRoundingMode (TO_NEAREST, fn () => R.round r)
+      
       fun rem (x, y) =
          (case class x of
              INF => nan
@@ -670,29 +662,36 @@ functor Real (structure W: WORD_EXTRA
       end
 
       val toString = fmt (StringCvt.GEN NONE)
+      
+      (* Not all devices support all rounding modes. 
+       * However, every device has ceil/floor/round/trunc.
+       *)
+      fun safeConvert (m, cvt, x) =
+         case m of
+            TO_POSINF => cvt (realCeil x)
+          | TO_NEGINF => cvt (realFloor x)
+          | TO_NEAREST => cvt (realRound x)
+          | TO_ZERO => cvt (realTrunc x)
 
       local
          fun 'a make {fromIntUnsafe: 'a -> real,
                       toIntUnsafe: real -> 'a,
-                      other : {maxInt': 'a,
+                      other : {maxInt': Word.word -> 'a,
                                minInt': 'a,
                                precision': int}} =
             (fromIntUnsafe,
              if Int.< (precision, #precision' other) then
                 let
-                   val maxInt' = #maxInt' other
+                   val trim = Int.- (Int.- (#precision' other, precision), 1)
+                   val maxInt' = (#maxInt' other) (Word.fromInt trim)
                    val minInt' = #minInt' other
-                   (* maxInt can't be represented exactly. *)
-                   (* minInt can be represented exactly. *)
-                   val (maxInt,minInt) =
-                       IEEEReal.withRoundingMode
-                       (TO_ZERO, fn () => (fromIntUnsafe maxInt',
-                                           fromIntUnsafe minInt'))
+                   val maxInt = fromIntUnsafe maxInt'
+                   val minInt = fromIntUnsafe minInt'
                 in
                    fn (m: rounding_mode) => fn x =>
                    if minInt <= x then
                       if x <= maxInt then
-                         toIntUnsafe (roundReal (x, m))
+                         safeConvert (m, toIntUnsafe, x)
                       else
                          raise Overflow
                    else
@@ -703,7 +702,7 @@ functor Real (structure W: WORD_EXTRA
                 end
              else
                 let
-                   val maxInt' = #maxInt' other
+                   val maxInt' = (#maxInt' other) 0w0
                    val minInt' = #minInt' other
                    val maxInt = fromIntUnsafe maxInt'
                    val minInt = fromIntUnsafe minInt'
@@ -711,7 +710,7 @@ functor Real (structure W: WORD_EXTRA
                    fn (m: rounding_mode) => fn x =>
                    if minInt <= x then
                       if x <= maxInt then
-                         toIntUnsafe (roundReal (x, m))
+                         safeConvert (m, toIntUnsafe, x)
                       else
                          if x < maxInt + one then
                             (case m of
@@ -748,25 +747,25 @@ functor Real (structure W: WORD_EXTRA
          val (fromInt8,toInt8) =
             make {fromIntUnsafe = R.fromInt8Unsafe,
                   toIntUnsafe = R.toInt8Unsafe,
-                  other = {maxInt' = Int8.maxInt',
+                  other = {maxInt' = fn w => Int8.<< (Int8.>> (Int8.maxInt', w), w),
                            minInt' = Int8.minInt',
                            precision' = Int8.precision'}}
          val (fromInt16,toInt16) =
             make {fromIntUnsafe = R.fromInt16Unsafe,
                   toIntUnsafe = R.toInt16Unsafe,
-                  other = {maxInt' = Int16.maxInt',
+                  other = {maxInt' = fn w => Int16.<< (Int16.>> (Int16.maxInt', w), w),
                            minInt' = Int16.minInt',
                            precision' = Int16.precision'}}
          val (fromInt32,toInt32) =
             make {fromIntUnsafe = R.fromInt32Unsafe,
                   toIntUnsafe = R.toInt32Unsafe,
-                  other = {maxInt' = Int32.maxInt',
+                  other = {maxInt' = fn w => Int32.<< (Int32.>> (Int32.maxInt', w), w),
                            minInt' = Int32.minInt',
                            precision' = Int32.precision'}}
          val (fromInt64,toInt64) =
             make {fromIntUnsafe = R.fromInt64Unsafe,
                   toIntUnsafe = R.toInt64Unsafe,
-                  other = {maxInt' = Int64.maxInt',
+                  other = {maxInt' = fn w => Int64.<< (Int64.>> (Int64.maxInt', w), w),
                            minInt' = Int64.minInt',
                            precision' = Int64.precision'}}
       end
@@ -795,7 +794,12 @@ functor Real (structure W: WORD_EXTRA
                   (* This round may turn x into an INF, so we need to check the
                    * class again.
                    *)
-                  val x = roundReal (x, mode)
+                  val x = 
+                     case mode of
+                        TO_POSINF => realCeil x
+                      | TO_NEGINF => realFloor x
+                      | TO_NEAREST => realRound x
+                      | TO_ZERO => realTrunc x
                in
                   case class x of
                      INF => raise Overflow
@@ -860,17 +864,15 @@ functor Real (structure W: WORD_EXTRA
       local
          fun 'a make {fromWordUnsafe: 'a -> real,
                       toWordUnsafe: real -> 'a,
-                      other : {maxWord': 'a,
+                      other : {maxWord': Word.word -> 'a,
                                wordSize: int,
                                zeroWord: 'a}} =
             (fromWordUnsafe,
              if Int.<= (precision, #wordSize other)
                 then let
-                        val maxWord' = #maxWord' other
-                        (* maxWord can't be represented exactly. *)
-                        val maxWord =
-                           IEEEReal.withRoundingMode
-                           (TO_ZERO, fn () => fromWordUnsafe maxWord')
+                        val trim = Int.- (#wordSize other, precision)
+                        val maxWord' = (#maxWord' other) (Word.fromInt trim)
+                        val maxWord = fromWordUnsafe maxWord'
                         val zeroWord = #zeroWord other
                      in
                         fn (m: rounding_mode) => fn x =>
@@ -879,7 +881,7 @@ functor Real (structure W: WORD_EXTRA
                          | NAN => raise Domain
                          | _ => if zero <= x
                                    then if x <= maxWord
-                                           then toWordUnsafe (roundReal (x, m))
+                                           then safeConvert (m, toWordUnsafe, x)
                                         else raise Overflow
                                 else if x > ~one
                                    then (case m of
@@ -893,7 +895,7 @@ functor Real (structure W: WORD_EXTRA
                                 else raise Overflow
                      end
              else let
-                     val maxWord' = #maxWord' other
+                     val maxWord' = (#maxWord' other) 0w0
                      val maxWord = fromWordUnsafe maxWord'
                      val zeroWord = #zeroWord other
                   in
@@ -903,7 +905,7 @@ functor Real (structure W: WORD_EXTRA
                       | NAN => raise Domain
                       | _ => if zero <= x
                                 then if x <= maxWord
-                                        then toWordUnsafe (roundReal (x, m))
+                                        then safeConvert (m, toWordUnsafe, x)
                              else if x < maxWord + one
                                 then (case m of
                                          TO_NEGINF => maxWord'
@@ -930,25 +932,25 @@ functor Real (structure W: WORD_EXTRA
          val (fromWord8,toWord8) =
             make {fromWordUnsafe = R.fromWord8Unsafe,
                   toWordUnsafe = R.toWord8Unsafe,
-                  other = {maxWord' = Word8.maxWord',
+                  other = {maxWord' = fn w => Word8.<< (Word8.>> (Word8.maxWord', w), w),
                            wordSize = Word8.wordSize,
                            zeroWord = Word8.zero}}
          val (fromWord16,toWord16) =
             make {fromWordUnsafe = R.fromWord16Unsafe,
                   toWordUnsafe = R.toWord16Unsafe,
-                  other = {maxWord' = Word16.maxWord',
+                  other = {maxWord' = fn w => Word16.<< (Word16.>> (Word16.maxWord', w), w),
                            wordSize = Word16.wordSize,
                            zeroWord = Word16.zero}}
          val (fromWord32,toWord32) =
             make {fromWordUnsafe = R.fromWord32Unsafe,
                   toWordUnsafe = R.toWord32Unsafe,
-                  other = {maxWord' = Word32.maxWord',
+                  other = {maxWord' = fn w => Word32.<< (Word32.>> (Word32.maxWord', w), w),
                            wordSize = Word32.wordSize,
                            zeroWord = Word32.zero}}
          val (fromWord64,toWord64) =
             make {fromWordUnsafe = R.fromWord64Unsafe,
                   toWordUnsafe = R.toWord64Unsafe,
-                  other = {maxWord' = Word64.maxWord',
+                  other = {maxWord' = fn w => Word64.<< (Word64.>> (Word64.maxWord', w), w),
                            wordSize = Word64.wordSize,
                            zeroWord = Word64.zero}}
       end

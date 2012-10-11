@@ -33,6 +33,10 @@ signature PRE_REAL =
       val modf: real * real ref -> real
 
       val round: real -> real
+      val realCeil: real -> real
+      val realFloor: real -> real
+      val realTrunc: real -> real
+      
       val gdtoa: real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t
       val strto: Primitive.NullString8.t * C_Int.t -> real
 
