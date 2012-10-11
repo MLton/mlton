@@ -45,7 +45,7 @@
 #define MLton_Platform_OS_host "linux"
 
 // environ is already defined if _GNU_SOURCE is.
-#ifndef _GNU_SOURCE
+#if !defined(_GNU_SOURCE) && !defined(__ANDROID__)
 extern char **environ; /* for Posix_ProcEnv_environ */
 #endif
 
@@ -58,8 +58,40 @@ typedef __kernel_suseconds_t suseconds_t;
 #define __suseconds_t_defined
 #endif
 
+#ifdef __GLIBC__
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ <= 1
 typedef unsigned long int nfds_t;
+#endif
+#endif
+
+#ifdef __ANDROID__
+/* Work around buggy android system libraries */
+#undef PRIxPTR
+#define PRIxPTR "x"
+
+/* Needed for fetching program counter */
+#include <platform/android_ucontext.h>
+
+/* Android is missing these methods: */
+#undef tcdrain
+#undef ctermid
+#define tcdrain MLton_tcdrain
+#define ctermid MLton_ctermid
+
+static inline int tcdrain(int fd) {
+  return ioctl(fd, TCSBRK, 1);
+}
+
+static inline char* ctermid(char* x) {
+  static char buf[] = "/dev/tty";
+  if (x) {
+    strcpy(x, buf);
+    return x;
+  } else {
+    return &buf[0];
+  }
+}
+
 #endif
 
 #ifndef SO_ACCEPTCONN
