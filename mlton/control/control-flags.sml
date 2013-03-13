@@ -64,13 +64,15 @@ structure Codegen =
    struct
       datatype t =
          CCodegen
+       | LLVMCodegen
        | x86Codegen
        | amd64Codegen
 
-      val all = [x86Codegen,amd64Codegen,CCodegen]
+      val all = [x86Codegen,amd64Codegen,CCodegen,LLVMCodegen]
 
       val toString: t -> string =
          fn CCodegen => "c"
+          | LLVMCodegen => "llvm"
           | x86Codegen => "x86"
           | amd64Codegen => "amd64"
    end

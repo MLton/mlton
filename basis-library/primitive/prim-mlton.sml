@@ -62,13 +62,14 @@ structure CallStack =
 
 structure Codegen =
    struct
-      datatype t = amd64 | C | x86
+      datatype t = amd64 | C | llvm | x86
 
       val codegen =
          case _build_const "MLton_Codegen_codegen": Int32.int; of
             0 => C
-          | 1 => x86
-          | 2 => amd64
+          | 1 => llvm
+          | 2 => x86
+          | 3 => amd64
           | _ => raise Primitive.Exn.Fail8 "MLton_Codegen_codegen"
 
       val isC = codegen = C

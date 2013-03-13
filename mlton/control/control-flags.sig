@@ -38,6 +38,7 @@ signature CONTROL_FLAGS =
          sig
             datatype t =
                CCodegen
+             | LLVMCodegen
              | x86Codegen
              | amd64Codegen
             val all: t list

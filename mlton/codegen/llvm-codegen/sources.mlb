@@ -1,0 +1,12 @@
+local
+   ../../atoms/sources.mlb
+   ../../control/sources.mlb
+   ../../../lib/mlton/sources.mlb
+   ../../backend/sources.mlb
+   
+   llvm-codegen.sig
+   llvm-codegen.fun
+in
+   signature LLVM_CODEGEN
+   functor LLVMCodegen
+end

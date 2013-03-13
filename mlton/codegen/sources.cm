@@ -11,10 +11,12 @@ Group
 
 functor amd64Codegen
 functor CCodegen
+functor LLVMCodegen
 functor x86Codegen
 
 is
 
 amd64-codegen/sources.cm
 c-codegen/sources.cm
+llvm-codegen/sources.cm
 x86-codegen/sources.cm

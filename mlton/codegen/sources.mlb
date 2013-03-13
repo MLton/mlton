@@ -10,9 +10,11 @@
 local
    amd64-codegen/sources.mlb
    c-codegen/sources.mlb
+   llvm-codegen/sources.mlb
    x86-codegen/sources.mlb
 in
    functor amd64Codegen
    functor CCodegen
+   functor LLVMCodegen
    functor x86Codegen
 end
