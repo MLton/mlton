@@ -184,11 +184,8 @@ signature SOCKET_EXTRA =
        sig
           type level = C_Int.int
           type optname = C_Int.int
-          type request = C_Int.int
 
           val getERROR: ('af, 'sock_type) sock -> (string * Posix.Error.syserror option) option
-          val getSockOptInt: level * optname -> ('af, 'sock_type) sock -> int
-          val setSockOptInt: level * optname -> ('af, 'sock_type) sock * int -> unit
           val getSockOptBool: level * optname -> ('af, 'sock_type) sock -> bool
           val setSockOptBool: level * optname -> ('af, 'sock_type) sock * bool -> unit
        end
