@@ -1327,11 +1327,12 @@ fun commandLine (args: string list): unit =
                   fun compileLL (c: Counter.t, input: File.t): File.t =
                       let
                           val output = mkOutputO (c, input)
+                          val outputS = File.base output ^ ".s"
                           val _ =
                               System.system
-                                  ("llc-3.0", ["-o", output, input])
+                                  ("llc-3.0", ["-o", outputS, input])
                       in
-                          output
+                          outputS
                       end
                   fun compileS (c: Counter.t, input: File.t): File.t =
                      let

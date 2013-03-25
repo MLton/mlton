@@ -80,10 +80,10 @@ val llvmIntrinsics =
 val common =
 "%cont = type { i8* }\n\
 \%GC_state = type opaque\n\
-\@nextFun = external global %uintptr_t\n\
-\@returnToC = external global i32\n\
-\@nextChunks = external global [0 x i8* ()*]\n\
-\@GCState = external global %GC_state\n"
+\@nextFun = common global %uintptr_t zeroinitializer\n\
+\@returnToC = common global i32 zeroinitializer\n\
+\@nextChunks = common global [0 x i8* ()*] zeroinitializer\n\
+\@GCState = common global %GC_state zeroinitializer\n"
 
 (* LLVM codegen context. Contains various values/functions that should
    be shared amongst all codegen functions. *)
