@@ -10,144 +10,72 @@ datatype z = datatype WordSize.prim
 
 val ctypes =
 "; stdint.h\n\
-\%uintptr_t = type i64\n\
-\; C\n\
-\%C_Bool_t = type %Word8_t ; _Bool\n\
-\%C_Char_t = type %Int8_t ; char\n\
-\%C_SChar_t = type %Int8_t ; signed char\n\
-\%C_UChar_t = type %Word8_t ; unsigned char\n\
-\%C_Short_t = type %Int16_t ; short\n\
-\%C_SShort_t = type %Int16_t ; signed_short\n\
-\%C_UShort_t = type %Word16_t ; unsigned short\n\
-\%C_Int_t = type %Int32_t ; int\n\
-\%C_SInt_t = type %Int32_t ; signed int\n\
-\%C_UInt_t = type %Word32_t ; unsigned int\n\
-\%C_Long_t = type %Int32_t ; long\n\
-\%C_SLong_t = type %Int32_t ; signed long\n\
-\%C_ULong_t = type %Word32_t ; unsigned long\n\
-\%C_LongLong_t = type %Int64_t ; long long\n\
-\%C_SLongLong_t = type %Int64_t ; signed long long\n\
-\%C_ULongLong_t = type %Word64_t ; unsigned long long\n\
-\%C_Float_t = type %Real32_t ; float\n\
-\%C_Double_t = type %Real64_t ; double\n\
-\%C_Size_t = type %Word32_t ; size_t\n\
-\\n\
-\%C_Pointer_t = type %Word32_t ; unsigned char*\n\
-\%C_String_t = type %Word32_t ; char*\n\
-\%C_StringArray_t = type %Word32_t ; char**\n\
-\\n\
-\; Generic integers\n\
-\%C_Fd_t = type %C_Int_t\n\
-\%C_Signal_t = type %C_Int_t\n\
-\%C_Status_t = type %C_Int_t\n\
-\%C_Sock_t = type %C_Int_t\n\
-\\n\
-\; C99\n\
-\%C_Ptrdiff_t = type %Int32_t ; ptrdiff_t\n\
-\%C_Intmax_t = type %Int64_t ; intmax_t\n\
-\%C_UIntmax_t = type %Word64_t ; uintmax_t\n\
-\%C_Intptr_t = type %Int32_t ; intptr_t\n\
-\%C_UIntptr_t = type %Word32_t ; uintptr_t\n\
-\\n\
-\; from <dirent.h>\n\
-\%C_DirP_t = type %Word32_t ; DIR\n\
-\\n\
-\; from <poll.h>\n\
-\%C_NFds_t = type %Word32_t ; nfds_t\n\
-\\n\
-\; from <resource.h>\n\
-\%C_RLim_t = type %Word64_t ; rlim_t\n\
-\\n\
-\; from <sys/types.h>\n\
-\%C_Clock_t = type %Int32_t ; clock_t\n\
-\%C_Dev_t = type %Word64_t ; dev_t\n\
-\%C_GId_t = type %Word32_t ; gid_t\n\
-\%C_INo_t = type %Word64_t ; ino_t\n\
-\%C_Mode_t = type %Word32_t ; mode_t\n\
-\%C_NLink_t = type %Word32_t ; nlink_t\n\
-\%C_Off_t = type %Int64_t ; off_t\n\
-\%C_PId_t = type %Int32_t ; pid_t\n\
-\%C_SSize_t = type %Int32_t ; ssize_t\n\
-\%C_SUSeconds_t = type %Int32_t ; suseconds_t\n\
-\%C_Time_t = type %Int32_t ; time_t\n\
-\%C_UID_t = type %Word32_t ; uid_t\n\
-\\n\
-\; from <sys/socket.h>\n\
-\%C_Socklen_t = type %Word32_t ; socklen_t\n\
-\\n\
-\; from <termio.h>\n\
-\%C_CC_t = type %Word8_t ; cc_t\n\
-\%C_Speed_t = type %Word32_t ; speed_t\n\
-\%C_TCFlag_t = type %Word32_t ; tcflag_t\n\
-\\n\
-\; from \"gmp.h\"\n\
-\%C_MPLimb_t = type %Word32_t ; mp_limb_t\n"
+\%uintptr_t = type i64\n"
 
 val mltypes =
 "; ML types\n\
 \%PointerAux = type i8\n\
 \%Pointer = type %PointerAux*\n\
 \\n\
-\%Int8_t = type i8\n\
 \%Int8 = type i8\n\
-\%Int16_t = type i16\n\
 \%Int16 = type i16\n\
-\%Int32_t = type i32\n\
 \%Int32 = type i32\n\
-\%Int64_t = type i64\n\
 \%Int64 = type i64\n\
-\%Real32_t = type float\n\
 \%Real32 = type float\n\
-\%Real64_t = type double\n\
 \%Real64 = type double\n\
-\%Word8_t = type i8\n\
 \%Word8 = type i8\n\
-\%Word16_t = type i16\n\
 \%Word16 = type i16\n\
-\%Word32_t = type i32\n\
 \%Word32 = type i32\n\
-\%Word64_t = type i64\n\
 \%Word64 = type i64\n\
-\\n\
-\%WordS8_t = type %Int8_t\n\
-\%WordS8 = type %Int8_t\n\
-\%WordS16_t = type %Int16_t\n\
-\%WordS16 = type %Int16_t\n\
-\%WordS32_t = type %Int32_t\n\
-\%WordS32 = type %Int32_t\n\
-\%WordS64_t = type %Int64_t\n\
-\%WordS64 = type %Int64_t\n\
-\\n\
-\%WordU8_t = type %Word8_t\n\
-\%WordU8 = type %Word8_t\n\
-\%WordU16_t = type %Word16_t\n\
-\%WordU16 = type %Word16_t\n\
-\%WordU32_t = type %Word32_t\n\
-\%WordU32 = type %Word32_t\n\
-\%WordU64_t = type %Word64_t\n\
-\%WordU64 = type %Word64_t\n\
-\\n\
-\%Char8_t = type %WordU8_t\n\
-\%Char8 = type %WordU8_t\n\
-\%Char16_t = type %WordU16_t\n\
-\%Char16 = type %WordU16_t\n\
-\%Char32_t = type %WordU32_t\n\
-\%Char32 = type %WordU32_t\n\
-\\n\
-\%String8_t = type %Pointer\n\
-\%String8 = type %Pointer\n\
-\%String16_t = type %Pointer\n\
-\%String16 = type %Pointer\n\
-\%String32_t = type %Pointer\n\
-\%String32 = type %Pointer\n\
-\\n\
-\%Bool_t = type %Int32_t\n\
-\%Bool = type %Int32_t\n\
-\%NullString8_t = type %String8_t\n\
-\%NullString8 = type %String8_t\n\
 \\n\
 \%CPointer = type i8*\n\
 \%Objptr = type %Pointer\n"
+
+val llvmIntrinsics =
+"declare float @llvm.sqrt.f32(float %Val)\n\
+\declare double @llvm.sqrt.f64(double %Val)\n\
+\declare float @llvm.sin.f32(float %Val)\n\
+\declare double @llvm.sin.f64(double %Val)\n\
+\declare float @llvm.cos.f32(float %Val)\n\
+\declare double @llvm.cos.f64(double %Val)\n\
+\declare float @llvm.tan.f32(float %Val)\n\
+\declare double @llvm.tan.f64(double %Val)\n\
+\declare float @llvm.exp.f32(float %Val)\n\
+\declare double @llvm.exp.f64(double %Val)\n\
+\declare float @llvm.log.f32(float %Val)\n\
+\declare double @llvm.log.f64(double %Val)\n\
+\declare float @llvm.log10.f32(float %Val)\n\
+\declare double @llvm.log10.f64(double %Val)\n\
+\declare float @llvm.fabs.f32(float %Val)\n\
+\declare double @llvm.fabs.f64(double %Val)\n\
+\declare float @llvm.rint.f32(float %Val)\n\
+\declare double @llvm.rint.f64(double %Val)\n\
+\declare {i8, i1} @llvm.sadd.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.sadd.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.sadd.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.sadd.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare {i8, i1} @llvm.uadd.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.uadd.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.uadd.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.uadd.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare {i8, i1} @llvm.ssub.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.ssub.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.ssub.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.ssub.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare {i8, i1} @llvm.usub.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.usub.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.usub.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.usub.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare {i8, i1} @llvm.smul.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.smul.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.smul.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.smul.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare {i8, i1} @llvm.umul.with.overflow.i8(i8 %a, i8 %b)\n\
+\declare {i16, i1} @llvm.umul.with.overflow.i16(i16 %a, i16 %b)\n\
+\declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n\
+\declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n\
+\declare float @llvm.fmuladd.f32(float %a, float %b, float %c)\n\
+\declare double @llvm.fmuladd.f64(double %a, double %b, double %c)\n"
 
 val common =
 "%cont = type { i8* }\n\
@@ -211,6 +139,18 @@ fun kindIsEntry kind =
       | Kind.Handler _ => true
       | _ => false
 
+fun typeOfGlobal global =
+    let
+        val t = Type.toCType (Global.ty global)
+        val s = CType.toString t
+        val number = llint (if Global.isRoot global
+                            then Global.numberOfType t
+                            else Global.numberOfNonRoot ())
+        val array = concat ["[", number, " x %", s, "]"]
+    in
+        array
+    end
+
 fun implementsPrim (p: 'a Prim.t): bool =
    let
       datatype z = datatype Prim.Name.t
@@ -266,8 +206,8 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_negCheck _ => true
        | Word_notb _ => true
        | Word_orb _ => true
-       | Word_quot (_, {signed}) => not signed
-       | Word_rem (_, {signed}) => not signed
+       | Word_quot _ => true
+       | Word_rem _ => true
        | Word_rndToReal _ => true
        | Word_rol _ => true
        | Word_ror _ => true
@@ -377,12 +317,13 @@ fun getOperand (cxt, operand) =
             val globalIsRoot = Global.isRoot global
             val globalIndex = Global.index global
             val llvmTy = tyToLLVM globalType
+            val ty = typeOfGlobal global
             val globalID = if globalIsRoot
                            then "@global" ^ String.dropFirst llvmTy (* drop '%' *)
                            else "@globalObjptrNonRoot"
             val ptr = nextLLVMReg ()
             val gep = concat ["\t", ptr, " = getelementptr inbounds ",
-                              llvmTy, "* ", globalID, ", i32 ",
+                              ty, "* ", globalID, ", i32 0, i32 ",
                               llint globalIndex, "\n"]
         in
             (gep, llvmTy, ptr)
@@ -418,9 +359,8 @@ fun getOperand (cxt, operand) =
             val reg = nextLLVMReg ()
             val cast = concat ["\t", reg, " = bitcast ", baseTy, "* ", ptr,
                                " to ", llvmTy, "*\n"]
-            val comment = concat ["\t; baseTy = ", baseTy, ", llvmTy = ", llvmTy, "\n"]
         in
-            (concat [basePre, gep, cast, comment], llvmTy, reg)
+            (concat [basePre, gep, cast], llvmTy, reg)
         end
       | Operand.Real real =>
         let
@@ -445,7 +385,7 @@ fun getOperand (cxt, operand) =
             val StackOffset.T {offset, ty} = stackOffset
             val idx = llint (Bytes.toInt offset)
             val gepReg = nextLLVMReg ()
-            val gep = concat ["\t", gepReg, " = getelementptr inbounds %Pointer* @StackTop, i8 ",
+            val gep = concat ["\t", gepReg, " = getelementptr inbounds %Pointer* %stackTop, i8 ",
                               idx, "\n"]
             val llvmTy = tyToLLVM ty
             val reg = nextLLVMReg ()
@@ -513,7 +453,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 (concat [cmp, ext], "%Word32")
             end
           | CPointer_fromWord =>
-            (mkconv (res, "inttoptr", "%C_Pointer_t", arg0, "%Pointer"), "%Pointer")
+            (mkconv (res, "inttoptr", "%Word32", arg0, "%Pointer"), "%Pointer")
           | CPointer_lt =>
             let
                 val reg = nextLLVMReg ()
@@ -533,7 +473,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 (concat [inst1, inst2, inst3], "%Pointer")
             end
           | CPointer_toWord =>
-            (mkinst (res, "ptrtoint", "%Pointer", arg0, "%C_Pointer_t"), "%Pointer")
+            (mkinst (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
           | FFI_Symbol _ => ("", "") (* TODO *)
           | Real_Math_cos rs => (mkmath ("cos", rs, arg0), rsToLLVM rs)
           | Real_Math_exp rs => (mkmath ("exp", rs, arg0), rsToLLVM rs)
@@ -746,7 +686,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 val opr = if signed then "ssub" else "usub"
                 val ty = wsToLLVM ws
                 val intty = wsToLLVMInt ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr, ".with.oveflow.",
+                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr, ".with.overflow.",
                                    intty, "(", ty, " ", arg0, ", ", ty, " ", arg1, ")\n"]
                 val resTy = concat ["{", ty, ", i1}"]
             in
@@ -800,140 +740,105 @@ fun outputPrimApp (cxt, p) =
     end
 
 fun outputStatement (cxt, stmt) =
-    case stmt of
-        Statement.Move {dst, src} =>
-        let
-            val comment = concat ["\t; Move\n\t;     src = ", Operand.toString src,
-                                  "\n\t;     dst = ", Operand.toString dst, "\n"]
-            val (srcpre, srcty, srcreg) = getOperand (cxt, src)
-            val (dstpre, dstty, dstreg) = getOperand (cxt, dst)
-            val typeComment = concat ["\t; srcty = ", srcty, ", dstty = ", dstty, "\n"]
-            val reg = nextLLVMReg ()
-            val move = concat [srcpre, "\t", reg, " = load ", srcty,
-                               "* ", srcreg, "\n", dstpre,
-                               "\tstore ", srcty, " ", reg, ", ",
-                               dstty, "* ", dstreg, "\n"]
-        in
-            concat [comment, typeComment, move]
-        end
-      | Statement.Noop => "\t; Noop\n"
-      | Statement.PrimApp p =>
-        let
-            val {args, dst, prim} = p
-            val argsstr = Vector.concatV (Vector.map (args, fn a => Operand.toString a ^ ", "))
-            val dststr = case dst of
-                             NONE => "(none)"
-                           | SOME dest => Operand.toString dest
-            val comment = concat ["\t; PrimApp ", Prim.toString prim,
-                                  "\n\t;     args = [", argsstr,
-                                  "]\n\t;     dst = ", dststr, "\n"]
-            val primapp = outputPrimApp (cxt, p)
-        in
-            concat [comment, primapp]
-        end
-      | Statement.ProfileLabel _ =>
-        let
-            val comment = "\t; ProfileLabel\n"
-        in
-            comment
-        end
+    let
+        val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
+    in
+        case stmt of
+            Statement.Move {dst, src} =>
+            let
+                val (srcpre, srcty, srcreg) = getOperand (cxt, src)
+                val (dstpre, dstty, dstreg) = getOperand (cxt, dst)
+                val reg = nextLLVMReg ()
+                val move = concat [srcpre, "\t", reg, " = load ", srcty,
+                                   "* ", srcreg, "\n", dstpre,
+                                   "\tstore ", srcty, " ", reg, ", ",
+                                   dstty, "* ", dstreg, "\n"]
+            in
+                concat [comment, move]
+            end
+          | Statement.Noop => "\t; Noop\n"
+          | Statement.PrimApp p =>
+            let
+                val primapp = outputPrimApp (cxt, p)
+            in
+                concat [comment, primapp]
+            end
+          | Statement.ProfileLabel _ => comment
+    end
 
 fun outputTransfer (cxt, transfer, sourceLabel) =
-    case transfer of
-        Transfer.Arith {args, dst, overflow, prim, success} =>
-        let
-            val argsstr = Vector.concatV (Vector.map (args, fn a => Operand.toString a ^ ", "))
-            val dststr = Operand.toString dst
-            val overflowstr = Label.toString overflow
-            val primstr = Prim.toString prim
-            val successstr = Label.toString success
-            val comment = concat ["\t; Arith ", primstr,
-                                  "\n\t;     args = [", argsstr,
-                                  "]\n\t;     dst = ", dststr,
-                                  "\n\t;     overflow = ", overflowstr,
-                                  "\n\t;     success=", successstr, "\n"]
-            val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-            val (arg0pre, arg0reg) = getArg (operands, 0)
-            val (arg1pre, arg1reg) = getArg (operands, 1)
-            val (arg2pre, arg2reg) = getArg (operands, 2)
-            val reg = nextLLVMReg ()
-            val (inst, ty) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
-            val res = nextLLVMReg ()
-            val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
-            val obit = nextLLVMReg ()
-            val extractObit = concat ["\t", obit, " = extractvalue ", ty, " ", reg, ", 1\n"]
-            val (destPre, destTy, destReg) = getOperand (cxt, dst)
-            val store = concat ["\tstore ", destTy, " ", res, ", ", destTy, "* ", destReg, "\n"]
-            val br = concat ["\tbr i1 ", obit, ", label %",
-                             overflowstr, ", label %", successstr, "\n"]
-        in
-            concat [comment, arg0pre, arg1pre, arg2pre, inst,
-                    extractRes, extractObit, destPre, store, br]
-        end
-      | Transfer.CCall {args, frameInfo, func, return} =>
-        let
-            val comment = "\t; CCall\n" (* TODO *)
-        in
+    let
+        val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
+    in
+        case transfer of
+            Transfer.Arith {args, dst, overflow, prim, success} =>
+            let
+                val overflowstr = Label.toString overflow
+                val successstr = Label.toString success
+                val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
+                val (arg0pre, arg0reg) = getArg (operands, 0)
+                val (arg1pre, arg1reg) = getArg (operands, 1)
+                val (arg2pre, arg2reg) = getArg (operands, 2)
+                val reg = nextLLVMReg ()
+                val (inst, ty) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
+                val res = nextLLVMReg ()
+                val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
+                val obit = nextLLVMReg ()
+                val extractObit = concat ["\t", obit, " = extractvalue ", ty, " ", reg, ", 1\n"]
+                val (destPre, destTy, destReg) = getOperand (cxt, dst)
+                val store = concat ["\tstore ", destTy, " ", res, ", ", destTy, "* ", destReg, "\n"]
+                val br = concat ["\tbr i1 ", obit, ", label %",
+                                 overflowstr, ", label %", successstr, "\n"]
+            in
+                concat [comment, arg0pre, arg1pre, arg2pre, inst,
+                        extractRes, extractObit, destPre, store, br]
+            end
+          | Transfer.CCall {args, frameInfo, func, return} =>
             concat [comment, "\tbr label %unreachable\n"]
-        end
-      | Transfer.Call {label, return, ...} =>
-        let
-            val labelstr = Label.toString label
-            val returnstr = case return of
-                                NONE => "(no return)"
-                              | SOME {return, ...} => Label.toString return
-            val comment = concat ["\t; Call\n\t;    label = ", labelstr,
-                                  "\n\t;    return=", returnstr, "\n"]
-            val push = case return of
-                           NONE => ""
-                         | SOME {return, size, ...} => "\t; push\n" (* TODO *)
-            val goto = concat ["\tbr label %", labelstr, "\n"] (* TODO check if it leaves the chunk *)
-        in
-            concat [comment, push, goto]
-        end
-      | Transfer.Goto label =>
-        let
-            val labelString = Label.toString label
-            val comment = concat ["\t; Goto ", labelString, "\n"]
-            val goto = concat ["\tbr label %", labelString, "\n"]
-        in
-            concat [comment, goto]
-        end
-      | Transfer.Raise =>
-        let
-            val comment = "\t; Raise\n"
+          | Transfer.Call {label, return, ...} =>
+            let
+                val labelstr = Label.toString label
+                val push = case return of
+                               NONE => ""
+                             | SOME {return, size, ...} => "\t; push\n" (* TODO *)
+                val goto = concat ["\tbr label %", labelstr, "\n"]
+                (* TODO check if it leaves the chunk *)
+            in
+                concat [comment, push, goto]
+            end
+          | Transfer.Goto label =>
+            let
+                val labelString = Label.toString label
+                val goto = concat ["\tbr label %", labelString, "\n"]
+            in
+                concat [comment, goto]
+            end
+          | Transfer.Raise =>
             (* StackTop = StackBottom + ExnStack TODO *)
             (* Return TODO *)
-        in
             concat [comment, "\tbr label %unreachable\n"]
-        end
-      | Transfer.Return =>
-        let
-            val comment = "\t; Return\n"
-        in
-            concat [comment, "\tbr label %unreachable\n"]
-        end
-      | Transfer.Switch switch =>
-        let
-            val Switch.T {cases, default, size, test} = switch
-            val comment = "\t; Switch\n"
-            val defaultLabel = case default of
-                                   SOME d => "%" ^ Label.toString d
-                                 | NONE => "%unreachable"
-            val branches =
-                Vector.concatV 
-                    (Vector.map
-                         (cases, fn (w, l) => concat ["\t\t", wsToLLVM (WordX.size w), " ",
-                                                      llword w,
-                                                      ", label %", Label.toString l, "\n"]))
-            val (testpre, testty, testreg) = getOperand (cxt, test)
-            val loadedTestReg = nextLLVMReg ()
-            val loadTest = concat ["\t", loadedTestReg, " = load ", testty, "* ", testreg, "\n"]
-            val inst = concat ["\tswitch ", testty, " ", loadedTestReg, ", label ", defaultLabel,
-                               " [\n", branches, "\t]\n"]
-        in
-            concat [comment, testpre, loadTest, inst]
-        end
+          | Transfer.Return => concat [comment, "\tbr label %unreachable\n"]
+          | Transfer.Switch switch =>
+            let
+                val Switch.T {cases, default, size, test} = switch
+                val defaultLabel = case default of
+                                       SOME d => "%" ^ Label.toString d
+                                     | NONE => "%unreachable"
+                val branches =
+                    Vector.concatV 
+                        (Vector.map
+                             (cases, fn (w, l) => concat ["\t\t", wsToLLVM (WordX.size w), " ",
+                                                          llword w,
+                                                          ", label %", Label.toString l, "\n"]))
+                val (testpre, testty, testreg) = getOperand (cxt, test)
+                val loadedTestReg = nextLLVMReg ()
+                val loadTest = concat ["\t", loadedTestReg, " = load ", testty, "* ", testreg, "\n"]
+                val inst = concat ["\tswitch ", testty, " ", loadedTestReg, ", label ", defaultLabel,
+                                   " [\n", branches, "\t]\n"]
+            in
+                concat [comment, testpre, loadTest, inst]
+            end
+    end
 
 fun outputBlock (cxt, block) =
     let
@@ -980,7 +885,7 @@ fun outputChunk (cxt, chunk) =
                                           val labelName = Label.toString label
                                           val i = indexer label
                                       in
-                                          concat ["\t\ti32 ", i, ", label %", labelName, "\n"]
+                                          concat ["\t\ti64 ", i, ", label %", labelName, "\n"]
                                       end))
         val () = print (concat ["\tswitch %uintptr_t ", t1,
                                 ", label %default [\n", branches, "\t]\n"])
@@ -994,11 +899,32 @@ fun outputChunk (cxt, chunk) =
         ()
     end
 
+fun outputGlobals () =
+    let
+        val globals =
+            concat
+                (List.map (CType.all,
+                      fn t =>
+                         let
+                             val s = CType.toString t
+                         in
+                             concat ["@global", s, " = global [", llint (Global.numberOfType t),
+                                     " x %", s, "] zeroinitializer\n@CReturn", CType.name t,
+                                     " = global %", s, " zeroinitializer\n"]
+                         end))
+        val nonroot = concat ["@globalObjptrNonRoot = global [", llint (Global.numberOfNonRoot ()),
+                              " x %Pointer] zeroinitializer\n"]
+    in
+        concat [globals, nonroot]
+    end
+
 fun outputDeclarations cxt =
     let
         val { print = print, ...} = cxt
+        val globals = outputGlobals ()
     in
-        print (concat [mltypes, "\n", ctypes, "\n", common, "\n"])
+        print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes,
+                       "\n", globals, "\n", common, "\n"])
     end
 
 fun annotate (frameLayouts, chunks) =

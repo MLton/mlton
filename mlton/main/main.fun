@@ -1330,7 +1330,6 @@ fun commandLine (args: string list): unit =
                           val _ =
                               System.system
                                   ("llc-3.0", ["-o", output, input])
-(*                              ("cp", [input, "."]) *)
                       in
                           output
                       end
