@@ -151,6 +151,30 @@ fun typeOfGlobal global =
         array
     end
 
+(* Makes a two-operand instruction:
+ * <lhs> = <opr> <ty> <a0>, <a1>
+*)
+fun mkinst (lhs, opr, ty, a0, a1) =
+    concat ["\t", lhs, " = ", opr, " ", ty, " ", a0, ", ", a1, "\n"]
+
+(* Makes a call to an LLVM math intrinsic function, given a RealSize as rs:
+ * <lhs> = call type @llvm.<f>.fX(type <a0>)
+*)
+fun mkmath (lhs, f, rs, a0) =
+    let
+        val ty = rsToLLVM rs
+        val fx = case rs of RealSize.R32 => "f32" | RealSize.R64 => "f64"
+    in
+        concat ["\t", lhs, " = call ", ty, " @llvm.", f, ".", fx,
+                "(", ty, " ", a0, ")\n"]
+    end
+
+(* Makes a conversion instruction:
+ * <lhs> = <opr> <fromty> <arg> to <toty>
+*)
+fun mkconv (lhs, opr, fromty, arg, toty) =
+    concat ["\t", lhs, " = ", opr, " ", fromty, " ", arg, " to ", toty, "\n"]
+
 fun implementsPrim (p: 'a Prim.t): bool =
    let
       datatype z = datatype Prim.Name.t
@@ -255,8 +279,6 @@ fun tyToLLVM ty = "%" ^ CType.toString (Type.toCType ty)
  *)
 
 fun getOperand (cxt, operand) =
-    let
-    in
     case operand of
         Operand.ArrayOffset {base, index, offset, scale, ty} =>
         let (* result = base + (index * scale) + offset *)
@@ -267,20 +289,17 @@ fun getOperand (cxt, operand) =
                                     indexReg, "\n"]
             val scl = Scale.toString scale (* "1", "2", "4", or "8" *)
             val scaledIndex = nextLLVMReg ()
-            val scaleIndex = concat ["\t", scaledIndex, " = mul nsw ", indexTy, " ",
-                                     loadedIndex, ", ", scl, "\n"]
+            val scaleIndex = mkinst(scaledIndex, "mul nsw", indexTy, loadedIndex, scl)
             val ofs = llint (Bytes.toInt offset)
             val offsettedIndex = nextLLVMReg ()
-            val offsetIndex = concat ["\t", offsettedIndex, " = add nsw ", indexTy, " ",
-                                      scaledIndex, ", ", ofs, "\n"]
+            val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
             val llvmTy = tyToLLVM ty
             val ptr = nextLLVMReg ()
             val gep = concat ["\t", ptr, " = getelementptr inbounds ",
                               baseTy, "* ", baseReg, ", ", indexTy, " ",
                               offsettedIndex, "\n"]
             val castedPtr = nextLLVMReg ()
-            val cast = concat ["\t", castedPtr, " = bitcast ", baseTy, "* ", ptr,
-                               " to ", llvmTy, "*\n"]
+            val cast = mkconv (castedPtr, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
         in
             (concat [basePre, indexPre, loadIndex, scaleIndex, offsetIndex, gep, cast],
              llvmTy, castedPtr)
@@ -290,7 +309,7 @@ fun getOperand (cxt, operand) =
             val (operPre, operTy, operReg) = getOperand (cxt, oper)
             val llvmTy = tyToLLVM ty
             val reg = nextLLVMReg ()
-            val inst = concat ["\t", reg, " = bitcast ", operTy, " *", operReg, " to ", llvmTy, "*\n"]
+            val inst = mkconv (reg, "bitcast", operTy ^ "*", operReg, llvmTy ^ "*")
         in
             (concat [operPre, inst], llvmTy, reg)
         end
@@ -299,7 +318,7 @@ fun getOperand (cxt, operand) =
             val (operPre, operTy, operReg) = getOperand (cxt, oper)
             val llvmTy = tyToLLVM ty
             val reg = nextLLVMReg ()
-            val inst = concat ["\t", reg, " = bitcast ", operTy, "* ", operReg, " to ", llvmTy, "*\n"]
+            val inst = mkconv (reg, "bitcast", operTy ^ "*", operReg, llvmTy ^ "*")
         in
             (concat [operPre, inst], llvmTy, reg)
         end
@@ -336,7 +355,7 @@ fun getOperand (cxt, operand) =
             val alloca = concat ["\t", reg, " = alloca %Word32\n"]
             val store = concat ["\tstore %Word32 ", labelVal, ", %Word32* ", reg, "\n"]
             val reg2 = nextLLVMReg ()
-            val cast = concat ["\t", reg2, " = bitcast %Word32* ", reg, " to %CPointer*\n"]
+            val cast = mkconv (reg2, "bitcast", "%Word32*", reg, "%CPointer*")
         in
             (concat [alloca, store, cast], "%CPointer", reg2)
         end
@@ -357,8 +376,7 @@ fun getOperand (cxt, operand) =
             val gep = concat ["\t", ptr, " = getelementptr inbounds ", baseTy,
                               "* ", baseReg, ", i8 ", idx, "\n"]
             val reg = nextLLVMReg ()
-            val cast = concat ["\t", reg, " = bitcast ", baseTy, "* ", ptr,
-                               " to ", llvmTy, "*\n"]
+            val cast = mkconv (reg, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
         in
             (concat [basePre, gep, cast], llvmTy, reg)
         end
@@ -389,7 +407,7 @@ fun getOperand (cxt, operand) =
                               idx, "\n"]
             val llvmTy = tyToLLVM ty
             val reg = nextLLVMReg ()
-            val cast = concat ["\t", reg, " = bitcast %Pointer* ", gepReg, " to ", llvmTy, "*\n"]
+            val cast = mkconv (reg, "bitcast", "%Pointer*", gepReg, llvmTy ^ "*")
         in
             (concat [gep, cast], llvmTy, reg)
         end  
@@ -404,24 +422,11 @@ fun getOperand (cxt, operand) =
         in
             (concat [alloca, store], ty, reg)
         end
-    end
 
 (* Returns (instruction, ty) pair for the given prim operation *)
 fun outputPrim (prim, res, arg0, arg1, arg2) =
     let
         datatype z = datatype Prim.Name.t
-        fun mkinst (lhs, opr, t, a0, a1) =
-            concat ["\t", lhs, " = ", opr, " ", t, " ", a0, ", ", a1, "\n"]
-        fun mkmath (f, rs, a0) =
-            let
-                val ty = rsToLLVM rs
-                val fx = case rs of RealSize.R32 => "f32" | RealSize.R64 => "f64"
-            in
-                concat ["\t", res, " = call ", ty, " @llvm.", f, ".", fx,
-                        "(", ty, " ", a0, ")\n"]
-            end
-        fun mkconv (lhs, opr, fromty, arg, toty) =
-            concat ["\t", lhs, " = ", opr, " ", fromty, " ", arg, " to ", toty, "\n"]
     in
         case Prim.name prim of
             CPointer_add =>
@@ -475,14 +480,14 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
           | CPointer_toWord =>
             (mkinst (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
           | FFI_Symbol _ => ("", "") (* TODO *)
-          | Real_Math_cos rs => (mkmath ("cos", rs, arg0), rsToLLVM rs)
-          | Real_Math_exp rs => (mkmath ("exp", rs, arg0), rsToLLVM rs)
-          | Real_Math_ln rs => (mkmath ("log", rs, arg0), rsToLLVM rs)
-          | Real_Math_log10 rs => (mkmath ("log10", rs, arg0), rsToLLVM rs)
-          | Real_Math_sin rs => (mkmath ("sin", rs, arg0), rsToLLVM rs)
-          | Real_Math_sqrt rs => (mkmath ("sqrt", rs, arg0), rsToLLVM rs)
-          | Real_Math_tan rs => (mkmath ("tan", rs, arg0), rsToLLVM rs)
-          | Real_abs rs => (mkmath ("fabs", rs, arg0), rsToLLVM rs)
+          | Real_Math_cos rs => (mkmath (res, "cos", rs, arg0), rsToLLVM rs)
+          | Real_Math_exp rs => (mkmath (res, "exp", rs, arg0), rsToLLVM rs)
+          | Real_Math_ln rs => (mkmath (res, "log", rs, arg0), rsToLLVM rs)
+          | Real_Math_log10 rs => (mkmath (res, "log10", rs, arg0), rsToLLVM rs)
+          | Real_Math_sin rs => (mkmath (res, "sin", rs, arg0), rsToLLVM rs)
+          | Real_Math_sqrt rs => (mkmath (res, "sqrt", rs, arg0), rsToLLVM rs)
+          | Real_Math_tan rs => (mkmath (res, "tan", rs, arg0), rsToLLVM rs)
+          | Real_abs rs => (mkmath (res, "fabs", rs, arg0), rsToLLVM rs)
           | Real_add rs => (mkinst (res, "fadd", rsToLLVM rs, arg0, arg1), rsToLLVM rs)
           | Real_castToWord (rs, ws) =>
             let
@@ -521,7 +526,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                              | RealSize.R64 => "f64"
                 val llsize = rsToLLVM rs
                 val tmp1 = nextLLVMReg ()
-                val inst1 = concat ["\t", tmp1, " = fsub ", llsize, " -0.0, ", arg2, "\n"]
+                val inst1 = mkinst (tmp1, "fsub", llsize, "-0.0", arg2)
                 val inst2 = concat ["\t", res, " = call ", llsize, " @llvm.fmuladd.", size, "(",
                                     llsize, " ", arg0, ", ", llsize, " ",
                                     arg1, ", ", llsize, " ", tmp1, ")\n"]
@@ -550,7 +555,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
             in
                 (mkconv (res, opr, rsToLLVM rs, arg0, wsToLLVM ws), wsToLLVM ws)
             end
-          | Real_round rs => (mkmath ("rint", rs, arg0), rsToLLVM rs)
+          | Real_round rs => (mkmath (res, "rint", rs, arg0), rsToLLVM rs)
           | Real_sub rs => (mkinst (res, "fsub", rsToLLVM rs, arg0, arg1), rsToLLVM rs)
           | Thread_returnToC =>
             let
