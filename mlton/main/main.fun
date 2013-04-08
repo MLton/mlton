@@ -1324,16 +1324,6 @@ fun commandLine (args: string list): unit =
                      in
                         output
                      end
-                  fun compileLL (c: Counter.t, input: File.t): File.t =
-                      let
-                          val output = mkOutputO (c, input)
-                          val outputS = File.base output ^ ".s"
-                          val _ =
-                              System.system
-                                  ("llc-3.0", ["-o", outputS, input])
-                      in
-                          outputS
-                      end
                   fun compileS (c: Counter.t, input: File.t): File.t =
                      let
                         val output = mkOutputO (c, input)
@@ -1349,6 +1339,16 @@ fun commandLine (args: string list): unit =
                      in
                         output
                      end
+                  fun compileLL (c: Counter.t, input: File.t): File.t =
+                      let
+                          val output = mkOutputO (c, input)
+                          val outputS = File.base output ^ ".s"
+                          val _ =
+                              System.system
+                                  ("llc-3.0", ["-o", outputS, input])
+                      in
+                          compileS (c, outputS)
+                      end
                   fun compileCSO (inputs: File.t list): unit =
                      if List.forall (inputs, fn f =>
                                      SOME "o" = File.extension f)

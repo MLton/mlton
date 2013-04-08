@@ -3,6 +3,7 @@ local
    ../../control/sources.mlb
    ../../../lib/mlton/sources.mlb
    ../../backend/sources.mlb
+   ../c-codegen/sources.mlb
    
    llvm-codegen.sig
    llvm-codegen.fun

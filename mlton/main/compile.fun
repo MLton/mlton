@@ -113,7 +113,8 @@ structure Backend = Backend (structure Ssa = Ssa2
 structure CCodegen = CCodegen (structure Ffi = Ffi
                                structure Machine = Machine)
 structure LLVMCodegen = LLVMCodegen (structure Ffi = Ffi
-                                     structure Machine = Machine)
+                                     structure Machine = Machine
+                                     structure CCodegen = CCodegen)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
 structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
@@ -735,6 +736,7 @@ fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
                (clearNames ()
                 ; (Control.trace (Control.Top, "llvm code gen")
                    LLVMCodegen.output {program = machine,
+                                       outputC = outputC,
                                       outputLL = outputLL}))
           | Control.x86Codegen =>
                (clearNames ()

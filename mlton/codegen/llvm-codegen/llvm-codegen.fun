@@ -8,9 +8,17 @@ open Machine
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
 
-val ctypes =
-"; stdint.h\n\
-\%uintptr_t = type i64\n"
+fun ctypes () =
+    let
+        val inttype = case !Control.defaultWord of
+                          "word8" => "i8"
+                        | "word16" => "i16"
+                        | "word32" => "i32"
+                        | "word64" => "i64"
+                        | _ => Error.bug "LLVMCodegen.ctypes"
+    in
+        concat ["%uintptr_t = type ", inttype, "\n"]
+    end
 
 val mltypes =
 "; ML types\n\
@@ -82,15 +90,16 @@ val llvmIntrinsics =
 datatype Context = Context of {
     program: Program.t,
     print: string -> unit,
-    indexer: Label.t -> string
+    labelToStringIndex: Label.t -> string,
+    chunkLabelToString: ChunkLabel.t -> string
 }
 
 (* WordX.toString converts to hexadecimal, this converts to base 10 *)
 fun llwordx (w: WordX.t) =
     IntInf.format (WordX.toIntInf w, StringCvt.DEC)
 
- fun llword (w: Word.t) =
-     IntInf.format (Word.toIntInf w, StringCvt.DEC)
+fun llword (w: Word.t) =
+    IntInf.format (Word.toIntInf w, StringCvt.DEC)
 
 fun llint (i: int) =
     if i >= 0
@@ -115,51 +124,22 @@ fun escapeLLVM s =
                 then "\\0" ^ hex
                 else "\\" ^ hex
             end
-        else Char.toString c))
+        else
+            case c of (* " and \ need to be escaped, everything else is fine *)
+                #"\"" => "\\22"
+              | #"\\" => "\\5C"
+              | _ => Char.toString c))
            
-fun llstring s = concat ["\"", escapeLLVM s, "\\00\""]
+fun llstring s = concat ["c\"", escapeLLVM s, "\\00\""]
 
 val globalDeclarations =
 "%struct.cont = type { i8* }\n\
-\%pointerAux = type i8\n\
-\%pointer = type %pointerAux*\n\
-\%size_t = type i32\n\
-\%bool = type i8\n\
-\%objptr = type i32 ; or i64, defined in gc/objptr.h\n\
-\%struct.GC_state = type { i8*, i8*, i8*, i8*, i32, i32, i8, i8, i8**, i32, i32, i32, %struct.GC_callStackState, i8, %struct.GC_controls, %struct.GC_cumulativeStatistics, i32, %struct.GC_forwardState, %struct.GC_frameLayout*, i32, %struct.GC_generationalMaps, i32*, i32, i8, %struct.GC_heap, %struct.GC_intInfInit*, i32, %struct.GC_lastMajorStatistics, i8*, i32 (%struct._IO_FILE*)*, i32, i32, i8, %struct.GC_objectHashTable*, %struct.GC_objectType*, i32, %struct.GC_profiling, i32 (i32)*, i32, i32 (%struct._IO_FILE*)*, i8, %struct.GC_heap, i32, %struct.GC_signalsInfo, %struct.GC_sourceMaps, i8*, %struct.GC_sysvals, %struct.GC_translateState, %struct.GC_vectorInit*, i32, %struct.GC_weak* }\n\
-\%struct.GC_callStackState = type { i32, i32* }\n\
-\%struct.GC_controls = type { i32, i32, i8, i8, i8, i8, i32, %struct.GC_ratios, i8, i8 }\n\
-\%struct.GC_ratios = type { float, float, float, float, float, float, float, float, float, float, float, float, float, float, float }\n\
-\%struct.GC_cumulativeStatistics = type { i64, i64, i64, i64, i64, i64, i32, i32, i64, i32, i64, i64, i64, i64, i64, i64, %struct.rusage, %struct.rusage, %struct.rusage, %struct.rusage }\n\
-\%struct.rusage = type { %struct.timeval, %struct.timeval, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32 }\n\
-\%struct.timeval = type { i32, i32 }\n\
-\%struct.GC_forwardState = type { i8, i8*, i8*, i8* }\n\
-\%struct.GC_frameLayout = type { i32, i16*, i16 }\n\
-\%struct.GC_generationalMaps = type { i8*, i8*, i32, i8*, i32, i32 }\n\
-\%struct.GC_heap = type { i8*, i32, i32, i8*, i32 }\n\
-\%struct.GC_intInfInit = type { i32, i8* }\n\
-\%struct.GC_lastMajorStatistics = type { i32, i32, i32, i64 }\n\
-\%struct._IO_FILE = type { i32, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8*, i8*, %struct._IO_marker*, %struct._IO_FILE*, i32, i32, i32, i16, i8, [1 x i8], i8*, i64, i8*, i8*, i8*, i8*, i32, i32, [40 x i8] }\n\
-\%struct._IO_marker = type { %struct._IO_marker*, %struct._IO_FILE*, i32 }\n\
-\%struct.GC_objectHashTable = type { %struct.GC_objectHashElement*, i8, i32, i32, i32, i8 }\n\
-\%struct.GC_objectHashElement = type { i32, i8* }\n\
-\%struct.GC_objectType = type { i32, i8, i16, i16 }\n\
-\%struct.GC_profiling = type { %struct.GC_profileData*, i8, i32, i8 }\n\
-\%struct.GC_profileData = type { i64*, %struct.GC_profileStack*, i64, i64 }\n\
-\%struct.GC_profileStack = type { i64, i64, i64, i64, i64 }\n\
-\%struct.GC_signalsInfo = type { i8, i8, i8, i32, %struct.__sigset_t, %struct.__sigset_t }\n\
-\%struct.__sigset_t = type { [32 x i32] }\n\
-\%struct.GC_sourceMaps = type { i32, i32*, i32, %struct.GC_sourceLabel*, i32, i8**, i32, i32**, i32, %struct.GC_source*, i32 }\n\
-\%struct.GC_sourceLabel = type { i8*, i32 }\n\
-\%struct.GC_source = type { i32, i32 }\n\
-\%struct.GC_sysvals = type { i32, i32, i64 }\n\
-\%struct.GC_translateState = type { i8*, i8* }\n\
-\%struct.GC_vectorInit = type { i8*, i32, i32, i32 }\n\
-\%struct.GC_weak = type <{ %struct.GC_weak*, i32 }>\n\
-\@nextFun = common global %uintptr_t zeroinitializer\n\
-\@returnToC = common global i32 zeroinitializer\n\
-\@nextChunks = common global [0 x i8* ()*] zeroinitializer\n\
-\@gcState = common global %struct.GC_state zeroinitializer\n"
+\%struct.GC_state = type opaque\n\
+\@nextFun = external global %uintptr_t\n\
+\@returnToC = external global i32\n\
+\@nextChunks = external global [0 x i8* ()*]\n\
+\@gcState = external global %struct.GC_state\n\
+\"
 
 fun declareAtMLtons () =
     let
@@ -172,7 +152,7 @@ fun declareAtMLtons () =
                 val len = Vector.sub (atMLtonsLengths, i)
             in
                 (concat [name, " = private unnamed_addr constant [",
-                                    len, " x i8] c", llstring a, "\n"])
+                                    len, " x i8] ", llstring a, "\n"])
             end)
         val atMLtonsLen = llint (Vector.length atMLtons)
         val atMLtonsGEPsVec = Vector.mapi (atMLtonsNames, fn (i, name) =>
@@ -185,9 +165,7 @@ fun declareAtMLtons () =
         val atMLtonsArray = concat ["@atMLtons = global [", atMLtonsLen, " x i8*] [\n",
                                atMLtonsGEPs, "\n]\n"]
     in
-        concat [globalDeclarations,
-                Vector.concatV atMLtonsDecs,
-                atMLtonsArray]
+        concat [Vector.concatV atMLtonsDecs, atMLtonsArray]
     end
 
 fun declareFrameOffsets cxt =
@@ -236,7 +214,7 @@ fun declareIntInfInits cxt =
         val intInfConstants = concat (List.map (intInfs, fn (g, i) => 
             let
                 val intInfStr = IntInf.toString i
-                val strlen = String.length intInfStr
+                val strlen = String.length intInfStr + 1 (* for trailing null *)
                 val constant = concat ["@IntInfConstant", llint (Global.index g), " = global [",
                                       llint strlen, " x i8] ", llstring intInfStr, "\n"]
             in
@@ -246,9 +224,9 @@ fun declareIntInfInits cxt =
         val intInfsElems = List.map (intInfs, fn (g, i) =>
             let
                 val strlen = llint (String.length (IntInf.toString i))
-                val constantName = concat ["@intInfConstant", llint (Global.index g)]
+                val constantName = concat ["@IntInfConstant", llint (Global.index g)]
             in
-                concat ["%struct.GC_intInfElem { i32 ", llint (Global.index g),
+                concat ["\t%struct.GC_intInfElem { i32 ", llint (Global.index g),
                         ", i8* getelementptr ([", strlen, " x i8]* ", constantName,
                        ", i32 0, i32 0) }"]
             end)
@@ -296,6 +274,141 @@ fun declareLoadGlobals () =
         concat [declareFread, func, loadArrays, funcEnd]
     end
 
+fun declareSaveGlobals () =
+    let
+        val declareFwrite = "declare %size_t @fwrite(i8*, %size_t, %size_t, %struct._IO_FILE*)\n"
+        fun saveArray a =
+            let
+                val aStr = "global" ^ CType.toString a
+                val aNumber = Global.numberOfType a
+                val aSize = llint ((Bytes.toInt (CType.size a)) * aNumber)
+                val aLen = llint aNumber
+                val ptr = concat ["%", aStr, "_ptr"]
+                val gep = concat ["\t", ptr, " = getelementptr [", aLen, " x %",
+                                  CType.toString a, "]* @", aStr, ", i32 0, i32 0\n"]
+                val vptr = concat ["%", aStr, "_vptr"]
+                val cast = concat ["\t", vptr, " = bitcast %", CType.toString a, "* ",
+                                   ptr, " to i8*\n"]
+                val callReg = concat ["%", aStr, "_call"]
+                val call = concat ["\t", callReg, " = call %size_t @fwrite(i8* ", vptr,
+                                   ", %size_t ", aSize, ", %size_t ", aLen,
+                                   ", %struct._IO_FILE* %f)\n"]
+                val testReg = concat ["%", aStr, "_test"]
+                val test = concat ["\t", testReg, " = icmp ne %size_t ", callReg, ", ", aLen, "\n"]
+                val ifTrueLabel = aStr ^ "_ifTrue"
+                val ifFalseLabel = aStr ^ "_ifFalse"
+                val br = concat ["\tbr i1 ", testReg, ", label %", ifTrueLabel,
+                                 ", label %", ifFalseLabel, "\n"]
+                val ifTrue = ifTrueLabel ^ ":\n\tret i32 -1\n"
+                val ifFalse = ifFalseLabel ^ ":\n" (* fallthrough to next loadArray *)
+            in
+                concat [gep, cast, call, test, br, ifTrue, ifFalse]
+            end
+        val func = concat ["define i32 @saveGlobals(%struct._IO_FILE* %f) {\n",
+                           "entry:\n"]
+        val saveArrays = concat (List.map (CType.all, fn t => saveArray t))
+        val funcEnd = "\tret i32 0\n}\n"
+    in
+        concat [declareFwrite, func, saveArrays, funcEnd]
+    end
+
+fun declareObjectTypes cxt =
+    let
+        val Context { program = program, ... } = cxt
+        val Program.T { objectTypes = objectTypes, ... } = program (* objectTypes: Type.ObjectType.t vector *)
+        val len = llint (Vector.length objectTypes)
+        val beginDec = concat ["@objectTypes = global [", len, " x %struct.GC_objectType] [\n"]
+        val objectTypesElems = Vector.map (objectTypes, fn t =>
+            let
+                datatype z = datatype Runtime.RObjectType.t
+                val array_tag = "0" (* from GC_objectTypeTag in gc/object.h *)
+                val normal_tag = "1"
+                val stack_tag = "2"
+                val weak_tag = "3"
+                val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
+                    case ObjectType.toRuntime t of
+                        Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                        (array_tag, hasIdentity, Bytes.toInt bytesNonObjptrs, numObjptrs)
+                      | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                        (normal_tag, hasIdentity, Bytes.toInt bytesNonObjptrs, numObjptrs)
+                      | Stack =>
+                        (stack_tag, false, 0, 0)
+                      | Weak {gone} =>
+                        let
+                            val bytesObjptr = Bits.toBytes (Control.Target.Size.objptr ())
+                            val bytesNonObjptrs =
+                                let
+                                    val align = case !Control.align of
+                                                    Control.Align4 => Bytes.fromInt 4
+                                                  | Control.Align8 => Bytes.fromInt 8
+                                    val bytesCPointer =
+                                        Bits.toBytes (Control.Target.Size.cpointer ())
+                                    val bytesHeader =
+                                        Bits.toBytes (Control.Target.Size.header ())
+                                    val bytesObject =
+                                        Bytes.+ (bytesHeader,
+                                                 Bytes.+ (bytesCPointer,
+                                                          bytesObjptr))
+                                    val bytesTotal =
+                                        Bytes.align (bytesObject, {alignment = align})
+                                    val bytesPad = Bytes.- (bytesTotal, bytesObject)
+                                in
+                                    Bytes.+ (bytesPad, bytesCPointer)
+                                end
+                            val (bytesNonObjptrs, bytesObjptr) =
+                                (Bytes.toInt bytesNonObjptrs,
+                                 Bytes.toInt bytesObjptr)
+                            val (bytesNonObjptrs, numObjptrs) =
+                                if gone
+                                then (bytesNonObjptrs + bytesObjptr, 0)
+                                else (bytesNonObjptrs, 1)
+                        in
+                            (weak_tag, false, bytesNonObjptrs, numObjptrs)
+                        end
+            in (* { i32, i8, i16, i16 } *)
+                concat ["\t%struct.GC_objectType { i32 ", tag, ", i8 ", llbool hasIdentity,
+                       ", i16 ", llint bytesNonObjptrs, ", i16 ", llint numObjptrs, " }"]
+            end)
+        val objectTypes = String.concatWith (Vector.toList objectTypesElems, ",\n")
+        val endDec = "\n]\n"
+    in
+        concat [beginDec, objectTypes, endDec]
+    end
+
+fun declareVectorInits cxt =
+    let
+        (* vectors: (Global.t * WordXVector.t) list} *)
+        val Context { program = program, ... } = cxt
+        val Program.T { vectors = vectors, ... } = program
+        val len = llint (List.length vectors)
+        val vectorConstants = concat (List.map (vectors, fn (g, v) =>
+            let
+                val vectorStr = WordXVector.toString v
+                val strlen = String.length vectorStr + 1 (* for trailing null *)
+                val constant = concat ["@VectorConstant", llint (Global.index g), " = global [",
+                                       llint strlen, " x i8] ", llstring vectorStr, "\n"]
+            in
+                constant
+            end))
+        val beginDec = concat ["@vectorInits = global [", len, " x %struct.GC_vectorInit] [\n"]
+        val vectorElems = List.map (vectors, fn (g, v) =>
+            let
+                val strlen = llint (String.length (WordXVector.toString v) + 1) 
+                val constantName = concat ["@VectorConstant", llint (Global.index g)]
+                val gep = concat ["getelementptr ([", strlen, " x i8]* ", constantName,
+                                  ", i32 0, i32 0)"]
+            in
+                concat ["\t%struct.GC_vectorInit { i8* ", gep,
+                        ", i32 ", llint (Bytes.toInt (WordSize.bytes (WordXVector.elementSize v))),
+                        ", i32 ", llint (Global.index g), ", i32 ", llint (WordXVector.length v),
+                        " }"]
+            end)
+        val vectors = String.concatWith (vectorElems, ",\n")
+        val endDec = "\n]\n"
+    in
+        concat [vectorConstants, beginDec, vectors, endDec]
+    end
+
 fun declareGlobals cxt =
     let
         val atMLtons = declareAtMLtons ()
@@ -303,8 +416,12 @@ fun declareGlobals cxt =
         val frameLayouts = declareFrameLayouts cxt
         val intInfInits = declareIntInfInits cxt
         val loadGlobals = declareLoadGlobals ()
+        val saveGlobals = declareSaveGlobals ()
+        val objectTypes = declareObjectTypes cxt
+        val vectorInits = declareVectorInits cxt
     in
-        concat [atMLtons, frameOffsets, frameLayouts, intInfInits, loadGlobals]
+        concat [atMLtons, frameOffsets, frameLayouts, intInfInits, loadGlobals,
+                saveGlobals, objectTypes, vectorInits]
     end
 
 val mltonMainBegin =
@@ -326,7 +443,9 @@ fun mltonMain (cxt: Context) =
         val Context { program = program, ...} = cxt
         val Program.T { maxFrameSize = maxFrameSize,
                         frameLayouts = frameLayouts,
-                        intInfs = intInfs, ...} = program
+                        intInfs = intInfs,
+                        objectTypes = objectTypes,
+                        vectors = vectors, ...} = program
         val mfs = llbytes maxFrameSize
         val mmc = llbool (!Control.markCards)
         val profile = "2" (* PROFILE_NONE in runtime/gc/profiling.h *)
@@ -335,54 +454,80 @@ fun mltonMain (cxt: Context) =
         val frameLayoutsLen = llint (Vector.length frameLayouts)
         val globalObjPtrLen = llint (Global.numberOfType CType.Objptr)
         val intInfInitsLen = llint (List.length intInfs)
+        val objectTypesLen = llint (Vector.length objectTypes)
+        val vectorInitsLen = llint (List.length vectors)
         val initialize = concat [
             (* gcState.alignment = al; *)
-            "\t%alignmentptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 5\n",
-            "\tstore i32 ", al, ", i32* %alignmentptr\n",
+            "\t%alignment_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 5\n",
+            "\tstore i32 ", al, ", i32* %alignment_ptr\n",
             (* gcState.atMLtons = atMLtons; *)
-            "\t%atMLtonsptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 8\n",
-            "\t%global_atMLtonsptr = getelementptr [", atMLtLen, " x i8*]* @atMLtons, i32 0, i32 0\n",
-            "\tstore i8** %global_atMLtonsptr, i8*** %atMLtonsptr\n",
-            (* gcState.atMLtonsLength = atMLthonsLength; *)
-            "\t%atMLtonsLengthptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 9\n",
-            "\tstore i32 ", atMLtLen, ", i32* %atMLtonsLengthptr\n",
+            "\t%atMLtons_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 8\n",
+            "\t%global_atMLtons_ptr = getelementptr [", atMLtLen, " x i8*]* @atMLtons, i32 0, i32 0\n",
+            "\tstore i8** %global_atMLtons_ptr, i8*** %atMLtons_ptr\n",
+            (* gcState.atMLtonsLength = atMLtonsLength; *)
+            "\t%atMLtonsLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 9\n",
+            "\tstore i32 ", atMLtLen, ", i32* %atMLtonsLength_ptr\n",
             (* gcState.frameLayouts = frameLayouts; *)
-            "\t%frameLayoutsptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 18\n",
+            "\t%frameLayouts_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 18\n",
             "\t%frameLayouts0 = getelementptr [", frameLayoutsLen,
                 " x %struct.GC_frameLayout]* @frameLayouts, i32 0, i32 0\n",
-            "\tstore %struct.GC_frameLayout* %frameLayouts0, %struct.GC_frameLayout** %frameLayoutsptr\n",
+            "\tstore %struct.GC_frameLayout* %frameLayouts0, %struct.GC_frameLayout** %frameLayouts_ptr\n",
             (* gcState.frameLayoutsLength = cardof(globalObjptr); *)
-            "\t%frameLayoutsLengthptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 19\n",
-            "\tstore i32 ", frameLayoutsLen, ", i32* %frameLayoutsLengthptr\n",
+            "\t%frameLayoutsLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 19\n",
+            "\tstore i32 ", frameLayoutsLen, ", i32* %frameLayoutsLength_ptr\n",
             (* gcState.globals = (objptr* )globalObjptr; *)
-            "\t%globalsptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 21\n",
+            "\t%globals_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 21\n",
             "\t%globalObjptr0 = getelementptr [", globalObjPtrLen,
                 " x %Objptr]* @globalObjptr, i32 0, i32 0\n",
-            "\t%globalObjptrAsobjptr = bitcast %Objptr* %globalObjptr0 to %objptr*\n",
-            "\tstore %objptr* %globalObjptrAsobjptr, %objptr** %globalsptr\n",
+            "\t%globalObjptr_as_objptr = bitcast %Objptr* %globalObjptr0 to %objptr*\n",
+            "\tstore %objptr* %globalObjptr_as_objptr, %objptr** %globals_ptr\n",
             (* gcState.globalsLength = cardof(globalObjptr); *)
-            "\t%globalsLengthptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 22\n",
-            "\tstore i32 ", globalObjPtrLen, ", i32* %globalsLengthptr\n",
+            "\t%globalsLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 22\n",
+            "\tstore i32 ", globalObjPtrLen, ", i32* %globalsLength_ptr\n",
             (* gcState.infInfInits = intInfInits; *)
-            "\t%intInfInitsptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 25\n",
+            "\t%intInfInits_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 25\n",
             "\t%intInfInits0 = getelementptr [", intInfInitsLen, " x %struct.GC_intInfInit]* ",
                 "@intInfInits, i32 0, i32 0\n",
-            "\tstore %struct.GC_intInfInit* %intInfInits0, %struct.GC_intInfInit** %intInfInitsptr\n",
+            "\tstore %struct.GC_intInfInit* %intInfInits0, %struct.GC_intInfInit** %intInfInits_ptr\n",
             (* gcState.intInfInitsLength = cardof(intInfInits); *)
-            "\t%intInfInitsLengthptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 26\n",
-            "\tstore i32 ", intInfInitsLen, ", i32* %intInfInitsLengthptr\n",
+            "\t%intInfInitsLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 26\n",
+            "\tstore i32 ", intInfInitsLen, ", i32* %intInfInitsLength_ptr\n",
             (* gcState.loadGlobals = loadGlobals; *)
-            "\t%loadGlobalsptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 29\n",
-            "\tstore i32 (%struct._IO_FILE*)* @loadGlobals, i32 (%struct._IO_FILE*)** %loadGlobalsptr\n",
+            "\t%loadGlobals_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 29\n",
+            "\tstore i32 (%struct._IO_FILE*)* @loadGlobals, i32 (%struct._IO_FILE*)** %loadGlobals_ptr\n",
             (* gcState.magic = mg; *)
+            "\t%magic_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 30\n",
+            "\tstore i32 ", magic, ", i32* %magic_ptr\n",
             (* gcState.maxFrameSize = mfs; *)
+            "\t%maxFrameSize_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 31\n",
+            "\tstore i32 ", mfs, ", i32* %maxFrameSize_ptr\n",
             (* gcState.mutatorMarksCards = mmc; *)
+            "\t%mutatorMarksCards_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 32\n",
+            "\tstore %bool ", mmc, ", %bool* %mutatorMarksCards_ptr\n",
             (* gcState.objectTypes = objectTypes; *)
+            "\t%objectTypes_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 34\n",
+            "\t%globalObjectTypes_ptr = getelementptr [", objectTypesLen,
+                " x %struct.GC_objectType]* @objectTypes, i32 0, i32 0\n",
+            "\tstore %struct.GC_objectType* %globalObjectTypes_ptr, ",
+                "%struct.GC_objectType** %objectTypes_ptr\n",
             (* gcState.objectTypesLength = cardof(objectTypes); *)
+            "\t%objectTypesLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 35\n",
+            "\tstore i32 ", objectTypesLen, ", i32* %objectTypesLength_ptr\n",
             (* gcState.returnAddressToFrameIndex = returnAddressToFrameIndex; *)
+            "\t%returnAddressToFrameIndex_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 37\n",
+            "\tstore %GC_frameIndex (%GC_returnAddress)* @returnAddressToFrameIndex, ",
+                "%GC_frameIndex (%GC_returnAddress)** %returnAddressToFrameIndex_ptr\n",
             (* gcState.saveGlobals = saveGlobals; *)
+            "\t%saveGlobals_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 39\n", 
+            "\tstore i32 (%struct._IO_FILE*)* @saveGlobals, i32 (%struct._IO_FILE*)** %saveGlobals_ptr\n",
             (* gcState.vectorInits = vectorInits; *)
+            "\t%vectorInits_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 48\n",
+            "\t%vectorInits0 = getelementptr [", vectorInitsLen, " x %struct.GC_vectorInit]* ",
+                "@vectorInits, i32 0, i32 0\n",
+            "\tstore %struct.GC_vectorInit* %vectorInits0, %struct.GC_vectorInit** %vectorInits_ptr\n",
             (* gcState.vectorInitsLength = cardof(vectorInits); *)
+            "\t%vectorInitsLength_ptr = getelementptr %struct.GC_state* @gcState, i32 0, i32 49\n",
+            "\tstore i32 ", vectorInitsLen, ", i32* %vectorInitsLength_ptr\n",
             (* gcState.sourceMaps.frameSources = frameSources; *)
             (* gcState.sourceMaps.frameSourcesLength = cardof(frameSources); *)
             (* gcState.sourceMaps.sourceLabels = sourceLabels; *)
@@ -644,8 +789,8 @@ fun getOperand (cxt, operand) =
         end
       | Operand.Label label =>
         let
-            val Context { indexer = indexer, ...} = cxt
-            val labelVal = indexer label
+            val Context { labelToStringIndex = labelToStringIndex, ...} = cxt
+            val labelVal = labelToStringIndex label
             val reg = nextLLVMReg ()
             val alloca = concat ["\t", reg, " = alloca %Word32\n"]
             val store = concat ["\tstore %Word32 ", labelVal, ", %Word32* ", reg, "\n"]
@@ -1153,11 +1298,11 @@ fun outputBlock (cxt, block) =
         
 fun outputChunk (cxt, chunk) =
     let
-        val Context { print, indexer, ... } = cxt
+        val Context { print, labelToStringIndex, chunkLabelToString, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
-        val chunkName = ChunkLabel.toString chunkLabel
+        val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
         val () = print (concat ["define i8* @",
-                                ChunkLabel.toString chunkLabel,
+                                chunkName,
                                 "() {\nentry:\n"])
         val () = print "\t%cont = alloca %struct.cont\n"
         val () = print "\t%frontier = alloca %Pointer\n"
@@ -1183,9 +1328,9 @@ fun outputChunk (cxt, chunk) =
                                       let
                                           val label = Block.label b
                                           val labelName = Label.toString label
-                                          val i = indexer label
+                                          val i = labelToStringIndex label
                                       in
-                                          concat ["\t\ti64 ", i, ", label %", labelName, "\n"]
+                                          concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
                                       end))
         val () = print (concat ["\tswitch %uintptr_t ", t1,
                                 ", label %default [\n", branches, "\t]\n"])
@@ -1208,33 +1353,31 @@ fun outputGlobals () =
                          let
                              val s = CType.toString t
                          in
-                             concat ["@global", s, " = global [", llint (Global.numberOfType t),
-                                     " x %", s, "] zeroinitializer\n@CReturn", CType.name t,
-                                     " = global %", s, " zeroinitializer\n"]
+                             concat ["@global", s, " = external global [", llint (Global.numberOfType t),
+                                     " x %", s, "]\n@CReturn", CType.name t,
+                                     " = external global %", s, "\n"]
                          end))
-        val nonroot = concat ["@globalObjptrNonRoot = global [", llint (Global.numberOfNonRoot ()),
-                              " x %Pointer] zeroinitializer\n"]
+        val nonroot = concat ["@globalObjptrNonRoot = external global [", llint (Global.numberOfNonRoot ()),
+                              " x %Pointer]\n"]
     in
         concat [globals, nonroot]
     end
 
-fun outputDeclarations cxt =
+fun outputLLVMDeclarations cxt =
     let
         val Context { print = print, ...} = cxt
         val globals = outputGlobals ()
-        val globalDecs = declareGlobals cxt
+(*        val globalDecs = declareGlobals cxt *)
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes,
-                       "\n", globals, "\n", globalDecs, "\n"])
+                       "\n", globals, "\n", globalDeclarations, "\n"])
     end
 
 fun annotate (frameLayouts, chunks) =
     let
-        datatype status = None | One | Many
         val {get = labelInfo: Label.t -> {block: Block.t,
                                           chunkLabel: ChunkLabel.t,
                                           frameIndex: int option,
-                                          status: status ref,
                                           layedOut: bool ref},
              set = setLabelInfo, ...} =
             Property.getSetOnce
@@ -1262,8 +1405,7 @@ fun annotate (frameLayouts, chunks) =
               setLabelInfo (label, {block = b,
                                     chunkLabel = chunkLabel,
                                     frameIndex = frameIndex,
-                                    layedOut = ref false,
-                                    status = ref None})
+                                    layedOut = ref false})
            end))
         val a = Array.fromList (!entryLabels)
         val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
@@ -1285,21 +1427,104 @@ fun annotate (frameLayouts, chunks) =
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
                 
     in
-        labelToStringIndex
+        (chunkLabelToString, labelToStringIndex, entryLabels, labelInfo)
     end
 
-fun output {program, outputLL} =
+fun transLLVM (program, outputLL) =
     let
         val Program.T { chunks, frameLayouts, ...} = program
         val { done, print, file=_ } = outputLL ()
-        val indexer = annotate (frameLayouts, chunks)
-        val cxt = Context { program = program, print = print, indexer = indexer }
-        val () = outputDeclarations cxt
+        val (chunkLabelToString, labelToStringIndex, _, _) = annotate (frameLayouts, chunks)
+        val cxt = Context { program = program, print = print, labelToStringIndex = labelToStringIndex,  chunkLabelToString = chunkLabelToString }
+        val () = outputLLVMDeclarations cxt
         val () = List.foreach (chunks, fn chunk => outputChunk (cxt, chunk))
-        val () = print (mltonMain cxt)
-        val () = print mainFunc
     in
         done ()
     end
-    
+
+fun transC (program, outputC) =
+    let
+        local val Machine.Program.T
+                      {chunks, 
+                       frameLayouts, 
+                       frameOffsets, 
+                       handlesSignals, 
+                       intInfs, 
+                       main, 
+                       maxFrameSize, 
+                       objectTypes, 
+                       reals, 
+                       vectors, ...} = program
+        in
+        val machineProgram =
+            Machine.Program.T
+                {chunks = chunks,
+                 frameLayouts = frameLayouts,
+                 frameOffsets = frameOffsets,
+                 handlesSignals = handlesSignals,
+                 intInfs = intInfs,
+                 main = main,
+                 maxFrameSize = maxFrameSize,
+                 objectTypes = objectTypes,
+                 profileInfo = NONE,
+                 reals = reals,
+                 vectors = vectors}
+        end
+
+        val {print, done, file=_} = outputC ()
+        val Program.T {main = main, chunks = chunks,
+                       frameLayouts, ... } = program
+        val (chunkLabelToString, labelToStringIndex, entryLabels, labelInfo) =
+            annotate (frameLayouts, chunks)
+        val chunkLabel = chunkLabelToString (#chunkLabel main)
+        val mainLabel = labelToStringIndex (#label main)
+        val additionalMainArgs = [chunkLabel, mainLabel]
+        fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
+            = (print f
+              ; print " ("
+              ; (case xs
+                  of [] => ()
+                   | x :: xs => (print x
+                                ; List.foreach (xs,
+                                                fn x => (print ", "; print x))))
+              ; print ")")
+        fun ccall (f, xs, print) =
+            (callNoSemi (f, xs, print)
+            ; print ";\n")
+        fun declareChunk (Chunk.T {chunkLabel, ...}, print) =
+            ccall ("DeclareChunk",
+                 [chunkLabelToString chunkLabel],
+                 print)
+        fun rest () =
+            (List.foreach (chunks, fn c => declareChunk (c, print))
+            ; print "PRIVATE struct cont ( *nextChunks []) () = {\n"
+            ; Vector.foreach (entryLabels, fn l =>
+                             let
+                                 val {chunkLabel, ...} = labelInfo l
+                             in
+                                 print "\t"
+                               ; callNoSemi ("Chunkp",
+                                             [chunkLabelToString chunkLabel],
+                                             print)
+                               ; print ",\n"
+                             end)
+            ; print "};\n")
+    in
+        CCodegen.outputDeclarations
+            {additionalMainArgs = additionalMainArgs,
+             includes = ["c-main.h"],
+             print = print,
+             program = machineProgram,
+             rest = rest}
+      ; done ()
+    end
+
+fun output {program, outputC, outputLL} =
+    let
+        val () = transC (program, outputC)
+        val () = transLLVM (program, outputLL)
+    in
+        ()
+    end
+
 end
