@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor CommonArg (S: COMMON_ARG_STRUCTS): COMMON_ARG = 
+functor CommonArg (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -46,7 +46,7 @@ structure NodeInfo =
     fun new var = T {var = var}
   end
 
-fun eliminate (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = nodeInfo: unit Node.t -> NodeInfo.t, 
            set = setNodeInfo, ...} =

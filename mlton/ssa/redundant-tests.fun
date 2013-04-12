@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor RedundantTests (S: REDUNDANT_TESTS_STRUCTS): REDUNDANT_TESTS = 
+functor RedundantTests (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -90,7 +90,7 @@ structure Fact =
 
 open Exp Transfer
 
-fun simplify (Program.T {globals, datatypes, functions, main}) =
+fun transform (Program.T {globals, datatypes, functions, main}) =
    let
       datatype varInfo =
          Const of Const.t

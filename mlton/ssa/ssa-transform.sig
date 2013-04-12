@@ -5,14 +5,14 @@
  *)
 
 
-signature COMBINE_CONVERSIONS_STRUCTS = 
+signature SSA_TRANSFORM_STRUCTS = 
    sig
       include SHRINK
    end
 
-signature COMBINE_CONVERSIONS = 
+signature SSA_TRANSFORM = 
    sig
-      include COMBINE_CONVERSIONS_STRUCTS
+      include SSA_TRANSFORM_STRUCTS
 
-      val combine: Program.t -> Program.t
+      val transform: Program.t -> Program.t
    end

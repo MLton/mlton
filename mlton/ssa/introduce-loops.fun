@@ -9,7 +9,7 @@
 (* Change any toplevel function that only calls itself in tail position
  * into one with a local loop and no self calls.
  *)
-functor IntroduceLoops (S: INTRODUCE_LOOPS_STRUCTS): INTRODUCE_LOOPS = 
+functor IntroduceLoops (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -27,7 +27,7 @@ structure Return =
           | Tail => true
    end
 
-fun introduceLoops (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val functions =
          List.revMap

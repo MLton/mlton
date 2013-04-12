@@ -7,14 +7,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor CommonSubexp (S: COMMON_SUBEXP_STRUCTS): COMMON_SUBEXP = 
+functor CommonSubexp (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
 
 open Exp Transfer
 
-fun eliminate (Program.T {globals, datatypes, functions, main}) =
+fun transform (Program.T {globals, datatypes, functions, main}) =
    let
       (* Keep track of control-flow specific cse's,
        * arguments, and in-degree of blocks.

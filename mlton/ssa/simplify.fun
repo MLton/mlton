@@ -38,61 +38,61 @@ type pass = {name: string,
              doit: Program.t -> Program.t}
 
 val ssaPassesDefault =
-   {name = "removeUnused1", doit = RemoveUnused.remove} ::
-   {name = "introduceLoops1", doit = IntroduceLoops.introduceLoops} ::
-   {name = "loopInvariant1", doit = LoopInvariant.loopInvariant} ::
+   {name = "removeUnused1", doit = RemoveUnused.transform} ::
+   {name = "introduceLoops1", doit = IntroduceLoops.transform} ::
+   {name = "loopInvariant1", doit = LoopInvariant.transform} ::
    {name = "inlineLeaf1", doit = fn p => 
     Inline.inlineLeaf (p, !Control.inlineLeafA)} ::
    {name = "inlineLeaf2", doit = fn p => 
     Inline.inlineLeaf (p, !Control.inlineLeafB)} ::
-   {name = "contify1", doit = Contify.contify} ::
-   {name = "localFlatten1", doit = LocalFlatten.flatten} ::
-   {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
+   {name = "contify1", doit = Contify.transform} ::
+   {name = "localFlatten1", doit = LocalFlatten.transform} ::
+   {name = "constantPropagation", doit = ConstantPropagation.transform} ::
    (* useless should run 
     *   - after constant propagation because constant propagation makes
     *     slots of tuples that are constant useless
     *)
-   {name = "useless", doit = Useless.useless} ::
-   {name = "removeUnused2", doit = RemoveUnused.remove} ::
-   {name = "simplifyTypes", doit = SimplifyTypes.simplify} ::
+   {name = "useless", doit = Useless.transform} ::
+   {name = "removeUnused2", doit = RemoveUnused.transform} ::
+   {name = "simplifyTypes", doit = SimplifyTypes.transform} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
     *   - before inlining so that equality functions can be inlined
     *)
-   {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   {name = "polyEqual", doit = PolyEqual.transform} ::
    (* polyHash should run
     *   - after types are simplified
     *   - before inlining so that hash functions can be inlined
     *)
-   {name = "polyHash", doit = PolyHash.polyHash} ::
-   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
-   {name = "loopInvariant2", doit = LoopInvariant.loopInvariant} ::
-   {name = "contify2", doit = Contify.contify} ::
+   {name = "polyHash", doit = PolyHash.transform} ::
+   {name = "introduceLoops2", doit = IntroduceLoops.transform} ::
+   {name = "loopInvariant2", doit = LoopInvariant.transform} ::
+   {name = "contify2", doit = Contify.transform} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
-   {name = "localFlatten2", doit = LocalFlatten.flatten} ::
-   {name = "removeUnused3", doit = RemoveUnused.remove} ::
-   {name = "contify3", doit = Contify.contify} ::
-   {name = "introduceLoops3", doit = IntroduceLoops.introduceLoops} ::
-   {name = "loopInvariant3", doit = LoopInvariant.loopInvariant} ::
+   {name = "localFlatten2", doit = LocalFlatten.transform} ::
+   {name = "removeUnused3", doit = RemoveUnused.transform} ::
+   {name = "contify3", doit = Contify.transform} ::
+   {name = "introduceLoops3", doit = IntroduceLoops.transform} ::
+   {name = "loopInvariant3", doit = LoopInvariant.transform} ::
    {name = "localRef", doit = LocalRef.eliminate} ::
-   {name = "flatten", doit = Flatten.flatten} ::
-   {name = "localFlatten3", doit = LocalFlatten.flatten} ::
-   {name = "combineConversions", doit = CombineConversions.combine} ::
-   {name = "commonArg", doit = CommonArg.eliminate} ::
-   {name = "commonSubexp", doit = CommonSubexp.eliminate} ::
-   {name = "commonBlock", doit = CommonBlock.eliminate} ::
-   {name = "redundantTests", doit = RedundantTests.simplify} ::
-   {name = "redundant", doit = Redundant.redundant} ::
+   {name = "flatten", doit = Flatten.transform} ::
+   {name = "localFlatten3", doit = LocalFlatten.transform} ::
+   {name = "combineConversions", doit = CombineConversions.transform} ::
+   {name = "commonArg", doit = CommonArg.transform} ::
+   {name = "commonSubexp", doit = CommonSubexp.transform} ::
+   {name = "commonBlock", doit = CommonBlock.transform} ::
+   {name = "redundantTests", doit = RedundantTests.transform} ::
+   {name = "redundant", doit = Redundant.transform} ::
    {name = "knownCase", doit = KnownCase.simplify} ::
-   {name = "removeUnused4", doit = RemoveUnused.remove} ::
+   {name = "removeUnused4", doit = RemoveUnused.transform} ::
    nil
 
 val ssaPassesMinimal =
    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
-   {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   {name = "polyEqual", doit = PolyEqual.transform} ::
    (* polyHash cannot be omitted.  It implements MLton_hash. *)
-   {name = "polyHash", doit = PolyHash.polyHash} ::
+   {name = "polyHash", doit = PolyHash.transform} ::
    nil
 
 val ssaPasses : pass list ref = ref ssaPassesDefault
@@ -185,26 +185,26 @@ local
    val passGens = 
       inlinePassGen ::
       (List.map([("addProfile", Profile.addProfile),
-                 ("combineConversions",  CombineConversions.combine),
-                 ("commonArg", CommonArg.eliminate),
-                 ("commonBlock", CommonBlock.eliminate),
-                 ("commonSubexp", CommonSubexp.eliminate),
-                 ("constantPropagation", ConstantPropagation.simplify),
-                 ("contify", Contify.contify),
+                 ("combineConversions",  CombineConversions.transform),
+                 ("commonArg", CommonArg.transform),
+                 ("commonBlock", CommonBlock.transform),
+                 ("commonSubexp", CommonSubexp.transform),
+                 ("constantPropagation", ConstantPropagation.transform),
+                 ("contify", Contify.transform),
                  ("dropProfile", Profile.dropProfile),
-                 ("flatten", Flatten.flatten),
-                 ("introduceLoops", IntroduceLoops.introduceLoops),
+                 ("flatten", Flatten.transform),
+                 ("introduceLoops", IntroduceLoops.transform),
                  ("knownCase", KnownCase.simplify),
-                 ("localFlatten", LocalFlatten.flatten),
+                 ("localFlatten", LocalFlatten.transform),
                  ("localRef", LocalRef.eliminate),
-                 ("loopInvariant", LoopInvariant.loopInvariant),
-                 ("polyEqual", PolyEqual.polyEqual),
-                 ("polyHash", PolyHash.polyHash),
-                 ("redundant", Redundant.redundant),
-                 ("redundantTests", RedundantTests.simplify),
-                 ("removeUnused", RemoveUnused.remove),
-                 ("simplifyTypes", SimplifyTypes.simplify),
-                 ("useless", Useless.useless),
+                 ("loopInvariant", LoopInvariant.transform),
+                 ("polyEqual", PolyEqual.transform),
+                 ("polyHash", PolyHash.transform),
+                 ("redundant", Redundant.transform),
+                 ("redundantTests", RedundantTests.transform),
+                 ("removeUnused", RemoveUnused.transform),
+                 ("simplifyTypes", SimplifyTypes.transform),
+                 ("useless", Useless.transform),
                  ("breakCriticalEdges",fn p => 
                   S.breakCriticalEdges (p, {codeMotion = true})),
                  ("eliminateDeadBlocks",S.eliminateDeadBlocks),

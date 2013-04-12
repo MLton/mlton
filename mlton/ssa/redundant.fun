@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Redundant (S: REDUNDANT_STRUCTS): REDUNDANT = 
+functor Redundant (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -260,7 +260,7 @@ structure Eqrel:>
       val layout = (List.layout (List.layout Int.layout)) o classes
    end
 
-fun redundant (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = funcInfo: Func.t -> {arg: Eqrel.t, return: Eqrel.t option},
            set = setFuncInfo, ...} =
