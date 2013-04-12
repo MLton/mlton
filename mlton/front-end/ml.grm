@@ -781,8 +781,9 @@ funs    : clausesTop               ([clausesTop])
 
 clausesTop: clauses (Vector.fromList clauses)
 
-clauses : clause                ([clause])
-        | clause BAR clauses    (clause :: clauses)
+clauses : clause                  ([clause])
+        | clause BAR clauses      (clause :: clauses)
+        | BAR clause BAR clauses  (clause :: clauses)
 
 clause  : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
                                           resultType = constraint,
@@ -827,8 +828,9 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
-constrs : constr                ([constr])
-        | constr BAR constrs    (constr :: constrs)
+constrs : constr                  ([constr])
+        | constr BAR constrs      (constr :: constrs)
+        | BAR constr BAR constrs  (constr :: constrs)
 
 constr  : opcon         (opcon, NONE)
         | opcon OF ty   (opcon, SOME ty)
@@ -952,8 +954,9 @@ longvidands : longvid  ([longvid])
 match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
                                             rulesleft, rulesright))
 
-rules : rule            ([rule])
-      | rule BAR rules  (rule :: rules)
+rules : rule                    ([rule])
+      | rule BAR rules          (rule :: rules)
+      | BAR rule BAR rules      (rule :: rules)
 
 rule    : pat DARROW exp        ((pat,exp))
 
