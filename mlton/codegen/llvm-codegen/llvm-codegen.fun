@@ -5,6 +5,12 @@ open S
 
 open Machine
 
+local
+    open Runtime
+in
+    structure GCField = GCField
+end
+
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
 
@@ -83,7 +89,8 @@ val llvmIntrinsics =
 \declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n\
 \declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n\
 \declare float @llvm.fmuladd.f32(float %a, float %b, float %c)\n\
-\declare double @llvm.fmuladd.f64(double %a, double %b, double %c)\n"
+\declare double @llvm.fmuladd.f64(double %a, double %b, double %c)\n\
+\declare i32 @printf(i8*, ...)\n"
 
 (* LLVM codegen context. Contains various values/functions that should
    be shared amongst all codegen functions. *)
@@ -105,6 +112,8 @@ fun llint (i: int) =
     if i >= 0
     then Int.toString i
     else "-" ^ Int.toString (~ i)
+
+fun llbits b = llint (Bits.toInt b)
 
 fun llbytes b = llint (Bytes.toInt b)
 
@@ -139,6 +148,9 @@ val globalDeclarations =
 \@returnToC = external global i32\n\
 \@nextChunks = external global [0 x i8* ()*]\n\
 \@gcState = external global %struct.GC_state\n\
+\@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
+\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n\
+\@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
 \"
 
 fun declareAtMLtons () =
@@ -704,7 +716,13 @@ fun regName (ty: CType.t, index: int): string =
     concat ["%", CType.name ty, "_", Int.toString index]
 
 (* Reuse CType for LLVM type *)
-fun tyToLLVM ty = "%" ^ CType.toString (Type.toCType ty)
+fun tyToLLVM (ty: Type.t): string = "%" ^ CType.toString (Type.toCType ty)
+
+val cFunctions = ref []
+
+fun addCFunction f = if not (List.contains (!cFunctions, f, String.equals))
+                     then cFunctions := List.cons (f, !cFunctions)
+                     else ()
 
 (* Converts an operand into its LLVM representation. Returns a triple
  (pre, ty, reg) where
@@ -1015,8 +1033,9 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 val opr = if signed then "sadd" else "uadd"
                 val ty = wsToLLVM ws
                 val intty = wsToLLVMInt ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr, ".with.overflow.",
-                                   intty, "(", ty, " ", arg0, ", ", ty, " ", arg1, ")\n"]
+                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
+                                   ".with.overflow.", intty, "(", ty, " ", arg0, ", ", ty,
+                                   " ", arg1, ")\n"]
                 val resTy = concat ["{", ty, ", i1}"]
             in
                 (inst, resTy)
@@ -1047,7 +1066,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
             let
                 val opr = case WordSize.compare (ws1, ws2) of
                               LESS => if signed then "sext" else "zext"
-                            | EQUAL => "" (* MLton Bug *)
+                            | EQUAL => Error.bug "LLVM codegen: Word_extdToWord"
                             | GREATER => "trunc"
             in
                 (mkconv (res, opr, wsToLLVM ws1, arg0, wsToLLVM ws2), wsToLLVM ws2)
@@ -1138,7 +1157,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 (inst, resTy)
             end
           | Word_xorb ws => (mkinst (res, "xor", wsToLLVM ws, arg0, arg1), wsToLLVM ws)
-          | _ => ("\t<Unsupported operation!>\n", "")
+          | _ => Error.bug "LLVM Codegen: Unsupported operation in outputPrim"
     end
 
 (* argv - vector of (pre, ty, addr) triples
@@ -1211,6 +1230,91 @@ fun outputStatement (cxt, stmt) =
           | Statement.ProfileLabel _ => comment
     end
 
+
+fun offsetGCState gcfield =
+    let
+        val castreg = nextLLVMReg ()
+        val cast = mkconv (castreg, "bitcast", "%struct.GC_state*", "@gcState", "%Pointer*")
+        (* val ptr = nextLLVMReg () *)
+        (* val load = concat ["\t", ptr, " = load %Pointer* ", castreg, "\n"] *)
+        val intreg = nextLLVMReg ()
+        val toint = mkconv (intreg, "ptrtoint", "%Pointer*", castreg, "%uintptr_t")
+        val offsetted = nextLLVMReg ()
+        val offset = mkinst (offsetted, "add", "%uintptr_t", intreg,
+                             llbytes (GCField.offset gcfield))
+
+        val offsettedptr = nextLLVMReg ()
+        val toptr = mkconv (offsettedptr, "inttoptr", "%uintptr_t", offsetted, "%Pointer*")
+    in
+        (concat [cast, toint, offset, toptr], offsettedptr)
+    end
+
+(* FrontierMem = Frontier *)
+fun flushFrontier () =
+    let
+        val comment = "\t; FlushFrontier\n"
+        val (pre, reg) = offsetGCState GCField.Frontier
+        val frontier = nextLLVMReg ()
+        val load = concat ["\t", frontier, " = load %Pointer* %frontier\n"]
+        val store = concat ["\tstore %Pointer ", frontier, ", %Pointer* ", reg, "\n"]
+    in
+        concat [comment, pre, load, store]
+    end
+
+(* StackTopMem = StackTop *)
+fun flushStackTop () =
+    let
+        val comment = "\t; FlushStackTop\n"
+        val (pre, reg) = offsetGCState GCField.StackTop
+        val stacktop = nextLLVMReg ()
+        val load = concat ["\t", stacktop, " = load %Pointer* %stackTop\n"]
+        val store = concat ["\tstore %Pointer ", stacktop, ", %Pointer* ", reg, "\n"]
+    in
+        concat [comment, pre, load, store]
+    end
+
+(* Frontier = FrontierMem *)
+fun cacheFrontier () =
+    let
+        val comment = "\t; CacheFrontier\n"
+        val (pre, reg) = offsetGCState GCField.Frontier
+        val frontier = nextLLVMReg ()
+        val load = concat ["\t", frontier, " = load %Pointer* ", reg, "\n"]
+        val store = concat ["\tstore %Pointer ", frontier, ", %Pointer* %frontier\n"]
+    in
+        concat [comment, pre, load, store]
+    end
+
+(* StackTop = StackTopMem *)
+fun cacheStackTop () =
+    let
+        val comment = "\t; CacheStackTop\n"
+        val (pre, reg) = offsetGCState GCField.StackTop
+        val stacktop = nextLLVMReg ()
+        val load = concat ["\t", stacktop, " = load %Pointer* ", reg, "\n"]
+        val store = concat ["\tstore %Pointer ", stacktop, ", %Pointer* %stackTop\n"]
+    in
+        concat [comment, pre, load, store]
+    end
+
+(* l_nextFun = *(uintptr_t* )(StackTop - sizeof(void* ));
+   goto top;
+ *)
+fun callReturn () =
+    let
+        val comment = "\t; Return\n"
+        val stacktop = nextLLVMReg ()
+        val load = concat ["\t", stacktop, " = load %Pointer* %stackTop\n"]
+        val int = nextLLVMReg ()
+        val toint = mkconv (int, "ptrtoint", "%Pointer", stacktop, "%uintptr_t")
+        val offsetted = nextLLVMReg ()
+        val ptrsize = llbits (Control.Target.Size.cpointer ())
+        val sub = mkinst (offsetted, "sub", "%uintptr_t", int, ptrsize)
+        val store = concat ["\tstore %uintptr_t ", offsetted, ", %uintptr_t* %l_nextFun\n"]
+    in
+        concat [comment, load, toint, sub, store]
+    end
+
 fun outputTransfer (cxt, transfer, sourceLabel) =
     let
         val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
@@ -1239,7 +1343,78 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         extractRes, extractObit, destPre, store, br]
             end
           | Transfer.CCall {args, frameInfo, func, return} =>
-            concat [comment, "\tbr label %unreachable\n"]
+            let
+                val CFunction.T {maySwitchThreads,
+                                 modifiesFrontier,
+                                 readsStackTop,
+                                 return = returnTy,
+                                 target,
+                                 writesStackTop,
+                                 args = cFuncArgs, ...} = func
+                val flushFrontierCode = if modifiesFrontier
+                                        then flushFrontier ()
+                                        else ""
+                val flushStackTopCode = if readsStackTop
+                                        then flushStackTop ()
+                                        else ""
+                val params = Vector.map (args, fn opr => getOperand (cxt, opr))
+                val (_, paramTypes, _) = Vector.unzip3 params
+                val (paramPres, paramRegs) = Vector.unzip (Vector.mapi (params, fn (i, _) =>
+                                                 getArg (params, i)))
+                val call = case target of
+                               CFunction.Target.Direct name =>
+                               let
+                                   val (lhs, ty) = if Type.isUnit returnTy
+                                                   then ("\t", "void")
+                                                   else (concat ["\t", nextLLVMReg (), " = "],
+                                                         tyToLLVM returnTy)
+                                   val llparams = String.concatWith
+                                                      (Vector.toListMap
+                                                           (Vector.zip (paramTypes, paramRegs),
+                                                            fn (t, p) => t ^ " " ^ p),
+                                                       ", ")
+                                   val cfunc = concat [ty, " @", name, "(",
+                                                       String.concatWith 
+                                                           ((Vector.toList paramTypes), ", "), ")"]
+                                   val () = addCFunction cfunc
+                               in
+                                   concat [lhs, "call ", ty, " @", name, "(", llparams, ")\n"]
+                               end
+                             | Indirect =>
+                               let
+                                   (* val (fptr, args) = *)
+                                   (*     case args of *)
+                                   (*         (fptr::args) => (fptr, args) *)
+                                   (*       | _ => Error.bug "LLVMCodegen.outputTransfer: CCall, indirect" *)
+                               in
+                                   (* TODO *) ""
+                               end
+                val cacheFrontierCode = if modifiesFrontier
+                                        then cacheFrontier ()
+                                        else ""
+                val cacheStackTopCode = if writesStackTop
+                                        then cacheStackTop ()
+                                        else ""
+                val returnCode = if maySwitchThreads
+                                 then callReturn ()
+                                 else case return of
+                                          NONE => "\tbr label %unreachable\n"
+                                        | SOME l => concat ["\tbr label %", Label.toString l, "\n"]
+                val reg = nextLLVMReg ()
+            in
+                concat [comment,
+                        flushFrontierCode,
+                        flushStackTopCode,
+                        "\t; GetOperands\n",
+                        Vector.concatV paramPres,
+                        "\t; Call\n",
+                        "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n",
+                        call,
+                        "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n",
+                        cacheFrontierCode,
+                        cacheStackTopCode,
+                        returnCode]
+            end
           | Transfer.Call {label, return, ...} =>
             let
                 val labelstr = Label.toString label
@@ -1288,12 +1463,17 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
 fun outputBlock (cxt, block) =
     let
         val Block.T {kind, label, live, raises, returns, statements, transfer} = block
-        val blockLabel = Label.toString label ^ ":\n"
+        val labelstr = Label.toString label
+        val labelstrLen = Int.toString (String.size labelstr + 1)
+        val blockLabel = labelstr ^ ":\n"
+        val printBlock = concat ["\tcall i32 (i8*, ...)* @printf(",
+            "i8* getelementptr inbounds ([19 x i8]* @enteringBlock, i32 0, i32 0), ",
+            "i8* getelementptr inbounds ([", labelstrLen, " x i8]* @labelstr_", labelstr, ", i32 0, i32 0))\n"]
         val outputStatementWithCxt = fn s => outputStatement (cxt, s)
         val blockBody = Vector.concatV (Vector.map (statements, outputStatementWithCxt))
         val blockTransfer = outputTransfer (cxt, transfer, label)
     in
-        concat [blockLabel, blockBody, blockTransfer, "\n"]
+        concat [blockLabel, printBlock, blockBody, blockTransfer, "\n"]
     end
         
 fun outputChunk (cxt, chunk) =
@@ -1304,6 +1484,7 @@ fun outputChunk (cxt, chunk) =
         val () = print (concat ["define i8* @",
                                 chunkName,
                                 "() {\nentry:\n"])
+        val () = print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
         val () = print "\t%cont = alloca %struct.cont\n"
         val () = print "\t%frontier = alloca %Pointer\n"
         val () = print "\t%l_nextFun = alloca %uintptr_t\n"
@@ -1353,11 +1534,13 @@ fun outputGlobals () =
                          let
                              val s = CType.toString t
                          in
-                             concat ["@global", s, " = external global [", llint (Global.numberOfType t),
+                             concat ["@global", s, " = external global [",
+                                     llint (Global.numberOfType t),
                                      " x %", s, "]\n@CReturn", CType.name t,
                                      " = external global %", s, "\n"]
                          end))
-        val nonroot = concat ["@globalObjptrNonRoot = external global [", llint (Global.numberOfNonRoot ()),
+        val nonroot = concat ["@globalObjptrNonRoot = external global [",
+                              llint (Global.numberOfNonRoot ()),
                               " x %Pointer]\n"]
     in
         concat [globals, nonroot]
@@ -1365,12 +1548,29 @@ fun outputGlobals () =
 
 fun outputLLVMDeclarations cxt =
     let
-        val Context { print = print, ...} = cxt
+        val Context { print = print, program = program, ...} = cxt
+        val Program.T { chunks = chunks, ... } = program
         val globals = outputGlobals ()
 (*        val globalDecs = declareGlobals cxt *)
+        val labelStrings = concat (List.map (chunks, fn c =>
+            let
+                val Chunk.T { chunkLabel = chunkLabel,
+                              blocks = blocks, ... } = c
+            in
+                Vector.concatV (Vector.map (blocks, fn b =>
+                    let
+                        val Block.T { label = label, ... } = b
+                        val labelstr = Label.toString label
+                        val len = Int.toString (String.size labelstr + 1)
+                    in
+                        concat ["@labelstr_", labelstr, " = global [", len, " x i8] ",
+                                llstring labelstr, "\n"]
+                    end))
+            end))
+                                
     in
-        print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes,
-                       "\n", globals, "\n", globalDeclarations, "\n"])
+        print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
+                       "\n", globals, "\n", globalDeclarations, "\n", labelStrings, "\n"])
     end
 
 fun annotate (frameLayouts, chunks) =
@@ -1435,9 +1635,14 @@ fun transLLVM (program, outputLL) =
         val Program.T { chunks, frameLayouts, ...} = program
         val { done, print, file=_ } = outputLL ()
         val (chunkLabelToString, labelToStringIndex, _, _) = annotate (frameLayouts, chunks)
-        val cxt = Context { program = program, print = print, labelToStringIndex = labelToStringIndex,  chunkLabelToString = chunkLabelToString }
+        val cxt = Context { program = program,
+                            print = print,
+                            labelToStringIndex = labelToStringIndex,
+                            chunkLabelToString = chunkLabelToString }
         val () = outputLLVMDeclarations cxt
         val () = List.foreach (chunks, fn chunk => outputChunk (cxt, chunk))
+        val () = List.foreach (!cFunctions, fn f =>
+                     print (concat ["declare ", f, "\n"]))
     in
         done ()
     end
