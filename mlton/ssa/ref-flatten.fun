@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor RefFlatten (S: REF_FLATTEN_STRUCTS): REF_FLATTEN = 
+functor RefFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM = 
 struct
 
 open S
@@ -292,7 +292,7 @@ structure VarInfo =
          end
    end
 
-fun flatten (program as Program.T {datatypes, functions, globals, main}) =
+fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
    let
       val {get = conValue: Con.t -> Value.t option ref, ...} =
          Property.get (Con.plist, Property.initFun (fn _ => ref NONE))

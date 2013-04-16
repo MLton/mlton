@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Zone (S: ZONE_STRUCTS): ZONE = 
+functor Zone (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM = 
 struct
 
 open S
@@ -257,7 +257,7 @@ fun maybeZoneFunction (f, ac) =
       else zoneFunction f :: ac
    end
 
-fun zone (Program.T {datatypes, globals, functions, main}) =
+fun transform2 (Program.T {datatypes, globals, functions, main}) =
    Program.T {datatypes = datatypes,
               globals = globals,
               functions = List.fold (functions, [], maybeZoneFunction),

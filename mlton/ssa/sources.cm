@@ -60,6 +60,7 @@ restore.sig
 restore.fun
 
 ssa-transform.sig
+ssa2-transform.sig
 common-arg.fun
 common-block.fun
 common-subexp.fun
@@ -70,7 +71,6 @@ multi.fun
 combine-conversions.fun
 constant-propagation.fun
 contify.fun
-deep-flatten.sig
 deep-flatten.fun
 flatten.fun
 inline.sig
@@ -88,14 +88,11 @@ profile2.sig
 profile2.fun
 redundant-tests.fun
 redundant.fun
-ref-flatten.sig
 ref-flatten.fun
-remove-unused2.sig
 remove-unused.fun
 remove-unused2.fun
 simplify-types.fun
 useless.fun
-zone.sig
 zone.fun
 simplify.sig
 simplify2.sig
