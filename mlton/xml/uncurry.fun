@@ -6,13 +6,13 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Uncurry(S: UNCURRY_STRUCTS): UNCURRY = 
+functor Uncurry(S: XML_TRANSFORM_STRUCTS): XML_TRANSFORM = 
 struct
 
 open S
 open Dec PrimExp
 
-fun uncurry(program as Program.T{datatypes, body, overflow}) =
+fun transform (program as Program.T{datatypes, body, overflow}) =
   let
     datatype D = T of {var: Var.t, lambda : Lambda.t}
 

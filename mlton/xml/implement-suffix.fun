@@ -6,8 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ImplementSuffix (S: IMPLEMENT_SUFFIX_STRUCTS):
-   IMPLEMENT_SUFFIX = 
+functor ImplementSuffix (S: XML_TRANSFORM_STRUCTS): XML_TRANSFORM = 
 struct
 
 open S
@@ -15,7 +14,7 @@ datatype z = datatype Dec.t
 datatype z = datatype PrimExp.t
 structure Dexp = DirectExp
 
-fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
+fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
    let
       (* topLevelSuffix holds the ref cell containing the function of
        * type unit -> unit that should be called on program exit.
