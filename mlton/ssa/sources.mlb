@@ -43,6 +43,8 @@ local
    two-point-lattice.fun
    three-point-lattice.sig
    ann "forceUsed" in three-point-lattice.fun end
+   restore.sig
+   restore.fun
 
    ssa-transform.sig
    common-arg.fun
@@ -61,12 +63,8 @@ local
    inline.sig
    inline.fun
    introduce-loops.fun
-   restore.sig
-   restore.fun
-   known-case.sig
    known-case.fun
    local-flatten.fun
-   local-ref.sig
    local-ref.fun
    loop-invariant.fun
    poly-equal.fun

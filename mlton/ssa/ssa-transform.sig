@@ -7,7 +7,7 @@
 
 signature SSA_TRANSFORM_STRUCTS = 
    sig
-      include SHRINK
+      include RESTORE
    end
 
 signature SSA_TRANSFORM = 

@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor LocalRef (S: LOCAL_REF_STRUCTS): LOCAL_REF = 
+functor LocalRef (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -139,7 +139,7 @@ structure LabelInfo =
 
 structure Multi = Multi (S)
 
-fun eliminate (program: Program.t): Program.t =
+fun transform (program: Program.t): Program.t =
    let
       val program as Program.T {datatypes, globals, functions, main} =
          eliminateDeadBlocks program

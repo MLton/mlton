@@ -56,6 +56,8 @@ two-point-lattice.sig
 two-point-lattice.fun
 three-point-lattice.sig
 three-point-lattice.fun
+restore.sig
+restore.fun
 
 ssa-transform.sig
 common-arg.fun
@@ -74,12 +76,8 @@ flatten.fun
 inline.sig
 inline.fun
 introduce-loops.fun
-restore.sig
-restore.fun
-known-case.sig
 known-case.fun
 local-flatten.fun
-local-ref.sig
 local-ref.fun
 loop-invariant.fun
 poly-equal.fun

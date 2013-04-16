@@ -75,7 +75,7 @@ val ssaPassesDefault =
    {name = "contify3", doit = Contify.transform} ::
    {name = "introduceLoops3", doit = IntroduceLoops.transform} ::
    {name = "loopInvariant3", doit = LoopInvariant.transform} ::
-   {name = "localRef", doit = LocalRef.eliminate} ::
+   {name = "localRef", doit = LocalRef.transform} ::
    {name = "flatten", doit = Flatten.transform} ::
    {name = "localFlatten3", doit = LocalFlatten.transform} ::
    {name = "combineConversions", doit = CombineConversions.transform} ::
@@ -84,7 +84,7 @@ val ssaPassesDefault =
    {name = "commonBlock", doit = CommonBlock.transform} ::
    {name = "redundantTests", doit = RedundantTests.transform} ::
    {name = "redundant", doit = Redundant.transform} ::
-   {name = "knownCase", doit = KnownCase.simplify} ::
+   {name = "knownCase", doit = KnownCase.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
    nil
 
@@ -194,9 +194,9 @@ local
                  ("dropProfile", Profile.dropProfile),
                  ("flatten", Flatten.transform),
                  ("introduceLoops", IntroduceLoops.transform),
-                 ("knownCase", KnownCase.simplify),
+                 ("knownCase", KnownCase.transform),
                  ("localFlatten", LocalFlatten.transform),
-                 ("localRef", LocalRef.eliminate),
+                 ("localRef", LocalRef.transform),
                  ("loopInvariant", LoopInvariant.transform),
                  ("polyEqual", PolyEqual.transform),
                  ("polyHash", PolyHash.transform),
