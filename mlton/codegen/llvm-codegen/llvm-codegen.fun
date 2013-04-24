@@ -454,7 +454,7 @@ fun getOperand (cxt, operand) =
             val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
             val llvmTy = llty ty
             val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy, baseReg, [offsettedIndex])
+            val gep = mkgep (ptr, baseTy ^ "*", baseReg, [offsettedIndex])
             val castedPtr = nextLLVMReg ()
             val cast = mkconv (castedPtr, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
         in
@@ -530,12 +530,18 @@ fun getOperand (cxt, operand) =
             val (basePre, baseTy, baseReg) = getOperand (cxt, base)
             val idx = llbytes offset
             val llvmTy = llty ty
-            val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy ^ "*", baseReg, [idx])
+            val base = nextLLVMReg ()
+            val load = mkload (base, baseTy ^ "*", baseReg)
+            val intreg = nextLLVMReg ()
+            val conv = mkconv (intreg, "ptrtoint", baseTy, base, "%uintptr_t")
+            val offsetreg = nextLLVMReg ()
+            val add = mkinst (offsetreg, "add", "%uintptr_t", intreg, idx)
+            val ptrreg = nextLLVMReg ()
+            val convback = mkconv (ptrreg, "inttoptr", "%uintptr_t", offsetreg, baseTy ^ "*")
             val reg = nextLLVMReg ()
-            val cast = mkconv (reg, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
+            val cast = mkconv (reg, "bitcast", baseTy ^ "*", ptrreg, llvmTy ^ "*")
         in
-            (concat [basePre, gep, cast], llvmTy, reg)
+            (concat [basePre, load, conv, add, convback, cast], llvmTy, reg)
         end
       | Operand.Real real =>
         let
@@ -588,22 +594,22 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
             CPointer_add =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "i32")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
-                val inst2 = mkinst (tmp2, "add", "i32", tmp1, arg1)
-                val inst3 = mkconv (res, "inttoptr", "i32", tmp2, "%Pointer")
+                val inst2 = mkinst (tmp2, "add", "%uintptr_t", tmp1, arg1)
+                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%Pointer")
             in
                 (concat [inst1, inst2, inst3], "%Pointer")
             end
           | CPointer_diff =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%Word32")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
-                val inst2 = mkconv (tmp2, "ptrtoint", "%Pointer", arg1, "%Word32")
-                val inst3 = mkinst (res, "sub", "%Word32", tmp1, tmp2)
+                val inst2 = mkconv (tmp2, "ptrtoint", "%Pointer", arg1, "%uintptr_t")
+                val inst3 = mkinst (res, "sub", "%uintptr_t", tmp1, tmp2)
             in (* CPointer_diff returns a Word32, not a Pointer *)
-                (concat [inst1, inst2, inst3], "%Word32")
+                (concat [inst1, inst2, inst3], "%uintptr_t")
             end
           | CPointer_equal => (* icmp works with pointer types here *)
             let
@@ -626,10 +632,10 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
           | CPointer_sub =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "i32")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
-                val inst2 = mkinst (tmp2, "sub", "i32", tmp1, arg1)
-                val inst3 = mkconv (res, "inttoptr", "i32", tmp2, "%Pointer")
+                val inst2 = mkinst (tmp2, "sub", "%uintptr_t", tmp1, arg1)
+                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%Pointer")
             in
                 (concat [inst1, inst2, inst3], "%Pointer")
             end
