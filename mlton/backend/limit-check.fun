@@ -62,7 +62,7 @@
  * Stack limit checks are completely orthogonal to heap checks, and are simply
  * inserted at the start of each function.
  *)
-functor LimitCheck (S: LIMIT_CHECK_STRUCTS): LIMIT_CHECK =
+functor LimitCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
@@ -825,7 +825,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun insert (Program.T {functions, handlesSignals, main, objectTypes}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
