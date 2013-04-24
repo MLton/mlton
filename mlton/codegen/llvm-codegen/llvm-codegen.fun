@@ -230,7 +230,7 @@ fun mkgep (lhs, ty, arg, idcs) =
     let
         val indices = String.concatWith (List.map (idcs, fn i => "i32 " ^ i), ", ")
     in
-        concat ["\t", lhs, " = getelementptr inbounds ", ty, ", ", indices, "\n"]
+        concat ["\t", lhs, " = getelementptr inbounds ", ty, " ", arg, ", ", indices, "\n"]
     end
 
 (* Makes a load instruction:
@@ -454,9 +454,7 @@ fun getOperand (cxt, operand) =
             val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
             val llvmTy = llty ty
             val ptr = nextLLVMReg ()
-            val gep = concat ["\t", ptr, " = getelementptr inbounds ",
-                              baseTy, "* ", baseReg, ", ", indexTy, " ",
-                              offsettedIndex, "\n"]
+            val gep = mkgep (ptr, baseTy, baseReg, [offsettedIndex])
             val castedPtr = nextLLVMReg ()
             val cast = mkconv (castedPtr, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
         in
@@ -485,7 +483,7 @@ fun getOperand (cxt, operand) =
       | Operand.GCState =>
         let
             val reg = nextLLVMReg ()
-            val cast = concat ["\t", reg, " = bitcast %struct.GC_state* @gcState to %Pointer\n"]
+            val cast = mkconv (reg, "bitcast", "%struct.GC_state*", "@gcState", "%Pointer")
             val reg2 = nextLLVMReg ()
             val alloca = mkalloca (reg2, "%Pointer")
             val store = mkstore ("%Pointer", reg, reg2)
@@ -500,12 +498,10 @@ fun getOperand (cxt, operand) =
             val llvmTy = llty globalType
             val ty = typeOfGlobal global
             val globalID = if globalIsRoot
-                           then "@global" ^ String.dropFirst llvmTy (* drop '%' *)
+                           then "@global" ^ CType.toString (Type.toCType globalType)
                            else "@globalObjptrNonRoot"
             val ptr = nextLLVMReg ()
-            val gep = concat ["\t", ptr, " = getelementptr inbounds ",
-                              ty, "* ", globalID, ", i32 0, i32 ",
-                              llint globalIndex, "\n"]
+            val gep = mkgep (ptr, ty ^ "*", globalID, ["0", llint globalIndex])
         in
             (gep, llvmTy, ptr)
         end
@@ -535,8 +531,7 @@ fun getOperand (cxt, operand) =
             val idx = llbytes offset
             val llvmTy = llty ty
             val ptr = nextLLVMReg ()
-            val gep = concat ["\t", ptr, " = getelementptr inbounds ", baseTy,
-                              "* ", baseReg, ", i8 ", idx, "\n"]
+            val gep = mkgep (ptr, baseTy ^ "*", baseReg, [idx])
             val reg = nextLLVMReg ()
             val cast = mkconv (reg, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
         in
@@ -565,8 +560,7 @@ fun getOperand (cxt, operand) =
             val StackOffset.T {offset, ty} = stackOffset
             val idx = llbytes offset
             val gepReg = nextLLVMReg ()
-            val gep = concat ["\t", gepReg, " = getelementptr inbounds %Pointer* %stackTop, i32 ",
-                              idx, "\n"]
+            val gep = mkgep (gepReg, "%Pointer*", "%stackTop", [idx])
             val llvmTy = llty ty
             val reg = nextLLVMReg ()
             val cast = mkconv (reg, "bitcast", "%Pointer*", gepReg, llvmTy ^ "*")
@@ -986,8 +980,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
                                 val labelIndex = labelToStringIndex (valOf return)
                                 val gepreg = nextLLVMReg ()
-                                val gep = concat ["\t", gepreg, " = getelementptr inbounds ",
-                                                  "%Pointer* %stackTop, i32 ", offset, "\n"]
+                                val gep = mkgep (gepreg, "%Pointer*", "%stackTop", [offset])
                                 val castreg = nextLLVMReg ()
                                 val cast = mkconv (castreg, "bitcast", "%Pointer*", gepreg, "i32*")
                                 val storeIndex = mkstore ("i32", labelIndex, castreg)
