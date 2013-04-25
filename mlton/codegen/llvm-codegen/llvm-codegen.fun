@@ -144,13 +144,14 @@ fun llstring s = concat ["c\"", escapeLLVM s, "\\00\""]
 val globalDeclarations =
 "%struct.cont = type { i8* }\n\
 \%struct.GC_state = type opaque\n\
-\@nextFun = external global %uintptr_t\n\
-\@returnToC = external global i32\n\
-\@nextChunks = external global [0 x i8* ()*]\n\
-\@gcState = external global %struct.GC_state\n\
+\@nextFun = external hidden global %uintptr_t\n\
+\@returnToC = external hidden global i32\n\
+\@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
+\@gcState = external hidden global %struct.GC_state\n\
 \@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
 \@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n\
 \@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
+\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n\
 \"
 
 fun llws (ws: WordSize.t): string =
@@ -471,13 +472,15 @@ fun getOperand (cxt, operand) =
             (concat [operPre, inst], llvmTy, reg)
         end
       | Operand.Contents {oper, ty} =>
-        let
+        let (* operTy should be a pointer type *)
             val (operPre, operTy, operReg) = getOperand (cxt, oper)
             val llvmTy = llty ty
+            val loaded = nextLLVMReg ()
+            val load = mkload (loaded, operTy ^ "*", operReg)
             val reg = nextLLVMReg ()
-            val inst = mkconv (reg, "bitcast", operTy ^ "*", operReg, llvmTy ^ "*")
+            val cast = mkconv (reg, "bitcast", operTy, loaded, llvmTy ^ "*")
         in
-            (concat [operPre, inst], llvmTy, reg)
+            (concat [operPre, load, cast], llvmTy, reg)
         end
       | Operand.Frontier => ("", "%Pointer", "%frontier")
       | Operand.GCState =>
@@ -533,15 +536,19 @@ fun getOperand (cxt, operand) =
             val base = nextLLVMReg ()
             val load = mkload (base, baseTy ^ "*", baseReg)
             val intreg = nextLLVMReg ()
-            val conv = mkconv (intreg, "ptrtoint", baseTy, base, "%uintptr_t")
-            val offsetreg = nextLLVMReg ()
-            val add = mkinst (offsetreg, "add", "%uintptr_t", intreg, idx)
-            val ptrreg = nextLLVMReg ()
-            val convback = mkconv (ptrreg, "inttoptr", "%uintptr_t", offsetreg, baseTy ^ "*")
+            (* val conv = mkconv (intreg, "ptrtoint", baseTy, base, "%uintptr_t") *)
+            (* val offsetreg = nextLLVMReg () *)
+            (* val add = mkinst (offsetreg, "add", "%uintptr_t", intreg, idx) *)
+            (* val ptrreg = nextLLVMReg () *)
+            (* val convback = mkconv (ptrreg, "inttoptr", "%uintptr_t", offsetreg, baseTy) *)
+            val ptr = nextLLVMReg ()
+            val gep = mkgep (ptr, baseTy, base, [idx])
             val reg = nextLLVMReg ()
-            val cast = mkconv (reg, "bitcast", baseTy ^ "*", ptrreg, llvmTy ^ "*")
+            (* val cast = mkconv (reg, "bitcast", baseTy, ptrreg, llvmTy ^ "*") *)
+            val cast = mkconv (reg, "bitcast", baseTy, ptr, llvmTy ^ "*")
         in
-            (concat [basePre, load, conv, add, convback, cast], llvmTy, reg)
+            (* (concat [basePre, load, conv, add, convback, cast], llvmTy, reg) *)
+            (concat [basePre, load, gep, cast], llvmTy, reg)
         end
       | Operand.Real real =>
         let
@@ -912,26 +919,24 @@ fun outputPrimApp (cxt, p) =
 fun outputStatement (cxt, stmt) =
     let
         val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
+        val printstmt = "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @stmt, i32 0, i32 0))\n"
+        val stmtcode =
+            case stmt of
+                Statement.Move {dst, src} =>
+                let
+                    val (srcpre, srcty, srcreg) = getOperand (cxt, src)
+                    val (dstpre, dstty, dstreg) = getOperand (cxt, dst)
+                    val reg = nextLLVMReg ()
+                    val load = mkload (reg, srcty ^ "*", srcreg)
+                    val store = mkstore (dstty, reg, dstreg)
+                in
+                    concat [srcpre, load, dstpre, store]
+                end
+              | Statement.Noop => "\t; Noop\n"
+              | Statement.PrimApp p => outputPrimApp (cxt, p)
+              | Statement.ProfileLabel _ => "\t; ProfileLabel\n"
     in
-        case stmt of
-            Statement.Move {dst, src} =>
-            let
-                val (srcpre, srcty, srcreg) = getOperand (cxt, src)
-                val (dstpre, dstty, dstreg) = getOperand (cxt, dst)
-                val reg = nextLLVMReg ()
-                val load = mkload (reg, srcty ^ "*", srcreg)
-                val store = mkstore (dstty, reg, dstreg)
-            in
-                concat [comment, srcpre, load, dstpre, store]
-            end
-          | Statement.Noop => "\t; Noop\n"
-          | Statement.PrimApp p =>
-            let
-                val primapp = outputPrimApp (cxt, p)
-            in
-                concat [comment, primapp]
-            end
-          | Statement.ProfileLabel _ => comment
+        concat [comment, printstmt, stmtcode]
     end
 
 fun outputTransfer (cxt, transfer, sourceLabel) =
@@ -1231,12 +1236,12 @@ fun outputGlobals () =
                          let
                              val s = CType.toString t
                          in
-                             concat ["@global", s, " = external global [",
+                             concat ["@global", s, " = external hidden global [",
                                      llint (Global.numberOfType t),
                                      " x %", s, "]\n@CReturn", CType.name t,
-                                     " = external global %", s, "\n"]
+                                     " = external hidden global %", s, "\n"]
                          end))
-        val nonroot = concat ["@globalObjptrNonRoot = external global [",
+        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
                               llint (Global.numberOfNonRoot ()),
                               " x %Pointer]\n"]
     in
