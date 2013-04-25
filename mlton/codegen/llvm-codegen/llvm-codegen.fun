@@ -445,21 +445,23 @@ fun getOperand (cxt, operand) =
         let (* result = base + (index * scale) + offset *)
             val (basePre, baseTy, baseReg) = getOperand (cxt, base)
             val (indexPre, indexTy, indexReg) = getOperand (cxt, index)
+            val loadedBase = nextLLVMReg ()
+            val load = mkload (loadedBase, baseTy ^ "*", baseReg)
             val loadedIndex = nextLLVMReg ()
             val loadIndex = mkload (loadedIndex, indexTy ^ "*", indexReg)
             val scl = Scale.toString scale (* "1", "2", "4", or "8" *)
             val scaledIndex = nextLLVMReg ()
-            val scaleIndex = mkinst(scaledIndex, "mul nsw", indexTy, loadedIndex, scl)
+            val scaleIndex = mkinst (scaledIndex, "mul nsw", indexTy, loadedIndex, scl)
             val ofs = llbytes offset
             val offsettedIndex = nextLLVMReg ()
             val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
             val llvmTy = llty ty
             val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy ^ "*", baseReg, [offsettedIndex])
+            val gep = mkgep (ptr, baseTy, loadedBase, [offsettedIndex])
             val castedPtr = nextLLVMReg ()
-            val cast = mkconv (castedPtr, "bitcast", baseTy ^ "*", ptr, llvmTy ^ "*")
+            val cast = mkconv (castedPtr, "bitcast", baseTy, ptr, llvmTy ^ "*")
         in
-            (concat [basePre, indexPre, loadIndex, scaleIndex, offsetIndex, gep, cast],
+            (concat [basePre, indexPre, load, loadIndex, scaleIndex, offsetIndex, gep, cast],
              llvmTy, castedPtr)
         end
       | Operand.Cast (oper, ty) =>
@@ -535,7 +537,7 @@ fun getOperand (cxt, operand) =
             val llvmTy = llty ty
             val base = nextLLVMReg ()
             val load = mkload (base, baseTy ^ "*", baseReg)
-            val intreg = nextLLVMReg ()
+            (* val intreg = nextLLVMReg () *)
             (* val conv = mkconv (intreg, "ptrtoint", baseTy, base, "%uintptr_t") *)
             (* val offsetreg = nextLLVMReg () *)
             (* val add = mkinst (offsetreg, "add", "%uintptr_t", intreg, idx) *)
