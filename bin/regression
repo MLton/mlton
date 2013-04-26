@@ -225,9 +225,10 @@ for f in *.sml; do
 			files="$files $f.[0-9][0-9].[cS]"
 		fi
                 gcc -o "$f" -w -O1                              \
+                        -I "/usr/local/include" \
                         -I "../build/lib/include"               \
-			-I "../build/lib/$crossTarget/include"  \
-                        -L"../build/lib/$crossTarget"           \
+			-I "../build/lib/targets/$crossTarget/include"  \
+                        -L"../build/lib/targets/$crossTarget"           \
                         -L/usr/pkg/lib                          \
                         -L/usr/local/lib                        \
                         $files $libs
