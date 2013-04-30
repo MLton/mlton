@@ -112,6 +112,9 @@ mips*)
 powerpc64)
 	HOST_ARCH=powerpc64
 ;;
+ppc64)
+        HOST_ARCH=powerpc64
+;;
 powerpc)
         HOST_ARCH=powerpc
 ;;
