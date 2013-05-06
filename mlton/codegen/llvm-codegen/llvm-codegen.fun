@@ -99,10 +99,14 @@ val llvmIntrinsics =
    be shared amongst all codegen functions. *)
 datatype Context = Context of {
     program: Program.t,
-    print: string -> unit,
     labelToStringIndex: Label.t -> string,
     chunkLabelToString: ChunkLabel.t -> string,
-    labelChunk: Label.t -> ChunkLabel.t
+    labelChunk: Label.t -> ChunkLabel.t,
+    entryLabels: Label.t vector,
+    labelInfo: Label.t -> {block: Block.t,
+                           chunkLabel: ChunkLabel.t,
+                           frameIndex: int option,
+                           layedOut: bool ref}
 }
 
 (* WordX.toString converts to hexadecimal, this converts to base 10 *)
@@ -951,23 +955,24 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
         val Context { labelToStringIndex = labelToStringIndex,
                       chunkLabelToString = chunkLabelToString,
-                      labelChunk = labelChunk, ... } = cxt
+                      labelChunk = labelChunk,
+                      labelInfo = labelInfo, ... } = cxt
         fun tpush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
-                val labelIndex = labelToStringIndex return
+                val frameIndex = Int.toString (valOf (#frameIndex (labelInfo return)))
                 val stackTop = nextLLVMReg ()
                 val load = mkload (stackTop, "%Pointer*", "%stackTop")
                 val gepReg = nextLLVMReg ()
                 val gep = mkgep (gepReg, "%Pointer", stackTop, [offset])
                 val castreg = nextLLVMReg ()
-                (* val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%uintptr_t*") *)
-                (* val storeIndex = mkstore ("%uintptr_t", labelIndex, castreg) *)
-                val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%Pointer*")
-                val li = if labelIndex = "0"
-                         then "null"
-                         else concat ["inttoptr (i32 ", labelIndex, " to %Pointer)"]
-                val storeIndex = mkstore ("%Pointer", li, castreg)
+                val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%uintptr_t*")
+                val storeIndex = mkstore ("%uintptr_t", frameIndex, castreg)
+                (* val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%Pointer*") *)
+                (* val li = if labelIndex = "0" *)
+                (*          then "null" *)
+                (*          else concat ["inttoptr (i32 ", labelIndex, " to %Pointer)"] *)
+                (* val storeIndex = mkstore ("%Pointer", li, castreg) *)
                 val pushcode = push (llbytes size)
             in
                 concat [load, gep, cast, storeIndex, pushcode]
@@ -1209,9 +1214,9 @@ fun outputBlock (cxt, block) =
         concat [blockLabel, printBlock, dopop, blockBody, blockTransfer, "\n"]
     end
         
-fun outputChunk (cxt, chunk) =
+fun outputChunk (cxt, print, chunk) =
     let
-        val Context { print, labelToStringIndex, chunkLabelToString, ... } = cxt
+        val Context { labelToStringIndex, chunkLabelToString, entryLabels, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
         val () = print (concat ["define %struct.cont @",
@@ -1240,13 +1245,13 @@ fun outputChunk (cxt, chunk) =
         val () = print "top:\n"
         val t2 = nextLLVMReg ()
         val () = print (mkload (t2, "%uintptr_t*", "%l_nextFun"))
-        val entryBlocks = Vector.keepAll (blocks, fn Block.T {kind, ...} => kindIsEntry kind)
+        (* val entryBlocks = Vector.keepAll (blocks, fn Block.T {kind, ...} => kindIsEntry kind) *)
         val branches =
             Vector.concatV
                 (Vector.map
-                     (entryBlocks, fn b =>
+                     (entryLabels, fn label =>
                                       let
-                                          val label = Block.label b
+                                          (* val label = Block.label b *)
                                           val labelName = Label.toString label
                                           val i = labelToStringIndex label
                                       in
@@ -1307,12 +1312,11 @@ fun outputGlobals () =
         concat [globals, nonroot]
     end
 
-fun outputLLVMDeclarations cxt =
+fun outputLLVMDeclarations (cxt, print) =
     let
-        val Context { print = print, program = program, ...} = cxt
+        val Context { program = program, ...} = cxt
         val Program.T { chunks = chunks, ... } = program
         val globals = outputGlobals ()
-(*        val globalDecs = declareGlobals cxt *)
         val labelStrings = concat (List.map (chunks, fn c =>
             let
                 val Chunk.T { blocks = blocks, ... } = c
@@ -1341,7 +1345,7 @@ fun annotate (frameLayouts, chunks) =
                                           layedOut: bool ref},
              set = setLabelInfo, ...} =
             Property.getSetOnce
-                (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
+                (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
         val entryLabels: (Label.t * int) list ref = ref []
         val indexCounter = Counter.new (Vector.length frameLayouts)
         val _ =
@@ -1359,8 +1363,8 @@ fun annotate (frameLayouts, chunks) =
                              else ()
                              ; NONE)
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       (entry frameLayoutsIndex
-                        ; SOME frameLayoutsIndex)
+                    (entry frameLayoutsIndex
+                    ; SOME frameLayoutsIndex)
            in
               setLabelInfo (label, {block = b,
                                     chunkLabel = chunkLabel,
@@ -1390,27 +1394,37 @@ fun annotate (frameLayouts, chunks) =
         (chunkLabelToString, labelToStringIndex, entryLabels, labelChunk, labelInfo)
     end
 
-fun transLLVM (program, outputLL) =
+fun makeContext program =
     let
         val Program.T { chunks, frameLayouts, ...} = program
+        val (chunkLabelToString, labelToStringIndex, entryLabels, labelChunk, labelInfo)
+                = annotate (frameLayouts, chunks)
+    in
+        Context { program = program,
+                  labelToStringIndex = labelToStringIndex,
+                  chunkLabelToString = chunkLabelToString,
+                  labelChunk = labelChunk,
+                  entryLabels = entryLabels,
+                  labelInfo = labelInfo
+                }
+    end
+
+fun transLLVM (cxt, outputLL) =
+    let
+        val Context { program, ... } = cxt
+        val Program.T { chunks, ...} = program
         val { done, print, file=_ } = outputLL ()
-        val (chunkLabelToString, labelToStringIndex, _, labelChunk, _) =
-            annotate (frameLayouts, chunks)
-        val cxt = Context { program = program,
-                            print = print,
-                            labelToStringIndex = labelToStringIndex,
-                            chunkLabelToString = chunkLabelToString,
-                            labelChunk = labelChunk }
-        val () = outputLLVMDeclarations cxt
-        val () = List.foreach (chunks, fn chunk => outputChunk (cxt, chunk))
+        val () = outputLLVMDeclarations (cxt, print)
+        val () = List.foreach (chunks, fn chunk => outputChunk (cxt, print, chunk))
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
     in
         done ()
     end
 
-fun transC (program, outputC) =
+fun transC (cxt, outputC) =
     let
+        val Context { program, ... } = cxt
         local val Machine.Program.T
                       {chunks, 
                        frameLayouts, 
@@ -1439,10 +1453,8 @@ fun transC (program, outputC) =
         end
 
         val {print, done, file=_} = outputC ()
-        val Program.T {main = main, chunks = chunks,
-                       frameLayouts, ... } = program
-        val (chunkLabelToString, labelToStringIndex, entryLabels, _, labelInfo) =
-            annotate (frameLayouts, chunks)
+        val Program.T {main = main, chunks = chunks, ... } = program
+        val Context { chunkLabelToString, labelToStringIndex, entryLabels, labelInfo, ... } = cxt
         val chunkLabel = chunkLabelToString (#chunkLabel main)
         val mainLabel = labelToStringIndex (#label main)
         val additionalMainArgs = [chunkLabel, mainLabel]
@@ -1488,8 +1500,9 @@ fun transC (program, outputC) =
 
 fun output {program, outputC, outputLL} =
     let
-        val () = transC (program, outputC)
-        val () = transLLVM (program, outputLL)
+        val context = makeContext program
+        val () = transC (context, outputC)
+        val () = transLLVM (context, outputLL)
     in
         ()
     end
