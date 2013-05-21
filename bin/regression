@@ -215,19 +215,20 @@ for f in *.sml; do
                 ;;
                 esac
                 libs="-lmlton -lgmp $libs -lgdtoa -lm"
-                # Must use $f.[0-9].[cS], not $f.*.[cS], because the
+                # Must use $f.[0-9].[csS], not $f.*.[csS], because the
                 # latter will include other files, e.g. for finalize,
                 # it will also include finalize.2. This happens only 
 		# when running cross regressions, which builds all the
 		# C files and saves them in this directory.
-		files="$f.[0-9].[cS]"
-		if [ 0 -ne `ls $f.[0-9][0-9].[cS] 2>/dev/null | wc -l` ]; then 
-			files="$files $f.[0-9][0-9].[cS]"
+		files="$f.[0-9].[csS]"
+		if [ 0 -ne `ls $f.[0-9][0-9].[csS] 2>/dev/null | wc -l` ]; then
+			files="$files $f.[0-9][0-9].[csS]"
 		fi
                 gcc -o "$f" -w -O1                              \
+                        -I "/usr/local/include" \
                         -I "../build/lib/include"               \
-			-I "../build/lib/$crossTarget/include"  \
-                        -L"../build/lib/$crossTarget"           \
+			-I "../build/lib/targets/$crossTarget/include"  \
+                        -L"../build/lib/targets/$crossTarget"           \
                         -L/usr/pkg/lib                          \
                         -L/usr/local/lib                        \
                         $files $libs
