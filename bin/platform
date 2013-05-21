@@ -93,6 +93,9 @@ amd64)
 arm*)
         HOST_ARCH=arm
 ;;
+aarch64)
+        HOST_ARCH=arm64
+;;
 parisc*)
         HOST_ARCH=hppa
 ;;

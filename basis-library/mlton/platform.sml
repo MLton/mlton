@@ -20,6 +20,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                 (Alpha, "Alpha"),
                 (AMD64, "AMD64"),
                 (ARM, "ARM"),
+                (ARM64, "ARM64"),
                 (HPPA, "HPPA"),
                 (IA64, "IA64"),
                 (m68k, "m68k"),

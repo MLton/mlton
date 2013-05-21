@@ -148,6 +148,7 @@ structure Platform =
                Alpha
              | AMD64
              | ARM
+             | ARM64
              | HPPA
              | IA64
              | m68k
@@ -163,6 +164,7 @@ structure Platform =
                   "alpha" => Alpha
                 | "amd64" => AMD64
                 | "arm" => ARM
+                | "arm64" => ARM64
                 | "hppa" => HPPA
                 | "ia64" => IA64
                 | "m68k" => m68k

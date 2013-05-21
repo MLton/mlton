@@ -53,6 +53,9 @@ static void catcher (__attribute__ ((unused)) int signo,
 #elif (defined (__arm__))
         ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.arm_pc);
+#elif (defined (__aarch64__))
+        ucontext_t* ucp = (ucontext_t*)context;
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.pc);
 #elif (defined (__s390__))
         ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.psw.addr);
