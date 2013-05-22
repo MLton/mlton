@@ -11081,26 +11081,36 @@ index 0000000..5961278
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..d8dab58
+index 0000000..b3bb573
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,26 @@
 +The following changes were made to the SML/NJ Library, in addition to
-+deriving the {{{.mlb}}} files from the {{{.cm}}} files:
-+ * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
-+ * {{{HTML/html-elements-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
-+ * {{{HTML4/pp-init.sml}}} (added): Implements {{{structure PrettyPrint}}} using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the {{{structure PrettyPrint}}} provided by the SML/NJ compiler itself.
-+ * {{{Util/bit-array.sml}}} (modified): The computation of the {{{maxLen}}} is given by: {{{
++deriving the `.mlb` files from the `.cm` files:
++
++* `HTML/html-attrs-fn.sml` (modified): Rewrote use of or-patterns.
++* `HTML/html-elements-fn.sml` (modified): Rewrote use of or-patterns.
++* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
++* `Util/bit-array.sml` (modified): The computation of the `maxLen` is given by:
+++
++[source,sml]
++----
 +val maxLen = 8*Word8Array.maxLen
-+}}} This is fine in SML/NJ where {{{Word8Array.maxLen}}} is 16777215, but in MLton, {{{Word8Array.maxLen}}} is equal to {{{valOf(Int.maxInt)}}}, so the computation overflows. To accommodate both SML/NJ and MLton, the computation is replaced by {{{
++----
+++
++This is fine in SML/NJ where `Word8Array.maxLen` is 16777215, but in MLton, `Word8Array.maxLen` is equal to `valOf(Int.maxInt)`, so the computation overflows. To accommodate both SML/NJ and MLton, the computation is replaced by
+++
++[source,sml]
++----
 +val maxLen = (8*Word8Array.maxLen) handle Overflow => Word8Array.maxLen
-+}}}
-+ * {{{Util/engine.mlton.sml}}} (added, not exported): Implements {{{structure Engine}}}, providing time-limited, resumable computations using ["MLtonThread"], ["MLtonSignal"], and ["MLtonItimer"].
-+ * {{{Util/graph-scc-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
-+ * {{{Util/redblack-map-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
-+ * {{{Util/redblack-set-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
-+ * {{{Util/time-limit.mlb}}} (added): Exports {{{structure TimeLimit}}}, which is ''not'' exported by {{{smlnj-lib.mlb}}}.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including {{{structure TimeLimit}}}.
-+ * {{{Util/time-limit.mlton.sml}}} (added): Implements {{{structure TimeLimit}}} using {{{structure Engine}}}.  The SML/NJ implementation of {{{structure TimeLimit}}} uses SML/NJ's first-class continuations, signals, and interval timer.
++----
++
++* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
++* `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
++* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 diff --git a/Reactive/reactive-lib.mlb b/Reactive/reactive-lib.mlb
 new file mode 100644
 index 0000000..3f13994
@@ -11471,7 +11481,7 @@ index 0000000..ebceb6d
 +
 +end
 diff --git a/Util/bit-array.sml b/Util/bit-array.sml
-index 8d962d8..e1de7e7 100644
+index 8d962d8..01ee183 100644
 --- a/Util/bit-array.sml
 +++ b/Util/bit-array.sml
 @@ -47,7 +47,9 @@ structure BitArray :> BIT_ARRAY =
@@ -11481,13 +11491,13 @@ index 8d962d8..e1de7e7 100644
 -          val maxLen = 8*Word8Array.maxLen
 +          val maxLen = (8*Word8Array.maxLen)
 +	               handle Overflow => Word8Array.maxLen
-+	               
++
            datatype vector = BA of {nbits : int, bits : W8A.array}
        
            fun array (0,init) = BA{nbits=0,bits=W8A.array(0,0w0)}
 diff --git a/Util/engine.mlton.sml b/Util/engine.mlton.sml
 new file mode 100644
-index 0000000..2463ad6
+index 0000000..deb0c42
 --- /dev/null
 +++ b/Util/engine.mlton.sml
 @@ -0,0 +1,99 @@
@@ -11553,7 +11563,7 @@ index 0000000..2463ad6
 +   in
 +      T {return = return, thread = thread}
 +   end
-+     
++
 +fun run (T {return, thread}, time: Time.time): 'a res =
 +   Thread.switch
 +   (fn cur: 'a res Thread.t =>
