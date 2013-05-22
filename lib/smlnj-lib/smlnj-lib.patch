@@ -6498,7 +6498,7 @@ index 0000000..c61b473
 +end
 diff --git a/HTML/html-gram.sml b/HTML/html-gram.sml
 new file mode 100644
-index 0000000..0dd6ee6
+index 0000000..5d220fb
 --- /dev/null
 +++ b/HTML/html-gram.sml
 @@ -0,0 +1,2477 @@
@@ -7426,7 +7426,7 @@ index 0000000..0dd6ee6
 +       fun f i =
 +            if i=numstates then g i
 +            else (Array.update(memo,i,SHIFT (STATE i)); f (i+1))
-+          in f 0 handle Subscript => ()
++          in f 0 handle General.Subscript => ()
 +          end
 +in
 +val entry_to_action = fn 0 => ACCEPT | 1 => ERROR | j => Array.sub(memo,(j-2))
@@ -7436,7 +7436,7 @@ index 0000000..0dd6ee6
 +val actionRowNumbers = string_to_list actionRowNumbers
 +val actionT = let val actionRowLookUp=
 +let val a=Array.fromList(actionRows) in fn i=>Array.sub(a,i) end
-+in Array.fromList(map actionRowLookUp actionRowNumbers)
++in Array.fromList(List.map actionRowLookUp actionRowNumbers)
 +end
 +in LrTable.mkLrTable {actions=actionT,gotos=gotoT,numRules=numrules,
 +numStates=numstates,initialState=STATE 0}
@@ -8981,7 +8981,7 @@ index 0000000..0dd6ee6
 +end
 diff --git a/HTML/html-lex.sml b/HTML/html-lex.sml
 new file mode 100644
-index 0000000..e5a78a0
+index 0000000..331d859
 --- /dev/null
 +++ b/HTML/html-lex.sml
 @@ -0,0 +1,670 @@
@@ -9469,12 +9469,12 @@ index 0000000..e5a78a0
 +),
 +(0, "")]
 +fun f x = x 
-+val s = map f (rev (tl (rev s))) 
++val s = List.map f (List.rev (tl (List.rev s))) 
 +exception LexHackingError 
 +fun look ((j,x)::r, i: int) = if i = j then x else look(r, i) 
 +  | look ([], i) = raise LexHackingError
 +fun g {fin=x, trans=i} = {fin=x, trans=look(s,i)} 
-+in Vector.fromList(map g 
++in Vector.fromList(List.map g 
 +[{fin = [], trans = 0},
 +{fin = [], trans = 1},
 +{fin = [], trans = 1},
@@ -9568,7 +9568,7 @@ index 0000000..e5a78a0
 +	| action (i,(node::acts)::l) =
 +		case node of
 +		    Internal.N yyk => 
-+			(let fun yymktext() = substring(!yyb,i0,i-i0)
++			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
 +			     val yypos = i0+ !yygone
 +			val _ = yylineno := CharVectorSlice.foldli
 +				(fn (_,#"\n", n) => n+1 | (_,_, n) => n) (!yylineno) (CharVectorSlice.slice (!yyb,i0,SOME(i-i0)))
@@ -9629,14 +9629,14 @@ index 0000000..e5a78a0
 +	     if trans = #trans(Vector.sub(Internal.tab,0))
 +	       then action(l,NewAcceptingLeaves
 +) else	    let val newchars= if !yydone then "" else yyinput 1024
-+	    in if (size newchars)=0
++	    in if (String.size newchars)=0
 +		  then (yydone := true;
 +		        if (l=i0) then UserDeclarations.eof yyarg
 +		                  else action(l,NewAcceptingLeaves))
 +		  else (if i0=l then yyb := newchars
-+		     else yyb := substring(!yyb,i0,l-i0)^newchars;
++		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
 +		     yygone := !yygone+i0;
-+		     yybl := size (!yyb);
++		     yybl := String.size (!yyb);
 +		     scan (s,AcceptingLeaves,l-i0,0))
 +	    end
 +	  else let val NewChar = Char.ord(Unsafe.CharVector.sub(!yyb,l))
@@ -9646,7 +9646,7 @@ index 0000000..e5a78a0
 +	end
 +	end
 +(*
-+	val start= if substring(!yyb,!yybufpos-1,1)="\n"
++	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
 +then !yybegin+1 else !yybegin
 +*)
 +	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
@@ -9657,10 +9657,10 @@ index 0000000..e5a78a0
 +end
 diff --git a/HTML/html-lib.mlb b/HTML/html-lib.mlb
 new file mode 100644
-index 0000000..38d179f
+index 0000000..fc014d3
 --- /dev/null
 +++ b/HTML/html-lib.mlb
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,299 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -9878,6 +9878,7 @@ index 0000000..38d179f
 +      signature ARG_PARSER = gs_24
 +      structure Array = gs_36
 +      structure Char = gs_3
++      structure General = gs_0
 +      structure HTML = gs_5
 +      structure HTMLAttrVals = gs_21
 +      signature HTML_ATTRS = gs_22
@@ -11429,6 +11430,228 @@ index 0000000..0dae724
 +end
 +
 +end
+diff --git a/SExp/sexp-lib.mlb b/SExp/sexp-lib.mlb
+index d7287e5..d0726a0 100644
+--- a/SExp/sexp-lib.mlb
++++ b/SExp/sexp-lib.mlb
+@@ -1,51 +1,171 @@
+-(* sexp-lib.mlb
+- *
+- * COPYRIGHT (c) 2011 The Fellowship of SML/NJ (http://www.smlnj.org)
+- * All rights reserved.
+- *
+- * Author: Damon Wang (with modifications by John Reppy)
+- *
+- * An MLB file for the JSON library, so that it can be used by MLton programs.
+- *
+- * TODO:
+- *	This is not complete, since MLton does not have the ml-lpt-lib yet.
+- *)
+-
+-local
+-
+-  $(SML_LIB)/basis/basis.mlb
+-  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+-(* I don't know what the path to this library will be
+-  ??/ml-lpt-lib/ml-lpt-lib.mlb
+-*)
+-
+-  ann
+-    "nonexhaustiveMatch warn" "redundantMatch warn"
+-    "sequenceNonUnit ignore"
+-    "warnUnused false" "forceUsed"
+-  in
+-
+-    sexp-tokens.sml
+-    sexp.lex.sml
+-    sexp.sml
+-(*    sexp-stream-parser.sml *)
+-    sexp-parser.sml
+-(*    sexp-stream-printer.sml *)
+-    sexp-printer.sml
+-
+-  end
+ 
++ann
++  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
+ in
+ 
+-(* DOM-style API (tree based) *)
+-  structure SExp
+-  structure SExpParser
+-  structure SExpPrinter
+-
+-(* SAX-style API (event based) *)
+-(*
+-  structure SExpStreamParser
+-  structure SExpStreamPrinter
+-*)
++local
++  basis l8 =
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb
++    end
++  basis l4 =
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++  basis l38 =
++    bas
++      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = Format
++   end
++   local
++      open l8
++   in
++      structure gs_1 = TextIO
++   end
++   local
++      open l8
++   in
++      structure gs_2 = String
++   end
++   local
++      open l8
++   in
++      structure gs_3 = List
++   end
++   local
++      open l4
++   in
++      structure gs_4 = Atom
++   end
++   local
++      open l8
++   in
++      structure gs_5 = IntInf
++   end
++   local
++      open l8
++   in
++      structure gs_6 = ListPair
++   end
++   local
++      open l8
++   in
++      structure gs_7 = Real
++   end
++   local
++      structure Atom = gs_4
++      structure IntInf = gs_5
++      structure ListPair = gs_6
++      structure Real = gs_7
++      sexp.sml
++   in
++      structure gs_8 = SExp
++   end
++   local
++      structure Atom = gs_4
++      structure Format = gs_0
++      structure List = gs_3
++      structure SExp = gs_8
++      structure String = gs_2
++      structure TextIO = gs_1
++      sexp-printer.sml
++   in
++      structure gs_9 = SExpPrinter
++   end
++   local
++      open l38
++   in
++      structure gs_10 = AntlrStreamPos
++   end
++   local
++      open l4
++   in
++      structure gs_11 = UTF8
++   end
++   local
++      structure IntInf = gs_5
++      structure List = gs_3
++      structure Real = gs_7
++      structure String = gs_2
++      structure UTF8 = gs_11
++      sexp-tokens.sml
++   in
++      structure gs_12 = SExpTokens
++   end
++   local
++      open l8
++   in
++      structure gs_13 = StringCvt
++   end
++   local
++      open l8
++   in
++      structure gs_14 = LargeReal
++   end
++   local
++      open l8
++   in
++      structure gs_15 = Substring
++   end
++   local
++      open l8
++   in
++      structure gs_16 = Vector
++   end
++   local
++      open l38
++   in
++      structure gs_17 = ULexBuffer
++   end
++   local
++      open l8
++   in
++      structure gs_18 = Word
++   end
++   local
++      structure AntlrStreamPos = gs_10
++      structure IntInf = gs_5
++      structure LargeReal = gs_14
++      structure List = gs_3
++      structure SExpTokens = gs_12
++      structure String = gs_2
++      structure StringCvt = gs_13
++      structure Substring = gs_15
++      structure TextIO = gs_1
++      structure ULexBuffer = gs_17
++      structure UTF8 = gs_11
++      structure Vector = gs_16
++      structure Word = gs_18
++      sexp.lex.sml
++   in
++      structure gs_19 = SExpLexer
++   end
++   local
++      structure AntlrStreamPos = gs_10
++      structure Atom = gs_4
++      structure List = gs_3
++      structure SExp = gs_8
++      structure SExpLexer = gs_19
++      structure SExpTokens = gs_12
++      structure TextIO = gs_1
++      sexp-parser.sml
++   in
++      structure gs_20 = SExpParser
++   end
++in
++   structure SExp = gs_8
++   structure SExpParser = gs_20
++   structure SExpPrinter = gs_9
++end
++end
+ 
+ end
 diff --git a/Unix/unix-lib.mlb b/Unix/unix-lib.mlb
 new file mode 100644
 index 0000000..ebceb6d
@@ -11692,10 +11915,10 @@ index f360528..545defd 100644
      structure Key = K
 diff --git a/Util/smlnj-lib.mlb b/Util/smlnj-lib.mlb
 new file mode 100644
-index 0000000..14462d8
+index 0000000..7ad014d
 --- /dev/null
 +++ b/Util/smlnj-lib.mlb
-@@ -0,0 +1,1108 @@
+@@ -0,0 +1,1120 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -12526,19 +12749,29 @@ index 0000000..14462d8
 +      structure gs_115 = HashTable
 +   end
 +   local
++      structure Array = gs_12
++      signature HASH_KEY = gs_51
++      structure List = gs_0
++      structure Word = gs_39
++      hash-set-fn.sml
++   in
++      signature gs_116 = HASH_SET
++      functor gs_117 = HashSetFn
++   end
++   local
 +      structure General = gs_14
 +      structure Int = gs_3
 +      signature MONO_ARRAY = gs_55
 +      signature MONO_DYNAMIC_ARRAY = gs_101
 +      dynamic-array-fn.sml
 +   in
-+      functor gs_116 = DynamicArrayFn
++      functor gs_118 = DynamicArrayFn
 +   end
 +   local
 +      signature MONO_ARRAY = gs_55
 +      mono-array-sort-sig.sml
 +   in
-+      signature gs_117 = MONO_ARRAY_SORT
++      signature gs_119 = MONO_ARRAY_SORT
 +   end
 +   local
 +      structure Int = gs_3
@@ -12546,7 +12779,7 @@ index 0000000..14462d8
 +      signature ORD_SET = gs_2
 +      int-redblack-set.sml
 +   in
-+      structure gs_118 = IntRedBlackSet
++      structure gs_120 = IntRedBlackSet
 +   end
 +   local
 +      structure Int = gs_3
@@ -12554,89 +12787,89 @@ index 0000000..14462d8
 +      signature ORD_MAP = gs_7
 +      int-redblack-map.sml
 +   in
-+      structure gs_119 = IntRedBlackMap
++      structure gs_121 = IntRedBlackMap
 +   end
 +   local
 +      array-sort-sig.sml
 +   in
-+      signature gs_120 = ARRAY_SORT
++      signature gs_122 = ARRAY_SORT
 +   end
 +   local
-+      signature ARRAY_SORT = gs_120
++      signature ARRAY_SORT = gs_122
 +      structure Array = gs_12
 +      structure Int = gs_3
 +      structure Unsafe = gs_43
 +      array-qsort.sml
 +   in
-+      structure gs_121 = ArrayQSort
++      structure gs_123 = ArrayQSort
 +   end
 +   local
 +      uref-sig.sml
 +   in
-+      signature gs_122 = UREF
++      signature gs_124 = UREF
 +   end
 +   local
-+      signature UREF = gs_122
++      signature UREF = gs_124
 +      simple-uref.sml
 +   in
-+      structure gs_123 = SimpleURef
++      structure gs_125 = SimpleURef
 +   end
 +   local
 +      listsort-sig.sml
 +   in
-+      signature gs_124 = LIST_SORT
++      signature gs_126 = LIST_SORT
 +   end
 +   local
-+      signature LIST_SORT = gs_124
++      signature LIST_SORT = gs_126
 +      structure LibBase = gs_5
 +      list-mergesort.sml
 +   in
-+      structure gs_125 = ListMergeSort
++      structure gs_127 = ListMergeSort
 +   end
 +   local
 +      structure Int = gs_3
 +      signature MONO_ARRAY = gs_55
-+      signature MONO_ARRAY_SORT = gs_117
++      signature MONO_ARRAY_SORT = gs_119
 +      array-qsort-fn.sml
 +   in
-+      functor gs_126 = ArrayQSortFn
++      functor gs_128 = ArrayQSortFn
 +   end
 +   local
 +      structure Atom = gs_45
 +      functor BinarySetFn = gs_86
 +      atom-binary-set.sml
 +   in
-+      structure gs_127 = AtomBinarySet
++      structure gs_129 = AtomBinarySet
 +   end
 +   local
 +      structure Atom = gs_45
 +      functor BinaryMapFn = gs_87
 +      atom-binary-map.sml
 +   in
-+      structure gs_128 = AtomBinaryMap
++      structure gs_130 = AtomBinaryMap
 +   end
 +   local
 +      structure StringCvt = gs_27
 +      utf8-sig.sml
 +   in
-+      signature gs_129 = UTF8
++      signature gs_131 = UTF8
 +   end
 +   local
 +      structure Char = gs_29
 +      structure String = gs_28
 +      structure StringCvt = gs_27
 +      structure Substring = gs_26
-+      signature UTF8 = gs_129
++      signature UTF8 = gs_131
 +      structure Word = gs_39
 +      utf8.sml
 +   in
-+      structure gs_130 = UTF8
++      structure gs_132 = UTF8
 +   end
 +   local
-+      signature UREF = gs_122
++      signature UREF = gs_124
 +      uref.sml
 +   in
-+      structure gs_131 = URef
++      structure gs_133 = URef
 +   end
 +   local
 +      structure Atom = gs_45
@@ -12650,7 +12883,7 @@ index 0000000..14462d8
 +      structure Word8 = gs_35
 +      scan-sig.sml
 +   in
-+      signature gs_132 = SCAN
++      signature gs_134 = SCAN
 +   end
 +   local
 +      structure Bool = gs_102
@@ -12659,50 +12892,50 @@ index 0000000..14462d8
 +      structure Int = gs_3
 +      structure LargeInt = gs_38
 +      structure LargeReal = gs_41
-+      signature SCAN = gs_132
++      signature SCAN = gs_134
 +      structure StringCvt = gs_27
 +      structure Substring = gs_26
 +      structure Word8Array = gs_91
 +      scan.sml
 +   in
-+      structure gs_133 = Scan
++      structure gs_135 = Scan
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_134 = Int32
++      structure gs_136 = Int32
 +   end
 +   local
 +      structure Word31 = gs_92
 +      rand-sig.sml
 +   in
-+      signature gs_135 = RAND
++      signature gs_137 = RAND
 +   end
 +   local
-+      structure Int32 = gs_134
++      structure Int32 = gs_136
 +      structure LibBase = gs_5
-+      signature RAND = gs_135
++      signature RAND = gs_137
 +      structure Real = gs_40
 +      structure Word31 = gs_92
 +      rand.sml
 +   in
-+      structure gs_136 = Rand
++      structure gs_138 = Rand
 +   end
 +   local
 +      signature LIST_XPROD = gs_67
 +      list-xprod.sml
 +   in
-+      structure gs_137 = ListXProd
++      structure gs_139 = ListXProd
 +   end
 +in
 +   structure ANSITerm = gs_23
-+   signature ARRAY_SORT = gs_120
++   signature ARRAY_SORT = gs_122
 +   signature ATOM = gs_42
-+   structure ArrayQSort = gs_121
-+   functor ArrayQSortFn = gs_126
++   structure ArrayQSort = gs_123
++   functor ArrayQSortFn = gs_128
 +   structure Atom = gs_45
-+   structure AtomBinaryMap = gs_128
-+   structure AtomBinarySet = gs_127
++   structure AtomBinaryMap = gs_130
++   structure AtomBinarySet = gs_129
 +   structure AtomMap = gs_62
 +   structure AtomRedBlackMap = gs_61
 +   structure AtomRedBlackSet = gs_58
@@ -12718,7 +12951,7 @@ index 0000000..14462d8
 +   structure CharMap = gs_66
 +   signature DYNAMIC_ARRAY = gs_15
 +   structure DynamicArray = gs_16
-+   functor DynamicArrayFn = gs_116
++   functor DynamicArrayFn = gs_118
 +   signature FIFO = gs_106
 +   signature FORMAT = gs_46
 +   signature FORMAT_COMB = gs_103
@@ -12730,8 +12963,10 @@ index 0000000..14462d8
 +   structure GetOpt = gs_31
 +   functor GraphSCCFn = gs_69
 +   signature HASH_KEY = gs_51
++   signature HASH_SET = gs_116
 +   signature HASH_TABLE = gs_114
 +   functor Hash2TableFn = gs_109
++   functor HashSetFn = gs_117
 +   structure HashString = gs_44
 +   structure HashTable = gs_115
 +   functor HashTableFn = gs_70
@@ -12744,22 +12979,22 @@ index 0000000..14462d8
 +   structure IntHashTable = gs_54
 +   structure IntListMap = gs_82
 +   structure IntListSet = gs_81
-+   structure IntRedBlackMap = gs_119
-+   structure IntRedBlackSet = gs_118
++   structure IntRedBlackMap = gs_121
++   structure IntRedBlackSet = gs_120
 +   functor IntervalSetFn = gs_78
 +   functor KeywordFn = gs_111
 +   signature LIB_BASE = gs_4
 +   signature LIST_FORMAT = gs_72
-+   signature LIST_SORT = gs_124
++   signature LIST_SORT = gs_126
 +   signature LIST_XPROD = gs_67
 +   functor LeftPriorityQFn = gs_113
 +   structure LibBase = gs_5
 +   structure ListFormat = gs_73
 +   functor ListMapFn = gs_8
-+   structure ListMergeSort = gs_125
++   structure ListMergeSort = gs_127
 +   functor ListSetFn = gs_6
-+   structure ListXProd = gs_137
-+   signature MONO_ARRAY_SORT = gs_117
++   structure ListXProd = gs_139
++   signature MONO_ARRAY_SORT = gs_119
 +   signature MONO_DYNAMIC_ARRAY = gs_101
 +   signature MONO_HASH2_TABLE = gs_77
 +   signature MONO_HASH_TABLE = gs_52
@@ -12778,24 +13013,24 @@ index 0000000..14462d8
 +   structure PropList = gs_63
 +   signature QUEUE = gs_105
 +   structure Queue = gs_108
-+   signature RAND = gs_135
++   signature RAND = gs_137
 +   signature RANDOM = gs_94
-+   structure Rand = gs_136
++   structure Rand = gs_138
 +   structure Random = gs_95
 +   structure RealOrderStats = gs_96
 +   functor RedBlackMapFn = gs_60
 +   functor RedBlackSetFn = gs_57
-+   signature SCAN = gs_132
++   signature SCAN = gs_134
 +   signature SPLAY_TREE = gs_18
-+   structure Scan = gs_133
-+   structure SimpleURef = gs_123
++   structure Scan = gs_135
++   structure SimpleURef = gs_125
 +   functor SplayMapFn = gs_21
 +   functor SplaySetFn = gs_20
 +   structure SplayTree = gs_19
-+   signature UREF = gs_122
-+   structure URef = gs_131
-+   signature UTF8 = gs_129
-+   structure UTF8 = gs_130
++   signature UREF = gs_124
++   structure URef = gs_133
++   signature UTF8 = gs_131
++   structure UTF8 = gs_132
 +   structure UnivariateStats = gs_97
 +   structure WordHashTable = gs_110
 +   structure WordRedBlackMap = gs_80
@@ -12858,10 +13093,10 @@ index 0000000..0f585b7
 +end
 diff --git a/smlnj-lib.mlb b/smlnj-lib.mlb
 new file mode 100644
-index 0000000..b59979f
+index 0000000..846951a
 --- /dev/null
 +++ b/smlnj-lib.mlb
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +local
 +   Controls/controls-lib.mlb
 +   HTML/html-lib.mlb
@@ -12872,6 +13107,7 @@ index 0000000..b59979f
 +   PP/pp-lib.mlb
 +   Reactive/reactive-lib.mlb
 +   RegExp/regexp-lib.mlb
++   SExp/sexp-lib.mlb
 +   Unix/unix-lib.mlb
 +   Util/smlnj-lib.mlb
 +   Util/time-limit.mlb
