@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1190,7 +1190,9 @@ fun commandLine (args: string list): unit =
                      fun maybeOutBase suf =
                         case !output of
                            NONE => suffix suf
-                         | SOME f => concat [File.base f, suf]
+                         | SOME f => if File.extension f = SOME "exe"
+                                        then concat [File.base f, suf]
+                                     else concat [f, suf]
                      val { base = outputBase, ext=_ } =
                         OS.Path.splitBaseExt (maybeOut ".ext")
                      val { file = defLibname, dir=_ } =
