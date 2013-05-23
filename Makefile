@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011 Matthew Fluet.
+## Copyright (C) 2009,2011,2013 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -75,8 +75,8 @@ basis-no-check:
 	mkdir -p "$(LIB)/sml"
 	rm -rf "$(LIB)/sml/basis"
 	$(CP) "$(SRC)/basis-library/." "$(LIB)/sml/basis"
-	find "$(LIB)/sml/basis" -type d -name .svn | xargs rm -rf
 	find "$(LIB)/sml/basis" -type f -name .ignore | xargs rm -rf
+	find "$(LIB)/sml/basis" -type l -name .gitignore | xargs rm -rf
 
 .PHONY: basis
 basis:
@@ -96,9 +96,10 @@ bootstrap-nj:
 clean:
 	bin/clean
 
-.PHONY: clean-svn
-clean-svn:
-	find . -type d | grep .svn | xargs rm -rf
+.PHONY: clean-git
+clean-git:
+	find . -type d -name .git | xargs rm -rf
+	find . -type l -name .gitignore | xargs rm -rf
 
 .PHONY: compiler
 compiler:
@@ -153,8 +154,8 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
 	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
-	find "$(LIB)/sml" -type d -name .svn | xargs rm -rf
 	find "$(LIB)/sml" -type f -name .ignore | xargs rm -rf
+	find "$(LIB)/sml" -type l -name .gitignore | xargs rm -rf
 
 .PHONY: libraries
 libraries:
@@ -383,10 +384,10 @@ install-docs:
 	if test -r $(YACC)/$(YACC).pdf; then                            \
 		$(CP) $(YACC)/$(YACC).pdf $(TDOC);                      \
 	fi
-	find "$(TDOC)/" -name .svn -type d | xargs rm -rf
-	find "$(TDOC)/" -name .ignore -type f | xargs rm -rf
-	find "$(TEXM)/" -name .svn -type d | xargs rm -rf
-	find "$(TEXM)/" -name .ignore -type f | xargs rm -rf
+	find "$(TDOC)/" -type f -name .ignore | xargs rm -rf
+	find "$(TDOC)/" -type l -name .gitignore | xargs rm -rf
+	find "$(TEXM)/" -type f -name .ignore | xargs rm -rf
+	find "$(TEXM)/" -type l -name .gitignore | xargs rm -rf
 
 
 .PHONY: move-docs
@@ -398,14 +399,14 @@ move-docs:	install-docs install-no-docs
 .PHONY: release
 release: version
 	tar cvzf ../mlton-$(VERSION).tar.gz \
-		--exclude .svn --exclude package \
+		--exclude .git --exclude .gitignore --exclude package \
 		--transform "s@^@mlton-$(VERSION)/@" \
 		*
 
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd
 freebsd:
-	$(MAKE) clean clean-svn version
+	$(MAKE) clean clean-git version
 	rm -rf "$(BSDSRC)"
 	mkdir -p "$(BSDSRC)"
 	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
@@ -419,7 +420,7 @@ TOPDIR := 'TOPDIR-unset'
 SOURCEDIR := $(TOPDIR)/SOURCES/mlton-$(VERSION)
 .PHONY: rpms
 rpms:
-	$(MAKE) clean clean-svn version
+	$(MAKE) clean clean-git version
 	mkdir -p "$(TOPDIR)"
 	cd "$(TOPDIR)" && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
 	rm -rf "$(SOURCEDIR)"
