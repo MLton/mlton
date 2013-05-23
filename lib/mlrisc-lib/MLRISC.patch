@@ -10,18 +10,19 @@ index 24d393f..6e58ea0 100755
  #
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..30a22b4
+index 0000000..2aae5cb
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,9 @@
 +The following changes were made to the MLRISC Library, in addition to
-+deriving the {{{.mlb}}} file from the {{{.cm}}} files:
-+ * eliminate or-patterns: Duplicate the whole match ({{{p => e}}}) at each of the patterns.
-+ * eliminate vector constants: Change {{{#[}}} to {{{Vector.fromList [}}}.
-+ * eliminate {{{withtype}}} in signatures.
-+ * eliminate sequential {{{withtype}}} expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
-+ * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
-+ * eliminate {{{where <str> = <str>}}}: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
++deriving the `.mlb` files from the `.cm` files:
++
++* eliminate _or-patterns_: Duplicate the whole match (`p => e`) at each of the patterns.
++* eliminate vector constants: Change `#[` to `Vector.fromList [`.
++* eliminate `withtype` in signatures.
++* eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
++* eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
++* eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
 diff --git a/aliasing/pointsTo.sig b/aliasing/pointsTo.sig
 index 9abcd4b..35655ef 100644
 --- a/aliasing/pointsTo.sig
@@ -434,7 +435,7 @@ index 8b6771e..6c39fa7 100644
  struct
      structure I = Instr
 diff --git a/alpha/mltree/alpha.sml b/alpha/mltree/alpha.sml
-index c7b22a3..d7375bb 100644
+index c7b22a3..6ffe6e8 100644
 --- a/alpha/mltree/alpha.sml
 +++ b/alpha/mltree/alpha.sml
 @@ -11,11 +11,72 @@
@@ -540,7 +541,7 @@ index c7b22a3..d7375bb 100644
 +     val sh1addv = NONE
 +     val sh2addv = NONE
 +     val sh3addv = NONE
-+     
++
 +     val signed = true)
 +
 +  (* unsigned, non-trapping version of multiply and divide *)
@@ -596,7 +597,7 @@ index c7b22a3..d7375bb 100644
 +         in  [I.operate{oper=I.ADDL,ra=r,rb=zeroOpn,rc=tmp},
 +              I.operate{oper=I.SRA,ra=tmp,rb=I.IMMop i,rc=d}]
 +         end
-+     
++
 +     val trapping = false
       val multCost = multCost
 -     fun addv{r1,r2,d} = [I.operatev{oper=I.ADDLV,ra=r1,rb=I.REGop r2,rc=d}]
@@ -612,7 +613,7 @@ index c7b22a3..d7375bb 100644
 +                    [I.operate{oper=I.S4ADDL,ra=r1,rb=I.REGop r2,rc=d}])
 +     val sh3addv = SOME(fn {r1,r2,d} =>
 +                    [I.operate{oper=I.S8ADDL,ra=r1,rb=I.REGop r2,rc=d}])
-+     
++
 +     val signed = false)
 +  (* signed, non-trapping version of multiply and divide *)
 +  structure Muls32 = MLTreeMult
@@ -621,13 +622,10 @@ index c7b22a3..d7375bb 100644
 +     structure CB = CellsBasis
 +
 +     val intTy = 32
-+   
++
 +     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
- 
--  (* non-trapping version of multiply and divide *)
--  functor Mul32 = Multiply32
--    (val trapping = false
++
 +     fun mov{r,d}    = I.COPY{k=CB.GP, sz=intTy, dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.operate{oper=I.ADDL,ra=r1,rb=I.REGop r2,rc=d}
 +     (*
@@ -659,7 +657,10 @@ index c7b22a3..d7375bb 100644
 +         in  [I.operate{oper=I.ADDL,ra=r,rb=zeroOpn,rc=tmp},
 +              I.operate{oper=I.SRA,ra=tmp,rb=I.IMMop i,rc=d}]
 +         end
-+
+ 
+-  (* non-trapping version of multiply and divide *)
+-  functor Mul32 = Multiply32
+-    (val trapping = false
 +     val trapping = false
       val multCost = multCost
       fun addv{r1,r2,d} = [I.operate{oper=I.ADDL,ra=r1,rb=I.REGop r2,rc=d}]
@@ -671,7 +672,7 @@ index c7b22a3..d7375bb 100644
 -    )
 -  structure Mulu32 = Mul32(val signed = false)
 -  structure Muls32 = Mul32(val signed = true)
-+     
++
 +     val signed = true)
  
    (* signed, trapping version of multiply and divide *)
@@ -681,7 +682,7 @@ index c7b22a3..d7375bb 100644
 +    (structure I = I
 +     structure T = T
 +     structure CB = CellsBasis
-+   
++
 +     val intTy = 64
 +
 +     type arg  = {r1:CB.cell, r2:CB.cell, d:CB.cell}
@@ -692,7 +693,7 @@ index c7b22a3..d7375bb 100644
 +     fun slli{r,i,d} = [I.operate{oper=I.SLL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srli{r,i,d} = [I.operate{oper=I.SRL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srai{r,i,d} = [I.operate{oper=I.SRA,ra=r,rb=I.IMMop i,rc=d}]
-+     
++
 +     val trapping = true
       val multCost = multCost
       fun addv{r1,r2,d} = [I.operatev{oper=I.ADDQV,ra=r1,rb=I.REGop r2,rc=d}]
@@ -702,7 +703,7 @@ index c7b22a3..d7375bb 100644
       val sh3addv = NONE
 -    )
 -    (val signed = true)
-+     
++
 +     val signed = true)
  
    (* unsigned, non-trapping version of multiply and divide *)
@@ -712,7 +713,7 @@ index c7b22a3..d7375bb 100644
 +    (structure I = I
 +     structure T = T
 +     structure CB = CellsBasis
-+   
++
 +     val intTy = 64
 +
 +     type arg  = {r1:CB.cell, r2:CB.cell, d:CB.cell}
@@ -723,24 +724,24 @@ index c7b22a3..d7375bb 100644
 +     fun slli{r,i,d} = [I.operate{oper=I.SLL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srli{r,i,d} = [I.operate{oper=I.SRL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srai{r,i,d} = [I.operate{oper=I.SRA,ra=r,rb=I.IMMop i,rc=d}]
-+    
++
 +     val trapping = false
 +     val multCost = multCost
 +     fun addv{r1,r2,d} = [I.operate{oper=I.ADDQ,ra=r1,rb=I.REGop r2,rc=d}]
 +     fun subv{r1,r2,d} = [I.operate{oper=I.SUBQ,ra=r1,rb=I.REGop r2,rc=d}]
 +     val sh1addv = NONE
-+     val sh2addv = SOME(fn {r1,r2,d} => 
++     val sh2addv = SOME(fn {r1,r2,d} =>
 +                    [I.operate{oper=I.S4ADDQ,ra=r1,rb=I.REGop r2,rc=d}])
-+     val sh3addv = SOME(fn {r1,r2,d} => 
++     val sh3addv = SOME(fn {r1,r2,d} =>
 +                    [I.operate{oper=I.S8ADDQ,ra=r1,rb=I.REGop r2,rc=d}])
-+     
++
 +     val signed = false)
 +  (* signed, non-trapping version of multiply and divide *)
 +  structure Muls64 = MLTreeMult
 +    (structure I = I
 +     structure T = T
 +     structure CB = CellsBasis
-+   
++
 +     val intTy = 64
 +
 +     type arg  = {r1:CB.cell, r2:CB.cell, d:CB.cell}
@@ -751,7 +752,7 @@ index c7b22a3..d7375bb 100644
 +     fun slli{r,i,d} = [I.operate{oper=I.SLL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srli{r,i,d} = [I.operate{oper=I.SRL,ra=r,rb=I.IMMop i,rc=d}]
 +     fun srai{r,i,d} = [I.operate{oper=I.SRA,ra=r,rb=I.IMMop i,rc=d}]
-+     
++
 +     val trapping = false
       val multCost = multCost
       fun addv{r1,r2,d} = [I.operate{oper=I.ADDQ,ra=r1,rb=I.REGop r2,rc=d}]
@@ -763,7 +764,7 @@ index c7b22a3..d7375bb 100644
 -    )
 -  structure Mulu64 = Mul64(val signed = false)
 -  structure Muls64 = Mul64(val signed = true)
-+     
++
 +     val signed = true)
  
    (* 
@@ -1705,7 +1706,7 @@ index b561a67..a235b50 100644
  struct
  
 diff --git a/amd64/instructions/amd64Props.sml b/amd64/instructions/amd64Props.sml
-index 5ff322a..a0a1c53 100644
+index 5ff322a..f8834de 100644
 --- a/amd64/instructions/amd64Props.sml
 +++ b/amd64/instructions/amd64Props.sml
 @@ -15,10 +15,48 @@ signature AMD64INSN_PROPERTIES =
@@ -1826,18 +1827,18 @@ index 5ff322a..a0a1c53 100644
 +	    of ( I.JMP (opnd, _) ) => ([], 	operandUse opnd)
 +             | ( I.JCC {opnd, ...} ) => ([], 	operandUse opnd)
 +	     | ( I.CALL {opnd, defs, uses, ...} )=>
-+ 	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
++	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
 +	     | ( I.CALLQ {opnd, defs, uses, ...} )=>
   	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
  	     | I.MOVE {src, dst=I.Direct (_, r), ...} => ([r], operandUse src) 
  	     | I.MOVE {src, dst, ...} => ([], operandAcc (dst, operandUse src))
 -	     | ( I.LEAL {r32=r, addr} | I.LEAQ {r64=r, addr} ) =>
 +	     | ( I.LEAL {r32=r, addr} ) =>
-+	       ([r], operandUse addr)
-+	     | ( I.LEAQ {r64=r, addr} ) =>
  	       ([r], operandUse addr)
 -	     | ( I.CMPQ arg | I.CMPL arg | I.CMPW arg | I.CMPB arg
 -	       | I.TESTQ arg | I.TESTL arg | I.TESTW arg | I.TESTB arg )  =>
++	     | ( I.LEAQ {r64=r, addr} ) =>
++	       ([r], operandUse addr)
 +	     | ( I.CMPQ arg )  =>
 +	       cmpTest arg
 +	     | ( I.CMPL arg )  =>
@@ -3890,7 +3891,7 @@ index 218d36f..33b5b30 100644
  end
  
 diff --git a/graphs/digraph.sml b/graphs/digraph.sml
-index 44d341a..7076b55 100644
+index 44d341a..1832f21 100644
 --- a/graphs/digraph.sml
 +++ b/graphs/digraph.sml
 @@ -7,7 +7,33 @@
@@ -3900,7 +3901,7 @@ index 44d341a..7076b55 100644
 -functor DirectedGraph(A : ARRAY) : 
 +functor DirectedGraph(A : sig type 'a array
 +                              type 'a vector
-+                                 
++
 +                              val all: ('a -> bool) -> 'a array -> bool
 +                              val app: ('a -> unit) -> 'a array -> unit
 +                              val appi: (int * 'a -> unit) -> 'a array -> unit
@@ -4350,7 +4351,7 @@ index df9b170..50d9210 100644
      in
        case instr
 diff --git a/hppa/mltree/hppa.sml b/hppa/mltree/hppa.sml
-index 50a58b4..0a340c8 100644
+index 50a58b4..ea04970 100644
 --- a/hppa/mltree/hppa.sml
 +++ b/hppa/mltree/hppa.sml
 @@ -14,14 +14,106 @@
@@ -4498,7 +4499,7 @@ index 50a58b4..0a340c8 100644
       val sh3addv = SOME(fn{r1,r2,d} => [I.arith{a=I.SH3ADDO,r1=r1,r2=r2,t=d}])
 -    )
 -    (val signed = true)
-+     
++
 +     val signed = true)
  
     (* unsigned, non-trapping version of multiply and divide *)
@@ -4517,7 +4518,7 @@ index 50a58b4..0a340c8 100644
 +     fun slli{r,i,d} = [I.shift{s=I.ZDEP,r=r,p=31-i,len=32-i,t=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.EXTRU,r=r,p=31-i,len=32-i,t=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.EXTRS,r=r,p=31-i,len=32-i,t=d}]
-+     
++
 +     val trapping = false
       val multCost = costOfMultiply
       val divCost  = costOfDivision
@@ -4528,7 +4529,7 @@ index 50a58b4..0a340c8 100644
       val sh3addv = SOME(fn{r1,r2,d} => [I.arith{a=I.SH3ADDL,r1=r1,r2=r2,t=d}])
 -    )
 -    (val signed   = false)
-+     
++
 +     val signed   = false)
  
     (* signed, non-trapping version of multiply and divide *)
@@ -4547,7 +4548,7 @@ index 50a58b4..0a340c8 100644
 +     fun slli{r,i,d} = [I.shift{s=I.ZDEP,r=r,p=31-i,len=32-i,t=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.EXTRU,r=r,p=31-i,len=32-i,t=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.EXTRS,r=r,p=31-i,len=32-i,t=d}]
-+     
++
 +     val trapping = false
       val multCost = costOfMultiply
       val divCost  = costOfDivision
@@ -4558,7 +4559,7 @@ index 50a58b4..0a340c8 100644
       val sh3addv = SOME(fn{r1,r2,d} => [I.arith{a=I.SH3ADDL,r1=r1,r2=r2,t=d}])
 -    )
 -    (val signed   = true)
-+     
++
 +     val signed   = true)
  
     fun error msg = MLRiscErrorMsg.error("Hppa",msg)
@@ -12766,7 +12767,7 @@ index 827c051..a69f5a6 100644
     exception TooComplex
  
 diff --git a/mltree/mltree-mult.sml b/mltree/mltree-mult.sml
-index 41c26eb..def5516 100644
+index 41c26eb..e0e0609 100644
 --- a/mltree/mltree-mult.sml
 +++ b/mltree/mltree-mult.sml
 @@ -8,7 +8,16 @@ functor MLTreeMult
@@ -12793,7 +12794,7 @@ index 41c26eb..def5516 100644
     val srai  : argi -> I.instruction list
 -  )
 -  (val trapping : bool (* trap on overflow? *)
-+  
++
 +   val trapping : bool (* trap on overflow? *)
     val multCost : int ref  (* cost of multiplication *)
  
@@ -12804,7 +12805,7 @@ index 41c26eb..def5516 100644
     val sh3addv  : (arg -> I.instruction list) option (* a*8 + b *)
 -  )  
 -  (val signed   : bool (* signed? *)
-+    
++
 +   val signed   : bool (* signed? *)
    ) : MLTREE_MULT_DIV =
  struct
@@ -13744,7 +13745,7 @@ index d1dd455..ee9be9b 100644
  struct
    structure I = PPCInstr
 diff --git a/ppc/mltree/ppc.sml b/ppc/mltree/ppc.sml
-index 94d81f6..8632899 100644
+index 94d81f6..c3968da 100644
 --- a/ppc/mltree/ppc.sml
 +++ b/ppc/mltree/ppc.sml
 @@ -10,10 +10,76 @@
@@ -13872,7 +13873,7 @@ index 94d81f6..8632899 100644
 +     fun slli{r,i,d} = [I.INSTR(SLLI32{r=r,i=i,d=d})]
 +     fun srli{r,i,d} = [I.INSTR(SRLI32{r=r,i=i,d=d})]
 +     fun srai{r,i,d} = [I.arithi{oper=I.SRAWI,rt=d,ra=r,im=I.ImmedOp i}]
-+     
++
 +     val trapping = false
       val multCost = multCost
       fun addv{r1,r2,d}=[I.arith{oper=I.ADD,ra=r1,rb=r2,rt=d,Rc=false,OE=false}]
@@ -13900,7 +13901,7 @@ index 94d81f6..8632899 100644
 +     fun slli{r,i,d} = [I.INSTR(SLLI32{r=r,i=i,d=d})]
 +     fun srli{r,i,d} = [I.INSTR(SRLI32{r=r,i=i,d=d})]
 +     fun srai{r,i,d} = [I.arithi{oper=I.SRAWI,rt=d,ra=r,im=I.ImmedOp i}]
-+     
++
 +     val trapping = true
       val multCost = multCost
       fun addv{r1,r2,d} = error "Mult32.addv"
@@ -13910,7 +13911,7 @@ index 94d81f6..8632899 100644
       val sh3addv = NONE
 -    )
 -    (val signed = true)
-+     
++
 +     val signed = true)
  
    fun selectInstructions
@@ -14797,7 +14798,7 @@ index e552cd8..5897411 100644
             delaySlotCandidate{jmp=i,delaySlot=delaySlot}
        | delaySlotCandidate{jmp,delaySlot=I.ANNOTATION{i,...}} = 
 diff --git a/sparc/backpatch/sparcJumps.sml b/sparc/backpatch/sparcJumps.sml
-index 43763bd..099dfea 100644
+index 43763bd..bec245e 100644
 --- a/sparc/backpatch/sparcJumps.sml
 +++ b/sparc/backpatch/sparcJumps.sml
 @@ -5,8 +5,67 @@
@@ -14917,9 +14918,9 @@ index 43763bd..099dfea 100644
  	  | I.CALL{label,...} => call label
  	  | I.WRY{i,...} => oper(i,12)
 - 	  | I.FPop1{a=(I.FMOVd | I.FNEGd | I.FABSd),...} => 8	    
-+ 	  | I.FPop1{a=I.FMOVd,...} => 8
-+ 	  | I.FPop1{a=I.FNEGd,...} => 8
-+ 	  | I.FPop1{a=I.FABSd,...} => 8
++	  | I.FPop1{a=I.FMOVd,...} => 8
++	  | I.FPop1{a=I.FNEGd,...} => 8
++	  | I.FPop1{a=I.FABSd,...} => 8
  	  | _ => error "sdiSize"
        end
      | sdiSize _ = error "sdiSize"
@@ -15553,7 +15554,7 @@ index 918dbaa..7cf7daf 100644
  struct
      structure CFG = CFG
 diff --git a/sparc/mltree/sparc.sml b/sparc/mltree/sparc.sml
-index b8e7e40..ecb9b8e 100644
+index b8e7e40..403e89c 100644
 --- a/sparc/mltree/sparc.sml
 +++ b/sparc/mltree/sparc.sml
 @@ -14,12 +14,72 @@
@@ -15661,7 +15662,7 @@ index b8e7e40..ecb9b8e 100644
 +     val sh1addv = NONE
 +     val sh2addv = NONE
 +     val sh3addv = NONE
-+     
++
 +     val signed = true)
 +
 +  (* unsigned, non-trapping version of multiply and divide *)
@@ -15714,14 +15715,14 @@ index b8e7e40..ecb9b8e 100644
 +     structure CB = CellsBasis
 +     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
-+  
++
 +     val intTy = 32
 +     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
 +     fun slli{r,i,d} = [I.shift{s=I.SLL,r=r,i=I.IMMED i,d=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.SRL,r=r,i=I.IMMED i,d=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.SRA,r=r,i=I.IMMED i,d=d}]
-+     
++
 +     val trapping = false
       val multCost = muluCost
       fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
@@ -15744,14 +15745,14 @@ index b8e7e40..ecb9b8e 100644
 +     structure CB = CellsBasis
 +     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
-+      
++
 +     val intTy = 64
 +     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
 +     fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
-+     
++
 +     val trapping = true
       val multCost = multCost 
       fun addv{r1,r2,d} = 
@@ -15762,7 +15763,7 @@ index b8e7e40..ecb9b8e 100644
       val sh3addv = NONE 
 -    )
 -    (val signed = true)
-+     
++
 +     val signed = true)
  
    (* unsigned, non-trapping version of multiply and divide *)
@@ -15774,14 +15775,14 @@ index b8e7e40..ecb9b8e 100644
 +     structure CB = CellsBasis
 +     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
-+      
++
 +     val intTy = 64
 +     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
 +     fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
-+     
++
 +     val trapping = false
       val multCost = muluCost
       fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
@@ -15802,14 +15803,14 @@ index b8e7e40..ecb9b8e 100644
 +     structure CB = CellsBasis
 +     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
-+      
++
 +     val intTy = 64
 +     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
 +     fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
-+     
++
 +     val trapping = false
 +     val multCost = muluCost
 +     fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
@@ -15817,7 +15818,7 @@ index b8e7e40..ecb9b8e 100644
 +     val sh1addv = NONE
 +     val sh2addv = NONE
 +     val sh3addv = NONE
-+     
++
 +     val signed = false)
  
    datatype commutative = COMMUTE | NOCOMMUTE
