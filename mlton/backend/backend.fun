@@ -190,11 +190,11 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = maybePass ({name = "rssaShrink1", 
                                 doit = Program.shrink}, p)
             val p = pass ({name = "insertLimitChecks", 
-                           doit = LimitCheck.insert}, p)
+                           doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
-                           doit = SignalCheck.insert}, p)
+                           doit = SignalCheck.transform}, p)
             val p = pass ({name = "implementHandlers", 
-                           doit = ImplementHandlers.doit}, p)
+                           doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
                                 doit = Program.shrink}, p)
             val () = Program.checkHandlers p

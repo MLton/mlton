@@ -6,13 +6,13 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor CommonBlock (S: COMMON_BLOCK_STRUCTS): COMMON_BLOCK = 
+functor CommonBlock (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
 open Exp Transfer
 
-fun eliminate (Program.T {globals, datatypes, functions, main}) = 
+fun transform (Program.T {globals, datatypes, functions, main}) = 
    let
       val shrink = shrinkFunction {globals = globals}
 

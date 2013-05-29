@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor DeepFlatten (S: DEEP_FLATTEN_STRUCTS): DEEP_FLATTEN = 
+functor DeepFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM = 
 struct
 
 open S
@@ -551,7 +551,7 @@ structure Object =
          Vector.sub (finalOffsets object, offset)
    end
 
-fun flatten (program as Program.T {datatypes, functions, globals, main}) =
+fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
    let
       val {get = conValue: Con.t -> Value.t option ref, ...} =
          Property.get (Con.plist, Property.initFun (fn _ => ref NONE))

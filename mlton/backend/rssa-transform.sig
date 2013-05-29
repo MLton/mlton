@@ -6,14 +6,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature REDUNDANT_STRUCTS = 
+signature RSSA_TRANSFORM_STRUCTS = 
    sig
-      include SHRINK
+      structure Rssa: RSSA
    end
 
-signature REDUNDANT = 
+signature RSSA_TRANSFORM = 
    sig
-      include REDUNDANT_STRUCTS
+      include RSSA_TRANSFORM_STRUCTS
 
-      val redundant: Program.t -> Program.t
+      val transform: Rssa.Program.t -> Rssa.Program.t
    end

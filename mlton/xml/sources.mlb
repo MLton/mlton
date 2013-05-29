@@ -18,10 +18,11 @@ local
    type-check.fun
    scc-funs.sig
    scc-funs.fun
-   simplify-types.sig
-   simplify-types.fun
    shrink.sig
    shrink.fun
+   xml-transform.sig
+   simplify-types.sig
+   simplify-types.fun
    xml-simplify.sig
    xml-simplify.fun
    xml.sig
@@ -30,13 +31,9 @@ local
    monomorphise.sig
    monomorphise.fun
    sxml-tree.sig
-   implement-exceptions.sig
    implement-exceptions.fun
-   implement-suffix.sig
    implement-suffix.fun
-   polyvariance.sig
    polyvariance.fun
-   cps-transform.sig
    cps-transform.fun
    sxml-simplify.sig
    sxml-simplify.fun

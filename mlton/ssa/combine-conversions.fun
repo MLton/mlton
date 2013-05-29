@@ -4,7 +4,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor CombineConversions (S: COMBINE_CONVERSIONS_STRUCTS): COMBINE_CONVERSIONS =
+functor CombineConversions (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
 struct
 
 open S
@@ -106,7 +106,7 @@ fun mapStatement stmt =
       Statement.T { exp = exp, ty = ty, var = var }
    end
 
-fun combine program =
+fun transform program =
    let
       val Program.T { datatypes, functions, globals, main } = program
       val shrink = shrinkFunction {globals = globals}
