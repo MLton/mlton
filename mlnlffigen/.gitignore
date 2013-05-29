@@ -1,5 +1,3 @@
-*.call-graph.dot
-*.ssa
-cppcmd.sml
-mlnlffigen
-mlnlffigen.exe
+/cppcmd.sml
+/mlnlffigen
+/mlnlffigen.exe

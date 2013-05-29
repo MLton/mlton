@@ -1,7 +1,2 @@
-build
-build-stamp
-configure-stamp
-install
-regression-log
-rpms
-runtime-log
+/build/
+/install/

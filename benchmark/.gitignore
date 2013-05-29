@@ -1,5 +1,2 @@
-*~
-core
-benchmark
-benchmark.sml
-junk
+/benchmark
+/benchmark.exe

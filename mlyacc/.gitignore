@@ -1,7 +1,8 @@
-*.call-graph.dot
-*.ssa
-mlyacc.exe
-mlyacc.pdf
-mlyacc.ps
-mlyacc.sml
-mlyacc
+/ml.grm
+/ml.grm.desc
+/ml.grm.sig
+/ml.grm.sml
+/mlyacc
+/mlyacc.exe
+/mlyacc.pdf
+/mlyacc.ps

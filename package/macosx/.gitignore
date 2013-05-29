@@ -1,4 +1,4 @@
-Info.plist
-*.dmg
-*.pkg
-install
+/*.dmg
+/*.pkg
+/Info.plist
+/install/

@@ -1,6 +1,7 @@
+## Ignore all *.a and *.o files
 *.a
 *.o
-gdtoa
-basis.c
-c-types.h
-ml-types.h
+
+/gdtoa/
+/c-types.h
+/ml-types.h

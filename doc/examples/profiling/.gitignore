@@ -1,6 +1,11 @@
-*.dot
-*.ps
-mlmon*.out
-fib-tak
-list-rev
-tak
+/mlmon.out
+
+/list-rev
+/list-rev.dot
+/list-rev.ps
+
+/tak
+
+/fib-tak
+/mlmon.fib.out
+/mlmon.tak.out

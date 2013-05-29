@@ -1,5 +1,6 @@
-ml.grm.sig
-ml.grm.sml
-ml.lex.sml
-tmp.s
-cmp.s
+/ml.lex.sml
+/ml.grm.desc
+/ml.grm.sig
+/ml.grm.sml
+/cmp.s
+/tmp.s
