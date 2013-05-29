@@ -435,6 +435,9 @@ structure Elaborate =
              parseIdAndArgs = fn _ => Bad,
              withDef = fn () => (fn () => ()),
              snapshot = fn () => fn () => (fn () => ())}
+         val (allowBar, ac) =
+            makeBool ({name = "allowBar",
+                       default = false, expert = false}, ac)
          val (allowConstant, ac) =
             makeBool ({name = "allowConstant", 
                        default = false, expert = true}, ac)

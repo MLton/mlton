@@ -210,6 +210,12 @@ fun 'a augment1 ((strexp: Strexp.t,
 
 type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
+local
+    open Control.Elaborate
+in
+    val allowBar = fn () => current allowBar
+end
+
   %%
   %term
       CHAR of IntInf.t
@@ -779,11 +785,15 @@ constraint :                    (NONE)
 funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
-clausesTop: clauses (Vector.fromList clauses)
+clausesTop : clauses        (Vector.fromList clauses)
+           | BAR clauses        (if allowBar ()
+                                then ()
+                                else error( reg (clausesleft, clausesright),
+                                    "Enable -allow-bar extension")
+                            ; Vector.fromList clauses)
 
 clauses : clause                  ([clause])
         | clause BAR clauses      (clause :: clauses)
-        | BAR clause BAR clauses  (clause :: clauses)
 
 clause  : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
                                           resultType = constraint,
@@ -828,9 +838,15 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
-constrs : constr                  ([constr])
-        | constr BAR constrs      (constr :: constrs)
-        | BAR constr BAR constrs  (constr :: constrs)
+constrsTop : constrs          (Vector.fromList constrs)
+           | BAR constrs      (if allowBar ()
+                                  then ()
+                                  else error( reg (constrsleft, constrsright),
+                                      "Enable -allow-bar extension")
+                              ; Vector.fromList constrs)
+
+constrs : constr                ([constr])
+        | constr BAR constrs    (constr :: constrs)
 
 constr  : opcon         (opcon, NONE)
         | opcon OF ty   (opcon, SOME ty)
@@ -938,7 +954,7 @@ dbs'
      (db :: dbs')
 
 db : tyvars tycon EQUALOP constrs
-     ({cons = Vector.fromList constrs,
+     ({cons = constrsTop,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -954,9 +970,15 @@ longvidands : longvid  ([longvid])
 match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
                                             rulesleft, rulesright))
 
+rulesTop : rules                (Vector.fromList rules)
+         | BAR rules            (if allowBar ()
+                                    then ()
+                                    else error( reg (rulesleft, rulesright),
+                                        "Enable -allow-bar extension")
+                                ; Vector.fromList rules)
+
 rules : rule                    ([rule])
       | rule BAR rules          (rule :: rules)
-      | BAR rule BAR rules      (rule :: rules)
 
 rule    : pat DARROW exp        ((pat,exp))
 
