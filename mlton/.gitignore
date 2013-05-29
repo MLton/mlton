@@ -1,1 +1,9 @@
-.ignore
+mlton-compile
+mlton-compile.exe
+mlton-polyml
+mlton-polyml.exe
+mlton-polyml.use
+mlton-smlnj.*-*
+mlton-stubs.mlb
+mlton.def-use
+upgrade-basis.sml

@@ -75,7 +75,6 @@ basis-no-check:
 	mkdir -p "$(LIB)/sml"
 	rm -rf "$(LIB)/sml/basis"
 	$(CP) "$(SRC)/basis-library/." "$(LIB)/sml/basis"
-	find "$(LIB)/sml/basis" -type f -name .ignore | xargs rm -rf
 	find "$(LIB)/sml/basis" -type l -name .gitignore | xargs rm -rf
 
 .PHONY: basis
@@ -99,7 +98,6 @@ clean:
 .PHONY: clean-git
 clean-git:
 	find . -type d -name .git | xargs rm -rf
-	find . -type l -name .gitignore | xargs rm -rf
 
 .PHONY: compiler
 compiler:
@@ -154,7 +152,6 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
 	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
-	find "$(LIB)/sml" -type f -name .ignore | xargs rm -rf
 	find "$(LIB)/sml" -type l -name .gitignore | xargs rm -rf
 
 .PHONY: libraries
@@ -384,9 +381,7 @@ install-docs:
 	if test -r $(YACC)/$(YACC).pdf; then                            \
 		$(CP) $(YACC)/$(YACC).pdf $(TDOC);                      \
 	fi
-	find "$(TDOC)/" -type f -name .ignore | xargs rm -rf
 	find "$(TDOC)/" -type l -name .gitignore | xargs rm -rf
-	find "$(TEXM)/" -type f -name .ignore | xargs rm -rf
 	find "$(TEXM)/" -type l -name .gitignore | xargs rm -rf
 
 
@@ -399,7 +394,7 @@ move-docs:	install-docs install-no-docs
 .PHONY: release
 release: version
 	tar cvzf ../mlton-$(VERSION).tar.gz \
-		--exclude .git --exclude .gitignore --exclude package \
+		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(VERSION)/@" \
 		*
 

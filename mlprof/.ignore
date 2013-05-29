@@ -1,5 +1,0 @@
-*.call-graph.dot
-*.ssa
-mlprof
-mlprof.exe
-mlprof.sml

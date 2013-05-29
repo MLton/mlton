@@ -1,1 +1,5 @@
-.ignore
+ml.grm.sig
+ml.grm.sml
+ml.lex.sml
+tmp.s
+cmp.s

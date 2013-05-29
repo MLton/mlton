@@ -1,1 +1,4 @@
-.ignore
+Info.plist
+*.dmg
+*.pkg
+install

@@ -1,1 +1,7 @@
-.ignore
+*.call-graph.dot
+*.ssa
+mlyacc.exe
+mlyacc.pdf
+mlyacc.ps
+mlyacc.sml
+mlyacc

@@ -1,1 +1,2 @@
-.ignore
+gen-rtld-flags
+gen-rtld-flags.exe

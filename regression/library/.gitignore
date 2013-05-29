@@ -1,1 +1,10 @@
-.ignore
+m?.h
+m?.def
+m?.dll
+libm?.so
+libm?.a
+libm?.dylib
+check.h
+check
+check.exe
+mlmon.out

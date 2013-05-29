@@ -1,1 +1,6 @@
-.ignore
+*.a
+*.o
+gdtoa
+basis.c
+c-types.h
+ml-types.h
