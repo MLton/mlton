@@ -30,6 +30,7 @@ type-check.fun
 shrink.sig
 shrink.fun
 xml-transform.sig
+scc-funs.sig
 scc-funs.fun
 simplify-types.sig
 simplify-types.fun
