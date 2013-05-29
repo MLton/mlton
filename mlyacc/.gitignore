@@ -1,1 +1,8 @@
-.ignore
+/ml.grm
+/ml.grm.desc
+/ml.grm.sig
+/ml.grm.sml
+/mlyacc
+/mlyacc.exe
+/mlyacc.pdf
+/mlyacc.ps

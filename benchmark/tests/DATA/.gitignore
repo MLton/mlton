@@ -1,1 +1,6 @@
-.ignore
+/ml.lex.sml
+/ml.grm.desc
+/ml.grm.sig
+/ml.grm.sml
+/cmp.s
+/tmp.s

@@ -1,1 +1,7 @@
-.ignore
+## Ignore all *.a and *.o files
+*.a
+*.o
+
+/gdtoa/
+/c-types.h
+/ml-types.h

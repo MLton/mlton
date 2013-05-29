@@ -1,1 +1,10 @@
-.ignore
+/c_quot.o
+/export
+/export.h
+/ffi-export.o
+/ffi-import.o
+/iimport
+/import
+/import2
+/test_quot
+/test_quot.h
