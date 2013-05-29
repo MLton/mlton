@@ -1,1 +1,6 @@
-.ignore
+/exit
+/ping-pong
+/primes
+/primes-multicast
+/print
+/timeout

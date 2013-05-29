@@ -2,47 +2,24 @@
 
 set -e
 
-dir=`dirname "$0"`
-root=`cd "$dir/.." && pwd`
+dir=$(dirname "$0")
+root=$(cd "$dir/.." && pwd)
 bin="$root/bin"
 
-case `"$bin/host-os"` in
-cygwin|freebsd|linux)
-        grepFlags='-q'
-;;
-sun)
-        grepFlags=''
-;;
-esac
-
-ignore='.ignore'
 doit () {
-        rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
-        if [ -r "$ignore" ]; then
-		# xargs allows us to have quoted strings for filenames
-		xargs -n 1 find . -maxdepth 1 -name < "$ignore" | xargs rm -rf
+    # rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
+    "$bin/ls-ignore" | xargs rm -rf
+    for f in *; do
+        if [ -d "$f" ]; then
+            cd "$f"
+            if [ -r Makefile ]; then
+                "$bin/mmake" clean || doit
+            else
+                doit
+            fi
+            cd ..
         fi
-        for f in *; do
-                if [ -d "$f" ]; then
-                        cd "$f"
-                        if [ -r Makefile ]; then
-				"$bin/mmake" clean || doit
-                        else
-                                doit
-                        fi
-                        cd ..
-                fi
-        done
+    done
 }
 
 doit
-
-# This script removes all the junk files created when compiling with MLton's
-# various -keep flags.
-
-#/bin/rm -f *.basis *.chunks *.const *.core-ml *.dot *.flat *.flow      \
-#       *.inline *.local-flatten *.mono *.o *.once-graph *.once-vars    \
-#       *.post-useless *.raise-to-jump *.redundant *.reg *.rep *.ssa    \
-#       *.sxml *.sxml.poly *.threshold[0-9] *.unused-args *.useless *.xml
-#
-#/bin/rm -f *~ core mlmon.out
