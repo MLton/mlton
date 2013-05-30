@@ -261,6 +261,7 @@ end
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
+       | constrsTop of (Con.t * Type.t option) vector
        | constOrBool of Const.t
        | datBind of DatBind.t
        | datBindNoWithtype of DatBind.t
@@ -332,6 +333,7 @@ end
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
+       | rulesTop of rule vector
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -786,7 +788,7 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop : clauses        (Vector.fromList clauses)
-           | BAR clauses        (if allowBar ()
+           | BAR clauses    (if allowBar ()
                                 then ()
                                 else error( reg (clausesleft, clausesright),
                                     "Enable -allow-bar extension")
@@ -953,7 +955,7 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrs
+db : tyvars tycon EQUALOP constrsTop
      ({cons = constrsTop,
        tycon = tycon,
        tyvars = tyvars})
