@@ -43,64 +43,43 @@ local
    two-point-lattice.fun
    three-point-lattice.sig
    ann "forceUsed" in three-point-lattice.fun end
+   restore.sig
+   restore.fun
 
-   common-arg.sig
+   ssa-transform.sig
+   ssa2-transform.sig
    common-arg.fun
-   common-block.sig
    common-block.fun
-   common-subexp.sig
    common-subexp.fun
    global.sig
    global.fun
    multi.sig
    multi.fun
-   combine-conversions.sig
    combine-conversions.fun
-   constant-propagation.sig
    constant-propagation.fun
-   contify.sig
    contify.fun
-   deep-flatten.sig
    deep-flatten.fun
-   flatten.sig
    flatten.fun
    inline.sig
    inline.fun
-   introduce-loops.sig
    introduce-loops.fun
-   restore.sig
-   restore.fun
-   known-case.sig
    known-case.fun
-   local-flatten.sig
    local-flatten.fun
-   local-ref.sig
    local-ref.fun
-   loop-invariant.sig
    loop-invariant.fun
-   poly-equal.sig
    poly-equal.fun
-   poly-hash.sig
    poly-hash.fun
    profile.sig
    profile.fun
    profile2.sig
    profile2.fun
-   redundant-tests.sig
    redundant-tests.fun
-   redundant.sig
    redundant.fun
-   ref-flatten.sig
    ref-flatten.fun
-   remove-unused.sig
-   remove-unused2.sig
    remove-unused.fun
    remove-unused2.fun
-   simplify-types.sig
    simplify-types.fun
-   useless.sig
    useless.fun
-   zone.sig
    zone.fun
    simplify.sig
    simplify2.sig

@@ -21,34 +21,34 @@ fun polyvariance (hofo, rounds, small, product) p =
    Ref.fluidLet
    (Control.polyvariance,
     SOME {hofo = hofo, rounds = rounds, small = small, product = product},
-    fn () => Polyvariance.duplicate p)
+    fn () => Polyvariance.transform p)
 
 type pass = {name: string,
              doit: Program.t -> Program.t}
 
 val sxmlPassesDefault =
    {name = "sxmlShrink1", doit = S.shrink} ::
-   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "implementSuffix", doit = ImplementSuffix.transform} ::
    {name = "sxmlShrink2", doit = S.shrink} ::
-   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "implementExceptions", doit = ImplementExceptions.transform} ::
    {name = "sxmlShrink3", doit = S.shrink} ::
-   (* {name = "uncurry", doit = Uncurry.uncurry} :: *)
+   (* {name = "uncurry", doit = Uncurry.transform} :: *)
    (* {name = "sxmlShrink4", doit = S.shrink} :: *)
-   {name = "polyvariance", doit = Polyvariance.duplicate} ::
+   {name = "polyvariance", doit = Polyvariance.transform} ::
    {name = "sxmlShrink4", doit = S.shrink} ::
    nil
 
 val sxmlPassesCpsTransform =
    sxmlPassesDefault @
-   {name = "cpsTransform", doit = CPSTransform.doit} ::
+   {name = "cpsTransform", doit = CPSTransform.transform} ::
    {name = "cpsSxmlShrink5", doit = S.shrink} ::
-   {name = "cpsPolyvariance", doit = Polyvariance.duplicate} ::
+   {name = "cpsPolyvariance", doit = Polyvariance.transform} ::
    {name = "cpsSxmlShrink6", doit = S.shrink} ::
    nil
 
 val sxmlPassesMinimal =
-   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
-   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "implementSuffix", doit = ImplementSuffix.transform} ::
+   {name = "implementExceptions", doit = ImplementExceptions.transform} ::
    nil
 
 val sxmlPasses : pass list ref = ref sxmlPassesDefault
@@ -111,8 +111,8 @@ local
    val passGens =
       polyvariancePassGen ::
       (List.map([("sxmlShrink", S.shrink),
-                 ("implementExceptions", ImplementExceptions.doit), 
-                 ("implementSuffix", ImplementSuffix.doit)],
+                 ("implementExceptions", ImplementExceptions.transform), 
+                 ("implementSuffix", ImplementSuffix.transform)],
                 mkSimplePassGen))
 in
    fun sxmlPassesSetCustom s =

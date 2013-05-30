@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor KnownCase (S: KNOWN_CASE_STRUCTS): KNOWN_CASE =
+functor KnownCase (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
 struct
 
 open S
@@ -276,7 +276,7 @@ structure LabelInfo =
         activate
   end
 
-fun simplify (Program.T {globals, datatypes, functions, main})
+fun transform (Program.T {globals, datatypes, functions, main})
   = let
       (* restore and shrink *)
       val restore = restoreFunction {globals = globals}

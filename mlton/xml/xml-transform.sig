@@ -5,14 +5,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature CPS_TRANSFORM_STRUCTS = 
+signature XML_TRANSFORM_STRUCTS = 
    sig
-      include SXML_TREE
+      include SHRINK
    end
 
-signature CPS_TRANSFORM = 
+signature XML_TRANSFORM = 
    sig
-      include CPS_TRANSFORM_STRUCTS
+      include XML_TRANSFORM_STRUCTS
 
-      val doit: Program.t -> Program.t
+      val transform: Program.t -> Program.t
    end

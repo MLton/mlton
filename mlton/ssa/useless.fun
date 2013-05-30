@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Useless (S: USELESS_STRUCTS): USELESS = 
+functor Useless (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -400,7 +400,7 @@ structure Value =
 
 structure Exists = Value.Exists
 
-fun useless (program: Program.t): Program.t =
+fun transform (program: Program.t): Program.t =
    let
       val program as Program.T {datatypes, globals, functions, main} =
          eliminateDeadBlocks program

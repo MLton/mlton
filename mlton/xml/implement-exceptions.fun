@@ -6,8 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ImplementExceptions (S: IMPLEMENT_EXCEPTIONS_STRUCTS):
-   IMPLEMENT_EXCEPTIONS = 
+functor ImplementExceptions (S: XML_TRANSFORM_STRUCTS): XML_TRANSFORM = 
 struct
 
 open S
@@ -15,7 +14,7 @@ datatype z = datatype Dec.t
 datatype z = datatype PrimExp.t
 structure Dexp = DirectExp
 
-fun doit (Program.T {datatypes, body, ...}): Program.t =
+fun transform (Program.T {datatypes, body, ...}): Program.t =
    let
       (* topLevelHandler holds the ref cell containing the function of
        * type exn -> unit that should be called on unhandled exceptions.
