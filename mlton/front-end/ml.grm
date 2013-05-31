@@ -211,9 +211,26 @@ fun 'a augment1 ((strexp: Strexp.t,
 type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
 local
-    open Control.Elaborate
+   structure ElabControl = Control.Elaborate
+
+   fun check (c: (bool,bool) ElabControl.t, syntax: string, region) =
+      if ElabControl.current c
+         then ()
+      else
+         let
+            open Layout
+         in
+            Control.error
+            (region,
+             str (concat (if ElabControl.expert c
+                             then [syntax, " disallowed"]
+                          else [syntax, " disallowed, compile with -default-ann '",
+                                ElabControl.name c, " true'"])),
+             empty)
+         end
 in
-    val allowBar = fn () => current allowBar
+   val allowBar = fn (syntax, region) =>
+      check (ElabControl.allowBar, syntax, region)
 end
 
   %%
@@ -788,11 +805,8 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop : clauses        (Vector.fromList clauses)
-           | BAR clauses    (if allowBar ()
-                                then ()
-                                else error( reg (clausesleft, clausesright),
-                                    "Enable -allow-bar extension")
-                            ; Vector.fromList clauses)
+           | BAR clauses    (allowBar ("'|' <clauses>", reg (BARleft, clausesright))
+                             ; Vector.fromList clauses)
 
 clauses : clause                  ([clause])
         | clause BAR clauses      (clause :: clauses)
@@ -841,11 +855,8 @@ tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
 constrsTop : constrs          (Vector.fromList constrs)
-           | BAR constrs      (if allowBar ()
-                                  then ()
-                                  else error( reg (constrsleft, constrsright),
-                                      "Enable -allow-bar extension")
-                              ; Vector.fromList constrs)
+           | BAR constrs      (allowBar ("'|' <constrs>", reg (BARleft, constrsright))
+                               ; Vector.fromList constrs)
 
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
@@ -969,15 +980,11 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rulesTop       (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
-                                rulesleft, rulesright))
+match : rulesTop (Match.makeRegion' (Match.T rulesTop, rulesTopleft, rulesTopright))
 
 rulesTop : rules                (Vector.fromList rules)
-         | BAR rules            (if allowBar ()
-                                    then ()
-                                    else error( reg (rulesleft, rulesright),
-                                        "Enable -allow-bar extension")
-                                ; Vector.fromList rules)
+         | BAR rules            (allowBar ("'|' <rules>", reg (BARleft, rulesright))
+                                 ; Vector.fromList rules)
 
 rules : rule                    ([rule])
       | rule BAR rules          (rule :: rules)
@@ -1304,3 +1311,4 @@ longstrid : longid         (Longstrid.fromSymbols longid)
 
 longstrids : longstrid             ([longstrid])
            | longstrid longstrids  (longstrid :: longstrids)
+
