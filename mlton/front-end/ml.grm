@@ -969,8 +969,8 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
-                                            rulesleft, rulesright))
+match : rulesTop       (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
+                                rulesleft, rulesright))
 
 rulesTop : rules                (Vector.fromList rules)
          | BAR rules            (if allowBar ()
