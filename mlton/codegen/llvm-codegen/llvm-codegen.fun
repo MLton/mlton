@@ -14,8 +14,9 @@ end
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
 
-val printstmt = true
-val printmove = false
+val printblock = !Control.Native.commented > 0
+val printstmt = !Control.Native.commented > 1
+val printmove = !Control.Native.commented > 2
 
 fun ctypes () =
     let
@@ -410,15 +411,18 @@ fun callReturn () =
     let
         val comment = "\t; Return\n"
         val stacktop = nextLLVMReg ()
-        val load = mkload (stacktop, "%Pointer*", "%stackTop")
-        val int = nextLLVMReg ()
-        val toint = mkconv (int, "ptrtoint", "%Pointer", stacktop, "%uintptr_t")
-        val offsetted = nextLLVMReg ()
-        val ptrsize = llbits (Control.Target.Size.cpointer ())
-        val sub = mkinst (offsetted, "sub", "%uintptr_t", int, ptrsize)
-        val store = mkstore ("%uintptr_t", offsetted, "%l_nextFun")
+        val loadst = mkload (stacktop, "%Pointer*", "%stackTop")
+        val ptrsize = llbytes (Bits.toBytes (Control.Target.Size.cpointer ()))
+        val ptr = nextLLVMReg ()
+        val gep = mkgep (ptr, "%Pointer", stacktop, ["-" ^ ptrsize])
+        val castreg = nextLLVMReg ()
+        val cast = mkconv (castreg, "bitcast", "%Pointer", ptr, "%uintptr_t*")
+        val loadreg = nextLLVMReg ()
+        val loadofs = mkload (loadreg, "%uintptr_t*", castreg)
+        val store = mkstore ("%uintptr_t", loadreg, "%l_nextFun")
+        val br = "\tbr label %top\n"
     in
-        concat [comment, load, toint, sub, store]
+        concat [comment, loadst, gep, cast, loadofs, store, br]
     end
 
 (* Converts an operand into its LLVM representation. Returns a triple
@@ -574,6 +578,10 @@ fun getOperand (cxt, operand) =
       | Operand.Word word =>
         let
             val reg = nextLLVMReg ()
+            val wordsize = WordX.size word
+            (* val () = Out.print (concat ["wordsize of ", WordX.toString word, " = ", *)
+            (*                             WordSize.toString wordsize, *)
+            (*                             ", type = ", llty (Operand.ty operand), "\n"]) *)
             val ty = llws (WordX.size word)
             val wordval = llwordx word
             val alloca = mkalloca (reg, ty)
@@ -869,27 +877,56 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
    i - index of argv
    returns: (pre, reg)
  *)
-fun getArg (argv, i) =
+fun getArg (argv, i, cast) =
     if Vector.length argv > i
     then
         let
             val (pre, ty, addr) = Vector.sub (argv, i)
+            val (bitcast, loadTy, loadFromReg) =
+                case cast of
+                    NONE => ("", ty, addr)
+                  | SOME toTy => let
+                      val castreg = nextLLVMReg ()
+                      val cast = mkconv (castreg, "bitcast", ty ^ "*", addr, toTy ^ "*")
+                  in
+                      (cast, toTy, castreg)
+                  end
             val reg = nextLLVMReg ()
-            val load = mkload (reg, ty ^ "*", addr)
+            val load = mkload (reg, loadTy ^ "*", loadFromReg)
         in
-            (concat [pre, load], reg)
+            (concat [pre, bitcast, load], reg)
         end
     else
         ("", "NO ARG " ^ Int.toString i)
 
-fun outputPrimApp (cxt, p) =
+fun outputPrimApp (cxt: Context,
+                   p: {args: Operand.t vector, dst: Operand.t option, prim: Type.t Prim.t})
+    : string =
     let
         datatype z = datatype Prim.Name.t
         val {args, dst, prim} = p
+        fun fixarg1 args' =
+            let
+                val arg1 = Vector.sub (args', 0)
+                val arg2 = Vector.sub (args', 1)
+                val typeOfArg1 = WordSize.fromBits (Type.width (Operand.ty arg1))
+                val valueOfArg2 = case arg2 of
+                                      Operand.Word w => WordX.toIntInf w
+                                    | _ => Error.bug "Arg 2 of shift is not a word"
+                val newArg2 = Operand.Word (WordX.fromIntInf (valueOfArg2, typeOfArg1))
+            in
+                Vector.fromList [arg1, newArg2]
+            end
+        fun typeOfArg0 () =
+            llws (WordSize.fromBits (Type.width (Operand.ty (Vector.sub (args, 0)))))
+        val castArg1 = case Prim.name prim of
+                           Word_rshift _ => SOME (typeOfArg0 ())
+                         | Word_lshift _ => SOME (typeOfArg0 ())
+                         | _ => NONE
         val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-        val (arg0pre, arg0reg) = getArg (operands, 0)
-        val (arg1pre, arg1reg) = getArg (operands, 1)
-        val (arg2pre, arg2reg) = getArg (operands, 2)
+        val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
+        val (arg1pre, arg1reg) = getArg (operands, 1, castArg1)
+        val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
         val reg = nextLLVMReg ()
         val (inst, _) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
         val storeDest =
@@ -919,7 +956,7 @@ fun push amt =
     end
 
 
-fun outputStatement (cxt, stmt) =
+fun outputStatement (cxt: Context, stmt: Statement.t): string =
     let
         val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
         val printstmt = if printstmt
@@ -984,9 +1021,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val overflowstr = Label.toString overflow
                 val successstr = Label.toString success
                 val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-                val (arg0pre, arg0reg) = getArg (operands, 0)
-                val (arg1pre, arg1reg) = getArg (operands, 1)
-                val (arg2pre, arg2reg) = getArg (operands, 2)
+                val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
+                val (arg1pre, arg1reg) = getArg (operands, 1, NONE)
+                val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
                 val reg = nextLLVMReg ()
                 val (inst, ty) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
                 val res = nextLLVMReg ()
@@ -1013,7 +1050,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val params = Vector.map (args, fn opr => getOperand (cxt, opr))
                 val (_, paramTypes, _) = Vector.unzip3 params
                 val (paramPres, paramRegs) = Vector.unzip (Vector.mapi (params, fn (i, _) =>
-                                                 getArg (params, i)))
+                                                 getArg (params, i, NONE)))
                 val push =
                     case frameInfo of
                         NONE => ""
@@ -1059,6 +1096,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                  else case return of
                                           NONE => "\tbr label %unreachable\n"
                                         | SOME l => concat ["\tbr label %", Label.toString l, "\n"]
+                val fcall = if printstmt
+                            then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n"
+                            else ""
             in
                 concat [comment,
                         push,
@@ -1067,7 +1107,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         "\t; GetOperands\n",
                         Vector.concatV paramPres,
                         "\t; Call\n",
-                        "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n",
+                        fcall,
                         call,
                         storeResult,
                         cacheFrontierCode,
@@ -1144,7 +1184,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 concat [comment, sbpre, loadStackBottom, espre, loadExnStack, gep, store,
                         loadStackTop, subPtrSize, toint, loadOffset, storeLNF, gotoTop]
             end
-          | Transfer.Return => concat [comment, "\tbr label %unreachable\n"]
+          | Transfer.Return => callReturn ()
           | Transfer.Switch switch =>
             let
                 val Switch.T {cases, default, test, ...} = switch
@@ -1174,10 +1214,12 @@ fun outputBlock (cxt, block) =
         val labelstr = Label.toString label
         val labelstrLen = Int.toString (String.size labelstr + 1)
         val blockLabel = labelstr ^ ":\n"
-        val printBlock = concat ["\tcall i32 (i8*, ...)* @printf(",
+        val printBlock = if printblock
+            then concat ["\tcall i32 (i8*, ...)* @printf(",
             "i8* getelementptr inbounds ([19 x i8]* @enteringBlock, i32 0, i32 0), ",
             "i8* getelementptr inbounds ([", labelstrLen, " x i8]* @labelstr_", labelstr,
                  ", i32 0, i32 0))\n"]
+            else ""
         fun pop fi = push (llbytes (Bytes.~ (Program.frameSize (program, fi))))
         val dopop = case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -1222,7 +1264,9 @@ fun outputChunk (cxt, print, chunk) =
         val () = print (concat ["define %struct.cont @",
                                 chunkName,
                                 "() {\nentry:\n"])
-        val () = print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
+        val () = if printblock
+                 then print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
+                 else ()
         val () = print "\t%cont = alloca %struct.cont\n"
         val () = print "\t%frontier = alloca %Pointer\n"
         val () = print "\t%l_nextFun = alloca %uintptr_t\n"

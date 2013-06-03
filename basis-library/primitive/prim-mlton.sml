@@ -73,6 +73,7 @@ structure Codegen =
           | _ => raise Primitive.Exn.Fail8 "MLton_Codegen_codegen"
 
       val isC = codegen = C
+      val isLLVM = codegen = llvm
       val isX86 = codegen = x86
       val isAmd64 = codegen = amd64
       (* val isNative = isX86 orelse isAmd64 *)
