@@ -129,9 +129,9 @@ dirs:
 docs: dirs
 	$(MAKE) -C "$(LEX)" docs
 	$(MAKE) -C "$(YACC)" docs
-	if htmldoc --version >/dev/null 2>&1; then \
-		bin/make-pdf-guide; \
-	fi
+#	if htmldoc --version >/dev/null 2>&1; then \
+#		bin/make-pdf-guide; \
+#	fi
 
 LIBRARIES := ckit-lib cml mllpt-lib mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
 
