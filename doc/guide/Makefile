@@ -11,7 +11,7 @@ XTRA_PAGES := Index
 SRC_ATTACHMENTS := $(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes')))
 XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
 
-WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org_gcse.js index.html $(SRC_PAGES) $(XTRA_PAGES) $(SRC_ATTACHMENTS) $(XTRA_ATTACHMENTS))
+WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org_gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(XTRA_PAGES) $(XTRA_ATTACHMENTS))
 
 all: $(WIKI)
 
@@ -38,35 +38,34 @@ wiki/mlton_org.css : conf/mlton_org.css
 wiki/mlton_org_gcse.js : conf/mlton_org_gcse.js
 	mkdir -p $(dir $@) ; cp $< $@
 
+wiki/index.html : wiki/Home
+	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
+
+define WIKI_PAGE_template
+wiki/$(1) : txt/$(1).txt conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
+	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $$@ $$<
+endef
+$(foreach page,$(SRC_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
+
+define WIKI_ATTACHMENT_template
+wiki/$(1) : txt/$(1)
+	mkdir -p $$(dir $$@) ; cp -prf $$< $$@
+endef
+$(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
+
+wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
+	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $@ -
+
 define SVG2PNG_template
 %.$(1).png : %.svg
 	gm convert $$< -resize $(1)x$(1) $$@
 endef
 $(foreach size,32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
 
-define PAGE_template
-wiki/$(1) : txt/$(1).txt conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
-	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $$@ $$<
-endef
-$(foreach page,$(SRC_PAGES),$(eval $(call PAGE_template,$(page))))
-
-wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $@ -
-
-define ATTACHMENT_template
-wiki/$(1) : txt/$(1)
-	mkdir -p $$(dir $$@) ; cp -prf $$< $$@
-endef
-$(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call ATTACHMENT_template,$(attachment))))
-
-
-wiki/index.html : wiki/Home
-	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
-
-
 .PHONY: upload_wiki
 upload_wiki: $(WIKI)
 	rsync -avzP --delete -e ssh wiki/ fluet,mlton@web.sourceforge.net:htdocs/wiki
+
 
 .PHONY: clean
 clean:
