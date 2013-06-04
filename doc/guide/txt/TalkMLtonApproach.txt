@@ -1,0 +1,15 @@
+TalkMLtonApproach
+=================
+
+== MLton's Approach ==
+
+ * whole-program optimization using a simply-typed, first-order intermediate language
+ * ensures programs are not penalized for exploiting abstraction and modularity
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkStandardML: Prev>|<:TalkFromSMLTo: Next>
+|====

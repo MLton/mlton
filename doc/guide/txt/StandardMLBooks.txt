@@ -1,0 +1,28 @@
+StandardMLBooks
+===============
+
+== Introductory Books ==
+
+* <!Cite(Ullman98, Elements of ML Programming)>
+
+* <!Cite(Paulson96, ML For the Working Programmer)>
+
+* <!Cite(HansenRichel99, Introduction to Programming using SML)>
+
+* <!Cite(FelleisenFreidman98, The Little MLer)>
+
+== Applications ==
+
+* <!Cite(Shipman02, Unix System Programming with Standard ML)>
+
+== Reference Books ==
+
+* <!Cite(GansnerReppy04, The Standard ML Basis Library)>
+
+* <:DefinitionOfStandardML:The Definition of Standard ML (Revised)>
+
+== Related Topics ==
+
+* <!Cite(Reppy99, Concurrent Programming in ML)>
+
+* <!Cite(Okasaki99, Purely Functional Data Structures)>

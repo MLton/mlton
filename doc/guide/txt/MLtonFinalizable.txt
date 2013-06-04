@@ -1,0 +1,111 @@
+MLtonFinalizable
+================
+
+[source,sml]
+----
+signature MLTON_FINALIZABLE =
+   sig
+      type 'a t
+
+      val addFinalizer: 'a t * ('a -> unit) -> unit
+      val finalizeBefore: 'a t * 'b t -> unit
+      val new: 'a -> 'a t
+      val touch: 'a t -> unit
+      val withValue: 'a t * ('a -> 'b) -> 'b
+   end
+----
+
+A _finalizable_ value is a container to which finalizers can be
+attached.  A container holds a value, which is reachable as long as
+the container itself is reachable.  A _finalizer_ is a function that
+runs at some point after garbage collection determines that the
+container to which it is attached has become
+<:Reachability:unreachable>.  A finalizer is treated like a signal
+handler, in that it runs asynchronously in a separate thread, with
+signals blocked, and will not interrupt a critical section (see
+<:MLtonThread:>).
+
+* `addFinalizer (v, f)`
++
+adds `f` as a finalizer to `v`.  This means that sometime after the
+last call to `withValue` on `v` completes and `v` becomes unreachable,
+`f` will be called with the value of `v`.
+
+* `finalizeBefore (v1, v2)`
++
+ensures that `v1` will be finalized before `v2`.  A cycle of values
+`v` = `v1`, ..., `vn` = `v` with `finalizeBefore (vi, vi+1)` will
+result in none of the `vi` being finalized.
+
+* `new x`
++
+creates a new finalizable value, `v`, with value `x`.  The finalizers
+of `v` will run sometime after the last call to `withValue` on `v`
+when the garbage collector determines that `v` is unreachable.
+
+* `touch v`
++
+ensures that `v`'s finalizers will not run before the call to `touch`.
+
+* `withValue (v, f)`
++
+returns the result of applying `f` to the value of `v` and ensures
+that `v`'s finalizers will not run before `f` completes.  The call to
+`f` is a nontail call.
+
+
+== Example ==
+
+Suppose that `finalizable.sml` contains the following:
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/finalizable/finalizable.sml]
+----
+
+Suppose that `cons.c` contains the following.
+[source,c]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/finalizable/cons.c]
+----
+
+We can compile these to create an executable with
+----
+% mlton -default-ann 'allowFFI true' finalizable.sml cons.c
+----
+
+Running this executable will create output like the following.
+----
+% finalizable
+0x08072890 = listSing (2)
+0x080728a0 = listCons (2)
+0x080728b0 = listCons (2)
+0x080728c0 = listCons (2)
+0x080728d0 = listCons (2)
+0x080728e0 = listCons (2)
+0x080728f0 = listCons (2)
+listSum
+listSum(l) = 14
+listFree (0x080728f0)
+listFree (0x080728e0)
+listFree (0x080728d0)
+listFree (0x080728c0)
+listFree (0x080728b0)
+listFree (0x080728a0)
+listFree (0x08072890)
+----
+
+
+== Synchronous Finalizers ==
+
+Finalizers in MLton are asynchronous.  That is, they run at an
+unspecified time, interrupting the user program.  It is also possible,
+and sometimes useful, to have synchronous finalizers, where the user
+program explicitly decides when to run enabled finalizers.  We have
+considered this in MLton, and it seems possible, but there are some
+unresolved design issues.  See the thread at
+
+* http://www.mlton.org/pipermail/mlton/2004-September/016570.html
+
+== Also see ==
+
+* <!Cite(Boehm03)>

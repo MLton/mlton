@@ -1,0 +1,134 @@
+Fold01N
+=======
+
+A common use pattern of <:Fold:> is to define a variable-arity
+function that combines multiple arguments together using a binary
+function.  It is slightly tricky to do this directly using fold,
+because of the special treatment required for the case of zero or one
+argument.  Here is a structure, `Fold01N`, that solves the problem
+once and for all, and eases the definition of such functions.
+
+[source,sml]
+----
+structure Fold01N =
+   struct
+      fun fold {finish, start, zero} =
+         Fold.fold ((id, finish, fn () => zero, start),
+                    fn (finish, _, p, _) => finish (p ()))
+
+      fun step0 {combine, input} =
+         Fold.step0 (fn (_, finish, _, f) =>
+                     (finish,
+                      finish,
+                      fn () => f input,
+                      fn x' => combine (f input, x')))
+
+      fun step1 {combine} z input =
+         step0 {combine = combine, input = input} z
+   end
+----
+
+If one has a value `zero`, and functions `start`, `c`, and `finish`,
+then one can define a variable-arity function `f` and stepper
++&grave;+ as follows.
+[source,sml]
+----
+val f = fn z => Fold01N.fold {finish = finish, start = start, zero = zero} z
+val ` = fn z => Fold01N.step1 {combine = c} z
+----
+
+One can then use the fold equation to prove the following equations.
+[source,sml]
+----
+f $ = zero
+f `a1 $ = finish (start a1)
+f `a1 `a2 $ = finish (c (start a1, a2))
+f `a1 `a2 `a3 $ = finish (c (c (start a1, a2), a3))
+...
+----
+
+For an example of `Fold01N`, see <:VariableArityPolymorphism:>.
+
+
+== Typing Fold01N ==
+
+Here is the signature for `Fold01N`.  We use a trick to avoid having
+to duplicate the definition of some rather complex types in both the
+signature and the structure.  We first define the types in a
+structure.  Then, we define them via type re-definitions in the
+signature, and via `open` in the full structure.
+[source,sml]
+----
+structure Fold01N =
+   struct
+      type ('input, 'accum1, 'accum2, 'answer, 'zero,
+            'a, 'b, 'c, 'd, 'e) t =
+         (('zero -> 'zero)
+          * ('accum2 -> 'answer)
+          * (unit -> 'zero)
+          * ('input -> 'accum1),
+          ('a -> 'b) * 'c * (unit -> 'a) * 'd,
+          'b,
+          'e) Fold.t
+
+       type ('input1, 'accum1, 'input2, 'accum2,
+            'a, 'b, 'c, 'd, 'e, 'f) step0 =
+         ('a * 'b * 'c * ('input1 -> 'accum1),
+          'b * 'b * (unit -> 'accum1) * ('input2 -> 'accum2),
+          'd, 'e, 'f) Fold.step0
+
+      type ('accum1, 'input, 'accum2,
+            'a, 'b, 'c, 'd, 'e, 'f, 'g) step1 =
+         ('a,
+          'b * 'c * 'd * ('a -> 'accum1),
+          'c * 'c * (unit -> 'accum1) * ('input -> 'accum2),
+          'e, 'f, 'g) Fold.step1
+   end
+
+signature FOLD_01N =
+   sig
+      type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) t =
+         ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.t
+      type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step0 =
+         ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.step0
+      type ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step1 =
+         ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.step1
+
+      val fold:
+         {finish: 'accum2 -> 'answer,
+          start: 'input -> 'accum1,
+          zero: 'zero}
+         -> ('input, 'accum1, 'accum2, 'answer, 'zero,
+             'a, 'b, 'c, 'd, 'e) t
+
+      val step0:
+         {combine: 'accum1 * 'input2 -> 'accum2,
+          input: 'input1}
+         -> ('input1, 'accum1, 'input2, 'accum2,
+             'a, 'b, 'c, 'd, 'e, 'f) step0
+
+      val step1:
+         {combine: 'accum1 * 'input -> 'accum2}
+         -> ('accum1, 'input, 'accum2,
+             'a, 'b, 'c, 'd, 'e, 'f, 'g) step1
+   end
+
+structure Fold01N: FOLD_01N =
+   struct
+      open Fold01N
+
+      fun fold {finish, start, zero} =
+         Fold.fold ((id, finish, fn () => zero, start),
+                    fn (finish, _, p, _) => finish (p ()))
+
+      fun step0 {combine, input} =
+         Fold.step0 (fn (_, finish, _, f) =>
+                     (finish,
+                      finish,
+                      fn () => f input,
+                      fn x' => combine (f input, x')))
+
+      fun step1 {combine} z input =
+         step0 {combine = combine, input = input} z
+   end
+----

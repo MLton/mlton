@@ -1,0 +1,19 @@
+Swerve
+======
+
+http://ftp.sun.ac.za/ftp/mirrorsites/ocaml/Systems_programming/book/c3253.html[Swerve]
+is an HTTP server written in SML, originally developed with SML/NJ.
+<:RayRacine:> ported Swerve to MLton in January 2005.
+
+link:Swereve.attachments/swerve.tar.bz2[Download] the port.
+
+Excerpt from the included `README`:
+____
+Total testing of this port consisted of a successful compile, startup,
+and serving one html page with one gif image.  Given that the original
+code was throughly designed and implemented in a thoughtful manner and
+I expect it is quite usable modulo a few minor bugs introduced by my
+porting effort.
+____
+
+Swerve is described in <!Cite(Shipman02)>.

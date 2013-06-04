@@ -1,0 +1,72 @@
+Emacs
+=====
+
+== SML modes ==
+
+There are a few Emacs modes for SML.
+
+* `sml-mode`
+** http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html
+** http://www.smlnj.org/doc/Emacs/sml-mode.html
+** http://www.iro.umontreal.ca/~monnier/elisp/
+
+* <!ViewGitFile(mlton,master,ide/emacs/mlton.el)> contains the Emacs lisp that <:StephenWeeks:> uses to interact with MLton (in addition to using `sml-mode`).
+
+* http://primate.net/~itz/mindent.tar, developed by Ian Zimmerman, who writes:
++
+_____
+Unlike the widespread `sml-mode.el` it doesn't try to indent code
+based on ML syntax.  I gradually got skeptical about this approach
+after writing the initial indentation support for caml mode and
+watching it bloat insanely as the language added new features.  Also,
+any such attempts that I know of impose a particular coding style, or
+at best a choice among a limited set of styles, which I now oppose.
+Instead my mode is based on a generic package which provides manual
+bindable commands for common indentation operations (example: indent
+the current line under the n-th occurrence of a particular character
+in the previous non-blank line).
+_____
+
+== MLB modes ==
+
+There is a mode for editing <:MLBasis: ML Basis> files.
+
+* <!ViewGitFile(mlton,master,ide/emacs/esml-mlb-mode.el)> (plus other files)
+
+== Definitions and uses ==
+
+There is a mode that supports the precise def-use information that
+MLton can output.  It highlights definitions and uses and provides
+commands for navigation (e.g., `jump-to-def`, `jump-to-next`,
+`list-all-refs`).  It can be handy, for example, for navigating in the
+MLton compiler source code.  See <:EmacsDefUseMode:> for further
+information.
+
+== Building on the background ==
+
+Tired of manually starting/stopping/restarting builds after editing
+files?  Now you don't have to.  See <:EmacsBgBuildMode:> for further
+information.
+
+== Error messages ==
+
+MLton's error messages are not in the format that the Emacs
+`next-error` parser natively understands.  There are a couple of ways
+to fix this.  The easiest way is to add the following to your `.emacs`
+to cause Emacs to recognize MLton's error messages.
+
+[source,cl]
+----
+(require 'compile)
+(add-to-list
+ 'compilation-error-regexp-alist
+ '("^\\(Warning\\|Error\\): \\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\.$"
+   2 3 4))
+----
+
+Alternatively, you could use a `sed` script to rewrite MLton's errors.
+Here is one such script:
+
+----
+sed -e 's/^\([W|E].*\): \([^ ]*\) \([0-9][0-9]*\)\.\([0-9][0-9]*\)\./\2:\3:\1:\4/'
+----

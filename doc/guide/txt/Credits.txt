@@ -1,0 +1,133 @@
+Credits
+=======
+
+MLton was designed and implemented by HenryCejtin,
+MatthewFluet, SureshJagannathan, and <:StephenWeeks:>.
+
+ * <:HenryCejtin:> wrote the `IntInf` implementation, the original
+ profiler, the original man pages, the `.spec` files for the RPMs,
+ and lots of little hacks to speed stuff up.
+
+ * <:MatthewFluet:> implemented the X86 and AMD64 native code generators,
+ ported `mlprof` to work with the native code generator, did a lot
+ of work on the SSA optimizer, both adding new optimizations and
+ improving or porting existing optimizations, updated the
+ <:BasisLibrary:Basis Library> implementation, ported
+ <:ConcurrentML:> and <:MLNLFFI:ML-NLFFI> to MLton, implemented the
+ <:MLBasis: ML Basis system>, and ported MLton to 64-bit platforms.
+
+ * <:SureshJagannathan:> implemented some early inlining and uncurrying
+ optimizations.
+
+ * <:StephenWeeks:> implemented most of the original version of MLton, and
+ continues to keep his fingers in most every part.
+
+Many people have helped us over the years.  Here is an alphabetical
+list.
+
+ * <:JesperLouisAndersen:> sent several patches to improve the runtime on
+ FreeBSD and ported MLton to run on NetBSD and OpenBSD.
+
+ * <:JohnnyAndersen:> implemented `BinIO`, modified MLton so it could
+ cross compile to MinGW, and provided useful discussion about
+ cross-compilation.
+
+ * Alain Deutsch and
+ http://www.polyspace.com/[PolySpace Technologies] provided many bug
+ fixes and runtime system improvements, code to help the Sparc/Solaris
+ port, and funded a number of improvements to MLton.
+
+ * Martin Elsman provided helpful discussions in the development of
+ the <:MLBasis:ML Basis system>.
+
+ * Brent Fulgham ported MLton most of the way to MinGW.
+
+ * <:AdamGoode:> provided the script to build the PDF MLton Guide.
+
+ * Simon Helsen provided bug reports, suggestions, and helpful
+ discussions.
+
+ * Joe Hurd provided useful discussion and feedback on source-level
+ profiling.
+
+ * <:VesaKarvonen:> contributed `esml-mode.el` and `esml-mlb-mode.el` (see <:Emacs:>),
+ contributed patches for improving match warnings,
+ contributed `esml-du-mlton.el` and extended def-use output to include types of variable definitions (see <:EmacsDefUseMode:>), and
+ improved constant folding of floating-point operations.
+
+ * Richard Kelsey provided helpful discussions.
+
+ * Ville Laurikari ported MLton to IA64/HPUX, HPPA/HPUX, PowerPC/AIX, PowerPC64/AIX.
+
+ * Geoffrey Mainland helped with FreeBSD packaging.
+
+ * Eric McCorkle ported MLton to Intel Mac.
+
+ * <:TomMurphy:> wrote the original version of `MLton.Syslog` as part
+ of his `mlftpd` project, and has sent many useful bug reports and
+ suggestions.
+
+ * Michael Neumann helped to patch the runtime to compile under
+ FreeBSD.
+
+ * Barak Pearlmutter built the original
+ http://packages.debian.org/mlton[Debian package] for MLton, and
+ helped us to take over the process.
+
+ * Filip Pizlo ported MLton to (PowerPC) Darwin.
+
+ * John Reppy assisted in porting MLton to Intel Mac.
+
+ * Sam Rushing ported MLton to FreeBSD.
+
+ * Jeffrey Mark Siskind provided helpful discussions and inspiration
+ with his Stalin Scheme compiler.
+
+ * <:WesleyTerpstra:> added support for `MLton.Process.create`, made
+ a number of contributions to the ForeignFunctionInterface,
+ contributed a number of other runtime system patches, and
+ added support for compiling to a C library.
+
+ * Luke Ziarek assisted in porting MLton to (PowerPC) Darwin.
+
+We have also benefited from other software development tools and
+used code from other sources.
+
+ * MLton was developed using
+ <:SMLNJ:Standard ML of New Jersey> and the
+ <:CompilationManager:Compilation Manager (CM)>
+
+ * MLton's lexer (`mlton/frontend/ml.lex`), parser
+ (`mlton/frontend/ml.grm`), and precedence-parser
+ (`mlton/elaborate/precedence-parse.fun`) are modified versions of
+ code from SML/NJ.
+
+ * The MLton <:BasisLibrary:Basis Library> implementation of
+ conversions between binary and decimal representations of reals uses
+ David Gay's http://www.netlib.org/fp/[gdtoa] library.
+
+ * The MLton <:BasisLibrary:Basis Library> implementation uses
+ modified versions of  portions of the the SML/NJ Basis Library
+ implementation modules `OS.IO`, `Posix.IO`, `Process`,
+ and `Unix`.
+
+ * The MLton <:BasisLibrary:Basis Library> implementation uses
+ modified versions of portions of the <:MLKit:ML Kit> Version 4.1.4
+ Basis Library implementation modules `Path`, `Time`, and
+ `Date`.
+
+ * Many of the benchmarks come from the SML/NJ benchmark suite.
+
+ * Many of the regression tests come from the ML Kit Version 4.1.4
+ distribution, which borrowed them from the
+ http://www.dina.kvl.dk/~sestoft/mosml.html[Moscow ML] distribution.
+
+ * MLton uses the http://www.gnu.org/software/gmp/gmp.html[GNU multiprecision library] for its implementation of `IntInf`.
+
+ * MLton's implementation of <:MLLex: mllex>, <:MLYacc: mlyacc>,
+ the <:CKitLibrary:ckit Library>,
+ the <:MLRISCLibrary:MLRISC Library>,
+ the <:SMLNJLibrary:SML/NJ Library>,
+ <:ConcurrentML:Concurrent ML>,
+ mlnlffigen and <:MLNLFFI:ML-NLFFI>
+ are modified versions of code from SML/NJ.

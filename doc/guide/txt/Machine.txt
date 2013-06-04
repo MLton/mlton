@@ -1,0 +1,27 @@
+Machine
+=======
+
+<:Machine:> is an <:IntermediateLanguage:>, translated from <:RSSA:>
+by <:ToMachine:> and used as input by the <:Codegen:>.
+
+== Description ==
+
+<:Machine:> is an <:Untyped:> <:IntermediateLanguage:>, corresponding
+to a abstract register machine.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/machine.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/machine.fun)>
+
+== Type Checking ==
+
+The <:Machine:> <:IntermediateLanguage:> has a primitive type checker
+(<!ViewGitFile(mlton,master,mlton/backend/machine.sig)>,
+<!ViewGitFile(mlton,master,mlton/backend/machine.fun)>), which only checks
+some liveness properties.
+
+== Details and Notes ==
+
+The runtime structure sets some constants according to the
+configuration files on the target architecture and OS.

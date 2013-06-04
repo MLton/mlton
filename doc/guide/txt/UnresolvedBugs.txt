@@ -1,0 +1,117 @@
+UnresolvedBugs
+==============
+
+Here are the places where MLton deviates from
+<:DefinitionOfStandardML:The Definition of Standard ML (Revised)>.  In
+general, MLton complies with the <:DefinitionOfStandardML:Definition>
+quite closely, typically much more closely than other SML compilers
+(see, e.g., our list of <:SMLNJDeviations:SML/NJ's deviations>).  In
+fact, the four deviations listed here are the only known deviations,
+and we have no plans to fix them.  If you find a deviation not listed
+here, please report a <:Bug:>.
+
+We don't plan to fix these bugs because the first (parsing nested
+cases) has historically never been accepted by any SML compiler, the
+other three clearly indicate problems in the
+<:DefinitionOfStandardML:Definition>.
+
+ * MLton does not correctly parse case expressions nested within other
+matches. For example, the following fails.
++
+[source,sml]
+----
+fun f 0 y =
+      case x of
+         1 => 2
+       | _ => 3
+  | f _ y = 4
+----
++
+To do this in a program, simply parenthesize the case expression.
++
+Allowing such expressions, although compliant with the Definition,
+would be a mistake, since using parentheses is clearer and no SML
+compiler has ever allowed them.  Furthermore, implementing this would
+require serious yacc grammar rewriting followed by postprocessing.
+
+ * MLton rejects rebinding of constructors with `val rec`
+declarations, as in
++
+[source,sml]
+----
+val rec NONE = fn () => ()
+----
++
+The Definition (bizarrely) requires this program to type check, but to
+raise `Bind`.
++
+We have no plans to change this behavior, as the Definition's behavior
+is clearly an error, a mismatch between the static semantics and the
+dynamic semantics.
+
+* MLton does not hide the equality aspect of types declared in
+`abstype` declarations. So, MLton accepts programs like the following,
+while the Definition rejects them.
++
+[source,sml]
+----
+abstype t = T with end
+val _ = fn (t1, t2 : t) => t1 = t2
+
+abstype t = T with val a = T end
+val _ = a = a
+----
++
+One consequence of this choice is that MLton accepts the following
+program, in accordance with the Definition.
++
+[source,sml]
+----
+abstype t = T with val eq = op = end
+val _ = fn (t1, t2 : t) => eq (t1, t2)
+----
++
+Other implementations will typically reject this program, because they
+make an early choice for the type of `eq` to be `''a * ''a -> bool`
+instead of `t * t -> bool`.  The choice is understandable, since the
+Definition accepts the following program.
++
+[source,sml]
+----
+abstype t = T with val eq = op = end
+val _ = eq (1, 2)
+----
++
+
+* MLton (re-)type checks each functor definition at every
+corresponding functor application (the compilation technique of
+defunctorization).  One consequence of this implementation is that
+MLton accepts the following program, while the Definition rejects
+it.
++
+[source,sml]
+----
+functor F (X: sig type t end) = struct
+    val f = id id
+end
+structure A = F (struct type t = int end)
+structure B = F (struct type t = bool end)
+val _ = A.f 10
+val _ = B.f "dude"
+----
++
+On the other hand, other implementations will typically reject the
+following program, while MLton and the Definition accept it.
++
+[source,sml]
+----
+functor F (X: sig type t end) = struct
+    val f = id id
+end
+structure A = F (struct type t = int end)
+structure B = F (struct type t = bool end)
+val _ = A.f 10
+val _ = B.f false
+----
++
+See <!Cite(DreyerBlume07)> for more details.

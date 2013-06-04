@@ -1,0 +1,6 @@
+MichaelNorrish
+==============
+
+I am a researcher at http://nicta.com.au[NICTA], with a web-page http://web.rsise.anu.edu.au/~michaeln/[here].
+
+I'm interested in MLton because of the chance that it might be a good vehicle for future implementations of the http://hol.sf.net[HOL] theorem-proving system. It's beginning to look as if one route forward will be to embed an SML interpreter into a MLton-compiled executable.  I don't know if an extensible interpreter of the kind we're looking for already exists.

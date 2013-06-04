@@ -1,0 +1,196 @@
+TypeVariableScope
+=================
+
+In <:StandardML:Standard ML>, every type variable is _scoped_ (or
+bound) at a particular point in the program.  A type variable can be
+either implicitly scoped or explicitly scoped.  For example, `'a` is
+implicitly scoped in
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+----
+
+and is implicitly scoped in
+
+[source,sml]
+----
+val id = fn x: 'a => x
+----
+
+On the other hand, `'a` is explicitly scoped in
+
+[source,sml]
+----
+val 'a id: 'a -> 'a = fn x => x
+----
+
+and is explicitly scoped in
+
+[source,sml]
+----
+val 'a id = fn x: 'a => x
+----
+
+A type variable can be scoped at a `val` or `fun` declaration.  An SML
+type checker performs scope inference on each top-level declaration to
+determine the scope of each implicitly scoped type variable.  After
+scope inference, every type variable is scoped at exactly one
+enclosing `val` or `fun` declaration.  Scope inference shows that the
+first and second example above are equivalent to the third and fourth
+example, respectively.
+
+Section 4.6 of the <:DefinitionOfStandardML:Definition> specifies
+precisely the scope of an implicitly scoped type variable.  A free
+occurrence of a type variable `'a` in a declaration `d` is said to be
+_unguarded_ in `d` if `'a` is not part of a smaller declaration.  A
+type variable `'a` is implicitly scoped at `d` if `'a` is unguarded in
+`d` and `'a` does not occur unguarded in any declaration containing
+`d`.
+
+
+== Scope inference examples ==
+
+* In this example,
++
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+----
++
+`'a` is unguarded in `val id` and does not occur unguarded in any
+containing declaration.  Hence, `'a` is scoped at `val id` and the
+declaration is equivalent to the following.
++
+[source,sml]
+----
+val 'a id: 'a -> 'a = fn x => x
+----
+
+* In this example,
++
+[source,sml]
+----
+ val f = fn x => let exception E of 'a in E x end
+----
++
+`'a` is unguarded in `val f` and does not occur unguarded in any
+containing declaration.  Hence, `'a` is scoped at `val f` and the
+declaration is equivalent to the following.
++
+[source,sml]
+----
+val 'a f = fn x => let exception E of 'a in E x end
+----
+
+* In this example (taken from the <:DefinitionOfStandardML:Definition>),
++
+[source,sml]
+----
+val x: int -> int = let val id: 'a -> 'a = fn z => z in id id end
+----
++
+`'a` occurs unguarded in `val id`, but not in `val x`.  Hence, `'a` is
+implicitly scoped at `val id`, and the declaration is equivalent to
+the following.
++
+[source,sml]
+----
+val x: int -> int = let val 'a id: 'a -> 'a = fn z => z in id id end
+----
+
+
+* In this example,
++
+[source,sml]
+----
+val f = (fn x: 'a => x) (fn y => y)
+----
++
+`'a` occurs unguarded in `val f` and does not occur unguarded in any
+containing declaration.  Hence, `'a` is implicitly scoped at `val f`,
+and the declaration is equivalent to the following.
++
+[source,sml]
+----
+val 'a f = (fn x: 'a => x) (fn y => y)
+----
++
+This does not type check due to the <:ValueRestriction:>.
+
+* In this example,
++
+[source,sml]
+----
+fun f x =
+  let
+    fun g (y: 'a) = if true then x else y
+  in
+    g x
+  end
+----
++
+`'a` occurs unguarded in `fun g`, not in `fun f`.  Hence, `'a` is
+implicitly scoped at `fun g`, and the declaration is equivalent to
++
+[source,sml]
+----
+fun f x =
+  let
+    fun 'a g (y: 'a) = if true then x else y
+  in
+    g x
+  end
+----
++
+This fails to type check because `x` and `y` must have the same type,
+and hence `'a` can not be generalized at `fun g`.  MLton reports the
+following error.
++
+----
+Error: scope.sml 3.7.
+  Unable to generalize 'a.
+    in: fun 'a g ((y): 'a) = (if true then x else y)
+----
++
+This problem could be fixed either by adding an explicit type
+constraint, as in `fun f (x: 'a)`, or by explicitly scoping `'a`, as
+in `fun 'a f x`.
+
+
+== Restrictions on type variable scope ==
+
+It is not allowed to scope a type variable within a declaration in
+which it is already in scope (see the last restriction listed on page
+9 of the <:DefinitionOfStandardML:Definition>).  For example, the
+following program is invalid.
+
+[source,sml]
+----
+fun 'a f (x: 'a) =
+   let
+      fun 'a g (y: 'a) = y
+   in
+      ()
+   end
+----
+
+MLton reports the following error.
+
+----
+Error: z.sml 3.11.
+  Type variable 'a scoped at an outer declaration.
+----
+
+This is an error even if the scoping is implicit.  That is, the
+following program is invalid as well.
+
+[source,sml]
+----
+fun f (x: 'a) =
+   let
+      fun 'a g (y: 'a) = y
+   in
+      ()
+   end
+----

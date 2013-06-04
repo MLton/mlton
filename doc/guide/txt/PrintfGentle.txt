@@ -1,0 +1,345 @@
+PrintfGentle
+============
+:toc:
+
+This page provides a gentle introduction and derivation of <:Printf:>,
+with sections and arrangement more suitable to a talk.
+
+
+== Introduction ==
+
+SML does not have `printf`.  Could we define it ourselves?
+
+[source,sml]
+----
+val () = printf ("here's an int %d and a real %f.\n", 13, 17.0)
+val () = printf ("here's three values (%d, %f, %f).\n", 13, 17.0, 19.0)
+----
+
+What could the type of `printf` be?
+
+This obviously can't work, because SML functions take a fixed number
+of arguments.  Actually they take one argument, but if that's a tuple,
+it can only have a fixed number of components.
+
+
+== From tupling to currying ==
+
+What about currying to get around the typing problem?
+
+[source,sml]
+----
+val () = printf "here's an int %d and a real %f.\n" 13 17.0
+val () = printf "here's three values (%d, %f, %f).\n" 13 17.0 19.0
+----
+
+That fails for a similar reason.  We need two types for `printf`.
+
+----
+val printf: string -> int -> real -> unit
+val printf: string -> int -> real -> real -> unit
+----
+
+This can't work, because `printf` can only have one type.  SML doesn't
+support programmer-defined overloading.
+
+
+== Overloading and dependent types ==
+
+Even without worrying about number of arguments, there is another
+problem.  The type of `printf` depends on the format string.
+
+[source,sml]
+----
+val () = printf "here's an int %d and a real %f.\n" 13 17.0
+val () = printf "here's a real %f and an int %d.\n" 17.0 13
+----
+
+Now we need
+
+----
+val printf: string -> int -> real -> unit
+val printf: string -> real -> int -> unit
+----
+
+Again, this can't possibly working because SML doesn't have
+overloading, and types can't depend on values.
+
+
+== Idea: express type information in the format string ==
+
+If we express type information in the format string, then different
+uses of `printf` can have different types.
+
+[source,sml]
+----
+type 'a t  (* the type of format strings *)
+val printf: 'a t -> 'a
+infix D F
+val fs1: (int -> real -> unit) t = "here's an int "D" and a real "F".\n"
+val fs2: (int -> real -> real -> unit) t =
+   "here's three values ("D", "F", "F").\n"
+val () = printf fs1 13 17.0
+val () = printf fs2 13 17.0 19.0
+----
+
+Now, our two calls to `printf` type check, because the format
+string specializes `printf` to the appropriate type.
+
+
+== The types of format characters ==
+
+What should the type of format characters `D` and `F` be?  Each format
+character requires an additional argument of the appropriate type to
+be supplied to `printf`.
+
+Idea: guess the final type that will be needed for `printf` the format
+string and verify it with each format character.
+
+[source,sml]
+----
+type ('a, 'b) t   (* 'a = rest of type to verify, 'b = final type *)
+val ` : string -> ('a, 'a) t  (* guess the type, which must be verified *)
+val D: (int -> 'a, 'b) t * string -> ('a, 'b) t  (* consume an int *)
+val F: (real -> 'a, 'b) t * string -> ('a, 'b) t  (* consume a real *)
+val printf: (unit, 'a) t -> 'a
+----
+
+Don't worry.  In the end, type inference will guess and verify for us.
+
+
+== Understanding guess and verify ==
+
+Now, let's build up a format string and a specialized `printf`.
+
+[source,sml]
+----
+infix D F
+val f0 = `"here's an int "
+val f1 = f0 D " and a real "
+val f2 = f1 F ".\n"
+val p = printf f2
+----
+
+These definitions yield the following types.
+
+[source,sml]
+----
+val f0: (int -> real -> unit, int -> real -> unit) t
+val f1: (real -> unit, int -> real -> unit) t
+val f2: (unit, int -> real -> unit) t
+val p: int -> real -> unit
+----
+
+So, `p` is a specialized `printf` function.  We could use it as
+follows
+
+[source,sml]
+----
+val () = p 13 17.0
+val () = p 14 19.0
+----
+
+
+== Type checking this using a functor ==
+
+[source,sml]
+----
+signature PRINTF =
+   sig
+      type ('a, 'b) t
+      val ` : string -> ('a, 'a) t
+      val D: (int -> 'a, 'b) t * string -> ('a, 'b) t
+      val F: (real -> 'a, 'b) t * string -> ('a, 'b) t
+      val printf: (unit, 'a) t -> 'a
+   end
+
+functor Test (P: PRINTF) =
+   struct
+      open P
+      infix D F
+
+      val () = printf (`"here's an int "D" and a real "F".\n") 13 17.0
+      val () = printf (`"here's three values ("D", "F ", "F").\n") 13 17.0 19.0
+   end
+----
+
+
+== Implementing `Printf` ==
+
+Think of a format character as a formatter transformer.  It takes the
+formatter for the part of the format string before it and transforms
+it into a new formatter that first does the left hand bit, then does
+its bit, then continues on with the rest of the format string.
+
+[source,sml]
+----
+structure Printf: PRINTF =
+   struct
+      datatype ('a, 'b) t = T of (unit -> 'a) -> 'b
+
+      fun printf (T f) = f (fn () => ())
+
+      fun ` s = T (fn a => (print s; a ()))
+
+      fun D (T f, s) =
+         T (fn g => f (fn () => fn i =>
+                       (print (Int.toString i); print s; g ())))
+
+      fun F (T f, s) =
+         T (fn g => f (fn () => fn i =>
+                       (print (Real.toString i); print s; g ())))
+   end
+----
+
+
+== Testing printf ==
+
+[source,sml]
+----
+structure Z = Test (Printf)
+----
+
+
+== User-definable formats ==
+
+The definition of the format characters is pretty much the same.
+Within the `Printf` structure we can define a format character
+generator.
+
+[source,sml]
+----
+val newFormat: ('a -> string) -> ('a -> 'b, 'c) t * string -> ('b, 'c) t =
+   fn toString => fn (T f, s) =>
+   T (fn th => f (fn () => fn a => (print (toString a); print s ; th ())))
+val D = fn z => newFormat Int.toString z
+val F = fn z => newFormat Real.toString z
+----
+
+
+== A core `Printf` ==
+
+We can now have a very small `PRINTF` signature, and define all
+the format strings externally to the core module.
+
+[source,sml]
+----
+signature PRINTF =
+   sig
+      type ('a, 'b) t
+      val ` : string -> ('a, 'a) t
+      val newFormat: ('a -> string) -> ('a -> 'b, 'c) t * string -> ('b, 'c) t
+      val printf: (unit, 'a) t -> 'a
+   end
+
+structure Printf: PRINTF =
+   struct
+      datatype ('a, 'b) t = T of (unit -> 'a) -> 'b
+
+      fun printf (T f) = f (fn () => ())
+
+      fun ` s = T (fn a => (print s; a ()))
+
+      fun newFormat toString (T f, s) =
+         T (fn th =>
+            f (fn () => fn a =>
+               (print (toString a)
+                ; print s
+                ; th ())))
+   end
+----
+
+
+== Extending to fprintf ==
+
+One can implement fprintf by threading the outstream through all the
+transformers.
+
+[source,sml]
+----
+signature PRINTF =
+   sig
+      type ('a, 'b) t
+      val ` : string -> ('a, 'a) t
+      val fprintf: (unit, 'a) t * TextIO.outstream -> 'a
+      val newFormat: ('a -> string) -> ('a -> 'b, 'c) t * string -> ('b, 'c) t
+      val printf: (unit, 'a) t -> 'a
+   end
+
+structure Printf: PRINTF =
+   struct
+      type out = TextIO.outstream
+      val output = TextIO.output
+
+      datatype ('a, 'b) t = T of (out -> 'a) -> out -> 'b
+
+      fun fprintf (T f, out) = f (fn _ => ()) out
+
+      fun printf t = fprintf (t, TextIO.stdOut)
+
+      fun ` s = T (fn a => fn out => (output (out, s); a out))
+
+      fun newFormat toString (T f, s) =
+         T (fn g =>
+            f (fn out => fn a =>
+               (output (out, toString a)
+                ; output (out, s)
+                ; g out)))
+   end
+----
+
+
+== Notes ==
+
+* Lesson: instead of using dependent types for a function, express the
+the dependency in the type of the argument.
+
+* If `printf` is partially applied, it will do the printing then and
+there.  Perhaps this could be fixed with some kind of terminator.
++
+A syntactic or argument terminator is not necessary.  A formatter can
+either be eager (as above) or lazy (as below).  A lazy formatter
+accumulates enough state to print the entire string.  The simplest
+lazy formatter concatenates the strings as they become available:
++
+[source,sml]
+----
+structure PrintfLazyConcat: PRINTF =
+   struct
+      datatype ('a, 'b) t = T of (string -> 'a) -> string -> 'b
+
+      fun printf (T f) = f print ""
+
+      fun ` s = T (fn th => fn s' => th (s' ^ s))
+
+      fun newFormat toString (T f, s) =
+         T (fn th =>
+            f (fn s' => fn a =>
+               th (s' ^ toString a ^ s)))
+   end
+----
++
+It is somewhat more efficient to accumulate the strings as a list:
++
+[source,sml]
+----
+structure PrintfLazyList: PRINTF =
+   struct
+      datatype ('a, 'b) t = T of (string list -> 'a) -> string list -> 'b
+
+      fun printf (T f) = f (List.app print o List.rev) []
+
+      fun ` s = T (fn th => fn ss => th (s::ss))
+
+      fun newFormat toString (T f, s) =
+         T (fn th =>
+            f (fn ss => fn a =>
+               th (s::toString a::ss)))
+   end
+----
+
+
+== Also see ==
+
+* <:Printf:>
+* <!Cite(Danvy98, Functional Unparsing)>

@@ -1,0 +1,31 @@
+MLtonMonoArray
+==============
+
+[source,sml]
+----
+signature MLTON_MONO_ARRAY =
+   sig
+      type t
+      type elem
+      val fromPoly: elem array -> t
+      val toPoly: t -> elem array
+   end
+----
+
+* `type t`
++
+type of monomorphic array
+
+* `type elem`
++
+type of array elements
+
+* `fromPoly a`
++
+type cast a polymorphic array to its monomorphic counterpart; the
+argument and result arrays share the same identity
+
+* `toPoly a`
++
+type cast a monomorphic array to its polymorphic counterpart; the
+argument and result arrays share the same identity

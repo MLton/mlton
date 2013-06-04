@@ -1,0 +1,409 @@
+ObjectOrientedProgramming
+=========================
+
+<:StandardML:Standard ML> does not have explicit support for
+object-oriented programming.  Here are some papers that show how to
+express certain object-oriented concepts in SML.
+
+* <!Cite(Berthomieu00, OO Programming styles in ML)>
+
+* <!Cite(ThorupTofte94, Object-oriented programming and Standard ML)>
+
+* <!Cite(LarsenNiss04, mGTK: An SML binding of Gtk+)>
+
+* <!Cite(FluetPucella02, Phantom Types and Subtyping)>
+
+The question of OO programming in SML comes up every now and then.
+The following discusses a simple object-oriented (OO) programming
+technique in Standard ML.  The reader is assumed to be able to read
+Java and SML code.
+
+
+== Motivation ==
+
+SML doesn't provide subtyping, but it does provide parametric
+polymorphism, which can be used to encode some forms of subtyping.
+Most articles on OO programming in SML concentrate on such encoding
+techniques.  While those techniques are interesting -- and it is
+recommended to read such articles -- and sometimes useful, it seems
+that basically all OO gurus agree that (deep) subtyping (or
+inheritance) hierarchies aren't as practical as they were thought to
+be in the early OO days.  "Good", flexible, "OO" designs tend to have
+a flat structure
+
+----
+         Interface
+             ^
+             |
+- - -+-------+-------+- - -
+     |       |       |
+   ImplA   ImplB   ImplC
+----
+
+
+and deep inheritance hierarchies
+
+----
+ClassA
+  ^
+  |
+ClassB
+  ^
+  |
+ClassC
+  ^
+  |
+----
+
+tend to be signs of design mistakes.  There are good underlying
+reasons for this, but a thorough discussion is not in the scope of
+this article.  However, the point is that perhaps the encoding of
+subtyping is not as important as one might believe.  In the following
+we ignore subtyping and rather concentrate on a very simple and basic
+dynamic dispatch technique.
+
+
+== Dynamic Dispatch Using a Recursive Record of Functions ==
+
+Quite simply, the basic idea is to implement a "virtual function
+table" using a record that is wrapped inside a (possibly recursive)
+datatype.  Let's first take a look at a simple concrete example.
+
+Consider the following Java interface:
+
+----
+public interface Counter {
+  public void inc();
+  public int get();
+}
+----
+
+We can translate the `Counter` interface to SML as follows:
+
+[source,sml]
+----
+datatype counter = Counter of {inc : unit -> unit, get : unit -> int}
+----
+
+Each value of type `counter` can be thought of as an object that
+responds to two messages `inc` and `get`.  To actually send messages
+to a counter, it is useful to define auxiliary functions
+
+[source,sml]
+----
+local
+   fun mk m (Counter t) = m t ()
+in
+   val cGet = mk#get
+   val cInc = mk#inc
+end
+----
+
+that basically extract the "function table" `t` from a counter object
+and then select the specified method `m` from the table.
+
+Let's then implement a simple function that increments a counter until a
+given maximum is reached:
+
+[source,sml]
+----
+fun incUpto counter max = while cGet counter < max do cInc counter
+----
+
+You can easily verify that the above code compiles even without any
+concrete implementation of a counter, thus it is clear that it doesn't
+depend on a particular counter implementation.
+
+Let's then implement a couple of counters.  First consider the
+following Java class implementing the `Counter` interface given earlier.
+
+----
+public class BasicCounter implements Counter {
+  private int cnt;
+  public BasicCounter(int initialCnt) { this.cnt = initialCnt; }
+  public void inc() { this.cnt += 1; }
+  public int get() { return this.cnt; }
+}
+----
+
+We can translate the above to SML as follows:
+
+[source,sml]
+----
+fun newBasicCounter initialCnt = let
+       val cnt = ref initialCnt
+    in
+       Counter {inc = fn () => cnt := !cnt + 1,
+                get = fn () => !cnt}
+    end
+----
+
+The SML function `newBasicCounter` can be described as a constructor
+function for counter objects of the `BasicCounter` "class".  We can
+also have other counter implementations.  Here is the constructor for
+a counter decorator that logs messages:
+
+[source,sml]
+----
+fun newLoggedCounter counter =
+    Counter {inc = fn () => (print "inc\n" ; cInc counter),
+             get = fn () => (print "get\n" ; cGet counter)}
+----
+
+The `incUpto` function works just as well with objects of either
+class:
+
+[source,sml]
+----
+val aCounter = newBasicCounter 0
+val () = incUpto aCounter 5
+val () = print (Int.toString (cGet aCounter) ^"\n")
+
+val aCounter = newLoggedCounter (newBasicCounter 0)
+val () = incUpto aCounter 5
+val () = print (Int.toString (cGet aCounter) ^"\n")
+----
+
+In general, a dynamic dispatch interface is represented as a record
+type wrapped inside a datatype.  Each field of the record corresponds
+to a public method or field of the object:
+
+[source,sml]
+----
+datatype interface =
+   Interface of {method : t1 -> t2,
+                 immutableField : t,
+                 mutableField : t ref}
+----
+
+The reason for wrapping the record inside a datatype is that records,
+in SML, can not be recursive.  However, SML datatypes can be
+recursive.  A record wrapped in a datatype can contain fields that
+contain the datatype.  For example, an interface such as `Cloneable`
+
+[source,sml]
+----
+datatype cloneable = Cloneable of {clone : unit -> cloneable}
+----
+
+can be represented using recursive datatypes.
+
+Like in OO languages, interfaces are abstract and can not be
+instantiated to produce objects.  To be able to instantiate objects,
+the constructors of a concrete class are needed.  In SML, we can
+implement constructors as simple functions from arbitrary arguments to
+values of the interface type.  Such a constructor function can
+encapsulate arbitrary private state and functions using lexical
+closure.  It is also easy to share implementations of methods between
+two or more constructors.
+
+While the `Counter` example is rather trivial, it should not be
+difficult to see that this technique quite simply doesn't require a huge
+amount of extra verbiage and is more than usable in practice.
+
+
+== SML Modules and Dynamic Dispatch ==
+
+One might wonder about how SML modules and the dynamic dispatch
+technique work together.  Let's investigate!  Let's use a simple
+dispenser framework as a concrete example.  (Note that this isn't
+intended to be an introduction to the SML module system.)
+
+=== Programming with SML Modules ===
+
+Using SML signatures we can specify abstract data types (ADTs) such as
+dispensers.  Here is a signature for an "abstract" functional (as
+opposed to imperative) dispenser:
+
+[source,sml]
+----
+signature ABSTRACT_DISPENSER = sig
+   type 'a t
+   val isEmpty : 'a t -> bool
+   val push : 'a * 'a t -> 'a t
+   val pop : 'a t -> ('a * 'a t) option
+end
+----
+
+The term "abstract" in the name of the signature refers to the fact that
+the signature gives no way to instantiate a dispenser.  It has nothing to
+do with the concept of abstract data types.
+
+Using SML functors we can write "generic" algorithms that manipulate
+dispensers of an unknown type.  Here are a couple of very simple
+algorithms:
+
+[source,sml]
+----
+functor DispenserAlgs (D : ABSTRACT_DISPENSER) = struct
+   open D
+
+   fun pushAll (xs, d) = foldl push d xs
+
+   fun popAll d = let
+          fun lp (xs, NONE) = rev xs
+            | lp (xs, SOME (x, d)) = lp (x::xs, pop d)
+       in
+          lp ([], pop d)
+       end
+
+   fun cp (from, to) = pushAll (popAll from, to)
+end
+----
+
+As one can easily verify, the above compiles even without any concrete
+dispenser structure.  Functors essentially provide a form a static
+dispatch that one can use to break compile-time dependencies.
+
+We can also give a signature for a concrete dispenser
+
+[source,sml]
+----
+signature DISPENSER = sig
+   include ABSTRACT_DISPENSER
+   val empty : 'a t
+end
+----
+
+and write any number of concrete structures implementing the signature.
+For example, we could implement stacks
+
+[source,sml]
+----
+structure Stack :> DISPENSER = struct
+   type 'a t = 'a list
+   val empty = []
+   val isEmpty = null
+   val push = op ::
+   val pop = List.getItem
+end
+----
+
+and queues
+
+[source,sml]
+----
+structure Queue :> DISPENSER = struct
+   datatype 'a t = T of 'a list * 'a list
+   val empty = T ([], [])
+   val isEmpty = fn T ([], _) => true | _ => false
+   val normalize = fn ([], ys) => (rev ys, []) | q => q
+   fun push (y, T (xs, ys)) = T (normalize (xs, y::ys))
+   val pop = fn (T (x::xs, ys)) => SOME (x, T (normalize (xs, ys))) | _ => NONE
+end
+----
+
+One can now write code that uses either the `Stack` or the `Queue`
+dispenser.  One can also instantiate the previously defined functor to
+create functions for manipulating dispensers of a type:
+
+[source,sml]
+----
+structure S = DispenserAlgs (Stack)
+val [4,3,2,1] = S.popAll (S.pushAll ([1,2,3,4], Stack.empty))
+
+structure Q = DispenserAlgs (Queue)
+val [1,2,3,4] = Q.popAll (Q.pushAll ([1,2,3,4], Queue.empty))
+----
+
+There is no dynamic dispatch involved at the module level in SML.  An
+attempt to do dynamic dispatch
+
+[source,sml]
+----
+val q = Q.push (1, Stack.empty)
+----
+
+will give a type error.
+
+=== Combining SML Modules and Dynamic Dispatch ===
+
+Let's then combine SML modules and the dynamic dispatch technique
+introduced in this article.  First we define an interface for
+dispensers:
+
+[source,sml]
+----
+structure Dispenser = struct
+   datatype 'a t =
+      I of {isEmpty : unit -> bool,
+            push : 'a -> 'a t,
+            pop : unit -> ('a * 'a t) option}
+
+   fun O m (I t) = m t
+
+   fun isEmpty t = O#isEmpty t ()
+   fun push (v, t) = O#push t v
+   fun pop t = O#pop t ()
+end
+----
+
+The `Dispenser` module, which we can think of as an interface for
+dispensers, implements the `ABSTRACT_DISPENSER` signature using
+the dynamic dispatch technique, but we leave the signature ascription
+until later.
+
+Then we define a `DispenserClass` functor that makes a "class" out of
+a given dispenser module:
+
+[source,sml]
+----
+functor DispenserClass (D : DISPENSER) : DISPENSER = struct
+   open Dispenser
+
+   fun make d =
+       I {isEmpty = fn () => D.isEmpty d,
+          push = fn x => make (D.push (x, d)),
+          pop = fn () =>
+                   case D.pop d of
+                      NONE => NONE
+                    | SOME (x, d) => SOME (x, make d)}
+
+   val empty =
+       I {isEmpty = fn () => true,
+          push = fn x => make (D.push (x, D.empty)),
+          pop = fn () => NONE}
+end
+----
+
+Finally we seal the `Dispenser` module:
+
+[source,sml]
+----
+structure Dispenser : ABSTRACT_DISPENSER = Dispenser
+----
+
+This isn't necessary for type safety, because the unsealed `Dispenser`
+module does not allow one to break encapsulation, but makes sure that
+only the `DispenserClass` functor can create dispenser classes
+(because the constructor `Dispenser.I` is no longer accessible).
+
+Using the `DispenserClass` functor we can turn any concrete dispenser
+module into a dispenser class:
+
+[source,sml]
+----
+structure StackClass = DispenserClass (Stack)
+structure QueueClass = DispenserClass (Queue)
+----
+
+Each dispenser class implements the same dynamic dispatch interface
+and the `ABSTRACT_DISPENSER` -signature.
+
+Because the dynamic dispatch `Dispenser` module implements the
+`ABSTRACT_DISPENSER`-signature, we can use it to instantiate the
+`DispenserAlgs`-functor:
+
+[source,sml]
+----
+structure D = DispenserAlgs (Dispenser)
+----
+
+The resulting `D` module, like the `Dispenser` module, works with
+any dispenser class and uses dynamic dispatch:
+
+[source,sml]
+----
+val [4, 3, 2, 1] = D.popAll (D.pushAll ([1, 2, 3, 4], StackClass.empty))
+val [1, 2, 3, 4] = D.popAll (D.pushAll ([1, 2, 3, 4], QueueClass.empty))
+----

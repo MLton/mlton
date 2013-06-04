@@ -1,0 +1,17 @@
+ParallelMove
+============
+
+<:ParallelMove:> is a rewrite pass, agnostic in the
+<:IntermediateLanguage:> which it produces.
+
+== Description ==
+
+This function computes a sequence of individual moves to effect a
+parallel move (with possibly overlapping froms and tos).
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/parallel-move.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/parallel-move.fun)>
+
+== Details and Notes ==

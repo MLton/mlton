@@ -1,0 +1,144 @@
+LibrarySupport
+==============
+
+MLton supports both linking to and creating system-level libraries.
+While Standard ML libraries should be designed with the <:MLBasis:> system to work with other Standard ML programs,
+system-level library support allows MLton to create libraries for use by other programming languages.
+Even more importantly, system-level library support allows MLton to access libraries from other languages.
+This article will explain how to use libraries portably with MLton.
+
+== The Basics ==
+
+A Dynamic Shared Object (DSO) is a piece of executable code written in a format understood by the operating system.
+Executable programs and dynamic libraries are the two most common examples of a DSO.
+They are called shared because if they are used more than once, they are only loaded once into main memory.
+For example, if you start two instances of your web browser (an executable), there may be two processes running, but the program code of the executable is only loaded once.
+A dynamic library, for example a graphical toolkit, might be used by several different executable programs, each possibly running multiple times.
+Nevertheless, the dynamic library is only loaded once and it's program code is shared between all of the processes.
+
+In addition to program code, DSOs contain a table of textual strings called symbols.
+These are used in order to make the DSO do something useful, like execute.
+For example, on linux the symbol `_start` refers to the point in the program code where the operating system should start executing the program.
+Dynamic libraries generally provide many symbols, corresponding to functions which can be called and variables which can be read or written.
+Symbols can be used by the DSO itself, or by other DSOs which require services.
+
+When a DSO creates a symbol, this is called 'exporting'.
+If a DSO needs to use a symbol, this is called 'importing'.
+A DSO might need to use symbols defined within itself or perhaps from another DSO.
+In both cases, it is importing that symbol, but the scope of the import differs.
+Similarly, a DSO might export a symbol for use only within itself, or it might export a symbol for use by other DSOs.
+Some symbols are resolved at compile time by the linker (those used within the DSO) and some are resolved at runtime by the dynamic link loader (symbols accessed between DSOs).
+
+== Symbols in MLton ==
+
+Symbols in MLton are both imported and exported via the <:ForeignFunctionInterface:>.
+The notation `_import "symbolname"` imports functions, `_symbol "symbolname"` imports variables, and `_address "symbolname"` imports an address.
+To create and export a symbol, `_export "symbolname"` creates a function symbol and `_symbol "symbolname" 'alloc'` creates and exports a variable.
+For details of the syntax and restrictions on the supported FFI types, read the <:ForeignFunctionInterface:> page.
+In this discussion it only matters that every FFI use is either an import or an export.
+
+When exporting a symbol, MLton supports controlling the export scope.
+If the symbol should only be used within the same DSO, that symbol has '`private`' scope.
+Conversely, if the symbol should also be available to other DSOs the symbol has '`public`' scope.
+Generally, one should have as few public exports as possible.
+Since they are public, other DSOs will come to depend on them, limiting your ability to change them.
+You specify the export scope in MLton by putting `private` or `public` after the symbol's name in an FFI directive.
+eg: `_export "foo" private: int->int;` or `_export "bar" public: int->int;` .
+
+For technical reasons, the linker and loader on various platforms need to know the scope of a symbol being imported.
+If the symbol is exported by the same DSO, use `public` or `private` as appropriate.
+If the symbol is exported by a different DSO, then the scope '`external`' should be used to import it.
+Within a DSO, all references to a symbol must use the same scope.
+MLton will check this at compile time, reporting: `symbol "foo" redeclared as public (previously external)`. This may cause linker errors.
+However, MLton can only check usage within Standard ML.
+All objects being linked into a resulting DSO must agree, and it is the programmer's responsibility to ensure this.
+
+Summary of symbol scopes:
+
+* `private`: used for symbols exported within a DSO only for use within that DSO
+* `public`: used for symbols exported within a DSO that may also be used outside that DSO
+* `external`: used for importing symbols from another DSO
+* All uses of a symbol within a DSO (both imports and exports) must agree on the symbol scope
+
+== Output Formats ==
+
+MLton can create executables (`-format executable`) and dynamic shared libraries (`-format library`).
+To link a shared library, use `-link-opt -l<dso_name>`.
+The default output format is executable.
+
+MLton can also create archives.
+An archive is not a DSO, but it does have a collection of symbols.
+When an archive is linked into a DSO, it is completely absorbed.
+Other objects being compiled into the DSO should refer to the public symbols in the archive as public, since they are still in the same DSO.
+However, in the interest of modular programming, private symbols in an archive cannot be used outside of that archive, even within the same DSO.
+
+Although both executables and libraries are DSOs, some implementation details differ on some platforms.
+For this reason, MLton can create two types or archives.
+A normal archive (`-format archive`) is appropriate for linking into an executable.
+Conversely, a libarchive (`-format libarchive`) should be used if it will be linked into a dynamic library.
+
+When MLton does not create an executable, it creates two special symbols.
+The symbol `libname_open` is a function which must be called before any other symbols are accessed.
+The `libname` is controlled by the `-libname` compile option and defaults to the name of the output, with any prefixing lib stripped (eg: `foo` -> `foo`, `libfoo` -> `foo`).
+The symbol `libname_close` is a function which should be called to clean up memory once done.
+
+Summary of `-format` options:
+
+* `executable`: create an executable (a DSO)
+* `library`: create a dynamic shared library (a DSO)
+* `archive`: create an archive of symbols (not a DSO) that can be linked into an executable
+* `libarchive`: create an archive of symbols (not a DSO) that can be linked into a library
+
+Related options:
+
+* `-libname x`: controls the name of the special `_open` and `_close` functions.
+
+
+== Interfacing with C ==
+
+MLton can generate a C header file.
+When the output format is not an executable, it creates one by default named `libname.h`.
+This can be overridden with `-export-header foo.h`.
+This header file should be included by any C files using the exported Standard ML symbols.
+
+If C is being linked with Standard ML into the same output archive or DSO,
+then the C code should `#define PART_OF_LIBNAME` before it includes the header file.
+This ensures that the C code is using the symbols with correct scope.
+Any symbols exported from C should also be marked using the `PRIVATE`/`PUBLIC`/`EXTERNAL` macros defined in the Standard ML export header.
+The declared C scope on exported C symbols should match the import scope used in Standard ML.
+
+An example:
+[source,c]
+----
+#define PART_OF_FOO
+#include "foo.h"
+
+PUBLIC int cFoo() {
+  return smlFoo();
+}
+----
+
+[source,sml]
+----
+val () = _export "smlFoo" private: unit -> int; (fn () => 5)
+val cFoo = _import "cFoo" public: unit -> int;
+----
+
+
+== Operating-system specific details ==
+
+On Windows, `libarchive` and `archive` are the same.
+However, depending on this will lead to portability problems.
+Windows is also especially sensitive to mixups of '`public`' and '`external`'.
+If an archive is linked, make sure it's symbols are imported as `public`.
+If a DLL is linked, make sure it's symbols are imported as `external`.
+Using `external` instead of `public` will result in link errors that `__imp__foo is undefined`.
+Using `public` instead of `external` will result in inconsistent function pointer addresses and failure to update the imported variables.
+
+On Linux, `libarchive` and `archive` are different.
+Libarchives are quite rare, but necessary if creating a library from an archive.
+It is common for a library to provide both an archive and a dynamic library on this platform.
+The linker will pick one or the other, usually preferring the dynamic library.
+While a quirk of the operating system allows external import to work for both archives and libraries,
+portable projects should not depend on this behaviour.
+On other systems it can matter how the library is linked (static or dynamic).

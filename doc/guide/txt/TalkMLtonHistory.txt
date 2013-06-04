@@ -1,0 +1,29 @@
+TalkMLtonHistory
+================
+
+== MLton History ==
+
+[cols="<25%,<75%"]
+|====
+| April 1997  | Stephen Weeks wrote a defunctorizer for SML/NJ
+| Aug. 1997   | Begin independent compiler (`smlc`)
+| Oct. 1997   | Monomorphiser
+| Nov. 1997   | Polyvariant higher-order control-flow analysis (10,000 lines)
+| March 1999  | First release of MLton (48,006 lines)
+| Jan. 2002   | MLton at 102,541 lines
+| Jan. 2003   | MLton at 112,204 lines
+| Jan. 2004   | MLton at 122,299 lines
+| Nov. 2004   | MLton at 141,311 lines
+|====
+
+{empty} +
+{empty} +
+See <:History:>.
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkMLtonFeatures: Prev>|<:TalkDiveIn: Next>
+|====

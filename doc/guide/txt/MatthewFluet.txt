@@ -1,0 +1,78 @@
+MatthewFluet
+============
+
+Matthew Fluet (
+mailto:matthew.fluet@gmail.com[matthew.fluet@gmail.com]
+,
+http://www.cs.rit.edu/~mtf
+)
+is an Assistant Professor at the http://www.rit.edu[Rochester Institute of Technology].
+
+''''
+
+Current MLton projects:
+
+* general maintenance
+* release new version
+
+''''
+
+Misc. and underspecified TODOs:
+
+* Copyright check in precommit:
+** http://www.mlton.org/pipermail/mlton/2007-November/030041.html
+* understand <:RefFlatten:> and <:DeepFlatten:>
+** http://www.mlton.org/pipermail/mlton/2005-April/026990.html
+** http://www.mlton.org/pipermail/mlton/2007-November/030056.html
+** http://www.mlton.org/pipermail/mlton/2008-April/030250.html
+** http://www.mlton.org/pipermail/mlton/2008-July/030279.html
+** http://www.mlton.org/pipermail/mlton/2008-August/030312.html
+** http://www.mlton.org/pipermail/mlton/2008-September/030360.html
+** http://www.mlton.org/pipermail/mlton-user/2009-June/001542.html
+* simplify `Socket.Ctl` implementation:
+** http://www.mlton.org/pipermail/mlton/2007-December/030087.html
+** marshal control values via different functions, rather than via SML `Word8Array.array`-s
+* `MSG_DONTWAIT` isn't Posix
+* coordinate w/ Dan Spoonhower and Lukasz Ziarek and Armand Navabi on multi-threaded
+** http://www.mlton.org/pipermail/mlton/2008-March/030214.html
+* Intel Research bug: `no tyconRep property` (company won't release sample code)
+** http://www.mlton.org/pipermail/mlton-user/2008-March/001358.html
+* treatment of real constants
+** http://www.mlton.org/pipermail/mlton/2008-May/030262.html
+** http://www.mlton.org/pipermail/mlton/2008-June/030271.html
+* representation of `bool` and `_bool` in <:ForeignFunctionInterface:>
+** http://www.mlton.org/pipermail/mlton/2008-May/030264.html
+* http://www.icfpcontest.org
+** John Reppy claims that "It looks like the card-marking overhead that one incurs when using generational collection swamps the benefits of generational collection."
+* page to disk policy / single heap
+** http://www.mlton.org/pipermail/mlton/2008-June/030278.html
+** http://www.mlton.org/pipermail/mlton/2008-August/030318.html
+* `MLton.GC.pack` doesn't keep a small heap if a garbage collection occurs before `MLton.GC.unpack`.
+** It might be preferable for `MLton.GC.pack` to be implemented as a (new) `MLton.GC.Ratios.setLive 1.1` followed by `MLton.GC.collect ()` and for `MLton.GC.unpack` to be implemented as `MLton.GC.Ratios.setLive 8.0` followed by `MLton.GC.collect ()`.
+* The `static struct GC_objectType objectTypes[] =` array includes many duplicates.  Objects of distinct source type, but equivalent representations (in terms of size, bytes non-pointers, number pointers) can share the objectType index.
+* PolySpace bug: <:Redundant:> optimization (company won't release sample code)
+** http://www.mlton.org/pipermail/mlton/2008-September/030355.html
+* treatment of exception raised during <:BasisLibrary:> evaluation
+** http://www.mlton.org/pipermail/mlton/2008-December/030501.html
+** http://www.mlton.org/pipermail/mlton/2008-December/030502.html
+** http://www.mlton.org/pipermail/mlton/2008-December/030503.html
+* Use `memcpy`
+** http://www.mlton.org/pipermail/mlton-user/2009-January/001506.html
+** http://www.mlton.org/pipermail/mlton/2009-January/030506.html
+* Implement more 64bit primops in x86 codegen
+** http://www.mlton.org/pipermail/mlton/2009-January/030507.html
+* Enrich path-map file syntax:
+** http://www.mlton.org/pipermail/mlton/2008-September/030348.html
+** http://www.mlton.org/pipermail/mlton-user/2009-January/001507.html
+* PolySpace bug: crash during Cheney-copy collection
+** http://www.mlton.org/pipermail/mlton/2009-February/030513.html
+* eliminate `-build-constants`
+** all `_const`-s are known by `runtime/gen/basis-ffi.def`
+** generate `gen-constants.c` from `basis-ffi.def`
+** generate `constants` from `gen-constants.c` and `libmlton.a`
+** similar to `gen-sizes.c` and `sizes`
+* eliminate "Windows hacks" for Cygwin from `Path` module
+** http://www.mlton.org/pipermail/mlton/2009-July/030606.html
+* extend IL type checkers to check for empty property lists
+* make (unsafe) `IntInf` conversions into primitives
+** http://www.mlton.org/pipermail/mlton/2009-July/030622.html

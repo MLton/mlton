@@ -1,0 +1,40 @@
+ProfilingAllocation
+===================
+
+With MLton and `mlprof`, you can <:Profiling:profile> your program to
+find out how many bytes each function allocates.  To do so, compile
+your program with `-profile alloc`.  For example, suppose that
+`list-rev.sml` is the following.
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/list-rev.sml]
+----
+
+Compile and run `list-rev` as follows.
+----
+% mlton -profile alloc list-rev.sml
+% ./list-rev
+% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
+       function          cur
+----------------------- -----
+append  list-rev.sml: 1 97.6%
+<gc>                     1.8%
+<main>                   0.4%
+rev  list-rev.sml: 6     0.2%
+----
+
+The data shows that most of the allocation is done by the `append`
+function defined on line 1 of `list-rev.sml`.  The table also shows
+how special functions like `gc` and `main` are handled: they are
+printed with surrounding brackets.  C functions are displayed
+similarly.  In this example, the allocation done by the garbage
+collector is due to stack growth, which is usually the case.
+
+The run-time performance impact of allocation profiling is noticeable,
+because it inserts additional C calls for object allocation.
+
+Compile with `-profile alloc -profile-branch true` to find out how
+much allocation is done in each branch of a function; see
+<:ProfilingCounts:> for more details on `-profile-branch`.

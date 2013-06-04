@@ -1,0 +1,23 @@
+TalkMLtonFeatures
+=================
+
+== MLton Features ==
+
+ * Supports full Standard ML language and Basis Library
+ * Generates standalone executables
+ * Extensions
+   ** Foreign function interface (SML to C, C to SML)
+   ** ML Basis system for programming in the very large
+   ** Extension libraries
+
+{empty} +
+{empty} +
+See <:Features:>.
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkFolkLore: Prev>|<:TalkMLtonHistory: Next>
+|====

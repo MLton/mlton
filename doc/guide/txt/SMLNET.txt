@@ -1,0 +1,12 @@
+SMLNET
+======
+
+http://www.research.microsoft.com/Projects/SML.NET/[SML.NET] is a
+<:StandardMLImplementations:Standard ML implementation> that
+targets the .NET Common Language Runtime.
+
+SML.NET is based on the <:MLj:MLj> compiler.
+
+== Also see ==
+
+* <!Cite(BentonEtAl04)>

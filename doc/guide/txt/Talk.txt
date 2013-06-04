@@ -1,0 +1,14 @@
+Talk
+====
+
+== The MLton Standard ML Compiler ==
+
+*Henry Cejtin, Matthew Fluet, Suresh Jagannathan, Stephen Weeks*
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+||<:TalkStandardML: Next>
+|====

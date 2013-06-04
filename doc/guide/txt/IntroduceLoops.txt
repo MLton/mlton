@@ -1,0 +1,40 @@
+IntroduceLoops
+==============
+
+<:IntroduceLoops:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass rewrites any <:SSA:> function that calls itself in tail
+position into one with a local loop and no self tail calls.
+
+A <:SSA:> function like
+----
+fun F (arg_0, arg_1) = L_0 ()
+  ...
+  L_16 (x_0)
+    ...
+    F (z_0, z_1) Tail
+  ...
+----
+becomes
+----
+fun F (arg_0', arg_1') = loopS_0 ()
+  loopS_0 ()
+    loop_0 (arg_0', arg_1')
+  loop_0 (arg_0, arg_1)
+    L_0 ()
+  ...
+  L_16 (x_0)
+    ...
+    loop_0 (z_0, z_1)
+  ...
+----
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/introduce-loops.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/introduce-loops.fun)>
+
+== Details and Notes ==

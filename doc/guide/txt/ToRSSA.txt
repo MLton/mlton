@@ -1,0 +1,18 @@
+ToRSSA
+======
+
+<:ToRSSA:> is a translation pass from the <:SSA2:>
+<:IntermediateLanguage:> to the <:RSSA:> <:IntermediateLanguage:>.
+
+== Description ==
+
+This pass converts a <:SSA2:> program into a <:RSSA:> program.
+
+It uses <:PackedRepresentation:>.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/ssa-to-rssa.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/ssa-to-rssa.fun)>
+
+== Details and Notes ==

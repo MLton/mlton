@@ -1,0 +1,688 @@
+BasisLibrary
+============
+:toc:
+
+The <:StandardML:Standard ML> Basis Library is a collection of modules
+dealing with basic types, input/output, OS interfaces, and simple
+datatypes.  It is intended as a portable library usable across all
+implementations of SML.  For the official online version of the Basis
+Library specification, see http://www.standardml.org/Basis.
+<!Cite(GansnerReppy04, The Standard ML Basis Library)> is a book
+version that includes all of the online version and more.  For a
+reverse chronological list of changes to the specification, see
+http://www.standardml.org/Basis/history.html.
+
+MLton implements all of the required portions of the Basis Library.
+MLton also implements many of the optional structures.  You can obtain
+a complete and current list of what's available using
+`mlton -show-basis` (see <:ShowBasis:>).  By default, MLton makes the
+Basis Library available to user programs.  You can also
+<:MLBasisAvailableLibraries:access the Basis Library> from
+<:MLBasis: ML Basis> files.
+
+Below is a complete list of what MLton implements.
+
+== Top-level types and constructors ==
+
+`eqtype 'a array`
+
+`datatype bool = false | true`
+
+`eqtype char`
+
+`type exn`
+
+`eqtype int`
+
+++datatype 'a list = nil | {two-colons} of ('a * 'a list)++
+
+`datatype 'a option = NONE | SOME of 'a`
+
+`datatype order = EQUAL | GREATER | LESS`
+
+`type real`
+
+`datatype 'a ref = ref of 'a`
+
+`eqtype string`
+
+`type substring`
+
+`eqtype unit`
+
+`eqtype 'a vector`
+
+`eqtype word`
+
+== Top-level exception constructors ==
+
+`Bind`
+
+`Chr`
+
+`Div`
+
+`Domain`
+
+`Empty`
+
+`Fail of string`
+
+`Match`
+
+`Option`
+
+`Overflow`
+
+`Size`
+
+`Span`
+
+`Subscript`
+
+== Top-level values ==
+
+MLton does not implement the optional top-level value
+`use: string -> unit`, which conflicts with whole-program
+compilation because it allows new code to be loaded dynamically.
+
+MLton implements all other top-level values:
+
+`!`,
+`:=`,
+`<>`,
+`=`,
+`@`,
+`^`,
+`app`,
+`before`,
+`ceil`,
+`chr`,
+`concat`,
+`exnMessage`,
+`exnName`,
+`explode`,
+`floor`,
+`foldl`,
+`foldr`,
+`getOpt`,
+`hd`,
+`ignore`,
+`implode`,
+`isSome`,
+`length`,
+`map`,
+`not`,
+`null`,
+`o`,
+`ord`,
+`print`,
+`real`,
+`rev`,
+`round`,
+`size`,
+`str`,
+`substring`,
+`tl`,
+`trunc`,
+`valOf`,
+`vector`
+
+== Overloaded identifiers ==
+
+`*`,
+`+`,
+`-`,
+`/`,
+`<`,
+`<=`,
+`>`,
+`>=`,
+`~`,
+`abs`,
+`div`,
+`mod`
+
+== Top-level signatures ==
+
+`ARRAY`
+
+`ARRAY2`
+
+`ARRAY_SLICE`
+
+`BIN_IO`
+
+`BIT_FLAGS`
+
+`BOOL`
+
+`BYTE`
+
+`CHAR`
+
+`COMMAND_LINE`
+
+`DATE`
+
+`GENERAL`
+
+`GENERIC_SOCK`
+
+`IEEE_REAL`
+
+`IMPERATIVE_IO`
+
+`INET_SOCK`
+
+`INTEGER`
+
+`INT_INF`
+
+`IO`
+
+`LIST`
+
+`LIST_PAIR`
+
+`MATH`
+
+`MONO_ARRAY`
+
+`MONO_ARRAY2`
+
+`MONO_ARRAY_SLICE`
+
+`MONO_VECTOR`
+
+`MONO_VECTOR_SLICE`
+
+`NET_HOST_DB`
+
+`NET_PROT_DB`
+
+`NET_SERV_DB`
+
+`OPTION`
+
+`OS`
+
+`OS_FILE_SYS`
+
+`OS_IO`
+
+`OS_PATH`
+
+`OS_PROCESS`
+
+`PACK_REAL`
+
+`PACK_WORD`
+
+`POSIX`
+
+`POSIX_ERROR`
+
+`POSIX_FILE_SYS`
+
+`POSIX_IO`
+
+`POSIX_PROCESS`
+
+`POSIX_PROC_ENV`
+
+`POSIX_SIGNAL`
+
+`POSIX_SYS_DB`
+
+`POSIX_TTY`
+
+`PRIM_IO`
+
+`REAL`
+
+`SOCKET`
+
+`STREAM_IO`
+
+`STRING`
+
+`STRING_CVT`
+
+`SUBSTRING`
+
+`TEXT`
+
+`TEXT_IO`
+
+`TEXT_STREAM_IO`
+
+`TIME`
+
+`TIMER`
+
+`UNIX`
+
+`UNIX_SOCK`
+
+`VECTOR`
+
+`VECTOR_SLICE`
+
+`WORD`
+
+== Top-level structures ==
+
+`structure Array: ARRAY`
+
+`structure Array2: ARRAY2`
+
+`structure ArraySlice: ARRAY_SLICE`
+
+`structure BinIO: BIN_IO`
+
+`structure BinPrimIO: PRIM_IO`
+
+`structure Bool: BOOL`
+
+`structure BoolArray: MONO_ARRAY`
+
+`structure BoolArray2: MONO_ARRAY2`
+
+`structure BoolArraySlice: MONO_ARRAY_SLICE`
+
+`structure BoolVector: MONO_VECTOR`
+
+`structure BoolVectorSlice: MONO_VECTOR_SLICE`
+
+`structure Byte: BYTE`
+
+`structure Char: CHAR`
+
+* `Char` characters correspond to ISO-8859-1.  The `Char` functions do not depend on locale.
+
+`structure CharArray: MONO_ARRAY`
+
+`structure CharArray2: MONO_ARRAY2`
+
+`structure CharArraySlice: MONO_ARRAY_SLICE`
+
+`structure CharVector: MONO_VECTOR`
+
+`structure CharVectorSlice: MONO_VECTOR_SLICE`
+
+`structure CommandLine: COMMAND_LINE`
+
+`structure Date: DATE`
+
+* `Date.fromString` and `Date.scan` accept a space in addition to a zero for the first character of the day of the month.  The Basis Library specification only allows a zero.
+
+`structure FixedInt: INTEGER`
+
+`structure General: GENERAL`
+
+`structure GenericSock: GENERIC_SOCK`
+
+`structure IEEEReal: IEEE_REAL`
+
+`structure INetSock: INET_SOCK`
+
+`structure IO: IO`
+
+`structure Int: INTEGER`
+
+`structure Int1: INTEGER`
+
+`structure Int2: INTEGER`
+
+`structure Int3: INTEGER`
+
+`structure Int4: INTEGER`
+
+...
+
+`structure Int31: INTEGER`
+
+`structure Int32: INTEGER`
+
+`structure Int64: INTEGER`
+
+`structure IntArray: MONO_ARRAY`
+
+`structure IntArray2: MONO_ARRAY2`
+
+`structure IntArraySlice: MONO_ARRAY_SLICE`
+
+`structure IntVector: MONO_VECTOR`
+
+`structure IntVectorSlice: MONO_VECTOR_SLICE`
+
+`structure Int8: INTEGER`
+
+`structure Int8Array: MONO_ARRAY`
+
+`structure Int8Array2: MONO_ARRAY2`
+
+`structure Int8ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Int8Vector: MONO_VECTOR`
+
+`structure Int8VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Int16: INTEGER`
+
+`structure Int16Array: MONO_ARRAY`
+
+`structure Int16Array2: MONO_ARRAY2`
+
+`structure Int16ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Int16Vector: MONO_VECTOR`
+
+`structure Int16VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Int32: INTEGER`
+
+`structure Int32Array: MONO_ARRAY`
+
+`structure Int32Array2: MONO_ARRAY2`
+
+`structure Int32ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Int32Vector: MONO_VECTOR`
+
+`structure Int32VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Int64Array: MONO_ARRAY`
+
+`structure Int64Array2: MONO_ARRAY2`
+
+`structure Int64ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Int64Vector: MONO_VECTOR`
+
+`structure Int64VectorSlice: MONO_VECTOR_SLICE`
+
+`structure IntInf: INT_INF`
+
+`structure LargeInt: INTEGER`
+
+`structure LargeIntArray: MONO_ARRAY`
+
+`structure LargeIntArray2: MONO_ARRAY2`
+
+`structure LargeIntArraySlice: MONO_ARRAY_SLICE`
+
+`structure LargeIntVector: MONO_VECTOR`
+
+`structure LargeIntVectorSlice: MONO_VECTOR_SLICE`
+
+`structure LargeReal: REAL`
+
+`structure LargeRealArray: MONO_ARRAY`
+
+`structure LargeRealArray2: MONO_ARRAY2`
+
+`structure LargeRealArraySlice: MONO_ARRAY_SLICE`
+
+`structure LargeRealVector: MONO_VECTOR`
+
+`structure LargeRealVectorSlice: MONO_VECTOR_SLICE`
+
+`structure LargeWord: WORD`
+
+`structure LargeWordArray: MONO_ARRAY`
+
+`structure LargeWordArray2: MONO_ARRAY2`
+
+`structure LargeWordArraySlice: MONO_ARRAY_SLICE`
+
+`structure LargeWordVector: MONO_VECTOR`
+
+`structure LargeWordVectorSlice: MONO_VECTOR_SLICE`
+
+`structure List: LIST`
+
+`structure ListPair: LIST_PAIR`
+
+`structure Math: MATH`
+
+`structure NetHostDB: NET_HOST_DB`
+
+`structure NetProtDB: NET_PROT_DB`
+
+`structure NetServDB: NET_SERV_DB`
+
+`structure OS: OS`
+
+`structure Option: OPTION`
+
+`structure PackReal32Big: PACK_REAL`
+
+`structure PackReal32Little: PACK_REAL`
+
+`structure PackReal64Big: PACK_REAL`
+
+`structure PackReal64Little: PACK_REAL`
+
+`structure PackRealBig: PACK_REAL`
+
+`structure PackRealLittle: PACK_REAL`
+
+`structure PackWord16Big: PACK_WORD`
+
+`structure PackWord16Little: PACK_WORD`
+
+`structure PackWord32Big: PACK_WORD`
+
+`structure PackWord32Little: PACK_WORD`
+
+`structure PackWord64Big: PACK_WORD`
+
+`structure PackWord64Little: PACK_WORD`
+
+`structure Position: INTEGER`
+
+`structure Posix: POSIX`
+
+`structure Real: REAL`
+
+`structure RealArray: MONO_ARRAY`
+
+`structure RealArray2: MONO_ARRAY2`
+
+`structure RealArraySlice: MONO_ARRAY_SLICE`
+
+`structure RealVector: MONO_VECTOR`
+
+`structure RealVectorSlice: MONO_VECTOR_SLICE`
+
+`structure Real32: REAL`
+
+`structure Real32Array: MONO_ARRAY`
+
+`structure Real32Array2: MONO_ARRAY2`
+
+`structure Real32ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Real32Vector: MONO_VECTOR`
+
+`structure Real32VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Real64: REAL`
+
+`structure Real64Array: MONO_ARRAY`
+
+`structure Real64Array2: MONO_ARRAY2`
+
+`structure Real64ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Real64Vector: MONO_VECTOR`
+
+`structure Real64VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Socket: SOCKET`
+
+* The Basis Library specification requires functions like
+`Socket.sendVec` to raise an exception if they fail.  However, on some
+platforms, sending to a socket that hasn't yet been connected causes a
+`SIGPIPE` signal, which invokes the default signal handler for
+`SIGPIPE` and causes the program to terminate.  If you want the
+exception to be raised, you can ignore `SIGPIPE` by adding the
+following to your program.
++
+[source,sml]
+----
+let
+   open MLton.Signal
+in
+   setHandler (Posix.Signal.pipe, Handler.ignore)
+end
+----
+
+`structure String: STRING`
+
+* The `String` functions do not depend on locale.
+
+`structure StringCvt: STRING_CVT`
+
+`structure Substring: SUBSTRING`
+
+`structure SysWord: WORD`
+
+`structure Text: TEXT`
+
+`structure TextIO: TEXT_IO`
+
+`structure TextPrimIO: PRIM_IO`
+
+`structure Time: TIME`
+
+`structure Timer: TIMER`
+
+`structure Unix: UNIX`
+
+`structure UnixSock: UNIX_SOCK`
+
+`structure Vector: VECTOR`
+
+`structure VectorSlice: VECTOR_SLICE`
+
+`structure Word: WORD`
+
+`structure Word1: WORD`
+
+`structure Word2: WORD`
+
+`structure Word3: WORD`
+
+`structure Word4: WORD`
+
+...
+
+`structure Word31: WORD`
+
+`structure Word32: WORD`
+
+`structure Word64: WORD`
+
+`structure WordArray: MONO_ARRAY`
+
+`structure WordArray2: MONO_ARRAY2`
+
+`structure WordArraySlice: MONO_ARRAY_SLICE`
+
+`structure WordVectorSlice: MONO_VECTOR_SLICE`
+
+`structure WordVector: MONO_VECTOR`
+
+`structure Word8Array: MONO_ARRAY`
+
+`structure Word8Array2: MONO_ARRAY2`
+
+`structure Word8ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Word8Vector: MONO_VECTOR`
+
+`structure Word8VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Word16Array: MONO_ARRAY`
+
+`structure Word16Array2: MONO_ARRAY2`
+
+`structure Word16ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Word16Vector: MONO_VECTOR`
+
+`structure Word16VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Word32Array: MONO_ARRAY`
+
+`structure Word32Array2: MONO_ARRAY2`
+
+`structure Word32ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Word32Vector: MONO_VECTOR`
+
+`structure Word32VectorSlice: MONO_VECTOR_SLICE`
+
+`structure Word64Array: MONO_ARRAY`
+
+`structure Word64Array2: MONO_ARRAY2`
+
+`structure Word64ArraySlice: MONO_ARRAY_SLICE`
+
+`structure Word64Vector: MONO_VECTOR`
+
+`structure Word64VectorSlice: MONO_VECTOR_SLICE`
+
+== Top-level functors ==
+
+`ImperativeIO`
+
+`PrimIO`
+
+`StreamIO`
+
+* MLton's `StreamIO` functor takes structures `ArraySlice` and
+`VectorSlice` in addition to the arguments specified in the Basis
+Library specification.
+
+== Type equivalences ==
+
+The following types are equivalent.
+----
+FixedInt = Int64.int
+LargeInt = IntInf.int
+LargeReal.real = Real64.real
+LargeWord = Word64.word
+----
+
+The default `int`, `real`, and `word` types may be set by the
+++-default-type __type__++ <:CompileTimeOptions: compile-time option>.
+By default, the following types are equivalent:
+----
+int = Int.int = Int32.int
+real = Real.real = Real64.real
+word = Word.word = Word32.word
+----
+
+== Real and Math functions ==
+
+The `Real`, `Real32`, and `Real64` modules are implemented
+using the `C` math library, so the SML functions will reflect the
+behavior of the underlying library function.  We have made some effort
+to unify the differences between the math libraries on different
+platforms, and in particular to handle exceptional cases according to
+the Basis Library specification.  However, there will be differences
+due to different numerical algorithms and cases we may have missed.
+Please submit a <:Bug:bug report> if you encounter an error in
+the handling of an exceptional case.
+
+On x86, real arithmetic is implemented internally using 80 bits of
+precision.  Using higher precision for intermediate results in
+computations can lead to different results than if all the computation
+is done at 32 or 64 bits.  If you require strict IEEE compliance, you
+can compile with `-ieee-fp true`, which will cause intermediate
+results to be stored after each operation.  This may cause a
+substantial performance penalty.

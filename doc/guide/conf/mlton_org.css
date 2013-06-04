@@ -1,0 +1,43 @@
+a:visited {
+  color: #3366FF;
+}
+
+#banner {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+#banner {
+  overflow: hidden;
+  font-size: x-large;
+  font-weight: bold;
+  border-bottom: 8px dotted silver;
+  padding-bottom: 0.5em;
+  margin-bottom: 1.0em;
+}
+
+#banner-home {
+  float: left;
+  vertical-align: bottom;
+  padding-top: 0.5em;
+}
+
+#banner-search {
+  float: right;
+  width: 50%;
+  vertical-align: bottom;
+  padding-top: 0.5em;
+}
+
+#footer {
+  overflow: hidden;
+}
+
+#footer-extra-badges {
+  float: right;
+  padding-bottom: 0.5em;
+  padding-left: 1.0em;
+}
+
+@media print {
+  #footer-extra-badges { display: none; }
+}

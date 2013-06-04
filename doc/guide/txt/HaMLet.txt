@@ -1,0 +1,8 @@
+HaMLet
+======
+
+http://www.ps.uni-sb.de/hamlet/[HaMLet] is a
+<:StandardMLImplementations:Standard ML implementation>.  It is
+intended as reference implementation of
+<:DefinitionOfStandardML:The Definition of Standard ML (Revised)> and
+not for serious practical work.

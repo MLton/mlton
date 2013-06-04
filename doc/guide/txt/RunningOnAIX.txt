@@ -1,0 +1,9 @@
+RunningOnAIX
+============
+
+MLton runs fine on AIX.
+
+== Also see ==
+
+* <:RunningOnPowerPC:>
+* <:RunningOnPowerPC64:>

@@ -1,0 +1,331 @@
+MLtonContIsolateImplementation
+==============================
+
+As noted before, it is fairly easy to get the operational behavior of `isolate` with just `callcc` and `throw`, but establishing the right space behavior is trickier.  Here, we show how to start from the obvious, but inefficient, implementation of `isolate` using only `callcc` and `throw`, and 'derive' an equivalent, but more efficient, implementation of `isolate` using MLton's primitive stack capture and copy operations.  This isn't a formal derivation, as we are not formally showing the equivalence of the programs (though I believe that they are all equivalent, modulo the space behavior).
+
+Here is a direct implementation of isolate using only `callcc` and `throw`:
+
+[source,sml]
+----
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  callcc
+  (fn k1 =>
+   let
+      val x = callcc (fn k2 => throw (k1, k2))
+      val _ = (f x ; Exit.topLevelSuffix ())
+              handle exn => MLtonExn.topLevelHandler exn
+   in
+      raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+   end)
+----
+
+
+We use the standard nested `callcc` trick to return a continuation that is ready to receive an argument, execute the isolated function, and exit the program.  Both `Exit.topLevelSuffix` and `MLtonExn.topLevelHandler` will terminate the program.
+
+Throwing to an isolated function will execute the function in a 'semantically' empty context, in the sense that we never re-execute the 'original' continuation of the call to isolate (i.e., the context that was in place at the time `isolate` was called).  However, we assume that the compiler isn't able to recognize that the 'original' continuation is unused; for example, while we (the programmer) know that `Exit.topLevelSuffix` and `MLtonExn.topLevelHandler` will terminate the program, the compiler may only see opaque calls to unknown foreign-functions.  So, that original continuation (in its entirety) is part of the continuation returned by `isolate` and throwing to the continuation returned by `isolate` will execute `f x` (with the exit wrapper) in the context of that original continuation.  Thus, the garbage collector will retain  everything reachable from that original continuation during the evaluation of `f x`, even though it is 'semantically' garbage.
+
+Note that this space-leak is independent of the implementation of continuations (it arises in both MLton's stack copying implementation of continuations and would arise in SML/NJ's CPS-translation implementation); we are only assuming that the implementation can't 'see' the program termination, and so must retain the original continuation (and anything reachable from it).
+
+So, we need an 'empty' continuation in which to execute `f x`.  (No surprise there, as that is the written description of `isolate`.)  To do this, we capture a top-level continuation and throw to that in order to execute `f x`:
+
+[source,sml]
+----
+local
+val base: (unit -> unit) t =
+  callcc
+  (fn k1 =>
+   let
+      val th = callcc (fn k2 => throw (k1, k2))
+      val _ = (th () ; Exit.topLevelSuffix ())
+              handle exn => MLtonExn.topLevelHandler exn
+   in
+      raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+   end)
+in
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  callcc
+  (fn k1 =>
+   let
+      val x = callcc (fn k2 => throw (k1, k2))
+   in
+      throw (base, fn () => f x)
+   end)
+end
+----
+
+
+We presume that `base` is evaluated 'early' in the program.  There is a subtlety here, because one needs to believe that this `base` continuation (which technically corresponds to the entire rest of the program evaluation) 'works' as an empty context; in particular, we want it to be the case that executing `f x` in the `base` context retains less space than executing `f x` in the context in place at the call to `isolate` (as occurred in the previous implementation of `isolate`).  This isn't particularly easy to believe if one takes a normal substitution-based operational semantics, because it seems that the context captured and bound to `base` is arbitrarily large.  However, this context is mostly unevaluated code; the only heap-allocated values that are reachable from it are those that were evaluated before the evaluation of `base` (and used in the program after the evaluation of `base`).  Assuming that `base` is evaluated 'early' in the program, we conclude that there are few heap-allocated values reachable from its continuation.  In contrast, the previous implementation of `isolate` could capture a context that has many heap-allocated values reachable from it (because we could evaluate `isolate f` 'late' in the program and 'deep' in a call stack), which would all remain reachable during the evaluation of
+`f x`.  [We'll return to this point later, as it is taking a slightly MLton-esque view of the evaluation of a program, and may not apply as strongly to other implementations (e.g., SML/NJ).]
+
+Now, once we throw to `base` and begin executing `f x`, only the heap-allocated values reachable from `f` and `x` and the few heap-allocated values reachable from `base` are retained by the garbage collector.  So, it seems that `base` 'works' as an empty context.
+
+But, what about the continuation returned from `isolate f`?  Note that the continuation returned by `isolate` is one that receives an argument `x` and then
+throws to `base` to evaluate `f x`.  If we used a CPS-translation implementation (and assume sufficient beta-contractions to eliminate administrative redexes), then the original continuation passed to `isolate` (i.e., the continuation bound to `k1`) will not be free in the continuation returned by `isolate f`.  Rather, the only free variables in the continuation returned by `isolate f` will be `base` and `f`, so the only heap-allocated values reachable from the continuation returned by `isolate f` will be those values reachable from `base` (assumed to be few) and those values reachable from `f` (necessary in order to execute `f` at some later point).
+
+But, MLton doesn't use a CPS-translation implementation.  Rather, at each call to `callcc` in the body of `isolate`, MLton will copy the current execution stack.  Thus, `k2` (the continuation returned by `isolate f`) will include execution stack at the time of the call to `isolate f` -- that is, it will include the 'original' continuation of the call to `isolate f`.  Thus, the heap-allocated values reachable from the continuation returned by `isolate f` will include those values reachable from `base`, those values reachable from `f`, and those values reachable from the original continuation of the call to `isolate f`.  So, just holding on to the continuation returned by `isolate f` will retain all of the heap-allocated values live at the time `isolate f` was called.  This leaks space, since, 'semantically', the
+continuation returned by `isolate f` only needs the heap-allocated values reachable from `f` (and `base`).
+
+In practice, this probably isn't a significant issue.  A common use of `isolate` is implement `abort`:
+[source,sml]
+----
+fun abort th = throw (isolate th, ())
+----
+
+The continuation returned by `isolate th` is dead immediately after being thrown to -- the continuation isn't retained, so neither is the 'semantic'
+garbage it would have retained.
+
+But, it is easy enough to 'move' onto the 'empty' context `base` the capturing of the context that we want to be returned by `isolate f`:
+
+[source,sml]
+----
+local
+val base: (unit -> unit) t =
+  callcc
+  (fn k1 =>
+   let
+      val th = callcc (fn k2 => throw (k1, k2))
+      val _ = (th () ; Exit.topLevelSuffix ())
+              handle exn => MLtonExn.topLevelHandler exn
+   in
+      raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+   end)
+in
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  callcc
+  (fn k1 =>
+   throw (base, fn () =>
+          let
+             val x = callcc (fn k2 => throw (k1, k2))
+          in
+             throw (base, fn () => f x)
+          end))
+end
+----
+
+
+This implementation now has the right space behavior; the continuation returned by `isolate f` will only retain the heap-allocated values reachable from `f` and from `base`.  (Technically, the continuation will retain two copies of the stack that was in place at the time `base` was evaluated, but we are assuming that that stack small.)
+
+One minor inefficiency of this implementation (given MLton's implementation of continuations) is that every `callcc` and `throw` entails copying a stack (albeit, some of them are small).  We can avoid this in the evaluation of `base` by using a reference cell, because `base` is evaluated at the top-level:
+
+[source,sml]
+----
+local
+val base: (unit -> unit) option t =
+  let
+     val baseRef: (unit -> unit) option t option ref = ref NONE
+     val th = callcc (fn k => (base := SOME k; NONE))
+  in
+     case th of
+        NONE => (case !baseRef of
+                    NONE => raise Fail "MLton.Cont.isolate: missing base"
+                  | SOME base => base)
+      | SOME th => let
+                      val _ = (th () ; Exit.topLevelSuffix ())
+                              handle exn => MLtonExn.topLevelHandler exn
+                   in
+                      raise Fail "MLton.Cont.isolate: return from (wrapped)
+                      func"
+                   end
+  end
+in
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  callcc
+  (fn k1 =>
+   throw (base, SOME (fn () =>
+          let
+             val x = callcc (fn k2 => throw (k1, k2))
+          in
+             throw (base, SOME (fn () => f x))
+          end)))
+end
+----
+
+
+Now, to evaluate `base`, we only copy the stack once (instead of 3 times).  Because we don't have a dummy continuation around to initialize the reference cell, the reference cell holds a continuation `option`.  To distinguish between the original evaluation of `base` (when we want to return the continuation) and the subsequent evaluations of `base` (when we want to evaluate a thunk), we capture a `(unit -> unit) option` continuation.
+
+This seems to be as far as we can go without exploiting the concrete implementation of continuations in <:MLtonCont:>.  Examining the implementation, we note that the type of
+continuations is given by
+[source,sml]
+----
+type 'a t = (unit -> 'a) -> unit
+----
+
+and the implementation of `throw` is given by
+[source,sml]
+----
+fun ('a, 'b) throw' (k: 'a t, v: unit -> 'a): 'b =
+  (k v; raise Fail "MLton.Cont.throw': return from continuation")
+
+fun ('a, 'b) throw (k: 'a t, v: 'a): 'b = throw' (k, fn () => v)
+----
+
+
+Suffice to say, a continuation is simply a function that accepts a thunk to yield the thrown value and the body of the function performs the actual throw. Using this knowledge, we can create a dummy continuation to initialize `baseRef` and greatly simplify the body of `isolate`:
+
+[source,sml]
+----
+local
+val base: (unit -> unit) option t =
+  let
+     val baseRef: (unit -> unit) option t ref =
+        ref (fn _ => raise Fail "MLton.Cont.isolate: missing base")
+     val th = callcc (fn k => (baseRef := k; NONE))
+  in
+     case th of
+        NONE => !baseRef
+      | SOME th => let
+                      val _ = (th () ; Exit.topLevelSuffix ())
+                              handle exn => MLtonExn.topLevelHandler exn
+                   in
+                      raise Fail "MLton.Cont.isolate: return from (wrapped)
+                      func"
+                   end
+  end
+in
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  fn (v: unit -> 'a) =>
+  throw (base, SOME (f o v))
+end
+----
+
+
+Note that this implementation of `isolate` makes it clear that the continuation returned by `isolate f` only retains the heap-allocated values reachable from `f` and `base`.  It also retains only one copy of the stack that was in place at the time `base` was evaluated.  Finally, it completely avoids making any copies of the stack that is in place at the time `isolate f` is evaluated; indeed, `isolate f` is a constant-time operation.
+
+Next, suppose we limited ourselves to capturing `unit` continuations with `callcc`.  We can't pass the thunk to be evaluated in the 'empty' context directly, but we can use a reference cell.
+
+[source,sml]
+----
+local
+val thRef: (unit -> unit) option ref = ref NONE
+val base: unit t =
+  let
+     val baseRef: unit t ref =
+        ref (fn _ => raise Fail "MLton.Cont.isolate: missing base")
+     val () = callcc (fn k => baseRef := k)
+  in
+     case !thRef of
+        NONE => !baseRef
+      | SOME th =>
+           let
+              val _ = thRef := NONE
+              val _ = (th () ; Exit.topLevelSuffix ())
+                      handle exn => MLtonExn.topLevelHandler exn
+           in
+              raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+           end
+  end
+in
+val isolate: ('a -> unit) -> 'a t =
+  fn (f: 'a -> unit) =>
+  fn (v: unit -> 'a) =>
+  let
+     val () = thRef := SOME (f o v)
+  in
+     throw (base, ())
+  end
+end
+----
+
+
+Note that it is important to set `thRef` to `NONE` before evaluating the thunk, so that the garbage collector doesn't retain all the heap-allocated values reachable from `f` and `v` during the evaluation of `f (v ())`.  This is because `thRef` is still live during the evaluation of the thunk; in particular, it was allocated before the evaluation of `base` (and used after), and so is retained by continuation on which the thunk is evaluated.
+
+This implementation can be easily adapted to use MLton's primitive stack copying operations.
+
+[source,sml]
+----
+local
+val thRef: (unit -> unit) option ref = ref NONE
+val base: Thread.preThread =
+   let
+      val () = Thread.copyCurrent ()
+   in
+      case !thRef of
+         NONE => Thread.savedPre ()
+       | SOME th =>
+            let
+               val () = thRef := NONE
+               val _ = (th () ; Exit.topLevelSuffix ())
+                       handle exn => MLtonExn.topLevelHandler exn
+            in
+               raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+            end
+   end
+in
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (v: unit -> 'a) =>
+   let
+      val () = thRef := SOME (f o v)
+      val new = Thread.copy base
+   in
+      Thread.switchTo new
+   end
+end
+----
+
+
+In essence, `Thread.copyCurrent` copies the current execution stack and stores it in an implicit reference cell in the runtime system, which is fetchable with `Thread.savedPre`.  When we are ready to throw to the isolated function, `Thread.copy` copies the saved execution stack (because the stack is modified in place during execution, we need to retain a pristine copy in case the isolated function itself throws to other isolated functions) and `Thread.switchTo` abandons the current execution stack, installing the newly copied execution stack.
+
+The actual implementation of `MLton.Cont.isolate` simply adds some `Thread.atomicBegin` and `Thread.atomicEnd` commands, which effectively protect the global `thRef` and accommodate the fact that `Thread.switchTo` does an implicit `Thread.atomicEnd` (used for leaving a signal handler thread).
+
+[source,sml]
+----
+local
+val thRef: (unit -> unit) option ref = ref NONE
+val base: Thread.preThread =
+   let
+      val () = Thread.copyCurrent ()
+   in
+      case !thRef of
+         NONE => Thread.savedPre ()
+       | SOME th =>
+            let
+               val () = thRef := NONE
+               val _ = MLton.atomicEnd (* Match 1 *)
+               val _ = (th () ; Exit.topLevelSuffix ())
+                       handle exn => MLtonExn.topLevelHandler exn
+            in
+               raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+            end
+   end
+in
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (v: unit -> 'a) =>
+   let
+      val _ = MLton.atomicBegin (* Match 1 *)
+      val () = thRef := SOME (f o v)
+      val new = Thread.copy base
+      val _ = MLton.atomicBegin (* Match 2 *)
+   in
+      Thread.switchTo new (* Match 2 *)
+   end
+end
+----
+
+
+It is perhaps interesting to note that the above implementation was originally 'derived' by specializing implementations of the <:MLtonThread:> `new`, `prepare`, and `switch` functions as if their only use was in the following implementation of `isolate`:
+
+[source,sml]
+----
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (v: unit -> 'a) =>
+   let
+      val th = (f (v ()) ; Exit.topLevelSuffix ())
+               handle exn => MLtonExn.topLevelHandler exn
+      val t = MLton.Thread.prepare (MLton.Thread.new th, ())
+   in
+      MLton.Thread.switch (fn _ => t)
+   end
+----
+
+
+It was pleasant to discover that it could equally well be 'derived' starting from the `callcc` and `throw` implementation.
+
+As a final comment, we noted that the degree to which the context of `base` could be considered 'empty' (i.e., retaining few heap-allocated values) depended upon a slightly MLton-esque view.  In particular, MLton does not heap allocate executable code.  So, although the `base` context keeps a lot of unevaluated code 'live', such code is not heap allocated.  In a system like SML/NJ, that does heap allocate executable code, one might want it to be the case that after throwing to an isolated function, the garbage collector retains only the code necessary to evaluate the function, and not any code that was necessary to evaluate the `base` context.

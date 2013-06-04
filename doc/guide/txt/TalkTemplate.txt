@@ -1,0 +1,16 @@
+TalkTemplate
+============
+
+== Title ==
+
+ * Bullet
+ * Bullet
+
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:ZZZPrev: Prev>|<:ZZZNext: Next>
+|====

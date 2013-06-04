@@ -1,0 +1,94 @@
+Regions
+=======
+
+In region-based memory management, the heap is divided into a
+collection of regions into which objects are allocated.  At compile
+time, either in the source program or through automatic inference,
+allocation points are annotated with the region in which the
+allocation will occur.  Typically, although not always, the regions
+are allocated and deallocated according to a stack discipline.
+
+MLton does not use region-based memory management; it uses traditional
+<:GarbageCollection:>.  We have considered integrating regions with
+MLton, but in our opinion it is far from clear that regions would
+provide MLton with improved performance, while they would certainly
+add a lot of complexity to the compiler and complicate reasoning about
+and achieving <:SpaceSafety:>.  Region-based memory management and
+garbage collection have different strengths and weaknesses; it's
+pretty easy to come up with programs that do significantly better
+under regions than under GC, and vice versa.  We believe that it is
+the case that common SML idioms tend to work better under GC than
+under regions.
+
+One common argument for regions is that the region operations can all
+be done in (approximately) constant time; therefore, you eliminate GC
+pause times, leading to a real-time GC.  However, because of space
+safety concerns (see below), we believe that region-based memory
+management for SML must also include a traditional garbage collector.
+Hence, to achieve real-time memory management for MLton/SML, we
+believe that it would be both easier and more efficient to implement a
+traditional real-time garbage collector than it would be to implement
+a region system.
+
+== Regions, the ML Kit, and space safety ==
+
+The <:MLKit:ML Kit> pioneered the use of regions for compiling
+Standard ML.  The ML Kit maintains a stack of regions at run time.  At
+compile time, it uses region inference to decide when data can be
+allocated in a stack-like manner, assigning it to an appropriate
+region.  The ML Kit has put a lot of effort into improving the
+supporting analyses and representations of regions, which are all
+necessary to improve the performance.
+
+Unfortunately, under a pure stack-based region system, space leaks are
+inevitable in theory, and costly in practice.  Data for which region
+inference can not determine the lifetime is moved into the "global
+region" whose lifetime is the entire program.  There are two ways in
+which region inference will place an object to the global region.
+
+* When the inference is too conservative, that is, when the data is
+used in a stack-like manner but the region inference can't figure it
+out.
+
+* When data is not used in a stack-like manner.  In this case,
+correctness requires region inference to place the object
+
+This global region is a source of space leaks.  No matter what region
+system you use, there are some programs such that the global region
+must exist, and its size will grow to an unbounded multiple of the
+live data size.  For these programs one must have a GC to achieve
+space safety.
+
+To solve this problem, the ML Kit has undergone work to combine
+garbage collection with region-based memory management.
+<!Cite(HallenbergEtAl02)> and <!Cite(Elsman03)> describe the addition
+of a garbage collector to the ML Kit's region-based system.  These
+papers provide convincing evidence for space leaks in the global
+region.  They show a number of benchmarks where the memory usage of
+the program running with just regions is a large multiple (2, 10, 50,
+even 150) of the program running with regions plus GC.
+
+These papers also give some numbers to show the ML Kit with just
+regions does better than either a system with just GC or a combined
+system.  Unfortunately, a pure region system isn't practical because
+of the lack of space safety.  And the other performance numbers are
+not so convincing, because they compare to an old version of SML/NJ
+and not at all with MLton.  It would be interesting to see a
+comparison with a more serious collector.
+
+== Regions, Garbage Collection, and Cyclone ==
+
+One possibility is to take Cyclone's approach, and provide both
+region-based memory management and garbage collection, but at the
+programmer's option (<!Cite(GrossmanEtAl02)>, <!Cite(HicksEtAl03)>).
+
+One might ask whether we might do the same thing -- i.e., provide a
+`MLton.Regions` structure with explicit region based memory
+management operations, so that the programmer could use them when
+appropriate.  <:MatthewFluet:> has thought about this question
+
+* http://www.cs.cornell.edu/People/fluet/rgn-monad/index.html
+
+Unfortunately, his conclusion is that the SML type system is too weak
+to support this option, although there might be a "poor-man's" version
+with dynamic checks.

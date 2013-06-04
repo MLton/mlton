@@ -1,0 +1,70 @@
+MLRISCLibrary
+=============
+
+The http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html[MLRISC
+Library] is a framework for retargetable and optimizing compiler back
+ends.  The MLRISC Library is distributed with SML/NJ.  Due to
+differences between SML/NJ and MLton, this library will not work
+out-of-the box with MLton.
+
+As of 20130522, MLton includes a port of the MLRISC Library
+synchronized with SML/NJ version 110.75.
+
+== Usage ==
+
+* You can import a sub-library of the MLRISC Library into an MLB file with:
++
+[options="header"]
+|====
+|MLB file|Description
+|`$(SML_LIB)/mlrisc-lib/mlb/ALPHA.mlb`|The ALPHA backend
+|`$(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb`|The AMD64 backend
+|`$(SML_LIB)/mlrisc-lib/mlb/AMD64-Peephole.mlb`|The AMD64 peephole optimizer
+|`$(SML_LIB)/mlrisc-lib/mlb/CCall.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/CCall-sparc.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/CCall-x86-64.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/CCall-x86.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/Control.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/HPPA.mlb`|The HPPA backend
+|`$(SML_LIB)/mlrisc-lib/mlb/IA32.mlb`|The IA32 backend
+|`$(SML_LIB)/mlrisc-lib/mlb/IA32-Peephole.mlb`|The IA32 peephole optimizer
+|`$(SML_LIB)/mlrisc-lib/mlb/Lib.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/MLTREE.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/Peephole.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/PPC.mlb`|The PPC backend
+|`$(SML_LIB)/mlrisc-lib/mlb/RA.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/SPARC.mlb`|The Sparc backend
+|`$(SML_LIB)/mlrisc-lib/mlb/StagedAlloc.mlb`|
+|`$(SML_LIB)/mlrisc-lib/mlb/Visual.mlb`|
+|=====
+
+* If you are porting a project from SML/NJ's <:CompilationManager:> to
+MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+following map is included by default:
++
+----
+# MLRISC Library
+$SMLNJ-MLRISC                           $(SML_LIB)/mlrisc-lib/mlb
+----
++
+This will automatically convert a `$SMLNJ-MLRISC/MLRISC.cm` import in
+an input `.cm` file into a `$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb`
+import in the output `.mlb` file.
+
+== Details ==
+
+The following changes were made to the MLRISC Library, in addition to
+deriving the `.mlb` files from the `.cm` files:
+
+* eliminate or-patterns: Duplicate the whole match (`p => e`) at each of the patterns.
+* eliminate vector constants: Change `#[` to `Vector.fromList [`.
+* eliminate `withtype` in signatures.
+* eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
+* eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
+* eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
+
+== Patch ==
+
+* <!ViewGitFile(mlton,master,lib/mlrisc-lib/MLRISC.patch)>

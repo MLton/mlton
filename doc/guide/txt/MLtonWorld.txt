@@ -1,0 +1,59 @@
+MLtonWorld
+==========
+
+[source,sml]
+----
+signature MLTON_WORLD =
+   sig
+      datatype status = Clone | Original
+
+      val load: string -> 'a
+      val save: string -> status
+      val saveThread: string * Thread.Runnable.t -> unit
+   end
+----
+
+* `datatype status`
++
+specifies whether a world is original or restarted (a clone).
+
+* `load f`
++
+loads the saved computation from file `f`.
+
+* `save f`
++
+saves the entire state of the computation to the file `f`.  The
+computation can then be restarted at a later time using `World.load`
+or the `load-world` <:RunTimeOptions:runtime option>.  The call to
+`save` in the original computation returns `Original` and the call in
+the restarted world returns `Clone`.
+
+* `saveThread (f, rt)`
++
+saves the entire state of the computation to the file `f` that will
+resume with thread `rt` upon restart.
+
+
+== Example ==
+
+Suppose that `save-world.sml` contains the following.
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/save-world/save-world.sml]
+----
+
+Then, if we compile `save-world.sml` and run it, the `Original`
+branch will execute, and a file named `world` will be created.
+----
+% mlton save-world.sml
+% ./save-world
+I am the original
+----
+
+We can then load `world` using the `load-world`
+<:RunTimeOptions:run time option>.
+----
+% ./save-world @MLton load-world world --
+I am the clone
+----

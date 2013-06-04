@@ -1,0 +1,97 @@
+CallGraph
+=========
+
+For easier visualization of <:Profiling:profiling> data, `mlprof` can
+create a call graph of the program in dot format, from which you can
+use the http://www.research.att.com/sw/tools/graphviz/[graphviz]
+software package to create a PostScript or PNG graph.  For example,
+----
+mlprof -call-graph foo.dot foo mlmon.out
+----
+will create `foo.dot` with a complete call graph.  For each source
+function, there will be one node in the graph that contains the
+function name (and source position with `-show-line true`), as
+well as the percentage of ticks.  If you want to create a call graph
+for your program without any profiling data, you can simply call
+`mlprof` without any `mlmon.out` files, as in
+----
+mlprof -call-graph foo.dot foo
+----
+
+Because SML has higher-order functions, the call graph is is dependent
+on MLton's analysis of which functions call each other.  This analysis
+depends on many implementation details and might display spurious
+edges that a human could conclude are impossible.  However, in
+practice, the call graphs tend to be very accurate.
+
+Because call graphs can get big, `mlprof` provides the `-keep` option
+to specify the nodes that you would like to see.  This option also
+controls which functions appear in the table that `mlprof` prints.
+The argument to `-keep` is an expression describing a set of source
+functions (i.e. graph nodes).  The expression _e_ should be of the
+following form.
+
+* ++all++
+* ++"__s__"++
+* ++(and __e ...__)++
+* ++(from __e__)++
+* ++(not __e__)++
+* ++(or __e__)++
+* ++(pred __e__)++
+* ++(succ __e__)++
+* ++(thresh __x__)++
+* ++(thresh-gc __x__)++
+* ++(thresh-stack __x__)++
+* ++(to __e__)++
+
+In the grammar, ++all++ denotes the set of all nodes.  ++"__s__"++ is
+a regular expression denoting the set of functions whose name
+(followed by a space and the source position) has a prefix matching
+the regexp.  The `and`, `not`, and `or` expressions denote
+intersection, complement, and union, respectively.  The `pred` and
+`succ` expressions add the set of immediate predecessors or successors
+to their argument, respectively.  The `from` and `to` expressions
+denote the set of nodes that have paths from or to the set of nodes
+denoted by their arguments, respectively.  Finally, `thresh`,
+`thresh-gc`, and `thresh-stack` denote the set of nodes whose
+percentage of ticks, gc ticks, or stack ticks, respectively, is
+greater than or equal to the real number _x_.
+
+For example, if you want to see the entire call graph for a program,
+you can use `-keep all` (this is the default).  If you want to see
+all nodes reachable from function `foo` in your program, you would
+use `-keep '(from "foo")'`.  Or, if you want to see all the
+functions defined in subdirectory `bar` of your project that used
+at least 1% of the ticks, you would use
+----
+-keep '(and ".*/bar/" (thresh 1.0))'
+----
+To see all functions with ticks above a threshold, you can also use
+`-thresh x`, which is an abbreviation for `-keep '(thresh x)'`.  You
+can not use multiple `-keep` arguments or both `-keep` and `-thresh`.
+When you use `-keep` to display a subset of the functions, `mlprof`
+will add dashed edges to the call graph to indicate a path in the
+original call graph from one function to another.
+
+When compiling with `-profile-stack true`, you can use `mlprof -gray
+true` to make the nodes darker or lighter depending on whether their
+stack percentage is higher or lower.
+
+MLton's optimizer may duplicate source functions for any of a number
+of reasons (functor duplication, monomorphisation, polyvariance,
+inlining).  By default, all duplicates of a function are treated as
+one.  If you would like to treat the duplicates separately, you can
+use ++mlprof -split __regexp__++, which will cause all duplicates of
+functions whose name has a prefix matching the regular expression to
+be treated separately.  This can be especially useful for higher-order
+utility functions like `General.o`.
+
+== Caveats ==
+
+Technically speaking, `mlprof` produces a call-stack graph rather than
+a call graph, because it describes the set of possible call stacks.
+The difference is in how tail calls are displayed.  For example if `f`
+nontail calls `g` and `g` tail calls `h`, then the call-stack graph
+has edges from `f` to `g` and `f` to `h`, while the call graph has
+edges from `f` to `g` and `g` to `h`.  That is, a tail call from `g`
+to `h` removes `g` from the call stack and replaces it with `h`.

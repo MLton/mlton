@@ -1,0 +1,109 @@
+XML
+===
+
+<:XML:> is an <:IntermediateLanguage:>, translated from <:CoreML:> by
+<:Defunctorize:>, optimized by <:XMLSimplify:>, and translated by
+<:Monomorphise:> to <:SXML:>.
+
+== Description ==
+
+<:XML:> is polymorphic, higher-order, with flat patterns.  Every
+<:XML:> expression is annotated with its type.  Polymorphic
+generalization is made explicit through type variables annotating
+`val` and `fun` declarations.  Polymorphic instantiation is made
+explicit by specifying type arguments at variable references.  <:XML:>
+patterns can not be nested and can not contain wildcards, constraints,
+flexible records, or layering.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/xml/xml.sig)>
+* <!ViewGitFile(mlton,master,mlton/xml/xml.fun)>
+* <!ViewGitFile(mlton,master,mlton/xml/xml-tree.sig)>
+* <!ViewGitFile(mlton,master,mlton/xml/xml-tree.fun)>
+
+== Type Checking ==
+
+<:XML:> also has a type checker, used for debugging.  At present, the
+type checker is also the best specification of the type system of
+<:XML:>.  If you need more details, the type checker
+(<!ViewGitFile(mlton,master,mlton/xml/type-check.sig)>,
+<!ViewGitFile(mlton,master,mlton/xml/type-check.fun)>), is pretty short.
+
+Since the type checker does not affect the output of the compiler
+(unless it reports an error), it can be turned off.  The type checker
+recursively descends the program, checking that the type annotating
+each node is the same as the type synthesized from the types of the
+expressions subnodes.
+
+== Details and Notes ==
+
+<:XML:> uses the same atoms as <:CoreML:>, hence all identifiers
+(constructors, variables, etc.) are unique and can have properties
+attached to them.  Finally, <:XML:> has a simplifier (<:XMLShrink:>),
+which implements a reduction system.
+
+=== Types ===
+
+<:XML:> types are either type variables or applications of n-ary type
+constructors.  There are many utility functions for constructing and
+destructing types involving built-in type constructors.
+
+A type scheme binds list of type variables in a type.  The only
+interesting operation on type schemes is the application of a type
+scheme to a list of types, which performs a simultaneous substitution
+of the type arguments for the bound type variables of the scheme.  For
+the purposes of type checking, it is necessary to know the type scheme
+of variables, constructors, and primitives.  This is done by
+associating the scheme with the identifier using its property list.
+This approach is used instead of the more traditional environment
+approach for reasons of speed.
+
+=== XmlTree ===
+
+Before defining `XML`, the signature for language <:XML:>, we need to
+define an auxiliary signature `XML_TREE`, that contains the datatype
+declarations for the expression trees of <:XML:>.  This is done solely
+for the purpose of modularity -- it allows the simplifier and type
+checker to be defined by separate functors (which take a structure
+matching `XML_TREE`).  Then, `Xml` is defined as the signature for a
+module containing the expression trees, the simplifier, and the type
+checker.
+
+Both constructors and variables can have type schemes, hence both
+constructor and variable references specify the instance of the scheme
+at the point of references.  An instance is specified with a vector of
+types, which corresponds to the type variables in the scheme.
+
+<:XML:> patterns are flat (i.e. not nested).  A pattern is a
+constructor with an optional argument variable.  Patterns only occur
+in `case` expressions.  To evaluate a case expression, compare the
+test value sequentially against each pattern.  For the first pattern
+that matches, destruct the value if necessary to bind the pattern
+variables and evaluate the corresponding expression.  If no pattern
+matches, evaluate the default.  All patterns of a case statement are
+of the same variant of `Pat.t`, although this is not enforced by ML's
+type system.  The type checker, however, does enforce this.  Because
+tuple patterns are irrefutable, there will only ever be one tuple
+pattern in a case expression and there will be no default.
+
+<:XML:> contains value, exception, and mutually recursive function
+declarations.  There are no free type variables in <:XML:>.  All type
+variables are explicitly bound at either a value or function
+declaration.  At some point in the future, exception declarations may
+go away, and exceptions may be represented with a single datatype
+containing a `unit ref` component to implement genericity.
+
+<:XML:> expressions are like those of <:CoreML:>, with the following
+exceptions.  There are no records expressions.  After type inference,
+all records (some of which may have originally been tuples in the
+source) are converted to tuples, because once flexible record patterns
+have been resolved, tuple labels are superfluous.  Tuple components
+are ordered based on the field ordering relation.  <:XML:> eta expands
+primitives and constructors so that there are always fully applied.
+Hence, the only kind of value of arrow type is a lambda.  This
+property is useful for flow analysis and later in code generation.
+
+An <:XML:> program is a list of toplevel datatype declarations and a
+body expression.  Because datatype declarations are not generative,
+the defunctorizer can safely move them to toplevel.

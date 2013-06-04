@@ -1,0 +1,11 @@
+# -v
+-b html5
+--conf-file=conf/mlton_org_markup.conf
+--conf-file=conf/header.conf
+--conf-file=conf/footer.conf
+--conf-file=conf/mlton_org_html.conf
+--attribute=source-highlighter=pygments
+# --attribute=disable-javascript
+--attribute=linkcss
+--attribute=badges
+# --attribute=icons

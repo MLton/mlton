@@ -1,0 +1,155 @@
+EmacsBgBuildMode
+================
+
+Do you really want to think about starting a build of you project?
+What if you had a personal slave that would restart a build of your
+project whenever you save any file belonging to that project?  The
+bg-build mode does just that.  Just save the file, a compile is
+started (silently!), you can continue working without even thinking
+about starting a build, and if there are errors, you are notified
+(with a message), and can then jump to errors.
+
+This mode is not specific to MLton per se, but is particularly useful
+for working with MLton due to the longer compile times.  By the time
+you start wondering about possible errors, the build is already on the
+way.
+
+== Functionality and Features ==
+
+* Each time a file is saved, and after a user configurable delay
+period has been exhausted, a build is started silently in the
+background.
+* When the build is finished, a status indicator (message) is
+displayed non-intrusively.
+* At any time, you can switch to a build process buffer where all the
+messages from the build are shown.
+* Optionally highlights (error/warning) message locations in (source
+code) buffers after a finished build.
+* After a build has finished, you can jump to locations of warnings
+and errors from the build process buffer or by using the `first-error`
+and `next-error` commands.
+* When a build fails, bg-build mode can optionally execute a user
+specified command.  By default, bg-build mode executes `first-error`.
+* When starting a build of a particular project, a possible previous
+live build of the same project is interrupted first.
+* A project configuration file specifies the commands required to
+build a project.
+* Multiple projects can be loaded into bg-build mode and bg-build mode
+can build a given maximum number of projects concurrently.
+* Supports both http://www.gnu.org/software/emacs/[Gnu Emacs] and
+http://www.xemacs.org[XEmacs].
+
+
+== Download ==
+
+There is no package for the mode at the moment.  To install the mode you
+need to fetch the Emacs Lisp, `*.el`, files from the MLton repository:
+<!ViewGitDir(mlton,master,ide/emacs)>.
+
+
+== Setup ==
+
+The easiest way to load the mode is to first tell Emacs where to find the
+files.  For example, add
+
+[source,cl]
+----
+(add-to-list 'load-path (file-truename "path-to-the-el-files"))
+----
+
+to your `~/.emacs` or `~/.xemacs/init.el`.  You'll probably also want
+to start the mode automatically by adding
+
+[source,cl]
+----
+(require 'bg-build-mode)
+(bg-build-mode)
+----
+
+to your Emacs init file.  Once the mode is activated, you should see
+the `BGB` indicator on the mode line.
+
+
+=== MLton and Compilation-Mode ===
+
+At the time of writing, neither Gnu Emacs nor XEmacs contain an error
+regexp that would match MLton's messages.
+
+If you use Gnu Emacs, insert the following code into your `.emacs` file:
+
+[source,cl]
+----
+(require 'compile)
+(add-to-list
+ 'compilation-error-regexp-alist
+ '("^\\(Warning\\|Error\\): \\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\.$"
+   2 3 4))
+----
+
+If you use XEmacs, insert the following code into your `init.el` file:
+
+[source,cl]
+----
+(require 'compile)
+(add-to-list
+ 'compilation-error-regexp-alist-alist
+ '(mlton
+   ("^\\(Warning\\|Error\\): \\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\.$"
+    2 3 4)))
+(compilation-build-compilation-error-regexp-alist)
+----
+
+== Usage ==
+
+Typically projects are built (or compiled) using a tool like http://www.gnu.org/software/make/[`make`],
+but the details vary.  The bg-build mode needs a project configuration file to
+know how to build your project.  A project configuration file basically contains
+an Emacs Lisp expression calling a function named `bg-build` that returns a
+project object.  A simple example of a project configuration file would be the
+(<!ViewGitFile(mltonlib,master,com/ssh/async/unstable/example/smlbot/Build.bgb)>)
+file used with smlbot:
+
+[source,cl]
+----
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/async/unstable/example/smlbot/Build.bgb 5:]
+----
+
+The `bg-build` function takes a number of keyword arguments:
+
+* `:name` specifies the name of the project.  This can be any
+expression that evaluates to a string or to a nullary function that
+returns a string.
+
+* `:shell` specifies a shell command to execute.  This can be any
+expression that evaluates to a string, a list of strings, or to a
+nullary function returning a list of strings.
+
+* `:build?` specifies a predicate to determine whether the project
+should be built after some files have been modified.  The predicate is
+given a list of filenames and should return a non-nil value when the
+project should be built and nil otherwise.
+
+All of the keyword arguments, except `:shell`, are optional and can be left out.
+
+Note the use of the `nice` command above.  It means that background
+build process is given a lower priority by the system process
+scheduler.  Assuming your machine has enough memory, using nice
+ensures that your computer remains responsive.  (You probably won't
+even notice when a build is started.)
+
+Once you have written a project file for bg-build mode.  Use the
+`bg-build-add-project` command to load the project file for bg-build
+mode.  The bg-build mode can also optionally load recent project files
+automatically at startup.
+
+After the project file has been loaded and bg-build mode activated,
+each time you save a file in Emacs, the bg-build mode tries to build
+your project.
+
+The `bg-build-status` command creates a buffer that displays some
+status information on builds and allows you to manage projects (start
+builds explicitly, remove a project from bg-build, ...) as well as
+visit buffers created by bg-build.  Notice the count of started
+builds.  At the end of the day it can be in the hundreds or thousands.
+Imagine the number of times you've been relieved of starting a build
+explicitly!

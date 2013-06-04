@@ -1,0 +1,9 @@
+SML3d
+=====
+
+The http://sml3d.cs.uchicago.edu/[SML3d Project] is a collection of
+libraries to support 3D graphics programming using Standard ML and the
+http://www.opengl.org/[OpenGL] graphics API. It currently requires the
+MLton implementation of SML and is supported on Linux, Mac OS X, and
+Microsoft Windows. There is also support for
+http://www.khronos.org/opencl/[OpenCL].

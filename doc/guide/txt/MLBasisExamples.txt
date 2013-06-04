@@ -1,0 +1,205 @@
+MLBasisExamples
+===============
+
+Here are some example uses of <:MLBasis:ML Basis> files.
+
+
+== Complete program ==
+
+Suppose your complete program consists of the files `file1.sml`, ...,
+`filen.sml`, which depend upon libraries `lib1.mlb`, ..., `libm.mlb`.
+
+----
+(* import libraries *)
+lib1.mlb
+...
+libm.mlb
+
+(* program files *)
+file1.sml
+...
+filen.sml
+----
+
+The bases denoted by `lib1.mlb`, ..., `libm.mlb` are merged (bindings
+of names in later bases take precedence over bindings of the same name
+in earlier bases), producing a basis in which `file1.sml`, ...,
+`filen.sml` are elaborated, adding additional bindings to the basis.
+
+
+== Export filter ==
+
+Suppose you only want to export certain structures, signatures, and
+functors from a collection of files.
+
+----
+local
+  file1.sml
+  ...
+  filen.sml
+in
+  (* export filter here *)
+  functor F
+  structure S
+end
+----
+
+While `file1.sml`, ..., `filen.sml` may declare top-level identifiers
+in addition to `F` and `S`, such names are not accessible to programs
+and libraries that import this `.mlb`.
+
+
+== Export filter with renaming ==
+
+Suppose you want an export filter, but want to rename one of the
+modules.
+
+----
+local
+  file1.sml
+  ...
+  filen.sml
+in
+  (* export filter, with renaming, here *)
+  functor F
+  structure S' = S
+end
+----
+
+Note that `functor F` is an abbreviation for `functor F = F`, which
+simply exports an identifier under the same name.
+
+
+== Import filter ==
+
+Suppose you only want to import a functor `F` from one library and a
+structure `S` from another library.
+
+----
+local
+  lib1.mlb
+in
+  (* import filter here *)
+  functor F
+end
+local
+  lib2.mlb
+in
+  (* import filter here *)
+  structure S
+end
+file1.sml
+...
+filen.sml
+----
+
+
+== Import filter with renaming ==
+
+Suppose you want to import a structure `S` from one library and
+another structure `S` from another library.
+
+----
+local
+  lib1.mlb
+in
+  (* import filter, with renaming, here *)
+  structure S1 = S
+end
+local
+  lib2.mlb
+in
+  (* import filter, with renaming, here *)
+  structure S2 = S
+end
+file1.sml
+...
+filen.sml
+----
+
+
+== Full Basis ==
+
+Since the Modules level of SML is the natural means for organizing
+program and library components, MLB files provide convenient syntax
+for renaming Modules level identifiers (in fact, renaming of functor
+identifiers provides a mechanism that is not available in SML).
+However, please note that `.mlb` files elaborate to full bases
+including top-level types and values (including infix status), in
+addition to structures, signatures, and functors.  For example,
+suppose you wished to extend the <:BasisLibrary:Basis Library> with an
+`('a, 'b) either` datatype corresponding to a disjoint sum; the type
+and some operations should be available at the top-level;
+additionally, a signature and structure provide the complete
+interface.
+
+We could use the following files.
+
+`either-sigs.sml`
+[source,sml]
+----
+signature EITHER_GLOBAL =
+  sig
+    datatype ('a, 'b) either = Left of 'a | Right of 'b
+    val &  : ('a -> 'c) * ('b -> 'c) -> ('a, 'b) either -> 'c
+    val && : ('a -> 'c) * ('b -> 'd) -> ('a, 'b) either -> ('c, 'd) either
+  end
+
+signature EITHER =
+  sig
+    include EITHER_GLOBAL
+    val isLeft  : ('a, 'b) either -> bool
+    val isRight : ('a, 'b) either -> bool
+    ...
+  end
+----
+
+`either-strs.sml`
+[source,sml]
+----
+structure Either : EITHER =
+  struct
+    datatype ('a, 'b) either = Left of 'a | Right of 'b
+    fun f & g = fn x =>
+      case x of Left z => f z | Right z => g z
+    fun f && g = (Left o f) & (Right o g)
+    fun isLeft x = ((fn _ => true) & (fn _ => false)) x
+    fun isRight x = (not o isLeft) x
+    ...
+  end
+structure EitherGlobal : EITHER_GLOBAL = Either
+----
+
+`either-infixes.sml`
+[source,sml]
+----
+infixr 3 & &&
+----
+
+`either-open.sml`
+[source,sml]
+----
+open EitherGlobal
+----
+
+`either.mlb`
+----
+either-infixes.sml
+local
+  (* import Basis Library *)
+  $(SML_LIB)/basis/basis.mlb
+  either-sigs.sml
+  either-strs.sml
+in
+  signature EITHER
+  structure Either
+  either-open.sml
+end
+----
+
+A client that imports `either.mlb` will have access to neither
+`EITHER_GLOBAL` nor `EitherGlobal`, but will have access to the type
+`either` and the values `&` and `&&` (with infix status) in the
+top-level environment.  Note that `either-infixes.sml` is outside the
+scope of the local, because we want the infixes available in the
+implementation of the library and to clients of the library.

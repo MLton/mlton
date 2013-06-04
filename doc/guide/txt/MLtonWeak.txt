@@ -1,0 +1,34 @@
+MLtonWeak
+=========
+
+[source,sml]
+----
+signature MLTON_WEAK =
+   sig
+      type 'a t
+
+      val get: 'a t -> 'a option
+      val new: 'a -> 'a t
+   end
+----
+
+A weak pointer is a pointer to an object that is nulled if the object
+becomes <:Reachability:unreachable> due to garbage collection.  The
+weak pointer does not itself cause the object it points to be retained
+by the garbage collector -- only other strong pointers can do that.
+For objects that are not allocated in the heap, like integers, a weak
+pointer will always be nulled.  So, if `w: int Weak.t`, then
+`Weak.get w = NONE`.
+
+* `type 'a t`
++
+the type of weak pointers to objects of type `'a`
+
+* `get w`
++
+returns `NONE` if the object pointed to by `w` no longer exists.
+Otherwise, returns `SOME` of the object pointed to by `w`.
+
+* `new x`
++
+returns a weak pointer to `x`.

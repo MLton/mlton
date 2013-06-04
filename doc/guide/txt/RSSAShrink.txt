@@ -1,0 +1,19 @@
+RSSAShrink
+==========
+
+<:RSSAShrink:> is an optimization pass for the <:RSSA:>
+<:IntermediateLanguage:>.
+
+== Description ==
+
+This pass implements a whole family of compile-time reductions, like:
+
+* constant folding, copy propagation
+* inline the `Goto` to a block with a unique predecessor
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/rssa/rssa.sig)>
+* <!ViewGitFile(mlton,master,mlton/rssa/rssa.fun)>
+
+== Details and Notes ==

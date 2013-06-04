@@ -1,0 +1,22 @@
+MLtonProcEnv
+============
+
+[source,sml]
+----
+signature MLTON_PROC_ENV =
+   sig
+      type gid
+
+      val setenv: {name: string, value: string} -> unit
+      val setgroups: gid list -> unit
+  end
+----
+
+* `setenv {name, value}`
++
+like the C `setenv` function.  Does not require `name` or `value` to
+be null terminated.
+
+* `setgroups grps`
++
+like the C `setgroups` function.

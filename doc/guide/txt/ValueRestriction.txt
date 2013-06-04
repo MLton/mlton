@@ -1,0 +1,290 @@
+ValueRestriction
+================
+:toc:
+
+The value restriction is a rule that governs when type inference is
+allowed to polymorphically generalize a value declaration.  In short,
+the value restriction says that generalization can only occur if the
+right-hand side of an expression is syntactically a value.  For
+example, in
+
+[source,sml]
+----
+val f = fn x => x
+val _ = (f "foo"; f 13)
+----
+
+the expression `fn x => x` is syntactically a value, so `f` has
+polymorphic type `'a -> 'a` and both calls to `f` type check.  On the
+other hand, in
+
+[source,sml]
+----
+val f = let in fn x => x end
+val _ = (f "foo"; f 13)
+----
+
+the expression `let in fn x => end end` is not syntactically a value
+and so `f` can either have type `int -> int` or `string -> string`,
+but not `'a -> 'a`.  Hence, the program does not type check.
+
+<:DefinitionOfStandardML:The Definition of Standard ML> spells out
+precisely which expressions are syntactic values (it refers to such
+expressions as _non-expansive_).  An expression is a value if it is of
+one of the following forms.
+
+* a constant (`13`, `"foo"`, `13.0`, ...)
+* a variable (`x`, `y`, ...)
+* a function (`fn x => e`)
+* the application of a constructor other than `ref` to a value (`Foo v`)
+* a type constrained value (`v: t`)
+* a tuple in which each field is a value `(v1, v2, ...)`
+* a record in which each field is a value `{l1 = v1, l2 = v2, ...}`
+* a list in which each element is a value `[v1, v2, ...]`
+
+
+== Why the value restriction exists ==
+
+The value restriction prevents a ref cell (or an array) from holding
+values of different types, which would allow a value of one type to be
+cast to another and hence would break type safety.  If the restriction
+were not in place, the following program would type check.
+
+[source,sml]
+----
+val r: 'a option ref = ref NONE
+val r1: string option ref = r
+val r2: int option ref = r
+val () = r1 := SOME "foo"
+val v: int = valOf (!r2)
+----
+
+The first line violates the value restriction because `ref NONE` is
+not a value.  All other lines are type correct.  By its last line, the
+program has cast the string `"foo"` to an integer.  This breaks type
+safety, because now we can add a string to an integer with an
+expression like `v + 13`.  We could even be more devious, by adding
+the following two lines, which allow us to threat the string `"foo"`
+as a function.
+
+[source,sml]
+----
+val r3: (int -> int) option ref = r
+val v: int -> int = valOf (!r3)
+----
+
+Eliminating the explicit `ref` does nothing to fix the problem.  For
+example, we could replace the declaration of `r` with the following.
+
+[source,sml]
+----
+val f: unit -> 'a option ref = fn () => ref NONE
+val r: 'a option ref = f ()
+----
+
+The declaration of `f` is well typed, while the declaration of `r`
+violates the value restriction because `f ()` is not a value.
+
+
+== Unnecessarily rejected programs ==
+
+Unfortunately, the value restriction rejects some programs that could
+be accepted.
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f: 'a -> 'a = id id
+----
+
+The type constraint on `f` requires `f` to be polymorphic, which is
+disallowed because `id id` is not a value.  MLton reports the
+following type error.
+
+----
+Error: z.sml 2.19.
+  Can't bind type variable: 'a.
+    in: val 'a (f): ('a -> 'a) = id id
+----
+
+MLton indicates the inability to make `f` polymorphic by saying that
+it can't bind the type variable `'a` at the declaration.  MLton
+doesn't explicitly mention the value restriction, but that is the
+reason.  If we leave the type constraint off of `f`
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f = id id
+----
+
+then the program succeeds; however, MLton gives us the following
+warning.
+
+----
+Warning: z.sml 2.1.
+  Unable to locally determine type of variable: f.
+    type: ??? -> ???
+    in: val f = id id
+----
+
+This warning indicates that MLton couldn't polymorphically generalize
+`f`, nor was there enough context using `f` to determine its type.
+This in itself is not a type error, but it it is a hint that something
+is wrong with our program.  Using `f` provides enough context to
+eliminate the warning.
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f = id id
+val _ = f 13
+----
+
+But attempting to use `f` as a polymorphic function will fail.
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f = id id
+val _ = f 13
+val _ = f "foo"
+----
+
+
+== Alternatives to the value restriction ==
+
+There would be nothing wrong with treating `f` as polymorphic in
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f = id id
+----
+
+One might think that the value restriction could be relaxed, and that
+only types involving `ref` should be disallowed.  Unfortunately, the
+following example shows that even the type `'a -> 'a` can cause
+problems.  If this program were allowed, then we could cast an integer
+to a string (or any other type).
+
+[source,sml]
+----
+val f: 'a -> 'a =
+   let
+      val r: 'a option ref = ref NONE
+   in
+      fn x =>
+      let
+         val y = !r
+         val () = r := SOME x
+      in
+         case y of
+            NONE => x
+          | SOME y => y
+      end
+   end
+val _ = f 13
+val _ = f "foo"
+----
+
+The previous version of Standard ML took a different approach
+(<!Cite(MilnerEtAl90)>, <!Cite(Tofte90)>, <:ImperativeTypeVariable:>)
+than the value restriction.  It encoded information in the type system
+about when ref cells would be created, and used this to prevent a ref
+cell from holding multiple types.  Although it allowed more programs
+to be type checked, this approach had significant drawbacks.  First,
+it was significantly more complex, both for implementers and for
+programmers.  Second, it had an unfortunate interaction with the
+modularity, because information about ref usage was exposed in module
+signatures.  This either prevented the use of references for
+implementing a signature, or required information that one would like
+to keep hidden to propagate across modules.
+
+In the early nineties, Andrew Wright studied about 250,000 lines of
+existing SML code and discovered that it did not make significant use
+of the extended typing ability, and proposed the value restriction as
+a simpler alternative (<!Cite(Wright95)>).  This was adopted in the
+revised <:DefinitionOfStandardML:Definition>.
+
+
+== Working with the value restriction ==
+
+One technique that works with the value restriction is
+<:EtaExpansion:>.  We can use eta expansion to make our `id id`
+example type check follows.
+
+[source,sml]
+----
+val id: 'a -> 'a = fn x => x
+val f: 'a -> 'a = fn z => (id id) z
+----
+
+This solution means that the computation (in this case `id id`) will
+be performed each time `f` is applied, instead of just once when `f`
+is declared.  In this case, that is not a problem, but it could be if
+the declaration of `f` performs substantial computation or creates a
+shared data structure.
+
+Another technique that sometimes works is to move a monomorphic
+computation prior to a (would-be) polymorphic declaration so that the
+expression is a value.  Consider the following program, which fails
+due to the value restriction.
+
+[source,sml]
+----
+datatype 'a t = A of string | B of 'a
+val x: 'a t = A (if true then "yes" else "no")
+----
+
+It is easy to rewrite this program as
+
+[source,sml]
+----
+datatype 'a t = A of string | B of 'a
+local
+   val s = if true then "yes" else "no"
+in
+   val x: 'a t = A s
+end
+----
+
+The following example (taken from <!Cite(Wright95)>) creates a ref
+cell to count the number of times a function is called.
+
+[source,sml]
+----
+val count: ('a -> 'a) -> ('a -> 'a) * (unit -> int) =
+   fn f =>
+   let
+      val r = ref 0
+   in
+      (fn x => (r := 1 + !r; f x), fn () => !r)
+   end
+val id: 'a -> 'a = fn x => x
+val (countId: 'a -> 'a, numCalls) = count id
+----
+
+The example does not type check, due to the value restriction.
+However, it is easy to rewrite the program, staging the ref cell
+creation before the polymorphic code.
+
+[source,sml]
+----
+datatype t = T of int ref
+val count1: unit -> t = fn () => T (ref 0)
+val count2: t * ('a -> 'a) -> (unit -> int) * ('a -> 'a) =
+   fn (T r, f) => (fn () => !r, fn x => (r := 1 + !r; f x))
+val id: 'a -> 'a = fn x => x
+val t = count1 ()
+val countId: 'a -> 'a = fn z => #2 (count2 (t, id)) z
+val numCalls = #1 (count2 (t, id))
+----
+
+Of course, one can hide the constructor `T` inside a `local` or behind
+a signature.
+
+
+== Also see ==
+
+* <:ImperativeTypeVariable:>

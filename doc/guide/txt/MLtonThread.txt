@@ -1,0 +1,112 @@
+MLtonThread
+===========
+
+[source,sml]
+----
+signature MLTON_THREAD =
+   sig
+      structure AtomicState:
+         sig
+            datatype t = NonAtomic | Atomic of int
+         end
+
+      val atomically: (unit -> 'a) -> 'a
+      val atomicBegin: unit -> unit
+      val atomicEnd: unit -> unit
+      val atomicState: unit -> AtomicState.t
+
+      structure Runnable:
+         sig
+            type t
+         end
+
+      type 'a t
+
+      val atomicSwitch: ('a t -> Runnable.t) -> 'a
+      val new: ('a -> unit) -> 'a t
+      val prepend: 'a t * ('b -> 'a) -> 'b t
+      val prepare: 'a t * 'a -> Runnable.t
+      val switch: ('a t -> Runnable.t) -> 'a
+   end
+----
+
+`MLton.Thread` provides access to MLton's user-level thread
+implementation (i.e. not OS-level threads).  Threads are lightweight
+data structures that represent a paused computation.  Runnable threads
+are threads that will begin or continue computing when `switch`-ed to.
+`MLton.Thread` does not include a default scheduling mechanism, but it
+can be used to implement both preemptive and non-preemptive threads.
+
+* `type AtomicState.t`
++
+the type of atomic states.
+
+
+* `atomically f`
++
+runs `f` in a critical section.
+
+* `atomicBegin ()`
++
+begins a critical section.
+
+* `atomicEnd ()`
++
+ends a critical section.
+
+* `atomicState ()`
++
+returns the current atomic state.
+
+* `type Runnable.t`
++
+the type of threads that can be resumed.
+
+* `type 'a t`
++
+the type of threads that expect a value of type `'a`.
+
+* `atomicSwitch f`
++
+like `switch`, but assumes an atomic calling context.  Upon
+`switch`-ing back to the current thread, an implicit `atomicEnd` is
+performed.
+
+* `new f`
++
+creates a new thread that, when run, applies `f` to the value given to
+the thread.  `f` must terminate by `switch`ing to another thread or
+exiting the process.
+
+* `prepend (t, f)`
++
+creates a new thread (destroying `t` in the process) that first
+applies `f` to the value given to the thread and then continues with
+`t`.  This is a constant time operation.
+
+* `prepare (t, v)`
++
+prepares a new runnable thread (destroying `t` in the process) that
+will evaluate `t` on `v`.
+
+* `switch f`
++
+applies `f` to the current thread to get `rt`, and then start running
+thread `rt`.  It is an error for `f` to perform another `switch`.  `f`
+is guaranteed to run atomically.
+
+
+== Example of non-preemptive threads ==
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/thread/non-preemptive-threads.sml]
+----
+
+
+== Example of preemptive threads ==
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/thread/preemptive-threads.sml]
+----

@@ -1,0 +1,71 @@
+MLBasisAnnotationExamples
+=========================
+
+Here are some example uses of <:MLBasisAnnotations:>.
+
+== Eliminate spurious warnings in automatically generated code ==
+
+Programs that automatically generate source code can often produce
+nonexhaustive matches, relying on invariants of the generated code to
+ensure that the matches never fail.  A programmer may wish to elide
+the nonexhaustive match warnings from this code, in order that
+legitimate warnings are not missed in a flurry of false positives.  To
+do so, the programmer simply annotates the generated code with the
+`nonexhaustiveMatch ignore` annotation:
+
+----
+local
+  $(GEN_ROOT)/gen-lib.mlb
+
+  ann "nonexhaustiveMatch ignore" in
+    foo.gen.sml
+  end
+in
+  signature FOO
+  structure Foo
+end
+----
+
+
+== Deliver a library ==
+
+Standard ML libraries can be delivered via `.mlb` files.  Authors of
+such libraries should strive to be mindful of the ways in which
+programmers may choose to compile their programs.  For example,
+although the defaults for `sequenceNonUnit` and `warnUnused` are
+`ignore` and `false`, periodically compiling with these annotations
+defaulted to `warn` and `true` can help uncover likely bugs.  However,
+a programmer is unlikely to be interested in unused modules from an
+imported library, and the behavior of `sequenceNonUnit error` may be
+incompatible with some libraries.  Hence, a library author may choose
+to deliver a library as follows:
+
+----
+ann
+  "nonexhaustiveMatch warn" "redundantMatch warn"
+  "sequenceNonUnit warn"
+  "warnUnused true" "forceUsed"
+in
+  local
+    file1.sml
+    ...
+    filen.sml
+  in
+    functor F1
+    ...
+    signature S1
+    ...
+    structure SN
+    ...
+  end
+end
+----
+
+The annotations `nonexhaustiveMatch warn`, `redundantMatch warn`, and
+`sequenceNonUnit warn` have the obvious effect on elaboration.  The
+annotations `warnUnused true` and `forceUsed` work in conjunction --
+warning on any identifiers that do not contribute to the exported
+modules, and preventing warnings on exported modules that are not used
+in the remainder of the program.  Many of the
+<:MLBasisAvailableLibraries:available libraries> are delivered with
+these annotations.

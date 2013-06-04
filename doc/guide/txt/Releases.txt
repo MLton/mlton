@@ -1,0 +1,23 @@
+Releases
+========
+
+Public releases of MLton:
+
+* <:Release20100608:>
+* <:Release20070826:>
+* <:Release20051202:>
+* <:Release20041109:>
+* Release20040227
+* Release20030716
+* Release20030711
+* Release20030312
+* Release20020923
+* Release20020410
+* Release20011006
+* Release20010806
+* Release20010706
+* Release20000906
+* Release20000712
+* Release19990712
+* Release19990319
+* Release19980826

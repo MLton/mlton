@@ -1,0 +1,31 @@
+StandardMLPortability
+=====================
+
+Technically, SML'97 as defined in the
+<:DefinitionOfStandardML:Definition>
+requires only a minimal initial basis, which, while including the
+types `int`, `real`, `char`, and `string`, need have
+no operations on those base types.  Hence, the only observable output
+of an SML'97 program is termination or raising an exception.  Most SML
+compilers should agree there, to the degree each agrees with the
+Definition.  See <:UnresolvedBugs:> for MLton's very few corner cases.
+
+Realistically, a program needs to make use of the
+<:BasisLibrary:Basis Library>.
+Within the Basis Library, there are numerous places where the behavior
+is implementation dependent.  For a trivial example:
+
+[source,sml]
+----
+val _ = valOf (Int.maxInt)
+----
+
+
+may either raise the `Option` exception (if
+`Int.maxInt == NONE`) or may terminate normally.  The default
+Int/Real/Word sizes are the biggest implementation dependent aspect;
+so, one implementation may raise `Overflow` while another can
+accommodate the result.  Also, maximum array and vector lengths are
+implementation dependent.  Interfacing with the operating system is a
+bit murky, and implementations surely differ in handling of errors
+there.

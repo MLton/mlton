@@ -1,0 +1,21 @@
+ClosureConvert
+==============
+
+<:ClosureConvert:> is a translation pass from the <:SXML:>
+<:IntermediateLanguage:> to the <:SSA:> <:IntermediateLanguage:>.
+
+== Description ==
+
+It converts an <:SXML:> program into an <:SSA:> program.
+
+<:Defunctionalization:> is the technique used to eliminate
+<:Closure:>s (see <!Cite(CejtinEtAl00)>).
+
+Uses <:Globalize:> and <:LambdaFree:> analyses.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/closure-convert/closure-convert.sig)>
+* <!ViewGitFile(mlton,master,mlton/closure-convert/closure-convert.fun)>
+
+== Details and Notes ==

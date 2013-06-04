@@ -1,0 +1,35 @@
+MLtonVector
+===========
+
+[source,sml]
+----
+signature MLTON_VECTOR =
+   sig
+      val create: int -> {done: unit -> 'a vector,
+                          sub: int -> 'a,
+                          update: int * 'a -> unit}
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector * 'b
+   end
+----
+
+* `create n`
++
+initiates the construction a vector _v_ of length `n`, returning
+functions to manipulate the vector.  The `done` function may be called
+to return the created vector; it is an error to call `done` before all
+entries have been initialized; it is an error to call `done` after
+having called `done`.  The `sub` function may be called to return an
+initialized vector entry; it is not an error to call `sub` after
+having called `done`.  The `update` function may be called to
+initialize a vector entry; it is an error to call `update` after
+having called `done`.  One must initialize vector entries in order
+from lowest to highest; that is, before calling `update (i, x)`, one
+must have already called `update (j, x)` for all `j` in `[0, i)`.  The
+`done`, `sub`, and `update` functions are all constant-time
+operations.
+
+* `unfoldi (n, b, f)`
++
+constructs a vector _v_ of length `n`, whose elements __v~i~__ are
+determined by the equations __v~0~ = b__ and
+__(v~i~, b~i+1~) = f (i, b~i~)__.

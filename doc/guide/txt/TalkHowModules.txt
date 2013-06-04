@@ -1,0 +1,19 @@
+TalkHowModules
+==============
+
+== Modules ==
+
+ * How does one represent SML's modules?
+ * MLton's answer: defunctorize
+
+{empty} +
+{empty} +
+See <:Elaborate:>.
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkFromSMLTo: Prev>|<:TalkHowPolymorphism: Next>
+|====

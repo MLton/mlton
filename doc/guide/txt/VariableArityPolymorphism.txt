@@ -1,0 +1,131 @@
+VariableArityPolymorphism
+=========================
+
+<:StandardML:Standard ML> programmers often face the problem of how to
+provide a variable-arity polymorphic function.  For example, suppose
+one is defining a combinator library, e.g. for parsing or pickling.
+The signature for such a library might look something like the
+following.
+
+[source,sml]
+----
+signature COMBINATOR =
+   sig
+      type 'a t
+
+      val int: int t
+      val real: real t
+      val string: string t
+      val unit: unit t
+      val tuple2: 'a1 t * 'a2 t -> ('a1 * 'a2) t
+      val tuple3: 'a1 t * 'a2 t * 'a3 t -> ('a1 * 'a2 * 'a3) t
+      val tuple4: 'a1 t * 'a2 t * 'a3 t * 'a4 t
+                  -> ('a1 * 'a2 * 'a3 * 'a4) t
+      ...
+   end
+----
+
+The question is how to define a variable-arity tuple combinator.
+Traditionally, the only way to take a variable number of arguments in
+SML is to put the arguments in a list (or vector) and pass that.  So,
+one might define a tuple combinator with the following signature.
+[source,sml]
+----
+val tupleN: 'a list -> 'a list t
+----
+
+The problem with this approach is that as soon as one places values in
+a list, they must all have the same type.  So, programmers often take
+an alternative approach, and define a family of `tuple<N>` functions,
+as we see in the `COMBINATOR` signature above.
+
+The family-of-functions approach is ugly for many reasons.  First, it
+clutters the signature with a number of functions when there should
+really only be one.  Second, it is _closed_, in that there are a fixed
+number of tuple combinators in the interface, and should a client need
+a combinator for a large tuple, he is out of luck.  Third, this
+approach often requires a lot of duplicate code in the implementation
+of the combinators.
+
+Fortunately, using <:Fold01N:> and <:ProductType:products>, one can
+provide an interface and implementation that solves all these
+problems.  Here is a simple pickling module that converts values to
+strings.
+[source,sml]
+----
+structure Pickler =
+   struct
+      type 'a t = 'a -> string
+
+      val unit = fn () => ""
+
+      val int = Int.toString
+
+      val real = Real.toString
+
+      val string = id
+
+      type 'a accum = 'a * string list -> string list
+
+      val tuple =
+         fn z =>
+         Fold01N.fold
+         {finish = fn ps => fn x => concat (rev (ps (x, []))),
+          start = fn p => fn (x, l) => p x :: l,
+          zero = unit}
+         z
+
+      val ` =
+         fn z =>
+         Fold01N.step1
+         {combine = (fn (p, p') => fn (x & x', l) => p' x' :: "," :: p (x, l))}
+         z
+   end
+----
+
+If one has `n` picklers of types
+[source,sml]
+----
+val p1: a1 Pickler.t
+val p2: a2 Pickler.t
+...
+val pn: an Pickler.t
+----
+then one can construct a pickler for n-ary products as follows.
+[source,sml]
+----
+tuple `p1 `p2 ... `pn $ : (a1 & a2 & ... & an) Pickler.t
+----
+
+For example, with `Pickler` in scope, one can prove the following
+equations.
+[source,sml]
+----
+"" = tuple $ ()
+"1" = tuple `int $ 1
+"1,2.0" = tuple `int `real $ (1 & 2.0)
+"1,2.0,three" = tuple `int `real `string $ (1 & 2.0 & "three")
+----
+
+Here is the signature for `Pickler`.  It shows why the `accum` type is
+useful.
+[source,sml]
+----
+signature PICKLER =
+   sig
+      type 'a t
+
+      val int: int t
+      val real: real t
+      val string: string t
+      val unit: unit t
+
+      type 'a accum
+      val ` : ('a accum, 'b t, ('a, 'b) prod accum,
+               'z1, 'z2, 'z3, 'z4, 'z5, 'z6, 'z7) Fold01N.step1
+      val tuple: ('a t, 'a accum, 'b accum, 'b t, unit t,
+                  'z1, 'z2, 'z3, 'z4, 'z5) Fold01N.t
+   end
+
+structure Pickler: PICKLER = Pickler
+----

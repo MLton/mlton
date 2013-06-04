@@ -1,0 +1,19 @@
+TalkHowPolymorphism
+===================
+
+== Polymorphism ==
+
+ * How does one represent SML's polymorphism?
+ * MLton's answer: monomorphise
+
+{empty} +
+{empty} +
+See <:Monomorphise:>.
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkHowModules: Prev>|<:TalkHowHigherOrder: Next>
+|====

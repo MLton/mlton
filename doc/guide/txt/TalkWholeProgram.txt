@@ -1,0 +1,18 @@
+TalkWholeProgram
+================
+
+== Whole Program Compiler ==
+
+ * Each of these techniques requires whole-program analysis
+ * But, additional benefits:
+   ** eliminate (some) variability in programming styles
+   ** specialize representations
+   ** simplifies and improves runtime system
+
+{empty} +
+{empty} +
+{empty} +
+[cols="<,>"]
+|====
+|<:TalkHowHigherOrder: Prev>|<:TalkFolkLore: Next>
+|====

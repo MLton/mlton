@@ -1,0 +1,23 @@
+Drawbacks
+=========
+
+MLton has several drawbacks due to its use of whole-program
+compilation.
+
+* Large compile-time memory requirement.
++
+Because MLton performs whole-program analysis and optimization,
+compilation requires a large amount of memory.  For example, compiling
+MLton (over 140K lines) requires at least 512M RAM.
+
+* Long compile times.
++
+Whole-program compilation can take a long time.  For example,
+compiling MLton (over 140K lines) on a 1.6GHz machine takes five to
+ten minutes.
+
+* No interactive top level.
++
+Because of whole-program compilation, MLton does not provide an
+interactive top level.  In particular, it does not implement the
+optional <:BasisLibrary:Basis Library> function `use`.

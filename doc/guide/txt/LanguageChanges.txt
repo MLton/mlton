@@ -1,0 +1,47 @@
+LanguageChanges
+===============
+
+We are sometimes asked to modify MLton to change the language it
+compiles.  In short, we are very conservative about making such
+changes.  There are a number of reasons for this.
+
+* <:DefinitionOfStandardML:The Definition of Standard ML> is an
+extremely high standard of specification.  The value of the Definition
+would be significantly diluted by changes that are not specified at an
+equally high level, and the dilution increases with the complexity of
+the language change and its interaction with other language features.
+
+* The SML community is small and there are a number of
+<:StandardMLImplementations:SML implementations>.  Without an
+agreed-upon standard, it becomes very difficult to port programs
+between compilers, and the community would be balkanized.
+
+* Our main goal is to enable programmers to be as effective as
+possible with MLton/SML.  There are a number of improvements other
+than language changes that we could spend our time on that would
+provide more benefit to programmers.
+
+* The more the language that MLton compiles changes over time, the
+more difficult it is to use MLton as a stable platform for serious
+program development.
+
+Despite these drawbacks, we have extended SML in a couple of cases.
+
+* <:ForeignFunctionInterface: Foreign function interface>
+* <:MLBasis: ML Basis system>
+
+We allow these language extensions because they provide functionality
+that is impossible to achieve without them.  The Definition does not
+define a foreign function interface.  So, we must either extend the
+language or greatly restrict the class of programs that can be
+written.  Similarly, the Definition does not provide a mechanism for
+namespace control at the module level, making it impossible to deliver
+packaged libraries and have a hope of users using them without name
+clashes.  The ML Basis system addresses this problem.  We have also
+provided a formal specification of the ML Basis system at the level of
+the Definition.
+
+== Also see ==
+
+* http://www.mlton.org/pipermail/mlton/2004-August/016165.html
+* http://www.mlton.org/pipermail/mlton-user/2004-December/000320.html

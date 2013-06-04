@@ -1,0 +1,108 @@
+Monomorphise
+============
+
+<:Monomorphise:> is a translation pass from the <:XML:>
+<:IntermediateLanguage:> to the <:SXML:> <:IntermediateLanguage:>.
+
+== Description ==
+
+Monomorphisation eliminates polymorphic values and datatype
+declarations by duplicating them for each type at which they are used.
+
+Consider the following <:XML:> program.
+[source,sml]
+----
+datatype 'a t = T of 'a
+fun 'a f (x: 'a) = T x
+val a = f 1
+val b = f 2
+val z = f (3, 4)
+----
+
+The result of monomorphising this program is the following <:SXML:> program:
+[source,sml]
+----
+datatype t1 = T1 of int
+datatype t2 = T2 of int * int
+fun f1 (x: int) = T1 x
+fun f2 (x: int * int) = T2 x
+val a = f1 1
+val b = f1 2
+val z = f2 (3, 4)
+----
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/xml/monomorphise.sig)>
+* <!ViewGitFile(mlton,master,mlton/xml/monomorphise.fun)>
+
+== Details and Notes ==
+
+The monomorphiser works by making one pass over the entire program.
+On the way down, it creates a cache for each variable declared in a
+polymorphic declaration that maps a lists of type arguments to a new
+variable name.  At a variable reference, it consults the cache (based
+on the types the variable is applied to).  If there is already an
+entry in the cache, it is used.  If not, a new entry is created.  On
+the way up, the monomorphiser duplicates a variable declaration for
+each entry in the cache.
+
+As with variables, the monomorphiser records all of the type at which
+constructors are used.  After the entire program is processed, the
+monomorphiser duplicates each datatype declaration and its associated
+constructors.
+
+The monomorphiser duplicates all of the functions declared in a
+`fun` declaration as a unit.  Consider the following program
+[source,sml]
+----
+fun 'a f (x: 'a) = g x
+and g (y: 'a) = f y
+val a = f 13
+val b = g 14
+val c = f (1, 2)
+----
+
+and its monomorphisation
+
+[source,sml]
+----
+fun f1 (x: int) = g1 x
+and g1 (y: int) = f1 y
+fun f2 (x : int * int) = g2 x
+and g2 (y : int * int) = f2 y
+val a = f1 13
+val b = g1 14
+val c = f2 (1, 2)
+----
+
+== Pathological datatype declarations ==
+
+SML allows a pathological polymorphic datatype declaration in which
+recursive uses of the defined type constructor are applied to
+different type arguments than the definition.  This has been
+disallowed by others on type theoretic grounds.  A canonical example
+is the following.
+[source,sml]
+----
+datatype 'a t = A of 'a | B of ('a * 'a) t
+val z : int t = B (B (A ((1, 2), (3, 4))))
+----
+
+The presence of the recursion in the datatype declaration might appear
+to cause the need for the monomorphiser to create an infinite number
+of types.  However, due to the absence of polymorphic recursion in
+SML, there are in fact only a finite number of instances of such types
+in any given program.  The monomorphiser translates the above program
+to the following one.
+[source,sml]
+----
+datatype t1 = B1 of t2
+datatype t2 = B2 of t3
+datatype t3 = A3 of (int * int) * (int * int)
+val z : int t = B1 (B2 (A3 ((1, 2), (3, 4))))
+----
+
+It is crucial that the monomorphiser be allowed to drop unused
+constructors from datatype declarations in order for the translation
+to terminate.

@@ -1,0 +1,97 @@
+Stabilizers
+===========
+
+== Installation ==
+
+* Stabilizers currently require the MLton sources, this should be fixed by the next release
+
+== License ==
+
+* Stabilizers are released under the MLton License
+
+== Instructions ==
+
+* Download and build a source copy of MLton
+* Extract the tar.gz file attached to this page
+* Some examples are provided in the "examples/" sub directory, more examples will be added to this page in the following week
+
+== Bug reports / Suggestions ==
+
+* Please send any errors you encounter to schatzp and lziarek at cs.purdue.edu
+* We are looking to expand the usability of stabilizers
+* Please send any suggestions and desired functionality to the above email addresses
+
+== Note ==
+
+* This is an alpha release. We expect to have another release shortly with added functionality soon
+* More documentation, such as signatures and descriptions of functionality, will be forthcoming
+
+
+== Documentation ==
+
+[source,sml]
+----
+signature STABLE =
+  sig
+     type checkpoint
+
+     val stable: ('a -> 'b) -> ('a -> 'b)
+     val stabilize: unit -> 'a
+
+     val stableCP: (('a -> 'b) * (unit -> unit)) ->
+                    (('a -> 'b) *  checkpoint)
+     val stabilizeCP: checkpoint -> unit
+
+     val unmonitoredAssign: ('a ref * 'a) -> unit
+     val monitoredAssign: ('a ref * 'a) -> unit
+  end
+----
+
+
+`Stable` provides functions to manage stable sections.
+
+* `type checkpoint`
++
+handle used to stabilize contexts other than the current one.
+
+* `stable f`
++
+returns a function identical to `f` that will execute within a stable section.
+
+* `stabilize ()`
++
+unrolls the effects made up to the current context to at least the
+nearest enclosing _stable_ section.  These effects may have propagated
+to other threads, so all affected threads are returned to a globally
+consistent previous state.  The return is undefined because control
+cannot resume after stabilize is called.
+
+* `stableCP (f, comp)`
++
+returns a function `f'` and checkpoint tag `cp`.  Function `f'` is
+identical to `f` but when applied will execute within a stable
+section.  `comp` will be executed if `f'` is later stabilized.  `cp`
+is used by `stabilizeCP` to stabilize a given checkpoint.
+
+* `stabilizeCP cp`
++
+same as stabilize except that the (possibly current) checkpoint to
+stabilize is provided.
+
+* `unmonitoredAssign (r, v)`
++
+standard assignment (`:=`).  The version of CML distributed rebinds
+`:=` to a monitored version so interesting effects can be recorded.
+
+* `monitoredAssign (r, v)`
++
+the assignment operator that should be used in programs that use
+stabilizers. `:=` is rebound to this by including CML.
+
+== Download ==
+
+* link:Stabilizers.attachments/stabilizers_alpha_2006-10-09.tar.gz[`stabilizers_alpha_2006-10-09.tar.gz`]
+
+== Also see ==
+
+* <!Cite(ZiarekEtAl06)>

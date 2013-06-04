@@ -1,0 +1,32 @@
+RSSA
+====
+
+<:RSSA:> is an <:IntermediateLanguage:>, translated from <:SSA2:> by
+<:ToRSSA:>, optimized by <:RSSASimplify:>, and translated by
+<:ToMachine:> to <:Machine:>.
+
+== Description ==
+
+<:RSSA:> is a <:IntermediateLanguage:> that makes representation
+decisions explicit.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/rssa.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/rssa.fun)>
+
+== Type Checking ==
+
+The new type language is aimed at expressing bit-level control over
+layout and associated packing of data representations.  There are
+singleton types that denote constants, other atomic types for things
+like integers and reals, and arbitrary sum types and sequence (tuple)
+types.  The big change to the type system is that type checking is now
+based on subtyping, not type equality.  So, for example, the singleton
+type `0xFFFFEEBB` whose only inhabitant is the eponymous constant is a
+subtype of the type `Word32`.
+
+== Details and Notes ==
+
+SSA is an abbreviation for Static Single Assignment.  The <:RSSA:>
+<:IntermediateLanguage:> is a variant of SSA.

@@ -1,0 +1,30 @@
+MLtonCross
+==========
+
+The debian package MLton-Cross adds various targets to MLton. In
+combination with the emdebian project, this allows a debian system to
+compile SML files to other architectures.
+
+Currently, these targets are supported:
+
+* _Windows (MinGW)_
+** -target i586-mingw32msvc (mlton-target-i586-mingw32msvc)
+** -target amd64-mingw32msvc( mlton-target-amd64-mingw32msvc)
+* _Linux (Debian)_
+** -target alpha-linux-gnu (mlton-target-alpha-linux-gnu)
+** -target arm-linux-gnueabi (mlton-target-arm-linux-gnueabi)
+** -target hppa-linux-gnu (mlton-target-hppa-linux-gnu)
+** -target i486-linux-gnu (mlton-target-i486-linux-gnu)
+** -target ia64-linux-gnu (mlton-target-ia64-linux-gnu)
+** -target mips-linux-gnu (mlton-target-mips-linux-gnu)
+** -target mipsel-linux-gnu (mlton-target-mipsel-linux-gnu)
+** -target powerpc-linux-gnu (mlton-target-powerpc-linux-gnu)
+** -target s390-linux-gnu (mlton-target-s390-linux-gnu)
+** -target sparc-linux-gnu (mlton-target-sparc-linux-gnu)
+** -target x86-64-linux-gnu (mlton-target-x86-64-linux-gnu)
+
+
+== Download ==
+
+MLton-Cross is kept in-sync with the current MLton release.
+link:MLtonCross.attachments/mlton-cross_20100608.orig.tar.gz[mlton-cross_20100608.orig.tar.gz]
