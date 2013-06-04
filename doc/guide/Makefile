@@ -7,7 +7,7 @@ ASCIIDOC := asciidoc
 ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|' )
 
 SRC_PAGES := $(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt'))
-SRC_ATTACHMENTS := $(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f)))
+SRC_ATTACHMENTS := $(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes')))
 XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
 
 WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org_gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(XTRA_ATTACHMENTS))
