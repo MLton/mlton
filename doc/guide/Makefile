@@ -67,8 +67,7 @@ upload_wiki: $(WIKI)
 
 .PHONY: clean
 clean:
-	rm -rf conf/header.conf conf/footer.conf
-	rm -rf wiki/*
+	../../bin/clean
 
 .PHONY: vars
 vars:
