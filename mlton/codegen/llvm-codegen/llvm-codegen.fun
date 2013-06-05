@@ -177,8 +177,8 @@ fun llwsInt (ws: WordSize.t): string =
 
 fun llrs (rs: RealSize.t): string =
     case rs of
-        RealSize.R32 => "Real32"
-      | RealSize.R64 => "Real64"
+        RealSize.R32 => "%Real32"
+      | RealSize.R64 => "%Real64"
 
 fun kindIsEntry kind =
     case kind of
@@ -591,7 +591,7 @@ fun getOperand (cxt, operand) =
         end
 
 (* Returns (instruction, ty) pair for the given prim operation *)
-fun outputPrim (prim, res, arg0, arg1, arg2) =
+fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
     let
         datatype z = datatype Prim.Name.t
     in
@@ -645,7 +645,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
                 (concat [inst1, inst2, inst3], "%Pointer")
             end
           | CPointer_toWord =>
-            (mkinst (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
+            (mkconv (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
           | FFI_Symbol _ =>
             let
             in
@@ -770,7 +770,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
           | Word_equal ws =>
             let
                 val reg = nextLLVMReg ()
-                val cmp = mkinst (reg, "icmp eq", llws ws, arg0, arg1)
+                val cmp = mkinst (reg, "icmp eq", argty, arg0, arg1)
                 val ext = mkconv (res, "zext", "i1", reg, "%Word32")
             in
                 (concat [cmp, ext], "%Word32")
@@ -811,7 +811,7 @@ fun outputPrim (prim, res, arg0, arg1, arg2) =
             let
                 val ty = llws ws
                 val intty = llwsInt ws
-                val inst = concat ["\t", res, " = call {", ty, ", } @llvm.ssub.with.overflow.",
+                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.ssub.with.overflow.",
                                    intty, "(", ty, " 0, ", ty, " ", arg0, ")\n"]
                 val resTy = concat ["{", ty, ", i1}"]
             in
@@ -927,8 +927,9 @@ fun outputPrimApp (cxt: Context,
         val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
         val (arg1pre, arg1reg) = getArg (operands, 1, castArg1)
         val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
+        val (_, argty, _) = Vector.sub (operands, 0)
         val reg = nextLLVMReg ()
-        val (inst, _) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
+        val (inst, _) = outputPrim (prim, reg, argty, arg0reg, arg1reg, arg2reg)
         val storeDest =
             case dst of
                 NONE => ""
@@ -1024,8 +1025,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
                 val (arg1pre, arg1reg) = getArg (operands, 1, NONE)
                 val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
+                val (_, argty, _) = Vector.sub (operands, 0)
                 val reg = nextLLVMReg ()
-                val (inst, ty) = outputPrim (prim, reg, arg0reg, arg1reg, arg2reg)
+                val (inst, ty) = outputPrim (prim, reg, argty, arg0reg, arg1reg, arg2reg)
                 val res = nextLLVMReg ()
                 val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
                 val obit = nextLLVMReg ()
@@ -1034,7 +1036,6 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val store = mkstore (destTy, res, destReg)
                 val br = concat ["\tbr i1 ", obit, ", label %",
                                  overflowstr, ", label %", successstr, "\n"]
-
             in
                 concat [comment, arg0pre, arg1pre, arg2pre, inst,
                         extractRes, extractObit, destPre, store, br]
