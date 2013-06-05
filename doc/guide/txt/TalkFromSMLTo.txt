@@ -5,9 +5,12 @@ TalkFromSMLTo
 
  * What issues arise when translating from Standard ML into an intermediate language?
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkMLtonApproach: Prev>|<:TalkHowModules: Next>

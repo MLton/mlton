@@ -12,13 +12,17 @@ TalkStandardML
    ** polymorphic datatypes
    ** separate modules
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 Also see <:StandardML:Standard ML>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:Talk: Prev>|<:TalkMLtonApproach: Next>

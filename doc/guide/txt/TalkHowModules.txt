@@ -6,13 +6,17 @@ TalkHowModules
  * How does one represent SML's modules?
  * MLton's answer: defunctorize
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 See <:Elaborate:>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkFromSMLTo: Prev>|<:TalkHowPolymorphism: Next>

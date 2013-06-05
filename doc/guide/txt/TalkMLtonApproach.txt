@@ -6,9 +6,12 @@ TalkMLtonApproach
  * whole-program optimization using a simply-typed, first-order intermediate language
  * ensures programs are not penalized for exploiting abstraction and modularity
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkStandardML: Prev>|<:TalkFromSMLTo: Next>

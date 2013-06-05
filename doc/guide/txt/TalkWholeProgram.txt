@@ -9,9 +9,12 @@ TalkWholeProgram
    ** specialize representations
    ** simplifies and improves runtime system
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkHowHigherOrder: Prev>|<:TalkFolkLore: Next>

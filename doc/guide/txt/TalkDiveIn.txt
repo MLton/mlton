@@ -7,9 +7,12 @@ TalkDiveIn
  * to <:Documentation:>
  * to <:Download:>
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkMLtonHistory: Prev>|

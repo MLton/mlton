@@ -7,9 +7,12 @@ TalkFolkLore
  * Global control-flow analysis is feasible
  * Early closure conversion is feasible
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkWholeProgram: Prev>|<:TalkMLtonFeatures: Next>

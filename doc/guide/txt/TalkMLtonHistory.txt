@@ -16,13 +16,17 @@ TalkMLtonHistory
 | Nov. 2004   | MLton at 141,311 lines
 |====
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 See <:History:>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkMLtonFeatures: Prev>|<:TalkDiveIn: Next>

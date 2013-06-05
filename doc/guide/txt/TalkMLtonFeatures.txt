@@ -10,13 +10,17 @@ TalkMLtonFeatures
    ** ML Basis system for programming in the very large
    ** Extension libraries
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 See <:Features:>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkFolkLore: Prev>|<:TalkMLtonHistory: Next>

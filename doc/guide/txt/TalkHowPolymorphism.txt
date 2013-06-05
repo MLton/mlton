@@ -6,13 +6,17 @@ TalkHowPolymorphism
  * How does one represent SML's polymorphism?
  * MLton's answer: monomorphise
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 See <:Monomorphise:>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:TalkHowModules: Prev>|<:TalkHowHigherOrder: Next>

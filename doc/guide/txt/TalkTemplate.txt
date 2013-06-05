@@ -7,9 +7,12 @@ TalkTemplate
  * Bullet
 
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
 [cols="<,>"]
 |====
 |<:ZZZPrev: Prev>|<:ZZZNext: Next>

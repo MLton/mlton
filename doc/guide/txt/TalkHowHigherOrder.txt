@@ -6,13 +6,16 @@ TalkHowHigherOrder
  * How does one represent SML's higher-order functions?
  * MLton's answer: defunctionalize
 
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+
 See <:ClosureConvert:>.
 
-{empty} +
-{empty} +
-{empty} +
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
 [cols="<,>"]
 |====
 |<:TalkMLtonApproach: Prev>|<:TalkWholeProgram: Next>
