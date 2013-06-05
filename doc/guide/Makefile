@@ -3,8 +3,8 @@ export LC_ALL = C
 NULL :=
 
 ASCIIDOC := asciidoc
-
-ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|' )
+ASCIIDOCFLAGS := $(shell cat conf/asciidoc.flags | sed 's|^\#.*||')
+ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
 
 SRC_PAGES := $(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt'))
 XTRA_PAGES := Index
@@ -43,7 +43,7 @@ wiki/index.html : wiki/Home
 
 define WIKI_PAGE_template
 wiki/$(1) : txt/$(1).txt conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
-	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $$@ $$<
+	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOCFLAGS) -o $$@ $$<
 endef
 $(foreach page,$(SRC_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
 
@@ -54,7 +54,7 @@ endef
 $(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
 
 wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(shell cat conf/asciidoc.flags | sed 's|^#.*||') -o $@ -
+	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(ASCIIDOCFLAGS) -o $@ -
 
 define SVG2PNG_template
 %.$(1).png : %.svg
