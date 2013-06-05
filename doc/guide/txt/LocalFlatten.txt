@@ -17,3 +17,5 @@ there is some tuple constructed in this function that flows to it.
 * <!ViewGitFile(mlton,master,mlton/ssa/local-flatten.fun)>
 
 == Details and Notes ==
+
+{empty}

@@ -36,6 +36,8 @@ output `.mlb` file.
 
 == Details ==
 
+{empty}
+
 == Patch ==
 
 * <!ViewGitFile(mlton,master,lib/mllpt-lib/ml-lpt.patch)>

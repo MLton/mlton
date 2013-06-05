@@ -208,8 +208,12 @@ rather than as terminators.
 
 == Stale bindings ==
 
+{empty}
+
 
 == Unresolved records ==
+
+{empty}
 
 
 == Value restriction ==

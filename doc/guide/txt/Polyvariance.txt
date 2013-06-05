@@ -15,3 +15,5 @@ variable reference, if the cost is smaller than some threshold.
 * <!ViewGitFile(mlton,master,mlton/xml/polyvariance.fun)>
 
 == Details and Notes ==
+
+{empty}

@@ -34,3 +34,5 @@ type.
 * <!ViewGitFile(mlton,master,mlton/ssa/flatten.fun)>
 
 == Details and Notes ==
+
+{empty}

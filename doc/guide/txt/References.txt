@@ -380,6 +380,9 @@ encountered in compiling large programs, and the speedups achieved
 ____
 
 == <!Anchor(I_References)>I ==
+
+{empty}
+
 == <!Anchor(J_References)>J ==
 
  * <!Anchor(Jones99)>
@@ -646,6 +649,9 @@ ____
  <<ICCL,ICCL>> 1998.
 
 == <!Anchor(Q_References)>Q ==
+
+{empty}
+
 == <!Anchor(R_References)>R ==
 
  * <!Anchor(Ramsey90)>
@@ -830,6 +836,9 @@ ____
  Prentice-Hall, 1998.
 
 == <!Anchor(V_References)>V ==
+
+{empty}
+
 == <!Anchor(W_References)>W ==
 
  * <!Anchor(Wand84)>
@@ -881,6 +890,8 @@ The origin of the <:ValueRestriction:>.
 ____
 
 == <!Anchor(X_References)>X ==
+
+{empty}
 
 == <!Anchor(Y_References)>Y ==
 

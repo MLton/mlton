@@ -16,3 +16,5 @@ do not appear in closures.
 * <!ViewGitFile(mlton,master,mlton/closure-convert/globalize.fun)>
 
 == Details and Notes ==
+
+{empty}
