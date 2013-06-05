@@ -59,7 +59,7 @@ discusses the typing of a related construct.)  The implementation
 is straightforward:
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/public/control/exit.sml 6:]
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/detail/control/exit.sml 6:]
 ----
 
 Here is an example of how one could implement a `find` function given
