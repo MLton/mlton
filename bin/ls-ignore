@@ -58,9 +58,9 @@ while true; do
                 pat="!${pat:2}"
             fi
             ## Trailing "/": Directory pattern -- supported
-            if [ "${pat:(-1):1}" = "/" ]; then
+            if [ "${pat:$((${#pat}-1)):1}" = "/" ]; then
                 dirPat="yes"
-                pat="${pat:0:(-1)}"
+                pat="${pat:0:$((${#pat}-1))}"
             else
                 dirPat="no"
             fi
