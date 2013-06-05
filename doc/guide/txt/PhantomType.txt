@@ -7,11 +7,11 @@ This is done by augmenting a type with additional arguments (phantom
 type variables) and expressing constraints by choosing phantom types
 to stand for the phantom types in the types of values.
 
-== References ==
+== Also see ==
 
- * <!Cite(Blume01)>
-  * dimensions
-  * C type system
- * <!Cite(FluetPucella02)>
-  * subtyping
- * socket module in <:BasisLibrary:Basis Library>
+* <!Cite(Blume01)>
+** dimensions
+** C type system
+* <!Cite(FluetPucella02)>
+** subtyping
+* socket module in <:BasisLibrary:Basis Library>
