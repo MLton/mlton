@@ -13,9 +13,9 @@ conveniently specify multiple annotations, the following derived form
 is provided:
 
 ****
-+ann+ ++"++__ann__++"++ (++"++__ann__++"++)^+^ +in+ _basdec_ +end+
++ann+ ++"++__ann__++"++ (++"++__ann__++"++ )^\+^ +in+ _basdec_ +end+
 =>
-+ann+ ++"++__ann__++"++ +in+ +ann+ (++"++__ann__++"+)^+^ +in+ _basdec_ +end+ +end+
++ann+ ++"++__ann__++"++ +in+ +ann+ (++"++__ann__++"++)^\+^ +in+ _basdec_ +end+ +end+
 ****
 
 Here are the available annotations.  In the explanation below, for
