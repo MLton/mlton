@@ -101,7 +101,7 @@ ____
 +
 ____
 Describes a linear-time implementation of an
-<<AppelJim97,Appel-Jim shrinker>>, using a mutable IL, and shows
+<!Cite(AppelJim97,Appel-Jim shrinker)>, using a mutable IL, and shows
 that it yields nice speedups in SML.NET's compile times.  There are
 also benchmarks showing that SML.NET when compiled by MLton runs
 roughly five times faster than when compiled by SML/NJ.
@@ -290,7 +290,7 @@ ____
 +
 ____
 The formalism behind G'CAML, which has an approach to ad-hoc
-polymorphism based on <<Dubois95>>, the differences being in how
+polymorphism based on <!Cite(Dubois95)>, the differences being in how
 type checking works an an improved compilation approach for typecase
 that does the matching at compile time, not run time.
 ____
@@ -401,8 +401,8 @@ ____
 +
 ____
 Describes a number of problems with the
-<<MilnerEtAl90,1990 Definition>>, many of which were fixed in the
-<<MilnerEtAl97,1997 Definition>>.
+<!Cite(MilnerEtAl90,1990 Definition)>, many of which were fixed in the
+<!Cite(MilnerEtAl97,1997 Definition)>.
 
 Also see the http://www.cs.kent.ac.uk/%7Esmk/errors-new.ps.Z[addenda]
 published in 1996.
@@ -518,7 +518,7 @@ ____
 +
 ____
 Introduces and explains the notation and approach used in
-<<MilnerEtAl90,The Definition of Standard ML>>.
+<!Cite(MilnerEtAl90,The Definition of Standard ML)>.
 ____
 
  * <!Anchor(MilnerEtAl90)>
@@ -529,8 +529,8 @@ ____
  The MIT Press, 1990.
 +
 ____
-Superseded by <<MilnerEtAl97,The Definition of Standard ML (Revised)>>.
-Accompanied by the <<MilnerTofte90,Commentary on Standard ML>>.
+Superseded by <!Cite(MilnerEtAl97,The Definition of Standard ML (Revised))>.
+Accompanied by the <!Cite(MilnerTofte90,Commentary on Standard ML)>.
 ____
 
  * <!Anchor(MilnerEtAl97)>
@@ -542,7 +542,7 @@ ____
 +
 ____
 A terse and formal specification of Standard ML's syntax and
-semantics.  Supersedes <<MilnerEtAl90,The Definition of Standard ML>>.
+semantics.  Supersedes <!Cite(MilnerEtAl90,The Definition of Standard ML)>.
 ____
 
  * <!Anchor(ML2000)>
@@ -812,7 +812,7 @@ ____
 Describes a closure-conversion algorithm for a monomorphic IL.  The
 algorithm uses a unification-based flow analysis followed by
 defunctionalization and is similar to the approach used in MLton
-(<<CejtinEtAl00>>).
+(<!Cite(CejtinEtAl00)>).
 ____
 
  * <!Anchor(TolmachOliva98)>
