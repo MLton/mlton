@@ -1,9 +1,9 @@
 fxp
 ===
 
-http://atseidl2.informatik.tu-muenchen.de/~berlea/Fxp/[fxp] is an XML
+http://atseidl2.informatik.tu-muenchen.de/%7Eberlea/Fxp/[fxp] is an XML
 parser written in Standard ML.
 
 It has a
-http://atseidl2.informatik.tu-muenchen.de/~berlea/Fxp/mlton.html[patch]
+http://atseidl2.informatik.tu-muenchen.de/%7Eberlea/Fxp/mlton.html[patch]
 to compile with MLton.

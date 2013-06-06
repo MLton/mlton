@@ -4,7 +4,7 @@ MatthewFluet
 Matthew Fluet (
 mailto:matthew.fluet@gmail.com[matthew.fluet@gmail.com]
 ,
-http://www.cs.rit.edu/~mtf
+http://www.cs.rit.edu/%7Emtf
 )
 is an Assistant Professor at the http://www.rit.edu[Rochester Institute of Technology].
 

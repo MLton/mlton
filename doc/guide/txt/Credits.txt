@@ -120,7 +120,7 @@ used code from other sources.
 
  * Many of the regression tests come from the ML Kit Version 4.1.4
  distribution, which borrowed them from the
- http://www.dina.kvl.dk/~sestoft/mosml.html[Moscow ML] distribution.
+ http://www.dina.kvl.dk/%7Esestoft/mosml.html[Moscow ML] distribution.
 
  * MLton uses the http://www.gnu.org/software/gmp/gmp.html[GNU multiprecision library] for its implementation of `IntInf`.
 

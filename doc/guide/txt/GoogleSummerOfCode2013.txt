@@ -6,8 +6,8 @@ Google Summer of Code (2013)
 
 The following developers have agreed to serve as mentors for the 2013 Google Summer of Code:
 
-* http://www.cs.rit.edu/~mtf[Matthew Fluet]
-* http://www.cse.buffalo.edu/~lziarek/[Lukasz (Luke) Ziarek]
+* http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+* http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 * http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
 
 == Ideas List ==
@@ -27,7 +27,7 @@ intermediate language.
 Background:
 --
 * http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract[Anticipation-based partial redundancy elimination for static single assignment form]; Thomas VanDrunen and Antony L. Hosking
-* http://cs.wheaton.edu/~tvandrun/writings/thesis.pdf[Partial Redundancy Elimination for Global Value Numbering]; Thomas VanDrunen
+* http://cs.wheaton.edu/%7Etvandrun/writings/thesis.pdf[Partial Redundancy Elimination for Global Value Numbering]; Thomas VanDrunen
 * http://www.springerlink.com/content/w06m3cw453nphm1u/[Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
 * http://portal.acm.org/citation.cfm?doid=319301.319348[Partial redundancy elimination in SSA form]; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow
 --
@@ -35,7 +35,7 @@ Background:
 Recommended Skills: SML programming experience; some middle-end compiler experience
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === Design and Implement a Heap Profiler ===
@@ -59,7 +59,7 @@ Background:
 Recommended Skills: C and SML programming experience; some experience with UI and visualization
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === Garbage Collector Improvements ===
@@ -83,7 +83,7 @@ collector.
 
 Background:
 --
-* http://www.dcs.gla.ac.uk/~whited/papers/automated_heap_sizing.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
+* http://www.dcs.gla.ac.uk/%7Ewhited/papers/automated_heap_sizing.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
 * http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125[Isla Vista Heap Sizing: Using Feedback to Avoid Paging]; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski
 * http://portal.acm.org/citation.cfm?doid=1152649.1152652[Controlling garbage collection and heap growth to reduce the execution time of Java applications]; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham
 * http://portal.acm.org/citation.cfm?doid=1065010.1065028[Garbage collection without paging]; Matthew Hertz, Yi Feng, and Emery D. Berger
@@ -93,7 +93,7 @@ Background:
 Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === Implement Successor{nbsp}ML Language Features ===
@@ -107,14 +107,14 @@ language features in the MLton compiler.
 Background:
 --
 * http://successor-ml.org/index.php?title=Main_Page[Successor{nbsp}ML]
-* http://www.mpi-sws.org/~rossberg/hamlet/index.html#successor-ml[HaMLet (Successor{nbsp}ML)]
+* http://www.mpi-sws.org/%7Erossberg/hamlet/index.html#successor-ml[HaMLet (Successor{nbsp}ML)]
 * http://journals.cambridge.org/action/displayAbstract?aid=1322628[A critique of Standard{nbsp}ML]; Andrew W. Appel
 --
 
 Recommended Skills: SML programming experience; some front-end compiler experience (i.e., scanners and parsers)
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === Implement Source-level Debugging ===
@@ -143,7 +143,7 @@ Background:
 Recommended Skills: SML programming experience; some compiler experience
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === SIMD Primitives ===
@@ -173,7 +173,7 @@ Background:
 Recommended Skills: SML programming experience; some compiler experience; some computer architecture experience
 
 /////
-Mentor: http://www.cs.rit.edu/~mtf[Matthew Fluet]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 === RTOS Support ===
@@ -190,7 +190,7 @@ emulators for supported architectures.
 Recommended Skills: C programming experience; some scripting experience
 
 /////
-Mentor: http://www.cse.buffalo.edu/~lziarek/[Lukasz (Luke) Ziarek]
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
 === Region Based Memory Management ===
@@ -218,7 +218,7 @@ Background:
 Recommended Skills: SML programming experience; C programming experience; some compiler and garbage collector experience
 
 /////
-Mentor: http://www.cse.buffalo.edu/~lziarek/[Lukasz (Luke) Ziarek]
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
 === Integration of Multi-MLton ===
@@ -246,5 +246,5 @@ Background
 Recommended Skills: SML programming experience; C programming experience; some compiler experience
 
 /////
-Mentor: http://www.cse.buffalo.edu/~lziarek/[Lukasz (Luke) Ziarek]
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////

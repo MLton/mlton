@@ -7,7 +7,7 @@ Andrew Cummings.
 * http://www.dcs.ed.ac.uk/home/stg/NOTES/[Programming in Standard ML '97: An Online Tutorial].
 Stephen Gilmore.
 
-* http://www-2.cs.cmu.edu/~rwh/smlbook/[Programming in Standard ML].
+* http://www.cs.cmu.edu/%7Erwh/smlbook/[Programming in Standard ML].
 Robert Harper.
 
 * http://www.diku.dk/topps/bibliography/1996.html#D-312[Essentials of Standard ML Modules].

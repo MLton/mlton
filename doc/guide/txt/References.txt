@@ -31,7 +31,7 @@ References
 == <!Anchor(A_References)>A ==
 
  * <!Anchor(AcarEtAl06)>
- http://ttic.uchicago.edu/~umut/papers/pldi06.html[An Experimental Analysis of Self-Adjusting Computation]
+ http://ttic.uchicago.edu/%7Eumut/papers/pldi06.html[An Experimental Analysis of Self-Adjusting Computation]
  Umut Acar, Guy Blelloch, Matthias Blume, and Kanat Tangwongsan.
  <<PLDI,PLDI>> 2006.
 
@@ -90,12 +90,12 @@ ____
  <<JFP,JFP>> 2001.
 
  * <!Anchor(BentonEtAl04)>
- http://www.research.microsoft.com/~nick/p53-Benton.pdf[Adventures in Interoperability: The SML.NET Experience].
+ http://www.research.microsoft.com/%7Enick/p53-Benton.pdf[Adventures in Interoperability: The SML.NET Experience].
  Nick Benton, Andrew Kennedy, and Claudio Russo.
  <<PPDP,PPDP>> 2004.
 
  * <!Anchor(BentonEtAl04_2)>
- http://research.microsoft.com/~akenn/sml/ShrinkingReductionsInSMLNet.pdf[Shrinking Reductions in SML.NET].
+ http://research.microsoft.com/%7Eakenn/sml/ShrinkingReductionsInSMLNet.pdf[Shrinking Reductions in SML.NET].
  Nick Benton, Andrew Kennedy, Sam Lindley and Claudio Russo.
  <<IFL,IFL>> 2004.
 +
@@ -108,7 +108,7 @@ roughly five times faster than when compiled by SML/NJ.
 ____
 
  * <!Anchor(Benton05)>
- http://research.microsoft.com/~nick/benton03.pdf[Embedded Interpreters].
+ http://research.microsoft.com/%7Enick/benton03.pdf[Embedded Interpreters].
  Nick Benton.
  <<JFP,JFP>> 2005.
 
@@ -133,7 +133,7 @@ ____
  Master's Thesis, 1998.
 
  * <!Anchor(Berthomieu00)>
- http://www.laas.fr/~bernard/oo/ooml.html[OO Programming styles in ML].
+ http://www.laas.fr/%7Ebernard/oo/ooml.html[OO Programming styles in ML].
  Bernard Berthomieu.
  LAAS Report #2000111, 2000.
 
@@ -143,7 +143,7 @@ ____
  <<BABEL,BABEL>> 2001.
 
  * <!Anchor(Blume01_02)>
- http://ttic.uchicago.edu/~blume/pgraph/proposal.pdf[Portable library descriptions for Standard ML].
+ http://ttic.uchicago.edu/%7Eblume/pgraph/proposal.pdf[Portable library descriptions for Standard ML].
  Matthias Blume.  2001.
 
  * <!Anchor(Boehm03)>
@@ -175,7 +175,7 @@ ____
  <<PLDI,PLDI>> 2001.
 
  * <!Anchor(Claessen00)>
- http://www.md.chalmers.se/~koen/Papers/quick.ps[QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs].
+ http://www.md.chalmers.se/%7Ekoen/Papers/quick.ps[QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs].
  Koen Claessen and John Hughes.
  <<ICFP,ICFP>> 2000.
 
@@ -190,7 +190,7 @@ ____
  CMU Technical Report CMU-CS-90-186, 1990.
 
  * <!Anchor(CouttsEtAl07)>
- http://www.cse.unsw.edu.au/~dons/papers/CLS07.html[Stream Fusion: From Lists to Streams to Nothing at All].
+ http://www.cse.unsw.edu.au/%7Edons/papers/CLS07.html[Stream Fusion: From Lists to Streams to Nothing at All].
  Duncan Coutts, Roman Leshchinskiy, and Don Stewart.
  Submitted for publication.  April 2007.
 
@@ -207,7 +207,7 @@ ____
  BRICS Technical Report RS 98-12, 1998.
 
  * <!Anchor(Deboer05)>
- http://www.cis.ksu.edu/~stough/eXene/dusty-thesis.pdf[Exhancements to eXene].
+ http://www.cis.ksu.edu/%7Estough/eXene/dusty-thesis.pdf[Exhancements to eXene].
  Dustin B. Deboer.
  Master of Science Thesis, 2005.
 +
@@ -222,12 +222,12 @@ ____
  <<POPL,POPL>> 1993.
 
  * <!Anchor(Dreyer07)>
- http://ttic.uchicago.edu/~dreyer/papers/mtc/main-long.pdf[Modular Type Classes].
+ http://ttic.uchicago.edu/%7Edreyer/papers/mtc/main-long.pdf[Modular Type Classes].
  Derek Dreyer, Robert Harper, Manuel M.T. Chakravarty.
  University of Chicago Technical Report TR-2007-02, 2006.
 
  * <!Anchor(DreyerBlume07)>
- http://ttic.uchicago.edu/~dreyer/papers/infmod/main-short.pdf[Principal Type Schemes for Modular Programs].
+ http://ttic.uchicago.edu/%7Edreyer/papers/infmod/main-short.pdf[Principal Type Schemes for Modular Programs].
  Derek Dreyer and Matthias Blume.
  <<ESOP,ESOP>> 2007.
 
@@ -284,7 +284,7 @@ ____
  <<TCS,TCS>> 2002.
 
  * <!Anchor(Furuse01)>
- http://pauillac.inria.fr/~furuse/publications/jfla2001.ps.gz[Generic Polymorphism in ML].
+ http://pauillac.inria.fr/%7Efuruse/publications/jfla2001.ps.gz[Generic Polymorphism in ML].
  J{empty}. Furuse.
  <<JFLA,JFLA>> 2001.
 +
@@ -317,7 +317,7 @@ http://www.standardml.org/Basis[online].
 ____
 
  * <!Anchor(GrossmanEtAl02)>
- http://www.eecs.harvard.edu/~greg/cyclone/[Region-based Memory Management in Cyclone].
+ http://www.eecs.harvard.edu/%7Egreg/cyclone/[Region-based Memory Management in Cyclone].
  Dan Grossman, Greg Morrisett, Trevor Jim, Michael Hicks, Yanling
  Wang, and James Cheney.
  <<PLDI,PLDI>> 2002.
@@ -359,17 +359,17 @@ modularizing a program.
 ____
 
  * <!Anchor(HeckmanWilhelm97)>
- http://rw4.cs.uni-sb.de/~heckmann/abstracts/neuform.html[A Functional Description of TeX's Formula Layout].
+ http://rw4.cs.uni-sb.de/%7Eheckmann/abstracts/neuform.html[A Functional Description of TeX's Formula Layout].
  Reinhold Heckmann and Reinhard Wilhelm.
  <<JFP,JFP>> 1997.
 
  * <!Anchor(HicksEtAl03)>
- http://www.eecs.harvard.edu/~greg/cyclone/[Safe and Flexible Memory Management in Cyclone].
+ http://www.eecs.harvard.edu/%7Egreg/cyclone/[Safe and Flexible Memory Management in Cyclone].
  Mike Hicks, Greg Morrisett, Dan Grossman, and Trevor Jim.
  University of Maryland Technical Report CS-TR-4514, 2003.
 
  * <!Anchor(Hurd04)>
- http://www.cl.cam.ac.uk/~jeh1004/research/papers/fasthol.pdf[Compiling HOL4 to Native Code].
+ http://www.cl.cam.ac.uk/%7Ejeh1004/research/papers/fasthol.pdf[Compiling HOL4 to Native Code].
  Joe Hurd.
  <<TPHOLs,TPHOLs>> 2004.
 +
@@ -404,7 +404,7 @@ Describes a number of problems with the
 <<MilnerEtAl90,1990 Definition>>, many of which were fixed in the
 <<MilnerEtAl97,1997 Definition>>.
 
-Also see the http://www.cs.kent.ac.uk/~smk/errors-new.ps.Z[addenda]
+Also see the http://www.cs.kent.ac.uk/%7Esmk/errors-new.ps.Z[addenda]
 published in 1996.
 ____
 
@@ -414,12 +414,12 @@ ____
  <<ML,ML>> 2007.
 
  * <!Anchor(Kennedy04)>
- http://research.microsoft.com/~akenn/fun/picklercombinators.pdf[Pickler Combinators].
+ http://research.microsoft.com/%7Eakenn/fun/picklercombinators.pdf[Pickler Combinators].
  Andrew Kennedy.
  <<JFP,JFP>> 2004.
 
  * <!Anchor(KoserEtAl03)>
- http://www.cs.princeton.edu/~hlarsen/work/dpcool-paper.pdf[sml2java: A Source To Source Translator].
+ http://www.cs.princeton.edu/%7Ehlarsen/work/dpcool-paper.pdf[sml2java: A Source To Source Translator].
  Justin Koser, Haakon Larsen, Jeffrey A. Vaughan.
  <<DPCOOL,DPCOOL>> 2003.
 
@@ -430,7 +430,7 @@ ____
  Kevin Lang. 1999.
 
  * <!Anchor(LarsenNiss04)>
- http://www.it-c.dk/~hniss/publications/freenix2004.pdf[mGTK: An SML binding of Gtk+].
+ http://www.it-c.dk/%7Ehniss/publications/freenix2004.pdf[mGTK: An SML binding of Gtk+].
  Ken Larsen and Henning Niss.
  USENIX Annual Technical Conference, 2004.
 
@@ -446,7 +446,7 @@ efficient implementation.
 ____
 
  * <!Anchor(Leroy93)>
- http://pauillac.inria.fr/~xleroy/leroy.html[Polymorphism by Name for References and Continuations].
+ http://pauillac.inria.fr/%7Exleroy/leroy.html[Polymorphism by Name for References and Continuations].
  Xavier Leroy.
  <<POPL,POPL>> 1993.
 
@@ -457,7 +457,7 @@ ____
 == <!Anchor(M_References)>M ==
 
  * <!Anchor(MarlowEtAl01)>
- http://www.haskell.org/~simonmar/papers/async.ps.gz[Asynchronous Exceptions in Haskell].
+ http://www.haskell.org/%7Esimonmar/papers/async.ps.gz[Asynchronous Exceptions in Haskell].
  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.
  <<PLDI,PLDI>> 2001.
 +
@@ -546,7 +546,7 @@ semantics.  Supersedes <<MilnerEtAl90,The Definition of Standard ML>>.
 ____
 
  * <!Anchor(ML2000)>
- http://www.cs.cmu.edu/~rwh/papers/ml2000/ml2000.pdf[Principles and a Preliminary Design for ML2000].
+ http://www.cs.cmu.edu/%7Erwh/papers/ml2000/ml2000.pdf[Principles and a Preliminary Design for ML2000].
  The ML2000 working group, 1999.
 
  * <!Anchor(Morentsen99)>
@@ -560,7 +560,7 @@ ____
  <<PPoPP,PPoPP>> 1993.
 
  * <!Anchor(Murphy06)>
- http://www.cs.cmu.edu/~tom7/papers/grid-ml06.pdf[ML Grid Programming with ConCert].
+ http://www.cs.cmu.edu/%7Etom7/papers/grid-ml06.pdf[ML Grid Programming with ConCert].
  Tom Murphy VII.
  <<ML,ML>> 2006.
 
@@ -572,7 +572,7 @@ ____
  Scottish Functional Programming Workshop, 1999.
 +
 ____
-Describes http://atseidl2.informatik.tu-muenchen.de/~berlea/Fxp/[fxp],
+Describes http://atseidl2.informatik.tu-muenchen.de/%7Eberlea/Fxp/[fxp],
 an XML parser implemented in Standard ML.
 ____
 
@@ -582,7 +582,7 @@ ____
  Doctoral Thesis, 1999.
 
  * <!Anchor(NguyenOhori06)>
- http://www.pllab.riec.tohoku.ac.jp/~ohori/research/NguyenOhoriPPDP06.pdf[Compiling ML Polymorphism with Explicit Layout Bitmap].
+ http://www.pllab.riec.tohoku.ac.jp/%7Eohori/research/NguyenOhoriPPDP06.pdf[Compiling ML Polymorphism with Explicit Layout Bitmap].
  Huu-Duc Nguyen and Atsushi Ohori.
  <<PPDP,PPDP>> 2006.
 
@@ -595,22 +595,22 @@ ____
  Cambridge University Press, 1999.
 
  * <!Anchor(Ohori89)>
- http://www.pllab.riec.tohoku.ac.jp/~ohori/research/fpca89.pdf[A Simple Semantics for ML Polymorphism].
+ http://www.pllab.riec.tohoku.ac.jp/%7Eohori/research/fpca89.pdf[A Simple Semantics for ML Polymorphism].
  Atsushi Ohori.
  <<FPCA,FPCA>> 1989.
 
  * <!Anchor(Ohori95)>
- http://www.pllab.riec.tohoku.ac.jp/~ohori/research/toplas95.pdf[A Polymorphic Record Calculus and Its Compilation].
+ http://www.pllab.riec.tohoku.ac.jp/%7Eohori/research/toplas95.pdf[A Polymorphic Record Calculus and Its Compilation].
  Atsushi Ohori.
  <<TOPLAS,TOPLAS>> 1995.
 
  * <!Anchor(OhoriTakamizawa97)>
- http://www.pllab.riec.tohoku.ac.jp/~ohori/research/jlsc97.pdf[An Unboxed Operational Semantics for ML Polymorphism].
+ http://www.pllab.riec.tohoku.ac.jp/%7Eohori/research/jlsc97.pdf[An Unboxed Operational Semantics for ML Polymorphism].
  Atsushi Ohori and Tomonobu Takamizawa.
  <<LASC,LASC>> 1997.
 
  * <!Anchor(Ohori99)>
- http://www.pllab.riec.tohoku.ac.jp/~ohori/research/ic98.pdf[Type-Directed Specialization of Polymorphism].
+ http://www.pllab.riec.tohoku.ac.jp/%7Eohori/research/ic98.pdf[Type-Directed Specialization of Polymorphism].
  Atsushi Ohori.
  <<IC,IC>> 1999.
 
@@ -629,7 +629,7 @@ ____
  Cambridge University Press, 1996.
 
  * <!Anchor(PetterssonEtAl02)>
- http://user.it.uu.se/~happi/publications/flops02.pdf[The HiPE/x86 Erlang Compiler: System Description and Performance Evaluation].
+ http://user.it.uu.se/%7Ehappi/publications/flops02.pdf[The HiPE/x86 Erlang Compiler: System Description and Performance Evaluation].
  Mikael Pettersson, Konstantinos Sagonas, and Erik Johansson.
  <<FLOPS,FLOPS>> 2002.
 +
@@ -660,12 +660,12 @@ ____
  Princeton University Technical Report CS-TR-262-90, 1990.
 
  * <!Anchor(Ramsey03)>
- http://www.eecs.harvard.edu/~nr/pubs/embed-abstract.html[Embedding an Interpreted Language Using Higher-Order Functions and Types].
+ http://www.eecs.harvard.edu/%7Enr/pubs/embed-abstract.html[Embedding an Interpreted Language Using Higher-Order Functions and Types].
  Norman Ramsey.
  <<IVME,IVME>> 2003.
 
  * <!Anchor(RamseyFisherGovereau05)>
- http://www.eecs.harvard.edu/~nr/pubs/els-abstract.html[An Expressive Language of Signatures].
+ http://www.eecs.harvard.edu/%7Enr/pubs/els-abstract.html[An Expressive Language of Signatures].
  Norman Ramsey, Kathleen Fisher, and Paul Govereau.
  <<ICFP,ICFP>> 2005.
 
@@ -753,7 +753,7 @@ Includes a description of the <:Swerve:> HTTP server written in SML.
 ____
 
  * <!Anchor(Signoles03)>
- http://www.lri.fr/~signoles/publis/jfla2003.ps.gz[Calcul Statique des Applications de Modules Parametres].
+ http://www.lri.fr/%7Esignoles/publis/jfla2003.ps.gz[Calcul Statique des Applications de Modules Parametres].
  Julien Signoles.
  <<JFLA,JFLA>> 2003.
 +
@@ -774,7 +774,7 @@ http://sourceforge.net/projects/buddy[BuDDY] BDD package.
 ____
 
  * <!Anchor(SwaseyEtAl06)>
- http://www.cs.cmu.edu/~tom7/papers/smlsc2-ml06.pdf[A Separate Compilation Extension to Standard ML].
+ http://www.cs.cmu.edu/%7Etom7/papers/smlsc2-ml06.pdf[A Separate Compilation Extension to Standard ML].
  David Swasey, Tom Murphy VII, Karl Crary and Robert Harper.
  <<ML,ML>> 2006.
 
@@ -816,7 +816,7 @@ defunctionalization and is similar to the approach used in MLton
 ____
 
  * <!Anchor(TolmachOliva98)>
- http://web.cecs.pdx.edu/~apt/jfp98.ps[From ML to Ada: Strongly-typed Language Interoperability via Source Translation].
+ http://web.cecs.pdx.edu/%7Eapt/jfp98.ps[From ML to Ada: Strongly-typed Language Interoperability via Source Translation].
  Andrew Tolmach and Dino Oliva.
  <<JFP,JFP>> 1998.
 +
@@ -829,7 +829,7 @@ ____
 == <!Anchor(U_References)>U ==
 
  * <!Anchor(Ullman98)>
- http://www-db.stanford.edu/~ullman/emlp.html[Elements of ML Programming]
+ http://www-db.stanford.edu/%7Eullman/emlp.html[Elements of ML Programming]
  (http://www3.addall.com/New/submitNew.cgi?query=0137903871&type=ISBN[addall]).
  ISBN 0137903871.
  Jeffrey D. Ullman.
@@ -857,7 +857,7 @@ collector for MLton.
 ____
 
  * <!Anchor(WangAppel01)>
- http://www.cs.princeton.edu/~danwang/Papers/tpsrvgc/[Type-Preserving Garbage Collectors].
+ http://www.cs.princeton.edu/%7Edanwang/Papers/tpsrvgc/[Type-Preserving Garbage Collectors].
  Daniel C. Wang and Andrew W. Appel.
  <<POPL,POPL>> 2001.
 +
@@ -867,7 +867,7 @@ collector as part of a program.
 ____
 
  * <!Anchor(WangMurphy02)>
- http://www-2.cs.cmu.edu/~tom7/papers/wang-murphy-recursion.pdf[Programming With Recursion Schemes].
+ http://www-2.cs.cmu.edu/%7Etom7/papers/wang-murphy-recursion.pdf[Programming With Recursion Schemes].
  Daniel C. Wang and Tom Murphy VII.
 +
 ____

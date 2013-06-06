@@ -35,7 +35,7 @@ software that is known to run on MLton.
 
 <:Contact:> us for details on any of these.
 
-* <:MLDoc:> http://people.cs.uchicago.edu/~jhr/tools/ml-doc.html
+* <:MLDoc:> http://people.cs.uchicago.edu/%7Ejhr/tools/ml-doc.html
 * <:Unicode:>
 
 == More ==
@@ -45,9 +45,9 @@ More projects using MLton can be seen on the <:Users:> page.
 == Software for SML implementations other than MLton ==
 
 * PostgreSQL
-** Moscow ML: http://www.dina.kvl.dk/~sestoft/mosmllib/Postgres.html
+** Moscow ML: http://www.dina.kvl.dk/%7Esestoft/mosmllib/Postgres.html
 ** SML/NJ NLFFI: http://smlweb.sourceforge.net/smlsql/
 * Web:
 ** ML Kit: http://www.smlserver.org[SMLserver]  (a plugin for AOLserver)
-** Moscow ML: http://ellemose.dina.kvl.dk/~sestoft/msp/index.msp[ML Server Pages] (support for PHP-style CGI scripting)
+** Moscow ML: http://ellemose.dina.kvl.dk/%7Esestoft/msp/index.msp[ML Server Pages] (support for PHP-style CGI scripting)
 ** SML/NJ: http://smlweb.sourceforge.net/[smlweb]
