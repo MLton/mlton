@@ -117,8 +117,6 @@ fun llint (i: int) =
     then Int.toString i
     else "-" ^ Int.toString (~ i)
 
-fun llbits b = llint (Bits.toInt b)
-
 fun llbytes b = llint (Bytes.toInt b)
 
 fun escapeLLVM s =
@@ -576,10 +574,6 @@ fun getOperand (cxt, operand) =
       | Operand.Word word =>
         let
             val reg = nextLLVMReg ()
-            val wordsize = WordX.size word
-            (* val () = Out.print (concat ["wordsize of ", WordX.toString word, " = ", *)
-            (*                             WordSize.toString wordsize, *)
-            (*                             ", type = ", llty (Operand.ty operand), "\n"]) *)
             val ty = llws (WordX.size word)
             val wordval = llwordx word
             val alloca = mkalloca (reg, ty)
@@ -785,7 +779,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             in
                 pair
             end
-          | Word_equal ws =>
+          | Word_equal _ =>
             let
                 val reg = nextLLVMReg ()
                 val cmp = mkinst (reg, "icmp eq", argty, arg0, arg1)
@@ -923,18 +917,6 @@ fun outputPrimApp (cxt: Context,
     let
         datatype z = datatype Prim.Name.t
         val {args, dst, prim} = p
-        fun fixarg1 args' =
-            let
-                val arg1 = Vector.sub (args', 0)
-                val arg2 = Vector.sub (args', 1)
-                val typeOfArg1 = WordSize.fromBits (Type.width (Operand.ty arg1))
-                val valueOfArg2 = case arg2 of
-                                      Operand.Word w => WordX.toIntInf w
-                                    | _ => Error.bug "Arg 2 of shift is not a word"
-                val newArg2 = Operand.Word (WordX.fromIntInf (valueOfArg2, typeOfArg1))
-            in
-                Vector.fromList [arg1, newArg2]
-            end
         fun typeOfArg0 () =
             llws (WordSize.fromBits (Type.width (Operand.ty (Vector.sub (args, 0)))))
         val castArg1 = case Prim.name prim of
