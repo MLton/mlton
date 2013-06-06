@@ -182,7 +182,7 @@ implementation in SML/NJ doesn't use any SML/NJ-isms.)  There is a
 slight difference in the way in which critical sections are handled in
 SML/NJ and MLton; since `MLton.Thread.switch` _always_ leaves a
 critical section, it is sometimes necessary to add additional
-`atomicBegin`/`atomicEnd`s to ensure that we remain in a critical
+`atomicBegin`-s/`atomicEnd`-s to ensure that we remain in a critical
 section after a thread switch.
 
 While looking at virtually every file in the core CML implementation,
@@ -198,9 +198,9 @@ easier to switch in more efficient or real-time implementations.
 
 * `core-cml/scheduler.sml`: in both implementations, this is where
 most of the interesting action takes place.  I've made the connection
-between `MLton.Thread.t`{wj}s and `ThreadId.thread_id`{wj}s more
-abstract than it is in the SML/NJ implementation, and encapsulated all
-of the `MLton.Thread` operations in this module.
+between `MLton.Thread.t`-s and `ThreadId.thread_id`-s more abstract
+than it is in the SML/NJ implementation, and encapsulated all of the
+`MLton.Thread` operations in this module.
 
 * eliminated all of the "by hand" inlining
 
