@@ -14,10 +14,6 @@ end
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
 
-val printblock = !Control.Native.commented > 0
-val printstmt = !Control.Native.commented > 1
-val printmove = !Control.Native.commented > 2
-
 fun ctypes () =
     let
         val inttype = case !Control.defaultWord of
@@ -105,7 +101,10 @@ datatype Context = Context of {
     labelInfo: Label.t -> {block: Block.t,
                            chunkLabel: ChunkLabel.t,
                            frameIndex: int option,
-                           layedOut: bool ref}
+                           layedOut: bool ref},
+    printblock: bool,
+    printstmt: bool,
+    printmove: bool
 }
 
 (* WordX.toString converts to hexadecimal, this converts to base 10 *)
@@ -911,9 +910,7 @@ fun getArg (argv, i, cast) =
     else
         ("", "NO ARG " ^ Int.toString i)
 
-fun outputPrimApp (cxt: Context,
-                   p: {args: Operand.t vector, dst: Operand.t option, prim: Type.t Prim.t})
-    : string =
+fun outputPrimApp (cxt, p) =
     let
         datatype z = datatype Prim.Name.t
         val {args, dst, prim} = p
@@ -962,7 +959,8 @@ fun push amt =
 fun outputStatement (cxt: Context, stmt: Statement.t): string =
     let
         val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
-        val printstmt = if printstmt
+        val Context { printstmt = printstmt, printmove = printmove, ...} = cxt
+        val printcode = if printstmt
                         then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @stmt, i32 0, i32 0))\n"
                         else ""
         val stmtcode =
@@ -987,7 +985,7 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
               | Statement.PrimApp p => outputPrimApp (cxt, p)
               | Statement.ProfileLabel _ => "\t; ProfileLabel\n"
     in
-        concat [comment, printstmt, stmtcode]
+        concat [comment, printcode, stmtcode]
     end
 
 fun outputTransfer (cxt, transfer, sourceLabel) =
@@ -996,7 +994,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         val Context { labelToStringIndex = labelToStringIndex,
                       chunkLabelToString = chunkLabelToString,
                       labelChunk = labelChunk,
-                      labelInfo = labelInfo, ... } = cxt
+                      labelInfo = labelInfo,
+                      printstmt = printstmt, ... } = cxt
         fun tpush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
@@ -1212,7 +1211,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
 
 fun outputBlock (cxt, block) =
     let
-        val Context { program = program, ... } = cxt
+        val Context { program = program, printblock = printblock, ... } = cxt
         val Block.T {kind, label, statements, transfer, ...} = block
         val labelstr = Label.toString label
         val labelstrLen = Int.toString (String.size labelstr + 1)
@@ -1261,7 +1260,7 @@ fun outputBlock (cxt, block) =
         
 fun outputChunk (cxt, print, chunk) =
     let
-        val Context { labelToStringIndex, chunkLabelToString, entryLabels, ... } = cxt
+        val Context { labelToStringIndex, chunkLabelToString, entryLabels, printblock, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
         val () = print (concat ["define %struct.cont @",
@@ -1452,7 +1451,10 @@ fun makeContext program =
                   chunkLabelToString = chunkLabelToString,
                   labelChunk = labelChunk,
                   entryLabels = entryLabels,
-                  labelInfo = labelInfo
+                  labelInfo = labelInfo,
+                  printblock = !Control.Native.commented > 0,
+                  printstmt = !Control.Native.commented > 1,
+                  printmove = !Control.Native.commented > 2
                 }
     end
 
