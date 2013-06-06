@@ -13,7 +13,13 @@ WIKI_XTRA_PAGES := Index
 WIKI_XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
 WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org_gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
 
-all: $(WIKI)
+ALL :=
+ifneq ($(shell which asciidoc),)
+ALL += $(WIKI)
+endif
+
+
+all: $(ALL)
 
 
 conf/header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-header-conf.sh
