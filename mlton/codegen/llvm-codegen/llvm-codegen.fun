@@ -56,18 +56,16 @@ val llvmIntrinsics =
 \declare double @llvm.sin.f64(double %Val)\n\
 \declare float @llvm.cos.f32(float %Val)\n\
 \declare double @llvm.cos.f64(double %Val)\n\
-\declare float @llvm.tan.f32(float %Val)\n\
-\declare double @llvm.tan.f64(double %Val)\n\
 \declare float @llvm.exp.f32(float %Val)\n\
 \declare double @llvm.exp.f64(double %Val)\n\
 \declare float @llvm.log.f32(float %Val)\n\
 \declare double @llvm.log.f64(double %Val)\n\
 \declare float @llvm.log10.f32(float %Val)\n\
 \declare double @llvm.log10.f64(double %Val)\n\
-\declare float @llvm.fabs.f32(float %Val)\n\
-\declare double @llvm.fabs.f64(double %Val)\n\
-\declare float @llvm.rint.f32(float %Val)\n\
-\declare double @llvm.rint.f64(double %Val)\n\
+\declare float @llvm.fabs.f32(float %Val) ; requires LLVM 3.2\n\
+\declare double @llvm.fabs.f64(double %Val) ; requires LLVM 3.2\n\
+\declare float @llvm.rint.f32(float %Val) ; requires LLVM 3.3\n\
+\declare double @llvm.rint.f64(double %Val) ; requires LLVM 3.3\n\
 \declare {i8, i1} @llvm.sadd.with.overflow.i8(i8 %a, i8 %b)\n\
 \declare {i16, i1} @llvm.sadd.with.overflow.i16(i16 %a, i16 %b)\n\
 \declare {i32, i1} @llvm.sadd.with.overflow.i32(i32 %a, i32 %b)\n\
@@ -276,8 +274,8 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_Math_log10 _ => true
        | Real_Math_sin _ => true
        | Real_Math_sqrt _ => true
-       | Real_Math_tan _ => true
-       | Real_abs _ => true
+       | Real_Math_tan _ => false
+       | Real_abs _ => false (* Requires LLVM 3.2 to use "llvm.fabs" intrinsic *)
        | Real_add _ => true
        | Real_castToWord _ => true
        | Real_div _ => true
@@ -292,7 +290,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_qequal _ => false
        | Real_rndToReal _ => true
        | Real_rndToWord _ => true
-       | Real_round _ => true
+       | Real_round _ => false (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
        | Real_sub _ => true
        | Word_add _ => true
        | Word_addCheck _ => true
@@ -657,7 +655,6 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           | Real_Math_log10 rs => (mkmath (res, "log10", rs, arg0), llrs rs)
           | Real_Math_sin rs => (mkmath (res, "sin", rs, arg0), llrs rs)
           | Real_Math_sqrt rs => (mkmath (res, "sqrt", rs, arg0), llrs rs)
-          | Real_Math_tan rs => (mkmath (res, "tan", rs, arg0), llrs rs)
           | Real_abs rs => (mkmath (res, "fabs", rs, arg0), llrs rs)
           | Real_add rs => (mkinst (res, "fadd", llrs rs, arg0, arg1), llrs rs)
           | Real_castToWord (rs, ws) =>
@@ -674,9 +671,30 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 pair
             end
           | Real_div rs => (mkinst (res, "fdiv", llrs rs, arg0, arg1), llrs rs)
-          | Real_equal rs => (mkinst (res, "fcmp oeq", llrs rs, arg0, arg1), llrs rs)
-          | Real_le rs => (mkinst (res, "fcmp ole", llrs rs, arg0, arg1), llrs rs)
-          | Real_lt rs => (mkinst (res, "fcmp olt", llrs rs, arg0, arg1), llrs rs)
+          | Real_equal rs =>
+            let
+                val reg = nextLLVMReg ()
+                val cmp = mkinst (reg, "fcmp oeq", llrs rs, arg0, arg1)
+                val ext = mkconv (res, "zext", "i1", reg, "%Word32")
+            in
+                (concat [cmp, ext], "%Word32")
+            end
+          | Real_le rs =>
+            let
+                val reg = nextLLVMReg ()
+                val cmp = mkinst (reg, "fcmp ole", llrs rs, arg0, arg1)
+                val ext = mkconv (res, "zext", "i1", reg, "%Word32")
+            in
+                (concat [cmp, ext], "%Word32")
+            end
+          | Real_lt rs =>
+            let
+                val reg = nextLLVMReg ()
+                val cmp = mkinst (reg, "fcmp olt", llrs rs, arg0, arg1)
+                val ext = mkconv (res, "zext", "i1", reg, "%Word32")
+            in
+                (concat [cmp, ext], "%Word32")
+            end
           | Real_mul rs => (mkinst (res, "fmul", llrs rs, arg0, arg1), llrs rs)
           | Real_muladd rs =>
             let
@@ -922,6 +940,8 @@ fun outputPrimApp (cxt: Context,
         val castArg1 = case Prim.name prim of
                            Word_rshift _ => SOME (typeOfArg0 ())
                          | Word_lshift _ => SOME (typeOfArg0 ())
+                         | Word_rol _ => SOME (typeOfArg0 ())
+                         | Word_ror _ => SOME (typeOfArg0 ())
                          | _ => NONE
         val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
         val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
