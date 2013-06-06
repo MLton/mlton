@@ -806,7 +806,7 @@ ____
 Describes a closure-conversion algorithm for a monomorphic IL.  The
 algorithm uses a unification-based flow analysis followed by
 defunctionalization and is similar to the approach used in MLton
-<<CejtinEtAl00)>>.
+(<<CejtinEtAl00>>).
 ____
 
  * <!Anchor(TolmachOliva98)>
