@@ -204,7 +204,7 @@ The functions `prod` and +&grave;+ satisfy the following equation.
 prod `i1 `i2 ... `im $ = i1 * i2 * ... * im
 ----
 
-Note that in SML, +&grave+`i1` is two different tokens, +&grave;+ and
+Note that in SML, +&grave;i1+ is two different tokens, +&grave;+ and
 `i1`.  We often use +&grave;+ for an instance of a `step1` function
 because of its syntactic unobtrusiveness and because no space is
 required to separate it from an alphanumeric token.
@@ -398,7 +398,7 @@ n `1 O `7 $ = 71
 
 That is, we've defined a syntax for writing octal integer constants,
 with a special syntax, `O`, for the zero digit (admittedly
-contrived, since one could just write +&grave;+`0` instead of `O`).
+contrived, since one could just write +&grave;0+ instead of `O`).
 
 See <:NumericLiteral:> for a practical extension of this approach that
 supports numeric constants in any base and of any type.

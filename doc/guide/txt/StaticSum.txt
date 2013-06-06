@@ -208,16 +208,16 @@ us to write the parser as
 ----
 val p = `lparen ^ \int ^ `comma ^ \int ^ `rparen @ (fn x & y => x + y)
 ----
-using four auxiliary combinators: +&grave;+, `\`, +&circ;+, and `@`.
+using four auxiliary combinators: +&grave;+, `\`, `^`, and `@`.
 
 Roughly speaking
 
 * +&grave;p+ means that the result of `p` is dropped,
 * `\p` means that the result of `p` is taken,
-* +p &circ; q+ means that results of `p` and `q` are taken as a product, and
+* `p ^ q` means that results of `p` and `q` are taken as a product, and
 * `p @ a` means that the results of `p` are passed to the function `a` and that result is returned.
 
-The difficulty is in implementing the concatenation combinator +&circ;+.
+The difficulty is in implementing the concatenation combinator `^`.
 The type of the result of the concatenation depends on the types of
 the arguments.
 

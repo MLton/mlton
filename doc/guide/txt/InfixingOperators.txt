@@ -256,9 +256,9 @@ operators defined by the <:BasisLibrary: Basis Library>.
 
 The closest approximation of Haskell's ++x &grave;f&grave; y++ syntax
 achievable in Standard ML would probably be something like
-++x &grave;f&circ; y++, but +&circ;+ is already used for string
+++x &grave;f^ y++, but `^` is already used for string
 concatenation by the <:BasisLibrary: Basis Library>. Other
-combinations of the characters +&grave;+ and +&circ;+ would be
+combinations of the characters +&grave;+ and `^` would be
 possible, but none seems clearly the best visually. The symbols `<\`,
 `\>`, `</`, and `/>` are reasonably concise and have a certain
 self-documenting appearance and symmetry, which can help to remember
