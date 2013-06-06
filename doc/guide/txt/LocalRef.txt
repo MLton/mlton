@@ -6,7 +6,7 @@ LocalRef
 
 == Description ==
 
-This pas optimizes `ref` cells local to a <:SSA:> function:
+This pass optimizes `ref` cells local to a <:SSA:> function:
 
 * global `ref`-s only used in one function are moved to the function
 
