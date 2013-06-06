@@ -18,7 +18,11 @@ functor MkIO (S : sig
       fun mkstemps {prefix, suffix} =
          let
             val name = concat [prefix, MLtonRandom.alphaNumString 6, suffix]
-         in (name, openOut name)
+         in
+            (* Make sure the temporary file name doesn't already exist. *)
+            if OS.FileSys.access (name, [])
+                then mkstemps {prefix = prefix, suffix = suffix}
+                else (name, openOut name)
          end
       fun mkstemp s = mkstemps {prefix = s, suffix = ""}
       fun newIn _ = raise Fail "IO.newIn"
