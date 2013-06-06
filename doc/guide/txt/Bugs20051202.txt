@@ -4,7 +4,7 @@ Bugs20051202
 Here are the known bugs in <:Release20051202:MLton 20051202>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug15)>
+* <!Anchor(bug16)>
  Bug in the http://www.standardml.org/Basis/real.html#SIG:REAL.fmt:VAL[++Real__<N>__.fmt++],
  http://www.standardml.org/Basis/real.html#SIG:REAL.fromString:VAL[++Real__<N>__.fromString++],
  http://www.standardml.org/Basis/real.html#SIG:REAL.scan:VAL[++Real__<N>__.scan++], and
