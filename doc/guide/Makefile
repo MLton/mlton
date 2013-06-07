@@ -11,7 +11,7 @@ SRC_ATTACHMENTS := $(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type 
 
 WIKI_XTRA_PAGES := Index
 WIKI_XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
-WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org_gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
+WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton_org.css mlton_org-gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
 
 ALL :=
 ifneq ($(shell which asciidoc),)
@@ -22,11 +22,11 @@ endif
 all: $(ALL)
 
 
-conf/header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-header-conf.sh
-	./bin/mk-header-conf.sh $< $@
+conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
+	./bin/mk-html5-header-conf.sh $< $@
 
-conf/footer.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-footer-conf.sh
-	./bin/mk-footer-conf.sh $< $@
+conf/html5-footer.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-footer-conf.sh
+	./bin/mk-html5-footer-conf.sh $< $@
 
 
 wiki/asciidoc.css : $(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css
@@ -41,14 +41,14 @@ wiki/pygments.css : $(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css
 wiki/mlton_org.css : conf/mlton_org.css
 	mkdir -p $(dir $@) ; cp $< $@
 
-wiki/mlton_org_gcse.js : conf/mlton_org_gcse.js
+wiki/mlton_org-gcse.js : conf/mlton_org-gcse.js
 	mkdir -p $(dir $@) ; cp $< $@
 
 wiki/index.html : wiki/Home
 	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
 
 define WIKI_PAGE_template
-wiki/$(1) : txt/$(1).txt conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
+wiki/$(1) : txt/$(1).txt conf/asciidoc.flags conf/mlton_org-asciidoc.conf conf/html5-header.conf conf/html5-footer.conf conf/mlton_org-html5.conf bin/InclGitFile.py
 	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOCFLAGS) -o $$@ $$<
 endef
 $(foreach page,$(SRC_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
@@ -59,7 +59,7 @@ wiki/$(1) : txt/$(1)
 endef
 $(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
 
-wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org_markup.conf conf/header.conf conf/footer.conf conf/mlton_org_html.conf bin/InclGitFile.py
+wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org-asciidoc.conf conf/html5-header.conf conf/html5-footer.conf conf/mlton_org-html5.conf bin/InclGitFile.py
 	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(ASCIIDOCFLAGS) -o $@ -
 
 define SVG2PNG_template
