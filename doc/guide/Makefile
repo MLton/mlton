@@ -60,7 +60,7 @@ endef
 $(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
 
 wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc.flags conf/mlton_org-asciidoc.conf conf/html5-header.conf conf/html5-footer.conf conf/mlton_org-html5.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; ./bin/mk-index.sh | $(ASCIIDOC) $(ASCIIDOCFLAGS) -o $@ -
+	mkdir -p $(dir $@) ; ./bin/mk-index.sh $(SRC_PAGES) | $(ASCIIDOC) $(ASCIIDOCFLAGS) -o $@ -
 
 define SVG2PNG_template
 %.$(1).png : %.svg
