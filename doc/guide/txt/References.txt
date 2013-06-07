@@ -1,34 +1,34 @@
 References
 ==========
 
-<!Link(A_References,A)>
-<!Link(B_References,B)>
-<!Link(C_References,C)>
-<!Link(D_References,D)>
-<!Link(E_References,E)>
-<!Link(F_References,F)>
-<!Link(G_References,G)>
-<!Link(H_References,H)>
-<!Link(I_References,I)>
-<!Link(J_References,J)>
-<!Link(K_References,K)>
-<!Link(L_References,L)>
-<!Link(M_References,M)>
-<!Link(N_References,N)>
-<!Link(O_References,O)>
-<!Link(P_References,P)>
-<!Link(Q_References,Q)>
-<!Link(R_References,R)>
-<!Link(S_References,S)>
-<!Link(T_References,T)>
-<!Link(U_References,U)>
-<!Link(V_References,V)>
-<!Link(W_References,W)>
-<!Link(X_References,X)>
-<!Link(Y_References,Y)>
-<!Link(Z_References,Z)>
+<!Link(AAA,A)>
+<!Link(BBB,B)>
+<!Link(CCC,C)>
+<!Link(DDD,D)>
+<!Link(EEE,E)>
+<!Link(FFF,F)>
+<!Link(GGG,G)>
+<!Link(HHH,H)>
+<!Link(III,I)>
+<!Link(JJJ,J)>
+<!Link(KKK,K)>
+<!Link(LLL,L)>
+<!Link(MMM,M)>
+<!Link(NNN,N)>
+<!Link(OOO,O)>
+<!Link(PPP,P)>
+<!Link(QQQ,Q)>
+<!Link(RRR,R)>
+<!Link(SSS,S)>
+<!Link(TTT,T)>
+<!Link(UUU,U)>
+<!Link(VVV,V)>
+<!Link(WWW,W)>
+<!Link(XXX,X)>
+<!Link(YYY,Y)>
+<!Link(ZZZ,Z)>
 
-== <!Anchor(A_References)>A ==
+== <!Anchor(AAA)>A ==
 
  * <!Anchor(AcarEtAl06)>
  http://ttic.uchicago.edu/%7Eumut/papers/pldi06.html[An Experimental Analysis of Self-Adjusting Computation]
@@ -63,7 +63,7 @@ References
  http://www.smlnj.org/doc/ML-Lex/manual.html[A lexical analyzer generator for Standard ML. Version 1.6.0]
  Andrew W. Appel, James S. Mattson, and David R. Tarditi.  1994
 
-== <!Anchor(B_References)>B ==
+== <!Anchor(BBB)>B ==
 
  * <!Anchor(BaudinetMacQueen85)>
  http://citeseer.ist.psu.edu/baudinet85tree.html[Tree Pattern Matching for ML].
@@ -156,7 +156,7 @@ Discusses a number of issues in the design of finalizers.  Many of the
 design choices are consistent with <:MLtonFinalizable:>.
 ____
 
-== <!Anchor(C_References)>C ==
+== <!Anchor(CCC)>C ==
 
  * <!Anchor(CejtinEtAl00)>
  link:References.attachments/CejtinEtAl00.pdf[Flow-directed Closure Conversion for Typed Languages].
@@ -194,7 +194,7 @@ ____
  Duncan Coutts, Roman Leshchinskiy, and Don Stewart.
  Submitted for publication.  April 2007.
 
-== <!Anchor(D_References)>D ==
+== <!Anchor(DDD)>D ==
 
  * <!Anchor(DamasMilner82)>
  http://portal.acm.org/citation.cfm?id=582176[Principal Type-Schemes for Functional Programs].
@@ -241,7 +241,7 @@ An extension of ML that allows the definition of ad-hoc polymorphic
 functions by inspecting the type of their argument.
 ____
 
-== <!Anchor(E_References)>E ==
+== <!Anchor(EEE)>E ==
 
  * <!Anchor(Elsman03)>
  http://www.it-c.dk/research/mlkit/papers.html[Garbage Collection Safety for Region-based Memory Management].
@@ -253,7 +253,7 @@ ____
  Martin Elsman.  University of Copenhagen. IT University Technical
  Report TR-2004-43, 2004.
 
-== <!Anchor(F_References)>F ==
+== <!Anchor(FFF)>F ==
 
  * <!Anchor(FelleisenFreidman98)>
  http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&tid=4787[The Little MLer]
@@ -295,7 +295,7 @@ type checking works an an improved compilation approach for typecase
 that does the matching at compile time, not run time.
 ____
 
-== <!Anchor(G_References)>G ==
+== <!Anchor(GGG)>G ==
 
  * <!Anchor(GansnerReppy93)>
  http://citeseer.ist.psu.edu/gansner93multithreaded.html[A Multi-Threaded Higher-order User Interface Toolkit].
@@ -322,7 +322,7 @@ ____
  Wang, and James Cheney.
  <!Link(PLDI,PLDI)> 2002.
 
-== <!Anchor(H_References)>H ==
+== <!Anchor(HHH)>H ==
 
  * <!Anchor(HallenbergEtAl02)>
  http://www.it-c.dk/research/mlkit/papers.html[Combining Region Inference and Garbage Collection].
@@ -379,11 +379,11 @@ encountered in compiling large programs, and the speedups achieved
 (roughly 10x).
 ____
 
-== <!Anchor(I_References)>I ==
+== <!Anchor(III)>I ==
 
 {empty}
 
-== <!Anchor(J_References)>J ==
+== <!Anchor(JJJ)>J ==
 
  * <!Anchor(Jones99)>
  http://www.cs.kent.ac.uk/people/staff/rej/gcbook/gcbook.html[Garbage Collection: Algorithms for Automatic Memory Management]
@@ -392,7 +392,7 @@ ____
  Richard Jones.
  John Wiley & Sons, 1999.
 
-== <!Anchor(K_References)>K ==
+== <!Anchor(KKK)>K ==
 
  * <!Anchor(Kahrs93)>
  http://www.cs.kent.ac.uk/pubs/1993/569/index.html[Mistakes and Ambiguities in the Definition of Standard ML].
@@ -423,7 +423,7 @@ ____
  Justin Koser, Haakon Larsen, Jeffrey A. Vaughan.
  <!Link(DPCOOL,DPCOOL)> 2003.
 
-== <!Anchor(L_References)>L ==
+== <!Anchor(LLL)>L ==
 
  * <!Anchor(Lang99)>
  http://citeseer.nj.nec.com/lang99faster.html[Faster Algorithms for Finding Minimal Consistent DFAs].
@@ -454,7 +454,7 @@ ____
  http://citeseer.ist.psu.edu/637416.html[MLRISC Annotations].
  Allen Leung and Lal George. 1998.
 
-== <!Anchor(M_References)>M ==
+== <!Anchor(MMM)>M ==
 
  * <!Anchor(MarlowEtAl01)>
  http://www.haskell.org/%7Esimonmar/papers/async.ps.gz[Asynchronous Exceptions in Haskell].
@@ -564,7 +564,7 @@ ____
  Tom Murphy VII.
  <!Link(ML,ML)> 2006.
 
-== <!Anchor(N_References)>N ==
+== <!Anchor(NNN)>N ==
 
  * <!Anchor(Neumann99)>
  http://citeseer.ist.psu.edu/412760.html[fxp - Processing Structured Documents in SML].
@@ -586,7 +586,7 @@ ____
  Huu-Duc Nguyen and Atsushi Ohori.
  <!Link(PPDP,PPDP)> 2006.
 
-== <!Anchor(O_References)>O ==
+== <!Anchor(OOO)>O ==
 
  * <!Anchor(Okasaki99)>
  http://us.cambridge.org/titles/catalogue.asp?isbn=0521663504[Purely Functional Data Structures].
@@ -619,7 +619,7 @@ ____
  Scott Owens, John Reppy, and Aaron Turon.
  <!Link(JFP,JFP)> 2009.
 
-== <!Anchor(P_References)>P ==
+== <!Anchor(PPP)>P ==
 
  * <!Anchor(Paulson96)>
  http://www.cl.cam.ac.uk/users/lcp/MLbook/[ML For the Working Programmer]
@@ -648,11 +648,11 @@ ____
  Riccardo R. Puccella.  1998.
  <!Link(ICCL,ICCL)> 1998.
 
-== <!Anchor(Q_References)>Q ==
+== <!Anchor(QQQ)>Q ==
 
 {empty}
 
-== <!Anchor(R_References)>R ==
+== <!Anchor(RRR)>R ==
 
  * <!Anchor(Ramsey90)>
  http://citeseer.ist.psu.edu/ramsey90concurrent.html[Concurrent Programming in ML].
@@ -710,7 +710,7 @@ ____
  http://www.ps.uni-sb.de/hamlet/defects.pdf[Defects in the Revised Definition of Standard ML].
  Andreas Rossberg. 2001.
 
-== <!Anchor(S_References)>S ==
+== <!Anchor(SSS)>S ==
 
  * <!Anchor(Sansom91)>
  http://citeseer.ist.psu.edu/sansom91dualmode.html[Dual-Mode Garbage Collection].
@@ -778,7 +778,7 @@ ____
  David Swasey, Tom Murphy VII, Karl Crary and Robert Harper.
  <!Link(ML,ML)> 2006.
 
-== <!Anchor(T_References)>T ==
+== <!Anchor(TTT)>T ==
 
  * <!Anchor(TarditiAppel00)>
  http://www.smlnj.org/doc/ML-Yacc/index.html[ML-Yacc User's Manual. Version 2.4]
@@ -826,7 +826,7 @@ is similar in structure to MLton, using monomorphisation,
 defunctionalization, and optimization on a first-order IL.
 ____
 
-== <!Anchor(U_References)>U ==
+== <!Anchor(UUU)>U ==
 
  * <!Anchor(Ullman98)>
  http://www-db.stanford.edu/%7Eullman/emlp.html[Elements of ML Programming]
@@ -835,11 +835,11 @@ ____
  Jeffrey D. Ullman.
  Prentice-Hall, 1998.
 
-== <!Anchor(V_References)>V ==
+== <!Anchor(VVV)>V ==
 
 {empty}
 
-== <!Anchor(W_References)>W ==
+== <!Anchor(WWW)>W ==
 
  * <!Anchor(Wand84)>
  http://portal.acm.org/citation.cfm?id=800527[A Types-as-Sets Semantics for Milner-Style Polymorphism].
@@ -889,18 +889,18 @@ ____
 The origin of the <:ValueRestriction:>.
 ____
 
-== <!Anchor(X_References)>X ==
+== <!Anchor(XXX)>X ==
 
 {empty}
 
-== <!Anchor(Y_References)>Y ==
+== <!Anchor(YYY)>Y ==
 
  * <!Anchor(Yang98)>
  http://citeseer.ist.psu.edu/53925.html[Encoding Types in ML-like Languages].
  Zhe Yang.
  <!Link(ICFP,ICFP)> 1998.
 
-== <!Anchor(Z_References)>Z ==
+== <!Anchor(ZZZ)>Z ==
 
  * <!Anchor(ZiarekEtAl06)>
  http://www.cs.purdue.edu/homes/suresh/abstracts.html#icfp06[Stabilizers: A Modular Checkpointing Abstraction for Concurrent Functional Programs].
