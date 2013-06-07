@@ -28,16 +28,22 @@ a:visited {
   padding-top: 0.5em;
 }
 
+@media print {
+  #banner-search { display: none; }
+}
+
 #footer {
   overflow: hidden;
 }
 
-#footer-extra-badges {
+#footer-text>div {
+  float: left;
+  padding-bottom: 0.5em;
+  padding-right: 1.0em;
+}
+
+#footer-badges>div {
   float: right;
   padding-bottom: 0.5em;
   padding-left: 1.0em;
-}
-
-@media print {
-  #footer-extra-badges { display: none; }
 }
