@@ -4,12 +4,13 @@ NULL :=
 
 ASCIIDOC := asciidoc
 ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
-
 ASCIIDOC_HTML5_FLAGS := $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
 
+GEN_PAGES := Index
+GEN_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
 
-SRC_PAGES := $(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt'))
-SRC_ATTACHMENTS := $(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes')))
+SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt')))
+SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
 
 WIKI_XTRA_PAGES := Index
 WIKI_XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
@@ -24,11 +25,22 @@ endif
 all: $(ALL)
 
 
+define SVG2PNG_template
+%.$(1).png : %.svg
+	gm convert $$< -resize $(1)x$(1) $$@
+endef
+$(foreach size,32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
+
+
 conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
 	./bin/mk-html5-header-conf.sh $< $@
 
 conf/html5-footer.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-footer-conf.sh
 	./bin/mk-html5-footer-conf.sh $< $@
+
+
+txt/Index.txt : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt)
+	./bin/mk-index.sh $(SRC_PAGES) > $@
 
 
 wiki/asciidoc.css : $(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css
@@ -53,22 +65,14 @@ define WIKI_PAGE_template
 wiki/$(1) : txt/$(1).txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
 	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOC_HTML5_FLAGS) -o $$@ $$<
 endef
-$(foreach page,$(SRC_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
+$(foreach page,$(SRC_PAGES) $(WIKI_XTRA_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
 
 define WIKI_ATTACHMENT_template
 wiki/$(1) : txt/$(1)
 	mkdir -p $$(dir $$@) ; cp -prf $$< $$@
 endef
-$(foreach attachment,$(SRC_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
+$(foreach attachment,$(SRC_ATTACHMENTS) $(WIKI_XTRA_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
 
-wiki/Index : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt) conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; ./bin/mk-index.sh $(SRC_PAGES) | $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -o $@ -
-
-define SVG2PNG_template
-%.$(1).png : %.svg
-	gm convert $$< -resize $(1)x$(1) $$@
-endef
-$(foreach size,32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
 
 .PHONY: upload_wiki
 upload_wiki: $(WIKI)
