@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2013 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -441,8 +441,16 @@ let
       end
       fun bogusOp (t: Type.t): M.Operand.t =
          case Type.deReal t of
-            NONE => M.Operand.Word (WordX.fromIntInf
-                                    (0, WordSize.fromBits (Type.width t)))
+            NONE => let
+                       val bogusWord =
+                          M.Operand.Word
+                          (WordX.zero
+                           (WordSize.fromBits (Type.width t)))
+                    in
+                       case Type.deWord t of
+                          NONE => M.Operand.Cast (bogusWord, t)
+                        | SOME _ => bogusWord
+                    end
           | SOME s => globalReal (RealX.zero s)
       fun constOperand (c: Const.t): M.Operand.t =
          let
