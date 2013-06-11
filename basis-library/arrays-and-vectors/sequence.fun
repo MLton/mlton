@@ -463,12 +463,33 @@ functor Sequence (S: sig
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                case sls of
-                  [] => seq0 ()
-                | [sl] => sequence sl
-                | sl::sls =>
-                     let val sep = full sep
-                     in concat (sl::(List.foldr (fn (sl,sls) => sep::sl::sls) [] sls))
-                     end
+                    [] => seq0 ()
+                  | [sl] => sequence sl
+                  | sl::sls =>
+                       let
+                          val sepn = S.length sep
+                          val n =
+                             List.foldl (fn (sl, s) => s +? sepn +? length' sl) (length' sl) sls
+                          datatype 'a pos =
+                               Separated of SeqIndex.int * 'a slice * 'a slice list
+                             | Separator of SeqIndex.int * 'a slice list
+                          fun separated (i, sl, sls) =
+                             if SeqIndex.< (i, length' sl)
+                                then (unsafeSub' (sl, i),
+                                      Separated (i +? 1, sl, sls))
+                                else separator (0, sls)
+                          and separator (i, sls) =
+                             if SeqIndex.< (i, sepn)
+                                then (S.subUnsafe (sep, i),
+                                      Separator (i +? 1, sls))
+                                else case sls of
+                                   [] => raise Fail "Sequence.Slice.concatWith"
+                                 | sl :: sls => separated (0, sl, sls)
+                          fun loop (_, Separated x) = separated x
+                            | loop (_, Separator x) = separator x
+                       in
+                          #1 (unfoldi' (n, Separated (0, sl, sls), loop))
+                       end
             fun triml k =
                if Primitive.Controls.safe andalso Int.< (k, 0)
                   then raise Subscript
