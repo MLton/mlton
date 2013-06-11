@@ -467,28 +467,24 @@ functor Sequence (S: sig
                   | [sl] => sequence sl
                   | sl::sls =>
                        let
-                          val sepn = S.length sep
+                          val sep = full sep
+                          val sepn = length' sep
                           val n =
                              List.foldl (fn (sl, s) => s +? sepn +? length' sl) (length' sl) sls
-                          datatype 'a pos =
-                               Separated of SeqIndex.int * 'a slice * 'a slice list
-                             | Separator of SeqIndex.int * 'a slice list
-                          fun separated (i, sl, sls) =
-                             if SeqIndex.< (i, length' sl)
-                                then (unsafeSub' (sl, i),
-                                      Separated (i +? 1, sl, sls))
-                                else separator (0, sls)
-                          and separator (i, sls) =
-                             if SeqIndex.< (i, sepn)
-                                then (S.subUnsafe (sep, i),
-                                      Separator (i +? 1, sls))
-                                else case sls of
-                                   [] => raise Fail "Sequence.Slice.concatWith"
-                                 | sl :: sls => separated (0, sl, sls)
-                          fun loop (_, Separated x) = separated x
-                            | loop (_, Separator x) = separator x
                        in
-                          #1 (unfoldi' (n, Separated (0, sl, sls), loop))
+                          #1 (unfoldi'
+                              (n, (true, 0, sl, sls), fn (_, ac) =>
+                              let
+                                 fun loop (b, i, sl, sls) =
+                                    if SeqIndex.< (i, length' sl)
+                                       then (unsafeSub' (sl, i),
+                                             (b, i +? 1, sl, sls))
+                                       else case (b, sls) of
+                                          (true, _) => loop (false, 0, sep, sls)
+                                        | (_, []) => raise Fail "Sequence.Slice.concatWith"
+                                        | (_, sl :: sls) => loop (true, 0, sl, sls)
+                              in loop ac
+                              end))
                        end
             fun triml k =
                if Primitive.Controls.safe andalso Int.< (k, 0)
