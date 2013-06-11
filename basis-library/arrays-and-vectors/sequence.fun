@@ -446,8 +446,7 @@ functor Sequence (S: sig
                 | sls' as sl::sls =>
                      let
                         val n = 
-                           (List.foldl (fn (sl, s) => s +? length' sl) 0 sls')
-                           handle Overflow => raise Size
+                           List.foldl (fn (sl, s) => s +? length' sl) 0 sls'
                      in
                         #1 (unfoldi' 
                             (n, (0, sl, sls), fn (_, ac) =>
