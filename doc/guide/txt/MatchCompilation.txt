@@ -8,7 +8,7 @@ MLton's match compiler is described <:MatchCompile:here>.
 
 == Match compilation in other compilers ==
 
-* <!Cite(BaudinetMacqueen85)>
+* <!Cite(BaudinetMacQueen85)>
 * <!Cite(Leroy90)>, pages 60-69.
 * <!Cite(Sestoft96)>
 * <!Cite(ScottRamsey00)>
