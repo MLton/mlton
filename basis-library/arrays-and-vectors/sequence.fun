@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -462,15 +463,13 @@ functor Sequence (S: sig
                              end))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
-               let val sep = full sep
-               in case sls of
-                     [] => seq0 ()
-                   | [sl] => sequence sl
-                   | sl::sls =>
-                       List.foldl (fn (sl,seq) => 
-                                   concat [full seq, sep, full (sequence sl)])
-                                  (sequence sl) sls
-               end
+               case sls of
+                  [] => seq0 ()
+                | [sl] => sequence sl
+                | sl::sls =>
+                     let val sep = full sep
+                     in concat (sl::(List.foldr (fn (sl,sls) => sep::sl::sls) [] sls))
+                     end
             fun triml k =
                if Primitive.Controls.safe andalso Int.< (k, 0)
                   then raise Subscript
