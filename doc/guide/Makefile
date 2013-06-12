@@ -26,11 +26,20 @@ endif
 all: $(ALL)
 
 
-define SVG2PNG_template
-%-$(1).png : %.svg
-	gm convert $$< -resize $(1)x$(1) $$@
-endef
-$(foreach size,16 32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
+%-16.png : %.svg
+	gm convert $< -resize 16x16 $@
+%-32.png : %.svg
+	gm convert $< -resize 32x32 $@
+%-64.png : %.svg
+	gm convert $< -resize 64x64 $@
+%-128.png : %.svg
+	gm convert $< -resize 128x128 $@
+%-256.png : %.svg
+	gm convert $< -resize 256x256 $@
+%-512.png : %.svg
+	gm convert $< -resize 512x512 $@
+%-1024.png : %.svg
+	gm convert $< -resize 1024x1024 $@
 
 
 conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
@@ -62,17 +71,12 @@ wiki/mlton-gcse.js : conf/mlton-gcse.js
 wiki/index.html : wiki/Home
 	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
 
-define WIKI_PAGE_template
-wiki/$(1) : txt/$(1).txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
-	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOC_HTML5_FLAGS) -a page=$(1) -o $$@ $$<
-endef
-$(foreach page,$(SRC_PAGES) $(WIKI_XTRA_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
 
-define WIKI_ATTACHMENT_template
-wiki/$(1) : txt/$(1)
-	mkdir -p $$(dir $$@) ; cp -prf $$< $$@
-endef
-$(foreach attachment,$(SRC_ATTACHMENTS) $(WIKI_XTRA_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
+wiki/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a page=$(basename $(notdir $<)) -o $@ $<
+
+wiki/% : txt/%
+	mkdir -p $(dir $@) ; cp -prf $< $@
 
 .PHONY: wiki
 wiki: $(WIKI)
