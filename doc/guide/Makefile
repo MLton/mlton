@@ -7,13 +7,13 @@ ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*r
 ASCIIDOC_HTML5_FLAGS := $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
 
 GEN_PAGES := Index
-GEN_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
+GEN_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
 
 SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt')))
 SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
 
 WIKI_XTRA_PAGES := Index
-WIKI_XTRA_ATTACHMENTS := $(foreach size,32 64 128 256 512 1024,Logo.attachments/mlton.$(size).png)
+WIKI_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
 WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
 
 ALL :=
@@ -26,10 +26,10 @@ all: $(ALL)
 
 
 define SVG2PNG_template
-%.$(1).png : %.svg
+%-$(1).png : %.svg
 	gm convert $$< -resize $(1)x$(1) $$@
 endef
-$(foreach size,32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
+$(foreach size,16 32 64 128 256 512 1024,$(eval $(call SVG2PNG_template,$(size))))
 
 
 conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
