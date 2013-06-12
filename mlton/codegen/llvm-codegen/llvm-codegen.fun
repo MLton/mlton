@@ -58,6 +58,8 @@ val llvmIntrinsics =
 \declare double @llvm.log.f64(double %Val)\n\
 \declare float @llvm.log10.f32(float %Val)\n\
 \declare double @llvm.log10.f64(double %Val)\n\
+\declare float @llvm.fma.f32(float %a, float %b, float %c)\n\
+\declare double @llvm.fma.f64(double %a, double %b, double %c)\n\
 \declare float @llvm.fabs.f32(float %Val) ; requires LLVM 3.2\n\
 \declare double @llvm.fabs.f64(double %Val) ; requires LLVM 3.2\n\
 \declare float @llvm.rint.f32(float %Val) ; requires LLVM 3.3\n\
@@ -86,8 +88,8 @@ val llvmIntrinsics =
 \declare {i16, i1} @llvm.umul.with.overflow.i16(i16 %a, i16 %b)\n\
 \declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n\
 \declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n\
-\declare float @llvm.fmuladd.f32(float %a, float %b, float %c)\n\
-\declare double @llvm.fmuladd.f64(double %a, double %b, double %c)\n\
+\declare float @llvm.fmuladd.f32(float %a, float %b, float %c) ; requires LLVM 3.2\n\
+\declare double @llvm.fmuladd.f64(double %a, double %b, double %c) ; requires LLVM 3.2\n\
 \declare i32 @printf(i8*, ...)\n"
 
 (* LLVM codegen context. Contains various values/functions that should
@@ -337,6 +339,13 @@ val cFunctions = ref []
 
 fun addCFunction f = if not (List.contains (!cFunctions, f, String.equals))
                      then cFunctions := List.cons (f, !cFunctions)
+                     else ()
+
+val ffiSymbols = ref []
+
+fun addFfiSymbol s = if not (List.contains (!ffiSymbols, s, fn ({name=n1, ...}, {name=n2, ...}) =>
+                             String.equals (n1, n2)))
+                     then ffiSymbols := List.cons (s, !ffiSymbols)
                      else ()
 
 fun offsetGCState (gcfield, ty) =
@@ -637,10 +646,15 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | CPointer_toWord =>
             (mkconv (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
-          | FFI_Symbol _ =>
+          | FFI_Symbol (s as {name, cty, symbolScope}) =>
             let
+                val () = addFfiSymbol s
+                val ty = case cty of
+                             SOME t => "%" ^ CType.toString t
+                           | NONE => Error.bug ("ffi symbol is void function?")
+                val inst = mkconv (res, "bitcast", ty ^ "*", "@" ^ name, "%Pointer")
             in
-                ("", "") (* TODO *)
+                (inst, "%Pointer")
             end
           | Real_Math_cos rs => (mkmath (res, "cos", rs, arg0), llrs rs)
           | Real_Math_exp rs => (mkmath (res, "exp", rs, arg0), llrs rs)
@@ -695,7 +709,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                                RealSize.R32 => "f32"
                              | RealSize.R64 => "f64"
                 val llsize = llrs rs
-                val inst = concat ["\t", res, " = call ", llsize, " @llvm.fmuladd.", size, "(",
+                val inst = concat ["\t", res, " = call ", llsize, " @llvm.fma.", size, "(",
                                    llsize, " ", arg0, ", ", llsize, " ",
                                    arg1, ", ", llsize, " ", arg2, ")\n"]
             in
@@ -709,7 +723,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 val llsize = llrs rs
                 val tmp1 = nextLLVMReg ()
                 val inst1 = mkinst (tmp1, "fsub", llsize, "-0.0", arg2)
-                val inst2 = concat ["\t", res, " = call ", llsize, " @llvm.fmuladd.", size, "(",
+                val inst2 = concat ["\t", res, " = call ", llsize, " @llvm.fma.", size, "(",
                                     llsize, " ", arg0, ", ", llsize, " ",
                                     arg1, ", ", llsize, " ", tmp1, ")\n"]
             in
@@ -886,7 +900,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
 
 (* argv - vector of (pre, ty, addr) triples
    i - index of argv
-   returns: (pre, reg)
+   returns: (pre, type, reg)
  *)
 fun getArg (argv, i, cast) =
     if Vector.length argv > i
@@ -905,10 +919,10 @@ fun getArg (argv, i, cast) =
             val reg = nextLLVMReg ()
             val load = mkload (reg, loadTy ^ "*", loadFromReg)
         in
-            (concat [pre, bitcast, load], reg)
+            (concat [pre, bitcast, load], ty, reg)
         end
     else
-        ("", "NO ARG " ^ Int.toString i)
+        ("", "NO TYPE", "NO ARG " ^ Int.toString i)
 
 fun outputPrimApp (cxt, p) =
     let
@@ -923,12 +937,11 @@ fun outputPrimApp (cxt, p) =
                          | Word_ror _ => SOME (typeOfArg0 ())
                          | _ => NONE
         val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-        val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
-        val (arg1pre, arg1reg) = getArg (operands, 1, castArg1)
-        val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
-        val (_, argty, _) = Vector.sub (operands, 0)
+        val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0, NONE)
+        val (arg1pre, _, arg1reg) = getArg (operands, 1, castArg1)
+        val (arg2pre, _, arg2reg) = getArg (operands, 2, NONE)
         val reg = nextLLVMReg ()
-        val (inst, _) = outputPrim (prim, reg, argty, arg0reg, arg1reg, arg2reg)
+        val (inst, _) = outputPrim (prim, reg, arg0ty, arg0reg, arg1reg, arg2reg)
         val storeDest =
             case dst of
                 NONE => ""
@@ -1023,12 +1036,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val overflowstr = Label.toString overflow
                 val successstr = Label.toString success
                 val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-                val (arg0pre, arg0reg) = getArg (operands, 0, NONE)
-                val (arg1pre, arg1reg) = getArg (operands, 1, NONE)
-                val (arg2pre, arg2reg) = getArg (operands, 2, NONE)
-                val (_, argty, _) = Vector.sub (operands, 0)
+                val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0, NONE)
+                val (arg1pre, _, arg1reg) = getArg (operands, 1, NONE)
+                val (arg2pre, _, arg2reg) = getArg (operands, 2, NONE)
                 val reg = nextLLVMReg ()
-                val (inst, ty) = outputPrim (prim, reg, argty, arg0reg, arg1reg, arg2reg)
+                val (inst, ty) = outputPrim (prim, reg, arg0ty, arg0reg, arg1reg, arg2reg)
                 val res = nextLLVMReg ()
                 val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
                 val obit = nextLLVMReg ()
@@ -1051,7 +1063,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                  writesStackTop, ...} = func
                 val params = Vector.map (args, fn opr => getOperand (cxt, opr))
                 val (_, paramTypes, _) = Vector.unzip3 params
-                val (paramPres, paramRegs) = Vector.unzip (Vector.mapi (params, fn (i, _) =>
+                val (paramPres, _, paramRegs) = Vector.unzip3 (Vector.mapi (params, fn (i, _) =>
                                                  getArg (params, i, NONE)))
                 val push =
                     case frameInfo of
@@ -1467,6 +1479,19 @@ fun transLLVM (cxt, outputLL) =
         val () = List.foreach (chunks, fn chunk => outputChunk (cxt, print, chunk))
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
+        val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
+                    let
+                        val ty = case cty of
+                                        SOME t => "%" ^ CType.toString t
+                                      | NONE => "void"
+                        val visibility = case symbolScope of
+                                             CFunction.SymbolScope.External => "default"
+                                           | CFunction.SymbolScope.Private => "hidden"
+                                           | CFunction.SymbolScope.Public => "default"
+                    in
+                        print (concat ["@", name, " = external ", visibility, " global ", ty,
+                                       "\n"])
+                    end)
     in
         done ()
     end

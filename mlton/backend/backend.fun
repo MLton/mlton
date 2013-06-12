@@ -440,10 +440,18 @@ let
                            v))
       end
       fun bogusOp (t: Type.t): M.Operand.t =
-         case Type.deReal t of
-            NONE => M.Operand.Word (WordX.fromIntInf
-                                    (0, WordSize.fromBits (Type.width t)))
-          | SOME s => globalReal (RealX.zero s)
+          case Type.deReal t of
+              NONE => let
+               val bogusWord =
+                   M.Operand.Word
+                       (WordX.zero
+                            (WordSize.fromBits (Type.width t)))
+           in
+               case Type.deWord t of
+                   NONE => M.Operand.Cast (bogusWord, t)
+                 | SOME _ => bogusWord
+           end
+            | SOME s => globalReal (RealX.zero s)
       fun constOperand (c: Const.t): M.Operand.t =
          let
             datatype z = datatype Const.t
