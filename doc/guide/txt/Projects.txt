@@ -14,7 +14,7 @@ mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
 * Heap profiler
 * Interfaces to libraries: OpenGL, Gtk+, D-BUS, ...
 * More libraries written in SML (see <!ViewGitProj(mltonlib)>)
-* Additional constant types: Real80, ...
+* Additional constant types: `structure Real80: REAL`, ...
 * An IDE (possibly integrated with <:Eclipse:>)
 * Port MLRISC and use for code generation
 * Optimizations
@@ -24,7 +24,7 @@ Right now, MLton's closure conversion algorithm uses a simple flat closure to re
 +
 *** http://www.mlton.org/pipermail/mlton/2003-October/024570.html
 *** http://www.mlton.org/pipermail/mlton-user/2007-July/001150.html
-*** http://www.mlton.org/References#ShaoAppel94
+*** <!Cite(ShaoAppel94)>
 ** Elimination of array bounds checks in loops
 ** Elimination of overflow checks on array index computations
 ** Common-subexpression elimination of repeated array subscripts
