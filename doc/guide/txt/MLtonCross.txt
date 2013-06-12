@@ -27,4 +27,5 @@ Currently, these targets are supported:
 == Download ==
 
 MLton-Cross is kept in-sync with the current MLton release.
-link:MLtonCross.attachments/mlton-cross_20100608.orig.tar.gz[mlton-cross_20100608.orig.tar.gz]
+
+* <!Attachment(MLtonCross,mlton-cross_20100608.orig.tar.gz)>

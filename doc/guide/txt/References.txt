@@ -159,7 +159,7 @@ ____
 == <!Anchor(CCC)>C ==
 
  * <!Anchor(CejtinEtAl00)>
- link:References.attachments/CejtinEtAl00.pdf[Flow-directed Closure Conversion for Typed Languages].
+ <!Attachment(References,CejtinEtAl00.pdf,Flow-directed Closure Conversion for Typed Languages)>.
  Henry Cejtin, Suresh Jagannathan, and Stephen Weeks.
  <!XRef(ESOP,ESOP)> 2000.
 +
@@ -268,7 +268,7 @@ ____
  <!XRef(PLDI,PLDI)> 2004.
 
  * <!Anchor(FluetWeeks01)>
- link:References.attachments/FluetWeeks01.pdf[Contification Using Dominators].
+ <!Attachment(References,FluetWeeks01.pdf,Contification Using Dominators)>.
  Matthew Fluet and Stephen Weeks.
  <!XRef(ICFP,ICFP)> 2001.
 +
@@ -744,7 +744,7 @@ ____
  <!XRef(LFP,LFP)> 2006.
 
  * <!Anchor(Shipman02)>
- link:References.attachments/Shipman02.pdf[Unix System Programming with Standard ML].
+ <!Attachment(References,Shipman02.pdf,Unix System Programming with Standard ML)>.
  Anthony L. Shipman.
  2002.
 +
@@ -876,7 +876,7 @@ benchmarks of MLton and other SML compilers.
 ____
 
  * <!Anchor(Weeks06)>
- link:References.attachments/060916-mlton.pdf[Whole-Program Compilation in MLton].
+ <!Attachment(References,060916-mlton.pdf,Whole-Program Compilation in MLton)>.
  Stephen Weeks.
  <!XRef(ML,ML)> 2006.
 

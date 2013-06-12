@@ -5,7 +5,7 @@ http://ftp.sun.ac.za/ftp/mirrorsites/ocaml/Systems_programming/book/c3253.html[S
 is an HTTP server written in SML, originally developed with SML/NJ.
 <:RayRacine:> ported Swerve to MLton in January 2005.
 
-link:Swereve.attachments/swerve.tar.bz2[Download] the port.
+<!Attachment(Swerve,swerve.tar.bz2,Download)> the port.
 
 Excerpt from the included `README`:
 ____

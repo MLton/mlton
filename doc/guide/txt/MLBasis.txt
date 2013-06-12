@@ -15,7 +15,7 @@ upon the programmer's intuitive notion (and
 formal notion) of the top-level environment (a _basis_).  The system
 is designed as a natural extension of <:StandardML: Standard ML>; the
 formal specification of the ML Basis system
-(link:MLBasis.attachments/mlb-formal.pdf[pdf]) is given in the style
+(<!Attachment(MLBasis,mlb-formal.pdf)>) is given in the style
 of the Definition.
 
 Here are some of the key features of the ML Basis system:

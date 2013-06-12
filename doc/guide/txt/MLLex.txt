@@ -28,6 +28,7 @@ There are 3 main passes in the MLLex tool:
 
 == Also see ==
 
+* <!Attachment(Documentation,mllex.pdf)>
 * <:MLYacc:>
 * <!Cite(AppelEtAl94)>
 * <!Cite(Price09)>

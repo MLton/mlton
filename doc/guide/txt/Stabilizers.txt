@@ -90,7 +90,7 @@ stabilizers. `:=` is rebound to this by including CML.
 
 == Download ==
 
-* link:Stabilizers.attachments/stabilizers_alpha_2006-10-09.tar.gz[`stabilizers_alpha_2006-10-09.tar.gz`]
+* <!Attachment(Stabilizers,stabilizers_alpha_2006-10-09.tar.gz)>
 
 == Also see ==
 

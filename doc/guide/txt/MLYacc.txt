@@ -9,6 +9,7 @@ distributed with MLton.
 
 == Also see ==
 
+* <!Attachment(Documentation,mlyacc.pdf)>
 * <:MLLex:>
 * <!Cite(TarditiAppel00)>
 * <!Cite(Price09)>

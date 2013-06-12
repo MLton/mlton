@@ -42,8 +42,8 @@ control options that affect the elaboration of SML source files.
 
 == Semantics ==
 
-There is a link:MLBasis.attachments/mlb-formal.pdf[formal semantics]
-for ML Basis files in the style of the
+There is a <!Attachment(MLBasis,mlb-formal.pdf,formal semantics)> for
+ML Basis files in the style of the
 <:DefinitionOfStandardML:Definition>.  Here, we give an informal
 explanation.
 

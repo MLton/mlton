@@ -24,6 +24,8 @@ Documentation is available on the following topics.
 ** <:License:>
 ** <:Talk:>
 ** <:WishList:>
-* <:MLLex:> link:Documentation.attachments/mllex.pdf[pdf]
-* <:MLYacc:> link:Documentation.attachments/mlyacc.pdf[pdf]
+* Tools
+** <:MLLex:> (<!Attachment(Documentation,mllex.pdf)>)
+** <:MLYacc:> (<!Attachment(Documentation,mlyacc.pdf)>)
+** <:MLNLFFIGen:> (<!Attachment(Documentation,mlyacc.pdf)>)
 * <:References:>
