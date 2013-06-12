@@ -64,7 +64,7 @@ wiki/index.html : wiki/Home
 
 define WIKI_PAGE_template
 wiki/$(1) : txt/$(1).txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
-	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOC_HTML5_FLAGS) -o $$@ $$<
+	mkdir -p $$(dir $$@) ; $$(ASCIIDOC) $$(ASCIIDOC_HTML5_FLAGS) -a page=$(1) -o $$@ $$<
 endef
 $(foreach page,$(SRC_PAGES) $(WIKI_XTRA_PAGES),$(eval $(call WIKI_PAGE_template,$(page))))
 

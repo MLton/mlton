@@ -16,8 +16,8 @@ This page compares the following SML compiler versions.
 * <:PolyML:Poly/ML> 4.1.3
 * <:SMLNJ:SML/NJ> 110.57
 
-There are tables for <!XRef(RunTime,run time)>, <!XRef(CodeSize,code size)>, and
-<!XRef(CompileTime,compile time)>.
+There are tables for <:#RunTime:run time>, <:#CodeSize:code size>, and
+<:#CompileTime:compile time>.
 
 
 == Setup ==
@@ -87,7 +87,7 @@ benchmark failed to run.
 |<!RawGitFile(mlton,master,benchmark/tests/ray.sml)>|1.0|*|14.8|22.3|0.8
 |<!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)>|1.0|*|*|*|3.3
 |<!RawGitFile(mlton,master,benchmark/tests/simple.sml)>|1.0|1.7|19.3|7.3|2.4
-|<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>|1.0|*|*|*|<!XRef(SNFNote,>1000)>
+|<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>|1.0|*|*|*|<:#SNFNote:{gt}1000>
 |<!RawGitFile(mlton,master,benchmark/tests/tailfib.sml)>|1.0|1.0|51.9|3.2|1.4
 |<!RawGitFile(mlton,master,benchmark/tests/tak.sml)>|1.0|1.2|17.0|1.3|2.0
 |<!RawGitFile(mlton,master,benchmark/tests/tensor.sml)>|1.0|*|*|*|7.4

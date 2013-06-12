@@ -35,19 +35,19 @@ the mapping between SML types and C types.
 | `Int16.int` | `Int16` | `int16_t` |
 | `Int32.int` | `Int32` | `int32_t` |
 | `Int64.int` | `Int64` | `int64_t` |
-| `int` | `Int32` | `int32_t` | <!XRef(Default,(default))>
+| `int` | `Int32` | `int32_t` | <:#Default:(default)>
 | `MLton.Pointer.t` | `Pointer` | `unsigned char *` |
 | `Real32.real` | `Real32` | `float` |
 | `Real64.real` | `Real64` | `double` |
-| `real` | `Real64` | `double` | <!XRef(Default,(default))>
+| `real` | `Real64` | `double` | <:#Default:(default)>
 | `ref` | `Pointer` | `unsigned char *` |
-| `string` | `Pointer` | `unsigned char *` | <!XRef(ReadOnly,(read only))>
-| `vector` | `Pointer` | `unsigned char *` | <!XRef(ReadOnly,(read only))>
+| `string` | `Pointer` | `unsigned char *` | <:#ReadOnly:(read only)>
+| `vector` | `Pointer` | `unsigned char *` | <:#ReadOnly:(read only)>
 | `Word8.word` | `Word8` | `uint8_t` |
 | `Word16.word` | `Word16` | `uint16_t` |
 | `Word32.word` | `Word32` | `uint32_t` |
 | `Word64.word` | `Word64` | `uint64_t` |
-| `word` | `Word32` | `uint32_t` | <!XRef(Default,(default))>
+| `word` | `Word32` | `uint32_t` | <:#Default:(default)>
 |====
 
 <!Anchor(Default)>Note (default): The default `int`, `real`, and
