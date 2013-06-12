@@ -12,9 +12,10 @@ GEN_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlt
 SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt')))
 SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
 
+WIKI_XTRA := asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html
 WIKI_XTRA_PAGES := Index
 WIKI_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
-WIKI := $(addprefix wiki/,asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
+WIKI := $(addprefix wiki/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(WIKI_XTRA) $(WIKI_XTRA_PAGES) $(WIKI_XTRA_ATTACHMENTS))
 
 ALL :=
 ifneq ($(shell which asciidoc),)
@@ -73,6 +74,8 @@ wiki/$(1) : txt/$(1)
 endef
 $(foreach attachment,$(SRC_ATTACHMENTS) $(WIKI_XTRA_ATTACHMENTS),$(eval $(call WIKI_ATTACHMENT_template,$(attachment))))
 
+.PHONY: wiki
+wiki: $(WIKI)
 
 .PHONY: upload_wiki
 upload_wiki: $(WIKI)
@@ -86,7 +89,7 @@ clean:
 .PHONY: vars
 vars:
 	@echo ASCIIDOC_CONF_DIR=$(ASCIIDOC_CONF_DIR)
+	@echo GEN_PAGES=$(GEN_PAGES)
+	@echo GEN_ATTACHMENTS=$(GEN_ATTACHMENTS)
 	@echo SRC_PAGES=$(SRC_PAGES)
 	@echo SRC_ATTACHMENTS=$(SRC_ATTACHMENTS)
-	@echo XTRA_ATTACHMENTS=$(XTRA_ATTACHMENTS)
-	@echo WIKI=$(WIKI)
