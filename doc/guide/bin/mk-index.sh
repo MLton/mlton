@@ -8,7 +8,7 @@ echo ":no-log-link:"
 echo ":no-edit-link:"
 echo ""
 for ul in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
-    echo "<!Link(${ul}${ul}${ul},${ul})>"
+    echo "<!XRef(${ul}${ul}${ul},${ul})>"
 done
 for ul in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
     echo ""
