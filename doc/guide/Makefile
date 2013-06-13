@@ -12,14 +12,22 @@ GEN_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlt
 SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.txt,%,$(shell cd txt ; find . -type f -name '*.txt')))
 SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd txt ; find . -type d -name '*.attachments'),$(shell cd txt ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
 
-MLTON_ORG_XTRA := asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html
-MLTON_ORG_XTRA_PAGES := Index
+HTML5_XTRA := asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html
+HTML5_XTRA_PAGES := Index
+
+MLTON_ORG_XTRA := $(HTML5_XTRA)
+MLTON_ORG_XTRA_PAGES := $(HTML5_XTRA_PAGES)
 MLTON_ORG_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
 MLTON_ORG := $(addprefix www.mlton.org/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(MLTON_ORG_XTRA) $(MLTON_ORG_XTRA_PAGES) $(MLTON_ORG_XTRA_ATTACHMENTS))
 
+LOCALHOST_XTRA := $(HTML5_XTRA)
+LOCALHOST_XTRA_PAGES := $(HTML5_XTRA_PAGES)
+LOCALHOST_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
+LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST_XTRA) $(LOCALHOST_XTRA_PAGES) $(LOCALHOST_XTRA_ATTACHMENTS))
+
 ALL :=
 ifneq ($(shell which asciidoc),)
-ALL += $(MLTON_ORG)
+ALL += $(MLTON_ORG) $(LOCALHOST)
 endif
 
 
@@ -53,22 +61,27 @@ txt/Index.txt : bin/mk-index.sh $(foreach page,$(SRC_PAGES),txt/$(page).txt)
 	./bin/mk-index.sh $(SRC_PAGES) > $@
 
 
-www.mlton.org/asciidoc.css : $(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css
+$(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css: ;
+%/asciidoc.css : $(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css
 	mkdir -p $(dir $@) ; cp $< $@
 
-www.mlton.org/asciidoc.js : $(ASCIIDOC_CONF_DIR)/javascripts/asciidoc.js
+$(ASCIIDOC_CONF_DIR)/javascripts/asciidoc.js: ;
+%/asciidoc.js : $(ASCIIDOC_CONF_DIR)/javascripts/asciidoc.js
 	mkdir -p $(dir $@) ; cp $< $@
 
-www.mlton.org/pygments.css : $(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css
+$(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css: ;
+%/pygments.css : $(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css
 	mkdir -p $(dir $@) ; cp $< $@
 
-www.mlton.org/mlton.css : conf/mlton.css
+conf/mlton.css: ;
+%/mlton.css : conf/mlton.css
 	mkdir -p $(dir $@) ; cp $< $@
 
-www.mlton.org/mlton-gcse.js : conf/mlton-gcse.js
+conf/mlton-gcse.js: ;
+%/mlton-gcse.js : conf/mlton-gcse.js
 	mkdir -p $(dir $@) ; cp $< $@
 
-www.mlton.org/index.html : www.mlton.org/Home
+%/index.html : %/Home
 	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
 
 
@@ -84,6 +97,16 @@ www.mlton.org: $(MLTON_ORG)
 .PHONY: upload_www.mlton.org
 upload_www.mlton.org: $(MLTON_ORG)
 	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
+
+
+localhost/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a page=$(basename $(notdir $<)) -o $@ $<
+
+localhost/% : txt/%
+	mkdir -p $(dir $@) ; cp -prf $< $@
+
+.PHONY: localhost
+localhost: $(LOCALHOST)
 
 
 .PHONY: clean
