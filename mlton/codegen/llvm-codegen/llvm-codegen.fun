@@ -646,7 +646,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | CPointer_toWord =>
             (mkconv (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
-          | FFI_Symbol (s as {name, cty, symbolScope}) =>
+          | FFI_Symbol (s as {name, cty, _}) =>
             let
                 val () = addFfiSymbol s
                 val ty = case cty of
@@ -1115,11 +1115,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                             else ""
             in
                 concat [comment,
+                        "\t; GetOperands\n",
+                        Vector.concatV paramPres,
                         push,
                         flushFrontierCode,
                         flushStackTopCode,
-                        "\t; GetOperands\n",
-                        Vector.concatV paramPres,
                         "\t; Call\n",
                         fcall,
                         call,
