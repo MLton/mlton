@@ -53,6 +53,9 @@ all: $(ALL)
 	gm convert $< -resize 1024x1024 $@
 
 
+conf/specialsections.conf : $(ASCIIDOC_CONF_DIR)/lang-en.conf bin/mk-specialsections-conf.sh
+	./bin/mk-specialsections-conf.sh $< $@
+
 conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
 	./bin/mk-html5-header-conf.sh $< $@
 
