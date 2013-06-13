@@ -265,6 +265,7 @@ version:
 		"$(SPEC)"						\
 		package/freebsd/Makefile				\
 		mlton/control/version_sml.src;				\
+		doc/guide/conf/asciidoc-html5.flags			\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && \
 		mv z "$$f";						\

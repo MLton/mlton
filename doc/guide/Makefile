@@ -86,7 +86,7 @@ conf/mlton-gcse.js: ;
 
 
 www.mlton.org/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a page=$(basename $(notdir $<)) -o $@ $<
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=www.mlton.org -a page=$(basename $(notdir $<)) -o $@ $<
 
 www.mlton.org/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
@@ -100,7 +100,7 @@ upload_www.mlton.org: $(MLTON_ORG)
 
 
 localhost/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a page=$(basename $(notdir $<)) -o $@ $<
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=localhost -a page=$(basename $(notdir $<)) -o $@ $<
 
 localhost/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
