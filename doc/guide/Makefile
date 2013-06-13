@@ -3,7 +3,7 @@ export LC_ALL = C
 NULL :=
 
 ASCIIDOC := asciidoc
-ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
+ASCIIDOC_CONF_DIR := $(shell $(ASCIIDOC) -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
 ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||')
 ASCIIDOC_MLTON_DEPS := bin/InclGitFile.py $(shell cat conf/asciidoc-mlton.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
 ASCIIDOC_HTML5_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
@@ -29,7 +29,7 @@ LOCALHOST_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.atta
 LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST_XTRA) $(LOCALHOST_XTRA_PAGES) $(LOCALHOST_XTRA_ATTACHMENTS))
 
 ALL :=
-ifneq ($(shell which asciidoc),)
+ifneq ($(shell which $(ASCIIDOC)),)
 ALL += $(MLTON_ORG) $(LOCALHOST)
 endif
 
@@ -122,9 +122,9 @@ clean:
 .PHONY: vars
 vars:
 	@echo ASCIIDOC_CONF_DIR=$(ASCIIDOC_CONF_DIR)
+	@echo ASCIIDOC_HTML5_FLAGS=$(ASCIIDOC_HTML5_FLAGS)
+	@echo ASCIIDOC_HTML5_DEPS=$(ASCIIDOC_HTML5_DEPS)
 	@echo GEN_PAGES=$(GEN_PAGES)
 	@echo GEN_ATTACHMENTS=$(GEN_ATTACHMENTS)
 	@echo SRC_PAGES=$(SRC_PAGES)
 	@echo SRC_ATTACHMENTS=$(SRC_ATTACHMENTS)
-	@echo ASCIIDOC_HTML5_FLAGS=$(ASCIIDOC_HTML5_FLAGS)
-	@echo ASCIIDOC_HTML5_DEPS=$(ASCIIDOC_HTML5_DEPS)
