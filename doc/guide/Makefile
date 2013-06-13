@@ -30,7 +30,7 @@ LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST
 
 ALL :=
 ifneq ($(shell which $(ASCIIDOC)),)
-ALL += $(MLTON_ORG) $(LOCALHOST)
+ALL += $(LOCALHOST)
 endif
 
 
