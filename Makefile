@@ -75,7 +75,7 @@ basis-no-check:
 	mkdir -p "$(LIB)/sml"
 	rm -rf "$(LIB)/sml/basis"
 	$(CP) "$(SRC)/basis-library/." "$(LIB)/sml/basis"
-	find "$(LIB)/sml/basis" -type l -name .gitignore | xargs rm -rf
+	find "$(LIB)/sml/basis" -name .gitignore | xargs rm -rf
 
 .PHONY: basis
 basis:
@@ -152,7 +152,7 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
 	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
-	find "$(LIB)/sml" -type l -name .gitignore | xargs rm -rf
+	find "$(LIB)/sml" -name .gitignore | xargs rm -rf
 
 .PHONY: libraries
 libraries:
@@ -381,8 +381,8 @@ install-docs:
 	if test -r $(YACC)/$(YACC).pdf; then                            \
 		$(CP) $(YACC)/$(YACC).pdf $(TDOC);                      \
 	fi
-	find "$(TDOC)/" -type l -name .gitignore | xargs rm -rf
-	find "$(TEXM)/" -type l -name .gitignore | xargs rm -rf
+	find "$(TDOC)/" -name .gitignore | xargs rm -rf
+	find "$(TEXM)/" -name .gitignore | xargs rm -rf
 
 
 .PHONY: move-docs
