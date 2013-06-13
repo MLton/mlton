@@ -4,7 +4,10 @@ NULL :=
 
 ASCIIDOC := asciidoc
 ASCIIDOC_CONF_DIR := $(shell asciidoc -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
-ASCIIDOC_HTML5_FLAGS := $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
+ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||')
+ASCIIDOC_MLTON_DEPS := bin/InclGitFile.py $(shell cat conf/asciidoc-mlton.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
+ASCIIDOC_HTML5_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
+ASCIIDOC_HTML5_DEPS := $(ASCIIDOC_MLTON_DEPS) $(shell cat conf/asciidoc-html5.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
 
 GEN_PAGES := Index
 GEN_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
@@ -85,7 +88,7 @@ conf/mlton-gcse.js: ;
 	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
 
 
-www.mlton.org/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
+www.mlton.org/% : txt/%.txt conf/asciidoc-html5.flags $(ASCIIDOC_HTML5_DEPS)
 	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=www.mlton.org -a page=$(basename $(notdir $<)) -o $@ $<
 
 www.mlton.org/% : txt/%
@@ -99,7 +102,7 @@ upload_www.mlton.org: $(MLTON_ORG)
 	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
-localhost/% : txt/%.txt conf/asciidoc-html5.flags conf/html5-header.conf conf/html5-footer.conf conf/mlton-asciidoc.conf conf/mlton-html5.conf bin/InclGitFile.py
+localhost/% : txt/%.txt conf/asciidoc-html5.flags $(ASCIIDOC_HTML5_DEPS)
 	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=localhost -a page=$(basename $(notdir $<)) -o $@ $<
 
 localhost/% : txt/%
@@ -120,3 +123,5 @@ vars:
 	@echo GEN_ATTACHMENTS=$(GEN_ATTACHMENTS)
 	@echo SRC_PAGES=$(SRC_PAGES)
 	@echo SRC_ATTACHMENTS=$(SRC_ATTACHMENTS)
+	@echo ASCIIDOC_HTML5_FLAGS=$(ASCIIDOC_HTML5_FLAGS)
+	@echo ASCIIDOC_HTML5_DEPS=$(ASCIIDOC_HTML5_DEPS)

@@ -1,0 +1,2 @@
+--attribute=mltonversion=MLTONVERSION
+--conf-file=conf/mlton-asciidoc.conf
