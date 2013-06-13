@@ -1,3 +1,4 @@
+--attribute=lang=en
 --attribute=mltonversion=MLTONVERSION
 --conf-file=conf/mlton-asciidoc.conf
 --conf-file=conf/specialsections.conf
