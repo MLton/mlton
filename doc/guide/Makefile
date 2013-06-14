@@ -47,35 +47,45 @@ endif
 all: $(ALL)
 
 
+ifneq ($(shell which gm),)
+CONVERT := gm convert
+else
+ifneq ($(shell which convert),)
+CONVERT := convert
+else
+CONVERT := no-convert
+endif
+endif
+
 %-16.png : %.svg
-	gm convert $< -resize 16x16 $@
+	$(CONVERT) $< -resize 16x16 $@
 %-32.png : %.svg
-	gm convert $< -resize 32x32 $@
+	$(CONVERT) $< -resize 32x32 $@
 %-64.png : %.svg
-	gm convert $< -resize 64x64 $@
+	$(CONVERT) $< -resize 64x64 $@
 %-128.png : %.svg
-	gm convert $< -resize 128x128 $@
+	$(CONVERT) $< -resize 128x128 $@
 %-256.png : %.svg
-	gm convert $< -resize 256x256 $@
+	$(CONVERT) $< -resize 256x256 $@
 %-512.png : %.svg
-	gm convert $< -resize 512x512 $@
+	$(CONVERT) $< -resize 512x512 $@
 %-1024.png : %.svg
-	gm convert $< -resize 1024x1024 $@
+	$(CONVERT) $< -resize 1024x1024 $@
 
 %-16.pdf : %.svg
-	gm convert $< -resize 16x16 $@
+	$(CONVERT) $< -resize 16x16 $@
 %-32.pdf : %.svg
-	gm convert $< -resize 32x32 $@
+	$(CONVERT) $< -resize 32x32 $@
 %-64.pdf : %.svg
-	gm convert $< -resize 64x64 $@
+	$(CONVERT) $< -resize 64x64 $@
 %-128.pdf : %.svg
-	gm convert $< -resize 128x128 $@
+	$(CONVERT) $< -resize 128x128 $@
 %-256.pdf : %.svg
-	gm convert $< -resize 256x256 $@
+	$(CONVERT) $< -resize 256x256 $@
 %-512.pdf : %.svg
-	gm convert $< -resize 512x512 $@
+	$(CONVERT) $< -resize 512x512 $@
 %-1024.pdf : %.svg
-	gm convert $< -resize 1024x1024 $@
+	$(CONVERT) $< -resize 1024x1024 $@
 
 
 conf/specialsections.conf : $(ASCIIDOC_CONF_DIR)/lang-en.conf bin/mk-specialsections-conf.sh
