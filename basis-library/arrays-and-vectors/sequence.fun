@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -445,8 +446,7 @@ functor Sequence (S: sig
                 | sls' as sl::sls =>
                      let
                         val n = 
-                           (List.foldl (fn (sl, s) => s +? length' sl) 0 sls')
-                           handle Overflow => raise Size
+                           List.foldl (fn (sl, s) => s +? length' sl) 0 sls'
                      in
                         #1 (unfoldi' 
                             (n, (0, sl, sls), fn (_, ac) =>
@@ -462,15 +462,30 @@ functor Sequence (S: sig
                              end))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
-               let val sep = full sep
-               in case sls of
-                     [] => seq0 ()
-                   | [sl] => sequence sl
-                   | sl::sls =>
-                       List.foldl (fn (sl,seq) => 
-                                   concat [full seq, sep, full (sequence sl)])
-                                  (sequence sl) sls
-               end
+               case sls of
+                    [] => seq0 ()
+                  | [sl] => sequence sl
+                  | sl::sls =>
+                       let
+                          val sep = full sep
+                          val sepn = length' sep
+                          val n =
+                             List.foldl (fn (sl, s) => s +? sepn +? length' sl) (length' sl) sls
+                       in
+                          #1 (unfoldi'
+                              (n, (true, 0, sl, sls), fn (_, ac) =>
+                              let
+                                 fun loop (b, i, sl, sls) =
+                                    if SeqIndex.< (i, length' sl)
+                                       then (unsafeSub' (sl, i),
+                                             (b, i +? 1, sl, sls))
+                                       else case (b, sls) of
+                                          (true, _) => loop (false, 0, sep, sls)
+                                        | (_, []) => raise Fail "Sequence.Slice.concatWith"
+                                        | (_, sl :: sls) => loop (true, 0, sl, sls)
+                              in loop ac
+                              end))
+                       end
             fun triml k =
                if Primitive.Controls.safe andalso Int.< (k, 0)
                   then raise Subscript
