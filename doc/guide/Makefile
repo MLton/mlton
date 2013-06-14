@@ -35,7 +35,9 @@ LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST
 
 ALL :=
 ifneq ($(shell which $(ASCIIDOC)),)
+ifneq ($(shell which pygmentize),)
 ALL += $(LOCALHOST)
+endif
 ifneq ($(shell which $(DBLATEX)),)
 ALL += mlton-guide.pdf
 endif
