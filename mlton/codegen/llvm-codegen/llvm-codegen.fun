@@ -646,12 +646,12 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | CPointer_toWord =>
             (mkconv (res, "ptrtoint", "%Pointer", arg0, "%Word32"), "%Pointer")
-          | FFI_Symbol (s as {name, cty, _}) =>
+          | FFI_Symbol (s as {name, cty, ...}) =>
             let
                 val () = addFfiSymbol s
                 val ty = case cty of
                              SOME t => "%" ^ CType.toString t
-                           | NONE => Error.bug ("ffi symbol is void function?")
+                           | NONE => Error.bug ("ffi symbol is void function?") (* TODO *)
                 val inst = mkconv (res, "bitcast", ty ^ "*", "@" ^ name, "%Pointer")
             in
                 (inst, "%Pointer")
@@ -1012,7 +1012,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         fun tpush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
-                val frameIndex = Int.toString (valOf (#frameIndex (labelInfo return)))
+                (* val frameIndex = Int.toString (valOf (#frameIndex (labelInfo return))) *)
+                val frameIndex = labelToStringIndex return
                 val stackTop = nextLLVMReg ()
                 val load = mkload (stackTop, "%Pointer*", "%stackTop")
                 val gepReg = nextLLVMReg ()
@@ -1020,11 +1021,6 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val castreg = nextLLVMReg ()
                 val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%uintptr_t*")
                 val storeIndex = mkstore ("%uintptr_t", frameIndex, castreg)
-                (* val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%Pointer*") *)
-                (* val li = if labelIndex = "0" *)
-                (*          then "null" *)
-                (*          else concat ["inttoptr (i32 ", labelIndex, " to %Pointer)"] *)
-                (* val storeIndex = mkstore ("%Pointer", li, castreg) *)
                 val pushcode = push (llbytes size)
             in
                 concat [load, gep, cast, storeIndex, pushcode]
@@ -1303,18 +1299,13 @@ fun outputChunk (cxt, print, chunk) =
         val () = print "top:\n"
         val t2 = nextLLVMReg ()
         val () = print (mkload (t2, "%uintptr_t*", "%l_nextFun"))
-        (* val entryBlocks = Vector.keepAll (blocks, fn Block.T {kind, ...} => kindIsEntry kind) *)
-        val branches =
-            Vector.concatV
-                (Vector.map
-                     (entryLabels, fn label =>
-                                      let
-                                          (* val label = Block.label b *)
-                                          val labelName = Label.toString label
-                                          val i = labelToStringIndex label
-                                      in
-                                          concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
-                                      end))
+        val branches = Vector.concatV (Vector.map (entryLabels, fn label =>
+                           let
+                               val labelName = Label.toString label
+                               val i = labelToStringIndex label
+                           in
+                               concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
+                           end))
         val () = print (concat ["\tswitch %uintptr_t ", t2,
                                 ", label %default [\n", branches, "\t]\n"])
         val () = print (Vector.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
