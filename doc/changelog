@@ -1,5 +1,8 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2013-06-10
+   - Improved performance of String.concatWith.
+
 * 2012-10-09
    - Fixed bug in elaboration that erroneously accepted the following:
          signature S = sig structure A : sig type t end
