@@ -1,0 +1,9 @@
+JohnnyAndersen
+==============
+
+Johnny Andersen (aka Anoq of the Sun)
+
+Here is a picture in front of the academy building
+at the University of Athens, Greece, taken in September 2003.
+
+image::JohnnyAndersen.attachments/anoq.jpg[align="center"]

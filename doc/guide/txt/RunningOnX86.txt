@@ -1,0 +1,9 @@
+RunningOnX86
+============
+
+MLton runs fine on the x86 architecture.
+
+== Notes ==
+
+* On x86, MLton supports native code generation (`-codegen native` or
+`-codegen x86`).

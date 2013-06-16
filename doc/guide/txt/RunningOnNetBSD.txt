@@ -1,0 +1,63 @@
+RunningOnNetBSD
+===============
+
+MLton runs fine on http://www.netbsd.org/[NetBSD].
+
+== Installing the correct packages for NetBSD ==
+
+The NetBSD system installs 3rd party packages by a mechanism known as
+pkgsrc. This is a tree of Makefiles which when invoked downloads the
+source code, builds a package and installs it on the system. In order
+to run MLton on NetBSD, you will have to install several packages for
+it to work:
+
+* `shells/bash`
+
+* `devel/gmp`
+
+* `devel/gmake`
+
+In order to get graphical call-graphs of profiling information, you
+will need the additional package
+
+* `graphics/graphviz`
+
+To build the documentation for MLton, you will need the addtional
+package
+
+* `htmldoc`.
+
+== Tips for compiling and using MLton on NetBSD ==
+
+MLton can be a memory-hog on computers with little memory.  While
+640Mb of RAM ought to be enough to self-compile MLton one might want
+to do some tuning to the NetBSD VM subsystem in order to succeed.  The
+notes presented here is what <:JesperLouisAndersen:> uses for
+compiling MLton on his laptop.
+
+=== The NetBSD VM subsystem ===
+
+NetBSD uses a VM subsystem named
+http://www.ccrc.wustl.edu/pub/chuck/tech/uvm/[UVM].
+http://www.selonen.org/arto/netbsd/vm_tune.html[Tuning the VM system]
+can be done via the `sysctl(8)`-interface with the "VM" MIB set.
+
+=== Tuning the NetBSD VM subsystem for MLton ===
+
+MLton uses a lot of anonymous pages when it is running. Thus, we will
+need to tune up the default of 80 for anonymous pages.  Setting
+
+----
+sysctl -w vm.anonmax=95
+sysctl -w vm.anonmin=50
+sysctl -w vm.filemin=2
+sysctl -w vm.execmin=2
+sysctl -w vm.filemax=4
+sysctl -w vm.execmax=4
+----
+
+makes it less likely for the VM system to swap out anonymous pages.
+For a full explanation of the above flags, see the documentation.
+
+The result is that my laptop goes from a MLton compile where it swaps
+a lot to a MLton compile with no swapping.

@@ -1,0 +1,309 @@
+CommonArg
+=========
+
+<:CommonArg:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+It optimizes instances of `Goto` transfers that pass the same
+arguments to the same label; e.g.
+----
+L_1 ()
+  ...
+  z1 = ?
+  ...
+  L_3 (x, y, z1)
+L_2 ()
+  ...
+  z2 = ?
+  ...
+  L_3 (x, y, z2)
+L_3 (a, b, c)
+  ...
+----
+
+This code can be simplified to:
+----
+L_1 ()
+  ...
+  z1 = ?
+  ...
+  L_3 (z1)
+L_2 ()
+  ...
+  z2 = ?
+  ...
+  L_3 (z2)
+L_3 (c)
+  a = x
+  b = y
+----
+which saves a number of resources: time of setting up the arguments
+for the jump to `L_3`, space (either stack or pseudo-registers) for
+the arguments of `L_3`, etc.  It may also expose some other
+optimizations, if more information is known about `x` or `y`.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/common-arg.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/common-arg.fun)>
+
+== Details and Notes ==
+
+Three analyses were originally proposed to drive the optimization
+transformation.  Only the _Dominator Analysis_ is currently
+implemented.  (Implementations of the other analyses are available in
+the <:Sources:repository history>.)
+
+=== Syntactic Analysis ===
+
+The simplest analysis I could think of maintains
+----
+varInfo: Var.t -> Var.t option list ref
+----
+initialized to `[]`.
+
+* For each variable `v` bound in a `Statement.t` or in the
+`Function.t` args, then `List.push(varInfo v, NONE)`.
+* For each `L (x1, ..., xn)` transfer where `(a1, ..., an)` are the
+formals of `L`, then `List.push(varInfo ai, SOME xi)`.
+* For each block argument a used in an unknown context (e.g.,
+arguments of blocks used as continuations, handlers, arith success,
+runtime return, or case switch labels), then
+`List.push(varInfo a, NONE)`.
+
+Now, any block argument `a` such that `varInfo a = xs`, where all of
+the elements of `xs` are equal to `SOME x`, can be optimized by
+setting `a = x` at the beginning of the block and dropping the
+argument from `Goto` transfers.
+
+That takes care of the example above.  We can clearly do slightly
+better, by changing the transformation criteria to the following: any
+block argument a such that `varInfo a = xs`, where all of the elements
+of `xs` are equal to `SOME x` _or_ are equal to `SOME a`, can be
+optimized by setting `a = x` at the beginning of the block and
+dropping the argument from `Goto` transfers.  This optimizes a case
+like:
+----
+L_1 ()
+  ... z1 = ? ...
+  L_3 (x, y, z1)
+L_2 ()
+  ... z2 = ? ...
+  L_3(x, y, z2)
+L_3 (a, b, c)
+  ... w = ? ...
+  case w of
+    true => L_4 | false => L_5
+L_4 ()
+   ...
+   L_3 (a, b, w)
+L_5 ()
+   ...
+----
+where a common argument is passed to a loop (and is invariant through
+the loop).  Of course, the <:LoopInvariant:> optimization pass would
+normally introduce a local loop and essentially reduce this to the
+first example, but I have seen this in practice, which suggests that
+some optimizations after <:LoopInvariant:> do enough simplifications
+to introduce (new) loop invariant arguments.
+
+=== Fixpoint Analysis ===
+
+However, the above analysis and transformation doesn't cover the cases
+where eliminating one common argument exposes the opportunity to
+eliminate other common arguments.  For example:
+----
+L_1 ()
+  ...
+  L_3 (x)
+L_2 ()
+  ...
+  L_3 (x)
+L_3 (a)
+  ...
+  L_5 (a)
+L_4 ()
+  ...
+  L_5 (x)
+L_5 (b)
+  ...
+----
+
+One pass of analysis and transformation would eliminate the argument
+to `L_3` and rewrite the `L_5(a)` transfer to `L_5 (x)`, thereby
+exposing the opportunity to eliminate the common argument to `L_5`.
+
+The interdependency the arguments to `L_3` and `L_5` suggest
+performing some sort of fixed-point analysis.  This analysis is
+relatively simple; maintain
+----
+varInfo: Var.t -> VarLattice.t
+----
+{empty}where
+----
+VarLattice.t ~=~ Bot | Point of Var.t | Top
+----
+(but is implemented by the <:FlatLattice:> functor with a `lessThan`
+list and `value ref` under the hood), initialized to `Bot`.
+
+* For each variable `v` bound in a `Statement.t` or in the
+`Function.t` args, then `VarLattice.<= (Point v, varInfo v)`
+* For each `L (x1, ..., xn)` transfer where `(a1, ..., an)` are the
+formals of `L`}, then `VarLattice.<= (varInfo xi, varInfo ai)`.
+* For each block argument a used in an unknown context, then
+`VarLattice.<= (Point a, varInfo a)`.
+
+Now, any block argument a such that `varInfo a = Point x` can be
+optimized by setting `a = x` at the beginning of the block and
+dropping the argument from `Goto` transfers.
+
+Now, with the last example, we introduce the ordering constraints:
+----
+varInfo x <= varInfo a
+varInfo a <= varInfo b
+varInfo x <= varInfo b
+----
+
+Assuming that `varInfo x = Point x`, then we get `varInfo a = Point x`
+and `varInfo b = Point x`, and we optimize the example as desired.
+
+But, that is a rather weak assumption.  It's quite possible for
+`varInfo x = Top`.  For example, consider:
+----
+G_1 ()
+  ... n = 1 ...
+  L_0 (n)
+G_2 ()
+  ... m = 2 ...
+  L_0 (m)
+L_0 (x)
+  ...
+L_1 ()
+  ...
+  L_3 (x)
+L_2 ()
+  ...
+  L_3 (x)
+L_3 (a)
+  ...
+  L_5(a)
+L_4 ()
+  ...
+  L_5(x)
+L_5 (b)
+   ...
+----
+
+Now `varInfo x = varInfo a = varInfo b = Top`.  What went wrong here?
+When `varInfo x` went to `Top`, it got propagated all the way through
+to `a` and `b`, and prevented the elimination of any common arguments.
+What we'd like to do instead is when `varInfo x` goes to `Top`,
+propagate on `Point x` -- we have no hope of eliminating `x`, but if
+we hold `x` constant, then we have a chance of eliminating arguments
+for which `x` is passed as an actual.
+
+=== Dominator Analysis ===
+
+Does anyone see where this is going yet?  Pausing for a little
+thought, <:MatthewFluet:> realized that he had once before tried
+proposing this kind of "fix" to a fixed-point analysis -- when we were
+first investigating the <:Contify:> optimization in light of John
+Reppy's CWS paper.  Of course, that "fix" failed because it defined a
+non-monotonic function and one couldn't take the fixed point.  But,
+<:StephenWeeks:> suggested a dominator based approach, and we were
+able to show that, indeed, the dominator analysis subsumed both the
+previous call based analysis and the cont based analysis.  And, a
+moment's reflection reveals further parallels: when
+`varInfo: Var.t -> Var.t option list ref`, we have something analogous
+to the call analysis, and when `varInfo: Var.t -> VarLattice.t`, we
+have something analogous to the cont analysis.  Maybe there is
+something analogous to the dominator approach (and therefore superior
+to the previous analyses).
+
+And this turns out to be the case.  Construct the graph `G` as follows:
+----
+nodes(G) = {Root} U Var.t
+edges(G) = {Root -> v | v bound in a Statement.t or
+                                in the Function.t args} U
+           {xi -> ai | L(x1, ..., xn) transfer where (a1, ..., an)
+                                      are the formals of L} U
+           {Root -> a | a is a block argument used in an unknown context}
+----
+
+Let `idom(x)` be the immediate dominator of `x` in `G` with root
+`Root`.  Now, any block argument a such that `idom(a) = x <> Root` can
+be optimized by setting `a = x` at the beginning of the block and
+dropping the argument from `Goto` transfers.
+
+Furthermore, experimental evidence suggests (and we are confident that
+a formal presentation could prove) that the dominator analysis
+subsumes the "syntactic" and "fixpoint" based analyses in this context
+as well and that the dominator analysis gets "everything" in one go.
+
+=== Final Thoughts ===
+
+I must admit, I was rather surprised at this progression and final
+result.  At the outset, I never would have thought of a connection
+between <:Contify:> and <:CommonArg:> optimizations.  They would seem
+to be two completely different optimizations.  Although, this may not
+really be the case.  As one of the reviewers of the ICFP paper said:
+____
+I understand that such a form of CPS might be convenient in some
+cases, but when we're talking about analyzing code to detect that some
+continuation is constant, I think it makes a lot more sense to make
+all the continuation arguments completely explicit.
+
+I believe that making all the continuation arguments explicit will
+show that the optimization can be generalized to eliminating constant
+arguments, whether continuations or not.
+____
+
+What I think the common argument optimization shows is that the
+dominator analysis does slightly better than the reviewer puts it: we
+find more than just constant continuations, we find common
+continuations.  And I think this is further justified by the fact that
+I have observed common argument eliminate some `env_X` arguments which
+would appear to correspond to determining that while the closure being
+executed isn't constant it is at least the same as the closure being
+passed elsewhere.
+
+At first, I was curious whether or not we had missed a bigger picture
+with the dominator analysis.  When we wrote the contification paper, I
+assumed that the dominator analysis was a specialized solution to a
+specialized problem; we never suggested that it was a technique suited
+to a larger class of analyses.  After initially finding a connection
+between <:Contify:> and <:CommonArg:> (and thinking that the only
+connection was the technique), I wondered if the dominator technique
+really was applicable to a larger class of analyses.  That is still a
+question, but after writing up the above, I'm suspecting that the
+"real story" is that the dominator analysis is a solution to the
+common argument optimization, and that the <:Contify:> optimization is
+specializing <:CommonArg:> to the case of continuation arguments (with
+a different transformation at the end).  (Note, a whole-program,
+inter-procedural common argument analysis doesn't really make sense
+(in our <:SSA:> <:IntermediateLanguage:>), because the only way of
+passing values between functions is as arguments.  (Unless of course
+in the case that the common argument is also a constant argument, in
+which case <:ConstantPropagation:> could lift it to a global.)  The
+inter-procedural <:Contify:> optimization works out because there we
+move the function to the argument.)
+
+Anyways, it's still unclear to me whether or not the dominator based
+approach solves other kinds of problems.
+
+=== Phase Ordering ===
+
+On the downside, the optimization doesn't have a huge impact on
+runtime, although it does predictably saved some code size.  I stuck
+it in the optimization sequence after <:Flatten:> and (the third round
+of) <:LocalFlatten:>, since it seems to me that we could have cases
+where some components of a tuple used as an argument are common, but
+the whole tuple isn't.  I think it makes sense to add it after
+<:IntroduceLoops:> and <:LoopInvariant:> (even though <:CommonArg:>
+get some things that <:LoopInvariant:> gets, it doesn't get all of
+them).  I also think that it makes sense to add it before
+<:CommonSubexp:>, since identifying variables could expose more common
+subexpressions.  I would think a similar thought applies to
+<:RedundantTests:>.

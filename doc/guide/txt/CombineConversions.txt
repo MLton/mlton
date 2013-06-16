@@ -1,0 +1,69 @@
+CombineConversions
+==================
+
+<:CombineConversions:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass looks for and simplifies nested calls to (signed)
+extension/truncation.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/combine-conversions.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/combine-conversions.fun)>
+
+== Details and Notes ==
+
+It processes each block in dfs order (visiting definitions before uses):
+
+* If the statement is not a `PrimApp` with `Word_extdToWord`, skip it.
+* After processing a conversion, it tags the `Var` for subsequent use.
+* When inspecting a conversion, check if the `Var` operand is also the
+result of a conversion. If it is, try to combine the two operations.
+Repeatedly simplify until hitting either a non-conversion `Var` or a
+case where the conversion cannot be simplified.
+
+The optimization rules are very simple:
+----
+x1 = ...
+x2 = Word_extdToWord (W1, W2, {signed=s1}) x1
+x3 = Word_extdToWord (W2, W3, {signed=s2}) x2
+----
+
+* If `W1 = W2`, then there is no conversions before `x_1`.
++
+This is guaranteed because `W2 = W3` will always trigger optimization.
+
+* Case `W1 <= W3 <= W2`:
++
+----
+x3 = Word_extdToWord (W1, W3, {signed=s1}) x1
+----
+
+* Case `W1 <  W2 <  W3  AND  ((NOT s1) OR s2)`:
++
+----
+x3 = Word_extdToWord (W1, W3, {signed=s1}) x1
+----
+
+* Case `W1 =  W2 <  W3`:
++
+unoptimized, because there are no conversions past `W1` and `x2 = x1`
+
+* Case `W3 <= W2 <= W1  OR  W3 <= W1 <= W2`:
++
+----
+x_3 = Word_extdToWord (W1, W3, {signed=_}) x1
+----
++
+because `W3 <= W1 && W3 <= W2`, just clip `x1`
+
+* Case `W2 < W1 <= W3  OR  W2 < W3 <= W1`:
++
+unoptimized, because `W2 < W1 && W2 < W3`, has truncation effect
+
+* Case `W1 < W2 < W3  AND  (s1 AND (NOT s2))`:
++
+unoptimized, because each conversion affects the result separately

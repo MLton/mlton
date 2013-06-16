@@ -1,0 +1,38 @@
+Projects
+========
+
+We have lots of ideas for projects to improve MLton, many of which we
+do not have time to implement, or at least haven't started on yet.
+Here is a list of some of those improvements, ranging from the easy (1
+week) to the difficult (several months).  If you have any interest in
+working on one of these, or some other improvement to MLton not listed
+here, please send mail to
+mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
+
+* Port to new platform: Windows (native, not Cygwin or MinGW), ...
+* Source-level debugger
+* Heap profiler
+* Interfaces to libraries: OpenGL, Gtk+, D-BUS, ...
+* More libraries written in SML (see <!ViewGitProj(mltonlib)>)
+* Additional constant types: `structure Real80: REAL`, ...
+* An IDE (possibly integrated with <:Eclipse:>)
+* Port MLRISC and use for code generation
+* Optimizations
+** Improved closure representation
++
+Right now, MLton's closure conversion algorithm uses a simple flat closure to represent each function.
++
+*** http://www.mlton.org/pipermail/mlton/2003-October/024570.html
+*** http://www.mlton.org/pipermail/mlton-user/2007-July/001150.html
+*** <!Cite(ShaoAppel94)>
+** Elimination of array bounds checks in loops
+** Elimination of overflow checks on array index computations
+** Common-subexpression elimination of repeated array subscripts
+** Loop-invariant code motion, especially for tuple selects
+** Partial redundancy elimination
+*** http://www.mlton.org/pipermail/mlton/2006-April/028598.html
+** Loop unrolling, especially for small loops
+** Auto-vectorization, for MMX/SSE/3DNow!/AltiVec (see the http://gcc.gnu.org/projects/tree-ssa/vectorization.html[work done on GCC])
+** Optimize `MLton_eq`: pointer equality is necessarily false when one of the arguments is freshly allocated in the block
+* Analyses
+** Uncaught exception analysis

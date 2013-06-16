@@ -1,0 +1,45 @@
+MLtonRandom
+===========
+
+[source,sml]
+----
+signature MLTON_RANDOM =
+   sig
+      val alphaNumChar: unit -> char
+      val alphaNumString: int -> string
+      val rand: unit -> word
+      val seed: unit -> word option
+      val srand: word -> unit
+      val useed: unit -> word option
+   end
+----
+
+* `alphaNumChar ()`
++
+returns a random alphanumeric character.
+
+* `alphaNumString n`
++
+returns a string of length `n` of random alphanumeric characters.
+
+* `rand ()`
++
+returns the next pseudo-random number.
+
+* `seed ()`
++
+returns a random word from `/dev/random`.  Useful as an arg to
+`srand`.  If `/dev/random` can not be read from, `seed ()` returns
+`NONE`.  A call to `seed` may block until enough random bits are
+available.
+
+* `srand w`
++
+sets the seed used by `rand` to `w`.
+
+* `useed ()`
++
+returns a random word from `/dev/urandom`.  Useful as an arg to
+`srand`.  If `/dev/urandom` can not be read from, `useed ()` returns
+`NONE`.  A call to `useed` will never block -- it will instead return
+lower quality random bits.

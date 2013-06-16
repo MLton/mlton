@@ -1,0 +1,96 @@
+Fixpoints
+=========
+
+This page discusses a framework that makes it possible to compute
+fixpoints over arbitrary products of abstract types.  The code is from
+an Extended Basis library
+(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>).
+
+First the signature of the framework
+(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/public/generic/tie.sig)>):
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/public/generic/tie.sig 6:]
+----
+
+`fix` is a <:TypeIndexedValues:type-indexed> function.  The type-index
+parameter to `fix` is called a "witness".  To compute fixpoints over
+products, one uses the +*&grave;+ operator to combine witnesses.  To provide
+a fixpoint combinator for an abstract type, one implements a witness
+providing a thunk whose instantiation allocates a fresh, mutable proxy
+and a procedure for updating the proxy with the solution.  Naturally
+this means that not all possible ways of computing a fixpoint of a
+particular type are possible under the framework.  The `pure`
+combinator is a generalization of `tier`.  The `iso` combinator is
+provided for reusing existing witnesses.
+
+Note that instead of using an infix operator, we could alternatively
+employ an interface using <:Fold:>.  Also, witnesses are eta-expanded
+to work around the <:ValueRestriction:value restriction>, while
+maintaining abstraction.
+
+Here is the implementation
+(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/detail/generic/tie.sml)>):
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/detail/generic/tie.sml 6:]
+----
+
+Let's then take a look at a couple of additional examples.
+
+Here is a naive implementation of lazy promises:
+[source,sml]
+----
+structure Promise :> sig
+   type 'a t
+   val lazy : 'a Thunk.t -> 'a t
+   val force : 'a t -> 'a
+   val Y : 'a t Tie.t
+end = struct
+   datatype 'a t' =
+      EXN of exn
+    | THUNK of 'a Thunk.t
+    | VALUE of 'a
+   type 'a t = 'a t' Ref.t
+   fun lazy f = ref (THUNK f)
+   fun force t =
+      case !t
+       of EXN e   => raise e
+        | THUNK f => (t := VALUE (f ()) handle e => t := EXN e ; force t)
+        | VALUE v => v
+   fun Y ? = Tie.tier (fn () => let
+                             val r = lazy (raising Fix.Fix)
+                          in
+                             (r, r <\ op := o !)
+                          end) ?
+end
+----
+
+An example use of our naive lazy promises is to implement equally naive
+lazy streams:
+[source,sml]
+----
+structure Stream :> sig
+   type 'a t
+   val cons : 'a * 'a t -> 'a t
+   val get : 'a t -> ('a * 'a t) Option.t
+   val Y : 'a t Tie.t
+end = struct
+   datatype 'a t = IN of ('a * 'a t) Option.t Promise.t
+   fun cons (x, xs) = IN (Promise.lazy (fn () => SOME (x, xs)))
+   fun get (IN p) = Promise.force p
+   fun Y ? = Tie.iso Promise.Y (fn IN p => p, IN) ?
+end
+----
+
+Note that above we make use of the `iso` combinator.  Here is a finite
+representation of an infinite stream of ones:
+
+[source,sml]
+----
+val ones = let
+   open Tie Stream
+in
+   fix Y (fn ones => cons (1, ones))
+end
+----

@@ -1,0 +1,33 @@
+Identifier
+==========
+
+In <:StandardML:Standard ML>, there are syntactically two kinds of
+identifiers.
+
+* Alphanumeric: starts with a letter or prime (`'`) and is followed by letters, digits, primes and underbars (`_`).
++
+Examples: `abc`, `ABC123`, `Abc_123`, `'a`.
+
+* Symbolic: a sequence of the following
++
+----
+ ! % & $ # + - / : < = > ? @ | ~ ` ^ | *
+----
++
+Examples: `+=`, `<=`, `>>`, `$`.
+
+With the exception of `=`, reserved words can not be identifiers.
+
+There are a number of different classes of identifiers, some of which
+have additional syntactic rules.
+
+* Identifiers not starting with a prime.
+** value identifier (includes variables and constructors)
+** type constructor
+** structure identifier
+** signature identifier
+** functor identifier
+* Identifiers starting with a prime.
+** type variable
+* Identifiers not starting with a prime and numeric labels (`1`, `2`, ...).
+** record label

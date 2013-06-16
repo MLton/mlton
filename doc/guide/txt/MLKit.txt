@@ -1,0 +1,24 @@
+MLKit
+=====
+
+The http://www.it-c.dk/research/mlkit/[ML Kit] is a
+<:StandardMLImplementations:Standard ML implementation>.
+
+MLKit supports:
+
+* <:DefinitionOfStandardML:SML'97>
+** including most of the latest <:BasisLibrary:Basis Library>
+http://www.standardml.org/Basis[specification],
+* <:MLBasis:ML Basis> files
+** and separate compilation,
+* <:Regions:Region-Based Memory Management>
+** and <:GarbageCollection:garbage collection>,
+* Multiple backends, including
+** native x86,
+** bytecode, and
+** JavaScript (see http://www.itu.dk/people/mael/smltojs/[SMLtoJs]).
+
+At the time of writing, MLKit does not support:
+
+* concurrent programming / threads,
+* calling from C to SML.

@@ -1,0 +1,47 @@
+PolyEqual
+=========
+
+<:PolyEqual:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass implements polymorphic equality.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/poly-equal.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/poly-equal.fun)>
+
+== Details and Notes ==
+
+For each datatype, tycon, and vector type, it builds and equality
+function and translates calls to `MLton_equal` into calls to that
+function.
+
+Also generates calls to `IntInf_equal` and `Word_equal`.
+
+For tuples, it does the equality test inline; i.e., it does not create
+a separate equality function for each tuple type.
+
+All equality functions are created only if necessary, i.e., if
+equality is actually used at a type.
+
+Optimizations:
+
+* for datatypes that are enumerations, do not build a case dispatch,
+just use `MLton_eq`, as the backend will represent these as ints
+
+* deep equality always does an `MLton_eq` test first
+
+* If one argument to `=` is a constant and the type will get
+translated to an `IntOrPointer`, then just use `eq` instead of the
+full equality.  This is important for implementing code like the
+following efficiently:
++
+----
+if x = 0  ...    (where x is of type IntInf.int)
+----
+
+* Also convert pointer equality on scalar types to type specific
+primitives.

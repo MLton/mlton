@@ -1,0 +1,118 @@
+ReturnStatement
+===============
+
+Programmers coming from languages that have a `return` statement, such
+as C, Java, and Python, often ask how one can translate functions that
+return early into SML.  This page briefly describes a number of ways
+to translate uses of `return` to SML.
+
+== Conditional iterator function ==
+
+A conditional iterator function, such as
+http://www.standardml.org/Basis/list.html#SIG:LIST.find:VAL[`List.find`],
+http://www.standardml.org/Basis/list.html#SIG:LIST.exists:VAL[`List.exists`],
+or
+http://www.standardml.org/Basis/list.html#SIG:LIST.all:VAL[`List.all`]
+is probably what you want in most cases.  Unfortunately, it might be
+the case that the particular conditional iteration pattern that you
+want isn't provided for your data structure.  Usually the best
+alternative in such a case is to implement the desired iteration
+pattern as a higher-order function.  For example, to implement a
+`find` function for arrays (which already exists as
+http://www.standardml.org/Basis/array.html#SIG:ARRAY.findi:VAL[`Array.find`])
+one could write
+
+[source,sml]
+----
+fun find predicate array = let
+   fun loop i =
+       if i = Array.length array then
+          NONE
+       else if predicate (Array.sub (array, i)) then
+          SOME (Array.sub (array, i))
+       else
+          loop (i+1)
+in
+   loop 0
+end
+----
+
+Of course, this technique, while probably the most common case in
+practice, applies only if you are essentially iterating over some data
+structure.
+
+== Escape handler ==
+
+Probably the most direct way to translate code using `return`
+statements is to basically implement `return` using exception
+handling.  The mechanism can be packaged into a reusable module with
+the signature
+(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/public/control/exit.sig)>):
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/public/control/exit.sig 6:]
+----
+
+(<!Cite(HarperEtAl93, Typing First-Class Continuations in ML)>
+discusses the typing of a related construct.)  The implementation
+(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/detail/control/exit.sml)>)
+is straightforward:
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/detail/control/exit.sml 6:]
+----
+
+Here is an example of how one could implement a `find` function given
+an `app` function:
+[source,sml]
+----
+fun appToFind (app : ('a -> unit) -> 'b -> unit)
+              (predicate : 'a -> bool)
+              (data : 'b) =
+    Exit.call
+       (fn return =>
+           (app (fn x =>
+                    if predicate x then
+                       return (SOME x)
+                    else
+                       ())
+                data
+          ; NONE))
+----
+
+In the above, as soon as the expression `predicate x` evaluates to
+`true` the `app` invocation is terminated.
+
+
+== Continuation-passing Style (CPS) ==
+
+A general way to implement complex control patterns is to use
+http://en.wikipedia.org/wiki/Continuation-passing_style[CPS].  In CPS,
+instead of returning normally, functions invoke a function passed as
+an argument.  In general, multiple continuation functions may be
+passed as arguments and the ordinary return continuation may also be
+used.  As an example, here is a function that finds the leftmost
+element of a binary tree satisfying a given predicate:
+[source,sml]
+----
+datatype 'a tree = LEAF | BRANCH of 'a tree * 'a * 'a tree
+
+fun find predicate = let
+   fun recurse continue =
+       fn LEAF =>
+          continue ()
+        | BRANCH (lhs, elem, rhs) =>
+          recurse
+             (fn () =>
+                 if predicate elem then
+                    SOME elem
+                 else
+                    recurse continue rhs)
+             lhs
+in
+   recurse (fn () => NONE)
+end
+----
+
+Note that the above function returns as soon as the leftmost element
+satisfying the predicate is found.

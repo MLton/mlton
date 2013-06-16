@@ -1,0 +1,47 @@
+History
+=======
+
+In April 1997, Stephen Weeks wrote a defunctorizer for Standard ML and
+integrated it with SML/NJ.  The defunctorizer used SML/NJ's visible
+compiler and operated on the `Ast` intermediate representation
+produced by the SML/NJ front end.  Experiments showed that
+defunctorization gave a speedup of up to six times over separate
+compilation and up to two times over batch compilation without functor
+expansion.
+
+In August 1997, we began development of an independent compiler for
+SML.  At the time the compiler was called `smlc`.  By October, we had
+a working monomorphiser.  By November, we added a polyvariant
+higher-order control-flow analysis.  At that point, MLton was about
+10,000 lines of code.
+
+Over the next year and half, `smlc` morphed into a full-fledged
+compiler for SML.  It was renamed MLton, and first released in March
+1999.
+
+From the start, MLton has been driven by whole-program optimization
+and an emphasis on performance.  Also from the start, MLton has had a
+fast C FFI and `IntInf` based on the GNU multiprecision library.  At
+its first release, MLton was 48,006 lines.
+
+Between the March 1999 and January 2002, MLton grew to 102,541 lines,
+as we added a native code generator, mllex, mlyacc, a profiler, many
+optimizations, and many libraries including threads and signal
+handling.
+
+During 2002, MLton grew to 112,204 lines and we had releases in April
+and September.  We added support for cross compilation and used this
+to enable MLton to run on Cygwin/Windows and FreeBSD.  We also made
+improvements to the garbage collector, so that it now works with large
+arrays and up to 4G of memory and so that it automatically uses
+copying, mark-compact, or generational collection depending on heap
+usage and RAM size.  We also continued improvements to the optimizer
+and libraries.
+
+During 2003, MLton grew to 122,299 lines and we had releases in March
+and July.  We extended the profiler to support source-level profiling
+of time and allocation and to display call graphs.  We completed the
+Basis Library implementation, and added new MLton-specific libraries
+for weak pointers and finalization.  We extended the FFI to allow
+callbacks from C to SML.  We added support for the Sparc/Solaris
+platform, and made many improvements to the C code generator.

@@ -1,0 +1,94 @@
+NumericLiteral
+==============
+
+Numeric literals in <:StandardML:Standard ML> can be written in either
+decimal or hexadecimal notation.  Sometimes it can be convenient to
+write numbers down in other bases.  Fortunately, using <:Fold:>, it is
+possible to define a concise syntax for numeric literals that allows
+one to write numeric constants in any base and of various types
+(`int`, `IntInf.int`, `word`, and more).
+
+We will define constants `I`, `II`, `W`, and +`+ so
+that, for example,
+[source,sml]
+----
+I 10 `1`2`3 $
+----
+denotes `123:int` in base 10, while
+[source,sml]
+----
+II 8 `2`3 $
+----
+denotes `19:IntInf.int` in base 8, and
+[source,sml]
+----
+W 2 `1`1`0`1 $
+----
+denotes `0w13: word`.
+
+Here is the code.
+
+[source,sml]
+----
+structure Num =
+   struct
+      fun make (op *, op +, i2x) iBase =
+          let
+             val xBase = i2x iBase
+          in
+             Fold.fold
+                ((i2x 0,
+                  fn (i, x) =>
+                     if 0 <= i andalso i < iBase then
+                        x * xBase + i2x i
+                     else
+                        raise Fail (concat
+                                       ["Num: ", Int.toString i,
+                                        " is not a valid\
+                                        \ digit in base ",
+                                        Int.toString iBase])),
+                 fst)
+          end
+
+      fun I  ? = make (op *, op +, id) ?
+      fun II ? = make (op *, op +, IntInf.fromInt) ?
+      fun W  ? = make (op *, op +, Word.fromInt) ?
+
+      fun ` ? = Fold.step1 (fn (i, (x, step)) =>
+                               (step (i, x), step)) ?
+
+      val a = 10
+      val b = 11
+      val c = 12
+      val d = 13
+      val e = 14
+      val f = 15
+   end
+----
+where
+[source,sml]
+----
+fun fst (x, _) = x
+----
+
+The idea is for the fold to start with zero and to construct the
+result one digit at a time, with each stepper multiplying the previous
+result by the base and adding the next digit.  The code is abstracted
+in two different ways for extra generality.  First, the `make`
+function abstracts over the various primitive operations (addition,
+multiplication, etc) that are needed to construct a number.  This
+allows the same code to be shared for constants `I`, `II`, `W` used to
+write down the various numeric types.  It also allows users to add new
+constants for additional numeric types, by supplying the necessary
+arguments to make.
+
+Second, the step function, +&grave;+, is abstracted over the actual
+construction operation, which is created by make, and passed along the
+fold.  This allows the same constant, +&grave;+, to be used for all
+numeric types.  The alternative approach, having a different step
+function for each numeric type, would be more painful to use.
+
+On the surface, it appears that the code checks the digits dynamically
+to ensure they are valid for the base.  However, MLton will simplify
+everything away at compile time, leaving just the final numeric
+constant.

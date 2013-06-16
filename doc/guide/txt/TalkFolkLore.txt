@@ -1,0 +1,19 @@
+TalkFolkLore
+============
+
+== Folk Lore ==
+
+ * Defunctorization and monomorphisation are feasible
+ * Global control-flow analysis is feasible
+ * Early closure conversion is feasible
+
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
+[cols="<,>"]
+|====
+|<:TalkWholeProgram: Prev>|<:TalkMLtonFeatures: Next>
+|====

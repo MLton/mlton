@@ -1,0 +1,84 @@
+Installation
+============
+
+MLton runs on a variety of platforms and is distributed in both source
+and binary form.  The format for the binary package depends on the
+platform.  The binary package will install under `/usr` or
+`/usr/local`, depending on the platform.  A `.tgz` or `.tbz` binary
+package should be extracted in the root directory.  If you install
+MLton somewhere else, you must set the `lib` variable in the
+`/usr/bin/mlton` script to the directory that contains the libraries
+(`/usr/lib/mlton` by default).
+
+MLton requires that you have the <:GnuMP: GNU multiprecision> library
+installed on your machine.  MLton must be able to find both the
+`gmp.h` include file and the `libgmp.a` (or `libgmp.so` or
+`libgmp.dylib`) library. If you see the error message `gmp.h: No such
+file or directory`, you should copy `gmp.h` to
+`/usr/lib/mlton/self/include`.  If you see the error message
+`/usr/bin/ld: cannot find -lgmp`, you should add a `-link-opt -L`
+argument in the `/usr/bin/mlton` script so that the linker can find
+`libgmp`.  If, for example, `libgmp.a` is in `/tmp`, then add
+`-link-opt -L/tmp`.
+
+Installation of MLton creates the following files and directories.
+
+* `/usr/bin/mllex`
++
+The <:MLLex:> lexer generator.
+
+* `/usr/bin/mlnlffigen`
++
+The <:MLNLFFI:ML-NLFFI> tool.
+
+* `/usr/bin/mlprof`
++
+A <:Profiling:> tool.
+
+* `/usr/bin/mlton`
++
+A script to call the compiler.  This script may be moved anywhere,
+however, it makes use of files in `/usr/lib/mlton`.
+
+* `/usr/bin/mlyacc`
++
+The <:MLYacc:> parser generator.
+
+* `/usr/lib/mlton`
++
+Directory containing libraries and include files needed during compilation.
+
+* `/usr/share/man/man1/mllex.1`, `mlnlffigen.1`, `mlprof.1`, `mlton.1`, `mlyacc.1`
++
+Man pages.
+
+* `/usr/share/doc/mlton`
++
+Directory containing the user guide for MLton, mllex, and mlyacc, as
+well as example SML programs (in the `examples` dir), and license
+information.
+
+
+== Hello, World! ==
+
+Once you have installed MLton, create a file called `hello-world.sml`
+with the following contents.
+
+----
+print "Hello, world!\n";
+----
+
+Now create an executable, `hello-world`, with the following command.
+----
+mlton hello-world.sml
+----
+
+You can now run `hello-world` to verify that it works.  There are more
+small examples in `/usr/share/doc/mlton/examples`.
+
+
+== Installation on Cygwin ==
+
+When installing the Cygwin `tgz`, you should use Cygwin's `bash` and
+`tar`.  The use of an archiving tool that is not aware of Cygwin's
+mounts will put the files in the wrong place.

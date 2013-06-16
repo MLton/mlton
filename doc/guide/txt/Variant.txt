@@ -1,0 +1,12 @@
+Variant
+=======
+
+A _variant_ is an arm of a datatype declaration.  For example, the
+datatype
+
+[source,sml]
+----
+datatype t = A | B of int | C of real
+----
+
+has three variants: `A`, `B`, and `C`.

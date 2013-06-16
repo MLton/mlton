@@ -1,0 +1,34 @@
+MLLex
+=====
+
+<:MLLex:> is a lexical analyzer generator for <:StandardML:Standard ML>
+modeled after the Lex lexical analyzer generator.
+
+A version of MLLex, ported from the <:SMLNJ:SML/NJ> sources, is
+distributed with MLton.
+
+== Description ==
+
+MLLex takes as input the lex language as defined in the ML-Lex manual,
+and outputs a lexical analyzer in SML.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mllex/lexgen.sml)>
+* <!ViewGitFile(mlton,master,mllex/main.sml)>
+* <!ViewGitFile(mlton,master,mllex/call-main.sml)>
+
+== Details and Notes ==
+
+There are 3 main passes in the MLLex tool:
+
+* Source parsing. In this pass, lex source program are parsed into internal representations. The core part of this pass is a hand-written lexer and an LL(1) parser. The output of this pass is a record of user code, rules (along with start states) and actions. (MLLex definitions are wiped off.)
+* DFA construction. In this pass, a DFA is constructed by the algorithm of H. Yamada et. al.
+* Output. In this pass, the generated DFA is written out as a transition table, along with a table-driven algorithm, to an SML file.
+
+== Also see ==
+
+* <!Attachment(Documentation,mllex.pdf)>
+* <:MLYacc:>
+* <!Cite(AppelEtAl94)>
+* <!Cite(Price09)>

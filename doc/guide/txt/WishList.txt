@@ -1,0 +1,41 @@
+WishList
+========
+
+This page is mainly for recording recurring feature requests.  If you
+have a new feature request, you probably want to query interest on one
+of the <:Contact:mailing lists> first.
+
+Please be aware of MLton's policy on
+<:LanguageChanges:language changes>.  Nonetheless, we hope to provide
+support for some of the "immediate" <:SuccessorML:> proposals in a
+future release.
+
+
+== Support for link options in ML Basis files ==
+
+Introduce a mechanism to specify link options in <:MLBasis:ML Basis>
+files.  For example, generalizing a bit, a ML Basis declaration of the
+form
+
+----
+option "option"
+----
+
+could be introduced whose semantics would be the same (as closely as
+possible) as if the option string were specified on the compiler
+command line.
+
+The main motivation for this is that a MLton library that would
+introduce bindings (through <:ForeignFunctionInterface:FFI>) to an
+external library could be packaged conveniently as a single MLB file.
+For example, to link with library `foo` the MLB file would simply
+contain:
+
+----
+option "-link-opt -lfoo"
+----
+
+Similar feature requests have been discussed previously on the mailing lists:
+
+* http://www.mlton.org/pipermail/mlton/2004-July/025553.html
+* http://www.mlton.org/pipermail/mlton/2005-January/026648.html

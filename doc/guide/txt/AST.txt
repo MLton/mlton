@@ -1,0 +1,70 @@
+AST
+===
+
+<:AST:> is the <:IntermediateLanguage:> produced by the <:FrontEnd:>
+and translated by <:Elaborate:> to <:CoreML:>.
+
+== Description ==
+
+The abstract syntax tree produced by the <:FrontEnd:>.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ast/ast-programs.sig)>
+* <!ViewGitFile(mlton,master,mlton/ast/ast-programs.fun)>
+* <!ViewGitFile(mlton,master,mlton/ast/ast-modules.sig)>
+* <!ViewGitFile(mlton,master,mlton/ast/ast-modules.fun)>
+* <!ViewGitFile(mlton,master,mlton/ast/ast-core.sig)>
+* <!ViewGitFile(mlton,master,mlton/ast/ast-core.fun)>
+* <!ViewGitDir(mlton,master,mlton/ast)>
+
+== Type Checking ==
+
+The <:AST:> <:IntermediateLanguage:> has no independent type
+checker. Type inference is performed on an AST program as part of
+<:Elaborate:>.
+
+== Details and Notes ==
+
+=== Source locations ===
+
+MLton makes use of a relatively clean method for annotating the
+abstract syntax tree with source location information.  Every source
+program phrase is "wrapped" with the `WRAPPED` interface:
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master mlton/ast/wrapped.sig 8:19]
+----
+
+The key idea is that `node'` is the type of an unannotated syntax
+phrase and `obj` is the type of its annotated counterpart. In the
+implementation, every `node'` is annotated with a `Region.t`
+(<!ViewGitFile(mlton,master,mlton/control/region.sig)>,
+<!ViewGitFile(mlton,master,mlton/control/region.sml)>), which describes the
+syntax phrase's left source position and right source position, where
+`SourcePos.t` (<!ViewGitFile(mlton,master,mlton/control/source-pos.sig)>,
+<!ViewGitFile(mlton,master,mlton/control/source-pos.sml)>) denotes a
+particular file, line, and column.  A typical use of the `WRAPPED`
+interface is illustrated by the following code:
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master mlton/ast/ast-core.sig 46:65]
+----
+
+Thus, AST nodes are cleanly separated from source locations.  By way
+of contrast, consider the approach taken by <:SMLNJ:SML/NJ> (and also
+by the <:CKitLibrary:CKit Library>).  Each datatype denoting a syntax
+phrase dedicates a special constructor for annotating source
+locations:
+[source,sml]
+-----
+datatype pat = WildPat                             (* empty pattern *)
+             | AppPat of {constr:pat,argument:pat} (* application *)
+             | MarkPat of pat * region             (* mark a pattern *)
+----
+
+The main drawback of this approach is that static type checking is not
+sufficient to guarantee that the AST emitted from the front-end is
+properly annotated.

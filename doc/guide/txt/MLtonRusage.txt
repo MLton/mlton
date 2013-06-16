@@ -1,0 +1,37 @@
+MLtonRusage
+===========
+
+[source,sml]
+----
+signature MLTON_RUSAGE =
+   sig
+      type t = {utime: Time.time, (* user time *)
+                stime: Time.time} (* system time *)
+
+      val measureGC: bool -> unit
+      val rusage: unit -> {children: t, gc: t, self: t}
+   end
+----
+
+* `type t`
++
+corresponds to a subset of the C `struct rusage`.
+
+* `measureGC b`
++
+controls whether garbage collection time is separately measured during
+program execution.  This affects the behavior of both `rusage` and
+`Timer.checkCPUTimes`, both of which will return gc times of zero with
+`measureGC false`.  Garbage collection time is always measured when
+either `gc-messages` or `gc-summary` is given as a
+<:RunTimeOptions:runtime system option>.
+
+* `rusage ()`
++
+corresponds to the C `getrusage` function.  It returns the resource
+usage of the exited children, the garbage collector, and the process
+itself.  The `self` component includes the usage of the `gc`
+component, regardless of whether `measureGC` is `true` or `false`.  If
+`rusage` is used in a program, either directly, or indirectly via the
+`Timer` structure, then `measureGC true` is automatically called at
+the start of the program (it can still be disable by user code later).

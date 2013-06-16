@@ -1,0 +1,121 @@
+XMLShrink
+=========
+
+XMLShrink is an optimization pass for the <:XML:>
+<:IntermediateLanguage:>, invoked from <:XMLSimplify:>.
+
+== Description ==
+
+This pass performs optimizations based on a reduction system.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/xml/shrink.sig)>
+* <!ViewGitFile(mlton,master,mlton/xml/shrink.fun)>
+
+== Details and Notes ==
+
+The simplifier is based on <!Cite(AppelJim97, Shrinking Lambda
+Expressions in Linear Time)>.
+
+The source program may contain functions that are only called once, or
+not even called at all.  Match compilation introduces many such
+functions.  In order to reduce the program size, speed up later
+phases, and improve the flow analysis, a source to source simplifier
+is run on <:XML:> after type inference and match compilation.
+
+The simplifier implements the reductions shown below.  The reductions
+eliminate unnecessary declarations (see the side constraint in the
+figure), applications where the function is immediate, and case
+statements where the test is immediate.  Declarations can be
+eliminated only when the expression is nonexpansive (see Section 4.7
+of the <:DefinitionOfStandardML: Definition>), which is a syntactic
+condition that ensures that the expression has no effects
+(assignments, raises, or nontermination).  The reductions on case
+statements do not show the other irrelevant cases that may exist.  The
+reductions were chosen so that they were strongly normalizing and so
+that they never increased tree size.
+
+* {empty}
++
+--
+[source,sml]
+----
+let x = e1 in e2
+----
+
+reduces to
+
+[source,sml]
+----
+e2 [x -> e1]
+----
+
+if `e1` is a constant or variable or if `e1` is nonexpansive and `x` occurs zero or one time in `e2`
+--
+
+* {empty}
++
+--
+[source,sml]
+----
+(fn x => e1) e2
+----
+
+reduces to
+
+[source,sml]
+----
+let x = e2 in e1
+----
+--
+
+* {empty}
++
+--
+[source,sml]
+----
+e1 handle e2
+----
+
+reduces to
+
+[source,sml]
+----
+e1
+----
+
+if `e1` is nonexpansive
+--
+
+* {empty}
++
+--
+[source,sml]
+----
+case let d in e end of p1 => e1 ...
+----
+
+reduces to
+
+[source,sml]
+----
+let d in case e of p1 => e1 ... end
+----
+--
+
+* {empty}
++
+--
+[source,sml]
+----
+case C e1 of C x => e2
+----
+
+reduces to
+
+[source,sml]
+----
+let x = e1 in e2
+----
+--

@@ -1,0 +1,62 @@
+RefFlatten
+==========
+
+<:RefFlatten:> is an optimization pass for the <:SSA2:>
+<:IntermediateLanguage:>, invoked from <:SSA2Simplify:>.
+
+== Description ==
+
+This pass flattens a `ref` cell into its containing object.
+The idea is to replace, where possible, a type like
+----
+(int ref * real)
+----
+
+with a type like
+----
+(int[m] * real)
+----
+
+where the `[m]` indicates a mutable field of a tuple.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/ref-flatten.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/ref-flatten.fun)>
+
+== Details and Notes ==
+
+The savings is obvious, I hope.  We avoid an extra heap-allocated
+object for the `ref`, which in the above case saves two words.  We
+also save the time and code for the extra indirection at each get and
+set.  There are lots of useful data structures (singly-linked and
+doubly-linked lists, union-find, Fibonacci heaps, ...) that I believe
+we are paying through the nose right now because of the absence of ref
+flattening.
+
+The idea is to compute for each occurrence of a `ref` type in the
+program whether or not that `ref` can be represented as an offset of
+some object (constructor or tuple).  As before, a unification-based
+whole-program with deep abstract values makes sure the analysis is
+consistent.
+
+The only syntactic part of the analysis that remains is the part that
+checks that for a variable bound to a value constructed by `Ref_ref`:
+
+* the object allocation is in the same block.  This is pretty
+draconian, and it would be nice to generalize it some day to allow
+flattening as long as the `ref` allocation and object allocation "line
+up one-to-one" in the same loop-free chunk of code.
+
+* updates occur in the same block (and hence it is safe-for-space
+because the containing object is still alive).  It would be nice to
+relax this to allow updates as long as it can be provedthat the
+container is live.
+
+Prevent flattening of `unit ref`-s.
+
+<:RefFlatten:> is safe for space.  The idea is to prevent a `ref`
+being flattened into an object that has a component of unbounded size
+(other than possibly the `ref` itself) unless we can prove that at
+each point the `ref` is live, then the containing object is live too.
+I used a pretty simple approximation to liveness.

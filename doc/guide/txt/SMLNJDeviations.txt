@@ -1,0 +1,379 @@
+SMLNJDeviations
+===============
+
+Here are some deviations of <:SMLNJ:SML/NJ> from
+<:DefinitionOfStandardML:The Definition of Standard ML (Revised)>.
+Some of these are documented in the
+http://www.smlnj.org/doc/Conversion/index.html[SML '97 Conversion Guide].
+Since MLton does not deviate from the Definition, you should look here
+if you are having trouble porting a program from MLton to SML/NJ or
+vice versa.  If you discover other deviations of SML/NJ that aren't
+listed here, please send mail to
+mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
+
+* SML/NJ allows spaces in long identifiers, as in `S . x`.  Section
+2.5 of the Definition implies that `S . x` should be treated as three
+separate lexical items.
+
+* SML/NJ allows `op` to appear in `val` specifications:
++
+[source,sml]
+----
+signature FOO = sig
+   val op + : int * int -> int
+end
+----
++
+The grammar on page 14 of the Definition does not allow it. Recent
+versions of SML/NJ do give a warning.
+
+* SML/NJ rejects
++
+[source,sml]
+----
+(op *)
+----
++
+as an unmatched close comment.
+
+* SML/NJ allows `=` to be rebound by the declaration:
++
+[source,sml]
+----
+val op = = 13
+----
++
+This is explicitly forbidden on page 5 of the Definition. Recent
+versions of SML/NJ do give a warning.
+
+* SML/NJ allows rebinding `true`, `false`, `nil`, `::`, and `ref` by
+the declarations:
++
+[source,sml]
+----
+fun true () = ()
+fun false () = ()
+fun nil () = ()
+fun op :: () = ()
+fun ref () = ()
+----
++
+This is explicitly forbidden on page 9 of the Definition.
+
+* SML/NJ extends the syntax of the language to allow vector
+expressions and patterns like the following:
++
+[source,sml]
+----
+val v = #[1,2,3]
+val #[x,y,z] = v
+----
+
+* SML/NJ extends the syntax of the language to allow _or patterns_
+like the following:
++
+[source,sml]
+----
+datatype foo = Foo of int | Bar of int
+val (Foo x | Bar x) = Foo 13
+----
+
+* SML/NJ allows higher-order functors, that is, functors can be
+components of structures and can be passed as functor arguments and
+returned as functor results.  As a consequence, SML/NJ allows
+abbreviated functor definitions, as in the following:
++
+[source,sml]
+----
+signature S =
+  sig
+    type t
+    val x: t
+  end
+functor F (structure A: S): S =
+  struct
+    type t = A.t * A.t
+    val x = (A.x, A.x)
+  end
+functor G = F
+----
+
+* SML/NJ extends the syntax of the language to allow `functor` and
+`signature` declarations to occur within the scope of `local` and
+`structure` declarations.
+
+* SML/NJ allows duplicate type specifications in signatures when the
+duplicates are introduced by `include`, as in the following:
++
+[source,sml]
+----
+signature SIG1 =
+   sig
+      type t
+      type u
+   end
+signature SIG2 =
+   sig
+      type t
+      type v
+   end
+signature SIG =
+   sig
+      include SIG1
+      include SIG2
+   end
+----
++
+This is disallowed by rule 77 of the Definition.
+
+* SML/NJ allows sharing constraints between type abbreviations in
+signatures, as in the following:
++
+[source,sml]
+----
+signature SIG =
+   sig
+      type t = int * int
+      type u = int * int
+      sharing type t = u
+   end
+----
++
+These are disallowed by rule 78 of the Definition.  Recent versions of
+SML/NJ correctly disallow sharing constraints between type
+abbreviations in signatures.
+
+* SML/NJ disallows multiple `where type` specifications of the same
+type name, as in the following
++
+[source,sml]
+----
+signature S =
+  sig
+     type t
+     type u = t
+  end
+  where type u = int
+----
++
+This is allowed by rule 64 of the Definition.
+
+* SML/NJ allows `and` in `sharing` specs in signatures, as in
++
+[source,sml]
+----
+signature S =
+   sig
+      type t
+      type u
+      type v
+      sharing type t = u
+      and type u = v
+   end
+----
+
+* SML/NJ does not expand the `withtype` derived form as described by
+the Definition.  According to page 55 of the Definition, the type
+bindings of a `withtype` declaration are substituted simultaneously in
+the connected datatype.  Consider the following program.
++
+[source,sml]
+----
+type u = real ;
+datatype a =
+    A of t
+  | B of u
+withtype u = int
+and t = u
+----
++
+According to the Definition, it should be expanded to the following.
++
+[source,sml]
+----
+type u = real ;
+datatype a =
+    A of u
+  | B of int ;
+type u = int
+and t = u
+----
++
+However, SML/NJ expands `withtype` bindings sequentially, meaning that
+earlier bindings are expanded within later ones. Hence, the above
+program is expanded to the following.
++
+[source,sml]
+----
+type u = real ;
+datatype a =
+    A of int
+  | B of int ;
+type u = int
+type t = int
+----
+
+* SML/NJ allows `withtype` specifications in signatures.
+
+* SML/NJ allows a `where` structure specification that is similar to a
+`where type` specification.  For example:
++
+[source,sml]
+----
+structure S = struct type t = int end
+signature SIG =
+  sig
+     structure T : sig type t end
+  end where T = S
+----
++
+This is equivalent to:
++
+[source,sml]
+----
+structure S = struct type t = int end
+signature SIG =
+  sig
+     structure T : sig type t end
+  end where type T.t = S.t
+----
++
+SML/NJ also allows a definitional structure specification that is
+similar to a definitional type specification.  For example:
++
+[source,sml]
+----
+structure S = struct type t = int end
+signature SIG =
+  sig
+     structure T : sig type t end = S
+  end
+----
++
+This is equivalent to the previous examples and to:
++
+[source,sml]
+----
+structure S = struct type t = int end
+signature SIG =
+  sig
+     structure T : sig type t end where type t = S.t
+  end
+----
+
+* SML/NJ disallows binding non-datatypes with datatype replication.
+For example, it rejects the following program that should be allowed
+according to the Definition.
++
+[source,sml]
+----
+type ('a, 'b) t = 'a * 'b
+datatype u = datatype t
+----
++
+This idiom can be useful when one wants to rename a type without
+rewriting all the type arguments.  For example, the above would have
+to be written in SML/NJ as follows.
++
+[source,sml]
+----
+type ('a, 'b) t = 'a * 'b
+type ('a, 'b) u = ('a, 'b) t
+----
+
+* SML/NJ disallows sharing a structure with one of its substructures.
+For example, SML/NJ disallows the following.
++
+[source,sml]
+----
+signature SIG =
+   sig
+      structure S:
+         sig
+            type t
+            structure T: sig type t end
+         end
+      sharing S = S.T
+   end
+----
++
+This signature is allowed by the Definition.
+
+* SML/NJ disallows polymorphic generalization of refutable
+patterns. For example, SML/NJ disallows the following.
++
+[source,sml]
+----
+val [x] = [[]]
+val _ = (1 :: x, "one" :: x)
+----
++
+Recent versions of SML/NJ correctly allow polymorphic generalization
+of refutable patterns.
+
+* SML/NJ uses an overly restrictive context for type inference.  For
+example, SML/NJ rejects both of the following.
++
+[source,sml]
+----
+structure S =
+struct
+  val z = (fn x => x) []
+  val y = z :: [true] :: nil
+end
+----
++
+[source,sml]
+----
+structure S : sig val z : bool list end =
+struct
+  val z = (fn x => x) []
+end
+----
++
+These structures are allowed by the Definition.
+
+== Deviations from the Basis Library Specification ==
+
+Here are some deviations of SML/NJ from the <:BasisLibrary:Basis Library>
+http://www.standardml.org/Basis[specification].
+
+* SML/NJ exposes the equality of the `vector` type in structures such
+as `Word8Vector` that abstractly match `MONO_VECTOR`, which says
+`type vector`, not `eqtype vector`.  So, for example, SML/NJ accepts
+the following program:
++
+[source,sml]
+----
+fun f (v: Word8Vector.vector) = v = v
+----
+
+* SML/NJ exposes the equality property of the type `status` in
+`OS.Process`. This means that programs which directly compare two
+values of type `status` will work with SML/NJ but not MLton.
+
+* Under SML/NJ on Windows, `OS.Path.validVolume` incorrectly considers
+absolute empty volumes to be valid. In other words, when the
+expression
++
+[source,sml]
+----
+OS.Path.validVolume { isAbs = true, vol = "" }
+----
++
+is evaluated by SML/NJ on Windows, the result is `true`.  MLton, on
+the other hand, correctly follows the Basis Library Specification,
+which states that on Windows, `OS.Path.validVolume` should return
+`false` whenever `isAbs = true` and `vol = ""`.
++
+This incorrect behavior causes other `OS.Path` functions to behave
+differently. For example, when the expression
++
+[source,sml]
+----
+OS.Path.toString (OS.Path.fromString "\\usr\\local")
+----
++
+is evaluated by SML/NJ on Windows, the result is `"\\usr\\local"`,
+whereas under MLton on Windows, evaluating this expression (correctly)
+causes an `OS.Path.Path` exception to be raised.

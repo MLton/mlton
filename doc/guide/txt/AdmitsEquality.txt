@@ -1,0 +1,240 @@
+AdmitsEquality
+==============
+
+A <:TypeConstructor:> admits equality if whenever it is applied to
+equality types, the result is an <:EqualityType:>.  This notion enables
+one to determine whether a type constructor application yields an
+equality type solely from the application, without looking at the
+definition of the type constructor.  It helps to ensure that
+<:PolymorphicEquality:> is only applied to sensible values.
+
+The definition of admits equality depends on whether the type
+constructor was declared by a `type` definition or a
+`datatype` declaration.
+
+
+== Type definitions ==
+
+For type definition
+
+[source,sml]
+----
+type ('a1, ..., 'an) t = ...
+----
+
+type constructor `t` admits equality if the right-hand side of the
+definition is an equality type after replacing `'a1`, ...,
+`'an` by equality types (it doesn't matter which equality types
+are chosen).
+
+For a nullary type definition, this amounts to the right-hand side
+being an equality type.  For example, after the definition
+
+[source,sml]
+----
+type t = bool * int
+----
+
+type constructor `t` admits equality because `bool * int` is
+an equality type.   On the other hand, after the definition
+
+[source,sml]
+----
+type t = bool * int * real
+----
+
+type constructor `t` does not admit equality, because `real`
+is not an equality type.
+
+For another example, after the definition
+
+[source,sml]
+----
+type 'a t = bool * 'a
+----
+
+type constructor `t` admits equality because `bool * int`
+is an equality type (we could have chosen any equality type other than
+`int`).
+
+On the other hand, after the definition
+
+[source,sml]
+----
+type 'a t = real * 'a
+----
+
+type constructor `t` does not admit equality because
+`real * int` is not equality type.
+
+We can check that a type constructor admits equality using an
+`eqtype` specification.
+
+[source,sml]
+----
+structure Ok: sig eqtype 'a t end =
+   struct
+      type 'a t = bool * 'a
+   end
+----
+
+[source,sml]
+----
+structure Bad: sig eqtype 'a t end =
+   struct
+      type 'a t = real * int * 'a
+   end
+----
+
+On `structure Bad`, MLton reports the following error.
+----
+Type t admits equality in signature but not in structure.
+  not equality: [real] * _ * _
+----
+
+The `not equality` section provides an explanation of why the type
+did not admit equality, highlighting the problematic component
+(`real`).
+
+
+== Datatype declarations ==
+
+For a type constructor declared by a datatype declaration to admit
+equality, every <:Variant:variant> of the datatype must admit equality.  For
+example, the following datatype admits equality because `bool` and
+`char * int` are equality types.
+
+[source,sml]
+----
+datatype t = A of bool | B of char * int
+----
+
+Nullary constructors trivially admit equality, so that the following
+datatype admits equality.
+
+[source,sml]
+----
+datatype t = A | B | C
+----
+
+For a parameterized datatype constructor to admit equality, we
+consider each <:Variant:variant> as a type definition, and require that the
+definition admit equality.  For example, for the datatype
+
+[source,sml]
+----
+datatype 'a t = A of bool * 'a | B of 'a
+----
+
+the type definitions
+
+[source,sml]
+----
+type 'a tA = bool * 'a
+type 'a tB = 'a
+----
+
+both admit equality.  Thus, type constructor `t` admits equality.
+
+On the other hand, the following datatype does not admit equality.
+
+[source,sml]
+----
+datatype 'a t = A of bool * 'a | B of real * 'a
+----
+
+As with type definitions, we can check using an `eqtype`
+specification.
+
+[source,sml]
+----
+structure Bad: sig eqtype 'a t end =
+   struct
+      datatype 'a t = A of bool * 'a | B of real * 'a
+   end
+----
+
+MLton reports the following error.
+
+----
+Type t admits equality in signature but not in structure.
+  not equality: B of [real] * _
+----
+
+MLton indicates the problematic constructor (`B`), as well as
+the problematic component of the constructor's argument.
+
+
+=== Recursive datatypes ===
+
+A recursive datatype like
+
+[source,sml]
+----
+datatype t = A | B of int * t
+----
+
+introduces a new problem, since in order to decide whether `t`
+admits equality, we need to know for the `B` <:Variant:variant> whether
+`t` admits equality.  The <:DefinitionOfStandardML:Definition>
+answers this question by requiring a type constructor to admit
+equality if it is consistent to do so.  So, in our above example, if
+we assume that `t` admits equality, then the <:Variant:variant>
+`B of int * t` admits equality.  Then, since the `A` <:Variant:variant>
+trivially admits equality, so does the type constructor `t`.
+Thus, it was consistent to assume that `t` admits equality, and
+so, `t` does admit equality.
+
+On the other hand, in the following declaration
+
+[source,sml]
+----
+datatype t = A | B of real * t
+----
+
+if we assume that `t` admits equality, then the `B` <:Variant:variant>
+does not admit equality.  Hence, the type constructor `t` does not
+admit equality, and our assumption was inconsistent.  Hence, `t`
+does not admit equality.
+
+The same kind of reasoning applies to mutually recursive datatypes as
+well.  For example, the following defines both `t` and `u` to
+admit equality.
+
+[source,sml]
+----
+datatype t = A | B of u
+and u = C | D of t
+----
+
+But the following defines neither `t` nor `u` to admit
+equality.
+
+[source,sml]
+----
+datatype t = A | B of u * real
+and u = C | D of t
+----
+
+As always, we can check whether a type admits equality using an
+`eqtype` specification.
+
+[source,sml]
+----
+structure Bad: sig eqtype t eqtype u end =
+   struct
+      datatype t = A | B of u * real
+      and u = C | D of t
+   end
+----
+
+MLton reports the following error.
+
+----
+Error: z.sml 1.16.
+  Type t admits equality in signature but not in structure.
+    not equality: B of [u] * [real]
+Error: z.sml 1.16.
+  Type u admits equality in signature but not in structure.
+    not equality: D of [t]
+----

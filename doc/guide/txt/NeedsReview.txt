@@ -1,0 +1,15 @@
+NeedsReview
+===========
+
+This page documents some patches and bug fixes that need additional review by experienced developers:
+
+* Bug in transparent signature match:
+** What is an 'original' interface and why does the equivalence of original interfaces implies the equivalence of the actual interfaces?
+** http://www.mlton.org/pipermail/mlton/2007-September/029991.html
+** http://www.mlton.org/pipermail/mlton/2007-September/029995.html
+** SVN Revision: <!ViewSVNRev(6046)>
+
+* Bug in <:DeepFlatten:> pass:
+** Should we allow argument to `Weak_new` to be flattened?
+** SVN Revision: <!ViewSVNRev(6189)> (regression test demonstrating bug)
+** SVN Revision: <!ViewSVNRev(6191)>

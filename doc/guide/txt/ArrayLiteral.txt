@@ -1,0 +1,91 @@
+ArrayLiteral
+============
+
+<:StandardML:Standard ML> does not have a syntax for array literals or
+vector literals.  The only way to write down an array is like
+[source,sml]
+----
+Array.fromList [w, x, y, z]
+----
+
+No SML compiler produces efficient code for the above expression.  The
+generated code allocates a list and then converts it to an array.  To
+alleviate this, one could write down the same array using
+`Array.tabulate`, or even using `Array.array` and `Array.update`, but
+that is syntactically unwieldy.
+
+Fortunately, using <:Fold:>, it is possible to define constants `A`,
+and +&grave;+ so that one can write down an array like:
+[source,sml]
+----
+A `w `x `y `z $
+----
+This is as syntactically concise as the `fromList` expression.
+Furthermore, MLton, at least, will generate the efficient code as if
+one had written down a use of `Array.array` followed by four uses of
+`Array.update`.
+
+Along with `A` and +&grave;+, one can define a constant `V` that makes
+it possible to define vector literals with the same syntax, e.g.,
+[source,sml]
+----
+V `w `x `y `z $
+----
+
+Note that the same element indicator, +&grave;+, serves for both array
+and vector literals.  Of course, the `$` is the end-of-arguments
+marker always used with <:Fold:>.  The only difference between an
+array literal and vector literal is the `A` or `V` at the beginning.
+
+Here is the implementation of `A`, `V`, and +&grave;+.  We place them
+in a structure and use signature abstraction to hide the type of the
+accumulator.  See <:Fold:> for more on this technique.
+[source,sml]
+----
+structure Literal:>
+   sig
+      type 'a z
+      val A: ('a z, 'a z, 'a array, 'd) Fold.t
+      val V: ('a z, 'a z, 'a vector, 'd) Fold.t
+      val ` : ('a, 'a z, 'a z, 'b, 'c, 'd) Fold.step1
+   end =
+   struct
+      type 'a z = int * 'a option * ('a array -> unit)
+
+      val A =
+         fn z =>
+         Fold.fold
+         ((0, NONE, ignore),
+          fn (n, opt, fill) =>
+          case opt of
+             NONE =>
+                Array.tabulate (0, fn _ => raise Fail "array0")
+           | SOME x =>
+                let
+                   val a = Array.array (n, x)
+                   val () = fill a
+                in
+                   a
+                end)
+         z
+
+      val V = fn z => Fold.post (A, Array.vector) z
+
+      val ` =
+         fn z =>
+         Fold.step1
+         (fn (x, (i, opt, fill)) =>
+          (i + 1,
+           SOME x,
+           fn a => (Array.update (a, i, x); fill a)))
+         z
+   end
+----
+
+The idea of the code is for the fold to accumulate a count of the
+number of elements, a sample element, and a function that fills in all
+the elements.  When the fold is complete, the finishing function
+allocates the array, applies the fill function, and returns the array.
+The only difference between `A` and `V` is at the very end; `A` just
+returns the array, while `V` converts it to a vector using
+post-composition, which is further described on the <:Fold:> page.

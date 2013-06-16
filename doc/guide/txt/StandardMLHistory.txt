@@ -1,0 +1,10 @@
+StandardMLHistory
+=================
+
+<:StandardML:Standard ML> grew out of <:ML:> in the early 1980s.
+
+For an excellent overview of SML's history, see Appendix F of the
+<:DefinitionOfStandardML:Definition>.
+
+For an overview if its history before 1982, see <!Cite(Milner82, How
+ML Evolved)>.

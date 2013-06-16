@@ -1,0 +1,60 @@
+MLtonPlatform
+=============
+
+[source,sml]
+----
+signature MLTON_PLATFORM =
+   sig
+      structure Arch:
+         sig
+            datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k
+                       | MIPS | PowerPC | S390 | Sparc | X86
+
+            val fromString: string -> t option
+            val host: t
+            val toString: t -> string
+         end
+
+      structure OS:
+         sig
+            datatype t = AIX | Cygwin | Darwin | FreeBSD | HPUX
+                       | Linux | MinGW | NetBSD | OpenBSD | Solaris
+
+            val fromString: string -> t option
+            val host: t
+            val toString: t -> string
+         end
+   end
+----
+
+* `datatype Arch.t`
++
+processor architectures
+
+* `Arch.fromString a`
++
+converts from string to architecture.  Case insensitive.
+
+* `Arch.host`
++
+the architecture for which the program is compiled.
+
+* `Arch.toString`
++
+string for architecture.
+
+* `datatype OS.t`
++
+operating systems
+
+* `OS.fromString`
++
+converts from string to operating system.  Case insensitive.
+
+* `OS.host`
++
+the operating system for which the program is compiled.
+
+* `OS.toString`
++
+string for operating system.

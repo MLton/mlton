@@ -1,0 +1,46 @@
+MLtonReal
+=========
+
+[source,sml]
+----
+signature MLTON_REAL =
+   sig
+      type t
+
+      val fromWord: word -> t
+      val fromLargeWord: LargeWord.word -> t
+      val toWord: IEEEReal.rounding_mode -> t -> word
+      val toLargeWord: IEEEReal.rounding_mode -> t -> LargeWord.word
+   end
+----
+
+* `type t`
++
+the type of reals.  For `MLton.LargeReal` this is `LargeReal.real`,
+for `MLton.Real` this is `Real.real`, for `MLton.Real32` this is
+`Real32.real`, for `MLton.Real64` this is `Real64.real`.
+
+* `fromWord w`
+* `fromLargeWord w`
++
+convert the word `w` to a real value.  If the value of `w` is larger
+than (the appropriate) `REAL.maxFinite`, then infinity is returned.
+If `w` cannot be exactly represented as a real value, then the current
+rounding mode is used to determine the resulting value.
+
+* `toWord mode r`
+* `toLargeWord mode r`
++
+convert the argument `r` to a word type using the specified rounding
+mode. They raise `Overflow` if the result is not representable, in
+particular, if `r` is an infinity. They raise `Domain` if `r` is NaN.
+
+* `MLton.Real32.castFromWord w`
+* `MLton.Real64.castFromWord w`
++
+convert the argument `w` to a real type as a bit-wise cast.
+
+* `MLton.Real32.castToWord r`
+* `MLton.Real64.castToWord r`
++
+convert the argument `r` to a word type as a bit-wise cast.

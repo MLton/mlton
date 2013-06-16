@@ -1,0 +1,27 @@
+ShowProf
+========
+
+If an executable is compiled for <:Profiling:profiling>, then it
+accepts a special command-line runtime system argument, `show-prof`,
+that outputs information about the source functions that are profiled.
+Normally, this information is used by `mlprof`.  This page documents
+the `show-prof` output format, and is intended for those working on
+the profiler internals.
+
+The `show-prof` output is ASCII, and consists of a sequence of lines.
+
+* The magic number of the executable.
+* The number of source names in the executable.
+* A line for each source name giving the name of the function, a tab,
+the filename of the file containing the function, a colon, a space,
+and the line number that the function starts on in that file.
+* The number of (split) source functions.
+* A line for each (split) source function, where each line consists of
+a source-name index (into the array of source names) and a successors
+index (into the array of split-source sequences, defined below).
+* The number of split-source sequences.
+* A line for each split-source sequence, where each line is a space
+separated list of (split) source functions.
+
+The latter two arrays, split sources and split-source sequences,
+define a directed graph, which is the call-graph of the program.

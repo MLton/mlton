@@ -1,0 +1,34 @@
+MLtonWord
+=========
+
+[source,sml]
+----
+signature MLTON_WORD =
+   sig
+      type t
+
+      val bswap: t -> t
+      val rol: t * word -> t
+      val ror: t * word -> t
+   end
+----
+
+* `type t`
++
+the type of words.  For `MLton.LargeWord` this is `LargeWord.word`,
+for `MLton.Word` this is `Word.word`, for `MLton.Word8` this is
+`Word8.word`, for `MLton.Word16` this is `Word16.word`, for
+`MLton.Word32` this is `Word32.word`, for `MLton.Word64` this is
+`Word64.word`.
+
+* `bswap w`
++
+byte swap.
+
+* `rol (w, w')`
++
+rotates left (circular).
+
+* `ror (w, w')`
++
+rotates right (circular).

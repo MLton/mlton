@@ -1,0 +1,37 @@
+Useless
+=======
+
+<:Useless:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass:
+
+* removes components of tuples that are constants (use unification)
+* removes function arguments that are constants
+* builds some kind of dependence graph where
+** a value of ground type is useful if it is an arg to a primitive
+** a tuple is useful if it contains a useful component
+** a constructor is useful if it contains a useful component or is used in a `Case` transfer
+
+If a useful tuple is coerced to another useful tuple, then all of
+their components must agree (exactly).  It is trivial to convert a
+useful value to a useless one.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/useless.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/useless.fun)>
+
+== Details and Notes ==
+
+It is also trivial to convert a useful tuple to one of its useful
+components -- but this seems hard.
+
+Suppose that you have a `ref`/`array`/`vector` that is useful, but the
+components aren't -- then the components are converted to type `unit`,
+and any primitive args must be as well.
+
+Unify all handler arguments so that `raise`/`handle` has a consistent
+calling convention.

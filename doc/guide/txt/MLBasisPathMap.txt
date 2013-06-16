@@ -1,0 +1,35 @@
+MLBasisPathMap
+==============
+
+An <:MLBasis:ML Basis> _path map_ describes a map from ML Basis path
+variables (of the form `$(VAR)`) to file system paths.  ML Basis path
+variables provide a flexible way to refer to libraries while allowing
+them to be moved without changing their clients.
+
+The format of an `mlb-path-map` file is a sequence of lines; each line
+consists of two, white-space delimited tokens.  The first token is a
+path variable `VAR` and the second token is the path to which the
+variable is mapped.  The path may include path variables, which are
+recursively expanded.
+
+The mapping from path variables to paths is initialized by reading a
+system-wide configuration file: `/usr/lib/mlton/mlb-path-map`.
+Additional path maps can be specified with `-mlb-path-map` and
+individual path variable mappings can be specified with
+`-mlb-path-var` (see <:CompileTimeOptions:>).  Configuration files are
+processed from first to last and from top to bottom, later mappings
+take precedence over earlier mappings.
+
+The compiler and system-wide configuration file makes the following
+path variables available.
+
+[options="header",cols="^25%,<75%"]
+|====
+|MLB path variable|Description
+|`SML_LIB`|path to system-wide libraries, usually `/usr/lib/mlton/sml`
+|`TARGET_ARCH`|string representation of target architecture
+|`TARGET_OS`|string representation of target operating system
+|`DEFAULT_INT`|binding for default int, usually `int32`
+|`DEFAULT_WORD`|binding for default word, usually `word32`
+|`DEFAULT_REAL`|binding for default real, usually `real64`
+|====

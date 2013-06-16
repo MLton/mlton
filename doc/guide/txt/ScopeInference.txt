@@ -1,0 +1,37 @@
+ScopeInference
+==============
+
+Scope inference is an analysis/rewrite pass for the <:AST:>
+<:IntermediateLanguage:>, invoked from <:Elaborate:>.
+
+== Description ==
+
+This pass adds free type variables to the `val` or `fun`
+declaration where they are implicitly scoped.
+
+== Implementation ==
+
+<!ViewGitFile(mlton,master,mlton/elaborate/scope.sig)>
+<!ViewGitFile(mlton,master,mlton/elaborate/scope.fun)>
+
+== Details and Notes ==
+
+Scope inference determines for each type variable, the declaration
+where it is bound.  Scope inference is a direct implementation of the
+specification given in section 4.6 of the
+<:DefinitionOfStandardML: Definition>.  Recall that a free occurrence
+of a type variable `'a` in a declaration `d` is _unguarded_
+in `d` if `'a` is not part of a smaller declaration.  A type
+variable `'a` is implicitly scoped at `d` if `'a` is
+unguarded in `d` and `'a` does not occur unguarded in any
+declaration containing `d`.
+
+The first pass of scope inference walks down the tree and renames all
+explicitly bound type variables in order to avoid name collisions.  It
+then walks up the tree and adds to each declaration the set of
+unguarded type variables occurring in that declaration.  At this
+point, if declaration `d` contains an unguarded type variable
+`'a` and the immediately containing declaration does not contain
+`'a`, then `'a` is implicitly scoped at `d`.  The final
+pass walks down the tree leaving a `'a` at the a declaration where
+it is scoped and removing it from all enclosed declarations.

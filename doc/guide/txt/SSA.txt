@@ -1,0 +1,41 @@
+SSA
+===
+
+<:SSA:> is an <:IntermediateLanguage:>, translated from <:SXML:> by
+<:ClosureConvert:>, optimized by <:SSASimplify:>, and translated by
+<:ToSSA2:> to <:SSA2:>.
+
+== Description ==
+
+<:SSA:> is a <:FirstOrder:>, <:SimplyTyped:> <:IntermediateLanguage:>.
+It is the main <:IntermediateLanguage:> used for optimizations.
+
+An <:SSA:> program consists of a collection of datatype declarations,
+a sequence of global statements, and a collection of functions, along
+with a distinguished "main" function.  Each function consists of a
+collection of basic blocks, where each basic block is a sequence of
+statements ending with some control transfer.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/ssa.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/ssa.fun)>
+* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree.fun)>
+
+== Type Checking ==
+
+Type checking (<!ViewGitFile(mlton,master,mlton/ssa/type-check.sig)>,
+<!ViewGitFile(mlton,master,mlton/ssa/type-check.fun)>) of a <:SSA:> program
+verifies the following:
+
+* no duplicate definitions (tycons, cons, vars, labels, funcs)
+* no out of scope references (tycons, cons, vars, labels, funcs)
+* variable definitions dominate variable uses
+* case transfers are exhaustive and irredundant
+* `Enter`/`Leave` profile statements match
+* "traditional" well-typedness
+
+== Details and Notes ==
+
+SSA is an abbreviation for Static Single Assignment.

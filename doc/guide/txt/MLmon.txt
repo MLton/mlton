@@ -1,0 +1,41 @@
+MLmon
+=====
+
+An `mlmon.out` file records dynamic <:Profiling:profiling> counts.
+
+== File format ==
+
+An `mlmon.out` file is a text file with a sequence of lines.
+
+* The string "`MLton prof`".
+
+* The string "`alloc`", "`count`", or "`time`", depending on the kind
+of profiling information, corresponding to the command-line argument
+supplied to `mlton -profile`.
+
+* The string "`current`" or "`stack`" depending on whether profiling
+data was gathered for only the current function (the top of the stack)
+or for all functions on the stack.  This corresponds to whether the
+executable was compiled with `-profile-stack false` or `-profile-stack
+true`.
+
+* The magic number of the executable.
+
+* The number of non-gc ticks, followed by a space, then the number of
+GC ticks.
+
+* The number of (split) functions for which data is recorded.
+
+* A line for each (split) function with counts.  Each line contains an
+integer count of the number of ticks while the function was current.
+In addition, if stack data was gathered (`-profile-stack true`), then
+the line contains two additional tick counts:
+
+** the number of ticks while the function was on the stack.
+** the number of ticks while the function was on the stack and a GC
+   was performed.
+
+* The number of (master) functions for which data is recorded.
+
+* A line for each (master) function with counts.  The lines have the
+same format and meaning as with split-function counts.

@@ -1,0 +1,89 @@
+ProductType
+===========
+
+<:StandardML:Standard ML> has special syntax for products (tuples). A
+product type is written as
+[source,sml]
+----
+t1 * t2 * ... * tN
+----
+and a product pattern is written as
+[source,sml]
+----
+(p1, p2, ..., pN)
+----
+
+In most situations the syntax is quite convenient.  However, there are
+situations where the syntax is cumbersome.  There are also situations
+in which it is useful to construct and destruct n-ary products
+inductively, especially when using <:Fold:>.
+
+In such situations, it is useful to have a binary product datatype
+with an infix constructor defined as follows.
+[source,sml]
+----
+datatype ('a, 'b) product = & of 'a * 'b
+infix &
+----
+
+With these definitions, one can write an n-ary product as a nested
+binary product quite conveniently.
+[source,sml]
+----
+x1 & x2 & ... & xn
+----
+
+Because of left associativity, this is the same as
+[source,sml]
+----
+(((x1 & x2) & ...) & xn)
+----
+
+Because `&` is a constructor, the syntax can also be used for
+patterns.
+
+The symbol `&` is inspired by the Curry-Howard isomorphism: the proof
+of a conjunction `(A & B)` is a pair of proofs `(a, b)`.
+
+
+== Example: parser combinators ==
+
+A typical parser combinator library provides a combinator that has a
+type of the form.
+[source,sml]
+----
+'a parser * 'b parser -> ('a * 'b) parser
+----
+and produces a parser for the concatenation of two parsers. When more
+than two parsers are concatenated, the result of the resulting parser
+is a nested structure of pairs
+[source,sml]
+----
+(...((p1, p2), p3)..., pN)
+----
+which is somewhat cumbersome.
+
+By using a product type, the type of the concatenation combinator then
+becomes
+[source,sml]
+----
+'a parser * 'b parser -> ('a, 'b) product parser
+----
+While this doesn't stop the nesting, it makes the pattern significantly
+easier to write. Instead of
+[source,sml]
+----
+(...((p1, p2), p3)..., pN)
+----
+the pattern is written as
+[source,sml]
+----
+p1 & p2 & p3 & ... & pN
+----
+which is considerably more concise.
+
+
+== Also see ==
+
+* <:VariableArityPolymorphism:>
+* <:Utilities:>

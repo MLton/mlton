@@ -1,0 +1,69 @@
+MLtonIntInf
+===========
+
+[source,sml]
+----
+signature MLTON_INT_INF =
+   sig
+      type t = IntInf.int
+
+      val areSmall: t * t -> bool
+      val gcd: t * t -> t
+      val isSmall: t -> bool
+
+      structure BigWord : WORD
+      structure SmallInt : INTEGER
+      datatype rep =
+         Big of BigWord.word vector
+       | Small of SmallInt.int
+      val rep: t -> rep
+      val fromRep : rep -> t
+   end
+----
+
+MLton represents an arbitrary precision integer either as an unboxed
+word with the bottom bit set to 1 and the top bits representing a
+small signed integer, or as a pointer to a vector of words, where the
+first word indicates the sign and the rest are the limbs of a
+<:GnuMP:> big integer.
+
+* `type t`
++
+the same as type `IntInf.int`.
+
+* `areSmall (a, b)`
++
+returns true iff both `a` and `b` are small.
+
+* `gcd (a, b)`
++
+uses the <:GnuMP:GnuMP's> fast gcd implementation.
+
+* `isSmall a`
++
+returns true iff `a` is small.
+
+* `BigWord : WORD`
++
+representation of a big `IntInf.int` as a vector of words; on 32-bit
+platforms, `BigWord` is likely to be equivalent to `Word32`, and on
+64-bit platforms, `BigWord` is likely to be equivalent to `Word64`.
+
+* `SmallInt : INTEGER`
++
+representation of a small `IntInf.int` as a signed integer; on 32-bit
+platforms, `SmallInt` is likely to be equivalent to `Int32`, and on
+64-bit platforms, `SmallInt` is likely to be equivalent to `Int64`.
+
+* `datatype rep`
++
+the underlying representation of an `IntInf.int`.
+
+* `rep i`
++
+returns the underlying representation of `i`.
+
+* `fromRep r`
++
+converts from the underlying representation back to `i`.  If the input
+is not identical to the result of `rep`, the result is undefined.

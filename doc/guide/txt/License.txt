@@ -1,0 +1,27 @@
+License
+=======
+
+== Web Site ==
+In order to allow the maximum freedom for the future use of the
+content in this web site, we require that contributions to the web
+site be dedicated to the public domain.  That means that you can only
+add works that are already in the public domain, or that you must hold
+the copyright on the work that you agree to dedicate the work to the
+public domain.
+
+By contributing to this web site, you agree to dedicate your
+contribution to the public domain.
+
+== Software ==
+
+As of 20050812, MLton software is licensed under the BSD-style license
+below.  By contributing code to the project, you agree to release the
+code under this license.  Contributors can retain copyright to their
+contributions by asserting copyright in their code.  Contributors may
+also add to the list of copyright holders in
+`doc/license/MLton-LICENSE`, which appears below.
+
+[source,text]
+----
+sys::[./bin/InclGitFile.py mlton master doc/license/MLton-LICENSE]
+----

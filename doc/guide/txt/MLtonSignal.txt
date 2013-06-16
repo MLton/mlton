@@ -1,0 +1,203 @@
+MLtonSignal
+===========
+
+[source,sml]
+----
+signature MLTON_SIGNAL =
+   sig
+      type t = Posix.Signal.signal
+      type signal = t
+
+      structure Handler:
+         sig
+            type t
+
+            val default: t
+            val handler: (Thread.Runnable.t -> Thread.Runnable.t) -> t
+            val ignore: t
+            val isDefault: t -> bool
+            val isIgnore: t -> bool
+            val simple: (unit -> unit) -> t
+         end
+
+      structure Mask:
+         sig
+            type t
+
+            val all: t
+            val allBut: signal list -> t
+            val block: t -> unit
+            val getBlocked: unit -> t
+            val isMember: t * signal -> bool
+            val none: t
+            val setBlocked: t -> unit
+            val some: signal list -> t
+            val unblock: t -> unit
+         end
+
+      val getHandler: t -> Handler.t
+      val handled: unit -> Mask.t
+      val prof: t
+      val restart: bool ref
+      val setHandler: t * Handler.t -> unit
+      val suspend: Mask.t -> unit
+      val vtalrm: t
+   end
+----
+
+Signals handlers are functions from (runnable) threads to (runnable)
+threads.  When a signal arrives, the corresponding signal handler is
+invoked, its argument being the thread that was interrupted by the
+signal.  The signal handler runs asynchronously, in its own thread.
+The signal handler returns the thread that it would like to resume
+execution (this is often the thread that it was passed).  It is an
+error for a signal handler to raise an exception that is not handled
+within the signal handler itself.
+
+A signal handler is never invoked while the running thread is in a
+critical section (see <:MLtonThread:>).  Invoking a signal handler
+implicitly enters a critical section and the normal return of a signal
+handler implicitly exits the critical section; hence, a signal handler
+is never interrupted by another signal handler.
+
+* `type t`
++
+the type of signals.
+
+* `type Handler.t`
++
+the type of signal handlers.
+
+* `Handler.default`
++
+handles the signal with the default action.
+
+* `Handler.handler f`
++
+returns a handler `h` such that when a signal `s` is handled by `h`,
+`f` will be passed the thread that was interrupted by `s` and should
+return the thread that will resume execution.
+
+* `Handler.ignore`
++
+is a handler that will ignore the signal.
+
+* `Handler.isDefault`
++
+returns true if the handler is the default handler.
+
+* `Handler.isIgnore`
++
+returns true if the handler is the ignore handler.
+
+* `Handler.simple f`
++
+returns a handler that executes `f ()` and does not switch threads.
+
+* `type Mask.t`
++
+the type of signal masks, which are sets of blocked signals.
+
+* `Mask.all`
++
+a mask of all signals.
+
+* `Mask.allBut l`
++
+a mask of all signals except for those in `l`.
+
+* `Mask.block m`
++
+blocks all signals in `m`.
+
+* `Mask.getBlocked ()`
++
+gets the signal mask `m`, i.e. a signal is blocked if and only if it
+is in `m`.
+
+* `Mask.isMember (m, s)`
++
+returns true if the signal `s` is in `m`.
+
+* `Mask.none`
++
+a mask of no signals.
+
+* `Mask.setBlocked m`
++
+sets the signal mask to `m`, i.e. a signal is blocked if and only if
+it is in `m`.
+
+* `Mask.some l`
++
+a mask of the signals in `l`.
+
+* `Mask.unblock m`
++
+unblocks all signals in `m`.
+
+* `getHandler s`
++
+returns the current handler for signal `s`.
+
+* `handled ()`
++
+returns the signal mask `m` corresponding to the currently handled
+signals; i.e., a signal is handled if and only if it is in `m`.
+
+* `prof`
++
+`SIGPROF`, the profiling signal.
+
+* `restart`
++
+dynamically determines the behavior of interrupted system calls; when
+`true`, interrupted system calls are restarted; when `false`,
+interrupted system calls raise `OS.SysError`.
+
+* `setHandler (s, h)`
++
+sets the handler for signal `s` to `h`.
+
+* `suspend m`
++
+temporarily sets the signal mask to `m` and suspends until an unmasked
+signal is received and handled, at which point `suspend` resets the
+mask and returns.
+
+* `vtalrm`
++
+`SIGVTALRM`, the signal for virtual timers.
+
+
+== Interruptible System Calls ==
+
+Signal handling interacts in a non-trivial way with those functions in
+the <:BasisLibrary:Basis Library> that correspond directly to
+interruptible system calls (a subset of those functions that may raise
+`OS.SysError`).  The desire is that these functions should have
+predictable semantics.  The principal concerns are:
+
+1. System calls that are interrupted by signals should, by default, be
+restarted; the alternative is to raise
++
+[source,sml]
+----
+OS.SysError (Posix.Error.errorMsg Posix.Error.intr,
+             SOME Posix.Error.intr)
+----
++
+This behavior is determined dynamically by the value of `Signal.restart`.
+
+2. Signal handlers should always get a chance to run (when outside a
+critical region).  If a system call is interrupted by a signal, then
+the signal handler will run before the call is restarted or
+`OS.SysError` is raised; that is, before the `Signal.restart` check.
+
+3. A system call that must be restarted while in a critical section
+will be restarted with the handled signals blocked (and the previously
+blocked signals remembered).  This encourages the system call to
+complete, allowing the program to make progress towards leaving the
+critical section where the signal can be handled.  If the system call
+completes, the set of blocked signals are restored to those previously
+blocked.

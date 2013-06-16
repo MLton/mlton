@@ -1,0 +1,106 @@
+Enscript
+========
+
+http://www.gnu.org/s/enscript/[GNU Enscript] converts ASCII files to
+PostScript, HTML, and other output languages, applying language
+sensitive highlighting (similar to <:Emacs:>'s font lock mode).  Here
+are a few _states_ files for highlighting <:StandardML: Standard ML>.
+
+* <!ViewGitFile(mlton,master,ide/enscript/sml_simple.st)> -- Provides highlighting of keywords, string and character constants, and (nested) comments.
+/////
++
+[source,sml]
+----
+(* Comments (* can be nested *) *)
+structure S = struct
+  val x = (1, 2, "three")
+end
+----
+/////
+
+* <!ViewGitFile(mlton,master,ide/enscript/sml_verbose.st)> -- Supersedes
+the above, adding highlighting of numeric constants.  Due to the
+limited parsing available, numeric record labels are highlighted as
+numeric constants, in all contexts.  Likewise, a binding precedence
+separated from `infix` or `infixr` by a newline is highlighted as a
+numeric constant and a numeric record label selector separated from
+`#` by a newline is highlighted as a numeric constant.
+/////
++
+[source,sml]
+----
+structure S = struct
+  (* These look good *)
+  val x = (1, 2, "three")
+  val z = #2 x
+
+  (* Although these look bad (not all the numbers are constants),       *
+   * they never occur in practice, as they are equivalent to the above. *)
+  val x = {1 = 1, 3 = "three", 2 = 2}
+  val z = #
+            2 x
+end
+----
+/////
+
+* <!ViewGitFile(mlton,master,ide/enscript/sml_fancy.st)> -- Supersedes the
+above, adding highlighting of type and constructor bindings,
+highlighting of explicit binding of type variables at `val` and `fun`
+declarations, and separate highlighting of core and modules level
+keywords.  Due to the limited parsing available, it is assumed that
+the input is a syntactically correct, top-level declaration.
+/////
++
+[source,sml]
+----
+structure S = struct
+  val x = (1, 2, "three")
+  datatype 'a t = T of 'a
+       and u = U of v * v
+  withtype v = {left: int t, right: int t}
+  exception E1 of int and E2
+  fun 'a id (x: 'a) : 'a = x
+
+  (* Although this looks bad (the explicitly bound type variable 'a is *
+   * not highlighted), it is unlikely to occur in practice.            *)
+  val
+      'a id = fn (x : 'a) => x
+end
+----
+/////
+
+* <!ViewGitFile(mlton,master,ide/enscript/sml_gaudy.st)> -- Supersedes the
+above, adding highlighting of type annotations, in both expressions
+and signatures.  Due to the limited parsing available, it is assumed
+that the input is a syntactically correct, top-level declaration.
+/////
++
+[source,sml]
+----
+signature S = sig
+  type t
+  val x : t
+  val f : t * int -> int
+end
+structure S : S = struct
+  datatype t = T of int
+  val x : t = T 0
+  fun f (T x, i : int) : int = x + y
+  fun 'a id (x: 'a) : 'a = x
+end
+----
+/////
+
+== Install and use ==
+
+* Version 1.6.3 of http://people.ssh.com/mtr/genscript[GNU Enscript]
+** Copy all files to `/usr/share/enscript/hl/` or `.enscript/` in your home directory.
+** Invoke `enscript` with `--highlight=sml_simple` (or `--highlight=sml_verbose` or `--highlight=sml_fancy` or `--highlight=sml_gaudy`).
+
+* Version 1.6.1 of http://people.ssh.com/mtr/genscript[GNU Enscript]
+** Append <!ViewGitFile(mlton,master,ide/enscript/sml_all.st)> to `/usr/share/enscript/enscript.st`
+** Invoke `enscript` with `--pretty-print=sml_simple` (or `--pretty-print=sml_verbose` or `--pretty-print=sml_fancy` or `--pretty-print=sml_gaudy`).
+
+== Feedback ==
+
+Comments and suggestions should be directed to <:MatthewFluet:>.

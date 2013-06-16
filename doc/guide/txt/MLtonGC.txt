@@ -1,0 +1,75 @@
+MLtonGC
+=======
+
+[source,sml]
+----
+signature MLTON_GC =
+   sig
+      val collect: unit -> unit
+      val pack: unit -> unit
+      val setMessages: bool -> unit
+      val setSummary: bool -> unit
+      val unpack: unit -> unit
+      structure Statistics :
+         sig
+            val bytesAllocated: unit -> IntInf.int
+            val lastBytesLive: unit -> IntInf.int
+            val numCopyingGCs: unit -> IntInf.int
+            val numMarkCompactGCs: unit -> IntInf.int
+            val numMinorGCs: unit -> IntInf.int
+            val maxBytesLive: unit -> IntInf.int
+         end
+   end
+----
+
+* `collect ()`
++
+causes a garbage collection to occur.
+
+* `pack ()`
++
+shrinks the heap as much as possible so that other processes can use
+available RAM.
+
+* `setMessages b`
++
+controls whether diagnostic messages are printed at the beginning and
+end of each garbage collection.  It is the same as the `gc-messages`
+runtime system option.
+
+* `setSummary b`
++
+controls whether a summary of garbage collection statistics is printed
+upon termination of the program.  It is the same as the `gc-summary`
+runtime system option.
+
+* `unpack ()`
++
+resizes a packed heap to the size desired by the runtime.
+
+* `Statistics.bytesAllocated ()`
++
+returns bytes allocated (as of the most recent garbage collection).
+
+* `Statistics.lastBytesLive ()`
++
+returns bytes live (as of the most recent garbage collection).
+
+* `Statistics.numCopyingGCs ()`
++
+returns number of (major) copying garbage collections performed (as of
+the most recent garbage collection).
+
+* `Statistics.numMarkCompactGCs ()`
++
+returns number of (major) mark-compact garbage collections performed
+(as of the most recent garbage collection).
+
+* `Statistics.numMinorGCs ()`
++
+returns number of minor garbage collections performed (as of the most
+recent garbage collection).
+
+* `Statistics.maxBytesLive ()`
++
+returns maximum bytes live (as of the most recent garbage collection).

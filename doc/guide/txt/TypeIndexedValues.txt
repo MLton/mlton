@@ -1,0 +1,592 @@
+TypeIndexedValues
+=================
+
+<:StandardML:Standard ML> does not support ad hoc polymorphism.  This
+presents a challenge to programmers.  The problem is that at first
+glance there seems to be no practical way to implement something like
+a function for converting a value of any type to a string or a
+function for computing a hash value for a value of any type.
+Fortunately there are ways to implement type-indexed values in SML as
+discussed in <!Cite(Yang98)>.  Various articles such as
+<!Cite(Danvy98)>, <!Cite(Ramsey03)>, <!Cite(Elsman04)>,
+<!Cite(Kennedy04)>, and <!Cite(Benton05)> also contain examples of
+type-indexed values.
+
+*NOTE:* The technique used in the following example uses an early (and
+somewhat broken) variation of the basic technique used in an
+experimental generic programming library (see
+<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/README)>) that can
+be found from the MLton repository.  The generic programming library
+also includes a more advanced generic pretty printing function (see
+<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/public/value/pretty.sig)>).
+
+== Example: Converting any SML value to (roughly) SML syntax ==
+
+Consider the problem of converting any SML value to a textual
+presentation that matches the syntax of SML as closely as possible.
+One solution is a type-indexed function that maps a given type to a
+function that maps any value (of the type) to its textual
+presentation.  A type-indexed function like this can be useful for a
+variety of purposes.  For example, one could use it to show debugging
+information.  We'll call this function "`show`".
+
+We'll do a fairly complete implementation of `show`.  We do not
+distinguish infix and nonfix constructors, but that is not an
+intrinsic property of SML datatypes.  We also don't reconstruct a type
+name for the value, although it would be particularly useful for
+functional values.  To reconstruct type names, some changes would be
+needed and the reader is encouraged to consider how to do that.  A
+more realistic implementation would use some pretty printing
+combinators to compute a layout for the result.  This should be a
+relatively easy change (given a suitable pretty printing library).
+Cyclic values (through references and arrays) do not have a standard
+textual presentation and it is impossible to convert arbitrary
+functional values (within SML) to a meaningful textual presentation.
+Finally, it would also make sense to show sharing of references and
+arrays.  We'll leave these improvements to an actual library
+implementation.
+
+The following code uses the <:Fixpoints:fixpoint framework> and other
+utilities from an Extended Basis library (see
+<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>).
+
+=== Signature ===
+
+Let's consider the design of the `SHOW` signature:
+[source,sml]
+----
+infixr -->
+
+signature SHOW = sig
+   type 'a t       (* complete type-index *)
+   type 'a s       (* incomplete sum *)
+   type ('a, 'k) p (* incomplete product *)
+   type u          (* tuple or unlabelled product *)
+   type l          (* record or labelled product *)
+
+   val show : 'a t -> 'a -> string
+
+   (* user-defined types *)
+   val inj : ('a -> 'b) -> 'b t -> 'a t
+
+   (* tuples and records *)
+   val * : ('a, 'k) p * ('b, 'k) p -> (('a, 'b) product, 'k) p
+
+   val U :           'a t -> ('a, u) p
+   val L : string -> 'a t -> ('a, l) p
+
+   val tuple  : ('a, u) p -> 'a t
+   val record : ('a, l) p -> 'a t
+
+   (* datatypes *)
+   val + : 'a s * 'b s -> (('a, 'b) sum) s
+
+   val C0 : string -> unit s
+   val C1 : string -> 'a t -> 'a s
+
+   val data : 'a s -> 'a t
+
+   val Y : 'a t Tie.t
+
+   (* exceptions *)
+   val exn : exn t
+   val regExn : (exn -> ('a * 'a s) option) -> unit
+
+   (* some built-in type constructors *)
+   val refc : 'a t -> 'a ref t
+   val array : 'a t -> 'a array t
+   val list : 'a t -> 'a list t
+   val vector : 'a t -> 'a vector t
+   val --> : 'a t * 'b t -> ('a -> 'b) t
+
+   (* some built-in base types *)
+   val string : string t
+   val unit : unit t
+   val bool : bool t
+   val char : char t
+   val int : int t
+   val word : word t
+   val real : real t
+end
+----
+
+While some details are shaped by the specific requirements of `show`,
+there are a number of (design) patterns that translate to other
+type-indexed values.  The former kind of details are mostly shaped by
+the syntax of SML values that `show` is designed to produce.  To this
+end, abstract types and phantom types are used to distinguish
+incomplete record, tuple, and datatype type-indices from each other
+and from complete type-indices.  Also, names of record labels and
+datatype constructors need to be provided by the user.
+
+==== Arbitrary user-defined datatypes ====
+
+Perhaps the most important pattern is how the design supports
+arbitrary user-defined datatypes.  A number of combinators together
+conspire to provide the functionality.  First of all, to support new
+user-defined types, a combinator taking a conversion function to a
+previously supported type is provided:
+[source,sml]
+----
+val inj : ('a -> 'b) -> 'b t -> 'a t
+----
+
+An injection function is sufficient in this case, but in the general
+case, an embedding with injection and projection functions may be
+needed.
+
+To support products (tuples and records) a product combinator is
+provided:
+[source,sml]
+----
+val * : ('a, 'k) p * ('b, 'k) p -> (('a, 'b) product, 'k) p
+----
+The second (phantom) type variable `'k` is there to distinguish
+between labelled and unlabelled products and the type `p`
+distinguishes incomplete products from complete type-indices of type
+`t`.  Most type-indexed values do not need to make such distinctions.
+
+To support sums (datatypes) a sum combinator is provided:
+[source,sml]
+----
+val + : 'a s * 'b s -> (('a, 'b) sum) s
+----
+Again, the purpose of the type `s` is to distinguish incomplete sums
+from complete type-indices of type `t`, which usually isn't necessary.
+
+Finally, to support recursive datatypes, including sets of mutually
+recursive datatypes, a <:Fixpoints:fixpoint tier> is provided:
+[source,sml]
+----
+val Y : 'a t Tie.t
+----
+
+Together these combinators (with the more domain specific combinators
+`U`, `L`, `tuple`, `record`, `C0`, `C1`, and `data`) enable one to
+encode a type-index for any user-defined datatype.
+
+==== Exceptions ====
+
+The `exn` type in SML is a <:UniversalType:universal type> into which
+all types can be embedded.  SML also allows a program to generate new
+exception variants at run-time.  Thus a mechanism is required to register
+handlers for particular variants:
+[source,sml]
+----
+val exn : exn t
+val regExn : (exn -> ('a * 'a s) option) -> unit
+----
+
+The universal `exn` type-index then makes use of the registered
+handlers.  The above particular form of handler, which converts an
+exception value to a value of some type and a type-index for that type
+(essentially an existential type) is designed to make it convenient to
+write handlers.  To write a handler, one can conveniently reuse
+existing type-indices:
+[source,sml]
+----
+exception Int of int
+
+local
+   open Show
+in
+   val () = regExn (fn Int v => SOME (v, C1"Int" int)
+                     | _     => NONE)
+end
+----
+
+Note that a single handler may actually handle an arbitrary number of
+different exceptions.
+
+==== Other types ====
+
+Some built-in and standard types typically require special treatment
+due to their special nature.  The most important of these are arrays
+and references, because cyclic data (ignoring closures) and observable
+sharing can only be constructed through them.
+
+When arrow types are really supported, unlike in this case, they
+usually need special treatment due to the contravariance of arguments.
+
+Lists and vectors require special treatment in the case of `show`,
+because of their special syntax.  This isn't usually the case.
+
+The set of base types to support also needs to be considered unless
+one exports an interface for constructing type-indices for entirely
+new base types.
+
+== Usage ==
+
+Before going to the implementation, let's look at some examples.  For
+the following examples, we'll assume a structure binding
+`Show :> SHOW`.  If you want to try the examples immediately, just
+skip forward to the implementation.
+
+To use `show`, one first needs a type-index, which is then given to
+`show`.  To show a list of integers, one would use the type-index
+`list int`, which has the type `int list Show.t`:
+[source,sml]
+----
+val "[3, 1, 4]" =
+    let open Show in show (list int) end
+       [3, 1, 4]
+----
+
+Likewise, to show a list of lists of characters, one would use the
+type-index `list (list char)`, which has the type `char list list
+Show.t`:
+[source,sml]
+----
+val "[[#\"a\", #\"b\", #\"c\"], []]" =
+    let open Show in show (list (list char)) end
+       [[#"a", #"b", #"c"], []]
+----
+
+Handling standard types is not particularly interesting.  It is more
+interesting to see how user-defined types can be handled.  Although
+the `option` datatype is a standard type, it requires no special
+support, so we can treat it as a user-defined type.  Options can be
+encoded easily using a sum:
+[source,sml]
+----
+fun option t = let
+   open Show
+in
+   inj (fn NONE => INL ()
+         | SOME v => INR v)
+       (data (C0"NONE" + C1"SOME" t))
+end
+
+val "SOME 5" =
+    let open Show in show (option int) end
+       (SOME 5)
+----
+
+Readers new to type-indexed values might want to type annotate each
+subexpression of the above example as an exercise.  (Use a compiler to
+check your annotations.)
+
+Using a product, user specified records can be also be encoded easily:
+[source,sml]
+----
+val abc = let
+   open Show
+in
+   inj (fn {a, b, c} => a & b & c)
+       (record (L"a" (option int) *
+                L"b" real *
+                L"c" bool))
+end
+
+val "{a = SOME 1, b = 3.0, c = false}" =
+    let open Show in show abc end
+       {a = SOME 1, b = 3.0, c = false}
+----
+
+As you can see, both of the above use `inj` to inject user-defined
+types to the general purpose sum and product types.
+
+Of particular interest is whether recursive datatypes and cyclic data
+can be handled.  For example, how does one write a type-index for a
+recursive datatype such as a cyclic graph?
+[source,sml]
+----
+datatype 'a graph = VTX of 'a * 'a graph list ref
+fun arcs (VTX (_, r)) = r
+----
+
+Using the `Show` combinators, we could first write a new type-index
+combinator for `graph`:
+[source,sml]
+----
+fun graph a = let
+   open Tie Show
+in
+   fix Y (fn graph_a =>
+             inj (fn VTX (x, y) => x & y)
+                 (data (C1"VTX"
+                          (tuple (U a *
+                                  U (refc (list graph_a)))))))
+end
+----
+
+To show a graph with integer labels
+[source,sml]
+----
+val a_graph = let
+   val a = VTX (1, ref [])
+   val b = VTX (2, ref [])
+   val c = VTX (3, ref [])
+   val d = VTX (4, ref [])
+   val e = VTX (5, ref [])
+   val f = VTX (6, ref [])
+in
+   arcs a := [b, d]
+ ; arcs b := [c, e]
+ ; arcs c := [a, f]
+ ; arcs d := [f]
+ ; arcs e := [d]
+ ; arcs f := [e]
+ ; a
+end
+----
+we could then simply write
+[source,sml]
+----
+val "VTX (1, ref [VTX (2, ref [VTX (3, ref [VTX (1, %0), \
+    \VTX (6, ref [VTX (5, ref [VTX (4, ref [VTX (6, %3)])])] as %3)]), \
+    \VTX (5, ref [VTX (4, ref [VTX (6, ref [VTX (5, %2)])])] as %2)]), \
+    \VTX (4, ref [VTX (6, ref [VTX (5, ref [VTX (4, %1)])])] as %1)] as %0)" =
+    let open Show in show (graph int) end
+       a_graph
+----
+
+There is a subtle gotcha with cyclic data.  Consider the following code:
+[source,sml]
+----
+exception ExnArray of exn array
+
+val () = let
+   open Show
+in
+   regExn (fn ExnArray a =>
+              SOME (a, C1"ExnArray" (array exn))
+            | _ => NONE)
+end
+
+val a_cycle = let
+   val a = Array.fromList [Empty]
+in
+   Array.update (a, 0, ExnArray a) ; a
+end
+----
+
+Although the above looks innocent enough, the evaluation  of
+[source,sml]
+----
+val "[|ExnArray %0|] as %0" =
+    let open Show in show (array exn) end
+       a_cycle
+----
+goes into an infinite loop.  To avoid this problem, the type-index
+`array exn` must be evaluated only once, as in the following:
+[source,sml]
+----
+val array_exn = let open Show in array exn end
+
+exception ExnArray of exn array
+
+val () = let
+   open Show
+in
+   regExn (fn ExnArray a =>
+              SOME (a, C1"ExnArray" array_exn)
+            | _ => NONE)
+end
+
+val a_cycle = let
+   val a = Array.fromList [Empty]
+in
+   Array.update (a, 0, ExnArray a) ; a
+end
+
+val "[|ExnArray %0|] as %0" =
+    let open Show in show array_exn end
+       a_cycle
+----
+
+Cyclic data (excluding closures) in Standard ML can only be
+constructed imperatively through arrays and references (combined with
+exceptions or recursive datatypes).  Before recursing to a reference
+or an array, one needs to check whether that reference or array has
+already been seen before.  When `ref` or `array` is called with a
+type-index, a new cyclicity checker is instantiated.
+
+== Implementation ==
+
+[source,sml]
+----
+structure SmlSyntax = struct
+   local
+      structure CV = CharVector and C = Char
+   in
+      val isSym = Char.contains "!%&$#+-/:<=>?@\\~`^|*"
+
+      fun isSymId s = 0 < size s andalso CV.all isSym s
+
+      fun isAlphaNumId s =
+          0 < size s
+          andalso C.isAlpha (CV.sub (s, 0))
+          andalso CV.all (fn c => C.isAlphaNum c
+                                  orelse #"'" = c
+                                  orelse #"_" = c) s
+
+      fun isNumLabel s =
+          0 < size s
+          andalso #"0" <> CV.sub (s, 0)
+          andalso CV.all C.isDigit s
+
+      fun isId s = isAlphaNumId s orelse isSymId s
+
+      fun isLongId s = List.all isId (String.fields (#"." <\ op =) s)
+
+      fun isLabel s = isId s orelse isNumLabel s
+   end
+end
+
+structure Show :> SHOW = struct
+   datatype 'a t = IN of exn list * 'a -> bool * string
+   type 'a s = 'a t
+   type ('a, 'k) p = 'a t
+   type u = unit
+   type l = unit
+
+   fun show (IN t) x = #2 (t ([], x))
+
+   (* user-defined types *)
+   fun inj inj (IN b) = IN (b o Pair.map (id, inj))
+
+   local
+      fun surround pre suf (_, s) = (false, concat [pre, s, suf])
+      fun parenthesize x = if #1 x then surround "(" ")" x else x
+      fun construct tag =
+          (fn (_, s) => (true, concat [tag, " ", s])) o parenthesize
+      fun check p m s = if p s then () else raise Fail (m^s)
+   in
+      (* tuples and records *)
+      fun (IN l) * (IN r) =
+          IN (fn (rs, a & b) =>
+                 (false, concat [#2 (l (rs, a)),
+                                 ", ",
+                                 #2 (r (rs, b))]))
+
+      val U = id
+      fun L l = (check SmlSyntax.isLabel "Invalid label: " l
+               ; fn IN t => IN (surround (l^" = ") "" o t))
+
+      fun tuple (IN t) = IN (surround "(" ")" o t)
+      fun record (IN t) = IN (surround "{" "}" o t)
+
+      (* datatypes *)
+      fun (IN l) + (IN r) = IN (fn (rs, INL a) => l (rs, a)
+                                 | (rs, INR b) => r (rs, b))
+
+      fun C0 c = (check SmlSyntax.isId "Invalid constructor: " c
+                ; IN (const (false, c)))
+      fun C1 c (IN t) = (check SmlSyntax.isId "Invalid constructor: " c
+                       ; IN (construct c o t))
+
+      val data = id
+
+      fun Y ? = Tie.iso Tie.function (fn IN x => x, IN) ?
+
+      (* exceptions *)
+      local
+         val handlers = ref ([] : (exn -> unit t option) list)
+      in
+         val exn = IN (fn (rs, e) => let
+                             fun lp [] =
+                                 C0(concat ["<exn:",
+                                            General.exnName e,
+                                            ">"])
+                               | lp (f::fs) =
+                                 case f e
+                                  of NONE => lp fs
+                                   | SOME t => t
+                             val IN f = lp (!handlers)
+                          in
+                             f (rs, ())
+                          end)
+         fun regExn f =
+             handlers := (Option.map
+                             (fn (x, IN f) =>
+                                 IN (fn (rs, ()) =>
+                                        f (rs, x))) o f)
+                         :: !handlers
+      end
+
+      (* some built-in type constructors *)
+      local
+         fun cyclic (IN t) = let
+            exception E of ''a * bool ref
+         in
+            IN (fn (rs, v : ''a) => let
+                      val idx = Int.toString o length
+                      fun lp (E (v', c)::rs) =
+                          if v' <> v then lp rs
+                          else (c := false ; (false, "%"^idx rs))
+                        | lp (_::rs) = lp rs
+                        | lp [] = let
+                             val c = ref true
+                             val r = t (E (v, c)::rs, v)
+                          in
+                             if !c then r
+                             else surround "" (" as %"^idx rs) r
+                          end
+                   in
+                      lp rs
+                   end)
+         end
+
+         fun aggregate pre suf toList (IN t) =
+             IN (surround pre suf o
+                 (fn (rs, a) =>
+                     (false,
+                      String.concatWith
+                         ", "
+                         (map (#2 o curry t rs)
+                              (toList a)))))
+      in
+         fun refc ? = (cyclic o inj ! o C1"ref") ?
+         fun array ? = (cyclic o aggregate "[|" "|]" (Array.foldr op:: [])) ?
+         fun list ? = aggregate "[" "]" id ?
+         fun vector ? = aggregate "#[" "]" (Vector.foldr op:: []) ?
+      end
+
+      fun (IN _) --> (IN _) = IN (const (false, "<fn>"))
+
+      (* some built-in base types *)
+      local
+         fun mk toS = (fn x => (false, x)) o toS o (fn (_, x) => x)
+      in
+         val string =
+             IN (surround "\"" "\"" o mk (String.translate Char.toString))
+         val unit = IN (mk (fn () => "()"))
+         val bool = IN (mk Bool.toString)
+         val char = IN (surround "#\"" "\"" o mk Char.toString)
+         val int = IN (mk Int.toString)
+         val word = IN (surround "0wx" "" o mk Word.toString)
+         val real = IN (mk Real.toString)
+      end
+   end
+end
+
+(* Handlers for standard top-level exceptions *)
+val () = let
+   open Show
+   fun E0 name = SOME ((), C0 name)
+in
+   regExn (fn Bind => E0"Bind"
+            | Chr => E0"Chr"
+            | Div => E0"Div"
+            | Domain => E0"Domain"
+            | Empty => E0"Empty"
+            | Match => E0"Match"
+            | Option => E0"Option"
+            | Overflow  => E0"Overflow"
+            | Size => E0"Size"
+            | Span => E0"Span"
+            | Subscript => E0"Subscript"
+            | _ => NONE)
+ ; regExn (fn Fail s => SOME (s, C1"Fail" string)
+            | _ => NONE)
+end
+----
+
+
+== Also see ==
+
+There are a number of related techniques.  Here are some of them.
+
+* <:Fold:>
+* <:StaticSum:>

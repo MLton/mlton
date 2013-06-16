@@ -1,0 +1,45 @@
+VesaKarvonen
+============
+
+Vesa Karvonen is a student at the http://www.cs.helsinki.fi/index.en.html[University of Helsinki].
+His interests lie in programming techniques that allow complex programs to be expressed
+clearly and concisely and the design and implementation of programming languages.
+
+image::VesaKarvonen.attachments/vesa-in-mlton-t-shirt.jpg[align="center"]
+
+Things he'd like to see for SML and hopes to be able to contribute towards:
+
+* A practical tool for documenting libraries. Preferably one that is
+based on extracting the documentation from source code comments.
+
+* A good IDE. Possibly an enhanced SML mode (`esml-mode`) for Emacs.
+Google for http://www.google.com/search?&q=SLIME+video[SLIME video] to
+get an idea of what he'd like to see. Some specific notes:
++
+--
+  * show type at point
+  * robust, consistent indentation
+  * show documentation
+  * jump to definition (see <:EmacsDefUseMode:>)
+--
++
+<:EmacsBgBuildMode:> has also been written for working with MLton.
+
+* Documented and cataloged libraries. Perhaps something like
+http://www.boost.org[Boost], but for SML libraries.  Here is a partial
+list of libraries, tools, and frameworks Vesa is or has been working
+on:
++
+--
+  * Asynchronous Programming Library (<!ViewGitFile(mltonlib,master,com/ssh/async/unstable/README)>)
+  * Extended Basis Library (<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>)
+  * Generic Programming Library (<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/README)>)
+  * Pretty Printing Library (<!ViewGitFile(mltonlib,master,com/ssh/prettier/unstable/README)>)
+  * Random Generator Library (<!ViewGitFile(mltonlib,master,com/ssh/random/unstable/README)>)
+  * RPC (Remote Procedure Call) Library (<!ViewGitFile(mltonlib,master,org/mlton/vesak/rpc-lib/unstable/README)>)
+  * http://www.libsdl.org/[SDL] Binding (<!ViewGitFile(mltonlib,master,org/mlton/vesak/sdl/unstable/README)>)
+  * Unit Testing Library (<!ViewGitFile(mltonlib,master,com/ssh/unit-test/unstable/README)>)
+  * Use Library (<!ViewGitFile(mltonlib,master,org/mlton/vesak/use-lib/unstable/README)>)
+  * Windows Library (<!ViewGitFile(mltonlib,master,com/ssh/windows/unstable/README)>)
+--
+Note that most of these libraries have been ported to several <:StandardMLImplementations:SML implementations>.

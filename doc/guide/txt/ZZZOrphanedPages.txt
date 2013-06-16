@@ -1,0 +1,9 @@
+ZZZOrphanedPages
+================
+
+The contents of these pages have been moved to other pages.
+
+These templates are used by other pages.
+
+ * <:CompilerPassTemplate:>
+ * <:TalkTemplate:>

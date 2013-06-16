@@ -1,0 +1,110 @@
+ForeignFunctionInterfaceTypes
+=============================
+
+MLton's <:ForeignFunctionInterface:> only allows values of certain SML
+types to be passed between SML and C.  The following types are
+allowed: `bool`, `char`, `int`, `real`, `word`.  All of the different
+sizes of (fixed-sized) integers, reals, and words are supported as
+well: `Int8.int`, `Int16.int`, `Int32.int`, `Int64.int`,
+`Real32.real`, `Real64.real`, `Word8.word`, `Word16.word`,
+`Word32.word`, `Word64.word`.  There is a special type,
+`MLton.Pointer.t`, for passing C pointers -- see <:MLtonPointer:> for
+details.
+
+Arrays, refs, and vectors of the above types are also allowed.
+Because in MLton monomorphic arrays and vectors are exactly the same
+as their polymorphic counterpart, these are also allowed.  Hence,
+`string`, `char vector`, and `CharVector.vector` are also allowed.
+Strings are not null terminated, unless you manually do so from the
+SML side.
+
+Unfortunately, passing tuples or datatypes is not allowed because that
+would interfere with representation optimizations.
+
+The C header file that `-export-header` generates includes
+++typedef++s for the C types corresponding to the SML types.  Here is
+the mapping between SML types and C types.
+
+[options="header"]
+|====
+| SML type | C typedef | C type | Note
+| `array` | `Pointer` | `unsigned char *` |
+| `bool` | `Bool` | `int32_t` |
+| `char` | `Char8` | `uint8_t` |
+| `Int8.int` | `Int8` | `int8_t` |
+| `Int16.int` | `Int16` | `int16_t` |
+| `Int32.int` | `Int32` | `int32_t` |
+| `Int64.int` | `Int64` | `int64_t` |
+| `int` | `Int32` | `int32_t` | <:#Default:(default)>
+| `MLton.Pointer.t` | `Pointer` | `unsigned char *` |
+| `Real32.real` | `Real32` | `float` |
+| `Real64.real` | `Real64` | `double` |
+| `real` | `Real64` | `double` | <:#Default:(default)>
+| `ref` | `Pointer` | `unsigned char *` |
+| `string` | `Pointer` | `unsigned char *` | <:#ReadOnly:(read only)>
+| `vector` | `Pointer` | `unsigned char *` | <:#ReadOnly:(read only)>
+| `Word8.word` | `Word8` | `uint8_t` |
+| `Word16.word` | `Word16` | `uint16_t` |
+| `Word32.word` | `Word32` | `uint32_t` |
+| `Word64.word` | `Word64` | `uint64_t` |
+| `word` | `Word32` | `uint32_t` | <:#Default:(default)>
+|====
+
+<!Anchor(Default)>Note (default): The default `int`, `real`, and
+`word` types may be set by the ++-default-type __type__++
+<:CompileTimeOptions: compiler option>.  The given C typedef and C
+types correspond to the default behavior.
+
+<!Anchor(ReadOnly)>Note (read only): Because MLton assumes that
+vectors and strings are read-only (and will perform optimizations
+that, for instance, cause them to share space), you must not modify
+the data pointed to by the `unsigned char *` in C code.
+
+Although the C type of an array, ref, or vector is always `Pointer`,
+in reality, the object has the natural C representation.  Your C code
+should cast to the appropriate C type if you want to keep the C
+compiler from complaining.
+
+When calling an <:CallingFromSMLToC: imported C function from SML>
+that returns an array, ref, or vector result or when calling an
+<:CallingFromCToSML: exported SML function from C> that takes an
+array, ref, or string argument, then the object must be an ML object
+allocated on the ML heap.  (Although an array, ref, or vector object
+has the natural C representation, the object also has an additional
+header used by the SML runtime system.)
+
+In addition, there is an <:MLBasis:> file, `$(SML_LIB)/basis/c-types.mlb`,
+which provides structure aliases for various C types:
+
+|====
+| C type | Structure | Signature
+| `char` | `C_Char` | `INTEGER`
+| `signed char` | `C_SChar` | `INTEGER`
+| `unsigned char` | `C_UChar` | `WORD`
+| `short` | `C_Short` | `INTEGER`
+| `signed short` | `C_SShort` | `INTEGER`
+| `unsigned short` | `C_UShort` | `WORD`
+| `int` | `C_Int` | `INTEGER`
+| `signed int` | `C_SInt` | `INTEGER`
+| `unsigned int` | `C_UInt` | `WORD`
+| `long` | `C_Long` | `INTEGER`
+| `signed long` | `C_SLong` | `INTEGER`
+| `unsigned long` | `C_ULong` | `WORD`
+| `long long` | `C_LongLong` | `INTEGER`
+| `signed long long` | `C_SLongLong` | `INTEGER`
+| `unsigned long long` | `C_ULongLong` | `WORD`
+| `float` | `C_Float` | `REAL`
+| `double` | `C_Double` | `REAL`
+| `size_t` | `C_Size` | `WORD`
+| `ptrdiff_t` | `C_Ptrdiff` | `INTEGER`
+| `intmax_t` | `C_Intmax` | `INTEGER`
+| `uintmax_t` | `C_UIntmax` | `WORD`
+| `intptr_t` | `C_Intptr` | `INTEGER`
+| `uintptr_t` | `C_UIntptr` | `WORD`
+| `void *` | `C_Pointer` | `WORD`
+|====
+
+These aliases depend on the configuration of the C compiler for the
+target architecture, and are independent of the configuration of MLton
+(including the ++-default-type __type__++
+<:CompileTimeOptions: compiler option>).

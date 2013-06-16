@@ -1,0 +1,156 @@
+MLtonProfile
+============
+
+[source,sml]
+----
+signature MLTON_PROFILE =
+   sig
+      structure Data:
+         sig
+            type t
+
+            val equals: t * t -> bool
+            val free: t -> unit
+            val malloc: unit -> t
+            val write: t * string -> unit
+         end
+
+      val isOn: bool
+      val withData: Data.t * (unit -> 'a) -> 'a
+   end
+----
+
+`MLton.Profile` provides <:Profiling:> control from within the
+program, allowing you to profile individual portions of your
+program. With `MLton.Profile`, you can create many units of profiling
+data (essentially, mappings from functions to counts) during a run of
+a program, switch between them while the program is running, and
+output multiple `mlmon.out` files.
+
+* `isOn`
++
+a compile-time constant that is false only when compiling `-profile no`.
+
+* `type Data.t`
++
+the type of a unit of profiling data.  In order to most efficiently
+execute non-profiled programs, when compiling `-profile no` (the
+default), `Data.t` is equivalent to `unit ref`.
+
+* `Data.equals (x, y)`
++
+returns true if the `x` and `y` are the same unit of profiling data.
+
+* `Data.free x`
++
+frees the memory associated with the unit of profiling data `x`.  It
+is an error to free the current unit of profiling data or to free a
+previously freed unit of profiling data.  When compiling
+`-profile no`, `Data.free x` is a no-op.
+
+* `Data.malloc ()`
++
+returns a new unit of profiling data.  Each unit of profiling data is
+allocated from the process address space (but is _not_ in the MLton
+heap) and consumes memory proportional to the number of source
+functions.  When compiling `-profile no`, `Data.malloc ()` is
+equivalent to allocating a new `unit ref`.
+
+* `write (x, f)`
++
+writes the accumulated ticks in the unit of profiling data `x` to file
+`f`.  It is an error to write a previously freed unit of profiling
+data.  When compiling `-profile no`, `write (x, f)` is a no-op.  A
+profiled program will always write the current unit of profiling data
+at program exit to a file named `mlmon.out`.
+
+* `withData (d, f)`
++
+runs `f` with `d` as the unit of profiling data, and returns the
+result of `f` after restoring the current unit of profiling data.
+When compiling `-profile no`, `withData (d, f)` is equivalent to
+`f ()`.
+
+
+== Example ==
+
+Here is an example, taken from the `examples/profiling` directory,
+showing how to profile the executions of the `fib` and `tak` functions
+separately.  Suppose that `fib-tak.sml` contains the following.
+[source,sml]
+----
+structure Profile = MLton.Profile
+
+val fibData = Profile.Data.malloc ()
+val takData = Profile.Data.malloc ()
+
+fun wrap (f, d) x =
+   Profile.withData (d, fn () => f x)
+
+val rec fib =
+   fn 0 => 0
+    | 1 => 1
+    | n => fib (n - 1) + fib (n - 2)
+val fib = wrap (fib, fibData)
+
+fun tak (x,y,z) =
+   if not (y < x)
+      then z
+   else tak (tak (x - 1, y, z),
+             tak (y - 1, z, x),
+             tak (z - 1, x, y))
+val tak = wrap (tak, takData)
+
+val rec f =
+   fn 0 => ()
+    | n => (fib 38; f (n-1))
+val _ = f 2
+
+val rec g =
+   fn 0 => ()
+    | n => (tak (18,12,6); g (n-1))
+val _ = g 500
+
+fun done (data, file) =
+   (Profile.Data.write (data, file)
+    ; Profile.Data.free data)
+
+val _ = done (fibData, "mlmon.fib.out")
+val _ = done (takData, "mlmon.tak.out")
+----
+
+Compile and run the program.
+----
+% mlton -profile time fib-tak.sml
+% ./fib-tak
+----
+
+Separately display the profiling data for `fib`
+----
+% mlprof fib-tak mlmon.fib.out
+5.77 seconds of CPU time (0.00 seconds GC)
+function   cur
+--------- -----
+fib       96.9%
+<unknown>  3.1%
+----
+and for `tak`
+----
+% mlprof fib-tak mlmon.tak.out
+0.68 seconds of CPU time (0.00 seconds GC)
+function  cur
+-------- ------
+tak      100.0%
+----
+
+Combine the data for `fib` and `tak` by calling `mlprof`
+with multiple `mlmon.out` files.
+----
+% mlprof fib-tak mlmon.fib.out mlmon.tak.out mlmon.out
+6.45 seconds of CPU time (0.00 seconds GC)
+function   cur
+--------- -----
+fib       86.7%
+tak       10.5%
+<unknown>  2.8%
+----

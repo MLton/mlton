@@ -1,0 +1,8 @@
+RunningOnHPUX
+=============
+
+MLton runs fine on HPUX.
+
+== Also see ==
+
+* <:RunningOnHPPA:>
