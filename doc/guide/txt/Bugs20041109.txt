@@ -1,0 +1,182 @@
+Bugs20041109
+============
+
+Here are the known bugs in <:Release20041109:MLton 20041109>, listed
+in reverse chronological order of date reported.
+
+* <!Anchor(bug17)>
+ `MLton.Finalizable.touch` doesn't necessarily keep values alive
+ long enough.  Our SVN has a patch to the compiler.  You must rebuild
+ the compiler in order for the patch to take effect.
++
+Thanks to Florian Weimer for reporting this bug.
+
+* <!Anchor(bug16)>
+ A bug in an optimization pass may incorrectly transform a program
+ to flatten ref cells into their containing data structure, yielding a
+ type-error in the transformed program.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/ssa/ref-flatten.fun.diff?r1=1.35&r2=1.37[patch]
+ to the compiler.  You must rebuild the compiler in order for the
+ patch to take effect.
++
+Thanks to <:VesaKarvonen:> for reporting this bug.
+
+* <!Anchor(bug15)>
+ A bug in the front end mistakenly allows unary constructors to be
+ used without an argument in patterns.  For example, the following
+ program is accepted, and triggers a large internal error.
++
+[source,sml]
+----
+fun f x = case x of SOME => true | _ => false
+----
++
+We have fixed the problem in our CVS.
++
+Thanks to William Lovas for reporting this bug.
+
+* <!Anchor(bug14)>
+ A bug in `Posix.IO.{getlk,setlk,setlkw}` causes a link-time error:
+ `undefined reference to Posix_IO_FLock_typ`
+ Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/posix/primitive.sml.diff?r1=1.34&r2=1.35[patch]
+ to the Basis Library implementation.
++
+Thanks to Adam Chlipala for reporting this bug.
+
+* <!Anchor(bug13)>
+ A bug can cause programs compiled with `-profile alloc` to
+ segfault.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/backend/ssa-to-rssa.fun.diff?r1=1.106&r2=1.107[patch]
+ to the compiler.  You must rebuild the compiler in order for the
+ patch to take effect.
++
+Thanks to John Reppy for reporting this bug.
+
+* <!Anchor(bug12)>
+ A bug in an optimization pass may incorrectly flatten ref cells
+ into their containing data structure, breaking the sharing between
+ the cells.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/ssa/ref-flatten.fun.diff?r1=1.32&r2=1.33[patch]
+ to the compiler.  You must rebuild the compiler in order for the
+ patch to take effect.
++
+Thanks to Paul Govereau for reporting this bug.
+
+* <!Anchor(bug11)>
+ Some arrays or vectors, such as `(char * char) vector`, are
+ incorrectly implemented, and will conflate the first and second
+ components of each element.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/backend/packed-representation.fun.diff?r1=1.32&r2=1.33[patch]
+ to the compiler.  You must rebuild the compiler in order for the
+ patch to take effect.
++
+Thanks to Scott Cruzen for reporting this bug.
+
+* <!Anchor(bug10)>
+ `Socket.Ctl.getLINGER` and `Socket.Ctl.setLINGER`
+ mistakenly raise `Subscript`.
+ Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/net/socket.sml.diff?r1=1.14&r2=1.15[patch]
+ to the Basis Library implementation.
++
+Thanks to Ray Racine for reporting the bug.
+
+* <!Anchor(bug09)>
+ <:ConcurrentML: CML> `Mailbox.send` makes a call in the wrong atomic context.
+ Our CVS has a http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/lib/cml/core-cml/mailbox.sml.diff?r1=1.3&r2=1.4[patch]
+ to the CML implementation.
+
+* <!Anchor(bug08)>
+ `OS.Path.joinDirFile` and `OS.Path.toString` did not
+ raise `InvalidArc` when they were supposed to.  They now do.
+ Our CVS has a http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/system/path.sml.diff?r1=1.8&r2=1.11[patch]
+ to the Basis Library implementation.
++
+Thanks to Andreas Rossberg for reporting the bug.
+
+* <!Anchor(bug07)>
+ The front end incorrectly disallows sequences of expressions
+ (separated by semicolons) after a topdec has already been processed.
+ For example, the following is incorrectly rejected.
++
+[source,sml]
+----
+val x = 0;
+ignore x;
+ignore x;
+----
++
+We have fixed the problem in our CVS.
++
+Thanks to Andreas Rossberg for reporting the bug.
+
+* <!Anchor(bug06)>
+ The front end incorrectly disallows expansive `val`
+ declarations that bind a type variable that doesn't occur in the
+ type of the value being bound.   For example, the following is
+ incorrectly rejected.
++
+[source,sml]
+----
+val 'a x = let exception E of 'a in () end
+----
++
+We have fixed the problem in our CVS.
++
+Thanks to Andreas Rossberg for reporting this bug.
+
+* <!Anchor(bug05)>
+ The x86 codegen fails to account for the possibility that a 64-bit
+ move could interfere with itself (as simulated by 32-bit moves).  We
+ have fixed the problem in our CVS.
++
+Thanks to Scott Cruzen for reporting this bug.
+
+* <!Anchor(bug04)>
+ `NetHostDB.scan` and `NetHostDB.fromString` incorrectly
+ raise an exception on internet addresses whose last component is a
+ zero, e.g `0.0.0.0`.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/net/net-host-db.sml.diff?r1=1.12&r2=1.13[patch] to the Basis Library implementation.
++
+Thanks to Scott Cruzen for reporting this bug.
+
+* <!Anchor(bug03)>
+ `StreamIO.inputLine` has an off-by-one error causing it to drop
+ the first character after a newline in some situations.  Our CVS has a
+ http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/io/stream-io.fun.diff?r1=text&tr1=1.29&r2=text&tr2=1.30&diff_format=h[patch].
+ to the Basis Library implementation.
++
+Thanks to Scott Cruzen for reporting this bug.
+
+* <!Anchor(bug02)>
+ `BinIO.getInstream` and `TextIO.getInstream` are
+ implemented incorrectly.  This also impacts the behavior of
+ `BinIO.scanStream` and `TextIO.scanStream`.  If you (directly
+ or indirectly) realize a `TextIO.StreamIO.instream` and do not
+ (directly or indirectly) call `TextIO.setInstream` with a derived
+ stream, you may lose input data.  We have fixed the problem in our
+ CVS.
++
+Thanks to <:WesleyTerpstra:> for reporting this bug.
+
+* <!Anchor(bug01)>
+ `Posix.ProcEnv.setpgid` doesn't work.  If you compile a program
+ that uses it, you will get a link time error
++
+----
+undefined reference to `Posix_ProcEnv_setpgid'
+----
++
+The bug is due to `Posix_ProcEnv_setpgid` being omitted from the
+ MLton runtime.  We fixed the problem in our CVS by adding the
+ following definition to `runtime/Posix/ProcEnv/ProcEnv.c`
++
+[source,c]
+----
+Int Posix_ProcEnv_setpgid (Pid p, Gid g) {
+        return setpgid (p, g);
+}
+----
++
+Thanks to Tom Murphy for reporting this bug.

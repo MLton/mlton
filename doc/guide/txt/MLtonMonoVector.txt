@@ -1,0 +1,31 @@
+MLtonMonoVector
+===============
+
+[source,sml]
+----
+signature MLTON_MONO_VECTOR =
+   sig
+      type t
+      type elem
+      val fromPoly: elem vector -> t
+      val toPoly: t -> elem vector
+   end
+----
+
+* `type t`
++
+type of monomorphic vector
+
+* `type elem`
++
+type of vector elements
+
+* `fromPoly v`
++
+type cast a polymorphic vector to its monomorphic counterpart; in
+MLton, this is a constant-time operation
+
+* `toPoly v`
++
+type cast a monomorphic vector to its polymorphic counterpart; in
+MLton, this is a constant-time operation

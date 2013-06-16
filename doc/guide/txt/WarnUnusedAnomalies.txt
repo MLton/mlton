@@ -1,0 +1,85 @@
+WarnUnusedAnomalies
+===================
+
+The `warnUnused` <:MLBasisAnnotations:MLBasis annotation> can be used
+to report unused identifiers.  This can be useful for catching bugs
+and for code maintenance (e.g., eliminating dead code).  However, the
+`warnUnused` annotation can sometimes behave in counter-intuitive
+ways.  This page gives some of the anomalies that have been reported.
+
+* Functions whose only uses are recursive uses within their bodies are
+not warned as unused:
++
+[source,sml]
+----
+local
+fun foo () = foo () : unit
+val bar = let fun baz () = baz () : unit in baz end
+in
+end
+----
++
+----
+Warning: z.sml 3.5.
+  Unused variable: bar.
+----
+
+* Components of actual functor argument that are necessary to match
+the functor argument signature but are unused in the body of the
+functor are warned as unused:
++
+[source,sml]
+----
+functor Warning (type t val x : t) = struct
+   val y = x
+end
+structure X = Warning (type t = int val x = 1)
+----
++
+----
+Warning: z.sml 4.29.
+  Unused type: t.
+----
+
+
+* No component of a functor result is warned as unused.  In the
+following, the only uses of `f2` are to match the functor argument
+signatures of `functor G` and `functor H` and there are no uses of
+`z`:
++
+[source,sml]
+----
+functor F(structure X : sig type t end) = struct
+   type t = X.t
+   fun f1 (_ : X.t) = ()
+   fun f2 (_ : X.t) = ()
+   val z = ()
+end
+functor G(structure Y : sig
+                           type t
+                           val f1 : t -> unit
+                           val f2 : t -> unit
+                           val z : unit
+                        end) = struct
+   fun g (x : Y.t) = Y.f1 x
+end
+functor H(structure Y : sig
+                           type t
+                           val f1 : t -> unit
+                           val f2 : t -> unit
+                           val z : unit
+                        end) = struct
+   fun h (x : Y.t) = Y.f1 x
+end
+functor Z() = struct
+   structure S = F(structure X = struct type t = unit end)
+   structure SG = G(structure Y = S)
+   structure SH = H(structure Y = S)
+end
+structure U = Z()
+val _ = U.SG.g ()
+val _ = U.SH.h ()
+----
++
+----
+----

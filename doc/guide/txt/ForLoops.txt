@@ -1,0 +1,247 @@
+ForLoops
+========
+
+A `for`-loop is typically used to iterate over a range of consecutive
+integers that denote indices of some sort.  For example, in <:OCaml:>
+a `for`-loop takes either the form
+----
+for <name> = <lower> to <upper> do <body> done
+----
+or the form
+----
+for <name> = <upper> downto <lower> do <body> done
+----
+
+Some languages provide considerably more flexible `for`-loop or
+`foreach`-constructs.
+
+A bit surprisingly, <:StandardML:Standard ML> provides special syntax
+for `while`-loops, but not for `for`-loops.  Indeed, in SML, many uses
+of `for`-loops are better expressed using `app`, `foldl`/`foldr`,
+`map` and many other higher-order functions provided by the
+<:BasisLibrary:Basis Library> for manipulating lists, vectors and
+arrays.  However, the Basis Library does not provide a function for
+iterating over a range of integer values.  Fortunately, it is very
+easy to write one.
+
+
+== A fairly simple design ==
+
+The following implementation imitates both the syntax and semantics of
+the OCaml `for`-loop.
+
+[source,sml]
+----
+datatype for = to of int * int
+             | downto of int * int
+
+infix to downto
+
+val for =
+    fn lo to up =>
+       (fn f => let fun loop lo = if lo > up then ()
+                                  else (f lo; loop (lo+1))
+                in loop lo end)
+     | up downto lo =>
+       (fn f => let fun loop up = if up < lo then ()
+                                  else (f up; loop (up-1))
+                in loop up end)
+----
+
+For example,
+
+[source,sml]
+----
+for (1 to 9)
+    (fn i => print (Int.toString i))
+----
+
+would print `123456789` and
+
+[source,sml]
+----
+for (9 downto 1)
+    (fn i => print (Int.toString i))
+----
+
+would print `987654321`.
+
+Straightforward formatting of nested loops
+
+[source,sml]
+----
+for (a to b)
+    (fn i =>
+        for (c to d)
+            (fn j =>
+                ...))
+----
+
+is fairly readable, but tends to cause the body of the loop to be
+indented quite deeply.
+
+
+== Off-by-one ==
+
+The above design has an annoying feature.  In practice, the upper
+bound of the iterated range is almost always excluded and most loops
+would subtract one from the upper bound:
+
+[source,sml]
+----
+for (0 to n-1) ...
+for (n-1 downto 0) ...
+----
+
+It is probably better to break convention and exclude the upper bound
+by default, because it leads to more concise code and becomes
+idiomatic with very little practice.  The iterator combinators
+described below exclude the upper bound by default.
+
+
+== Iterator combinators ==
+
+While the simple `for`-function described in the previous section is
+probably good enough for many uses, it is a bit cumbersome when one
+needs to iterate over a Cartesian product.  One might also want to
+iterate over more than just consecutive integers.  It turns out that
+one can provide a library of iterator combinators that allow one to
+implement iterators more flexibly.
+
+Since the types of the combinators may be a bit difficult to infer
+from their implementations, let's first take a look at a signature of
+the iterator combinator library:
+
+[source,sml]
+----
+signature ITER =
+  sig
+    type 'a t = ('a -> unit) -> unit
+
+    val return : 'a -> 'a t
+    val >>= : 'a t * ('a -> 'b t) -> 'b t
+
+    val none : 'a t
+
+    val to : int * int -> int t
+    val downto : int * int -> int t
+
+    val inList : 'a list -> 'a t
+    val inVector : 'a vector -> 'a t
+    val inArray : 'a array -> 'a t
+
+    val using : ('a, 'b) StringCvt.reader -> 'b -> 'a t
+
+    val when : 'a t * ('a -> bool) -> 'a t
+    val by : 'a t * ('a -> 'b) -> 'b t
+    val @@ : 'a t * 'a t -> 'a t
+    val ** : 'a t * 'b t -> ('a, 'b) product t
+
+    val for : 'a -> 'a
+  end
+----
+
+Several of the above combinators are meant to be used as infix
+operators.  Here is a set of suitable infix declarations:
+
+[source,sml]
+----
+infix 2 to downto
+infix 1 @@ when by
+infix 0 >>= **
+----
+
+A few notes are in order:
+
+* The `'a t` type constructor with the `return` and `>>=` operators forms a monad.
+
+* The `to` and `downto` combinators will omit the upper bound of the range.
+
+* `for` is the identity function.  It is purely for syntactic sugar and is not strictly required.
+
+* The `@@` combinator produces an iterator for the concatenation of the given iterators.
+
+* The `**` combinator produces an iterator for the Cartesian product of the given iterators.
+** See <:ProductType:> for the type constructor `('a, 'b) product` used in the type of the iterator produced by `**`.
+
+* The `using` combinator allows one to iterate over slices, streams and many other kinds of sequences.
+
+* `when` is the filtering combinator.  The name `when` is   inspired by <:OCaml:>'s guard clauses.
+
+* `by` is the mapping combinator.
+
+The below implementation of the `ITER`-signature makes use of the
+following basic combinators:
+
+[source,sml]
+----
+fun const x _ = x
+fun flip f x y = f y x
+fun id x = x
+fun opt fno fso = fn NONE => fno () | SOME ? => fso ?
+fun pass x f = f x
+----
+
+Here is an implementation the `ITER`-signature:
+
+[source,sml]
+----
+structure Iter :> ITER =
+  struct
+    type 'a t = ('a -> unit) -> unit
+
+    val return = pass
+    fun (iA >>= a2iB) f = iA (flip a2iB f)
+
+    val none = ignore
+
+    fun (l to u) f = let fun `l = if l<u then (f l; `(l+1)) else () in `l end
+    fun (u downto l) f = let fun `u = if u>l then (f (u-1); `(u-1)) else () in `u end
+
+    fun inList ? = flip List.app ?
+    fun inVector ? = flip Vector.app ?
+    fun inArray ? = flip Array.app ?
+
+    fun using get s f = let fun `s = opt (const ()) (fn (x, s) => (f x; `s)) (get s) in `s end
+
+    fun (iA when p) f = iA (fn a => if p a then f a else ())
+    fun (iA by g) f = iA (f o g)
+    fun (iA @@ iB) f = (iA f : unit; iB f)
+    fun (iA ** iB) f = iA (fn a => iB (fn b => f (a & b)))
+
+    val for = id
+  end
+----
+
+Note that some of the above combinators (e.g. `**`) could be expressed
+in terms of the other combinators, most notably `return` and `>>=`.
+Another implementation issue worth mentioning is that `downto` is
+written specifically to avoid computing `l-1`, which could cause an
+`Overflow`.
+
+To use the above combinators the `Iter`-structure needs to be opened
+
+[source,sml]
+----
+open Iter
+----
+
+and one usually also wants to declare the infix status of the
+operators as shown earlier.
+
+Here is an example that illustrates some of the features:
+
+[source,sml]
+----
+for (0 to 10 when (fn x => x mod 3 <> 0) ** inList ["a", "b"] ** 2 downto 1 by real)
+    (fn x & y & z =>
+       print ("("^Int.toString x^", \""^y^"\", "^Real.toString z^")\n"))
+----
+
+Using the `Iter` combinators one can easily produce more complicated
+iterators.  For example, here is an iterator over a "triangle":
+
+[source,sml]
+----
+fun triangle (l, u) = l to u >>= (fn i => i to u >>= (fn j => return (i, j)))
+----

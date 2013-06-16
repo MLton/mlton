@@ -1,0 +1,19 @@
+Logo
+====
+
+ifdef::basebackend-html[]
+image::Logo.attachments/mlton.svg[align="center",height="128",width="128"]
+endif::[]
+ifdef::basebackend-docbook[]
+image::Logo.attachments/mlton-128.pdf[align="center"]
+endif::[]
+
+== Files ==
+
+* <!Attachment(Logo,mlton.svg)>
+* <!Attachment(Logo,mlton-1024.png)>
+* <!Attachment(Logo,mlton-512.png)>
+* <!Attachment(Logo,mlton-256.png)>
+* <!Attachment(Logo,mlton-128.png)>
+* <!Attachment(Logo,mlton-64.png)>
+* <!Attachment(Logo,mlton-32.png)>

@@ -1,0 +1,35 @@
+CompilerOverview
+================
+
+The following table shows the overall structure of the compiler.
+<:IntermediateLanguage:>s are shown in the center column.  The names
+of compiler passes are listed in the left and right columns.
+
+[align="center",witdth="50%",cols="^,^,^"]
+|====
+3+^| *Compiler Overview*
+| _Translation Passes_ | _<:IntermediateLanguage:>_ | _Optimization Passes_
+|                      | Source                     |
+| <:FrontEnd:>         |                            |
+|                      | <:AST:>                    |
+| <:Elaborate:>        |                            |
+|                      | <:CoreML:>                 | <:CoreMLSimplify:>
+| <:Defunctorize:>     |                            |
+|                      | <:XML:>                    | <:XMLSimplify:>
+| <:Monomorphise:>     |                            |
+|                      | <:SXML:>                   | <:SXMLSimplify:>
+| <:ClosureConvert:>   |                            |
+|                      | <:SSA:>                    | <:SSASimplify:>
+| <:ToSSA2:>           |                            |
+|                      | <:SSA2:>                   | <:SSA2Simplify:>
+| <:ToRSSA:>           |                            |
+|                      | <:RSSA:>                   | <:RSSASimplify:>
+| <:ToMachine:>        |                            |
+|                      | <:Machine:>                |
+| <:Codegen:>          |                            |
+|====
+
+The `Compile` functor (<!ViewGitFile(mlton,master,mlton/main/compile.sig)>,
+<!ViewGitFile(mlton,master,mlton/main/compile.fun)>), controls the
+high-level view of the compiler passes, from <:FrontEnd:> to code
+generation.

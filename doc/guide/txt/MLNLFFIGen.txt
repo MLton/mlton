@@ -1,0 +1,17 @@
+MLNLFFIGen
+==========
+
+`mlnlffigen` generates a <:MLNLFFI:> binding from a collection of `.c`
+files. It is based on the <:CKitLibrary:>, which is primarily designed
+to handle standardized C and thus does not understand many (any?)
+compiler extensions; however, it attempts to recover from errors when
+seeing unrecognized definitions.
+
+In order to work around common gcc extensions, it may be useful to add
+`-cppopt` options to the command line; for example
+`-cppopt '-D__extension__'` may be occasionally useful. Fortunately,
+most portable libraries largely avoid the use of these types of
+extensions in header files.
+
+`mlnlffigen` will normally not generate bindings for `#included`
+files; see `-match` and `-allSU` if this is desirable.

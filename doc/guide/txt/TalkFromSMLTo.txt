@@ -1,0 +1,17 @@
+TalkFromSMLTo
+=============
+
+== From Standard ML to S-T F-O IL ==
+
+ * What issues arise when translating from Standard ML into an intermediate language?
+
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
+[cols="<,>"]
+|====
+|<:TalkMLtonApproach: Prev>|<:TalkHowModules: Next>
+|====

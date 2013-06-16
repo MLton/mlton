@@ -1,0 +1,19 @@
+XMLSimplify
+===========
+
+The optimization passes for the <:XML:> <:IntermediateLanguage:> are
+collected and controlled by the `XmlSimplify` functor
+(<!ViewGitFile(mlton,master,mlton/xml/xml-simplify.sig)>,
+<!ViewGitFile(mlton,master,mlton/xml/xml-simplify.fun)>).
+
+The following optimization passes are implemented:
+
+* <:XMLSimplifyTypes:>
+* <:XMLShrink:>
+
+The optimization passes can be controlled from the command-line by the options
+
+* `-diag-pass <pass>` -- keep diagnostic info for pass
+* `-drop-pass <pass>` -- omit optimization pass
+* `-keep-pass <pass>` -- keep the results of pass
+* `-xml-passes <passes>` -- xml optimization passes

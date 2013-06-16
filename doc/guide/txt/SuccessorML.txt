@@ -1,0 +1,9 @@
+SuccessorML
+===========
+
+The purpose of http://successor-ml.org[successor ML], or sML for
+short, is to provide a vehicle for the continued evolution of ML,
+using Standard ML as a starting point. The intention is for successor
+ML to be a living, evolving dialect of ML that is responsive to
+community needs and advances in language design, implementation, and
+semantics.

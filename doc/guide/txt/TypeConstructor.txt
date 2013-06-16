@@ -1,0 +1,36 @@
+TypeConstructor
+===============
+
+In <:StandardML:Standard ML>, a type constructor is a function from
+types to types.  Type constructors can be _nullary_, meaning that
+they take no arguments, as in `char`, `int`, and `real`.
+Type constructors can be _unary_, meaning that they take one
+argument, as in `array`, `list`, and `vector`.  A program
+can define a new type constructor in two ways: a `type` definition
+or a `datatype` declaration.  User-defined type constructors can
+can take any number of arguments.
+
+[source,sml]
+----
+datatype t = T of int * real            (* 0 arguments *)
+type 'a t = 'a * int                    (* 1 argument *)
+datatype ('a, 'b) t = A | B of 'a * 'b  (* 2 arguments *)
+type ('a, 'b, 'c) t = 'a * ('b  -> 'c)  (* 3 arguments *)
+----
+
+Here are the syntax rules for type constructor application.
+
+ * Type constructor application is written in postfix.  So, one writes
+ `int list`, not `list int`.
+
+ * Unary type constructors drop the parens, so one writes
+ `int list`, not `(int) list`.
+
+ * Nullary type constructors drop the argument entirely, so one writes
+ `int`, not `() int`.
+
+ * N-ary type constructors use tuple notation; for example,
+ `(int, real) t`.
+
+ * Type constructor application associates to the left.  So,
+ `int ref list` is the same as `(int ref) list`.

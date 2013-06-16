@@ -1,0 +1,20 @@
+Globalize
+=========
+
+<:Globalize:> is an analysis pass for the <:SXML:>
+<:IntermediateLanguage:>, invoked from <:ClosureConvert:>.
+
+== Description ==
+
+This pass marks values that are constant, allowing <:ClosureConvert:>
+to move them out to the top level so they are only evaluated once and
+do not appear in closures.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/closure-convert/globalize.sig)>
+* <!ViewGitFile(mlton,master,mlton/closure-convert/globalize.fun)>
+
+== Details and Notes ==
+
+{empty}

@@ -1,0 +1,29 @@
+TalkStandardML
+==============
+
+== Standard ML ==
+
+ * a high-level language makes
+   ** a programmer's life easier
+   ** a compiler writer's life harder
+
+ * perceived overheads of features discourage their use
+   ** higher-order functions
+   ** polymorphic datatypes
+   ** separate modules
+
+{nbsp} +
+{nbsp} +
+
+Also see <:StandardML:Standard ML>.
+
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+
+[cols="<,>"]
+|====
+|<:Talk: Prev>|<:TalkMLtonApproach: Next>
+|====

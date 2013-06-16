@@ -1,0 +1,64 @@
+CrossCompiling
+==============
+
+MLton's `-target` flag directs MLton to cross compile an application
+for another platform.  By default, MLton is only able to compile for
+the machine it is running on.  In order to use MLton as a cross
+compiler, you need to do two things.
+
+1. Install the GCC cross-compiler tools on the host so that GCC can
+compile to the target.
+
+2. Cross compile the MLton runtime system to build the runtime
+libraries for the target.
+
+To make the terminology clear, we refer to the _host_ as the machine
+MLton is running on and the _target_ as the machine that MLton is
+compiling for.
+
+To build a GCC cross-compiler toolset on the host, you can use the
+script `bin/build-cross-gcc`, available in the MLton sources, as a
+template.  The value of the `target` variable in that script is
+important, since that is what you will pass to MLton's `-target` flag.
+Once you have the toolset built, you should be able to test it by
+cross compiling a simple hello world program on your host machine.
+----
+% gcc -b i386-pc-cygwin -o hello-world hello-world.c
+----
+
+You should now be able to run `hello-world` on the target machine, in
+this case, a Cygwin machine.
+
+Next, you must cross compile the MLton runtime system and inform MLton
+of the availability of the new target.  The script `bin/add-cross`
+from the MLton sources will help you do this.  Please read the
+comments at the top of the script.  Here is a sample run adding a
+Solaris cross compiler.
+----
+% add-cross sparc-sun-solaris sun blade
+Making runtime.
+Building print-constants executable.
+Running print-constants on blade.
+----
+
+Running `add-cross` uses `ssh` to compile the runtime on the target
+machine and to create `print-constants`, which prints out all of the
+constants that MLton needs in order to implement the
+<:BasisLibrary:Basis Library>.  The script runs `print-constants` on
+the target machine (`blade` in this case), and saves the output.
+
+Once you have done all this, you should be able to cross compile SML
+applications.  For example,
+----
+mlton -target i386-pc-cygwin hello-world.sml
+----
+will create `hello-world`, which you should be able to run from a
+Cygwin shell on your Windows machine.
+
+
+== Cross-compiling alternatives ==
+
+Building and maintaining cross-compiling `gcc`'s is complex.  You may
+find it simpler to use `mlton -keep g` to generate the files on the
+host, then copy the files to the target, and then use `gcc` or `mlton`
+on the target to compile the files.

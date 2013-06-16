@@ -129,9 +129,7 @@ dirs:
 docs: dirs
 	$(MAKE) -C "$(LEX)" docs
 	$(MAKE) -C "$(YACC)" docs
-	if htmldoc --version >/dev/null 2>&1; then \
-		bin/make-pdf-guide; \
-	fi
+	$(MAKE) -C doc/guide
 
 LIBRARIES := ckit-lib cml mllpt-lib mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
 
@@ -265,6 +263,7 @@ version:
 		"$(SPEC)"						\
 		package/freebsd/Makefile				\
 		mlton/control/version_sml.src;				\
+		doc/guide/conf/asciidoc-html5.flags			\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && \
 		mv z "$$f";						\
@@ -361,10 +360,13 @@ install-docs:
 	mkdir -p "$(TDOC)"
 	(								\
 		cd "$(SRC)/doc" &&					\
-		$(CP) changelog examples guide license README "$(TDOC)/" \
+		$(CP) changelog examples license README "$(TDOC)/"	\
 	)
-	if [ -r "$(TDOC)/guide/mlton-guide.pdf" ]; then			\
-		cp "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/";		\
+	if [ -d "$(SRC)/doc/guide/localhost" ]; then			\
+		$(CP) "$(SRC)/doc/guide/localhost" "$(TDOC)/guide";	\
+	fi
+	if [ -r "$(SRC)/doc/guide/mlton-guide.pdf" ]; then		\
+		$(CP) "$(SRC)/doc/guide/mlton-guide.pdf" "$(TDOC)/";	\
 	fi
 	(								\
 		cd "$(SRC)/util" &&					\
@@ -375,11 +377,11 @@ install-docs:
 		; do							\
 		$(CP) "$(SRC)/regression/$$f.sml" "$(TEXM)/";		\
 	done
-	if test -r $(LEX)/$(LEX).pdf; then                              \
-		$(CP) $(LEX)/$(LEX).pdf $(TDOC);                        \
+	if [ -r "$(LEX)/$(LEX).pdf" ]; then				\
+		$(CP) "$(LEX)/$(LEX).pdf" "$(TDOC)/";			\
 	fi
-	if test -r $(YACC)/$(YACC).pdf; then                            \
-		$(CP) $(YACC)/$(YACC).pdf $(TDOC);                      \
+	if [ -r "$(YACC)/$(YACC).pdf" ]; then				\
+		$(CP) "$(YACC)/$(YACC).pdf" "$(TDOC)/";			\
 	fi
 	find "$(TDOC)/" -name .gitignore | xargs rm -rf
 	find "$(TEXM)/" -name .gitignore | xargs rm -rf

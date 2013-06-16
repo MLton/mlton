@@ -1,0 +1,19 @@
+WholeProgramOptimization
+========================
+
+Whole-program optimization is a compilation technique in which
+optimizations operate over the entire program.  This allows the
+compiler many optimization opportunities that are not available when
+analyzing modules separately (as with separate compilation).
+
+Most of MLton's optimizations are whole-program optimizations.
+Because MLton compiles the whole program at once, it can perform
+optimization across module boundaries.  As a consequence, MLton often
+reduces or eliminates the run-time penalty that arises with separate
+compilation of SML features such as functors, modules, polymorphism,
+and higher-order functions.  MLton takes advantage of having the
+entire program to perform transformations such as: defunctorization,
+monomorphisation, higher-order control-flow analysis, inlining,
+unboxing, argument flattening, redundant-argument removal, constant
+folding, and representation selection.  Whole-program compilation is
+an integral part of the design of MLton and is not likely to change.

@@ -1,0 +1,53 @@
+MLtonCont
+=========
+
+[source,sml]
+----
+signature MLTON_CONT =
+   sig
+      type 'a t
+
+      val callcc: ('a t -> 'a) -> 'a
+      val isolate: ('a -> unit) -> 'a t
+      val prepend: 'a t * ('b -> 'a) -> 'b t
+      val throw: 'a t * 'a -> 'b
+      val throw': 'a t * (unit -> 'a) -> 'b
+   end
+----
+
+* `type 'a t`
++
+the type of continuations that expect a value of type `'a`.
+
+* `callcc f`
++
+applies `f` to the current continuation.  This copies the entire
+stack; hence, `callcc` takes time proportional to the size of the
+current stack.
+
+* `isolate f`
++
+creates a continuation that evaluates `f` in an empty context.  This
+is a constant time operation, and yields a constant size stack.
+
+* `prepend (k, f)`
++
+composes a function `f` with a continuation `k` to create a
+continuation that first does `f` and then does `k`.  This is a
+constant time operation.
+
+* `throw (k, v)`
++
+throws value `v` to continuation `k`.  This copies the entire stack of
+`k`; hence, `throw` takes time proportional to the size of this stack.
+
+* `throw' (k, th)`
++
+a generalization of throw that evaluates `th ()` in the context of
+`k`.  Thus, for example, if `th ()` raises an exception or captures
+another continuation, it will see `k`, not the current continuation.
+
+
+== Also see ==
+
+* <:MLtonContIsolateImplementation:>

@@ -1,0 +1,209 @@
+PolymorphicEquality
+===================
+:toc:
+
+Polymorphic equality is a built-in function in
+<:StandardML:Standard ML> that compares two values of the same type
+for equality.  It is specified as
+
+[source,sml]
+----
+val = : ''a * ''a -> bool
+----
+
+The `''a` in the specification are
+<:EqualityTypeVariable:equality type variables>, and indicate that
+polymorphic equality can only be applied to values of an
+<:EqualityType:equality type>.  It is not allowed in SML to rebind
+`=`, so a programmer is guaranteed that `=` always denotes polymorphic
+equality.
+
+
+== Equality of ground types ==
+
+Ground types like `char`, `int`, and `word` may be compared (to values
+of the same type).  For example, `13 = 14` is type correct and yields
+`false`.
+
+
+== Equality of reals ==
+
+The one ground type that can not be compared is `real`.  So,
+`13.0 = 14.0` is not type correct.  One can use `Real.==` to compare
+reals for equality, but beware that this has different algebraic
+properties than polymorphic equality.
+
+See http://standardml.org/Basis/real.html for a discussion of why
+`real` is not an equality type.
+
+
+== Equality of functions ==
+
+Comparison of functions is not allowed.
+
+
+== Equality of immutable types ==
+
+Polymorphic equality can be used on <:Immutable:immutable> values like
+tuples, records, lists, and vectors.  For example,
+
+----
+(1, 2, 3) = (4, 5, 6)
+----
+
+is a type-correct expression yielding `false`, while
+
+----
+[1, 2, 3] = [1, 2, 3]
+----
+
+is type correct and yields `true`.
+
+Equality on immutable values is computed by structure, which means
+that values are compared by recursively descending the data structure
+until ground types are reached, at which point the ground types are
+compared with primitive equality tests (like comparison of
+characters).  So, the expression
+
+----
+[1, 2, 3] = [1, 1 + 1, 1 + 1 + 1]
+----
+
+is guaranteed to yield `true`, even though the lists may occupy
+different locations in memory.
+
+Because of structural equality, immutable values can only be compared
+if their components can be compared.  For example, `[1, 2, 3]` can be
+compared, but `[1.0, 2.0, 3.0]` can not.  The SML type system uses
+<:EqualityType:equality types> to ensure that structural equality is
+only applied to valid values.
+
+
+== Equality of mutable values ==
+
+In contrast to immutable values, polymorphic equality of
+<:Mutable:mutable> values (like ref cells and arrays) is performed by
+pointer comparison, not by structure.  So, the expression
+
+----
+ref 13 = ref 13
+----
+
+is guaranteed to yield `false`, even though the ref cells hold the
+same contents.
+
+Because equality of mutable values is not structural, arrays and refs
+can be compared _even if their components are not equality types_.
+Hence, the following expression is type correct (and yields true).
+
+[source,sml]
+----
+let
+   val r = ref 13.0
+in
+   r = r
+end
+----
+
+
+== Equality of datatypes ==
+
+Polymorphic equality of datatypes is structural.  Two values of the
+same datatype are equal if they are of the same <:Variant:variant> and
+if the <:Variant:variant>'s arguments are equal (recursively).  So,
+with the datatype
+
+[source,sml]
+----
+datatype t = A | B of t
+----
+
+then `B (B A) = B A` is type correct and yields `false`, while `A = A`
+and `B A = B A` yield `true`.
+
+As polymorphic equality descends two values to compare them, it uses
+pointer equality whenever it reaches a mutable value.  So, with the
+datatype
+
+[source,sml]
+----
+datatype t = A of int ref | ...
+----
+
+then `A (ref 13) = A (ref 13)` is type correct and yields `false`,
+because the pointer equality on the two ref cells yields `false`.
+
+One weakness of the SML type system is that datatypes do not inherit
+the special property of the `ref` and `array` type constructors that
+allows them to be compared regardless of their component type.  For
+example, after declaring
+
+[source,sml]
+----
+datatype 'a t = A of 'a ref
+----
+
+one might expect to be able to compare two values of type `real t`,
+because pointer comparison on a ref cell would suffice.
+Unfortunately, the type system can only express that a user-defined
+datatype <:AdmitsEquality:admits equality> or not.  In this case, `t`
+admits equality, which means that `int t` can be compared but that
+`real t` can not.  We can confirm this with the program
+
+[source,sml]
+----
+datatype 'a t = A of 'a ref
+fun f (x: real t, y: real t) = x = y
+----
+
+on which MLton reports the following error.
+
+----
+Error: z.sml 2.34.
+  Function applied to incorrect argument.
+    expects: [<equality>] * [<equality>]
+    but got: [<non-equality>] * [<non-equality>]
+    in: = (x, y)
+----
+
+
+== Implementation ==
+
+Polymorphic equality is implemented by recursively descending the two
+values being compared, stopping as soon as they are determined to be
+unequal, or exploring the entire values to determine that they are
+equal.  Hence, polymorphic equality can take time proportional to the
+size of the smaller value.
+
+MLton uses some optimizations to improve performance.
+
+* When computing structural equality, first do a pointer comparison.
+If the comparison yields `true`, then stop and return `true`, since
+the structural comparison is guaranteed to do so.  If the pointer
+comparison fails, then recursively descend the values.
+
+* If a datatype is an enum (e.g. `datatype t = A | B | C`), then a
+single comparison suffices to compare values of the datatype.  No case
+dispatch is required to determine whether the two values are of the
+same <:Variant:variant>.
+
+* When comparing a known constant non-value-carrying
+<:Variant:variant>, use a single comparison.  For example, the
+following code will compile into a single comparison for `A = x`.
++
+[source,sml]
+----
+datatype t = A | B | C of ...
+fun f x = ... if A = x then ...
+----
+
+* When comparing a small constant `IntInf.int` to another
+`IntInf.int`, use a single comparison against the constant.  No case
+dispatch is required.
+
+
+== Also see ==
+
+* <:AdmitsEquality:>
+* <:EqualityType:>
+* <:EqualityTypeVariable:>

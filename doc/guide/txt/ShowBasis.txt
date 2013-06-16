@@ -1,0 +1,131 @@
+ShowBasis
+=========
+
+MLton has a flag, `-show-basis <file>`, that causes MLton to pretty
+print to _file_ the basis defined by the input program.  For example,
+if `foo.sml` contains
+[source,sml]
+----
+fun f x = x + 1
+----
+then `mlton -show-basis foo.basis foo.sml` will create `foo.basis`
+with the following contents.
+----
+val f: int -> int
+----
+
+If you only want to see the basis and do not wish to compile the
+program, you can call MLton with `-stop tc`.
+
+== Displaying signatures ==
+
+When displaying signatures, MLton prefixes types defined in the
+signature them with `?.` to distinguish them from types defined in the
+environment.  For example,
+[source,sml]
+----
+signature SIG =
+   sig
+      type t
+      val x: t * int -> unit
+   end
+----
+is displayed as
+----
+signature SIG =
+   sig
+      type t = ?.t
+      val x: (?.t * int) -> unit
+   end
+----
+
+Notice that `int` occurs without the `?.` prefix.
+
+MLton also uses a canonical name for each type in the signature, and
+that name is used everywhere for that type, no matter what the input
+signature looked like.  For example:
+[source,sml]
+----
+signature SIG =
+   sig
+      type t
+      type u = t
+      val x: t
+      val y: u
+   end
+----
+is displayed as
+----
+signature SIG =
+   sig
+      type t = ?.t
+      type u = ?.t
+      val x: ?.t
+      val y: ?.t
+   end
+----
+
+Canonical names are always relative to the "top" of the signature,
+even when used in nested substructures.  For example:
+[source,sml]
+----
+signature S =
+   sig
+      type t
+      val w: t
+      structure U:
+         sig
+            type u
+            val x: t
+            val y: u
+         end
+      val z: U.u
+   end
+----
+is displayed as
+----
+signature S =
+   sig
+      type t = ?.t
+      val w: ?.t
+      val z: ?.U.u
+      structure U:
+         sig
+            type u = ?.U.u
+            val x: ?.t
+            val y: ?.U.u
+         end
+   end
+----
+
+== Displaying structures ==
+
+When displaying structures, MLton uses signature constraints wherever
+possible, combined with `where type` clauses to specify the meanings
+of the types defined within the signature.  For example:
+[source,sml]
+----
+signature SIG =
+   sig
+      type t
+      val x: t
+   end
+structure S: SIG =
+   struct
+      type t = int
+      val x = 13
+   end
+structure S2:> SIG = S
+----
+is displayed as
+----
+structure S: SIG
+             where type t = int
+structure S2: SIG
+              where type t = S2.t
+signature SIG =
+   sig
+      type t = ?.t
+      val x: ?.t
+   end
+----

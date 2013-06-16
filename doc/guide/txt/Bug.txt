@@ -1,0 +1,18 @@
+Bug
+===
+
+To report a bug, please send mail to
+mailto:mlton-devel@mlton.org[`mlton-devel@mlton.org`].  Please include
+the complete SML program that caused the problem and a log of a
+compile of the program with `-verbose 2`.  For large programs (over
+256K), please send an email containing the discussion text and a link
+to any large files.
+
+There are some <:UnresolvedBugs:> that we don't plan to fix.
+
+We also maintain a list of bugs found with each release.
+
+* <:Bugs20100608:>
+* <:Bugs20070826:>
+* <:Bugs20051202:>
+* <:Bugs20041109:>

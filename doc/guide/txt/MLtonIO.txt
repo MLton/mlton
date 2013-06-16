@@ -1,0 +1,51 @@
+MLtonIO
+=======
+
+[source,sml]
+----
+signature MLTON_IO =
+   sig
+      type instream
+      type outstream
+
+      val inFd: instream -> Posix.IO.file_desc
+      val mkstemp: string -> string * outstream
+      val mkstemps: {prefix: string, suffix: string} -> string * outstream
+      val newIn: Posix.IO.file_desc * string -> instream
+      val newOut: Posix.IO.file_desc * string -> outstream
+      val outFd: outstream -> Posix.IO.file_desc
+      val tempPrefix: string -> string
+   end
+----
+
+* `inFd ins`
++
+returns the file descriptor corresponding to `ins`.
+
+* `mkstemp s`
++
+like the C `mkstemp` function, generates and open a temporary file
+with prefix `s`.
+
+* `mkstemps {prefix, suffix}`
++
+like `mkstemp`, except it has both a prefix and suffix.
+
+* `newIn (fd, name)`
++
+creates a new instream from file descriptor `fd`, with `name` used in
+any `Io` exceptions later raised.
+
+* `newOut (fd, name)`
++
+creates a new outstream from file descriptor `fd`, with `name` used in
+any `Io` exceptions later raised.
+
+* `outFd out`
++
+returns the file descriptor corresponding to `out`.
+
+* `tempPrefix s`
++
+adds a suitable system or user specific prefix (directory) for temp
+files.

@@ -1,0 +1,196 @@
+OptionalArguments
+=================
+
+<:StandardML:Standard ML> does not have built-in support for optional
+arguments.  Nevertheless, using <:Fold:>, it is easy to define
+functions that take optional arguments.
+
+For example, suppose that we have the following definition of a
+function `f`.
+
+[source,sml]
+----
+fun f (i, r, s) =
+   concat [Int.toString i, ", ", Real.toString r, ", ", s]
+----
+
+Using the `OptionalArg` structure described below, we can define a
+function `f'`, an optionalized version of `f`, that takes 0, 1, 2, or
+3 arguments.  Embedded within `f'` will be default values for `i`,
+`r`, and `s`.  If `f'` gets no arguments, then all the defaults are
+used.  If `f'` gets one argument, then that will be used for `i`.  Two
+arguments will be used for `i` and `r` respectively.  Three arguments
+will override all default values.  Calls to `f'` will look like the
+following.
+
+[source,sml]
+----
+f' $
+f' `2 $
+f' `2 `3.0 $
+f' `2 `3.0 `"four" $
+----
+
+The optional argument indicator, +&grave;+, is not special syntax ---
+it is a normal SML value, defined in the `OptionalArg` structure
+below.
+
+Here is the definition of `f'` using the `OptionalArg` structure, in
+particular, `OptionalArg.make` and `OptionalArg.D`.
+
+[source,sml]
+----
+val f' =
+   fn z =>
+   let open OptionalArg in
+      make (D 1) (D 2.0) (D "three") $
+   end (fn i & r & s => f (i, r, s))
+   z
+----
+
+The definition of `f'` is eta expanded as with all uses of fold.  A
+call to `OptionalArg.make` is supplied with a variable number of
+defaults (in this case, three), the end-of-arguments terminator, `$`,
+and the function to run, taking its arguments as an n-ary
+<:ProductType:product>.  In this case, the function simply converts
+the product to an ordinary tuple and calls `f`.  Often, the function
+body will simply be written directly.
+
+In general, the definition of an optional-argument function looks like
+the following.
+
+[source,sml]
+----
+val f =
+   fn z =>
+   let open OptionalArg in
+      make (D <default1>) (D <default2>) ... (D <defaultn>) $
+   end (fn x1 & x2 & ... & xn =>
+        <function code goes here>)
+   z
+----
+
+Here is the definition of `OptionalArg`.
+
+[source,sml]
+----
+structure OptionalArg =
+   struct
+      val make =
+         fn z =>
+         Fold.fold
+         ((id, fn (f, x) => f x),
+          fn (d, r) => fn func =>
+          Fold.fold ((id, d ()), fn (f, d) =>
+                     let
+                        val d & () = r (id, f d)
+                     in
+                        func d
+                     end))
+         z
+
+      fun D d = Fold.step0 (fn (f, r) =>
+                            (fn ds => f (d & ds),
+                             fn (f, a & b) => r (fn x => f a & x, b)))
+
+      val ` =
+         fn z =>
+         Fold.step1 (fn (x, (f, _ & d)) => (fn d => f (x & d), d))
+         z
+   end
+----
+
+`OptionalArg.make` uses a nested fold.  The first `fold` accumulates
+the default values in a product, associated to the right, and a
+reversal function that converts a product (of the same arity as the
+number of defaults) from right associativity to left associativity.
+The accumulated defaults are used by the second fold, which recurs
+over the product, replacing the appropriate component as it encounters
+optional arguments.  The second fold also constructs a "fill"
+function, `f`, that is used to reconstruct the product once the
+end-of-arguments is reached.  Finally, the finisher reconstructs the
+product and uses the reversal function to convert the product from
+right associative to left associative, at which point it is passed to
+the user-supplied function.
+
+Much of the complexity comes from the fact that while recurring over a
+product from left to right, one wants it to be right-associative,
+e.g., look like
+
+[source,sml]
+----
+a & (b & (c & d))
+----
+
+but the user function in the end wants the product to be left
+associative, so that the product argument pattern can be written
+without parentheses (since `&` is left associative).
+
+
+== Labelled optional arguments ==
+
+In addition to the positional optional arguments described above, it
+is sometimes useful to have labelled optional arguments.  These allow
+one to define a function, `f`, with defaults, say `a` and `b`.  Then,
+a caller of `f` can supply values for `a` and `b` by name.  If no
+value is supplied then the default is used.
+
+Labelled optional arguments are a simple extension of
+<:FunctionalRecordUpdate:> using post composition.  Suppose, for
+example, that one wants a function `f` with labelled optional
+arguments `a` and `b` with default values `0` and `0.0` respectively.
+If one has a functional-record-update function `updateAB` for records
+with `a` and `b` fields, then one can define `f` in the following way.
+
+[source,sml]
+----
+val f =
+   fn z =>
+   Fold.post
+   (updateAB {a = 0, b = 0.0},
+    fn {a, b} => print (concat [Int.toString a, " ",
+                                Real.toString b, "\n"]))
+   z
+----
+
+The idea is that `f` is the post composition (using `Fold.post`) of
+the actual code for the function with a functional-record updater that
+starts with the defaults.
+
+Here are some example calls to `f`.
+[source,sml]
+----
+val () = f $
+val () = f (U#a 13) $
+val () = f (U#a 13) (U#b 17.5) $
+val () = f (U#b 17.5) (U#a 13) $
+----
+
+Notice that a caller can supply neither of the arguments, either of
+the arguments, or both of the arguments, and in either order.  All
+that matter is that the arguments be labelled correctly (and of the
+right type, of course).
+
+Here is another example.
+
+[source,sml]
+----
+val f =
+   fn z =>
+   Fold.post
+   (updateBCD {b = 0, c = 0.0, d = "<>"},
+    fn {b, c, d} =>
+    print (concat [Int.toString b, " ",
+                   Real.toString c, " ",
+                   d, "\n"]))
+   z
+----
+
+Here are some example calls.
+
+[source,sml]
+----
+val () = f $
+val () = f (U#d "goodbye") $
+val () = f (U#d "hello") (U#b 17) (U#c 19.3) $
+----

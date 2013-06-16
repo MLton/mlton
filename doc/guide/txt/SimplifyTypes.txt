@@ -1,0 +1,71 @@
+SimplifyTypes
+=============
+
+<:SimplifyTypes:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass computes a "cardinality" of each datatype, which is an
+abstraction of the number of values of the datatype.
+
+* `Zero` means the datatype has no values (except for bottom).
+* `One` means the datatype has one value (except for bottom).
+* `Many` means the datatype has many values.
+
+This pass removes all datatypes whose cardinality is `Zero` or `One`
+and removes:
+
+* components of tuples
+* function args
+* constructor args
+
+which are such datatypes.
+
+This pass marks constructors as one of:
+
+* `Useless`: it never appears in a `ConApp`.
+* `Transparent`: it is the only variant in its datatype and its argument type does not contain any uses of `array` or `vector`.
+* `Useful`: otherwise
+
+This pass also removes `Useless` and `Transparent` constructors.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/simplify-types.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/simplify-types.fun)>
+
+== Details and Notes ==
+
+This pass must happen before polymorphic equality is implemented because
+
+* it will make polymorphic equality faster because some types are simpler
+* it removes uses of polymorphic equality that must return true
+
+We must keep track of `Transparent` constructors whose argument type
+uses `array` because of datatypes like the following:
+[source,sml]
+----
+datatype t = T of t array
+----
+
+Such a datatype has `Cardinality.Many`, but we cannot eliminate the
+datatype and replace the lhs by the rhs, i.e. we must keep the
+circularity around.
+
+Must do similar things for `vectors`.
+
+Also, to eliminate as many `Transparent` constructors as possible, for
+something like the following,
+[source,sml]
+----
+datatype t = T of u array
+     and u = U of t vector
+----
+we (arbitrarily) expand one of the datatypes first.  The result will
+be something like
+[source,sml]
+----
+datatype u = U of u array array
+----
+where all uses of `t` are replaced by `u array`.

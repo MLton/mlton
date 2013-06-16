@@ -1,0 +1,82 @@
+MLtonPointer
+============
+
+[source,sml]
+----
+signature MLTON_POINTER =
+   sig
+      eqtype t
+
+      val add: t * word -> t
+      val compare: t * t -> order
+      val diff: t * t -> word
+      val getInt8: t * int -> Int8.int
+      val getInt16: t * int -> Int16.int
+      val getInt32: t * int -> Int32.int
+      val getInt64: t * int -> Int64.int
+      val getPointer: t * int -> t
+      val getReal32: t * int -> Real32.real
+      val getReal64: t * int -> Real64.real
+      val getWord8: t * int -> Word8.word
+      val getWord16: t * int -> Word16.word
+      val getWord32: t * int -> Word32.word
+      val getWord64: t * int -> Word64.word
+      val null: t
+      val setInt8: t * int * Int8.int -> unit
+      val setInt16: t * int * Int16.int -> unit
+      val setInt32: t * int * Int32.int -> unit
+      val setInt64: t * int * Int64.int -> unit
+      val setPointer: t * int * t -> unit
+      val setReal32: t * int * Real32.real -> unit
+      val setReal64: t * int * Real64.real -> unit
+      val setWord8: t * int * Word8.word -> unit
+      val setWord16: t * int * Word16.word -> unit
+      val setWord32: t * int * Word32.word -> unit
+      val setWord64: t * int * Word64.word -> unit
+      val sizeofPointer: word
+      val sub: t * word -> t
+   end
+----
+
+* `eqtype t`
++
+the type of pointers, i.e. machine addresses.
+
+* `add (p, w)`
++
+returns the pointer `w` bytes after than `p`.  Does not check for
+overflow.
+
+* `compare (p1, p2)`
++
+compares the pointer `p1` to the pointer `p2` (as addresses).
+
+* `diff (p1, p2)`
++
+returns the number of bytes `w` such that `add (p2, w) = p1`.  Does
+not check for overflow.
+
+* ++get__<X>__ (p, i)++
++
+returns the object stored at index i of the array of _X_ objects
+pointed to by `p`.  For example, `getWord32 (p, 7)` returns the 32-bit
+word stored 28 bytes beyond `p`.
+
+* `null`
++
+the null pointer, i.e. 0.
+
+* ++set__<X>__ (p, i, v)++
++
+assigns `v` to the object stored at index i of the array of _X_
+objects pointed to by `p`.  For example, `setWord32 (p, 7, w)` stores
+the 32-bit word `w` at the address 28 bytes beyond `p`.
+
+* `sizeofPointer`
++
+size, in bytes, of a pointer.
+
+* `sub (p, w)`
++
+returns the pointer `w` bytes before `p`.  Does not check for
+overflow.

@@ -1,0 +1,71 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="2048px" height="2048px" viewBox="0 0 64 64"
+     xmlns="http://www.w3.org/2000/svg" version="1.1"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <!--
+  <rect x="0" y="0" width="64" height="64" fill="red" stroke="none" />
+  -->
+
+  <!--
+  <rect x="01" y="01" width="31" height="62" fill="green" stroke="none" />
+  <rect x="02" y="02" width="29" height="60" fill="lightgreen" stroke="none" />
+  <rect x="02" y="02" width="14.5" height="30" fill="none" stroke="none" />
+  <rect x="16.5" y="32" width="14.5" height="30" fill="none" stroke="none" />
+  -->
+  <polyline fill="none" stroke="black" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+            points="05,59 05,05 16,31 27,05 27,59" />
+  <!--
+  <polyline fill="none" stroke="blue" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            points="05,59 05,05 16,31 27,05 27,59" />
+  -->
+
+  <!--
+  <rect x="32" y="01" width="31" height="62" fill="blue" stroke="none" />
+  <rect x="33" y="02" width="29" height="60" fill="lightblue" stroke="none" />
+  -->
+  <polyline fill="none" stroke="black" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+            points="37,05 37,59 59,59" />
+  <!--
+  <polyline fill="none" stroke="blue" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            points="37,05 37,59 59,59" />
+  -->
+
+
+  <!--
+  <rect x="40" y="02" width="22" height="17" fill="violet" stroke="none" />
+  <rect x="42" y="02" width="20" height="16" fill="pink" stroke="none" />
+  <rect x="40" y="19" width="22" height="18" fill="purple" stroke="none" />
+  <rect x="42" y="20" width="20" height="16" fill="pink" stroke="none" />
+  <rect x="40" y="37" width="22" height="17" fill="indigo" stroke="none" />
+  <rect x="42" y="38" width="20" height="16" fill="pink" stroke="none" />
+  -->
+
+  <polyline fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            points="44,40 44,52" />
+  <polyline fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            points="44,46 60,46" />
+  <!--
+  <polyline fill="none" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            points="44,40 44,52" />
+  <polyline fill="none" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            points="44,46 60,46" />
+  -->
+
+  <ellipse fill="none" stroke="black" stroke-width="4"
+           cx="52" cy="29" rx="8" ry="7" />
+  <!--
+  <ellipse fill="none" stroke="blue" stroke-width="2"
+           cx="52" cy="29" rx="8" ry="7" />
+  -->
+
+  <polyline fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            points="60,16 44,16 60,04 44,04" />
+  <!--
+  <polyline fill="none" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            points="60,16 44,16 60,04 44,04" />
+  -->
+
+</svg>

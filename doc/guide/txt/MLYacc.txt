@@ -1,0 +1,15 @@
+MLYacc
+======
+
+<:MLYacc:> is a parser generator for <:StandardML:Standard ML> modeled
+after the Yacc parser generator.
+
+A version of MLYacc, ported from the <:SMLNJ:SML/NJ> sources, is
+distributed with MLton.
+
+== Also see ==
+
+* <!Attachment(Documentation,mlyacc.pdf)>
+* <:MLLex:>
+* <!Cite(TarditiAppel00)>
+* <!Cite(Price09)>

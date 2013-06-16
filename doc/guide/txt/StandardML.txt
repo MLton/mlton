@@ -1,0 +1,63 @@
+StandardML
+==========
+:toc:
+
+Standard ML (SML) is a programming language that combines excellent
+support for rapid prototyping, modularity, and development of large
+programs, with performance approaching that of C.
+
+== SML Resources ==
+
+* <:StandardMLTutorials:Tutorials>
+* <:StandardMLBooks:Books>
+* <:StandardMLImplementations:Implementations>
+// * http://google.com/coop/cse?cx=014714656471597805969%3Afzuz7eybmcy[SML web search] from Google Co-op
+
+== Aspects of SML ==
+
+* <:DefineTypeBeforeUse:>
+* <:EqualityType:>
+* <:EqualityTypeVariable:>
+* <:GenerativeDatatype:>
+* <:GenerativeException:>
+* <:Identifier:>
+* <:OperatorPrecedence:>
+* <:Overloading:>
+* <:PolymorphicEquality:>
+* <:TypeVariableScope:>
+* <:ValueRestriction:>
+
+== Using SML ==
+
+* <:Fixpoints:>
+* <:ForLoops:>
+* <:FunctionalRecordUpdate:>
+* <:InfixingOperators:>
+* <:Lazy:>
+* <:ObjectOrientedProgramming:>
+* <:OptionalArguments:>
+* <:Printf:>
+* <:PropertyList:>
+* <:ReturnStatement:>
+* <:Serialization:>
+* <:StandardMLGotchas:>
+* <:StyleGuide:>
+* <:TipsForWritingConciseSML:>
+* <:UniversalType:>
+
+== Programming in SML ==
+
+* <:Emacs:>
+* <:Enscript:>
+* <:Pygments:>
+
+== Notes ==
+
+* <:StandardMLHistory: History of SML>
+* <:Regions:>
+
+== Related Languages ==
+
+* <:Alice:>
+* <:FSharp:F#>
+* <:OCaml:>

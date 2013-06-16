@@ -1,0 +1,39 @@
+ProfilingTheStack
+=================
+
+For all forms of <:Profiling:>, you can gather counts for all
+functions on the stack, not just the currently executing function.  To
+do so, compile your program with `-profile-stack true`.  For example,
+suppose that `list-rev.sml` contains the following.
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/list-rev.sml]
+----
+
+Compile with stack profiling and then run the program.
+----
+% mlton -profile alloc -profile-stack true list-rev.sml
+% ./list-rev
+----
+
+Display the profiling data.
+----
+% mlprof -show-line true list-rev mlmon.out
+6,030,136 bytes allocated (108,336 bytes by GC)
+       function          cur  stack  GC
+----------------------- ----- ----- ----
+append  list-rev.sml: 1 97.6% 97.6% 1.4%
+<gc>                     1.8%  0.0% 1.8%
+<main>                   0.4% 98.2% 1.8%
+rev  list-rev.sml: 6     0.2% 97.6% 1.8%
+----
+
+In the above table, we see that `rev`, defined on line 6 of
+`list-rev.sml`, is only responsible for 0.2% of the allocation, but is
+on the stack while 97.6% of the allocation is done by the user program
+and while 1.8% of the allocation is done by the garbage collector.
+
+The run-time performance impact of `-profile-stack true` can be
+noticeable since there is some extra bookkeeping at every nontail call
+and return.

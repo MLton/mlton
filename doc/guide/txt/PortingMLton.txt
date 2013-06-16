@@ -1,0 +1,185 @@
+PortingMLton
+============
+
+Porting MLton to a new target platform (architecture or OS) involves
+the following steps.
+
+1. Make the necessary changes to the scripts, runtime system,
+<:BasisLibrary: Basis Library> implementation, and compiler.
+
+2. Get the regressions working using a cross compiler.
+
+3. <:CrossCompiling: Cross compile> MLton and bootstrap on the target.
+
+MLton has a native code generator only for AMD64 and X86, so, if you
+are porting to another architecture, you must use the C code
+generator.  These notes do not cover building a new native code
+generator.
+
+Some of the following steps will not be necessary if MLton already
+supports the architecture or operating system you are porting to.
+
+
+== What code to change ==
+
+* Scripts.
++
+--
+* In `bin/platform`, add new cases to define `$HOST_OS` and `$HOST_ARCH`.
+--
+
+* Runtime system.
++
+--
+The goal of this step is to be able to successfully run `make` in the
+`runtime` directory on the target machine.
+
+* In `platform.h`, add a new case to include `platform/<arch>.h` and `platform/<os>.h`.
+
+* In `platform/<arch>.h`:
+** define `MLton_Platform_Arch_host`.
+
+* In `platform/<os>.h`:
+** include platform-specific includes.
+** define `MLton_Platform_OS_host`.
+** define all of the `HAS_*` macros.
+
+* In `platform/<os>.c` implement any platform-dependent functions that the runtime needs.
+
+* Add rounding mode control to `basis/Real/IEEEReal.c` for the new arch (if not `HAS_FEROUND`)
+
+* Compile and install the <:GnuMP:>.  This varies from platform to platform.  In `platform/<os>.h`, you need to include the appropriate `gmp.h`.
+--
+
+* Basis Library implementation (`basis-library/*`)
++
+--
+* In `primitive/prim-mlton.sml`:
+** Add a new variant to the `MLton.Platform.Arch.t` datatype.
+** modify the constants that define `MLton.Platform.Arch.host` to match with `MLton_Platform_Arch_host`, as set in `runtime/platform/<arch>.h`.
+** Add a new variant to the `MLton.Platform.OS.t` datatype.
+** modify the constants that define `MLton.Platform.OS.host` to match with `MLton_Platform_OS_host`, as set in `runtime/platform/<os>.h`.
+
+* In `mlton/platform.{sig,sml}` add a new variant.
+
+* In `sml-nj/sml-nj.sml`, modify `getOSKind`.
+
+* Look at all the uses of `MLton.Platform` in the Basis Library implementation and see if you need to do anything special.  You might use the following command to see where to look.
++
+----
+find basis-library -type f | xargs grep 'MLton\.Platform'
+----
++
+If in doubt, leave the code alone and wait to see what happens when you run the regression tests.
+--
+
+* Compiler.
++
+--
+* In `lib/stubs/mlton-stubs/platform.sig` add any new variants, as was done in the Basis Library.
+
+* In `lib/stubs/mlton-stubs/mlton.sml` add any new variants in `MLton.Platform`, as was done in the Basis Library.
+--
+
+The string used to identify a particular architecture or operating
+system must be the same (except for possibly case of letters) in the
+scripts, runtime, Basis Library implementation, and compiler (stubs).
+In `mlton/main/main.fun`, MLton itself uses the conversions to and
+from strings:
+----
+MLton.Platform.{Arch,OS}.{from,to}String
+----
+
+If the there is a mismatch, you may see the error message
+`strange arch` or `strange os`.
+
+
+== Running the regressions with a cross compiler ==
+
+When porting to a new platform, it is always best to get all (or as
+many as possible) of the regressions working before moving to a self
+compile.  It is easiest to do this by modifying and rebuilding the
+compiler on a working machine and then running the regressions with a
+cross compiler.  It is not easy to build a gcc cross compiler, so we
+recommend generating the C and assembly on a working machine (using
+MLton's `-target` and `-stop g` flags, copying the generated files to
+the target machine, then compiling and linking there.
+
+1. Remake the compiler on a working machine.
+
+2. Use `bin/add-cross` to add support for the new target.  In particular, this should create `build/lib/targets/<target>/` with the platform-specific necessary cross-compilation information.
+
+3. Run the regression tests with the cross-compiler.  To cross-compile all the tests, do
++
+----
+bin/regression -cross <target>
+----
++
+This will create all the executables.  Then, copy `bin/regression` and
+the `regression` directory to the target machine, and do
++
+----
+bin/regression -run-only <target>
+----
++
+This should run all the tests.
+
+Repeat this step, interleaved with appropriate compiler modifications,
+until all the regressions pass.
+
+
+== Bootstrap ==
+
+Once you've got all the regressions working, you can build MLton for
+the new target.  As with the regressions, the idea for bootstrapping
+is to generate the C and assembly on a working machine, copy it to the
+target machine, and then compile and link there.  Here's the sequence
+of steps.
+
+1. On a working machine, with the newly rebuilt compiler, in the `mlton` directory, do:
++
+----
+mlton -stop g -target <target> mlton.mlb
+----
+
+2. Copy to the target machine.
+
+3. On the target machine, move the libraries to the right place. That is, in `build/lib/targets`, do:
++
+----
+rm -rf self
+mv <target> self
+----
+
+4. On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like:
++
+----
+gcc -c -Ibuild/lib/include -Ibuild/lib/targets/self/include -O1 -w mlton/mlton.*.[cs]
+gcc -o build/lib/mlton-compile \
+        -Lbuild/lib/targets/self \
+        -L/usr/local/lib \
+        mlton.*.o \
+        -lmlton -lgmp -lgdtoa -lm
+----
+
+5. At this point, MLton should be working and you can finish the rest of a usual make on the target machine.
++
+----
+make basis-no-check script mlbpathmap targetmap constants libraries tools
+----
+
+There are other details to get right, like making sure that the tools
+directories were clean so that the tools are rebuilt on the new
+platform, but hopefully this structure works.  Once you've got a
+compiler on the target machine, you should test it by running all the
+regressions normally (i.e. without the `-cross` flag) and by running a
+couple rounds of self compiles.
+
+
+== Also see ==
+
+The above description is based on the following emails sent to the
+MLton list.
+
+* http://www.mlton.org/pipermail/mlton/2002-October/013110.html
+* http://www.mlton.org/pipermail/mlton/2004-July/016029.html

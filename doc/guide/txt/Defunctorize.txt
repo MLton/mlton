@@ -1,0 +1,77 @@
+Defunctorize
+============
+
+<:Defunctorize:> is a translation pass from the <:CoreML:>
+<:IntermediateLanguage:> to the <:XML:> <:IntermediateLanguage:>.
+
+== Description ==
+
+This pass converts a <:CoreML:> program to an <:XML:> program by
+performing:
+
+* linearization
+* <:MatchCompile:>
+* polymorphic `val` dec expansion
+* `datatype` lifting (to the top-level)
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/defunctorize/defunctorize.sig)>
+* <!ViewGitFile(mlton,master,mlton/defunctorize/defunctorize.fun)>
+
+== Details and Notes ==
+
+This pass is grossly misnamed and does not perform defunctorization.
+
+=== Datatype Lifting ===
+
+This pass moves all `datatype` declarations to the top level.
+
+<:StandardML:Standard ML> `datatype` declarations can contain type
+variables that are not bound in the declaration itself.  For example,
+the following program is valid.
+[source,sml]
+----
+fun 'a f (x: 'a) =
+   let
+      datatype 'b t = T of 'a * 'b
+      val y: int t = T (x, 1)
+   in
+      13
+   end
+----
+
+Unfortunately, the `datatype` declaration can not be immediately moved
+to the top level, because that would leave `'a` free.
+[source,sml]
+----
+datatype 'b t = T of 'a * 'b
+fun 'a f (x: 'a) =
+   let
+      val y: int t = T (x, 1)
+   in
+      13
+   end
+----
+
+In order to safely move `datatype`s, this pass must close them, as
+well as add any free type variables as extra arguments to the type
+constructor.  For example, the above program would be translated to
+the following.
+[source,sml]
+----
+datatype ('a, 'b) t = T of 'a * 'b
+fun 'a f (x: 'a) =
+   let
+      val y: ('a * int) t = T (x, 1)
+   in
+      13
+   end
+----
+
+== Historical Notes ==
+
+The <:Defunctorize:> pass originally eliminated
+<:StandardML:Standard ML> functors by duplicating their body at each
+application.  These duties have been adopted by the <:Elaborate:>
+pass.

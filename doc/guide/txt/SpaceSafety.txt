@@ -1,0 +1,10 @@
+SpaceSafety
+===========
+
+Informally, space safety is a property of a language implementation
+that asymptotically bounds the space used by a running program.
+
+== Also see ==
+
+* Chapter 12 of <!Cite(Appel92)>
+* <!Cite(Clinger98)>

@@ -1,0 +1,31 @@
+RunningOnFreeBSD
+================
+
+MLton runs fine on http://www.freebsd.org/[FreeBSD].
+
+== Notes ==
+
+* MLton is available as a http://www.freebsd.org/[FreeBSD]
+http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[port].
+
+== Known issues ==
+
+* Executables often run more slowly than on a comparable Linux
+machine.  We conjecture that part of this is due to costs due to heap
+resizing and kernel zeroing of pages.  Any help in solving the problem
+would be appreciated.
+
+* FreeBSD defaults to a datasize limit of 512M, even if you have more
+than that amount of memory in the computer. Hence, your MLton process
+will be limited in the amount of memory it has. To fix this problem,
+turn up the datasize and the default datasize available to a process:
+Edit `/boot/loader.conf` to set the limits. For example, the setting
++
+----
+   kern.maxdsiz="671088640"
+   kern.dfldsiz="671088640"
+   kern.maxssiz="134217728"
+----
++
+will give a process 640M of datasize memory, default to 640M available
+and set 128M of stack size memory.

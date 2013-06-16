@@ -1,0 +1,83 @@
+DefineTypeBeforeUse
+===================
+
+<:StandardML:Standard ML> requires types to be defined before they are
+used.  Because of type inference, the use of a type can be implicit;
+hence, this requirement is more subtle than it might appear.  For
+example, the following program is not type correct, because the type
+of `r` is `t option ref`, but `t` is defined after `r`.
+
+[source,sml]
+----
+val r = ref NONE
+datatype t = A | B
+val () = r := SOME A
+----
+
+MLton reports the following error, indicating that the type defined on
+line 2 is used on line 1.
+
+----
+Error: z.sml 1.1.
+  Type escapes the scope of its definition at z.sml 2.10.
+    type: t
+    in: val r = ref NONE
+----
+
+While the above example is benign, the following example shows how to
+cast an integer to a function by (implicitly) using a type before it
+is defined.  In the example, the ref cell `r` is of type
+`t option ref`, where `t` is defined _after_ `r`, as a parameter to
+functor `F`.
+
+[source,sml]
+----
+val r = ref NONE
+functor F (type t
+           val x: t) =
+   struct
+      val () = r := SOME x
+      fun get () = valOf (!r)
+   end
+structure S1 = F (type t = unit -> unit
+                  val x = fn () => ())
+structure S2 = F (type t = int
+                  val x = 13)
+val () = S1.get () ()
+----
+
+MLton reports the following error.
+
+----
+Warning: z.sml 1.1.
+  Unable to locally determine type of variable: r.
+    type: ??? option ref
+    in: val r = ref NONE
+Error: z.sml 1.1.
+  Type escapes the scope of its definition at z.sml 2.17.
+    type: t
+    in: val r = ref NONE
+----
+
+<:PolyML:PolyML> 4.1.3 to seg faults, but <:PolyML:PolyML> 5.4 reports
+the following error.
+
+----
+Warning- in 'z.sml', line 13.
+The type of (r) contains a free type variable. Setting it to a unique
+   monotype.
+Error- in 'z.sml', line 5.
+Type error in function application.
+   Function: := : _a option ref * _a option -> unit
+   Argument: (r, SOME x) : _a option ref * t option
+   Reason:
+      Can't unify _a (*Constructed from a free type variable.*) with t
+      (Different type constructors)
+Found near r := SOME x
+Error- in 'z.sml', line 12.
+Type error in function application.
+   Function: S1.get () : _a
+   Argument: () : unit
+   Reason: Value being applied does not have a function type
+Found near S1.get () ()
+----

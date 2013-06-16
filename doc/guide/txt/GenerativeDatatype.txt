@@ -1,0 +1,36 @@
+GenerativeDatatype
+==================
+
+In <:StandardML:Standard ML>, datatype declarations are said to be
+_generative_, because each time a datatype declaration is evaluated,
+it yields a new type.  Thus, any attempt to mix the types will lead to
+a type error at compile-time.  The following program, which does not
+type check, demonstrates this.
+
+[source,sml]
+----
+functor F () =
+   struct
+      datatype t = T
+   end
+structure S1 = F ()
+structure S2 = F ()
+val _: S1.t -> S2.t = fn x => x
+----
+
+Generativity also means that two different datatype declarations
+define different types, even if they define identical constructors.
+The following program does not type check due to this.
+
+[source,sml]
+----
+datatype t = A | B
+val a1 = A
+datatype t = A | B
+val a2 = A
+val _ = if true then a1 else a2
+----
+
+== Also see ==
+
+ * <:GenerativeException:>

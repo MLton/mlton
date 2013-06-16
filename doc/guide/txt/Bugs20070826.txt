@@ -1,0 +1,124 @@
+Bugs20070826
+============
+
+Here are the known bugs in <:Release20070826:MLton 20070826>, listed
+in reverse chronological order of date reported.
+
+* <!Anchor(bug25)>
+ Bug in the mark-compact garbage collector where the C library's `memcpy` was used to move objects during the compaction phase; this could lead to heap corruption and segmentation faults with newer versions of gcc and/or glibc, which assume that src and dst in a `memcpy` do not overlap.
+ Fixed by revision <!ViewSVNRev(7461)>.
+
+* <!Anchor(bug24)>
+ Bug in elaboration of `datatype` declarations with `withtype` bindings.
+ Fixed by revision <!ViewSVNRev(7434)>.
+
+* <!Anchor(bug23)>
+ Performance bug in <:RefFlatten:> optimization pass.
+ Thanks to Reactive Systems for the bug report.
+ Fixed by revision <!ViewSVNRev(7379)>.
+
+* <!Anchor(bug22)>
+ Performance bug in <:SimplifyTypes:> optimization pass.
+ Thanks to Reactive Systems for the bug report.
+ Fixed by revisions <!ViewSVNRev(7377)> and <!ViewSVNRev(7378)>.
+
+* <!Anchor(bug21)>
+ Bug in amd64 codegen register allocation of indirect C calls.
+ Thanks to David Hansel for the bug report.
+ Fixed by revision <!ViewSVNRev(7368)>.
+
+* <!Anchor(bug20)>
+ Bug in `IntInf.scan` and `IntInf.fromString` where leading spaces were only accepted if the stream had an explicit sign character.
+ Thanks to David Hansel for the bug report.
+ Fixed by revisions <!ViewSVNRev(7227)> and <!ViewSVNRev(7230)>.
+
+* <!Anchor(bug19)>
+ Bug in `IntInf.~>>` that could cause a `glibc` assertion.
+ Fixed by revisions <!ViewSVNRev(7083)>, <!ViewSVNRev(7084)>, and <!ViewSVNRev(7085)>.
+
+* <!Anchor(bug18)>
+ Bug in the return type of `MLton.Process.reap`.
+ Thanks to Risto Saarelma for the bug report.
+ Fixed by revision <!ViewSVNRev(7029)>.
+
+* <!Anchor(bug17)>
+ Bug in `MLton.size` and `MLton.share` when tracing the current stack.
+ Fixed by revisions <!ViewSVNRev(6978)>, <!ViewSVNRev(6981)>, <!ViewSVNRev(6988)>, <!ViewSVNRev(6989)>, and <!ViewSVNRev(6990)>.
+
+* <!Anchor(bug16)>
+ Bug in nested `_export`/`_import` functions.
+ Fixed by revision <!ViewSVNRev(6919)>.
+
+* <!Anchor(bug15)>
+ Bug in the name mangling of `_import`-ed functions with the `stdcall` convention.
+ Thanks to Lars Bergstrom for the bug report.
+ Fixed by revision <!ViewSVNRev(6672)>.
+
+* <!Anchor(bug14)>
+ Bug in Windows code to page the heap to disk when unable to grow the heap to a desired size.
+ Thanks to Sami Evangelista for the bug report.
+ Fixed by revisions <!ViewSVNRev(6600)> and <!ViewSVNRev(6624)>.
+
+* <!Anchor(bug13)>
+ Bug in *NIX code to page the heap to disk when unable to grow the heap to a desired size.
+ Thanks to Nicolas Bertolotti for the bug report and patch.
+ Fixed by revisions <!ViewSVNRev(6596)> and <!ViewSVNRev(6600)>.
+
+* <!Anchor(bug12)>
+ Space-safety bug in pass to <:RefFlatten: flatten refs> into containing data structure.
+ Thanks to Daniel Spoonhower for the bug report and initial diagnosis and patch.
+ Fixed by revision <!ViewSVNRev(6395)>.
+
+* <!Anchor(bug11)>
+ Bug in the frontend that rejected `op longvid` patterns and expressions.
+ Thanks to Florian Weimer for the bug report.
+ Fixed by revision <!ViewSVNRev(6347)>.
+
+* <!Anchor(bug10)>
+ Bug in the http://www.standardml.org/Basis/imperative-io.html#SIG:IMPERATIVE_IO.canInput:VAL[`IMPERATIVE_IO.canInput`] function of the <:BasisLibrary:Basis Library> implementation.
+ Thanks to Ville Laurikari for the bug report.
+ Fixed by revision <!ViewSVNRev(6261)>.
+
+* <!Anchor(bug09)>
+ Bug in algebraic simplification of real primitives.  http://www.standardml.org/Basis/real.html#SIG:REAL.\|@LTE\|:VAL[++REAL__<N>__.\<=(x, x)++] is `false` when `x` is NaN.
+ Fixed by revision <!ViewSVNRev(6242)>.
+
+* <!Anchor(bug08)>
+ Bug in the FFI visible representation of `Int16.int ref` (and references of other primitive types smaller than 32-bits) on big-endian platforms.
+ Thanks to Dave Herman for the bug report.
+ Fixed by revision <!ViewSVNRev(6267)>.
+
+* <!Anchor(bug07)>
+ Bug in type inference of flexible records.  This would later cause the compiler to raise the `TypeError` exception.
+ Thanks to Wesley Terpstra for the bug report.
+ Fixed by revision <!ViewSVNRev(6229)>.
+
+* <!Anchor(bug06)>
+ Bug in cross-compilation of `gdtoa` library.
+ Thanks to Wesley Terpstra for the bug report and patch.
+ Fixed by revision <!ViewSVNRev(6620)>.
+
+* <!Anchor(bug05)>
+ Bug in pass to <:RefFlatten: flatten refs> into containing data structure.
+ Thanks to Ruy Ley-Wild for the bug report.
+ Fixed by revision <!ViewSVNRev(6191)>.
+
+* <!Anchor(bug04)>
+ Bug in the handling of weak pointers by the mark-compact garbage collector.
+ Thanks to Sean McLaughlin for the bug report and Florian Weimer for the initial diagnosis.
+ Fixed by revision <!ViewSVNRev(6183)>.
+
+* <!Anchor(bug03)>
+ Bug in the elaboration of structures with signature constraints.  This would later cause the compiler to raise the `TypeError` exception.
+ Thanks to Vesa Karvonen for the bug report.
+ Fixed by revision <!ViewSVNRev(6046)>.
+
+* <!Anchor(bug02)>
+ Bug in the interaction of `_export`-ed functions and signal handlers.
+ Thanks to Sean McLaughlin for the bug report.
+ Fixed by revision <!ViewSVNRev(6013)>.
+
+* <!Anchor(bug01)>
+ Bug in the implementation of `_export`-ed functions using the `char` type, leading to a linker error.
+ Thanks to Katsuhiro Ueno for the bug report.
+ Fixed by revision <!ViewSVNRev(5999)>.

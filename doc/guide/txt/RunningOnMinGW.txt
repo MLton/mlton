@@ -1,0 +1,81 @@
+RunningOnMinGW
+==============
+
+MLton runs on http://mingw.org[MinGW], a library for porting Unix
+applications to Windows.  Some library functionality is missing or
+changed.
+
+== Notes ==
+
+* To compile MLton on MinGW:
+** The <:GnuMP:> library is required.
+** The Bash shell is required.  If you are using a prebuilt MSYS, you
+probably want to symlink `bash` to `sh`.
+
+== Known issues ==
+
+* Many functions are unimplemented and will `raise SysErr`.
+** `MLton.Itimer.set`
+** `MLton.ProcEnv.setgroups`
+** `MLton.Process.kill`
+** `MLton.Process.reap`
+** `MLton.World.load`
+** `OS.FileSys.readLink`
+** `OS.IO.poll`
+** `OS.Process.terminate`
+** `Posix.FileSys.chown`
+** `Posix.FileSys.fchown`
+** `Posix.FileSys.fpathconf`
+** `Posix.FileSys.link`
+** `Posix.FileSys.mkfifo`
+** `Posix.FileSys.pathconf`
+** `Posix.FileSys.readlink`
+** `Posix.FileSys.symlink`
+** `Posix.IO.dupfd`
+** `Posix.IO.getfd`
+** `Posix.IO.getfl`
+** `Posix.IO.getlk`
+** `Posix.IO.setfd`
+** `Posix.IO.setfl`
+** `Posix.IO.setlkw`
+** `Posix.IO.setlk`
+** `Posix.ProcEnv.ctermid`
+** `Posix.ProcEnv.getegid`
+** `Posix.ProcEnv.geteuid`
+** `Posix.ProcEnv.getgid`
+** `Posix.ProcEnv.getgroups`
+** `Posix.ProcEnv.getlogin`
+** `Posix.ProcEnv.getpgrp`
+** `Posix.ProcEnv.getpid`
+** `Posix.ProcEnv.getppid`
+** `Posix.ProcEnv.getuid`
+** `Posix.ProcEnv.setgid`
+** `Posix.ProcEnv.setpgid`
+** `Posix.ProcEnv.setsid`
+** `Posix.ProcEnv.setuid`
+** `Posix.ProcEnv.sysconf`
+** `Posix.ProcEnv.times`
+** `Posix.ProcEnv.ttyname`
+** `Posix.Process.exece`
+** `Posix.Process.execp`
+** `Posix.Process.exit`
+** `Posix.Process.fork`
+** `Posix.Process.kill`
+** `Posix.Process.pause`
+** `Posix.Process.waitpid_nh`
+** `Posix.Process.waitpid`
+** `Posix.SysDB.getgrgid`
+** `Posix.SysDB.getgrnam`
+** `Posix.SysDB.getpwuid`
+** `Posix.TTY.TC.drain`
+** `Posix.TTY.TC.flow`
+** `Posix.TTY.TC.flush`
+** `Posix.TTY.TC.getattr`
+** `Posix.TTY.TC.getpgrp`
+** `Posix.TTY.TC.sendbreak`
+** `Posix.TTY.TC.setattr`
+** `Posix.TTY.TC.setpgrp`
+** `Unix.kill`
+** `Unix.reap`
+** `UnixSock.fromAddr`
+** `UnixSock.toAddr`

@@ -1,0 +1,271 @@
+InfixingOperators
+=================
+
+Fixity specifications are not part of signatures in
+<:StandardML:Standard ML>. When one wants to use a module that
+provides functions designed to be used as infix operators there are
+several obvious alternatives:
+
+* Use only prefix applications. Unfortunately there are situations
+where infix applications lead to considerably more readable code.
+
+* Make the fixity declarations at the top-level. This may lead to
+collisions and may be unsustainable in a large project. Pollution of
+the top-level should be avoided.
+
+* Make the fixity declarations at each scope where you want to use
+infix applications. The duplication becomes inconvenient if the
+operators are widely used. Duplication of code should be avoided.
+
+* Use non-standard extensions, such as the <:MLBasis: ML Basis system>
+to control the scope of fixity declarations. This has the obvious
+drawback of reduced portability.
+
+* Reuse existing infix operator symbols (`^`, `+`, `-`, ...).  This
+can be convenient when the standard operators aren't needed in the
+same scope with the new operators.  On the other hand, one is limited
+to the standard operator symbols and the code may appear confusing.
+
+None of the obvious alternatives is best in every case. The following
+describes a slightly less obvious alternative that can sometimes be
+useful. The idea is to approximate Haskell's special syntax for
+treating any identifier enclosed in grave accents (backquotes) as an
+infix operator. In Haskell, instead of writing the prefix application
+`f x y` one can write the infix application ++x &grave;f&grave; y++.
+
+
+== Infixing operators ==
+
+Let's first take a look at the definitions of the operators:
+
+[source,sml]
+----
+infix  3 <\     fun x <\ f = fn y => f (x, y)     (* Left section      *)
+infix  3 \>     fun f \> y = f y                  (* Left application  *)
+infixr 3 />     fun f /> y = fn x => f (x, y)     (* Right section     *)
+infixr 3 </     fun x </ f = f x                  (* Right application *)
+
+infix  2 o  (* See motivation below *)
+infix  0 :=
+----
+
+The left and right sectioning operators, `<\` and `/>`, are useful in
+SML for partial application of infix operators.
+<!Cite(Paulson96, ML For the Working Programmer)> describes curried
+functions `secl` and `secr` for the same purpose on pages 179-181.
+For example,
+
+[source,sml]
+----
+List.map (op- /> y)
+----
+
+is a function for subtracting `y` from a list of integers and
+
+[source,sml]
+----
+List.exists (x <\ op=)
+----
+
+is a function for testing whether a list contains an `x`.
+
+Together with the left and right application operators, `\>` and `</`,
+the sectioning operators provide a way to treat any binary function
+(i.e. a function whose domain is a pair) as an infix operator.  In
+general,
+
+----
+x0 <\f1\> x1 <\f2\> x2 ... <\fN\> xN = fN (... f2 (f1 (x0, x1), x2) ..., xN)
+----
+
+and
+
+----
+xN </fN/> ... x2 </f2/> x1 </f1/> x0  =  fN (xN, ... f2 (x2, f1 (x1, x0)) ...)
+----
+
+
+=== Examples ===
+
+As a fairly realistic example, consider providing a function for sequencing
+comparisons:
+
+[source,sml]
+----
+structure Order (* ... *) =
+   struct
+      (* ... *)
+      val orWhenEq = fn (EQUAL, th) => th ()
+                      | (other,  _) => other
+      (* ... *)
+   end
+----
+Using `orWhenEq` and the infixing operators, one can write a
+`compare` function for triples as
+
+[source,sml]
+----
+fun compare (fad, fbe, fcf) ((a, b, c), (d, e, f)) =
+    fad (a, d) <\Order.orWhenEq\> `fbe (b, e) <\Order.orWhenEq\> `fcf (c, f)
+----
+
+where +&grave;+ is defined as
+
+[source,sml]
+----
+fun `f x = fn () => f x
+----
+
+Although `orWhenEq` can be convenient (try rewriting the above without
+it), it is probably not useful enough to be defined at the top level
+as an infix operator. Fortunately we can use the infixing operators
+and don't have to.
+
+Another fairly realistic example would be to use the infixing operators with
+the technique described on the <:Printf:> page. Assuming that you would have
+a `Printf` module binding `printf`, +&grave;+, and formatting combinators
+named `int` and `string`, you could write
+
+[source,sml]
+----
+let open Printf in
+  printf (`"Here's an int "<\int\>" and a string "<\string\>".") 13 "foo" end
+----
+
+without having to duplicate the fixity declarations. Alternatively, you could
+write
+
+[source,sml]
+----
+P.printf (P.`"Here's an int "<\P.int\>" and a string "<\P.string\>".") 13 "foo"
+----
+
+assuming you have the made the binding
+
+[source,sml]
+----
+structure P = Printf
+----
+
+
+== Application and piping operators ==
+
+The left and right application operators may also provide some notational
+convenience on their own. In general,
+
+----
+f \> x1 \> ... \> xN = f x1 ... xN
+----
+
+and
+
+----
+xN </ ... </ x1 </ f = f x1 ... xN
+----
+
+If nothing else, both of them can eliminate parentheses. For example,
+
+[source,sml]
+----
+foo (1 + 2) = foo \> 1 + 2
+----
+
+The left and right application operators are related to operators
+that could be described as the right and left piping operators:
+
+[source,sml]
+----
+infix  1 >|     val op>| = op</      (* Left pipe *)
+infixr 1 |<     val op|< = op\>      (* Right pipe *)
+----
+
+As you can see, the left and right piping operators, `>|` and `|<`,
+are the same as the right and left application operators,
+respectively, except the associativities are reversed and the binding
+strength is lower. They are useful for piping data through a sequence
+of operations. In general,
+
+----
+x >| f1 >| ... >| fN = fN (... (f1 x) ...) = (fN o ... o f1) x
+----
+
+and
+
+----
+fN |< ... |< f1 |< x = fN (... (f1 x) ...) = (fN o ... o f1) x
+----
+
+The right piping operator, `|<`, is provided by the Haskell prelude as
+`$`. It can be convenient in CPS or continuation passing style.
+
+A use for the left piping operator is with parsing combinators. In a
+strict language, like SML, eta-reduction is generally unsafe. Using
+the left piping operator, parsing functions can be formatted
+conveniently as
+
+[source,sml]
+----
+fun parsingFunc input =
+   input >| (* ... *)
+         || (* ... *)
+         || (* ... *)
+----
+
+where `||` is supposed to be a combinator provided by the parsing combinator
+library.
+
+
+== About precedences ==
+
+You probably noticed that we redefined the
+<:OperatorPrecedence:precedences> of the function composition operator
+`o` and the assignment operator `:=`. Doing so is not strictly
+necessary, but can be convenient and should be relatively
+safe. Consider the following motivating examples from
+<:WesleyTerpstra: Wesley W. Terpstra> relying on the redefined
+precedences:
+
+[source,sml]
+----
+Word8.fromInt o Char.ord o s <\String.sub
+(* Combining sectioning and composition *)
+
+x := s <\String.sub\> i
+(* Assigning the result of an infixed application *)
+----
+
+In imperative languages, assignment usually has the lowest precedence
+(ignoring statement separators). The precedence of `:=` in the
+<:BasisLibrary: Basis Library> is perhaps unnecessarily high, because
+an expression of the form `r := x` always returns a unit, which makes
+little sense to combine with anything. Dropping `:=` to the lowest
+precedence level makes it behave more like in other imperative
+languages.
+
+The case for `o` is different. With the exception of `before` and
+`:=`, it doesn't seem to make much sense to use `o` with any of the
+operators defined by the <:BasisLibrary: Basis Library> in an
+unparenthesized expression. This is simply because none of the other
+operators deal with functions. It would seem that the precedence of
+`o` could be chosen completely arbitrarily from the set `{1, ..., 9}`
+without having any adverse effects with respect to other infix
+operators defined by the <:BasisLibrary: Basis Library>.
+
+
+== Design of the symbols ==
+
+The closest approximation of Haskell's ++x &grave;f&grave; y++ syntax
+achievable in Standard ML would probably be something like
+++x &grave;f^ y++, but `^` is already used for string
+concatenation by the <:BasisLibrary: Basis Library>. Other
+combinations of the characters +&grave;+ and `^` would be
+possible, but none seems clearly the best visually. The symbols `<\`,
+`\>`, `</`, and `/>` are reasonably concise and have a certain
+self-documenting appearance and symmetry, which can help to remember
+them.  As the names suggest, the symbols of the piping operators `>|`
+and `|<` are inspired by Unix shell pipelines.
+
+
+== Also see ==
+
+ * <:Utilities:>

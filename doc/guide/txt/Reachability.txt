@@ -1,0 +1,20 @@
+Reachability
+============
+
+Reachability is a notion dealing with the graph of heap objects
+maintained at runtime.  Nodes in the graph are heap objects and edges
+correspond to the pointers between heap objects.  As the program runs,
+it allocates new objects (adds nodes to the graph), and those new
+objects can contain pointers to other objects (new edges in the
+graph).  If the program uses mutable objects (refs or arrays), it can
+also change edges in the graph.
+
+At any time, the program has access to some finite set of _root_
+nodes, and can only ever access nodes that are reachable by following
+edges from these root nodes.  Nodes that are _unreachable_ can be
+garbage collected.
+
+== Also see ==
+
+ * <:MLtonFinalizable:>
+ * <:MLtonWeak:>

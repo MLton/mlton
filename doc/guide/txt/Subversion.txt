@@ -1,0 +1,10 @@
+Subversion
+==========
+
+http://subversion.apache.org/[Subversion] is a version control system.
+The MLton project used Subversion to maintain its
+<:Sources:source code>, but switched to <:Git:> on 20130308.
+
+Here are some online Subversion resources.
+
+* http://svnbook.red-bean.com[Version Control with Subversion]

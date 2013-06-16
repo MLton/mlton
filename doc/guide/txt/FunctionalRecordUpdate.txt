@@ -1,0 +1,260 @@
+FunctionalRecordUpdate
+======================
+
+Functional record update is the copying of a record while replacing
+the values of some of the fields.  <:StandardML:Standard ML> does not
+have explicit syntax for functional record update.  We will show below
+how to implement functional record update in SML, with a little
+boilerplate code.
+
+As an example, the functional update of the record
+
+[source,sml]
+----
+{a = 13, b = 14, c = 15}
+----
+
+with `c = 16` yields a new record
+
+[source,sml]
+----
+{a = 13, b = 14, c = 16}
+----
+
+Functional record update also makes sense with multiple simultaneous
+updates.  For example, the functional update of the record above with
+`a = 18, c = 19` yields a new record
+
+[source,sml]
+----
+{a = 18, b = 14, c = 19}
+----
+
+
+One could easily imagine an extension of the SML that supports
+functional record update.  For example
+
+[source,sml]
+----
+e with {a = 16, b = 17}
+----
+
+would create a copy of the record denoted by `e` with field `a`
+replaced with `16` and `b` replaced with `17`.
+
+Since there is no such syntax in SML, we now show how to implement
+functional record update directly.  We first give a simple
+implementation that has a number of problems.  We then give an
+advanced implementation, that, while complex underneath, is a reusable
+library that admits simple use.
+
+
+== Simple implementation ==
+
+To support functional record update on the record type
+
+[source,sml]
+----
+{a: 'a, b: 'b, c: 'c}
+----
+
+first, define an update function for each component.
+
+[source,sml]
+----
+fun withA ({a = _, b, c}, a) = {a = a, b = b, c = c}
+fun withB ({a, b = _, c}, b) = {a = a, b = b, c = c}
+fun withC ({a, b, c = _}, c) = {a = a, b = b, c = c}
+----
+
+Then, one can express `e with {a = 16, b = 17}` as
+
+[source,sml]
+----
+withB (withA (e, 16), 17)
+----
+
+With infix notation
+
+[source,sml]
+----
+infix withA withB withC
+----
+
+the syntax is almost as concise as a language extension.
+
+[source,sml]
+----
+e withA 16 withB 17
+----
+
+This approach suffers from the fact that the amount of boilerplate
+code is quadratic in the number of record fields.  Furthermore,
+changing, adding, or deleting a field requires time proportional to
+the number of fields (because each ++with__<L>__++ function must be
+changed).  It is also annoying to have to define a ++with__<L>__++
+function, possibly with a fixity declaration, for each field.
+
+Fortunately, there is a solution to these problems.
+
+
+== Advanced implementation ==
+
+Using <:Fold:> one can define a family of ++makeUpdate__<N>__++
+functions and single _update_ operator `U` so that one can define a
+functional record update function for any record type simply by
+specifying a (trivial) isomorphism between that type and function
+argument list.  For example, suppose that we would like to do
+functional record update on records with fields `a` and `b`.  Then one
+defines a function `updateAB` as follows.
+
+[source,sml]
+----
+val updateAB =
+   fn z =>
+   let
+      fun from v1 v2 = {a = v1, b = v2}
+      fun to f {a = v1, b = v2} = f v1 v2
+   in
+      makeUpdate2 (from, from, to)
+   end
+   z
+----
+
+The functions `from` (think _from function arguments_) and `to` (think
+_to function arguements_) specify an isomorphism between `a`,`b`
+records and function arguments.  There is a second use of `from` to
+work around the lack of
+<:FirstClassPolymorphism:first-class polymorphism> in SML.
+
+With the definition of `updateAB` in place, the following expressions
+are valid.
+
+[source,sml]
+----
+updateAB {a = 13, b = "hello"} (set#b "goodbye") $
+updateAB {a = 13.5, b = true} (set#b false) (set#a 12.5) $
+----
+
+As another example, suppose that we would like to do functional record
+update on records with fields `b`, `c`, and `d`.  Then one defines a
+function `updateBCD` as follows.
+
+[source,sml]
+----
+val updateBCD =
+   fn z =>
+   let
+      fun from v1 v2 v3 = {b = v1, c = v2, d = v3}
+      fun to f {b = v1, c = v2, d = v3} = f v1 v2 v3
+   in
+      makeUpdate3 (from, from, to)
+   end
+   z
+----
+
+With the definition of `updateBCD` in place, the following expression
+is valid.
+
+[source,sml]
+----
+updateBCD {b = 1, c = 2, d = 3} (set#c 4) (set#c 5) $
+----
+
+Note that not all fields need be updated and that the same field may
+be updated multiple times.  Further note that the same `set` operator
+is used for all update functions (in the above, for both `updateAB`
+and `updateBCD`).
+
+In general, to define a functional-record-update function on records
+with fields `f1`, `f2`, ..., `fN`, use the following template.
+
+[source,sml]
+----
+val update =
+   fn z =>
+   let
+      fun from v1 v2 ... vn = {f1 = v1, f2 = v2, ..., fn = vn}
+      fun to f {f1 = v1, f2 = v2, ..., fn = vn} = v1 v2 ... vn
+   in
+      makeUpdateN (from, from, to)
+   end
+   z
+----
+
+With this, one can update a record as follows.
+
+[source,sml]
+----
+update {f1 = v1, ..., fn = vn} (set#fi1 vi1) ... (set#fim vim) $
+----
+
+
+== The `FunctionalRecordUpdate` structure ==
+
+Here is the implementation of functional record update.
+
+[source,sml]
+----
+structure FunctionalRecordUpdate =
+   struct
+      local
+         fun next g (f, z) x = g (f x, z)
+         fun f1 (f, z) x = f (z x)
+         fun f2  z = next f1  z
+         fun f3  z = next f2  z
+
+         fun c0  from = from
+         fun c1  from = c0  from f1
+         fun c2  from = c1  from f2
+         fun c3  from = c2  from f3
+
+         fun makeUpdate cX (from, from', to) record =
+            let
+               fun ops () = cX from'
+               fun vars f = to f record
+            in
+               Fold.fold ((vars, ops), fn (vars, _) => vars from)
+            end
+      in
+         fun makeUpdate0  z = makeUpdate c0  z
+         fun makeUpdate1  z = makeUpdate c1  z
+         fun makeUpdate2  z = makeUpdate c2  z
+         fun makeUpdate3  z = makeUpdate c3  z
+
+         fun upd z = Fold.step2 (fn (s, f, (vars, ops)) => (fn out => vars (s (ops ()) (out, f)), ops)) z
+         fun set z = Fold.step2 (fn (s, v, (vars, ops)) => (fn out => vars (s (ops ()) (out, fn _ => v)), ops)) z
+      end
+   end
+----
+
+The idea of `makeUpdate` is to build a record of functions which can
+replace the contents of one argument out of a list of arguments.  The
+functions ++f__<X>__++ replace the 0th, 1st, ... argument with their
+argument `z`. The ++c__<X>__++ functions pass the first __X__ `f`
+functions to the record constructor.
+
+The `#field` notation of Standard ML allows us to select the map
+function which replaces the corresponding argument. By converting the
+record to an argument list, feeding that list through the selected map
+function and piping the list into the record constructor, functional
+record update is achieved.
+
+
+== Efficiency ==
+
+With MLton, the efficiency of this approach is as good as one would
+expect with the special syntax.  Namely a sequence of updates will be
+optimized into a single record construction that copies the unchanged
+fields and fills in the changed fields with their new values.
+
+Before Sep 14, 2009, this page advocated an alternative implementation
+of <:FunctionalRecordUpdate:>.  However, the old structure caused
+exponentially increasing compile times.  We advise you to switch to
+the newer version.
+
+
+== Applications ==
+
+Functional record update can be used to implement labelled
+<:OptionalArguments:optional arguments>.

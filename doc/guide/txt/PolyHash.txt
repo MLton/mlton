@@ -1,0 +1,26 @@
+PolyHash
+========
+
+<:PolyHash:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass implements polymorphic, structural hashing.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/poly-hash.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/poly-hash.fun)>
+
+== Details and Notes ==
+
+For each datatype, tycon, and vector type, it builds and equality
+function and translates calls to `MLton_hash` into calls to that
+function.
+
+For tuples, it does the equality test inline; i.e., it does not create
+a separate equality function for each tuple type.
+
+All equality functions are created only if necessary, i.e., if
+equality is actually used at a type.

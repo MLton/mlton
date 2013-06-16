@@ -1,0 +1,57 @@
+CKitLibrary
+===========
+
+The http://www.smlnj.org/doc/ckit[ckit Library] is a C front end
+written in SML that translates C source code (after preprocessing)
+into abstract syntax represented as a set of SML datatypes.  The ckit
+Library is distributed with SML/NJ.  Due to differences between SML/NJ
+and MLton, this library will not work out-of-the box with MLton.
+
+As of 20130522, MLton includes a port of the ckit Library synchronized
+with SML/NJ version 110.75.
+
+== Usage ==
+
+* You can import the ckit Library into an MLB file with:
++
+[options="header"]
+|=====
+|MLB file|Description
+|`$(SML_LIB)/ckit-lib/ckit-lib.mlb`|
+|=====
+
+* If you are porting a project from SML/NJ's <:CompilationManager:> to
+MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+following map is included by default:
++
+----
+# ckit Library
+$ckit-lib.cm                            $(SML_LIB)/ckit-lib
+$ckit-lib.cm/ckit-lib.cm                $(SML_LIB)/ckit-lib/ckit-lib.mlb
+----
++
+This will automatically convert a `$/ckit-lib.cm` import in an input
+`.cm` file into a `$(SML_LIB)/ckit-lib/ckit-lib.mlb` import in the
+output `.mlb` file.
+
+== Details ==
+
+The following changes were made to the ckit Library, in addition to
+deriving the `.mlb` file from the `.cm` file:
+
+* `ast/ast-sig.sml` (modified): Rewrote use of `withtype` in signature.
+* `ast/build-ast.sml` (modified): Rewrote use of or-patterns.
+* `ast/initializer-normalizer.sml` (modified): Rewrote use of or-patterns.
+* `ast/pp/pp-ast-adornment-sig.sml` (modified): Rewrote use of `signature` in `local`.
+* `ast/pp/pp-ast-ext-sig.sml` (modified): Rewrote use of `signature` in `local`.
+* `ast/pp/pp-lib.sml` (modified): Rewrote use of or-patterns.
+* `ast/sizeof.sml` (modified): Rewrote use of or-patterns.
+* `ast/type-util-sig.sml` (modified): Rewrote use of `signature` in `local`.
+* `ast/type-util.sml` (modified): Rewrote use of or-patterns.
+* `parser/grammar/c.lex.sml` (modified): Rewrote use of vector literal.
+* `parser/parse-tree-sig.sml` (modified): Rewrote use of (sequential) `withtype` in signature.
+* `parser/parse-tree.sml` (modified): Rewrote use of (sequential) `withtype`.
+
+== Patch ==
+
+* <!ViewGitFile(mlton,master,lib/ckit-lib/ckit.patch)>

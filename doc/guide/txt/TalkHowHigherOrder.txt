@@ -1,0 +1,22 @@
+TalkHowHigherOrder
+==================
+
+== Higher-order Functions ==
+
+ * How does one represent SML's higher-order functions?
+ * MLton's answer: defunctionalize
+
+{nbsp} +
+{nbsp} +
+
+See <:ClosureConvert:>.
+
+{nbsp} +
+{nbsp} +
+{nbsp} +
+
+'''
+[cols="<,>"]
+|====
+|<:TalkMLtonApproach: Prev>|<:TalkWholeProgram: Next>
+|====
