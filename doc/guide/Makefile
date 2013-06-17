@@ -129,8 +129,8 @@ conf/mlton-gcse.js: ;
 	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
 
 
-www.mlton.org/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=www.mlton.org -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
+www.mlton.org/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-flags.sh
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) $(shell ./bin/mk-git-attribute-entity-flags.sh $<) -a mlton-guide-host=www.mlton.org -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
 
 www.mlton.org/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
@@ -143,8 +143,8 @@ upload_www.mlton.org: $(MLTON_ORG)
 	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
-localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
+localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-flags.sh
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) $(shell ./bin/mk-git-attribute-entity-flags.sh $<) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
 
 localhost/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
