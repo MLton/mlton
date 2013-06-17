@@ -1007,12 +1007,10 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         val Context { labelToStringIndex = labelToStringIndex,
                       chunkLabelToString = chunkLabelToString,
                       labelChunk = labelChunk,
-                      labelInfo = labelInfo,
                       printstmt = printstmt, ... } = cxt
         fun tpush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
-                (* val frameIndex = Int.toString (valOf (#frameIndex (labelInfo return))) *)
                 val frameIndex = labelToStringIndex return
                 val stackTop = nextLLVMReg ()
                 val load = mkload (stackTop, "%Pointer*", "%stackTop")
@@ -1437,6 +1435,9 @@ fun annotate (frameLayouts, chunks) =
                                  Property.initRaise ("index", Label.layout))
         val _ =
             Vector.foreachi (entryLabels, fn (i, l) => setLabelIndex (l, i))
+        (* NB: This should always return the same value as
+         * (Int.toString o valOf o #frameIndex o labelInfo) l
+         *)
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
                 
     in
