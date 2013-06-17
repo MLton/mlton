@@ -130,7 +130,7 @@ conf/mlton-gcse.js: ;
 
 
 www.mlton.org/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=www.mlton.org -a page=$(basename $(notdir $<)) -o $@ $<
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=www.mlton.org -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
 
 www.mlton.org/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
@@ -144,7 +144,7 @@ upload_www.mlton.org: $(MLTON_ORG)
 
 
 localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a target=localhost -a page=$(basename $(notdir $<)) -o $@ $<
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
 
 localhost/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@

@@ -4,7 +4,7 @@ pages=$(echo $@ | sort -f)
 
 xform () {
     page=$1
-    echo ":page: ${page}"
+    echo ":mlton-guide-page: ${page}"
     echo "[[${page}]]"
     # echo "include::${page}.txt[]"
     cat txt/${page}.txt |
@@ -13,18 +13,18 @@ xform () {
     cat
 }
 
-echo "MLton Guide ({mltonversion})"
-echo "============================"
+echo "MLton Guide ({mlton-version})"
+echo "============================="
 echo ":toc:"
-echo ":page!:"
-echo ":no-log-link:"
-echo ":no-edit-link:"
+echo ":mlton-guide-page!:"
+echo ":mlton-guide-no-log-link:"
+echo ":mlton-guide-no-edit-link:"
 echo ""
 echo "[abstract]"
 echo "--"
 echo "This is the guide for MLton, an open-source, whole-program, optimizing Standard ML compiler."
 echo ""
-echo "This guide was generated automatically from the MLton website, available online at http://mlton.org. It is up to date for MLton {mltonversion}."
+echo "This guide was generated automatically from the MLton website, available online at http://mlton.org. It is up to date for MLton {mlton-version}."
 echo "--"
 echo ""
 echo ""

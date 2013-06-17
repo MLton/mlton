@@ -4,8 +4,8 @@ pages=$(echo $@ | sort -f)
 
 echo "Index"
 echo "====="
-echo ":no-log-link:"
-echo ":no-edit-link:"
+echo ":mlton-guide-no-log-link:"
+echo ":mlton-guide-no-edit-link:"
 echo ""
 for ul in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z; do
     echo "<:#${ul}${ul}${ul}:${ul}>"
