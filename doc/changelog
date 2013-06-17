@@ -3,15 +3,34 @@ Here are the changes from version 2010608 to version YYYYMMDD.
 * 2013-06-10
    - Improved performance of String.concatWith.
 
+* 2013-05-22
+   - Update SML/NJ libraries to SML/NJ 110.75.
+
+* 2013-04-30
+   - Detect PowerPC 64 architecture.
+
 * 2012-10-09
    - Fixed bug in elaboration that erroneously accepted the following:
          signature S = sig structure A : sig type t end
                                  and B : sig type t end where type t = A.t end
 
+* 2012-09-04
+   - Introduce an MLB annotation to control overload and flex record
+     resolution scope: "resolveScope {strdec|dec|topdec|program}".
+
+* 2012-07-04
+   - Simplify use of 'getsockopt' and 'setsockopt'in Basis Library.
+   - Direct implementation of Socket.Ctl.{getATMARK,getNREAD} in
+     runtime system, rather than indirect implementation in Basis
+     Library via 'io ctl'.
+   - Replace use of casting through a union with memcpy in runtime.
+
 * 2012-06-11
+   - Use bit operations for real classification and low-level operations.
    - Fixed bugs in REAL.copySign, REAL.signBit, and REAL.{to,from}Decimal.
 
 * 2012-06-01
+   - Cosmetic improvements to type-error messages.
    - Fixed bug in elaboration that erroneously rejected the following:
 	 datatype ('a, ''a) t = T
 	 type ('a, ''a) u = unit
@@ -22,10 +41,21 @@ Here are the changes from version 2010608 to version YYYYMMDD.
 * 2012-02-24
    - Fixed bug in redundant SSA optimization.
 
+* 2011-06-20
+   - Support additional variables with Posix.ProcEnv.sysconf.
+
+* 2011-06-17
+   - Change mllex and mlyacc to generate #line directives with simple
+     file names, rather than absolute paths.
+   - Interpret "#line" directives as relative file names.
+
 * 2011-06-14
    - Fixed bug in SSA/SSA2 shrinker that could erroneously turn a
      non-tail function call with a Bug transfer as its continuation
      into a tail function call.
+
+* 2011-06-11
+   - Update SML/NJ libraries to SML/NJ 110.73 and add ML-LPT library.
 
 * 2011-06-10
    - Fixed bug in translation from SSA2 to RSSA with case expressions
@@ -45,7 +75,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
    - Fixed bug with treatment of nan in common subexpression
      elimination SSA optimization.
 
-* 2011-02-17
+* 2011-02-18
    - Fixed bug in translation from SSA2 to RSSA with weak pointers.
 
 * 2011-02-05
@@ -53,6 +83,10 @@ Here are the changes from version 2010608 to version YYYYMMDD.
 
 * 2011-01-17
    - Fixed bug in comment-handling in lexer for mlyacc's input language.
+
+* 2010-06-22
+   - Fixed bug in elaboration of function clauses with different numbers
+     of arguments that would raise an uncaught Subscript exception.
 
 --------------------------------------------------------------------------------
 

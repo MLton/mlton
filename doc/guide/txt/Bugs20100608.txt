@@ -56,3 +56,7 @@ in reverse chronological order of date reported.
  Bug in comment-handling in lexer for <:MLYacc:>'s input language.
  Thanks to Michael Norrish for the bug report and patch.
  Fixed by revision <!ViewSVNRev(7500)>.
+
+* <!Anchor(bug00)>
+ Bug in elaboration of function clauses with different numbers of arguments that would raise an uncaught `Subscript` exception.
+ Fixed by revision <!ViewSVNRev(75497)>.
