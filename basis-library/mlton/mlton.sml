@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010,2013 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -101,7 +101,6 @@ structure Real64 =
 structure Rlimit = MLtonRlimit
 structure Rusage = MLtonRusage
 structure Signal = MLtonSignal
-structure Socket = MLtonSocket
 structure Syslog = MLtonSyslog
 structure TextIO = MLtonIO (TextIO)
 structure Thread = MLtonThread

@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -351,8 +352,6 @@ in
    (* ../mlton/ptrace.sml *)
    ../mlton/rlimit.sig
    ../mlton/rlimit.sml
-   ../mlton/socket.sig
-   ../mlton/socket.sml
    ../mlton/syslog.sig
    ../mlton/syslog.sml 
    ../mlton/vector.sig
