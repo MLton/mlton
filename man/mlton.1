@@ -39,13 +39,15 @@ default.
 
 .SH Compile-time options
 .TP
-\fB\-align \fI{\fB4\fP|\fB8\fP}\fP\fR
-Aligns object sizes and doubles in memory by the specified alignment.
+\fB\-align \fIn\fP\fR
+Aligns objects in memory by the specified alignment (\fB4\fP or \fB8\fP).
 The default varies depending on architecture.
 
 .TP
 \fB\-as\-opt \fIoption\fP\fR
-Pass \fIoption\fP to \fBgcc\fP when assembling.
+Pass \fIoption\fP to \fBgcc\fP when compiling assembler code.  If you
+wish to pass an option to the assembler, you must use \fBgcc\fP's
+\fB\-Wa,\fP syntax.
 
 .TP
 \fB\-cc\-opt \fIoption\fP\fR
@@ -118,7 +120,7 @@ approximate measure of code size of a procedure.  The default is 320.
 Save intermediate files.  If no \fB\-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
-\fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to gcc and the assembler
+\fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to \fBgcc\fP
 .br
 \fBo\fP    object (\fB.o\fP) files
 .in -.5i
@@ -249,25 +251,18 @@ details.
 Like \fB\-as\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when assembling,
 except it only passes \fIoption\fP when the target architecture or
 operating system is \fItarget\fP.
-Valid values for \fItarget\fP are:
-\fBalpha\fP, \fBamd64\fP, \fBarm,\fP, \fBhppa\fP, \fBia64\fP, \fBm68k\fP,
-\fBmips\fP, \fBpowerpc\fP, \fBpowerpc64\fP, \fBs390\fP, \fBsparc\fP, \fBx86\fP,
-\fBaix\fP, \fBcygwin\fP, \fBdarwin\fP, \fBfreebsd\fP, \fBhurd\fP, \fBhpux\fP, 
-\fBlinux\fP, \fBmingw\fP, \fBnetbsd\fP, \fBopenbsd\fP, \fBsolaris\fP.
 
 .TP
 \fB\-target\-cc\-opt \fItarget\fP \fIoption\fP\fR
 Like \fB\-cc\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when compiling
 C code, except it only passes \fIoption\fP when the target architecture
-or operating system is \fItarget\fP.  Valid values for \fItarget\fR
-are as for \fB\-target\-as\-opt\fP.
+or operating system is \fItarget\fP.
 
 .TP
 \fB\-target\-link\-opt \fItarget\fP \fIoption\fP\fR
 Like \fB\-link\-opt\fP, this passes \fIoption\fP to \fBgcc\fP when linking,
 except it only passes \fIoption\fP when the target architecture or
 operating system is \fItarget\fP.
-Valid values for \fItarget\fP are as for \fB\-target\-as\-opt\fP.
 
 .TP
 \fB\-verbose \fI{\fB0\fP|\fB1\fP|\fB2\fP|\fB3\fP}\fP\fR
