@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Henry Cejtin, Matthew Fluet, Suresh
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -632,7 +633,7 @@ structure IntInf =
                     in
                        if Int32.>= (MPLimb.sizeInBits, #sizeInBits other) 
                           then let
-                                  val limbsPer = 1
+                                  val limbsPer : S.t = 1
                                   val limb = V.subUnsafe (v, 1)
                                   val extra =
                                      S.> (n, S.+ (limbsPer, 1))
@@ -1053,7 +1054,7 @@ structure IntInf =
              | (_, 0) => a * acc
              | (_, 1) => acc
              | (1, _) => acc
-             | _ => 
+             | (_ : I.t * I.t) =>
                   if a = b
                      then a * acc
                      else

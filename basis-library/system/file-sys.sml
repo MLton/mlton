@@ -92,7 +92,7 @@ structure OS_FileSys =
                handle ex => (chDir oldCWD; raise ex)
          in
             case (P.fromString p)
-               of {isAbs=false, arcs, ...} =>
+               of {isAbs=false, arcs, vol} =>
                   let
                      val {arcs=arcs', vol=vol, ...} = P.fromString(oldCWD)
                   in

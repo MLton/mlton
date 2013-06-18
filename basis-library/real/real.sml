@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2012 Matthew Fluet.
+(* Copyright (C) 2011-2013 Matthew Fluet.
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -788,7 +788,7 @@ functor Real (structure W: WORD_EXTRA
          case class x of
             INF => raise Overflow
           | NAN => raise Domain
-          | ZERO => 0
+          | ZERO => (0 : LargeInt.int)
           | _ =>
                let
                   (* This round may turn x into an INF, so we need to check the
@@ -803,8 +803,7 @@ functor Real (structure W: WORD_EXTRA
                in
                   case class x of
                      INF => raise Overflow
-                   | _ =>
-                        valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+                   | _ => valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
                end
 
       local

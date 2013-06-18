@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -166,7 +167,7 @@ structure IntInf: INT_INF_EXTRA =
                                     chunk = W.+ (W.* (base, chunk), dig),
                                     s = s'}
                (* digitsPerChunk = floor((W.wordSize - 3) / (log2 base)) *)
-               val digitsPerChunk =
+               val digitsPerChunk : Int32.t =
                   case (W.wordSize, base) of
                      (64, 0w16) => 15
                    | (64, 0w10) => 18
