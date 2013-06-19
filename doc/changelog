@@ -29,7 +29,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
    - Replace use of casting through a union with memcpy in runtime.
 
 * 2012-06-11
-   - Use bit operations for real classification and low-level operations.
+   - Use bit operations for REAL.class and other low-level operations.
    - Fixed bugs in REAL.copySign, REAL.signBit, and REAL.{to,from}Decimal.
 
 * 2012-06-01
