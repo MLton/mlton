@@ -34,7 +34,6 @@ fun F (arg_0', arg_1') = loopS_0 ()
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/introduce-loops.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/introduce-loops.fun)>
 
 == Details and Notes ==

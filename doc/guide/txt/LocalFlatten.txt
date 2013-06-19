@@ -13,7 +13,6 @@ there is some tuple constructed in this function that flows to it.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/local-flatten.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/local-flatten.fun)>
 
 == Details and Notes ==

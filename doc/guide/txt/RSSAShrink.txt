@@ -13,8 +13,7 @@ This pass implements a whole family of compile-time reductions, like:
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/rssa/rssa.sig)>
-* <!ViewGitFile(mlton,master,mlton/rssa/rssa.fun)>
+* <!ViewGitFile(mlton,master,mlton/backend/rssa.fun)>
 
 == Details and Notes ==
 

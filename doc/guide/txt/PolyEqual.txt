@@ -10,7 +10,6 @@ This pass implements polymorphic equality.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/poly-equal.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/poly-equal.fun)>
 
 == Details and Notes ==

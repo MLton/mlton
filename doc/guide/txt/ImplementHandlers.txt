@@ -10,7 +10,6 @@ This pass implements the (threaded) exception handler stack.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/backend/implement-handlers.sig)>
 * <!ViewGitFile(mlton,master,mlton/backend/implement-handlers.fun)>
 
 == Details and Notes ==

@@ -64,7 +64,6 @@ fun last_0 (x_142) = loopS_1 ()
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/known-case.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/known-case.fun)>
 
 == Details and Notes ==

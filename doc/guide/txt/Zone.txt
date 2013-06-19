@@ -15,7 +15,6 @@ to decrease the liveness information in large <:SSA:> functions.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/zone.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/zone.fun)>
 
 == Details and Notes ==

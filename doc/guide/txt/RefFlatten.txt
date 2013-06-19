@@ -21,7 +21,6 @@ where the `[m]` indicates a mutable field of a tuple.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/ref-flatten.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/ref-flatten.fun)>
 
 == Details and Notes ==

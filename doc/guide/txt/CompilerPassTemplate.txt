@@ -13,7 +13,6 @@ A short description of the pass.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ZZZ.sig)>
 * <!ViewGitFile(mlton,master,mlton/ZZZ.fun)>
 
 == Details and Notes ==

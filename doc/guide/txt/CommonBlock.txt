@@ -13,7 +13,6 @@ global variable.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-block.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/common-block.fun)>
 
 == Details and Notes ==

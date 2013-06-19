@@ -42,7 +42,7 @@ of the benchmarks expect certain input files to exist in the
 * <!RawGitFile(mlton,master,benchmark/tests/hamlet.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/hamlet-input.sml)>
 * <!RawGitFile(mlton,master,benchmark/tests/ray.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/ray)>
 * <!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/chess.gml)>
-* <!RawGitFile(mlton,master,benchmark/tests/vliw.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/ndotprod.sml)>
+* <!RawGitFile(mlton,master,benchmark/tests/vliw.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/ndotprod.s)>
 
 
 == <!Anchor(RunTime)>Run-time ratio ==

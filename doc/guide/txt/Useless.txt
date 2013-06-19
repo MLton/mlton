@@ -21,7 +21,6 @@ useful value to a useless one.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/useless.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/useless.fun)>
 
 == Details and Notes ==
