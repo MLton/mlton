@@ -282,10 +282,10 @@ fun mkFixError({is_keyword,terms,errtermvalue,
              distanceParse : ('_a,'_b) distanceParse,
              minAdvance,maxAdvance)
 
-            (lexv as (TOKEN (term,value as (_,leftPos,_)),_),stack,queue) =
+            (lexv as (TOKEN (term,value as (_,leftPos,rightPos)),_),stack,queue) =
     let val _ = if DEBUG2 then
                         error("syntax error found at " ^ (showTerminal term),
-                              leftPos,leftPos)
+                              leftPos,rightPos)
                 else ()
 
         fun tokAt(t,p) = TOKEN(t,(errtermvalue t,p,p))
@@ -511,7 +511,7 @@ fun mkFixError({is_keyword,terms,errtermvalue,
               in (lexPair,stack,queue)
               end
         | nil => (error("syntax error found at " ^ (showTerminal term),
-                        leftPos,leftPos); raise ParseError)
+                        leftPos,rightPos); raise ParseError)
     end
 
    val parse = fn {arg,table,lexer,saction,void,lookahead,
