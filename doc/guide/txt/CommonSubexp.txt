@@ -10,7 +10,6 @@ It eliminates instances of common subexpressions.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-subexp.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/common-subexp.fun)>
 
 == Details and Notes ==

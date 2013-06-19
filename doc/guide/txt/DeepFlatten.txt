@@ -13,7 +13,7 @@ object, and an `(int * int) array` contains pairs of `int`-s,
 rather than pointers to pairs of `int`-s.
 
 == Implementation ==
-* <!ViewGitFile(mlton,master,mlton/ssa/deep-flatten.sig)>
+
 * <!ViewGitFile(mlton,master,mlton/ssa/deep-flatten.fun)>
 
 == Details and Notes ==

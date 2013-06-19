@@ -46,7 +46,6 @@ optimizations, if more information is known about `x` or `y`.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-arg.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/common-arg.fun)>
 
 == Details and Notes ==

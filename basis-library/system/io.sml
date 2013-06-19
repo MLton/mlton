@@ -3,6 +3,7 @@
 (* modified by Matthew Fluet 2002-11-21 *)
 (* modified by Matthew Fluet 2006-04-30 *)
 (* modified by Matthew Fluet 2008-04-06 *)
+(* modified by Matthew Fluet 2013-06-18 *)
 
 (* os-io.sml
  *
@@ -120,7 +121,7 @@ structure OS_IO: OS_IO =
                       then Error.raiseSys Error.inval
                    else (C_Int.fromLarge (Time.toMilliseconds t)
                          handle Overflow => Error.raiseSys Error.inval)
-          val revents = Array.array (n, 0)
+          val revents = Array.array (n, 0: C_Short.t)
           val _ = Posix.Error.SysCall.simpleRestart
                   (fn () => Prim.poll (PrePosix.FileDesc.vectorToRep fds,
                                        events,

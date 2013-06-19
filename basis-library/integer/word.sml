@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -40,7 +41,7 @@ local
           xorb (msk, W.<<? (msk, Primitive.Word32.>>? (sft, 0w1))),
           Primitive.Word32.>>? (sft, 0w1))
       end
-   val (f, sft) =
+   val (f, sft : Primitive.Word32.t) =
       case W.sizeInBitsWord of
          0w8 => (fn x => x, 0w4)
        | 0w16 => (st, 0w8)

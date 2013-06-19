@@ -10,7 +10,6 @@ This pass implements polymorphic, structural hashing.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/poly-hash.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/poly-hash.fun)>
 
 == Details and Notes ==

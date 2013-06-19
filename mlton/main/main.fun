@@ -491,7 +491,7 @@ fun makeOptions {usage} =
              case !inlineNonRec of
                 {product, ...} =>
                    inlineNonRec := {small = small, product = product})),
-       (Normal, "keep", " {g|o|sml}", "save intermediate files",
+       (Normal, "keep", " {g|o}", "save intermediate files",
         SpaceString (fn s =>
                      case s of
                         "core-ml" => keepCoreML := true

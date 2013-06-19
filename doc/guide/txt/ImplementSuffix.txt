@@ -11,7 +11,6 @@ installs a function to exit the program.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/xml/implement-suffix.sig)>
 * <!ViewGitFile(mlton,master,mlton/xml/implement-suffix.fun)>
 
 == Details and Notes ==

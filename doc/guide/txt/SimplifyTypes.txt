@@ -32,7 +32,6 @@ This pass also removes `Useless` and `Transparent` constructors.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/simplify-types.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/simplify-types.fun)>
 
 == Details and Notes ==
