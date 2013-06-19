@@ -1004,20 +1004,20 @@ fun commandLine (args: string list): unit =
                    :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir]],
-                      if positionIndependent then
-                      ["-lmlton-pic", "-lgdtoa-pic"]
-                      else if !debugRuntime then
+                      if !debugRuntime then
                       ["-lmlton-gdb", "-lgdtoa-gdb"]
+                      else if positionIndependent then
+                      ["-lmlton-pic", "-lgdtoa-pic"]
                       else
                       ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
       val linkArchives =
-         if positionIndependent then
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
-          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
-         else if !debugRuntime then
+         if !debugRuntime then
          [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
+         else if positionIndependent then
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
+          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
          else
          [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
