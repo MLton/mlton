@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -157,7 +158,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                        NO_BUF => put ()
                      | LINE_BUF buf => doit (buf, fn () => (case line of
                                                                NONE => false 
-                                                             | SOME {isLine, ...} => V.exists isLine v))
+                                                             | SOME {isLine, lineElem} => V.exists isLine v))
                      | BLOCK_BUF buf => doit (buf, fn () => false)
                  end
                  handle exn => liftExn (outstreamName os) "output" exn
@@ -223,7 +224,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                   in
                      case line of
                         NONE => ()
-                      | SOME {isLine, ...} =>
+                      | SOME {isLine, lineElem} =>
                            if isLine c then flush (os, size, array) else ()
                   end
              | NO_BUF =>
@@ -258,7 +259,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                        NO_BUF => put ()
                      | LINE_BUF buf => doit (buf, fn () => (case line of
                                                                NONE => false 
-                                                             | SOME {isLine, ...} => VS.exists isLine v))
+                                                             | SOME {isLine, lineElem} => VS.exists isLine v))
                      | BLOCK_BUF buf => doit (buf, fn () => false)
                  end
                  handle exn => liftExn (outstreamName os) "output" exn
@@ -571,9 +572,9 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
       val inputLine =
          case line of
             NONE => (fn is => SOME (input is))
-          | SOME {isLine, lineElem, ...} =>
+          | SOME {isLine, lineElem} =>
             let
-               val lineVecSl = VS.full (V.tabulate(1, fn _ => lineElem))
+               val lineVecSl = VS.full (V.tabulate (1, fn _ => lineElem))
             in
                fn is =>
                let
@@ -745,7 +746,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                                                         base = base,
                                                         next = next}})}
                   else case (lastRead, base, xlatePos) of
-                         (true, SOME b, SOME {fromInt, toInt, ...}) =>
+                         (true, SOME b, SOME {fromInt, toInt}) =>
                            let
                              val b =
                                fromInt (Position.- (toInt b, Position.fromInt (V.length v)))
@@ -785,7 +786,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                                buf = Buf {base, ...}, ...}) =
         case base of
            SOME b => (case xlatePos of
-                         SOME {fromInt, toInt, ...} => 
+                         SOME {fromInt, toInt} =>
                             (fromInt (Position.+ (Position.fromInt pos, toInt b)))
                        | NONE => (case (readerSel (augmented_reader, #readVec),
                                         readerSel (augmented_reader, #getPos),

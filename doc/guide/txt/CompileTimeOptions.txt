@@ -19,14 +19,15 @@ default.
 
 == Options ==
 
-* ++-align {4|8}++
+* ++-align __n__++
 +
-Aligns object sizes and doubles in memory by the specified alignment.
+Aligns object in memory by the specified alignment (+4+ or +8+).
 The default varies depending on architecture.
 
 * ++-as-opt __option__++
 +
-Pass _option_ to `gcc` when assembling.
+Pass _option_ to `gcc` when compiling assembler code.  If you wish to
+pass an option to the assembler, you must use `gcc`'s `-Wa,` syntax.
 
 * ++-cc-opt __option__++
 +
@@ -105,7 +106,7 @@ the output file is saved.
 +
 [cols="^25%,<75%"]
 |====
-| `g` | generated `.c` and `.s` files passed to gcc and the assembler
+| `g` | generated `.c` and `.s` files passed to `gcc`
 | `o` | object (`.o`) files
 |====
 
@@ -228,25 +229,21 @@ is running on.  To use any other target, you must first install a
 
 * ++-target-as-opt __target__ __option__++
 +
-Like `-as-opt`, this passes _option_ to `gcc` when assembling, except
-it only passes _option_ when the target architecture or operating
-system is _target_.  Valid values for _target_ are: `amd64`, `hppa`,
-`powerpc`, `sparc`, `x86`, `cygwin`, `darwin`, `freebsd`, `hpux`,
-`linux`, `mingw`, `netbsd`, `openbsd`, `solaris`.
+Like `-as-opt`, this passes _option_ to `gcc` when compliling
+assembler code, except it only passes _option_ when the target
+architecture or operating system is _target_.
 
 * ++-target-cc-opt __target__ __option__++
 +
 Like `-cc-opt`, this passes _option_ to `gcc` when compiling C code,
 except it only passes _option_ when the target architecture or
-operating system is _target_.  Valid values for _target_ are as for
-`-target-as-opt`.
+operating system is _target_.
 
 * ++-target-link-opt __target__ __option__++
 +
 Like `-link-opt`, this passes _option_ to `gcc` when linking, except
 it only passes _option_ when the target architecture or operating
-system is _target_.  Valid values for _target_ are as for
-`-target-as-opt`.
+system is _target_.
 
 * ++-verbose {0|1|2|3}++
 +

@@ -160,6 +160,10 @@ mlton-guide.pdf : txt/mlton-guide.xml txt/Logo.attachments/mlton-128.pdf conf/ml
 	$(DBLATEX) -t pdf -p conf/mlton-dblatex.xsl -s conf/mlton-dblatex.sty -o $@ $<
 
 
+.PHONY: check-git-links
+check-git-links:
+	@./bin/check-git-links.sh $(SRC_PAGES)
+
 .PHONY: clean
 clean:
 	../../bin/clean

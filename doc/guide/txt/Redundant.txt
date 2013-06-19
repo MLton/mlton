@@ -27,7 +27,6 @@ the formals by the equivalence classes of the actuals.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/redundant.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/redundant.fun)>
 
 == Details and Notes ==

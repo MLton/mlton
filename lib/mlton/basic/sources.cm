@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2013 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -66,7 +66,6 @@ structure FixedPoint
 structure Function
 structure HashSet
 structure Html
-structure Http
 structure In
 structure InitScript
 structure Int
@@ -86,7 +85,6 @@ structure List
 structure MLton
 (* structure MergeSortList *)
 (* structure MergeSortVector *)
-structure Net
 structure OS
 structure Option
 structure Out
@@ -363,8 +361,6 @@ format.sig
 format.sml
 html.sig
 html.sml
-http.sig
-http.sml
 inet-sock.sml
 init-script.sig
 init-script.sml
@@ -379,8 +375,6 @@ mark.sig
 mark.sml
 mono-list.fun
 mono-option.fun
-net.sig
-net.sml
 pair.fun
 pair.sig
 parse.fun

@@ -30,7 +30,6 @@ type.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/flatten.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/flatten.fun)>
 
 == Details and Notes ==

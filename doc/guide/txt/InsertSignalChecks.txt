@@ -10,7 +10,6 @@ This pass inserts signal checks.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/backend/limit-check.sig)>
 * <!ViewGitFile(mlton,master,mlton/backend/limit-check.fun)>
 
 == Details and Notes ==

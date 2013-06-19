@@ -151,13 +151,13 @@ functor Sequence (S: sig
       fun generate' n =
         let
            val a = arrayUninit' n
-           val subLim = ref 0
+           val subLim : SeqIndex.t ref = ref 0
            fun sub i =
               if Primitive.Controls.safe andalso geu (i, !subLim) then
                  raise Subscript
               else
                  Array.subUnsafe (a, i)
-           val updateLim = ref 0
+           val updateLim : SeqIndex.t ref = ref 0
            fun update (i, x) =
               if Primitive.Controls.safe andalso geu (i, !updateLim) then
                  if i = !updateLim andalso i < n then
@@ -429,15 +429,15 @@ functor Sequence (S: sig
                   let
                      val l1 = length' sl1
                      val l2 = length' sl2
-                     val n = (l1 + l2) handle Overflow => raise Size
+                     val n = l1 +? l2
+                     fun loop (i, sl) =
+                        if SeqIndex.< (i, length' sl)
+                           then (unsafeSub' (sl, i),
+                                 (i +? 1, sl))
+                           else (unsafeSub' (sl2, 0),
+                                 (1, sl2))
                   in
-                     #1 (unfoldi' 
-                         (n, (0, sl1), fn (_, (i, sl)) =>
-                          if SeqIndex.< (i, length' sl)
-                             then (unsafeSub' (sl, i), 
-                                   (i +? 1, sl))
-                             else (unsafeSub' (sl2, 0), 
-                                   (1, sl2))))
+                     #1 (unfoldi' (n, (0, sl1), fn (_, ac) => loop ac))
                   end
             fun concat (sls: 'a slice list): 'a sequence =
                case sls of
@@ -445,21 +445,17 @@ functor Sequence (S: sig
                 | [sl] => sequence sl
                 | sls' as sl::sls =>
                      let
-                        val n = 
+                        val n =
                            List.foldl (fn (sl, s) => s +? length' sl) 0 sls'
+                        fun loop (i, sl, sls) =
+                           if SeqIndex.< (i, length' sl)
+                              then (unsafeSub' (sl, i),
+                                    (i +? 1, sl, sls))
+                              else case sls of
+                                 [] => raise Fail "Sequence.Slice.concat"
+                               | sl :: sls => loop (0, sl, sls)
                      in
-                        #1 (unfoldi' 
-                            (n, (0, sl, sls), fn (_, ac) =>
-                             let
-                                fun loop (i, sl, sls) =
-                                   if SeqIndex.< (i, length' sl)
-                                      then (unsafeSub' (sl, i), 
-                                            (i +? 1, sl, sls))
-                                      else case sls of
-                                         [] => raise Fail "Sequence.Slice.concat"
-                                       | sl :: sls => loop (0, sl, sls)
-                             in loop ac
-                             end))
+                        #1 (unfoldi' (n, (0, sl, sls), fn (_, ac) => loop ac))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                case sls of
@@ -471,20 +467,16 @@ functor Sequence (S: sig
                           val sepn = length' sep
                           val n =
                              List.foldl (fn (sl, s) => s +? sepn +? length' sl) (length' sl) sls
+                          fun loop (b, i, sl, sls) =
+                             if SeqIndex.< (i, length' sl)
+                                then (unsafeSub' (sl, i),
+                                      (b, i +? 1, sl, sls))
+                                else case (b, sls) of
+                                   (true, _) => loop (false, 0, sep, sls)
+                                 | (_, []) => raise Fail "Sequence.Slice.concatWith"
+                                 | (_, sl :: sls) => loop (true, 0, sl, sls)
                        in
-                          #1 (unfoldi'
-                              (n, (true, 0, sl, sls), fn (_, ac) =>
-                              let
-                                 fun loop (b, i, sl, sls) =
-                                    if SeqIndex.< (i, length' sl)
-                                       then (unsafeSub' (sl, i),
-                                             (b, i +? 1, sl, sls))
-                                       else case (b, sls) of
-                                          (true, _) => loop (false, 0, sep, sls)
-                                        | (_, []) => raise Fail "Sequence.Slice.concatWith"
-                                        | (_, sl :: sls) => loop (true, 0, sl, sls)
-                              in loop ac
-                              end))
+                          #1 (unfoldi' (n, (true, 0, sl, sls), fn (_, ac) => loop ac))
                        end
             fun triml k =
                if Primitive.Controls.safe andalso Int.< (k, 0)

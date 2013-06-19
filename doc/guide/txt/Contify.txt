@@ -13,7 +13,6 @@ including traditional loop optimizations.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/contify.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/contify.fun)>
 
 == Details and Notes ==

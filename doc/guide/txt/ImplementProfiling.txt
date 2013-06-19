@@ -10,8 +10,7 @@ This pass implements profiling.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/backend/profile.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/profile.fun)>
+* <!ViewGitFile(mlton,master,mlton/backend/implement-profiling.fun)>
 
 == Details and Notes ==
 

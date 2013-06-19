@@ -17,7 +17,6 @@ Uses <:Multi:> and <:Restore:>.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/local-ref.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/local-ref.fun)>
 
 == Details and Notes ==

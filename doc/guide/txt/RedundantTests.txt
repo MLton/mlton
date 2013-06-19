@@ -11,7 +11,6 @@ previous conditional test.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/ssa/redundant-tests.sig)>
 * <!ViewGitFile(mlton,master,mlton/ssa/redundant-tests.fun)>
 
 == Details and Notes ==

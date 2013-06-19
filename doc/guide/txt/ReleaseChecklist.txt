@@ -3,58 +3,57 @@ ReleaseChecklist
 
 == Advance preparation for release ==
 
-* Catch up on `doc/changelog` documentation.
+* Update `doc/changelog`.
+** Write entries for missing notable commits.
 ** Write summary of changes from previous release.
-* Update `doc/README` with relevant changes.
-* Update `man/{mlton,mlprof}.1` with relevant changes and set dates.
-* Wiki
+** Update with estimated release date.
+* Update `doc/README`.
+** Check features and description.
+* Update `man/{mlton,mlprof}.1`.
+** Check compile-time and run-time options in `man/mlton.1`.
+** Update with estimated release date.
+* Update `doc/guide`.
 ** Check <:OrphanedPages:> and <:WantedPages:>.
-** <:Features:> page should by synchronized with `doc/README`.
-** Catch up on <:Credits:> acknowledgements.
+** Synchronize <:Features:> page with `doc/README`.
+** Update <:Credits:> page with acknowledgements.
 ** Create *ReleaseYYYYMM??* (i.e., forthcoming release) based on *ReleaseXXXXLLCC* (i.e., previous release).
 *** Update summary from `doc/changelog`.
-*** Update attachment, SVN, and Wiki links to estimated release date.
+*** Update links to estimated release date.
 *** Comment out lists and attachment links under `YYYYMM?? binary packages` and `YYYYMM?? sources`.
-*** Ensure page has `#acl All:`
 ** Create *BugsYYYYMM??* based on *BugsXXXXLLCC*.
-*** Update SVN and Wiki links to estimated release date.
+*** Update links to estimated release date.
 ** Spell check pages.
-
-== Prepare Wiki for tagging ==
-
-This ensures that the guide distributed with the release looks updated
-for the release.
-
-* Rename *ReleaseYYYYMM??* to *ReleaseYYYYMMDD* with proper release date.
-** Update attachment, SVN, and Wiki links to proper release date.
-* Rename *BugsYYYYMM??* to *BugsYYYYMMDD* with proper release date.
-** Update SVN and Wiki links to proper release date.
-* Update *ReleaseXXXXLLCC*.
-** Change intro to "`This is an archived public release of MLton, version XXXXLLCC.`"
-* Update <:Download:>.
-** Change `Include(ReleaseXXXXLLCC, "Release XXXXLLCC")` to `Include(ReleaseYYYYMMDD,"Release YYYYMMDD")`.
-* Update <:Home:> with note of new release.
-** Change `What's new?` text to `Please try out our new release, <:ReleaseYYYYMMDD:MLton YYYYMMDD>`.
-* Clear <:Experimental:>.
-* Clear <:TemporaryUpload:>
+* Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
 
 == Prepare sources for tagging ==
 
-* Run `bin/grab-wiki` to update `doc/guide`.
-** Check that `doc/guide/MLTONWIKIVERSION` has proper release date.
-** Make sure that *ReleaseYYYYMMDD* and *BugsYYYYMMDD* are added to the repository.
-** Make sure that *ReleaseYYYYMM??* and *BugsYYYYMM??* are removed from the repository (if they were added during the advanced preparation).
-** Commit changes to `doc/guide`.
-* Check that `doc/changelog` has proper date.
+* Update `doc/changelog`.
+** Update with proper release date.
+* Update `man/{mlton,mlprof}.1`.
+** Update with proper release date.
+* Update `doc/guide`.
+** Rename *ReleaseYYYYMM??* to *ReleaseYYYYMMDD* with proper release date.
+*** Update links with proper release date.
+** Rename *BugsYYYYMM??* to *BugsYYYYMMDD* with proper release date.
+*** Update links with proper release date.
+** Update *ReleaseXXXXLLCC*.
+*** Change intro to "`This is an archived public release of MLton, version XXXXLLCC.`"
+** Update <:Home:> with note of new release.
+*** Change `What's new?` text to `Please try out our new release, <:ReleaseYYYYMMDD:MLton YYYYMMDD>`.
+** Clear <:Experimental:>.
+* Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
 
 == Tag sources ==
 
 * Shell commands:
 +
 ----
-svn copy -m "Tagging YYYYMMDD release" svn+ssh://mlton.org/svnroot/mlton/trunk svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release
+git clone http://github.com/MLton/mlton mlton.git
+cd mlton.git
+git checkout master
+git tag -a -m "Tagging YYYYMMDD release" on-YYYYMMDD-release master
+git push origin on-YYYYMMDD-release
 ----
-
 
 == Packaging ==
 
@@ -63,9 +62,11 @@ svn copy -m "Tagging YYYYMMDD release" svn+ssh://mlton.org/svnroot/mlton/trunk s
 * Shell commands:
 +
 ----
-svn checkout svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release mlton-YYYYMMDD
+git clone http://github.com/MLton/mlton mlton-YYYYMMDD
 cd mlton-YYYYMMDD
-make clean clean-svn version VERSION=YYYYMMDD
+git checkout on-YYYYMMDD-release
+make clean clean-git version VERSION=YYYYMMDD
+# make -C doc/guide
 cd ..
 tar --exclude package -czpvf mlton-YYYYMMDD.src.tgz mlton-YYYYMMDD
 ----
@@ -83,7 +84,7 @@ cd mlton-YYYYMMDD
 make
 ----
 
-* If your platform doesn't have `htmldoc`, please build or get `mlton-guide.pdf` and copy to `doc/guide`.
+* If your platform doesn't have `asciidoc` and `dblatex`, then get `doc/guide/localhost` and `doc/guide/mlton-guide.pdf` from another package.
 * Shell commands:
 +
 ----
@@ -94,31 +95,27 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 * Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD-1.ARCH-OS.tgz` attachment.
 
-=== Package releases ===
-
-* Debian: ???
-
 == Website ==
 
-* `basis` gets a snapshot of http://standardml.org/Basis (if any relevant changes).
-* `changelog` gets a copy of `doc/changelog`.
-* `guide/YYYYMMDD` gets a copy of `doc/guide`.
-** Need to run `sed` to replace `MLTONWIKIVERSION` with `YYYYMMDD`.
-** Copy `guide/YYYYMMDD/Home` to `guide/YYYYMMDD/index.html`.
-** Upload `guide/guide-YYYYMMDD.tgz` and unpack.
-** Add `<Directory /var/www/html/mlton.org/guide/YYYYMMDD> DefaultType text/html </Directory>` to `/etc/apache2/sites-available/mlton.org`
-** Restart `apache2` service.
+* `guide/YYYYMMDD` gets a copy of `doc/guide/localhost`.
+* Shell commands:
++
+----
+tar -xzpvf mlton-YYYYMMDD.src.tgz
+cd mlton-YYYYMMDD
+make doc
+cd doc/guide
+cp -prf localhost YYYYMMDD
+tar -czpvf guide-YYYYMMDD.tgz YYYYMMDD
+rsync -avzP --delete -e ssh YYYYMMDD fluet,mlton@web.sourceforge.net:htdocst/guide/
+rsync -avzP --delete -e ssh guide-YYYYMMDD.tgz fluet,mlton@web.sourceforge.net:htdocs/guide/
+----
 
 == Announce release ==
 
-* Send mail to
+* Mail announcement to:
 ** mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`]
 ** mailto:MLton-user@mlton.org[`MLton-user@mlton.org`]
-** mailto:sml-list@cs.cmu.edu[`sml-list@cs.cmu.edu`]  (aka [news:comp.lang.ml])
-** mailto:lwn@lwn.net[lwn@lwn.net] (linux weekly news)
-
-* Post to
-** [news:comp.lang.functional]
 
 * Update <:OtherSites:> that have MLton pages.
 

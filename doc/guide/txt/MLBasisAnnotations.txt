@@ -31,7 +31,7 @@ expressions to appear in source files.  See
 * +forceUsed+
 +
 Force all identifiers in the basis denoted by the body of the `ann` to
- be considered used; use in conjunction with `warnUnused true`.
+be considered used; use in conjunction with `warnUnused true`.
 
 * +nonexhaustiveExnMatch {default|ignore}+
 +
@@ -48,6 +48,21 @@ abort a compile, while a warning will not.
 +
 If `error` or `warn`, report redundant matches.  An error will abort a
 compile, while a warning will not.
+
+* +resolveScope {strdec|dec|topdec|program}+
++
+Used to control the scope at which overload constraints are resolved
+to default types (if not otherwise resolved by type inference) and the
+scope at which unresolved flexible record constraints are reported.
++
+The syntactic-class argument means to perform resolution checks at the
+smallest enclosing syntactic form of the given class.  The default
+behavior is to resolve at the smallest enclosing _strdec_ (which is
+equivalent to the largest enclosing _dec_).  Other useful behaviors
+are to resolve at the smallest enclosing _topdec_ (which is equivalent
+to the largest enclosing _strdec_) and at the smallest enclosing
+_program_ (which corresponds to a single `.sml` file and does not
+correspond to the whole `.mlb` program).
 
 * +sequenceNonUnit {ignore|error|warn}+
 +

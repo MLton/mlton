@@ -10,7 +10,6 @@ This pass implements exceptions.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/xml/implement-exceptions.sig)>
 * <!ViewGitFile(mlton,master,mlton/xml/implement-exceptions.fun)>
 
 == Details and Notes ==
