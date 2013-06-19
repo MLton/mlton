@@ -46,7 +46,35 @@ fun lambdaFree {program = Program.T {body, ...},
             NONE => ()
           | SOME x => varExp (x, s)
       fun varExps (xs, s) = Vector.foreach (xs, fn x => varExp (x, s))
-      fun newScope th = 
+
+      (*
+        newScope is invoked whenever there is a need to consider a new scope while
+        looking for free variables. Its only parameter is a function taking a record that
+        represents a scope supporting "setting" and "getting" variable statuses.
+        The intent is that `th` will continue traversing the program in the current
+        scope while aggregating variable statuses.
+
+        Initially, newScope creates a reference to a list of variables (`frees`)
+        Its purpose is twofold:
+            - It is a unique identifier for every encountered scope.
+            - It is utilized by `th` to aggregate all variabes
+
+        Since each variable has an associated status, updating every single status
+        in the program would be unreasonably slow. Thus, we delay updating the status
+        by associating each variable with the last scope for which that variable was
+        seen. If the variable has been unmentioned until this point in the current scope,
+        then we save its last scope and status, and "initialize" it to be Unseen.
+        This is achieved by having `get` and `set` use the `statusRef` function.
+
+        After setting up these operations, we perform `th`, and then recover
+        every variable's previous status and scope so that we may continue
+        traversing the program.
+       *)
+      fun newScope
+            (th: {frees: Var.t list ref,
+                  get:   Var.t -> Status.t,
+                  set:   Var.t * Status.t -> unit } -> unit)
+            : Var.t vector =
          let
             val frees = ref []
             val all = ref []
@@ -65,6 +93,7 @@ fun lambdaFree {program = Program.T {body, ...},
          in
             Vector.fromList (!frees)
          end
+
       fun exp (e, s) =
          let val {decs, result} = Exp.dest e
          in List.foreach
@@ -77,8 +106,16 @@ fun lambdaFree {program = Program.T {body, ...},
                       val {get = isBound, set, destroy} =
                          Property.destGetSetOnce (Var.plist,
                                                   Property.initConst false)
-                      val _ =
-                         Vector.foreach (decs, fn {var, ...} => set (var, true))
+
+                      (* Consider each of the functions in this function group to be bound
+                         according to a property list. *)
+                      val _ = Vector.foreach (decs, fn {var, ...} => set (var, true))
+
+                      (* Consider this recursive function group to be part of a new scope.
+                         Then accumulate all free variables from each function (`lambda l`)
+                         and if it is a mutually recursive function from this group (i.e. it
+                         was marked as bound), then treat it as such; otherwise, delegate
+                         the responsibility of checking/setting the variable to the var function *)
                       val xs =
                          newScope
                          (fn s =>
@@ -90,7 +127,12 @@ fun lambdaFree {program = Program.T {body, ...},
                                     if isBound x
                                        then true
                                     else (var (x, s); false)))))
+                       
+                      (* Get rid of the list of mutually recursive functions *)
                       val _ = destroy ()
+
+                      (* Each function in this function group will have the same associated free variables.
+                         Its name will then be bound to the current scope. *)
                       val _ =
                          Vector.foreach (decs, fn {var, lambda, ...} =>
                                          (setFree (lambda, xs)
