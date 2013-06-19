@@ -245,11 +245,6 @@ fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", ty, " ", arg, "\n"]
  *)
 fun mkstore (ty, arg, loc) = concat ["\tstore ", ty, " ", arg, ", ", ty, "* ", loc, "\n"]
 
-(* Makes an alloca instruction:
- * <lhs> = alloca <ty>
- *)
-fun mkalloca (lhs, ty) = concat ["\t", lhs, " = alloca ", ty, "\n"]
-
 fun implementsPrim (p: 'a Prim.t): bool =
    let
       datatype z = datatype Prim.Name.t
@@ -441,43 +436,30 @@ fun callReturn () =
  reg - The register containing a pointer to the value of the operand
  *)
 
-fun getOperand (cxt, operand) =
+fun getOperandAddr (cxt, operand) =
     case operand of
         Operand.ArrayOffset {base, index, offset, scale, ty} =>
-        let (* result = base + (index * scale) + offset *)
-            val (basePre, baseTy, baseReg) = getOperand (cxt, base)
-            val (indexPre, indexTy, indexReg) = getOperand (cxt, index)
-            val loadedBase = nextLLVMReg ()
-            val load = mkload (loadedBase, baseTy ^ "*", baseReg)
-            val loadedIndex = nextLLVMReg ()
-            val loadIndex = mkload (loadedIndex, indexTy ^ "*", indexReg)
+        let
+            (* arrayoffset = base + (index * scale) + offset *)
+            val (basePre, baseTy, baseReg) = getOperandValue (cxt, base)
+            val (indexPre, indexTy, indexReg) = getOperandValue (cxt, index)
             val scl = Scale.toString scale (* "1", "2", "4", or "8" *)
             val scaledIndex = nextLLVMReg ()
-            val scaleIndex = mkinst (scaledIndex, "mul nsw", indexTy, loadedIndex, scl)
+            val scaleIndex = mkinst (scaledIndex, "mul nsw", indexTy, indexReg, scl)
             val ofs = llbytes offset
             val offsettedIndex = nextLLVMReg ()
             val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
             val llvmTy = llty ty
             val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy, loadedBase, [offsettedIndex])
+            val gep = mkgep (ptr, baseTy, baseReg, [offsettedIndex])
             val castedPtr = nextLLVMReg ()
             val cast = mkconv (castedPtr, "bitcast", baseTy, ptr, llvmTy ^ "*")
         in
-            (concat [basePre, indexPre, load, loadIndex, scaleIndex, offsetIndex, gep, cast],
-             llvmTy, castedPtr)
-        end
-      | Operand.Cast (oper, ty) =>
-        let
-            val (operPre, operTy, operReg) = getOperand (cxt, oper)
-            val llvmTy = llty ty
-            val reg = nextLLVMReg ()
-            val inst = mkconv (reg, "bitcast", operTy ^ "*", operReg, llvmTy ^ "*")
-        in
-            (concat [operPre, inst], llvmTy, reg)
+            (concat [basePre, indexPre, scaleIndex, offsetIndex, gep, cast], llvmTy, castedPtr)
         end
       | Operand.Contents {oper, ty} =>
-        let (* operTy should be a pointer type *)
-            val (operPre, operTy, operReg) = getOperand (cxt, oper)
+        let
+            val (operPre, operTy, operReg) = getOperandAddr (cxt, oper)
             val llvmTy = llty ty
             val loaded = nextLLVMReg ()
             val load = mkload (loaded, operTy ^ "*", operReg)
@@ -487,16 +469,6 @@ fun getOperand (cxt, operand) =
             (concat [operPre, load, cast], llvmTy, reg)
         end
       | Operand.Frontier => ("", "%Pointer", "%frontier")
-      | Operand.GCState =>
-        let
-            val reg = nextLLVMReg ()
-            val cast = mkconv (reg, "bitcast", "%struct.GC_state*", "@gcState", "%Pointer")
-            val reg2 = nextLLVMReg ()
-            val alloca = mkalloca (reg2, "%Pointer")
-            val store = mkstore ("%Pointer", reg, reg2)
-        in
-            (concat [cast, alloca, store], "%Pointer", reg2)
-        end
       | Operand.Global global =>
         let
             val globalType = Global.ty global
@@ -512,49 +484,17 @@ fun getOperand (cxt, operand) =
         in
             (gep, llvmTy, ptr)
         end
-      | Operand.Label label =>
-        let
-            val Context { labelToStringIndex = labelToStringIndex, ...} = cxt
-            val labelVal = labelToStringIndex label
-            val reg = nextLLVMReg ()
-            val alloca = mkalloca (reg, "%Word32")
-            val store = mkstore ("%Word32", labelVal, reg)
-            val reg2 = nextLLVMReg ()
-            val cast = mkconv (reg2, "bitcast", "%Word32*", reg, "%CPointer*")
-        in
-            (concat [alloca, store, cast], "%CPointer", reg2)
-        end
-      | Operand.Null =>
-        let
-            val reg = nextLLVMReg ()
-            val alloca = mkalloca (reg, "i8*")
-            val store = mkstore ("i8*", "null", reg)
-        in
-            (concat [alloca, store], "i8*", reg)
-        end
       | Operand.Offset {base, offset, ty} =>
         let
-            val (basePre, baseTy, baseReg) = getOperand (cxt, base)
+            val (basePre, baseTy, baseReg) = getOperandValue (cxt, base)
             val idx = llbytes offset
             val llvmTy = llty ty
-            val loaded = nextLLVMReg ()
-            val load = mkload (loaded, baseTy ^ "*", baseReg)
             val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy, loaded, [idx])
+            val gep = mkgep (ptr, baseTy, baseReg, [idx])
             val reg = nextLLVMReg ()
             val cast = mkconv (reg, "bitcast", baseTy, ptr, llvmTy ^ "*")
         in
-            (concat [basePre, load, gep, cast], llvmTy, reg)
-        end
-      | Operand.Real real =>
-        let
-            val reg = nextLLVMReg ()
-            val ty = llrs (RealX.size real)
-            val realval = RealX.toString real
-            val alloca = mkalloca (reg, ty)
-            val store = mkstore (ty, realval, reg)
-        in
-            (concat [alloca, store], ty, reg)
+            (concat [basePre, gep, cast], llvmTy, reg)
         end
       | Operand.Register register =>
         let
@@ -579,17 +519,111 @@ fun getOperand (cxt, operand) =
             (concat [load, gep, cast], llvmTy, reg)
         end 
       | Operand.StackTop => ("", "%Pointer", "%stackTop")
-      | Operand.Word word =>
-        let
-            val reg = nextLLVMReg ()
-            val ty = llws (WordX.size word)
-            val wordval = llwordx word
-            val alloca = mkalloca (reg, ty)
-            val store = mkstore (ty, wordval, reg)
-        in
-            (concat [alloca, store], ty, reg)
-        end
+      | _ => Error.bug ("Cannot get address of " ^ Operand.toString operand)
 
+(* ty is the type of the value *)
+and getOperandValue (cxt, operand) =
+    let
+        fun loadOperand () =
+            let
+                val (pre, ty, addr) = getOperandAddr (cxt, operand)
+                val reg = nextLLVMReg ()
+                val load = mkload (reg, ty ^ "*", addr)
+            in
+                (pre ^ load, ty, reg)
+            end
+        val Context { labelToStringIndex = labelToStringIndex, ... } = cxt
+    in
+        case operand of
+            Operand.ArrayOffset _ => loadOperand ()
+          | Operand.Cast (oper, ty) =>
+            let
+                val ((operPre, operTy, operReg), shouldLoad) =
+                    case oper of
+                        Operand.ArrayOffset _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.Cast _ => (getOperandValue (cxt, oper), false)
+                      | Operand.Contents _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.Frontier => (getOperandAddr (cxt, oper), true)
+                      | Operand.GCState => (getOperandValue (cxt, oper), false)
+                      | Operand.Global _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.Label _ => (getOperandValue (cxt, oper), false)
+                      | Operand.Null => (getOperandValue (cxt, oper), false)
+                      | Operand.Offset _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.Real _ => (getOperandValue (cxt, oper), false)
+                      | Operand.Register _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.StackOffset _ => (getOperandAddr (cxt, oper), true)
+                      | Operand.StackTop => (getOperandAddr (cxt, oper), true)
+                      | Operand.Word _ => (getOperandValue (cxt, oper), false)
+                val llvmTy = llty ty
+                val reg = nextLLVMReg ()
+                val inst = if shouldLoad
+                           then
+                               let
+                                   val castReg = nextLLVMReg ()
+                                   val cast = mkconv (castReg, "bitcast", operTy ^ "*",
+                                                      operReg, llvmTy ^ "*")
+                                   val load = mkload (reg, llvmTy ^ "*", castReg)
+                               in
+                                   concat [cast, load]
+                               end
+                           else
+                               let
+                                   fun isIntegerType cty = case cty of
+                                                               CType.Int8 => true
+                                                             | CType.Int16 => true
+                                                             | CType.Int32 => true
+                                                             | CType.Int64 => true
+                                                             | CType.Word8 => true
+                                                             | CType.Word16 => true
+                                                             | CType.Word32 => true
+                                                             | CType.Word64 => true
+                                                             | _ => false
+                                   fun isPointerType cty = case cty of
+                                                               CType.CPointer => true
+                                                             | CType.Objptr => true
+                                                             | _ => false
+                                   val operIsInt = (isIntegerType o Type.toCType o Operand.ty) oper
+                                   val operIsPtr = (isPointerType o Type.toCType o Operand.ty) oper
+                                   val tyIsInt = (isIntegerType o Type.toCType) ty
+                                   val tyIsPtr = (isPointerType o Type.toCType) ty
+                                   val operation = if operIsInt andalso tyIsPtr
+                                                   then "inttoptr"
+                                                   else if operIsPtr andalso tyIsInt
+                                                        then "ptrtoint"
+                                                        else "bitcast"
+                               in
+                                   mkconv (reg, operation, operTy, operReg, llvmTy)
+                               end
+            in
+                (concat [operPre, inst], llvmTy, reg)
+            end
+          | Operand.Contents _ => loadOperand ()
+          | Operand.Frontier => loadOperand ()
+          | Operand.GCState =>
+            let
+                val reg = nextLLVMReg ()
+                val cast = mkconv (reg, "bitcast", "%struct.GC_state*", "@gcState", "%Pointer")
+            in
+                (cast, "%Pointer", reg)
+            end
+          | Operand.Global _ => loadOperand ()
+          | Operand.Label label =>
+            let
+                val reg = nextLLVMReg ()
+                val cast = mkconv (reg, "inttoptr", "%Word32", labelToStringIndex label,
+                                   "%CPointer")
+            in
+                (cast, "%CPointer", reg)
+            end
+          | Operand.Null => ("", "i8*", "null")
+          | Operand.Offset _ => loadOperand ()
+          | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString real)
+          | Operand.Register  _ => loadOperand ()
+          | Operand.StackOffset _ => loadOperand ()
+          | Operand.StackTop => loadOperand()
+          | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
+    end
+          
 (* Returns (instruction, ty) pair for the given prim operation *)
 fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
     let
@@ -613,7 +647,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 val tmp2 = nextLLVMReg ()
                 val inst2 = mkconv (tmp2, "ptrtoint", "%Pointer", arg1, "%uintptr_t")
                 val inst3 = mkinst (res, "sub", "%uintptr_t", tmp1, tmp2)
-            in (* CPointer_diff returns a Word32, not a Pointer *)
+            in (* CPointer_diff returns an integer, not a pointer *)
                 (concat [inst1, inst2, inst3], "%uintptr_t")
             end
           | CPointer_equal => (* icmp works with pointer types here *)
@@ -902,44 +936,40 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
    i - index of argv
    returns: (pre, type, reg)
  *)
-fun getArg (argv, i, cast) =
+fun getArg (argv, i) =
     if Vector.length argv > i
-    then
-        let
-            val (pre, ty, addr) = Vector.sub (argv, i)
-            val (bitcast, loadTy, loadFromReg) =
-                case cast of
-                    NONE => ("", ty, addr)
-                  | SOME toTy => let
-                      val castreg = nextLLVMReg ()
-                      val cast = mkconv (castreg, "bitcast", ty ^ "*", addr, toTy ^ "*")
-                  in
-                      (cast, toTy, castreg)
-                  end
-            val reg = nextLLVMReg ()
-            val load = mkload (reg, loadTy ^ "*", loadFromReg)
-        in
-            (concat [pre, bitcast, load], ty, reg)
-        end
-    else
-        ("", "NO TYPE", "NO ARG " ^ Int.toString i)
+    then Vector.sub (argv, i)
+    else ("", "NO TYPE", "NO ARG " ^ Int.toString i)
 
 fun outputPrimApp (cxt, p) =
     let
         datatype z = datatype Prim.Name.t
         val {args, dst, prim} = p
-        fun typeOfArg0 () =
-            llws (WordSize.fromBits (Type.width (Operand.ty (Vector.sub (args, 0)))))
+        fun typeOfArg0 () = (WordSize.fromBits o Type.width o Operand.ty o Vector.sub) (args, 0)
         val castArg1 = case Prim.name prim of
                            Word_rshift _ => SOME (typeOfArg0 ())
                          | Word_lshift _ => SOME (typeOfArg0 ())
                          | Word_rol _ => SOME (typeOfArg0 ())
                          | Word_ror _ => SOME (typeOfArg0 ())
                          | _ => NONE
-        val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-        val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0, NONE)
-        val (arg1pre, _, arg1reg) = getArg (operands, 1, castArg1)
-        val (arg2pre, _, arg2reg) = getArg (operands, 2, NONE)
+        val operands = Vector.map (args, fn opr => getOperandValue (cxt, opr))
+        val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0)
+        val (arg1pre, _, arg1) = getArg (operands, 1)
+        val (cast, arg1reg) = case castArg1 of
+                                  SOME ty =>
+                                  let
+                                      val reg = nextLLVMReg ()
+                                      val opr = case WordSize.prim ty of
+                                                    WordSize.W8 => "trunc"
+                                                  | WordSize.W16 => "trunc"
+                                                  | WordSize.W32 => "bitcast"
+                                                  | WordSize.W64 => "zext"
+                                      val inst = mkconv (reg, opr, "%Word32", arg1, llws ty)
+                                  in
+                                      (inst, reg)
+                                  end
+                                | NONE => ("", arg1)
+        val (arg2pre, _, arg2reg) = getArg (operands, 2)
         val reg = nextLLVMReg ()
         val (inst, _) = outputPrim (prim, reg, arg0ty, arg0reg, arg1reg, arg2reg)
         val storeDest =
@@ -947,13 +977,13 @@ fun outputPrimApp (cxt, p) =
                 NONE => ""
               | SOME dest =>
                 let
-                    val (destPre, destTy, destReg) = getOperand (cxt, dest)
+                    val (destPre, destTy, destReg) = getOperandAddr (cxt, dest)
                     val store = mkstore (destTy, reg, destReg)
                 in
                     concat [destPre, store]
                 end
     in
-        concat [arg0pre, arg1pre, arg2pre, inst, storeDest]
+        concat [arg0pre, arg1pre, cast, arg2pre, inst, storeDest]
     end
 
 fun push amt =
@@ -980,11 +1010,9 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
             case stmt of
                 Statement.Move {dst, src} =>
                 let
-                    val (srcpre, srcty, srcreg) = getOperand (cxt, src)
-                    val (dstpre, dstty, dstreg) = getOperand (cxt, dst)
-                    val reg = nextLLVMReg ()
-                    val load = mkload (reg, srcty ^ "*", srcreg)
-                    val store = mkstore (dstty, reg, dstreg)
+                    val (srcpre, _, srcreg) = getOperandValue (cxt, src)
+                    val (dstpre, dstty, dstreg) = getOperandAddr (cxt, dst)
+                    val store = mkstore (dstty, srcreg, dstreg)
                     val gotlhs = if printmove
                                  then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @gotlhs, i32 0, i32 0))\n"
                                  else ""
@@ -992,7 +1020,7 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
                                  then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @gotrhs, i32 0, i32 0))\n"
                                  else ""
                 in
-                    concat [srcpre, gotrhs, load, dstpre, gotlhs, store]
+                    concat [srcpre, gotrhs, dstpre, gotlhs, store]
                 end
               | Statement.Noop => "\t; Noop\n"
               | Statement.PrimApp p => outputPrimApp (cxt, p)
@@ -1029,17 +1057,17 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             let
                 val overflowstr = Label.toString overflow
                 val successstr = Label.toString success
-                val operands = Vector.map (args, fn opr => getOperand (cxt, opr))
-                val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0, NONE)
-                val (arg1pre, _, arg1reg) = getArg (operands, 1, NONE)
-                val (arg2pre, _, arg2reg) = getArg (operands, 2, NONE)
+                val operands = Vector.map (args, fn opr => getOperandValue (cxt, opr))
+                val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0)
+                val (arg1pre, _, arg1reg) = getArg (operands, 1)
+                val (arg2pre, _, arg2reg) = getArg (operands, 2)
                 val reg = nextLLVMReg ()
                 val (inst, ty) = outputPrim (prim, reg, arg0ty, arg0reg, arg1reg, arg2reg)
                 val res = nextLLVMReg ()
                 val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
                 val obit = nextLLVMReg ()
                 val extractObit = concat ["\t", obit, " = extractvalue ", ty, " ", reg, ", 1\n"]
-                val (destPre, destTy, destReg) = getOperand (cxt, dst)
+                val (destPre, destTy, destReg) = getOperandAddr (cxt, dst)
                 val store = mkstore (destTy, res, destReg)
                 val br = concat ["\tbr i1 ", obit, ", label %",
                                  overflowstr, ", label %", successstr, "\n"]
@@ -1055,10 +1083,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                  return = returnTy,
                                  target,
                                  writesStackTop, ...} = func
-                val params = Vector.map (args, fn opr => getOperand (cxt, opr))
-                val (_, paramTypes, _) = Vector.unzip3 params
-                val (paramPres, _, paramRegs) = Vector.unzip3 (Vector.mapi (params, fn (i, _) =>
-                                                 getArg (params, i, NONE)))
+                val (paramPres, paramTypes, paramRegs) =
+                    Vector.unzip3 (Vector.map (args, fn opr => getOperandValue (cxt, opr)))
                 val push =
                     case frameInfo of
                         NONE => ""
@@ -1199,19 +1225,14 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val defaultLabel = case default of
                                        SOME d => "%" ^ Label.toString d
                                      | NONE => "%unreachable"
-                val branches =
-                    Vector.concatV 
-                        (Vector.map
-                             (cases, fn (w, l) => concat ["\t\t", llws (WordX.size w), " ",
-                                                          llwordx w,
-                                                          ", label %", Label.toString l, "\n"]))
-                val (testpre, testty, testreg) = getOperand (cxt, test)
-                val loadedTestReg = nextLLVMReg ()
-                val loadTest = mkload (loadedTestReg, testty ^ "*", testreg)
-                val inst = concat ["\tswitch ", testty, " ", loadedTestReg,
+                val branches = Vector.concatV (Vector.map (cases, fn (w, l) =>
+                                   concat ["\t\t", llws (WordX.size w), " ", llwordx w,
+                                           ", label %", Label.toString l, "\n"]))
+                val (testpre, testty, testreg) = getOperandValue (cxt, test)
+                val inst = concat ["\tswitch ", testty, " ", testreg,
                                    ", label ", defaultLabel, " [\n", branches, "\t]\n"]
             in
-                concat [comment, testpre, loadTest, inst]
+                concat [comment, testpre, inst]
             end
     end
 
@@ -1247,7 +1268,8 @@ fun outputBlock (cxt, block) =
                                                val load = mkload (reg, llvmTy ^ "*", 
                                                                   "@CReturn" ^
                                                                   CType.name(Type.toCType ty))
-                                               val (dstpre, dstty, dstreg) = getOperand (cxt, xop)
+                                               val (dstpre, dstty, dstreg) =
+                                                   getOperandAddr (cxt, xop)
                                                val store = mkstore (dstty, reg, dstreg)
                                            in
                                                concat [dstpre, load, store]
