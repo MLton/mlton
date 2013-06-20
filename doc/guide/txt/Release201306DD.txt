@@ -6,11 +6,10 @@ Elsewhere you can download newer, <:Experimental:> releases.
 
 == Changes since the last public release ==
 
-* New platforms.
-** ???
+// * New platforms.
+// ** ???
 * Compiler.
 ** Cosmetic improvements to type-error messages.
-** ???
 ** Removed features
 *** Bytecode codegen: The bytecode codegen had not seen significant use and it was not well understood by any of the active developers.
 *** Support for `.cm` files as input: The <:MLBasis:ML Basis system> provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The `cm2mlb` tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.
@@ -46,19 +45,17 @@ For a complete list of changes and bug fixes since
 
 == 201306DD binary packages ==
 
-/////
 * AMD64 (aka "x86-64" or "x64")
 ** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
 ** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
-** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.amd64-linux.tgz[Linux], glibc 2.??
+** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.amd64-linux.tgz[Linux], glibc 2.15
 ** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.amd64-linux.static.tgz[Linux], statically linked
 // ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/201306DD/MLton-201306DD-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/201306DD/MLton-201306DD-1.msi[MSI] (61MB) installer
 * X86
 // ** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.x86-cygwin.tgz[Cygwin] 1.7.5
-** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.x86-linux.tgz[Linux], glibc 2.??
+** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.x86-linux.tgz[Linux], glibc 2.15
 ** http://sourceforge.net/projects/mlton/files/mlton/201306DD/mlton-201306DD-1.x86-linux.static.tgz[Linux], statically linked
 // ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/201306DD/MLton-201306DD-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/201306DD/MLton-201306DD-1.msi[MSI] (61MB) installer
-/////
 
 == 201306DD source packages ==
 
