@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2012 Matthew Fluet.
+## Copyright (C) 2010-2013 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -229,24 +229,23 @@ gen/gen-basis-ffi.stamp: gen/gen-basis-ffi.sml gen/basis-ffi.def
 GDTOAHFILES := arith.h gdtoa.h
 GDTOAHFILES := $(patsubst %,gdtoa/%,$(GDTOAHFILES))
 GDTOACFILES :=									\
-	dmisc.c    g__fmt.c   misc.c     strtoIdd.c  strtopdd.c  strtorf.c	\
-	dtoa.c     gmisc.c    smisc.c    strtoIf.c   strtopf.c   strtorQ.c	\
-	g_ddfmt.c  g_Qfmt.c   strtod.c   strtoIg.c   strtopQ.c   strtorx.c	\
-	g_dfmt.c   g_xfmt.c   strtodg.c  strtoIQ.c   strtopx.c   strtorxL.c	\
-	gdtoa.c    g_xLfmt.c  strtodI.c  strtoIx.c   strtopxL.c  sum.c		\
-	gethex.c   hd_init.c  strtof.c   strtoIxL.c  strtord.c   ulp.c		\
-	g_ffmt.c   hexnan.c   strtoId.c  strtopd.c   strtordd.c
+	dmisc.c     g_ddfmt.c   g_ffmt_p.c  gdtoa.c     misc.c      strtoIf.c   strtodI.c   strtopdd.c  strtord.c   sum.c \
+	dtoa.c      g_ddfmt_p.c g_xLfmt.c   gethex.c    smisc.c     strtoIg.c   strtodg.c   strtopf.c   strtordd.c  ulp.c \
+	g_Qfmt.c    g_dfmt.c    g_xLfmt_p.c gmisc.c     strtoIQ.c   strtoIx.c   strtof.c    strtopx.c   strtorf.c \
+	g_Qfmt_p.c  g_dfmt_p.c  g_xfmt.c    hd_init.c   strtoId.c   strtoIxL.c  strtopQ.c   strtopxL.c  strtorx.c \
+	g__fmt.c    g_ffmt.c    g_xfmt_p.c  hexnan.c    strtoIdd.c  strtod.c    strtopd.c   strtorQ.c   strtorxL.c
 GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
 
 GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
 GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
 GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
-gdtoa/README: gdtoa.tgz gdtoa-patch gdtoa-patch.internal gdtoa-patch.mlton
+gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch
 	gzip -dc gdtoa.tgz | tar xf -
-	patch -s -p0 <gdtoa-patch
-	patch -s -p0 <gdtoa-patch.internal
-	patch -s -p0 <gdtoa-patch.mlton
+	patch -s -p0 <gdtoa.may_alias-unions.patch
+	patch -s -p0 <gdtoa.rename-public-fns.patch
+	patch -s -p0 <gdtoa.hide-private-fns.patch
+	patch -s -p0 <gdtoa.hide-public-fns.patch
 	@touch $@
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
@@ -400,13 +399,3 @@ flags:
 .PHONY: clean
 clean:
 	../bin/clean
-
-
-.PHONY: rebuild-gdtoa-patch
-rebuild-gdtoa-patch:
-	cd gdtoa && $(MAKE) clean && rm -f *~ *.orig
-	mv gdtoa gdtoa-new
-	gzip -dc gdtoa.tgz | tar xf -
-	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0
-	rm -rf gdtoa
-	mv gdtoa-new gdtoa
