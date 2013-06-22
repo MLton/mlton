@@ -24,6 +24,8 @@ declare -a flags
 declare -a extraFlags
 flags[${#flags[@]}]="-type-check"
 flags[${#flags[@]}]="true"
+flags[${#flags[@]}]="-codegen"
+flags[${#flags[@]}]="llvm"
 while [ "$#" -gt 0 ]; do
         case "$1" in
         -cross)

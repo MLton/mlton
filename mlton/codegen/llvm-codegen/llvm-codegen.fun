@@ -325,7 +325,7 @@ fun getAndIncReg () =
 fun nextLLVMReg () = concat ["%r", Int.toString (getAndIncReg ())]
 
 fun regName (ty: CType.t, index: int): string =
-    concat ["%", CType.name ty, "_", Int.toString index]
+    concat ["%reg", CType.name ty, "_", Int.toString index]
 
 (* Reuse CType for LLVM type *)
 fun llty (ty: Type.t): string = "%" ^ CType.toString (Type.toCType ty)
@@ -1309,7 +1309,7 @@ fun outputChunk (cxt, print, chunk) =
         val () = List.foreach (CType.all,
                                fn t =>
                                   let
-                                      val pre = concat ["\t%", CType.name t, "_"]
+                                      val pre = concat ["\t%reg", CType.name t, "_"]
                                       val post = concat [" = alloca %", CType.toString t, "\n"]
                                   in
                                       Int.for (0, 1 + regMax t,
