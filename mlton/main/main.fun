@@ -53,6 +53,7 @@ structure Show =
 
 val gcc: string ref = ref "<unset>"
 val arScript: string ref = ref "<unset>"
+val llc: string ref = ref "llc"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -520,6 +521,8 @@ fun makeOptions {usage} =
        (Expert, "link-opt-quote", " <opt>", "pass (quoted) option to linker",
         SpaceString
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llc", " <llc>", "path to llc executable",
+        SpaceString (fn s => llc := s)),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
         Int
         (fn i =>
@@ -1342,12 +1345,9 @@ fun commandLine (args: string list): unit =
                   fun compileLL (c: Counter.t, input: File.t): File.t =
                       let
                           val output = mkOutputO (c, input)
-                          val outputS = File.base output ^ ".s"
-                          val _ =
-                              System.system
-                                  ("llc-3.0", ["-o", outputS, input])
+                          val _ = System.system (!llc, ["-filetype=obj", "-o", output, input])
                       in
-                          compileS (c, outputS)
+                          output
                       end
                   fun compileCSO (inputs: File.t list): unit =
                      if List.forall (inputs, fn f =>
