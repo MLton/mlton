@@ -28,9 +28,7 @@ fun ctypes () =
 
 val mltypes =
 "; ML types\n\
-\%PointerAux = type i8\n\
-\%Pointer = type %PointerAux*\n\
-\\n\
+\%Pointer = type i8*\n\
 \%Int8 = type i8\n\
 \%Int16 = type i16\n\
 \%Int32 = type i32\n\
@@ -41,9 +39,8 @@ val mltypes =
 \%Word16 = type i16\n\
 \%Word32 = type i32\n\
 \%Word64 = type i64\n\
-\\n\
 \%CPointer = type i8*\n\
-\%Objptr = type %Pointer\n"
+\%Objptr = type i8*\n"
 
 val llvmIntrinsics =
 "declare float @llvm.sqrt.f32(float %Val)\n\
@@ -142,21 +139,28 @@ fun escapeLLVM s =
            
 fun llstring s = concat ["c\"", escapeLLVM s, "\\00\""]
 
-val globalDeclarations =
+fun globalDeclarations cxt =
+    let
+        val Context { printblock, printstmt, printmove, ... } = cxt
+    in
+        concat [
 "%struct.cont = type { i8* }\n\
 \%struct.GC_state = type opaque\n\
 \@nextFun = external hidden global %uintptr_t\n\
 \@returnToC = external hidden global i32\n\
 \@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
 \@gcState = external hidden global %struct.GC_state\n\
-\@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
-\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n\
-\@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
-\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n\
-\@gotlhs = global [9 x i8] c\"got lhs\\0A\\00\"\n\
-\@gotrhs = global [9 x i8] c\"got rhs\\0A\\00\"\n\
-\@unreach = global [40 x i8] c\"Reached unreachable control flow path!\\0A\\00\"\n\
-\"
+\@unreach = global [40 x i8] c\"Reached unreachable control flow path!\\0A\\00\"\n",
+if printblock then
+"@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
+\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n" else "",
+if printstmt then
+"@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
+\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n" else "",
+if printmove then
+"@gotlhs = global [9 x i8] c\"got lhs\\0A\\00\"\n\
+\@gotrhs = global [9 x i8] c\"got rhs\\0A\\00\"\n" else ""]
+    end
 
 fun llws (ws: WordSize.t): string =
     case WordSize.prim ws of
@@ -1383,10 +1387,11 @@ fun outputGlobals () =
 
 fun outputLLVMDeclarations (cxt, print) =
     let
-        val Context { program = program, ...} = cxt
+        val Context { program = program, printblock = printblock, ...} = cxt
         val Program.T { chunks = chunks, ... } = program
         val globals = outputGlobals ()
-        val labelStrings = concat (List.map (chunks, fn c =>
+        val labelStrings = if printblock
+                           then concat (List.map (chunks, fn c =>
             let
                 val Chunk.T { blocks = blocks, ... } = c
             in
@@ -1400,10 +1405,10 @@ fun outputLLVMDeclarations (cxt, print) =
                                 llstring labelstr, "\n"]
                     end))
             end))
-                                
+                           else ""
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n", globalDeclarations, "\n", labelStrings, "\n"])
+                       "\n", globals, "\n", globalDeclarations cxt, "\n", labelStrings, "\n"])
     end
 
 fun annotate (frameLayouts, chunks) =
