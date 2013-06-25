@@ -95,6 +95,7 @@ datatype Context = Context of {
     program: Program.t,
     labelToStringIndex: Label.t -> string,
     chunkLabelToString: ChunkLabel.t -> string,
+    chunkLabelIndex: ChunkLabel.t -> int,
     labelChunk: Label.t -> ChunkLabel.t,
     entryLabels: Label.t vector,
     labelInfo: Label.t -> {block: Block.t,
@@ -1163,7 +1164,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                            then concat ["\tbr label %", labelstr, "\n"]
                            else let
                                (* cont.nextChunk = ChunkN *)
-                               val funcname = "Chunk" ^ chunkLabelToString dstChunk
+                               val funcname = "@Chunk" ^ chunkLabelToString dstChunk
                                val func = nextLLVMReg ()
                                val cast = mkconv (func, "bitcast", "%struct.cont ()*", funcname,
                                                   "i8*")
@@ -1172,7 +1173,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                val storeNCP = mkstore ("i8*", func, nextchunkptr)
                                (* nextFun = l *)
                                val storeNF = mkstore ("%uintptr_t", labelToStringIndex label,
-                                                      "%nextFun")
+                                                      "@nextFun")
                                val br = "\tbr label %leaveChunk\n"
                            in
                                concat [cast, gep, storeNCP, storeNF, br]
@@ -1292,7 +1293,8 @@ fun outputBlock (cxt, block) =
         
 fun outputChunk (cxt, print, chunk) =
     let
-        val Context { labelToStringIndex, chunkLabelToString, entryLabels, printblock, ... } = cxt
+        val Context { labelToStringIndex, chunkLabelIndex, labelChunk,
+                      chunkLabelToString, entryLabels, printblock, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
         val () = print (concat ["define %struct.cont @",
@@ -1323,7 +1325,10 @@ fun outputChunk (cxt, print, chunk) =
         val () = print "top:\n"
         val t2 = nextLLVMReg ()
         val () = print (mkload (t2, "%uintptr_t*", "%l_nextFun"))
-        val branches = Vector.concatV (Vector.map (entryLabels, fn label =>
+        val entryLabelsInChunk = Vector.keepAll (entryLabels,
+                                                 fn l => chunkLabelIndex chunkLabel =
+                                                         chunkLabelIndex (labelChunk l))
+        val branches = Vector.concatV (Vector.map (entryLabelsInChunk, fn label =>
                            let
                                val labelName = Label.toString label
                                val i = labelToStringIndex label
@@ -1468,17 +1473,19 @@ fun annotate (frameLayouts, chunks) =
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
                 
     in
-        (chunkLabelToString, labelToStringIndex, entryLabels, labelChunk, labelInfo)
+        (chunkLabelIndex, chunkLabelToString, labelToStringIndex, entryLabels, labelChunk,
+         labelInfo)
     end
 
 fun makeContext program =
     let
         val Program.T { chunks, frameLayouts, ...} = program
-        val (chunkLabelToString, labelToStringIndex, entryLabels, labelChunk, labelInfo)
-                = annotate (frameLayouts, chunks)
+        val (chunkLabelIndex, chunkLabelToString, labelToStringIndex, entryLabels,
+             labelChunk, labelInfo) = annotate (frameLayouts, chunks)
     in
         Context { program = program,
                   labelToStringIndex = labelToStringIndex,
+                  chunkLabelIndex = chunkLabelIndex,
                   chunkLabelToString = chunkLabelToString,
                   labelChunk = labelChunk,
                   entryLabels = entryLabels,
