@@ -1,6 +1,5 @@
 Group
 
-signature LLVM_CODEGEN
 functor LLVMCodegen
 
 is

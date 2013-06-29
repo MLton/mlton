@@ -8,6 +8,5 @@ local
    llvm-codegen.sig
    llvm-codegen.fun
 in
-   signature LLVM_CODEGEN
    functor LLVMCodegen
 end
