@@ -1111,14 +1111,14 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                              | CFunction.Target.Indirect => (* TODO *) ""
                 val storeResult = if Type.isUnit returnTy
                                   then ""
-                                  else  mkstore (llty returnTy, resultReg,
-                                                 "@CReturn" ^ CType.name (Type.toCType returnTy))
+                                  else mkstore (llty returnTy, resultReg,
+                                                "@CReturn" ^ CType.name (Type.toCType returnTy))
                 val cacheFrontierCode = if modifiesFrontier then cacheFrontier () else ""
                 val cacheStackTopCode = if writesStackTop then cacheStackTop () else ""
                 val returnCode = if maySwitchThreads
                                  then callReturn ()
                                  else case return of
-                                          NONE => "\tbr label %unreachable\n"
+                                          NONE => "\tbr label %default\n"
                                         | SOME l => concat ["\tbr label %", Label.toString l, "\n"]
                 val fcall = if printstmt
                             then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n"
@@ -1334,9 +1334,6 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                       chunkLabelIndex = chunkLabelIndex, ...} = cxt
         val Chunk.T { chunkLabel, ... } = chunk
         val globals = outputGlobals ()
-        val unreach = if chunkLabelIndex chunkLabel = 0
-                      then "@unreach = global [40 x i8] c\"Reached unreachable control flow path!\\0A\\00\"\n"
-                      else "@unreach = external global [40 x i8]\n"
         val printBlockStrings = if chunkLabelIndex chunkLabel = 0
                                 then
 "@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
@@ -1376,7 +1373,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                            else ""
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n", globalDeclarations, unreach, "\n",
+                       "\n", globals, "\n", globalDeclarations, "\n",
                        if printblock then printBlockStrings else "",
                        if printstmt then printStmtStrings else "",
                        if printmove then printMoveStrings else "",
@@ -1457,9 +1454,6 @@ fun outputChunk (cxt, outputLL, chunk) =
         val leaveRet = nextLLVMReg ()
         val () = print (mkload (leaveRet, "%struct.cont*", "%cont"))
         val () = print (concat ["\tret %struct.cont ", leaveRet, "\n"])
-        val () = print "unreachable:\n"
-        val () = print (concat ["\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([40 x i8]* @unreach, i32 0, i32 0))\n"])
-        val () = print "\tbr label %leaveChunk\n"
         val () = print "}\n\n"
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
