@@ -10,7 +10,7 @@
 #define _C_COMMON_H_
 
 #ifndef DEBUG_CCODEGEN
-#define DEBUG_CCODEGEN TRUE
+#define DEBUG_CCODEGEN FALSE
 #endif
 
 #include "export.h"

@@ -140,28 +140,13 @@ fun escapeLLVM s =
            
 fun llstring s = concat ["c\"", escapeLLVM s, "\\00\""]
 
-fun globalDeclarations cxt =
-    let
-        val Context { printblock, printstmt, printmove, ... } = cxt
-    in
-        concat [
+val globalDeclarations =
 "%struct.cont = type { i8* }\n\
 \%struct.GC_state = type opaque\n\
 \@nextFun = external hidden global %uintptr_t\n\
 \@returnToC = external hidden global i32\n\
 \@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
-\@gcState = external hidden global %struct.GC_state\n\
-\@unreach = global [40 x i8] c\"Reached unreachable control flow path!\\0A\\00\"\n",
-if printblock then
-"@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
-\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n" else "",
-if printstmt then
-"@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
-\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n" else "",
-if printmove then
-"@gotlhs = global [9 x i8] c\"got lhs\\0A\\00\"\n\
-\@gotrhs = global [9 x i8] c\"got rhs\\0A\\00\"\n" else ""]
-    end
+\@gcState = external hidden global %struct.GC_state\n"
 
 fun llws (ws: WordSize.t): string =
     case WordSize.prim ws of
@@ -283,8 +268,8 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_le _ => true
        | Real_lt _ => true
        | Real_mul _ => true
-       | Real_muladd _ => true
-       | Real_mulsub _ => true
+       | Real_muladd _ => false
+       | Real_mulsub _ => false
        | Real_neg _ => true
        | Real_qequal _ => false
        | Real_rndToReal _ => true
@@ -300,7 +285,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       | Word_mulCheck _ => true
+       | Word_mulCheck _ => false (* mul.with.overflow calls __mulodi4 in compiler-rt for long ints *)
        | Word_neg _ => true
        | Word_negCheck _ => true
        | Word_notb _ => true
@@ -1163,6 +1148,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val goto = if ChunkLabel.equals (labelChunk sourceLabel, dstChunk)
                            then concat ["\tbr label %", labelstr, "\n"]
                            else let
+                               val comment = "\t; FarJump\n"
                                (* cont.nextChunk = ChunkN *)
                                val funcname = "@Chunk" ^ chunkLabelToString dstChunk
                                val func = nextLLVMReg ()
@@ -1171,12 +1157,13 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                val nextchunkptr = nextLLVMReg ()
                                val gep = mkgep (nextchunkptr, "%struct.cont*", "%cont", ["0", "0"])
                                val storeNCP = mkstore ("i8*", func, nextchunkptr)
+                               val () = addCFunction (concat ["%struct.cont ", funcname, "()"])
                                (* nextFun = l *)
                                val storeNF = mkstore ("%uintptr_t", labelToStringIndex label,
                                                       "@nextFun")
                                val br = "\tbr label %leaveChunk\n"
                            in
-                               concat [cast, gep, storeNCP, storeNF, br]
+                               concat [comment, cast, gep, storeNCP, storeNF, br]
                            end
             in
                 concat [push, goto]
@@ -1290,12 +1277,92 @@ fun outputBlock (cxt, block) =
     in
         concat [blockLabel, printBlock, dopop, blockBody, blockTransfer, "\n"]
     end
-        
-fun outputChunk (cxt, print, chunk) =
+
+fun outputGlobals () =
     let
+        val globals =
+            concat
+                (List.map (CType.all,
+                      fn t =>
+                         let
+                             val s = CType.toString t
+                         in
+                             concat ["@global", s, " = external hidden global [",
+                                     llint (Global.numberOfType t),
+                                     " x %", s, "]\n@CReturn", CType.name t,
+                                     " = external hidden global %", s, "\n"]
+                         end))
+        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
+                              llint (Global.numberOfNonRoot ()),
+                              " x %Pointer]\n"]
+    in
+        concat [globals, nonroot]
+    end
+
+fun outputLLVMDeclarations (cxt, print, chunk) =
+    let
+        val Context { printblock = printblock, printstmt = printstmt, printmove = printmove,
+                      chunkLabelIndex = chunkLabelIndex, ...} = cxt
+        val Chunk.T { chunkLabel, ... } = chunk
+        val globals = outputGlobals ()
+        val unreach = if chunkLabelIndex chunkLabel = 0
+                      then "@unreach = global [40 x i8] c\"Reached unreachable control flow path!\\0A\\00\"\n"
+                      else "@unreach = external global [40 x i8]\n"
+        val printBlockStrings = if chunkLabelIndex chunkLabel = 0
+                                then
+"@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
+\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n"
+                                else
+"@enteringChunk = external hidden global [16 x i8]\n\
+\@enteringBlock = external hidden global [19 x i8]\n"
+        val printStmtStrings = if chunkLabelIndex chunkLabel = 0
+                               then
+"@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
+\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n"
+                               else
+"@fcall = external hidden global [15 x i8]\n\
+\@stmt = external hidden global [11 x i8]\n"
+        val printMoveStrings = if chunkLabelIndex chunkLabel = 0
+                               then
+"@gotlhs = global [9 x i8] c\"got lhs\\0A\\00\"\n\
+\@gotrhs = global [9 x i8] c\"got rhs\\0A\\00\"\n"
+                               else
+"gotlhs = external hidden global [9 x i8]\n\
+\gotrhs = external hidden global [9 x i8]\n"
+        val labelStrings = if printblock
+                           then 
+                               let
+                                   val Chunk.T { blocks = blocks, ... } = chunk
+                               in
+                                   Vector.concatV (Vector.map (blocks, fn b =>
+                                       let
+                                           val Block.T { label = label, ... } = b
+                                           val labelstr = Label.toString label
+                                           val len = Int.toString (String.size labelstr + 1)
+                                       in
+                                           concat ["@labelstr_", labelstr, " = global [", len,
+                                                   " x i8] ", llstring labelstr, "\n"]
+                                       end))
+                               end
+                           else ""
+    in
+        print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
+                       "\n", globals, "\n", globalDeclarations, unreach, "\n",
+                       if printblock then printBlockStrings else "",
+                       if printstmt then printStmtStrings else "",
+                       if printmove then printMoveStrings else "",
+                       labelStrings, "\n"])
+    end
+
+fun outputChunk (cxt, outputLL, chunk) =
+    let
+        val () = cFunctions := []
+        val () = ffiSymbols := []
         val Context { labelToStringIndex, chunkLabelIndex, labelChunk,
                       chunkLabelToString, entryLabels, printblock, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
+        val { done, print, file=_ } = outputLL ()
+        val () = outputLLVMDeclarations (cxt, print, chunk)
         val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
         val () = print (concat ["define %struct.cont @",
                                 chunkName,
@@ -1362,58 +1429,27 @@ fun outputChunk (cxt, print, chunk) =
         val () = print (mkload (leaveRet, "%struct.cont*", "%cont"))
         val () = print (concat ["\tret %struct.cont ", leaveRet, "\n"])
         val () = print "unreachable:\n"
-        val () = print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([40 x i8]* @unreach, i32 0, i32 0))\n"
+        val () = print (concat ["\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([40 x i8]* @unreach, i32 0, i32 0))\n"])
         val () = print "\tbr label %leaveChunk\n"
         val () = print "}\n\n"
-    in
-        ()
-    end
-
-fun outputGlobals () =
-    let
-        val globals =
-            concat
-                (List.map (CType.all,
-                      fn t =>
-                         let
-                             val s = CType.toString t
-                         in
-                             concat ["@global", s, " = external hidden global [",
-                                     llint (Global.numberOfType t),
-                                     " x %", s, "]\n@CReturn", CType.name t,
-                                     " = external hidden global %", s, "\n"]
-                         end))
-        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
-                              llint (Global.numberOfNonRoot ()),
-                              " x %Pointer]\n"]
-    in
-        concat [globals, nonroot]
-    end
-
-fun outputLLVMDeclarations (cxt, print) =
-    let
-        val Context { program = program, printblock = printblock, ...} = cxt
-        val Program.T { chunks = chunks, ... } = program
-        val globals = outputGlobals ()
-        val labelStrings = if printblock
-                           then concat (List.map (chunks, fn c =>
-            let
-                val Chunk.T { blocks = blocks, ... } = c
-            in
-                Vector.concatV (Vector.map (blocks, fn b =>
+        val () = List.foreach (!cFunctions, fn f =>
+                     print (concat ["declare ", f, "\n"]))
+        val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
                     let
-                        val Block.T { label = label, ... } = b
-                        val labelstr = Label.toString label
-                        val len = Int.toString (String.size labelstr + 1)
+                        val ty = case cty of
+                                        SOME t => "%" ^ CType.toString t
+                                      | NONE => "void"
+                        val visibility = case symbolScope of
+                                             CFunction.SymbolScope.External => "default"
+                                           | CFunction.SymbolScope.Private => "hidden"
+                                           | CFunction.SymbolScope.Public => "default"
                     in
-                        concat ["@labelstr_", labelstr, " = global [", len, " x i8] ",
-                                llstring labelstr, "\n"]
-                    end))
-            end))
-                           else ""
+                        print (concat ["@", name, " = external ", visibility, " global ", ty,
+                                       "\n"])
+                    end)
+
     in
-        print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n", globalDeclarations cxt, "\n", labelStrings, "\n"])
+        done ()
     end
 
 fun annotate (frameLayouts, chunks) =
@@ -1424,6 +1460,7 @@ fun annotate (frameLayouts, chunks) =
                                           layedOut: bool ref},
              set = setLabelInfo, ...} =
             Property.getSetOnce
+
                 (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
         val entryLabels: (Label.t * int) list ref = ref []
         val indexCounter = Counter.new (Vector.length frameLayouts)
@@ -1500,26 +1537,9 @@ fun transLLVM (cxt, outputLL) =
     let
         val Context { program, ... } = cxt
         val Program.T { chunks, ...} = program
-        val { done, print, file=_ } = outputLL ()
-        val () = outputLLVMDeclarations (cxt, print)
-        val () = List.foreach (chunks, fn chunk => outputChunk (cxt, print, chunk))
-        val () = List.foreach (!cFunctions, fn f =>
-                     print (concat ["declare ", f, "\n"]))
-        val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
-                    let
-                        val ty = case cty of
-                                        SOME t => "%" ^ CType.toString t
-                                      | NONE => "void"
-                        val visibility = case symbolScope of
-                                             CFunction.SymbolScope.External => "default"
-                                           | CFunction.SymbolScope.Private => "hidden"
-                                           | CFunction.SymbolScope.Public => "default"
-                    in
-                        print (concat ["@", name, " = external ", visibility, " global ", ty,
-                                       "\n"])
-                    end)
+        val () = List.foreach (chunks, fn chunk => outputChunk (cxt, outputLL, chunk))
     in
-        done ()
+        ()
     end
 
 fun transC (cxt, outputC) =

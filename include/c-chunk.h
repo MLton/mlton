@@ -24,7 +24,7 @@
 #endif
 
 #ifndef DEBUG_CCODEGEN
-#define DEBUG_CCODEGEN TRUE
+#define DEBUG_CCODEGEN FALSE
 #endif
 
 #define GCState ((Pointer)&gcState)
