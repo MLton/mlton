@@ -14,6 +14,24 @@ end
 datatype z = datatype RealSize.t
 datatype z = datatype WordSize.prim
 
+(* LLVM codegen context. Contains various values/functions that should
+   be shared amongst all codegen functions. *)
+datatype Context = Context of {
+    program: Program.t,
+    labelToStringIndex: Label.t -> string,
+    chunkLabelToString: ChunkLabel.t -> string,
+    chunkLabelIndex: ChunkLabel.t -> int,
+    labelChunk: Label.t -> ChunkLabel.t,
+    entryLabels: Label.t vector,
+    labelInfo: Label.t -> {block: Block.t,
+                           chunkLabel: ChunkLabel.t,
+                           frameIndex: int option,
+                           layedOut: bool ref},
+    printblock: bool,
+    printstmt: bool,
+    printmove: bool
+}
+
 fun ctypes () =
     let
         val inttype = case !Control.defaultWord of
@@ -86,26 +104,82 @@ val llvmIntrinsics =
 \declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n\
 \declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n\
 \declare float @llvm.fmuladd.f32(float %a, float %b, float %c) ; requires LLVM 3.2\n\
-\declare double @llvm.fmuladd.f64(double %a, double %b, double %c) ; requires LLVM 3.2\n\
-\declare i32 @printf(i8*, ...)\n"
+\declare double @llvm.fmuladd.f64(double %a, double %b, double %c) ; requires LLVM 3.2\n"
 
-(* LLVM codegen context. Contains various values/functions that should
-   be shared amongst all codegen functions. *)
-datatype Context = Context of {
-    program: Program.t,
-    labelToStringIndex: Label.t -> string,
-    chunkLabelToString: ChunkLabel.t -> string,
-    chunkLabelIndex: ChunkLabel.t -> int,
-    labelChunk: Label.t -> ChunkLabel.t,
-    entryLabels: Label.t vector,
-    labelInfo: Label.t -> {block: Block.t,
-                           chunkLabel: ChunkLabel.t,
-                           frameIndex: int option,
-                           layedOut: bool ref},
-    printblock: bool,
-    printstmt: bool,
-    printmove: bool
-}
+val globalDeclarations =
+"%struct.cont = type { i8* }\n\
+\%struct.GC_state = type opaque\n\
+\@nextFun = external hidden global %uintptr_t\n\
+\@returnToC = external hidden global i32\n\
+\@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
+\@gcState = external hidden global %struct.GC_state\n"
+
+fun implementsPrim (p: 'a Prim.t): bool =
+   let
+      datatype z = datatype Prim.Name.t
+   in
+      case Prim.name p of
+         CPointer_add => true
+       | CPointer_diff => true
+       | CPointer_equal => true
+       | CPointer_fromWord => true
+       | CPointer_lt => true
+       | CPointer_sub => true
+       | CPointer_toWord => true
+       | FFI_Symbol _ => true
+       | Real_Math_acos _ => false
+       | Real_Math_asin _ => false
+       | Real_Math_atan _ => false
+       | Real_Math_atan2 _ => false
+       | Real_Math_cos _ => true
+       | Real_Math_exp _ => true
+       | Real_Math_ln _ => true
+       | Real_Math_log10 _ => true
+       | Real_Math_sin _ => true
+       | Real_Math_sqrt _ => true
+       | Real_Math_tan _ => false
+       | Real_abs _ => true (* Requires LLVM 3.2 to use "llvm.fabs" intrinsic *)
+       | Real_add _ => true
+       | Real_castToWord _ => true
+       | Real_div _ => true
+       | Real_equal _ => true
+       | Real_ldexp _ => false
+       | Real_le _ => true
+       | Real_lt _ => true
+       | Real_mul _ => true
+       | Real_muladd _ => false
+       | Real_mulsub _ => false
+       | Real_neg _ => true
+       | Real_qequal _ => false
+       | Real_rndToReal _ => true
+       | Real_rndToWord _ => true
+       | Real_round _ => true (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
+       | Real_sub _ => true
+       | Word_add _ => true
+       | Word_addCheck _ => true
+       | Word_andb _ => true
+       | Word_castToReal _ => true
+       | Word_equal _ => true
+       | Word_extdToWord _ => true
+       | Word_lshift _ => true
+       | Word_lt _ => true
+       | Word_mul _ => true
+       | Word_mulCheck _ => false (* mul.with.overflow calls __mulodi4 in compiler-rt for long ints *)
+       | Word_neg _ => true
+       | Word_negCheck _ => true
+       | Word_notb _ => true
+       | Word_orb _ => true
+       | Word_quot _ => true
+       | Word_rem _ => true
+       | Word_rndToReal _ => true
+       | Word_rol _ => true
+       | Word_ror _ => true
+       | Word_rshift _ => true
+       | Word_sub _ => true
+       | Word_subCheck _ => true
+       | Word_xorb _ => true
+       | _ => false
+   end
 
 (* WordX.toString converts to hexadecimal, this converts to base 10 *)
 fun llwordx (w: WordX.t) =
@@ -118,35 +192,30 @@ fun llint (i: int) =
 
 fun llbytes b = llint (Bytes.toInt b)
 
-fun escapeLLVM s =
-    concat (List.map (String.explode s, fn c =>
-        if Char.isCntrl c
-        then
-            (* take the integer value of the char, convert it into a
-            * 2-digit hex string, and put a backslash in front of it
-            *)
-            let
-                val hex = IntInf.format (Int.toIntInf (Char.ord c), StringCvt.HEX)
-            in
-                if String.length hex = 1
-                then "\\0" ^ hex
-                else "\\" ^ hex
-            end
-        else
-            case c of (* " and \ need to be escaped, everything else is fine *)
-                #"\"" => "\\22"
-              | #"\\" => "\\5C"
-              | _ => Char.toString c))
-           
-fun llstring s = concat ["c\"", escapeLLVM s, "\\00\""]
-
-val globalDeclarations =
-"%struct.cont = type { i8* }\n\
-\%struct.GC_state = type opaque\n\
-\@nextFun = external hidden global %uintptr_t\n\
-\@returnToC = external hidden global i32\n\
-\@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
-\@gcState = external hidden global %struct.GC_state\n"
+fun llstring s =
+    let
+        fun escapeLLVM s =
+            concat (List.map (String.explode s, fn c =>
+                if Char.isCntrl c
+                then
+                    (* take the integer value of the char, convert it into a
+                     * 2-digit hex string, and put a backslash in front of it
+                     *)
+                    let
+                        val hex = IntInf.format (Int.toIntInf (Char.ord c), StringCvt.HEX)
+                    in
+                        if String.length hex = 1
+                        then "\\0" ^ hex
+                        else "\\" ^ hex
+                    end
+                else
+                    case c of (* " and \ need to be escaped, everything else is fine *)
+                        #"\"" => "\\22"
+                      | #"\\" => "\\5C"
+                      | _ => Char.toString c))
+    in 
+        concat ["c\"", escapeLLVM s, "\\00\""]
+    end
 
 fun llws (ws: WordSize.t): string =
     case WordSize.prim ws of
@@ -166,6 +235,9 @@ fun llrs (rs: RealSize.t): string =
     case rs of
         RealSize.R32 => "%Real32"
       | RealSize.R64 => "%Real64"
+
+(* Reuse CType for LLVM type *)
+fun llty (ty: Type.t): string = "%" ^ CType.toString (Type.toCType ty)
 
 fun kindIsEntry kind =
     case kind of
@@ -201,8 +273,7 @@ fun mkmath (lhs, f, rs, a0) =
         val ty = llrs rs
         val fx = case rs of RealSize.R32 => "f32" | RealSize.R64 => "f64"
     in
-        concat ["\t", lhs, " = call ", ty, " @llvm.", f, ".", fx,
-                "(", ty, " ", a0, ")\n"]
+        concat ["\t", lhs, " = call ", ty, " @llvm.", f, ".", fx, "(", ty, " ", a0, ")\n"]
     end
 
 (* Makes a conversion instruction:
@@ -235,73 +306,6 @@ fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", ty, " ", arg, "\n"]
  *)
 fun mkstore (ty, arg, loc) = concat ["\tstore ", ty, " ", arg, ", ", ty, "* ", loc, "\n"]
 
-fun implementsPrim (p: 'a Prim.t): bool =
-   let
-      datatype z = datatype Prim.Name.t
-   in
-      case Prim.name p of
-         CPointer_add => true
-       | CPointer_diff => true
-       | CPointer_equal => true
-       | CPointer_fromWord => true
-       | CPointer_lt => true
-       | CPointer_sub => true
-       | CPointer_toWord => true
-       | FFI_Symbol _ => true
-       | Real_Math_acos _ => false
-       | Real_Math_asin _ => false
-       | Real_Math_atan _ => false
-       | Real_Math_atan2 _ => false
-       | Real_Math_cos _ => true
-       | Real_Math_exp _ => true
-       | Real_Math_ln _ => true
-       | Real_Math_log10 _ => true
-       | Real_Math_sin _ => true
-       | Real_Math_sqrt _ => true
-       | Real_Math_tan _ => false
-       | Real_abs _ => false (* Requires LLVM 3.2 to use "llvm.fabs" intrinsic *)
-       | Real_add _ => true
-       | Real_castToWord _ => true
-       | Real_div _ => true
-       | Real_equal _ => true
-       | Real_ldexp _ => false
-       | Real_le _ => true
-       | Real_lt _ => true
-       | Real_mul _ => true
-       | Real_muladd _ => false
-       | Real_mulsub _ => false
-       | Real_neg _ => true
-       | Real_qequal _ => false
-       | Real_rndToReal _ => true
-       | Real_rndToWord _ => true
-       | Real_round _ => false (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
-       | Real_sub _ => true
-       | Word_add _ => true
-       | Word_addCheck _ => true
-       | Word_andb _ => true
-       | Word_castToReal _ => true
-       | Word_equal _ => true
-       | Word_extdToWord _ => true
-       | Word_lshift _ => true
-       | Word_lt _ => true
-       | Word_mul _ => true
-       | Word_mulCheck _ => false (* mul.with.overflow calls __mulodi4 in compiler-rt for long ints *)
-       | Word_neg _ => true
-       | Word_negCheck _ => true
-       | Word_notb _ => true
-       | Word_orb _ => true
-       | Word_quot _ => true
-       | Word_rem _ => true
-       | Word_rndToReal _ => true
-       | Word_rol _ => true
-       | Word_ror _ => true
-       | Word_rshift _ => true
-       | Word_sub _ => true
-       | Word_subCheck _ => true
-       | Word_xorb _ => true
-       | _ => false
-   end
-
 val regnum = ref 0
 
 fun getAndIncReg () =
@@ -316,9 +320,6 @@ fun nextLLVMReg () = concat ["%r", Int.toString (getAndIncReg ())]
 
 fun regName (ty: CType.t, index: int): string =
     concat ["%reg", CType.name ty, "_", Int.toString index]
-
-(* Reuse CType for LLVM type *)
-fun llty (ty: Type.t): string = "%" ^ CType.toString (Type.toCType ty)
 
 val cFunctions = ref []
 
@@ -414,6 +415,27 @@ fun callReturn () =
         concat [comment, loadst, gep, cast, loadofs, store, br]
     end
 
+fun stackPush amt =
+    let
+        val stacktop = nextLLVMReg ()
+        val load = mkload (stacktop, "%Pointer*", "%stackTop")
+        val ptr = nextLLVMReg ()
+        val gep = mkgep (ptr, "%Pointer", stacktop, [amt])
+        val store = mkstore ("%Pointer", ptr, "%stackTop")
+        val comment = concat ["\t; Push(", amt, ")\n"]
+    in
+        concat [comment, load, gep, store]
+    end
+
+(* argv - vector of (pre, ty, addr) triples
+   i - index of argv
+   returns: (pre, type, reg)
+ *)
+fun getArg (argv, i) =
+    if Vector.length argv > i
+    then Vector.sub (argv, i)
+    else ("", "", "")
+
 (* Converts an operand into its LLVM representation. Returns a triple
  (pre, ty, reg) where
 
@@ -425,7 +447,6 @@ fun callReturn () =
 
  reg - The register containing a pointer to the value of the operand
  *)
-
 fun getOperandAddr (cxt, operand) =
     case operand of
         Operand.ArrayOffset {base, index, offset, scale, ty} =>
@@ -522,7 +543,7 @@ and getOperandValue (cxt, operand) =
             in
                 (pre ^ load, ty, reg)
             end
-        val Context { labelToStringIndex = labelToStringIndex, ... } = cxt
+        val Context { labelToStringIndex, ... } = cxt
     in
         case operand of
             Operand.ArrayOffset _ => loadOperand ()
@@ -558,7 +579,7 @@ and getOperandValue (cxt, operand) =
                                end
                            else
                                let
-                                   fun isIntegerType cty = case cty of
+                                   fun isIntType cty = case cty of
                                                                CType.Int8 => true
                                                              | CType.Int16 => true
                                                              | CType.Int32 => true
@@ -568,14 +589,14 @@ and getOperandValue (cxt, operand) =
                                                              | CType.Word32 => true
                                                              | CType.Word64 => true
                                                              | _ => false
-                                   fun isPointerType cty = case cty of
+                                   fun isPtrType cty = case cty of
                                                                CType.CPointer => true
                                                              | CType.Objptr => true
                                                              | _ => false
-                                   val operIsInt = (isIntegerType o Type.toCType o Operand.ty) oper
-                                   val operIsPtr = (isPointerType o Type.toCType o Operand.ty) oper
-                                   val tyIsInt = (isIntegerType o Type.toCType) ty
-                                   val tyIsPtr = (isPointerType o Type.toCType) ty
+                                   val operIsInt = (isIntType o Type.toCType o Operand.ty) oper
+                                   val operIsPtr = (isPtrType o Type.toCType o Operand.ty) oper
+                                   val tyIsInt = (isIntType o Type.toCType) ty
+                                   val tyIsPtr = (isPtrType o Type.toCType) ty
                                    val operation = if operIsInt andalso tyIsPtr
                                                    then "inttoptr"
                                                    else if operIsPtr andalso tyIsInt
@@ -637,10 +658,10 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 val tmp2 = nextLLVMReg ()
                 val inst2 = mkconv (tmp2, "ptrtoint", "%Pointer", arg1, "%uintptr_t")
                 val inst3 = mkinst (res, "sub", "%uintptr_t", tmp1, tmp2)
-            in (* CPointer_diff returns an integer, not a pointer *)
+            in
                 (concat [inst1, inst2, inst3], "%uintptr_t")
             end
-          | CPointer_equal => (* icmp works with pointer types here *)
+          | CPointer_equal =>
             let
                 val reg = nextLLVMReg ()
                 val cmp = mkinst (reg, "icmp eq", "%Pointer", arg0, arg1)
@@ -689,18 +710,13 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           | Real_abs rs => (mkmath (res, "fabs", rs, arg0), llrs rs)
           | Real_add rs => (mkinst (res, "fadd", llrs rs, arg0, arg1), llrs rs)
           | Real_castToWord (rs, ws) =>
-            let
-                val pair =
-                    case rs of
-                        R32 => if WordSize.equals (ws, WordSize.word32)
-                               then (mkconv (res, "bitcast", "float", arg0, "i32"), "i32")
-                               else Error.bug "LLVM codegen: Real_castToWord"
-                      | R64 => if WordSize.equals (ws, WordSize.word64)
-                               then (mkconv (res, "bitcast", "double", arg0, "i64"), "i64")
-                               else Error.bug "LLVM codegen: Real_castToWord"
-            in
-                pair
-            end
+            (case rs of
+                 R32 => if WordSize.equals (ws, WordSize.word32)
+                        then (mkconv (res, "bitcast", "float", arg0, "i32"), "i32")
+                        else Error.bug "LLVM codegen: Real_castToWord"
+               | R64 => if WordSize.equals (ws, WordSize.word64)
+                        then (mkconv (res, "bitcast", "double", arg0, "i64"), "i64")
+                        else Error.bug "LLVM codegen: Real_castToWord")
           | Real_div rs => (mkinst (res, "fdiv", llrs rs, arg0, arg1), llrs rs)
           | Real_equal rs =>
             let
@@ -755,20 +771,15 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | Real_neg rs => (mkinst (res, "fsub", llrs rs, "-0.0", arg0), llrs rs)
           | Real_rndToReal rs =>
-            let
-                val pair =
-                    case rs of
-                        (RealSize.R64, RealSize.R32) =>
-                        (mkconv (res, "fptrunc", "double", arg0, "float"), "float")
-                      | (RealSize.R32, RealSize.R64) =>
-                        (mkconv (res, "fpext", "float", arg0, "double"), "double")
-                      | (RealSize.R32, RealSize.R32) => (* this is a no-op *)
-                        (mkconv (res, "bitcast", "float", arg0, "float"), "float")
-                      | (RealSize.R64, RealSize.R64) => (* this is a no-op *)
-                        (mkconv (res, "bitcast", "double", arg0, "double"), "double")
-            in
-                pair
-            end
+            (case rs of
+                 (RealSize.R64, RealSize.R32) =>
+                 (mkconv (res, "fptrunc", "double", arg0, "float"), "float")
+               | (RealSize.R32, RealSize.R64) =>
+                 (mkconv (res, "fpext", "float", arg0, "double"), "double")
+               | (RealSize.R32, RealSize.R32) => (* this is a no-op *)
+                 (mkconv (res, "bitcast", "float", arg0, "float"), "float")
+               | (RealSize.R64, RealSize.R64) => (* this is a no-op *)
+                 (mkconv (res, "bitcast", "double", arg0, "double"), "double"))
           | Real_rndToWord (rs, ws, {signed}) =>
             let
                 val opr = if signed then "fptosi" else "fptoui"
@@ -784,38 +795,26 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             in
                 (concat [store, ret], "")
             end
-          | Word_add ws =>
-            let
-                val llws = llws ws
-            in 
-                (mkinst (res, "add", llws, arg0, arg1), llws)
-            end
+          | Word_add ws => (mkinst (res, "add", llws ws, arg0, arg1), llws ws)
           | Word_addCheck (ws, {signed}) =>
             let
                 val opr = if signed then "sadd" else "uadd"
                 val ty = llws ws
-                val intty = llwsInt ws
                 val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
-                                   ".with.overflow.", intty, "(", ty, " ", arg0, ", ", ty,
-                                   " ", arg1, ")\n"]
-                val resTy = concat ["{", ty, ", i1}"]
+                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
+                                   ", ", ty, " ", arg1, ")\n"]
             in
-                (inst, resTy)
+                (inst, concat ["{", ty, ", i1}"])
             end
           | Word_andb ws => (mkinst (res, "and", llws ws, arg0, arg1), llws ws)
           | Word_castToReal (ws, rs) =>
-            let
-                val pair =
-                    case rs of
-                        R32 => if WordSize.equals (ws, WordSize.word32)
-                               then (mkconv (res, "bitcast", "i32", arg0, "float"), "float")
-                               else Error.bug "LLVM codegen: Word_castToReal"
-                      | R64 => if WordSize.equals (ws, WordSize.word64)
-                               then (mkconv (res, "bitcast", "i64", arg0, "double"), "double")
-                               else Error.bug "LLVM codegen: Word_castToReal"
-            in
-                pair
-            end
+            (case rs of
+                 R32 => if WordSize.equals (ws, WordSize.word32)
+                        then (mkconv (res, "bitcast", "i32", arg0, "float"), "float")
+                        else Error.bug "LLVM codegen: Word_castToReal"
+               | R64 => if WordSize.equals (ws, WordSize.word64)
+                        then (mkconv (res, "bitcast", "i64", arg0, "double"), "double")
+                        else Error.bug "LLVM codegen: Word_castToReal")
           | Word_equal _ =>
             let
                 val reg = nextLLVMReg ()
@@ -848,20 +847,18 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             let
                 val opr = if signed then "smul" else "umul"
                 val ty = llws ws
-                val intty = llwsInt ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr, ".with.overflow.",
-                                   intty, "(", ty, " ", arg0, ", ", ty, " ", arg1, ")\n"]
-                val resTy = concat ["{", ty, ", i1}"]
+                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
+                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
+                                   ", ", ty, " ", arg1, ")\n"]
             in
-                (inst, resTy)
+                (inst, concat ["{", ty, ", i1}"])
             end
           | Word_neg ws => (mkinst (res, "sub", llws ws, "0", arg0), llws ws)
           | Word_negCheck ws =>
             let
                 val ty = llws ws
-                val intty = llwsInt ws
                 val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.ssub.with.overflow.",
-                                   intty, "(", ty, " 0, ", ty, " ", arg0, ")\n"]
+                                   llwsInt ws, "(", ty, " 0, ", ty, " ", arg0, ")\n"]
                 val resTy = concat ["{", ty, ", i1}"]
             in
                 (inst, resTy)
@@ -880,6 +877,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | Word_rol ws =>
             let
+                (* (arg0 >> (size - arg1)) | (arg0 << arg1) *)
                 val ty = llws ws
                 val tmp1 = nextLLVMReg ()
                 val inst1 = mkinst (tmp1, "sub", ty, WordSize.toString ws, arg1)
@@ -893,6 +891,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | Word_ror ws =>
             let
+                (* (arg0 >> arg1) | (arg0 << (size - arg1)) *)
                 val ty = llws ws
                 val tmp1 = nextLLVMReg ()
                 val inst1 = mkinst (tmp1, "lshr", ty, arg0, arg1)
@@ -905,31 +904,25 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 (concat [inst1, inst2, inst3, inst4], llws ws)
             end
           | Word_rshift (ws, {signed}) =>
-            (mkinst (res, if signed then "ashr" else "lshr", llws ws, arg0, arg1), llws ws)
+            let
+                val opr = if signed then "ashr" else "lshr"
+            in
+                (mkinst (res, opr, llws ws, arg0, arg1), llws ws)
+            end
           | Word_sub ws => (mkinst (res, "sub", llws ws, arg0, arg1), llws ws)
           | Word_subCheck (ws, {signed}) =>
             let
                 val opr = if signed then "ssub" else "usub"
                 val ty = llws ws
-                val intty = llwsInt ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr, ".with.overflow.",
-                                   intty, "(", ty, " ", arg0, ", ", ty, " ", arg1, ")\n"]
-                val resTy = concat ["{", ty, ", i1}"]
+                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
+                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
+                                   ", ", ty, " ", arg1, ")\n"]
             in
-                (inst, resTy)
+                (inst, concat ["{", ty, ", i1}"])
             end
           | Word_xorb ws => (mkinst (res, "xor", llws ws, arg0, arg1), llws ws)
           | _ => Error.bug "LLVM Codegen: Unsupported operation in outputPrim"
     end
-
-(* argv - vector of (pre, ty, addr) triples
-   i - index of argv
-   returns: (pre, type, reg)
- *)
-fun getArg (argv, i) =
-    if Vector.length argv > i
-    then Vector.sub (argv, i)
-    else ("", "NO TYPE", "NO ARG " ^ Int.toString i)
 
 fun outputPrimApp (cxt, p) =
     let
@@ -976,23 +969,10 @@ fun outputPrimApp (cxt, p) =
         concat [arg0pre, arg1pre, cast, arg2pre, inst, storeDest]
     end
 
-fun push amt =
-    let
-        val stacktop = nextLLVMReg ()
-        val load = mkload (stacktop, "%Pointer*", "%stackTop")
-        val ptr = nextLLVMReg ()
-        val gep = mkgep (ptr, "%Pointer", stacktop, [amt])
-        val store = mkstore ("%Pointer", ptr, "%stackTop")
-        val comment = concat ["\t; Push(", amt, ")\n"]
-    in
-        concat [comment, load, gep, store]
-    end
-
-
 fun outputStatement (cxt: Context, stmt: Statement.t): string =
     let
         val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
-        val Context { printstmt = printstmt, printmove = printmove, ...} = cxt
+        val Context { printstmt, printmove, ...} = cxt
         val printcode = if printstmt
                         then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @stmt, i32 0, i32 0))\n"
                         else ""
@@ -1026,7 +1006,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                       chunkLabelToString = chunkLabelToString,
                       labelChunk = labelChunk,
                       printstmt = printstmt, ... } = cxt
-        fun tpush (return, size) =
+        fun transferPush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
                 val frameIndex = labelToStringIndex return
@@ -1037,7 +1017,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val castreg = nextLLVMReg ()
                 val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%uintptr_t*")
                 val storeIndex = mkstore ("%uintptr_t", frameIndex, castreg)
-                val pushcode = push (llbytes size)
+                val pushcode = stackPush (llbytes size)
             in
                 concat [load, gep, cast, storeIndex, pushcode]
             end
@@ -1083,7 +1063,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                             val Context { program = program, ... } = cxt
                             val size = Program.frameSize (program, fi)
                         in 
-                            tpush (valOf return, size)
+                            transferPush (valOf return, size)
                         end
                 val flushFrontierCode = if modifiesFrontier then flushFrontier () else ""
                 val flushStackTopCode = if readsStackTop then flushStackTop () else ""
@@ -1144,7 +1124,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val dstChunk = labelChunk label
                 val push = case return of
                                NONE => ""
-                             | SOME {return, size, ...} => tpush (return, size)
+                             | SOME {return, size, ...} => transferPush (return, size)
                 val goto = if ChunkLabel.equals (labelChunk sourceLabel, dstChunk)
                            then concat ["\tbr label %", labelstr, "\n"]
                            else let
@@ -1270,7 +1250,7 @@ fun outputBlock (cxt, block) =
             "i8* getelementptr inbounds ([", labelstrLen, " x i8]* @labelstr_", labelstr,
                  ", i32 0, i32 0))\n"]
             else ""
-        fun pop fi = push (llbytes (Bytes.~ (Program.frameSize (program, fi))))
+        fun pop fi = (stackPush o llbytes o Bytes.~ o Program.frameSize) (program, fi)
         val dopop = case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
                       | Kind.CReturn {dst, frameInfo, ...} =>
@@ -1288,7 +1268,7 @@ fun outputBlock (cxt, block) =
                                                val reg = nextLLVMReg ()
                                                val load = mkload (reg, llvmTy ^ "*", 
                                                                   "@CReturn" ^
-                                                                  CType.name(Type.toCType ty))
+                                                                  CType.name (Type.toCType ty))
                                                val (dstpre, dstty, dstreg) =
                                                    getOperandAddr (cxt, xop)
                                                val store = mkstore (dstty, reg, dstreg)
@@ -1307,39 +1287,31 @@ fun outputBlock (cxt, block) =
         concat [blockLabel, printBlock, dopop, blockBody, blockTransfer, "\n"]
     end
 
-fun outputGlobals () =
-    let
-        val globals =
-            concat
-                (List.map (CType.all,
-                      fn t =>
-                         let
-                             val s = CType.toString t
-                         in
-                             concat ["@global", s, " = external hidden global [",
-                                     llint (Global.numberOfType t),
-                                     " x %", s, "]\n@CReturn", CType.name t,
-                                     " = external hidden global %", s, "\n"]
-                         end))
-        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
-                              llint (Global.numberOfNonRoot ()),
-                              " x %Pointer]\n"]
-    in
-        concat [globals, nonroot]
-    end
-
 fun outputLLVMDeclarations (cxt, print, chunk) =
     let
         val Context { printblock = printblock, printstmt = printstmt, printmove = printmove,
                       chunkLabelIndex = chunkLabelIndex, ...} = cxt
         val Chunk.T { chunkLabel, ... } = chunk
-        val globals = outputGlobals ()
+        val globals = concat (List.map (CType.all, fn t =>
+                          let
+                              val s = CType.toString t
+                          in
+                              concat ["@global", s, " = external hidden global [",
+                                      llint (Global.numberOfType t),
+                                      " x %", s, "]\n@CReturn", CType.name t,
+                                      " = external hidden global %", s, "\n"]
+                          end))
+        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
+                              llint (Global.numberOfNonRoot ()),
+                              " x %Pointer]\n"]
         val printBlockStrings = if chunkLabelIndex chunkLabel = 0
                                 then
-"@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
+"declare i32 @printf(i8*, ...)\n\
+\@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
 \@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n"
                                 else
-"@enteringChunk = external hidden global [16 x i8]\n\
+"declare i32 @printf(i8*, ...)\n\
+\@enteringChunk = external hidden global [16 x i8]\n\
 \@enteringBlock = external hidden global [19 x i8]\n"
         val printStmtStrings = if chunkLabelIndex chunkLabel = 0
                                then
@@ -1373,7 +1345,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                            else ""
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n", globalDeclarations, "\n",
+                       "\n", globals, nonroot, "\n", globalDeclarations, "\n",
                        if printblock then printBlockStrings else "",
                        if printstmt then printStmtStrings else "",
                        if printmove then printMoveStrings else "",
@@ -1389,22 +1361,21 @@ fun outputChunk (cxt, outputLL, chunk) =
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val { done, print, file=_ } = outputLL ()
         val () = outputLLVMDeclarations (cxt, print, chunk)
-        val chunkName = "Chunk" ^ chunkLabelToString chunkLabel
-        val () = print (concat ["define %struct.cont @",
-                                chunkName,
+        val () = print (concat ["define hidden %struct.cont @",
+                                "Chunk" ^ chunkLabelToString chunkLabel,
                                 "() {\nentry:\n"])
         val () = if printblock
                  then print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
                  else ()
-        val () = print "\t%cont = alloca %struct.cont\n"
-        val () = print "\t%frontier = alloca %Pointer\n"
-        val () = print "\t%l_nextFun = alloca %uintptr_t\n"
-        val t1 = nextLLVMReg ()
-        val () = print (mkload (t1, "%uintptr_t*", "@nextFun"))
-        val () = print (mkstore ("%uintptr_t", t1, "%l_nextFun"))
-        val () = print "\t%stackTop = alloca %Pointer\n"
-        val () = print (cacheFrontier ())
-        val () = print (cacheStackTop ())
+        val () = (print "\t%cont = alloca %struct.cont\n"
+                 ; print "\t%frontier = alloca %Pointer\n"
+                 ; print "\t%l_nextFun = alloca %uintptr_t\n")
+        val tmp1 = nextLLVMReg ()
+        val () = (print (mkload (tmp1, "%uintptr_t*", "@nextFun"))
+                 ; print (mkstore ("%uintptr_t", tmp1, "%l_nextFun"))
+                 ; print "\t%stackTop = alloca %Pointer\n"
+                 ; print (cacheFrontier ())
+                 ; print (cacheStackTop ()))
         val () = List.foreach (CType.all,
                                fn t =>
                                   let
@@ -1414,10 +1385,9 @@ fun outputChunk (cxt, outputLL, chunk) =
                                       Int.for (0, 1 + regMax t,
                                                fn i => print (concat [pre, llint i, post]))
                                   end)
-        val () = print "\tbr label %top\n"
-        val () = print "top:\n"
-        val t2 = nextLLVMReg ()
-        val () = print (mkload (t2, "%uintptr_t*", "%l_nextFun"))
+        val () = print "\tbr label %top\ntop:\n"
+        val tmp2 = nextLLVMReg ()
+        val () = print (mkload (tmp2, "%uintptr_t*", "%l_nextFun"))
         val entryLabelsInChunk = Vector.keepAll (entryLabels,
                                                  fn l => chunkLabelIndex chunkLabel =
                                                          chunkLabelIndex (labelChunk l))
@@ -1428,13 +1398,13 @@ fun outputChunk (cxt, outputLL, chunk) =
                            in
                                concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
                            end))
-        val () = print (concat ["\tswitch %uintptr_t ", t2,
-                                ", label %default [\n", branches, "\t]\n"])
-        val () = print (Vector.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
-        val () = print "default:\n"
+        val () = (print (concat ["\tswitch %uintptr_t ", tmp2,
+                                 ", label %default [\n", branches, "\t]\n"])
+                 ; print (Vector.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
+                 ; print "default:\n")
         val nextFun = nextLLVMReg ()
-        val () = print (mkload (nextFun, "%uintptr_t*", "%l_nextFun"))
-        val () = print (mkstore ("%uintptr_t", nextFun, "@nextFun"))
+        val () = (print (mkload (nextFun, "%uintptr_t*", "%l_nextFun"))
+                 ; print (mkstore ("%uintptr_t", nextFun, "@nextFun")))
         val nextChunks_nextFun_ptr = nextLLVMReg ()
         val () = print (mkgep (nextChunks_nextFun_ptr,
                               "[0 x void (%struct.cont*)*]*", "@nextChunks", ["0", nextFun]))
@@ -1445,16 +1415,16 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print (mkconv (nextChunks_nextFun_bc, "bitcast", "void (%struct.cont*)*",
                                 nextChunks_nextFun, "i8*"))
         val cont_nextChunk_ptr = nextLLVMReg ()
-        val () = print (mkgep (cont_nextChunk_ptr, "%struct.cont*", "%cont", ["0", "0"]))
-        val () = print (mkstore ("i8*", nextChunks_nextFun_bc, cont_nextChunk_ptr))
-        val () = print "\tbr label %leaveChunk\n"
-        val () = print "leaveChunk:\n"
-        val () = print (flushFrontier ())
-        val () = print (flushStackTop ())
+        val () = (print (mkgep (cont_nextChunk_ptr, "%struct.cont*", "%cont", ["0", "0"]))
+                 ; print (mkstore ("i8*", nextChunks_nextFun_bc, cont_nextChunk_ptr))
+                 ; print "\tbr label %leaveChunk\n"
+                 ; print "leaveChunk:\n"
+                 ; print (flushFrontier ())
+                 ; print (flushStackTop ()))
         val leaveRet = nextLLVMReg ()
-        val () = print (mkload (leaveRet, "%struct.cont*", "%cont"))
-        val () = print (concat ["\tret %struct.cont ", leaveRet, "\n"])
-        val () = print "}\n\n"
+        val () = (print (mkload (leaveRet, "%struct.cont*", "%cont"))
+                 ; print (concat ["\tret %struct.cont ", leaveRet, "\n"])
+                 ; print "}\n\n")
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
         val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
@@ -1475,8 +1445,9 @@ fun outputChunk (cxt, outputLL, chunk) =
         done ()
     end
 
-fun annotate (frameLayouts, chunks) =
+fun makeContext program =
     let
+        val Program.T { chunks, frameLayouts, ...} = program
         val {get = labelInfo: Label.t -> {block: Block.t,
                                           chunkLabel: ChunkLabel.t,
                                           frameIndex: int option,
@@ -1531,17 +1502,6 @@ fun annotate (frameLayouts, chunks) =
          * (Int.toString o valOf o #frameIndex o labelInfo) l
          *)
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
-                
-    in
-        (chunkLabelIndex, chunkLabelToString, labelToStringIndex, entryLabels, labelChunk,
-         labelInfo)
-    end
-
-fun makeContext program =
-    let
-        val Program.T { chunks, frameLayouts, ...} = program
-        val (chunkLabelIndex, chunkLabelToString, labelToStringIndex, entryLabels,
-             labelChunk, labelInfo) = annotate (frameLayouts, chunks)
     in
         Context { program = program,
                   labelToStringIndex = labelToStringIndex,
