@@ -1,0 +1,122 @@
+diff -P -C 2 -r gdtoa/arithchk.c gdtoa-new/arithchk.c
+*** gdtoa/arithchk.c	2005-01-05 13:05:47.000000000 -0500
+--- gdtoa-new/arithchk.c	2013-06-20 10:51:38.000000000 -0400
+***************
+*** 47,51 ****
+  		double d;
+  		long L[2];
+! 		} u;
+  	struct {
+  		double d;
+--- 47,51 ----
+  		double d;
+  		long L[2];
+! 		} __attribute__((__may_alias__)) u;
+  	struct {
+  		double d;
+***************
+*** 74,78 ****
+  		double d;
+  		int L[2];
+! 		} u;
+  	struct {
+  		double d;
+--- 74,78 ----
+  		double d;
+  		int L[2];
+! 		} __attribute__((__may_alias__)) u;
+  	struct {
+  		double d;
+***************
+*** 103,107 ****
+  		double d;
+  		long L;
+! 		} u;
+  	long Cray1;
+  
+--- 103,107 ----
+  		double d;
+  		long L;
+! 		} __attribute__((__may_alias__)) u;
+  	long Cray1;
+  
+diff -P -C 2 -r gdtoa/gdtoaimp.h gdtoa-new/gdtoaimp.h
+*** gdtoa/gdtoaimp.h	2012-12-23 20:34:38.000000000 -0500
+--- gdtoa-new/gdtoaimp.h	2013-06-20 10:51:00.000000000 -0400
+***************
+*** 275,279 ****
+  #endif
+  
+! typedef union { double d; ULong L[2]; } U;
+  
+  #ifdef IEEE_8087
+--- 275,279 ----
+  #endif
+  
+! typedef union { double d; ULong L[2]; } __attribute__((__may_alias__)) U;
+  
+  #ifdef IEEE_8087
+diff -P -C 2 -r gdtoa/qnan.c gdtoa-new/qnan.c
+*** gdtoa/qnan.c	2012-12-21 14:26:58.000000000 -0500
+--- gdtoa-new/qnan.c	2013-06-20 10:51:21.000000000 -0400
+***************
+*** 82,86 ****
+  		long double D;
+  #endif
+! 		} U;
+  	U a, b, c;
+  	int i;
+--- 82,86 ----
+  		long double D;
+  #endif
+! 		} __attribute__((__may_alias__)) U;
+  	U a, b, c;
+  	int i;
+diff -P -C 2 -r gdtoa/strtodnrp.c gdtoa-new/strtodnrp.c
+*** gdtoa/strtodnrp.c	2005-01-12 01:47:38.000000000 -0500
+--- gdtoa-new/strtodnrp.c	2013-06-20 10:51:15.000000000 -0400
+***************
+*** 49,53 ****
+  	Long exp;
+  	int k;
+! 	union { ULong L[2]; double d; } u;
+  
+  	k = strtodg(s, sp, &fpi, &exp, bits);
+--- 49,53 ----
+  	Long exp;
+  	int k;
+! 	union { ULong L[2]; double d; } __attribute__((__may_alias__)) u;
+  
+  	k = strtodg(s, sp, &fpi, &exp, bits);
+diff -P -C 2 -r gdtoa/strtof.c gdtoa-new/strtof.c
+*** gdtoa/strtof.c	2009-03-16 00:57:44.000000000 -0400
+--- gdtoa-new/strtof.c	2013-06-20 10:51:11.000000000 -0400
+***************
+*** 43,47 ****
+  	Long exp;
+  	int k;
+! 	union { ULong L[1]; float f; } u;
+  #ifdef Honor_FLT_ROUNDS
+  #include "gdtoa_fltrnds.h"
+--- 43,47 ----
+  	Long exp;
+  	int k;
+! 	union { ULong L[1]; float f; } __attribute__((__may_alias__)) u;
+  #ifdef Honor_FLT_ROUNDS
+  #include "gdtoa_fltrnds.h"
+diff -P -C 2 -r gdtoa/strtopdd.c gdtoa-new/strtopdd.c
+*** gdtoa/strtopdd.c	2009-03-16 01:32:44.000000000 -0400
+--- gdtoa-new/strtopdd.c	2013-06-20 10:51:06.000000000 -0400
+***************
+*** 50,54 ****
+  		double d[2];
+  		ULong L[4];
+! 		} U;
+  	U *u;
+  #ifdef Honor_FLT_ROUNDS
+--- 50,54 ----
+  		double d[2];
+  		ULong L[4];
+! 		} __attribute__((__may_alias__)) U;
+  	U *u;
+  #ifdef Honor_FLT_ROUNDS

@@ -1,7 +1,7 @@
 #include "platform.h"
 #include "gdtoa/gdtoa.h"
 
-Real32_t Real32_strto (NullString8_t s, C_Int_t rounding) {
+Real32_t Real32_strtor (NullString8_t s, C_Int_t rounding) {
   char *endptr;
   Real32_t res;
 
@@ -10,7 +10,7 @@ Real32_t Real32_strto (NullString8_t s, C_Int_t rounding) {
   return res;
 }
 
-Real64_t Real64_strto (NullString8_t s, C_Int_t rounding) {
+Real64_t Real64_strtor (NullString8_t s, C_Int_t rounding) {
   char *endptr;
   Real64_t res;
 

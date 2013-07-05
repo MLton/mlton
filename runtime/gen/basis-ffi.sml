@@ -960,7 +960,7 @@ val rndToWordU64 = _import "Real32_rndToWordU64" private : Real32.t -> Word64.t;
 val rndToWordU8 = _import "Real32_rndToWordU8" private : Real32.t -> Word8.t;
 val round = _import "Real32_round" private : Real32.t -> Real32.t;
 val store = _import "Real32_store" private : (Real32.t) ref * Real32.t -> unit;
-val strto = _import "Real32_strto" private : NullString8.t * C_Int.t -> Real32.t;
+val strtor = _import "Real32_strtor" private : NullString8.t * C_Int.t -> Real32.t;
 val sub = _import "Real32_sub" private : Real32.t * Real32.t -> Real32.t;
 end
 structure Real64 = 
@@ -1018,7 +1018,7 @@ val rndToWordU64 = _import "Real64_rndToWordU64" private : Real64.t -> Word64.t;
 val rndToWordU8 = _import "Real64_rndToWordU8" private : Real64.t -> Word8.t;
 val round = _import "Real64_round" private : Real64.t -> Real64.t;
 val store = _import "Real64_store" private : (Real64.t) ref * Real64.t -> unit;
-val strto = _import "Real64_strto" private : NullString8.t * C_Int.t -> Real64.t;
+val strtor = _import "Real64_strtor" private : NullString8.t * C_Int.t -> Real64.t;
 val sub = _import "Real64_sub" private : Real64.t * Real64.t -> Real64.t;
 end
 structure Socket = 

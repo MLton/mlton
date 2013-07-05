@@ -1,5 +1,10 @@
 Here are the changes from version 2010608 to version YYYYMMDD.
 
+* 2013-06-19
+   - Upgrade gdtoa.tgz; fixed bug in
+     'Real32.{fmt,toDecimal,toString}', which in some cases produced
+     too many digits
+
 * 2013-06-18
    - Removed MLton.Socket structure (deprecated in last release).
 
@@ -67,6 +72,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
      words.
 
 * 2011-06-04
+   - Upgrade gdtoa.tgz.
    - Remove bytecode codegen.
    - Remove support for .cm files as input.
 
