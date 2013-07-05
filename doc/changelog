@@ -25,7 +25,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
    - Simplify use of 'getsockopt' and 'setsockopt'in Basis Library.
    - Direct implementation of Socket.Ctl.{getATMARK,getNREAD} in
      runtime system, rather than indirect implementation in Basis
-     Library via 'io ctl'.
+     Library via 'ioctl'.
    - Replace use of casting through a union with memcpy in runtime.
 
 * 2012-06-11
