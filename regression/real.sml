@@ -143,7 +143,7 @@ val _ =
         "91827365478400")]
    end
 
-val _ = print "\nTesting scan"
+val _ = print "\nTesting scan\n"
 
 val _ = for' (fn r =>
               let
