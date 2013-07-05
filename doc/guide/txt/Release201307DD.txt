@@ -10,7 +10,7 @@ Elsewhere you can download newer, <:Experimental:> releases.
 // ** ???
 * Compiler.
 ** Cosmetic improvements to type-error messages.
-** Removed features
+** Removed features:
 *** Bytecode codegen: The bytecode codegen had not seen significant use and it was not well understood by any of the active developers.
 *** Support for `.cm` files as input: The <:MLBasis:ML Basis system> provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The `cm2mlb` tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.
 ** Bug fixes: see <!RawGitFile(mlton,on-201307DD-release,doc/changelog)>
@@ -19,7 +19,7 @@ Elsewhere you can download newer, <:Experimental:> releases.
 * Language.
 ** Interpret `(*#line line:col "file" *)` directives as relative file names.
 ** <:MLBasisAnnotations:ML Basis annotations>.
-*** Added: `resolveScope`.
+*** Added: `resolveScope`
 * Libraries.
 ** <:BasisLibrary:Basis Library>.
 *** Improved performance of `String.concatWith`.
@@ -29,7 +29,7 @@ Elsewhere you can download newer, <:Experimental:> releases.
 ** <:MLtonStructure:MLton structure>.
 *** Removed: `MLton.Socket`
 ** Other libraries.
-*** Updated: <:CKitLibrary:ckit library>, <:MLRISCLibrary:MLRISC library>, <:SMLNJLibrary:SML/NJ library>.
+*** Updated: <:CKitLibrary:ckit library>, <:MLRISCLibrary:MLRISC library>, <:SMLNJLibrary:SML/NJ library>
 *** Added: <:MLLPTLibrary:MLLPT library>
 * Tools.
 ** `mllex`
