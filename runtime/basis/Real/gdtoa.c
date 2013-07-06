@@ -1,19 +1,17 @@
 #include "platform.h"
 #include "gdtoa/gdtoa.h"
 
-/* This code is patterned on g_dfmt from the gdtoa sources. */
+/* This code is patterned on g_ffmt from the gdtoa sources. */
 C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, 
                          C_Int_t rounding, Ref(C_Int_t) decpt) {
-  ULong bits[1];
-  int ex;
-  FPI fpi = { 24, 1-127-24+1, 254-127-24+1, (int)rounding, 0 };
-  int i;
-  ULong L[1];
+  FPI fpi = { 24, 1-127-24+1, 254-127-24+1, (int)rounding, 0, 6 };
+  ULong bits[1], L[1];
+  int ex, i;
   char *result;
 
   memcpy(L, &f, sizeof(Real32_t));
   bits[0] = L[0] & 0x7fffff;
-  if (0 != (ex = (L[0] >> 23) & 0xff))
+  if ((ex = (L[0] >> 23) & 0xff) != 0)
     bits[0] |= 0x800000;
   else
     ex = 1;
@@ -23,13 +21,12 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig,
   return (C_String_t)result;
 }
 
+/* This code is patterned on g_dfmt from the gdtoa sources. */
 C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, 
                          C_Int_t rounding, Ref(C_Int_t) decpt) {
-  ULong bits[2];
-  int ex;
-  FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, (int)rounding, 0 };
-  int i;
-  ULong L[2];
+  FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, (int)rounding, 0, 14 };
+  ULong bits[2], L[2];
+  int ex, i;
   char *result;
   int x0, x1;
 
@@ -43,7 +40,7 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig,
   memcpy(L, &d, sizeof(Real64_t));
   bits[0] = L[x1];
   bits[1] = L[x0] & 0xfffff;
-  if (0 != (ex = (L[x0] >> 20) & 0x7ff))
+  if ((ex = (L[x0] >> 20) & 0x7ff) != 0)
     bits[1] |= 0x100000;
   else
     ex = 1;

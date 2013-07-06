@@ -1,8 +1,8 @@
 diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
-*** gdtoa/gdtoa.h	2011-05-27 17:20:57.492026828 -0400
---- gdtoa-new/gdtoa.h	2011-05-27 17:21:21.004032383 -0400
+*** gdtoa/gdtoa.h	2013-06-20 10:20:00.000000000 -0400
+--- gdtoa-new/gdtoa.h	2013-06-20 10:20:28.000000000 -0400
 ***************
-*** 105,144 ****
+*** 106,151 ****
   #endif
   
 ! extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
@@ -14,12 +14,18 @@ diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
 ! extern double gdtoa__strtod ANSI((CONST char *, char **));
 ! extern int gdtoa__strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
   
-! extern char*	gdtoa__g_ddfmt  ANSI((char*, double*, int, size_t));
-! extern char*	gdtoa__g_dfmt   ANSI((char*, double*, int, size_t));
-! extern char*	gdtoa__g_ffmt   ANSI((char*, float*,  int, size_t));
-! extern char*	gdtoa__g_Qfmt   ANSI((char*, void*,   int, size_t));
-! extern char*	gdtoa__g_xfmt   ANSI((char*, void*,   int, size_t));
-! extern char*	gdtoa__g_xLfmt  ANSI((char*, void*,   int, size_t));
+! extern char*	gdtoa__g_ddfmt   ANSI((char*, double*, int, size_t));
+! extern char*	gdtoa__g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
+! extern char*	gdtoa__g_dfmt    ANSI((char*, double*, int, size_t));
+! extern char*	gdtoa__g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
+! extern char*	gdtoa__g_ffmt    ANSI((char*, float*,  int, size_t));
+! extern char*	gdtoa__g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
+! extern char*	gdtoa__g_Qfmt    ANSI((char*, void*,   int, size_t));
+! extern char*	gdtoa__g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
+! extern char*	gdtoa__g_xfmt    ANSI((char*, void*,   int, size_t));
+! extern char*	gdtoa__g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
+! extern char*	gdtoa__g_xLfmt   ANSI((char*, void*,   int, size_t));
+! extern char*	gdtoa__g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
   
 ! extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
 ! extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
@@ -43,7 +49,7 @@ diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
 ! extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
   #else
   #define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
---- 105,144 ----
+--- 106,151 ----
   #endif
   
 ! PRIVATE extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
@@ -55,12 +61,18 @@ diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
 ! PRIVATE extern double gdtoa__strtod ANSI((CONST char *, char **));
 ! PRIVATE extern int gdtoa__strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
   
-! PRIVATE extern char*	gdtoa__g_ddfmt  ANSI((char*, double*, int, size_t));
-! PRIVATE extern char*	gdtoa__g_dfmt   ANSI((char*, double*, int, size_t));
-! PRIVATE extern char*	gdtoa__g_ffmt   ANSI((char*, float*,  int, size_t));
-! PRIVATE extern char*	gdtoa__g_Qfmt   ANSI((char*, void*,   int, size_t));
-! PRIVATE extern char*	gdtoa__g_xfmt   ANSI((char*, void*,   int, size_t));
-! PRIVATE extern char*	gdtoa__g_xLfmt  ANSI((char*, void*,   int, size_t));
+! PRIVATE extern char*	gdtoa__g_ddfmt   ANSI((char*, double*, int, size_t));
+! PRIVATE extern char*	gdtoa__g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
+! PRIVATE extern char*	gdtoa__g_dfmt    ANSI((char*, double*, int, size_t));
+! PRIVATE extern char*	gdtoa__g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
+! PRIVATE extern char*	gdtoa__g_ffmt    ANSI((char*, float*,  int, size_t));
+! PRIVATE extern char*	gdtoa__g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
+! PRIVATE extern char*	gdtoa__g_Qfmt    ANSI((char*, void*,   int, size_t));
+! PRIVATE extern char*	gdtoa__g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
+! PRIVATE extern char*	gdtoa__g_xfmt    ANSI((char*, void*,   int, size_t));
+! PRIVATE extern char*	gdtoa__g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
+! PRIVATE extern char*	gdtoa__g_xLfmt   ANSI((char*, void*,   int, size_t));
+! PRIVATE extern char*	gdtoa__g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
   
 ! PRIVATE extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
 ! PRIVATE extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
@@ -84,20 +96,3 @@ diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
 ! PRIVATE extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
   #else
   #define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
-diff -P -C 2 -r gdtoa/gdtoaimp.h gdtoa-new/gdtoaimp.h
-*** gdtoa/gdtoaimp.h	2011-05-27 17:20:57.493026911 -0400
---- gdtoa-new/gdtoaimp.h	2011-05-27 17:21:21.004032383 -0400
-***************
-*** 504,508 ****
-  #define gethex gethex_D2A
-  #define hexdig hexdig_D2A
-! #define hexdig_init hexdig_init_D2A
-  #define hexnan hexnan_D2A
-  #define hi0bits(x) hi0bits_D2A((ULong)(x))
---- 504,509 ----
-  #define gethex gethex_D2A
-  #define hexdig hexdig_D2A
-! /* work around MinGW bug */
-! #define hexdig_init hexdig_init_D3A
-  #define hexnan hexnan_D2A
-  #define hi0bits(x) hi0bits_D2A((ULong)(x))

@@ -1,4 +1,4 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2013 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -47,7 +47,7 @@ local
       val () = check (R1.*-, R2.mulsub)
       val () = check (R1.~, R2.neg)
       val () = check (R1.round, R2.round)
-      val () = check (R1.strto, R2.strto)
+      val () = check (R1.strtor, R2.strtor)
       val () = check (R1.-, R2.sub)
    end
 
@@ -88,7 +88,7 @@ local
       val () = check (R1.*-, R2.mulsub)
       val () = check (R1.~, R2.neg)
       val () = check (R1.round, R2.round)
-      val () = check (R1.strto, R2.strto)
+      val () = check (R1.strtor, R2.strtor)
       val () = check (R1.-, R2.sub)
    end
 
