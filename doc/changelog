@@ -1,4 +1,45 @@
-Here are the changes from version 2010608 to version YYYYMMDD.
+Here are the changes from version 2010608 to version 201307DD.
+
+Summary:
+  + Compiler.
+   o Cosmetic improvements to type-error messages.
+   o Removed features:
+    * Bytecode codegen: The bytecode codegen had not seen significant
+        use and it was not well understood by any of the active
+        developers.
+    * Support for .cm files as input: The ML Basis system provides
+        much better infrastructure for "programming in the very large"
+        than the (very) limited support for CM.  The cm2mlb tool
+        (available in the source distribution) can be used to convert
+        CM projects to MLB projects, preserving the CM scoping of
+        module identifiers.
+   o Bug fixes: see changelog
+  + Runtime.
+   o Bug fixes: see changelog
+  + Language.
+   o Interpret (*#line line:col "file" *) directives as relative file
+       names.
+   o ML Basis annotations.
+    * Added: resolveScope
+  + Libraries.
+   o Basis Library.
+    * Improved performance of String.concatWith.
+    * Use bit operations for REAL.class and other low-level operations.
+    * Support additional variables with Posix.ProcEnv.sysconf.
+    * Bug fixes: see changelog
+   o MLton structure.
+    * Removed: MLton.Socket
+   o Other libraries.
+    * Updated: ckit library, MLRISC library, SML/NJ library
+    * Added: MLLPT library
+  + Tools.
+   o mllex
+    * Generate (*#line line:col "file.lex" *) directives with simple
+        (relative) file names, rather than absolute paths.
+   o mlyacc
+    * Generate `(*#line line:col "file.grm" *)` directives with simple
+        (relative) file names, rather than absolute paths.
+    * Fixed bug in comment-handling in lexer.
 
 * 2013-06-19
    - Upgrade gdtoa.tgz; fixed bug in
@@ -30,7 +71,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
    - Simplify use of 'getsockopt' and 'setsockopt'in Basis Library.
    - Direct implementation of Socket.Ctl.{getATMARK,getNREAD} in
      runtime system, rather than indirect implementation in Basis
-     Library via 'io ctl'.
+     Library via 'ioctl'.
    - Replace use of casting through a union with memcpy in runtime.
 
 * 2012-06-11

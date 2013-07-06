@@ -35,6 +35,23 @@ saves the entire state of the computation to the file `f` that will
 resume with thread `rt` upon restart.
 
 
+== Notes ==
+
+<!Anchor(ASLR)>
+Executables that save and load worlds are incompatible with
+http://en.wikipedia.org/wiki/Address_space_layout_randomization[address space layout randomization (ASLR)]
+of the executable (though, not of shared libraries).  The state of a
+computation includes addresses into the code and data segments of the
+executable (e.g., static runtime-system data, return addresses); such
+addresses are invalid when interpreted by the executable loaded at a
+different base address.
+
+Executables that save and load worlds should be compiled with an
+option to suppress the generation of position-independent executables.
+
+* <:RunningOnDarwin:Darwin 11 (Mac OS X Lion) and higher> : `-link-opt -fno-PIE`
+
+
 == Example ==
 
 Suppose that `save-world.sml` contains the following.

@@ -14,7 +14,8 @@ MatthewFluet, SureshJagannathan, and <:StephenWeeks:>.
  improving or porting existing optimizations, updated the
  <:BasisLibrary:Basis Library> implementation, ported
  <:ConcurrentML:> and <:MLNLFFI:ML-NLFFI> to MLton, implemented the
- <:MLBasis: ML Basis system>, and ported MLton to 64-bit platforms.
+ <:MLBasis: ML Basis system>, ported MLton to 64-bit platforms,
+ and currently leads the project.
 
  * <:SureshJagannathan:> implemented some early inlining and uncurrying
  optimizations.
@@ -32,6 +33,10 @@ list.
  cross compile to MinGW, and provided useful discussion about
  cross-compilation.
 
+ * Christopher Cramer contributed support for additional
+ `Posix.ProcEnv.sysconf` variables and performance improvements for
+ `String.concatWith`.
+
  * Alain Deutsch and
  http://www.polyspace.com/[PolySpace Technologies] provided many bug
  fixes and runtime system improvements, code to help the Sparc/Solaris
@@ -42,7 +47,10 @@ list.
 
  * Brent Fulgham ported MLton most of the way to MinGW.
 
- * <:AdamGoode:> provided the script to build the PDF MLton Guide.
+ * <:AdamGoode:> provided a script to build the PDF MLton Guide and
+ maintains the
+ https://admin.fedoraproject.org/pkgdb/acls/name/mlton[Fedora]
+ packages.
 
  * Simon Helsen provided bug reports, suggestions, and helpful
  discussions.
@@ -84,9 +92,11 @@ list.
  with his Stalin Scheme compiler.
 
  * <:WesleyTerpstra:> added support for `MLton.Process.create`, made
- a number of contributions to the ForeignFunctionInterface,
- contributed a number of other runtime system patches, and
- added support for compiling to a C library.
+ a number of contributions to the <:ForeignFunctionInterface:>,
+ contributed a number of runtime system patches,
+ added support for compiling to a <:LibrarySupport:C library>,
+ ported MLton to http://mingw.org[MinGW] and all http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] supported architectures with <:CrossCompiling:cross-compiling> support,
+ and maintains the http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] and http://mingw.org[MinGW] packages.
 
  * Luke Ziarek assisted in porting MLton to (PowerPC) Darwin.
 
@@ -126,6 +136,7 @@ used code from other sources.
 
  * MLton's implementation of <:MLLex: mllex>, <:MLYacc: mlyacc>,
  the <:CKitLibrary:ckit Library>,
+ the <:MLLPTLibrary:ML-LPT Library>,
  the <:MLRISCLibrary:MLRISC Library>,
  the <:SMLNJLibrary:SML/NJ Library>,
  <:ConcurrentML:Concurrent ML>,
