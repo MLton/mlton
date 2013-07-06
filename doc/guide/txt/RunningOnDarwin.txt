@@ -6,7 +6,8 @@ MLton runs fine on Darwin (and on Mac OS X).
 == Notes ==
 
 * MLton requires the <:GnuMP:> library, which is available via
-http://www.finkproject.org[Fink] or http://www.macports.com[MacPorts].
+http://www.finkproject.org[Fink], http://www.macports.com[MacPorts],
+http://mxcl.github.io/homebrew/[Homebrew].
 
 * For Intel-based Macs, MLton targets the <:RunningOnAMD64:AMD64
 architecture> on Darwin 10 (Mac OS X Snow Leopard) and higher and
@@ -14,6 +15,10 @@ targets the <:RunningOnX86:x86 architecture> on Darwin 8 (Mac OS X
 Tiger) and Darwin 9 (Mac OS X Leopard).
 
 == Known issues ==
+
+* Executables that save and load worlds on Darwin 11 (Mac OS X Lion)
+and higher should be compiled with `-link-opt -fno-PIE` ; see
+<:MLtonWorld:> for more details.
 
 * <:ProfilingTime:> may give inaccurate results on multi-processor
 machines.  The `SIGPROF` signal, used to sample the profiled program,

@@ -26,17 +26,19 @@ MLTON_ORG_XTRA := $(HTML5_XTRA)
 MLTON_ORG_XTRA_PAGES := $(HTML5_XTRA_PAGES)
 MLTON_ORG_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
 MLTON_ORG := $(addprefix www.mlton.org/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(MLTON_ORG_XTRA) $(MLTON_ORG_XTRA_PAGES) $(MLTON_ORG_XTRA_ATTACHMENTS))
+MLTON_ORG_TORM := $(filter-out $(MLTON_ORG),$(shell if [ -d www.mlton.org ]; then find www.mlton.org -type f; fi))
 
 LOCALHOST_XTRA := $(filter-out mlton-gcse.js,$(HTML5_XTRA))
 LOCALHOST_XTRA_PAGES := $(HTML5_XTRA_PAGES)
 LOCALHOST_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
 LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST_XTRA) $(LOCALHOST_XTRA_PAGES) $(LOCALHOST_XTRA_ATTACHMENTS))
+LOCALHOST_TORM := $(filter-out $(LOCALHOST),$(shell if [ -d localhost ]; then find localhost -type f; fi))
 
 
 ALL :=
 ifneq ($(shell which $(ASCIIDOC)),)
 ifneq ($(shell which pygmentize),)
-ALL += $(LOCALHOST)
+ALL += $(LOCALHOST) localhost-rm
 endif
 ifneq ($(shell which $(DBLATEX)),)
 ALL += mlton-guide.pdf
@@ -135,11 +137,15 @@ www.mlton.org/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-f
 www.mlton.org/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
 
+.PHONY: www.mlton.org-rm
+www.mlton.org-rm: $(MLTON_ORG)
+	@rm -rf $(MLTON_ORG_TORM)
+
 .PHONY: www.mlton.org
 www.mlton.org: $(MLTON_ORG)
 
 .PHONY: upload_www.mlton.org
-upload_www.mlton.org: $(MLTON_ORG)
+upload_www.mlton.org: $(MLTON_ORG) www.mlton.org-rm
 	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
@@ -149,9 +155,12 @@ localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-flags
 localhost/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
 
-.PHONY: localhost
-localhost: $(LOCALHOST)
+.PHONY: localhost-rm
+localhost-rm: $(LOCALHOST)
+	@rm -rf $(LOCALHOST_TORM)
 
+.PHONY: localhost
+localhost: $(LOCALHOST) localhost-rm
 
 txt/mlton-guide.xml : txt/mlton-guide.txt conf/asciidoc-docbook45.flags $(ASCIIDOC_DOCBOOK45_DEPS)
 	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_DOCBOOK45_FLAGS) -o $@ $<
