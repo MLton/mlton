@@ -41,6 +41,9 @@ Summary:
         (relative) file names, rather than absolute paths.
     * Fixed bug in comment-handling in lexer.
 
+* 2013-07-06
+   - Update SML/NJ libraries to SML/NJ 110.76.
+
 * 2013-06-19
    - Upgrade gdtoa.tgz; fixed bug in
      'Real32.{fmt,toDecimal,toString}', which in some cases produced

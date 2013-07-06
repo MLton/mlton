@@ -326,7 +326,7 @@ index 8548877..be61bb7 100644
     
         fun doNothing _ = ()
 diff --git a/alpha/flowgraph/alphaGasPseudoOps.sml b/alpha/flowgraph/alphaGasPseudoOps.sml
-index e6ba8a1..b616d67 100644
+index 5f6a34c..d715a2b 100644
 --- a/alpha/flowgraph/alphaGasPseudoOps.sml
 +++ b/alpha/flowgraph/alphaGasPseudoOps.sml
 @@ -1,6 +1,26 @@
@@ -874,7 +874,7 @@ index a22feeb..f9c584e 100644
     type reduceOpnd = I.operand -> CB.cell
  
 diff --git a/amd64/amd64.mdl b/amd64/amd64.mdl
-index beef155..1d715eb 100644
+index 15e331b..321894b 100644
 --- a/amd64/amd64.mdl
 +++ b/amd64/amd64.mdl
 @@ -577,7 +577,8 @@ architecture AMD64 =
@@ -922,7 +922,7 @@ index beef155..1d715eb 100644
               )
  	(*rtl: ``<binOp>''*)
 diff --git a/amd64/amd64MC.sml b/amd64/amd64MC.sml
-index 1e4f1f2..1d094de 100644
+index 35efcdb..e4536a3 100644
 --- a/amd64/amd64MC.sml
 +++ b/amd64/amd64MC.sml
 @@ -1,8 +1,69 @@
@@ -998,13 +998,13 @@ index 1e4f1f2..1d094de 100644
  struct
    structure I = Instr
    structure C = I.C
-@@ -327,7 +388,21 @@ struct
+@@ -421,7 +482,21 @@ struct
  		     | I.SHLQ => shift(64, 4, src)
  		     | I.SARQ => shift(64, 7, src)
  		     | I.SHRQ => shift(64, 5, src)
 -		     | (I.IMULL | I.MULQ) => 
 +		     | (I.IMULL) =>
-+		       let val sz = if binOp = I.IMULQ then 64 else 32
++		       let val sz = if binOp = I.MULQ then 64 else 32
 +		       in (case (src, dst)
 +			    of (I.Immed(i), I.Direct (_, dstR)) =>
 +			       (case size i
@@ -1018,12 +1018,12 @@ index 1e4f1f2..1d094de 100644
 +			  (* esac *))
 +		       end
 +		     | (I.MULQ) =>
- 		       let val sz = if binOp = I.IMULQ then 64 else 32
+ 		       let val sz = if binOp = I.MULQ then 64 else 32
  		       in (case (src, dst) 
  			    of (I.Immed(i), I.Direct (_, dstR)) =>
-@@ -379,19 +454,34 @@ struct
+@@ -475,19 +550,34 @@ struct
  	     | I.INTO => eByte(0xcd+4)
- 	     | I.CDQ => eByte(0x99)
+ 	     | I.CDQ => (* eByte(0x99) *) (* XXX this is CQO *) eBytes [0wx48, 0wx99]
  	     | I.SAHF => eByte(0x9e)
 -	     | ( I.PUSHL (I.Immed i) | I.PUSHQ (I.Immed i) )=> 
 +	     | ( I.PUSHL (I.Immed i) )=>
@@ -1060,8 +1060,8 @@ index 1e4f1f2..1d094de 100644
 +	     | I.MOVE{mvOp=mvOp as (I.MOVQ), src, dst} =>
  	       let val sz = case mvOp of I.MOVL => 32 | I.MOVQ => 64
  		   fun mv(I.Immed(i), I.Direct (_, r)) =
-                        eBytes(Word8.+(0wxb8, Word8.fromInt(rNum r))::eLong(i))
-@@ -448,7 +538,8 @@ struct
+                    (case sz
+@@ -625,7 +715,8 @@ struct
  	     | I.CALL{opnd, ...} => encode32 (0wxff, opcode 2, opnd)
  	     | I.CMPL{lsrc, rsrc} => arith(32, 0wx38, opcode 7) (rsrc, lsrc)
  	     | I.CMPQ{lsrc, rsrc} => arith(64, 0wx38, opcode 7) (rsrc, lsrc)
@@ -1246,8 +1246,22 @@ index 539bf54..16ee3a7 100644
  	   | I.POP opnd =>  operand opnd
  	   | _ => false
        end
+diff --git a/amd64/c-calls/amd64-svid.sml b/amd64/c-calls/amd64-svid.sml
+index 185f951..c69e7ad 100644
+--- a/amd64/c-calls/amd64-svid.sml
++++ b/amd64/c-calls/amd64-svid.sml
+@@ -450,7 +450,8 @@ functor AMD64SVID_CCalls (
+ 	 * differences there might be between the SVID and Windows ABIs. (JHR)
+ 	 *)
+ 	  val calleePops = (case #conv proto
+-		 of (""|"ccall") => false
++		 of ("") => false
++		  | ("ccall") => false
+ 		  | "stdcall" => true
+ 		  | conv => error (concat [
+ 			"unknown calling convention \"", String.toString conv, "\""
 diff --git a/amd64/emit/amd64Asm.sml b/amd64/emit/amd64Asm.sml
-index e630204..08534e6 100644
+index a275515..bc740c4 100644
 --- a/amd64/emit/amd64Asm.sml
 +++ b/amd64/emit/amd64Asm.sml
 @@ -6,12 +6,85 @@
@@ -1428,7 +1442,7 @@ index e630204..08534e6 100644
               emit "\t%cl, "; 
               emit_dst dst )
 diff --git a/amd64/flowgraph/amd64-darwin-pseudo-ops.sml b/amd64/flowgraph/amd64-darwin-pseudo-ops.sml
-index 407adee..7067744 100644
+index de9238f..c60550a 100644
 --- a/amd64/flowgraph/amd64-darwin-pseudo-ops.sml
 +++ b/amd64/flowgraph/amd64-darwin-pseudo-ops.sml
 @@ -7,7 +7,27 @@
@@ -1461,7 +1475,7 @@ index 407adee..7067744 100644
    ) : PSEUDO_OPS_BASIS = struct
  
 diff --git a/amd64/flowgraph/amd64GasPseudoOps.sml b/amd64/flowgraph/amd64GasPseudoOps.sml
-index 10874fe..80962cb 100644
+index f9adca4..8addf5d 100644
 --- a/amd64/flowgraph/amd64GasPseudoOps.sml
 +++ b/amd64/flowgraph/amd64GasPseudoOps.sml
 @@ -6,7 +6,27 @@
@@ -1618,7 +1632,7 @@ index 981d4de..9afe8d7 100644
  struct
    structure CFG = CFG
 diff --git a/amd64/instructions/amd64Instr.sml b/amd64/instructions/amd64Instr.sml
-index 91644dc..b26d66b 100644
+index 7f117cf..01c16e0 100644
 --- a/amd64/instructions/amd64Instr.sml
 +++ b/amd64/instructions/amd64Instr.sml
 @@ -8,7 +8,16 @@
@@ -2122,7 +2136,7 @@ index 5ff322a..f8834de 100644
           | I.FSQRTS _ => 32
           | I.FSQRTD _ => 64
 diff --git a/amd64/mltree/amd64-gen.sml b/amd64/mltree/amd64-gen.sml
-index fbfb364..d20c32a 100644
+index 9cd49d3..23a17ef 100644
 --- a/amd64/mltree/amd64-gen.sml
 +++ b/amd64/mltree/amd64-gen.sml
 @@ -5,10 +5,53 @@
@@ -2183,7 +2197,7 @@ index fbfb364..d20c32a 100644
  
      (* Take a number of bits and returns a label that points to a literal with the high bit set.
       * We need this literal value for floating-point negation and absolute value (at least
-@@ -369,7 +412,8 @@ functor AMD64Gen (
+@@ -378,7 +421,8 @@ functor AMD64Gen (
  		   move (ty, I.Immed64 (Int64.fromLarge i'), dst);
  		   dst
                 end
@@ -2193,7 +2207,7 @@ index fbfb364..d20c32a 100644
            | operand _ (T.LABEXP le) = loadLabel (I.ImmedLabel le)
            | operand _ (T.REG(ty,r)) = gpr (ty, r)
            | operand _ (T.LOAD(ty,ea,mem)) = address (ea, mem)
-@@ -383,7 +427,8 @@ functor AMD64Gen (
+@@ -392,7 +436,8 @@ functor AMD64Gen (
  	  | immedOrReg(ty, opnd as I.LabelEA _)  = moveToReg (ty, opnd)
  	  | immedOrReg (ty, opnd)  = opnd
  
@@ -2203,7 +2217,7 @@ index fbfb364..d20c32a 100644
  	  | regOrMem (ty, opnd) = opnd
  
  	and getExpr (exp as T.REG(_, rd)) = rd
-@@ -797,7 +842,9 @@ functor AMD64Gen (
+@@ -806,7 +851,9 @@ functor AMD64Gen (
  		 | T.LI z => if (fitsIn32Bits z)
                     then move' (ty, I.Immed (toInt32 z), dstOpnd, an)
                     else mark' (move64 (I.Immed64(toInt64 z), dstOpnd), an)
@@ -2214,7 +2228,7 @@ index fbfb364..d20c32a 100644
                     move' (ty, I.ImmedLabel e, dstOpnd, an)
  		 | T.LABEXP le => move' (ty, I.ImmedLabel le, dstOpnd, an)
  		 (* arithmetic operations *)
-@@ -936,7 +983,34 @@ functor AMD64Gen (
+@@ -945,7 +992,34 @@ functor AMD64Gen (
  	and fbinop (fty, binOp, a, b, d, an) = let
             (* try to move memory operands to src rather than dst if binOp is commutative *)
  	    val (a, b) = (case (binOp, a, b)
@@ -2250,7 +2264,7 @@ index fbfb364..d20c32a 100644
  		     T.FLOAD _,
  		     T.FREG _) => (b, a)
  		 | _ => (a, b)
-@@ -1301,7 +1375,15 @@ functor AMD64Gen (
+@@ -1316,7 +1390,15 @@ functor AMD64Gen (
  	 * On the amd64, TEST is superior to AND for doing the same thing,
  	 * since it doesn't need to write out the result in a register.
  	 *)
@@ -2267,8 +2281,66 @@ index fbfb364..d20c32a 100644
  		(case ty 
  		  of 8 => test(ty, I.TESTB, a, b, an)
  		  | 16 => test(ty, I.TESTW, a, b, an)
+diff --git a/amd64/omit-frameptr/amd64omit-frameptr.sml b/amd64/omit-frameptr/amd64omit-frameptr.sml
+index 5c122da..b079909 100644
+--- a/amd64/omit-frameptr/amd64omit-frameptr.sml
++++ b/amd64/omit-frameptr/amd64omit-frameptr.sml
+@@ -10,9 +10,51 @@
+  *)
+ functor AMD64OmitFramePointer (
+     structure I : AMD64INSTR 
+-    structure CFG : CONTROL_FLOW_GRAPH where I = I): OMIT_FRAME_POINTER = 
++    structure CFG : CONTROL_FLOW_GRAPH (* where I = I *)
++                    where type I.addressing_mode = I.addressing_mode
++                      and type I.ea = I.ea
++                      and type I.instr = I.instr
++                      and type I.instruction = I.instruction
++                      and type I.operand = I.operand): OMIT_FRAME_POINTER = 
+ (*
+-    structure MemRegs : MEMORY_REGISTERS where I=I
++    structure MemRegs : MEMORY_REGISTERS (* where I = I *)
++                        where type I.Constant.const = I.Constant.const
++                          and type I.Region.region = I.Region.region
++                          and type I.T.Basis.cond = I.T.Basis.cond
++                          and type I.T.Basis.div_rounding_mode = I.T.Basis.div_rounding_mode
++                          and type I.T.Basis.ext = I.T.Basis.ext
++                          and type I.T.Basis.fcond = I.T.Basis.fcond
++                          and type I.T.Basis.rounding_mode = I.T.Basis.rounding_mode
++                          and type ('s,'r,'f,'c) I.T.Extension.ccx = ('s,'r,'f,'c) I.T.Extension.ccx
++                          and type ('s,'r,'f,'c) I.T.Extension.fx = ('s,'r,'f,'c) I.T.Extension.fx
++                          and type ('s,'r,'f,'c) I.T.Extension.rx = ('s,'r,'f,'c) I.T.Extension.rx
++                          and type ('s,'r,'f,'c) I.T.Extension.sx = ('s,'r,'f,'c) I.T.Extension.sx
++                          and type I.T.I.div_rounding_mode = I.T.I.div_rounding_mode
++                          and type I.T.ccexp = I.T.ccexp
++                          and type I.T.fexp = I.T.fexp
++                          (* and type I.T.labexp = I.T.labexp *)
++                          and type I.T.mlrisc = I.T.mlrisc
++                          and type I.T.oper = I.T.oper
++                          and type I.T.rep = I.T.rep
++                          and type I.T.rexp = I.T.rexp
++                          and type I.T.stm = I.T.stm
++                          (* and type I.addressing_mode = I.addressing_mode *)
++                          and type I.binaryOp = I.binaryOp
++                          and type I.bitOp = I.bitOp
++                          and type I.cond = I.cond
++                          and type I.fbinOp = I.fbinOp
++                          and type I.fenvOp = I.fenvOp
++                          and type I.fibinOp = I.fibinOp
++                          and type I.fsize = I.fsize
++                          and type I.funOp = I.funOp
++                          and type I.instr = I.instr
++                          and type I.instruction = I.instruction
++                          and type I.isize = I.isize
++                          and type I.move = I.move
++                          and type I.multDivOp = I.multDivOp
++                          and type I.operand = I.operand
++                          and type I.shiftOp = I.shiftOp
++                          and type I.unaryOp = I.unaryOp
+     val memRegBase : CellsBasis.cell option
+ *)
+ struct
 diff --git a/amd64/ra/amd64RegAlloc.sml b/amd64/ra/amd64RegAlloc.sml
-index cb37763..1556796 100644
+index cf1b6f2..ef4fdd9 100644
 --- a/amd64/ra/amd64RegAlloc.sml
 +++ b/amd64/ra/amd64RegAlloc.sml
 @@ -6,15 +6,51 @@
@@ -3765,7 +3837,7 @@ index 6834f48..7a31d3c 100644
       val max_alignment : int option	(* maximum alignment for internal labels *)
       val nop: {sz:int, en:Word32.word}	(* encoding for noop *)
 diff --git a/flowgraph/pseudo-ops-little.sml b/flowgraph/pseudo-ops-little.sml
-index a474d29..c9ee8f4 100644
+index 2d433cd..38b180e 100644
 --- a/flowgraph/pseudo-ops-little.sml
 +++ b/flowgraph/pseudo-ops-little.sml
 @@ -7,8 +7,27 @@
@@ -4227,7 +4299,7 @@ index e4d5ad4..37805e3 100644
     
         fun doNothing _ = ()
 diff --git a/hppa/flowgraph/hppaGasPseudoOps.sml b/hppa/flowgraph/hppaGasPseudoOps.sml
-index 8d140ee..1eb8f85 100644
+index 8e77f26..859cb7a 100644
 --- a/hppa/flowgraph/hppaGasPseudoOps.sml
 +++ b/hppa/flowgraph/hppaGasPseudoOps.sml
 @@ -1,6 +1,26 @@
@@ -5268,10 +5340,10 @@ index 0000000..4a9607e
 +end
 diff --git a/mlb/AMD64.mlb b/mlb/AMD64.mlb
 new file mode 100644
-index 0000000..7fd9142
+index 0000000..1ebc214
 --- /dev/null
 +++ b/mlb/AMD64.mlb
-@@ -0,0 +1,670 @@
+@@ -0,0 +1,747 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -5284,7 +5356,7 @@ index 0000000..7fd9142
 +    bas
 +      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/unsafe.mlb
 +    end
-+  basis l111 =
++  basis l108 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
@@ -5296,7 +5368,7 @@ index 0000000..7fd9142
 +    bas
 +      (* $Control.cm(=(proxyLib.cm):.)/Control.cm =??=> *) Control.mlb
 +    end
-+  basis l223 =
++  basis l119 =
 +    bas
 +      (* $Graphs.cm(=(proxyLib.cm):.)/Graphs.cm =??=> *) Graphs.mlb
 +    end
@@ -5304,7 +5376,7 @@ index 0000000..7fd9142
 +    bas
 +      (* $Lib.cm(=(proxyLib.cm):.)/Lib.cm =??=> *) Lib.mlb
 +    end
-+  basis l276 =
++  basis l145 =
 +    bas
 +      (* $MLTREE.cm(=(proxyLib.cm):.)/MLTREE.cm =??=> *) MLTREE.mlb
 +    end
@@ -5483,9 +5555,14 @@ index 0000000..7fd9142
 +      functor gs_29 = AMD64MCFn
 +   end
 +   local
++      open l4
++   in
++      structure gs_30 = Word64
++   end
++   local
 +      open l9
 +   in
-+      signature gs_30 = INSTRUCTION_EMITTER
++      signature gs_31 = INSTRUCTION_EMITTER
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
@@ -5493,9 +5570,10 @@ index 0000000..7fd9142
 +      signature AMD64SHUFFLE = gs_27
 +      functor AMD64Shuffle = gs_28
 +      structure CellsBasis = gs_5
-+      signature INSTRUCTION_EMITTER = gs_30
++      signature INSTRUCTION_EMITTER = gs_31
 +      structure Int = gs_0
 +      structure Int32 = gs_8
++      structure Int64 = gs_7
 +      structure LargeWord = gs_22
 +      signature MC_EMIT = gs_19
 +      signature MLRISC_ERROR_MSG = gs_12
@@ -5503,91 +5581,206 @@ index 0000000..7fd9142
 +      signature MLTREE_EVAL = gs_25
 +      structure Word = gs_24
 +      structure Word32 = gs_20
++      structure Word64 = gs_30
 +      structure Word8 = gs_21
 +      structure Word8Vector = gs_23
 +      ../amd64/amd64MC.sml
 +   in
-+      functor gs_31 = AMD64MCEmitter
++      functor gs_32 = AMD64MCEmitter
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_32 = PSEUDO_OPS_BASIS
++      signature gs_33 = OMIT_FRAME_POINTER
++   end
++   local
++      open l108
++   in
++      structure gs_34 = IntHashTable
++   end
++   local
++      open l46
++   in
++      signature gs_35 = MLRISC_CONTROL
++      structure gs_36 = MLRiscControl
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_33 = GasPseudoOps
++      structure gs_37 = MLRiscAnnotations
 +   end
 +   local
-+      open l9
++      open l119
 +   in
-+      functor gs_34 = PseudoOpsLittle
-+   end
-+   local
-+      open l111
-+   in
-+      structure gs_35 = Format
-+   end
-+   local
-+      open l9
-+   in
-+      structure gs_36 = PseudoOpsBasisTyp
-+   end
-+   local
-+      structure Format = gs_35
-+      functor GasPseudoOps = gs_33
-+      signature MLRISC_ERROR_MSG = gs_12
-+      structure MLRiscErrorMsg = gs_13
-+      signature MLTREE = gs_3
-+      signature MLTREE_EVAL = gs_25
-+      signature PSEUDO_OPS_BASIS = gs_32
-+      structure PseudoOpsBasisTyp = gs_36
-+      functor PseudoOpsLittle = gs_34
-+      structure Word32 = gs_20
-+      ../amd64/flowgraph/amd64GasPseudoOps.sml
-+   in
-+      functor gs_37 = AMD64GasPseudoOps
++      structure gs_38 = Graph
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_38 = List
++      structure gs_39 = General
++   end
++   local
++      open l4
++   in
++      structure gs_40 = ListPair
++   end
++   local
++      open l4
++   in
++      structure gs_41 = Option
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_39 = MLTREE_HASH
++      signature gs_42 = CONTROL_FLOW_GRAPH
++   end
++   local
++      signature AMD64INSTR = gs_16
++      functor AMD64Instr = gs_17
++      signature CONTROL_FLOW_GRAPH = gs_42
++      structure CellsBasis = gs_5
++      structure General = gs_39
++      structure Graph = gs_38
++      structure Int = gs_0
++      structure Int32 = gs_8
++      structure IntHashTable = gs_34
++      structure ListPair = gs_40
++      signature MLRISC_CONTROL = gs_35
++      signature MLRISC_ERROR_MSG = gs_12
++      structure MLRiscAnnotations = gs_37
++      structure MLRiscControl = gs_36
++      structure MLRiscErrorMsg = gs_13
++      signature OMIT_FRAME_POINTER = gs_33
++      structure Option = gs_41
++      ../amd64/omit-frameptr/amd64omit-frameptr.sml
++   in
++      functor gs_43 = AMD64OmitFramePointer
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_40 = INSN_PROPERTIES
++      signature gs_44 = C_CALLS
++   end
++   local
++      open l9
++   in
++      structure gs_45 = CTypes
++   end
++   local
++      open l145
++   in
++      functor gs_46 = MLTreeUtils
++   end
++   local
++      open l4
++   in
++      structure gs_47 = IntInf
++   end
++   local
++      open l4
++   in
++      structure gs_48 = String
++   end
++   local
++      open l4
++   in
++      structure gs_49 = List
++   end
++   local
++      signature AMD64CELLS = gs_14
++      structure AMD64Cells = gs_15
++      structure CTypes = gs_45
++      signature C_CALLS = gs_44
++      structure CellsBasis = gs_5
++      structure Int = gs_0
++      structure Int32 = gs_8
++      structure IntInf = gs_47
++      structure List = gs_49
++      signature MLRISC_ERROR_MSG = gs_12
++      structure MLRiscAnnotations = gs_37
++      structure MLRiscErrorMsg = gs_13
++      signature MLTREE = gs_3
++      functor MLTreeUtils = gs_46
++      structure String = gs_48
++      structure Word = gs_24
++      ../amd64/c-calls/amd64-svid.sml
++   in
++      functor gs_50 = AMD64SVID_CCalls
++   end
++   local
++      open l9
++   in
++      signature gs_51 = PSEUDO_OPS_BASIS
++   end
++   local
++      open l9
++   in
++      functor gs_52 = GasPseudoOps
++   end
++   local
++      open l9
++   in
++      functor gs_53 = PseudoOpsLittle
++   end
++   local
++      open l108
++   in
++      structure gs_54 = Format
++   end
++   local
++      open l9
++   in
++      structure gs_55 = PseudoOpsBasisTyp
++   end
++   local
++      structure Format = gs_54
++      functor GasPseudoOps = gs_52
++      signature MLRISC_ERROR_MSG = gs_12
++      structure MLRiscErrorMsg = gs_13
++      signature MLTREE = gs_3
++      signature MLTREE_EVAL = gs_25
++      signature PSEUDO_OPS_BASIS = gs_51
++      structure PseudoOpsBasisTyp = gs_55
++      functor PseudoOpsLittle = gs_53
++      structure Word32 = gs_20
++      ../amd64/flowgraph/amd64GasPseudoOps.sml
++   in
++      functor gs_56 = AMD64GasPseudoOps
++   end
++   local
++      open l9
++   in
++      signature gs_57 = MLTREE_HASH
++   end
++   local
++      open l9
++   in
++      signature gs_58 = INSN_PROPERTIES
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
 +      functor AMD64Instr = gs_17
 +      structure CellsBasis = gs_5
-+      signature INSN_PROPERTIES = gs_40
++      signature INSN_PROPERTIES = gs_58
 +      structure Int = gs_0
 +      structure Int32 = gs_8
 +      structure Int64 = gs_7
 +      structure Label = gs_6
-+      structure List = gs_38
++      structure List = gs_49
 +      signature MLRISC_ERROR_MSG = gs_12
 +      structure MLRiscErrorMsg = gs_13
 +      signature MLTREE_EVAL = gs_25
-+      signature MLTREE_HASH = gs_39
++      signature MLTREE_HASH = gs_57
 +      structure Word = gs_24
 +      ../amd64/instructions/amd64Props.sml
 +   in
-+      signature gs_41 = AMD64INSN_PROPERTIES
-+      functor gs_42 = AMD64Props
++      signature gs_59 = AMD64INSN_PROPERTIES
++      functor gs_60 = AMD64Props
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_43 = SDI_JUMPS
++      signature gs_61 = SDI_JUMPS
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
@@ -5598,296 +5791,250 @@ index 0000000..7fd9142
 +      signature MLRISC_ERROR_MSG = gs_12
 +      structure MLRiscErrorMsg = gs_13
 +      signature MLTREE_EVAL = gs_25
-+      signature SDI_JUMPS = gs_43
++      signature SDI_JUMPS = gs_61
 +      structure Word8Vector = gs_23
 +      ../amd64/backpatch/amd64Jumps.sml
 +   in
-+      functor gs_44 = AMD64Jumps
++      functor gs_62 = AMD64Jumps
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_45 = CONTROL_FLOW_GRAPH
-+   end
-+   local
-+      open l9
-+   in
-+      signature gs_46 = MLTREE_STREAM
++      signature gs_63 = MLTREE_STREAM
 +   end
 +   local
 +      ../amd64/instructions/amd64InstrExt.sml
 +   in
-+      structure gs_47 = AMD64InstrExt
++      structure gs_64 = AMD64InstrExt
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
 +      functor AMD64Instr = gs_17
-+      structure AMD64InstrExt = gs_47
-+      signature CONTROL_FLOW_GRAPH = gs_45
++      structure AMD64InstrExt = gs_64
++      signature CONTROL_FLOW_GRAPH = gs_42
 +      signature MLRISC_ERROR_MSG = gs_12
 +      structure MLRiscErrorMsg = gs_13
-+      signature MLTREE_STREAM = gs_46
++      signature MLTREE_STREAM = gs_63
 +      ../amd64/instructions/amd64CompInstrExt.sml
 +   in
-+      signature gs_48 = AMD64COMP_INSTR_EXT
-+      functor gs_49 = AMD64CompInstrExt
++      signature gs_65 = AMD64COMP_INSTR_EXT
++      functor gs_66 = AMD64CompInstrExt
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_50 = DarwinPseudoOps
++      functor gs_67 = DarwinPseudoOps
 +   end
 +   local
-+      functor DarwinPseudoOps = gs_50
-+      structure Format = gs_35
++      functor DarwinPseudoOps = gs_67
++      structure Format = gs_54
 +      signature MLRISC_ERROR_MSG = gs_12
 +      structure MLRiscErrorMsg = gs_13
 +      signature MLTREE = gs_3
 +      signature MLTREE_EVAL = gs_25
-+      signature PSEUDO_OPS_BASIS = gs_32
-+      structure PseudoOpsBasisTyp = gs_36
-+      functor PseudoOpsLittle = gs_34
++      signature PSEUDO_OPS_BASIS = gs_51
++      structure PseudoOpsBasisTyp = gs_55
++      functor PseudoOpsLittle = gs_53
 +      structure Word32 = gs_20
 +      ../amd64/flowgraph/amd64-darwin-pseudo-ops.sml
 +   in
-+      functor gs_51 = AMD64DarwinPseudoOps
++      functor gs_68 = AMD64DarwinPseudoOps
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_52 = ASM_FORMAT_UTIL
-+      structure gs_53 = AsmFormatUtil
++      signature gs_69 = ASM_FORMAT_UTIL
++      structure gs_70 = AsmFormatUtil
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_54 = ASM_STREAM
-+      structure gs_55 = AsmStream
++      signature gs_71 = ASM_STREAM
++      structure gs_72 = AsmStream
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_56 = TextIO
++      structure gs_73 = TextIO
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_57 = String
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_58 = Char
++      structure gs_74 = Char
 +   end
 +   local
 +      open l9
 +   in
-+      structure gs_59 = AsmFlags
++      structure gs_75 = AsmFlags
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_60 = INSTRUCTION_STREAM
++      signature gs_76 = INSTRUCTION_STREAM
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
 +      functor AMD64Instr = gs_17
 +      signature AMD64SHUFFLE = gs_27
 +      functor AMD64Shuffle = gs_28
-+      signature ASM_FORMAT_UTIL = gs_52
-+      signature ASM_STREAM = gs_54
++      signature ASM_FORMAT_UTIL = gs_69
++      signature ASM_STREAM = gs_71
 +      structure Annotations = gs_9
-+      structure AsmFlags = gs_59
-+      structure AsmFormatUtil = gs_53
-+      structure AsmStream = gs_55
++      structure AsmFlags = gs_75
++      structure AsmFormatUtil = gs_70
++      structure AsmStream = gs_72
 +      structure CellsBasis = gs_5
-+      structure Char = gs_58
-+      signature INSTRUCTION_EMITTER = gs_30
-+      signature INSTRUCTION_STREAM = gs_60
++      structure Char = gs_74
++      signature INSTRUCTION_EMITTER = gs_31
++      signature INSTRUCTION_STREAM = gs_76
 +      structure Int = gs_0
 +      structure Int32 = gs_8
 +      structure Int64 = gs_7
 +      signature MLRISC_ERROR_MSG = gs_12
 +      structure MLRiscErrorMsg = gs_13
 +      signature MLTREE_EVAL = gs_25
-+      structure String = gs_57
-+      structure TextIO = gs_56
++      structure String = gs_48
++      structure TextIO = gs_73
 +      ../amd64/emit/amd64Asm.sml
 +   in
-+      functor gs_61 = AMD64AsmEmitter
++      functor gs_77 = AMD64AsmEmitter
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_62 = CFG_OPTIMIZATION
++      signature gs_78 = CFG_OPTIMIZATION
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_63 = GetReg
++      functor gs_79 = GetReg
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_64 = PRINT_FLOWGRAPH
-+      functor gs_65 = PrintFlowgraph
++      signature gs_80 = PRINT_FLOWGRAPH
++      functor gs_81 = PrintFlowgraph
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_66 = RegisterAllocator
++      functor gs_82 = RegisterAllocator
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_67 = MemoryRA
++      functor gs_83 = MemoryRA
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_68 = RADeadCodeElim
++      functor gs_84 = RADeadCodeElim
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_69 = ClusterRA
-+   end
-+   local
-+      open l111
-+   in
-+      structure gs_70 = IntHashTable
-+   end
-+   local
-+      open l46
-+   in
-+      signature gs_71 = MLRISC_CONTROL
-+      structure gs_72 = MLRiscControl
-+   end
-+   local
-+      open l223
-+   in
-+      structure gs_73 = Graph
++      functor gs_85 = ClusterRA
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_74 = Array
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_75 = Option
++      structure gs_86 = Vector
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_76 = RA_SPILL
++      signature gs_87 = RA_SPILL
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_77 = RA_SPILL_HEURISTICS
++      signature gs_88 = RA_SPILL_HEURISTICS
 +   end
 +   local
 +      open l9
 +   in
-+      structure gs_78 = RAGraph
++      structure gs_89 = RAGraph
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_79 = ARCH_SPILL_INSTR
++      signature gs_90 = ARCH_SPILL_INSTR
 +   end
 +   local
-+      open l9
-+   in
-+      structure gs_80 = MLRiscAnnotations
-+   end
-+   local
-+      signature AMD64INSN_PROPERTIES = gs_41
++      signature AMD64INSN_PROPERTIES = gs_59
 +      signature AMD64INSTR = gs_16
 +      functor AMD64Instr = gs_17
-+      functor AMD64Props = gs_42
-+      signature ARCH_SPILL_INSTR = gs_79
++      functor AMD64Props = gs_60
++      signature ARCH_SPILL_INSTR = gs_90
 +      structure Annotations = gs_9
 +      structure CellsBasis = gs_5
 +      signature MLRISC_ERROR_MSG = gs_12
-+      structure MLRiscAnnotations = gs_80
++      structure MLRiscAnnotations = gs_37
 +      structure MLRiscErrorMsg = gs_13
 +      ../amd64/ra/amd64SpillInstr.sml
 +   in
-+      functor gs_81 = AMD64SpillInstr
++      functor gs_91 = AMD64SpillInstr
 +   end
 +   local
-+      signature AMD64INSN_PROPERTIES = gs_41
++      signature AMD64INSN_PROPERTIES = gs_59
 +      signature AMD64INSTR = gs_16
 +      functor AMD64Instr = gs_17
-+      functor AMD64Props = gs_42
-+      functor AMD64SpillInstr = gs_81
++      functor AMD64Props = gs_60
++      functor AMD64SpillInstr = gs_91
 +      structure Annotations = gs_9
-+      structure Array = gs_74
-+      signature CFG_OPTIMIZATION = gs_62
-+      signature CONTROL_FLOW_GRAPH = gs_45
++      signature CFG_OPTIMIZATION = gs_78
++      signature CONTROL_FLOW_GRAPH = gs_42
 +      structure CellsBasis = gs_5
-+      functor ClusterRA = gs_69
-+      functor GetReg = gs_63
-+      structure Graph = gs_73
-+      signature INSTRUCTION_EMITTER = gs_30
-+      structure IntHashTable = gs_70
-+      structure List = gs_38
-+      signature MLRISC_CONTROL = gs_71
++      functor ClusterRA = gs_85
++      functor GetReg = gs_79
++      structure Graph = gs_38
++      signature INSTRUCTION_EMITTER = gs_31
++      structure IntHashTable = gs_34
++      structure List = gs_49
++      signature MLRISC_CONTROL = gs_35
 +      signature MLRISC_ERROR_MSG = gs_12
-+      structure MLRiscControl = gs_72
++      structure MLRiscControl = gs_36
 +      structure MLRiscErrorMsg = gs_13
-+      functor MemoryRA = gs_67
-+      structure Option = gs_75
-+      signature PRINT_FLOWGRAPH = gs_64
-+      functor PrintFlowgraph = gs_65
-+      functor RADeadCodeElim = gs_68
-+      structure RAGraph = gs_78
-+      signature RA_SPILL = gs_76
-+      signature RA_SPILL_HEURISTICS = gs_77
-+      functor RegisterAllocator = gs_66
++      functor MemoryRA = gs_83
++      structure Option = gs_41
++      signature PRINT_FLOWGRAPH = gs_80
++      functor PrintFlowgraph = gs_81
++      functor RADeadCodeElim = gs_84
++      structure RAGraph = gs_89
++      signature RA_SPILL = gs_87
++      signature RA_SPILL_HEURISTICS = gs_88
++      functor RegisterAllocator = gs_82
++      structure Vector = gs_86
 +      ../amd64/ra/amd64RegAlloc.sml
 +   in
-+      functor gs_82 = AMD64RegAlloc
++      functor gs_92 = AMD64RegAlloc
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_83 = MLTreeGen
++      functor gs_93 = MLTreeGen
 +   end
 +   local
 +      open l9
 +   in
-+      functor gs_84 = MLTreeSize
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_85 = IntInf
++      functor gs_94 = MLTreeSize
 +   end
 +   local
 +      open l34
 +   in
-+      signature gs_86 = PROBABILITY
-+      structure gs_87 = Probability
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_88 = ListPair
++      signature gs_95 = PROBABILITY
++      structure gs_96 = Probability
 +   end
 +   local
 +      open l9
 +   in
-+      signature gs_89 = MLTREECOMP
-+      signature gs_90 = MLTREE_EXTENSION_COMP
++      signature gs_97 = MLTREECOMP
++      signature gs_98 = MLTREE_EXTENSION_COMP
 +   end
 +   local
-+      open l276
++      open l145
 +   in
-+      signature gs_91 = MLTREE_UTILS
++      signature gs_99 = MLTREE_UTILS
 +   end
 +   local
 +      signature AMD64INSTR = gs_16
@@ -5896,48 +6043,50 @@ index 0000000..7fd9142
 +      structure CellsBasis = gs_5
 +      structure Int32 = gs_8
 +      structure Int64 = gs_7
-+      structure IntInf = gs_85
++      structure IntInf = gs_47
 +      structure Label = gs_6
-+      structure List = gs_38
-+      structure ListPair = gs_88
++      structure List = gs_49
++      structure ListPair = gs_40
 +      signature MLRISC_ERROR_MSG = gs_12
-+      structure MLRiscAnnotations = gs_80
++      structure MLRiscAnnotations = gs_37
 +      structure MLRiscErrorMsg = gs_13
-+      signature MLTREECOMP = gs_89
-+      signature MLTREE_EXTENSION_COMP = gs_90
-+      signature MLTREE_UTILS = gs_91
-+      functor MLTreeGen = gs_83
-+      functor MLTreeSize = gs_84
-+      signature PROBABILITY = gs_86
-+      structure Probability = gs_87
++      signature MLTREECOMP = gs_97
++      signature MLTREE_EXTENSION_COMP = gs_98
++      signature MLTREE_UTILS = gs_99
++      functor MLTreeGen = gs_93
++      functor MLTreeSize = gs_94
++      signature PROBABILITY = gs_95
++      structure Probability = gs_96
 +      functor Shuffle = gs_26
 +      structure Word = gs_24
 +      structure Word32 = gs_20
 +      ../amd64/mltree/amd64-gen.sml
 +   in
-+      functor gs_92 = AMD64Gen
++      functor gs_100 = AMD64Gen
 +   end
 +in
-+   functor AMD64AsmEmitter = gs_61
++   functor AMD64AsmEmitter = gs_77
 +   signature AMD64CELLS = gs_14
 +   structure AMD64Cells = gs_15
-+   functor AMD64CompInstrExt = gs_49
-+   functor AMD64DarwinPseudoOps = gs_51
-+   functor AMD64GasPseudoOps = gs_37
-+   functor AMD64Gen = gs_92
-+   signature AMD64INSN_PROPERTIES = gs_41
++   functor AMD64CompInstrExt = gs_66
++   functor AMD64DarwinPseudoOps = gs_68
++   functor AMD64GasPseudoOps = gs_56
++   functor AMD64Gen = gs_100
++   signature AMD64INSN_PROPERTIES = gs_59
 +   signature AMD64INSTR = gs_16
 +   functor AMD64Instr = gs_17
-+   structure AMD64InstrExt = gs_47
-+   functor AMD64Jumps = gs_44
-+   functor AMD64MCEmitter = gs_31
++   structure AMD64InstrExt = gs_64
++   functor AMD64Jumps = gs_62
++   functor AMD64MCEmitter = gs_32
 +   functor AMD64MCFn = gs_29
++   functor AMD64OmitFramePointer = gs_43
 +   functor AMD64Opcodes = gs_18
-+   functor AMD64Props = gs_42
-+   functor AMD64RegAlloc = gs_82
++   functor AMD64Props = gs_60
++   functor AMD64RegAlloc = gs_92
 +   signature AMD64SHUFFLE = gs_27
++   functor AMD64SVID_CCalls = gs_50
 +   functor AMD64Shuffle = gs_28
-+   functor AMD64SpillInstr = gs_81
++   functor AMD64SpillInstr = gs_91
 +end
 +end
 +
@@ -13478,7 +13627,7 @@ index fcd3e4a..776ea7d 100644
                    rc=Rc}
               )
 diff --git a/ppc/flowgraph/ppcDarwinPseudoOps.sml b/ppc/flowgraph/ppcDarwinPseudoOps.sml
-index 5b86ab7..4442fd0 100644
+index daf6933..533b845 100644
 --- a/ppc/flowgraph/ppcDarwinPseudoOps.sml
 +++ b/ppc/flowgraph/ppcDarwinPseudoOps.sml
 @@ -7,7 +7,27 @@
@@ -13511,7 +13660,7 @@ index 5b86ab7..4442fd0 100644
  
      structure T = T
 diff --git a/ppc/flowgraph/ppcGasPseudoOps.sml b/ppc/flowgraph/ppcGasPseudoOps.sml
-index 08fdbba..a1bffba 100644
+index e627bfa..267246d 100644
 --- a/ppc/flowgraph/ppcGasPseudoOps.sml
 +++ b/ppc/flowgraph/ppcGasPseudoOps.sml
 @@ -1,6 +1,26 @@
@@ -15311,7 +15460,7 @@ index 4aa4e00..079645d 100644
     
         fun doNothing _ = ()
 diff --git a/sparc/flowgraph/sparcGasPseudoOps.sml b/sparc/flowgraph/sparcGasPseudoOps.sml
-index 375df59..973dd4e 100644
+index 3675d5f..66f08f0 100644
 --- a/sparc/flowgraph/sparcGasPseudoOps.sml
 +++ b/sparc/flowgraph/sparcGasPseudoOps.sml
 @@ -1,6 +1,26 @@
@@ -16190,7 +16339,7 @@ index 04ac150..e4d02b4 100644
               emit "\t%cl, "; 
               emit_dst dst )
 diff --git a/x86/flowgraph/x86-darwin-pseudo-ops.sml b/x86/flowgraph/x86-darwin-pseudo-ops.sml
-index 4248572..fc8a8ec 100644
+index 2b3db45..d848c1c 100644
 --- a/x86/flowgraph/x86-darwin-pseudo-ops.sml
 +++ b/x86/flowgraph/x86-darwin-pseudo-ops.sml
 @@ -7,7 +7,27 @@
@@ -16223,7 +16372,7 @@ index 4248572..fc8a8ec 100644
    ) : PSEUDO_OPS_BASIS = struct
  
 diff --git a/x86/flowgraph/x86GasPseudoOps.sml b/x86/flowgraph/x86GasPseudoOps.sml
-index b6b4a12..79e0d57 100644
+index 5b441e1..2e79f3e 100644
 --- a/x86/flowgraph/x86GasPseudoOps.sml
 +++ b/x86/flowgraph/x86GasPseudoOps.sml
 @@ -5,7 +5,27 @@
@@ -16736,7 +16885,7 @@ index 60a8610..1383d06 100644
 -
 -end (* local *)
 diff --git a/x86/mltree/x86.sml b/x86/mltree/x86.sml
-index 3c98b66..092f32a 100644
+index 69fbd74..7872cdd 100644
 --- a/x86/mltree/x86.sml
 +++ b/x86/mltree/x86.sml
 @@ -32,19 +32,77 @@
@@ -16847,7 +16996,7 @@ index 3c98b66..092f32a 100644
          | operand(T.LABEXP le) = I.ImmedLabel le
          | operand(T.REG(_,r)) = IntReg r
          | operand(T.LOAD(32,ea,mem)) = address(ea, mem)
-@@ -968,8 +1030,8 @@ struct
+@@ -969,8 +1031,8 @@ struct
  		 else
  		   move'(I.Immed(n), rdOpnd, an)
  	       end
@@ -16858,7 +17007,7 @@ index 3c98b66..092f32a 100644
               | T.LABEXP le => move'(I.ImmedLabel le, rdOpnd, an)
  
                 (* 32-bit addition *)
-@@ -1094,7 +1156,14 @@ struct
+@@ -1096,7 +1158,14 @@ struct
            * On the x86, TEST is superior to AND for doing the same thing,
            * since it doesn't need to write out the result in a register.
            *)
@@ -16874,7 +17023,7 @@ index 3c98b66..092f32a 100644
              (case ty of
                 8  => test(I.TESTB, a, b, an)
               | 16 => test(I.TESTW, a, b, an)
-@@ -1408,7 +1477,8 @@ struct
+@@ -1410,7 +1479,8 @@ struct
          *)
        and foldableFexp(T.FREG _) = true
          | foldableFexp(T.FLOAD _) = true
@@ -16884,7 +17033,7 @@ index 3c98b66..092f32a 100644
          | foldableFexp(T.CVTF2F(_, _, t)) = foldableFexp t
          | foldableFexp(T.FMARK(t, _)) = foldableFexp t
          | foldableFexp _ = false
-@@ -1531,7 +1601,8 @@ struct
+@@ -1533,7 +1603,8 @@ struct
                (* Try to fold the the memory operand or integer conversion *) 
                and suFold(e as T.FREG _) = (LEAF(0, e, []), false)
                  | suFold(e as T.FLOAD _) = (LEAF(0, e, []), false)
@@ -16894,7 +17043,7 @@ index 3c98b66..092f32a 100644
                  | suFold(T.CVTF2F(_, _, t)) = suFold t
                  | suFold(T.FMARK(t, a)) = 
                    let val (t, integer) = suFold t 
-@@ -1725,7 +1796,8 @@ struct
+@@ -1727,7 +1798,8 @@ struct
            let 
                fun isMemOpnd(T.FREG(_, f)) = isFMemReg f
                  | isMemOpnd(T.FLOAD _) = true
@@ -16904,7 +17053,7 @@ index 3c98b66..092f32a 100644
                  | isMemOpnd(T.CVTF2F(_, _, t)) = isMemOpnd t
                  | isMemOpnd(T.FMARK(t, _)) = isMemOpnd t
                  | isMemOpnd _ = false
-@@ -2006,5 +2078,3 @@ struct
+@@ -2010,5 +2082,3 @@ struct
    end 
  
  end (* functor *)
