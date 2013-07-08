@@ -1,4 +1,4 @@
-## Copyright (C) 2009 Matthew Fluet.
+## Copyright (C) 2009,2013 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -32,13 +32,18 @@ lexgen.dvi: lexgen.tex
 	latex lexgen.tex
 	latex lexgen.tex
 
-mllex.pdf: lexgen.tex
+lexgen.pdf: lexgen.tex
 	latex lexgen.tex
 	pdflatex lexgen.tex
-	mv lexgen.pdf mllex.pdf
 
-mllex.ps: lexgen.dvi
-	dvips -o mllex.ps lexgen.dvi
+lexgen.ps: lexgen.dvi
+	dvips -o lexgen.ps lexgen.dvi
+
+mllex.pdf: lexgen.pdf
+	cp lexgen.pdf mllex.pdf
+
+mllex.ps: lexgen.ps
+	cp lexgen.ps mllex.ps
 
 .PHONY: clean
 clean:

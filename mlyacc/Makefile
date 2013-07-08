@@ -1,4 +1,4 @@
-## Copyright (C) 2009 Matthew Fluet.
+## Copyright (C) 2009,2013 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -53,17 +53,17 @@ src/%.grm.sig src/%.grm.sml: src/%.grm
 	$(MLYACC) $<
 	chmod -w $<.*
 
-doc/mlyacc.ps:
-	$(MAKE) -C doc mlyacc.ps
-
 doc/mlyacc.pdf:
 	$(MAKE) -C doc mlyacc.pdf
 
-mlyacc.ps: doc/mlyacc.ps
-	cp doc/mlyacc.ps .
+doc/mlyacc.ps:
+	$(MAKE) -C doc mlyacc.ps
 
 mlyacc.pdf: doc/mlyacc.pdf
 	cp doc/mlyacc.pdf .
+
+mlyacc.ps: doc/mlyacc.ps
+	cp doc/mlyacc.ps .
 
 .PHONY: clean
 clean:
