@@ -262,14 +262,18 @@ version:
 	for f in							\
 		"$(SPEC)"						\
 		package/freebsd/Makefile				\
-		mlton/control/version_sml.src;				\
-		doc/guide/conf/asciidoc-html5.flags			\
-	do								\
-		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && \
-		mv z "$$f";						\
+		mlton/control/version_sml.src				\
+		doc/guide/conf/asciidoc-mlton.flags			\
+	; do								\
+		if grep -q 'MLTONVERSION' "$$f"; then			\
+			sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && 	\
+			mv z "$$f";							\
+		fi;							\
 	done
-	sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"
-	mv z "$(SPEC)"
+	if grep -q '^Release:$$' "$(SPEC)"; then			\
+		sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"; 		\
+		mv z "$(SPEC)";								\
+	fi
 
 .PHONY: check
 check:
@@ -395,7 +399,7 @@ move-docs:	install-docs install-no-docs
 
 .PHONY: release
 release: version
-	tar cvzf ../mlton-$(VERSION).tar.gz \
+	tar cvzf ../mlton-$(VERSION).src.tgz \
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(VERSION)/@" \
 		*
