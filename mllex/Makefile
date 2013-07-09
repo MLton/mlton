@@ -28,29 +28,26 @@ html/index.html: $(TEX_FILES)
 	hevea -fix -o html/mllex.html -exec xxdate.exe macros.hva lexgen.tex
 	cd html && hacha mllex.html && rm -f mllex.html
 
-lexgen.dvi: lexgen.tex
-	latex lexgen.tex
-	latex lexgen.tex
+PDFLATEX := pdflatex
 
 lexgen.pdf: lexgen.tex
-	latex lexgen.tex
-	pdflatex lexgen.tex
-
-lexgen.ps: lexgen.dvi
-	dvips -o lexgen.ps lexgen.dvi
+	$(PDFLATEX) lexgen.tex
+	$(PDFLATEX) lexgen.tex
 
 mllex.pdf: lexgen.pdf
 	cp lexgen.pdf mllex.pdf
 
-mllex.ps: lexgen.ps
-	cp lexgen.ps mllex.ps
+DOCS :=
+ifneq ($(shell which $(PDFLATEX)),)
+DOCS += mllex.pdf
+endif
+
+.PHONY: docs
+docs: $(DOCS)
 
 .PHONY: clean
 clean:
 	../bin/clean
-
-.PHONY: docs
-docs: mllex.pdf
 
 .PHONY: test
 test: $(NAME)

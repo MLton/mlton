@@ -53,24 +53,25 @@ src/%.grm.sig src/%.grm.sml: src/%.grm
 	$(MLYACC) $<
 	chmod -w $<.*
 
+PDFLATEX := pdflatex
+
 doc/mlyacc.pdf:
 	$(MAKE) -C doc mlyacc.pdf
-
-doc/mlyacc.ps:
-	$(MAKE) -C doc mlyacc.ps
 
 mlyacc.pdf: doc/mlyacc.pdf
 	cp doc/mlyacc.pdf .
 
-mlyacc.ps: doc/mlyacc.ps
-	cp doc/mlyacc.ps .
+DOCS :=
+ifneq ($(shell which $(PDFLATEX)),)
+DOCS += mlyacc.pdf
+endif
+
+.PHONY: docs
+docs: $(DOCS)
 
 .PHONY: clean
 clean:
 	../bin/clean
-
-.PHONY: docs
-docs: mlyacc.pdf
 
 .PHONY: test
 test: $(NAME)
