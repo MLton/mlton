@@ -11,16 +11,16 @@ ReleaseChecklist
 ** Check features and description.
 * Update `man/{mlton,mlprof}.1`.
 ** Check compile-time and run-time options in `man/mlton.1`.
+** Check options in `man/mlprof.1`.
 ** Update with estimated release date.
 * Update `doc/guide`.
-** Check <:OrphanedPages:> and <:WantedPages:>.
+// ** Check <:OrphanedPages:> and <:WantedPages:>.
 ** Synchronize <:Features:> page with `doc/README`.
 ** Update <:Credits:> page with acknowledgements.
-** Create *ReleaseYYYYMM??* (i.e., forthcoming release) based on *ReleaseXXXXLLCC* (i.e., previous release).
+** Create *ReleaseYYYYMM??* page (i.e., forthcoming release) based on *ReleaseXXXXLLCC* (i.e., previous release).
 *** Update summary from `doc/changelog`.
 *** Update links to estimated release date.
-*** Comment out lists and attachment links under `YYYYMM?? binary packages` and `YYYYMM?? sources`.
-** Create *BugsYYYYMM??* based on *BugsXXXXLLCC*.
+** Create *BugsYYYYMM??* page based on *BugsXXXXLLCC*.
 *** Update links to estimated release date.
 ** Spell check pages.
 * Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
@@ -57,43 +57,76 @@ git push origin on-YYYYMMDD-release
 
 == Packaging ==
 
+=== SourceForge FRS ===
+
+* Create *YYYYMMDD* directory:
++
+-----
+sftp user@frs.sourceforge.net:/home/frs/project/mlton/mlton
+sftp> mkdir YYYYMMDD
+sftp> quit
+-----
+
 === Source release ===
 
-* Shell commands:
+* Create `mlton-YYYYMMDD.src.tgz`:
 +
 ----
-git clone http://github.com/MLton/mlton mlton-YYYYMMDD
-cd mlton-YYYYMMDD
+git clone http://github.com/MLton/mlton mlton
+cd mlton
 git checkout on-YYYYMMDD-release
-make clean clean-git version VERSION=YYYYMMDD
-# make -C doc/guide
+make version VERSION=YYYYMMDD
+( cd mllex ; latexmk -pdf lexgen ; latexmk -c lexgen ; make mllex.pdf )
+( cd mlyacc ; ( cd doc; latexmk -pdf mlyaccc ; latexmk -c mlyacc ); make mlyacc.pdf )
+make -C doc/guide
+make release VERSION=YYYYMMDD
 cd ..
-tar --exclude package -czpvf mlton-YYYYMMDD.src.tgz mlton-YYYYMMDD
+----
++
+or
++
+----
+wget https://github.com/MLton/mlton/archive/on-YYYYMMDD-release.tar.gz
+tar xpvf on-YYYYMMDD-release.tar.gz
+cd mlton-on-YYYYMMDD-release
+make version VERSION=YYYYMMDD
+( cd mllex ; latexmk -pdf lexgen ; latexmk -c lexgen ; make mllex.pdf )
+( cd mlyacc ; ( cd doc; latexmk -pdf mlyaccc ; latexmk -c mlyacc ); make mlyacc.pdf )
+make -C doc/guide
+make release VERSION=YYYYMMDD
+cd ..
 ----
 
-* Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD.src.tgz` attachment.
+* Upload `mlton-YYYYMMDD.src.tgz`:
++
+-----
+scp mlton-YYYYMMDD.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/YYYYMMDD/
+-----
+
+* Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD.src.tgz` link.
 
 === Binary releases ===
 
-* Download source release (`mlton-YYYYMMDD.src.tgz` from <:Download:>).
-* Shell commands:
+* Build and create `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
 +
 ----
-tar -xzpvf mlton-YYYYMMDD.src.tgz
+wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.src.tgz
+tar xzvf mlton-YYYYMMDD.src.tgz
 cd mlton-YYYYMMDD
-make
-----
-
-* If your platform doesn't have `asciidoc` and `dblatex`, then get `doc/guide/localhost` and `doc/guide/mlton-guide.pdf` from another package.
-* Shell commands:
-+
-----
+make all
 make install
 cd install
-tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
+tar cpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
+cd ../..
 ----
 
-* Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD-1.ARCH-OS.tgz` attachment.
+* Upload `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
++
+-----
+scp mlton-YYYYMMDD-1.ARCH-OS.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/YYYYMMDD/
+-----
+
+* Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD-1.ARCH-OS.tgz` link.
 
 == Website ==
 
@@ -101,14 +134,14 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 * Shell commands:
 +
 ----
-tar -xzpvf mlton-YYYYMMDD.src.tgz
+wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.src.tgz
+tar xzvf mlton-YYYYMMDD.src.tgz
 cd mlton-YYYYMMDD
-make doc
 cd doc/guide
 cp -prf localhost YYYYMMDD
-tar -czpvf guide-YYYYMMDD.tgz YYYYMMDD
-rsync -avzP --delete -e ssh YYYYMMDD fluet,mlton@web.sourceforge.net:htdocst/guide/
-rsync -avzP --delete -e ssh guide-YYYYMMDD.tgz fluet,mlton@web.sourceforge.net:htdocs/guide/
+tar czvf guide-YYYYMMDD.tgz YYYYMMDD
+rsync -avzP --delete -e ssh YYYYMMDD user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
+rsync -avzP --delete -e ssh guide-YYYYMMDD.tgz user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
 ----
 
 == Announce release ==
