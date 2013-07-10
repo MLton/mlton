@@ -149,8 +149,8 @@ upload_www.mlton.org: $(MLTON_ORG) www.mlton.org-rm
 	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
-localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-flags.sh
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) $(shell ./bin/mk-git-attribute-entity-flags.sh $<) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
+localhost/% : txt/%.txt $(ASCIIDOC_HTML5_DEPS)
+	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
 
 localhost/% : txt/%
 	mkdir -p $(dir $@) ; cp -prf $< $@
