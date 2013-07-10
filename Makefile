@@ -401,7 +401,7 @@ move-docs:	install-docs install-no-docs
 release: version
 	tar cvzf ../mlton-$(VERSION).src.tgz \
 		--exclude .git --exclude package \
-		--transform "s@^@mlton-$(VERSION)/@" \
+		--transform "s@^@mlton-$(VERSION)/@S" \
 		*
 
 BSDSRC := /tmp/mlton-$(VERSION)
