@@ -3,7 +3,11 @@ export LC_ALL = C
 NULL :=
 
 ASCIIDOC := asciidoc
+ifneq ($(shell which $(ASCIIDOC) 2> /dev/null),)
 ASCIIDOC_CONF_DIR := $(shell $(ASCIIDOC) -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
+else
+ASCIIDOC_CONF_DIR :=
+endif
 ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||')
 ASCIIDOC_MLTON_DEPS := bin/InclGitFile.py conf/asciidoc-mlton.flags $(shell cat conf/asciidoc-mlton.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
 ASCIIDOC_HTML5_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
@@ -36,11 +40,11 @@ LOCALHOST_TORM := $(filter-out $(LOCALHOST),$(shell if [ -d localhost ]; then fi
 
 
 ALL :=
-ifneq ($(shell which $(ASCIIDOC)),)
-ifneq ($(shell which pygmentize),)
+ifneq ($(shell which $(ASCIIDOC) 2> /dev/null),)
+ifneq ($(shell which pygmentize 2> /dev/null),)
 ALL += $(LOCALHOST) localhost-rm
 endif
-ifneq ($(shell which $(DBLATEX)),)
+ifneq ($(shell which $(DBLATEX) 2> /dev/null),)
 ALL += mlton-guide.pdf
 endif
 endif
@@ -49,10 +53,10 @@ endif
 all: $(ALL)
 
 
-ifneq ($(shell which gm),)
+ifneq ($(shell which gm 2> /dev/null),)
 CONVERT := gm convert
 else
-ifneq ($(shell which convert),)
+ifneq ($(shell which convert 2> /dev/null),)
 CONVERT := convert
 else
 CONVERT := no-convert

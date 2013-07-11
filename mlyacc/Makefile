@@ -62,7 +62,7 @@ mlyacc.pdf: doc/mlyacc.pdf
 	cp doc/mlyacc.pdf .
 
 DOCS :=
-ifneq ($(shell which $(PDFLATEX)),)
+ifneq ($(shell which $(PDFLATEX) 2> /dev/null),)
 DOCS += mlyacc.pdf
 endif
 
