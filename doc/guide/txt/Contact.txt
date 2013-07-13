@@ -12,7 +12,7 @@ MLton user community discussion
 --
 * https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe]
 * http://news.gmane.org/gmane.comp.lang.ml.mlton.user[archive (Gmane; current)],
-https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive (SourceForge; through 201209)],
+https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive (SourceForge; current)],
 http://www.mlton.org/pipermail/mlton-user/[archive (PiperMail; through 201110)]
 --
 
@@ -23,7 +23,7 @@ MLton developer community discussion
 --
 * https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe]
 * http://news.gmane.org/gmane.comp.lang.ml.mlton.devel[archive (Gmane; current)],
-https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive (SourceForge; through 201209)],
+https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive (SourceForge; current)],
 http://www.mlton.org/pipermail/mlton-devel/[archive (PiperMail; through 201110)]
 --
 
@@ -33,7 +33,7 @@ MLton code commits
 +
 --
 * https://lists.sourceforge.net/lists/listinfo/mlton-commit[subscribe]
-* https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-commit[archive (SourceForge; through 201209)],
+* https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-commit[archive (SourceForge; current)],
 http://www.mlton.org/pipermail/mlton-commit/[archive (PiperMail; through 201110)]
 --
 
