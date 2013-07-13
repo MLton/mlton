@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2013 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -39,6 +39,9 @@ char* intmaxToCommaString (intmax_t n) {
     j = 0;
     k = l % 3;
   }
+  if (k == 0) {
+    k = 3;
+  }
   buf[j++] = tmp[i++];
   k--;
   while (tmp[i] != '\000') {
@@ -73,6 +76,9 @@ char* uintmaxToCommaString (uintmax_t n) {
   i = 0;
   j = 0;
   k = l % 3;
+  if (k == 0) {
+    k = 3;
+  }
   buf[j++] = tmp[i++];
   k--;
   while (tmp[i] != '\000') {
