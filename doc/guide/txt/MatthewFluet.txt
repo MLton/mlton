@@ -19,8 +19,6 @@ Current MLton projects:
 
 Misc. and underspecified TODOs:
 
-* Copyright check in precommit:
-** http://www.mlton.org/pipermail/mlton/2007-November/030041.html
 * understand <:RefFlatten:> and <:DeepFlatten:>
 ** http://www.mlton.org/pipermail/mlton/2005-April/026990.html
 ** http://www.mlton.org/pipermail/mlton/2007-November/030056.html
@@ -29,9 +27,6 @@ Misc. and underspecified TODOs:
 ** http://www.mlton.org/pipermail/mlton/2008-August/030312.html
 ** http://www.mlton.org/pipermail/mlton/2008-September/030360.html
 ** http://www.mlton.org/pipermail/mlton-user/2009-June/001542.html
-* simplify `Socket.Ctl` implementation:
-** http://www.mlton.org/pipermail/mlton/2007-December/030087.html
-** marshal control values via different functions, rather than via SML `Word8Array.array`-s
 * `MSG_DONTWAIT` isn't Posix
 * coordinate w/ Dan Spoonhower and Lukasz Ziarek and Armand Navabi on multi-threaded
 ** http://www.mlton.org/pipermail/mlton/2008-March/030214.html
