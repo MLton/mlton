@@ -38,7 +38,7 @@ mllex.pdf: lexgen.pdf
 	cp lexgen.pdf mllex.pdf
 
 DOCS :=
-ifneq ($(shell which $(PDFLATEX)),)
+ifneq ($(shell which $(PDFLATEX) 2> /dev/null),)
 DOCS += mllex.pdf
 endif
 

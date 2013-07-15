@@ -8,6 +8,8 @@ MLton is an open-source, whole-program, optimizing
 
 == What's new? ==
 
+* 20130715: Please try out our latest release, <:Release20130715:MLton 20130715>.
+
 * 20130308: Subversion repository on
   http://www.sourceforge.net[SourceForge] converted and migrated to a
   Git repository on http://github.com[GitHub]; see <:Sources:> for
@@ -30,8 +32,6 @@ MLton is an open-source, whole-program, optimizing
 * 20120129: Mailing lists migrated to
   http://www.sourceforge.net[SourceForge]; see <:Contact:> for current
   details.
-
-* Please try out our latest release, <:Release20100608:MLton 20100608>.
 
 == Next steps ==
 
