@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pages=$(echo $@ | sort -f)
+pages=$(for page in $@; do echo $page; done | LC_ALL=C sort -f)
 
 xform () {
     page=$1

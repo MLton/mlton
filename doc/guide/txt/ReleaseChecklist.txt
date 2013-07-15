@@ -40,6 +40,7 @@ ReleaseChecklist
 *** Change intro to "`This is an archived public release of MLton, version XXXXLLCC.`"
 ** Update <:Home:> with note of new release.
 *** Change `What's new?` text to `Please try out our new release, <:ReleaseYYYYMMDD:MLton YYYYMMDD>`.
+** Update <:Releases:> with new release.
 ** Clear <:Experimental:>.
 * Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
 
@@ -87,7 +88,7 @@ or
 +
 ----
 wget https://github.com/MLton/mlton/archive/on-YYYYMMDD-release.tar.gz
-tar xpvf on-YYYYMMDD-release.tar.gz
+tar xzvf on-YYYYMMDD-release.tar.gz
 cd mlton-on-YYYYMMDD-release
 make version VERSION=YYYYMMDD
 ( cd mllex ; latexmk -pdf lexgen ; latexmk -c lexgen ; make mllex.pdf )
@@ -116,7 +117,7 @@ cd mlton-YYYYMMDD
 make all
 make install
 cd install
-tar cpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
+tar czvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 cd ../..
 ----
 
