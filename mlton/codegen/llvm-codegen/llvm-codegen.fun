@@ -33,16 +33,7 @@ datatype Context = Context of {
 }
 
 fun ctypes () =
-    let
-        val inttype = case !Control.defaultWord of
-                          "word8" => "i8"
-                        | "word16" => "i16"
-                        | "word32" => "i32"
-                        | "word64" => "i64"
-                        | _ => Error.bug "LLVMCodegen.ctypes"
-    in
-        concat ["%uintptr_t = type ", inttype, "\n"]
-    end
+    concat ["%uintptr_t = type i", Bits.toString (Control.Target.Size.cpointer ()), "\n"]
 
 val mltypes =
 "; ML types\n\
@@ -239,14 +230,6 @@ fun llrs (rs: RealSize.t): string =
 (* Reuse CType for LLVM type *)
 fun llty (ty: Type.t): string = "%" ^ CType.toString (Type.toCType ty)
 
-fun kindIsEntry kind =
-    case kind of
-        Kind.Cont _ => true
-      | Kind.CReturn {func, ...} => CFunction.mayGC func
-      | Kind.Func => true
-      | Kind.Handler _ => true
-      | _ => false
-
 fun typeOfGlobal global =
     let
         val t = Type.toCType (Global.ty global)
@@ -402,7 +385,7 @@ fun callReturn () =
         val comment = "\t; Return\n"
         val stacktop = nextLLVMReg ()
         val loadst = mkload (stacktop, "%Pointer*", "%stackTop")
-        val ptrsize = llbytes (Bits.toBytes (Control.Target.Size.cpointer ()))
+        val ptrsize = (llbytes o Bits.toBytes o Control.Target.Size.cpointer) ()
         val ptr = nextLLVMReg ()
         val gep = mkgep (ptr, "%Pointer", stacktop, ["-" ^ ptrsize])
         val castreg = nextLLVMReg ()
@@ -1170,14 +1153,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 (* l_nextFun = *(uintptr_t* )(StackTop - sizeof(void* )); *)
                 val stackTop = nextLLVMReg ()
                 val loadStackTop = mkload (stackTop, "%Pointer*", "%stackTop")
-                val sizeofptr = case !Control.defaultWord of
-                                    "word8" => "-1"
-                                  | "word16" => "-2"
-                                  | "word32" => "-4"
-                                  | "word64" => "-8"
-                                  | _ => Error.bug "LLVMCodegen.Raise"
+                val sizeofptr = (Bytes.toString o Bits.toBytes o Control.Target.Size.cpointer) ()
                 val offsetST = nextLLVMReg ()
-                val subPtrSize = mkgep (offsetST, "%Pointer", stackTop, [sizeofptr])
+                val subPtrSize = mkgep (offsetST, "%Pointer", stackTop, ["-" ^ sizeofptr])
                 val offsetIntPtr = nextLLVMReg ()
                 val toint = mkconv (offsetIntPtr, "bitcast", "%Pointer", offsetST,
                                     "%uintptr_t*")
@@ -1466,6 +1444,13 @@ fun makeContext program =
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
+              fun kindIsEntry kind =
+                  case kind of
+                      Kind.Cont _ => true
+                    | Kind.CReturn {func, ...} => CFunction.mayGC func
+                    | Kind.Func => true
+                    | Kind.Handler _ => true
+                    | _ => false
               val frameIndex =
                  case Kind.frameInfoOpt kind of
                     NONE => (if kindIsEntry kind
