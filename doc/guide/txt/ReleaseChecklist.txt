@@ -40,6 +40,7 @@ ReleaseChecklist
 *** Change intro to "`This is an archived public release of MLton, version XXXXLLCC.`"
 ** Update <:Home:> with note of new release.
 *** Change `What's new?` text to `Please try out our new release, <:ReleaseYYYYMMDD:MLton YYYYMMDD>`.
+*** Update `Download` link with proper release date.
 ** Update <:Releases:> with new release.
 ** Clear <:Experimental:>.
 * Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
