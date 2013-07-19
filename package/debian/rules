@@ -5,14 +5,14 @@ include /usr/share/cdbs/1/class/makefile.mk
 include /usr/share/cdbs/1/rules/patchsys-quilt.mk
 
 HEAPSIZE := $(shell . debian/heap-size)
-	
+
 # MLton compiles optimized, debug, and pic versions on its own.
 DEB_MAKE_INVOKE = $(DEB_MAKE_ENVVARS) make -C $(DEB_BUILDDIR)
 
 # The MLton guide is html. Don't compress example .sml files.
 DEB_COMPRESS_EXCLUDE_ALL = mlton/guide .sml
 
-DEB_MAKE_CLEAN_TARGET   = clean clean-svn
+DEB_MAKE_CLEAN_TARGET   = clean clean-git
 DEB_MAKE_BUILD_TARGET   = all RUNTIME_ARGS="$(HEAPSIZE)"
 DEB_MAKE_INSTALL_TARGET = install-no-strip DESTDIR=$(CURDIR)/debian/tmp/ PREFIX=/usr MAN_PREFIX_EXTRA=/share
 DEB_MAKE_CHECK_TARGET   = check

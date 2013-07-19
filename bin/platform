@@ -93,6 +93,9 @@ amd64)
 arm*)
         HOST_ARCH=arm
 ;;
+aarch64)
+        HOST_ARCH=arm64
+;;
 parisc*)
         HOST_ARCH=hppa
 ;;
@@ -111,6 +114,9 @@ mips*)
 ;;
 powerpc64)
 	HOST_ARCH=powerpc64
+;;
+ppc64)
+        HOST_ARCH=powerpc64
 ;;
 powerpc)
         HOST_ARCH=powerpc

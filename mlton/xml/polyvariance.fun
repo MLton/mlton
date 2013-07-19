@@ -11,7 +11,7 @@
  * if cost is smaller than threshold.
  * 
  *)
-functor Polyvariance (S: POLYVARIANCE_STRUCTS): POLYVARIANCE = 
+functor Polyvariance (S: XML_TRANSFORM_STRUCTS): XML_TRANSFORM = 
 struct
 
 open S
@@ -229,7 +229,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
        | SOME {shouldDuplicate, ...} => !shouldDuplicate
    end
 
-fun duplicate (program as Program.T {datatypes, body, overflow},
+fun transform (program as Program.T {datatypes, body, overflow},
                hofo: bool,
                small: int,
                product: int) =
@@ -430,7 +430,7 @@ fun duplicate (program as Program.T {datatypes, body, overflow},
       program
    end
 
-val duplicate =
+val transform =
    fn p =>
    case !Control.polyvariance of
       NONE => p
@@ -447,7 +447,7 @@ val duplicate =
                            stats = Program.layoutStats,
                            style = Control.No,
                            suffix = "post.xml",
-                           thunk = fn () => shrink (duplicate (p, hofo, small, product))}
+                           thunk = fn () => shrink (transform (p, hofo, small, product))}
                     in
                        loop (p, n + 1)
                     end

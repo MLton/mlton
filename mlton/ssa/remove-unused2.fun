@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor RemoveUnused2 (S: REMOVE_UNUSED2_STRUCTS): REMOVE_UNUSED2 =
+functor RemoveUnused2 (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM =
 struct
 
 open S
@@ -289,7 +289,7 @@ structure LabelInfo =
    end
 
 
-fun remove (Program.T {datatypes, globals, functions, main}) =
+fun transform2 (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> ConInfo.t,
            set = setConInfo, ...} =

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -18,7 +19,11 @@ functor MkIO (S : sig
       fun mkstemps {prefix, suffix} =
          let
             val name = concat [prefix, MLtonRandom.alphaNumString 6, suffix]
-         in (name, openOut name)
+         in
+            (* Make sure the temporary file name doesn't already exist. *)
+            if OS.FileSys.access (name, [])
+                then mkstemps {prefix = prefix, suffix = suffix}
+                else (name, openOut name)
          end
       fun mkstemp s = mkstemps {prefix = s, suffix = ""}
       fun newIn _ = raise Fail "IO.newIn"
@@ -395,35 +400,6 @@ structure MLton: MLTON =
             val restart = ref true
             fun setHandler _ = raise Fail "Signal.setHandler"
             fun suspend _ = raise Fail "Signal.suspend"
-         end
-
-      structure Socket =
-         struct
-            structure Address =
-               struct
-                  type t = NetHostDB.in_addr
-               end
-
-            structure Ctl =
-               struct
-                  fun getERROR _ = NONE
-               end
-
-            structure Port =
-               struct
-                  type t = int
-               end
-
-            type t = unit
-
-            fun accept _ = raise Fail "Socket.accept"
-            fun connect _ = raise Fail "Socket.connect"
-            fun listen _ = raise Fail "Socket.listen"
-            fun listenAt _ = raise Fail "Socket.listenAt"
-            fun shutdownRead _ = raise Fail "Socket.shutdownWrite"
-            fun shutdownWrite _ = raise Fail "Socket.shutdownWrite"
-
-            fun fdToSock _ = raise Fail "Socket.fdToSock"
          end
 
       structure TextIO = MkIO (TextIO)

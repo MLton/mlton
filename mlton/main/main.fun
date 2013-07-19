@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -491,7 +491,7 @@ fun makeOptions {usage} =
              case !inlineNonRec of
                 {product, ...} =>
                    inlineNonRec := {small = small, product = product})),
-       (Normal, "keep", " {g|o|sml}", "save intermediate files",
+       (Normal, "keep", " {g|o}", "save intermediate files",
         SpaceString (fn s =>
                      case s of
                         "core-ml" => keepCoreML := true
@@ -1004,20 +1004,20 @@ fun commandLine (args: string list): unit =
                    :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir]],
-                      if positionIndependent then
-                      ["-lmlton-pic", "-lgdtoa-pic"]
-                      else if !debugRuntime then
+                      if !debugRuntime then
                       ["-lmlton-gdb", "-lgdtoa-gdb"]
+                      else if positionIndependent then
+                      ["-lmlton-pic", "-lgdtoa-pic"]
                       else
                       ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
       val linkArchives =
-         if positionIndependent then
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
-          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
-         else if !debugRuntime then
+         if !debugRuntime then
          [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
+         else if positionIndependent then
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
+          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
          else
          [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
@@ -1191,7 +1191,9 @@ fun commandLine (args: string list): unit =
                      fun maybeOutBase suf =
                         case !output of
                            NONE => suffix suf
-                         | SOME f => concat [File.base f, suf]
+                         | SOME f => if File.extension f = SOME "exe"
+                                        then concat [File.base f, suf]
+                                     else concat [f, suf]
                      val { base = outputBase, ext=_ } =
                         OS.Path.splitBaseExt (maybeOut ".ext")
                      val { file = defLibname, dir=_ } =

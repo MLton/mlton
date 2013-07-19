@@ -50,7 +50,7 @@
  * where all uses of t are replaced by u array.
  *)
 
-functor SimplifyTypes (S: SIMPLIFY_TYPES_STRUCTS): SIMPLIFY_TYPES = 
+functor SimplifyTypes (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -106,7 +106,7 @@ structure Result =
          end
    end
 
-fun simplify (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {rep: ConRep.t ref,
                                     args: Type.t vector},

@@ -1,4 +1,4 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2013 Matthew Fluet.
  * Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -29,7 +29,7 @@ fun unpackSockAddr (SA sa) = sa
 fun newSockAddr (): (pre_sock_addr * C_Socklen.t ref * (unit -> sock_addr)) = 
    let
       val salen = C_Size.toInt Prim.sockAddrStorageLen
-      val sa = Array.array (salen, 0wx0)
+      val sa = Array.array (salen, 0wx0: Word8.word)
       val salenRef = ref (C_Socklen.fromInt salen)
       fun finish () = 
          SA (ArraySlice.vector 
@@ -326,7 +326,7 @@ fun select {rds: sock_desc list,
          fun mk l =
             let
                val vec = Vector.fromList l
-               val arr = Array.array (Vector.length vec, 0)
+               val arr = Array.array (Vector.length vec, 0: C_Int.t)
             in
                (PrePosix.FileDesc.vectorToRep vec, arr)
             end
@@ -363,8 +363,8 @@ fun select {rds: sock_desc list,
                fun mk (l, arr) = 
                   (List.rev o #1)
                   (List.foldl (fn (sd, (l, i)) =>
-                               (if Array.sub (arr, i) <> 0 then sd::l else l, i + 1))
-                              ([],0) 
+                               (if Array.sub (arr, i) <> (0: C_Int.t) then sd::l else l, i + 1))
+                              ([], 0)
                               l)
             in
                (mk (rds, read_arr),

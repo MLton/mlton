@@ -1,0 +1,33 @@
+ToMachine
+=========
+
+<:ToMachine:> is a translation pass from the <:RSSA:>
+<:IntermediateLanguage:> to the <:Machine:> <:IntermediateLanguage:>.
+
+== Description ==
+
+This pass converts from a <:RSSA:> program into a <:Machine:> program.
+
+It uses <:AllocateRegisters:>, <:Chunkify:>, and <:ParallelMove:>.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/backend.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/backend.fun)>
+
+== Details and Notes ==
+
+Because the MLton runtime system is shared by all codegens, it is most
+convenient to decide on stack layout _before_ any codegen takes over.
+In particular, we compute all the stack frame info for each <:RSSA:>
+function, including stack size, <:GarbageCollection:garbage collector>
+masks for each frame, etc.  To do so, the <:Machine:>
+<:IntermediateLanguage:> imagines an abstract machine with an infinite
+number of (pseudo-)registers of every size.  A liveness analysis
+determines, for each variable, whether or not it is live across a
+point where the runtime system might take over (for example, any
+garbage collection point) or a non-tail call to another <:RSSA:>
+function.  Those that are live go on the stack, while those that
+aren't live go into psuedo-registers.  From this information, we know
+all we need to about each stack frame.  On the downside, nothing
+further on is allowed to change this stack info; it is set in stone.

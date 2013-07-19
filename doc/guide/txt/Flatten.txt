@@ -1,0 +1,37 @@
+Flatten
+=======
+
+<:Flatten:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass flattens arguments to <:SSA:> constructors, blocks, and
+functions.
+
+If a tuple is explicitly available at all uses of a function
+(resp. block), then:
+
+* The formals and call sites are changed so that the components of the
+tuple are passed.
+
+* The tuple is reconstructed at the beginning of the body of the
+function (resp. block).
+
+Similarly, if a tuple is explicitly available at all uses of a
+constructor, then:
+
+* The constructor argument datatype is changed to flatten the tuple
+type.
+
+* The tuple is passed flat at each `ConApp`.
+
+* The tuple is reconstructed at each `Case` transfer target.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/flatten.fun)>
+
+== Details and Notes ==
+
+{empty}

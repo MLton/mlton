@@ -1,0 +1,104 @@
+PropertyList
+============
+
+A property list is a dictionary-like data structure into which
+properties (name-value pairs) can be inserted and from which
+properties can be looked up by name.  The term comes from the Lisp
+language, where every symbol has a property list for storing
+information, and where the names are typically symbols and keys can be
+any type of value.
+
+Here is an SML signature for property lists such that for any type of
+value a new property can be dynamically created to manipulate that
+type of value in a property list.
+
+[source,sml]
+----
+signature PROPERTY_LIST =
+   sig
+      type t
+
+      val new: unit -> t
+      val newProperty: unit -> {add: t * 'a -> unit,
+                                peek: t -> 'a option}
+   end
+----
+
+Here is a functor demonstrating the use of property lists.  It first
+creates a property list, then two new properties (of different types),
+and adds a value to the list for each property.
+
+[source,sml]
+----
+functor Test (P: PROPERTY_LIST) =
+   struct
+      val pl = P.new ()
+
+      val {add = addInt: P.t * int -> unit, peek = peekInt} = P.newProperty ()
+      val {add = addReal: P.t * real -> unit, peek = peekReal} = P.newProperty ()
+
+      val () = addInt (pl, 13)
+      val () = addReal (pl, 17.0)
+      val s1 = Int.toString (valOf (peekInt pl))
+      val s2 = Real.toString (valOf (peekReal pl))
+      val () = print (concat [s1, " ", s2, "\n"])
+   end
+----
+
+Applied to an appropriate implementation `PROPERTY_LIST`, the `Test`
+functor will produce the following output.
+
+----
+13 17.0
+----
+
+
+== Implementation ==
+
+Because property lists can hold values of any type, their
+implementation requires a <:UniversalType:>.  Given that, a property
+list is simply a list of elements of the universal type.  Adding a
+property adds to the front of the list, and looking up a property
+scans the list.
+
+[source,sml]
+----
+functor PropertyList (U: UNIVERSAL_TYPE): PROPERTY_LIST =
+   struct
+      datatype t = T of U.t list ref
+
+      fun new () = T (ref [])
+
+      fun 'a newProperty () =
+         let
+            val (inject, out) = U.embed ()
+            fun add (T r, a: 'a): unit = r := inject a :: (!r)
+            fun peek (T r) =
+               Option.map (valOf o out) (List.find (isSome o out) (!r))
+         in
+            {add = add, peek = peek}
+         end
+   end
+----
+
+
+If `U: UNIVERSAL_TYPE`, then we can test our code as follows.
+
+[source,sml]
+----
+structure Z = Test (PropertyList (U))
+----
+
+Of course, a serious implementation of property lists would have to
+handle duplicate insertions of the same property, as well as the
+removal of elements in order to avoid space leaks.
+
+== Also see ==
+
+* MLton relies heavily on property lists for attaching information to
+syntax tree nodes in its intermediate languages.  See
+<!ViewGitFile(mlton,master,lib/mlton/basic/property-list.sig)> and
+<!ViewGitFile(mlton,master,lib/mlton/basic/property-list.fun)>.
+
+* The <:MLRISCLibrary:> <!Cite(LeungGeorge98, uses property lists
+extensively)>.

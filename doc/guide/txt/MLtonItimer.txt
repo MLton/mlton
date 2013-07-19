@@ -1,0 +1,25 @@
+MLtonItimer
+===========
+
+[source,sml]
+----
+signature MLTON_ITIMER =
+   sig
+      datatype t =
+         Prof
+       | Real
+       | Virtual
+
+      val set: t * {interval: Time.time, value: Time.time} -> unit
+      val signal: t -> Posix.Signal.signal
+   end
+----
+
+* `set (t, {interval, value})`
++
+sets the interval timer (using `setitimer`) specified by `t` to the
+given `interval` and `value`.
+
+* `signal t`
++
+returns the signal corresponding to `t`.

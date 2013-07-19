@@ -1,0 +1,26 @@
+XMLSimplifyTypes
+================
+
+<:XMLSimplifyTypes:> is an optimization pass for the <:XML:>
+<:IntermediateLanguage:>, invoked from <:XMLSimplify:>.
+
+== Description ==
+
+This pass simplifies types in an <:XML:> program, eliminating all
+unused type arguments.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/xml/simplify-types.sig)>
+* <!ViewGitFile(mlton,master,mlton/xml/simplify-types.fun)>
+
+== Details and Notes ==
+
+It first computes a simple fixpoint on all the `datatype` declarations
+to determine which `datatype` `tycon` args are actually used.  Then it
+does a single pass over the program to determine which polymorphic
+declaration type variables are used, and rewrites types to eliminate
+unused type arguments.
+
+This pass should eliminate any spurious duplication that the
+<:Monomorphise:> pass might perform due to phantom types.

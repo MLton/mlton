@@ -1,0 +1,57 @@
+MLtonRlimit
+===========
+
+[source,sml]
+----
+signature MLTON_RLIMIT =
+   sig
+      structure RLim : sig
+                          type t
+                          val castFromSysWord: SysWord.word -> t
+                          val castToSysWord: t -> SysWord.word
+                       end
+
+      val infinity: RLim.t
+
+      type t
+
+      val coreFileSize: t        (* CORE    max core file size *)
+      val cpuTime: t             (* CPU     CPU time in seconds *)
+      val dataSize: t            (* DATA    max data size *)
+      val fileSize: t            (* FSIZE   Maximum filesize *)
+      val numFiles: t            (* NOFILE  max number of open files *)
+      val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
+      val numProcesses: t        (* NPROC   max number of processes *)
+      val residentSetSize: t     (* RSS     max resident set size *)
+      val stackSize: t           (* STACK   max stack size *)
+      val virtualMemorySize: t   (* AS      virtual memory limit *)
+
+      val get: t -> {hard: rlim, soft: rlim}
+      val set: t * {hard: rlim, soft: rlim} -> unit
+   end
+----
+
+`MLton.Rlimit` provides a wrapper around the C `getrlimit` and
+`setrlimit` functions.
+
+* `type Rlim.t`
++
+the type of resource limits.
+
+* `infinity`
++
+indicates that a resource is unlimited.
+
+* `type t`
++
+the types of resources that can be inspected and modified.
+
+* `get r`
++
+returns the current hard and soft limits for resource `r`. May raise
+`OS.SysErr`.
+
+* `set (r, {hard, soft})`
++
+sets the hard and soft limits for resource `r`.  May raise
+`OS.SysErr`.

@@ -1,0 +1,21 @@
+ConstantPropagation
+===================
+
+<:ConstantPropagation:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This is whole-program constant propagation, even through data
+structures.  It also performs globalization of (small) values computed
+once.
+
+Uses <:Multi:>.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/constant-propagation.fun)>
+
+== Details and Notes ==
+
+{empty}

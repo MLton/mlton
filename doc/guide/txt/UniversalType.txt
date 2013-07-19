@@ -1,0 +1,155 @@
+UniversalType
+=============
+
+A universal type is a type into which all other types can be embedded.
+Here's a <:StandardML:Standard ML> signature for a universal type.
+
+[source,sml]
+----
+signature UNIVERSAL_TYPE =
+   sig
+      type t
+
+      val embed: unit -> ('a -> t) * (t -> 'a option)
+   end
+----
+
+The idea is that `type t` is the universal type and that each call to
+`embed` returns a new pair of functions `(inject, project)`, where
+`inject` embeds a value into the universal type and `project` extracts
+the value from the universal type.  A pair `(inject, project)`
+returned by `embed` works together in that `project u` will return
+`SOME v` if and only if `u` was created by `inject v`.  If `u` was
+created by a different function `inject'`, then `project` returns
+`NONE`.
+
+Here's an example embedding integers and reals into a universal type.
+
+[source,sml]
+----
+functor Test (U: UNIVERSAL_TYPE): sig end =
+   struct
+      val (intIn: int -> U.t, intOut) = U.embed ()
+      val r: U.t ref = ref (intIn 13)
+      val s1 =
+         case intOut (!r) of
+            NONE => "NONE"
+          | SOME i => Int.toString i
+      val (realIn: real -> U.t, realOut) = U.embed ()
+      val () = r := realIn 13.0
+      val s2 =
+         case intOut (!r) of
+            NONE => "NONE"
+          | SOME i => Int.toString i
+      val s3 =
+         case realOut (!r) of
+            NONE => "NONE"
+          | SOME x => Real.toString x
+      val () = print (concat [s1, " ", s2, " ", s3, "\n"])
+   end
+----
+
+Applying `Test` to an appropriate implementation will print
+
+----
+13 NONE 13.0
+----
+
+Note that two different calls to embed on the same type return
+different embeddings.
+
+Standard ML does not have explicit support for universal types;
+however, there are at least two ways to implement them.
+
+
+== Implementation Using Exceptions ==
+
+While the intended use of SML exceptions is for exception handling, an
+accidental feature of their design is that the `exn` type is a
+universal type.  The implementation relies on being able to declare
+exceptions locally to a function and on the fact that exceptions are
+<:GenerativeException:generative>.
+
+[source,sml]
+----
+structure U:> UNIVERSAL_TYPE =
+   struct
+      type t = exn
+
+      fun 'a embed () =
+         let
+            exception E of 'a
+            fun project (e: t): 'a option =
+               case e of
+                  E a => SOME a
+                | _ => NONE
+         in
+            (E, project)
+         end
+   end
+----
+
+
+== Implementation Using Functions and References ==
+
+[source,sml]
+----
+structure U:> UNIVERSAL_TYPE =
+   struct
+      datatype t = T of {clear: unit -> unit,
+                         store: unit -> unit}
+
+      fun 'a embed () =
+         let
+            val r: 'a option ref = ref NONE
+            fun inject (a: 'a): t =
+               T {clear = fn () => r := NONE,
+                  store = fn () => r := SOME a}
+            fun project (T {clear, store}): 'a option =
+               let
+                  val () = store ()
+                  val res = !r
+                  val () = clear ()
+               in
+                  res
+               end
+         in
+            (inject, project)
+         end
+   end
+----
+
+Note that due to the use of a shared ref cell, the above
+implementation is not thread safe.
+
+One could try to simplify the above implementation by eliminating the
+`clear` function, making `type t = unit -> unit`.
+
+[source,sml]
+----
+structure U:> UNIVERSAL_TYPE =
+   struct
+      type t = unit -> unit
+
+      fun 'a embed () =
+         let
+            val r: 'a option ref = ref NONE
+            fun inject (a: 'a): t = fn () => r := SOME a
+            fun project (f: t): 'a option = (r := NONE; f (); !r)
+         in
+            (inject, project)
+         end
+   end
+----
+
+While correct, this approach keeps the contents of the ref cell alive
+longer than necessary, which could cause a space leak.  The problem is
+in `project`, where the call to `f` stores some value in some ref cell
+`r'`.  Perhaps `r'` is the same ref cell as `r`, but perhaps not.  If
+we do not clear `r'` before returning from `project`, then `r'` will
+keep the value alive, even though it is useless.
+
+
+== Also see ==
+
+* <:PropertyList:>: Lisp-style property lists implemented with a universal type

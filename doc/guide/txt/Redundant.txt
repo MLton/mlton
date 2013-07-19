@@ -1,0 +1,40 @@
+Redundant
+=========
+
+<:Redundant:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+The redundant SSA optimization eliminates redundant function and label
+arguments; an argument of a function or label is redundant if it is
+always the same as another argument of the same function or label.
+The analysis finds an equivalence relation on the arguments of a
+function or label, such that all arguments in an equivalence class are
+redundant with respect to the other arguments in the equivalence
+class; the transformation selects one representative of each
+equivalence class and drops the binding occurrence of
+non-representative variables and renames use occurrences of the
+non-representative variables to the representative variable.  The
+analysis finds the equivalence classes via a fixed-point analysis.
+Each vector of arguments to a function or label is initialized to
+equivalence classes that equate all arguments of the same type; one
+could start with an equivalence class that equates all arguments, but
+arguments of different type cannot be redundant.  Variables bound in
+statements are initialized to singleton equivalence classes.  The
+fixed-point analysis repeatedly refines these equivalence classes on
+the formals by the equivalence classes of the actuals.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/redundant.fun)>
+
+== Details and Notes ==
+
+The reason <:Redundant:> got put in was due to some output of the
+<:ClosureConvert:> pass converter where the environment record, or
+components of it, were passed around in several places.  That may have
+been more relevant with polyvariant analyses (which are long gone).
+But it still seems possibly relevant, especially with more aggressive
+flattening, which should reveal some fields in nested closure records
+that are redundant.

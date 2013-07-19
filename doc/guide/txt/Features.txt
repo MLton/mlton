@@ -1,0 +1,196 @@
+Features
+========
+
+MLton has the following features.
+
+== Portability ==
+
+* Runs on a variety of platforms.
+
+** <:RunningOnARM:ARM>:
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnAlpha:Alpha>:
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnAMD64:AMD64>:
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnFreeBSD:FreeBSD>
+*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+*** <:RunningOnSolaris:Solaris> (10 and above)
+
+** <:RunningOnHPPA:HPPA>:
+*** <:RunningOnHPUX:HPUX> (11.11 and above)
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnIA64:IA64>:
+*** <:RunningOnHPUX:HPUX> (11.11 and above)
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnPowerPC:PowerPC>:
+*** <:RunningOnAIX:AIX> (5.2 and above)
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnLinux:Linux> (Debian, Fedora)
+
+** <:RunningOnPowerPC64:PowerPC64>:
+*** <:RunningOnAIX:AIX> (5.2 and above)
+
+** <:RunningOnS390:S390>
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnSparc:Sparc>
+*** <:RunningOnLinux:Linux> (Debian)
+*** <:RunningOnSolaris:Solaris> (8 and above)
+
+** <:RunningOnX86:X86>:
+*** <:RunningOnCygwin:Cygwin>/Windows
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnFreeBSD:FreeBSD>
+*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+*** <:RunningOnMinGW:MinGW>/Windows
+*** <:RunningOnNetBSD:NetBSD>
+*** <:RunningOnOpenBSD:OpenBSD>
+*** <:RunningOnSolaris:Solaris> (10 and above)
+
+== Robustness ==
+
+* Supports the full SML 97 language as given in <:DefinitionOfStandardML:The Definition of Standard ML (Revised)>.
++
+If there is a program that is valid according to the
+<:DefinitionOfStandardML:Definition> that is rejected by MLton, or a
+program that is invalid according to the
+<:DefinitionOfStandardML:Definition> that is accepted by MLton, it is
+a bug.  For a list of known bugs, see <:UnresolvedBugs:>.
+
+* A complete implementation of the <:BasisLibrary:Basis Library>.
++
+MLton's implementation matches latest <:BasisLibrary:Basis Library>
+http://www.standardml.org/Basis[specification], and includes a
+complete implementation of all the required modules, as well as many
+of the optional modules.
+
+* Generates standalone executables.
++
+No additional code or libraries are necessary in order to run an
+executable, except for the standard shared libraries.  MLton can also
+generate statically linked executables.
+
+* Compiles large programs.
++
+MLton is sufficiently efficient and robust that it can compile large
+programs, including itself (over 140K lines).  The distributed version
+of MLton was compiled by MLton.
+
+* Support for large amounts of memory (up to 4G on 32-bit systems; more on 64-bit systems).
+
+* Support for large array lengths (up to 2^31^-1 on 32-bit systems; up to 2^63^-1 on 64-bit systems).
+
+* Support for large files, using 64-bit file positions.
+
+== Performance ==
+
+* Executables have <:Performance:excellent running times>.
+
+* Generates small executables.
++
+MLton takes advantage of whole-program compilation to perform very
+aggressive dead-code elimination, which often leads to smaller
+executables than with other SML compilers.
+
+* Untagged and unboxed native integers, reals, and words.
++
+In MLton, integers and words are 8 bits, 16 bits, 32 bits, and 64 bits
+and arithmetic does not have any overhead due to tagging or boxing.
+Also, reals (32-bit and 64-bit) are stored unboxed, avoiding any
+overhead due to boxing.
+
+* Unboxed native arrays.
++
+In MLton, an array (or vector) of integers, reals, or words uses the
+natural C-like representation.  This is fast and supports easy
+exchange of data with C.  Monomorphic arrays (and vectors) use the
+same C-like representations as their polymorphic counterparts.
+
+* Multiple <:GarbageCollection:garbage collection> strategies.
+
+* Fast arbitrary precision arithmetic (`IntInf`) based on the <:GnuMP:>.
++
+For `IntInf` intensive programs, MLton can be an order of magnitude or
+more faster than Poly/ML or SML/NJ.
+
+== Tools ==
+
+* Source-level <:Profiling:> of both time and allocation.
+* <:MLLex:> lexer generator
+* <:MLYacc:> parser generator
+* <:MLNLFFIGen:> foreign-function-interface generator
+
+== Extensions ==
+
+* A simple and fast C <:ForeignFunctionInterface:> that supports calling from SML to C and from C to SML.
+
+* The <:MLBasis:ML Basis system> for programming in the very large, separate delivery of library sources, and more.
+
+* A number of extension libraries that provide useful functionality
+that cannot be implemented with the <:BasisLibrary:Basis Library>.
+See below for an overview and <:MLtonStructure:> for details.
+
+** <:MLtonCont:continuations>
++
+MLton supports continuations via `callcc` and `throw`.
+
+** <:MLtonFinalizable:finalization>
++
+MLton supports finalizable values of arbitrary type.
+
+** <:MLtonItimer:interval timers>
++
+MLton supports the functionality of the C `setitimer` function.
+
+** <:MLtonRandom:random numbers>
++
+MLton has functions similar to the C `rand` and `srand` functions, as well as support for access to `/dev/random` and `/dev/urandom`.
+
+** <:MLtonRlimit:resource limits>
++
+MLton has functions similar to the C `getrlimit` and `setrlimit` functions.
+
+** <:MLtonRusage:resource usage>
++
+MLton supports a subset of the functionality of the C `getrusage` function.
+
+** <:MLtonSignal:signal handlers>
++
+MLton supports signal handlers written in SML.  Signal handlers run in
+a separate MLton thread, and have access to the thread that was
+interrupted by the signal.  Signal handlers can be used in conjunction
+with threads to implement preemptive multitasking.
+
+** <:MLtonStructure:size primitive>
++
+MLton includes a primitive that returns the size (in bytes) of any
+object.  This can be useful in understanding the space behavior of a
+program.
+
+** <:MLtonSyslog:system logging>
++
+MLton has a complete interface to the C `syslog` function.
+
+** <:MLtonThread:threads>
++
+MLton has support for its own threads, upon which either preemptive or
+non-preemptive multitasking can be implemented.  MLton also has
+support for <:ConcurrentML:Concurrent ML> (CML).
+
+** <:MLtonWeak:weak pointers>
++
+MLton supports weak pointers, which allow the garbage collector to
+reclaim objects that it would otherwise be forced to keep.  Weak
+pointers are also used to provide finalization.
+
+** <:MLtonWorld:world save and restore>
++
+MLton has a facility for saving the entire state of a computation to a
+file and restarting it later.  This facility can be used for staging
+and for checkpointing computations.  It can even be used from within
+signal handlers, allowing interrupt driven checkpointing.

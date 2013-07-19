@@ -1,0 +1,95 @@
+CallingFromCToSML
+=================
+
+MLton's <:ForeignFunctionInterface:> allows programs to _export_ SML
+functions to be called from C.  Suppose you would like export from SML
+a function of type `real * char -> int` as the C function `foo`.
+MLton extends the syntax of SML to allow expressions like the
+following:
+----
+_export "foo": (real * char -> int) -> unit;
+----
+The above expression exports a C function named `foo`, with
+prototype
+[source,c]
+----
+Int32 foo (Real64 x0, Char x1);
+----
+The `_export` expression denotes a function of type
+`(real * char -> int) -> unit` that when called with a function
+`f`, arranges for the exported `foo` function to call `f`
+when `foo` is called.  So, for example, the following exports and
+defines `foo`.
+[source,sml]
+----
+val e = _export "foo": (real * char -> int) -> unit;
+val _ = e (fn (x, c) => 13 + Real.floor x + Char.ord c)
+----
+
+The general form of an `_export` expression is
+----
+_export "C function name" attr... : cFuncTy -> unit;
+----
+The type and the semicolon are not optional.  As with `_import`, a
+sequence of attributes may follow the function name.
+
+MLton's `-export-header` option generates a C header file with
+prototypes for all of the functions exported from SML.  Include this
+header file in your C files to type check calls to functions exported
+from SML.  This header file includes ++typedef++s for the
+<:ForeignFunctionInterfaceTypes: types that can be passed between SML and C>.
+
+
+== Example ==
+
+Suppose that `export.sml` is
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/export.sml]
+----
+
+Create the header file with `-export-header`.
+----
+% mlton -default-ann 'allowFFI true'    \
+        -export-header export.h         \
+        -stop tc                        \
+        export.sml
+----
+
+`export.h` now contains the following C prototypes.
+----
+Int8 f (Int32 x0, Real64 x1, Int8 x2);
+Pointer f2 (Word8 x0);
+void f3 ();
+void f4 (Int32 x0);
+extern Int32 zzz;
+----
+
+Use `export.h` in a C program, `ffi-export.c`, as follows.
+
+[source,c]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/ffi-export.c]
+----
+
+Compile `ffi-export.c` and `export.sml`.
+----
+% gcc -c ffi-export.c
+% mlton -default-ann 'allowFFI true' \
+         export.sml ffi-export.o
+----
+
+Finally, run `export`.
+----
+% ./export
+g starting
+...
+g4 (0)
+success
+----
+
+
+== Download ==
+* <!RawGitFile(mlton,master,doc/examples/ffi/export.sml)>
+* <!RawGitFile(mlton,master,doc/examples/ffi/ffi-export.c)>

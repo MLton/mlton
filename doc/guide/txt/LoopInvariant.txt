@@ -1,0 +1,37 @@
+LoopInvariant
+=============
+
+<:LoopInvariant:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+This pass removes loop invariant arguments to local loops.
+
+----
+  loop (x, y)
+    ...
+  ...
+    loop (x, z)
+  ...
+----
+
+becomes
+
+----
+  loop' (x, y)
+    loop (y)
+  loop (y)
+    ...
+  ...
+    loop (z)
+  ...
+----
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/loop-invariant.fun)>
+
+== Details and Notes ==
+
+{empty}

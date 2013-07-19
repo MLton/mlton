@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor SignalCheck (S: SIGNAL_CHECK_STRUCTS): SIGNAL_CHECK = 
+functor SignalCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM = 
 struct
 
 open S
@@ -180,7 +180,7 @@ fun insertInFunction (f: Function.t): Function.t =
       f
    end
 
-fun insert p =
+fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = p
    in

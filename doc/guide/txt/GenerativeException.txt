@@ -1,0 +1,104 @@
+GenerativeException
+===================
+
+In <:StandardML:Standard ML>, exception declarations are said to be
+_generative_, because each time an exception declaration is evaluated,
+it yields a new exception.
+
+The following program demonstrates the generativity of exceptions.
+
+[source,sml]
+----
+exception E
+val e1 = E
+fun isE1 (e: exn): bool =
+   case e of
+      E => true
+    | _ => false
+exception E
+val e2 = E
+fun isE2 (e: exn): bool =
+   case e of
+      E => true
+    | _ => false
+fun pb (b: bool): unit =
+   print (concat [Bool.toString b, "\n"])
+val () = (pb (isE1 e1)
+          ;pb (isE1 e2)
+          ; pb (isE2 e1)
+          ; pb (isE2 e2))
+----
+
+In the above program, two different exception declarations declare an
+exception `E` and a corresponding function that returns `true` only on
+that exception.  Although declared by syntactically identical
+exception declarations, `e1` and `e2` are different exceptions.  The
+program, when run, prints `true`, `false`, `false`, `true`.
+
+A slight modification of the above program shows that even a single
+exception declaration yields a new exception each time it is
+evaluated.
+
+[source,sml]
+----
+fun f (): exn * (exn -> bool) =
+   let
+      exception E
+   in
+      (E, fn E => true | _ => false)
+   end
+val (e1, isE1) = f ()
+val (e2, isE2) = f ()
+fun pb (b: bool): unit =
+   print (concat [Bool.toString b, "\n"])
+val () = (pb (isE1 e1)
+          ; pb (isE1 e2)
+          ; pb (isE2 e1)
+          ; pb (isE2 e2))
+----
+
+Each call to `f` yields a new exception and a function that returns
+`true` only on that exception.  The program, when run, prints `true`,
+`false`, `false`, `true`.
+
+
+== Type Safety ==
+
+Exception generativity is required for type safety.  Consider the
+following valid SML program.
+
+[source,sml]
+----
+fun f (): ('a -> exn) * (exn -> 'a) =
+   let
+      exception E of 'a
+   in
+      (E, fn E x => x | _ => raise Fail "f")
+   end
+fun cast (a: 'a): 'b =
+   let
+      val (make: 'a -> exn, _) = f ()
+      val (_, get: exn -> 'b) = f ()
+   in
+      get (make a)
+   end
+val _ = ((cast 13): int -> int) 14
+----
+
+If exceptions weren't generative, then each call `f ()` would yield
+the same exception constructor `E`.  Then, our `cast` function could
+use `make: 'a -> exn` to convert any value into an exception and then
+`get: exn -> 'b` to convert that exception to a value of arbitrary
+type.  If `cast` worked, then we could cast an integer as a function
+and apply.  Of course, because of generative exceptions, this program
+raises `Fail "f"`.
+
+
+== Applications ==
+
+The `exn` type is effectively a <:UniversalType:universal type>.
+
+
+== Also see ==
+
+ * <:GenerativeDatatype:>

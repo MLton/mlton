@@ -1,0 +1,16 @@
+MLtonArray
+==========
+
+[source,sml]
+----
+signature MLTON_ARRAY =
+   sig
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array * 'b
+   end
+----
+
+* `unfoldi (n, b, f)`
++
+constructs an array _a_ of length `n`, whose elements _a~i~_ are
+determined by the equations __a~0~ = b__ and
+__(a~i~, b~i+1~) = f (i, b~i~)__.

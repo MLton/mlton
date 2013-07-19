@@ -1,0 +1,266 @@
+TipsForWritingConciseSML
+========================
+
+SML is a rich enough language that there are often several ways to
+express things.  This page contains miscellaneous tips (ideas not
+rules) for writing concise SML.  The metric that we are interested in
+here is the number of tokens or words (rather than the number of
+lines, for example).
+
+== Datatypes in Signatures ==
+
+A seemingly frequent source of repetition in SML is that of datatype
+definitions in signatures and structures.  Actually, it isn't
+repetition at all.  A datatype specification in a signature, such as,
+
+[source,sml]
+----
+signature EXP = sig
+   datatype exp = Fn of id * exp | App of exp * exp | Var of id
+end
+----
+
+is just a specification of a datatype that may be matched by multiple
+(albeit identical) datatype declarations.  For example, in
+
+[source,sml]
+----
+structure AnExp : EXP = struct
+   datatype exp = Fn of id * exp | App of exp * exp | Var of id
+end
+
+structure AnotherExp : EXP = struct
+   datatype exp = Fn of id * exp | App of exp * exp | Var of id
+end
+----
+
+the types `AnExp.exp` and `AnotherExp.exp` are two distinct types.  If
+such <:GenerativeDatatype:generativity> isn't desired or needed, you
+can avoid the repetition:
+
+[source,sml]
+----
+structure Exp = struct
+   datatype exp = Fn of id * exp | App of exp * exp | Var of id
+end
+
+signature EXP = sig
+   datatype exp = datatype Exp.exp
+end
+
+structure Exp : EXP = struct
+   open Exp
+end
+----
+
+Keep in mind that this isn't semantically equivalent to the original.
+
+
+== Clausal Function Definitions ==
+
+The syntax of clausal function definitions is rather repetitive.  For
+example,
+
+[source,sml]
+----
+fun isSome NONE = false
+  | isSome (SOME _) = true
+----
+
+is more verbose than
+
+[source,sml]
+----
+val isSome =
+ fn NONE => false
+  | SOME _ => true
+----
+
+For recursive functions the break-even point is one clause higher.  For example,
+
+[source,sml]
+----
+fun fib 0 = 0
+  | fib 1 = 1
+  | fib n = fib (n-1) + fib (n-2)
+----
+
+isn't less verbose than
+
+[source,sml]
+----
+val rec fib =
+ fn 0 => 0
+  | 1 => 1
+  | n => fib (n-1) + fib (n-2)
+----
+
+It is quite often the case that a curried function primarily examines
+just one of its arguments.  Such functions can be written particularly
+concisely by making the examined argument last.  For example, instead
+of
+
+[source,sml]
+----
+fun eval (Fn (v, b)) env => ...
+  | eval (App (f, a) env => ...
+  | eval (Var v) env => ...
+----
+
+consider writing
+
+[source,sml]
+----
+fun eval env =
+ fn Fn (v, b) => ...
+  | App (f, a) => ...
+  | Var v => ...
+----
+
+
+== Parentheses ==
+
+It is a good idea to avoid using lots of irritating superfluous
+parentheses.  An important rule to know is that prefix function
+application in SML has higher precedence than any infix operator.  For
+example, the outer parentheses in
+
+[source,sml]
+----
+(square (5 + 1)) + (square (5 * 2))
+----
+
+are superfluous.
+
+People trained in other languages often use superfluous parentheses in
+a number of places.  In particular, the parentheses in the following
+examples are practically always superfluous and are best avoided:
+
+[source,sml]
+----
+if (condition) then ... else ...
+while (condition) do ...
+----
+
+The same basically applies to case expressions:
+
+[source,sml]
+----
+case (expression) of ...
+----
+
+It is not uncommon to match a tuple of two or more values:
+
+[source,sml]
+----
+case (a, b) of
+   (A1, B1) => ...
+ | (A2, B2) => ...
+----
+
+Such case expressions can be written more concisely with an
+<:ProductType:infix product constructor>:
+
+[source,sml]
+----
+case a & b of
+   A1 & B1 => ...
+ | A2 & B2 => ...
+----
+
+
+== Conditionals ==
+
+Repeated sequences of conditionals such as
+
+[source,sml]
+----
+if x < y then ...
+else if x = y then ...
+else ...
+----
+
+can often be written more concisely as case expressions such as
+
+[source,sml]
+----
+case Int.compare (x, y) of
+   LESS => ...
+ | EQUAL => ...
+ | GREATER => ...
+----
+
+For a custom comparison, you would then define an appropriate datatype
+and a reification function.  An alternative to using datatypes is to
+use dispatch functions
+
+[source,sml]
+----
+comparing (x, y)
+{lt = fn () => ...,
+ eq = fn () => ...,
+ gt = fn () => ...}
+----
+
+where
+
+[source,sml]
+----
+fun comparing (x, y) {lt, eq, gt} =
+    (case Int.compare (x, y) of
+        LESS => lt
+      | EQUAL => eq
+      | GREATER => gt) ()
+----
+
+An advantage is that no datatype definition is needed.  A disadvantage
+is that you can't combine multiple dispatch results easily.
+
+
+== Command-Query Fusion ==
+
+Many are familiar with the
+http://en.wikipedia.org/wiki/Command-Query_Separation[Command-Query
+Separation Principle].  Adhering to the principle, a signature for an
+imperative stack might contain specifications
+
+[source,sml]
+----
+val isEmpty : 'a t -> bool
+val pop : 'a t -> 'a
+----
+
+and use of a stack would look like
+
+[source,sml]
+----
+if isEmpty stack
+then ... pop stack ...
+else ...
+----
+
+or, when the element needs to be named,
+
+[source,sml]
+----
+if isEmpty stack
+then let val elem = pop stack in ... end
+else ...
+----
+
+For efficiency, correctness, and conciseness, it is often better to
+combine the query and command and return the result as an option:
+
+[source,sml]
+----
+val pop : 'a t -> 'a option
+----
+
+A use of a stack would then look like this:
+
+[source,sml]
+----
+case pop stack of
+   NONE => ...
+ | SOME elem => ...
+----

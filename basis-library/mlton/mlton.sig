@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -64,7 +65,6 @@ signature MLTON =
       structure Rlimit: MLTON_RLIMIT
       structure Rusage: MLTON_RUSAGE
       structure Signal: MLTON_SIGNAL
-      structure Socket: MLTON_SOCKET
       structure Syslog: MLTON_SYSLOG
       structure TextIO: MLTON_TEXT_IO
       structure Thread: MLTON_THREAD

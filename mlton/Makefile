@@ -1,4 +1,4 @@
-## Copyright (C) 2010 Matthew Fluet.
+## Copyright (C) 2010,2013 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -66,10 +66,10 @@ SOURCES :=			\
 all: $(AOUT)
 
 control/version.sml: control/version_sml.src
-	cat control/version_sml.src |						\
-		sed "s/MLTONVERSION/$${VERSION:-g$(shell git log --pretty="%h$(shell if [ $$(git status --porcelain | wc -l) -ne 0 ]; then echo '-dirty'; fi)" -n1)}/" |\
-		sed "s/\(.*\)MLTONBUILDDATE\(.*\)/\1`LANG=C date`\2/" |		\
-		sed "s/\(.*\)MLTONBUILDNODE\(.*\)/\1`uname -n`\2/" >		\
+	cat control/version_sml.src |				\
+		sed "s/MLTONVERSION/$$(git log -n1 --pretty="g%h$$(if [ $$(git status --porcelain 2> /dev/null | wc -l) -ne 0 ]; then echo '-dirty'; fi)" 2> /dev/null || echo "???????")/" |	\
+		sed "s/MLTONBUILDDATE/$$(LANG=C date)/" |	\
+		sed "s/MLTONBUILDNODE/$$(uname -n)/" >		\
 		control/version.sml
 
 front-end/%.lex.sml: front-end/%.lex

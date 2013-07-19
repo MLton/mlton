@@ -1,1 +1,4 @@
-.ignore
+## Ignore all .cm directories
+.cm/
+
+/cm2mlb.*-*

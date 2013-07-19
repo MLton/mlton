@@ -1,0 +1,292 @@
+StaticSum
+=========
+
+While SML makes it impossible to write functions whose types would
+depend on the values of their arguments, or so called dependently
+typed functions, it is possible, and arguably commonplace, to write
+functions whose types depend on the types of their arguments.  Indeed,
+the types of parametrically polymorphic functions like `map` and
+`foldl` can be said to depend on the types of their arguments.  What
+is less commonplace, however, is to write functions whose behavior
+would depend on the types of their arguments.  Nevertheless, there are
+several techniques for writing such functions.
+<:TypeIndexedValues:Type-indexed values> and <:Fold:fold> are two such
+techniques.  This page presents another such technique dubbed static
+sums.
+
+
+== Ordinary Sums ==
+
+Consider the sum type as defined below:
+[source,sml]
+----
+structure Sum = struct
+   datatype ('a, 'b) t = INL of 'a | INR of 'b
+end
+----
+
+While a generic sum type such as defined above is very useful, it has
+a number of limitations.  As an example, we could write the function
+`out` to extract the value from a sum as follows:
+[source,sml]
+----
+fun out (s : ('a, 'a) Sum.t) : 'a =
+    case s
+     of Sum.INL a => a
+      | Sum.INR a => a
+----
+
+As can be seen from the type of `out`, it is limited in the sense that
+it requires both variants of the sum to have the same type.  So, `out`
+cannot be used to extract the value of a sum of two different types,
+such as the type `(int, real) Sum.t`.  As another example of a
+limitation, consider the following attempt at a `succ` function:
+[source,sml]
+----
+fun succ (s : (int, real) Sum.t) : ??? =
+    case s
+     of Sum.INL i => i + 1
+      | Sum.INR r => Real.nextAfter (r, Real.posInf)
+----
+
+The above definition of `succ` cannot be typed, because there is no
+type for the codomain within SML.
+
+
+== Static Sums ==
+
+Interestingly, it is possible to define values `inL`, `inR`, and
+`match` that satisfy the laws
+----
+match (inL x) (f, g) = f x
+match (inR x) (f, g) = g x
+----
+and do not suffer from the same limitions.  The definitions are
+actually quite trivial:
+[source,sml]
+----
+structure StaticSum = struct
+   fun inL x (f, _) = f x
+   fun inR x (_, g) = g x
+   fun match x = x
+end
+----
+
+Now, given the `succ` function defined as
+[source,sml]
+----
+fun succ s =
+    StaticSum.match s
+       (fn i => i + 1,
+        fn r => Real.nextAfter (r, Real.posInf))
+----
+we get
+[source,sml]
+----
+succ (StaticSum.inL 1) = 2
+succ (StaticSum.inR Real.maxFinite) = Real.posInf
+----
+
+To better understand how this works, consider the following signature
+for static sums:
+[source,sml]
+----
+structure StaticSum :> sig
+   type ('dL, 'cL, 'dR, 'cR, 'c) t
+   val inL : 'dL -> ('dL, 'cL, 'dR, 'cR, 'cL) t
+   val inR : 'dR -> ('dL, 'cL, 'dR, 'cR, 'cR) t
+   val match : ('dL, 'cL, 'dR, 'cR, 'c) t -> ('dL -> 'cL) * ('dR -> 'cR) -> 'c
+end = struct
+   type ('dL, 'cL, 'dR, 'cR, 'c) t = ('dL -> 'cL) * ('dR -> 'cR) -> 'c
+   open StaticSum
+end
+----
+
+Above, `'d` stands for domain and `'c` for codomain.  The key
+difference between an ordinary sum type, like `(int, real) Sum.t`, and
+a static sum type, like `(int, real, real, int, real) StaticSum.t`, is
+that the ordinary sum type says nothing about the type of the result
+of deconstructing a sum while the static sum type specifies the type.
+
+With the sealed static sum module, we get the type
+[source,sml]
+----
+val succ : (int, int, real, real, 'a) StaticSum.t -> 'a
+----
+for the previously defined `succ` function.  The type specifies that
+`succ` maps a left `int` to an `int` and a right `real` to a `real`.
+For example, the type of `StaticSum.inL 1` is
+`(int, 'cL, 'dR, 'cR, 'cL) StaticSum.t`.  Unifying this with the
+argument type of `succ` gives the type `(int, int, real, real, int)
+StaticSum.t -> int`.
+
+The `out` function is quite useful on its own.  Here is how it can be
+defined:
+[source,sml]
+----
+structure StaticSum = struct
+   open StaticSum
+   val out : ('a, 'a, 'b, 'b, 'c) t -> 'c =
+    fn s => match s (fn x => x, fn x => x)
+end
+----
+
+Due to the value restriction, lack of first class polymorphism and
+polymorphic recursion, the usefulness and convenience of static sums
+is somewhat limited in SML.  So, don't throw away the ordinary sum
+type just yet.  Static sums can nevertheless be quite useful.
+
+
+=== Example: Send and Receive with Argument Type Dependent Result Types ===
+
+In some situations it would seem useful to define functions whose
+result type would depend on some of the arguments.  Traditionally such
+functions have been thought to be impossible in SML and the solution
+has been to define multiple functions.  For example, the
+http://www.standardml.org/Basis/socket.html[`Socket` structure] of the
+Basis library defines 16 `send` and 16 `recv` functions.  In contrast,
+the Net structure
+(<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/net.sig)>) of the
+Basic library designed by Stephen Weeks defines only a single `send`
+and a single `receive` and the result types of the functions depend on
+their arguments.  The implementation
+(<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/net.sml)>) uses
+static sums (with a slighly different signature:
+<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/static-sum.sig)>).
+
+
+=== Example: Picking Monad Results ===
+
+Suppose that we need to write a parser that accepts a pair of integers
+and returns their sum given a monadic parsing combinator library.  A
+part of the signature of such library could look like this
+[source,sml]
+----
+signature PARSING = sig
+   include MONAD
+   val int : int t
+   val lparen : unit t
+   val rparen : unit t
+   val comma : unit t
+   (* ... *)
+end
+----
+where the `MONAD` signature could be defined as
+[source,sml]
+----
+signature MONAD = sig
+   type 'a t
+   val return : 'a -> 'a t
+   val >>= : 'a t * ('a -> 'b t) -> 'b t
+end
+infix >>=
+----
+
+The straightforward, but tedious, way to write the desired parser is:
+[source,sml]
+----
+val p = lparen >>= (fn _ =>
+        int    >>= (fn x =>
+        comma  >>= (fn _ =>
+        int    >>= (fn y =>
+        rparen >>= (fn _ =>
+        return (x + y))))))
+----
+
+In Haskell, the parser could be written using the `do` notation
+considerably less verbosely as:
+[source,haskell]
+----
+p = do { lparen ; x <- int ; comma ; y <- int ; rparen ; return $ x + y }
+----
+
+SML doesn't provide a `do` notation, so we need another solution.
+
+Suppose we would have a "pick" notation for monads that would allows
+us to write the parser as
+[source,sml]
+----
+val p = `lparen ^ \int ^ `comma ^ \int ^ `rparen @ (fn x & y => x + y)
+----
+using four auxiliary combinators: +&grave;+, `\`, `^`, and `@`.
+
+Roughly speaking
+
+* +&grave;p+ means that the result of `p` is dropped,
+* `\p` means that the result of `p` is taken,
+* `p ^ q` means that results of `p` and `q` are taken as a product, and
+* `p @ a` means that the results of `p` are passed to the function `a` and that result is returned.
+
+The difficulty is in implementing the concatenation combinator `^`.
+The type of the result of the concatenation depends on the types of
+the arguments.
+
+Using static sums and the <:ProductType:product type>, the pick
+notation for monads can be implemented as follows:
+[source,sml]
+----
+functor MkMonadPick (include MONAD) = let
+   open StaticSum
+in
+   struct
+      fun `a = inL (a >>= (fn _ => return ()))
+      val \ = inR
+      fun a @ f = out a >>= (return o f)
+      fun a ^ b =
+          (match b o match a)
+             (fn a =>
+                 (fn b => inL (a >>= (fn _ => b)),
+                  fn b => inR (a >>= (fn _ => b))),
+              fn a =>
+                 (fn b => inR (a >>= (fn a => b >>= (fn _ => return a))),
+                  fn b => inR (a >>= (fn a => b >>= (fn b => return (a & b))))))
+   end
+end
+----
+
+The above implementation is inefficient, however.  It uses many more
+bind operations, `>>=`, than necessary.  That can be solved with an
+additional level of abstraction:
+[source,sml]
+----
+functor MkMonadPick (include MONAD) = let
+   open StaticSum
+in
+   struct
+      fun `a = inL (fn b => a >>= (fn _ => b ()))
+      fun \a = inR (fn b => a >>= b)
+      fun a @ f = out a (return o f)
+      fun a ^ b =
+          (match b o match a)
+             (fn a => (fn b => inL (fn c => a (fn () => b c)),
+                       fn b => inR (fn c => a (fn () => b c))),
+              fn a => (fn b => inR (fn c => a (fn a => b (fn () => c a))),
+                       fn b => inR (fn c => a (fn a => b (fn b => c (a & b))))))
+   end
+end
+----
+
+After instantiating and opening either of the above monad pick
+implementations, the previously given definition of `p` can be
+compiled and results in a parser whose result is of type `int`.  Here
+is a functor to test the theory:
+[source,sml]
+----
+functor Test (Arg : PARSING) = struct
+   local
+      structure Pick = MkMonadPick (Arg)
+      open Pick Arg
+   in
+      val p : int t =
+          `lparen ^ \int ^ `comma ^ \int ^ `rparen @ (fn x & y => x + y)
+   end
+end
+----
+
+
+== Also see ==
+
+There are a number of related techniques.  Here are some of them.
+
+* <:Fold:>
+* <:TypeIndexedValues:>

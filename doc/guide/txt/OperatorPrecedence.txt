@@ -1,0 +1,17 @@
+OperatorPrecedence
+==================
+
+<:StandardML:Standard ML> has a built in notion of precedence for
+certain symbols.  Every program that includes the
+<:BasisLibrary:Basis Library> automatically gets the following infix
+declarations.  Higher number indicates higher precedence.
+
+[source,sml]
+----
+infix 7 * / mod div
+infix 6 + - ^
+infixr 5 :: @
+infix 4 = <> > >= < <=
+infix 3 := o
+infix 0 before
+----

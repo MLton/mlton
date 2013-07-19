@@ -20,7 +20,7 @@
  *   - The tuple is reconstructed at each Case target.
  *)
 
-functor Flatten (S: FLATTEN_STRUCTS): FLATTEN = 
+functor Flatten (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -54,7 +54,7 @@ structure Rep =
       fun unifys (rs, rs') = Vector.foreach2 (rs, rs', unify)
    end
 
-fun flatten (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {argsTypes: Type.t vector,
                                     args: Rep.t vector},

@@ -1,0 +1,30 @@
+PlatformSpecificNotes
+=====================
+
+Here are notes about using MLton on the following platforms.
+
+== Operating Systems ==
+
+* <:RunningOnAIX:AIX>
+* <:RunningOnCygwin:Cygwin>
+* <:RunningOnDarwin:Darwin>
+* <:RunningOnFreeBSD:FreeBSD>
+* <:RunningOnHPUX:HPUX>
+* <:RunningOnLinux:Linux>
+* <:RunningOnMinGW:MinGW>
+* <:RunningOnNetBSD:NetBSD>
+* <:RunningOnOpenBSD:OpenBSD>
+* <:RunningOnSolaris:Solaris>
+
+== Architectures ==
+
+* <:RunningOnAMD64:AMD64>
+* <:RunningOnHPPA:HPPA>
+* <:RunningOnPowerPC:PowerPC>
+* <:RunningOnPowerPC64:PowerPC64>
+* <:RunningOnSparc:Sparc>
+* <:RunningOnX86:X86>
+
+== Also see ==
+
+* <:PortingMLton:>

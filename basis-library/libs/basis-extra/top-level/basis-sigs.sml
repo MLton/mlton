@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -104,7 +105,6 @@ signature MLTON_REAL = MLTON_REAL
 signature MLTON_RLIMIT = MLTON_RLIMIT
 signature MLTON_RUSAGE = MLTON_RUSAGE
 signature MLTON_SIGNAL = MLTON_SIGNAL
-signature MLTON_SOCKET = MLTON_SOCKET
 signature MLTON_SYSLOG = MLTON_SYSLOG
 signature MLTON_TEXT_IO = MLTON_TEXT_IO
 signature MLTON_THREAD = MLTON_THREAD

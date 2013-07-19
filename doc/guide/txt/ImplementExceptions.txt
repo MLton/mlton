@@ -1,0 +1,17 @@
+ImplementExceptions
+===================
+
+<:ImplementExceptions:> is a pass for the <:SXML:>
+<:IntermediateLanguage:>, invoked from <:SXMLSimplify:>.
+
+== Description ==
+
+This pass implements exceptions.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/xml/implement-exceptions.fun)>
+
+== Details and Notes ==
+
+{empty}

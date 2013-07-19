@@ -1,0 +1,75 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="2048px" height="2048px" viewBox="0 0 64 64"
+     xmlns="http://www.w3.org/2000/svg" version="1.1"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <defs>
+    <symbol id="background">
+      <rect stroke="none"
+            x="0" y="0" width="64" height="64" />
+    </symbol>
+    <symbol id="M_stroke">
+      <polyline fill="none"
+                stroke-linecap="round" stroke-linejoin="round"
+                points="05,59 05,05 16,31 27,05 27,59" />
+    </symbol>
+    <symbol id="L_stroke">
+      <polyline fill="none"
+                stroke-linecap="round" stroke-linejoin="round"
+                points="37,05 37,59 59,59" />
+    </symbol>
+    <symbol id="t_stroke">
+      <polyline fill="none"
+                stroke-linecap="round" stroke-linejoin="round"
+                points="44,40 44,52" />
+      <polyline fill="none"
+                stroke-linecap="round" stroke-linejoin="round"
+                points="44,46 60,46" />
+    </symbol>
+    <symbol id="o_stroke">
+      <ellipse fill="none"
+               cx="52" cy="29" rx="8" ry="7" />
+    </symbol>
+    <symbol id="n_stroke">
+      <polyline fill="none"
+                stroke-linecap="round" stroke-linejoin="round"
+                points="60,16 44,16 60,04 44,04" />
+    </symbol>
+  </defs>
+
+  <g fill="white">
+    <!-- <use xlink:href="#background" /> -->
+    <rect stroke="none"
+          x="0" y="0" width="64" height="64" />
+  </g>
+
+  <g stroke="black" stroke-width="6">
+    <!-- <use xlink:href="#M_stroke" /> -->
+    <polyline fill="none"
+              stroke-linecap="round" stroke-linejoin="round"
+              points="05,59 05,05 16,31 27,05 27,59" />
+    <!-- <use xlink:href="#L_stroke" /> -->
+    <polyline fill="none"
+              stroke-linecap="round" stroke-linejoin="round"
+              points="37,05 37,59 59,59" />
+  </g>
+  <g stroke="black" stroke-width="4">
+    <!-- <use xlink:href="#t_stroke" /> -->
+    <polyline fill="none"
+              stroke-linecap="round" stroke-linejoin="round"
+              points="44,40 44,52" />
+    <polyline fill="none"
+              stroke-linecap="round" stroke-linejoin="round"
+              points="44,46 60,46" />
+    <!-- <use xlink:href="#o_stroke" /> -->
+    <ellipse fill="none"
+             cx="52" cy="29" rx="8" ry="7" />
+    <!-- <use xlink:href="#n_stroke" /> -->
+    <polyline fill="none"
+              stroke-linecap="round" stroke-linejoin="round"
+              points="60,16 44,16 60,04 44,04" />
+  </g>
+
+</svg>

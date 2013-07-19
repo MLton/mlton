@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor PolyHash (S: POLY_HASH_STRUCTS): POLY_HASH = 
+functor PolyHash (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -319,7 +319,7 @@ structure Hash =
          wordBytes (st, Dexp.wordFromWord (w, ws), ws)
    end
 
-fun polyHash (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = funcInfo: Func.t -> {hasHash: bool},
            set = setFuncInfo, ...} =

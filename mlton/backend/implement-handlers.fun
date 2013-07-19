@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ImplementHandlers (S: IMPLEMENT_HANDLERS_STRUCTS): IMPLEMENT_HANDLERS = 
+functor ImplementHandlers (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM = 
 struct
 
 open S
@@ -209,7 +209,7 @@ fun flow (f: Function.t): Function.t =
                     start = newStart}
    end
 
-fun doit (Program.T {functions, handlesSignals, main, objectTypes}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes}) =
    Program.T {functions = List.revMap (functions, flow),
               handlesSignals = handlesSignals,
               main = flow main,

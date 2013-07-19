@@ -1,0 +1,41 @@
+Zone
+====
+
+<:Zone:> is an optimization pass for the <:SSA2:>
+<:IntermediateLanguage:>, invoked from <:SSA2Simplify:>.
+
+== Description ==
+
+This pass breaks large <:SSA2:> functions into zones, which are
+connected subgraphs of the dominator tree.  For each zone, at the node
+that dominates the zone (the "zone root"), it places a tuple
+collecting all of the live variables at that node.  It replaces any
+variables used in that zone with offsets from the tuple.  The goal is
+to decrease the liveness information in large <:SSA:> functions.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/zone.fun)>
+
+== Details and Notes ==
+
+Compute strongly-connected components to avoid put tuple constructions
+in loops.
+
+There are two (expert) flags that govern the use of this pass
+
+* `-max-function-size <n>`
+* `-zone-cut-depth <n>`
+
+Zone splitting only works when the number of basic blocks in a
+function is greater than `n`.  The `n` used to cut the dominator tree
+is set by `-zone-cut-depth`.
+
+There is currently no attempt to be safe-for-space.  That is, the
+tuples are not restricted to containing only "small" values.
+
+In the `HOL` program, the particular problem is the main function,
+which has 161,783 blocks and 257,519 variables -- the product of those
+two numbers being about 41 billion.  Now, we're not likely going to
+need that much space since we use a sparse representation.  But even
+1/100th would really hurt.  And of course this rules out bit vectors.

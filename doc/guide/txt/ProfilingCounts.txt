@@ -1,0 +1,52 @@
+ProfilingCounts
+===============
+
+With MLton and `mlprof`, you can <:Profiling:profile> your program to
+find out how many times each function is called and how many times
+each branch is taken.  To do so, compile your program with
+`-profile count -profile-branch true`. For example, suppose that
+`tak.sml` contains the following.
+
+[source,sml]
+----
+sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/tak.sml]
+----
+
+Compile with count profiling and run the program.
+----
+% mlton -profile count -profile-branch true tak.sml
+% ./tak
+----
+
+Display the profiling data, along with raw counts and file positions.
+----
+% mlprof -raw true -show-line true tak mlmon.out
+623,610,002 ticks
+            function               cur       raw
+--------------------------------- ----- -------------
+Tak.tak1.tak2  tak.sml: 5         38.2% (238,530,000)
+Tak.tak1.tak2.<true>  tak.sml: 7  27.5% (171,510,000)
+Tak.tak1  tak.sml: 3              10.7%  (67,025,000)
+Tak.tak1.<true>  tak.sml: 14      10.7%  (67,025,000)
+Tak.tak1.tak2.<false>  tak.sml: 9 10.7%  (67,020,000)
+Tak.tak1.<false>  tak.sml: 16      2.0%  (12,490,000)
+f  tak.sml: 23                     0.0%       (5,001)
+f.<branch>  tak.sml: 25            0.0%       (5,000)
+f.<branch>  tak.sml: 23            0.0%           (1)
+uncalled  tak.sml: 29              0.0%           (0)
+f.<branch>  tak.sml: 24            0.0%           (0)
+----
+
+Branches are displayed with lexical nesting followed by `<branch>`
+where the function name would normally be, or `<true>` or `<false>`
+for if-expressions.  It is best to run `mlprof` with `-show-line true`
+to help identify the branch.
+
+One use of `-profile count` is as a code-coverage tool, to help find
+code in your program that hasn't been tested.  For this reason,
+`mlprof` displays functions and branches even if they have a count of
+zero.  As the above output shows, the branch on line 24 was never
+taken and the function defined on line 29 was never called.  To see
+zero counts, it is best to run `mlprof` with `-raw true`, since some
+code (e.g. the branch on line 23 above) will show up with `0.0%` but
+may still have been executed and hence have a nonzero raw count.

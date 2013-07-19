@@ -1,0 +1,19 @@
+AllocateRegisters
+=================
+
+<:AllocateRegisters:> is an analysis pass for the <:RSSA:>
+<:IntermediateLanguage:>, invoked from <:ToMachine:>.
+
+== Description ==
+
+Computes an allocation of <:RSSA:> variables as <:Machine:> register
+or stack operands.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/allocate-registers.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/allocate-registers.fun)>
+
+== Details and Notes ==
+
+{empty}

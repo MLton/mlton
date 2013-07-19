@@ -1,0 +1,81 @@
+MLBasisAnnotations
+==================
+
+<:MLBasis:ML Basis> annotations control options that affect the
+elaboration of SML source files.  Conceptually, a basis file is
+elaborated in a default annotation environment (just as it is
+elaborated in an empty basis).  The declaration
+++ann++{nbsp}++"++__ann__++"++{nbsp}++in++{nbsp}__basdec__{nbsp}++end++
+merges the annotation _ann_ with the "current" annotation environment
+for the elaboration of _basdec_.  To allow for future expansion,
+++"++__ann__++"++ is lexed as a single SML string constant.  To
+conveniently specify multiple annotations, the following derived form
+is provided:
+
+****
++ann+ ++"++__ann__++"++ (++"++__ann__++"++ )^\+^ +in+ _basdec_ +end+
+=>
++ann+ ++"++__ann__++"++ +in+ +ann+ (++"++__ann__++"++)^\+^ +in+ _basdec_ +end+ +end+
+****
+
+Here are the available annotations.  In the explanation below, for
+annotations that take an argument, the first value listed is the
+default.
+
+* +allowFFI {false|true}+
++
+If `true`, allow `_address`, `_export`, `_import`, and `_symbol`
+expressions to appear in source files.  See
+<:ForeignFunctionInterface:>.
+
+* +forceUsed+
++
+Force all identifiers in the basis denoted by the body of the `ann` to
+be considered used; use in conjunction with `warnUnused true`.
+
+* +nonexhaustiveExnMatch {default|ignore}+
++
+If `ignore`, suppress errors and warnings about nonexhaustive matches
+that arise solely from unmatched exceptions.  If `default`, follow the
+behavior of `nonexhaustiveMatch`.
+
+* +nonexhaustiveMatch {warn|error|ignore}+
++
+If `error` or `warn`, report nonexhaustive matches.  An error will
+abort a compile, while a warning will not.
+
+* +redundantMatch {warn|error|ignore}+
++
+If `error` or `warn`, report redundant matches.  An error will abort a
+compile, while a warning will not.
+
+* +resolveScope {strdec|dec|topdec|program}+
++
+Used to control the scope at which overload constraints are resolved
+to default types (if not otherwise resolved by type inference) and the
+scope at which unresolved flexible record constraints are reported.
++
+The syntactic-class argument means to perform resolution checks at the
+smallest enclosing syntactic form of the given class.  The default
+behavior is to resolve at the smallest enclosing _strdec_ (which is
+equivalent to the largest enclosing _dec_).  Other useful behaviors
+are to resolve at the smallest enclosing _topdec_ (which is equivalent
+to the largest enclosing _strdec_) and at the smallest enclosing
+_program_ (which corresponds to a single `.sml` file and does not
+correspond to the whole `.mlb` program).
+
+* +sequenceNonUnit {ignore|error|warn}+
++
+If `error` or `warn`, report when `e1` is not of type `unit` in the
+sequence expression `(e1; e2)`.  This can be helpful in detecting
+curried applications that are mistakenly not fully applied.  To
+silence spurious messages, you can use `ignore e1`.
+
+* +warnUnused {false|true}+
++
+Report unused identifiers.
+
+== Next Steps ==
+
+ * <:MLBasisAnnotationExamples:>
+ * <:WarnUnusedAnomalies:>

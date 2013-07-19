@@ -1,0 +1,80 @@
+SMLofNJStructure
+================
+
+[source,sml]
+----
+signature SML_OF_NJ =
+   sig
+      structure Cont:
+         sig
+            type 'a cont
+            val callcc: ('a cont -> 'a) -> 'a
+            val isolate: ('a -> unit) -> 'a cont
+            val throw: 'a cont -> 'a -> 'b
+         end
+      structure SysInfo:
+         sig
+            exception UNKNOWN
+            datatype os_kind = BEOS | MACOS | OS2 | UNIX | WIN32
+
+            val getHostArch: unit -> string
+            val getOSKind: unit -> os_kind
+            val getOSName: unit -> string
+         end
+
+      val exnHistory: exn -> string list
+      val exportFn: string * (string * string list -> OS.Process.status) -> unit
+      val exportML: string -> bool
+      val getAllArgs: unit -> string list
+      val getArgs: unit -> string list
+      val getCmdName: unit -> string
+   end
+----
+
+`SMLofNJ` implements a subset of the structure of the same name
+provided in <:SMLNJ:Standard ML of New Jersey>.  It is included to
+make it easier to port programs between the two systems.  The
+semantics of these functions may be different than in SML/NJ.
+
+* `structure Cont`
++
+implements continuations.
+
+* `SysInfo.getHostArch ()`
++
+returns the string for the architecture.
+
+* `SysInfo.getOSKind`
++
+returns the OS kind.
+
+* `SysInfo.getOSName ()`
++
+returns the string for the host.
+
+* `exnHistory`
++
+the same as `MLton.Exn.history`.
+
+* `getCmdName ()`
++
+the same as `CommandLine.name ()`.
+
+* `getArgs ()`
++
+the same as `CommandLine.arguments ()`.
+
+* `getAllArgs ()`
++
+the same as `getCmdName()::getArgs()`.
+
+* `exportFn f`
++
+saves the state of the computation to a file that will apply `f` to
+the command-line arguments upon restart.
+
+* `exportML f`
++
+saves the state of the computation to file `f` and continue.  Returns
+`true` in the restarted computation and `false` in the continuing
+computation.

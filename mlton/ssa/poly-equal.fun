@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor PolyEqual (S: POLY_EQUAL_STRUCTS): POLY_EQUAL = 
+functor PolyEqual (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -79,7 +79,7 @@ structure Dexp =
                   ty = Type.bool}
    end
 
-fun polyEqual (Program.T {datatypes, globals, functions, main}) =
+fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = funcInfo: Func.t -> {hasEqual: bool},
            set = setFuncInfo, ...} =

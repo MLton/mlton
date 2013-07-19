@@ -1,0 +1,69 @@
+ConcurrentML
+============
+
+http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
+library based on synchronous message passing.  MLton has an initial
+port of CML from SML/NJ, but is missing a thread-safe wrapper around
+the Basis Library and event-based equivalents to `IO` and `OS`
+functions.
+
+All of the core CML functionality is present.
+
+[source,sml]
+----
+structure CML: CML
+structure SyncVar: SYNC_VAR
+structure Mailbox: MAILBOX
+structure Multicast: MULTICAST
+structure SimpleRPC: SIMPLE_RPC
+structure RunCML: RUN_CML
+----
+
+The `RUN_CML` signature is minimal.
+
+[source,sml]
+----
+signature RUN_CML =
+   sig
+      val isRunning: unit -> bool
+      val doit: (unit -> unit) * Time.time option -> OS.Process.status
+      val shutdown: OS.Process.status -> 'a
+   end
+----
+
+MLton's `RunCML` structure does not include all of the cleanup and
+logging operations of SML/NJ's `RunCML` structure.  However, the
+implementation does include the `CML.timeOutEvt` and `CML.atTimeEvt`
+functions, and a preemptive scheduler that knows to sleep when there
+are no ready threads and some threads blocked on time events.
+
+Because MLton does not wrap the Basis Library for CML, the "right" way
+to call a Basis Library function that is stateful is to wrap the call
+with `MLton.Thread.atomically`.
+
+== Usage ==
+
+* You can import the CML Library into an MLB file with:
++
+[options="header"]
+|=====
+|MLB file|Description
+|`$(SML_LIB)/cml/cml.mlb`|
+|====
+
+* If you are porting a project from SML/NJ's <:CompilationManager:> to
+MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+following map is included by default:
++
+----
+# CML Library
+$cml                                    $(SML_LIB)/cml
+$cml/cml.cm                             $(SML_LIB)/cml/cml.mlb
+----
++
+This will automatically convert a `$cml/cml.cm` import in an input `.cm` file into a `$(SML_LIB)/cml/cml.mlb` import in the output `.mlb` file.
+
+== Also see ==
+
+* <:ConcurrentMLImplementation:>
+* <:eXene:>

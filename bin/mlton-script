@@ -121,9 +121,9 @@ doit "$lib" \
                 -fno-strength-reduce
                 -fschedule-insns
                 -fschedule-insns2
-                -malign-functions=5
-                -malign-jumps=2
-                -malign-loops=2'                                 \
+                -falign-functions=5
+                -falign-jumps=2
+                -falign-loops=2'                                 \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \

@@ -1,4 +1,4 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2013 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -62,7 +62,7 @@ signature PRIM_REAL =
       val realCeil: real -> real
       val realFloor: real -> real
       val realTrunc: real -> real
-      val strto: Primitive.NullString8.t * C_Int.t -> real
+      val strtor: Primitive.NullString8.t * C_Int.t -> real
 
       (* Integer to float; depends on rounding mode. *)
       val fromInt8Unsafe: Primitive.Int8.int -> real
@@ -153,7 +153,7 @@ structure Real32 : PRIM_REAL =
       val realCeil = _import "Real32_realCeil" private: real -> real;
       val realFloor = _import "Real32_realFloor" private: real -> real;
       val realTrunc = _import "Real32_realTrunc" private: real -> real;
-      val strto = _import "Real32_strto" private: NullString8.t * C_Int.t -> real;
+      val strtor = _import "Real32_strtor" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal32": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal32": Int16.int -> real;
@@ -243,7 +243,7 @@ structure Real64 : PRIM_REAL =
       val realCeil = _import "Real64_realCeil" private: real -> real;
       val realFloor = _import "Real64_realFloor" private: real -> real;
       val realTrunc = _import "Real64_realTrunc" private: real -> real;
-      val strto = _import "Real64_strto" private: NullString8.t * C_Int.t -> real;
+      val strtor = _import "Real64_strtor" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal64": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal64": Int16.int -> real;

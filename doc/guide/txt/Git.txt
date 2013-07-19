@@ -1,0 +1,11 @@
+Git
+===
+
+http://git-scm.com/[Git] is a distributed version control system.  The
+MLton project currently uses Git to maintain its
+<:Sources:source code>.
+
+Here are some online Git resources.
+
+* http://git-scm.com/docs[Reference Manual]
+* http://git-scm.com/book[ProGit, by Scott Chacon]

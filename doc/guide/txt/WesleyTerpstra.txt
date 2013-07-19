@@ -1,0 +1,18 @@
+WesleyTerpstra
+==============
+
+Wesley W. Terpstra is a PhD student at the Technische Universitat Darmstadt (Germany).
+
+Research interests
+
+* Distributed systems (P2P)
+* Number theory (Error-correcting codes)
+
+My interest in SML is centered on the fact the the language is able to directly express ideas from number theory which are important for my work. Modules and Functors seem to be a very natural basis for implementing many algebraic structures. MLton provides an ideal platform for actual implementation as it is fast and has unboxed words.
+
+Things I would like from MLton in the future:
+
+* Some better optimization of mathematical expressions
+* IPv6 and multicast support
+* A complete GUI toolkit like mGTK
+* More supported platforms so that applications written under MLton have a wider audience

@@ -1,0 +1,24 @@
+GarbageCollection
+=================
+
+For a good introduction and overview to garbage collection, see
+<!Cite(Jones99)>.
+
+MLton's garbage collector uses copying, mark-compact, and generational
+collection, automatically switching between them at run time based on
+the amount of live data relative to the amount of RAM.  The runtime
+system tries to keep the heap within RAM if at all possible.
+
+MLton's copying collector is a simple, two-space, breadth-first,
+Cheney-style collector.  The design for the generational and
+mark-compact GC is based on <!Cite(Sansom91)>.
+
+== Design notes ==
+
+* http://www.mlton.org/pipermail/mlton/2002-May/012420.html
++
+object layout and header word design
+
+== Also see ==
+
+ * <:Regions:>

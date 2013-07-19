@@ -1,14 +1,88 @@
-Here are the changes from version 2010608 to version YYYYMMDD.
+Here are the changes from version 2010608 to version 20130715.
+
+Summary:
+  + Compiler.
+   o Cosmetic improvements to type-error messages.
+   o Removed features:
+    * Bytecode codegen: The bytecode codegen had not seen significant
+        use and it was not well understood by any of the active
+        developers.
+    * Support for .cm files as input: The ML Basis system provides
+        much better infrastructure for "programming in the very large"
+        than the (very) limited support for CM.  The cm2mlb tool
+        (available in the source distribution) can be used to convert
+        CM projects to MLB projects, preserving the CM scoping of
+        module identifiers.
+   o Bug fixes: see changelog
+  + Runtime.
+   o Bug fixes: see changelog
+  + Language.
+   o Interpret (*#line line:col "file" *) directives as relative file
+       names.
+   o ML Basis annotations.
+    * Added: resolveScope
+  + Libraries.
+   o Basis Library.
+    * Improved performance of String.concatWith.
+    * Use bit operations for REAL.class and other low-level operations.
+    * Support additional variables with Posix.ProcEnv.sysconf.
+    * Bug fixes: see changelog
+   o MLton structure.
+    * Removed: MLton.Socket
+   o Other libraries.
+    * Updated: ckit library, MLRISC library, SML/NJ library
+    * Added: MLLPT library
+  + Tools.
+   o mllex
+    * Generate (*#line line:col "file.lex" *) directives with simple
+        (relative) file names, rather than absolute paths.
+   o mlyacc
+    * Generate `(*#line line:col "file.grm" *)` directives with simple
+        (relative) file names, rather than absolute paths.
+    * Fixed bug in comment-handling in lexer.
+
+* 2013-07-06
+   - Update SML/NJ libraries to SML/NJ 110.76.
+
+* 2013-06-19
+   - Upgrade gdtoa.tgz; fixed bug in
+     'Real32.{fmt,toDecimal,toString}', which in some cases produced
+     too many digits
+
+* 2013-06-18
+   - Removed MLton.Socket structure (deprecated in last release).
+
+* 2013-06-10
+   - Improved performance of String.concatWith.
+
+* 2013-05-22
+   - Update SML/NJ libraries to SML/NJ 110.75.
+
+* 2013-04-30
+   - Detect PowerPC 64 architecture.
 
 * 2012-10-09
    - Fixed bug in elaboration that erroneously accepted the following:
          signature S = sig structure A : sig type t end
                                  and B : sig type t end where type t = A.t end
 
+* 2012-09-04
+   - Introduce an MLB annotation to control overload and flex record
+     resolution scope: "resolveScope {strdec|dec|topdec|program}".
+
+* 2012-07-04
+   - Simplify use of 'getsockopt' and 'setsockopt'in Basis Library.
+   - Direct implementation of Socket.Ctl.{getATMARK,getNREAD} in
+     runtime system, rather than indirect implementation in Basis
+     Library via 'ioctl'.
+   - Replace use of casting through a union with memcpy in runtime.
+
 * 2012-06-11
+   - Use bit operations for REAL.class and other low-level operations.
    - Fixed bugs in REAL.copySign, REAL.signBit, and REAL.{to,from}Decimal.
 
 * 2012-06-01
+   - Cosmetic improvements to type-error messages.
    - Fixed bug in elaboration that erroneously rejected the following:
 	 datatype ('a, ''a) t = T
 	 type ('a, ''a) u = unit
@@ -19,10 +93,21 @@ Here are the changes from version 2010608 to version YYYYMMDD.
 * 2012-02-24
    - Fixed bug in redundant SSA optimization.
 
+* 2011-06-20
+   - Support additional variables with Posix.ProcEnv.sysconf.
+
+* 2011-06-17
+   - Change mllex and mlyacc to generate #line directives with simple
+     file names, rather than absolute paths.
+   - Interpret "#line" directives as relative file names.
+
 * 2011-06-14
    - Fixed bug in SSA/SSA2 shrinker that could erroneously turn a
      non-tail function call with a Bug transfer as its continuation
      into a tail function call.
+
+* 2011-06-11
+   - Update SML/NJ libraries to SML/NJ 110.73 and add ML-LPT library.
 
 * 2011-06-10
    - Fixed bug in translation from SSA2 to RSSA with case expressions
@@ -31,6 +116,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
      words.
 
 * 2011-06-04
+   - Upgrade gdtoa.tgz.
    - Remove bytecode codegen.
    - Remove support for .cm files as input.
 
@@ -42,7 +128,7 @@ Here are the changes from version 2010608 to version YYYYMMDD.
    - Fixed bug with treatment of nan in common subexpression
      elimination SSA optimization.
 
-* 2011-02-17
+* 2011-02-18
    - Fixed bug in translation from SSA2 to RSSA with weak pointers.
 
 * 2011-02-05
@@ -50,6 +136,10 @@ Here are the changes from version 2010608 to version YYYYMMDD.
 
 * 2011-01-17
    - Fixed bug in comment-handling in lexer for mlyacc's input language.
+
+* 2010-06-22
+   - Fixed bug in elaboration of function clauses with different numbers
+     of arguments that would raise an uncaught Subscript exception.
 
 --------------------------------------------------------------------------------
 

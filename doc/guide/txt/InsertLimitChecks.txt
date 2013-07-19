@@ -1,0 +1,17 @@
+InsertLimitChecks
+=================
+
+<:InsertLimitChecks:> is a pass for the <:RSSA:>
+<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+
+== Description ==
+
+This pass inserts limit checks.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/limit-check.fun)>
+
+== Details and Notes ==
+
+{empty}

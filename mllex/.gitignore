@@ -1,1 +1,13 @@
-.ignore
+/html/
+/lexgen.aux
+/lexgen.dvi
+/lexgen.log
+/lexgen.pdf
+/lexgen.ps
+/lexgen.toc
+/ml.lex
+/ml.lex.sml
+/mllex
+/mllex.exe
+/mllex.pdf
+/mllex.ps

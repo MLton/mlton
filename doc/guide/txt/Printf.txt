@@ -1,0 +1,158 @@
+Printf
+======
+
+Programmers coming from C or Java often ask if
+<:StandardML:Standard ML> has a `printf` function.  It does not.
+However, it is possible to implement your own version with only a few
+lines of code.
+
+Here is a definition for `printf` and `fprintf`, along with format
+specifiers for booleans, integers, and reals.
+
+[source,sml]
+----
+structure Printf =
+   struct
+      fun $ (_, f) = f (fn p => p ()) ignore
+      fun fprintf out f = f (out, id)
+      val printf = fn z => fprintf TextIO.stdOut z
+      fun one ((out, f), make) g =
+         g (out, fn r =>
+            f (fn p =>
+               make (fn s =>
+                     r (fn () => (p (); TextIO.output (out, s))))))
+      fun ` x s = one (x, fn f => f s)
+      fun spec to x = one (x, fn f => f o to)
+      val B = fn z => spec Bool.toString z
+      val I = fn z => spec Int.toString z
+      val R = fn z => spec Real.toString z
+   end
+----
+
+Here's an example use.
+
+[source,sml]
+----
+val () = printf `"Int="I`"  Bool="B`"  Real="R`"\n" $ 1 false 2.0
+----
+
+This prints the following.
+
+----
+Int=1  Bool=false  Real=2.0
+----
+
+In general, a use of `printf` looks like
+
+----
+printf <spec1> ... <specn> $ <arg1> ... <argm>
+----
+
+where each `<speci>` is either a specifier like `B`, `I`, or `R`, or
+is an inline string, like ++&grave;"foo"++.  A backtick (+&grave;+)
+must precede each inline string.  Each `<argi>` must be of the
+appropriate type for the corresponding specifier.
+
+SML `printf` is more powerful than its C counterpart in a number of
+ways.  In particular, the function produced by `printf` is a perfectly
+ordinary SML function, and can be passed around, used multiple times,
+etc.  For example:
+
+[source,sml]
+----
+val f: int -> bool -> unit = printf `"Int="I`"  Bool="B`"\n" $
+val () = f 1 true
+val () = f 2 false
+----
+
+The definition of `printf` is even careful to not print anything until
+it is fully applied.  So, examples like the following will work as
+expected.
+
+----
+val f: int -> bool -> unit = printf `"Int="I`"  Bool="B`"\n" $ 13
+val () = f true
+val () = f false
+----
+
+It is also easy to define new format specifiers.  For example, suppose
+we wanted format specifiers for characters and strings.
+
+----
+val C = fn z => spec Char.toString z
+val S = fn z => spec (fn s => s) z
+----
+
+One can define format specifiers for more complex types, e.g. pairs of
+integers.
+
+----
+val I2 =
+   fn z =>
+   spec (fn (i, j) =>
+         concat ["(", Int.toString i, ", ", Int.toString j, ")"])
+   z
+----
+
+Here's an example use.
+
+----
+val () = printf `"Test "I2`"  a string "S`"\n" $ (1, 2) "hello"
+----
+
+
+== Printf via <:Fold:> ==
+
+`printf` is best viewed as a special case of variable-argument
+<:Fold:> that inductively builds a function as it processes its
+arguments.  Here is the definition of a `Printf` structure in terms of
+fold.  The structure is equivalent to the above one, except that it
+uses the standard `$` instead of a specialized one.
+
+[source,sml]
+----
+structure Printf =
+   struct
+      fun fprintf out =
+         Fold.fold ((out, id), fn (_, f) => f (fn p => p ()) ignore)
+
+      val printf = fn z => fprintf TextIO.stdOut z
+
+      fun one ((out, f), make) =
+         (out, fn r =>
+          f (fn p =>
+             make (fn s =>
+                   r (fn () => (p (); TextIO.output (out, s))))))
+
+      val ` =
+         fn z => Fold.step1 (fn (s, x) => one (x, fn f => f s)) z
+
+      fun spec to = Fold.step0 (fn x => one (x, fn f => f o to))
+
+      val B = fn z => spec Bool.toString z
+      val I = fn z => spec Int.toString z
+      val R = fn z => spec Real.toString z
+   end
+----
+
+Viewing `printf` as a fold opens up a number of possibilities.  For
+example, one can name parts of format strings using the fold idiom for
+naming sequences of steps.
+
+----
+val IB = fn u => Fold.fold u `"Int="I`" Bool="B
+val () = printf IB`"  "IB`"\n" $ 1 true 3 false
+----
+
+One can even parametrize over partial format strings.
+
+----
+fun XB X = fn u => Fold.fold u `"X="X`" Bool="B
+val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
+----
+
+
+== Also see ==
+
+* <:PrintfGentle:>
+* <!Cite(Danvy98, Functional Unparsing)>

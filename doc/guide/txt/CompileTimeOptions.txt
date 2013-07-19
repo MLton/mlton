@@ -1,0 +1,258 @@
+CompileTimeOptions
+==================
+
+MLton's compile-time options control the name of the output file, the
+verbosity of compile-time messages, and whether or not certain
+optimizations are performed.  They also can specify which intermediate
+files are saved and can stop the compilation process early, at some
+intermediate pass, in which case compilation can be resumed by passing
+the generated files to MLton.  MLton uses the input file suffix to
+determine the type of input program.  The possibilities are `.c`,
+`.mlb`, `.o`, `.s`, and `.sml`.
+
+With no arguments, MLton prints the version number and exits.  For a
+usage message, run MLton with an invalid switch, e.g.  `mlton -z`.  In
+the explanation below and in the usage message, for flags that take a
+number of choices (e.g. `{true|false}`), the first value listed is the
+default.
+
+
+== Options ==
+
+* ++-align __n__++
++
+Aligns object in memory by the specified alignment (+4+ or +8+).
+The default varies depending on architecture.
+
+* ++-as-opt __option__++
++
+Pass _option_ to `gcc` when compiling assembler code.  If you wish to
+pass an option to the assembler, you must use `gcc`'s `-Wa,` syntax.
+
+* ++-cc-opt __option__++
++
+Pass _option_ to `gcc` when compiling C code.
+
+* ++-codegen {native|x86|amd64|c}++
++
+Generate native code or C code.  With `-codegen native`
+(`-codegen x86` or `-codegen amd64`), MLton typically compiles more
+quickly and generates better code.
+
+* ++-const __name__ __value__++
++
+Set the value of a compile-time constant.  Here is a list of
+available constants, their default values, and what they control.
++
+** ++Exn.keepHistory {false|true}++
++
+Enable `MLton.Exn.history`.  See <:MLtonExn:> for details.  There is a
+performance cost to setting this to `true`, both in memory usage of
+exceptions and in run time, because of additional work that must be
+performed at each exception construction, raise, and handle.
+
+* ++-default-ann __ann__++
++
+Specify default <:MLBasisAnnotations:ML Basis annotations>.  For
+example, `-default-ann 'warnUnused true'` causes unused variable
+warnings to be enabled by default.  A default is overridden by the
+corresponding annotation in an ML Basis file.
+
+* ++-default-type __type__++
++
+Specify the default binding for a primitive type.  For example,
+`-default-type word64` causes the top-level type `word` and the
+top-level structure `Word` in the <:BasisLibrary:Basis Library> to be
+equal to `Word64.word` and `Word64:WORD`, respectively.  Similarly,
+`-default-type intinf` causes the top-level type `int` and the
+top-level structure `Int` in the <:BasisLibrary:Basis Library> to be
+equal to `IntInf.int` and `IntInf:INTEGER`, respectively.
+
+* ++-disable-ann __ann__++
++
+Ignore the specified <:MLBasisAnnotations:ML Basis annotation> in
+every ML Basis file.  For example, to see _all_ match and unused
+warnings, compile with
++
+----
+-default-ann 'warnUnused true'
+-disable-ann forceUsed
+-disable-ann nonexhaustiveMatch
+-disable-ann redundantMatch
+-disable-ann warnUnused
+----
+
+* ++-export-header __file__++
++
+Write C prototypes to _file_ for all of the functions in the program
+<:CallingFromCToSML:exported from SML to C>.
+
+* ++-ieee-fp {false|true}++
++
+Cause the native code generator to be pedantic about following the
+IEEE floating point standard.  By default, it is not, because of the
+performance cost.  This only has an effect with `-codegen x86`.
+
+* ++-inline __n__++
++
+Set the inlining threshold used in the optimizer.  The threshold is an
+approximate measure of code size of a procedure.  The default is
+`320`.
+
+* ++-keep {g|o}++
++
+Save intermediate files.  If no `-keep` argument is given, then only
+the output file is saved.
++
+[cols="^25%,<75%"]
+|====
+| `g` | generated `.c` and `.s` files passed to `gcc`
+| `o` | object (`.o`) files
+|====
+
+* ++-link-opt __option__++
++
+Pass _option_ to `gcc` when linking.  You can use this to specify
+library search paths, e.g. `-link-opt -Lpath`, and libraries to link
+with, e.g., `-link-opt -lfoo`, or even both at the same time,
+e.g. `-link-opt '-Lpath -lfoo'`.  If you wish to pass an option to the
+linker, you must use `gcc`'s `-Wl,` syntax, e.g.,
+`-link-opt '-Wl,--export-dynamic'`.
+
+* ++-mlb-path-map __file__++
++
+Use _file_ as an <:MLBasisPathMap:ML Basis path map> to define
+additional MLB path variables.  Multiple uses of `-mlb-path-map` and
+`-mlb-path-var` are allowed, with variable definitions in later path
+maps taking precedence over earlier ones.
+
+* ++-mlb-path-var __name__ __value__++
++
+Define an additional MLB path variable.  Multiple uses of
+`-mlb-path-map` and `-mlb-path-var` are allowed, with variable
+definitions in later path maps taking precedence over earlier ones.
+
+* ++-output __file__++
++
+Specify the name of the final output file. The default name is the
+input file name with its suffix removed and an appropriate, possibly
+empty, suffix added.
+
+* ++-profile {no|alloc|count|time}++
++
+Produce an executable that gathers <:Profiling: profiling> data.  When
+such an executable is run, it produces an `mlmon.out` file.
+
+* ++-profile-branch {false|true}++
++
+If true, the profiler will separately gather profiling data for each
+branch of a function definition, `case` expression, and `if`
+expression.
+
+* ++-profile-stack {false|true}++
++
+If `true`, the executable will gather profiling data for all functions
+on the stack, not just the currently executing function.  See
+<:ProfilingTheStack:>.
+
+* ++-profile-val {false|true}++
++
+If `true`, the profiler will separately gather profiling data for each
+(expansive) `val` declaration.
+
+* ++-runtime __arg__++
++
+Pass argument to the runtime system via `@MLton`.  See
+<:RunTimeOptions:>.  The argument will be processed before other
+`@MLton` command line switches.  Multiple uses of `-runtime` are
+allowed, and will pass all the arguments in order.  If the same
+runtime switch occurs more than once, then the last setting will take
+effect.  There is no need to supply the leading `@MLton` or the
+trailing `--`; these will be supplied automatically.
++
+An argument to `-runtime` may contain spaces, which will cause the
+argument to be treated as a sequence of words by the runtime.  For
+example the command line:
++
+----
+mlton -runtime 'ram-slop 0.4' foo.sml
+----
++
+will cause `foo` to run as if it had been called like:
++
+----
+foo @MLton ram-slop 0.4 --
+----
++
+An executable created with `-runtime stop` doesn't process any
+`@MLton` arguments.  This is useful to create an executable, e.g.,
+`echo`, that must treat `@MLton` like any other command-line argument.
++
+----
+% mlton -runtime stop echo.sml
+% echo @MLton --
+@MLton --
+----
+
+* ++-show-basis __file__++
++
+Pretty print to _file_ the basis defined by the input program.  See
+<:ShowBasis:>.
+
+* ++-show-def-use __file__++
++
+Output def-use information to _file_.  Each identifier that is defined
+appears on a line, followed on subsequent lines by the position of
+each use.
+
+* ++-stop {f|g|o|tc}++
++
+Specify when to stop.
++
+[cols="^25%,<75%"]
+|====
+| `f` | list of files on stdout (only makes sense when input is `foo.mlb`)
+| `g` | generated `.c` and `.s` files
+| `o` | object (`.o`) files
+| `tc` | after type checking
+|====
++
+If you compile with `-stop g` or `-stop o`, you can resume compilation
+by running MLton on the generated `.c` and `.s` or `.o` files.
+
+* ++-target {self|__...__}++
++
+Generate an executable that runs on the specified platform.  The
+default is `self`, which means to compile for the machine that MLton
+is running on.  To use any other target, you must first install a
+<:CrossCompiling: cross compiler>.
+
+* ++-target-as-opt __target__ __option__++
++
+Like `-as-opt`, this passes _option_ to `gcc` when compliling
+assembler code, except it only passes _option_ when the target
+architecture or operating system is _target_.
+
+* ++-target-cc-opt __target__ __option__++
++
+Like `-cc-opt`, this passes _option_ to `gcc` when compiling C code,
+except it only passes _option_ when the target architecture or
+operating system is _target_.
+
+* ++-target-link-opt __target__ __option__++
++
+Like `-link-opt`, this passes _option_ to `gcc` when linking, except
+it only passes _option_ when the target architecture or operating
+system is _target_.
+
+* ++-verbose {0|1|2|3}++
++
+How verbose to be about what passes are running.  The default is `0`.
++
+[cols="^25%,<75%"]
+|====
+| `0` | silent
+| `1` | calls to compiler, assembler, and linker
+| `2` | 1, plus intermediate compiler passes
+| `3` | 2, plus some data structure sizes
+|====

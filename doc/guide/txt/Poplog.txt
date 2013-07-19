@@ -1,0 +1,15 @@
+Poplog
+======
+
+http://www.cs.bham.ac.uk/research/poplog/poplog.info.html[POPLOG] is a
+development environment that includes implementations of a number of
+languages, including <:StandardML:Standard ML>.
+
+While POPLOG is actively developed, the <:ML:> support predates
+<:DefinitionOfStandardML:SML'97>, and there is no support for the
+<:BasisLibrary:Basis Library>
+http://www.standardml.org/Basis[specification].
+
+== Also see ==
+
+ * http://www.cs.bham.ac.uk/research/poplog/doc/pmlhelp/mlinpop[Mixed-language programming in ML and Pop-11].

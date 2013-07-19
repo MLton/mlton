@@ -1,0 +1,323 @@
+MLtonProcess
+============
+
+[source,sml]
+----
+signature MLTON_PROCESS =
+   sig
+      type pid
+
+      val spawn: {args: string list, path: string} -> pid
+      val spawne: {args: string list, env: string list, path: string} -> pid
+      val spawnp: {args: string list, file: string} -> pid
+
+      type ('stdin, 'stdout, 'stderr) t
+
+      type input
+      type output
+
+      type none
+      type chain
+      type any
+
+      exception MisuseOfForget
+      exception DoublyRedirected
+
+      structure Child:
+        sig
+          type ('use, 'dir) t
+
+          val binIn: (BinIO.instream, input) t -> BinIO.instream
+          val binOut: (BinIO.outstream, output) t -> BinIO.outstream
+          val fd: (Posix.FileSys.file_desc, 'dir) t -> Posix.FileSys.file_desc
+          val remember: (any, 'dir) t -> ('use, 'dir) t
+          val textIn: (TextIO.instream, input) t -> TextIO.instream
+          val textOut: (TextIO.outstream, output) t -> TextIO.outstream
+        end
+
+      structure Param:
+        sig
+          type ('use, 'dir) t
+
+          val child: (chain, 'dir) Child.t -> (none, 'dir) t
+          val fd: Posix.FileSys.file_desc -> (none, 'dir) t
+          val file: string -> (none, 'dir) t
+          val forget: ('use, 'dir) t -> (any, 'dir) t
+          val null: (none, 'dir) t
+          val pipe: ('use, 'dir) t
+          val self: (none, 'dir) t
+        end
+
+      val create:
+         {args: string list,
+          env: string list option,
+          path: string,
+          stderr: ('stderr, output) Param.t,
+          stdin: ('stdin, input) Param.t,
+          stdout: ('stdout, output) Param.t}
+         -> ('stdin, 'stdout, 'stderr) t
+      val getStderr: ('stdin, 'stdout, 'stderr) t -> ('stderr, input) Child.t
+      val getStdin:  ('stdin, 'stdout, 'stderr) t -> ('stdin, output) Child.t
+      val getStdout: ('stdin, 'stdout, 'stderr) t -> ('stdout, input) Child.t
+      val kill: ('stdin, 'stdout, 'stderr) t * Posix.Signal.signal -> unit
+      val reap: ('stdin, 'stdout, 'stderr) t -> Posix.Process.exit_status
+   end
+----
+
+
+== Spawn ==
+
+The `spawn` functions provide an alternative to the
+`fork`/`exec` idiom that is typically used to create a new
+process.  On most platforms, the `spawn` functions are simple
+wrappers around `fork`/`exec`.  However, under Windows, the
+`spawn` functions are primitive.  All `spawn` functions return
+the process id of the spawned process.  They differ in how the
+executable is found and the environment that it uses.
+
+* `spawn {args, path}`
++
+starts a new process running the executable specified by `path`
+with the arguments `args`.  Like `Posix.Process.exec`.
+
+* `spawne {args, env, path}`
++
+starts a new process running the executable specified by `path` with
+the arguments `args` and environment `env`.  Like
+`Posix.Process.exece`.
+
+* `spawnp {args, file}`
++
+search the `PATH` environment variable for an executable named `file`,
+and start a new process running that executable with the arguments
+`args`.  Like `Posix.Process.execp`.
+
+
+== Create ==
+
+`MLton.Process.create` provides functionality similar to
+`Unix.executeInEnv`, but provides more control control over the input,
+output, and error streams.  In addition, `create` works on all
+platforms, including Cygwin and MinGW (Windows) where `Posix.fork` is
+unavailable.  For greatest portability programs should still use the
+standard `Unix.execute`, `Unix.executeInEnv`, and `OS.Process.system`.
+
+The following types and sub-structures are used by the `create`
+function.  They provide static type checking of correct stream usage.
+
+=== Child ===
+
+* `('use, 'dir) Child.t`
++
+This represents a handle to one of a child's standard streams. The
+`'dir` is viewed with respect to the parent. Thus a `('a, input)
+Child.t` handle means that the parent may input the output from the
+child.
+
+* `Child.{bin,text}{In,Out} h`
++
+These functions take a handle and bind it to a stream of the named
+type.  The type system will detect attempts to reverse the direction
+of a stream or to use the same stream in multiple, incompatible ways.
+
+* `Child.fd h`
++
+This function behaves like the other `Child.*` functions; it opens a
+stream. However, it does not enforce that you read or write from the
+handle. If you use the descriptor in an inappropriate direction, the
+behavior is undefined. Furthermore, this function may potentially be
+unavailable on future MLton host platforms.
+
+* `Child.remember h`
++
+This function takes a stream of use `any` and resets the use of the
+stream so that the stream may be used by `Child.*`. An `any` stream
+may have had use `none` or `'use` prior to calling `Param.forget`. If
+the stream was `none` and is used, `MisuseOfForget` is raised.
+
+=== Param ===
+
+* `('use, 'dir) Param.t`
++
+This is a handle to an input/output source and will be passed to the
+created child process. The `'dir` is relative to the child process.
+Input means that the child process will read from this stream.
+
+* `Param.child h`
++
+Connect the stream of the new child process to the stream of a
+previously created child process. A single child stream should be
+connected to only one child process or else `DoublyRedirected` will be
+raised.
+
+* `Param.fd fd`
++
+This creates a stream from the provided file descriptor which will be
+closed when `create` is called. This function may not be available on
+future MLton host platforms.
+
+* `Param.forget h`
++
+This hides the type of the actual parameter as `any`. This is useful
+if you are implementing an application which conditionally attaches
+the child process to files or pipes. However, you must ensure that
+your use after `Child.remember` matches the original type.
+
+* `Param.file s`
++
+Open the given file and connect it to the child process. Note that the
+file will be opened only when `create` is called. So any exceptions
+will be raised there and not by this function. If used for `input`,
+the file is opened read-only. If used for `output`, the file is opened
+read-write.
+
+* `Param.null`
++
+In some situations, the child process should have its output
+discarded.  The `null` param when passed as `stdout` or `stderr` does
+this.  When used for `stdin`, the child process will either receive
+`EOF` or a failure condition if it attempts to read from `stdin`.
+
+* `Param.pipe`
++
+This will connect the input/output of the child process to a pipe
+which the parent process holds. This may later form the input to one
+of the `Child.*` functions and/or the `Param.child` function.
+
+* `Param.self`
++
+This will connect the input/output of the child process to the
+corresponding stream of the parent process.
+
+=== Process ===
+
+* `type ('stdin, 'stdout, 'stderr) t`
++
+represents a handle to a child process.  The type arguments capture
+how the named stream of the child process may be used.
+
+* `type any`
++
+bypasses the type system in situations where an application does not
+want the it to enforce correct usage.  See `Child.remember` and
+`Param.forget`.
+
+* `type chain`
++
+means that the child process's stream was connected via a pipe to the
+parent process. The parent process may pass this pipe in turn to
+another child, thus chaining them together.
+
+* `type input, output`
++
+record the direction that a stream flows.  They are used as a part of
+`Param.t` and `Child.t` and is detailed there.
+
+* `type none`
++
+means that the child process's stream my not be used by the parent
+process.  This happens when the child process is connected directly to
+some source.
++
+The types `BinIO.instream`, `BinIO.outstream`, `TextIO.instream`,
+`TextIO.outstream`, and `Posix.FileSys.file_desc` are also valid types
+with which to instantiate child streams.
+
+* `exception MisuseOfForget`
++
+may be raised if `Child.remember` and `Param.forget` are used to
+bypass the normal type checking.  This exception will only be raised
+in cases where the `forget` mechanism allows a misuse that would be
+impossible with the type-safe versions.
+
+* `exception DoublyRedirected`
++
+raised if a stream connected to a child process is redirected to two
+separate child processes.  It is safe, though bad style, to use the a
+`Child.t` with the same `Child.*` function repeatedly.
+
+* `create {args, path, env, stderr, stdin, stdout}`
++
+starts a child process with the given command-line `args` (excluding
+the program name). `path` should be an absolute path to the executable
+run in the new child process; relative paths work, but are less
+robust.  Optionally, the environment may be overridden with `env`
+where each string element has the form `"key=value"`. The `std*`
+options must be provided by the `Param.*` functions documented above.
++
+Processes which are `create`-d must be either `reap`-ed or `kill`-ed.
+
+* `getStd{in,out,err} proc`
++
+gets a handle to the specified stream. These should be used by the
+`Child.*` functions. Failure to use a stream connected via pipe to a
+child process may result in runtime dead-lock and elicits a compiler
+warning.
+
+* `kill (proc, sig)`
++
+terminates the child process immediately.  The signal may or may not
+mean anything depending on the host platform.  A good value is
+`Posix.Signal.term`.
+
+* `reap proc`
++
+waits for the child process to terminate and return its exit status.
+
+
+== Important usage notes ==
+
+When building an application with many pipes between child processes,
+it is important to ensure that there are no cycles in the undirected
+pipe graph.  If this property is not maintained, deadlocks are a very
+serious potential bug which may only appear under difficult to
+reproduce conditions.
+
+The danger lies in that most operating systems implement pipes with a
+fixed buffer size. If process A has two output pipes which process B
+reads, it can happen that process A blocks writing to pipe 2 because
+it is full while process B blocks reading from pipe 1 because it is
+empty. This same situation can happen with any undirected cycle formed
+between processes (vertexes) and pipes (undirected edges) in the
+graph.
+
+It is possible to make this safe using low-level I/O primitives for
+polling.  However, these primitives are not very portable and
+difficult to use properly.  A far better approach is to make sure you
+never create a cycle in the first place.
+
+For these reasons, the `Unix.executeInEnv` is a very dangerous
+function. Be careful when using it to ensure that the child process
+only operates on either `stdin` or `stdout`, but not both.
+
+
+== Example use of MLton.Process.create ==
+
+The following example program launches the `ipconfig` utility, pipes
+its output through `grep`, and then reads the result back into the
+program.
+
+[source,sml]
+----
+open MLton.Process
+val p =
+        create {args = [ "/all" ],
+                env = NONE,
+                path = "C:\\WINDOWS\\system32\\ipconfig.exe",
+                stderr = Param.self,
+                stdin = Param.null,
+                stdout = Param.pipe}
+val q =
+        create {args = [ "IP-Ad" ],
+                env = NONE,
+                path = "C:\\msys\\bin\\grep.exe",
+                stderr = Param.self,
+                stdin = Param.child (getStdout p),
+                stdout = Param.pipe}
+fun suck h =
+        case TextIO.inputLine h of
+                NONE => ()
+                | SOME s => (print ("'" ^ s ^ "'\n"); suck h)
+
+val () = suck (Child.textIn (getStdout q))
+----

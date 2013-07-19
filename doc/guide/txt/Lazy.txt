@@ -1,0 +1,46 @@
+Lazy
+====
+
+In a lazy (or non-strict) language, the arguments to a function are
+not evaluated before calling the function.  Instead, the arguments are
+suspended and only evaluated by the function if needed.
+
+<:StandardML:Standard ML> is an eager (or strict) language, not a lazy
+language.  However, it is easy to delay evaluation of an expression in
+SML by creating a _thunk_, which is a nullary function.  In SML, a
+thunk is written `fn () => e`.  Another essential feature of laziness
+is _memoization_, meaning that once a suspended argument is evaluated,
+subsequent references look up the value.  We can express this in SML
+with a function that maps a thunk to a memoized thunk.
+
+[source,sml]
+----
+signature LAZY =
+   sig
+      val lazy: (unit -> 'a) -> unit -> 'a
+   end
+----
+
+This is easy to implement in SML.
+
+[source,sml]
+----
+structure Lazy: LAZY =
+   struct
+      fun lazy (th: unit -> 'a): unit -> 'a =
+         let
+            val r: 'a option ref = ref NONE
+         in
+            fn () =>
+            case !r of
+               NONE =>
+                  let
+                     val a = th ()
+                     val () = r := SOME a
+                  in
+                     a
+                  end
+             | SOME a => a
+         end
+   end
+----

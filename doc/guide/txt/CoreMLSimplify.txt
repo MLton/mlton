@@ -1,0 +1,10 @@
+CoreMLSimplify
+==============
+
+The single optimization pass for the <:CoreML:>
+<:IntermediateLanguage:> is controlled by the `Compile` functor
+(<!ViewGitFile(mlton,master,mlton/main/compile.fun)>).
+
+The following optimization pass is implemented:
+
+* <:DeadCode:>

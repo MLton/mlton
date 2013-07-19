@@ -1,0 +1,47 @@
+MLBasis
+=======
+
+The ML Basis system extends <:StandardML:Standard ML> to support
+programming-in-the-very-large, namespace management at the module
+level, separate delivery of library sources, and more.  While Standard
+ML modules are a sophisticated language for programming-in-the-large,
+it is difficult, if not impossible, to accomplish a number of routine
+namespace management operations when a program draws upon multiple
+libraries provided by different vendors.
+
+The ML Basis system is a simple, yet powerful, approach that builds
+upon the programmer's intuitive notion (and
+<:DefinitionOfStandardML: The Definition of Standard ML (Revised)>'s
+formal notion) of the top-level environment (a _basis_).  The system
+is designed as a natural extension of <:StandardML: Standard ML>; the
+formal specification of the ML Basis system
+(<!Attachment(MLBasis,mlb-formal.pdf)>) is given in the style
+of the Definition.
+
+Here are some of the key features of the ML Basis system:
+
+1. Explicit file order: The order of files (and, hence, the order of
+evaluation) in the program is explicit.  The ML Basis system's
+semantics are structured in such a way that for any well-formed
+project, there will be exactly one possible interpretation of the
+project's syntax, static semantics, and dynamic semantics.
+
+2. Implicit dependencies: A source file (corresponding to an SML
+top-level declaration) is elaborated in the environment described by
+preceding declarations.  It is not necessary to explicitly list the
+dependencies of a file.
+
+3. Scoping and renaming: The ML Basis system provides mechanisms for
+limiting the scope of (i.e, hiding) and renaming identifiers.
+
+4. No naming convention for finding the file that defines a module.
+To import a module, its defining file must appear in some ML Basis
+file.
+
+== Next steps ==
+
+* <:MLBasisSyntaxAndSemantics:>
+* <:MLBasisExamples:>
+* <:MLBasisPathMap:>
+* <:MLBasisAnnotations:>
+* <:MLBasisAvailableLibraries:>

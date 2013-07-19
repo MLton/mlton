@@ -1,0 +1,79 @@
+MatchCompile
+============
+
+<:MatchCompile:> is a translation pass, agnostic in the
+<:IntermediateLanguage:>s between which it translates.
+
+== Description ==
+
+<:MatchCompilation:Match compilation> converts a case expression with
+nested patterns into a case expression with flat patterns.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/match-compile/match-compile.sig)>
+* <!ViewGitFile(mlton,master,mlton/match-compile/match-compile.fun)>
+
+== Details and Notes ==
+
+[source,sml]
+----
+val matchCompile:
+   {caseType: Type.t, (* type of entire expression *)
+    cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+    conTycon: Con.t -> Tycon.t,
+    region: Region.t,
+    test: Var.t,
+    testType: Type.t,
+    tyconCons: Tycon.t -> {con: Con.t, hasArg: bool} vector}
+   -> Exp.t * (unit -> ((Layout.t * {isOnlyExns: bool}) vector) vector)
+----
+
+`matchCompile` is complicated by the desire for modularity between the
+match compiler and its caller.  Its caller is responsible for building
+the right hand side of a rule `p => e`.  On the other hand, the match
+compiler is responsible for destructing the test and binding new
+variables to the components.  In order to connect the new variables
+created by the match compiler with the variables in the pattern `p`,
+the match compiler passes an environment back to its caller that maps
+each variable in `p` to the corresponding variable introduced by the
+match compiler.
+
+The match compiler builds a tree of n-way case expressions by working
+from outside to inside and left to right in the patterns.  For example,
+[source,sml]
+----
+case x of
+  (_, C1 a) => e1
+| (C2 b, C3 c) => e2
+----
+is translated to
+[source,sml]
+----
+let
+   fun f1 a = e1
+   fun f2 (b, c) = e2
+in
+  case x of
+     (x1, x2) =>
+       (case x1 of
+          C2 b' => (case x2 of
+                      C1 a' => f1 a'
+                    | C3 c' => f2(b',c')
+                    | _ => raise Match)
+        | _ => (case x2 of
+                  C1 a_ => f1 a_
+                | _ => raise Match))
+end
+----
+
+Here you can see the necessity of abstracting out the ride hand sides
+of the cases in order to avoid code duplication.  Right hand sides are
+always abstracted.  The simplifier cleans things up.  You can also see
+the new (primed) variables introduced by the match compiler and how
+the renaming works.  Finally, you can see how the match compiler
+introduces the necessary default clauses in order to make a match
+exhaustive, i.e. cover all the cases.
+
+The match compiler uses `numCons` and `tyconCons` to determine
+the exhaustivity of matches against constructors.

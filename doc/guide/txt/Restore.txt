@@ -1,0 +1,40 @@
+Restore
+=======
+
+<:Restore:> is a rewrite pass for the <:SSA:> and <:SSA2:>
+<:IntermediateLanguage:>s, invoked from <:KnownCase:> and
+<:LocalRef:>.
+
+== Description ==
+
+This pass restores the SSA condition for a violating <:SSA:> or
+<:SSA2:> program; the program must satisfy:
+____
+Every path from the root to a use of a variable (excluding globals)
+passes through a def of that variable.
+____
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/restore.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/restore.fun)>
+* <!ViewGitFile(mlton,master,mlton/ssa/restore2.sig)>
+* <!ViewGitFile(mlton,master,mlton/ssa/restore2.fun)>
+
+== Details and Notes ==
+
+Based primarily on Section 19.1 of <!Cite(Appel98, Modern Compiler
+Implementation in ML)>.
+
+The main deviation is the calculation of liveness of the violating
+variables, which is used to predicate the insertion of phi arguments.
+This is due to the algorithm's bias towards imperative languages, for
+which it makes the assumption that all variables are defined in the
+start block and all variables are "used" at exit.
+
+This is "optimized" for restoration of functions with small numbers of
+violating variables -- use bool vectors to represent sets of violating
+variables.
+
+Also, we use a `Promise.t` to suspend part of the dominance frontier
+computation.

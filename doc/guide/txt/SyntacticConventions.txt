@@ -1,0 +1,596 @@
+SyntacticConventions
+====================
+:toc:
+
+Here are a number of syntactic conventions useful for programming in
+SML.
+
+
+== General ==
+
+* A line of code never exceeds 80 columns.
+
+* Only split a syntactic entity across multiple lines if it doesn't fit on one line within 80 columns.
+
+* Use alphabetical order wherever possible.
+
+* Avoid redundant parentheses.
+
+* When using `:`, there is no space before the colon, and a single space after it.
+
+
+== Identifiers ==
+
+* Variables, record labels and type constructors begin with and use
+small letters, using capital letters to separate words.
++
+[source,sml]
+----
+cost
+maxValue
+----
+
+* Variables that represent collections of objects (lists, arrays,
+vectors, ...) are often suffixed with an `s`.
++
+[source,sml]
+----
+xs
+employees
+----
+
+* Constructors, structure identifiers, and functor identifiers begin
+with a capital letter.
++
+[source,sml]
+----
+Queue
+LinkedList
+----
+
+* Signature identifiers are in all capitals, using `_` to separate
+words.
++
+[source,sml]
+----
+LIST
+BINARY_HEAP
+----
+
+
+== Types ==
+
+* Alphabetize record labels.  In a record type, there are spaces after
+colons and commas, but not before colons or commas, or at the
+delimiters `{` and `}`.
++
+[source,sml]
+----
+{bar: int, foo: int}
+----
+
+* Only split a record type across multiple lines if it doesn't fit on
+one line. If a record type must be split over multiple lines, put one
+field per line.
++
+[source,sml]
+----
+{bar: int,
+ foo: real * real,
+ zoo: bool}
+----
+
+
+* In a tuple type, there are spaces before and after each `*`.
++
+[source,sml]
+----
+int * bool * real
+----
+
+* Only split a tuple type across multiple lines if it doesn't fit on
+one line.  In a tuple type split over multiple lines, there is one
+type per line, and the `*`-s go at the beginning of the lines.
++
+[source,sml]
+----
+int
+* bool
+* real
+----
++
+It may also be useful to parenthesize to make the grouping more
+apparent.
++
+[source,sml]
+----
+(int
+ * bool
+ * real)
+----
+
+* In an arrow type split over multiple lines, put the arrow at the
+beginning of its line.
++
+[source,sml]
+----
+int * real
+-> bool
+----
++
+It may also be useful to parenthesize to make the grouping more
+apparent.
++
+[source,sml]
+----
+(int * real
+ -> bool)
+----
+
+* Avoid redundant parentheses.
+
+* Arrow types associate to the right, so write
++
+[source,sml]
+----
+a -> b -> c
+----
++
+not
++
+[source,sml]
+----
+a -> (b -> c)
+----
+
+* Type constructor application associates to the left, so write
++
+[source,sml]
+----
+int ref list
+----
++
+not
++
+[source,sml]
+----
+(int ref) list
+----
+
+* Type constructor application binds more tightly than a tuple type,
+so write
++
+[source,sml]
+----
+int list * bool list
+----
++
+not
++
+[source,sml]
+----
+(int list) * (bool list)
+----
+
+* Tuple types bind more tightly than arrow types, so write
++
+[source,sml]
+----
+int * bool -> real
+----
++
+not
++
+[source,sml]
+----
+(int * bool) -> real
+----
+
+
+== Core ==
+
+* A core expression or declaration split over multiple lines does not
+contain any blank lines.
+
+* A record field selector has no space between the `#` and the record
+label.  So, write
++
+[source,sml]
+----
+#foo
+----
++
+not
++
+[source,sml]
+----
+# foo
+----
++
+
+* A tuple has a space after each comma, but not before, and not at the
+delimiters `(` and `)`.
++
+[source,sml]
+----
+(e1, e2, e3)
+----
+
+* A tuple split over multiple lines has one element per line, and the
+commas go at the end of the lines.
++
+[source,sml]
+----
+(e1,
+ e2,
+ e3)
+----
+
+* A list has a space after each comma, but not before, and not at the
+delimiters `[` and `]`.
++
+[source,sml]
+----
+[e1, e2, e3]
+----
+
+* A list split over multiple lines has one element per line, and the
+commas at the end of the lines.
++
+[source,sml]
+----
+[e1,
+ e2,
+ e3]
+----
+
+* A record has spaces before and after `=`, a space after each comma,
+but not before, and not at the delimiters `{` and `}`.  Field names
+appear in alphabetical order.
++
+[source,sml]
+----
+{bar = 13, foo = true}
+----
+
+* A sequence expression has a space after each semicolon, but not before.
++
+[source,sml]
+----
+(e1; e2; e3)
+----
+
+* A sequence expression split over multiple lines has one expression
+per line, and the semicolons at the beginning of lines.  Lisp and
+Scheme programmers may find this hard to read at first.
++
+[source,sml]
+----
+(e1
+ ; e2
+ ; e3)
+----
++
+_Rationale_: this makes it easy to visually spot the beginning of each
+expression, which becomes more valuable as the expressions themselves
+are split across multiple lines.
+
+* An application expression has a space between the function and the
+argument.  There are no parens unless the argument is a tuple (in
+which case the parens are really part of the tuple, not the
+application).
++
+[source,sml]
+----
+f a
+f (a1, a2, a3)
+----
+
+* Avoid redundant parentheses.  Application associates to left, so
+write
++
+[source,sml]
+----
+f a1 a2 a3
+----
++
+not
++
+[source,sml]
+----
+((f a1) a2) a3
+----
+
+* Infix operators have a space before and after the operator.
++
+[source,sml]
+----
+x + y
+x * y - z
+----
+
+* Avoid redundant parentheses.  Use <:OperatorPrecedence:>.  So, write
++
+[source,sml]
+----
+x + y * z
+----
++
+not
++
+[source,sml]
+----
+x + (y * z)
+----
+
+* An `andalso` expression split over multiple lines has the `andalso`
+at the beginning of subsequent lines.
++
+[source,sml]
+----
+e1
+andalso e2
+andalso e3
+----
+
+* A `case` expression is indented as follows
++
+[source,sml]
+----
+case e1 of
+   p1 => e1
+ | p2 => e2
+ | p3 => e3
+----
+
+* A `datatype`'s constructors are alphabetized.
++
+[source,sml]
+----
+datatype t = A | B | C
+----
+
+* A `datatype` declaration has a space before and after each `|`.
++
+[source,sml]
+----
+datatype t = A | B of int | C
+----
+
+* A `datatype` split over multiple lines has one constructor per line,
+with the `|` at the beginning of lines and the constructors beginning
+3 columns to the right of the `datatype`.
++
+[source,sml]
+----
+datatype t =
+   A
+ | B
+ | C
+----
+
+* A `fun` declaration may start its body on the subsequent line,
+indented 3 spaces.
++
+[source,sml]
+----
+fun f x y =
+   let
+      val z = x + y + z
+   in
+      z
+   end
+----
+
+* An `if` expression is indented as follows.
++
+[source,sml]
+----
+if e1
+   then e2
+else e3
+----
+
+* A sequence of `if`-`then`-`else`-s is indented as follows.
++
+[source,sml]
+----
+if e1
+   then e2
+else if e3
+   then e4
+else if e5
+   then e6
+else e7
+----
+
+* A `let` expression has the `let`, `in`, and `end` on their own
+lines, starting in the same column.  Declarations and the body are
+indented 3 spaces.
++
+[source,sml]
+----
+let
+   val x = 13
+   val y = 14
+in
+   x + y
+end
+----
+
+* A `local` declaration has the `local`, `in`, and `end` on their own
+lines, starting in the same column.  Declarations are indented 3
+spaces.
++
+[source,sml]
+----
+local
+   val x = 13
+in
+   val y = x
+end
+----
+
+* An `orelse` expression split over multiple lines has the `orelse` at
+the beginning of subsequent lines.
++
+[source,sml]
+----
+e1
+orelse e2
+orelse e3
+----
+
+* A `val` declaration has a space before and after the `=`.
++
+[source,sml]
+----
+val p = e
+----
+
+* A `val` declaration can start the expression on the subsequent line,
+indented 3 spaces.
++
+[source,sml]
+----
+val p =
+   if e1 then e2 else e3
+----
+
+
+== Signatures ==
+
+* A `signature` declaration is indented as follows.
++
+[source,sml]
+----
+signature FOO =
+   sig
+      val x: int
+   end
+----
++
+_Exception_: a signature declaration in a file to itself can omit the
+indentation to save horizontal space.
++
+[source,sml]
+----
+signature FOO =
+sig
+
+val x: int
+
+end
+----
++
+In this case, there should be a blank line after the `sig` and before
+the `end`.
+
+* A `val` specification has a space after the colon, but not before.
++
+[source,sml]
+----
+val x: int
+----
++
+_Exception_: in the case of operators (like `+`), there is a space
+before the colon to avoid lexing the colon as part of the operator.
++
+[source,sml]
+----
+val + : t * t -> t
+----
+
+* Alphabetize specifications in signatures.
++
+[source,sml]
+----
+sig
+   val x: int
+   val y: bool
+end
+----
+
+
+== Structures ==
+
+* A `structure` declaration has a space on both sides of the `=`.
++
+[source,sml]
+----
+structure Foo = Bar
+----
+
+* A `structure` declaration split over multiple lines is indented as
+follows.
++
+[source,sml]
+----
+structure S =
+   struct
+      val x = 13
+   end
+----
++
+_Exception_: a structure declaration in a file to itself can omit the
+indentation to save horizontal space.
++
+[source,sml]
+----
+structure S =
+struct
+
+val x = 13
+
+end
+----
++
+In this case, there should be a blank line after the `struct` and
+before the `end`.
+
+* Declarations in a `struct` are separated by blank lines.
++
+[source,sml]
+----
+struct
+   val x =
+      let
+         y = 13
+      in
+         y + 1
+      end
+
+   val z = 14
+end
+----
+
+
+== Functors ==
+
+* A `functor` declaration has spaces after each `:` (or `:>`) but not
+before, and a space before and after the `=`.  It is indented as
+follows.
++
+[source,sml]
+----
+functor Foo (S: FOO_ARG): FOO =
+   struct
+       val x = S.x
+   end
+----
++
+_Exception_: a functor declaration in a file to itself can omit the
+indentation to save horizontal space.
++
+[source,sml]
+----
+functor Foo (S: FOO_ARG): FOO =
+struct
+
+val x = S.x
+
+end
+----
++
+In this case, there should be a blank line after the `struct`
+and before the `end`.

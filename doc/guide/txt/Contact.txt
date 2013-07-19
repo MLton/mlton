@@ -1,0 +1,74 @@
+Contact
+=======
+
+== Mailing lists ==
+
+There are three mailing lists available.
+
+* mailto:MLton-user@mlton.org[`MLton-user@mlton.org`]
++
+MLton user community discussion
++
+--
+* https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe]
+* http://news.gmane.org/gmane.comp.lang.ml.mlton.user[archive (Gmane; current)],
+https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive (SourceForge; current)],
+http://www.mlton.org/pipermail/mlton-user/[archive (PiperMail; through 201110)]
+--
+
+* mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`]
++
+MLton developer community discussion
++
+--
+* https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe]
+* http://news.gmane.org/gmane.comp.lang.ml.mlton.devel[archive (Gmane; current)],
+https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive (SourceForge; current)],
+http://www.mlton.org/pipermail/mlton-devel/[archive (PiperMail; through 201110)]
+--
+
+* mailto:MLton-commit@mlton.org[`MLton-commit@mlton.org`]
++
+MLton code commits
++
+--
+* https://lists.sourceforge.net/lists/listinfo/mlton-commit[subscribe]
+* https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-commit[archive (SourceForge; current)],
+http://www.mlton.org/pipermail/mlton-commit/[archive (PiperMail; through 201110)]
+--
+
+
+=== Mailing list policies ===
+
+* Both mailing lists are unmoderated.  However, the mailing lists are
+configured them to discard all spam, to hold all non-subscriber posts
+for moderation, to accept all subscriber posts, and to admin approve
+subscription requests.  Please contact
+mailto:matthew.fluet@gmail.com[Matthew Fluet] if it appears that your
+messages are being discarded as spam.
+
+* Large messages (over 256K) should not be sent.  Rather, please send
+an email containing the discussion text and a link to any large files.
+
+/////
+* Very active mailto:MLton-devel@mlton.org[`MLton@mlton.org`] list
+members who might otherwise be expected to provide a fast response
+should send a message when they will be offline for more than a few
+days.  The convention is to put
+"++__userid__ offline until __date__++" in the subject line to make it
+easy to scan.
+/////
+
+* Discussions started on the mailing lists should stay on the mailing
+lists.  Private replies may be bounced to the mailing list for the
+benefit of those following the discussion.
+
+* Discussions started on
+mailto:MLton-user@mlton.org[`MLton-user@mlton.org`] may be migrated to
+mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`], particularly
+when the discussion shifts from how to use MLton to how to modify
+MLton (e.g., to fix a bug identified by the initial discussion).
+
+== IRC ==
+
+* Some MLton developers and users are in channel `#sml` on http://freenode.net.

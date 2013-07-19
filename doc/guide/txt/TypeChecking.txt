@@ -1,0 +1,174 @@
+TypeChecking
+============
+
+MLton's type checker follows the <:DefinitionOfStandardML:Definition>
+closely, so you may find differences between MLton and other SML
+compilers that do not follow the Definition so closely.  In
+particular, SML/NJ has many deviations from the Definition -- please
+see <:SMLNJDeviations:> for those that we are aware of.
+
+In some respects MLton's type checker is more powerful than other SML
+compilers, so there are programs that MLton accepts that are rejected
+by some other SML compilers.  These kinds of programs fall into a few
+simple categories.
+
+* MLton resolves flexible record patterns using a larger context than
+many other SML compilers.  For example, MLton accepts the
+following.
++
+[source,sml]
+----
+fun f {x, ...} = x
+val _ = f {x = 13, y = "foo"}
+----
+
+* MLton uses as large a context as possible to resolve the type of
+variables constrained by the value restriction to be monotypes.  For
+example, MLton accepts the following.
++
+[source,sml]
+----
+structure S:
+   sig
+      val f: int -> int
+   end =
+   struct
+      val f = (fn x => x) (fn y => y)
+   end
+----
+
+
+== Type error messages ==
+
+To aid in the understanding of type errors, MLton's type checker
+displays type errors differently than other SML compilers.  In
+particular, when two types are different, it is important for the
+programmer to easily understand why they are different.  So, MLton
+displays only the differences between two types that don't match,
+using underscores for the parts that match.  For example, if a
+function expects `real * int` but gets `real * real`, the type error
+message would look like
+
+----
+expects: _ * [int]
+but got: _ * [real]
+----
+
+As another aid to spotting differences, MLton places brackets `[]`
+around the parts of the types that don't match.  A common situation is
+when a function receives a different number of arguments than it
+expects, in which case you might see an error like
+
+----
+expects: [int * real]
+but got: [int * real * string]
+----
+
+The brackets make it easy to see that the problem is that the tuples
+have different numbers of components -- not that the components don't
+match.  Contrast that with a case where a function receives the right
+number of arguments, but in the wrong order, in which case you might
+see an error like
+
+----
+expects: [int] * [real]
+but got: [real] * [int]
+----
+
+Here the brackets make it easy to see that the components do not match.
+
+We appreciate feedback on any type error messages that you find
+confusing, or suggestions you may have for improvements to error
+messages.
+
+
+== The shortest/most-recent rule for type names ==
+
+In a type error message, MLton often has a number of choices in
+deciding what name to use for a type.  For example, in the following
+type-incorrect program
+
+[source,sml]
+----
+type t = int
+fun f (x: t) = x
+val _ = f "foo"
+----
+
+MLton reports the error message
+
+----
+Error: z.sml 3.9.
+  Function applied to incorrect argument.
+    expects: [t]
+    but got: [string]
+    in: f "foo"
+----
+
+MLton could have reported `expects: [int]` instead of `expects: [t]`.
+However, MLton uses the shortest/most-recent rule in order to decide
+what type name to display.  This rule means that, at the point of the
+error, MLton first looks for the shortest name for a type in terms of
+number of structure identifiers (e.g. `foobar` is shorter than `A.t`).
+Next, if there are multiple names of the same length, then MLton uses
+the most recently defined name.  It is this tiebreaker that causes
+MLton to prefer `t` to `int` in the above example.
+
+In signature matching, most recently defined is taken to include all
+of the definitions introduced by the structure.  For example
+
+[source,sml]
+----
+structure S:
+   sig
+      val x: int
+   end =
+   struct
+      type t = int
+      val x = "foo"
+   end
+----
+
+MLton reports the error message
+
+----
+Error: z.sml 2.4.
+  Variable type in structure disagrees with signature.
+    variable: x
+    structure: [string]
+    signature: [t]
+----
+
+in which the `[t]` refers to the type defined in the structure, since
+that is more recent than the definition of `int`.
+
+In signatures with type equations, this can be somewhat confusing.
+For example.
+
+[source,sml]
+----
+structure S:
+   sig
+      type t
+      type u = t
+   end =
+   struct
+      type t = int
+      type u = char
+   end
+----
+
+MLton reports the error message
+
+----
+Error: z.sml 2.4.
+  Type definition in structure disagrees with signature.
+    type: u
+    structure: [u]
+    signature: [t]
+----
+
+This error reflects the fact that the signature requires type `u` to
+equal `t`, but that in the structure, `u` is defined to be `char`,
+whose most-recent name is `u`, while the signature requires `u` to be
+`int`, whose most-recent name is `t`.

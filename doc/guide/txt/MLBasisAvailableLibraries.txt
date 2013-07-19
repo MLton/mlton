@@ -1,0 +1,91 @@
+MLBasisAvailableLibraries
+=========================
+
+MLton comes with the following <:MLBasis:ML Basis> files available.
+
+* `$(SML_LIB)/basis/basis.mlb`
++
+The <:BasisLibrary:Basis Library>.
+
+* `$(SML_LIB)/basis/basis-1997.mlb`
++
+The (deprecated) 1997 version of the <:BasisLibrary:Basis Library>.
+
+* `$(SML_LIB)/basis/mlton.mlb`
++
+The <:MLtonStructure:MLton> structure and signatures.
+
+* `$(SML_LIB)/basis/c-types.mlb`
++
+Various structure aliases useful as <:ForeignFunctionInterfaceTypes:>.
+
+* `$(SML_LIB)/basis/unsafe.mlb`
++
+The <:UnsafeStructure:Unsafe> structure and signature.
+
+* `$(SML_LIB)/basis/sml-nj.mlb`
++
+The <:SMLofNJStructure:SMLofNJ> structure and signature.
+
+* `$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb`
++
+Modules used by parsers built with <:MLYacc:>.
+
+* `$(SML_LIB)/cml/cml.mlb`
++
+<:ConcurrentML:>, a library for message-passing concurrency.
+
+* `$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb`
++
+<:MLNLFFI:ML-NLFFI>, a library for foreign function interfaces.
+
+* `$(SML_LIB)/mlrisc-lib/...`
++
+<:MLRISCLibrary:>, a library for retargetable and optimizing compiler back ends.
+
+* `$(SML_LIB)/smlnj-lib/...`
++
+<:SMLNJLibrary:>, a collection of libraries distributed with SML/NJ.
+
+* `$(SML_LIB)/ckit-lib/ckit-lib.mlb`
++
+<:CKitLibrary:>, a library for C source code.
+
+* `$(SML_LIB)/mllpt-lib/mllpt-lib.mlb`
++
+<:MLLPTLibrary:>, a support library for the <:MLULex:> scanner generator and the <:MLAntlr:> parser generator.
+
+
+== Basis fragments ==
+
+There are a number of specialized ML Basis files for importing
+fragments of the <:BasisLibrary: Basis Library> that can not be
+expressed within SML.
+
+* `$(SML_LIB)/basis/pervasive-types.mlb`
++
+The top-level types and constructors of the Basis Library.
+
+* `$(SML_LIB)/basis/pervasive-exns.mlb`
++
+The top-level exception constructors of the Basis Library.
+
+* `$(SML_LIB)/basis/pervasive-vals.mlb`
++
+The top-level values of the Basis Library, without infix status.
+
+* `$(SML_LIB)/basis/overloads.mlb`
++
+The top-level overloaded values of the Basis Library, without infix status.
+
+* `$(SML_LIB)/basis/equal.mlb`
++
+The polymorphic equality `=` and inequality `<>` values, without infix status.
+
+* `$(SML_LIB)/basis/infixes.mlb`
++
+The infix declarations of the Basis Library.
+
+* `$(SML_LIB)/basis/pervasive.mlb`
++
+The entire top-level value and type environment of the Basis Library, with infix status.  This is the same as importing the above six MLB files.

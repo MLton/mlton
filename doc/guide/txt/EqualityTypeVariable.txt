@@ -1,0 +1,149 @@
+EqualityTypeVariable
+====================
+
+An equality type variable is a type variable that starts with two or
+more primes, as in `''a` or `''b`.  The canonical use of equality type
+variables is in specifying the type of the <:PolymorphicEquality:>
+function, which is `''a * ''a -> bool`.  Equality type variables
+ensure that polymorphic equality is only used on
+<:EqualityType:equality types>, by requiring that at every use of a
+polymorphic value, equality type variables are instantiated by
+equality types.
+
+For example, the following program is type correct because polymorphic
+equality is applied to variables of type `''a`.
+
+[source,sml]
+----
+fun f (x: ''a, y: ''a): bool = x = y
+----
+
+On the other hand, the following program is not type correct, because
+polymorphic equality is applied to variables of type `'a`, which is
+not an equality type.
+
+[source,sml]
+----
+fun f (x: 'a, y: 'a): bool = x = y
+----
+
+MLton reports the following error, indicating that polymorphic
+equality expects equality types, but didn't get them.
+
+----
+Error: z.sml 1.32.
+  Function applied to incorrect argument.
+    expects: [<equality>] * [<equality>]
+    but got: [<non-equality>] * [<non-equality>]
+    in: = (x, y)
+----
+
+As an example of using such a function that requires equality types,
+suppose that `f` has polymorphic type `''a -> unit`.  Then, `f 13` is
+type correct because `int` is an equality type.  On the other hand,
+`f 13.0` and `f (fn x => x)` are not type correct, because `real` and
+arrow types are not equality types.  We can test these facts with the
+following short programs.  First, we verify that such an `f` can be
+applied to integers.
+
+[source,sml]
+----
+functor Ok (val f: ''a -> unit): sig end =
+   struct
+      val () = f 13
+      val () = f 14
+   end
+----
+
+We can do better, and verify that such an `f` can be applied to
+any integer.
+
+[source,sml]
+----
+functor Ok (val f: ''a -> unit): sig end =
+   struct
+      fun g (x: int) = f x
+   end
+----
+
+Even better, we don't need to introduce a dummy function name; we can
+use a type constraint.
+
+[source,sml]
+----
+functor Ok (val f: ''a -> unit): sig end =
+   struct
+      val _ = f: int -> unit
+   end
+----
+
+Even better, we can use a signature constraint.
+
+[source,sml]
+----
+functor Ok (S: sig val f: ''a -> unit end):
+   sig val f: int -> unit end = S
+----
+
+This functor concisely verifies that a function of polymorphic type
+`''a -> unit` can be safely used as a function of type `int -> unit`.
+
+As above, we can verify that such an `f` can not be used at non
+equality types.
+
+[source,sml]
+----
+functor Bad (S: sig val f: ''a -> unit end):
+   sig val f: real -> unit end = S
+----
+
+[source,sml]
+----
+functor Bad (S: sig val f: ''a -> unit end):
+   sig val f: ('a -> 'a) -> unit end = S
+----
+
+For each of these programs, MLton reports the following error.
+
+----
+Error: z.sml 2.4.
+  Variable type in structure disagrees with signature.
+    variable: f
+    structure: [<equality>] -> _
+    signature: [<non-equality>] -> _
+----
+
+
+== Equality type variables in type and datatype declarations ==
+
+Equality type variables can be used in type and datatype declarations;
+however they play no special role.  For example,
+
+[source,sml]
+----
+type 'a t = 'a * int
+----
+
+is completely identical to
+
+[source,sml]
+----
+type ''a t = ''a * int
+----
+
+In particular, such a definition does _not_ require that `t` only be
+applied to equality types.
+
+Similarly,
+
+[source,sml]
+----
+datatype 'a t = A | B of 'a
+----
+
+is completely identical to
+
+[source,sml]
+----
+datatype ''a t = A | B of ''a
+----

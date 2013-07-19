@@ -11,7 +11,7 @@
  * Contification Using Dominators, by Fluet and Weeks.  ICFP 2001.
  *)
 
-functor Contify (S: CONTIFY_STRUCTS): CONTIFY = 
+functor Contify (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -727,7 +727,7 @@ structure Transform =
       = Control.trace (Control.Detail, "transform") transform
   end
 
-fun contify (program as Program.T _)
+fun transform (program as Program.T _)
   = let
       val {get = getLabelInfo : Label.t -> (Handler.t * ContData.t) list ref,
            ...}

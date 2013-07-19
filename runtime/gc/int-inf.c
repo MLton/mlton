@@ -181,8 +181,8 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
 
 static inline objptr binary (objptr lhs, objptr rhs, size_t bytes,
                              void(*binop)(__mpz_struct *resmpz,
-                                          __gmp_const __mpz_struct *lhsspace,
-                                          __gmp_const __mpz_struct *rhsspace)) {
+                                          const __mpz_struct *lhsspace,
+                                          const __mpz_struct *rhsspace)) {
   __mpz_struct lhsmpz, rhsmpz, resmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
 
@@ -258,7 +258,7 @@ objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes) {
 
 static objptr unary (objptr arg, size_t bytes,
                      void(*unop)(__mpz_struct *resmpz,
-                                 __gmp_const __mpz_struct *argspace)) {
+                                 const __mpz_struct *argspace)) {
   __mpz_struct argmpz, resmpz;
  mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
 
@@ -284,7 +284,7 @@ objptr IntInf_notb (objptr arg, size_t bytes) {
 
 static objptr shary (objptr arg, Word32_t shift, size_t bytes,
                      void(*shop)(__mpz_struct *resmpz,
-                                 __gmp_const __mpz_struct *argspace,
+                                 const __mpz_struct *argspace,
                                  unsigned long shift))
 {
   __mpz_struct argmpz, resmpz;
