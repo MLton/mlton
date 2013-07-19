@@ -304,13 +304,13 @@ fun nextLLVMReg () = concat ["%r", Int.toString (getAndIncReg ())]
 fun regName (ty: CType.t, index: int): string =
     concat ["%reg", CType.name ty, "_", Int.toString index]
 
-val cFunctions = ref []
+val cFunctions : string list ref = ref []
 
 fun addCFunction f = if not (List.contains (!cFunctions, f, String.equals))
                      then cFunctions := List.cons (f, !cFunctions)
                      else ()
 
-val ffiSymbols = ref []
+val ffiSymbols : {name: string, cty: CType.t option, symbolScope: CFunction.SymbolScope.t} list ref = ref []
 
 fun addFfiSymbol s = if not (List.contains (!ffiSymbols, s, fn ({name=n1, ...}, {name=n2, ...}) =>
                              String.equals (n1, n2)))
@@ -1089,7 +1089,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             in
                 concat [comment,
                         "\t; GetOperands\n",
-                        Vector.concatV paramPres,
+                        String.concatV paramPres,
                         push,
                         flushFrontierCode,
                         flushStackTopCode,
@@ -1190,7 +1190,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                 SOME d => (cases, "%" ^ Label.toString d)
                               | NONE => (Vector.dropPrefix (cases, 1),
                                          "%" ^ Label.toString (#2 (Vector.sub (cases, 0))))
-                        val branches = Vector.concatV (Vector.map (switchCases, fn (w, l) =>
+                        val branches = String.concatV (Vector.map (switchCases, fn (w, l) =>
                                            concat ["\t\t", llws (WordX.size w), " ", llwordx w,
                                                    ", label %", Label.toString l, "\n"]))
                         val switch = concat ["\tswitch ", testty, " ", testreg,
@@ -1259,7 +1259,7 @@ fun outputBlock (cxt, block) =
                       | Kind.Handler {frameInfo, ...} => pop frameInfo
                       | _ => ""
         val outputStatementWithCxt = fn s => outputStatement (cxt, s)
-        val blockBody = Vector.concatV (Vector.map (statements, outputStatementWithCxt))
+        val blockBody = String.concatV (Vector.map (statements, outputStatementWithCxt))
         val blockTransfer = outputTransfer (cxt, transfer, label)
     in
         concat [blockLabel, printBlock, dopop, blockBody, blockTransfer, "\n"]
@@ -1310,7 +1310,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                                let
                                    val Chunk.T { blocks = blocks, ... } = chunk
                                in
-                                   Vector.concatV (Vector.map (blocks, fn b =>
+                                   String.concatV (Vector.map (blocks, fn b =>
                                        let
                                            val Block.T { label = label, ... } = b
                                            val labelstr = Label.toString label
@@ -1369,7 +1369,7 @@ fun outputChunk (cxt, outputLL, chunk) =
         val entryLabelsInChunk = Vector.keepAll (entryLabels,
                                                  fn l => chunkLabelIndex chunkLabel =
                                                          chunkLabelIndex (labelChunk l))
-        val branches = Vector.concatV (Vector.map (entryLabelsInChunk, fn label =>
+        val branches = String.concatV (Vector.map (entryLabelsInChunk, fn label =>
                            let
                                val labelName = Label.toString label
                                val i = labelToStringIndex label
@@ -1378,7 +1378,7 @@ fun outputChunk (cxt, outputLL, chunk) =
                            end))
         val () = (print (concat ["\tswitch %uintptr_t ", tmp2,
                                  ", label %default [\n", branches, "\t]\n"])
-                 ; print (Vector.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
+                 ; print (String.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
                  ; print "default:\n")
         val nextFun = nextLLVMReg ()
         val () = (print (mkload (nextFun, "%uintptr_t*", "%l_nextFun"))
