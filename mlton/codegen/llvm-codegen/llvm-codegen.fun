@@ -1513,33 +1513,6 @@ fun transLLVM (cxt, outputLL) =
 fun transC (cxt, outputC) =
     let
         val Context { program, ... } = cxt
-        local val Machine.Program.T
-                      {chunks, 
-                       frameLayouts, 
-                       frameOffsets, 
-                       handlesSignals, 
-                       intInfs, 
-                       main, 
-                       maxFrameSize, 
-                       objectTypes, 
-                       reals, 
-                       vectors, ...} = program
-        in
-        val machineProgram =
-            Machine.Program.T
-                {chunks = chunks,
-                 frameLayouts = frameLayouts,
-                 frameOffsets = frameOffsets,
-                 handlesSignals = handlesSignals,
-                 intInfs = intInfs,
-                 main = main,
-                 maxFrameSize = maxFrameSize,
-                 objectTypes = objectTypes,
-                 profileInfo = NONE,
-                 reals = reals,
-                 vectors = vectors}
-        end
-
         val {print, done, file=_} = outputC ()
         val Program.T {main = main, chunks = chunks, ... } = program
         val Context { chunkLabelToString, labelToStringIndex, entryLabels, labelInfo, ... } = cxt
@@ -1581,7 +1554,7 @@ fun transC (cxt, outputC) =
             {additionalMainArgs = additionalMainArgs,
              includes = ["c-main.h"],
              print = print,
-             program = machineProgram,
+             program = program,
              rest = rest}
       ; done ()
     end
