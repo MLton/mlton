@@ -146,6 +146,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_rndToWord _ => true
        | Real_round _ => true (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
        | Real_sub _ => true
+       | Thread_returnToC => false
        | Word_add _ => true
        | Word_addCheck _ => true
        | Word_andb _ => true
