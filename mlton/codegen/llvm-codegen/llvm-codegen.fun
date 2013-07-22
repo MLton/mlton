@@ -205,7 +205,7 @@ fun llstring s =
                         #"\"" => "\\22"
                       | #"\\" => "\\5C"
                       | _ => Char.toString c))
-    in 
+    in
         concat ["c\"", escapeLLVM s, "\\00\""]
     end
 
@@ -512,7 +512,7 @@ fun getOperandAddr (cxt, operand) =
             val cast = mkconv (reg, "bitcast", "%Pointer", gepReg, llvmTy ^ "*")
         in
             (concat [load, gep, cast], llvmTy, reg)
-        end 
+        end
       | Operand.StackTop => ("", "%Pointer", "%stackTop")
       | _ => Error.bug ("Cannot get address of " ^ Operand.toString operand)
 
@@ -590,7 +590,7 @@ and getOperandValue (cxt, operand) =
           | Operand.StackTop => loadOperand()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
     end
-          
+
 (* Returns (instruction, ty) pair for the given prim operation *)
 fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
     let
@@ -1018,7 +1018,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         let
                             val Context { program = program, ... } = cxt
                             val size = Program.frameSize (program, fi)
-                        in 
+                        in
                             transferPush (valOf return, size)
                         end
                 val flushFrontierCode = if modifiesFrontier then flushFrontier () else ""
@@ -1217,7 +1217,7 @@ fun outputBlock (cxt, block) =
                                                val ty = Operand.ty xop
                                                val llvmTy = llty ty
                                                val reg = nextLLVMReg ()
-                                               val load = mkload (reg, llvmTy ^ "*", 
+                                               val load = mkload (reg, llvmTy ^ "*",
                                                                   "@CReturn" ^
                                                                   CType.name (Type.toCType ty))
                                                val (dstpre, dstty, dstreg) =
@@ -1279,7 +1279,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
 "gotlhs = external hidden global [9 x i8]\n\
 \gotrhs = external hidden global [9 x i8]\n"
         val labelStrings = if printblock
-                           then 
+                           then
                                let
                                    val Chunk.T { blocks = blocks, ... } = chunk
                                in
