@@ -533,62 +533,34 @@ and getOperandValue (cxt, operand) =
             Operand.ArrayOffset _ => loadOperand ()
           | Operand.Cast (oper, ty) =>
             let
-                val ((operPre, operTy, operReg), shouldLoad) =
-                    case oper of
-                        Operand.ArrayOffset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Cast _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Contents _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Frontier => (getOperandAddr (cxt, oper), true)
-                      | Operand.GCState => (getOperandValue (cxt, oper), false)
-                      | Operand.Global _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Label _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Null => (getOperandValue (cxt, oper), false)
-                      | Operand.Offset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Real _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Register _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.StackOffset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.StackTop => (getOperandAddr (cxt, oper), true)
-                      | Operand.Word _ => (getOperandValue (cxt, oper), false)
+                val (operPre, operTy, operReg) =
+                   getOperandValue (cxt, oper)
                 val llvmTy = llty ty
                 val reg = nextLLVMReg ()
-                val inst = if shouldLoad
-                           then
-                               let
-                                   val castReg = nextLLVMReg ()
-                                   val cast = mkconv (castReg, "bitcast", operTy ^ "*",
-                                                      operReg, llvmTy ^ "*")
-                                   val load = mkload (reg, llvmTy ^ "*", castReg)
-                               in
-                                   concat [cast, load]
-                               end
-                           else
-                               let
-                                   fun isIntType cty = case cty of
-                                                               CType.Int8 => true
-                                                             | CType.Int16 => true
-                                                             | CType.Int32 => true
-                                                             | CType.Int64 => true
-                                                             | CType.Word8 => true
-                                                             | CType.Word16 => true
-                                                             | CType.Word32 => true
-                                                             | CType.Word64 => true
-                                                             | _ => false
-                                   fun isPtrType cty = case cty of
-                                                               CType.CPointer => true
-                                                             | CType.Objptr => true
-                                                             | _ => false
-                                   val operIsInt = (isIntType o Type.toCType o Operand.ty) oper
-                                   val operIsPtr = (isPtrType o Type.toCType o Operand.ty) oper
-                                   val tyIsInt = (isIntType o Type.toCType) ty
-                                   val tyIsPtr = (isPtrType o Type.toCType) ty
-                                   val operation = if operIsInt andalso tyIsPtr
-                                                   then "inttoptr"
-                                                   else if operIsPtr andalso tyIsInt
-                                                        then "ptrtoint"
-                                                        else "bitcast"
-                               in
-                                   mkconv (reg, operation, operTy, operReg, llvmTy)
-                               end
+                fun isIntType cty = case cty of
+                                            CType.Int8 => true
+                                          | CType.Int16 => true
+                                          | CType.Int32 => true
+                                          | CType.Int64 => true
+                                          | CType.Word8 => true
+                                          | CType.Word16 => true
+                                          | CType.Word32 => true
+                                          | CType.Word64 => true
+                                          | _ => false
+                fun isPtrType cty = case cty of
+                                            CType.CPointer => true
+                                          | CType.Objptr => true
+                                          | _ => false
+                val operIsInt = (isIntType o Type.toCType o Operand.ty) oper
+                val operIsPtr = (isPtrType o Type.toCType o Operand.ty) oper
+                val tyIsInt = (isIntType o Type.toCType) ty
+                val tyIsPtr = (isPtrType o Type.toCType) ty
+                val operation = if operIsInt andalso tyIsPtr
+                                then "inttoptr"
+                                else if operIsPtr andalso tyIsInt
+                                        then "ptrtoint"
+                                        else "bitcast"
+                val inst = mkconv (reg, operation, operTy, operReg, llvmTy)
             in
                 (concat [operPre, inst], llvmTy, reg)
             end
