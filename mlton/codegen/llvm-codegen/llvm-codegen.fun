@@ -1,3 +1,9 @@
+(* Copyright (C) 2013 Matthew Fluet, Brian Leibig.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 functor LLVMCodegen(S: LLVM_CODEGEN_STRUCTS): LLVM_CODEGEN =
 struct
 
@@ -139,13 +145,14 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_lt _ => true
        | Real_mul _ => true
        | Real_muladd _ => false
-       | Real_mulsub _ => false
+       | Real_mulsub _ => true
        | Real_neg _ => true
        | Real_qequal _ => false
        | Real_rndToReal _ => true
        | Real_rndToWord _ => true
        | Real_round _ => true (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
        | Real_sub _ => true
+       | Thread_returnToC => false
        | Word_add _ => true
        | Word_addCheck _ => true
        | Word_andb _ => true
@@ -155,7 +162,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       | Word_mulCheck _ => false (* mul.with.overflow calls __mulodi4 in compiler-rt for long ints *)
+       | Word_mulCheck _ => true
        | Word_neg _ => true
        | Word_negCheck _ => true
        | Word_notb _ => true
@@ -204,7 +211,7 @@ fun llstring s =
                         #"\"" => "\\22"
                       | #"\\" => "\\5C"
                       | _ => Char.toString c))
-    in 
+    in
         concat ["c\"", escapeLLVM s, "\\00\""]
     end
 
@@ -511,7 +518,7 @@ fun getOperandAddr (cxt, operand) =
             val cast = mkconv (reg, "bitcast", "%Pointer", gepReg, llvmTy ^ "*")
         in
             (concat [load, gep, cast], llvmTy, reg)
-        end 
+        end
       | Operand.StackTop => ("", "%Pointer", "%stackTop")
       | _ => Error.bug ("Cannot get address of " ^ Operand.toString operand)
 
@@ -532,62 +539,34 @@ and getOperandValue (cxt, operand) =
             Operand.ArrayOffset _ => loadOperand ()
           | Operand.Cast (oper, ty) =>
             let
-                val ((operPre, operTy, operReg), shouldLoad) =
-                    case oper of
-                        Operand.ArrayOffset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Cast _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Contents _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Frontier => (getOperandAddr (cxt, oper), true)
-                      | Operand.GCState => (getOperandValue (cxt, oper), false)
-                      | Operand.Global _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Label _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Null => (getOperandValue (cxt, oper), false)
-                      | Operand.Offset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.Real _ => (getOperandValue (cxt, oper), false)
-                      | Operand.Register _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.StackOffset _ => (getOperandAddr (cxt, oper), true)
-                      | Operand.StackTop => (getOperandAddr (cxt, oper), true)
-                      | Operand.Word _ => (getOperandValue (cxt, oper), false)
+                val (operPre, operTy, operReg) =
+                   getOperandValue (cxt, oper)
                 val llvmTy = llty ty
                 val reg = nextLLVMReg ()
-                val inst = if shouldLoad
-                           then
-                               let
-                                   val castReg = nextLLVMReg ()
-                                   val cast = mkconv (castReg, "bitcast", operTy ^ "*",
-                                                      operReg, llvmTy ^ "*")
-                                   val load = mkload (reg, llvmTy ^ "*", castReg)
-                               in
-                                   concat [cast, load]
-                               end
-                           else
-                               let
-                                   fun isIntType cty = case cty of
-                                                               CType.Int8 => true
-                                                             | CType.Int16 => true
-                                                             | CType.Int32 => true
-                                                             | CType.Int64 => true
-                                                             | CType.Word8 => true
-                                                             | CType.Word16 => true
-                                                             | CType.Word32 => true
-                                                             | CType.Word64 => true
-                                                             | _ => false
-                                   fun isPtrType cty = case cty of
-                                                               CType.CPointer => true
-                                                             | CType.Objptr => true
-                                                             | _ => false
-                                   val operIsInt = (isIntType o Type.toCType o Operand.ty) oper
-                                   val operIsPtr = (isPtrType o Type.toCType o Operand.ty) oper
-                                   val tyIsInt = (isIntType o Type.toCType) ty
-                                   val tyIsPtr = (isPtrType o Type.toCType) ty
-                                   val operation = if operIsInt andalso tyIsPtr
-                                                   then "inttoptr"
-                                                   else if operIsPtr andalso tyIsInt
-                                                        then "ptrtoint"
-                                                        else "bitcast"
-                               in
-                                   mkconv (reg, operation, operTy, operReg, llvmTy)
-                               end
+                fun isIntType cty = case cty of
+                                            CType.Int8 => true
+                                          | CType.Int16 => true
+                                          | CType.Int32 => true
+                                          | CType.Int64 => true
+                                          | CType.Word8 => true
+                                          | CType.Word16 => true
+                                          | CType.Word32 => true
+                                          | CType.Word64 => true
+                                          | _ => false
+                fun isPtrType cty = case cty of
+                                            CType.CPointer => true
+                                          | CType.Objptr => true
+                                          | _ => false
+                val operIsInt = (isIntType o Type.toCType o Operand.ty) oper
+                val operIsPtr = (isPtrType o Type.toCType o Operand.ty) oper
+                val tyIsInt = (isIntType o Type.toCType) ty
+                val tyIsPtr = (isPtrType o Type.toCType) ty
+                val operation = if operIsInt andalso tyIsPtr
+                                then "inttoptr"
+                                else if operIsPtr andalso tyIsInt
+                                        then "ptrtoint"
+                                        else "bitcast"
+                val inst = mkconv (reg, operation, operTy, operReg, llvmTy)
             in
                 (concat [operPre, inst], llvmTy, reg)
             end
@@ -617,7 +596,7 @@ and getOperandValue (cxt, operand) =
           | Operand.StackTop => loadOperand()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
     end
-          
+
 (* Returns (instruction, ty) pair for the given prim operation *)
 fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
     let
@@ -1045,7 +1024,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         let
                             val Context { program = program, ... } = cxt
                             val size = Program.frameSize (program, fi)
-                        in 
+                        in
                             transferPush (valOf return, size)
                         end
                 val flushFrontierCode = if modifiesFrontier then flushFrontier () else ""
@@ -1244,7 +1223,7 @@ fun outputBlock (cxt, block) =
                                                val ty = Operand.ty xop
                                                val llvmTy = llty ty
                                                val reg = nextLLVMReg ()
-                                               val load = mkload (reg, llvmTy ^ "*", 
+                                               val load = mkload (reg, llvmTy ^ "*",
                                                                   "@CReturn" ^
                                                                   CType.name (Type.toCType ty))
                                                val (dstpre, dstty, dstreg) =
@@ -1306,7 +1285,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
 "gotlhs = external hidden global [9 x i8]\n\
 \gotrhs = external hidden global [9 x i8]\n"
         val labelStrings = if printblock
-                           then 
+                           then
                                let
                                    val Chunk.T { blocks = blocks, ... } = chunk
                                in
@@ -1513,33 +1492,6 @@ fun transLLVM (cxt, outputLL) =
 fun transC (cxt, outputC) =
     let
         val Context { program, ... } = cxt
-        local val Machine.Program.T
-                      {chunks, 
-                       frameLayouts, 
-                       frameOffsets, 
-                       handlesSignals, 
-                       intInfs, 
-                       main, 
-                       maxFrameSize, 
-                       objectTypes, 
-                       reals, 
-                       vectors, ...} = program
-        in
-        val machineProgram =
-            Machine.Program.T
-                {chunks = chunks,
-                 frameLayouts = frameLayouts,
-                 frameOffsets = frameOffsets,
-                 handlesSignals = handlesSignals,
-                 intInfs = intInfs,
-                 main = main,
-                 maxFrameSize = maxFrameSize,
-                 objectTypes = objectTypes,
-                 profileInfo = NONE,
-                 reals = reals,
-                 vectors = vectors}
-        end
-
         val {print, done, file=_} = outputC ()
         val Program.T {main = main, chunks = chunks, ... } = program
         val Context { chunkLabelToString, labelToStringIndex, entryLabels, labelInfo, ... } = cxt
@@ -1581,7 +1533,7 @@ fun transC (cxt, outputC) =
             {additionalMainArgs = additionalMainArgs,
              includes = ["c-main.h"],
              print = print,
-             program = machineProgram,
+             program = program,
              rest = rest}
       ; done ()
     end

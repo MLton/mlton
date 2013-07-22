@@ -1305,6 +1305,18 @@ fun commandLine (args: string list): unit =
                                              Int.toString (Counter.next c),
                                              ".o"])
                         else temp ".o"
+                  fun mkOutputBC (c: Counter.t, input: File.t): File.t =
+                     if stop = Place.O orelse !keepO
+                        then
+                           if File.dirOf input = File.dirOf (maybeOutBase ".bc")
+                              then
+                                 concat [File.base input, ".bc"]
+                              else
+                                 maybeOutBase
+                                    (concat [".",
+                                             Int.toString (Counter.next c),
+                                             ".bc"])
+                        else temp ".bc"
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
                         val debugSwitches = gccDebug @ ["-DASSERT=1"]
@@ -1343,11 +1355,9 @@ fun commandLine (args: string list): unit =
                      end
                   fun compileLL (c: Counter.t, input: File.t): File.t =
                       let
+                          val outputBC = mkOutputBC (c, input)
+                          val _ = System.system ("opt", ["-mem2reg", "-O2", "-o", outputBC, input])
                           val output = mkOutputO (c, input)
-                          (* val outputS = File.base output ^ ".s" *)
-                          val outputBC = File.base output ^ ".bc"
-                          val _ = System.system ("opt", ["-mem2reg", "-O2", "-o", outputBC,
-                                                         input])
                           val _ = System.system ("llc", ["-filetype=obj", "-o", output, outputBC])
                       in
                           output
