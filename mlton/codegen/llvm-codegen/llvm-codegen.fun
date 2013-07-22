@@ -1,3 +1,9 @@
+(* Copyright (C) 2013 Matthew Fluet, Brian Leibig.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 functor LLVMCodegen(S: LLVM_CODEGEN_STRUCTS): LLVM_CODEGEN =
 struct
 
