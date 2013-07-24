@@ -99,9 +99,7 @@ val llvmIntrinsics =
 \declare {i8, i1} @llvm.umul.with.overflow.i8(i8 %a, i8 %b)\n\
 \declare {i16, i1} @llvm.umul.with.overflow.i16(i16 %a, i16 %b)\n\
 \declare {i32, i1} @llvm.umul.with.overflow.i32(i32 %a, i32 %b)\n\
-\declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n\
-\declare float @llvm.fmuladd.f32(float %a, float %b, float %c) ; requires LLVM 3.2\n\
-\declare double @llvm.fmuladd.f64(double %a, double %b, double %c) ; requires LLVM 3.2\n"
+\declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n"
 
 val globalDeclarations =
 "%struct.cont = type { i8* }\n\
@@ -144,7 +142,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_le _ => true
        | Real_lt _ => true
        | Real_mul _ => true
-       | Real_muladd _ => false
+       | Real_muladd _ => true
        | Real_mulsub _ => true
        | Real_neg _ => true
        | Real_qequal _ => false
