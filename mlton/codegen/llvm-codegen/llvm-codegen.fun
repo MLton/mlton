@@ -1051,17 +1051,28 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                    concat [lhs, "call ", ty, " @", name, "(", llparams, ")\n"]
                                end
                              | CFunction.Target.Indirect => (* TODO *) ""
-                val storeResult = if Type.isUnit returnTy
-                                  then ""
-                                  else mkstore (llty returnTy, resultReg,
-                                                "@CReturn" ^ CType.name (Type.toCType returnTy))
-                val cacheFrontierCode = if modifiesFrontier then cacheFrontier () else ""
-                val cacheStackTopCode = if writesStackTop then cacheStackTop () else ""
-                val returnCode = if maySwitchThreads
-                                 then callReturn ()
-                                 else case return of
-                                          NONE => "\tbr label %default\n"
-                                        | SOME l => concat ["\tbr label %", Label.toString l, "\n"]
+                val epilogue = case return of
+                                   NONE => "\tunreachable\n"
+                                 | SOME l =>
+                                   let
+                                       val storeResult = if Type.isUnit returnTy
+                                                         then ""
+                                                         else mkstore (llty returnTy, resultReg,
+                                                                       "@CReturn" ^ CType.name (Type.toCType returnTy))
+                                       val cacheFrontierCode = if modifiesFrontier
+                                                               then cacheFrontier ()
+                                                               else ""
+                                       val cacheStackTopCode = if writesStackTop
+                                                               then cacheStackTop ()
+                                                               else ""
+                                       val br = if maySwitchThreads
+                                                then callReturn ()
+                                                else concat ["\tbr label %", Label.toString l,
+                                                             "\n"]
+                                   in
+                                       concat [storeResult, cacheFrontierCode, cacheStackTopCode,
+                                               br]
+                                   end
                 val fcall = if printstmt
                             then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n"
                             else ""
@@ -1075,10 +1086,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         "\t; Call\n",
                         fcall,
                         call,
-                        storeResult,
-                        cacheFrontierCode,
-                        cacheStackTopCode,
-                        returnCode]
+                        epilogue]
             end
           | Transfer.Call {label, return, ...} =>
             let
@@ -1548,3 +1556,4 @@ fun output {program, outputC, outputLL} =
     end
 
 end
+
