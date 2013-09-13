@@ -1,4 +1,5 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2013 Matthew Fluet.
+ * Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -92,6 +93,7 @@ val benchCounts: (string * int * int) list =
     ("checksum", 1500, 150),
     ("count-graphs", 3, 1),
     ("DLXSimulator", 50, 15),
+    ("even-odd", 12, 6),
     ("fft", 256, 128),
     ("fib", 6, 1),
     ("flat-array", 6000, 1200),
