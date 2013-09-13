@@ -50,6 +50,6 @@ structure Main =
                if i = 0
                   then ()
                else (inner (); loop (i - 1))
-         in loop 1000
+         in loop size
          end
    end

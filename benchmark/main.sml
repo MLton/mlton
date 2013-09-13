@@ -87,65 +87,58 @@ in
       end
 end
 
-val benchCounts: (string * int * int) list =
-   [("barnes-hut", 4096, 1024),
-    ("boyer", 3000, 1000),
-    ("checksum", 1500, 150),
-    ("count-graphs", 3, 1),
-    ("DLXSimulator", 50, 15),
-    ("even-odd", 12, 6),
-    ("fft", 256, 128),
-    ("fib", 6, 1),
-    ("flat-array", 6000, 1200),
-    ("hamlet", 100, 10),
-    ("imp-for", 1000, 300),
-    ("knuth-bendix", 500, 100),
-    ("lexgen", 300, 50),
-    ("life", 6, 2),
-    ("logic", 40, 7),
-    ("mandelbrot", 2, 1),
-    ("matrix-multiply", 20, 20),
-    ("md5", 30, 10),
-    ("merge", 4000, 1000),
-    ("mlyacc", 500, 150),
-    ("model-elimination", 0, 0),
-    ("mpuz", 20, 5),
-    ("nucleic", 500, 150),
-    ("output1", 3, 3),
-    ("peek", 1000, 100),
-    ("psdes-random", 3, 1),
-    ("ratio-regions", 1024, 512),
-    ("ray", 100, 30),
-    ("raytrace", 10, 3),
-    ("simple", 100, 20),
-    ("smith-normal-form", 6, 1),
-    ("tailfib", 200, 60),
-    ("tak", 4, 2),
-    ("tensor", 3, 1),
-    ("tsp", 4, 1),
-    ("tyan", 80, 13),
-    ("vector-concat", 10, 2),
-    ("vector-rev", 20, 20),
-    ("vliw", 150, 30),
-    ("wc-input1", 4000, 1000),
-    ("wc-scanStream", 6000, 2000),
-    ("zebra", 15, 3),
-    ("zern", 2000, 500)]
+val benchCounts: (string * int) list =
+   ("barnes-hut", 16384)::
+   ("boyer", 6144)::
+   ("checksum", 4096)::
+   ("count-graphs", 8)::
+   ("DLXSimulator", 128)::
+   ("even-odd", 12)::
+   ("fft", 1024)::
+   ("fib", 6)::
+   ("flat-array", 16384)::
+   ("hamlet", 192)::
+   ("imp-for", 1536)::
+   ("knuth-bendix", 1536)::
+   ("lexgen", 1024)::
+   ("life", 16)::
+   ("logic", 128)::
+   ("mandelbrot", 4)::
+   ("matrix-multiply", 64)::
+   ("md5", 48)::
+   ("merge", 8192)::
+   ("mlyacc", 1536)::
+   ("model-elimination", 0)::
+   ("mpuz", 64)::
+   ("nucleic", 2048)::
+   ("output1", 6)::
+   ("peek", 1024)::
+   ("psdes-random", 8)::
+   ("ratio-regions", 768)::
+   ("ray", 768)::
+   ("raytrace", 48)::
+   ("simple", 384)::
+   ("smith-normal-form", 96)::
+   ("tailfib", 256)::
+   ("tak", 12)::
+   ("tensor", 4)::
+   ("tsp", 8)::
+   ("tyan", 192)::
+   ("vector-concat", 16)::
+   ("vector-rev", 32)::
+   ("vliw", 384)::
+   ("wc-input1", 12288)::
+   ("wc-scanStream", 12288)::
+   ("zebra", 32)::
+   ("zern", 6144)::
+   nil
 
 val benchCount =
    String.memoize
    (fn s =>
-    case List.peek (benchCounts, fn (b, _, _) => b = s) of
+    case List.peek (benchCounts, fn (b, _) => b = s) of
        NONE => Error.bug (concat ["no benchCount for ", s])
-     | SOME (_, x86, sparc) =>
-          Int.toString
-          let
-             open MLton.Platform.Arch
-          in
-             case host of
-                Sparc => sparc
-              | _ => x86
-          end)
+     | SOME (_, c) => Int.toString c)
 
 fun compileSizeRun {command, exe, doTextPlusData: bool} =
    Escape.new
