@@ -12,6 +12,6 @@ to stand for the phantom types in the types of values.
 * <!Cite(Blume01)>
 ** dimensions
 ** C type system
-* <!Cite(FluetPucella02)>
+* <!Cite(FluetPucella06)>
 ** subtyping
 * socket module in <:BasisLibrary:Basis Library>
