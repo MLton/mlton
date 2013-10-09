@@ -364,7 +364,7 @@ ____
  <:#JFP:> 1997.
 
  * <!Anchor(HicksEtAl03)>
- http://www.cs.umd.edu/Library/TRs/CS-TR-4514/CS-TR-4514.pdf[Safe and Flexible Memory Management in Cyclone].
+ http://wwwold.cs.umd.edu/Library/TRs/CS-TR-4514/CS-TR-4514.pdf[Safe and Flexible Memory Management in Cyclone].
  Mike Hicks, Greg Morrisett, Dan Grossman, and Trevor Jim.
  University of Maryland Technical Report CS-TR-4514, 2003.
 
@@ -510,13 +510,28 @@ ____
  Robin Milner.
  Polymorphism--The ML/LCF/Hope Newsletter, 1983.
 
+ * <!Anchor(MilnerTofte91)>
+ http://www.itu.dk/people/tofte/publ/1990sml/1990sml.html[Commentary on Standard ML]
+ (http://www3.addall.com/New/submitNew.cgi?query=0262631377&type=ISBN[addall])
+ ISBN 0262631377.
+ Robin Milner and Mads Tofte.
+ The MIT Press, 1991.
++
+____
+Introduces and explains the notation and approach used in
+<!Cite(MilnerEtAl90,The Definition of Standard ML)>.
+____
+
  * <!Anchor(MilnerEtAl90)>
- http://www.itu.dk/people/tofte/publ/1990sml/1990sml.html[The Definition of Standard ML and Commentary on Standard ML].
+ http://www.itu.dk/people/tofte/publ/1990sml/1990sml.html[The Definition of Standard ML].
+ (http://www3.addall.com/New/submitNew.cgi?query=0262631326&type=ISBN[addall])
+ ISBN 0262631326.
  Robin Milner, Mads Tofte, and Robert Harper.
  The MIT Press, 1990.
 +
 ____
 Superseded by <!Cite(MilnerEtAl97,The Definition of Standard ML (Revised))>.
+Accompanied by the <!Cite(MilnerTofte91,Commentary on Standard ML)>.
 ____
 
  * <!Anchor(MilnerEtAl97)>
@@ -882,7 +897,7 @@ ____
 == <!Anchor(YYY)>Y ==
 
  * <!Anchor(Yang98)>
- http://cs.nyu.edu/zheyang/papers/YangZ--ICFP98.html[Encoding Types in ML-like Languages].
+ http://cs.nyu.edu/zheyang/papers/YangZ\--ICFP98.html[Encoding Types in ML-like Languages].
  Zhe Yang.
  <:#ICFP:> 1998.
 
