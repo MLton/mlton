@@ -8,7 +8,7 @@ a function for converting a value of any type to a string or a
 function for computing a hash value for a value of any type.
 Fortunately there are ways to implement type-indexed values in SML as
 discussed in <!Cite(Yang98)>.  Various articles such as
-<!Cite(Danvy98)>, <!Cite(Ramsey03)>, <!Cite(Elsman04)>,
+<!Cite(Danvy98)>, <!Cite(Ramsey11)>, <!Cite(Elsman04)>,
 <!Cite(Kennedy04)>, and <!Cite(Benton05)> also contain examples of
 type-indexed values.
 
