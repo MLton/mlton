@@ -55,7 +55,7 @@ fun ignoreOutput f =
 datatype command =
    Explicit of {args: string list,
                 com: string}
-  | Shell of string
+  | Shell of string list
 
 fun timeIt ca =
    Process.time
@@ -63,7 +63,7 @@ fun timeIt ca =
     case ca of
        Explicit {args, com} =>
           Process.wait (Process.spawnp {file = com, args = com :: args})
-     | Shell s => Process.system s)
+     | Shell ss => List.foreach (ss, Process.system))
    
 local
    val trialTime = Time.seconds (IntInf.fromInt 60)
@@ -168,29 +168,50 @@ fun compileSizeRun {command, exe, doTextPlusData: bool} =
         size = size}
     end)
 
-fun batch bench = concat [bench, ".batch.sml"]
+fun batch {abbrv, bench} =
+   let
+      val abbrv =
+         String.translate
+         (abbrv, fn c =>
+          if Char.isAlphaNum c
+             then String.fromChar c
+          else "_")
+   in
+      concat [bench, ".", abbrv, ".batch.sml"]
+   end
 
 local
    val n = Counter.new 0
-   val exe = "a.out"
 in
    fun makeMLton commandPattern =
       case ChoicePattern.expand commandPattern of
          Result.No m => usage m
-       | Result.Yes coms => 
+       | Result.Yes cmds =>
             List.map
-            (coms, fn com =>
-             {name = com,
-              abbrv = "MLton" ^ (Int.toString (Counter.next n)),
-              test = (fn {bench} =>
-                      compileSizeRun
-                      {command = Shell (concat [com, " -output ", exe, " ", batch bench]),
-                       exe = exe,
-                       doTextPlusData = true})})
+            (cmds, fn cmd =>
+             let
+                val abbrv = "MLton" ^ (Int.toString (Counter.next n))
+             in
+                {name = cmd,
+                 abbrv = abbrv,
+                 test = (fn {bench} =>
+                         let
+                            val src = batch {abbrv = abbrv, bench = bench}
+                            val exe = String.dropSuffix (src, 4)
+                            val cmds = (concat [cmd, " -output ", exe, " ", src])::
+                                       (*(concat ["strip ", exe])::*)
+                                       nil
+                         in
+                            compileSizeRun
+                            {command = Shell cmds,
+                             exe = exe,
+                             doTextPlusData = true}
+                         end)}
+             end)
 end
 
 fun kitCompile {bench} =
-   compileSizeRun {command = Explicit {args = [batch bench],
+   compileSizeRun {command = Explicit {args = [batch {abbrv = "mlkit", bench = bench}],
                                        com = "mlkit"},
                    exe = "run",
                    doTextPlusData = true}
@@ -198,7 +219,7 @@ fun kitCompile {bench} =
 fun mosmlCompile {bench} =
    compileSizeRun
    {command = Explicit {args = ["-orthodox", "-standalone", "-toplevel",
-                                batch bench],
+                                batch {abbrv = "mosml", bench = bench}],
                         com = "mosmlc"},
     exe = "a.out",
     doTextPlusData = false}
@@ -582,17 +603,10 @@ fun main args =
                                 outs = [], errs = []},
                    fn (bench, ac) =>
                    let
-                      val _ =
-                         File.withOut
-                         (batch bench, fn out =>
-                          (File.outputContents (concat [bench, ".sml"], out)
-                           ; Out.output (out, concat ["val _ = Main.doit ",
-                                                      benchCount bench,
-                                                      "\n"])))
                       val foundOne = ref false
                       val res =
                          List.fold
-                         (compilers, ac, fn ({name, abbrv = _, test},
+                         (compilers, ac, fn ({name, abbrv, test},
                                              ac as {compiles: real data,
                                                     runs: real data,
                                                     sizes: Position.int data,
@@ -601,6 +615,13 @@ fun main args =
                           if true
                              then
                                 let
+                                   val _ =
+                                      File.withOut
+                                      (batch {abbrv = abbrv, bench = bench}, fn out =>
+                                       (File.outputContents (concat [bench, ".sml"], out)
+                                        ; Out.output (out, concat ["val _ = Main.doit ",
+                                                                   benchCount bench,
+                                                                   "\n"])))
 (*
                                    val outTmpFile =
                                       File.tempName {prefix = "tmp", suffix = "out"}
