@@ -1,7 +1,7 @@
 SMLNET
 ======
 
-http://www.research.microsoft.com/Projects/SML.NET/[SML.NET] is a
+http://www.cl.cam.ac.uk/research/tsg/SMLNET[SML.NET] is a
 <:StandardMLImplementations:Standard ML implementation> that
 targets the .NET Common Language Runtime.
 
