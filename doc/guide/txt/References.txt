@@ -336,6 +336,10 @@ ____
  Michael R. Hansen, Hans Rischel.
  Addison-Wesley, 1999.
 
+ * <!Anchor(Harper11)>
+ http://www.cs.cmu.edu/~rwh/smlbook/book.pdf[Programming in Standard ML].
+ Robert Harper.
+
  * <!Anchor(HarperEtAl93)>
  http://www.cs.cmu.edu/~rwh/papers/callcc/jfp.pdf[Typing First-Class Continuations in ML].
  Robert Harper, Bruce F. Duba, and David MacQueen.
@@ -798,6 +802,14 @@ ____
  Type Inference for Polymorphic References.
  Mads Tofte.
  <:#IC:> 1990.
+
+ * <!Anchor(Tofte96)>
+ http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf[Essentials of Standard ML Modules].
+ Mads Tofte.
+
+ * <!Anchor(Tofte09)>
+ http://www.itu.dk/people/tofte/publ/tips.pdf[Tips for Computer Scientists on Standard ML (Revised)].
+ Mads Tofte.
 
  * <!Anchor(TolmachAppel95)>
  http://web.cecs.pdx.edu/~apt/jfp95.ps[A Debugger for Standard ML].

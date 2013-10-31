@@ -1,7 +1,7 @@
 HaMLet
 ======
 
-http://www.mpi-sws.org/%7Erossberg/hamlet/[HaMLet] is a
+http://www.mpi-sws.org/~rossberg/hamlet/[HaMLet] is a
 <:StandardMLImplementations:Standard ML implementation>.  It is
 intended as reference implementation of
 <:DefinitionOfStandardML:The Definition of Standard ML (Revised)> and

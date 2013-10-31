@@ -1,7 +1,7 @@
 MLKit
 =====
 
-The http://www.it-c.dk/research/mlkit/[ML Kit] is a
+The http://sourceforge.net/apps/mediawiki/mlkit[ML Kit] is a
 <:StandardMLImplementations:Standard ML implementation>.
 
 MLKit supports:
