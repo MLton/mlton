@@ -32,7 +32,7 @@ structure Lazy: LAZY =
             datatype 'a lazy_result = Unevaluated of (unit -> 'a)
                                     | Evaluated of 'a
                                     | Failed of exn
-            
+
             val r = ref (Unevaluated th)
          in
             fn () =>
