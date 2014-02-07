@@ -1,0 +1,205 @@
+Google Summer of Code (2014)
+============================
+:toc:
+
+== Mentors ==
+
+The following developers have agreed to serve as mentors for the 2014 Google Summer of Code:
+
+* http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+* http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+* http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
+/////
+
+== Ideas List ==
+
+=== Implement a Partial Redundancy Elimination (PRE) Optimization ===
+
+Partial redundancy elimination (PRE) is a program transformation that
+removes operations that are redundant on some, but not necessarily all
+paths, through the program.  PRE can subsume both common subexpression
+elimination and loop-invariant code motion, and is therefore a
+potentially powerful optimization.  However, a na&iuml;ve
+implementation of PRE on a program in static single assignment (SSA)
+form is unlikely to be effective.  This project aims to adapt and
+implement the SSAPRE algorithm(s) of Thomas VanDrunen in MLton's SSA
+intermediate language.
+
+Background:
+--
+* http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract[Anticipation-based partial redundancy elimination for static single assignment form]; Thomas VanDrunen and Antony L. Hosking
+* http://cs.wheaton.edu/%7Etvandrun/writings/thesis.pdf[Partial Redundancy Elimination for Global Value Numbering]; Thomas VanDrunen
+* http://www.springerlink.com/content/w06m3cw453nphm1u/[Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
+* http://portal.acm.org/citation.cfm?doid=319301.319348[Partial redundancy elimination in SSA form]; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow
+--
+
+Recommended Skills: SML programming experience; some middle-end compiler experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Design and Implement a Heap Profiler ===
+
+A heap profile is a description of the space usage of a program.  A
+heap profile is concerned with the allocation, retention, and
+deallocation (via garbage collection) of heap data during the
+execution of a program.  A heap profile can be used to diagnose
+performance problems in a functional program that arise from space
+leaks.  This project aims to design and implement a heap profiler for
+MLton compiled programs.
+
+Background:
+--
+* http://portal.acm.org/citation.cfm?doid=583854.582451[GCspy: an adaptable heap visualisation framework]; Tony Printezis and Richard Jones
+* http://journals.cambridge.org/action/displayAbstract?aid=1349892[New dimensions in heap profiling]; Colin Runciman and Niklas R&ouml;jemo
+* http://www.springerlink.com/content/710501660722gw37/[Heap profiling for space efficiency]; Colin Runciman and Niklas R&ouml;jemo
+* http://journals.cambridge.org/action/displayAbstract?aid=1323096[Heap profiling of lazy functional programs]; Colin Runciman and David Wakeling
+--
+
+Recommended Skills: C and SML programming experience; some experience with UI and visualization
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Garbage Collector Improvements ===
+
+The garbage collector plays a significant role in the performance of
+functional languages.  Garbage collect too often, and program
+performance suffers due to the excessive time spent in the garbage
+collector.  Garbage collect not often enough, and program performance
+suffers due to the excessive space used by the uncollected garbage.
+One particular issue is ensuring that a program utilizing a garbage
+collector "plays nice" with other processes on the system, by not
+using too much or too little physical memory.  While there are some
+reasonable theoretical results about garbage collections with heaps of
+fixed size, there seems to be insufficient work that really looks
+carefully at the question of dynamically resizing the heap in response
+to the live data demands of the application and, similarly, in
+response to the behavior of the operating system and other processes.
+This project aims to investigate improvements to the memory behavior of
+MLton compiled programs through better tuning of the garbage
+collector.
+
+Background:
+--
+* http://www.dcs.gla.ac.uk/%7Ewhited/papers/automated_heap_sizing.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
+* http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125[Isla Vista Heap Sizing: Using Feedback to Avoid Paging]; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski
+* http://portal.acm.org/citation.cfm?doid=1152649.1152652[Controlling garbage collection and heap growth to reduce the execution time of Java applications]; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham
+* http://portal.acm.org/citation.cfm?doid=1065010.1065028[Garbage collection without paging]; Matthew Hertz, Yi Feng, and Emery D. Berger
+* http://portal.acm.org/citation.cfm?doid=1029873.1029881[Automatic heap sizing: taking real memory into account]; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss
+--
+
+Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Implement Successor{nbsp}ML Language Features ===
+
+Any programming language, including Standard{nbsp}ML, can be improved.
+The community has identified a number of modest extensions and
+revisions to the Standard{nbsp}ML programming language that would
+likely prove useful in practice.  This project aims to implement these
+language features in the MLton compiler.
+
+Background:
+--
+* http://successor-ml.org/index.php?title=Main_Page[Successor{nbsp}ML]
+* http://www.mpi-sws.org/%7Erossberg/hamlet/index.html#successor-ml[HaMLet (Successor{nbsp}ML)]
+* http://journals.cambridge.org/action/displayAbstract?aid=1322628[A critique of Standard{nbsp}ML]; Andrew W. Appel
+--
+
+Recommended Skills: SML programming experience; some front-end compiler experience (i.e., scanners and parsers)
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Implement Source-level Debugging ===
+
+Debugging is a fact of programming life.  Unfortunately, most SML
+implementations (including MLton) provide little to no source-level
+debugging support.  This project aims to add basic to intermediate
+source-level debugging support to the MLton compiler.  MLton already
+supports source-level profiling, which can be used to attribute bytes
+allocated or time spent in source functions.  It should be relatively
+straightforward to leverage this source-level information into basic
+source-level debugging support, with the ability to set/unset
+breakpoints and step through declarations and functions.  It may be
+possible to also provide intermediate source-level debugging support,
+with the ability to inspect in-scope variables of basic types (e.g.,
+types compatible with MLton's foreign function interface).
+
+Background:
+--
+* http://mlton.org/HowProfilingWorks[MLton -- How Profiling Works]
+* http://mlton.org/ForeignFunctionInterfaceTypes[MLton -- Foreign Function Interface Types]
+* http://dwarfstd.org/[DWARF Debugging Standard]
+* http://sourceware.org/gdb/current/onlinedocs/stabs/index.html[STABS Debugging Format]
+--
+
+Recommended Skills: SML programming experience; some compiler experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Region Based Memory Management ===
+
+Region based memory management is an alternative automatic memory
+management scheme to garbage collection.  Regions can be inferred by
+the compiler (e.g., Cyclone and MLKit) or provided to the programmer
+through a library.  Since many students do not have extensive
+experience with compilers we plan on adopting the later approach.
+Creating a viable region based memory solution requires the removal of
+the GC and changes to the allocator.  Additionally, write barriers
+will be necessary to ensure references between two ML objects is never
+established if the left hand side of the assignment has a longer
+lifetime than the right hand side.  Students will need to come up with
+an appropriate interface for creating, entering, and exiting regions
+(examples include RTSJ scoped memory and SCJ scoped memory).
+
+Background:
+--
+* Cyclone
+* MLKit
+* RTSJ + SCJ scopes
+--
+
+Recommended Skills: SML programming experience; C programming experience; some compiler and garbage collector experience
+
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+
+=== Integration of Multi-MLton ===
+
+http://multimlton.cs.purdue.edu[MultiMLton] is a compiler and runtime
+environment that targets scalable multicore platforms.  It is an
+extension of MLton.  It combines new language abstractions and
+associated compiler analyses for expressing and implementing various
+kinds of fine-grained parallelism (safe futures, speculation,
+transactions, etc.), along with a sophisticated runtime system tuned
+to efficiently handle large numbers of lightweight threads.  The core
+stable features of MultiMLton will need to be integrated with the
+latest MLton public release.  Certain experimental features, such as
+support for the Intel SCC and distributed runtime will be omitted.
+This project requires students to understand the delta between the
+MultiMLton code base and the MLton code base.  Students will need to
+create build and configuration scripts for MLton to enable MultiMLton
+features.
+
+Background
+--
+* http://multimlton.cs.purdue.edu/mML/Publications.html[MultiMLton -- Publications]
+--
+
+Recommended Skills: SML programming experience; C programming experience; some compiler experience
+
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
