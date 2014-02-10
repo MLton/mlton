@@ -203,3 +203,43 @@ Recommended Skills: SML programming experience; C programming experience; some c
 /////
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
+
+=== Concurrent{nbsp}ML Improvements ===
+
+http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
+library based on synchronous message passing.  MLton has an initial
+port of CML from SML/NJ, but is missing a thread-safe wrapper around
+the Basis Library and event-based equivalents to IO and OS functions.
+This project aims to improve the CML implementation, to implement a
+thread-safe wrapper around the Basis Library, and to implement
+event-based equivalents to IO and OS functions.
+
+Background
+--
+* http://cml.cs.uchicago.edu/
+* http://mlton.org/ConcurrentML
+* http://mlton.org/ConcurrentMLImplementation
+--
+
+/////
+Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== SML3d Development ===
+
+The SML3d Project is a collection of libraries to support 3D graphics
+programming using Standard ML and the http://opengl.org/[OpenGL]
+graphics API. It currently requires the MLton implementation of SML
+and is supported on Linux, Mac OS X, and Microsoft Windows. There is
+also support for http://www.khronos.org/opencl/[OpenCL].  This project
+aims to continue development of the SML3d Project.
+
+Background
+--
+* http://sml3d.cs.uchicago.edu/
+--
+
+/////
+Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
+/////
