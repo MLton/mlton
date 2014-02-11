@@ -10,6 +10,7 @@ The following developers have agreed to serve as mentors for the 2014 Google Sum
 * http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 * http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
+* http://people.cs.uchicago.edu/~jhr/[John Reppy]
 /////
 
 == Ideas List ==
