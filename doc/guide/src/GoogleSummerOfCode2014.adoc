@@ -8,9 +8,9 @@ The following developers have agreed to serve as mentors for the 2014 Google Sum
 
 * http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 * http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+* http://people.cs.uchicago.edu/~jhr/[John Reppy]
 /////
 * http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
-* http://people.cs.uchicago.edu/~jhr/[John Reppy]
 /////
 
 == Ideas List ==
@@ -208,12 +208,15 @@ Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 === Concurrent{nbsp}ML Improvements ===
 
 http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
-library based on synchronous message passing.  MLton has an initial
-port of CML from SML/NJ, but is missing a thread-safe wrapper around
-the Basis Library and event-based equivalents to IO and OS functions.
-This project aims to improve the CML implementation, to implement a
-thread-safe wrapper around the Basis Library, and to implement
-event-based equivalents to IO and OS functions.
+library based on synchronous message passing.  MLton has a partial
+implementation of the CML message-passing primitives, but its use in
+real-world applications has been stymied by the lack of completeness
+and thread-safe I/O libraries.  This project would aim to flesh out
+the CML implementation in MLton to be fully compatible with the
+"official" version distributed as part of SML/NJ.  Furthermore, time
+permitting, runtime system support could be added to allow use of
+modern OS features, such as asynchronous I/O, in the implementation of
+CML's system interfaces.
 
 Background
 --
@@ -222,11 +225,14 @@ Background
 * http://mlton.org/ConcurrentMLImplementation
 --
 
+Recommended Skills: SML programming experience; knowledge of concurrent programming; some operating systems and/or systems programming experience
+
 /////
 Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
+/////
 === SML3d Development ===
 
 The SML3d Project is a collection of libraries to support 3D graphics
@@ -241,6 +247,5 @@ Background
 * http://sml3d.cs.uchicago.edu/
 --
 
-/////
 Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
 /////
