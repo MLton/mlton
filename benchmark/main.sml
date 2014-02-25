@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2014 Matthew Fluet.
  * Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -211,7 +211,7 @@ in
 end
 
 fun kitCompile {bench} =
-   compileSizeRun {command = Explicit {args = [batch {abbrv = "mlkit", bench = bench}],
+   compileSizeRun {command = Explicit {args = [batch {abbrv = "MLKit", bench = bench}],
                                        com = "mlkit"},
                    exe = "run",
                    doTextPlusData = true}
@@ -219,7 +219,7 @@ fun kitCompile {bench} =
 fun mosmlCompile {bench} =
    compileSizeRun
    {command = Explicit {args = ["-orthodox", "-standalone", "-toplevel",
-                                batch {abbrv = "mosml", bench = bench}],
+                                batch {abbrv = "Moscow ML", bench = bench}],
                         com = "mosmlc"},
     exe = "a.out",
     doTextPlusData = false}
@@ -426,13 +426,13 @@ fun main args =
                      ("err", SpaceString setErrData),
                      ("mlkit", 
                       None (fn () => pushCompiler
-                            {name = "ML-Kit",
-                             abbrv = "ML-Kit",
+                            {name = "MLKit",
+                             abbrv = "MLKit",
                              test = kitCompile})),
                      ("mosml",
                       None (fn () => pushCompiler
-                            {name = "Moscow-ML",
-                             abbrv = "Moscow-ML",
+                            {name = "Moscow ML",
+                             abbrv = "Moscow ML",
                              test = mosmlCompile})),
                      ("mlton",
                       SpaceString (fn arg => pushCompilers
