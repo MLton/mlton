@@ -458,7 +458,7 @@ fun main args =
        | Result.Yes benchmarks =>
             let
                val compilers = List.rev (!compilers)
-               val base = #name (hd compilers)
+               val base = #abbrv (hd compilers)
                val _ =
                   let
                      open MLton.Signal
@@ -491,33 +491,31 @@ fun main args =
                            val _ = Out.output (out, concat [title, "\n"])
                            val compilers =
                               List.fold
-                              (compilers, [],
-                               fn ({name = n, abbrv = n', ...}, ac) =>
+                              (compilers, [], fn ({name = n, abbrv = a, ...}, ac) =>
                                if showAll
-                                  orelse (List.exists
-                                          (data, fn {compiler = c, ...} =>
-                                           n = c))
-                                  then (n, n') :: ac
+                                  orelse List.exists (data, fn {compiler = c', ...} =>
+                                                      a = c')
+                                  then (n, a) :: ac
                                else ac)
                            val benchmarks =
                               List.fold
                               (benchmarks, [], fn (b, ac) =>
                                if showAll
-                                  orelse List.exists (data, fn {bench, ...} =>
-                                                      bench = b)
+                                  orelse List.exists (data, fn {bench = b', ...} =>
+                                                      b = b')
                                   then b :: ac
                                else ac)
                            fun rows toString =
                               ("benchmark"
-                               :: List.revMap (compilers, fn (_, n') => n'))
+                               :: List.revMap (compilers, fn (_, a) => a))
                               :: (List.revMap
                                   (benchmarks, fn b =>
                                    b :: (List.revMap
-                                         (compilers, fn (n, _) =>
+                                         (compilers, fn (_, a) =>
                                           case (List.peek
                                                 (data, fn {bench = b',
                                                            compiler = c', ...} =>
-                                                 b = b' andalso n = c')) of
+                                                 b = b' andalso a = c')) of
                                              NONE => "*"
                                            | SOME {value = v, ...} =>
                                                 toString v))))
@@ -676,7 +674,7 @@ fun main args =
                                        | SOME v =>
                                             (foundOne := true
                                              ; {bench = bench,
-                                                compiler = name,
+                                                compiler = abbrv,
                                                 value = v} :: ac)
                                    val ac =
                                       {compiles = add (compile, compiles),
