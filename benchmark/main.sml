@@ -88,49 +88,49 @@ in
 end
 
 val benchCounts: (string * int) list =
-   ("barnes-hut", 16384)::
-   ("boyer", 6144)::
-   ("checksum", 4096)::
-   ("count-graphs", 8)::
-   ("DLXSimulator", 128)::
-   ("even-odd", 12)::
-   ("fft", 1024)::
-   ("fib", 6)::
-   ("flat-array", 16384)::
-   ("hamlet", 192)::
-   ("imp-for", 1536)::
-   ("knuth-bendix", 1536)::
-   ("lexgen", 1024)::
-   ("life", 16)::
-   ("logic", 128)::
-   ("mandelbrot", 4)::
-   ("matrix-multiply", 64)::
-   ("md5", 48)::
-   ("merge", 8192)::
-   ("mlyacc", 1536)::
-   ("model-elimination", 0)::
-   ("mpuz", 64)::
-   ("nucleic", 2048)::
-   ("output1", 6)::
-   ("peek", 1024)::
-   ("psdes-random", 8)::
-   ("ratio-regions", 768)::
-   ("ray", 768)::
-   ("raytrace", 48)::
-   ("simple", 384)::
-   ("smith-normal-form", 96)::
-   ("tailfib", 256)::
-   ("tak", 12)::
-   ("tensor", 4)::
-   ("tsp", 8)::
-   ("tyan", 192)::
-   ("vector-concat", 16)::
-   ("vector-rev", 32)::
-   ("vliw", 384)::
-   ("wc-input1", 12288)::
-   ("wc-scanStream", 12288)::
-   ("zebra", 32)::
-   ("zern", 6144)::
+   ("barnes-hut", 24576):: (* 31.24 sec *)
+   ("boyer", 12288):: (* 40.51 sec *)
+   ("checksum", 8192):: (* 31.32 sec *)
+   ("count-graphs", 16):: (* 35.31 sec *)
+   ("DLXSimulator", 256):: (* 30.54 sec *)
+   ("even-odd", 24):: (* 37.79 sec *)
+   ("fft", 2048):: (* 34.90 sec *)
+   ("fib", 12):: (* 30.48 sec *)
+   ("flat-array", 32768):: (* 34.97 sec *)
+   ("hamlet", 384):: (* 35.68 sec *)
+   ("imp-for", 3072):: (* 30.23 sec *)
+   ("knuth-bendix", 3072):: (* 37.77 sec *)
+   ("lexgen", 2048):: (* 34.21 sec *)
+   ("life", 32):: (* 37.96 sec *)
+   ("logic", 256):: (* 38.89 sec *)
+   ("mandelbrot", 6):: (* 38.47 sec *)
+   ("matrix-multiply", 128):: (* 30.13 sec *)
+   ("md5", 96):: (* 41.21 sec *)
+   ("merge", 16384):: (* 40.37 sec *)
+   ("mlyacc", 3072):: (* 38.96 sec *)
+   ("model-elimination", 0):: (* ??? sec *)
+   ("mpuz", 96):: (* 30.02 sec *)
+   ("nucleic", 4096):: (* 32.38 sec *)
+   ("output1", 12):: (* 35.66 sec *)
+   ("peek", 2048):: (* 35.49 sec *)
+   ("psdes-random", 24):: (* 40.55 sec *)
+   ("ratio-regions", 1536):: (* 45.04 sec *)
+   ("ray", 1536):: (* 42.25 sec *)
+   ("raytrace", 96):: (* 37.25 sec *)
+   ("simple", 768):: (* 36.13 sec *)
+   ("smith-normal-form", 192):: (* 42.55 sec *)
+   ("tailfib", 512):: (* 35.35 sec *)
+   ("tak", 24):: (* 44.55 sec *)
+   ("tensor", 6):: (* 34.61 sec *)
+   ("tsp", 16):: (* 36.83 sec *)
+   ("tyan", 384):: (* 32.51 sec *)
+   ("vector-concat", 32):: (* 34.77 sec *)
+   ("vector-rev", 64):: (* 32.14 sec *)
+   ("vliw", 768):: (* 30.43 sec *)
+   ("wc-input1", 24576):: (* 41.64 sec *)
+   ("wc-scanStream", 24576):: (* 30.52 sec *)
+   ("zebra", 64):: (* 33.41 sec *)
+   ("zern", 12288):: (* 33.54 sec *)
    nil
 
 val benchCount =
