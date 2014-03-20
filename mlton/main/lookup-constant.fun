@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -30,9 +30,9 @@ val buildConstants: (string * (unit -> string)) list =
                                             | Align8 => 8)),
        ("MLton_Codegen_codegen", fn () => int (case !codegen of
                                                   CCodegen => 0
-                                                | LLVMCodegen => 1
-                                                | x86Codegen => 2
-                                                | amd64Codegen => 3)),
+                                                | x86Codegen => 1
+                                                | amd64Codegen => 2
+                                                | LLVMCodegen => 3)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ())),
        ("MLton_Platform_Format", fn () => case !format of
                                              Archive => "archive"
