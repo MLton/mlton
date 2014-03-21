@@ -1,3 +1,9 @@
+(* Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 local
    ../../atoms/sources.mlb
    ../../control/sources.mlb
