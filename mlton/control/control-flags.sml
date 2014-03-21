@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -63,24 +63,24 @@ val closureConvertShrink = control {name = "closureConvertShrink",
 structure Codegen =
    struct
       datatype t =
-         CCodegen
+         AMD64Codegen
+       | CCodegen
        | LLVMCodegen
-       | x86Codegen
-       | amd64Codegen
+       | X86Codegen
 
-      val all = [x86Codegen,amd64Codegen,CCodegen,LLVMCodegen]
+      val all = [X86Codegen,AMD64Codegen,CCodegen,LLVMCodegen]
 
       val toString: t -> string =
-         fn CCodegen => "c"
+         fn AMD64Codegen => "amd64"
+          | CCodegen => "c"
           | LLVMCodegen => "llvm"
-          | x86Codegen => "x86"
-          | amd64Codegen => "amd64"
+          | X86Codegen => "x86"
    end
 
 datatype codegen = datatype Codegen.t
 
 val codegen = control {name = "codegen",
-                       default = Codegen.x86Codegen,
+                       default = Codegen.X86Codegen,
                        toString = Codegen.toString}
 
 val contifyIntoMain = control {name = "contifyIntoMain",

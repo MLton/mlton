@@ -1,4 +1,4 @@
-(* Copyright (C) 2011 Matthew Fluet.
+(* Copyright (C) 2011,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -684,10 +684,10 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          end
       val codegenImplementsPrim =
          case !Control.codegen of
-            Control.CCodegen => CCodegen.implementsPrim
+            Control.AMD64Codegen => amd64Codegen.implementsPrim
+          | Control.CCodegen => CCodegen.implementsPrim
           | Control.LLVMCodegen => LLVMCodegen.implementsPrim
-          | Control.x86Codegen => x86Codegen.implementsPrim
-          | Control.amd64Codegen => amd64Codegen.implementsPrim
+          | Control.X86Codegen => x86Codegen.implementsPrim
       val machine =
          Control.passTypeCheck
          {display = Control.Layouts Machine.Program.layouts,
@@ -727,7 +727,13 @@ fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
           ; Machine.Label.printNameAlphaNumeric := true)
       val () =
          case !Control.codegen of
-            Control.CCodegen =>
+            Control.AMD64Codegen =>
+               (clearNames ()
+                ; (Control.trace (Control.Top, "amd64 code gen")
+                   amd64Codegen.output {program = machine,
+                                        outputC = outputC,
+                                        outputS = outputS}))
+          | Control.CCodegen =>
                (clearNames ()
                 ; (Control.trace (Control.Top, "C code gen")
                    CCodegen.output {program = machine,
@@ -738,18 +744,12 @@ fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
                    LLVMCodegen.output {program = machine,
                                        outputC = outputC,
                                       outputLL = outputLL}))
-          | Control.x86Codegen =>
+          | Control.X86Codegen =>
                (clearNames ()
                 ; (Control.trace (Control.Top, "x86 code gen")
                    x86Codegen.output {program = machine,
                                       outputC = outputC,
                                       outputS = outputS}))
-          | Control.amd64Codegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "amd64 code gen")
-                   amd64Codegen.output {program = machine,
-                                        outputC = outputC,
-                                        outputS = outputS}))
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in

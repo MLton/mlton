@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -64,7 +64,7 @@ val debugFormat: debugFormat option ref = ref NONE
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunk: Control.chunk option ref = ref NONE
-datatype explicitCodegen = Native | Explicit of Control.codegen
+datatype explicitCodegen = Native | Explicit of Control.Codegen.t
 val explicitCodegen: explicitCodegen option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
@@ -155,27 +155,27 @@ fun hasCodegen (cg) =
    in
       case !Control.Target.arch of
          AMD64 => (case cg of
-                      x86Codegen => false
+                      X86Codegen => false
                     | _ => true)
        | X86 => (case cg of
-                    amd64Codegen => false
-                  | x86Codegen =>
+                    AMD64Codegen => false
+                  | X86Codegen =>
                       (* Darwin PIC doesn't work *)
                       !Control.Target.os <> Darwin orelse
                       !Control.format = Executable orelse
                       !Control.format = Archive
                   | _ => true)
        | _ => (case cg of
-                  amd64Codegen => false
-                | x86Codegen => false
+                  AMD64Codegen => false
+                | X86Codegen => false
                 | _ => true)
    end
 fun hasNativeCodegen () =
    let
       datatype z = datatype Control.codegen
    in
-      hasCodegen amd64Codegen
-      orelse hasCodegen x86Codegen
+      hasCodegen AMD64Codegen
+      orelse hasCodegen X86Codegen
    end
 
 
@@ -898,16 +898,16 @@ fun commandLine (args: string list): unit =
       val () =
          codegen := (case !explicitCodegen of
                         NONE =>
-                           if hasCodegen (x86Codegen)
-                              then x86Codegen
-                           else if hasCodegen (amd64Codegen)
-                               then amd64Codegen
+                           if hasCodegen AMD64Codegen
+                              then AMD64Codegen
+                           else if hasCodegen X86Codegen
+                              then X86Codegen
                            else CCodegen
                       | SOME Native =>
-                           if hasCodegen (x86Codegen)
-                              then x86Codegen
-                           else if hasCodegen (amd64Codegen)
-                              then amd64Codegen
+                           if hasCodegen AMD64Codegen
+                              then AMD64Codegen
+                           else if hasCodegen X86Codegen
+                              then X86Codegen
                            else usage (concat ["can't use native codegen on ",
                                                MLton.Platform.Arch.toString targetArch,
                                                " target"])
@@ -915,8 +915,8 @@ fun commandLine (args: string list): unit =
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () = if !profileTimeSet
                   then (case !codegen of
-                           x86Codegen => profile := ProfileTimeLabel
-                         | amd64Codegen => profile := ProfileTimeLabel
+                           X86Codegen => profile := ProfileTimeLabel
+                         | AMD64Codegen => profile := ProfileTimeLabel
                          | _ => profile := ProfileTimeField)
                   else ()
       val () = if !exnHistory
@@ -1039,13 +1039,13 @@ fun commandLine (args: string list): unit =
          chunk :=
          (case !explicitChunk of
              NONE => (case !codegen of
-                         amd64Codegen => ChunkPerFunc
+                         AMD64Codegen => ChunkPerFunc
                        | CCodegen => Coalesce {limit = 4096}
                        | LLVMCodegen => OneChunk
-                       | x86Codegen => ChunkPerFunc
+                       | X86Codegen => ChunkPerFunc
                        )
            | SOME c => c)
-      val _ = if not (!Control.codegen = x86Codegen) andalso !Native.IEEEFP
+      val _ = if not (!Control.codegen = X86Codegen) andalso !Native.IEEEFP
                  then usage "must use x86 codegen with -ieee-fp true"
               else ()
       val _ =
