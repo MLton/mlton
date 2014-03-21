@@ -100,6 +100,8 @@ doit "$lib" \
         -cc-opt '-O1 -fno-common'                                \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lm -lgmp'                                    \
+        -llvm-llc-opt '-O2'                                      \
+        -llvm-opt-opt '-mem2reg -O2'                             \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opt amd64 '-m64'                              \
         -target-as-opt x86 '-m32'                                \

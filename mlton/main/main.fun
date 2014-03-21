@@ -56,6 +56,12 @@ val arScript: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val llvm_as: string ref = ref "llvm-as"
+val llvm_asOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val llvm_llc: string ref = ref "llc"
+val llvm_llcOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val llvm_opt: string ref = ref "opt"
+val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
@@ -520,6 +526,30 @@ fun makeOptions {usage} =
        (Expert, "link-opt-quote", " <opt>", "pass (quoted) option to linker",
         SpaceString
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-as", " <llvm-as>", "path to llvm .ll -> .bc assembler",
+        SpaceString (fn s => llvm_as := s)),
+       (Normal, "llvm-as-opt", " <opt>", "pass option to llvm assembler",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-as-opt-quote", " <opt>", "pass (quoted) option to llvm assembler",
+        SpaceString
+        (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-llc", " <llc>", "path to llvm .bc -> .o compiler",
+        SpaceString (fn s => llvm_llc := s)),
+       (Normal, "llvm-llc-opt", " <opt>", "pass option to llvm compiler",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (llvm_llcOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-llc-opt-quote", " <opt>", "pass (quoted) option to llvm compiler",
+        SpaceString
+        (fn s => List.push (llvm_llcOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-opt", " <llvm-as>", "path to llvm .bc -> .bc optimizer",
+        SpaceString (fn s => llvm_opt := s)),
+       (Normal, "llvm-opt-opt", " <opt>", "pass option to llvm optimizer",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (llvm_optOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-opt-opt-quote", " <opt>", "pass (quoted) option to llvm optimizer",
+        SpaceString
+        (fn s => List.push (llvm_optOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
         Int
         (fn i =>
@@ -1021,6 +1051,14 @@ fun commandLine (args: string list): unit =
          else
          [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" },
           OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
+
+      val llvm_as = !llvm_as
+      val llvm_llc = !llvm_llc
+      val llvm_opt = !llvm_opt
+      val llvm_asOpts = addTargetOpts llvm_asOpts
+      val llvm_llcOpts = addTargetOpts llvm_llcOpts
+      val llvm_optOpts = addTargetOpts llvm_optOpts
+
       val _ =
          if not (hasCodegen (!codegen))
             then usage (concat ["can't use ",
@@ -1305,18 +1343,19 @@ fun commandLine (args: string list): unit =
                                              Int.toString (Counter.next c),
                                              ".o"])
                         else temp ".o"
-                  fun mkOutputBC (c: Counter.t, input: File.t): File.t =
+                  fun mkOutputBC (c: Counter.t, input: File.t, xsuf): File.t =
                      if stop = Place.O orelse !keepO
                         then
-                           if File.dirOf input = File.dirOf (maybeOutBase ".bc")
+                           if File.dirOf input = File.dirOf (maybeOutBase (xsuf ^ ".bc"))
                               then
-                                 concat [File.base input, ".bc"]
+                                 concat [File.base input, xsuf, ".bc"]
                               else
                                  maybeOutBase
                                     (concat [".",
                                              Int.toString (Counter.next c),
+                                             xsuf,
                                              ".bc"])
-                        else temp ".bc"
+                        else temp (xsuf ^ ".bc")
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
                         val debugSwitches = gccDebug @ ["-DASSERT=1"]
@@ -1354,14 +1393,35 @@ fun commandLine (args: string list): unit =
                         output
                      end
                   fun compileLL (c: Counter.t, input: File.t): File.t =
-                      let
-                          val outputBC = mkOutputBC (c, input)
-                          val _ = System.system ("opt", ["-mem2reg", "-O2", "-o", outputBC, input])
-                          val output = mkOutputO (c, input)
-                          val _ = System.system ("llc", ["-filetype=obj", "-o", output, outputBC])
-                      in
-                          output
-                      end
+                     let
+                        val asBC = mkOutputBC (c, input, ".as")
+                        val _ =
+                           System.system
+                           (llvm_as,
+                            List.concat
+                            [llvm_asOpts,
+                             ["-o", asBC],
+                             [input]])
+                        val optBC = mkOutputBC (c, input, ".opt")
+                        val _ =
+                           System.system
+                           (llvm_opt,
+                            List.concat
+                            [llvm_optOpts,
+                             ["-o", optBC],
+                             [asBC]])
+                        val output = mkOutputO (c, input)
+                        val _ =
+                           System.system
+                           (llvm_llc,
+                            List.concat
+                            [llvm_llcOpts,
+                             ["-filetype=obj"],
+                             ["-o", output],
+                             [optBC]])
+                     in
+                        output
+                     end
                   fun compileCSO (inputs: File.t list): unit =
                      if List.forall (inputs, fn f =>
                                      SOME "o" = File.extension f)
