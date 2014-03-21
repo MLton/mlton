@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet, Brian Leibig.
+(* Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
@@ -145,7 +145,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_muladd _ => true
        | Real_mulsub _ => true
        | Real_neg _ => true
-       | Real_qequal _ => false
+       | Real_qequal _ => true
        | Real_rndToReal _ => true
        | Real_rndToWord _ => true
        | Real_round _ => true (* Requires LLVM 3.3 to use "llvm.rint" intrinsic *)
@@ -739,6 +739,14 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 (concat [inst1, inst2], llsize)
             end
           | Real_neg rs => (mkinst (res, "fsub", llrs rs, "-0.0", arg0), llrs rs)
+          | Real_qequal rs =>
+            let
+                val reg = nextLLVMReg ()
+                val cmp = mkinst (reg, "fcmp ueq", llrs rs, arg0, arg1)
+                val ext = mkconv (res, "zext", "i1", reg, "%Word32")
+            in
+                (concat [cmp, ext], "%Word32")
+            end
           | Real_rndToReal rs =>
             (case rs of
                  (RealSize.R64, RealSize.R32) =>
