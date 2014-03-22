@@ -106,7 +106,7 @@ the output file is saved.
 +
 [cols="^25%,<75%"]
 |====
-| `g` | generated `.c` and `.s` files passed to `gcc`
+| `g` | generated `.c` and `.s` files passed to `gcc` and generated `.ll` files passed to `llvm-as`
 | `o` | object (`.o`) files
 |====
 
@@ -118,6 +118,18 @@ with, e.g., `-link-opt -lfoo`, or even both at the same time,
 e.g. `-link-opt '-Lpath -lfoo'`.  If you wish to pass an option to the
 linker, you must use `gcc`'s `-Wl,` syntax, e.g.,
 `-link-opt '-Wl,--export-dynamic'`.
+
+* ++-llvm-as-opt __option__++
++
+Pass _option_ to `llvm-as` when assembling (`.ll` to `.bc`) LLVM code.
+
+* ++-llvm-llc-opt __option__++
++
+Pass _option_ to `llc` when compiling (`.bc` to `.o`) LLVM code.
+
+* ++-llvm-opt-opt __option__++
++
+Pass _option_ to `opt` when optimizing (`.bc` to `.bc`) LLVM code.
 
 * ++-mlb-path-map __file__++
 +
