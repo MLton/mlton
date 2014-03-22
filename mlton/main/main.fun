@@ -821,6 +821,24 @@ fun makeOptions {usage} =
         (SpaceString2
          (fn (target, opt) =>
           List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
+       (Expert, "target-llvm-as-opt", " <target> <opt>", "target-dependent llvm assembler option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) => List.push (llvm_asOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-llvm-as-opt-quote", " <target> <opt>", "target-dependent llvm assembler option (quoted)",
+        SpaceString2
+        (fn (target, opt) => List.push (llvm_asOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-llvm-llc-opt", " <target> <opt>", "target-dependent llvm compiler option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) => List.push (llvm_llcOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-llvm-llc-opt-quote", " <target> <opt>", "target-dependent llvm compiler option (quoted)",
+        SpaceString2
+        (fn (target, opt) => List.push (llvm_llcOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-llvm-opt-opt", " <target> <opt>", "target-dependent llvm optimizer option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) => List.push (llvm_optOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-llvm-opt-opt-quote", " <target> <opt>", "target-dependent llvm optimizer option (quoted)",
+        SpaceString2
+        (fn (target, opt) => List.push (llvm_optOpts, {opt = opt, pred = OptPred.Target target}))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
         boolRef typeCheck),
