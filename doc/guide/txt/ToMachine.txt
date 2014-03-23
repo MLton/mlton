@@ -17,8 +17,8 @@ It uses <:AllocateRegisters:>, <:Chunkify:>, and <:ParallelMove:>.
 
 == Details and Notes ==
 
-Because the MLton runtime system is shared by all codegens, it is most
-convenient to decide on stack layout _before_ any codegen takes over.
+Because the MLton runtime system is shared by all <:Codegen:codegens>, it is most
+convenient to decide on stack layout _before_ any <:Codegen:codegen> takes over.
 In particular, we compute all the stack frame info for each <:RSSA:>
 function, including stack size, <:GarbageCollection:garbage collector>
 masks for each frame, etc.  To do so, the <:Machine:>

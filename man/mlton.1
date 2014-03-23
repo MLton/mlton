@@ -55,9 +55,10 @@ Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
 \fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBllvm\fP}\fP\fR
-Generate native code or C code.  With \fB\-codegen
-native\fP (\fB\-codegen x86\fP or \fB\-codegen amd64\fP), \fBMLton\fP
-typically compiles more quickly and generates better code.
+Generate native object code via amd64 assembly, C code, LLVM code, or
+x86 assembly.  With \fB\-codegen native\fP (\fB\-codegen amd64\fP or
+\fB\-codegen x86\fP), \fBMLton\fP typically compiles more quickly and
+generates better code.
 
 .TP
 \fB\-const '\fIname value\fP'\fR

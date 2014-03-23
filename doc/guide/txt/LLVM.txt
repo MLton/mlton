@@ -1,18 +1,11 @@
 LLVM
 ====
 
-http://www.llvm.org/[LLVM] (Low Level Virtual Machine) is an abstract
-machine, optimizer, and code generator.  It might make a nice backend
-for MLton, and there has been some discussion about this on the MLton
-list.
+The http://www.llvm.org/[LLVM Project] is a collection of modular and
+reusable compiler and toolchain technologies.
 
-* http://www.mlton.org/pipermail/mlton/2005-November/028263.html
-
-The latest is that LLVM's `gcc` variant has been used in place of
-`gcc`, and so there has been no work toward changing MLton to target
-LLVM's IL directly.
-
-* http://www.mlton.org/pipermail/mlton/2006-August/029021.html
+MLton supports code generation via LLVM (`-codegen llvm`); see
+<:LLVMCodegen:>.
 
 == Also see ==
 

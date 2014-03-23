@@ -1,0 +1,17 @@
+LLVMCodegen
+===========
+
+The <:LLVMCodegen:> is a <:Codegen:code generator> that translates the
+<:Machine:> <:IntermediateLanguage:> to <:LLVM:> assembly, which is
+further optimized and compiled to native object code by the <:LLVM:>
+toolchain.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/codegen/llvm-codegen/llvm-codegen.sig)>
+* <!ViewGitFile(mlton,master,mlton/codegen/llvm-codegen/llvm-codegen.fun)>
+
+== Details and Notes ==
+
+The <:LLVMCodegen:> was initially developed by Brian Leibig (see
+<!Cite(Leibig13,An LLVM Back-end for MLton)>).

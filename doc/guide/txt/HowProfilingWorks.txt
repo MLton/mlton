@@ -43,10 +43,10 @@ the profiler uses the `Enter`/`Leave` statements to infer the "local"
 portion of the control stack at each program point.  The profiler then
 removes the ++Enter++s/++Leave++s and inserts different information
 depending on which kind of profiling is happening.  For time profiling
-(with the native codegen), the profiler inserts labels that cover the
+(with the <:AMD64Codegen:> and <:X86Codegen:>), the profiler inserts labels that cover the
 code (i.e. each statement has a unique label in its basic block that
 prefixes it) and associates each label with the local control stack.
-For time profiling (with the C and bytecode codegens), the profiler
+For time profiling (with the <:CCodegen:> and <:LLVMCodegen:>), the profiler
 inserts code that sets a global field that records the local control
 stack.  For allocation profiling, the profiler inserts calls to a C
 function that will maintain byte counts.  With stack profiling, the

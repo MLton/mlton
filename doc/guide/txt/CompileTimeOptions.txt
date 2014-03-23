@@ -33,11 +33,12 @@ pass an option to the assembler, you must use `gcc`'s `-Wa,` syntax.
 +
 Pass _option_ to `gcc` when compiling C code.
 
-* ++-codegen {native|x86|amd64|c}++
+* ++-codegen {native|amd64|c|llvm|x86}++
 +
-Generate native code or C code.  With `-codegen native`
-(`-codegen x86` or `-codegen amd64`), MLton typically compiles more
-quickly and generates better code.
+Generate native object code via amd64 assembly, C code, LLVM code, or
+x86 code or C code.  With `-codegen native` (`-codegen amd64` or
+`-codegen x86`), MLton typically compiles more quickly and generates
+better code.
 
 * ++-const __name__ __value__++
 +
@@ -89,7 +90,7 @@ Write C prototypes to _file_ for all of the functions in the program
 
 * ++-ieee-fp {false|true}++
 +
-Cause the native code generator to be pedantic about following the
+Cause the x86 native code generator to be pedantic about following the
 IEEE floating point standard.  By default, it is not, because of the
 performance cost.  This only has an effect with `-codegen x86`.
 
