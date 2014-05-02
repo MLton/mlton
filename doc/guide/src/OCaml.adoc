@@ -22,6 +22,10 @@ Standard ML does not (however, see <:ObjectOrientedProgramming:>).
 http://www.mpi-sws.org/%7Erossberg/sml-vs-ocaml.html[side-by-side
 comparison] of the syntax of SML and OCaml.
 
+* Adam Chlipala has a
+http://adam.chlipala.net/mlcomp[point-by-point comparison] of OCaml
+and SML.
+
 == OCaml and MLton ==
 
 Here's a comparison of some aspects of OCaml and MLton.
