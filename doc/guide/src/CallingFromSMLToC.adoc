@@ -51,7 +51,7 @@ sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/ffi-import.c]
 
 Compile and run the program.
 ----
-% mlton -default-ann 'allowFFI true' import.sml ffi-import.c
+% mlton -default-ann 'allowFFI true' -export-header export.h  import.sml ffi-import.c
 % ./import
 13
 success
