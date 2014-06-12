@@ -24,7 +24,7 @@ case "$#" in
 esac
 
 uname=`uname`
-arch=
+arch=$HOST_ARCH
 
 case "$uname" in
 AIX)
