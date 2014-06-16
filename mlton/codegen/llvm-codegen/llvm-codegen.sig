@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet, Brian Leibig.
+(* Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
@@ -6,7 +6,6 @@
 
 signature LLVM_CODEGEN_STRUCTS =
    sig
-       structure Ffi: FFI
        structure CCodegen: C_CODEGEN
        structure Machine: MACHINE
        sharing Machine = CCodegen.Machine
