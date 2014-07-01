@@ -100,5 +100,5 @@ syntax tree nodes in its intermediate languages.  See
 <!ViewGitFile(mlton,master,lib/mlton/basic/property-list.sig)> and
 <!ViewGitFile(mlton,master,lib/mlton/basic/property-list.fun)>.
 
-* The <:MLRISCLibrary:> <!Cite(LeungGeorge98, uses property lists
+* The <:MLRISCLibrary:> <!Cite(LeungGeorge99, uses property lists
 extensively)>.

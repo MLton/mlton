@@ -1,5 +1,5 @@
 TILT
 ====
 
-http://www.tilt.cs.cmu.edu/[TILT] is a
+http://www.cs.cornell.edu/home/jgm/tilt.html[TILT] is a
 <:StandardMLImplementations:Standard ML implementation>.

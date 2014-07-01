@@ -11,7 +11,7 @@ express certain object-oriented concepts in SML.
 
 * <!Cite(LarsenNiss04, mGTK: An SML binding of Gtk+)>
 
-* <!Cite(FluetPucella02, Phantom Types and Subtyping)>
+* <!Cite(FluetPucella06, Phantom Types and Subtyping)>
 
 The question of OO programming in SML comes up every now and then.
 The following discusses a simple object-oriented (OO) programming

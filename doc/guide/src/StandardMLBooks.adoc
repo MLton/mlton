@@ -23,6 +23,6 @@ StandardMLBooks
 
 == Related Topics ==
 
-* <!Cite(Reppy99, Concurrent Programming in ML)>
+* <!Cite(Reppy07, Concurrent Programming in ML)>
 
 * <!Cite(Okasaki99, Purely Functional Data Structures)>
