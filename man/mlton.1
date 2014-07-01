@@ -54,10 +54,11 @@ wish to pass an option to the assembler, you must use \fBgcc\fP's
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
-\fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP}\fP\fR
-Generate native code or C code.  With \fB\-codegen
-native\fP (\fB\-codegen x86\fP or \fB\-codegen amd64\fP), \fBMLton\fP
-typically compiles more quickly and generates better code.
+\fB\-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBllvm\fP}\fP\fR
+Generate native object code via amd64 assembly, C code, LLVM code, or
+x86 assembly.  With \fB\-codegen native\fP (\fB\-codegen amd64\fP or
+\fB\-codegen x86\fP), \fBMLton\fP typically compiles more quickly and
+generates better code.
 
 .TP
 \fB\-const '\fIname value\fP'\fR
@@ -120,10 +121,22 @@ approximate measure of code size of a procedure.  The default is 320.
 Save intermediate files.  If no \fB\-keep\fP argument is given, then
 only the output file is saved.
 .in +.5i
-\fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to \fBgcc\fP
+\fBg\fP    generated \fB.c\fP and \fB.s\fP files passed to \fBgcc\fP and generated \fB.ll\fP files passed to \fBllvm-as\fP
 .br
 \fBo\fP    object (\fB.o\fP) files
 .in -.5i
+
+.TP
+\fB\-llvm\-as\-opt \fIoption\fP\fR
+Pass \fIoption\fP to \fBllvm-as\fP when assembling (\fB.ll\fP to \fB.bc\fP) LLVM code.
+
+.TP
+\fB\-llvm\-llc\-opt \fIoption\fP\fR
+Pass \fIoption\fP to \fBllc\fP when compiling (\fB.bc\fP to \fB.o\fP) LLVM code.
+
+.TP
+\fB\-llvm\-opt\-opt \fIoption\fP\fR
+Pass \fIoption\fP to \fBopt\fP when optimizing (\fB.bc\fP to \fB.bc\fP) LLVM code.
 
 .TP
 \fB\-link\-opt \fIoption\fP\fR

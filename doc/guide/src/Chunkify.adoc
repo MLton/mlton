@@ -17,4 +17,4 @@ program into disjoint sets, referred to as chunks.
 == Details and Notes ==
 
 Breaking large <:RSSA:> functions into chunks is necessary for
-reasonable `gcc` compile times with the <:CCodegen:>.
+reasonable compile times with the <:CCodegen:> and the <:LLVMCodegen:>.

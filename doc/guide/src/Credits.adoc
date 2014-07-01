@@ -67,6 +67,8 @@ list.
 
  * Ville Laurikari ported MLton to IA64/HPUX, HPPA/HPUX, PowerPC/AIX, PowerPC64/AIX.
 
+ * Brian Leibig implemented the <:LLVMCodegen:>.
+
  * Geoffrey Mainland helped with FreeBSD packaging.
 
  * Eric McCorkle ported MLton to Intel Mac.

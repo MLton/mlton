@@ -438,6 +438,15 @@ ____
  Ken Larsen and Henning Niss.
  USENIX Annual Technical Conference, 2004.
 
+ * <!Anchor(Leibig13)>
+ http://www.cs.rit.edu/~bal6053/msproject/[An LLVM Back-end for MLton].
+ Brian Leibig.
+ MS Project Report, 2013.
++
+____
+Describes MLton's <:LLVMCodegen:>.
+____
+
  * <!Anchor(Leroy90)>
  http://pauillac.inria.fr/~xleroy/bibrefs/Leroy-ZINC.html[The ZINC Experiment: an Economical Implementation of the ML Language].
  Xavier Leroy.

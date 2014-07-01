@@ -1,0 +1,18 @@
+(* Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+local
+   ../../atoms/sources.mlb
+   ../../control/sources.mlb
+   ../../../lib/mlton/sources.mlb
+   ../../backend/sources.mlb
+   ../c-codegen/sources.mlb
+
+   llvm-codegen.sig
+   llvm-codegen.fun
+in
+   functor LLVMCodegen
+end
