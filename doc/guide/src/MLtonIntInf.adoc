@@ -17,7 +17,7 @@ signature MLTON_INT_INF =
          Big of BigWord.word vector
        | Small of SmallInt.int
       val rep: t -> rep
-      val fromRep : rep -> t
+      val fromRep : rep -> t option
    end
 ----
 
@@ -65,5 +65,6 @@ returns the underlying representation of `i`.
 
 * `fromRep r`
 +
-converts from the underlying representation back to `i`.  If the input
-is not identical to the result of `rep`, the result is undefined.
+converts from the underlying representation back to an `IntInf.int`.  
+If `fromRep r` is given anything besides the valid result of `rep i`
+for some `i`, this function call will return `NONE`.
