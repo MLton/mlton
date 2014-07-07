@@ -27,20 +27,8 @@ signature PRIM_INT_INF =
       val rep: int -> rep
       val fromRep: rep -> int option
 
-      structure Prim : 
-         sig
-            val isSmall: int -> bool
-            val areSmall: int * int -> bool
-            val dropTag: ObjptrWord.word -> ObjptrWord.word
-            val dropTagCoerce: int -> ObjptrWord.word
-            val dropTagCoerceInt: int -> ObjptrInt.int
-            val addTag: ObjptrWord.word -> ObjptrWord.word
-            val addTagCoerce: ObjptrWord.word -> int
-            val addTagCoerceInt: ObjptrInt.int -> int
-            val zeroTag: ObjptrWord.word -> ObjptrWord.word
-            val oneTag: ObjptrWord.word -> ObjptrWord.word
-            val oneTagCoerce: ObjptrWord.word -> int
-         end
+      val isSmall: int -> bool
+      val areSmall: int * int -> bool
 
       val abs: int -> int
       val +! : int * int -> int
@@ -74,7 +62,6 @@ signature PRIM_INT_INF =
       val leu: int * int -> bool
       val gtu: int * int -> bool
       val geu: int * int -> bool
-      val isNeg: int -> bool
 
       val andb: int * int -> int
       val <<? : int * Primitive.Word32.word -> int
@@ -1276,21 +1263,6 @@ structure IntInf =
       val maxInt = NONE
       val minInt = NONE
 
-      structure Prim = 
-         struct
-            val isSmall = isSmall
-            val areSmall = areSmall
-            val dropTag = dropTag
-            val dropTagCoerce = dropTagCoerce
-            val dropTagCoerceInt = dropTagCoerceInt
-            val addTag = addTag
-            val addTagCoerce = addTagCoerce
-            val addTagCoerceInt = addTagCoerceInt
-            val zeroTag = zeroTag
-            val oneTag = oneTag
-            val oneTagCoerce = oneTagCoerce
-        end
-
       val abs = bigAbs
       val op +! = bigAdd
       val op +? = bigAdd
@@ -1323,7 +1295,6 @@ structure IntInf =
       val leu = bigLEU
       val gtu = bigGTU
       val geu = bigGEU
-      val isNeg = bigIsNeg
 
       val andb = bigAndb
       val <<? = bigLshift

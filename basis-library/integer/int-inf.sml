@@ -22,11 +22,9 @@ structure IntInf: INT_INF_EXTRA =
       val precision: Int.int option = NONE
 
       fun sign (arg: int): Int.int =
-         if Prim.isSmall arg
-            then I.sign (Prim.dropTagCoerceInt arg)
-            else if isNeg arg
-                    then ~1
-                    else 1
+         if arg < zero then ~1
+         else if arg > zero then 1
+         else 0
 
       fun sameSign (x, y) = sign x = sign y
 
@@ -201,8 +199,8 @@ structure IntInf: INT_INF_EXTRA =
                              NONE => (acc, s)
                            | SOME ({more, shift, chunk}, s') =>
                                 loop (more,
-                                      ((Prim.addTagCoerce shift) * acc)
-                                      + (Prim.addTagCoerce chunk),
+                                      ((W.toLargeInt shift) * acc)
+                                      + (W.toLargeInt chunk),
                                       s')
                      else (acc, s)
                fun reader (s: 'a): (int * 'a) option =
@@ -210,7 +208,7 @@ structure IntInf: INT_INF_EXTRA =
                      NONE => NONE
                    | SOME ({more, chunk, ...}, s') =>
                         SOME (loop (more,
-                                    Prim.addTagCoerce chunk,
+                                    W.toLargeInt chunk,
                                     s'))
             in 
                reader
@@ -334,7 +332,4 @@ structure IntInf: INT_INF_EXTRA =
                  fromLarge = fn {numLimbsMinusOne, mostSigLimbLog2} =>
                  Int.+ (Int.* (MPLimb.wordSize, SeqIndex.toInt numLimbsMinusOne),
                         Int32.toInt mostSigLimbLog2)}
-
-      val isSmall = Prim.isSmall
-      val areSmall = Prim.areSmall
    end
