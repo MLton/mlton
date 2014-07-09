@@ -65,7 +65,7 @@ a bug.  For a list of known bugs, see <:UnresolvedBugs:>.
 * A complete implementation of the <:BasisLibrary:Basis Library>.
 +
 MLton's implementation matches latest <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification], and includes a
+http://www.sml-family.org/Basis[specification], and includes a
 complete implementation of all the required modules, as well as many
 of the optional modules.
 

@@ -143,7 +143,7 @@ In some situations it would seem useful to define functions whose
 result type would depend on some of the arguments.  Traditionally such
 functions have been thought to be impossible in SML and the solution
 has been to define multiple functions.  For example, the
-http://www.standardml.org/Basis/socket.html[`Socket` structure] of the
+http://www.sml-family.org/Basis/socket.html[`Socket` structure] of the
 Basis library defines 16 `send` and 16 `recv` functions.  In contrast,
 the Net structure
 (<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/net.sig)>) of the

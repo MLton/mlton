@@ -313,7 +313,7 @@ ____
 An introduction and overview of the <:BasisLibrary:Basis Library>,
 followed by a detailed description of each module.  The module
 descriptions are also available
-http://www.standardml.org/Basis[online].
+http://www.sml-family.org/Basis[online].
 ____
 
  * <!Anchor(GrossmanEtAl02)>

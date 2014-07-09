@@ -5,7 +5,7 @@ Here are the known bugs in <:Release20051202:MLton 20051202>, listed
 in reverse chronological order of date reported.
 
 * <!Anchor(bug16)>
-Bug in the http://www.standardml.org/Basis/real.html#SIG:REAL.fmt:VAL[++Real__<N>__.fmt++], http://www.standardml.org/Basis/real.html#SIG:REAL.fromString:VAL[++Real__<N>__.fromString++], http://www.standardml.org/Basis/real.html#SIG:REAL.scan:VAL[++Real__<N>__.scan++], and http://www.standardml.org/Basis/real.html#SIG:REAL.toString:VAL[++Real__<N>__.toString++] functions of the <:BasisLibrary:Basis Library> implementation.  These functions were using `TO_NEAREST` semantics, but should obey the current rounding mode.  (Only ++Real__<N>__.fmt StringCvt.EXACT++, ++Real__<N>__.fromDecimal++, and ++Real__<N>__.toDecimal++ are specified to override the current rounding mode with `TO_NEAREST` semantics.)
+Bug in the http://www.sml-family.org/Basis/real.html#SIG:REAL.fmt:VAL[++Real__<N>__.fmt++], http://www.sml-family.org/Basis/real.html#SIG:REAL.fromString:VAL[++Real__<N>__.fromString++], http://www.sml-family.org/Basis/real.html#SIG:REAL.scan:VAL[++Real__<N>__.scan++], and http://www.sml-family.org/Basis/real.html#SIG:REAL.toString:VAL[++Real__<N>__.toString++] functions of the <:BasisLibrary:Basis Library> implementation.  These functions were using `TO_NEAREST` semantics, but should obey the current rounding mode.  (Only ++Real__<N>__.fmt StringCvt.EXACT++, ++Real__<N>__.fromDecimal++, and ++Real__<N>__.toDecimal++ are specified to override the current rounding mode with `TO_NEAREST` semantics.)
 +
 Thanks to Sean McLaughlin for the bug report.
 +
@@ -19,19 +19,19 @@ Thanks to Sean McLaughlin for the bug report.
 Fixed by revision <!ViewSVNRev(5794)>.
 
 * <!Anchor(bug14)>
-Bug in the http://www.standardml.org/Basis/real.html#SIG:REAL.toInt:VAL[++Real32.toInt++] function of the <:BasisLibrary:Basis Library> implementation could lead incorrect results when applied to a `Real32.real` value numerically close to `valOf(Int.maxInt)`.
+Bug in the http://www.sml-family.org/Basis/real.html#SIG:REAL.toInt:VAL[++Real32.toInt++] function of the <:BasisLibrary:Basis Library> implementation could lead incorrect results when applied to a `Real32.real` value numerically close to `valOf(Int.maxInt)`.
 +
 Fixed by revision <!ViewSVNRev(5764)>.
 
 * <!Anchor(bug13)>
-The http://www.standardml.org/Basis/socket.html[++Socket++] structure of the <:BasisLibrary:Basis Library> implementation used `andb` rather than `orb` to unmarshal socket options (for ++Socket.Ctl.get__<OPT>__++ functions).
+The http://www.sml-family.org/Basis/socket.html[++Socket++] structure of the <:BasisLibrary:Basis Library> implementation used `andb` rather than `orb` to unmarshal socket options (for ++Socket.Ctl.get__<OPT>__++ functions).
 +
 Thanks to Anders Petersson for the bug report and patch.
 +
 Fixed by revision <!ViewSVNRev(5735)>.
 
 * <!Anchor(bug12)>
-Bug in the http://www.standardml.org/Basis/date.html[++Date++] structure of the <:BasisLibrary:Basis Library> implementation yielded some functions that would erroneously raise `Date` when applied to a year before 1900.
+Bug in the http://www.sml-family.org/Basis/date.html[++Date++] structure of the <:BasisLibrary:Basis Library> implementation yielded some functions that would erroneously raise `Date` when applied to a year before 1900.
 +
 Thanks to Joe Hurd for the bug report.
 +
@@ -45,7 +45,7 @@ Thanks to Vesa Karvonen for the bug report.
 Fixed by revision <!ViewSVNRev(5731)>.
 
 * <!Anchor(bug10)>
-The http://www.standardml.org/Basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL[++PackReal__<N>__.toBytes++] function in the <:BasisLibrary:Basis Library> implementation incorrectly shared (and mutated) the result vector.
+The http://www.sml-family.org/Basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL[++PackReal__<N>__.toBytes++] function in the <:BasisLibrary:Basis Library> implementation incorrectly shared (and mutated) the result vector.
 +
 Thanks to Eric McCorkle for the bug report and patch.
 +
@@ -57,7 +57,7 @@ Bug in elaboration of FFI forms.  Using a unary FFI types (e.g., `array`, `ref`,
 Fixed by revision <!ViewSVNRev(4890)>.
 
 * <!Anchor(bug08)>
-The http://www.standardml.org/Basis/mono-vector.html[++MONO_VECTOR++] signature of the <:BasisLibrary:Basis Library> implementation incorrectly omits the specification of `find`.
+The http://www.sml-family.org/Basis/mono-vector.html[++MONO_VECTOR++] signature of the <:BasisLibrary:Basis Library> implementation incorrectly omits the specification of `find`.
 +
 Fixed by revision <!ViewSVNRev(4707)>.
 
@@ -81,7 +81,7 @@ The native codegen's implementation of the C-calling convention failed to widen 
 Fixed by revision <!ViewSVNRev(4631)>.
 
 * <!Anchor(bug04)>
-The http://www.standardml.org/Basis/pack-float.html[++PACK_REAL++] structures of the <:BasisLibrary:Basis Library> implementation used byte, rather than element, indexing.
+The http://www.sml-family.org/Basis/pack-float.html[++PACK_REAL++] structures of the <:BasisLibrary:Basis Library> implementation used byte, rather than element, indexing.
 +
 Fixed by revision <!ViewSVNRev(4411)>.
 
