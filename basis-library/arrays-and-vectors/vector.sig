@@ -51,8 +51,8 @@ signature VECTOR_EXTRA =
                           sub: int -> 'a,
                           update: int * 'a -> unit}
       val duplicate: 'a vector -> 'a vector
-      val tabulate': SeqIndex.int * (SeqIndex.int -> 'a) -> 'a vector 
       val toList: 'a vector -> 'a list
       val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector * 'b
+      val unfold: int * 'b * ('b -> 'a * 'b) -> 'a vector * 'b
       val vector: int * 'a -> 'a vector
    end

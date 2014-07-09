@@ -49,6 +49,7 @@ structure Exn =
       exception Fail32 of String32.string
       exception Overflow
       exception Size
+      exception Span
       exception Subscript
 
       val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
@@ -92,6 +93,7 @@ exception Domain = Primitive.Exn.Domain
 exception Match = Primitive.Exn.Match
 exception Overflow = Primitive.Exn.Overflow
 exception Size = Primitive.Exn.Size
+exception Span = Primitive.Exn.Span
 exception Subscript = Primitive.Exn.Subscript
 
 datatype option = datatype Primitive.Option.option
