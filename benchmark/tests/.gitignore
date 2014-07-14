@@ -21,6 +21,9 @@
 /count-graphs
 /count-graphs.batch.sml
 /count-graphs.*-*
+/even-odd
+/even-odd.batch.sml
+/even-odd.*-*
 /fft
 /fft.batch.sml
 /fft.*-*
