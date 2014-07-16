@@ -291,7 +291,10 @@ fun test np =
 fun loop_np i np = if i > 15 then () else
   (test np; loop_np (i+1) (np*2))
 
-fun doit size = loop_np 1 size
+fun doit n =
+   if n = 0
+      then ()
+   else (loop_np 1 256; doit (n - 1))
 
 end
 end;
