@@ -27,9 +27,6 @@ for prog in $bench; do
     case "$prog" in
         "fxp")
             continue ;;
-        "model-elimination")
-            echo "(\"model-elimination\", 0):: (* ??? sec *)"
-            continue ;;
     esac
 
     ( cat $prog.sml ; echo "val _ = Main.doit (valOf (Int.fromString (hd (CommandLine.arguments ()))))" ) > $prog.main.sml
