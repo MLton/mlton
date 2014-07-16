@@ -35,12 +35,15 @@ for prog in $bench; do
     ( cat $prog.sml ; echo "val _ = Main.doit (valOf (Int.fromString (hd (CommandLine.arguments ()))))" ) > $prog.main.sml
     mlton -output $prog $prog.main.sml 1>/dev/null 2>/dev/null
 
-    n=1;
-    m=1;
-    k=1;
-    t=$($time -o $prog.time --format "%U + %S" ./$prog $n 1>/dev/null 2>/dev/null; cat $prog.time | grep -v "Command exited" | bc)
+    n=0
+    t=0
+
     while [ "$(echo "$t < $minTime" | bc)" = "1" ]; do
-        if [ $n -lt $m ]; then
+        if [ $n -eq 0 ]; then
+            n=1
+            m=1
+            k=1
+        elif [ $n -lt $m ]; then
             n=$(($n+$k))
         else
             m=$((2*$m))
