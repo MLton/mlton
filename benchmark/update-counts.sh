@@ -54,10 +54,17 @@ for prog in $bench; do
                 n=$(($n+$k))
             fi
         fi
-        t=$($time -o $prog.time --format "%U + %S" ./$prog $n 1>/dev/null 2>/dev/null; cat $prog.time | grep -v "Command exited" | bc)
+        $time -o $prog.time --format "%U + %S" ./$prog $n 1>/dev/null 2>/dev/null
+        t=$(cat $prog.time | grep -v "Command exited" | bc)
+        s=$(grep "Command exited" $prog.time)
+        if [ ! -z "$s" ]; then
+            s="; $s "
+            break
+        fi
     done
+
+    echo "(\"$prog\", $n):: (* $t sec $s*)"
 
     rm $prog $prog.main.sml $prog.time
 
-    echo "(\"$prog\", $n):: (* $t sec *)"
 done
