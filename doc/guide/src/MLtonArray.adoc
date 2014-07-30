@@ -12,5 +12,5 @@ signature MLTON_ARRAY =
 * `unfoldi (n, b, f)`
 +
 constructs an array _a_ of length `n`, whose elements _a~i~_ are
-determined by the equations __a~0~ = b__ and
+determined by the equations __b~0~ = b__ and
 __(a~i~, b~i+1~) = f (i, b~i~)__.
