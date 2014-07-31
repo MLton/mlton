@@ -31,5 +31,5 @@ operations.
 * `unfoldi (n, b, f)`
 +
 constructs a vector _v_ of length `n`, whose elements __v~i~__ are
-determined by the equations __v~0~ = b__ and
+determined by the equations __b~0~ = b__ and
 __(v~i~, b~i+1~) = f (i, b~i~)__.
