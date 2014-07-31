@@ -48,15 +48,7 @@ signature ARRAY_SLICE_EXTRA =
 
       val concat: 'a slice list -> 'a array
       val toList: 'a slice -> 'a list
-      val slice': 'a array * SeqIndex.int * SeqIndex.int option -> 'a slice
-      val unsafeSlice': 'a array * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSlice: 'a array * int * int option -> 'a slice
-      val sub': 'a slice * SeqIndex.int -> 'a
-      val unsafeSub': 'a slice * SeqIndex.int -> 'a
       val unsafeSub: 'a slice * int -> 'a
-      val unsafeSubslice': 'a slice * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
-      val update': 'a slice * SeqIndex.int * 'a -> unit
-      val unsafeUpdate': 'a slice * SeqIndex.int * 'a -> unit
-      val unsafeUpdate: 'a slice * int * 'a -> unit
    end

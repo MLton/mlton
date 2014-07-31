@@ -8,12 +8,7 @@
 
 structure Vector: VECTOR_EXTRA =
    struct
-      structure V = Sequence (type 'a sequence = 'a vector
-                              type 'a elt = 'a
-                              val fromArray = Primitive.Vector.fromArrayUnsafe
-                              val isMutable = false
-                              val length = Primitive.Vector.length
-                              val subUnsafe = Primitive.Vector.subUnsafe)
+      structure V = Sequence (Primitive.Vector)
       open V
 
       type 'a vector = 'a vector
@@ -26,34 +21,14 @@ structure Vector: VECTOR_EXTRA =
 
             val isSubvector = isSubsequence
             val span = fn (sl, sl') => 
-               span (op = : ''a vector * ''a vector -> bool) (sl, sl')
+               Primitive.Vector.Slice.span 
+                  (op = : ''a vector * ''a vector -> bool) 
+                  (sl, sl')
          end
 
       fun update (v, i, x) = 
-         let
-            fun doit i =
-               tabulate' (length' v,
-                          fn j => if i = j 
-                                     then x 
-                                     else unsafeSub' (v, j))
-         in 
-            if Primitive.Controls.safe
-               then
-                  let
-                     val i = 
-                        (SeqIndex.fromInt i)
-                        handle Overflow => raise Subscript
-                  in
-                     if SeqIndex.geu (i, length' v)
-                        then raise Subscript
-                        else doit i
-                  end 
-               else let
-                       val i = SeqIndex.fromIntUnsafe i
-                    in 
-                       doit i
-                    end
-         end
+         (Primitive.Vector.update (v, SeqIndex.fromInt i, x))
+         handle Overflow => raise Subscript
 
       val isSubvector = isSubsequence
 

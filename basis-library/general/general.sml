@@ -19,7 +19,7 @@ structure General: GENERAL_EXTRA =
       exception Fail of string
       exception Overflow = Overflow
       exception Size = Size
-      exception Span
+      exception Span = Span
       exception Subscript = Subscript
 
       datatype order = datatype Primitive.Order.order
