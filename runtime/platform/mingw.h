@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <unistd.h>
+#include <winsock2.h>
 #include <windows.h>
 
 #include <dirent.h>
@@ -23,7 +24,6 @@
 #include <lm.h>
 #include <process.h>
 //#include <psapi.h>
-#include <winsock2.h>
 #include <ws2tcpip.h>
 #include <psapi.h>
 
