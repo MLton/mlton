@@ -22892,6 +22892,7 @@ structure Main =
                   let
                      val _ = ins := openIn "DATA/hamlet-input.sml"
                      val _ = Main.main' ["-x"]
+                     val _ = closeIn (!ins)
                   in loop (n - 1)
                   end
          in 
