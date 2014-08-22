@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -381,9 +381,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                Const c =>
                   (case c of
                       Const.IntInf i =>
-                         if Const.SmallIntInf.isSmall i
-                            then const ()
-                         else ()
+                         (case Const.IntInfRep.fromIntInf i of
+                             Const.IntInfRep.Big _ => ()
+                           | Const.IntInfRep.Small _ => const ())
                     | Const.Word _ => const ()
                     | _ => ())
              | ConApp {args, ...} =>

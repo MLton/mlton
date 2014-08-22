@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -16,26 +17,44 @@ structure ConstType = ConstType (struct
                                     structure WordSize = WordX.WordSize
                                  end)
 
-structure SmallIntInf =
+structure IntInfRep =
    struct
       structure WordSize = WordX.WordSize
-
-      fun toWord (i: IntInf.t): WordX.t option =
+      datatype t = Big of WordXVector.t | Small of WordX.t
+      fun fromIntInf (i: IntInf.t) : t =
          let
-            val ws = WordSize.smallIntInfWord ()
-            val ws' = WordSize.fromBits (Bits.- (WordSize.bits ws, Bits.one))
+            val sws = WordSize.smallIntInfWord ()
+            val sws' = WordSize.fromBits (Bits.- (WordSize.bits sws, Bits.one))
          in
-            if WordSize.isInRange (ws', i, {signed = true})
-               then SOME (WordX.orb (WordX.one ws,
-                                     WordX.lshift (WordX.fromIntInf (i, ws),
-                                                   WordX.one ws)))
-               else NONE
+            if WordSize.isInRange (sws', i, {signed = true})
+               then Small (WordX.orb (WordX.one sws,
+                                      WordX.lshift (WordX.fromIntInf (i, sws), WordX.one sws)))
+            else let
+                    val bws = WordSize.bigIntInfWord ()
+                    val card = WordSize.cardinality bws
+                    fun loop (i, acc) =
+                       if IntInf.isZero i
+                          then Big (WordXVector.fromListRev ({elementSize = bws}, acc))
+                       else let
+                               val (quot, rem) = IntInf.quotRem (i, card)
+                            in
+                               loop (quot, (WordX.fromIntInf (rem, bws)) :: acc)
+                            end
+                 in
+                    loop (if IntInf.>= (i, IntInf.zero)
+                             then (i, [WordX.zero bws])
+                          else (IntInf.~ i, [WordX.one bws]))
+                 end
          end
-
-      val isSmall = isSome o toWord
-
-      fun fromWord (w: WordX.t): IntInf.t =
-         WordX.toIntInfX (WordX.rshift (w, WordX.one (WordX.size w), {signed = true}))
+      fun smallToIntInf (w: WordX.t): IntInf.t option =
+         let
+            val sws = WordSize.smallIntInfWord ()
+            val one = WordX.one sws
+         in
+            if WordSize.equals (WordX.size w, sws) andalso WordX.isOne (WordX.andb (w, one))
+               then SOME (WordX.toIntInfX (WordX.rshift (w, one, {signed = true})))
+            else NONE
+         end
    end
 
 datatype t =

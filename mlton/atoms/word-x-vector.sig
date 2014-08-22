@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -22,6 +23,7 @@ signature WORD_X_VECTOR =
       val equals: t * t -> bool
       val forall: t * (WordX.t -> bool) -> bool
       val fromString: string -> t
+      val fromListRev: {elementSize: WordSize.t} * WordX.t list -> t
       val hash : t -> word
       val layout: t -> Layout.t
       val length: t -> int

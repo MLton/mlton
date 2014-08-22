@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1438,7 +1438,7 @@ val extractTargs =
    fn z =>
    Trace.trace ("Prim.extractTargs", layout o #1, Layout.ignore) extractTargs z
 
-structure SmallIntInf = Const.SmallIntInf
+structure IntInfRep = Const.IntInfRep
 
 structure ApplyArg =
    struct
@@ -1655,9 +1655,9 @@ fun ('a, 'b) apply (p: 'a t,
                 end
            | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
            | (IntInf_toWord, [IntInf i]) =>
-                (case SmallIntInf.toWord i of
-                    NONE => ApplyResult.Unknown
-                  | SOME w => word w)
+                (case IntInfRep.fromIntInf i of
+                    IntInfRep.Big _ => ApplyResult.Unknown
+                  | IntInfRep.Small w => word w)
            | (_, [IntInf i1, IntInf i2, _]) => intInfBinary (i1, i2)
            | (_, [IntInf i1, Word w2, _]) => intInfShiftOrToString (i1, w2)
            | (_, [IntInf i1, _]) => intInfUnary (i1)
@@ -1724,7 +1724,10 @@ fun ('a, 'b) apply (p: 'a t,
                 wordS (WordX.rshift, s, w1, w2)
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
            | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
-           | (Word_toIntInf, [Word w]) => intInf (SmallIntInf.fromWord w)
+           | (Word_toIntInf, [Word w]) =>
+                (case IntInfRep.smallToIntInf w of
+                    NONE => ApplyResult.Unknown
+                  | SOME i => intInf i)
            | (Word_extdToWord (_, s, {signed}), [Word w]) =>
                 word (if signed then WordX.resizeX (w, s)
                       else WordX.resize (w, s))

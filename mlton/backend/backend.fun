@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -459,9 +459,9 @@ let
          in
             case c of
                IntInf i =>
-                  (case Const.SmallIntInf.toWord i of
-                      NONE => globalIntInf i
-                    | SOME w => M.Operand.Cast (M.Operand.Word w, Type.intInf ()))
+                  (case Const.IntInfRep.fromIntInf i of
+                      Const.IntInfRep.Big _ => globalIntInf i
+                    | Const.IntInfRep.Small w => M.Operand.Cast (M.Operand.Word w, Type.intInf ()))
              | Null => M.Operand.Null
              | Real r => globalReal r
              | Word w => M.Operand.Word w
