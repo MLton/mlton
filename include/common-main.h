@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -21,10 +22,6 @@
 #define DeclareProfileLabel(l)                  \
         extern char l __attribute__ ((weak))
 
-#define BeginIntInfInits static struct GC_intInfInit intInfInits[] = {
-#define IntInfInitElem(g, n) { g, n },
-#define EndIntInfInits };
-
 #define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
 #define VectorInitElem(a, b, c, d) { (pointer)a, b, c, d },
 #define EndVectorInits };
@@ -43,8 +40,6 @@ PRIVATE Pointer gcStateAddress;
         gcState.frameLayoutsLength = cardof(frameLayouts);              \
         gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
-        gcState.intInfInits = intInfInits;                              \
-        gcState.intInfInitsLength = cardof(intInfInits);                \
         gcState.loadGlobals = loadGlobals;                              \
         gcState.magic = mg;                                             \
         gcState.maxFrameSize = mfs;                                     \

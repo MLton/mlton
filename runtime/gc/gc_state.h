@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -40,8 +40,6 @@ struct GC_state {
   uint32_t globalsLength;
   bool hashConsDuringGC;
   struct GC_heap heap;
-  struct GC_intInfInit *intInfInits;
-  uint32_t intInfInitsLength;
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   int (*loadGlobals)(FILE *f); /* loads the globals from the file. */

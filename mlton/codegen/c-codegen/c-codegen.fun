@@ -272,9 +272,6 @@ fun outputDeclarations
          in
             ()
          end
-      fun declareIntInfs () =
-         (print "BeginIntInfInits\n"
-          ; print "EndIntInfInits\n")
       fun declareStrings () =
          (print "BeginVectorInits\n"
           ; (List.foreach
@@ -459,7 +456,6 @@ fun outputDeclarations
       ; declareGlobals ("PRIVATE ", print)
       ; declareExports ()
       ; declareLoadSaveGlobals ()
-      ; declareIntInfs ()
       ; declareStrings ()
       ; declareReals ()
       ; declareFrameOffsets ()

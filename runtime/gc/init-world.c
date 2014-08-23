@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012 Matthew Fluet.
+/* Copyright (C) 2011-2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,27 +11,12 @@
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
-size_t sizeofIntInfFromString (GC_state s, const char *str) {
-  size_t slen = strlen (str);
-
-  /* A slight overestimate. */
-  double bytesPerChar = 0.415241011861 /* = ((log(10.0) / log(2.0)) / 8.0) */ ;
-  double bytes = ceil((double)slen * bytesPerChar);
-  return align (GC_ARRAY_HEADER_SIZE
-                + sizeof(mp_limb_t) // for the sign
-                + align((size_t)bytes, sizeof(mp_limb_t)),
-                s->alignment);
-}
-
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
   size_t dataBytes;
   size_t total;
 
   total = 0;
-  for (i = 0; i < s->intInfInitsLength; ++i) {
-    total += sizeofIntInfFromString (s, s->intInfInits[i].mlstr);
-  }
   for (i = 0; i < s->vectorInitsLength; ++i) {
     dataBytes =
       s->vectorInits[i].bytesPerElement
@@ -43,34 +28,6 @@ size_t sizeofInitialBytesLive (GC_state s) {
                     s->alignment);
   }
   return total;
-}
-
-void initIntInfs (GC_state s) {
-  struct GC_intInfInit *inits;
-  uint32_t i;
-  const char *str;
-  size_t bytes;
-  bool neg;
-  __mpz_struct resmpz;
-  LOCAL_USED_FOR_ASSERT int ans;
-
-  assert (isFrontierAligned (s, s->frontier));
-  for (i = 0; i < s->intInfInitsLength; i++) {
-    inits = &(s->intInfInits[i]);
-    assert (inits->globalIndex < s->globalsLength);
-    str = inits->mlstr;
-    bytes = sizeofIntInfFromString (s, str);
-    neg = *str == '~';
-    if (neg)
-      str++;
-    initIntInfRes (s, &resmpz, bytes);
-    ans = mpz_set_str (&resmpz, str, 10);
-    assert (ans == 0);
-    if (neg)
-      resmpz._mp_size = - resmpz._mp_size;
-    s->globals[inits->globalIndex] = finiIntInfRes (s, &resmpz, bytes);
-  }
-  assert (isFrontierAligned (s, s->frontier));
 }
 
 void initVectors (GC_state s) {
@@ -150,7 +107,6 @@ void initWorld (GC_state s) {
   s->frontier = start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  initIntInfs (s);
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
