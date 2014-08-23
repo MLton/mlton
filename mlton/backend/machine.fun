@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -793,7 +793,6 @@ structure Program =
                                         size: Bytes.t} vector,
                          frameOffsets: Bytes.t vector vector,
                          handlesSignals: bool,
-                         intInfs: (Global.t * IntInf.t) list,
                          main: {chunkLabel: ChunkLabel.t,
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
@@ -877,7 +876,7 @@ structure Program =
          end
 
       fun typeCheck (program as
-                     T {chunks, frameLayouts, frameOffsets, intInfs,
+                     T {chunks, frameLayouts, frameOffsets,
                         maxFrameSize, objectTypes, profileInfo, reals,
                         vectors, ...}) =
          let
@@ -979,10 +978,6 @@ structure Program =
                globals ("real", reals,
                         fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
                         RealX.layout)
-            val _ =
-               globals ("intInf", intInfs,
-                        fn (t, _) => Type.isSubtype (t, Type.intInf ()),
-                        IntInf.layout)
             val _ =
                globals ("vector", vectors,
                         fn (t, v) =>

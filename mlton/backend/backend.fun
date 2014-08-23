@@ -424,11 +424,6 @@ let
                (all, get)
             end
       in
-         val (allIntInfs, globalIntInf) =
-            make (IntInf.equals,
-                  fn i => (IntInf.toString i,
-                           Type.intInf (),
-                           i))
          val (allReals, globalReal) =
             make (RealX.equals,
                   fn r => (RealX.toString r,
@@ -458,10 +453,8 @@ let
             datatype z = datatype Const.t
          in
             case c of
-               IntInf i =>
-                  (case Const.IntInfRep.fromIntInf i of
-                      Const.IntInfRep.Big _ => globalIntInf i
-                    | Const.IntInfRep.Small w => M.Operand.Cast (M.Operand.Word w, Type.intInf ()))
+               IntInf _ =>
+                  Error.bug "Backend.constOperand: IntInf"
              | Null => M.Operand.Null
              | Real r => globalReal r
              | Word w => M.Operand.Word w
@@ -1148,7 +1141,6 @@ in
        frameLayouts = frameLayouts,
        frameOffsets = frameOffsets,
        handlesSignals = handlesSignals,
-       intInfs = allIntInfs (), 
        main = main,
        maxFrameSize = maxFrameSize,
        objectTypes = objectTypes,
