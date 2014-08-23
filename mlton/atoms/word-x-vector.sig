@@ -21,6 +21,7 @@ signature WORD_X_VECTOR =
 
       val elementSize: t -> WordSize.t
       val equals: t * t -> bool
+      val foldFrom: t * int * 'b * (WordX.t * 'b -> 'b) -> 'b
       val forall: t * (WordX.t -> bool) -> bool
       val fromString: string -> t
       val fromListRev: {elementSize: WordSize.t} * WordX.t list -> t

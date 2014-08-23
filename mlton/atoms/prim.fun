@@ -1550,6 +1550,8 @@ fun ('a, 'b) apply (p: 'a t,
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.word w)
       val wordOpt = fn NONE => ApplyResult.Unknown | SOME w => word w
+      fun wordVector (v: WordXVector.t): ('a, 'b) ApplyResult.t =
+         ApplyResult.Const (Const.wordVector v)
       fun iio (f, c1, c2) = intInf (f (c1, c2))
       fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
                  (_: WordSize.t, sg),
@@ -1658,6 +1660,10 @@ fun ('a, 'b) apply (p: 'a t,
                 (case IntInfRep.fromIntInf i of
                     IntInfRep.Big _ => ApplyResult.Unknown
                   | IntInfRep.Small w => word w)
+           | (IntInf_toVector, [IntInf i]) =>
+                (case IntInfRep.fromIntInf i of
+                    IntInfRep.Big v => wordVector v
+                  | IntInfRep.Small _ => ApplyResult.Unknown)
            | (_, [IntInf i1, IntInf i2, _]) => intInfBinary (i1, i2)
            | (_, [IntInf i1, Word w2, _]) => intInfShiftOrToString (i1, w2)
            | (_, [IntInf i1, _]) => intInfUnary (i1)
@@ -1732,6 +1738,10 @@ fun ('a, 'b) apply (p: 'a t,
                 word (if signed then WordX.resizeX (w, s)
                       else WordX.resize (w, s))
            | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
+           | (WordVector_toIntInf, [WordVector v]) =>
+                (case IntInfRep.bigToIntInf v of
+                    NONE => ApplyResult.Unknown
+                  | SOME i => intInf i)
            | _ => ApplyResult.Unknown)
              handle Chr => ApplyResult.Unknown
                   | Div => ApplyResult.Unknown

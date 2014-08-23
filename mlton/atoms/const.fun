@@ -56,6 +56,28 @@ structure IntInfRep =
                then SOME (WordX.toIntInfX (WordX.rshift (w, one, {signed = true})))
             else NONE
          end
+      fun bigToIntInf (v: WordXVector.t): IntInf.t option =
+         let
+            val bws = WordSize.bigIntInfWord ()
+            val bbws = Bits.toWord (WordSize.bits bws)
+         in
+            if WordSize.equals (WordXVector.elementSize v, bws)
+               andalso WordXVector.length v >= 2
+               then let
+                       val v0 = WordXVector.sub (v, 0)
+                       fun mag () =
+                          WordXVector.foldFrom
+                          (v, 1, IntInf.zero, fn (w, i) =>
+                           IntInf.andb (IntInf.<< (i, bbws), WordX.toIntInf w))
+                    in
+                       if WordX.isZero v0
+                          then SOME (mag ())
+                       else if WordX.isOne v0
+                          then SOME (IntInf.~ (mag ()))
+                       else NONE
+                    end
+            else NONE
+         end
    end
 
 datatype t =

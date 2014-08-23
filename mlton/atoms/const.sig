@@ -26,6 +26,7 @@ signature CONST =
       structure IntInfRep:
          sig
             datatype t = Big of WordXVector.t | Small of WordX.t
+            val bigToIntInf: WordXVector.t -> IntInf.t option
             val fromIntInf: IntInf.t -> t
             val smallToIntInf: WordX.t -> IntInf.t option
          end
