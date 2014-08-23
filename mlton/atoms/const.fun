@@ -31,12 +31,14 @@ structure IntInfRep =
                                       WordX.lshift (WordX.fromIntInf (i, sws), WordX.one sws)))
             else let
                     val bws = WordSize.bigIntInfWord ()
-                    val card = WordSize.cardinality bws
+                    val bbws = Bits.toWord (WordSize.bits bws)
+                    val mask = IntInf.- (WordSize.cardinality bws, IntInf.one)
                     fun loop (i, acc) =
                        if IntInf.isZero i
                           then Big (WordXVector.fromListRev ({elementSize = bws}, acc))
                        else let
-                               val (quot, rem) = IntInf.quotRem (i, card)
+                               val quot = IntInf.~>> (i, bbws)
+                               val rem = IntInf.andb (i, mask)
                             in
                                loop (quot, (WordX.fromIntInf (rem, bws)) :: acc)
                             end
