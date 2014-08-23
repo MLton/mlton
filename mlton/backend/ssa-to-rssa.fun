@@ -1018,8 +1018,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         maybeMove (fn ty => Operand.cast (Const c, ty))
                                   in
                                      case Const.IntInfRep.fromIntInf i of
-                                        Const.IntInfRep.Big ws =>
-                                           doit (Const.WordVector ws)
+                                        Const.IntInfRep.Big v =>
+                                           doit (Const.WordVector v)
                                       | Const.IntInfRep.Small w =>
                                            doit (Const.Word w)
                                   end

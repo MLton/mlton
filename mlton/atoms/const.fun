@@ -51,7 +51,8 @@ structure IntInfRep =
             val sws = WordSize.smallIntInfWord ()
             val one = WordX.one sws
          in
-            if WordSize.equals (WordX.size w, sws) andalso WordX.isOne (WordX.andb (w, one))
+            if WordSize.equals (WordX.size w, sws)
+               andalso WordX.isOne (WordX.andb (w, one))
                then SOME (WordX.toIntInfX (WordX.rshift (w, one, {signed = true})))
             else NONE
          end
