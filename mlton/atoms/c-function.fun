@@ -57,6 +57,43 @@ structure Target =
    end
 datatype z = datatype Target.t
 
+structure Kind =
+   struct
+      datatype t = 
+	       Functional
+	     | ReadState 
+	     | Impure
+	     | Pure
+	     | Runtime
+
+      val toString =
+         fn Functional => "functional"
+          | ReadState => "readstate"
+          | Impure => "impure"
+	  | Pure => "pure"
+	  | Runtime => "runtime"  
+
+      val layout = Layout.str o toString
+
+      val bytesNeeded =
+	 fn _ => NONE
+
+      val ensuresBytesFree =
+	 fn _ => false
+
+      val mayGC =
+	 fn _ => false
+
+      val maySwitchThreads =
+         fn _ => false
+      
+      val readsStackTop =
+         fn _ => false
+      
+      val writesStackTop = 
+         fn _ => false
+   end
+
 datatype 'a t = T of {args: 'a vector,
                       bytesNeeded: int option,
                       convention: Convention.t,
@@ -70,6 +107,13 @@ datatype 'a t = T of {args: 'a vector,
                       symbolScope: SymbolScope.t,
                       target: Target.t,
                       writesStackTop: bool}
+	      | T' of {args: 'a vector,
+		      kind: Kind.t,
+                      convention: Convention.t,
+                      prototype: CType.t vector * CType.t option,
+                      return: 'a,
+                      symbolScope: SymbolScope.t,
+                      target: Target.t}
 
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
                maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
