@@ -1026,23 +1026,23 @@ fun import {attributes: ImportExportAttribute.t list,
                                             else Vector.concat
                                                  [Vector.new1 addrTy, args]
                                       end,
-                               bytesNeeded = NONE,
                                convention = convention,
-                               ensuresBytesFree = false,
-                               modifiesFrontier = true,
-                               mayGC = true,
-                               maySwitchThreads = false,
+			       kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
+							      ensuresBytesFree = false,
+							      mayGC = true,
+							      maySwitchThreads = false,
+							      modifiesFrontier = true,
+							      readsStackTop = true,
+							      writesStackTop = true},
                                prototype = (Vector.map (args, #ctype),
                                             Option.map (result, #ctype)),
-                               readsStackTop = true,
                                return = (case result of
                                             NONE => Type.unit
                                           | SOME {ty, ...} => ty),
                                symbolScope = symbolScope,
                                target = (case name of
                                             NONE => Indirect
-                                          | SOME name => Direct name),
-                               writesStackTop = true}
+                                          | SOME name => Direct name)}
             in
                Prim.ffi func
             end

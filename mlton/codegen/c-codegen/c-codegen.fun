@@ -1015,12 +1015,16 @@ fun output {program as Machine.Program.T {chunks,
                         end
                    | CCall {args, frameInfo, func, return} =>
                         let
-                           val CFunction.T {maySwitchThreads,
+                           val CFunction.T {kind,
+                                            return = returnTy,
+                                            target,...} = func
+(*                           val CFunction.T {maySwitchThreads,
                                             modifiesFrontier,
                                             readsStackTop,
                                             return = returnTy,
                                             target,
                                             writesStackTop,...} = func
+*)
                            val (args, afterCall) =
                               case frameInfo of
                                  NONE =>
@@ -1036,11 +1040,11 @@ fun output {program as Machine.Program.T {chunks,
                                        res
                                     end
                            val _ =
-                              if modifiesFrontier
+                              if CFunction.Kind.modifiesFrontier kind
                                  then print "\tFlushFrontier();\n"
                               else ()
                            val _ =
-                              if readsStackTop
+                              if CFunction.Kind.readsStackTop kind
                                  then print "\tFlushStackTop();\n"
                               else ()
                            val _ = print "\t"
@@ -1067,15 +1071,15 @@ fun output {program as Machine.Program.T {chunks,
                                     end
                            val _ = afterCall ()
                            val _ =
-                              if modifiesFrontier
+                              if CFunction.Kind.modifiesFrontier kind
                                  then print "\tCacheFrontier();\n"
                               else ()
                            val _ =
-                              if writesStackTop
+                              if CFunction.Kind.writesStackTop kind
                                  then print "\tCacheStackTop();\n"
                               else ()
                            val _ =
-                              if maySwitchThreads
+                              if CFunction.Kind.maySwitchThreads kind
                                  then print "\tReturn();\n"
                               else Option.app (return, gotoLabel)
                         in

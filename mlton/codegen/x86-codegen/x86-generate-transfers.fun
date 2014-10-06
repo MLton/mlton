@@ -1138,6 +1138,11 @@ struct
                      datatype z = datatype CFunction.SymbolScope.t
                      datatype z = datatype CFunction.Target.t
                      val CFunction.T {convention,
+				      kind,
+                                      return = returnTy,
+                                      symbolScope,
+                                      target, ...} = func
+(*                     val CFunction.T {convention,
                                       maySwitchThreads,
                                       modifiesFrontier,
                                       readsStackTop, 
@@ -1145,6 +1150,7 @@ struct
                                       symbolScope,
                                       target,
                                       writesStackTop, ...} = func
+*)
                      val stackTopMinusWordDeref
                        = x86MLton.gcState_stackTopMinusWordDerefOperand ()
                      val Liveness.T {dead, ...}
@@ -1340,11 +1346,11 @@ struct
                                 (Assembly.directive_force
                                  {commit_memlocs = let
                                                      val s = MemLocSet.empty
-                                                     val s = if modifiesFrontier
+                                                     val s = if CFunction.Kind.modifiesFrontier kind
                                                                then MemLocSet.add
                                                                     (s, frontier ())
                                                                else s
-                                                     val s = if readsStackTop
+                                                     val s = if CFunction.Kind.readsStackTop kind
                                                                then MemLocSet.add
                                                                     (s, stackTop ())
                                                                else s
@@ -1461,11 +1467,11 @@ struct
                                   remove_classes = ClassSet.empty,
                                   dead_memlocs = let
                                                    val s = MemLocSet.empty
-                                                   val s = if modifiesFrontier
+                                                   val s = if CFunction.Kind.modifiesFrontier kind
                                                              then MemLocSet.add
                                                                   (s, frontier ())
                                                              else s
-                                                   val s = if writesStackTop
+                                                   val s = if CFunction.Kind.writesStackTop kind
                                                              then MemLocSet.add
                                                                   (s, stackTop ())
                                                              else s
@@ -1488,7 +1494,7 @@ struct
                                    size = pointerSize}))
                            else AppendList.empty
                      val continue
-                       = if maySwitchThreads
+                       = if CFunction.Kind.maySwitchThreads kind
                            then (* Returning from runtime *)
                                 (farTransfer MemLocSet.empty
                                  AppendList.empty

@@ -46,7 +46,13 @@ signature C_FUNCTION =
 		   | ReadState 
 		   | Impure
 		   | Pure
-		   | Runtime
+		   | Runtime of {bytesNeeded: int option, 
+				 ensuresBytesFree: bool,
+				 mayGC: bool,
+				 maySwitchThreads: bool,
+				 modifiesFrontier: bool,
+				 readsStackTop: bool,
+				 writesStackTop: bool}
 
 	    val layout: t -> Layout.t
 	    val toString: t -> string
@@ -55,36 +61,13 @@ signature C_FUNCTION =
 	    val ensuresBytesFree: t -> bool
 	    val mayGC: t -> bool
 	    val maySwitchThreads: t -> bool
+	    val modifiesFrontier: t -> bool
 	    val readsStackTop: t -> bool
 	    val writesStackTop: t -> bool
 	end
 
       datatype 'a t = T of {args: 'a vector,
-                            (* bytesNeeded = SOME i means that the i'th
-                             * argument to the function is a word that
-                             * specifies the number of bytes that must be
-                             * free in order for the C function to succeed.
-                             * Limit check insertion is responsible for
-                             * making sure that the bytesNeeded is available.
-                             *)
-                            bytesNeeded: int option,
-                            convention: Convention.t,
-                            ensuresBytesFree: bool,
-                            mayGC: bool,
-                            maySwitchThreads: bool,
-                            modifiesFrontier: bool,
-                            prototype: CType.t vector * CType.t option,
-                            readsStackTop: bool,
-                            return: 'a,
-                            symbolScope: SymbolScope.t,
-                            (* target = Indirect means that the 0'th
-                             * argument to the function is a word
-                             * that specifies the target.
-                             *)
-                            target: Target.t,
-                            writesStackTop: bool}
-
-		    | T' of {args: 'a vector,
+			     convention: Convention.t,
                              (* bytesNeeded = SOME i means that the i'th
                               * argument to the function is a word that
                               * specifies the number of bytes that must be
@@ -93,7 +76,6 @@ signature C_FUNCTION =
                               * making sure that the bytesNeeded is available.
                               *)
 			     kind: Kind.t,
-			     convention: Convention.t,
                              prototype: CType.t vector * CType.t option,
                              return: 'a,
                              symbolScope: SymbolScope.t,
@@ -102,6 +84,10 @@ signature C_FUNCTION =
                               * that specifies the target.
                               *)
                              target: Target.t}
+
+(* Vedant: 
+I am not sure about the functions provided here,
+should we remove them from here or piggyback them from kind *)
 
       val args: 'a t -> 'a vector
       val bytesNeeded: 'a t -> int option

@@ -64,148 +64,153 @@ structure Kind =
 	     | ReadState 
 	     | Impure
 	     | Pure
-	     | Runtime
+	     | Runtime of {bytesNeeded: int option, 
+			   ensuresBytesFree: bool,
+			   mayGC: bool,
+			   maySwitchThreads: bool,
+			   modifiesFrontier: bool,
+			   readsStackTop: bool,
+			   writesStackTop: bool}
 
       val toString =
          fn Functional => "functional"
           | ReadState => "readstate"
           | Impure => "impure"
 	  | Pure => "pure"
-	  | Runtime => "runtime"  
+	  | Runtime _ => "runtime"
+(* Vedant:
+Merge the below text to the toString function *)  
+
+(*
+    ("bytesNeeded", Option.layout Int.layout kind.bytesNeeded),
+    ("ensuresBytesFree", Bool.layout kind.ensuresBytesFree),
+    ("mayGC", Bool.layout kind.mayGC),
+    ("maySwitchThreads", Bool.layout kind.maySwitchThreads),
+    ("modifiesFrontier", Bool.layout kind.modifiesFrontier),
+    ("readsStackTop", Bool.layout kind.readsStackTop),
+    ("writesStackTop", Bool.layout kind.writesStackTop)
+*)
 
       val layout = Layout.str o toString
 
       val bytesNeeded =
-	 fn _ => NONE
+	 fn Runtime { bytesNeeded, ... } => bytesNeeded
+	  | _ => NONE
 
       val ensuresBytesFree =
-	 fn _ => false
+	 fn Runtime { ensuresBytesFree, ... } => ensuresBytesFree
+	  | _ => false
 
       val mayGC =
-	 fn _ => false
+	 fn Runtime { mayGC, ... } => mayGC
+	  | _ => false
 
       val maySwitchThreads =
-         fn _ => false
+	 fn Runtime { maySwitchThreads, ... } => maySwitchThreads
+	  | _ => false
+
+      val modifiesFrontier =
+	 fn Runtime { modifiesFrontier, ... } => modifiesFrontier
+	  | _ => false
       
       val readsStackTop =
-         fn _ => false
+	 fn Runtime { readsStackTop, ... } => readsStackTop
+	  | _ => false
       
       val writesStackTop = 
-         fn _ => false
+	 fn Runtime { writesStackTop, ... } => writesStackTop
+	  | _ => false
    end
 
 datatype 'a t = T of {args: 'a vector,
-                      bytesNeeded: int option,
                       convention: Convention.t,
-                      ensuresBytesFree: bool,
-                      mayGC: bool,
-                      maySwitchThreads: bool,
-                      modifiesFrontier: bool,
-                      prototype: CType.t vector * CType.t option,
-                      readsStackTop: bool,
-                      return: 'a,
-                      symbolScope: SymbolScope.t,
-                      target: Target.t,
-                      writesStackTop: bool}
-	      | T' of {args: 'a vector,
 		      kind: Kind.t,
-                      convention: Convention.t,
                       prototype: CType.t vector * CType.t option,
                       return: 'a,
                       symbolScope: SymbolScope.t,
                       target: Target.t}
 
-fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-               maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
-               return, symbolScope, target, writesStackTop, ...},
+fun layout (T {args, convention, kind, prototype, return, symbolScope, target, ...},
             layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
-    ("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("convention", Convention.layout convention),
-    ("ensuresBytesFree", Bool.layout ensuresBytesFree),
-    ("mayGC", Bool.layout mayGC),
-    ("maySwitchThreads", Bool.layout maySwitchThreads),
-    ("modifiesFrontier", Bool.layout modifiesFrontier),
+(* Vedant : *)
+(*    ("kind"), Kind.layout kind,*)
     ("prototype", (fn (args,ret) => 
                    Layout.record
                    [("args", Vector.layout CType.layout args),
                     ("res", Option.layout CType.layout ret)]) prototype),
-    ("readsStackTop", Bool.layout readsStackTop),
     ("return", layoutType return),
     ("symbolScope", SymbolScope.layout symbolScope),
-    ("target", Target.layout target),
-    ("writesStackTop", Bool.layout writesStackTop)]
+    ("target", Target.layout target)]
 
 local
    fun make f (T r) = f r
 in
+(* Vedant:
+*)
    fun args z = make #args z
-   fun bytesNeeded z = make #bytesNeeded z
+   fun bytesNeeded z = Kind.bytesNeeded ( make #kind z )
    fun convention z = make #convention z
-   fun ensuresBytesFree z = make #ensuresBytesFree z
-   fun mayGC z = make #mayGC z
-   fun maySwitchThreads z = make #maySwitchThreads z
-   fun modifiesFrontier z = make #modifiesFrontier z
+   fun ensuresBytesFree z = Kind.ensuresBytesFree ( make #kind z )
+   fun mayGC z = Kind.mayGC ( make #kind z )
+   fun maySwitchThreads z = Kind.maySwitchThreads ( make #kind z )
+   fun modifiesFrontier z = Kind.modifiesFrontier ( make #kind z )
    fun prototype z = make #prototype z
-   fun readsStackTop z = make #readsStackTop z
+   fun readsStackTop z = Kind.readsStackTop ( make #kind z )
    fun return z = make #return z
    fun symbolScope z = make #symbolScope z
    fun target z = make #target z
-   fun writesStackTop z = make #writesStackTop z
+   fun writesStackTop z = Kind.writesStackTop ( make #kind z )
 end
 (* quell unused warnings *)
 val _ = (modifiesFrontier, readsStackTop, writesStackTop)
 
 fun equals (f, f') = Target.equals (target f, target f')
 
-fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-            maySwitchThreads, modifiesFrontier, prototype, readsStackTop, 
-            return, symbolScope, target, writesStackTop},
+fun map (T {args, convention, kind, prototype, return, symbolScope, target},
          f) =
    T {args = Vector.map (args, f),
-      bytesNeeded = bytesNeeded,
       convention = convention,
-      ensuresBytesFree = ensuresBytesFree,
-      mayGC = mayGC,
-      maySwitchThreads = maySwitchThreads,
-      modifiesFrontier = modifiesFrontier,
+      kind = kind,
       prototype = prototype,
-      readsStackTop = readsStackTop,
       return = f return,
       symbolScope = symbolScope,
-      target = target,
-      writesStackTop = writesStackTop}
+      target = target}
 
-fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
-             readsStackTop, return, writesStackTop, ...},
+fun isOk (T {kind, return, ...},
           {isUnit}): bool =
-   (if maySwitchThreads
-       then mayGC andalso isUnit return
+   (if Kind.maySwitchThreads kind
+       then Kind.mayGC kind andalso isUnit return
     else true)
-   andalso (if ensuresBytesFree orelse maySwitchThreads
-               then mayGC
+   andalso (if Kind.ensuresBytesFree kind orelse Kind.maySwitchThreads kind
+               then Kind.mayGC kind
             else true)
-   andalso (if mayGC
-               then (modifiesFrontier
-                     andalso readsStackTop andalso writesStackTop)
+   andalso (if Kind.mayGC kind
+               then (Kind.modifiesFrontier kind
+                     andalso Kind.readsStackTop kind andalso Kind.writesStackTop kind)
             else true)
-   andalso (not writesStackTop orelse readsStackTop )
+   andalso (not (Kind.writesStackTop kind) orelse Kind.readsStackTop kind)
 
 fun vanilla {args, name, prototype, return} =
    T {args = args,
-      bytesNeeded = NONE,
       convention = Convention.Cdecl,
-      ensuresBytesFree = false,
-      mayGC = false,
-      maySwitchThreads = false,
-      modifiesFrontier = false,
+      kind = Kind.Functional,
+(* Vedant:
+*)
+(*      kind = Kind.Runtime {bytesNeeded = NONE,
+			      ensuresBytesFree = false,
+			      mayGC = false,
+			      maySwitchThreads = false,
+			      modifiesFrontier = false,
+			      readsStackTop = false,
+			      writesStackTop = false}
+*)
       prototype = prototype,
-      readsStackTop = false,
       return = return,
       symbolScope = SymbolScope.Private,
-      target = Direct name,
-      writesStackTop = false}
+      target = Direct name}
 
 fun cPrototype (T {convention, prototype = (args, return), symbolScope, target, 
                    ...}) =
