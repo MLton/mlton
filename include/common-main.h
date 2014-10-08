@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -26,7 +27,7 @@
 #define EndIntInfInits };
 
 #define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
-#define VectorInitElem(a, b, c, d) { (pointer)a, b, c, d },
+#define VectorInitElem(es, gi, l, w) { es, gi, l, w },
 #define EndVectorInits };
 
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
