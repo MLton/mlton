@@ -242,16 +242,10 @@ in
    fun vector v =
       sequence ("#[", "]", ",")
       (Pervasive.Vector.foldr (op ::) [] v)
+   fun array v =
+      sequence ("#![", "]", ",")
+      (Pervasive.Array.foldr (op ::) [] v)
 end
-
-structure Array =
-   struct
-      open Pervasive.Array
-
-      fun toList a = foldr (op ::) [] a
-   end
-
-val array = list o Array.toList
 
 fun namedRecord (name, fields) = seq [str name, str " ", record fields]
 
