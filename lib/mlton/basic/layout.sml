@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -239,9 +239,10 @@ in
    fun record fts =
       sequence ("{", "}", ",")
       (map (fn (f, t) => seq [str (f ^ " = "), t]) fts)
+   fun vector v =
+      sequence ("#[", "]", ",")
+      (Pervasive.Vector.foldr (op ::) [] v)
 end
-
-fun vector v = tuple (Pervasive.Vector.foldr (op ::) [] v)
 
 structure Array =
    struct
