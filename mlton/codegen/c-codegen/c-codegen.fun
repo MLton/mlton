@@ -71,7 +71,7 @@ structure WordX =
       fun toC (w: t): string =
          let
             fun doit s =
-               concat ["(Word", s, ")(0x", toString w, "ull)"]
+               concat ["(Word", s, ")(", toString w, "ull)"]
          in
             case WordSize.prim (size w) of
                W8 => doit "8"

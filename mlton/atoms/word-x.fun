@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -46,9 +46,9 @@ fun toIntInfX w =
 
 val toInt = IntInf.toInt o toIntInf
 
-fun toString w = IntInf.format (toIntInf w, StringCvt.HEX)
+fun toString w = concat ["0x", IntInf.format (toIntInf w, StringCvt.HEX)]
 
-fun layout w = Layout.str (concat ["0x", toString w])
+val layout = Layout.str o toString
 
 fun zero s = make (0, s)
 
