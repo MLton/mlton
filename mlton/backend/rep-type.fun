@@ -846,7 +846,7 @@ structure BuiltInCFunction =
             T {args = Vector.new3 (Type.gcState (), Type.csize (), Type.bool),
                    convention = Cdecl,
    		   kind = Kind.Runtime {bytesNeeded = NONE,
-					ensuresBytesFree = false,
+					ensuresBytesFree = true,
 					mayGC = true,
 					maySwitchThreads = b,
 					modifiesFrontier = true,

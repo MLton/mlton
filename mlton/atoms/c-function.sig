@@ -28,14 +28,14 @@ signature C_FUNCTION =
 	    datatype t = 
 		     Functional
 		   | Impure
-		   | Runtime of {bytesNeeded: int option, 
-				 (* bytesNeeded = SOME i means that the i'th
+		   | Runtime of {(* bytesNeeded = SOME i means that the i'th
 				  * argument to the function is a word that
 				  * specifies the number of bytes that must be
 				  * free in order for the C function to succeed.
 				  * Limit check insertion is responsible for
 				  * making sure that the bytesNeeded is available.
 				  *)
+				 bytesNeeded: int option, 
 				 ensuresBytesFree: bool,
 				 mayGC: bool,
 				 maySwitchThreads: bool,
@@ -82,10 +82,6 @@ signature C_FUNCTION =
                               * that specifies the target.
                               *)
                              target: Target.t}
-
-(* Vedant: 
-I am not sure about the functions provided here,
-should we remove them from here or piggyback them from kind *)
 
       val args: 'a t -> 'a vector
       val bytesNeeded: 'a t -> int option
