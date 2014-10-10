@@ -23,30 +23,19 @@ signature C_FUNCTION =
             val toString: t -> string
          end
 
-      structure SymbolScope:
-         sig
-            datatype t = External | Private | Public
-
-            val layout: t -> Layout.t
-            val toString: t -> string
-         end
-
-      structure Target:
-         sig
-            datatype t = Direct of string | Indirect
-
-            val layout: t -> Layout.t
-            val toString: t -> string
-         end
-
       structure Kind:
 	sig
 	    datatype t = 
 		     Functional
-		   | ReadState 
 		   | Impure
-		   | Pure
 		   | Runtime of {bytesNeeded: int option, 
+				 (* bytesNeeded = SOME i means that the i'th
+				  * argument to the function is a word that
+				  * specifies the number of bytes that must be
+				  * free in order for the C function to succeed.
+				  * Limit check insertion is responsible for
+				  * making sure that the bytesNeeded is available.
+				  *)
 				 ensuresBytesFree: bool,
 				 mayGC: bool,
 				 maySwitchThreads: bool,
@@ -66,15 +55,24 @@ signature C_FUNCTION =
 	    val writesStackTop: t -> bool
 	end
 
+      structure SymbolScope:
+         sig
+            datatype t = External | Private | Public
+
+            val layout: t -> Layout.t
+            val toString: t -> string
+         end
+
+      structure Target:
+         sig
+            datatype t = Direct of string | Indirect
+
+            val layout: t -> Layout.t
+            val toString: t -> string
+         end
+
       datatype 'a t = T of {args: 'a vector,
 			     convention: Convention.t,
-                             (* bytesNeeded = SOME i means that the i'th
-                              * argument to the function is a word that
-                              * specifies the number of bytes that must be
-                              * free in order for the C function to succeed.
-                              * Limit check insertion is responsible for
-                              * making sure that the bytesNeeded is available.
-                              *)
 			     kind: Kind.t,
                              prototype: CType.t vector * CType.t option,
                              return: 'a,
