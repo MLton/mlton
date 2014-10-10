@@ -36,9 +36,10 @@ fun layout (T {elements, elementSize}) =
                  val cs = Vector.map (elements, WordX.toChar)
                  val l = Vector.length cs
                  val n = Vector.fold (cs, 0, fn (c, n) =>
-                                      if Char.isPrint c
+                                      if Char.isGraph c
+                                         orelse Char.isSpace c
                                          then n + 1
-                                      else n)
+                                         else n)
               in
                  if l = 0 orelse (10 * n) div l > 9
                     then string cs
