@@ -24,26 +24,13 @@ end
 fun layout (T {elements, elementSize}) =
    let
       fun vector () =
-         let
-            fun packAux ws =
-               case ws of
-                  [] => []
-                | [w] => [w]
-                | w1::w2::ws => Layout.mayAlign [w1, w2] :: packAux ws
-            fun pack ws =
-               case ws of
-                  [] => Layout.empty
-                | [w] => w
-                | _ => pack (packAux ws)
-         in
-            Layout.seq
-            [Layout.str "#[",
-             pack (Layout.separateRight
-                   (Vector.toListMap
-                    (elements, WordX.layout),
-                    ",")),
-             Layout.str "]"]
-         end
+         Layout.seq
+         [Layout.str "#[",
+          Layout.fill (Layout.separateRight
+                       (Vector.toListMap
+                        (elements, WordX.layout),
+                        ",")),
+          Layout.str "]"]
       fun string cs =
          Layout.seq
          [Layout.str "\"",

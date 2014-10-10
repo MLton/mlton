@@ -230,6 +230,20 @@ fun alignPrefix (ts, prefix) =
                               ~ (String.size prefix))]
 
 local
+   fun fillAux ts =
+      case ts of
+         [] => []
+       | [t] => [t]
+       | t1::t2::ts => mayAlign [t1, t2] :: fillAux ts
+in
+   fun fill ts =
+      case ts of
+         [] => empty
+       | [t] => t
+       | _ => fill (fillAux ts)
+end
+
+local
    fun sequence (start, finish, sep) ts =
       seq [str start, mayAlign (separateRight (ts, sep)), str finish]
 in
