@@ -1125,14 +1125,14 @@ structure Function =
                              open Layout
                           in
                              toString
-                             (tuple
-                              (Vector.toListMap
-                               (formals, fn (var, ty) =>
-                                if !Control.showTypes
-                                   then seq [Var.layout var,
-                                             str ": ",
-                                             Type.layout ty]
-                                else Var.layout var)))
+                             (Vector.layout
+                              (fn (var, ty) =>
+                               if !Control.showTypes
+                                  then seq [Var.layout var,
+                                            str ": ",
+                                            Type.layout ty]
+                               else Var.layout var)
+                              formals)
                           end]
                open Dot
                val graph = Graph.new ()
