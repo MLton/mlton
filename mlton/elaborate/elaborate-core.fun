@@ -81,6 +81,7 @@ in
    structure CharSize = CharSize
    structure Convention  = CFunction.Convention
    structure SymbolScope  = CFunction.SymbolScope
+   structure CKind = CFunction.Kind
    structure Con = Con
    structure Const = Const
    structure ConstType = Const.ConstType
@@ -927,6 +928,24 @@ fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
            | _ => NONE)
     | _ => NONE
 
+val isIEAttributeKind =
+   fn ImportExportAttribute.Functional => true
+    | ImportExportAttribute.Impure => true
+    | ImportExportAttribute.Runtime => true
+    | _ => false
+
+fun parseIEAttributesKind (attributes: ImportExportAttribute.t list)
+    : CKind.t option =
+   case attributes of
+      [] => SOME CKind.runtimeDefault
+    | [a] =>
+         (case a of
+             ImportExportAttribute.Functional => SOME CKind.Functional
+           | ImportExportAttribute.Impure => SOME CKind.Impure
+           | ImportExportAttribute.Runtime => SOME CKind.runtimeDefault
+           | _ => NONE)
+    | _ => NONE
+
 val isIEAttributeSymbolScope =
    fn ImportExportAttribute.External => true
     | ImportExportAttribute.Private => true
@@ -993,6 +1012,13 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
+               val kind =
+                  List.keepAll (attributes, isIEAttributeKind)
+               val kind =
+                  case parseIEAttributesKind kind of
+                     NONE => (invalidAttributes ()
+                              ; CKind.runtimeDefault)
+                   | SOME k => k
                val symbolScope =
                   List.keepAll (attributes, isIEAttributeSymbolScope)
                val symbolScope =
@@ -1027,13 +1053,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                                  [Vector.new1 addrTy, args]
                                       end,
                                convention = convention,
-			       kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
-							      ensuresBytesFree = false,
-							      mayGC = true,
-							      maySwitchThreads = false,
-							      modifiesFrontier = true,
-							      readsStackTop = true,
-							      writesStackTop = true},
+			       kind = kind,
                                prototype = (Vector.map (args, #ctype),
                                             Option.map (result, #ctype)),
                                return = (case result of

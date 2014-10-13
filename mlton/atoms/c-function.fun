@@ -36,6 +36,14 @@ structure Kind =
 			   readsStackTop: bool,
 			   writesStackTop: bool}
 
+      val runtimeDefault = Runtime {bytesNeeded = NONE,
+				    ensuresBytesFree = false,
+				    mayGC = true,
+				    maySwitchThreads = false,
+				    modifiesFrontier = true,
+				    readsStackTop = true,
+				    writesStackTop = true}
+
       fun layout k = 
 	  case k of
 	      Functional => Layout.str "Functional" 

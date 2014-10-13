@@ -42,6 +42,8 @@ signature C_FUNCTION =
 				 modifiesFrontier: bool,
 				 readsStackTop: bool,
 				 writesStackTop: bool}
+				   
+	    val runtimeDefault: t
 
 	    val layout: t -> Layout.t
 	    val toString: t -> string
