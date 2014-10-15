@@ -38,6 +38,48 @@ structure Kind =
 
 val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout)
 
+structure C =
+   struct
+      val truee = "TRUE"
+      val falsee = "FALSE"
+
+      fun bool b = if b then truee else falsee
+
+      fun args (ss: string list): string
+         = concat ("(" :: List.separate (ss, ", ") @ [")"])
+
+      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
+         = (print f
+            ; print " ("
+            ; (case xs
+                  of [] => ()
+                | x :: xs => (print x
+                              ; List.foreach (xs,
+                                             fn x => (print ", "; print x))))
+            ; print ")")
+
+      fun call (f, xs, print) =
+         (callNoSemi (f, xs, print)
+          ; print ";\n")
+
+      fun int (i: int) =
+         if i >= 0
+            then Int.toString i
+         else concat ["-", Int.toString (~ i)]
+
+      val bytes = int o Bytes.toInt
+
+      fun string s =
+         let val quote = "\""
+         in concat [quote, String.escapeC s, quote]
+         end
+
+      fun word (w: Word.t) = "0x" ^ Word.toString w
+
+      fun push (size: Bytes.t, print) =
+         call ("\tPush", [bytes size], print)
+   end
+
 structure RealX =
    struct
       open RealX
@@ -92,59 +134,20 @@ structure WordXVector =
 
       fun toC (v: t): string =
          let
-            fun doit s =
+            fun string () =
+               concat ["(pointer)",
+                       C.string (String.implode (toListMap (v, WordX.toChar)))]
+            fun vector s =
                concat ["(pointer)((Word", s, "[]){",
                        String.concatWith (toListMap (v, WordX.toC), ","),
                        "})"]
          in
             case WordSize.prim (elementSize v) of
-               W8 => doit "8"
-             | W16 => doit "16"
-             | W32 => doit "32"
-             | W64 => doit "64"
+               W8 => string ()
+             | W16 => vector "16"
+             | W32 => vector "32"
+             | W64 => vector "64"
          end
-   end
-
-structure C =
-   struct
-      val truee = "TRUE"
-      val falsee = "FALSE"
-
-      fun bool b = if b then truee else falsee
-
-      fun args (ss: string list): string
-         = concat ("(" :: List.separate (ss, ", ") @ [")"])
-
-      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
-         = (print f
-            ; print " ("
-            ; (case xs
-                  of [] => ()
-                | x :: xs => (print x
-                              ; List.foreach (xs,
-                                             fn x => (print ", "; print x))))
-            ; print ")")
-
-      fun call (f, xs, print) =
-         (callNoSemi (f, xs, print)
-          ; print ";\n")
-
-      fun int (i: int) =
-         if i >= 0
-            then Int.toString i
-         else concat ["-", Int.toString (~ i)]
-
-      val bytes = int o Bytes.toInt
-
-      fun string s =
-         let val quote = "\""
-         in concat [quote, String.escapeC s, quote]
-         end
-
-      fun word (w: Word.t) = "0x" ^ Word.toString w
-
-      fun push (size: Bytes.t, print) =
-         call ("\tPush", [bytes size], print)
    end
 
 structure Operand =
