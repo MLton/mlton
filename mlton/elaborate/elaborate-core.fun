@@ -937,7 +937,7 @@ val isIEAttributeKind =
 fun parseIEAttributesKind (attributes: ImportExportAttribute.t list)
     : CKind.t option =
    case attributes of
-      [] => SOME CKind.runtimeDefault
+      [] => SOME CKind.Impure
     | [a] =>
          (case a of
              ImportExportAttribute.Functional => SOME CKind.Functional
@@ -1017,7 +1017,7 @@ fun import {attributes: ImportExportAttribute.t list,
                val kind =
                   case parseIEAttributesKind kind of
                      NONE => (invalidAttributes ()
-                              ; CKind.runtimeDefault)
+                              ; CKind.Impure)
                    | SOME k => k
                val symbolScope =
                   List.keepAll (attributes, isIEAttributeSymbolScope)
