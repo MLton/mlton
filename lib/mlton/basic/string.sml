@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -41,6 +41,9 @@ structure String: STRING =
                in
                   tabulate (n, fn i => Array.sub (a, i))
                end
+
+      fun implodeV cs =
+         tabulate (Vector.length cs, fn i => Vector.sub (cs, i))
 
       fun existsi (s, f) = Int.exists (0, size s, fn i => f (i, sub (s, i)))
 

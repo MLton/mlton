@@ -23,7 +23,7 @@
         extern char l __attribute__ ((weak))
 
 #define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
-#define VectorInitElem(a, b, c, d) { (pointer)a, b, c, d },
+#define VectorInitElem(es, gi, l, w) { es, gi, l, w },
 #define EndVectorInits };
 
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;

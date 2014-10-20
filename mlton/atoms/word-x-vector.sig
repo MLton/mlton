@@ -30,5 +30,6 @@ signature WORD_X_VECTOR =
       val length: t -> int
       val sub: t * int -> WordX.t
       val tabulate: {elementSize: WordSize.t} * int * (int -> WordX.t) -> t
+      val toListMap: t * (WordX.t -> 'a) -> 'a list
       val toString: t -> string
    end

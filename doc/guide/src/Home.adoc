@@ -8,6 +8,17 @@ MLton is an open-source, whole-program, optimizing
 
 == What's new? ==
 
+* 20140730: http://www.cs.rit.edu/%7emtf[Matthew Fluet] and
+  http://www.cse.buffalo.edu/%7elziarek[Lukasz Ziarek] have been
+  awarded an http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=12810[NSF
+  CISE Research Infrastructure (CRI)] grant titled "Positioning MLton
+  for Next-Generation Programming Languages Research;" read the award
+  abstracts
+  (http://www.nsf.gov/awardsearch/showAward?AWD_ID=1405770[Award{nbsp}#1405770]
+  and
+  http://www.nsf.gov/awardsearch/showAward?AWD_ID=1405614[Award{nbsp}#1405614])
+  for more details.
+
 * 20130715: Please try out our latest release, <:Release20130715:MLton 20130715>.
 
 * 20130308: Subversion repository on

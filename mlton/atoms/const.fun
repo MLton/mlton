@@ -97,17 +97,13 @@ val wordVector = WordVector
 
 val string = wordVector o WordXVector.fromString
 
-local
-   open Layout
-   fun wrap (pre, post, s) = seq [str pre, String.layout s, str post]
-in
-   val layout =
-      fn IntInf i => IntInf.layout i
-       | Null => str "NULL"
-       | Real r => RealX.layout r
-       | Word w => WordX.layout w
-       | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
-end
+fun layout c =
+   case c of
+      IntInf i => IntInf.layout i
+    | Null => Layout.str "NULL"
+    | Real r => RealX.layout r
+    | Word w => WordX.layout w
+    | WordVector v => WordXVector.layout v
 
 val toString = Layout.toString o layout
 

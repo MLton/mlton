@@ -38,49 +38,6 @@ structure Kind =
 
 val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout)
 
-structure RealX =
-   struct
-      open RealX
-
-      fun toC (r: t): string =
-         let
-            (* The main difference between SML reals and C floats/doubles is that
-             * SML uses "~" while C uses "-".
-             *)
-            val s =
-               String.translate (toString r,
-                                 fn #"~" => "-" | c => String.fromChar c)
-            (* Also, inf is spelled INFINITY and nan is NAN in C. *)
-            val s =
-               case s of
-                  "-inf" => "-INFINITY"
-                | "inf"  => "INFINITY"
-                | "nan"  => "NAN"
-                | other  => other
-         in
-            case size r of
-               R32 => concat ["(Real32)", s]
-             | R64 => s
-         end
-   end
-
-structure WordX =
-   struct
-      open WordX
-
-      fun toC (w: t): string =
-         let
-            fun simple s =
-               concat ["(Word", s, ")0x", toString w]
-         in
-            case WordSize.prim (size w) of
-               W8 => simple "8"
-             | W16 => simple "16"
-             | W32 => concat ["0x", toString w]
-             | W64 => concat ["0x", toString w, "llu"]
-         end
-   end
-
 structure C =
    struct
       val truee = "TRUE"
@@ -121,6 +78,76 @@ structure C =
 
       fun push (size: Bytes.t, print) =
          call ("\tPush", [bytes size], print)
+   end
+
+structure RealX =
+   struct
+      open RealX
+
+      fun toC (r: t): string =
+         let
+            (* The main difference between SML reals and C floats/doubles is that
+             * SML uses "~" while C uses "-".
+             *)
+            val s =
+               String.translate (toString r,
+                                 fn #"~" => "-" | c => String.fromChar c)
+            (* Also, inf is spelled INFINITY and nan is NAN in C. *)
+            val s =
+               case s of
+                  "-inf" => "-INFINITY"
+                | "inf"  => "INFINITY"
+                | "nan"  => "NAN"
+                | other  => other
+         in
+            case size r of
+               R32 => concat ["(Real32)", s]
+             | R64 => s
+         end
+   end
+
+structure WordX =
+   struct
+      open WordX
+
+      fun toC (w: t): string =
+         let
+            fun doit s =
+               concat ["(Word", s, ")(", toString w, "ull)"]
+         in
+            case WordSize.prim (size w) of
+               W8 => doit "8"
+             | W16 => doit "16"
+             | W32 => doit "32"
+             | W64 => doit "64"
+         end
+   end
+
+structure WordXVector =
+   struct
+      local
+         structure Z = WordX
+      in
+         open WordXVector
+         structure WordX = Z
+      end
+
+      fun toC (v: t): string =
+         let
+            fun string () =
+               concat ["(pointer)",
+                       C.string (String.implode (toListMap (v, WordX.toChar)))]
+            fun vector s =
+               concat ["(pointer)((Word", s, "[]){",
+                       String.concatWith (toListMap (v, WordX.toC), ","),
+                       "})"]
+         in
+            case WordSize.prim (elementSize v) of
+               W8 => string ()
+             | W16 => vector "16"
+             | W32 => vector "32"
+             | W64 => vector "64"
+         end
    end
 
 structure Operand =
@@ -272,17 +299,17 @@ fun outputDeclarations
          in
             ()
          end
-      fun declareStrings () =
+      fun declareVectors () =
          (print "BeginVectorInits\n"
           ; (List.foreach
              (vectors, fn (g, v) =>
               (C.callNoSemi ("VectorInitElem",
-                             [C.string (WordXVector.toString v),
-                              C.int (Bytes.toInt
+                             [C.int (Bytes.toInt
                                      (WordSize.bytes
                                       (WordXVector.elementSize v))),
                               C.int (Global.index g),
-                              C.int (WordXVector.length v)],
+                              C.int (WordXVector.length v),
+                              WordXVector.toC v],
                              print)
                  ; print "\n")))
           ; print "EndVectorInits\n")
@@ -456,7 +483,7 @@ fun outputDeclarations
       ; declareGlobals ("PRIVATE ", print)
       ; declareExports ()
       ; declareLoadSaveGlobals ()
-      ; declareStrings ()
+      ; declareVectors ()
       ; declareReals ()
       ; declareFrameOffsets ()
       ; declareFrameLayouts ()

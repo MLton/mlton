@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -10,7 +10,7 @@ signature LAYOUT =
    sig
       type t
 
-      (* layout the objects on separate lines*)
+      (* layout the objects on separate lines *)
       val align: t list -> t
       val alignPrefix: t list * string -> t
       val array: t array -> t
@@ -20,6 +20,10 @@ signature LAYOUT =
        *)
       val detailed: bool ref
       val empty: t
+      (* layout the objects on separate lines, if necessary,
+       * using a paragraph-fill style
+       *)
+      val fill: t list -> t
       val ignore: 'a -> t
       val isEmpty: t -> bool
       val makeOutput: ('a -> t) -> 'a * Outstream0.t -> unit
