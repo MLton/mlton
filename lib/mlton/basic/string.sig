@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -60,6 +60,7 @@ signature STRING =
       val fromString: t -> t option
       val hash: t -> Word.t
       val implode: char list -> t
+      val implodeV: char vector -> t
       val isEmpty: t -> bool
       val hasPrefix: t * {prefix: t} -> bool
       val hasSubstring: t * {substring: t} -> bool

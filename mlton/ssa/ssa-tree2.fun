@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1364,14 +1364,14 @@ structure Function =
                              open Layout
                           in
                              toString
-                             (vector
-                              (Vector.map
-                               (formals, fn (var, ty) =>
-                                if !Control.showTypes
-                                   then seq [Var.layout var,
-                                             str ": ",
-                                             Type.layout ty]
-                                else Var.layout var)))
+                             (Vector.layout
+                              (fn (var, ty) =>
+                               if !Control.showTypes
+                                  then seq [Var.layout var,
+                                            str ": ",
+                                            Type.layout ty]
+                               else Var.layout var)
+                              formals)
                           end]
                open Dot
                val graph = Graph.new ()

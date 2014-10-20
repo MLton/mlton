@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012 Matthew Fluet.
+/* Copyright (C) 2011-2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,8 +34,8 @@ size_t sizeofInitialBytesLive (GC_state s) {
   }
   for (i = 0; i < s->vectorInitsLength; ++i) {
     dataBytes =
-      s->vectorInits[i].bytesPerElement
-      * s->vectorInits[i].numElements;
+      s->vectorInits[i].elementSize
+      * s->vectorInits[i].length;
     total += align (GC_ARRAY_HEADER_SIZE
                     + ((dataBytes < OBJPTR_SIZE)
                        ? OBJPTR_SIZE
@@ -82,13 +82,13 @@ void initVectors (GC_state s) {
   inits = s->vectorInits;
   frontier = s->frontier;
   for (i = 0; i < s->vectorInitsLength; i++) {
-    size_t bytesPerElement;
+    size_t elementSize;
     size_t dataBytes;
     size_t objectSize;
     uint32_t typeIndex;
 
-    bytesPerElement = inits[i].bytesPerElement;
-    dataBytes = bytesPerElement * inits[i].numElements;
+    elementSize = inits[i].elementSize;
+    dataBytes = elementSize * inits[i].length;
     objectSize = align (GC_ARRAY_HEADER_SIZE
                         + ((dataBytes < OBJPTR_SIZE)
                            ? OBJPTR_SIZE
@@ -97,9 +97,9 @@ void initVectors (GC_state s) {
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
     *((GC_arrayCounter*)(frontier)) = 0;
     frontier = frontier + GC_ARRAY_COUNTER_SIZE;
-    *((GC_arrayLength*)(frontier)) = inits[i].numElements;
+    *((GC_arrayLength*)(frontier)) = inits[i].length;
     frontier = frontier + GC_ARRAY_LENGTH_SIZE;
-    switch (bytesPerElement) {
+    switch (elementSize) {
     case 1:
       typeIndex = WORD8_VECTOR_TYPE_INDEX;
       break;
@@ -113,8 +113,8 @@ void initVectors (GC_state s) {
       typeIndex = WORD64_VECTOR_TYPE_INDEX;
       break;
     default:
-      die ("unknown bytes per element in vectorInit: %"PRIuMAX"",
-           (uintmax_t)bytesPerElement);
+      die ("unknown element size in vectorInit: %"PRIuMAX"",
+           (uintmax_t)elementSize);
     }
     *((GC_header*)(frontier)) = buildHeaderFromTypeIndex (typeIndex);
     frontier = frontier + GC_HEADER_SIZE;
@@ -122,7 +122,7 @@ void initVectors (GC_state s) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "allocated vector at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
-    memcpy (frontier, inits[i].bytes, dataBytes);
+    memcpy (frontier, inits[i].words, dataBytes);
     frontier += objectSize - GC_ARRAY_HEADER_SIZE;
   }
   if (DEBUG_DETAILED)
