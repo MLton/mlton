@@ -8,8 +8,8 @@ MLton is an open-source, whole-program, optimizing
 
 == What's new? ==
 
-* 20140730: http://www.cs.rit.edu/~mtf[Matthew Fluet] and
-  http://www.cse.buffalo.edu/~lziarek/[Lukasz Ziarek] have been
+* 20140730: http://www.cs.rit.edu/%7emtf[Matthew Fluet] and
+  http://www.cse.buffalo.edu/%7elziarek[Lukasz Ziarek] have been
   awarded an http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=12810[NSF
   CISE Research Infrastructure (CRI)] grant titled "Positioning MLton
   for Next-Generation Programming Languages Research;" read the award
