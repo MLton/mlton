@@ -228,9 +228,9 @@ structure PrimKind =
                 | Private => "private"
                 | Public => "public"
                 | Stdcall => "stdcall"
-		| Functional => "functional"
-		| Impure => "impure"  
-		| Runtime => "runtime"
+                | Functional => "functional"
+                | Impure => "impure"
+                | Runtime => "runtime"
 
             val layout = Layout.str o toString
          end

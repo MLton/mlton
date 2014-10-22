@@ -24,38 +24,38 @@ signature C_FUNCTION =
          end
 
       structure Kind:
-	sig
-	    datatype t = 
-		     Functional
-		   | Impure
-		   | Runtime of {(* bytesNeeded = SOME i means that the i'th
-				  * argument to the function is a word that
-				  * specifies the number of bytes that must be
-				  * free in order for the C function to succeed.
-				  * Limit check insertion is responsible for
-				  * making sure that the bytesNeeded is available.
-				  *)
-				 bytesNeeded: int option, 
-				 ensuresBytesFree: bool,
-				 mayGC: bool,
-				 maySwitchThreads: bool,
-				 modifiesFrontier: bool,
-				 readsStackTop: bool,
-				 writesStackTop: bool}
-				   
-	    val runtimeDefault: t
+         sig
+            datatype t =
+               Functional
+             | Impure
+             | Runtime of {(* bytesNeeded = SOME i means that the i'th
+                            * argument to the function is a word that
+                            * specifies the number of bytes that must be
+                            * free in order for the C function to succeed.
+                            * Limit check insertion is responsible for
+                            * making sure that the bytesNeeded is available.
+                            *)
+                           bytesNeeded: int option,
+                           ensuresBytesFree: bool,
+                           mayGC: bool,
+                           maySwitchThreads: bool,
+                           modifiesFrontier: bool,
+                           readsStackTop: bool,
+                           writesStackTop: bool}
 
-	    val layout: t -> Layout.t
-	    val toString: t -> string
-				  
-	    val bytesNeeded: t -> int option
-	    val ensuresBytesFree: t -> bool
-	    val mayGC: t -> bool
-	    val maySwitchThreads: t -> bool
-	    val modifiesFrontier: t -> bool
-	    val readsStackTop: t -> bool
-	    val writesStackTop: t -> bool
-	end
+            val runtimeDefault: t
+
+            val layout: t -> Layout.t
+            val toString: t -> string
+
+            val bytesNeeded: t -> int option
+            val ensuresBytesFree: t -> bool
+            val mayGC: t -> bool
+            val maySwitchThreads: t -> bool
+            val modifiesFrontier: t -> bool
+            val readsStackTop: t -> bool
+            val writesStackTop: t -> bool
+         end
 
       structure SymbolScope:
          sig
@@ -74,16 +74,16 @@ signature C_FUNCTION =
          end
 
       datatype 'a t = T of {args: 'a vector,
-			     convention: Convention.t,
-			     kind: Kind.t,
-                             prototype: CType.t vector * CType.t option,
-                             return: 'a,
-                             symbolScope: SymbolScope.t,
-                             (* target = Indirect means that the 0'th
-                              * argument to the function is a word
+                            convention: Convention.t,
+                            kind: Kind.t,
+                            prototype: CType.t vector * CType.t option,
+                            return: 'a,
+                            symbolScope: SymbolScope.t,
+                            (* target = Indirect means that the 0'th
+                             * argument to the function is a word
                               * that specifies the target.
-                              *)
-                             target: Target.t}
+                             *)
+                            target: Target.t}
 
       val args: 'a t -> 'a vector
       val bytesNeeded: 'a t -> int option

@@ -1053,7 +1053,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                                  [Vector.new1 addrTy, args]
                                       end,
                                convention = convention,
-			       kind = kind,
+                               kind = kind,
                                prototype = (Vector.map (args, #ctype),
                                             Option.map (result, #ctype)),
                                return = (case result of

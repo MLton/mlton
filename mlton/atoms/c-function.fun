@@ -25,60 +25,60 @@ structure Convention =
 
 structure Kind =
    struct
-      datatype t = 
-	       Functional
-	     | Impure
-	     | Runtime of {bytesNeeded: int option, 
-			   ensuresBytesFree: bool,
-			   mayGC: bool,
-			   maySwitchThreads: bool,
-			   modifiesFrontier: bool,
-			   readsStackTop: bool,
-			   writesStackTop: bool}
+      datatype t =
+         Functional
+       | Impure
+       | Runtime of {bytesNeeded: int option,
+                     ensuresBytesFree: bool,
+                     mayGC: bool,
+                     maySwitchThreads: bool,
+                     modifiesFrontier: bool,
+                     readsStackTop: bool,
+                     writesStackTop: bool}
 
       val runtimeDefault = Runtime {bytesNeeded = NONE,
-				    ensuresBytesFree = false,
-				    mayGC = true,
-				    maySwitchThreads = false,
-				    modifiesFrontier = true,
-				    readsStackTop = true,
-				    writesStackTop = true}
+                                    ensuresBytesFree = false,
+                                    mayGC = true,
+                                    maySwitchThreads = false,
+                                    modifiesFrontier = true,
+                                    readsStackTop = true,
+                                    writesStackTop = true}
 
-      fun layout k = 
-	  case k of
-	      Functional => Layout.str "Functional" 
-	    | Impure => Layout.str "Impure"
-	    | Runtime {bytesNeeded, ensuresBytesFree, mayGC,
-                       maySwitchThreads, modifiesFrontier,
-                       readsStackTop, writesStackTop} => 
-	      Layout.namedRecord 
-		  ("Runtime", 
-		   [("bytesNeeded", Option.layout Int.layout bytesNeeded),
-		    ("ensuresBytesFree", Bool.layout ensuresBytesFree),
-		    ("mayGC", Bool.layout mayGC),
-		    ("maySwitchThreads", Bool.layout maySwitchThreads),
-		    ("modifiesFrontier", Bool.layout modifiesFrontier),
-		    ("readsStackTop", Bool.layout readsStackTop),
-		    ("writesStackTop", Bool.layout writesStackTop)])
+      fun layout k =
+         case k of
+            Functional => Layout.str "Functional"
+          | Impure => Layout.str "Impure"
+          | Runtime {bytesNeeded, ensuresBytesFree, mayGC,
+                     maySwitchThreads, modifiesFrontier,
+                     readsStackTop, writesStackTop} =>
+               Layout.namedRecord
+               ("Runtime",
+                [("bytesNeeded", Option.layout Int.layout bytesNeeded),
+                 ("ensuresBytesFree", Bool.layout ensuresBytesFree),
+                 ("mayGC", Bool.layout mayGC),
+                 ("maySwitchThreads", Bool.layout maySwitchThreads),
+                 ("modifiesFrontier", Bool.layout modifiesFrontier),
+                 ("readsStackTop", Bool.layout readsStackTop),
+                 ("writesStackTop", Bool.layout writesStackTop)])
 
       val toString = Layout.toString o layout
 
       local
-	  fun make (sel, default) k = 
-	      case k of
-		  Functional => default
-		| Impure => default
-		| Runtime r => sel r
-	  fun makeBool sel = make (sel, false)
-	  fun makeOpt sel = make (sel, NONE)
+         fun make (sel, default) k =
+            case k of
+               Functional => default
+             | Impure => default
+             | Runtime r => sel r
+         fun makeBool sel = make (sel, false)
+         fun makeOpt sel = make (sel, NONE)
       in
-          val bytesNeeded = makeOpt #bytesNeeded
-	  val ensuresBytesFree = makeBool #ensuresBytesFree
-          val mayGC = makeBool #mayGC
-          val maySwitchThreads = makeBool #maySwitchThreads
-          val modifiesFrontier = makeBool #modifiesFrontier
-          val readsStackTop = makeBool #readsStackTop
-          val writesStackTop = makeBool #writesStackTop
+         val bytesNeeded = makeOpt #bytesNeeded
+         val ensuresBytesFree = makeBool #ensuresBytesFree
+         val mayGC = makeBool #mayGC
+         val maySwitchThreads = makeBool #maySwitchThreads
+         val modifiesFrontier = makeBool #modifiesFrontier
+         val readsStackTop = makeBool #readsStackTop
+         val writesStackTop = makeBool #writesStackTop
       end
    end
 
@@ -118,7 +118,7 @@ datatype z = datatype Target.t
 
 datatype 'a t = T of {args: 'a vector,
                       convention: Convention.t,
-		      kind: Kind.t,
+                      kind: Kind.t,
                       prototype: CType.t vector * CType.t option,
                       return: 'a,
                       symbolScope: SymbolScope.t,
