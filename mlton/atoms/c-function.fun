@@ -26,8 +26,8 @@ structure Convention =
 structure Kind =
    struct
       datatype t =
-         Functional
-       | Impure
+         Impure
+       | Pure
        | Runtime of {bytesNeeded: int option,
                      ensuresBytesFree: bool,
                      mayGC: bool,
@@ -46,8 +46,8 @@ structure Kind =
 
       fun layout k =
          case k of
-            Functional => Layout.str "Functional"
-          | Impure => Layout.str "Impure"
+            Impure => Layout.str "Impure"
+          | Pure => Layout.str "Pure"
           | Runtime {bytesNeeded, ensuresBytesFree, mayGC,
                      maySwitchThreads, modifiesFrontier,
                      readsStackTop, writesStackTop} =>
@@ -66,8 +66,8 @@ structure Kind =
       local
          fun make (sel, default) k =
             case k of
-               Functional => default
-             | Impure => default
+               Impure => default
+             | Pure => default
              | Runtime r => sel r
          fun makeBool sel = make (sel, false)
          fun makeOpt sel = make (sel, NONE)

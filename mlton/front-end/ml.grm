@@ -1049,12 +1049,12 @@ ieattributes
          case id of
             "cdecl" => PrimKind.ImportExportAttribute.Cdecl :: ieattributes
           | "external" => PrimKind.ImportExportAttribute.External :: ieattributes
+          | "impure" => PrimKind.ImportExportAttribute.Impure :: ieattributes
           | "private" => PrimKind.ImportExportAttribute.Private :: ieattributes
           | "public" => PrimKind.ImportExportAttribute.Public :: ieattributes
-          | "stdcall" => PrimKind.ImportExportAttribute.Stdcall :: ieattributes
-          | "functional" => PrimKind.ImportExportAttribute.Functional :: ieattributes
-          | "impure" => PrimKind.ImportExportAttribute.Impure :: ieattributes
+          | "pure" => PrimKind.ImportExportAttribute.Pure :: ieattributes
           | "runtime" => PrimKind.ImportExportAttribute.Runtime :: ieattributes
+          | "stdcall" => PrimKind.ImportExportAttribute.Stdcall :: ieattributes
           | _ => (error (reg (idleft, idright), concat ["invalid attribute: ", id])
                   ; ieattributes)
       end)

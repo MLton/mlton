@@ -26,8 +26,8 @@ signature C_FUNCTION =
       structure Kind:
          sig
             datatype t =
-               Functional
-             | Impure
+               Impure
+             | Pure
              | Runtime of {(* bytesNeeded = SOME i means that the i'th
                             * argument to the function is a word that
                             * specifies the number of bytes that must be
