@@ -62,7 +62,13 @@ fun equals (v, v') =
     WordSize.equals (elementSize v, elementSize v')
     andalso Vector.equals (elements v, elements v', WordX.equals)
 
+fun foldFrom (v, start, b, f) = Vector.foldFrom (elements v, start, b, f)
+
 fun forall (v, f) = Vector.forall (elements v, f)
+
+fun fromListRev ({elementSize}, l) =
+   T {elementSize = elementSize,
+      elements = Vector.fromListRev l}
 
 fun fromString s =
    T {elementSize = WordSize.byte,

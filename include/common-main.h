@@ -22,10 +22,6 @@
 #define DeclareProfileLabel(l)                  \
         extern char l __attribute__ ((weak))
 
-#define BeginIntInfInits static struct GC_intInfInit intInfInits[] = {
-#define IntInfInitElem(g, n) { g, n },
-#define EndIntInfInits };
-
 #define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
 #define VectorInitElem(es, gi, l, w) { es, gi, l, w },
 #define EndVectorInits };
@@ -44,8 +40,6 @@ PRIVATE Pointer gcStateAddress;
         gcState.frameLayoutsLength = cardof(frameLayouts);              \
         gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
-        gcState.intInfInits = intInfInits;                              \
-        gcState.intInfInitsLength = cardof(intInfInits);                \
         gcState.loadGlobals = loadGlobals;                              \
         gcState.magic = mg;                                             \
         gcState.maxFrameSize = mfs;                                     \

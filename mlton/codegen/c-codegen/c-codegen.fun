@@ -273,7 +273,7 @@ fun outputDeclarations
     includes: string list,
     print: string -> unit,
     program = (Program.T
-               {frameLayouts, frameOffsets, intInfs, maxFrameSize,
+               {frameLayouts, frameOffsets, maxFrameSize,
                 objectTypes, profileInfo, reals, vectors, ...}),
     rest: unit -> unit
     }: unit =
@@ -299,16 +299,6 @@ fun outputDeclarations
          in
             ()
          end
-      fun declareIntInfs () =
-         (print "BeginIntInfInits\n"
-          ; (List.foreach
-             (intInfs, fn (g, i) =>
-              (C.callNoSemi ("IntInfInitElem",
-                             [C.int (Global.index g),
-                              C.string (IntInf.toString i)],
-                             print)
-               ; print "\n")))
-          ; print "EndIntInfInits\n")
       fun declareVectors () =
          (print "BeginVectorInits\n"
           ; (List.foreach
@@ -493,7 +483,6 @@ fun outputDeclarations
       ; declareGlobals ("PRIVATE ", print)
       ; declareExports ()
       ; declareLoadSaveGlobals ()
-      ; declareIntInfs ()
       ; declareVectors ()
       ; declareReals ()
       ; declareFrameOffsets ()

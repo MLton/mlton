@@ -17,26 +17,69 @@ structure ConstType = ConstType (struct
                                     structure WordSize = WordX.WordSize
                                  end)
 
-structure SmallIntInf =
+structure IntInfRep =
    struct
       structure WordSize = WordX.WordSize
-
-      fun toWord (i: IntInf.t): WordX.t option =
+      datatype t = Big of WordXVector.t | Small of WordX.t
+      fun fromIntInf (i: IntInf.t) : t =
          let
-            val ws = WordSize.smallIntInfWord ()
-            val ws' = WordSize.fromBits (Bits.- (WordSize.bits ws, Bits.one))
+            val sws = WordSize.smallIntInfWord ()
+            val sws' = WordSize.fromBits (Bits.- (WordSize.bits sws, Bits.one))
          in
-            if WordSize.isInRange (ws', i, {signed = true})
-               then SOME (WordX.orb (WordX.one ws,
-                                     WordX.lshift (WordX.fromIntInf (i, ws),
-                                                   WordX.one ws)))
-               else NONE
+            if WordSize.isInRange (sws', i, {signed = true})
+               then Small (WordX.orb (WordX.one sws,
+                                      WordX.lshift (WordX.fromIntInf (i, sws), WordX.one sws)))
+            else let
+                    val bws = WordSize.bigIntInfWord ()
+                    val bbws = Bits.toWord (WordSize.bits bws)
+                    val mask = IntInf.- (WordSize.cardinality bws, IntInf.one)
+                    fun loop (i, acc) =
+                       if IntInf.isZero i
+                          then Big (WordXVector.fromListRev ({elementSize = bws}, acc))
+                       else let
+                               val quot = IntInf.~>> (i, bbws)
+                               val rem = IntInf.andb (i, mask)
+                            in
+                               loop (quot, (WordX.fromIntInf (rem, bws)) :: acc)
+                            end
+                 in
+                    loop (if IntInf.>= (i, IntInf.zero)
+                             then (i, [WordX.zero bws])
+                          else (IntInf.~ i, [WordX.one bws]))
+                 end
          end
-
-      val isSmall = isSome o toWord
-
-      fun fromWord (w: WordX.t): IntInf.t =
-         WordX.toIntInfX (WordX.rshift (w, WordX.one (WordX.size w), {signed = true}))
+      fun smallToIntInf (w: WordX.t): IntInf.t option =
+         let
+            val sws = WordSize.smallIntInfWord ()
+            val one = WordX.one sws
+         in
+            if WordSize.equals (WordX.size w, sws)
+               andalso WordX.isOne (WordX.andb (w, one))
+               then SOME (WordX.toIntInfX (WordX.rshift (w, one, {signed = true})))
+            else NONE
+         end
+      fun bigToIntInf (v: WordXVector.t): IntInf.t option =
+         let
+            val bws = WordSize.bigIntInfWord ()
+            val bbws = Bits.toWord (WordSize.bits bws)
+         in
+            if WordSize.equals (WordXVector.elementSize v, bws)
+               andalso WordXVector.length v >= 2
+               then let
+                       val v0 = WordXVector.sub (v, 0)
+                       fun mag () =
+                          WordXVector.foldFrom
+                          (v, 1, IntInf.zero, fn (w, i) =>
+                           IntInf.andb (IntInf.<< (i, bbws), WordX.toIntInf w))
+                    in
+                       if WordX.isZero v0
+                          then SOME (mag ())
+                       else if WordX.isOne v0
+                          then SOME (IntInf.~ (mag ()))
+                       else NONE
+                    end
+            else NONE
+         end
    end
 
 datatype t =

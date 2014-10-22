@@ -37,9 +37,7 @@ struct GC_vectorInit {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static inline size_t sizeofIntInfFromString (GC_state s, const char *str);
 static inline size_t sizeofInitialBytesLive (GC_state s);
-static void initIntInfs (GC_state s);
 static void initVectors (GC_state s);
 static void initWorld (GC_state s);
 

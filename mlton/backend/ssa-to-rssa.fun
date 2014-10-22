@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -605,15 +605,6 @@ fun convertWordSize (ws: WordSize.t): WordSize.t =
 fun convertWordX (w: WordX.t): WordX.t =
    WordX.resize (w, convertWordSize (WordX.size w))
 
-fun convertConst (c: Const.t): Const.t =
-   let
-      datatype z = datatype Const.t
-   in
-      case c of
-         Word w => Word (convertWordX w)
-       | _ => c
-   end
-
 fun convert (program as S.Program.T {functions, globals, main, ...},
              {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
@@ -1019,7 +1010,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      fun move (src: Operand.t) = maybeMove (fn _ => src)
                   in
                      case exp of
-                        S.Exp.Const c => move (Const (convertConst c))
+                        S.Exp.Const c =>
+                           (case c of
+                               Const.IntInf i =>
+                                  let
+                                     fun doit c =
+                                        maybeMove (fn ty => Operand.cast (Const c, ty))
+                                  in
+                                     case Const.IntInfRep.fromIntInf i of
+                                        Const.IntInfRep.Big v =>
+                                           doit (Const.WordVector v)
+                                      | Const.IntInfRep.Small w =>
+                                           doit (Const.Word w)
+                                  end
+                             | Const.Word w => move (Const (Const.Word (convertWordX w)))
+                             | _ => move (Const c))
                       | S.Exp.Inject {variant, ...} =>
                            if isSome (toRtype ty)
                               then move (varOp variant)
@@ -1434,7 +1439,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              (Prim.wordExtdToWord
                                               (s1, s2, {signed = signed}))
                                        end
-                               | WordVector_toIntInf => move (a 0)
+                               | WordVector_toIntInf => cast ()
                                | Word8Array_subWord s => subWord s
                                | Word8Array_updateWord s =>
                                        let
