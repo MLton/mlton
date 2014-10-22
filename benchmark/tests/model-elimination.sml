@@ -8723,7 +8723,7 @@ in
       val () = settings := update_parm_meson      (K false) (!settings);
       val () = settings := update_parm_delta      (K false) (!settings);
 
-      val l = CommandLine.arguments ()
+      val l = (**CommandLine.arguments ()**) []
       val n = opts l
     in
       split l (length l - n)
@@ -8732,7 +8732,7 @@ end;
 
 val (opts, work) = if Milton.ml = "MLton" then options () else ([], []);
 (*#line 0.0 "data/benchmark.sml"*)
-val pure = null (CommandLine.arguments ());
+val pure = null ((**CommandLine.arguments ()**) []);
 
 local
   open Useful Metis1;

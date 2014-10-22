@@ -108,7 +108,7 @@ val benchCounts: (string * int) list =
    ("md5", 96):: (* 41.23 sec *)
    ("merge", 16384):: (* 39.13 sec *)
    ("mlyacc", 3072):: (* 37.48 sec *)
-   ("model-elimination", 1572864):: (* 41.59 sec *)
+   ("model-elimination", 4):: (* 39.14 sec *)
    ("mpuz", 96):: (* 30.01 sec *)
    ("nucleic", 4096):: (* 31.90 sec *)
    ("output1", 12):: (* 33.01 sec *)
