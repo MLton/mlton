@@ -1024,12 +1024,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             end
           | Transfer.CCall {args, frameInfo, func, return} =>
             let
-                val CFunction.T {maySwitchThreads,
-                                 modifiesFrontier,
-                                 readsStackTop,
-                                 return = returnTy,
-                                 target,
-                                 writesStackTop, ...} = func
+                val CFunction.T {return = returnTy,
+                                 target, ...} = func
                 val (paramPres, paramTypes, paramRegs) =
                     Vector.unzip3 (Vector.map (args, fn opr => getOperandValue (cxt, opr)))
                 val push =
@@ -1042,8 +1038,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         in
                             transferPush (valOf return, size)
                         end
-                val flushFrontierCode = if modifiesFrontier then flushFrontier () else ""
-                val flushStackTopCode = if readsStackTop then flushStackTop () else ""
+                val flushFrontierCode = if CFunction.modifiesFrontier func then flushFrontier () else ""
+                val flushStackTopCode = if CFunction.readsStackTop func then flushStackTop () else ""
                 val resultReg = if Type.isUnit returnTy then "" else nextLLVMReg ()
                 val call = case target of
                                CFunction.Target.Direct name =>
@@ -1074,13 +1070,13 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                                          then ""
                                                          else mkstore (llty returnTy, resultReg,
                                                                        "@CReturn" ^ CType.name (Type.toCType returnTy))
-                                       val cacheFrontierCode = if modifiesFrontier
+                                       val cacheFrontierCode = if CFunction.modifiesFrontier func
                                                                then cacheFrontier ()
                                                                else ""
-                                       val cacheStackTopCode = if writesStackTop
+                                       val cacheStackTopCode = if CFunction.writesStackTop func
                                                                then cacheStackTop ()
                                                                else ""
-                                       val br = if maySwitchThreads
+                                       val br = if CFunction.maySwitchThreads func
                                                 then callReturn ()
                                                 else concat ["\tbr label %", Label.toString l,
                                                              "\n"]

@@ -23,6 +23,65 @@ structure Convention =
       val layout = Layout.str o toString
    end
 
+structure Kind =
+   struct
+      datatype t =
+         Impure
+       | Pure
+       | Runtime of {bytesNeeded: int option,
+                     ensuresBytesFree: bool,
+                     mayGC: bool,
+                     maySwitchThreads: bool,
+                     modifiesFrontier: bool,
+                     readsStackTop: bool,
+                     writesStackTop: bool}
+
+      val runtimeDefault = Runtime {bytesNeeded = NONE,
+                                    ensuresBytesFree = false,
+                                    mayGC = true,
+                                    maySwitchThreads = false,
+                                    modifiesFrontier = true,
+                                    readsStackTop = true,
+                                    writesStackTop = true}
+
+      fun layout k =
+         case k of
+            Impure => Layout.str "Impure"
+          | Pure => Layout.str "Pure"
+          | Runtime {bytesNeeded, ensuresBytesFree, mayGC,
+                     maySwitchThreads, modifiesFrontier,
+                     readsStackTop, writesStackTop} =>
+               Layout.namedRecord
+               ("Runtime",
+                [("bytesNeeded", Option.layout Int.layout bytesNeeded),
+                 ("ensuresBytesFree", Bool.layout ensuresBytesFree),
+                 ("mayGC", Bool.layout mayGC),
+                 ("maySwitchThreads", Bool.layout maySwitchThreads),
+                 ("modifiesFrontier", Bool.layout modifiesFrontier),
+                 ("readsStackTop", Bool.layout readsStackTop),
+                 ("writesStackTop", Bool.layout writesStackTop)])
+
+      val toString = Layout.toString o layout
+
+      local
+         fun make (sel, default) k =
+            case k of
+               Impure => default
+             | Pure => default
+             | Runtime r => sel r
+         fun makeBool sel = make (sel, false)
+         fun makeOpt sel = make (sel, NONE)
+      in
+         val bytesNeeded = makeOpt #bytesNeeded
+         val ensuresBytesFree = makeBool #ensuresBytesFree
+         val mayGC = makeBool #mayGC
+         val maySwitchThreads = makeBool #maySwitchThreads
+         val modifiesFrontier = makeBool #modifiesFrontier
+         val readsStackTop = makeBool #readsStackTop
+         val writesStackTop = makeBool #writesStackTop
+      end
+   end
+
 structure SymbolScope =
    struct
       datatype t =
@@ -58,110 +117,82 @@ structure Target =
 datatype z = datatype Target.t
 
 datatype 'a t = T of {args: 'a vector,
-                      bytesNeeded: int option,
                       convention: Convention.t,
-                      ensuresBytesFree: bool,
-                      mayGC: bool,
-                      maySwitchThreads: bool,
-                      modifiesFrontier: bool,
+                      kind: Kind.t,
                       prototype: CType.t vector * CType.t option,
-                      readsStackTop: bool,
                       return: 'a,
                       symbolScope: SymbolScope.t,
-                      target: Target.t,
-                      writesStackTop: bool}
+                      target: Target.t}
 
-fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-               maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
-               return, symbolScope, target, writesStackTop, ...},
+fun layout (T {args, convention, kind, prototype, return, symbolScope, target, ...},
             layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
-    ("bytesNeeded", Option.layout Int.layout bytesNeeded),
     ("convention", Convention.layout convention),
-    ("ensuresBytesFree", Bool.layout ensuresBytesFree),
-    ("mayGC", Bool.layout mayGC),
-    ("maySwitchThreads", Bool.layout maySwitchThreads),
-    ("modifiesFrontier", Bool.layout modifiesFrontier),
+    ("kind", Kind.layout kind),
     ("prototype", (fn (args,ret) => 
                    Layout.record
                    [("args", Vector.layout CType.layout args),
                     ("res", Option.layout CType.layout ret)]) prototype),
-    ("readsStackTop", Bool.layout readsStackTop),
     ("return", layoutType return),
     ("symbolScope", SymbolScope.layout symbolScope),
-    ("target", Target.layout target),
-    ("writesStackTop", Bool.layout writesStackTop)]
+    ("target", Target.layout target)]
 
 local
    fun make f (T r) = f r
+   fun makeKind f (T r) = f (#kind r)
 in
    fun args z = make #args z
-   fun bytesNeeded z = make #bytesNeeded z
+   fun bytesNeeded z = makeKind Kind.bytesNeeded z
    fun convention z = make #convention z
-   fun ensuresBytesFree z = make #ensuresBytesFree z
-   fun mayGC z = make #mayGC z
-   fun maySwitchThreads z = make #maySwitchThreads z
-   fun modifiesFrontier z = make #modifiesFrontier z
+   fun ensuresBytesFree z = makeKind Kind.ensuresBytesFree z
+   fun mayGC z = makeKind Kind.mayGC z
+   fun maySwitchThreads z = makeKind Kind.maySwitchThreads z
+   fun modifiesFrontier z = makeKind Kind.modifiesFrontier z
    fun prototype z = make #prototype z
-   fun readsStackTop z = make #readsStackTop z
+   fun readsStackTop z = makeKind Kind.readsStackTop z
    fun return z = make #return z
    fun symbolScope z = make #symbolScope z
    fun target z = make #target z
-   fun writesStackTop z = make #writesStackTop z
+   fun writesStackTop z = makeKind Kind.writesStackTop z
 end
 (* quell unused warnings *)
 val _ = (modifiesFrontier, readsStackTop, writesStackTop)
 
 fun equals (f, f') = Target.equals (target f, target f')
 
-fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
-            maySwitchThreads, modifiesFrontier, prototype, readsStackTop, 
-            return, symbolScope, target, writesStackTop},
+fun map (T {args, convention, kind, prototype, return, symbolScope, target},
          f) =
    T {args = Vector.map (args, f),
-      bytesNeeded = bytesNeeded,
       convention = convention,
-      ensuresBytesFree = ensuresBytesFree,
-      mayGC = mayGC,
-      maySwitchThreads = maySwitchThreads,
-      modifiesFrontier = modifiesFrontier,
+      kind = kind,
       prototype = prototype,
-      readsStackTop = readsStackTop,
       return = f return,
       symbolScope = symbolScope,
-      target = target,
-      writesStackTop = writesStackTop}
+      target = target}
 
-fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
-             readsStackTop, return, writesStackTop, ...},
+fun isOk (T {kind, return, ...},
           {isUnit}): bool =
-   (if maySwitchThreads
-       then mayGC andalso isUnit return
+   (if Kind.maySwitchThreads kind
+       then Kind.mayGC kind andalso isUnit return
     else true)
-   andalso (if ensuresBytesFree orelse maySwitchThreads
-               then mayGC
+   andalso (if Kind.ensuresBytesFree kind orelse Kind.maySwitchThreads kind
+               then Kind.mayGC kind
             else true)
-   andalso (if mayGC
-               then (modifiesFrontier
-                     andalso readsStackTop andalso writesStackTop)
+   andalso (if Kind.mayGC kind
+               then (Kind.modifiesFrontier kind
+                     andalso Kind.readsStackTop kind andalso Kind.writesStackTop kind)
             else true)
-   andalso (not writesStackTop orelse readsStackTop )
+   andalso (not (Kind.writesStackTop kind) orelse Kind.readsStackTop kind)
 
 fun vanilla {args, name, prototype, return} =
    T {args = args,
-      bytesNeeded = NONE,
       convention = Convention.Cdecl,
-      ensuresBytesFree = false,
-      mayGC = false,
-      maySwitchThreads = false,
-      modifiesFrontier = false,
+      kind = Kind.Impure,
       prototype = prototype,
-      readsStackTop = false,
       return = return,
       symbolScope = SymbolScope.Private,
-      target = Direct name,
-      writesStackTop = false}
+      target = Direct name}
 
 fun cPrototype (T {convention, prototype = (args, return), symbolScope, target, 
                    ...}) =

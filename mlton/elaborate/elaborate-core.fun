@@ -81,6 +81,7 @@ in
    structure CharSize = CharSize
    structure Convention  = CFunction.Convention
    structure SymbolScope  = CFunction.SymbolScope
+   structure CKind = CFunction.Kind
    structure Con = Con
    structure Const = Const
    structure ConstType = Const.ConstType
@@ -927,6 +928,24 @@ fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
            | _ => NONE)
     | _ => NONE
 
+val isIEAttributeKind =
+   fn ImportExportAttribute.Impure => true
+    | ImportExportAttribute.Pure => true
+    | ImportExportAttribute.Runtime => true
+    | _ => false
+
+fun parseIEAttributesKind (attributes: ImportExportAttribute.t list)
+    : CKind.t option =
+   case attributes of
+      [] => SOME CKind.Impure
+    | [a] =>
+         (case a of
+             ImportExportAttribute.Impure => SOME CKind.Impure
+           | ImportExportAttribute.Pure => SOME CKind.Pure
+           | ImportExportAttribute.Runtime => SOME CKind.runtimeDefault
+           | _ => NONE)
+    | _ => NONE
+
 val isIEAttributeSymbolScope =
    fn ImportExportAttribute.External => true
     | ImportExportAttribute.Private => true
@@ -993,6 +1012,13 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
+               val kind =
+                  List.keepAll (attributes, isIEAttributeKind)
+               val kind =
+                  case parseIEAttributesKind kind of
+                     NONE => (invalidAttributes ()
+                              ; CKind.Impure)
+                   | SOME k => k
                val symbolScope =
                   List.keepAll (attributes, isIEAttributeSymbolScope)
                val symbolScope =
@@ -1026,23 +1052,17 @@ fun import {attributes: ImportExportAttribute.t list,
                                             else Vector.concat
                                                  [Vector.new1 addrTy, args]
                                       end,
-                               bytesNeeded = NONE,
                                convention = convention,
-                               ensuresBytesFree = false,
-                               modifiesFrontier = true,
-                               mayGC = true,
-                               maySwitchThreads = false,
+                               kind = kind,
                                prototype = (Vector.map (args, #ctype),
                                             Option.map (result, #ctype)),
-                               readsStackTop = true,
                                return = (case result of
                                             NONE => Type.unit
                                           | SOME {ty, ...} => ty),
                                symbolScope = symbolScope,
                                target = (case name of
                                             NONE => Indirect
-                                          | SOME name => Direct name),
-                               writesStackTop = true}
+                                          | SOME name => Direct name)}
             in
                Prim.ffi func
             end

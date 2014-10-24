@@ -24,18 +24,18 @@ structure CFunction =
       local
          fun make {args, name, prototype} =
             T {args = args,
-               bytesNeeded = NONE,
                convention = Convention.Cdecl,
-               ensuresBytesFree = false,
-               mayGC = false,
-               maySwitchThreads = false,
-               modifiesFrontier = false,
+               kind = Kind.Runtime {bytesNeeded = NONE,
+                                    ensuresBytesFree = false,
+                                    mayGC = false,
+                                    maySwitchThreads = false,
+                                    modifiesFrontier = false,
+                                    readsStackTop = true,
+                                    writesStackTop = false},
                prototype = (prototype, NONE),
-               readsStackTop = true,
                return = Type.unit,
                symbolScope = SymbolScope.Private,
-               target = Target.Direct name,
-               writesStackTop = false}
+               target = Target.Direct name}
       in
          val profileEnter = fn () =>
             make {args = Vector.new1 (Type.gcState ()),

@@ -51,13 +51,13 @@ structure CallStack =
       datatype t = T of Word32.word array
 
       val callStack =
-         _import "GC_callStack" private: GCState.t * Word32.word array -> unit;
+         _import "GC_callStack" runtime private: GCState.t * Word32.word array -> unit;
       val frameIndexSourceSeq =
-         _import "GC_frameIndexSourceSeq" private: GCState.t * Word32.word -> Pointer.t;
+         _import "GC_frameIndexSourceSeq" runtime private: GCState.t * Word32.word -> Pointer.t;
       val keep = _command_line_const "CallStack.keep": bool = false;
       val numStackFrames =
-         _import "GC_numStackFrames" private: GCState.t -> Word32.word;
-      val sourceName = _import "GC_sourceName" private: GCState.t * Word32.word -> C_String.t;
+         _import "GC_numStackFrames" runtime private: GCState.t -> Word32.word;
+      val sourceName = _import "GC_sourceName" runtime private: GCState.t * Word32.word -> C_String.t;
    end
 
 structure Codegen =
@@ -119,26 +119,26 @@ structure Finalizable =
 structure GC =
    struct
       val collect = _prim "GC_collect": unit -> unit;
-      val pack = _import "GC_pack" private: GCState.t -> unit;
+      val pack = _import "GC_pack" runtime private: GCState.t -> unit;
       val getBytesAllocated =
-         _import "GC_getCumulativeStatisticsBytesAllocated" private: GCState.t -> C_UIntmax.t;
+         _import "GC_getCumulativeStatisticsBytesAllocated" runtime private: GCState.t -> C_UIntmax.t;
       val getNumCopyingGCs =
-         _import "GC_getCumulativeStatisticsNumCopyingGCs" private: GCState.t -> C_UIntmax.t;
+         _import "GC_getCumulativeStatisticsNumCopyingGCs" runtime private: GCState.t -> C_UIntmax.t;
       val getNumMarkCompactGCs =
-         _import "GC_getCumulativeStatisticsNumMarkCompactGCs" private: GCState.t -> C_UIntmax.t;
+         _import "GC_getCumulativeStatisticsNumMarkCompactGCs" runtime private: GCState.t -> C_UIntmax.t;
       val getNumMinorGCs =
-         _import "GC_getCumulativeStatisticsNumMinorGCs" private: GCState.t -> C_UIntmax.t;
+         _import "GC_getCumulativeStatisticsNumMinorGCs" runtime private: GCState.t -> C_UIntmax.t;
       val getLastBytesLive =
-         _import "GC_getLastMajorStatisticsBytesLive" private: GCState.t -> C_Size.t;
+         _import "GC_getLastMajorStatisticsBytesLive" runtime private: GCState.t -> C_Size.t;
       val getMaxBytesLive =
-         _import "GC_getCumulativeStatisticsMaxBytesLive" private: GCState.t -> C_Size.t;
+         _import "GC_getCumulativeStatisticsMaxBytesLive" runtime private: GCState.t -> C_Size.t;
       val setHashConsDuringGC =
-         _import "GC_setHashConsDuringGC" private: GCState.t * bool -> unit;
-      val setMessages = _import "GC_setControlsMessages" private: GCState.t * bool -> unit;
+         _import "GC_setHashConsDuringGC" runtime private: GCState.t * bool -> unit;
+      val setMessages = _import "GC_setControlsMessages" runtime private: GCState.t * bool -> unit;
       val setRusageMeasureGC =
-         _import "GC_setControlsRusageMeasureGC" private: GCState.t * bool -> unit;
-      val setSummary = _import "GC_setControlsSummary" private: GCState.t * bool -> unit;
-      val unpack = _import "GC_unpack" private: GCState.t -> unit;
+         _import "GC_setControlsRusageMeasureGC" runtime private: GCState.t * bool -> unit;
+      val setSummary = _import "GC_setControlsSummary" runtime private: GCState.t * bool -> unit;
+      val unpack = _import "GC_unpack" runtime private: GCState.t -> unit;
    end
 
 structure Platform =
@@ -300,14 +300,14 @@ structure Profile =
             type t = Pointer.t
 
             val dummy = Pointer.null
-            val free = _import "GC_profileFree" private: GCState.t * t -> unit;
-            val malloc = _import "GC_profileMalloc" private: GCState.t -> t;
+            val free = _import "GC_profileFree" runtime private: GCState.t * t -> unit;
+            val malloc = _import "GC_profileMalloc" runtime private: GCState.t -> t;
             val write =
-               _import "GC_profileWrite" private: GCState.t * t * NullString8.t -> unit;
+               _import "GC_profileWrite" runtime private: GCState.t * t * NullString8.t -> unit;
          end
-      val done = _import "GC_profileDone" private: GCState.t -> unit;
-      val getCurrent = _import "GC_getProfileCurrent" private: GCState.t -> Data.t;
-      val setCurrent = _import "GC_setProfileCurrent" private : GCState.t * Data.t -> unit;
+      val done = _import "GC_profileDone" runtime private: GCState.t -> unit;
+      val getCurrent = _import "GC_getProfileCurrent" runtime private: GCState.t -> Data.t;
+      val setCurrent = _import "GC_setProfileCurrent" runtime private : GCState.t * Data.t -> unit;
    end
 
 structure Thread =
@@ -336,17 +336,17 @@ structure Thread =
        * switching to a copy.
        *)
       val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
-      val current = _import "GC_getCurrentThread" private: GCState.t -> thread;
-      val finishSignalHandler = _import "GC_finishSignalHandler" private: GCState.t -> unit;
+      val current = _import "GC_getCurrentThread" runtime private: GCState.t -> thread;
+      val finishSignalHandler = _import "GC_finishSignalHandler" runtime private: GCState.t -> unit;
       val returnToC = _prim "Thread_returnToC": unit -> unit;
-      val saved = _import "GC_getSavedThread" private: GCState.t -> thread;
-      val savedPre = _import "GC_getSavedThread" private: GCState.t -> preThread;
+      val saved = _import "GC_getSavedThread" runtime private: GCState.t -> thread;
+      val savedPre = _import "GC_getSavedThread" runtime private: GCState.t -> preThread;
       val setCallFromCHandler =
-         _import "GC_setCallFromCHandlerThread" private: GCState.t * thread -> unit;
+         _import "GC_setCallFromCHandlerThread" runtime private: GCState.t * thread -> unit;
       val setSignalHandler =
-         _import "GC_setSignalHandlerThread" private: GCState.t * thread -> unit;
-      val setSaved = _import "GC_setSavedThread" private: GCState.t * thread -> unit;
-      val startSignalHandler = _import "GC_startSignalHandler" private: GCState.t -> unit;
+         _import "GC_setSignalHandlerThread" runtime private: GCState.t * thread -> unit;
+      val setSaved = _import "GC_setSavedThread" runtime private: GCState.t * thread -> unit;
+      val startSignalHandler = _import "GC_startSignalHandler" runtime private: GCState.t -> unit;
       val switchTo = _prim "Thread_switchTo": thread -> unit;
    end
 
@@ -361,9 +361,9 @@ structure Weak =
 
 structure World =
    struct
-      val getAmOriginal = _import "GC_getAmOriginal" private: GCState.t -> bool;
-      val setAmOriginal = _import "GC_setAmOriginal" private: GCState.t * bool -> unit;
-      val getSaveStatus = _import "GC_getSaveWorldStatus" private: GCState.t -> bool C_Errno.t;
+      val getAmOriginal = _import "GC_getAmOriginal" runtime private: GCState.t -> bool;
+      val setAmOriginal = _import "GC_setAmOriginal" runtime private: GCState.t * bool -> unit;
+      val getSaveStatus = _import "GC_getSaveWorldStatus" runtime private: GCState.t -> bool C_Errno.t;
       (* save's result status is accesible via getSaveStatus ().
        * It is not possible to have the type of save as
        * NullString8.t -> bool C_Errno.t, because there are two

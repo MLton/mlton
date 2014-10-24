@@ -81,7 +81,7 @@ signature AST_CORE =
          sig
             structure ImportExportAttribute:
                sig
-                  datatype t = Cdecl | External | Private | Public | Stdcall
+                  datatype t = Cdecl | External | Impure | Private | Public | Pure | Runtime | Stdcall
 
                   val layout: t -> Layout.t
                end
