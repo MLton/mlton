@@ -110,6 +110,10 @@
 /peek.*.batch
 /peek.*.batch.sml
 /peek.*-*
+/pidigits
+/pidigits.*.batch
+/pidigits.*.batch.sml
+/pidigits.*-*
 /psdes-random
 /psdes-random.*.batch
 /psdes-random.*.batch.sml
