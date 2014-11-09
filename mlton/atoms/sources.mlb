@@ -8,9 +8,34 @@
 
 local
    ../../lib/mlton/sources.mlb
-   ../ast/sources.mlb
+(*   ../ast/sources.mlb *)
    ../control/sources.mlb
 
+   admits-equality.sig
+   admits-equality.fun
+   wrapped.sig
+   char-size.sig
+   char-size.fun
+   int-size.sig
+   int-size.fun
+   real-size.sig
+   real-size.fun
+   word-size.sig
+   word-size.fun
+   symbol.sig
+   symbol.fun
+   field.sig
+   field.fun
+   prim-cons.sig
+   prim-cons.fun
+   tycon-kind.sig
+   tycon-kind.fun
+   prim-tycons.sig
+   prim-tycons.fun
+   record.sig
+   record.fun
+   tyvar.sig
+   tyvar.fun
    id.sig
    id.fun
    (* Windows doesn't like files named con, so use con- instead. *)
@@ -56,7 +81,9 @@ local
    hash-type.sig
    hash-type.fun
 in
-   signature AST
+   signature ADMITS_EQUALITY
+   signature WRAPPED
+   signature BINDING_STRENGTH
    signature ATOMS
    signature ID
    signature C_FUNCTION
@@ -69,12 +96,35 @@ in
    signature LABEL
    signature PRIM
    signature PROFILE_LABEL
+   signature PRIM_TYCONS
    signature RECORD
    signature TYCON
+   signature TYCON_KIND
    signature TYPE_OPS
    signature WORD_X
    signature WORD_X_VECTOR
+   signature CHAR_SIZE
+   signature INT_SIZE
+   signature REAL_SIZE
+   signature WORD_SIZE
+   signature SYMBOL
+   signature FIELD
+   signature PRIM_CONS
+   signature RECORD
+   signature TYVAR
 
+   functor AdmitsEquality
+   functor CharSize
+   functor IntSize
+   functor RealSize
+   functor WordSize
+   functor Symbol
+   functor Field
+   functor PrimCons
+   functor PrimTycons
+   functor Record
+   functor TyconKind
+   functor Tyvar
    functor Atoms
    functor Id
    functor GenericScheme
