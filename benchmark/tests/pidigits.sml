@@ -53,7 +53,7 @@ struct
          val lfts = Stream.map (fn k => (k, 4*k+2, 0, 2*k+1)) (Stream.unfold (fn i => SOME (i, i+1)) 1)
          fun floor_extr (q,r,s,t) x = (q * x + r) div (s * x + t)
          fun next z = floor_extr z 3
-         fun safe z n = case IntInf.compare (n, floor_extr z 4) of EQUAL => true | _ => false
+         fun safe z n = n = floor_extr z 4
          fun prod z n = comp (10, ~10*n, 0, 1) z
          fun cons z z' = comp z z'
       in
