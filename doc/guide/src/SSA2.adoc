@@ -11,7 +11,7 @@ SSA2
 <:IntermediateLanguage:>, a slight variant of the <:SSA:>
 <:IntermediateLanguage:>,
 
-Like <:SSA:>, a <:SSA:> program consists of a collection of datatype
+Like <:SSA:>, an <:SSA2:> program consists of a collection of datatype
 declarations, a sequence of global statements, and a collection of
 functions, along with a distinguished "main" function.  Each function
 consists of a collection of basic blocks, where each basic block is a
