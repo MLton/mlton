@@ -175,11 +175,11 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
 
-static inline objptr binary (GC_state s,
-                             objptr lhs, objptr rhs, size_t bytes,
-                             void(*binop)(__mpz_struct *resmpz,
-                                          const __mpz_struct *lhsspace,
-                                          const __mpz_struct *rhsspace)) {
+static objptr binary (GC_state s,
+                      objptr lhs, objptr rhs, size_t bytes,
+                      void(*binop)(__mpz_struct *resmpz,
+                                   const __mpz_struct *lhsspace,
+                                   const __mpz_struct *rhsspace)) {
   __mpz_struct lhsmpz, rhsmpz, resmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
 
