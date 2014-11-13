@@ -18,7 +18,7 @@ For each datatype, tycon, and vector type, it builds and equality
 function and translates calls to `MLton_equal` into calls to that
 function.
 
-Also generates calls to `IntInf_equal` and `Word_equal`.
+Also generates calls to `Word_equal`.
 
 For tuples, it does the equality test inline; i.e., it does not create
 a separate equality function for each tuple type.
@@ -39,7 +39,7 @@ full equality.  This is important for implementing code like the
 following efficiently:
 +
 ----
-if x = 0  ...    (where x is of type IntInf.int)
+if x = 0  ...    (* where x is of type IntInf.int *)
 ----
 
 * Also convert pointer equality on scalar types to type specific
