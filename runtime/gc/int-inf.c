@@ -175,110 +175,113 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
 
-static inline objptr binary (objptr lhs, objptr rhs, size_t bytes,
+static inline objptr binary (GC_state s,
+                             objptr lhs, objptr rhs, size_t bytes,
                              void(*binop)(__mpz_struct *resmpz,
                                           const __mpz_struct *lhsspace,
                                           const __mpz_struct *rhsspace)) {
   __mpz_struct lhsmpz, rhsmpz, resmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
 
-  initIntInfRes (&gcState, &resmpz, bytes);
-  fillIntInfArg (&gcState, lhs, &lhsmpz, lhsspace);
-  fillIntInfArg (&gcState, rhs, &rhsmpz, rhsspace);
+  initIntInfRes (s, &resmpz, bytes);
+  fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
+  fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
   binop (&resmpz, &lhsmpz, &rhsmpz);
-  return finiIntInfRes (&gcState, &resmpz, bytes);
+  return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_add (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_add ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_add);
+  return binary (s, lhs, rhs, bytes, &mpz_add);
 }
 
-objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_andb (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_andb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_and);
+  return binary (s, lhs, rhs, bytes, &mpz_and);
 }
 
-objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_gcd (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_gcd ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_gcd);
+  return binary (s, lhs, rhs, bytes, &mpz_gcd);
 }
 
-objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_mul (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_mul ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_mul);
+  return binary (s, lhs, rhs, bytes, &mpz_mul);
 }
 
-objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_quot (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_quot ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_tdiv_q);
+  return binary (s, lhs, rhs, bytes, &mpz_tdiv_q);
 }
 
-objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_orb (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_orb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_ior);
+  return binary (s, lhs, rhs, bytes, &mpz_ior);
 }
 
-objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_rem (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_quot ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_tdiv_r);
+  return binary (s, lhs, rhs, bytes, &mpz_tdiv_r);
 }
 
-objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_sub (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_sub ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_sub);
+  return binary (s, lhs, rhs, bytes, &mpz_sub);
 }
 
-objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes) {
+objptr IntInf_xorb (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_xorb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_xor);
+  return binary (s, lhs, rhs, bytes, &mpz_xor);
 }
 
-static objptr unary (objptr arg, size_t bytes,
+static objptr unary (GC_state s,
+                     objptr arg, size_t bytes,
                      void(*unop)(__mpz_struct *resmpz,
                                  const __mpz_struct *argspace)) {
   __mpz_struct argmpz, resmpz;
  mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
 
- initIntInfRes (&gcState, &resmpz, bytes);
- fillIntInfArg (&gcState, arg, &argmpz, argspace);
+ initIntInfRes (s, &resmpz, bytes);
+ fillIntInfArg (s, arg, &argmpz, argspace);
  unop (&resmpz, &argmpz);
- return finiIntInfRes (&gcState, &resmpz, bytes);
+ return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_neg (objptr arg, size_t bytes) {
+objptr IntInf_neg (GC_state s, objptr arg, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_neg ("FMTOBJPTR", %"PRIuMAX")\n",
              arg, (uintmax_t)bytes);
-  return unary (arg, bytes, &mpz_neg);
+  return unary (s, arg, bytes, &mpz_neg);
 }
 
-objptr IntInf_notb (objptr arg, size_t bytes) {
+objptr IntInf_notb (GC_state s, objptr arg, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_notb ("FMTOBJPTR", %"PRIuMAX")\n",
              arg, (uintmax_t)bytes);
-  return unary (arg, bytes, &mpz_com);
+  return unary (s, arg, bytes, &mpz_com);
 }
 
-static objptr shary (objptr arg, Word32_t shift, size_t bytes,
+static objptr shary (GC_state s,
+                     objptr arg, Word32_t shift, size_t bytes,
                      void(*shop)(__mpz_struct *resmpz,
                                  const __mpz_struct *argspace,
                                  unsigned long shift))
@@ -286,31 +289,31 @@ static objptr shary (objptr arg, Word32_t shift, size_t bytes,
   __mpz_struct argmpz, resmpz;
   mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
 
-  initIntInfRes (&gcState, &resmpz, bytes);
-  fillIntInfArg (&gcState, arg, &argmpz, argspace);
+  initIntInfRes (s, &resmpz, bytes);
+  fillIntInfArg (s, arg, &argmpz, argspace);
   shop (&resmpz, &argmpz, (unsigned long)shift);
-  return finiIntInfRes (&gcState, &resmpz, bytes);
+  return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes) {
+objptr IntInf_arshift (GC_state s, objptr arg, Word32_t shift, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_arshift ("FMTOBJPTR", %"PRIu32", %"PRIuMAX")\n",
              arg, shift, (uintmax_t)bytes);
-  return shary (arg, shift, bytes, &mpz_fdiv_q_2exp);
+  return shary (s, arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes) {
+objptr IntInf_lshift (GC_state s, objptr arg, Word32_t shift, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_lshift ("FMTOBJPTR", %"PRIu32", %"PRIuMAX")\n",
              arg, shift, (uintmax_t)bytes);
-  return shary(arg, shift, bytes, &mpz_mul_2exp);
+  return shary(s, arg, shift, bytes, &mpz_mul_2exp);
 }
 
 /*
  * Return an integer which compares to 0 as the two intInf args compare
  * to each other.
  */
-Int32_t IntInf_compare (objptr lhs, objptr rhs) {
+Int32_t IntInf_compare (GC_state s, objptr lhs, objptr rhs) {
   __mpz_struct lhsmpz, rhsmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
   int res;
@@ -318,8 +321,8 @@ Int32_t IntInf_compare (objptr lhs, objptr rhs) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_compare ("FMTOBJPTR", "FMTOBJPTR")\n",
              lhs, rhs);
-  fillIntInfArg (&gcState, lhs, &lhsmpz, lhsspace);
-  fillIntInfArg (&gcState, rhs, &rhsmpz, rhsspace);
+  fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
+  fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
   res = mpz_cmp (&lhsmpz, &rhsmpz);
   if (res < 0) return -1;
   if (res > 0) return 1;
@@ -331,7 +334,7 @@ Int32_t IntInf_compare (objptr lhs, objptr rhs) {
  * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and
  * space is a string (mutable) which is large enough.
  */
-objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
+objptr IntInf_toString (GC_state s, objptr arg, int32_t base, size_t bytes) {
   GC_string8 sp;
   __mpz_struct argmpz;
   mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
@@ -342,8 +345,9 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
     fprintf (stderr, "IntInf_toString ("FMTOBJPTR", %"PRId32", %"PRIuMAX")\n",
              arg, base, (uintmax_t)bytes);
   assert (base == 2 || base == 8 || base == 10 || base == 16);
-  fillIntInfArg (&gcState, arg, &argmpz, argspace);
-  sp = (GC_string8)gcState.frontier;
+  fillIntInfArg (s, arg, &argmpz, argspace);
+  assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));
+  sp = (GC_string8)s->frontier;
   str = mpz_get_str((void*)&sp->obj, base, &argmpz);
   assert (str == (char*)&sp->obj);
   size = strlen(str);
@@ -355,11 +359,11 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
       if (('a' <= c) && (c <= 'z'))
         sp->obj.chars[i] = (char)(c + ('A' - 'a'));
     }
-  setFrontier (&gcState, (pointer)&sp->obj + size, bytes);
-  sp->counter = 0;
-  sp->length = size;
+  setFrontier (s, (pointer)&sp->obj + size, bytes);
+  sp->counter = (GC_arrayCounter)0;
+  sp->length = (GC_arrayLength)size;
   sp->header = GC_STRING8_HEADER;
-  return pointerToObjptr ((pointer)&sp->obj, gcState.heap.start);
+  return pointerToObjptr ((pointer)&sp->obj, s->heap.start);
 }
 
 /*

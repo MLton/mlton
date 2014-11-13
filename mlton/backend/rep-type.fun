@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -106,6 +106,8 @@ structure Type =
       val csize: unit -> t = word o WordSize.csize
 
       val cint: unit -> t = word o WordSize.cint
+
+      val compareRes = word WordSize.compareRes
 
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 

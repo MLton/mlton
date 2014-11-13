@@ -47,6 +47,8 @@ structure CFunction =
          struct
             open CType
             val gcState = CPointer
+            val intInf = Objptr
+            val string = Objptr
             val thread = CPointer (* CHECK; thread (= objptr) would be better? *)
          end
 
@@ -268,6 +270,112 @@ structure CFunction =
             return = Type.csize (),
             symbolScope = Private,
             target = Direct "GC_size"}
+
+      fun amAllocationProfiling () =
+         Control.ProfileAlloc = !Control.profile
+      val intInfBinary = fn name =>
+         CFunction.T {args = Vector.new4 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.intInf (),
+                                          Type.csize ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = true,
+                                                     readsStackTop = amAllocationProfiling (),
+                                                     writesStackTop = false},
+                      prototype = (Vector.new4 (CType.gcState,
+                                                CType.intInf,
+                                                CType.intInf,
+                                                CType.csize ()),
+                                   SOME CType.intInf),
+                      return = Type.intInf (),
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
+      val intInfCompare = fn name =>
+         (* CHECK; cint would be better? *)
+         CFunction.T {args = Vector.new3 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.intInf ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = false,
+                                                     readsStackTop = false,
+                                                     writesStackTop = false},
+                      prototype = (Vector.new3 (CType.gcState,
+                                                CType.intInf,
+                                                CType.intInf),
+                                   SOME CType.compareRes),
+                      return = Type.compareRes,
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
+      val intInfShift = fn name =>
+         CFunction.T {args = Vector.new4 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.shiftArg,
+                                          Type.csize ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = true,
+                                                     readsStackTop = amAllocationProfiling (),
+                                                     writesStackTop = false},
+                      prototype = (Vector.new4 (CType.gcState,
+                                                CType.intInf,
+                                                CType.shiftArg,
+                                                CType.csize ()),
+                                   SOME CType.intInf),
+                      return = Type.intInf (),
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
+      val intInfToString = fn name =>
+         (* CHECK; cint would be better? *)
+         CFunction.T {args = Vector.new4 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.word WordSize.word32,
+                                          Type.csize ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = true,
+                                                     readsStackTop = amAllocationProfiling (),
+                                                     writesStackTop = false},
+                      prototype = (Vector.new4 (CType.gcState,
+                                                CType.intInf,
+                                                CType.Int32,
+                                                CType.csize ()),
+                                   SOME CType.string),
+                      return = Type.string (),
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
+      val intInfUnary = fn name =>
+         CFunction.T {args = Vector.new3 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.csize ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = true,
+                                                     readsStackTop = amAllocationProfiling (),
+                                                     writesStackTop = false},
+                      prototype = (Vector.new3 (CType.gcState,
+                                                CType.intInf,
+                                                CType.csize ()),
+                                   SOME CType.intInf),
+                      return = Type.intInf (),
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
    end
 
 structure Name =
@@ -275,13 +383,6 @@ structure Name =
       open Prim.Name
 
       type t = Type.t t
-
-      structure CType =
-         struct
-            open CType
-            val intInf = Objptr
-            val string = Objptr
-         end
 
       fun cFunctionRaise (n: t): CFunction.t =
          let
@@ -299,79 +400,6 @@ structure Name =
                         name = name,
                         prototype = (Vector.new1 ct1, SOME ct2),
                         return = t2}
-            fun amAllocationProfiling () =
-               Control.ProfileAlloc = !Control.profile
-            val intInfBinary = fn () =>
-               CFunction.T {args = Vector.new3 (Type.intInf (), Type.intInf (),
-                                                Type.csize ()),
-                            convention = Cdecl,
-                            kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
-                                                 ensuresBytesFree = false,
-                                                 mayGC = false,
-                                                 maySwitchThreads = false,
-                                                 modifiesFrontier = true,
-                                                 readsStackTop = amAllocationProfiling (),
-                                                 writesStackTop = false},
-                            prototype = (Vector.new3 (CType.intInf, CType.intInf,
-                                                      CType.csize ()),
-                                         SOME CType.intInf),
-                            return = Type.intInf (),
-                            symbolScope = Private,
-                            target = Direct name}
-            val intInfShift = fn () =>
-               CFunction.T {args = Vector.new3 (Type.intInf (),
-                                                Type.shiftArg,
-                                                Type.csize ()),
-                            convention = Cdecl,
-                            kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
-                                                 ensuresBytesFree = false,
-                                                 mayGC = false,
-                                                 maySwitchThreads = false,
-                                                 modifiesFrontier = true,
-                                                 readsStackTop = amAllocationProfiling (),
-                                                 writesStackTop = false},
-                            prototype = (Vector.new3 (CType.intInf,
-                                                      CType.shiftArg,
-                                                      CType.csize ()),
-                                         SOME CType.intInf),
-                            return = Type.intInf (),
-                            symbolScope = Private,
-                            target = Direct name}
-            val intInfToString = fn () =>
-               (* CHECK; cint would be better? *)
-               CFunction.T {args = Vector.new3 (Type.intInf (),
-                                                Type.word WordSize.word32,
-                                                Type.csize ()),
-                            convention = Cdecl,
-                            kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
-                                                 ensuresBytesFree = false,
-                                                 mayGC = false,
-                                                 maySwitchThreads = false,
-                                                 modifiesFrontier = true,
-                                                 readsStackTop = amAllocationProfiling (),
-                                                 writesStackTop = false},
-                            prototype = (Vector.new3 (CType.intInf,
-                                                      CType.Int32,
-                                                      CType.csize ()),
-                                         SOME CType.string),
-                            return = Type.string (),
-                            symbolScope = Private,
-                            target = Direct name}
-            val intInfUnary = fn () =>
-               CFunction.T {args = Vector.new2 (Type.intInf (), Type.csize ()),
-                            convention = Cdecl,
-                            kind = CFunction.Kind.Runtime {bytesNeeded = SOME 1,
-                                                 ensuresBytesFree = false,
-                                                 mayGC = false,
-                                                 maySwitchThreads = false,
-                                                 modifiesFrontier = true,
-                                                 readsStackTop = amAllocationProfiling (),
-                                                 writesStackTop = false},
-                            prototype = (Vector.new2 (CType.intInf, CType.csize ()),
-                                         SOME CType.intInf),
-                            return = Type.intInf (),
-                            symbolScope = Private,
-                            target = Direct name}
             local
                fun make n s =
                   let
@@ -450,28 +478,7 @@ structure Name =
                end
          in
             case n of
-               IntInf_add => intInfBinary ()
-             | IntInf_andb => intInfBinary ()
-             | IntInf_arshift => intInfShift ()
-             | IntInf_compare =>
-                  (* CHECK; cint would be better? *)
-                  vanilla {args = Vector.new2 (Type.intInf (), Type.intInf ()),
-                           name = name,
-                           prototype = (Vector.new2 (CType.intInf, CType.intInf),
-                                        SOME CType.Int32),
-                           return = Type.word WordSize.word32}
-             | IntInf_gcd => intInfBinary ()
-             | IntInf_lshift => intInfShift ()
-             | IntInf_mul => intInfBinary ()
-             | IntInf_neg => intInfUnary ()
-             | IntInf_notb => intInfUnary ()
-             | IntInf_orb => intInfBinary ()
-             | IntInf_quot => intInfBinary ()
-             | IntInf_rem => intInfBinary ()
-             | IntInf_sub => intInfBinary ()
-             | IntInf_toString => intInfToString ()
-             | IntInf_xorb => intInfBinary ()
-             | MLton_bug => CFunction.bug ()
+               MLton_bug => CFunction.bug ()
              | Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
@@ -1213,8 +1220,53 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               Operand.bool true)),
                                      func = (CFunction.gc
                                              {maySwitchThreads = handlesSignals})}
+                               | IntInf_add =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_add)
+                               | IntInf_andb =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_andb)
+                               | IntInf_arshift =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfShift IntInf_arshift)
+                               | IntInf_compare =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfCompare IntInf_compare)
+                               | IntInf_gcd =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_gcd)
+                               | IntInf_lshift =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfShift IntInf_lshift)
+                               | IntInf_mul =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_mul)
+                               | IntInf_neg =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfUnary IntInf_neg)
+                               | IntInf_notb =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfUnary IntInf_notb)
+                               | IntInf_orb =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_orb)
+                               | IntInf_quot =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_quot)
+                               | IntInf_rem =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_rem)
+                               | IntInf_sub =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_sub)
+                               | IntInf_toString =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfToString IntInf_toString)
                                | IntInf_toVector => cast ()
                                | IntInf_toWord => cast ()
+                               | IntInf_xorb =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary IntInf_xorb)
                                | MLton_bogus =>
                                     (case toRtype ty of
                                         NONE => none ()
