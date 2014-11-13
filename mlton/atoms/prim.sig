@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -58,7 +59,6 @@ signature PRIM =
              | IntInf_andb (* ssa to rssa *)
              | IntInf_arshift (* ssa to rssa *)
              | IntInf_compare (* ssa to rssa *)
-             | IntInf_equal (* ssa to rssa *)
              | IntInf_gcd (* ssa to rssa *)
              | IntInf_lshift (* ssa to rssa *)
              | IntInf_mul (* ssa to rssa *)
@@ -260,7 +260,6 @@ signature PRIM =
                       symbolScope: CFunction.SymbolScope.t } -> 'a t
       val fromString: string -> 'a t option
       val hash: 'a t (* polymorphic hash *)
-      val intInfEqual: 'a t
       val intInfToWord: 'a t
       val intInfToVector: 'a t
       val isCommutative: 'a t -> bool

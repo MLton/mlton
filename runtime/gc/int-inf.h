@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -78,7 +78,6 @@ PRIVATE objptr IntInf_notb (objptr arg, size_t bytes);
 PRIVATE objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes);
 PRIVATE objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
 PRIVATE Int32_t IntInf_compare (objptr lhs, objptr rhs);
-PRIVATE Bool_t IntInf_equal (objptr lhs, objptr rhs);
 PRIVATE objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2005, 2007-2008 Henry Cejtin, Matthew Fluet,
  *    Suresh Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,10 +12,6 @@
  */
 static inline bool isSmall (objptr arg) {
   return (arg & 1);
-}
-
-static inline bool isEitherSmall (objptr arg1, objptr arg2) {
-  return ((arg1 | arg2) & (objptr)1);
 }
 
 static inline bool areSmall (objptr arg1, objptr arg2) {
@@ -328,18 +324,6 @@ Int32_t IntInf_compare (objptr lhs, objptr rhs) {
   if (res < 0) return -1;
   if (res > 0) return 1;
   return 0;
-}
-
-/*
- * Check if two IntInf.int's are equal.
- */
-Bool_t IntInf_equal (objptr lhs, objptr rhs) {
-  if (lhs == rhs)
-    return TRUE;
-  if (isEitherSmall (lhs, rhs))
-    return FALSE;
-  else
-    return 0 == IntInf_compare (lhs, rhs);
 }
 
 /*

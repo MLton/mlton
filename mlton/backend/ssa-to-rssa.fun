@@ -460,12 +460,6 @@ structure Name =
                            prototype = (Vector.new2 (CType.intInf, CType.intInf),
                                         SOME CType.Int32),
                            return = Type.word WordSize.word32}
-             | IntInf_equal =>
-                  vanilla {args = Vector.new2 (Type.intInf (), Type.intInf ()),
-                           name = name,
-                           prototype = (Vector.new2 (CType.intInf, CType.intInf),
-                                        SOME CType.bool),
-                           return = Type.bool}
              | IntInf_gcd => intInfBinary ()
              | IntInf_lshift => intInfShift ()
              | IntInf_mul => intInfBinary ()
