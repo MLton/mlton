@@ -83,20 +83,4 @@ PRIVATE objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
                                            int base,
                                            const __mpz_struct *argspace));
 
-PRIVATE objptr IntInf_add (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_andb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_gcd (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_mul (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_quot (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_orb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_rem (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_sub (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_xorb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_neg (GC_state s, objptr arg, size_t bytes);
-PRIVATE objptr IntInf_notb (GC_state s, objptr arg, size_t bytes);
-PRIVATE objptr IntInf_arshift (GC_state s, objptr arg, Word32_t shift, size_t bytes);
-PRIVATE objptr IntInf_lshift (GC_state s, objptr arg, Word32_t shift, size_t bytes);
-PRIVATE Int32_t IntInf_compare (GC_state s, objptr lhs, objptr rhs);
-PRIVATE objptr IntInf_toString (GC_state s, objptr arg, Int32_t base, size_t bytes);
-
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
