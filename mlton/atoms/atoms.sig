@@ -8,36 +8,38 @@
 
 signature ATOMS_STRUCTS =
    sig
-      structure Field: FIELD
-      structure CharSize: CHAR_SIZE
-      structure IntSize: INT_SIZE
-      structure RealSize: REAL_SIZE
-      structure Record: RECORD
-      structure SortedRecord: RECORD
-      structure Tyvar: TYVAR
-      structure WordSize: WORD_SIZE
-      sharing Field = Record.Field = SortedRecord.Field
    end
 
 signature ATOMS' =
    sig
       include ATOMS_STRUCTS
 
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
+      structure CharSize: CHAR_SIZE
       structure Con: CON
       structure Const: CONST
       structure Ffi: FFI
+      structure Field: FIELD
       structure Func: FUNC
+      structure IntSize: INT_SIZE
       structure Label: LABEL
       structure Prim: PRIM
-      structure ProfileLabel: PROFILE_LABEL
       structure ProfileExp: PROFILE_EXP
+      structure ProfileLabel: PROFILE_LABEL
+      structure RealSize: REAL_SIZE
       structure RealX: REAL_X
+      structure Record: RECORD
+      structure SortedRecord: RECORD
       structure SourceInfo: SOURCE_INFO
+      structure Symbol: SYMBOL
       structure Tycon: TYCON
+      structure TyconKind: TYCON_KIND
+      structure Tyvar: TYVAR
       structure Var: VAR 
       structure Vars: SET
+      structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
 
@@ -46,6 +48,7 @@ signature ATOMS' =
       sharing CharSize = Tycon.CharSize
       sharing Con = Prim.Con
       sharing Const = Prim.Const
+      sharing Field = Record.Field = SortedRecord.Field
       sharing IntSize = Tycon.IntSize
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
          = Tycon.RealSize

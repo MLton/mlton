@@ -13,6 +13,23 @@ structure Atoms =
    struct
       open S
 
+      structure CharSize = CharSize ()
+      structure IntSize = IntSize ()
+      structure RealSize = RealSize ()
+      structure WordSize = WordSize ()
+
+      structure Symbol = Symbol ()
+      structure Field = Field (structure Symbol = Symbol)
+      structure Record = Record (val isSorted = false
+                                 structure Field = Field)
+      structure SortedRecord = Record (val isSorted = true
+                                       structure Field = Field)
+
+      structure AdmitsEquality = AdmitsEquality ()
+      structure TyconKind = TyconKind ()
+
+      structure Tyvar = Tyvar ()
+
       structure ProfileLabel = ProfileLabel ()
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)

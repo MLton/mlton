@@ -82,49 +82,36 @@ local
    hash-type.fun
 in
    signature ADMITS_EQUALITY
-   signature WRAPPED
-   signature BINDING_STRENGTH
    signature ATOMS
-   signature ID
-   signature C_FUNCTION
-   signature C_TYPE
+   signature BINDING_STRENGTH
+   signature CHAR_SIZE
    signature CONST
    signature CONST_TYPE
+   signature C_FUNCTION
+   signature C_TYPE
    signature FFI
-   signature ID
    signature HASH_TYPE
+   signature ID
+   signature INT_SIZE
    signature LABEL
    signature PRIM
-   signature PROFILE_LABEL
+   signature PRIM_CONS
    signature PRIM_TYCONS
+   signature PROFILE_LABEL
+   signature REAL_SIZE
    signature RECORD
+   signature SYMBOL
    signature TYCON
    signature TYCON_KIND
    signature TYPE_OPS
+   signature TYVAR
+   signature WORD_SIZE
    signature WORD_X
    signature WORD_X_VECTOR
-   signature CHAR_SIZE
-   signature INT_SIZE
-   signature REAL_SIZE
-   signature WORD_SIZE
-   signature SYMBOL
-   signature FIELD
-   signature PRIM_CONS
-   signature RECORD
-   signature TYVAR
-
-   functor AdmitsEquality
-   functor CharSize
-   functor IntSize
-   functor RealSize
-   functor WordSize
-   functor Symbol
-   functor Field
+   signature WRAPPED
+ 
    functor PrimCons
    functor PrimTycons
-   functor Record
-   functor TyconKind
-   functor Tyvar
    functor Atoms
    functor Id
    functor GenericScheme

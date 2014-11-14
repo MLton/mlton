@@ -16,42 +16,19 @@ open S
 (*              Intermediate Languages               *)
 (*---------------------------------------------------*)
 
-structure Symbol = Symbol ()
-structure Field = Field (structure Symbol = Symbol)
-structure Record = Record (val isSorted = false
-                           structure Field = Field)
-structure SortedRecord = Record (val isSorted = true
-                                 structure Field = Field)
-structure Tyvar = Tyvar ()
-structure Ast = Ast (structure Record = Record
-                     structure SortedRecord = SortedRecord
-                     structure Symbol = Symbol
-                     structure Tyvar = Tyvar)
-local
-   open Ast.Tycon
-in
-   structure CharSize = CharSize
-   structure IntSize = IntSize
-   structure RealSize = RealSize
-   structure WordSize = WordSize
-end
-structure Atoms = Atoms (structure CharSize = CharSize
-                         structure Field = Field
-                         structure IntSize = IntSize
-                         structure RealSize = RealSize
-                         structure Record = Record
-                         structure SortedRecord = SortedRecord
-                         structure Tyvar = Tyvar
-                         structure WordSize = WordSize)
+structure Atoms = Atoms ()
 local
    open Atoms
 in
    structure Const = Const
    structure ConstType = Const.ConstType
    structure Ffi = Ffi
+   structure Symbol = Symbol
+   structure WordSize = WordSize
    structure WordX = WordX
 end
-structure TypeEnv = TypeEnv (Atoms)
+structure Ast = Ast (open Atoms)
+structure TypeEnv = TypeEnv (open Atoms)
 structure CoreML = CoreML (open Atoms
                            structure Type =
                               struct

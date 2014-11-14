@@ -12,14 +12,7 @@ struct
 open S
 
 structure Wrap = Region.Wrap
-structure AdmitsEquality = AdmitsEquality ()
-structure CharSize = CharSize ()
 structure Const = AstConst ()
-structure IntSize = IntSize ()
-structure Kind = TyconKind ()
-structure RealSize = RealSize ()
-structure WordSize = WordSize ()
-
 structure Field = Record.Field
 
 structure Tycon =
@@ -31,7 +24,7 @@ structure Tycon =
          PrimTycons (structure AdmitsEquality = AdmitsEquality
                      structure CharSize = CharSize
                      structure IntSize = IntSize
-                     structure Kind = Kind
+                     structure Kind = TyconKind
                      structure RealSize = RealSize
                      structure WordSize = WordSize
                      open Id
