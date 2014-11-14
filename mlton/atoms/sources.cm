@@ -8,32 +8,37 @@
 
 Group
 
-signature AST
+signature ADMITS_EQUALITY
 signature ATOMS
-signature ID
-signature C_FUNCTION
-signature C_TYPE
-signature CON
+signature BINDING_STRENGTH
+signature CHAR_SIZE
 signature CONST
 signature CONST_TYPE
+signature C_FUNCTION
+signature C_TYPE
 signature FFI
-signature GENERIC_SCHEME
-signature ID
 signature HASH_TYPE
+signature ID
+signature INT_SIZE
 signature LABEL
 signature PRIM
-signature PROFILE_EXP
+signature PRIM_CONS
+signature PRIM_TYCONS
 signature PROFILE_LABEL
-signature REAL_X
+signature REAL_SIZE
 signature RECORD
-signature SOURCE_INFO
+signature SYMBOL
 signature TYCON
+signature TYCON_KIND
 signature TYPE_OPS
 signature TYVAR
-signature VAR
+signature WORD_SIZE
 signature WORD_X
 signature WORD_X_VECTOR
-
+signature WRAPPED
+ 
+functor PrimCons
+functor PrimTycons
 functor Atoms
 functor Id
 functor GenericScheme
@@ -44,9 +49,33 @@ functor UseName
 is
 
 ../../lib/mlton/sources.cm
-../ast/sources.cm
 ../control/sources.cm
 
+admits-equality.sig
+admits-equality.fun
+wrapped.sig
+char-size.sig
+char-size.fun
+int-size.sig
+int-size.fun
+real-size.sig
+real-size.fun
+word-size.sig
+word-size.fun
+symbol.sig
+symbol.fun
+field.sig
+field.fun
+prim-cons.sig
+prim-cons.fun
+tycon-kind.sig
+tycon-kind.fun
+prim-tycons.sig
+prim-tycons.fun
+record.sig
+record.fun
+tyvar.sig
+tyvar.fun
 id.sig
 id.fun
 (* Windows doesn't like files named con, so use con- instead. *)

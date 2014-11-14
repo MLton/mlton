@@ -8,7 +8,6 @@
 
 local
    ../../lib/mlton/sources.mlb
-(*   ../ast/sources.mlb *)
    ../control/sources.mlb
 
    admits-equality.sig
