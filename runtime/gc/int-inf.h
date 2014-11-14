@@ -64,6 +64,25 @@ static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes)
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
+PRIVATE objptr IntInf_binop (GC_state s, objptr lhs, objptr rhs, size_t bytes,
+                             void(*binop)(__mpz_struct *resmpz,
+                                          const __mpz_struct *lhsspace,
+                                          const __mpz_struct *rhsspace));
+PRIVATE objptr IntInf_unop (GC_state s, objptr arg, size_t bytes,
+                            void(*unop)(__mpz_struct *resmpz,
+                                        const __mpz_struct *argspace));
+PRIVATE objptr IntInf_shop (GC_state s, objptr arg, Word32_t shift, size_t bytes,
+                            void(*shop)(__mpz_struct *resmpz,
+                                        const __mpz_struct *argspace,
+                                        unsigned long shift));
+PRIVATE Int32_t IntInf_cmpop (GC_state s, objptr lhs, objptr rhs,
+                              int(*cmpop)(const __mpz_struct *lhsspace,
+                                          const __mpz_struct *rhsspace));
+PRIVATE objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
+                             char*(*strop)(char *str,
+                                           int base,
+                                           const __mpz_struct *argspace));
+
 PRIVATE objptr IntInf_add (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_andb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_gcd (GC_state s, objptr lhs, objptr rhs, size_t bytes);
