@@ -266,17 +266,11 @@ objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
   fillIntInfArg (s, arg, &argmpz, argspace);
   assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));
   sp = (GC_string8)s->frontier;
-  str = strop ((void*)&sp->obj, base, &argmpz);
+  str = strop ((void*)&sp->obj, -base, &argmpz);
   assert (str == (char*)&sp->obj);
   size = strlen(str);
   if (sp->obj.chars[0] == '-')
     sp->obj.chars[0] = '~';
-  if (base > 10)
-    for (unsigned int i = 0; i < size; i++) {
-      char c = sp->obj.chars[i];
-      if (('a' <= c) && (c <= 'z'))
-        sp->obj.chars[i] = (char)(c + ('A' - 'a'));
-    }
   setFrontier (s, (pointer)&sp->obj + size, bytes);
   sp->counter = (GC_arrayCounter)0;
   sp->length = (GC_arrayLength)size;
