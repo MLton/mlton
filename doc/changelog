@@ -1,5 +1,10 @@
 Here are the changes from version 20130715 to version YYYYMMDD.
 
+* 2014-11-14
+   - Reorganized runtime support for IntInf operations so that
+     programs that do not use IntInf compile to executables with no
+     residual dependency on GMP.
+
 * 2014-07-01
    - Merged Brian Leibig's llvm code generator.
 
