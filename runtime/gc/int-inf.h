@@ -47,9 +47,11 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__is_four_or_eight,
         CHAR_BIT * sizeof(mp_limb_t) == 64 ? \
         GC_WORD64_VECTOR_HEADER : ( 0 ) ) )
 
-COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr, 
-                    (sizeof(mp_limb_t) >= sizeof(objptr)) ||
-                    (sizeof(objptr) % sizeof(mp_limb_t) == 0));
+COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr,
+                    sizeof(objptr) <= sizeof(mp_limb_t) ?
+                    sizeof(mp_limb_t) % sizeof(objptr) == 0 :
+                    sizeof(objptr) % sizeof(mp_limb_t) == 0);
+
 #define LIMBS_PER_OBJPTR ( \
         sizeof(mp_limb_t) >= sizeof(objptr) ? \
         1 : (int)(sizeof(objptr) / sizeof(mp_limb_t)))

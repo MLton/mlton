@@ -55,21 +55,31 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
       const objptr highBitMask = (objptr)1 << (CHAR_BIT * OBJPTR_SIZE - 1);
       bool neg = (arg & highBitMask) != (objptr)0;
       if (neg) {
-        res->_mp_size = - LIMBS_PER_OBJPTR;
         arg = -((arg >> 1) | highBitMask);
       } else {
-        res->_mp_size = LIMBS_PER_OBJPTR;
         arg = (arg >> 1);
       }
-      for (int i = 0; i < LIMBS_PER_OBJPTR; i++) {
-        space[i] = (mp_limb_t)arg;
-        // The conditional below is to quell a gcc warning:
-        //   right shift count >= width of type
-        // When 1 == LIMBS_PER_OBJPTR, the for loop will not continue,
-        // so the shift doesn't matter.
-        arg = arg >> (1 == LIMBS_PER_OBJPTR ?
-                      0 : CHAR_BIT * sizeof(mp_limb_t));
+      int size;
+      if (sizeof(objptr) <= sizeof(mp_limb_t)) {
+        space[0] = (mp_limb_t)arg;
+        size = 1;
+      } else {
+        size = 0;
+        while (arg != 0) {
+          space[size] = (mp_limb_t)arg;
+          // The conditional below is to quell a gcc warning:
+          //   right shift count >= width of type
+          // When (sizeof(objptr) <= sizeof(mp_limb_t)),
+          // this branch is unreachable,
+          // so the shift doesn't matter.
+          arg = arg >> (sizeof(objptr) <= sizeof(mp_limb_t) ?
+                        0 : CHAR_BIT * sizeof(mp_limb_t));
+          size++;
+        }
       }
+      if (neg)
+        size = - size;
+      res->_mp_size = size;
     }
   } else {
     bp = toBignum (s, arg);
@@ -146,26 +156,57 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   } else
     bp->obj.isneg = FALSE;
   assert (size >= 0);
-  if (size <= 1) {
-    uintmax_t val, ans;
-
-    if (size == 0)
-      val = 0;
-    else
-      val = bp->obj.limbs[0];
-    if (bp->obj.isneg) {
-      /*
-       * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
-       */
-      ans = - val;
-      val = val - 1;
-    } else
-      /*
-       * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
-       */
-      ans = val;
-    if (val < (uintmax_t)1<<(CHAR_BIT * OBJPTR_SIZE - 2)) {
-      return (objptr)(ans<<1 | 1);
+  if (size == 0)
+    return (objptr)1;
+  if (size <= LIMBS_PER_OBJPTR) {
+    if (sizeof(objptr) <= sizeof(mp_limb_t)) {
+      objptr ans;
+      mp_limb_t val = bp->obj.limbs[0];
+      if (bp->obj.isneg) {
+        /*
+         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
+         */
+        ans = (objptr)(- val);
+        val = val - 1;
+      } else
+        /*
+         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
+         */
+        ans = (objptr)val;
+      // The conditional below is to quell a gcc warning:
+      //   right shift count >= width of type
+      // When (sizeof(objptr) > sizeof(mp_limb_t)),
+      // this branch is unreachable,
+      // so the shift doesn't matter.
+      if (val < (mp_limb_t)1<<(sizeof(objptr) > sizeof(mp_limb_t) ?
+                               0 : CHAR_BIT * OBJPTR_SIZE - 2))
+        return (ans<<1 | 1);
+    } else {
+      objptr ans, val;
+      val = (objptr)(bp->obj.limbs[0]);
+      for (int i = 1; i < size; i++) {
+        // The conditional below is to quell a gcc warning:
+        //   left shift count >= width of type
+        // When (sizeof(objptr) <= sizeof(mp_limb_t)),
+        // this branch is unreachable,
+        // so the shift doesn't matter.
+        val = val << (sizeof(objptr) <= sizeof(mp_limb_t) ?
+                      0 : CHAR_BIT * sizeof(mp_limb_t));
+        val = val & (objptr)(bp->obj.limbs[i]);
+      }
+      if (bp->obj.isneg) {
+        /*
+         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
+         */
+        ans = - val;
+        val = val - 1;
+      } else
+        /*
+         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
+         */
+        ans = val;
+      if (val < (objptr)1<<(CHAR_BIT * OBJPTR_SIZE - 2))
+        return (ans<<1 | 1);
     }
   }
   setFrontier (s, (pointer)(&bp->obj.limbs[size]), bytes);
