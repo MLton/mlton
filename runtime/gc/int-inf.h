@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -47,9 +47,11 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__is_four_or_eight,
         CHAR_BIT * sizeof(mp_limb_t) == 64 ? \
         GC_WORD64_VECTOR_HEADER : ( 0 ) ) )
 
-COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr, 
-                    (sizeof(mp_limb_t) >= sizeof(objptr)) ||
-                    (sizeof(objptr) % sizeof(mp_limb_t) == 0));
+COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr,
+                    sizeof(objptr) <= sizeof(mp_limb_t) ?
+                    sizeof(mp_limb_t) % sizeof(objptr) == 0 :
+                    sizeof(objptr) % sizeof(mp_limb_t) == 0);
+
 #define LIMBS_PER_OBJPTR ( \
         sizeof(mp_limb_t) >= sizeof(objptr) ? \
         1 : (int)(sizeof(objptr) / sizeof(mp_limb_t)))
@@ -64,21 +66,23 @@ static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes)
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-PRIVATE objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes);
-PRIVATE objptr IntInf_neg (objptr arg, size_t bytes);
-PRIVATE objptr IntInf_notb (objptr arg, size_t bytes);
-PRIVATE objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes);
-PRIVATE objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
-PRIVATE Int32_t IntInf_compare (objptr lhs, objptr rhs);
-PRIVATE Bool_t IntInf_equal (objptr lhs, objptr rhs);
-PRIVATE objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
+PRIVATE objptr IntInf_binop (GC_state s, objptr lhs, objptr rhs, size_t bytes,
+                             void(*binop)(__mpz_struct *resmpz,
+                                          const __mpz_struct *lhsspace,
+                                          const __mpz_struct *rhsspace));
+PRIVATE objptr IntInf_unop (GC_state s, objptr arg, size_t bytes,
+                            void(*unop)(__mpz_struct *resmpz,
+                                        const __mpz_struct *argspace));
+PRIVATE objptr IntInf_shop (GC_state s, objptr arg, Word32_t shift, size_t bytes,
+                            void(*shop)(__mpz_struct *resmpz,
+                                        const __mpz_struct *argspace,
+                                        unsigned long shift));
+PRIVATE Int32_t IntInf_cmpop (GC_state s, objptr lhs, objptr rhs,
+                              int(*cmpop)(const __mpz_struct *lhsspace,
+                                          const __mpz_struct *rhsspace));
+PRIVATE objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
+                             char*(*strop)(char *str,
+                                           int base,
+                                           const __mpz_struct *argspace));
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

@@ -113,6 +113,7 @@ val benchCounts: (string * int) list =
    ("nucleic", 4096):: (* 31.90 sec *)
    ("output1", 12):: (* 33.01 sec *)
    ("peek", 2048):: (* 35.93 sec *)
+   ("pidigits", 4096):: (* 36.27 sec *)
    ("psdes-random", 24):: (* 40.57 sec *)
    ("ratio-regions", 1536):: (* 45.14 sec *)
    ("ray", 1536):: (* 42.18 sec *)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,9 +23,6 @@
 #include "gc/virtual-memory.c"
 #include "gc/align.c"
 #include "gc/read_write.c"
-
-/* Import the global gcState (but try not to use it too much). */
-extern struct GC_state gcState;
 
 #include "gc/array-allocate.c"
 #include "gc/array.c"

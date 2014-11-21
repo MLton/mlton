@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013-2014 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,9 +22,10 @@ structure IntInf: INT_INF_EXTRA =
       val precision: Int.int option = NONE
 
       fun sign (arg: int): Int.int =
-         if arg < zero then ~1
-         else if arg > zero then 1
-         else 0
+         case compare (arg, zero) of
+            LESS => ~1
+          | EQUAL => 0
+          | GREATER => 1
 
       fun sameSign (x, y) = sign x = sign y
 

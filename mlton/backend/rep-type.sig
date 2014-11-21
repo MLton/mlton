@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -62,6 +63,7 @@ signature REP_TYPE =
       val cpointer: unit -> t
       val csize: unit -> t
       val cint: unit -> t
+      val compareRes: t
       val deLabel: t -> Label.t option
       val deObjptr: t -> ObjptrTycon.t option
       val deReal: t -> RealSize.t option

@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2014 Matthew Fluet.
  * Copyright (C) 1999-2005, 2007-2008 Henry Cejtin, Matthew Fluet,
  *    Suresh Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,10 +12,6 @@
  */
 static inline bool isSmall (objptr arg) {
   return (arg & 1);
-}
-
-static inline bool isEitherSmall (objptr arg1, objptr arg2) {
-  return ((arg1 | arg2) & (objptr)1);
 }
 
 static inline bool areSmall (objptr arg1, objptr arg2) {
@@ -59,21 +55,31 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
       const objptr highBitMask = (objptr)1 << (CHAR_BIT * OBJPTR_SIZE - 1);
       bool neg = (arg & highBitMask) != (objptr)0;
       if (neg) {
-        res->_mp_size = - LIMBS_PER_OBJPTR;
         arg = -((arg >> 1) | highBitMask);
       } else {
-        res->_mp_size = LIMBS_PER_OBJPTR;
         arg = (arg >> 1);
       }
-      for (int i = 0; i < LIMBS_PER_OBJPTR; i++) {
-        space[i] = (mp_limb_t)arg;
-        // The conditional below is to quell a gcc warning:
-        //   right shift count >= width of type
-        // When 1 == LIMBS_PER_OBJPTR, the for loop will not continue,
-        // so the shift doesn't matter.
-        arg = arg >> (1 == LIMBS_PER_OBJPTR ?
-                      0 : CHAR_BIT * sizeof(mp_limb_t));
+      int size;
+      if (sizeof(objptr) <= sizeof(mp_limb_t)) {
+        space[0] = (mp_limb_t)arg;
+        size = 1;
+      } else {
+        size = 0;
+        while (arg != 0) {
+          space[size] = (mp_limb_t)arg;
+          // The conditional below is to quell a gcc warning:
+          //   right shift count >= width of type
+          // When (sizeof(objptr) <= sizeof(mp_limb_t)),
+          // this branch is unreachable,
+          // so the shift doesn't matter.
+          arg = arg >> (sizeof(objptr) <= sizeof(mp_limb_t) ?
+                        0 : CHAR_BIT * sizeof(mp_limb_t));
+          size++;
+        }
       }
+      if (neg)
+        size = - size;
+      res->_mp_size = size;
     }
   } else {
     bp = toBignum (s, arg);
@@ -150,26 +156,57 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   } else
     bp->obj.isneg = FALSE;
   assert (size >= 0);
-  if (size <= 1) {
-    uintmax_t val, ans;
-
-    if (size == 0)
-      val = 0;
-    else
-      val = bp->obj.limbs[0];
-    if (bp->obj.isneg) {
-      /*
-       * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
-       */
-      ans = - val;
-      val = val - 1;
-    } else
-      /*
-       * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
-       */
-      ans = val;
-    if (val < (uintmax_t)1<<(CHAR_BIT * OBJPTR_SIZE - 2)) {
-      return (objptr)(ans<<1 | 1);
+  if (size == 0)
+    return (objptr)1;
+  if (size <= LIMBS_PER_OBJPTR) {
+    if (sizeof(objptr) <= sizeof(mp_limb_t)) {
+      objptr ans;
+      mp_limb_t val = bp->obj.limbs[0];
+      if (bp->obj.isneg) {
+        /*
+         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
+         */
+        ans = (objptr)(- val);
+        val = val - 1;
+      } else
+        /*
+         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
+         */
+        ans = (objptr)val;
+      // The conditional below is to quell a gcc warning:
+      //   right shift count >= width of type
+      // When (sizeof(objptr) > sizeof(mp_limb_t)),
+      // this branch is unreachable,
+      // so the shift doesn't matter.
+      if (val < (mp_limb_t)1<<(sizeof(objptr) > sizeof(mp_limb_t) ?
+                               0 : CHAR_BIT * OBJPTR_SIZE - 2))
+        return (ans<<1 | 1);
+    } else {
+      objptr ans, val;
+      val = (objptr)(bp->obj.limbs[0]);
+      for (int i = 1; i < size; i++) {
+        // The conditional below is to quell a gcc warning:
+        //   left shift count >= width of type
+        // When (sizeof(objptr) <= sizeof(mp_limb_t)),
+        // this branch is unreachable,
+        // so the shift doesn't matter.
+        val = val << (sizeof(objptr) <= sizeof(mp_limb_t) ?
+                      0 : CHAR_BIT * sizeof(mp_limb_t));
+        val = val & (objptr)(bp->obj.limbs[i]);
+      }
+      if (bp->obj.isneg) {
+        /*
+         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
+         */
+        ans = - val;
+        val = val - 1;
+      } else
+        /*
+         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
+         */
+        ans = val;
+      if (val < (objptr)1<<(CHAR_BIT * OBJPTR_SIZE - 2))
+        return (ans<<1 | 1);
     }
   }
   setFrontier (s, (pointer)(&bp->obj.limbs[size]), bytes);
@@ -179,175 +216,84 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
 
-static inline objptr binary (objptr lhs, objptr rhs, size_t bytes,
-                             void(*binop)(__mpz_struct *resmpz,
-                                          const __mpz_struct *lhsspace,
-                                          const __mpz_struct *rhsspace)) {
+objptr IntInf_binop (GC_state s,
+                     objptr lhs, objptr rhs, size_t bytes,
+                     void(*binop)(__mpz_struct *resmpz,
+                                  const __mpz_struct *lhsspace,
+                                  const __mpz_struct *rhsspace)) {
   __mpz_struct lhsmpz, rhsmpz, resmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
 
-  initIntInfRes (&gcState, &resmpz, bytes);
-  fillIntInfArg (&gcState, lhs, &lhsmpz, lhsspace);
-  fillIntInfArg (&gcState, rhs, &rhsmpz, rhsspace);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "IntInf_binop ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
+             lhs, rhs, (uintmax_t)bytes);
+  initIntInfRes (s, &resmpz, bytes);
+  fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
+  fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
   binop (&resmpz, &lhsmpz, &rhsmpz);
-  return finiIntInfRes (&gcState, &resmpz, bytes);
+  return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_add ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_add);
-}
-
-objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_andb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_and);
-}
-
-objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_gcd ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_gcd);
-}
-
-objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_mul ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_mul);
-}
-
-objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_quot ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_tdiv_q);
-}
-
-objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_orb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_ior);
-}
-
-objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_quot ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_tdiv_r);
-}
-
-objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_sub ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_sub);
-}
-
-objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_xorb ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX")\n",
-             lhs, rhs, (uintmax_t)bytes);
-  return binary (lhs, rhs, bytes, &mpz_xor);
-}
-
-static objptr unary (objptr arg, size_t bytes,
-                     void(*unop)(__mpz_struct *resmpz,
-                                 const __mpz_struct *argspace)) {
+objptr IntInf_unop (GC_state s,
+                    objptr arg, size_t bytes,
+                    void(*unop)(__mpz_struct *resmpz,
+                                const __mpz_struct *argspace)) {
   __mpz_struct argmpz, resmpz;
  mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
 
- initIntInfRes (&gcState, &resmpz, bytes);
- fillIntInfArg (&gcState, arg, &argmpz, argspace);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "IntInf_unop ("FMTOBJPTR", %"PRIuMAX")\n",
+             arg, (uintmax_t)bytes);
+
+ initIntInfRes (s, &resmpz, bytes);
+ fillIntInfArg (s, arg, &argmpz, argspace);
  unop (&resmpz, &argmpz);
- return finiIntInfRes (&gcState, &resmpz, bytes);
+ return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_neg (objptr arg, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_neg ("FMTOBJPTR", %"PRIuMAX")\n",
-             arg, (uintmax_t)bytes);
-  return unary (arg, bytes, &mpz_neg);
-}
-
-objptr IntInf_notb (objptr arg, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_notb ("FMTOBJPTR", %"PRIuMAX")\n",
-             arg, (uintmax_t)bytes);
-  return unary (arg, bytes, &mpz_com);
-}
-
-static objptr shary (objptr arg, Word32_t shift, size_t bytes,
-                     void(*shop)(__mpz_struct *resmpz,
-                                 const __mpz_struct *argspace,
-                                 unsigned long shift))
+objptr IntInf_shop (GC_state s,
+                    objptr arg, Word32_t shift, size_t bytes,
+                    void(*shop)(__mpz_struct *resmpz,
+                                const __mpz_struct *argspace,
+                                unsigned long shift))
 {
   __mpz_struct argmpz, resmpz;
   mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
 
-  initIntInfRes (&gcState, &resmpz, bytes);
-  fillIntInfArg (&gcState, arg, &argmpz, argspace);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "IntInf_shop ("FMTOBJPTR", %"PRIu32", %"PRIuMAX")\n",
+             arg, shift, (uintmax_t)bytes);
+
+  initIntInfRes (s, &resmpz, bytes);
+  fillIntInfArg (s, arg, &argmpz, argspace);
   shop (&resmpz, &argmpz, (unsigned long)shift);
-  return finiIntInfRes (&gcState, &resmpz, bytes);
+  return finiIntInfRes (s, &resmpz, bytes);
 }
 
-objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_arshift ("FMTOBJPTR", %"PRIu32", %"PRIuMAX")\n",
-             arg, shift, (uintmax_t)bytes);
-  return shary (arg, shift, bytes, &mpz_fdiv_q_2exp);
-}
-
-objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes) {
-  if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_lshift ("FMTOBJPTR", %"PRIu32", %"PRIuMAX")\n",
-             arg, shift, (uintmax_t)bytes);
-  return shary(arg, shift, bytes, &mpz_mul_2exp);
-}
-
-/*
- * Return an integer which compares to 0 as the two intInf args compare
- * to each other.
- */
-Int32_t IntInf_compare (objptr lhs, objptr rhs) {
+Int32_t IntInf_cmpop (GC_state s, objptr lhs, objptr rhs,
+                      int(*cmpop)(const __mpz_struct *lhsspace,
+                                  const __mpz_struct *rhsspace))
+{
   __mpz_struct lhsmpz, rhsmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
   int res;
 
   if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_compare ("FMTOBJPTR", "FMTOBJPTR")\n",
+    fprintf (stderr, "IntInf_cmpop ("FMTOBJPTR", "FMTOBJPTR")\n",
              lhs, rhs);
-  fillIntInfArg (&gcState, lhs, &lhsmpz, lhsspace);
-  fillIntInfArg (&gcState, rhs, &rhsmpz, rhsspace);
-  res = mpz_cmp (&lhsmpz, &rhsmpz);
+  fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
+  fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
+  res = cmpop (&lhsmpz, &rhsmpz);
   if (res < 0) return -1;
   if (res > 0) return 1;
   return 0;
 }
 
-/*
- * Check if two IntInf.int's are equal.
- */
-Bool_t IntInf_equal (objptr lhs, objptr rhs) {
-  if (lhs == rhs)
-    return TRUE;
-  if (isEitherSmall (lhs, rhs))
-    return FALSE;
-  else
-    return 0 == IntInf_compare (lhs, rhs);
-}
-
-/*
- * Convert an intInf to a string.
- * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and
- * space is a string (mutable) which is large enough.
- */
-objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
+objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
+                     char*(*strop)(char *str,
+                                   int base,
+                                   const __mpz_struct *argspace))
+{
   GC_string8 sp;
   __mpz_struct argmpz;
   mp_limb_t argspace[LIMBS_PER_OBJPTR + 1];
@@ -355,27 +301,22 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   size_t size;
 
   if (DEBUG_INT_INF)
-    fprintf (stderr, "IntInf_toString ("FMTOBJPTR", %"PRId32", %"PRIuMAX")\n",
+    fprintf (stderr, "IntInf_strop ("FMTOBJPTR", %"PRId32", %"PRIuMAX")\n",
              arg, base, (uintmax_t)bytes);
   assert (base == 2 || base == 8 || base == 10 || base == 16);
-  fillIntInfArg (&gcState, arg, &argmpz, argspace);
-  sp = (GC_string8)gcState.frontier;
-  str = mpz_get_str((void*)&sp->obj, base, &argmpz);
+  fillIntInfArg (s, arg, &argmpz, argspace);
+  assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));
+  sp = (GC_string8)s->frontier;
+  str = strop ((void*)&sp->obj, -base, &argmpz);
   assert (str == (char*)&sp->obj);
   size = strlen(str);
   if (sp->obj.chars[0] == '-')
     sp->obj.chars[0] = '~';
-  if (base > 0)
-    for (unsigned int i = 0; i < size; i++) {
-      char c = sp->obj.chars[i];
-      if (('a' <= c) && (c <= 'z'))
-        sp->obj.chars[i] = (char)(c + ('A' - 'a'));
-    }
-  setFrontier (&gcState, (pointer)&sp->obj + size, bytes);
-  sp->counter = 0;
-  sp->length = size;
+  setFrontier (s, (pointer)&sp->obj + size, bytes);
+  sp->counter = (GC_arrayCounter)0;
+  sp->length = (GC_arrayLength)size;
   sp->header = GC_STRING8_HEADER;
-  return pointerToObjptr ((pointer)&sp->obj, gcState.heap.start);
+  return pointerToObjptr ((pointer)&sp->obj, s->heap.start);
 }
 
 /*
