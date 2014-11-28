@@ -89,7 +89,7 @@ install in `/usr/local`.
 
 == Compiling with SML/NJ ==
 
-To compile with SML/NJ, run `make nj-mlton` from within the root
+To compile with SML/NJ, run `make smlnj-mlton` from within the root
 directory of the sources.  You must use a recent version of SML/NJ.
 First, the `Makefile` calls `mllex` and `mlyacc` to build the lexer
 and parser.  Then, it calls SML/NJ with the appropriate `sources.cm`
