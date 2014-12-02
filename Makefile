@@ -88,7 +88,7 @@ basis:
 
 .PHONY: bootstrap-nj
 bootstrap-nj:
-	$(MAKE) nj-mlton
+	$(MAKE) smlnj-mlton
 	$(MAKE) all
 
 .PHONY: clean
