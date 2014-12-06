@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2014 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -224,14 +225,15 @@ local
 in
    val register: int * (MLtonPointer.t -> unit) -> unit =
       let
-         val exports = 
-            Array.array (Int32.toInt (Primitive.MLton.FFI.numExports), 
+         val exports =
+            Array.array (Int32.toInt (Primitive.MLton.FFI.numExports),
                          fn _ => raise Fail "undefined export")
-         fun loop (): unit =
+         val worker : (Prim.thread * Prim.thread option ref) option ref = ref NONE
+         fun mkWorker (): Prim.thread * Prim.thread option ref =
             let
-               (* Atomic 2 *)
-               val t = Prim.saved gcState
-               fun doit () =
+               val thisWorker : (Prim.thread * Prim.thread option ref) option ref = ref NONE
+               val savedRef : Prim.thread option ref = ref NONE
+               fun workerLoop () =
                   let
                      (* Atomic 1 *)
                      val p = Primitive.MLton.FFI.getOpArgsResPtr ()
@@ -240,24 +242,42 @@ in
                      val i = MLtonPointer.getInt32 (MLtonPointer.getPointer (p, 0), 0)
                      val _ =
                         (Array.sub (exports, Int32.toInt i) p)
-                        handle e => 
-                           (TextIO.output 
+                        handle e =>
+                           (TextIO.output
                             (TextIO.stdErr, "Call from C to SML raised exception.\n")
                             ; MLtonExn.topLevelHandler e)
                      (* Atomic 0 *)
                      val _ = atomicBegin ()
                      (* Atomic 1 *)
-                     val _ = Prim.setSaved (gcState, t)
+                     val _ = worker := !thisWorker
+                     val _ = Prim.setSaved (gcState, valOf (!savedRef))
+                     val _ = savedRef := NONE
                      val _ = Prim.returnToC () (* implicit atomicEnd() *)
                   in
-                     ()
+                     workerLoop ()
                   end
-               val _ = Prim.switchTo (toPrimitive (new doit)) (* implicit atomicEnd() *)
+               val workerThread = toPrimitive (new workerLoop)
+               val _ = thisWorker := SOME (workerThread, savedRef)
             in
-               loop ()
+               (workerThread, savedRef)
             end
-         val p = toPrimitive (new (fn () => loop ()))
-         val _ = Prim.setCallFromCHandler (gcState, p)
+         fun handlerLoop (): unit =
+            let
+               (* Atomic 2 *)
+               val saved = Prim.saved gcState
+               val (workerThread, savedRef) =
+                  case !worker of
+                     NONE => mkWorker ()
+                   | SOME (workerThread, savedRef) =>
+                        (worker := NONE
+                         ; (workerThread, savedRef))
+               val _ = savedRef := SOME saved
+               val _ = Prim.switchTo (workerThread) (* implicit atomicEnd() *)
+            in
+               handlerLoop ()
+            end
+         val handlerThread = toPrimitive (new handlerLoop)
+         val _ = Prim.setCallFromCHandler (gcState, handlerThread)
       in
          fn (i, f) => Array.update (exports, i, f)
       end
