@@ -34,7 +34,7 @@ program phrase is "wrapped" with the `WRAPPED` interface:
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master mlton/ast/wrapped.sig 8:19]
+sys::[./bin/InclGitFile.py mlton master mlton/control/wrapped.sig 8:19]
 ----
 
 The key idea is that `node'` is the type of an unannotated syntax

@@ -12,7 +12,6 @@ local
 
    admits-equality.sig
    admits-equality.fun
-   wrapped.sig
    char-size.sig
    char-size.fun
    int-size.sig
@@ -107,7 +106,6 @@ in
    signature WORD_SIZE
    signature WORD_X
    signature WORD_X_VECTOR
-   signature WRAPPED
  
    functor PrimCons
    functor PrimTycons
