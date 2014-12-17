@@ -5,10 +5,10 @@
  *)
 
 local
-   ../../atoms/sources.mlb
-   ../../control/sources.mlb
    ../../../lib/mlton/sources.mlb
+   ../../atoms/sources.mlb
    ../../backend/sources.mlb
+   ../../control/sources.mlb
    ../c-codegen/sources.mlb
 
    llvm-codegen.sig

@@ -7,9 +7,9 @@
  *)
 
 local
+   ../../../lib/mlton/sources.mlb
    ../../atoms/sources.mlb
    ../../control/sources.mlb
-   ../../../lib/mlton/sources.mlb
    ../../backend/sources.mlb
 
    c-codegen.sig

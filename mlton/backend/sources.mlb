@@ -8,7 +8,6 @@
 
 local
    ../../lib/mlton/sources.mlb
-   ../ast/sources.mlb
    ../atoms/sources.mlb
    ../control/sources.mlb
    ../ssa/sources.mlb

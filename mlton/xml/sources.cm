@@ -18,9 +18,9 @@ functor Sxml
 
 is
 
+../../lib/mlton/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
-../../lib/mlton/sources.cm
 
 xml-type.sig
 xml-tree.sig
