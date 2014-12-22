@@ -769,6 +769,4 @@ val matchCompile =
     Exp.layout o #1)
    matchCompile
 
-structure Vars = S.Vars
-
 end

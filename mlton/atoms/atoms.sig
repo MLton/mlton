@@ -38,7 +38,6 @@ signature ATOMS' =
       structure TyconKind: TYCON_KIND
       structure Tyvar: TYVAR
       structure Var: VAR 
-      structure Vars: SET
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
@@ -96,7 +95,6 @@ signature ATOMS =
       sharing Tyvar = Atoms.Tyvar
       (* sharing Tyvars = Atoms.Tyvars *)
       sharing Var = Atoms.Var
-      sharing Vars = Atoms.Vars
       sharing WordSize = Atoms.WordSize
       sharing WordX = Atoms.WordX
    end

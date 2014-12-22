@@ -68,7 +68,6 @@ structure Atoms =
                              structure WordSize = WordSize)
       structure Ffi = Ffi (structure CFunction = CFunction
                            structure CType = CType)
-      structure Vars = UnorderedSet (Var)
    end
 
 open Atoms
