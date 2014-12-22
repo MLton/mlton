@@ -10,8 +10,6 @@ local
    ../../lib/mlton/sources.mlb
    ../control/sources.mlb
 
-   admits-equality.sig
-   admits-equality.fun
    char-size.sig
    char-size.fun
    int-size.sig
@@ -20,64 +18,66 @@ local
    real-size.fun
    word-size.sig
    word-size.fun
-   symbol.sig
-   symbol.fun
-   field.sig
-   field.fun
-   prim-cons.sig
-   prim-cons.fun
-   tycon-kind.sig
-   tycon-kind.fun
-   prim-tycons.sig
-   prim-tycons.fun
-   record.sig
-   record.fun
-   tyvar.sig
-   tyvar.fun
-   id.sig
-   id.fun
-   (* Windows doesn't like files named con, so use con- instead. *)
-   con-.sig
-   con-.fun
    word-x.sig
    word-x.fun
-   real-x.sig
-   real-x.fun
    word-x-vector.sig
    word-x-vector.fun
-   c-type.sig
-   c-type.fun
-   label.sig
-   c-function.sig
-   c-function.fun
+   real-x.sig
+   real-x.fun
    const-type.sig
    const-type.fun
    const.sig
    const.fun
-   prim.sig
-   prim.fun
-   ffi.sig
-   ffi.fun
-   func.sig
-   generic-scheme.sig
-   generic-scheme.fun
-   profile-label.sig
-   profile-label.fun
-   source-info.sig
-   source-info.fun
-   profile-exp.sig
-   profile-exp.fun
+   symbol.sig
+   symbol.fun
+   field.sig
+   field.fun
+   record.sig
+   record.fun
+   id.sig
+   id.fun
+   tyvar.sig
+   tyvar.fun
+   admits-equality.sig
+   admits-equality.fun
+   tycon-kind.sig
+   tycon-kind.fun
+   prim-tycons.sig
+   prim-tycons.fun
    tycon.sig
    tycon.fun
-   type-ops.sig
-   type-ops.fun
-   use-name.fun
+   prim-cons.sig
+   prim-cons.fun
+   (* Windows doesn't like files named con, so use con- instead. *)
+   con-.sig
+   con-.fun
    var.sig
    var.fun
+   func.sig
+   label.sig
+   c-type.sig
+   c-type.fun
+   c-function.sig
+   c-function.fun
+   ffi.sig
+   ffi.fun
+   prim.sig
+   prim.fun
+   source-info.sig
+   source-info.fun
+   profile-label.sig
+   profile-label.fun
+   profile-exp.sig
+   profile-exp.fun
    atoms.sig
    atoms.fun
+   generic-scheme.sig
+   generic-scheme.fun
+   type-ops.sig
+   type-ops.fun
    hash-type.sig
    hash-type.fun
+   use-name.fun
 in
    signature ADMITS_EQUALITY
    signature ATOMS
