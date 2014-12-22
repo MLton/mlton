@@ -14,9 +14,6 @@ open S
 structure Id = Id (val noname = "t")
 open Id
 
-structure AdmitsEquality = AdmitsEquality ()
-structure Kind = TyconKind ()
-
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
                           structure CharSize = CharSize
                           structure IntSize = IntSize

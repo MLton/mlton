@@ -8,8 +8,10 @@
 
 signature TYCON_STRUCTS = 
    sig
+      structure AdmitsEquality: ADMITS_EQUALITY
       structure CharSize: CHAR_SIZE
       structure IntSize: INT_SIZE
+      structure Kind: TYCON_KIND
       structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
    end
