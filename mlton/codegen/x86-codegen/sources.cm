@@ -14,10 +14,9 @@ functor x86Codegen
 is
 
 ../../../lib/mlton/sources.cm
-../../ast/sources.cm
 ../../atoms/sources.cm
-../../control/sources.cm
 ../../backend/sources.cm
+../../control/sources.cm
 ../c-codegen/sources.cm
 
 peephole.sig

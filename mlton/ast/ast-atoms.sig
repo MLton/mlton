@@ -9,10 +9,16 @@
 
 signature AST_ATOMS_STRUCTS = 
    sig
+      structure AdmitsEquality: ADMITS_EQUALITY
+      structure CharSize: CHAR_SIZE
+      structure IntSize: INT_SIZE
+      structure RealSize: REAL_SIZE
       structure Record: RECORD
       structure SortedRecord: RECORD
       structure Symbol: SYMBOL
+      structure TyconKind: TYCON_KIND
       structure Tyvar: TYVAR
+      structure WordSize: WORD_SIZE
       sharing Record.Field = SortedRecord.Field
       sharing Symbol = Record.Field.Symbol
    end

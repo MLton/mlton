@@ -8,69 +8,22 @@
 
 Group
 
-signature ADMITS_EQUALITY
 signature AST
-signature BINDING_STRENGTH
-signature CHAR_SIZE
-signature FIELD
-signature INT_SIZE
-signature LONGID
-signature PRIM_CONS
-signature PRIM_TYCONS
-signature REAL_SIZE
-signature RECORD
-signature SYMBOL
-signature TYCON_KIND
-signature TYVAR
-signature WORD_SIZE
-signature WRAPPED
 
-functor AdmitsEquality
 functor Ast
-functor Field
-functor PrimCons
-functor PrimTycons
-functor Record
-functor Symbol
-functor TyconKind
-functor Tyvar
 
 is
 
 ../../lib/mlton/sources.cm
+../atoms/sources.cm
 ../control/sources.cm
 
-admits-equality.sig
-admits-equality.fun
-wrapped.sig
 ast-const.sig
 ast-const.fun
-symbol.sig
-symbol.fun
 ast-id.sig
 ast-id.fun
-field.sig
-field.fun
-char-size.sig
-char-size.fun
-int-size.sig
-int-size.fun
 longid.sig
 longid.fun
-prim-cons.sig
-prim-cons.fun
-real-size.sig
-real-size.fun
-word-size.sig
-word-size.fun
-tycon-kind.sig
-tycon-kind.fun
-prim-tycons.sig
-prim-tycons.fun
-record.sig
-record.fun
-tyvar.sig
-tyvar.fun
 ast-atoms.sig
 ast-atoms.fun
 ast-core.sig

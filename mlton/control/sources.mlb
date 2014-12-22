@@ -17,6 +17,7 @@ local
    source-pos.sml
    region.sig
    region.sml
+   wrapped.sig
    source.sig
    source.sml
    version.sml
@@ -36,4 +37,5 @@ in
    structure SourcePos
    structure System
    structure Version
+   signature WRAPPED
 end

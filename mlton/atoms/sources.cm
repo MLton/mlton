@@ -8,32 +8,36 @@
 
 Group
 
-signature AST
+signature ADMITS_EQUALITY
 signature ATOMS
-signature ID
-signature C_FUNCTION
-signature C_TYPE
-signature CON
+signature BINDING_STRENGTH
+signature CHAR_SIZE
 signature CONST
 signature CONST_TYPE
+signature C_FUNCTION
+signature C_TYPE
 signature FFI
-signature GENERIC_SCHEME
-signature ID
 signature HASH_TYPE
+signature ID
+signature INT_SIZE
 signature LABEL
 signature PRIM
-signature PROFILE_EXP
+signature PRIM_CONS
+signature PRIM_TYCONS
 signature PROFILE_LABEL
-signature REAL_X
+signature REAL_SIZE
 signature RECORD
-signature SOURCE_INFO
+signature SYMBOL
 signature TYCON
+signature TYCON_KIND
 signature TYPE_OPS
 signature TYVAR
-signature VAR
+signature WORD_SIZE
 signature WORD_X
 signature WORD_X_VECTOR
-
+ 
+functor PrimCons
+functor PrimTycons
 functor Atoms
 functor Id
 functor GenericScheme
@@ -44,50 +48,73 @@ functor UseName
 is
 
 ../../lib/mlton/sources.cm
-../ast/sources.cm
 ../control/sources.cm
 
-id.sig
-id.fun
-(* Windows doesn't like files named con, so use con- instead. *)
-con-.sig
-con-.fun
+char-size.sig
+char-size.fun
+int-size.sig
+int-size.fun
+real-size.sig
+real-size.fun
+word-size.sig
+word-size.fun
 word-x.sig
 word-x.fun
-real-x.sig
-real-x.fun
 word-x-vector.sig
 word-x-vector.fun
-c-type.sig
-c-type.fun
-label.sig
-c-function.sig
-c-function.fun
+real-x.sig
+real-x.fun
 const-type.sig
 const-type.fun
 const.sig
 const.fun
-prim.sig
-prim.fun
-ffi.sig
-ffi.fun
-func.sig
-generic-scheme.sig
-generic-scheme.fun
-profile-label.sig
-profile-label.fun
-source-info.sig
-source-info.fun
-profile-exp.sig
-profile-exp.fun
+symbol.sig
+symbol.fun
+field.sig
+field.fun
+record.sig
+record.fun
+id.sig
+id.fun
+tyvar.sig
+tyvar.fun
+admits-equality.sig
+admits-equality.fun
+tycon-kind.sig
+tycon-kind.fun
+prim-tycons.sig
+prim-tycons.fun
 tycon.sig
 tycon.fun
-type-ops.sig
-type-ops.fun
-use-name.fun
+prim-cons.sig
+prim-cons.fun
+(* Windows doesn't like files named con, so use con- instead. *)
+con-.sig
+con-.fun
 var.sig
 var.fun
+func.sig
+label.sig
+c-type.sig
+c-type.fun
+c-function.sig
+c-function.fun
+ffi.sig
+ffi.fun
+prim.sig
+prim.fun
+source-info.sig
+source-info.fun
+profile-label.sig
+profile-label.fun
+profile-exp.sig
+profile-exp.fun
 atoms.sig
 atoms.fun
+generic-scheme.sig
+generic-scheme.fun
+type-ops.sig
+type-ops.fun
 hash-type.sig
 hash-type.fun
+use-name.fun

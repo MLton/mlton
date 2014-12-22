@@ -20,9 +20,9 @@ functor SsaToSsa2
 
 is
 
+../../lib/mlton/sources.cm
 ../atoms/sources.cm
 ../control/sources.cm
-../../lib/mlton/sources.cm
 
 equatable.sig
 equatable.sml

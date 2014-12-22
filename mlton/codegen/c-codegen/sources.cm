@@ -13,10 +13,10 @@ functor CCodegen
 
 is
 
-../../atoms/sources.cm
-../../control/sources.cm
 ../../../lib/mlton/sources.cm
+../../atoms/sources.cm
 ../../backend/sources.cm
+../../control/sources.cm
 
 c-codegen.sig
 c-codegen.fun

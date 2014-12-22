@@ -9,10 +9,9 @@
 
 local
    ../../../lib/mlton/sources.mlb
-   ../../ast/sources.mlb
    ../../atoms/sources.mlb
-   ../../control/sources.mlb
    ../../backend/sources.mlb
+   ../../control/sources.mlb
    ../c-codegen/sources.mlb
 
    peephole.sig

@@ -9,8 +9,6 @@
 
 Group
 
-signature REGION
-
 structure Bits
 structure Bytes
 structure Control
@@ -20,6 +18,7 @@ structure Source
 structure SourcePos
 structure System
 structure Version
+signature WRAPPED
 
 is
 
@@ -32,6 +31,7 @@ source-pos.sig
 source-pos.sml
 region.sig
 region.sml
+wrapped.sig
 source.sig
 source.sml
 version.sml

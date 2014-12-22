@@ -7,10 +7,9 @@
  *)
 
 local
-   ../ast/sources.mlb
+   ../../lib/mlton/sources.mlb
    ../atoms/sources.mlb
    ../control/sources.mlb
-   ../../lib/mlton/sources.mlb
 
    core-ml.sig
    core-ml.fun

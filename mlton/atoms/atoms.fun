@@ -13,22 +13,38 @@ structure Atoms =
    struct
       open S
 
-      structure ProfileLabel = ProfileLabel ()
-      structure SourceInfo = SourceInfo ()
-      structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
-      structure Var = Var ()
-      structure Tycon = Tycon (structure CharSize = CharSize
+      structure CharSize = CharSize ()
+      structure IntSize = IntSize ()
+      structure RealSize = RealSize ()
+      structure WordSize = WordSize ()
+
+      structure WordX = WordX (structure WordSize = WordSize)
+      structure WordXVector = WordXVector (structure WordSize = WordSize
+                                           structure WordX = WordX)
+      structure RealX = RealX (structure RealSize = RealSize
+                               structure WordX = WordX)
+      structure Const = Const (structure RealX = RealX
+                               structure WordX = WordX
+                               structure WordXVector = WordXVector)
+
+      structure Symbol = Symbol ()
+      structure Field = Field (structure Symbol = Symbol)
+      structure Record = Record (val isSorted = false
+                                 structure Field = Field)
+      structure SortedRecord = Record (val isSorted = true
+                                       structure Field = Field)
+
+      structure Tyvar = Tyvar ()
+      structure AdmitsEquality = AdmitsEquality ()
+      structure TyconKind = TyconKind ()
+      structure Tycon = Tycon (structure AdmitsEquality = AdmitsEquality
+                               structure CharSize = CharSize
                                structure IntSize = IntSize
+                               structure Kind = TyconKind
                                structure RealSize = RealSize
                                structure WordSize = WordSize)
       structure Con = Con ()
-      structure CType = CType (structure RealSize = RealSize
-                               structure WordSize = WordSize)
-      structure WordX = WordX (structure WordSize = WordSize)
-      structure RealX = RealX (structure RealSize = RealSize
-                               structure WordX = WordX)
-      structure WordXVector = WordXVector (structure WordSize = WordSize
-                                           structure WordX = WordX)
+      structure Var = Var ()
       structure Func =
          struct
             open Var
@@ -39,19 +55,23 @@ structure Atoms =
             open Func
             fun newNoname () = newString "L"
          end
-      structure Const = Const (structure RealX = RealX
-                               structure WordX = WordX
-                               structure WordXVector = WordXVector)
+
+      structure CType = CType (structure RealSize = RealSize
+                               structure WordSize = WordSize)
       structure CFunction = CFunction (structure CType = CType)
+      structure Ffi = Ffi (structure CFunction = CFunction
+                           structure CType = CType)
+
       structure Prim = Prim (structure CFunction = CFunction
                              structure CType = CType
                              structure Con = Con
                              structure Const = Const
                              structure RealSize = RealSize
                              structure WordSize = WordSize)
-      structure Ffi = Ffi (structure CFunction = CFunction
-                           structure CType = CType)
-      structure Vars = UnorderedSet (Var)
+
+      structure SourceInfo = SourceInfo ()
+      structure ProfileLabel = ProfileLabel ()
+      structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
    end
 
 open Atoms
