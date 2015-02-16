@@ -200,9 +200,9 @@ structure AstToSpec = struct
         and fun_valty_nonvoid C t =
             case valty_nonvoid C t of
                 Spec.STRUCT tag =>
-                    raise SkipFunction "struct argument/return type not supported"
+                    raise SkipFunction "struct argument not supported"
               | Spec.UNION tag =>
-                    raise SkipFunction "union argument/return type not supported"
+                    raise SkipFunction "union argument not supported"
               | ty => ty
 
         and typeref (tid, otherwise, C) =
@@ -382,7 +382,7 @@ structure AstToSpec = struct
         and cft C (res, args) =
             { res = case getCoreType res of
                         A.Void => NONE
-                      | _ => SOME (fun_valty_nonvoid C res),
+                      | _ => SOME (valty_nonvoid C res),
               args = case args of
                          [(arg, _)] => (case getCoreType arg of
                                        A.Void => []
