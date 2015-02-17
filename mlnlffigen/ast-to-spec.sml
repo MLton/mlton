@@ -389,7 +389,7 @@ structure AstToSpec = struct
                                      | _ => [fun_valty_nonvoid C arg])
                        | _ => let fun build [] = []
                                     | build [(x, _)] =
-                                      ([valty_nonvoid C x]
+                                      ([fun_valty_nonvoid C x]
                                        handle Ellipsis =>
                                               (warnLoc
                                                    ("varargs not supported; \
