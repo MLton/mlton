@@ -22,18 +22,18 @@ Partial redundancy elimination (PRE) is a program transformation that
 removes operations that are redundant on some, but not necessarily all
 paths, through the program.  PRE can subsume both common subexpression
 elimination and loop-invariant code motion, and is therefore a
-potentially powerful optimization.  However, a na&iuml;ve
-implementation of PRE on a program in static single assignment (SSA)
-form is unlikely to be effective.  This project aims to adapt and
-implement the SSAPRE algorithm(s) of Thomas VanDrunen in MLton's SSA
-intermediate language.
+potentially powerful optimization.  However, a naïve implementation of
+PRE on a program in static single assignment (SSA) form is unlikely to
+be effective.  This project aims to adapt and implement the GVN-PRE
+algorithm of Thomas VanDrunen in MLton's SSA intermediate language.
 
 Background:
 --
-* http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract[Anticipation-based partial redundancy elimination for static single assignment form]; Thomas VanDrunen and Antony L. Hosking
 * http://cs.wheaton.edu/%7Etvandrun/writings/thesis.pdf[Partial Redundancy Elimination for Global Value Numbering]; Thomas VanDrunen
+* http://www.cs.purdue.edu/research/technical_reports/2003/TR%2003-032.pdf[Corner-cases in Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
 * http://www.springerlink.com/content/w06m3cw453nphm1u/[Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
-* http://portal.acm.org/citation.cfm?doid=319301.319348[Partial redundancy elimination in SSA form]; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow
+* http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract[Anticipation-based Partial Redundancy Elimination for Static Single Assignment Form]; Thomas VanDrunen and Antony L. Hosking
+* http://portal.acm.org/citation.cfm?doid=319301.319348[Partial Redundancy Elimination in SSA Form]; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow
 --
 
 Recommended Skills: SML programming experience; some middle-end compiler experience
@@ -72,26 +72,29 @@ The garbage collector plays a significant role in the performance of
 functional languages.  Garbage collect too often, and program
 performance suffers due to the excessive time spent in the garbage
 collector.  Garbage collect not often enough, and program performance
-suffers due to the excessive space used by the uncollected garbage.
-One particular issue is ensuring that a program utilizing a garbage
-collector "plays nice" with other processes on the system, by not
-using too much or too little physical memory.  While there are some
+suffers due to the excessive space used by the uncollected
+garbage.  One particular issue is ensuring that a program utilizing a
+garbage collector "plays nice" with other processes on the system, by
+not using too much or too little physical memory.  While there are some
 reasonable theoretical results about garbage collections with heaps of
 fixed size, there seems to be insufficient work that really looks
 carefully at the question of dynamically resizing the heap in response
 to the live data demands of the application and, similarly, in
-response to the behavior of the operating system and other processes.
-This project aims to investigate improvements to the memory behavior of
-MLton compiled programs through better tuning of the garbage
-collector.
+response to the behavior of the operating system and other
+processes.  This project aims to investigate improvements to the memory
+behavior of MLton compiled programs through better tuning of the
+garbage collector.
 
 Background:
 --
-* http://www.dcs.gla.ac.uk/%7Ewhited/papers/automated_heap_sizing.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
+* http://gchandbook.org/[The Garbage Collection Handbook: The Art of Automatic Memory Management]; Richard Jones, Antony Hosking, Eliot Moss
+* http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.24.1020[Dual-Mode Garbage Collection]; Patrick Sansom
+* http://portal.acm.org/citation.cfm?doid=1029873.1029881[Automatic Heap Sizing: Taking Real Memory into Account]; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss
+* http://portal.acm.org/citation.cfm?doid=1152649.1152652[Controlling Garbage Collection and Heap Growth to Reduce the Execution Time of Java Applications]; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham
 * http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125[Isla Vista Heap Sizing: Using Feedback to Avoid Paging]; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski
-* http://portal.acm.org/citation.cfm?doid=1152649.1152652[Controlling garbage collection and heap growth to reduce the execution time of Java applications]; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham
-* http://portal.acm.org/citation.cfm?doid=1065010.1065028[Garbage collection without paging]; Matthew Hertz, Yi Feng, and Emery D. Berger
-* http://portal.acm.org/citation.cfm?doid=1029873.1029881[Automatic heap sizing: taking real memory into account]; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss
+* http://portal.acm.org/citation.cfm?doid=1806651.1806669[The Economics of Garbage Collection]; Jeremy Singer, Richard E. Jones, Gavin Brown, and Mikel Luján
+* http://www.dcs.gla.ac.uk/%7Ejsinger/pdfs/tfp12.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
+* http://portal.acm.org/citation.cfm?doid=2555670.2466481[Control Theory for Principled Heap Sizing]; David R. White, Jeremy Singer, Jonathan M. Aitken, and Richard E. Jones
 --
 
 Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience
@@ -100,22 +103,85 @@ Recommended Skills: C programming experience; some operating systems and/or syst
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Implement Successor{nbsp}ML Language Features ===
+=== Heap-allocated Activation Records ===
 
-Any programming language, including Standard{nbsp}ML, can be improved.
-The community has identified a number of modest extensions and
-revisions to the Standard{nbsp}ML programming language that would
-likely prove useful in practice.  This project aims to implement these
-language features in the MLton compiler.
+Activation records (a.k.a., stack frames) are traditionally allocated
+on a stack.  This naturally corresponds to the call-return pattern of
+function invocation.  However, there are some disadvantages to
+stack-allocated activation records.  In a functional programming
+language, functions may be deeply recursive, resulting in call stacks
+that are much larger than typically supported by the operating system;
+hence, a functional programming language implementation will typically
+store its stack in its heap.  Furthermore, a functional programming
+language implementation must handle and recover from stack overflow,
+by allocating a larger stack (again, in its heap) and copying
+activation records from the old stack to the new stack.  In the
+presence of threads, stacks must be allocated in a heap and, in the
+presence of a garbage collector, should be garbage collected when
+unreachable.  While heap-allocated activation records avoid many of
+these disadvantages, they have not been widely implemented.  This
+project aims to implement and evaluate heap-allocated activation
+records in the MLton compiler.
 
 Background:
 --
-* http://successor-ml.org/index.php?title=Main_Page[Successor{nbsp}ML]
-* http://www.mpi-sws.org/%7Erossberg/hamlet/index.html#successor-ml[HaMLet (Successor{nbsp}ML)]
-* http://journals.cambridge.org/action/displayAbstract?aid=1322628[A critique of Standard{nbsp}ML]; Andrew W. Appel
+* http://journals.cambridge.org/action/displayAbstract?aid=1295104[Empirical and Analytic Study of Stack Versus Heap Cost for Languages with Closures]; Andrew W. Appel and Zhong Shao
+* http://portal.acm.org/citation.cfm?doid=182590.156783[Space-efficient closure representations]; Zhong Shao and Andrew W. Appel
+* http://portal.acm.org/citation.cfm?doid=93548.93554[Representing control in the presence of first-class continuations]; R. Hieb, R. Kent Dybvig, and Carl Bruggeman
 --
 
-Recommended Skills: SML programming experience; some front-end compiler experience (i.e., scanners and parsers)
+Recommended Skills: SML programming experience; some middle- and back-end compiler experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML ===
+
+The
+http://en.wikipedia.org/wiki/IEEE_754-2008[IEEE Standard for Floating-Point Arithmetic (IEEE 754)]
+is the de facto representation for floating-point computation.
+However, it is a _binary_ (base 2) representation of floating-point
+values, while many applications call for input and output of
+floating-point values in _decimal_ (base 10) representation.  The
+_decimal-to-binary_ conversion problem takes a decimal floating-point
+representation (e.g., a string like +"0.1"+) and returns the best
+binary floating-point representation of that number.  The
+_binary-to-decimal_ conversion problem takes a binary floating-point
+representation and returns a decimal floating-point representation
+using the smallest number of digits that allow the decimal
+floating-point representation to be converted to the original binary
+floating-point representation.  For both conversion routines, "best"
+is dependent upon the current floating-point rounding mode.
+
+MLton uses David Gay's
+http://www.netlib.org/fp/gdtoa.tgz[gdtoa library] for floating-point
+conversions.  While this is an exellent library, it generalizes the
+decimal-to-binary and binary-to-decimal conversion routines beyond
+what is required by the
+http://standardml.org/Basis/[Standard ML Basis Library] and induces an
+external dependency on the compiler.  Native implementations of these
+conversion routines in Standard ML would obviate the dependency on the
++gdtoa+ library, while also being able to take advantage of Standard
+ML features in the implementation (e.g., the published algorithms
+often require use of infinite precision arithmetic, which is provided
+by the +IntInf+ structure in Standard ML, but is provided in an ad hoc
+fasion in the +gdtoa+ library).
+
+This project aims to develop a native implementation of the conversion
+routines in Standard ML.
+
+Background:
+--
+* http://dl.acm.org/citation.cfm?doid=103162.103163[What every computer scientist should know about floating-point arithmetic]; David Goldberg
+* http://dl.acm.org/citation.cfm?doid=93542.93559[How to print floating-point numbers accurately]; Guy L. Steele, Jr. and Jon L. White
+* http://dl.acm.org/citation.cfm?doid=93542.93557[How to read floating point numbers accurately]; William D. Clinger
+* http://cm.bell-labs.com/cm/cs/doc/90/4-10.ps.gz[Correctly Rounded Binary-Decimal and Decimal-Binary Conversions]; David Gay
+* http://dl.acm.org/citation.cfm?doid=249069.231397[Printing floating-point numbers quickly and accurately]; Robert G. Burger and R. Kent Dybvig
+* http://dl.acm.org/citation.cfm?doid=1806596.1806623[Printing floating-point numbers quickly and accurately with integers]; Florian Loitsch
+--
+
+Recommended Skills: SML programming experience; algorithm design and implementation
 
 /////
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
@@ -206,6 +272,7 @@ Recommended Skills: SML programming experience; C programming experience; some c
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
+/////
 === Concurrent{nbsp}ML Improvements ===
 
 http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
@@ -228,7 +295,6 @@ Background
 
 Recommended Skills: SML programming experience; knowledge of concurrent programming; some operating systems and/or systems programming experience
 
-/////
 Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
