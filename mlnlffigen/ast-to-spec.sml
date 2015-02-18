@@ -23,6 +23,7 @@ structure AstToSpec = struct
     exception VoidType
     exception Ellipsis
     exception Duplicate of string
+    exception SkipFunction of string
 
     fun bug m = raise Fail ("AstToSpec: bug: " ^ m)
     fun err m = raise Fail ("AstToSpec: error: " ^ m)
@@ -195,6 +196,14 @@ structure AstToSpec = struct
 
         and valty_nonvoid C t = valty C t
             handle VoidType => err "void variable type"
+
+        and fun_valty_nonvoid C t =
+            case valty_nonvoid C t of
+                Spec.STRUCT tag =>
+                    raise SkipFunction "struct argument not supported"
+              | Spec.UNION tag =>
+                    raise SkipFunction "union argument not supported"
+              | ty => ty
 
         and typeref (tid, otherwise, C) =
             case Tidtab.find (tidtab, tid) of
@@ -377,17 +386,17 @@ structure AstToSpec = struct
               args = case args of
                          [(arg, _)] => (case getCoreType arg of
                                        A.Void => []
-                                     | _ => [valty_nonvoid C arg])
+                                     | _ => [fun_valty_nonvoid C arg])
                        | _ => let fun build [] = []
                                     | build [(x, _)] =
-                                      ([valty_nonvoid C x]
+                                      ([fun_valty_nonvoid C x]
                                        handle Ellipsis =>
                                               (warnLoc
                                                    ("varargs not supported; \
                                                     \ignoring the ellipsis\n");
                                                    []))
                                     | build ((x, _) :: xs) =
-                                      valty_nonvoid C x :: build xs
+                                      fun_valty_nonvoid C x :: build xs
                               in
                                   build args
                               end }
@@ -415,6 +424,8 @@ structure AstToSpec = struct
                                                 spec = cft tl_context fs,
                                                 argnames = anlo })
                         | NONE => bug "function without function type")
+                     handle SkipFunction reason =>
+                         warnLoc (reason ^ "; skipping function\n")
                  in
                  case #stClass f of
                      A.EXTERN => doit ()
