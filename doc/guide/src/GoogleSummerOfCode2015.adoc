@@ -244,29 +244,43 @@ Recommended Skills: SML programming experience; C programming experience; some c
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
-=== Integration of Multi-MLton ===
+=== Adding Real-Time Capabilities ===
 
-http://multimlton.cs.purdue.edu[MultiMLton] is a compiler and runtime
-environment that targets scalable multicore platforms.  It is an
-extension of MLton.  It combines new language abstractions and
-associated compiler analyses for expressing and implementing various
-kinds of fine-grained parallelism (safe futures, speculation,
-transactions, etc.), along with a sophisticated runtime system tuned
-to efficiently handle large numbers of lightweight threads.  The core
-stable features of MultiMLton will need to be integrated with the
-latest MLton public release.  Certain experimental features, such as
-support for the Intel SCC and distributed runtime will be omitted.
-This project requires students to understand the delta between the
-MultiMLton code base and the MLton code base.  Students will need to
-create build and configuration scripts for MLton to enable MultiMLton
-features.
+This project focuses on exposing real-time APIs from a real-time OS
+kernel at the SML level.  This will require mapping the current MLton
+(or http://multimlton.cs.purdue.edu[MultiMLton]) threading framework
+to real-time threads that the RTOS provides.  This will include
+associating priorities with MLton threads and building priority based
+scheduling algorithms.  Additionally, support for perdioc, aperiodic,
+and sporadic tasks should be supported.  A real-time SML library will
+need to be created to provide a forward facing interface for
+programmers.  Stretch goals include reworking the MLton +atomic+
+statement and associated synchronization primitives built on top of
+the MLton +atomic+ statement.
 
-Background
---
-* http://multimlton.cs.purdue.edu/mML/Publications.html[MultiMLton -- Publications]
---
+Recommended Skills: SML programming experience; C programming experience; real-time experience a plus but not required
 
-Recommended Skills: SML programming experience; C programming experience; some compiler experience
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+
+=== Real-Time Garbage Collection ===
+
+This project focuses on modifications to the MLton GC to support
+real-time garbage collection.  We will model the real-time GC on the
+Schism RTGC.  The first task will be to create a fixed size runtime
+object representation.  Large structures will need to be represented
+as a linked lists of fixed sized objects.  Arrays and vectors will be
+transferred into dense trees.  Compaction and copying can therefore be
+removed from the GC algorithms that MLton currently supports.  Lastly,
+the GC will be made concurrent, allowing for the execution of the GC
+threads as the lowest priority task in the system.  Stretch goals
+include a priority aware mechanism for the GC to signal to real-time
+ML threads that it needs to scan their stack and identification of
+places where the stack is shallow to bound priority inversion during
+this procedure.
+
+Recommended Skills: C programming experience; garbage collector experience a plus but not required
 
 /////
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
