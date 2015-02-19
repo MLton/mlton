@@ -16,6 +16,7 @@ The following developers have agreed to serve as mentors for the 2015 Google Sum
 
 == Ideas List ==
 
+/////
 === Implement a Partial Redundancy Elimination (PRE) Optimization ===
 
 Partial redundancy elimination (PRE) is a program transformation that
@@ -38,7 +39,6 @@ Background:
 
 Recommended Skills: SML programming experience; some middle-end compiler experience
 
-/////
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
