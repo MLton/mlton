@@ -94,6 +94,7 @@ signature CONTROL_FLAGS =
 
             val document: {expert: bool} -> Layout.t
 
+            val allowBar: (bool,bool) t
             val allowConstant: (bool,bool) t
             val allowFFI: (bool,bool) t
             val allowOverload: (bool,bool) t

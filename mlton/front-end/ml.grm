@@ -210,6 +210,29 @@ fun 'a augment1 ((strexp: Strexp.t,
 
 type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
+local
+   structure ElabControl = Control.Elaborate
+
+   fun check (c: (bool,bool) ElabControl.t, syntax: string, region) =
+      if ElabControl.current c
+         then ()
+      else
+         let
+            open Layout
+         in
+            Control.error
+            (region,
+             str (concat (if ElabControl.expert c
+                             then [syntax, " disallowed"]
+                          else [syntax, " disallowed, compile with -default-ann '",
+                                ElabControl.name c, " true'"])),
+             empty)
+         end
+in
+   val allowBar = fn (syntax, region) =>
+      check (ElabControl.allowBar, syntax, region)
+end
+
   %%
   %term
       CHAR of IntInf.t
@@ -255,6 +278,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
+       | constrsTop of (Con.t * Type.t option) vector
        | constOrBool of Const.t
        | datBind of DatBind.t
        | datBindNoWithtype of DatBind.t
@@ -326,6 +350,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
+       | rulesTop of rule vector
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -779,10 +804,12 @@ constraint :                    (NONE)
 funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
-clausesTop: clauses (Vector.fromList clauses)
+clausesTop : clauses        (Vector.fromList clauses)
+           | BAR clauses    (allowBar ("'|' <clauses>", reg (BARleft, clausesright))
+                             ; Vector.fromList clauses)
 
-clauses : clause                ([clause])
-        | clause BAR clauses    (clause :: clauses)
+clauses : clause                  ([clause])
+        | clause BAR clauses      (clause :: clauses)
 
 clause  : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
                                           resultType = constraint,
@@ -826,6 +853,10 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
+
+constrsTop : constrs          (Vector.fromList constrs)
+           | BAR constrs      (allowBar ("'|' <constrs>", reg (BARleft, constrsright))
+                               ; Vector.fromList constrs)
 
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
@@ -935,8 +966,8 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrs
-     ({cons = Vector.fromList constrs,
+db : tyvars tycon EQUALOP constrsTop
+     ({cons = constrsTop,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -949,11 +980,14 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
-                                            rulesleft, rulesright))
+match : rulesTop (Match.makeRegion' (Match.T rulesTop, rulesTopleft, rulesTopright))
 
-rules : rule            ([rule])
-      | rule BAR rules  (rule :: rules)
+rulesTop : rules                (Vector.fromList rules)
+         | BAR rules            (allowBar ("'|' <rules>", reg (BARleft, rulesright))
+                                 ; Vector.fromList rules)
+
+rules : rule                    ([rule])
+      | rule BAR rules          (rule :: rules)
 
 rule    : pat DARROW exp        ((pat,exp))
 
@@ -1280,3 +1314,4 @@ longstrid : longid         (Longstrid.fromSymbols longid)
 
 longstrids : longstrid             ([longstrid])
            | longstrid longstrids  (longstrid :: longstrids)
+
