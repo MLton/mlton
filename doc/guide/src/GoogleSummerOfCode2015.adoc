@@ -1,0 +1,332 @@
+Google Summer of Code (2015)
+============================
+:toc:
+
+== Mentors ==
+
+The following developers have agreed to serve as mentors for the 2015 Google Summer of Code:
+
+* http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+* http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+* http://people.cs.uchicago.edu/~jhr/[John Reppy]
+* http://www.cs.purdue.edu/homes/chandras[KC Sivaramakrishnan]
+* http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
+/////
+
+== Ideas List ==
+
+/////
+=== Implement a Partial Redundancy Elimination (PRE) Optimization ===
+
+Partial redundancy elimination (PRE) is a program transformation that
+removes operations that are redundant on some, but not necessarily all
+paths, through the program.  PRE can subsume both common subexpression
+elimination and loop-invariant code motion, and is therefore a
+potentially powerful optimization.  However, a naïve implementation of
+PRE on a program in static single assignment (SSA) form is unlikely to
+be effective.  This project aims to adapt and implement the GVN-PRE
+algorithm of Thomas VanDrunen in MLton's SSA intermediate language.
+
+Background:
+--
+* http://cs.wheaton.edu/%7Etvandrun/writings/thesis.pdf[Partial Redundancy Elimination for Global Value Numbering]; Thomas VanDrunen
+* http://www.cs.purdue.edu/research/technical_reports/2003/TR%2003-032.pdf[Corner-cases in Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
+* http://www.springerlink.com/content/w06m3cw453nphm1u/[Value-Based Partial Redundancy Elimination]; Thomas VanDrunen and Antony L. Hosking
+* http://onlinelibrary.wiley.com/doi/10.1002/spe.618/abstract[Anticipation-based Partial Redundancy Elimination for Static Single Assignment Form]; Thomas VanDrunen and Antony L. Hosking
+* http://portal.acm.org/citation.cfm?doid=319301.319348[Partial Redundancy Elimination in SSA Form]; Robert Kennedy, Sun Chan, Shin-Ming Liu, Raymond Lo, Peng Tu, and Fred Chow
+--
+
+Recommended Skills: SML programming experience; some middle-end compiler experience
+
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Design and Implement a Heap Profiler ===
+
+A heap profile is a description of the space usage of a program.  A
+heap profile is concerned with the allocation, retention, and
+deallocation (via garbage collection) of heap data during the
+execution of a program.  A heap profile can be used to diagnose
+performance problems in a functional program that arise from space
+leaks.  This project aims to design and implement a heap profiler for
+MLton compiled programs.
+
+Background:
+--
+* http://portal.acm.org/citation.cfm?doid=583854.582451[GCspy: an adaptable heap visualisation framework]; Tony Printezis and Richard Jones
+* http://journals.cambridge.org/action/displayAbstract?aid=1349892[New dimensions in heap profiling]; Colin Runciman and Niklas R&ouml;jemo
+* http://www.springerlink.com/content/710501660722gw37/[Heap profiling for space efficiency]; Colin Runciman and Niklas R&ouml;jemo
+* http://journals.cambridge.org/action/displayAbstract?aid=1323096[Heap profiling of lazy functional programs]; Colin Runciman and David Wakeling
+--
+
+Recommended Skills: C and SML programming experience; some experience with UI and visualization
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Garbage Collector Improvements ===
+
+The garbage collector plays a significant role in the performance of
+functional languages.  Garbage collect too often, and program
+performance suffers due to the excessive time spent in the garbage
+collector.  Garbage collect not often enough, and program performance
+suffers due to the excessive space used by the uncollected
+garbage.  One particular issue is ensuring that a program utilizing a
+garbage collector "plays nice" with other processes on the system, by
+not using too much or too little physical memory.  While there are some
+reasonable theoretical results about garbage collections with heaps of
+fixed size, there seems to be insufficient work that really looks
+carefully at the question of dynamically resizing the heap in response
+to the live data demands of the application and, similarly, in
+response to the behavior of the operating system and other
+processes.  This project aims to investigate improvements to the memory
+behavior of MLton compiled programs through better tuning of the
+garbage collector.
+
+Background:
+--
+* http://gchandbook.org/[The Garbage Collection Handbook: The Art of Automatic Memory Management]; Richard Jones, Antony Hosking, Eliot Moss
+* http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.24.1020[Dual-Mode Garbage Collection]; Patrick Sansom
+* http://portal.acm.org/citation.cfm?doid=1029873.1029881[Automatic Heap Sizing: Taking Real Memory into Account]; Ting Yang, Matthew Hertz, Emery D. Berger, Scott F. Kaplan, and J. Eliot B. Moss
+* http://portal.acm.org/citation.cfm?doid=1152649.1152652[Controlling Garbage Collection and Heap Growth to Reduce the Execution Time of Java Applications]; Tim Brecht, Eshrat Arjomandi, Chang Li, and Hang Pham
+* http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=4145125[Isla Vista Heap Sizing: Using Feedback to Avoid Paging]; Chris Grzegorczyk, Sunil Soman, Chandra Krintz, and Rich Wolski
+* http://portal.acm.org/citation.cfm?doid=1806651.1806669[The Economics of Garbage Collection]; Jeremy Singer, Richard E. Jones, Gavin Brown, and Mikel Luján
+* http://www.dcs.gla.ac.uk/%7Ejsinger/pdfs/tfp12.pdf[Automated Heap Sizing in the Poly/ML Runtime (Position Paper)]; David White, Jeremy Singer, Jonathan Aitken, and David Matthews
+* http://portal.acm.org/citation.cfm?doid=2555670.2466481[Control Theory for Principled Heap Sizing]; David R. White, Jeremy Singer, Jonathan M. Aitken, and Richard E. Jones
+--
+
+Recommended Skills: C programming experience; some operating systems and/or systems programming experience; some compiler and garbage collector experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Heap-allocated Activation Records ===
+
+Activation records (a.k.a., stack frames) are traditionally allocated
+on a stack.  This naturally corresponds to the call-return pattern of
+function invocation.  However, there are some disadvantages to
+stack-allocated activation records.  In a functional programming
+language, functions may be deeply recursive, resulting in call stacks
+that are much larger than typically supported by the operating system;
+hence, a functional programming language implementation will typically
+store its stack in its heap.  Furthermore, a functional programming
+language implementation must handle and recover from stack overflow,
+by allocating a larger stack (again, in its heap) and copying
+activation records from the old stack to the new stack.  In the
+presence of threads, stacks must be allocated in a heap and, in the
+presence of a garbage collector, should be garbage collected when
+unreachable.  While heap-allocated activation records avoid many of
+these disadvantages, they have not been widely implemented.  This
+project aims to implement and evaluate heap-allocated activation
+records in the MLton compiler.
+
+Background:
+--
+* http://journals.cambridge.org/action/displayAbstract?aid=1295104[Empirical and Analytic Study of Stack Versus Heap Cost for Languages with Closures]; Andrew W. Appel and Zhong Shao
+* http://portal.acm.org/citation.cfm?doid=182590.156783[Space-efficient closure representations]; Zhong Shao and Andrew W. Appel
+* http://portal.acm.org/citation.cfm?doid=93548.93554[Representing control in the presence of first-class continuations]; R. Hieb, R. Kent Dybvig, and Carl Bruggeman
+--
+
+Recommended Skills: SML programming experience; some middle- and back-end compiler experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML ===
+
+The
+http://en.wikipedia.org/wiki/IEEE_754-2008[IEEE Standard for Floating-Point Arithmetic (IEEE 754)]
+is the de facto representation for floating-point computation.
+However, it is a _binary_ (base 2) representation of floating-point
+values, while many applications call for input and output of
+floating-point values in _decimal_ (base 10) representation.  The
+_decimal-to-binary_ conversion problem takes a decimal floating-point
+representation (e.g., a string like +"0.1"+) and returns the best
+binary floating-point representation of that number.  The
+_binary-to-decimal_ conversion problem takes a binary floating-point
+representation and returns a decimal floating-point representation
+using the smallest number of digits that allow the decimal
+floating-point representation to be converted to the original binary
+floating-point representation.  For both conversion routines, "best"
+is dependent upon the current floating-point rounding mode.
+
+MLton uses David Gay's
+http://www.netlib.org/fp/gdtoa.tgz[gdtoa library] for floating-point
+conversions.  While this is an exellent library, it generalizes the
+decimal-to-binary and binary-to-decimal conversion routines beyond
+what is required by the
+http://standardml.org/Basis/[Standard ML Basis Library] and induces an
+external dependency on the compiler.  Native implementations of these
+conversion routines in Standard ML would obviate the dependency on the
++gdtoa+ library, while also being able to take advantage of Standard
+ML features in the implementation (e.g., the published algorithms
+often require use of infinite precision arithmetic, which is provided
+by the +IntInf+ structure in Standard ML, but is provided in an ad hoc
+fasion in the +gdtoa+ library).
+
+This project aims to develop a native implementation of the conversion
+routines in Standard ML.
+
+Background:
+--
+* http://dl.acm.org/citation.cfm?doid=103162.103163[What every computer scientist should know about floating-point arithmetic]; David Goldberg
+* http://dl.acm.org/citation.cfm?doid=93542.93559[How to print floating-point numbers accurately]; Guy L. Steele, Jr. and Jon L. White
+* http://dl.acm.org/citation.cfm?doid=93542.93557[How to read floating point numbers accurately]; William D. Clinger
+* http://cm.bell-labs.com/cm/cs/doc/90/4-10.ps.gz[Correctly Rounded Binary-Decimal and Decimal-Binary Conversions]; David Gay
+* http://dl.acm.org/citation.cfm?doid=249069.231397[Printing floating-point numbers quickly and accurately]; Robert G. Burger and R. Kent Dybvig
+* http://dl.acm.org/citation.cfm?doid=1806596.1806623[Printing floating-point numbers quickly and accurately with integers]; Florian Loitsch
+--
+
+Recommended Skills: SML programming experience; algorithm design and implementation
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Implement Source-level Debugging ===
+
+Debugging is a fact of programming life.  Unfortunately, most SML
+implementations (including MLton) provide little to no source-level
+debugging support.  This project aims to add basic to intermediate
+source-level debugging support to the MLton compiler.  MLton already
+supports source-level profiling, which can be used to attribute bytes
+allocated or time spent in source functions.  It should be relatively
+straightforward to leverage this source-level information into basic
+source-level debugging support, with the ability to set/unset
+breakpoints and step through declarations and functions.  It may be
+possible to also provide intermediate source-level debugging support,
+with the ability to inspect in-scope variables of basic types (e.g.,
+types compatible with MLton's foreign function interface).
+
+Background:
+--
+* http://mlton.org/HowProfilingWorks[MLton -- How Profiling Works]
+* http://mlton.org/ForeignFunctionInterfaceTypes[MLton -- Foreign Function Interface Types]
+* http://dwarfstd.org/[DWARF Debugging Standard]
+* http://sourceware.org/gdb/current/onlinedocs/stabs/index.html[STABS Debugging Format]
+--
+
+Recommended Skills: SML programming experience; some compiler experience
+
+/////
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+=== Region Based Memory Management ===
+
+Region based memory management is an alternative automatic memory
+management scheme to garbage collection.  Regions can be inferred by
+the compiler (e.g., Cyclone and MLKit) or provided to the programmer
+through a library.  Since many students do not have extensive
+experience with compilers we plan on adopting the later approach.
+Creating a viable region based memory solution requires the removal of
+the GC and changes to the allocator.  Additionally, write barriers
+will be necessary to ensure references between two ML objects is never
+established if the left hand side of the assignment has a longer
+lifetime than the right hand side.  Students will need to come up with
+an appropriate interface for creating, entering, and exiting regions
+(examples include RTSJ scoped memory and SCJ scoped memory).
+
+Background:
+--
+* Cyclone
+* MLKit
+* RTSJ + SCJ scopes
+--
+
+Recommended Skills: SML programming experience; C programming experience; some compiler and garbage collector experience
+
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+
+=== Adding Real-Time Capabilities ===
+
+This project focuses on exposing real-time APIs from a real-time OS
+kernel at the SML level.  This will require mapping the current MLton
+(or http://multimlton.cs.purdue.edu[MultiMLton]) threading framework
+to real-time threads that the RTOS provides.  This will include
+associating priorities with MLton threads and building priority based
+scheduling algorithms.  Additionally, support for perdioc, aperiodic,
+and sporadic tasks should be supported.  A real-time SML library will
+need to be created to provide a forward facing interface for
+programmers.  Stretch goals include reworking the MLton +atomic+
+statement and associated synchronization primitives built on top of
+the MLton +atomic+ statement.
+
+Recommended Skills: SML programming experience; C programming experience; real-time experience a plus but not required
+
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+
+=== Real-Time Garbage Collection ===
+
+This project focuses on modifications to the MLton GC to support
+real-time garbage collection.  We will model the real-time GC on the
+Schism RTGC.  The first task will be to create a fixed size runtime
+object representation.  Large structures will need to be represented
+as a linked lists of fixed sized objects.  Arrays and vectors will be
+transferred into dense trees.  Compaction and copying can therefore be
+removed from the GC algorithms that MLton currently supports.  Lastly,
+the GC will be made concurrent, allowing for the execution of the GC
+threads as the lowest priority task in the system.  Stretch goals
+include a priority aware mechanism for the GC to signal to real-time
+ML threads that it needs to scan their stack and identification of
+places where the stack is shallow to bound priority inversion during
+this procedure.
+
+Recommended Skills: C programming experience; garbage collector experience a plus but not required
+
+/////
+Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
+/////
+
+/////
+=== Concurrent{nbsp}ML Improvements ===
+
+http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
+library based on synchronous message passing.  MLton has a partial
+implementation of the CML message-passing primitives, but its use in
+real-world applications has been stymied by the lack of completeness
+and thread-safe I/O libraries.  This project would aim to flesh out
+the CML implementation in MLton to be fully compatible with the
+"official" version distributed as part of SML/NJ.  Furthermore, time
+permitting, runtime system support could be added to allow use of
+modern OS features, such as asynchronous I/O, in the implementation of
+CML's system interfaces.
+
+Background
+--
+* http://cml.cs.uchicago.edu/
+* http://mlton.org/ConcurrentML
+* http://mlton.org/ConcurrentMLImplementation
+--
+
+Recommended Skills: SML programming experience; knowledge of concurrent programming; some operating systems and/or systems programming experience
+
+Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
+Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
+/////
+
+/////
+=== SML3d Development ===
+
+The SML3d Project is a collection of libraries to support 3D graphics
+programming using Standard ML and the http://opengl.org/[OpenGL]
+graphics API. It currently requires the MLton implementation of SML
+and is supported on Linux, Mac OS X, and Microsoft Windows. There is
+also support for http://www.khronos.org/opencl/[OpenCL].  This project
+aims to continue development of the SML3d Project.
+
+Background
+--
+* http://sml3d.cs.uchicago.edu/
+--
+
+Mentor: http://people.cs.uchicago.edu/~jhr/[John Reppy]
+/////
