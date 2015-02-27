@@ -241,11 +241,9 @@ hexnum={hexDigit}+;
                     ; stringtype := false
                     ; YYBEGIN S
                     ; continue ());
-					
 <INITIAL>"(*)"	=> (YYBEGIN B
-					; commentStart := Source.getPos (source, yypos)
-					; continue ());
-					
+                    ; commentStart := Source.getPos (source, yypos)
+                    ; continue ());
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
                     ; commentStart := Source.getPos (source, yypos)
@@ -287,11 +285,9 @@ hexnum={hexDigit}+;
                     ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
                     ; continue ());
 <A>.            => (continue ());
-
-<B>{eol}		=> (YYBEGIN INITIAL
-					; Source.newline (source, yypos) ; continue ());
-<B>.			=> (continue ());
-
+<B>{eol}        => (YYBEGIN INITIAL
+                    ; Source.newline (source, yypos) ; continue ());
+<B>.            => (continue ());
 <S>\"           => (let
                        val s = Vector.fromListRev (!charlist)
                        val _ = charlist := nil
