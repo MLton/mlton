@@ -113,7 +113,7 @@ fun word (yytext, drop, source, yypos, radix) =
 
 %% 
 %reject
-%s A S F L LL LLC LLCQ;
+%s A B S F L LL LLC LLCQ;
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
 %arg ({source});
 alphanum=[A-Za-z'_0-9]*;
@@ -241,6 +241,11 @@ hexnum={hexDigit}+;
                     ; stringtype := false
                     ; YYBEGIN S
                     ; continue ());
+					
+<INITIAL>"(*)"	=> (YYBEGIN B
+					; commentStart := Source.getPos (source, yypos)
+					; continue ());
+					
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
                     ; commentStart := Source.getPos (source, yypos)
@@ -282,6 +287,10 @@ hexnum={hexDigit}+;
                     ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
                     ; continue ());
 <A>.            => (continue ());
+
+<B>{eol}		=> (YYBEGIN INITIAL
+					; Source.newline (source, yypos) ; continue ());
+<B>.			=> (continue ());
 
 <S>\"           => (let
                        val s = Vector.fromListRev (!charlist)
