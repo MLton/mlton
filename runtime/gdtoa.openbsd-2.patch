@@ -1,9 +1,9 @@
-diff -P -C 2 -r gdtoa/misc.c gdtoa-new/misc.c
-*** gdtoa/misc.c      Sun Mar  1 21:50:47 2015
---- gdtoa-new/misc.c     Sun Mar  1 21:51:25 2015
+diff -P -C 2 gdtoa/misc.c gdtoa-new/misc.c
+*** gdtoa/misc.c	Sun Mar  1 22:08:46 2015
+--- gdtoa-new/misc.c	Sun Mar  1 22:09:56 2015
 ***************
 *** 845,859 ****
-                };
+  		};
   
 -  char *
 - #ifdef KR_headers
@@ -12,10 +12,10 @@ diff -P -C 2 -r gdtoa/misc.c gdtoa-new/misc.c
 - strcp_D2A(char *a, CONST char *b)
 - #endif
 - {
--       while((*a = *b++))
--               a++;
--       return a;
--       }
+- 	while((*a = *b++))
+- 		a++;
+- 	return a;
+- 	}
   
   #ifdef NO_STRING_H
 --- 845,848 ----
