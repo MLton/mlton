@@ -246,6 +246,7 @@ gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.pat
 	patch -s -p0 <gdtoa.rename-public-fns.patch
 	patch -s -p0 <gdtoa.hide-private-fns.patch
 	patch -s -p0 <gdtoa.hide-public-fns.patch
+	patch -s -p0 <gdtoa.openbsd.patch
 	@touch $@
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
