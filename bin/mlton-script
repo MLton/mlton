@@ -137,7 +137,7 @@ doit "$lib" \
         -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
         -target-link-opt netbsd                                  \
                 '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'             \
-        -target-link-opt openbsd 
+        -target-link-opt openbsd                                 \
 		'-fPIC
 		-static
 		-L/usr/local/lib/'                               \
