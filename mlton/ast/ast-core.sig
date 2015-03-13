@@ -197,6 +197,7 @@ signature AST_CORE =
                Abstype of {datBind: DatBind.t,
                            body: t}
              | Datatype of DatatypeRhs.t
+             | DoDec of Exp.t
              | Exception of (Con.t * EbRhs.t) vector
              | Fix of {fixity: Fixity.t,
                        ops: Vid.t vector}

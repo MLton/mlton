@@ -295,6 +295,7 @@ fun ('down, 'up)
                   in
                      (doit (Datatype rhs), u)
                   end
+             | DoDec _ => empty ()
              | Exception ebs =>
                   let
                      val (ebs, u) =

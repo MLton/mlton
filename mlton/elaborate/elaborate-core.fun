@@ -1910,6 +1910,45 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 Decs.empty
                              end)
+                 | Adec.DoDec exp =>
+                      let
+                         fun lay () =
+                            let
+                               open Layout
+                            in
+                               seq [str "in: ",
+                                    approximate
+                                    (seq [str "do ", Aexp.layout exp])]
+                            end
+                         val elaboratePat = elaboratePat ()
+                         val pat = Apat.wild
+                         val (pat, bound) =
+                                   elaboratePat (pat, E, {bind = false,
+                                                          isRvb = false}, preError)
+                         val patRegion = Region.bogus
+                         val expRegion = Aexp.region exp
+                         (* val exp' = elab exp *)
+                         val exp' = elabExp (exp, nest, NONE)
+                         val bound = fn () => Vector.new0 ()
+                         val _ =
+                            unify
+                            (Cexp.ty exp', Type.unit, fn (l1, _) =>
+                            (Aexp.region exp,
+                               str "do declaration not of type unit",
+                               align [seq [str "do declaration type: ", l1], lay ()]))
+                         val vbs = {exp = exp',
+                                    lay = lay,
+                                    nest = nest,
+                                    pat = pat,
+                                    patRegion = patRegion}::[]
+                      in
+                         Decs.single
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
+                                    nonexhaustiveMatch = nonexhaustiveMatch (),
+                                    rvbs = Vector.new0 (),
+                                    tyvars = bound,
+                                    vbs = Vector.fromList vbs})
+                      end
                  | Adec.Exception ebs =>
                       let
                          val decs =

@@ -327,6 +327,7 @@ datatype expNode =
 and decNode =
    Abstype of {body: dec,
                datBind: DatBind.t}
+  | DoDec of exp
   | Datatype of DatatypeRhs.t
   | Exception of Eb.t vector
   | Fix of {fixity: Fixity.t,
@@ -481,6 +482,7 @@ and layoutDec d =
                 seq [str "with ", layoutDec body],
                 str "end"]
     | Datatype rhs => DatatypeRhs.layout rhs
+    | DoDec exp => layoutExpT exp
     | Exception ebs =>
          layoutAnds ("exception", ebs,
                      fn (prefix, eb) => seq [prefix, Eb.layout eb])
@@ -562,6 +564,7 @@ and checkSyntaxDec (d: dec): unit =
          (DatBind.checkSyntax datBind
           ; checkSyntaxDec body)
     | Datatype rhs => DatatypeRhs.checkSyntax rhs
+    | DoDec exp => checkSyntaxExp exp
     | Exception v =>
          (Vector.foreach (v, fn (_, ebrhs) => EbRhs.checkSyntax ebrhs)
           ; (reportDuplicates
