@@ -46,7 +46,7 @@ else
 endif
 
 ifeq ($(origin VERSION), undefined)
-	VERSION := $(shell date +%Y%m%d)
+	VERSION := $(shell LANG=en_us date +%Y%m%d)
 endif
 ifeq ($(origin RELEASE), undefined)
 	RELEASE := 1
@@ -62,7 +62,7 @@ all-no-docs:
 # Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
 # We also want to re-run the just-built tools (mllex and mlyacc)
 # because they may be better than those that were used for the first
-# round of compilation.  So, we clean out the front end.
+# round of compilation.  So, we clean out the front end. 
 ifeq (true, $(BOOTSTRAP_OTHER))
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
