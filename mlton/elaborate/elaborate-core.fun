@@ -1938,14 +1938,14 @@ fun elaborateDec (d, {env = E, nest}) =
                                     lay = lay,
                                     nest = nest,
                                     pat = pat,
-                                    patRegion = patRegion}::[]
+                                    patRegion = patRegion}
                       in
                          Decs.single
                          (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                     nonexhaustiveMatch = nonexhaustiveMatch (),
                                     rvbs = Vector.new0 (),
                                     tyvars = bound,
-                                    vbs = Vector.fromList vbs})
+                                    vbs = Vector.new1 vbs})
                       end
                  | Adec.Exception ebs =>
                       let
