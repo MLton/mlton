@@ -1922,12 +1922,10 @@ fun elaborateDec (d, {env = E, nest}) =
                             end
                          val elaboratePat = elaboratePat ()
                          val pat = Apat.wild
-                         val (pat, bound) =
+                         val (pat, _) =
                                    elaboratePat (pat, E, {bind = false,
                                                           isRvb = false}, preError)
                          val patRegion = Region.bogus
-                         val expRegion = Aexp.region exp
-                         (* val exp' = elab exp *)
                          val exp' = elabExp (exp, nest, NONE)
                          val bound = fn () => Vector.new0 ()
                          val _ =

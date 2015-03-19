@@ -255,6 +255,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
+       | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
        | datBind of DatBind.t
        | datBindNoWithtype of DatBind.t
@@ -326,6 +327,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
+       | rulesTop of rule list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -781,6 +783,7 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
+          | BAR clauses (Vector.fromList clauses)
 
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
@@ -828,6 +831,9 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
+constrsTop : constrs            (constrs)
+           | BAR constrs        (constrs)
+        
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
 
@@ -936,8 +942,8 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrs
-     ({cons = Vector.fromList constrs,
+db : tyvars tycon EQUALOP constrsTop
+     ({cons = Vector.fromList constrsTop,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -950,9 +956,12 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
-                                            rulesleft, rulesright))
+match : rulesTop           (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
+                                            rulesTopleft, rulesTopright))
 
+rulesTop : rules        (rules)
+         | BAR rules    (rules)
+                                            
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
