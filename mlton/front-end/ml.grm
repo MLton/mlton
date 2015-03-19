@@ -728,7 +728,7 @@ decnolocal
         | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
-        | Do exp		(Dec.DoDec exp)
+        | DO exp		(Dec.DoDec exp)
 	| FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
         | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
         | TYPE typBind          (Dec.Type typBind)
