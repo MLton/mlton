@@ -68,7 +68,7 @@ all: $(AOUT)
 control/version.sml: control/version_sml.src
 	cat control/version_sml.src |				\
 		sed "s/MLTONVERSION/$$(git log -n1 --pretty="g%h$$(if [ $$(git status --porcelain 2> /dev/null | wc -l) -ne 0 ]; then echo '-dirty'; fi)" 2> /dev/null || echo "???????")/" |	\
-		sed "s/MLTONBUILDDATE/$$(LANG=C date)/" |	\
+		sed "s/MLTONBUILDDATE/$$(LANG=en_us date)/" |	\
 		sed "s/MLTONBUILDNODE/$$(uname -n)/" >		\
 		control/version.sml
 
