@@ -33,7 +33,7 @@ pointer GC_serialize (GC_state s, pointer p, GC_header header) {
   size_t objectClosureSize;
   pointer buffer;
 
-  assert (isPointer (p) && isPointerInHeap (s, p));
+  assert (isPointer (p) && (isPointerInOldGen (s, p) || isPointerInNursery (s,p)));
 
   objectClosureSize = GC_size (s, p);
   buffer = GC_arrayAllocate (s, 0, objectClosureSize, header);

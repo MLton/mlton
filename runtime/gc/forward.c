@@ -117,7 +117,7 @@ void copyObjptr (GC_state s, objptr *opp) {
     }
   }
 
-  e = (CopyObjectMap*) malloc (sizeof (CopyObjectMap));
+  e = (CopyObjectMap*) malloc_safe (sizeof (CopyObjectMap));
   e->oldP = (pointer)*opp;
   e->newP = (pointer) s->forwardState.back + headerBytes;
   if (DEBUG_DETAILED)
