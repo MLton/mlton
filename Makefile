@@ -46,7 +46,7 @@ else
 endif
 
 ifeq ($(origin VERSION), undefined)
-	VERSION := $(shell LANG=en_us date +%Y%m%d)
+	VERSION := $(shell date +%Y%m%d)
 endif
 ifeq ($(origin RELEASE), undefined)
 	RELEASE := 1
