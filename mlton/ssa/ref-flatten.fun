@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor RefFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM = 
+functor RefFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM =
 struct
 
 open S
@@ -20,7 +20,7 @@ datatype z = datatype Transfer.t
 
 structure Finish =
    struct
-      datatype t = T of {flat: Type.t Prod.t option, 
+      datatype t = T of {flat: Type.t Prod.t option,
                          ty: Type.t}
 
       val _: t -> Layout.t =
@@ -81,7 +81,7 @@ structure Value =
             case v of
                GroundV t => Type.layout t
              | Complex e =>
-                  Equatable.layout 
+                  Equatable.layout
                   (e,
                    fn ObjectC ob => layoutObject ob
                     | WeakC {arg, ...} => seq [str "Weak ", layout arg])
@@ -213,7 +213,7 @@ structure Value =
                Equatable.equate
                (e, e', fn (c, c') =>
                 case (c, c') of
-                   (ObjectC (Obj {args = a, flat = f, ...}), 
+                   (ObjectC (Obj {args = a, flat = f, ...}),
                     ObjectC (Obj {args = a', flat = f', ...})) =>
                       let
                          val () = unifyProd (a, a')
@@ -461,12 +461,14 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                    * be flattened.
                    *)
                   dontFlatten ()
+             | MLton_deserialize => dontFlatten ()
              | MLton_eq => equal ()
              | MLton_equal => equal ()
+             | MLton_serialize => dontFlatten ()
              | MLton_size => dontFlatten ()
              | MLton_share => dontFlatten ()
              | Weak_get => deWeak (arg 0)
-             | Weak_new => 
+             | Weak_new =>
                   let val a = arg 0
                   in (Value.dontFlatten a; weak a)
                   end
@@ -492,7 +494,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
       fun update {base, offset, value} =
          (coerce {from = value,
                   to = select {base = base, offset = offset}}
-          (* Don't flatten the component of the update, 
+          (* Don't flatten the component of the update,
            * else sharing will be broken.
            *)
           ; Value.dontFlatten value)
@@ -620,8 +622,8 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                       case Value.value (varValue var) of
                          Value.Ground _ => ()
                        | Value.Object obj => f (var, args, obj)
-                       | _ => 
-                            Error.bug 
+                       | _ =>
+                            Error.bug
                             "RefFlatten.foreachObject: Object with strange value")
                 | _ => ()
             val () = Vector.foreach (globals, loopStatement)
@@ -706,13 +708,13 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
       val {get = tyconSize: Tycon.t -> Size.t, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
       (* Force (mutually) recursive datatypes to top. *)
-      val {get = nodeTycon: unit Node.t -> Tycon.t, 
+      val {get = nodeTycon: unit Node.t -> Tycon.t,
            set = setNodeTycon, ...} =
-         Property.getSetOnce 
+         Property.getSetOnce
          (Node.plist, Property.initRaise ("nodeTycon", Node.layout))
-      val {get = tyconNode: Tycon.t -> unit Node.t, 
+      val {get = tyconNode: Tycon.t -> unit Node.t,
            set = setTyconNode, ...} =
-         Property.getSetOnce 
+         Property.getSetOnce
          (Tycon.plist, Property.initRaise ("tyconNode", Tycon.layout))
       val graph = Graph.new ()
       val () =
@@ -722,7 +724,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
              val node = Graph.newNode graph
              val () = setTyconNode (tycon, node)
              val () = setNodeTycon (node, tycon)
-          in 
+          in
              ()
           end)
       val () =
@@ -887,7 +889,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
           end)
       (* Conversion from values to types. *)
       datatype z = datatype Finish.t
-      val traceValueType = 
+      val traceValueType =
          Trace.trace ("RefFlatten.valueType", Value.layout, Type.layout)
       fun valueType arg: Type.t =
          traceValueType
@@ -910,7 +912,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
             (Prod.dest args, [], fn ({elt, isMutable = i}, ac) =>
              case Value.deFlat {inner = elt, outer = obj} of
                 NONE => {elt = valueType elt, isMutable = i} :: ac
-              | SOME z => 
+              | SOME z =>
                    Vector.foldr
                    (Prod.dest (objectFinalComponents z), ac,
                     fn ({elt, isMutable = i'}, ac) =>
@@ -957,7 +959,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
          Vector.foldri
          (Prod.dest args, ac, fn (i, {elt, ...}, ac) =>
           case Value.deFlat {inner = elt, outer = obj} of
-             NONE => 
+             NONE =>
                 let
                    val var = Var.newNoname ()
                    val () =
@@ -1037,7 +1039,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                              Base.Object object =>
                                 (case varObject object of
                                     NONE => make exp
-                                  | SOME obj => 
+                                  | SOME obj =>
                                        make
                                        (if isSome (Value.deFlat
                                                    {inner = varValue var,
@@ -1100,7 +1102,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                     val args =
                        case ! (conValue con) of
                           NONE => args
-                        | SOME v => 
+                        | SOME v =>
                              case Type.dest (valueType v) of
                                 Type.Object {args, ...} => args
                               | _ => Error.bug "RefFlatten.datatypes: strange con"

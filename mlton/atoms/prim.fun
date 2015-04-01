@@ -11,7 +11,7 @@
  * If you add new polymorphic primitives, you must modify extractTargs.
  *)
 
-functor Prim (S: PRIM_STRUCTS): PRIM = 
+functor Prim (S: PRIM_STRUCTS): PRIM =
 struct
 
 open S
@@ -59,8 +59,8 @@ datatype 'a t =
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {name: string, 
-                  cty: CType.t option, 
+ | FFI_Symbol of {name: string,
+                  cty: CType.t option,
                   symbolScope: CFunction.SymbolScope.t } (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
@@ -85,7 +85,7 @@ datatype 'a t =
   * Makes a bogus value of any type.
   *)
  | MLton_bug (* ssa to rssa *)
- | MLton_deserialize (* unused *)
+ | MLton_deserialize (* backend *)
  | MLton_eq (* codegen *)
  | MLton_equal (* polymorphic equality *)
  | MLton_halt (* ssa to rssa *)
@@ -104,7 +104,7 @@ datatype 'a t =
   *)
  | MLton_handlesSignals (* closure conversion *)
  | MLton_installSignalHandler (* backend *)
- | MLton_serialize (* unused *)
+ | MLton_serialize (* ssa to rssa *)
  | MLton_share
  | MLton_size (* ssa to rssa *)
  | MLton_touch (* backend *)
@@ -546,7 +546,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name, cty, symbolScope} => 
+    | FFI_Symbol {name, cty, symbolScope} =>
         FFI_Symbol {name = name, cty = cty, symbolScope = symbolScope}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
@@ -668,7 +668,7 @@ val bug = MLton_bug
 val cpointerAdd = CPointer_add
 val cpointerDiff = CPointer_diff
 val cpointerEqual = CPointer_equal
-fun cpointerGet ctype = 
+fun cpointerGet ctype =
    let datatype z = datatype CType.t
    in
       case ctype of
@@ -686,7 +686,7 @@ fun cpointerGet ctype =
        | Word64 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 64))
    end
 val cpointerLt = CPointer_lt
-fun cpointerSet ctype = 
+fun cpointerSet ctype =
    let datatype z = datatype CType.t
    in
       case ctype of
@@ -1059,7 +1059,7 @@ in
            fun coerces (name, sizes, sizes', ac) =
               List.fold
               (sizes, ac, fn (s, ac) =>
-               List.fold 
+               List.fold
                (sizes', ac, fn (s', ac) =>
                 name (s, s') :: ac))
            fun coercesS (name, sizes, sizes', ac) =
@@ -1070,7 +1070,7 @@ in
            fun casts (name, sizes, ac) =
               List.fold (sizes, ac, fn (s, ac) => name s :: ac)
         in
-           casts (fn rs => Real_castToWord (rs, WordSize.fromBits (RealSize.bits rs)), real, 
+           casts (fn rs => Real_castToWord (rs, WordSize.fromBits (RealSize.bits rs)), real,
            coerces (Real_rndToReal, real, real,
            coercesS (Real_rndToWord, real, word,
            casts (fn rs => Word_castToReal (WordSize.fromBits (RealSize.bits rs), rs), real,
@@ -1525,7 +1525,7 @@ fun ('a, 'b) apply (p: 'a t,
             orelse IntInf.> (ii, maxIntInf)
       end
       val intInfTooBig =
-         Trace.trace 
+         Trace.trace
          ("Prim.intInfTooBig", IntInf.layout, Bool.layout)
          intInfTooBig
       fun intInf (ii:  IntInf.t): ('a, 'b) ApplyResult.t =
@@ -1581,7 +1581,7 @@ fun ('a, 'b) apply (p: 'a t,
       fun intInfBinary (i1, i2) =
          if intInfTooBig i1 orelse intInfTooBig i2
             then ApplyResult.Unknown
-         else 
+         else
             case p of
                IntInf_add => iio (IntInf.+, i1, i2)
              | IntInf_andb => iio (IntInf.andb, i1, i2)
@@ -1596,7 +1596,7 @@ fun ('a, 'b) apply (p: 'a t,
       fun intInfUnary (i1) =
          if intInfTooBig i1
             then ApplyResult.Unknown
-         else 
+         else
             case p of
                IntInf_neg => intInf (IntInf.~ i1)
              | IntInf_notb => intInf (IntInf.notb i1)
@@ -1604,7 +1604,7 @@ fun ('a, 'b) apply (p: 'a t,
       fun intInfShiftOrToString (i1, w2) =
          if intInfTooBig i1
             then ApplyResult.Unknown
-         else 
+         else
             case p of
                IntInf_arshift =>
                   intInf (IntInf.~>> (i1, Word.fromIntInf (WordX.toIntInf w2)))
@@ -1622,7 +1622,7 @@ fun ('a, 'b) apply (p: 'a t,
                      val base =
                         case WordX.toInt w2 of
                            2 => StringCvt.BIN
-                         | 8 => StringCvt.OCT 
+                         | 8 => StringCvt.OCT
                          | 10 => StringCvt.DEC
                          | 16 => StringCvt.HEX
                          | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
@@ -1901,7 +1901,7 @@ fun ('a, 'b) apply (p: 'a t,
                           else Unknown
                in
                   case p of
-                     CPointer_add => 
+                     CPointer_add =>
                         if WordX.isZero w
                            then Var x
                         else Unknown
@@ -1986,9 +1986,9 @@ fun ('a, 'b) apply (p: 'a t,
              | (_, [Const (Real r), Var x]) => varReal (x, r, false)
              | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
              | (_, [Const (Word i), Var x]) => varWord (x, i, false)
-             | (_, [Const (IntInf i1), Const (IntInf i2), _]) => 
+             | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
                   intInfBinary (i1, i2)
-             | (_, [Const (IntInf i1), Const (Word w2), _]) => 
+             | (_, [Const (IntInf i1), Const (Word w2), _]) =>
                   intInfShiftOrToString (i1, w2)
              | (_, [Const (IntInf i1), _]) => intInfUnary (i1)
              | (_, [Var x, Const (IntInf i), Var space]) =>

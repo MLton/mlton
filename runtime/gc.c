@@ -59,6 +59,7 @@
 #include "gc/pointer.c"
 #include "gc/profiling.c"
 #include "gc/rusage.c"
+#include "gc/serialize.c"
 #include "gc/share.c"
 #include "gc/signals.c"
 #include "gc/size.c"

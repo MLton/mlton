@@ -271,6 +271,47 @@ structure CFunction =
             symbolScope = Private,
             target = Direct "GC_size"}
 
+      (* CHECK; serialize with objptr *)
+      fun serialize t =
+         T {args = Vector.new3 (Type.gcState (), t, Type.objptrHeader()),
+            convention = Cdecl,
+            kind = Kind.Runtime {
+              bytesNeeded = NONE,
+              ensuresBytesFree = false,
+              mayGC = true, (* MLton.serialize works by tracing an object.
+                            * Make sure all the GC invariants are true,
+                            * because tracing might encounter the current
+                            * stack in the heap.
+                            *)
+              maySwitchThreads = false,
+              modifiesFrontier = true,
+              readsStackTop = true,
+              writesStackTop = true},
+            prototype = (Vector.new3 (CType.gcState, CType.cpointer,
+                                      CType.objptrHeader()),
+                         SOME CType.cpointer),
+            return = Type.wordVector WordSize.word8,
+            symbolScope = Private,
+            target = Direct "GC_serialize"}
+
+      (* CHECK; deserialize with objptr *)
+      fun deserialize t =
+         T {args = Vector.new2 (Type.gcState (), Type.wordVector WordSize.word8),
+            convention = Cdecl,
+            kind = Kind.Runtime {
+              bytesNeeded = NONE,
+              ensuresBytesFree = false,
+              mayGC = true,
+              maySwitchThreads = false,
+              modifiesFrontier = true,
+              readsStackTop = true,
+              writesStackTop = true},
+            prototype = (Vector.new2 (CType.gcState, CType.cpointer),
+                         SOME CType.cpointer),
+            return = t,
+            symbolScope = Private,
+            target = Direct "GC_deserialize"}
+
       fun amAllocationProfiling () =
          Control.ProfileAlloc = !Control.profile
       val intInfBinary = fn name =>
@@ -1271,6 +1312,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     (case toRtype ty of
                                         NONE => none ()
                                       | SOME t => move (bogus t))
+                               | MLton_deserialize =>
+                                   (case toRtype ty of
+                                         NONE => Error.bug "MLton_deserialize saw unit"
+                                       | SOME t => simpleCCallWithGCState (CFunction.deserialize t))
                                | MLton_eq =>
                                     (case toRtype (varType (arg 0)) of
                                         NONE => move (Operand.bool true)
@@ -1279,6 +1324,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            (Prim.wordEqual
                                             (WordSize.fromBits (Type.width t))))
                                | MLton_installSignalHandler => none ()
+                               | MLton_serialize =>
+                                   let
+                                     val header = ObjptrTycon (ObjptrTycon.wordVector Bits.inWord8)
+                                   in
+                                     ccall {args = Vector.concat [Vector.new1 GCState, vos args, Vector.new1 header],
+                                            func = CFunction.serialize (Operand.ty (a 0))}
+                                   end
                                | MLton_share =>
                                     (case toRtype (varType (arg 0)) of
                                         NONE => none ()

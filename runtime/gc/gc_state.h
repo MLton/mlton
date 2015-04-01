@@ -30,6 +30,7 @@ struct GC_state {
   struct GC_callStackState callStackState;
   bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_controls controls;
+  CopyObjectMap* copyObjectMap;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
   struct GC_forwardState forwardState;
@@ -76,13 +77,13 @@ static void displayGCState (GC_state s, FILE *stream);
 
 static inline size_t sizeofGCStateCurrentStackUsed (GC_state s);
 static inline void setGCStateCurrentThreadAndStack (GC_state s);
-static void setGCStateCurrentHeap (GC_state s, 
-                                   size_t oldGenBytesRequested, 
+static void setGCStateCurrentHeap (GC_state s,
+                                   size_t oldGenBytesRequested,
                                    size_t nurseryBytesRequested);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
-#if (defined (MLTON_GC_INTERNAL_BASIS)) 
+#if (defined (MLTON_GC_INTERNAL_BASIS))
 
 PRIVATE bool GC_getAmOriginal (GC_state s);
 PRIVATE void GC_setAmOriginal (GC_state s, bool b);

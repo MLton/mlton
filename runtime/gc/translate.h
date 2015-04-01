@@ -19,5 +19,7 @@ struct GC_translateState {
 
 static inline void translateObjptr (GC_state s, objptr *opp);
 static void translateHeap (GC_state s, pointer from, pointer to, size_t size);
+static void translateRange (GC_state s, pointer base, pointer from,
+                            pointer to, size_t size);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

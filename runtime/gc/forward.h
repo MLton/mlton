@@ -9,6 +9,12 @@
 
 #if (defined (MLTON_GC_INTERNAL_TYPES))
 
+typedef struct __CopyObjectMap {
+  pointer oldP;
+  pointer newP;
+  UT_hash_handle hh;
+} CopyObjectMap;
+
 struct GC_forwardState {
   bool amInMinorGC;
   pointer back;
@@ -23,10 +29,11 @@ struct GC_forwardState {
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 #if ASSERT
-static inline bool isPointerInToSpace (GC_state s, pointer p);
 static inline bool isObjptrInToSpace (GC_state s, objptr op);
 #endif
 
+static inline bool isPointerInToSpace (GC_state s, pointer p);
+static inline void copyObjptr (GC_state s, objptr *opp);
 static inline void forwardObjptr (GC_state s, objptr *opp);
 static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp);
 static inline void forwardInterGenerationalObjptrs (GC_state s);
