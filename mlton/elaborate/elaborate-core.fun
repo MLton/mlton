@@ -516,7 +516,7 @@ val elaboratePat:
                (bindToType (x, t, d), t)
             end
          fun loopWithDepth (arg: Apat.t, d) =
-            Trace.traceInfo' (elabPatInfo, Apat.layout, Cpat.layout)
+            Trace.traceInfo' (elabPatInfo, Layout.tuple2 (Apat.layout, Int.layout), Cpat.layout)
             (fn (p: Apat.t, depth) =>
              let
                 val loop = fn p => loopWithDepth (p, depth)
@@ -800,7 +800,7 @@ val elaboratePat:
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
-             end) arg
+             end) (arg, d)
          val p' = loopWithDepth (p, 0)
          val xts = Vector.fromList (!xts)
          val _ = List.push (others, (p, xts))
@@ -1973,6 +1973,43 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 Decs.empty
                              end)
+				 | Adec.DoDec exp =>
+					  let		
+                         fun lay () =		
+                            let		
+                               open Layout		
+                            in		
+                               seq [str "in: ",		
+                                    approximate		
+                                    (seq [str "do ", Aexp.layout exp])]		
+                            end		
+                         val elaboratePat = elaboratePat ()		
+                         val pat = Apat.wild		
+                         val (pat, _) =		
+                                   elaboratePat (pat, E, {bind = false,		
+                                                          isRvb = false}, preError)		
+                         val patRegion = Region.bogus		
+                         val exp' = elabExp (exp, nest, NONE)		
+                         val bound = fn () => Vector.new0 ()		
+                         val _ =		
+                            unify		
+                            (Cexp.ty exp', Type.unit, fn (l1, _) =>		
+                            (Aexp.region exp,		
+                               str "do declaration not of type unit",		
+                               align [seq [str "do declaration type: ", l1], lay ()]))		
+                         val vbs = {exp = exp',		
+                                    lay = lay,		
+                                    nest = nest,		
+                                    pat = pat,		
+                                    patRegion = patRegion}		
+                      in		
+                         Decs.single		
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),		
+                                    nonexhaustiveMatch = nonexhaustiveMatch (),		
+                                    rvbs = Vector.new0 (),		
+                                    tyvars = bound,		
+                                    vbs = Vector.new1 vbs})		
+                      end
                  | Adec.Exception ebs =>
                       let
                          val decs =
