@@ -54,6 +54,7 @@ signature AST_CORE =
                            pat: t,
                            var: Var.t}
              | List of t vector
+             | Or of t vector
              | Record of {flexible: bool,
                           items: (Record.Field.t * Item.t) vector}
              | Tuple of t vector

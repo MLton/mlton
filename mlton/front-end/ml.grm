@@ -315,6 +315,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | match of Match.t
        | opaspat of Pat.t option
        | opcon of Con.t
+       | orpats of Pat.t list
        | ot_list of Exp.t list
        | pat of Pat.t
        | pat_2c of Pat.t list
@@ -322,6 +323,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | patitems of ((Field.t * Pat.Item.t) list * bool)
        | patnode of Pat.node
        | pats of Pat.t list
+       | pats2 of Pat.t list
        | priority of Priority.t
        | program of Program.t
        | repl of DatatypeRhs.node
@@ -731,7 +733,7 @@ decnolocal
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
         | DO exp		(Dec.DoDec exp)
-	| FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
+        | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
         | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
         | TYPE typBind          (Dec.Type typBind)
         | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
@@ -784,7 +786,7 @@ funs    : clausesTop               ([clausesTop])
 
 clausesTop: clauses (Vector.fromList clauses)
           | BAR clauses (Vector.fromList clauses)
-
+          
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
 
@@ -1131,6 +1133,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
         | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
+        | LPAREN pats2 RPAREN    (Pat.Or (Vector.fromList pats2))
         | LBRACE RBRACE          (Pat.unit)
         | LBRACE patitems RBRACE
           (let
@@ -1142,6 +1145,11 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 
 pats: ([])
     | pat commapats (pat :: commapats)
+    
+pats2: pat BAR orpats (pat :: orpats)
+     
+orpats  : pat ([pat])
+        | pat BAR orpats (pat :: orpats)
 
 commapats : ([])
           | COMMA pat commapats (pat :: commapats)
