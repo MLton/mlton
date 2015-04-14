@@ -758,6 +758,33 @@ fun matchCompile {caseType: Type.t,
       (res, fn () => Vector.map (examples, fn r => Vector.fromList (!r)))
    end
 
+(*
+val matchCompile =
+   fn {caseType: Type.t,
+       cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+       conTycon: Con.t -> Tycon.t,
+       region: Region.t,
+       test: Var.t,
+       testType: Type.t,
+       tyconCons: Tycon.t -> {con: Con.t,
+                              hasArg: bool} vector} =>
+   let
+      val cases =
+         Vector.map
+         (fn (npat, mk) =>
+          Vector.map (NestedPat.flatten npat, fn fpat => (fpat, mk)))
+      val cases = Vector.concatV cases
+   in
+      matchCompile {caseType = caseType,
+                    cases = cases,
+                    conTycon = conTycon,
+                    region = region,
+                    test = test,
+                    testType = testType,
+                    tyconCons = tyconCons}
+   end
+*)
+
 val matchCompile =
    Trace.trace
    ("MatchCompile.matchCompile",
@@ -770,3 +797,4 @@ val matchCompile =
    matchCompile
 
 end
+

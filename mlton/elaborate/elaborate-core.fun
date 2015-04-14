@@ -433,95 +433,55 @@ val elaboratePat:
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, {bind, isRvb}, preError: unit -> unit) =>
+      fn (p: Apat.t, E: Env.t, {bind = bindInEnv, isRvb}, preError: unit -> unit) =>
       let
-         val xts: (Avar.t * Var.t * Type.t * int * int ref) list ref = ref []
-         fun bindToType (x: Avar.t, t: Type.t, d: int): Var.t =
+         fun layTop () = approximate (Apat.layout p)
+         val rename =
+            let
+               val renames: (Avar.t * Var.t) list ref = ref []
+            in
+               fn x =>
+               case List.peek (!renames, fn (y, _) => Avar.equals (x, y)) of
+                  NONE => let val x' = Var.fromAst x
+                          in (List.push (renames, (x, x')); x')
+                          end
+                | SOME (_, x') => x'
+            end
+         val xts: (Avar.t * Var.t * Type.t) list ref = ref []
+         fun bindToType (x: Avar.t, t: Type.t): Var.t =
             let
                val _ = ensureNotEquals x
-               val (x', new) =
-                  case List.peek (!xts, fn (y, _, _, _, _) => Avar.equals (x, y)) of
-                     NONE => (Var.fromAst x, true)
-                   | SOME (_, x', t', d', r') =>
-                        if d <> d'
-                           then let
-                                   open Layout
-                                   val _ =
-                                      Control.error (Avar.region x,
-                                                     seq [str "variable ",
-                                                          Avar.layout x,
-                                                          str " occurs more than once in pattern"],
-                                                     seq [str "in: ",
-                                                           approximate (Apat.layout p)])
-                                in
-                                   (Var.fromAst x, true)
-                                end
-                        else let
-                                val _ = Int.inc r'
-								val _ =
-                                     unify
-                                     (t, t', preError, fn (l1, l2) =>
-                                      (Avar.region x,
-                                       str "variable used at different types in sub-patterns of or-pattern",
-                                       align [seq [str "variable ", Avar.layout x],
-										      seq [str "type: ", l2],
-											  seq [str "previous: ", l1],
-                                              seq [str "in: ", approximate (Apat.layout p)]]))
-                             in
-                                (x', false)
-                             end
-               val _ =
-                  case (List.peekMap
-                        (!others, fn (p, v) =>
-                         if Vector.exists (v, fn (y, _, _) =>
-                                           Avar.equals (x, y))
-                            then SOME p
-                         else NONE)) of
+               val x' = rename x
+               val () =
+                  case List.peek (!xts, fn (y, _, _) => Avar.equals (x, y)) of
                      NONE => ()
-                   | SOME p' =>
+                   | SOME _ =>
                         let
                            open Layout
+                           val _ =
+                              Control.error
+                              (Avar.region x,
+                               seq [str "variable ",
+                                    Avar.layout x,
+                                    str " occurs more than once in pattern"],
+                               seq [str "in: ", layTop ()])
                         in
-                           Control.error
-                           (Apat.region p,
-                            seq [str "variable ",
-                                 Avar.layout x,
-                                 str " occurs in multiple patterns"],
-                            align [seq [str "in: ",
-                                        approximate (Apat.layout p)],
-                                   seq [str "and in: ",
-                                        approximate (Apat.layout p')]])
-
+                           ()
                         end
-               val _ =
-                  if new
-                     then let
-                             val _ = List.push (xts, (x, x', t, d, ref 1))
-                             val _ =
-                                if bind
-                                   then Env.extendVar (E, x, x', Scheme.fromType t,
-                                                       {isRebind = false})
-                                else ()
-                          in
-                             ()
-                          end
-                  else ()
+               val _ = List.push (xts, (x, x', t))
             in
                x'
             end
-         fun bind (x: Avar.t, d): Var.t * Type.t =
+         fun bind (x: Avar.t): Var.t * Type.t =
             let
                val t = Type.new ()
             in
-               (bindToType (x, t, d), t)
+               (bindToType (x, t), t)
             end
-         fun loopWithDepth (arg: Apat.t, d) =
-            Trace.traceInfo' (elabPatInfo, Layout.tuple2 (Apat.layout, Int.layout), Cpat.layout)
-            (fn (p: Apat.t, depth) =>
+         fun loop (arg: Apat.t) =
+            Trace.traceInfo' (elabPatInfo, Apat.layout, Cpat.layout)
+            (fn (p: Apat.t) =>
              let
-                val loop = fn p => loopWithDepth (p, depth)
-                val bind = fn x => bind (x, depth)
-                val bindToType = fn (x, t) => bindToType (x, t, depth)
                 val region = Apat.region p
                 val unify = fn (t, t', f) => unify (t, t', preError, f)
                 fun unifyPatternConstraint (p, lay, c) =
@@ -539,30 +499,63 @@ val elaboratePat:
                 case Apat.node p of
                    Apat.Or ps =>
                       let
-						 val ps = Vector.toList ps
-                         val n = List.length ps
-                         val ps' = List.map (ps, fn p => loopWithDepth (p, depth + 1))
-                         val zs =
-                            List.keepAllMap (!xts, fn (x,x',t,d,r) =>
-                                             if d = depth + 1 andalso !r <> n
-                                                then SOME x
-                                             else NONE)
-						 val _ = List.foreach (zs, fn (z) =>
-											   let 
-												  val _ = Control.error
-													      (Apat.region p,
-														   seq [str "variable does not occur in all sub-patterns of or-pattern",
-														        Avar.layout z],
-														   seq [str "in: ", lay ()])
-											   in
-												  ()
-											   end)
-                         val _ = xts := List.map (!xts, fn (x,x',t,d,r) =>
-                                                  (x,x',t,depth,r))
+                         val xtsOrig = !xts
+                         val n = Vector.length ps
+                         val ps =
+                            Vector.map
+                            (ps, fn p =>
+                             let
+                                val _ = xts := []
+                                val p' = loop p
+                             in
+                                (p, p', !xts)
+                             end)
+                         val ps' = Vector.map (ps, fn (_, p', _) => p')
+
+                         val xtsPats =
+                            Vector.fold
+                            (ps, [], fn ((p, _, xtsPat), xtsPats) =>
+                             List.fold
+                             (xtsPat, xtsPats, fn ((x, x', t), xtsPats) =>
+                              case List.peek (xtsPats, fn (y, _, _, _) => Avar.equals (x, y)) of
+                                 NONE => (x, x', t, ref 1)::xtsPats
+                               | SOME (_, _, t', c) =>
+                                    let
+                                       val _ = Int.inc c
+                                       val _ =
+                                          unify
+                                          (t', t, fn (l', l) =>
+                                           (Avar.region x,
+                                            str "variable used at different types in sub-patterns of or-pattern",
+                                            align [seq [str "variable ", Avar.layout x],
+                                                   seq [str "type: ", l],
+                                                   seq [str "previous: ", l'],
+                                                   seq [str "in: ", approximate (Apat.layout p)],
+                                                   seq [str "in: ", lay ()]]))
+
+                                    in
+                                       xtsPats
+                                    end))
+                         val _ =
+                            List.foreach
+                            (xtsPats, fn (x, _, _, c) =>
+                             if !c <> n
+                                then let 
+                                        val _ =
+                                           Control.error
+                                           (Apat.region p,
+                                            seq [str "variable ",
+                                                 Avar.layout x,
+                                                 str " does not occur in all sub-patterns of or-pattern"],
+                                            seq [str "in: ", lay ()])
+                                     in
+                                        ()
+                                     end
+                             else ())
                          val t = Type.new ()
                          val _ =
-                            List.foreach2
-                            (ps, ps', fn (p, p') =>
+                            Vector.foreach
+                            (ps, fn (p, p', _) =>
                              unify
                              (t, Cpat.ty p', fn (l, l') =>
                               (Apat.region p,
@@ -571,6 +564,25 @@ val elaboratePat:
                                       seq [str "previous: ", l],
                                       seq [str "in: ", approximate (Apat.layout p)],
                                       seq [str "in: ", lay ()]])))
+                         val xtsMerge =
+                            List.fold
+                            (xtsPats, xtsOrig, fn ((x, x', t, _), xtsMerge) =>
+                             case List.peek (xtsMerge, fn (y, _, _) => Avar.equals (x, y)) of
+                                NONE => (x, x', t)::xtsMerge
+                              | SOME _ =>
+                                   let
+                                      open Layout
+                                      val _ =
+                                         Control.error
+                                         (Avar.region x,
+                                          seq [str "variable ",
+                                               Avar.layout x,
+                                               str " occurs more than once in pattern"],
+                                          seq [str "in: ", layTop ()])
+                                   in
+                                      (x, x', t)::xtsMerge
+                                   end)
+                         val _ = xts := xtsMerge
                       in
                          Cpat.make (Cpat.Or ps', t)
                       end
@@ -800,10 +812,41 @@ val elaboratePat:
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
-             end) (arg, d)
-         val p' = loopWithDepth (p, 0)
+             end) arg
+         val p' = loop p
          val xts = Vector.fromList (!xts)
+         val _ =
+            Vector.foreach
+            (xts, fn (x, _, _) =>
+             case (List.peekMap
+                   (!others, fn (p, v) =>
+                    if Vector.exists (v, fn (y, _, _) =>
+                                      Avar.equals (x, y))
+                       then SOME p
+                    else NONE)) of
+                NONE => ()
+              | SOME p' =>
+                   let
+                      open Layout
+                   in
+                      Control.error
+                      (Apat.region p,
+                       seq [str "variable ",
+                            Avar.layout x,
+                            str " occurs in multiple patterns"],
+                       align [seq [str "in: ",
+                                   approximate (Apat.layout p)],
+                              seq [str "and in: ",
+                                   approximate (Apat.layout p')]])
+                   end)
          val _ = List.push (others, (p, xts))
+         val _ =
+            if bindInEnv
+               then Vector.foreach
+                    (xts, fn (x, x', t) =>
+                     Env.extendVar (E, x, x', Scheme.fromType t,
+                                    {isRebind = false}))
+            else ()
       in
          (p', xts)
       end

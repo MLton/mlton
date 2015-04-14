@@ -127,7 +127,7 @@ structure Pat =
                               constraint),
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
-			 | Or ps => Vector.layout layoutT ps
+             | Or ps => Vector.layout layoutT ps
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -171,7 +171,7 @@ structure Pat =
              | Layered {constraint, pat, ...} =>
                   (c pat; Option.app (constraint, Type.checkSyntax))
              | List ps => Vector.foreach (ps, c)
-			 | Or ps => Vector.foreach (ps, c)
+             | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
                   (Vector.foreach (items, fn (_, i) =>
                                    case i of
