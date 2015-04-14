@@ -82,17 +82,36 @@ fun flatten p =
                                                     Vector.map (fargs, fn farg => make (Con {arg = SOME farg, con = con, targs=targs}, ty p))
                                                  end))
     | Layered (x, p') => (let
-                            val ps = flatten p'
+                             val ps = flatten p'
                           in
-                            Vector.map (ps, fn fp => make (Layered (x, fp), ty p))
+                             Vector.map (ps, fn fp => make (Layered (x, fp), ty p))
                          end)
     | Or ps => (let
-                    val fps = Vector.map (ps, fn p' => flatten p')
+                   val fps = Vector.map (ps, fn p' => flatten p')
                 in
-                    Vector.concat (Vector.toList fps)
+                   Vector.concat (Vector.toList fps)
                 end)
-    | Tuple ps => Vector.new1 p
+    | Tuple ps => (let
+                      (* Flatten the ps, and transform into a list of flattened ps *)
+                      val lfps = Vector.toList (Vector.map (ps, fn p' => flatten p'))
+                      (* Init the resultsofar to be a list of n empty lists where n is the length of ps *)
+                      val rsf = []
+                      (* foreach lfps add a new empty list to the vector rsf *)
+                      val _ = List.foreach (ps, fn _ => rsf::[])
+                      val listOfCombos = makeOpts rsf lfps
+                   in
+                      (* Create the actual tuples for each of the combos gotten *)
+                   end)
     |  _ => Vector.new1 p
+
+fun makeOpts rsf ps =
+   case ps of
+      [] => rsf
+    | [h::t] => (let
+                   val newrsf = List.foreach (rsf, fn l => l::h)
+                 in
+                   makeOpts newrsf t
+                 end)
 
 fun isRefutable p =
    case node p of
