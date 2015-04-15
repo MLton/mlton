@@ -113,6 +113,7 @@ structure Facts =
                                | _ => Error.bug "MatchCompile.Facts.bind: Tuple:wrong fact")
                    | Var y => Env.extend (env, y, x)
                    | Wild => env
+                   | NestedPat.Or _ => Error.bug "MatchCompile.factbind: or pattern shouldn't be here"
                end
             val env = loop (p, x, Env.empty)
             val () = destroy ()
@@ -205,6 +206,7 @@ structure Pat =
                 | NestedPat.Tuple ps => Tuple (Vector.map (ps, loop))
                 | NestedPat.Var _ => Wild
                 | NestedPat.Wild => Wild
+                | NestedPat.Or _ => Error.bug "MatchCompile.fromNestedPat: or pattern shouldn't be here"
          in
             loop
          end

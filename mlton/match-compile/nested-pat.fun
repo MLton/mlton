@@ -89,7 +89,7 @@ fun flatten p =
     | Or ps => (let
                    val fps = Vector.map (ps, fn p' => flatten p')
                 in
-                   Vector.concat (Vector.toList fps)
+                   Vector.concatV fps
                 end)
     | Tuple ps => (let
                       val tpss = 
