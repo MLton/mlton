@@ -127,7 +127,10 @@ structure Pat =
                               constraint),
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
-             | Or ps => Vector.layout layoutT ps
+             | Or ps => seq [str "(",
+                             mayAlign (separate 
+                                       (Vector.toListMap (ps, layoutF), "|")),
+                             str ")"]
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
