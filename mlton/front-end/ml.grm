@@ -969,6 +969,12 @@ rules : rule            ([rule])
 rule    : pat DARROW exp        ((pat,exp))
 
 elabel  : field EQUALOP exp     (field,exp)
+        | vidNoEqual            (Field.Symbol (Vid.toSymbol vidNoEqual), 
+                                 Exp.makeRegion' (Exp.FlatApp 
+                                 (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
+                                                                         fixop = Fixop.None}, 
+                                                                vidNoEqualleft, vidNoEqualright))), 
+                                  vidNoEqualleft, vidNoEqualright))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
