@@ -449,6 +449,21 @@ structure Elaborate =
          val (allowOverload, ac) =
             makeBool ({name = "allowOverload", 
                        default = false, expert = true}, ac)
+         val (allowOptBar, ac) =
+            makeBool ({name = "allowOptBar",
+                       default = false, expert = false}, ac)
+         val (allowLineComments, ac) =
+            makeBool ({name = "allowLineComments",
+                       default = false, expert = false}, ac)
+         val (allowDoDecls, ac) =
+            makeBool ({name = "allowDoDecls",
+                       default = false, expert = false}, ac)
+         val (allowRecPunning, ac) =
+            makeBool ({name = "allowRecPunning",
+                       default = false, expert = false}, ac)
+         val (allowOrPats, ac) =
+            makeBool ({name = "allowOrPats",
+                       default = false, expert = false}, ac)
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)

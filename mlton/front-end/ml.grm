@@ -8,6 +8,14 @@
 fun reg (left, right) = Region.make {left = left, right = right}
 fun error (reg, msg) = Control.error (reg, Layout.str msg, Layout.empty)
 
+local
+   open Control.Elaborate
+in
+   val allowOptBar = fn () => current allowOptBar
+   val allowRecPunning = fn () => current allowRecPunning
+end
+
+
 open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
@@ -731,7 +739,7 @@ decnolocal
         | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
-        | DO exp		(Dec.DoDec exp)
+        | DO exp                (Dec.DoDec exp)
         | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
         | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
         | TYPE typBind          (Dec.Type typBind)
@@ -969,12 +977,15 @@ rules : rule            ([rule])
 rule    : pat DARROW exp        ((pat,exp))
 
 elabel  : field EQUALOP exp     (field,exp)
-        | vidNoEqual            (Field.Symbol (Vid.toSymbol vidNoEqual), 
-                                 Exp.makeRegion' (Exp.FlatApp 
-                                 (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
-                                                                         fixop = Fixop.None}, 
-                                                                vidNoEqualleft, vidNoEqualright))), 
-                                  vidNoEqualleft, vidNoEqualright))
+        | vidNoEqual            (if allowRecPunning ()
+                                    then ()
+                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning disallowed, compile with -default-ann 'allowRecPunning true'")
+                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual), 
+                                    Exp.makeRegion' (Exp.FlatApp 
+                                    (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
+                                                                            fixop = Fixop.None}, 
+                                                                   vidNoEqualleft, vidNoEqualright))), 
+                                    vidNoEqualleft, vidNoEqualright)))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
