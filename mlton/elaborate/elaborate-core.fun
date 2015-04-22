@@ -21,6 +21,21 @@ in
    val redundantMatch = fn () => current redundantMatch
    val resolveScope = fn () => current resolveScope
    val sequenceNonUnit = fn () => current sequenceNonUnit
+   fun check (c: (bool,bool) t, keyword: string, region) =
+      if current c
+         then ()
+      else
+         let
+            open Layout
+         in
+            Control.error
+            (region,
+             str (concat (if expert c
+                             then [keyword, " disallowed"]
+                             else [keyword, " disallowed, compile with -default-ann '",
+                                   name c, " true'"])),
+             empty)
+         end
 end
 
 local
@@ -498,7 +513,8 @@ val elaboratePat:
              in
                 case Apat.node p of
                    Apat.Or ps =>
-                      let
+                      (check (Control.Elaborate.allowOrPats, "allowOrPats", region)
+                      ; let
                          val xtsOrig = !xts
                          val n = Vector.length ps
                          val ps =
@@ -585,7 +601,7 @@ val elaboratePat:
                          val _ = xts := xtsMerge
                       in
                          Cpat.make (Cpat.Or ps', t)
-                      end
+                      end)
                  | Apat.App (c, p) =>
                       let
                          val (con, s) = Env.lookupLongcon (E, c)
@@ -1724,22 +1740,6 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
 
 structure ElabControl = Control.Elaborate
 
-fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
-   if ElabControl.current c
-      then ()
-   else
-      let
-         open Layout
-      in
-         Control.error
-         (region,
-          str (concat (if ElabControl.expert c
-                          then [keyword, " disallowed"]
-                          else [keyword, " disallowed, compile with -default-ann '",
-                                ElabControl.name c, " true'"])),
-          empty)
-      end
-
 fun elaborateDec (d, {env = E, nest}) =
    let
       val profileBody =
@@ -2017,7 +2017,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                 Decs.empty
                              end)
 				 | Adec.DoDec exp =>
-					  let		
+                      (check (ElabControl.allowDoDecls, "allowDoDecls", Aexp.region exp)
+					  ; let
                          fun lay () =		
                             let		
                                open Layout		
@@ -2052,7 +2053,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                     rvbs = Vector.new0 (),		
                                     tyvars = bound,		
                                     vbs = Vector.new1 vbs})		
-                      end
+                      end)
                  | Adec.Exception ebs =>
                       let
                          val decs =
