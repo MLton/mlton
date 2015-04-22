@@ -15,7 +15,6 @@ in
    val allowRecPunning = fn () => current allowRecPunning
 end
 
-
 open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
@@ -792,7 +791,10 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
-          | BAR clauses (Vector.fromList clauses)
+          | BAR clauses (if allowOptBar ()
+                            then ()
+                            else error (reg (clausesleft, clausesright), "Optional bar disallowed, compile with -default-ann 'allowOptBar true'")
+                         ;(Vector.fromList clauses))
           
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
@@ -841,7 +843,10 @@ tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
 constrsTop : constrs            (constrs)
-           | BAR constrs        (constrs)
+           | BAR constrs        (if allowOptBar ()
+                                    then ()
+                                    else error (reg (constrsleft, constrsright), "Optional bar disallowed, compile with -default-ann 'allowOptBar true'")
+                                ;(constrs))
         
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
@@ -969,7 +974,10 @@ match : rulesTop           (Match.makeRegion' (Match.T (Vector.fromList rulesTop
                                             rulesTopleft, rulesTopright))
 
 rulesTop : rules        (rules)
-         | BAR rules    (rules)
+         | BAR rules    (if allowOptBar ()
+                            then ()
+                            else error (reg (rulesleft, rulesright), "Optional bar disallowed, compile with -default-ann 'allowOptBar true'")
+                         ;(rules))
                                             
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)

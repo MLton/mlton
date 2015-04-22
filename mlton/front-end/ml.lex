@@ -55,6 +55,12 @@ fun stringError (source, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
+local
+   open Control.Elaborate
+in
+   val allowLineComments = fn () => current allowLineComments
+end
+
 fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
 
 fun addHexEscape (s: string, source, yypos): unit =
@@ -241,9 +247,15 @@ hexnum={hexDigit}+;
                     ; stringtype := false
                     ; YYBEGIN S
                     ; continue ());
-<INITIAL>"(*)"	=> (YYBEGIN B
-                    ; commentStart := Source.getPos (source, yypos)
-                    ; continue ());
+<INITIAL>"(*)"	=> (if allowLineComments ()
+                       then (YYBEGIN B
+                            ; commentStart := Source.getPos (source, yypos)
+                            ; continue ())
+                       else (YYBEGIN A
+                            ; commentLevel := 1
+                            ; commentStart := Source.getPos (source, yypos)
+                            ; continue ())
+                    );
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
                     ; commentStart := Source.getPos (source, yypos)
