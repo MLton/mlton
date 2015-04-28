@@ -116,7 +116,6 @@ fun word (yytext, drop, source, yypos, radix) =
                 Source.getPos (source, yypos),
                 Source.getPos (source, yypos + size yytext))
 
-
 %% 
 %reject
 %s A B S F L LL LLC LLCQ;
@@ -139,6 +138,8 @@ exp=[eE](~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
 hexDigit=[0-9a-fA-F];
 hexnum={hexDigit}+;
+binDigit=[0-1];
+binnum={binDigit}+;
 
 %%
 <INITIAL>{ws}   => (continue ());
@@ -233,10 +234,16 @@ hexnum={hexDigit}+;
    (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX));
 <INITIAL>"~0x"{hexnum} =>
    (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX));
+<INITIAL>"0b"{binnum} =>
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.BIN));
+<INITIAL>"~0b"{binnum} =>
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.BIN));
 <INITIAL>"0w"{num} =>
    (word (yytext, 2, source, yypos, StringCvt.DEC));
 <INITIAL>"0wx"{hexnum} =>
    (word (yytext, 3, source, yypos, StringCvt.HEX));
+<INITIAL>("0wb"|"0bw"){binnum} =>
+   (word (yytext, 3, source, yypos, StringCvt.BIN));
 <INITIAL>\"     => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
