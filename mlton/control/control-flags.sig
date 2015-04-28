@@ -98,6 +98,7 @@ signature CONTROL_FLAGS =
             val allowFFI: (bool,bool) t
             val allowOverload: (bool,bool) t
             val allowOptBar: (bool,bool) t
+            val allowOptSemicolon: (bool,bool) t
             val allowLineComments: (bool,bool) t
             val allowDoDecls: (bool,bool) t
             val allowOrPats: (bool,bool) t

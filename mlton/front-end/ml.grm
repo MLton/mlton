@@ -12,6 +12,7 @@ local
    open Control.Elaborate
 in
    val allowOptBar = fn () => current allowOptBar
+   val allowOptSemicolon = fn () => current allowOptSemicolon
    val allowRecPunning = fn () => current allowRecPunning
 end
 
@@ -1000,6 +1001,10 @@ elabels : elabel COMMA elabels  (elabel :: elabels)
 
 exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
         | exp SEMICOLON exp_ps  (exp :: exp_ps)
+        | exp SEMICOLON exp SEMICOLON (if allowOptSemicolon ()
+                                          then ()
+                                          else error (reg (SEMICOLON2left, SEMICOLON2right), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'")
+                                       ;([exp1, exp2]))
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 

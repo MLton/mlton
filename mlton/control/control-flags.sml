@@ -452,6 +452,9 @@ structure Elaborate =
          val (allowOptBar, ac) =
             makeBool ({name = "allowOptBar",
                        default = false, expert = false}, ac)
+         val (allowOptSemicolon, ac) =
+            makeBool ({name = "allowOptSemicolon",
+                       default = false, expert = false}, ac)
          val (allowLineComments, ac) =
             makeBool ({name = "allowLineComments",
                        default = false, expert = false}, ac)
