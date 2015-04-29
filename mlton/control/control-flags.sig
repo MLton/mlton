@@ -103,6 +103,7 @@ signature CONTROL_FLAGS =
             val allowDoDecls: (bool,bool) t
             val allowOrPats: (bool,bool) t
             val allowRecPunning: (bool,bool) t
+            val allowExtendedLiterals: (bool,bool) t
             val allowPrim: (bool,bool) t
             val allowRebindEquals: (bool,bool) t
             val deadCode: (bool,bool) t

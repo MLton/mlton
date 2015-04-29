@@ -467,6 +467,9 @@ structure Elaborate =
          val (allowOrPats, ac) =
             makeBool ({name = "allowOrPats",
                        default = false, expert = false}, ac)
+         val (allowExtendedLiterals, ac) =
+            makeBool ({name = "allowExtendedLiterals",
+                       default = false, expert = false}, ac)
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)

@@ -59,6 +59,7 @@ local
    open Control.Elaborate
 in
    val allowLineComments = fn () => current allowLineComments
+   val allowExtendedLiterals = fn () => current allowExtendedLiterals
 end
 
 fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
@@ -103,15 +104,31 @@ fun tok (t, s, l, r) =
 
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
+fun stripUscores (yytext) =
+   String.keepAll (yytext, (fn c => if c = #"_" then false else true))
+
+fun hasUscores (yytext) =
+   String.exists (yytext, (fn c => if c = #"_" then true else false))
+
+fun extLiteral (yytext, source, l, r) =
+   if (not (allowExtendedLiterals ())) andalso (hasUscores yytext)
+      then (error (source, l, r, "Extended literals disallowed, compile with -default-ann 'allowExtendedLiterals true'"))
+      else ()
+
+fun binLiteral (yytext, source, l, r) =
+   if not (allowExtendedLiterals ())
+      then (error (source, l, r, "Binary literals disallowed, compile with -default-ann 'allowExtendedLiterals true'"))
+      else ()
+
 fun int (yytext, drop, source, yypos, {negate: bool}, radix) =
-   Tokens.INT ({digits = String.dropPrefix (yytext, drop),
+   Tokens.INT ({digits = String.dropPrefix (stripUscores yytext, drop),
                 negate = negate,
                 radix = radix},
                Source.getPos (source, yypos),
                Source.getPos (source, yypos + size yytext))
 
 fun word (yytext, drop, source, yypos, radix) =
-   Tokens.WORD ({digits = String.dropPrefix (yytext, drop),
+   Tokens.WORD ({digits = String.dropPrefix (stripUscores yytext, drop),
                  radix = radix},
                 Source.getPos (source, yypos),
                 Source.getPos (source, yypos + size yytext))
@@ -132,14 +149,14 @@ nrws=("\012"|[\t\ ])+;
 cr="\013";
 nl="\010";
 eol=({cr}{nl}|{nl}|{cr});
-num=[0-9]+;
+num=([0-9]|"_")*[0-9];
 frac="."{num};
 exp=[eE](~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
 hexDigit=[0-9a-fA-F];
-hexnum={hexDigit}+;
+hexnum=({hexDigit}|"_")*{hexDigit};
 binDigit=[0-1];
-binnum={binDigit}+;
+binnum=({binDigit}|"_")*{binDigit};
 
 %%
 <INITIAL>{ws}   => (continue ());
@@ -225,25 +242,36 @@ binnum={binDigit}+;
    (case yytext of
        "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
      | _ => tok' (Tokens.LONGID, yytext, source, yypos));
-<INITIAL>{real} => (tok' (Tokens.REAL, yytext, source, yypos));
+<INITIAL>{real} =>
+   ((extLiteral (yytext, source, yypos, yypos + size yytext));
+   (tok' (Tokens.REAL, stripUscores yytext, source, yypos)));
 <INITIAL>{num} =>
-   (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC));
+   ((extLiteral (yytext, source, yypos, yypos + size yytext));
+   (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC)));
 <INITIAL>"~"{num} =>
-   (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC));
+   ((extLiteral (yytext, source, yypos, yypos + 1 + size yytext));
+   (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC)));
 <INITIAL>"0x"{hexnum} =>
-   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX)));
 <INITIAL>"~0x"{hexnum} =>
-   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX)));
 <INITIAL>"0b"{binnum} =>
-   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.BIN));
+   ((binLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.BIN)));
 <INITIAL>"~0b"{binnum} =>
-   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.BIN));
+   ((binLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.BIN)));
 <INITIAL>"0w"{num} =>
-   (word (yytext, 2, source, yypos, StringCvt.DEC));
+   ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (word (yytext, 2, source, yypos, StringCvt.DEC)));
 <INITIAL>"0wx"{hexnum} =>
-   (word (yytext, 3, source, yypos, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (word (yytext, 3, source, yypos, StringCvt.HEX)));
 <INITIAL>("0wb"|"0bw"){binnum} =>
-   (word (yytext, 3, source, yypos, StringCvt.BIN));
+   ((binLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (word (yytext, 3, source, yypos, StringCvt.BIN)));
 <INITIAL>\"     => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
