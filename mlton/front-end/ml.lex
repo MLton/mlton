@@ -149,7 +149,7 @@ nrws=("\012"|[\t\ ])+;
 cr="\013";
 nl="\010";
 eol=({cr}{nl}|{nl}|{cr});
-num=([0-9]|"_")*[0-9];
+num=([0-9]([0-9]|"_")*[0-9])|([0-9]+);
 frac="."{num};
 exp=[eE](~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
@@ -266,7 +266,7 @@ binnum=({binDigit}|"_")*{binDigit};
 <INITIAL>"0w"{num} =>
    ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
    (word (yytext, 2, source, yypos, StringCvt.DEC)));
-<INITIAL>"0wx"{hexnum} =>
+<INITIAL>("0wx"|"0xw"){hexnum} =>
    ((extLiteral (yytext, source, yypos, yypos + 3 + size yytext));
    (word (yytext, 3, source, yypos, StringCvt.HEX)));
 <INITIAL>("0wb"|"0bw"){binnum} =>
