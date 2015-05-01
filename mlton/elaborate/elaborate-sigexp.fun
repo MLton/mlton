@@ -181,9 +181,27 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
     end)
 
+fun elabTypBind (typBind: TypBind.t, E) = 
+   let
+      val TypBind.T types = TypBind.node typBind
+      val strs =
+         Vector.map
+         (types, fn {def, tyvars, ...} =>
+          (let
+              val (_, ty) = elaborateType (def, E)
+              val scheme = Scheme.make (tyvars, ty)
+           in
+              TypeStr.def (scheme, Kind.Arity (Vector.length tyvars))
+           end))
+   in
+      Vector.foreach2
+      (types, strs, fn ({tycon, ...}, str) =>
+       Env.extendTycon (E, tycon, str))
+   end
+
 fun elaborateDatBind (datBind: DatBind.t, E): unit =
    let
-      val DatBind.T {datatypes, ...} = DatBind.node datBind
+      val DatBind.T {datatypes, withtypes} = DatBind.node datBind
       (* Build enough of an interface so that that the constructor argument
        * types can be elaborated.
        *)
@@ -202,6 +220,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
               tycon = tycon,
               tyvars = tyvars}
           end)
+      val _ = elabTypBind (withtypes, E)
       val datatypes =
          Vector.map
          (datatypes, fn {cons, kind, name, tycon, tyvars, ...} =>
