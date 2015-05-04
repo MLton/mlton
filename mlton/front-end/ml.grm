@@ -266,11 +266,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
        | datBind of DatBind.t
-       | datBindNoWithtype of DatBind.t
        | datatypeRhs of DatatypeRhs.t
-       | datatypeRhsNoWithtype of DatatypeRhs.t
        | datatypeRhsnode of DatatypeRhs.node
-       | datatypeRhsnodeNoWithtype of DatatypeRhs.node
        | db of db
        | dbs of db vector
        | dbs' of db list
@@ -920,19 +917,9 @@ datatypeRhs
      (DatatypeRhs.makeRegion' (datatypeRhsnode,
                                datatypeRhsnodeleft, datatypeRhsnoderight))
 
-datatypeRhsNoWithtype
-   : datatypeRhsnodeNoWithtype
-     (DatatypeRhs.makeRegion' (datatypeRhsnodeNoWithtype,
-                               datatypeRhsnodeNoWithtypeleft,
-                               datatypeRhsnodeNoWithtyperight))
-
 datatypeRhsnode
    : repl              (repl)
    | datBind           (DatatypeRhs.DatBind datBind)
-
-datatypeRhsnodeNoWithtype
-   : repl               (repl)
-   | datBindNoWithtype  (DatatypeRhs.DatBind datBindNoWithtype)
 
 repl : tyvars tycon EQUALOP DATATYPE longtycon
        (if Vector.isEmpty tyvars
@@ -944,10 +931,6 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
 datBind
    : dbs withtypes
      (DatBind.make (dbs, withtypes, dbsleft, withtypesright))
-
-datBindNoWithtype
-   : dbs
-     (DatBind.make (dbs, TypBind.empty, dbsleft, dbsright))
 
 dbs : dbs' (Vector.fromList dbs')
 
