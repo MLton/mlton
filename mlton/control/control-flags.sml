@@ -470,6 +470,9 @@ structure Elaborate =
          val (allowExtendedLiterals, ac) =
             makeBool ({name = "allowExtendedLiterals",
                        default = false, expert = false}, ac)
+         val (allowSigWithtype, ac) =
+            makeBool ({name = "allowSigWithtype",
+                       default = false, expert = false}, ac)
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)
