@@ -2,7 +2,7 @@ Source: mlton
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (>= 20070826), libgmp-dev, htmldoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt, binutils (>= 2.21.51.201104) [mips mipsel], gcc (>= 4:4.6.0-5) [mips mipsel]
+Build-Depends: mlton (>= 20070826), libgmp-dev, asciidoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt, binutils (>= 2.21.51.201104) [mips mipsel], gcc (>= 4:4.6.0-5) [mips mipsel]
 Standards-Version: 3.9.1
 
 Package: mlton

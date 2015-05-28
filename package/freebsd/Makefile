@@ -24,7 +24,7 @@ COMMENT=	An optimizing Standard ML compiler
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
 .if !defined(NOPORTDOCS)
 BUILD_DEPENDS+=	gsed:${PORTSDIR}/textproc/gsed \
-		htmldoc:${PORTSDIR}/textproc/htmldoc \
+		asciidoc:${PORTSDIR}/textproc/asciidoc \
 		latex:${PORTSDIR}/print/teTeX
 .endif
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
