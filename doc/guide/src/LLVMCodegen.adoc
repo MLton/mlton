@@ -6,6 +6,15 @@ The <:LLVMCodegen:> is a <:Codegen:code generator> that translates the
 further optimized and compiled to native object code by the <:LLVM:>
 toolchain.
 
+It requires <:LLVM:> version 3.3 or greater to be installed.
+
+In benchmarks performed on the <:RunningOnAMD64:AMD64> architecture,
+code size with this generator is usually slightly smaller than either
+the <:AMD64Codegen:native> or the <:CCodegen:C> code generators. Compile
+time is worse than <:AMD64Codegen:native>, but slightly better than
+<:CCodegen:C>. Run time is often better than either <:AMD64Codegen:native>
+or <:CCodegen:C>.
+
 == Implementation ==
 
 * <!ViewGitFile(mlton,master,mlton/codegen/llvm-codegen/llvm-codegen.sig)>
