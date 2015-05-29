@@ -52,6 +52,30 @@ fun lexAndParse (source: Source.t, ins: In.t) =
                Ast.Basdec.empty
             end
       val () = Ast.Basdec.checkSyntax result
+
+      (* Outputs AST to a file if Control.keepAST is true *)
+      val () =
+        if !Control.keepAST
+          then
+            let
+               val inputFile = File.toString (!Control.inputFile)
+               val outputFile = concat [inputFile, ".ast"]
+               val outputStream = Out.openAppend outputFile
+               val sourceName = Source.name source
+               val () =
+                 (Out.output
+                    (outputStream,
+                     concat ["File: ", sourceName, "\n"]);
+                  Layout.output
+                    (Ast.Basdec.layout result,
+                     outputStream);
+                  Out.output
+                    (outputStream,
+                     "\n\n"))
+             in
+               Out.close outputStream
+            end
+          else ()
    in 
       result
    end

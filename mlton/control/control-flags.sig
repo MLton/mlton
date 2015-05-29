@@ -195,6 +195,8 @@ signature CONTROL_FLAGS =
       (* List of pass names to save the input/output. *)
       val keepPasses: Regexp.Compiled.t list ref
 
+      (* Save the AST to a file. *)
+      val keepAST: bool ref
       (* Save the final CoreML to a file. *)
       val keepCoreML: bool ref
       (* Save the final Machine to a file. *)

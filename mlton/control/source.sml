@@ -51,4 +51,7 @@ fun newline (T {lineStart, lineNum, ...}, n) =
    (Int.inc lineNum
     ; lineStart := n)
 
+fun name (T {file, ...}) =
+   File.toString (!file)
+
 end
