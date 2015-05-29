@@ -65,6 +65,7 @@ Package: mlton-compiler
 Architecture: alpha amd64 armel armhf hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime-native (= ${binary:Version}) | mlton-runtime
+Suggests: llvm
 Breaks: mlton (<< 20100608-3)
 Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
