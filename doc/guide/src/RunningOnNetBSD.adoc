@@ -25,7 +25,7 @@ will need the additional package
 To build the documentation for MLton, you will need the addtional
 package
 
-* `htmldoc`.
+* `textproc/asciidoc`.
 
 == Tips for compiling and using MLton on NetBSD ==
 

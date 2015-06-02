@@ -2,7 +2,7 @@ Source: mlton
 Section: devel
 Priority: optional
 Maintainer: Wesley W. Terpstra (Debian) <terpstra@debian.org>
-Build-Depends: mlton (>= 20070826), libgmp-dev, htmldoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt, binutils (>= 2.21.51.201104) [mips mipsel], gcc (>= 4:4.6.0-5) [mips mipsel]
+Build-Depends: mlton (>= 20070826), libgmp-dev, asciidoc, texlive-latex-base, procps, debhelper (>= 7.0.0), cdbs (>= 0.4.52), quilt, binutils (>= 2.21.51.201104) [mips mipsel], gcc (>= 4:4.6.0-5) [mips mipsel]
 Standards-Version: 3.9.1
 
 Package: mlton
@@ -65,6 +65,7 @@ Package: mlton-compiler
 Architecture: alpha amd64 armel armhf hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}, gcc, libc6-dev, libgmp-dev, mlton-basis (= ${source:Version}), mlton-runtime-native (= ${binary:Version}) | mlton-runtime
+Suggests: llvm
 Breaks: mlton (<< 20100608-3)
 Replaces: mlton (<< 20100608-3)
 Homepage: http://mlton.org/
@@ -101,7 +102,7 @@ Description: Optimizing compiler for Standard ML - tools
 
 Package: mlton-runtime-native
 Architecture: alpha amd64 armel armhf hppa hurd-i386 i386 ia64 kfreebsd-i386 kfreebsd-amd64 mips mipsel powerpc s390 sparc
-Depends: ${misc:Depends}, mlton-runtime-alpha-linux-gnu (= ${binary:Version}) [alpha] | mlton-runtime-x86-64-linux-gnu (= ${binary:Version}) [amd64] | mlton-runtime-arm-linux-gnueabi (= ${binary:Version}) [armel] | mlton-runtime-arm-linux-gnueabihf (= ${binary:Version}) [armhf] | mlton-runtime-hppa-linux-gnu (= ${binary:Version}) [hppa] | mlton-runtime-i486-gnu (= ${binary:Version}) [hurd-i386] | mlton-runtime-i486-linux-gnu (= ${binary:Version}) [i386] | mlton-runtime-ia64-linux-gnu (= ${binary:Version}) [ia64] | mlton-runtime-i486-kfreebsd-gnu (= ${binary:Version}) [kfreebsd-i386] | mlton-runtime-x86-64-kfreebsd-gnu (= ${binary:Version}) [kfreebsd-amd64] | mlton-runtime-mips-linux-gnu (= ${binary:Version}) [mips] | mlton-runtime-mipsel-linux-gnu (= ${binary:Version}) [mipsel] | mlton-runtime-powerpc-linux-gnu (= ${binary:Version}) [powerpc] | mlton-runtime-s390-linux-gnu (= ${binary:Version}) [s390] | mlton-runtime-sparc-linux-gnu (= ${binary:Version}) [sparc]
+Depends: ${misc:Depends}, mlton-runtime-alpha-linux-gnu (= ${binary:Version}) [alpha] | mlton-runtime-x86-64-linux-gnu (= ${binary:Version}) [amd64] | mlton-runtime-arm-linux-gnueabi (= ${binary:Version}) [armel] | mlton-runtime-arm-linux-gnueabihf (= ${binary:Version}) [armhf] | mlton-runtime-hppa-linux-gnu (= ${binary:Version}) [hppa] | mlton-runtime-i586-gnu (= ${binary:Version}) [hurd-i386] | mlton-runtime-i586-linux-gnu (= ${binary:Version}) [i386] | mlton-runtime-ia64-linux-gnu (= ${binary:Version}) [ia64] | mlton-runtime-i586-kfreebsd-gnu (= ${binary:Version}) [kfreebsd-i386] | mlton-runtime-x86-64-kfreebsd-gnu (= ${binary:Version}) [kfreebsd-amd64] | mlton-runtime-mips-linux-gnu (= ${binary:Version}) [mips] | mlton-runtime-mipsel-linux-gnu (= ${binary:Version}) [mipsel] | mlton-runtime-powerpc-linux-gnu (= ${binary:Version}) [powerpc] | mlton-runtime-s390-linux-gnu (= ${binary:Version}) [s390] | mlton-runtime-sparc-linux-gnu (= ${binary:Version}) [sparc]
 Homepage: http://mlton.org/
 Description: Optimizing compiler for Standard ML - native runtime libraries
  MLton is a whole-program optimizing compiler
@@ -205,7 +206,7 @@ Description: Optimizing compiler for Standard ML - hppa runtime libraries
  .
  This package provides hppa target libraries.
 
-Package: mlton-runtime-i486-gnu
+Package: mlton-runtime-i586-gnu
 Architecture: hurd-i386
 Multi-Arch: foreign
 Depends: ${misc:Depends}, mlton-basis (= ${source:Version})
@@ -221,9 +222,9 @@ Description: Optimizing compiler for Standard ML - hurd-i386 runtime libraries
  multiprecision library, and lots of useful
  libraries.
  .
- This package provides hurd i486 target libraries.
+ This package provides hurd i586 target libraries.
 
-Package: mlton-runtime-i486-linux-gnu
+Package: mlton-runtime-i586-linux-gnu
 Architecture: i386
 Multi-Arch: foreign
 Depends: ${misc:Depends}, mlton-basis (= ${source:Version})
@@ -239,7 +240,7 @@ Description: Optimizing compiler for Standard ML - i386 runtime libraries
  multiprecision library, and lots of useful
  libraries.
  .
- This package provides i486 target libraries.
+ This package provides i586 target libraries.
 
 Package: mlton-runtime-ia64-linux-gnu
 Architecture: ia64
@@ -259,7 +260,7 @@ Description: Optimizing compiler for Standard ML - ia64 runtime libraries
  .
  This package provides ia64 target libraries.
 
-Package: mlton-runtime-i486-kfreebsd-gnu
+Package: mlton-runtime-i586-kfreebsd-gnu
 Architecture: kfreebsd-i386
 Multi-Arch: foreign
 Depends: ${misc:Depends}, mlton-basis (= ${source:Version})
@@ -275,7 +276,7 @@ Description: Optimizing compiler for Standard ML - kfreebsd-i386 runtime librari
  multiprecision library, and lots of useful
  libraries.
  .
- This package provides kfreebsd i386 target libraries.
+ This package provides kfreebsd i586 target libraries.
 
 Package: mlton-runtime-x86-64-kfreebsd-gnu
 Architecture: kfreebsd-amd64
