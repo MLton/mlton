@@ -500,7 +500,8 @@ fun makeOptions {usage} =
        (Normal, "keep", " {g|o}", "save intermediate files",
         SpaceString (fn s =>
                      case s of
-                        "core-ml" => keepCoreML := true
+                        "ast" => keepAST := true
+                      | "core-ml" => keepCoreML := true
                       | "dot" => keepDot := true
                       | "g" => keepGenerated := true
                       | "machine" => keepMachine := true

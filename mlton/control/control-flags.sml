@@ -743,6 +743,10 @@ val inputFile = control {name = "input file",
                          default = "<bogus>",
                          toString = File.toString}
 
+val keepAST = control {name = "keep AST",
+                       default = false,
+                       toString = Bool.toString}
+
 val keepCoreML = control {name = "keep CoreML",
                           default = false,
                           toString = Bool.toString}

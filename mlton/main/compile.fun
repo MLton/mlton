@@ -350,9 +350,22 @@ fun parseAndElaborateMLB (input: MLBString.t)
     stats = fn _ => Layout.empty,
     style = Control.ML,
     suffix = "core-ml",
-    thunk = (fn () =>
-             (Const.lookup := lookupConstant
-              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})))}
+    thunk =
+       (fn () =>
+         let
+            val _ = if !Control.keepAST
+               then
+                  let
+                     val inputFile = File.toString (!Control.inputFile)
+                     val astFile = concat [inputFile, ".ast"]
+                  in
+                     File.remove astFile
+                  end
+               else ()
+            val _ = Const.lookup := lookupConstant
+         in
+            elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
+         end)}
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)

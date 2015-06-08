@@ -19,4 +19,5 @@ signature SOURCE =
       val lineStart: t -> SourcePos.t
       val new: File.t -> t
       val newline: t * int -> unit
+      val name: t -> string
    end
