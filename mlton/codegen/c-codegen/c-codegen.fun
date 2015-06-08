@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014-2015 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -409,9 +409,15 @@ fun outputDeclarations
                case !Control.align of
                   Control.Align4 => 4
                 | Control.Align8 => 8
-            val magic = C.word (case Random.useed () of
-                                   NONE => String.hash (!Control.inputFile)
-                                 | SOME w => w)
+            val magic =
+               let
+                  val version = String.hash Version.version
+                  val random = Random.word ()
+               in
+                  Word.orb
+                  (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
+                   Word.>> (random, Word.fromInt 8))
+               end
             val profile =
                case !Control.profile of
                   Control.ProfileNone => "PROFILE_NONE"
@@ -429,7 +435,7 @@ fun outputDeclarations
                            | Control.LibArchive => "MLtonLibrary"
                            | Control.Library => "MLtonLibrary",
                           [C.int align,
-                           magic,
+                           C.word magic,
                            C.bytes maxFrameSize,
                            C.bool (!Control.markCards),
                            profile,
