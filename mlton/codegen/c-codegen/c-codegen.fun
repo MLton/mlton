@@ -411,12 +411,12 @@ fun outputDeclarations
                 | Control.Align8 => 8
             val magic =
                let
-                  val version = String.hash Version.banner
+                  val version = String.hash Version.version
                   val random = Random.word ()
                in
                   Word.orb
-                  (Word.<< (version, Word.fromInt (Word.wordSize - 11)),
-                   Word.>> (random, Word.fromInt 11))
+                  (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
+                   Word.>> (random, Word.fromInt 8))
                end
             val profile =
                case !Control.profile of
