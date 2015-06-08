@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -43,27 +44,14 @@ fun lexAndParse (source: Source.t, ins: In.t): Ast.Program.t =
 
       (* Outputs AST to a file if Control.keepAST is true *)
       val () =
-        if !Control.keepAST
-          then
-            let
-               val inputFile = File.toString (!Control.inputFile)
-               val outputFile = concat [inputFile, ".ast"]
-               val outputStream = Out.openAppend outputFile
-               val sourceName = Source.name source
-               val () =
-                 (Out.output
-                    (outputStream,
-                     concat ["File: ", sourceName, "\n"]);
-                  Layout.output
-                    (Ast.Program.layout result,
-                     outputStream);
-                  Out.output
-                    (outputStream,
-                     "\n\n"))
-             in
-               Out.close outputStream
-            end
-          else ()
+         if !Control.keepAST
+            then File.withAppend
+                 (concat [!Control.inputFile, ".ast"], fn outputStream =>
+                  (Out.outputl (outputStream, concat ["File: ", Source.name source]);
+                   Layout.output (Ast.Program.layout result, outputStream);
+                   Out.newline outputStream;
+                   Out.newline outputStream))
+            else ()
    in
       result
    end
