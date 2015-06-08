@@ -1,11 +1,11 @@
 (* By default _import is external *)
-val c_quot = _import "c_quot" private: Int8.int * Int8.int -> Int8.int;
+val c_quot = _import "c_quot" private pure: Int8.int * Int8.int -> Int8.int;
 
 (* By default _export is public *)
 val sml_quot = _export "sml_quot": (Int8.int * Int8.int -> Int8.int) -> unit;
 val _ = sml_quot Int8.quot
 
-val call_sml_quot = _import "call_sml_quot" public: unit -> unit;
+val call_sml_quot = _import "call_sml_quot" public reentrant: unit -> unit;
 
 val x : Int8.int = ~1
 val y : Int8.int = 10

@@ -1,5 +1,10 @@
 Here are the changes from version 20130715 to version YYYYMMDD.
 
+* 2015-06-08
+  - Added "reentrant" attribute to _import.  An _import-ed C function
+    that (directly or indirectly) calls an _export-ed SML function
+    should be attributed "reentrant".
+
 * 2014-11-21
    - Fixed bug in MLton.IntInf.fromRep that could yield values that
      violate the IntInf representation invariants.
@@ -9,6 +14,12 @@ Here are the changes from version 20130715 to version YYYYMMDD.
    - Reorganized runtime support for IntInf operations so that
      programs that do not use IntInf compile to executables with no
      residual dependency on GMP.
+
+* 2014-10-24
+  - Added "pure" and "impure" attributes to _import.  An unattributed
+    _import is treated as "impure".  A "pure" _import may be subject
+    to more aggressive optimizations (common subexpression
+    elimination, dead-code elimiation).
 
 * 2014-07-01
    - Merged Brian Leibig's llvm code generator.

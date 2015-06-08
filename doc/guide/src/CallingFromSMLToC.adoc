@@ -25,11 +25,7 @@ _import "C function name" attr... : cFuncTy;
 The type and the semicolon are not optional.
 
 The function name is followed by a (possibly empty) sequence of
-attributes, analogous to C `__attribute__` specifiers.  For now, the
-only attributes supported are `cdecl` and `stdcall`.  These specify
-the calling convention of the C function on Cygwin/Windows, and are
-ignored on all other platforms.  The default is `cdecl`.  You must use
-`stdcall` in order to correctly call Windows API functions.
+attributes, analogous to C `__attribute__` specifiers.
 
 
 == Example ==
