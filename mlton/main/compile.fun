@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -350,22 +350,12 @@ fun parseAndElaborateMLB (input: MLBString.t)
     stats = fn _ => Layout.empty,
     style = Control.ML,
     suffix = "core-ml",
-    thunk =
-       (fn () =>
-         let
-            val _ = if !Control.keepAST
-               then
-                  let
-                     val inputFile = File.toString (!Control.inputFile)
-                     val astFile = concat [inputFile, ".ast"]
-                  in
-                     File.remove astFile
-                  end
-               else ()
-            val _ = Const.lookup := lookupConstant
-         in
-            elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
-         end)}
+    thunk = (fn () =>
+             (if !Control.keepAST
+                 then File.remove (concat [!Control.inputFile, ".ast"])
+                 else ()
+              ; Const.lookup := lookupConstant
+              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})))}
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
