@@ -1,4 +1,5 @@
-(* Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -43,6 +44,9 @@ structure Kind =
                                     modifiesFrontier = true,
                                     readsStackTop = true,
                                     writesStackTop = true}
+      val pure = Pure
+      val impure = Impure
+      val reentrant = runtimeDefault
 
       fun layout k =
          case k of

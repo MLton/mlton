@@ -77,8 +77,11 @@ details.
 
 * `cdecl` : call with the `cdecl` calling convention (default).
 * `external` : import with external symbol scope (see <:LibrarySupport:>) (default).
+* `impure`: assert that the function depends upon state and/or performs side effects (default).
 * `private` : import with private symbol scope (see <:LibrarySupport:>).
 * `public` : import with public symbol scope (see <:LibrarySupport:>).
+* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <:CommonSubexp:>, <:RemoveUnused:>)
+* `reentrant`: assert that the function (directly or indirectly) calls an `_export`-ed SML function.
 * `stdcall` : call with the `stdcall` calling convention (ignored except on Cygwin and MinGW).
 
 
@@ -92,6 +95,9 @@ function through a C function pointer.
 `attr...` denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:
 
 * `cdecl` : call with the `cdecl` calling convention (default).
+* `impure`: assert that the function depends upon state and/or performs side effects (default).
+* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <:CommonSubexp:>, <:RemoveUnused:>)
+* `reentrant`: assert that the function (directly or indirectly) calls an `_export`-ed SML function.
 * `stdcall` : call with the `stdcall` calling convention (ignored except on Cygwin and MinGW).
 
 See

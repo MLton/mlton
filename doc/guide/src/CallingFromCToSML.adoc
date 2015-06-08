@@ -49,6 +49,9 @@ Suppose that `export.sml` is
 sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/export.sml]
 ----
 
+Note that the the `reentrant` attribute is used for `_import`-ing the
+C functions that will call the `_export`-ed SML functions.
+
 Create the header file with `-export-header`.
 ----
 % mlton -default-ann 'allowFFI true'    \
