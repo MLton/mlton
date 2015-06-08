@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -932,6 +932,7 @@ val isIEAttributeKind =
    fn ImportExportAttribute.Impure => true
     | ImportExportAttribute.Pure => true
     | ImportExportAttribute.Runtime => true
+    | ImportExportAttribute.Reentrant => true
     | _ => false
 
 fun parseIEAttributesKind (attributes: ImportExportAttribute.t list)
@@ -940,9 +941,10 @@ fun parseIEAttributesKind (attributes: ImportExportAttribute.t list)
       [] => SOME CKind.Impure
     | [a] =>
          (case a of
-             ImportExportAttribute.Impure => SOME CKind.Impure
-           | ImportExportAttribute.Pure => SOME CKind.Pure
+             ImportExportAttribute.Impure => SOME CKind.impure
+           | ImportExportAttribute.Pure => SOME CKind.pure
            | ImportExportAttribute.Runtime => SOME CKind.runtimeDefault
+           | ImportExportAttribute.Reentrant => SOME CKind.reentrant
            | _ => NONE)
     | _ => NONE
 

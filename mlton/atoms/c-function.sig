@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2015 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -43,6 +43,9 @@ signature C_FUNCTION =
                            readsStackTop: bool,
                            writesStackTop: bool}
 
+            val impure: t
+            val pure: t
+            val reentrant: t
             val runtimeDefault: t
 
             val layout: t -> Layout.t

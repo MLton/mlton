@@ -1053,6 +1053,7 @@ ieattributes
           | "private" => PrimKind.ImportExportAttribute.Private :: ieattributes
           | "public" => PrimKind.ImportExportAttribute.Public :: ieattributes
           | "pure" => PrimKind.ImportExportAttribute.Pure :: ieattributes
+          | "reentrant" => PrimKind.ImportExportAttribute.Reentrant :: ieattributes
           | "runtime" => PrimKind.ImportExportAttribute.Runtime :: ieattributes
           | "stdcall" => PrimKind.ImportExportAttribute.Stdcall :: ieattributes
           | _ => (error (reg (idleft, idright), concat ["invalid attribute: ", id])
