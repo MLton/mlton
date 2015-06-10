@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,242 +7,260 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature EQ_MONO =
+signature EQTYPE_MONO =
    sig
-      structure Array: MONO_ARRAY_EXTRA
-      structure Array2: MONO_ARRAY2
-      structure ArraySlice: MONO_ARRAY_SLICE_EXTRA
-      structure Vector: EQTYPE_MONO_VECTOR_EXTRA
-      structure VectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA
-      sharing type Array.array = ArraySlice.array = Vector.array
-      sharing type Array.elem = Array2.elem = ArraySlice.elem = Vector.elem
-         = VectorSlice.elem
-      sharing type Array.vector = Array2.vector = ArraySlice.vector
-         = Vector.vector = VectorSlice.vector
-      sharing type ArraySlice.vector_slice = VectorSlice.slice
+      type elem
+      structure MonoArray: MONO_ARRAY_EXTRA
+      structure MonoArray2: MONO_ARRAY2
+      structure MonoVector: EQTYPE_MONO_VECTOR_EXTRA
+      sharing type MonoArray.array = MonoVector.array
+      sharing type elem = MonoArray.elem = MonoArray2.elem = MonoVector.elem
+      sharing type MonoArray.vector = MonoArray2.vector = MonoVector.vector
+      sharing type MonoArray.MonoArraySlice.vector_slice = MonoVector.MonoVectorSlice.slice
    end
 
-functor EqMono (eqtype elem) =
+signature MONO =
+   sig
+      type elem
+      structure MonoArray: MONO_ARRAY_EXTRA
+      structure MonoArray2: MONO_ARRAY2
+      structure MonoVector: MONO_VECTOR_EXTRA
+      sharing type MonoArray.array = MonoVector.array
+      sharing type elem = MonoArray.elem = MonoArray2.elem = MonoVector.elem
+      sharing type MonoArray.vector = MonoArray2.vector = MonoVector.vector
+      sharing type MonoArray.MonoArraySlice.vector_slice = MonoVector.MonoVectorSlice.slice
+   end
+
+functor EqtypeMonoX (eqtype elem) =
    struct
-      structure Vector = EqtypeMonoVector (type elem = elem)
-      structure VectorSlice = Vector.MonoVectorSlice
-      structure Array = MonoArray (type elem = elem
-                                   structure V = Vector)
-      structure ArraySlice = Array.MonoArraySlice
-      structure Array2 = MonoArray2 (type elem = elem
-                                     structure V = Vector)
+      type elem = elem
+      structure MonoVector = EqtypeMonoVector (type elem = elem)
+      structure MonoArray = MonoArray (type elem = elem
+                                       structure MV = MonoVector)
+      structure MonoArray2 = MonoArray2 (type elem = elem
+                                         structure MV = MonoVector)
    end
 
-functor Mono (type elem) =
+functor EqtypeMono (eqtype elem) :> EQTYPE_MONO where type elem = elem =
    struct
-      structure Vector = MonoVector (type elem = elem)
-      structure VectorSlice = Vector.MonoVectorSlice
-      structure Array = MonoArray (type elem = elem
-                                   structure V = Vector)
-      structure ArraySlice = Array.MonoArraySlice
-      structure Array2 = MonoArray2 (type elem = elem
-                                     structure V = Vector)
+      type elem = elem
+      structure MonoVector = EqtypeMonoVector (type elem = elem)
+      structure MonoArray = MonoArray (type elem = elem
+                                       structure MV = MonoVector)
+      structure MonoArray2 = MonoArray2 (type elem = elem
+                                         structure MV = MonoVector)
+   end
+
+functor Mono (type elem) :> MONO where type elem = elem =
+   struct
+      type elem = elem
+      structure MonoVector = MonoVector (type elem = elem)
+      structure MonoArray = MonoArray (type elem = elem
+                                       structure MV = MonoVector)
+      structure MonoArray2 = MonoArray2 (type elem = elem
+                                         structure MV = MonoVector)
    end
 
 local
-   structure S = EqMono (type elem = Primitive.Bool.bool)
+   structure S = EqtypeMono (type elem = Primitive.Bool.bool)
    open S
 in
-   structure BoolVector = Vector
-   structure BoolVectorSlice = VectorSlice
-   structure BoolArray = Array
-   structure BoolArraySlice = ArraySlice
-   structure BoolArray2 = Array2
+   structure BoolVector = MonoVector
+   structure BoolVectorSlice = MonoVector.MonoVectorSlice
+   structure BoolArray = MonoArray
+   structure BoolArraySlice = MonoArray.MonoArraySlice
+   structure BoolArray2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Int8.int)
+   structure S = EqtypeMono (type elem = Primitive.Int8.int)
    open S
 in
-   structure Int8Vector = Vector
-   structure Int8VectorSlice = VectorSlice
-   structure Int8Array = Array
-   structure Int8ArraySlice = ArraySlice
-   structure Int8Array2 = Array2
+   structure Int8Vector = MonoVector
+   structure Int8VectorSlice = MonoVector.MonoVectorSlice
+   structure Int8Array = MonoArray
+   structure Int8ArraySlice = MonoArray.MonoArraySlice
+   structure Int8Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Int16.int)
+   structure S = EqtypeMono (type elem = Primitive.Int16.int)
    open S
 in
-   structure Int16Vector = Vector
-   structure Int16VectorSlice = VectorSlice
-   structure Int16Array = Array
-   structure Int16ArraySlice = ArraySlice
-   structure Int16Array2 = Array2
+   structure Int16Vector = MonoVector
+   structure Int16VectorSlice = MonoVector.MonoVectorSlice
+   structure Int16Array = MonoArray
+   structure Int16ArraySlice = MonoArray.MonoArraySlice
+   structure Int16Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Int32.int)
+   structure S = EqtypeMono (type elem = Primitive.Int32.int)
    open S
 in
-   structure Int32Vector = Vector
-   structure Int32VectorSlice = VectorSlice
-   structure Int32Array = Array
-   structure Int32ArraySlice = ArraySlice
-   structure Int32Array2 = Array2
+   structure Int32Vector = MonoVector
+   structure Int32VectorSlice = MonoVector.MonoVectorSlice
+   structure Int32Array = MonoArray
+   structure Int32ArraySlice = MonoArray.MonoArraySlice
+   structure Int32Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Int64.int)
+   structure S = EqtypeMono (type elem = Primitive.Int64.int)
    open S
 in
-   structure Int64Vector = Vector
-   structure Int64VectorSlice = VectorSlice
-   structure Int64Array = Array
-   structure Int64ArraySlice = ArraySlice
-   structure Int64Array2 = Array2
+   structure Int64Vector = MonoVector
+   structure Int64VectorSlice = MonoVector.MonoVectorSlice
+   structure Int64Array = MonoArray
+   structure Int64ArraySlice = MonoArray.MonoArraySlice
+   structure Int64Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.IntInf.int)
+   structure S = EqtypeMono (type elem = Primitive.IntInf.int)
    open S
 in
-   structure IntInfVector = Vector
-   structure IntInfVectorSlice = VectorSlice
-   structure IntInfArray = Array
-   structure IntInfArraySlice = ArraySlice
-   structure IntInfArray2 = Array2
+   structure IntInfVector = MonoVector
+   structure IntInfVectorSlice = MonoVector.MonoVectorSlice
+   structure IntInfArray = MonoArray
+   structure IntInfArraySlice = MonoArray.MonoArraySlice
+   structure IntInfArray2 = MonoArray2
 end
 local
    structure S = Mono (type elem = Primitive.Real32.real)
    open S
 in
-   structure Real32Vector = Vector
-   structure Real32VectorSlice = VectorSlice
-   structure Real32Array = Array
-   structure Real32ArraySlice = ArraySlice
-   structure Real32Array2 = Array2
+   structure Real32Vector = MonoVector
+   structure Real32VectorSlice = MonoVector.MonoVectorSlice
+   structure Real32Array = MonoArray
+   structure Real32ArraySlice = MonoArray.MonoArraySlice
+   structure Real32Array2 = MonoArray2
 end
 local
    structure S = Mono (type elem = Primitive.Real64.real)
    open S
 in
-   structure Real64Vector = Vector
-   structure Real64VectorSlice = VectorSlice
-   structure Real64Array = Array
-   structure Real64ArraySlice = ArraySlice
-   structure Real64Array2 = Array2
+   structure Real64Vector = MonoVector
+   structure Real64VectorSlice = MonoVector.MonoVectorSlice
+   structure Real64Array = MonoArray
+   structure Real64ArraySlice = MonoArray.MonoArraySlice
+   structure Real64Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Word8.word)
+   structure S = EqtypeMono (type elem = Primitive.Word8.word)
    open S
 in
-   structure Word8Vector = Vector
-   structure Word8VectorSlice = VectorSlice
-   structure Word8Array = Array
-   structure Word8ArraySlice = ArraySlice
-   structure Word8Array2 = Array2
+   structure Word8Vector = MonoVector
+   structure Word8VectorSlice = MonoVector.MonoVectorSlice
+   structure Word8Array = MonoArray
+   structure Word8ArraySlice = MonoArray.MonoArraySlice
+   structure Word8Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Word16.word)
+   structure S = EqtypeMono (type elem = Primitive.Word16.word)
    open S
 in
-   structure Word16Vector = Vector
-   structure Word16VectorSlice = VectorSlice
-   structure Word16Array = Array
-   structure Word16ArraySlice = ArraySlice
-   structure Word16Array2 = Array2
+   structure Word16Vector = MonoVector
+   structure Word16VectorSlice = MonoVector.MonoVectorSlice
+   structure Word16Array = MonoArray
+   structure Word16ArraySlice = MonoArray.MonoArraySlice
+   structure Word16Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Word32.word)
+   structure S = EqtypeMono (type elem = Primitive.Word32.word)
    open S
 in
-   structure Word32Vector = Vector
-   structure Word32VectorSlice = VectorSlice
-   structure Word32Array = Array
-   structure Word32ArraySlice = ArraySlice
-   structure Word32Array2 = Array2
+   structure Word32Vector = MonoVector
+   structure Word32VectorSlice = MonoVector.MonoVectorSlice
+   structure Word32Array = MonoArray
+   structure Word32ArraySlice = MonoArray.MonoArraySlice
+   structure Word32Array2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Primitive.Word64.word)
+   structure S = EqtypeMono (type elem = Primitive.Word64.word)
    open S
 in
-   structure Word64Vector = Vector
-   structure Word64VectorSlice = VectorSlice
-   structure Word64Array = Array
-   structure Word64ArraySlice = ArraySlice
-   structure Word64Array2 = Array2
+   structure Word64Vector = MonoVector
+   structure Word64VectorSlice = MonoVector.MonoVectorSlice
+   structure Word64Array = MonoArray
+   structure Word64ArraySlice = MonoArray.MonoArraySlice
+   structure Word64Array2 = MonoArray2
 end
 
 
 local
-   structure S = EqMono (type elem = Char.char)
+   structure S = EqtypeMonoX (type elem = Char.char)
    open S
 in
-   structure CharArray = Array
-   structure CharArray2 = Array2
-   structure CharArraySlice = ArraySlice
-   structure CharVector = Vector
-   structure CharVectorSlice = VectorSlice
+   structure CharVector = MonoVector
+   structure CharVectorSlice = MonoVector.MonoVectorSlice
+   structure CharArray = MonoArray
+   structure CharArraySlice = MonoArray.MonoArraySlice
+   structure CharArray2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = WideChar.char)
+   structure S = EqtypeMonoX (type elem = WideChar.char)
    open S
 in
-   structure WideCharArray = Array
-   structure WideCharArray2 = Array2
-   structure WideCharArraySlice = ArraySlice
-   structure WideCharVector = Vector
-   structure WideCharVectorSlice = VectorSlice
+   structure WideCharVector = MonoVector
+   structure WideCharVectorSlice = MonoVector.MonoVectorSlice
+   structure WideCharArray = MonoArray
+   structure WideCharArraySlice = MonoArray.MonoArraySlice
+   structure WideCharArray2 = MonoArray2
+end
+
+local
+   structure S = EqtypeMono (type elem = Int.int)
+   open S
+in
+   structure IntVector = MonoVector
+   structure IntVectorSlice = MonoVector.MonoVectorSlice
+   structure IntArray = MonoArray
+   structure IntArraySlice = MonoArray.MonoArraySlice
+   structure IntArray2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Int.int)
+   structure S = EqtypeMono (type elem = LargeInt.int)
    open S
 in
-   structure IntVector = Vector
-   structure IntVectorSlice = VectorSlice
-   structure IntArray = Array
-   structure IntArraySlice = ArraySlice
-   structure IntArray2 = Array2
-end
-local
-   structure S = EqMono (type elem = LargeInt.int)
-   open S
-in
-   structure LargeIntVector = Vector
-   structure LargeIntVectorSlice = VectorSlice
-   structure LargeIntArray = Array
-   structure LargeIntArraySlice = ArraySlice
-   structure LargeIntArray2 = Array2
+   structure LargeIntVector = MonoVector
+   structure LargeIntVectorSlice = MonoVector.MonoVectorSlice
+   structure LargeIntArray = MonoArray
+   structure LargeIntArraySlice = MonoArray.MonoArraySlice
+   structure LargeIntArray2 = MonoArray2
 end
 local
    structure S = Mono (type elem = Real.real)
    open S
 in
-   structure RealVector = Vector
-   structure RealVectorSlice = VectorSlice
-   structure RealArray = Array
-   structure RealArraySlice = ArraySlice
-   structure RealArray2 = Array2
+   structure RealVector = MonoVector
+   structure RealVectorSlice = MonoVector.MonoVectorSlice
+   structure RealArray = MonoArray
+   structure RealArraySlice = MonoArray.MonoArraySlice
+   structure RealArray2 = MonoArray2
 end
 local
    structure S = Mono (type elem = LargeReal.real)
    open S
 in
-   structure LargeRealVector = Vector
-   structure LargeRealVectorSlice = VectorSlice
-   structure LargeRealArray = Array
-   structure LargeRealArraySlice = ArraySlice
-   structure LargeRealArray2 = Array2
+   structure LargeRealVector = MonoVector
+   structure LargeRealVectorSlice = MonoVector.MonoVectorSlice
+   structure LargeRealArray = MonoArray
+   structure LargeRealArraySlice = MonoArray.MonoArraySlice
+   structure LargeRealArray2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = Word.word)
+   structure S = EqtypeMono (type elem = Word.word)
    open S
 in
-   structure WordVector = Vector
-   structure WordVectorSlice = VectorSlice
-   structure WordArray = Array
-   structure WordArraySlice = ArraySlice
-   structure WordArray2 = Array2
+   structure WordVector = MonoVector
+   structure WordVectorSlice = MonoVector.MonoVectorSlice
+   structure WordArray = MonoArray
+   structure WordArraySlice = MonoArray.MonoArraySlice
+   structure WordArray2 = MonoArray2
 end
 local
-   structure S = EqMono (type elem = LargeWord.word)
+   structure S = EqtypeMono (type elem = LargeWord.word)
    open S
 in
-   structure LargeWordVector = Vector
-   structure LargeWordVectorSlice = VectorSlice
-   structure LargeWordArray = Array
-   structure LargeWordArraySlice = ArraySlice
-   structure LargeWordArray2 = Array2
+   structure LargeWordVector = MonoVector
+   structure LargeWordVectorSlice = MonoVector.MonoVectorSlice
+   structure LargeWordArray = MonoArray
+   structure LargeWordArraySlice = MonoArray.MonoArraySlice
+   structure LargeWordArray2 = MonoArray2
 end

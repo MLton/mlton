@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -13,12 +14,16 @@ functor MonoVector (type elem): MONO_VECTOR_EXTRA
       type array = elem array
       type elem = elem
       type vector = elem vector
+      val fromPoly = fn v => v
+      val toPoly = fn v => v
       structure MonoVectorSlice = 
          struct
             open VectorSlice
             type elem = elem
             type vector = vector
             type slice = elem slice
+            val fromPoly = fn s => s
+            val toPoly = fn s => s
          end
    end
 
@@ -29,6 +34,7 @@ functor EqtypeMonoVector (eqtype elem): EQTYPE_MONO_VECTOR_EXTRA
       type array = elem array
       type elem = elem
       type vector = elem vector
+      type vector_eqtype = vector
       val fromPoly = fn v => v
       val toPoly = fn v => v
       structure MonoVectorSlice = 

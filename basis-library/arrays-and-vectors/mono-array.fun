@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -7,21 +8,21 @@
  *)
 
 functor MonoArray (type elem
-                   structure V: MONO_VECTOR_EXTRA
+                   structure MV: MONO_VECTOR_EXTRA
                      where type elem = elem
                        and type vector = elem Vector.vector
                        and type MonoVectorSlice.slice = elem VectorSlice.slice
                   ): MONO_ARRAY_EXTRA 
                      where type elem = elem
-                       and type vector = V.vector
-                       and type vector_slice = V.MonoVectorSlice.slice =
+                       and type vector = MV.vector
+                       and type vector_slice = MV.MonoVectorSlice.slice =
    struct
       open Array
 
-      type elem = V.elem
+      type elem = MV.elem
       type array = elem array
-      type vector = V.vector
-      type vector_slice = V.MonoVectorSlice.slice
+      type vector = MV.vector
+      type vector_slice = MV.MonoVectorSlice.slice
 
       val fromPoly = fn a => a
       val toPoly = fn a => a

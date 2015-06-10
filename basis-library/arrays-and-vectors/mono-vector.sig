@@ -25,32 +25,33 @@ signature MONO_VECTOR =
       val update: vector * int * elem -> vector
    end
 
-signature MONO_VECTOR_EXTRA_PRE = 
+signature MONO_VECTOR_EXTRA_COMMON =
    sig
       include MONO_VECTOR
 
       type array
 
-      val unsafeFromArray: array -> vector
-      val unsafeSub: vector * int -> elem
-
       val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
       val duplicate: vector -> vector
       val fields: (elem -> bool) -> vector -> vector list
+      val fromPoly: elem Vector.vector -> vector
       val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
       val toList: vector -> elem list
+      val toPoly: vector -> elem Vector.vector
       val tokens: (elem -> bool) -> vector -> vector list
       val translate: (elem -> vector) -> vector -> vector
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector * 'a
+      val unsafeFromArray: array -> vector
+      val unsafeSub: vector * int -> elem
       val vector: int * elem -> vector
    end
 
 signature MONO_VECTOR_EXTRA =
    sig
-      include MONO_VECTOR_EXTRA_PRE
+      include MONO_VECTOR_EXTRA_COMMON
 
       structure MonoVectorSlice: MONO_VECTOR_SLICE_EXTRA 
          where type elem = elem
@@ -59,12 +60,11 @@ signature MONO_VECTOR_EXTRA =
 
 signature EQTYPE_MONO_VECTOR_EXTRA =
    sig
-      include MONO_VECTOR_EXTRA_PRE
+      eqtype vector_eqtype
+      include MONO_VECTOR_EXTRA_COMMON
+      sharing type vector_eqtype = vector
 
       structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
          where type elem = elem
            and type vector = vector
-
-      val fromPoly: elem Vector.vector -> vector 
-      val toPoly: vector -> elem Vector.vector
    end

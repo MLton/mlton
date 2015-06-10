@@ -1,4 +1,4 @@
-(* Copyright (C) 2012,2013 Matthew Fluet.
+(* Copyright (C) 2012,2013,2015 Matthew Fluet.
  * Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -389,10 +389,10 @@ fun mk_out_flags {don't_route, oob} =
               0x0))
 
 local
-   fun make (base, primSend, primSendTo) =
+   fun make (toPoly, base, primSend, primSendTo) =
       let
          val base = fn sl => let val (buf, i, sz) = base sl
-                             in (buf, i, sz)
+                             in (toPoly buf, i, sz)
                              end
          fun send' (s, sl, out_flags) =
             let
@@ -450,10 +450,10 @@ local
 in
    val (sendArr, sendArr', sendArrNB, sendArrNB',
         sendArrTo, sendArrTo', sendArrToNB, sendArrToNB') =
-      make (Word8ArraySlice.base, Prim.sendArr, Prim.sendArrTo)
+      make (Word8Array.toPoly, Word8ArraySlice.base, Prim.sendArr, Prim.sendArrTo)
    val (sendVec, sendVec', sendVecNB, sendVecNB',
         sendVecTo, sendVecTo', sendVecToNB, sendVecToNB') =
-      make (Word8VectorSlice.base, Prim.sendVec, Prim.sendVecTo)
+      make (Word8Vector.toPoly, Word8VectorSlice.base, Prim.sendVec, Prim.sendVecTo)
 end
 
 type in_flags = {peek: bool, oob: bool}
