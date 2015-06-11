@@ -1,4 +1,5 @@
-(* Copyright (C) 2014 Rob Simmons.
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 2013 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -9,15 +10,15 @@
  *)
 
 functor PrimSequence (S: sig
-                        type 'a sequence 
-                        type 'a elt
-                        (* fromArray should be constant time. *)
-                        val fromArray: 'a elt array -> 'a sequence 
-                        val isMutable: bool
-                        val length: 'a sequence -> SeqIndex.int
-                        val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
-                     end
-                  ): PRIM_SEQUENCE =
+                            type 'a sequence
+                            type 'a elt
+                            (* fromArray should be constant time. *)
+                            val fromArray: 'a elt array -> 'a sequence
+                            val isMutable: bool
+                            val length: 'a sequence -> SeqIndex.int
+                            val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
+                         end) :> PRIM_SEQUENCE where type 'a sequence = 'a S.sequence
+                                               where type 'a elt = 'a S.elt =
    struct
       structure Array = Primitive.Array
       

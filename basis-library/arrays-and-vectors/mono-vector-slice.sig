@@ -37,6 +37,7 @@ signature MONO_VECTOR_SLICE_EXTRA =
       val dropl: (elem -> bool) -> slice -> slice
       val dropr: (elem -> bool) -> slice -> slice
       val fields: (elem -> bool) -> slice -> slice list
+      val fromPoly: elem VectorSlice.slice -> slice
       val isPrefix: (elem * elem -> bool) -> vector -> slice -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> slice -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> slice -> bool
@@ -47,6 +48,7 @@ signature MONO_VECTOR_SLICE_EXTRA =
       val takel: (elem -> bool) -> slice -> slice
       val taker: (elem -> bool) -> slice -> slice
       val toList: slice -> elem list
+      val toPoly: slice -> elem VectorSlice.slice
       val tokens: (elem -> bool) -> slice -> slice list
       val translate: (elem -> vector) -> slice -> vector
       val triml: int -> slice -> slice
@@ -60,7 +62,5 @@ signature EQTYPE_MONO_VECTOR_SLICE_EXTRA =
    sig
       include MONO_VECTOR_SLICE_EXTRA
 
-      val fromPoly: elem VectorSlice.slice -> slice
       val span: slice * slice -> slice
-      val toPoly: slice -> elem VectorSlice.slice
    end
