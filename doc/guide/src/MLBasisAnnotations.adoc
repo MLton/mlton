@@ -75,6 +75,46 @@ silence spurious messages, you can use `ignore e1`.
 +
 Report unused identifiers.
 
+Here are the annotations for enabling SuccessorML
+features.  The default value for all of these annotations is false,
+the SuccessorML features are all disabled by default.
+For information on the SuccessorML features
+see <:SuccessorML:>.
+
+* +allowDoDecls {false|true}+
++
+If `true` allows for the usage of do declarations.
+
+* +allowExtendedLiterals {false|true}+
++
+If `true` allows for the usage of extended literals.
+
+* +allowLineComments {false|true}+
++
+If `true` allows for the usage of line comments.
+
+* +allowOptBar {false|true}+
++
+If `true` allows for a pattern bar to optionally be placed before the
+first match in a case expression.
+
+* +allowOptSemicolon {false|true}+
++
+If `true` allows for a semicolon to optionally be placed after the last
+expression in a series.
+
+* +allowOrPats {false|true}+
++
+If `true` allows for the usage of disjunctive patterns.
+
+* +allowRecPunning {false|true}+
++
+If `true` allows for the usage record punning.
+
+* +allowSigWithtype {false|true}+
++
+If `true` allows for the usage the withtype keyword in signatures.
+
 == Next Steps ==
 
  * <:MLBasisAnnotationExamples:>
