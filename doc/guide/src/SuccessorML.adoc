@@ -68,11 +68,33 @@ val x = 0 (*) This line is no-longer part of a block comment
 
 * Optional Pattern Bars
 +
-Information about optional pattern bars
+A bar may be optionally placed before the first rule of a match.
+By eliminating the special case of the first match requiring no
+bar, this allows for easier refactoring.
++
+----
+case exp of
+  | A => 1
+  | B => 2
+  | C => 3
+----
++
+This optional bar may also be placed for `fn` and `handle`,
+function declarations, and `datatype` declarations.
 
 * Optional Semicolons
 +
-Information about optional semicolons
+In the same spirit, a semicolon may be optionally placed
+after the the last expression in a sequence.
++
+----
+let
+   val x = 3
+in
+   f x;
+   g x;
+end
+----
 
 * Disjunctive (Or) Patterns
 +
@@ -91,8 +113,30 @@ case exp of
 
 * Record Punning
 +
-Information about record punning
+Records with fields that are of the form id=id can be abbreviated
+to id.  Previously this was only allowed in patterns.
++
+For example:
++
+----
+fn {a, b, c} => {a=a, b=b+1, c=c}
+----
++
+Could be abbreviated to:
++
+----
+fn {a, b, c} => {a, b=b+1, c}
+----
 
 * Withtype for Signatures
 +
-Information about withtype for signatures
+This feature allows for the use of the `withtype` keyword in
+signatures.  Previously, `withtype` was only allowed in structures.
++
+----
+signature S =
+   sig
+      datatype a = A1 of int | A2 of int * t
+      withtype t = int * a option
+   end
+----
