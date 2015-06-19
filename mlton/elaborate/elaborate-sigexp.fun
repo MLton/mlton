@@ -50,6 +50,26 @@ in
    structure TypeStr = TypeStr
 end
 
+local
+   open Control.Elaborate
+in
+   fun check (c: (bool,bool) t, keyword: string, region) =
+      if current c
+         then ()
+      else
+         let
+            open Layout
+         in
+            Control.error
+            (region,
+             str (concat (if expert c
+                             then [keyword, " disallowed"]
+                             else [keyword, " disallowed, compile with -default-ann '",
+                                   name c, " true'"])),
+             empty)
+         end
+end
+
 fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
    let
       val tyvars = ref []
@@ -181,9 +201,30 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
     end)
 
+fun elabTypBind (typBind: TypBind.t, E) = 
+   let
+      val TypBind.T types = TypBind.node typBind
+      val () = (if (Vector.length (types) > 0)
+                then (check (Control.Elaborate.allowSigWithtype, "allowSigWithtype", TypBind.region typBind))
+                else ())
+      val strs =
+         Vector.map
+         (types, fn {def, tyvars, ...} =>
+          (let
+              val (_, ty) = elaborateType (def, E)
+              val scheme = Scheme.make (tyvars, ty)
+           in
+              TypeStr.def (scheme, Kind.Arity (Vector.length tyvars))
+           end))
+   in
+      Vector.foreach2
+      (types, strs, fn ({tycon, ...}, str) =>
+       Env.extendTycon (E, tycon, str))
+   end
+
 fun elaborateDatBind (datBind: DatBind.t, E): unit =
    let
-      val DatBind.T {datatypes, ...} = DatBind.node datBind
+      val DatBind.T {datatypes, withtypes} = DatBind.node datBind
       (* Build enough of an interface so that that the constructor argument
        * types can be elaborated.
        *)
@@ -202,6 +243,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
               tycon = tycon,
               tyvars = tyvars}
           end)
+      val _ = elabTypBind (withtypes, E)
       val datatypes =
          Vector.map
          (datatypes, fn {cons, kind, name, tycon, tyvars, ...} =>

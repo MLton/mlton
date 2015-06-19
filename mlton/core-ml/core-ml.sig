@@ -42,6 +42,7 @@ signature CORE_ML =
              | Const of unit -> Const.t
              | Layered of Var.t * t
              | List of t vector
+             | Or of t vector
              | Record of t Record.t
              | Tuple of t vector
              | Var of Var.t

@@ -695,6 +695,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                        case Record.peek (r, f) of
                           NONE => NestedPat.make (NestedPat.Wild, loopTy t)
                         | SOME p => loopPat p))
+                | Or ps => NestedPat.Or (Vector.map (ps, loopPat))
                 | Tuple ps => NestedPat.Tuple (Vector.map (ps, loopPat))
                 | Var x => NestedPat.Var x
                 | Wild => NestedPat.Wild

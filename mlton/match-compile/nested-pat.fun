@@ -20,6 +20,7 @@ and node =
               isChar: bool,
               isInt: bool}
   | Layered of Var.t * t
+  | Or of t vector
   | Tuple of t vector
   | Var of Var.t
   | Wild
@@ -53,6 +54,7 @@ fun layout p =
             end
        | Const {const = c, ...} => Const.layout c
        | Layered (x, p) => paren (seq [Var.layout x, str " as ", layout p])
+       | Or ps => list (Vector.toListMap (ps, layout))
        | Tuple ps => tuple (Vector.toListMap (ps, layout))
        | Var x => Var.layout x
        | Wild => str "_"
@@ -66,12 +68,46 @@ fun make (p, t) =
          else T {pat = p, ty = t}
     | _ => T {pat = p, ty = t}
 
+fun flatten p = 
+
+   case node p of
+      Wild => Vector.new1 p
+    | Var _ => Vector.new1 p
+    | Const _ => Vector.new1 p
+    | Con {arg, con, targs} => (case arg of
+                                   NONE => Vector.new1 p
+                                 | SOME arg' => (let
+                                                    val fargs = flatten arg'
+                                                 in
+                                                    Vector.map (fargs, fn farg => make (Con {arg = SOME farg, con = con, targs=targs}, ty p))
+                                                 end))
+    | Layered (x, p') => (let
+                             val ps = flatten p'
+                          in
+                             Vector.map (ps, fn fp => make (Layered (x, fp), ty p))
+                         end)
+    | Or ps => (let
+                   val fps = Vector.map (ps, fn p' => flatten p')
+                in
+                   Vector.concatV fps
+                end)
+    | Tuple ps => (let
+                      val tpss = 
+                         Vector.foldr
+                         (Vector.map (ps, flatten), Vector.new1 [], fn (fps, tpss) =>
+                          Vector.concatV
+                          (Vector.map (fps, fn fp => Vector.map (tpss, fn tps => fp :: tps))))
+                   in
+                      Vector.map (tpss, fn tps => make (Tuple (Vector.fromList tps), ty p))
+                   end)
+
 fun isRefutable p =
    case node p of
       Wild => false
     | Var _ => false
     | Const _ => true
     | Con _ => true
+    | Or ps => Vector.exists (ps, isRefutable)
     | Tuple ps => Vector.exists (ps, isRefutable)
     | Layered (_, p) => isRefutable p
 
@@ -99,6 +135,7 @@ fun removeOthersReplace (p, {new, old}) =
                            then Layered (new, p)
                         else node p
                      end
+                | Or ps => Or (Vector.map (ps, loop))
                 | Tuple ps => Tuple (Vector.map (ps, loop))
                 | Var x =>
                      if Var.equals (x, old)
@@ -135,6 +172,7 @@ fun replaceTypes (p: t, f: Type.t -> Type.t): t =
                           targs = Vector.map (targs, f)}
                 | Const _ => pat
                 | Layered (x, p) => Layered (x, loop p)
+                | Or ps => Or (Vector.map (ps, loop))
                 | Tuple ps => Tuple (Vector.map (ps, loop))
                 | Var _ => pat
                 | Wild => pat
@@ -152,6 +190,7 @@ fun varsAndTypes (p: t): (Var.t * Type.t) list =
             Wild => accum
           | Const _ => accum
           | Var x => (x, ty p) :: accum
+          | Or ps => Vector.fold (ps, accum, loop)
           | Tuple ps => Vector.fold (ps, accum, loop)
           | Con {arg, ...} => (case arg of
                                 NONE => accum

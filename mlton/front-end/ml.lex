@@ -55,6 +55,13 @@ fun stringError (source, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
+local
+   open Control.Elaborate
+in
+   val allowLineComments = fn () => current allowLineComments
+   val allowExtendedLiterals = fn () => current allowExtendedLiterals
+end
+
 fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
 
 fun addHexEscape (s: string, source, yypos): unit =
@@ -97,23 +104,38 @@ fun tok (t, s, l, r) =
 
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
+fun stripUscores (yytext) =
+   String.keepAll (yytext, (fn c => if c = #"_" then false else true))
+
+fun hasUscores (yytext) =
+   String.exists (yytext, (fn c => if c = #"_" then true else false))
+
+fun extLiteral (yytext, source, l, r) =
+   if (not (allowExtendedLiterals ())) andalso (hasUscores yytext)
+      then (error (source, l, r, "Extended literals disallowed, compile with -default-ann 'allowExtendedLiterals true'"))
+      else ()
+
+fun binLiteral (yytext, source, l, r) =
+   if not (allowExtendedLiterals ())
+      then (error (source, l, r, "Binary literals disallowed, compile with -default-ann 'allowExtendedLiterals true'"))
+      else ()
+
 fun int (yytext, drop, source, yypos, {negate: bool}, radix) =
-   Tokens.INT ({digits = String.dropPrefix (yytext, drop),
+   Tokens.INT ({digits = String.dropPrefix (stripUscores yytext, drop),
                 negate = negate,
                 radix = radix},
                Source.getPos (source, yypos),
                Source.getPos (source, yypos + size yytext))
 
 fun word (yytext, drop, source, yypos, radix) =
-   Tokens.WORD ({digits = String.dropPrefix (yytext, drop),
+   Tokens.WORD ({digits = String.dropPrefix (stripUscores yytext, drop),
                  radix = radix},
                 Source.getPos (source, yypos),
                 Source.getPos (source, yypos + size yytext))
 
-
 %% 
 %reject
-%s A S F L LL LLC LLCQ;
+%s A B C S F L LL LLC LLCQ;
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
 %arg ({source});
 alphanum=[A-Za-z'_0-9]*;
@@ -127,12 +149,14 @@ nrws=("\012"|[\t\ ])+;
 cr="\013";
 nl="\010";
 eol=({cr}{nl}|{nl}|{cr});
-num=[0-9]+;
+num=([0-9]([0-9]|"_")*[0-9])|([0-9]+);
 frac="."{num};
 exp=[eE](~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
 hexDigit=[0-9a-fA-F];
-hexnum={hexDigit}+;
+hexnum=({hexDigit}({hexDigit}|"_")*{hexDigit})|({hexDigit}+);
+binDigit=[0-1];
+binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
 
 %%
 <INITIAL>{ws}   => (continue ());
@@ -218,19 +242,36 @@ hexnum={hexDigit}+;
    (case yytext of
        "*" => tok (Tokens.ASTERISK, source, yypos, yypos + 1)
      | _ => tok' (Tokens.LONGID, yytext, source, yypos));
-<INITIAL>{real} => (tok' (Tokens.REAL, yytext, source, yypos));
+<INITIAL>{real} =>
+   ((extLiteral (yytext, source, yypos, yypos + size yytext));
+   (tok' (Tokens.REAL, stripUscores yytext, source, yypos)));
 <INITIAL>{num} =>
-   (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC));
+   ((extLiteral (yytext, source, yypos, yypos + size yytext));
+   (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC)));
 <INITIAL>"~"{num} =>
-   (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC));
+   ((extLiteral (yytext, source, yypos, yypos + 1 + size yytext));
+   (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC)));
 <INITIAL>"0x"{hexnum} =>
-   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.HEX)));
 <INITIAL>"~0x"{hexnum} =>
-   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.HEX)));
+<INITIAL>"0b"{binnum} =>
+   ((binLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (int (yytext, 2, source, yypos, {negate = false}, StringCvt.BIN)));
+<INITIAL>"~0b"{binnum} =>
+   ((binLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (int (yytext, 3, source, yypos, {negate = true}, StringCvt.BIN)));
 <INITIAL>"0w"{num} =>
-   (word (yytext, 2, source, yypos, StringCvt.DEC));
-<INITIAL>"0wx"{hexnum} =>
-   (word (yytext, 3, source, yypos, StringCvt.HEX));
+   ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
+   (word (yytext, 2, source, yypos, StringCvt.DEC)));
+<INITIAL>("0wx"|"0xw"){hexnum} =>
+   ((extLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (word (yytext, 3, source, yypos, StringCvt.HEX)));
+<INITIAL>("0wb"|"0bw"){binnum} =>
+   ((binLiteral (yytext, source, yypos, yypos + 3 + size yytext));
+   (word (yytext, 3, source, yypos, StringCvt.BIN)));
 <INITIAL>\"     => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
@@ -241,6 +282,15 @@ hexnum={hexDigit}+;
                     ; stringtype := false
                     ; YYBEGIN S
                     ; continue ());
+<INITIAL>"(*)"	=> (if allowLineComments ()
+                       then (YYBEGIN B
+                            ; commentStart := Source.getPos (source, yypos)
+                            ; continue ())
+                       else (YYBEGIN A
+                            ; commentLevel := 1
+                            ; commentStart := Source.getPos (source, yypos)
+                            ; continue ())
+                    );
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
                     ; commentStart := Source.getPos (source, yypos)
@@ -276,13 +326,22 @@ hexnum={hexDigit}+;
 <L,LLC,LLCQ>"*)" => (YYBEGIN INITIAL; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>.   => (YYBEGIN A; continue ());
 
+<A>"(*)"        => (if allowLineComments ()
+                       then (YYBEGIN C
+                            ; continue ())
+                       else (inc commentLevel; continue ())
+                   );
 <A>"(*"         => (inc commentLevel; continue ());
 <A>\n           => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
                     ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
                     ; continue ());
 <A>.            => (continue ());
-
+<B>{eol}        => (YYBEGIN INITIAL
+                    ; Source.newline (source, yypos) ; continue ());
+<B>.            => (continue ());
+<C>{eol}        => (YYBEGIN A; continue ());
+<C>.            => (continue ());
 <S>\"           => (let
                        val s = Vector.fromListRev (!charlist)
                        val _ = charlist := nil

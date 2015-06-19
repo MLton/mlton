@@ -54,6 +54,7 @@ signature AST_CORE =
                            pat: t,
                            var: Var.t}
              | List of t vector
+             | Or of t vector
              | Record of {flexible: bool,
                           items: (Record.Field.t * Item.t) vector}
              | Tuple of t vector
@@ -197,6 +198,7 @@ signature AST_CORE =
                Abstype of {datBind: DatBind.t,
                            body: t}
              | Datatype of DatatypeRhs.t
+             | DoDec of Exp.t
              | Exception of (Con.t * EbRhs.t) vector
              | Fix of {fixity: Fixity.t,
                        ops: Vid.t vector}

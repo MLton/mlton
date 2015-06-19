@@ -167,6 +167,7 @@ fun ('down, 'up)
                                       pat = pat,
                                       var = var})
                    | List ps => do1 (loops (ps, loop), List)
+                   | Or ps => do1 (loops (ps, loop), Or)
                    | Record {flexible, items} =>
                         let
                            val (items, u) =
@@ -295,6 +296,7 @@ fun ('down, 'up)
                   in
                      (doit (Datatype rhs), u)
                   end
+             | DoDec _ => empty ()
              | Exception ebs =>
                   let
                      val (ebs, u) =

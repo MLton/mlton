@@ -31,10 +31,12 @@ signature NESTED_PAT =
                     isChar: bool,
                     isInt: bool}
         | Layered of Var.t * t
+        | Or of t vector
         | Tuple of t vector
         | Var of Var.t
         | Wild
 
+      val flatten: t -> t vector
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool
       val isVar: t -> bool

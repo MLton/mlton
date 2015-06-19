@@ -8,6 +8,14 @@
 fun reg (left, right) = Region.make {left = left, right = right}
 fun error (reg, msg) = Control.error (reg, Layout.str msg, Layout.empty)
 
+local
+   open Control.Elaborate
+in
+   val allowOptBar = fn () => current allowOptBar
+   val allowOptSemicolon = fn () => current allowOptSemicolon
+   val allowRecPunning = fn () => current allowRecPunning
+end
+
 open Ast
 structure Field = Record.Field
 structure Srecord = SortedRecord
@@ -255,13 +263,11 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
+       | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
        | datBind of DatBind.t
-       | datBindNoWithtype of DatBind.t
        | datatypeRhs of DatatypeRhs.t
-       | datatypeRhsNoWithtype of DatatypeRhs.t
        | datatypeRhsnode of DatatypeRhs.node
-       | datatypeRhsnodeNoWithtype of DatatypeRhs.node
        | db of db
        | dbs of db vector
        | dbs' of db list
@@ -314,6 +320,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | match of Match.t
        | opaspat of Pat.t option
        | opcon of Con.t
+       | orpats of Pat.t list
        | ot_list of Exp.t list
        | pat of Pat.t
        | pat_2c of Pat.t list
@@ -326,6 +333,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
+       | rulesTop of rule list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -626,7 +634,7 @@ specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
          | TYPE typdescs        (Spec.Type (Vector.fromList typdescs))
          | TYPE typBind         (Spec.TypeDefs typBind)
          | EQTYPE typdescs      (Spec.Eqtype (Vector.fromList typdescs))
-         | DATATYPE datatypeRhsNoWithtype (Spec.Datatype datatypeRhsNoWithtype)
+         | DATATYPE datatypeRhs (Spec.Datatype datatypeRhs)
          | EXCEPTION exndescs   (Spec.Exception (Vector.fromList exndescs))
          | STRUCTURE strdescs   (Spec.Structure (Vector.fromList strdescs))
          | INCLUDE sigexp       (Spec.IncludeSigexp sigexp)
@@ -728,6 +736,7 @@ decnolocal
         | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
+        | DO exp                (Dec.DoDec exp)
         | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
         | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
         | TYPE typBind          (Dec.Type typBind)
@@ -780,7 +789,11 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
-
+          | BAR clauses (if allowOptBar ()
+                            then ()
+                            else error (reg (BARleft, BARright), "Optional clauses bar disallowed, compile with -default-ann 'allowOptBar true'")
+                         ;(Vector.fromList clauses))
+          
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
 
@@ -827,6 +840,12 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
+constrsTop : constrs            (constrs)
+           | BAR constrs        (if allowOptBar ()
+                                    then ()
+                                    else error (reg (BARleft, BARright), "Optional constrs bar disallowed, compile with -default-ann 'allowOptBar true'")
+                                ;(constrs))
+        
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
 
@@ -898,19 +917,9 @@ datatypeRhs
      (DatatypeRhs.makeRegion' (datatypeRhsnode,
                                datatypeRhsnodeleft, datatypeRhsnoderight))
 
-datatypeRhsNoWithtype
-   : datatypeRhsnodeNoWithtype
-     (DatatypeRhs.makeRegion' (datatypeRhsnodeNoWithtype,
-                               datatypeRhsnodeNoWithtypeleft,
-                               datatypeRhsnodeNoWithtyperight))
-
 datatypeRhsnode
    : repl              (repl)
    | datBind           (DatatypeRhs.DatBind datBind)
-
-datatypeRhsnodeNoWithtype
-   : repl               (repl)
-   | datBindNoWithtype  (DatatypeRhs.DatBind datBindNoWithtype)
 
 repl : tyvars tycon EQUALOP DATATYPE longtycon
        (if Vector.isEmpty tyvars
@@ -923,10 +932,6 @@ datBind
    : dbs withtypes
      (DatBind.make (dbs, withtypes, dbsleft, withtypesright))
 
-datBindNoWithtype
-   : dbs
-     (DatBind.make (dbs, TypBind.empty, dbsleft, dbsright))
-
 dbs : dbs' (Vector.fromList dbs')
 
 dbs'
@@ -935,8 +940,8 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrs
-     ({cons = Vector.fromList constrs,
+db : tyvars tycon EQUALOP constrsTop
+     ({cons = Vector.fromList constrsTop,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -949,21 +954,40 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
-                                            rulesleft, rulesright))
+match : rulesTop           (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
+                                            rulesTopleft, rulesTopright))
 
+rulesTop : rules        (rules)
+         | BAR rules    (if allowOptBar ()
+                            then ()
+                            else error (reg (BARleft, BARright), "Optional rules bar disallowed, compile with -default-ann 'allowOptBar true'")
+                         ;(rules))
+                                            
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
 rule    : pat DARROW exp        ((pat,exp))
 
 elabel  : field EQUALOP exp     (field,exp)
+        | vidNoEqual            (if allowRecPunning ()
+                                    then ()
+                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning disallowed, compile with -default-ann 'allowRecPunning true'")
+                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual), 
+                                    Exp.makeRegion' (Exp.FlatApp 
+                                    (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
+                                                                            fixop = Fixop.None}, 
+                                                                   vidNoEqualleft, vidNoEqualright))), 
+                                    vidNoEqualleft, vidNoEqualright)))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
 
 exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
         | exp SEMICOLON exp_ps  (exp :: exp_ps)
+        | exp SEMICOLON exp SEMICOLON (if allowOptSemicolon ()
+                                          then ()
+                                          else error (reg (SEMICOLON2left, SEMICOLON2right), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'")
+                                       ;([exp1, exp2]))
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 
@@ -1122,6 +1146,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
         | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
+        | LPAREN pat BAR orpats RPAREN    (Pat.Or (Vector.fromList (pat :: orpats)))
         | LBRACE RBRACE          (Pat.unit)
         | LBRACE patitems RBRACE
           (let
@@ -1133,6 +1158,9 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 
 pats: ([])
     | pat commapats (pat :: commapats)
+     
+orpats  : pat ([pat])
+        | pat BAR orpats (pat :: orpats)
 
 commapats : ([])
           | COMMA pat commapats (pat :: commapats)

@@ -74,6 +74,7 @@ structure Pat =
                      constraint: Type.t option,
                      pat: t}
        | List of t vector
+       | Or of t vector
        | Record of {flexible: bool,
                     items: (Record.Field.t * item) vector}
        | Tuple of t vector
@@ -126,6 +127,10 @@ structure Pat =
                               constraint),
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
+             | Or ps => seq [str "(",
+                             mayAlign (separate 
+                                       (Vector.toListMap (ps, layoutF), "|")),
+                             str ")"]
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -169,6 +174,7 @@ structure Pat =
              | Layered {constraint, pat, ...} =>
                   (c pat; Option.app (constraint, Type.checkSyntax))
              | List ps => Vector.foreach (ps, c)
+             | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
                   (Vector.foreach (items, fn (_, i) =>
                                    case i of
@@ -328,6 +334,7 @@ datatype expNode =
 and decNode =
    Abstype of {body: dec,
                datBind: DatBind.t}
+  | DoDec of exp
   | Datatype of DatatypeRhs.t
   | Exception of Eb.t vector
   | Fix of {fixity: Fixity.t,
@@ -482,6 +489,7 @@ and layoutDec d =
                 seq [str "with ", layoutDec body],
                 str "end"]
     | Datatype rhs => DatatypeRhs.layout rhs
+    | DoDec exp => layoutExpT exp
     | Exception ebs =>
          layoutAnds ("exception", ebs,
                      fn (prefix, eb) => seq [prefix, Eb.layout eb])
@@ -563,6 +571,7 @@ and checkSyntaxDec (d: dec): unit =
          (DatBind.checkSyntax datBind
           ; checkSyntaxDec body)
     | Datatype rhs => DatatypeRhs.checkSyntax rhs
+    | DoDec exp => checkSyntaxExp exp
     | Exception v =>
          (Vector.foreach (v, fn (_, ebrhs) => EbRhs.checkSyntax ebrhs)
           ; (reportDuplicates

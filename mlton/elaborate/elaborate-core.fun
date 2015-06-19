@@ -21,6 +21,21 @@ in
    val redundantMatch = fn () => current redundantMatch
    val resolveScope = fn () => current resolveScope
    val sequenceNonUnit = fn () => current sequenceNonUnit
+   fun check (c: (bool,bool) t, keyword: string, region) =
+      if current c
+         then ()
+      else
+         let
+            open Layout
+         in
+            Control.error
+            (region,
+             str (concat (if expert c
+                             then [keyword, " disallowed"]
+                             else [keyword, " disallowed, compile with -default-ann '",
+                                   name c, " true'"])),
+             empty)
+         end
 end
 
 local
@@ -433,56 +448,42 @@ val elaboratePat:
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, {bind, isRvb}, preError: unit -> unit) =>
+      fn (p: Apat.t, E: Env.t, {bind = bindInEnv, isRvb}, preError: unit -> unit) =>
       let
+         fun layTop () = approximate (Apat.layout p)
+         val rename =
+            let
+               val renames: (Avar.t * Var.t) list ref = ref []
+            in
+               fn x =>
+               case List.peek (!renames, fn (y, _) => Avar.equals (x, y)) of
+                  NONE => let val x' = Var.fromAst x
+                          in (List.push (renames, (x, x')); x')
+                          end
+                | SOME (_, x') => x'
+            end
          val xts: (Avar.t * Var.t * Type.t) list ref = ref []
          fun bindToType (x: Avar.t, t: Type.t): Var.t =
             let
                val _ = ensureNotEquals x
-               val x' = Var.fromAst x
-               val _ =
-                  if List.exists (!xts, fn (x', _, _) => Avar.equals (x, x'))
-                     then
-                        let
-                           open Layout
-                        in
-                           Control.error (Avar.region x,
-                                          seq [str "variable ",
-                                               Avar.layout x,
-                                               str " occurs more than once in pattern"],
-                                          seq [str "in: ",
-                                               approximate (Apat.layout p)])
-                        end
-                  else ()
-               val _ =
-                  case (List.peekMap
-                        (!others, fn (p, v) =>
-                         if Vector.exists (v, fn (x', _, _) =>
-                                           Avar.equals (x, x'))
-                            then SOME p
-                         else NONE)) of
+               val x' = rename x
+               val () =
+                  case List.peek (!xts, fn (y, _, _) => Avar.equals (x, y)) of
                      NONE => ()
-                   | SOME p' =>
+                   | SOME _ =>
                         let
                            open Layout
+                           val _ =
+                              Control.error
+                              (Avar.region x,
+                               seq [str "variable ",
+                                    Avar.layout x,
+                                    str " occurs more than once in pattern"],
+                               seq [str "in: ", layTop ()])
                         in
-                           Control.error
-                           (Apat.region p,
-                            seq [str "variable ",
-                                 Avar.layout x,
-                                 str " occurs in multiple patterns"],
-                            align [seq [str "in: ",
-                                        approximate (Apat.layout p)],
-                                   seq [str "and in: ",
-                                        approximate (Apat.layout p')]])
-
+                           ()
                         end
                val _ = List.push (xts, (x, x', t))
-               val _ =
-                  if bind
-                     then Env.extendVar (E, x, x', Scheme.fromType t,
-                                         {isRebind = false})
-                  else ()
             in
                x'
             end
@@ -492,9 +493,9 @@ val elaboratePat:
             in
                (bindToType (x, t), t)
             end
-         fun loop arg: Cpat.t =
+         fun loop (arg: Apat.t) =
             Trace.traceInfo' (elabPatInfo, Apat.layout, Cpat.layout)
-            (fn p: Apat.t =>
+            (fn (p: Apat.t) =>
              let
                 val region = Apat.region p
                 val unify = fn (t, t', f) => unify (t, t', preError, f)
@@ -511,7 +512,97 @@ val elaboratePat:
                    Cpat.wild (Type.new ())
              in
                 case Apat.node p of
-                   Apat.App (c, p) =>
+                   Apat.Or ps =>
+                      (check (Control.Elaborate.allowOrPats, "allowOrPats", region)
+                      ; let
+                         val xtsOrig = !xts
+                         val n = Vector.length ps
+                         val ps =
+                            Vector.map
+                            (ps, fn p =>
+                             let
+                                val _ = xts := []
+                                val p' = loop p
+                             in
+                                (p, p', !xts)
+                             end)
+                         val ps' = Vector.map (ps, fn (_, p', _) => p')
+
+                         val xtsPats =
+                            Vector.fold
+                            (ps, [], fn ((p, _, xtsPat), xtsPats) =>
+                             List.fold
+                             (xtsPat, xtsPats, fn ((x, x', t), xtsPats) =>
+                              case List.peek (xtsPats, fn (y, _, _, _) => Avar.equals (x, y)) of
+                                 NONE => (x, x', t, ref 1)::xtsPats
+                               | SOME (_, _, t', c) =>
+                                    let
+                                       val _ = Int.inc c
+                                       val _ =
+                                          unify
+                                          (t', t, fn (l', l) =>
+                                           (Avar.region x,
+                                            str "variable used at different types in sub-patterns of or-pattern",
+                                            align [seq [str "variable ", Avar.layout x],
+                                                   seq [str "type: ", l],
+                                                   seq [str "previous: ", l'],
+                                                   seq [str "in: ", approximate (Apat.layout p)],
+                                                   seq [str "in: ", lay ()]]))
+
+                                    in
+                                       xtsPats
+                                    end))
+                         val _ =
+                            List.foreach
+                            (xtsPats, fn (x, _, _, c) =>
+                             if !c <> n
+                                then let 
+                                        val _ =
+                                           Control.error
+                                           (Apat.region p,
+                                            seq [str "variable ",
+                                                 Avar.layout x,
+                                                 str " does not occur in all sub-patterns of or-pattern"],
+                                            seq [str "in: ", lay ()])
+                                     in
+                                        ()
+                                     end
+                             else ())
+                         val t = Type.new ()
+                         val _ =
+                            Vector.foreach
+                            (ps, fn (p, p', _) =>
+                             unify
+                             (t, Cpat.ty p', fn (l, l') =>
+                              (Apat.region p,
+                               str "or-patterns disagree",
+                               align [seq [str "pattern:  ", l'],
+                                      seq [str "previous: ", l],
+                                      seq [str "in: ", approximate (Apat.layout p)],
+                                      seq [str "in: ", lay ()]])))
+                         val xtsMerge =
+                            List.fold
+                            (xtsPats, xtsOrig, fn ((x, x', t, _), xtsMerge) =>
+                             case List.peek (xtsMerge, fn (y, _, _) => Avar.equals (x, y)) of
+                                NONE => (x, x', t)::xtsMerge
+                              | SOME _ =>
+                                   let
+                                      open Layout
+                                      val _ =
+                                         Control.error
+                                         (Avar.region x,
+                                          seq [str "variable ",
+                                               Avar.layout x,
+                                               str " occurs more than once in pattern"],
+                                          seq [str "in: ", layTop ()])
+                                   in
+                                      (x, x', t)::xtsMerge
+                                   end)
+                         val _ = xts := xtsMerge
+                      in
+                         Cpat.make (Cpat.Or ps', t)
+                      end)
+                 | Apat.App (c, p) =>
                       let
                          val (con, s) = Env.lookupLongcon (E, c)
                       in
@@ -740,7 +831,38 @@ val elaboratePat:
              end) arg
          val p' = loop p
          val xts = Vector.fromList (!xts)
+         val _ =
+            Vector.foreach
+            (xts, fn (x, _, _) =>
+             case (List.peekMap
+                   (!others, fn (p, v) =>
+                    if Vector.exists (v, fn (y, _, _) =>
+                                      Avar.equals (x, y))
+                       then SOME p
+                    else NONE)) of
+                NONE => ()
+              | SOME p' =>
+                   let
+                      open Layout
+                   in
+                      Control.error
+                      (Apat.region p,
+                       seq [str "variable ",
+                            Avar.layout x,
+                            str " occurs in multiple patterns"],
+                       align [seq [str "in: ",
+                                   approximate (Apat.layout p)],
+                              seq [str "and in: ",
+                                   approximate (Apat.layout p')]])
+                   end)
          val _ = List.push (others, (p, xts))
+         val _ =
+            if bindInEnv
+               then Vector.foreach
+                    (xts, fn (x, x', t) =>
+                     Env.extendVar (E, x, x', Scheme.fromType t,
+                                    {isRebind = false}))
+            else ()
       in
          (p', xts)
       end
@@ -1620,22 +1742,6 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
 
 structure ElabControl = Control.Elaborate
 
-fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
-   if ElabControl.current c
-      then ()
-   else
-      let
-         open Layout
-      in
-         Control.error
-         (region,
-          str (concat (if ElabControl.expert c
-                          then [keyword, " disallowed"]
-                          else [keyword, " disallowed, compile with -default-ann '",
-                                ElabControl.name c, " true'"])),
-          empty)
-      end
-
 fun elaborateDec (d, {env = E, nest}) =
    let
       val profileBody =
@@ -1912,6 +2018,44 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 Decs.empty
                              end)
+				 | Adec.DoDec exp =>
+                      (check (ElabControl.allowDoDecls, "allowDoDecls", Aexp.region exp)
+					  ; let
+                         fun lay () =		
+                            let		
+                               open Layout		
+                            in		
+                               seq [str "in: ",		
+                                    approximate		
+                                    (seq [str "do ", Aexp.layout exp])]		
+                            end		
+                         val elaboratePat = elaboratePat ()		
+                         val pat = Apat.wild		
+                         val (pat, _) =		
+                                   elaboratePat (pat, E, {bind = false,		
+                                                          isRvb = false}, preError)		
+                         val patRegion = Region.bogus		
+                         val exp' = elabExp (exp, nest, NONE)		
+                         val bound = fn () => Vector.new0 ()		
+                         val _ =		
+                            unify		
+                            (Cexp.ty exp', Type.unit, fn (l1, _) =>		
+                            (Aexp.region exp,		
+                               str "do declaration not of type unit",		
+                               align [seq [str "do declaration type: ", l1], lay ()]))		
+                         val vbs = {exp = exp',		
+                                    lay = lay,		
+                                    nest = nest,		
+                                    pat = pat,		
+                                    patRegion = patRegion}		
+                      in		
+                         Decs.single		
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),		
+                                    nonexhaustiveMatch = nonexhaustiveMatch (),		
+                                    rvbs = Vector.new0 (),		
+                                    tyvars = bound,		
+                                    vbs = Vector.new1 vbs})		
+                      end)
                  | Adec.Exception ebs =>
                       let
                          val decs =

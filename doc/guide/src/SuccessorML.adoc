@@ -7,3 +7,175 @@ using Standard ML as a starting point. The intention is for successor
 ML to be a living, evolving dialect of ML that is responsive to
 community needs and advances in language design, implementation, and
 semantics.
+
+== SuccessorML Features in MLton ==
+
+The following SuccessorML features have been implemented in MLton.
+The features are disabled by default, and may be enabled utilizing
+the feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
+which is listed directly after the feature name.
+
+* Do Declarations: +allowDoDecls {false|true}+
++
+Evaluating functions for their side effects is a common idiom seen
+in SML.  This feature allows for the same functionality but in an
+alternative syntax.  It is requried that the expression being
+evaluated has the type of unit in order to use a do declaration.
++
+Commonly one may perform either of the following:
++
+[source,sml]
+----
+val _ = print "Hello world.\n"
+val () = print "Hello world.\n"
+----
++
+Instead, the following syntax may be used:
++
+[source,sml]
+----
+do print "Hello world.\n"
+----
+
+* Extended Literals: +allowExtendedLiterals {false|true}+
++
+This feature allows for binary literals to be used.
+Additionally, underscores may be used throughout
+literals to group digits together for convenience.
+Note: literals cannot be started or ended with underscores.
++
+Below are some examples of extended literal syntax.
++
+[source,sml]
+----
+val b = 0b10101
+val nb = ~0b10_10_10
+val bw = 0wb1010
+val bw' = 0bw10_10
+val x = 4_327_829
+----
++
+Below are some non-examples of extended literal syntax.
++
+[source,sml]
+----
+val b = 0b101_
+val nb = ~0b_10_10_
+val h = 0x_09_a
+val x - _12_3
+----
+
+* Line Comments: +allowLineComments {false|true}+
++
+Line comments may be may be started with ++(*)++.
++
+[source,sml]
+----
+(*) This is a line comment
+----
++
+Line comments may also be nested inside block comments.
+The following is valid SML code utilizing line comments.
++
+[source,sml]
+----
+(*
+val x = 4 (*) This is a line comment
+*)
+
+(*
+val y = 5 (*) This is a line comment *)
+*)
+----
++
+Please note that with this feature enabled the following
+SML code which would previously compile will now result
+in a compilation error due to the unexpected `*)`.
++
+[source,sml]
+----
+(*)
+val x = 0
+*)
+----
+
+* Optional Pattern Bars: +allowOptBar {false|true}+
++
+A bar may be optionally placed before the first rule of a match.
+By eliminating the special case of the first match requiring no
+bar, this allows for easier refactoring.
++
+[source,sml]
+----
+case exp of
+  | A => 1
+  | B => 2
+  | C => 3
+----
++
+This optional bar may also be placed for `fn` and `handle`,
+function declarations, and `datatype` declarations.
+
+* Optional Semicolons: +allowOptSemicolon {false|true}+
++
+In the same spirit, a semicolon may be optionally placed
+after the the last expression in a sequence.
++
+[source,sml]
+----
+let
+   val x = 3
+in
+   f x;
+   g x;
+end
+----
+
+* Disjunctive (Or) Patterns: +allowOrPats {false|true}+
++
+This feature allows for being able to utilize "or-patterns".
+One can "or" multiple matches together without having to re-write
+the same resultant right-hand-side expression.  Note that
+disjunctive patterns require an additional surrounding parenthesis.
++
+For example `exp` could be matched as follows:
++
+[source,sml]
+----
+case exp of
+    (A | B | C) =>  1
+  | (D | E) => 2
+----
+
+* Record Punning: +allowRecPunning {false|true}+
++
+Records with fields that are of the form id=id can be abbreviated
+to id.  Previously this was only allowed in patterns.
++
+For example:
++
+[source,sml]
+----
+fn {a, b, c} => {a=a, b=b+1, c=c}
+----
++
+May be abbreviated to:
++
+[source,sml]
+----
+fn {a, b, c} => {a, b=b+1, c}
+----
+
+* Withtype for Signatures: +allowSigWithtype {false|true}+
++
+This feature allows for the use of the `withtype` keyword in
+signatures.  Previously, `withtype` was only allowed in structures.
++
+[source,sml]
+----
+signature S =
+   sig
+      datatype a = A1 of int | A2 of int * t
+      withtype t = int * a option
+   end
+----
