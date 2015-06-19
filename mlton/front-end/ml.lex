@@ -135,7 +135,7 @@ fun word (yytext, drop, source, yypos, radix) =
 
 %% 
 %reject
-%s A B C S F L LL LLC LLCQ;
+%s A B S F L LL LLC LLCQ;
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
 %arg ({source});
 alphanum=[A-Za-z'_0-9]*;
@@ -154,9 +154,9 @@ frac="."{num};
 exp=[eE](~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
 hexDigit=[0-9a-fA-F];
-hexnum=({hexDigit}|"_")*{hexDigit};
+hexnum=({hexDigit}({hexDigit}|"_")*{hexDigit})|({hexDigit}+);
 binDigit=[0-1];
-binnum=({binDigit}|"_")*{binDigit};
+binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
 
 %%
 <INITIAL>{ws}   => (continue ());
@@ -326,11 +326,6 @@ binnum=({binDigit}|"_")*{binDigit};
 <L,LLC,LLCQ>"*)" => (YYBEGIN INITIAL; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>.   => (YYBEGIN A; continue ());
 
-<A>"(*)"        => (if allowLineComments ()
-                       then (YYBEGIN C
-                            ; continue ())
-                       else (inc commentLevel; continue ())
-                   );
 <A>"(*"         => (inc commentLevel; continue ());
 <A>\n           => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
@@ -340,8 +335,6 @@ binnum=({binDigit}|"_")*{binDigit};
 <B>{eol}        => (YYBEGIN INITIAL
                     ; Source.newline (source, yypos) ; continue ());
 <B>.            => (continue ());
-<C>{eol}        => (YYBEGIN A; continue ());
-<C>.            => (continue ());
 <S>\"           => (let
                        val s = Vector.fromListRev (!charlist)
                        val _ = charlist := nil
