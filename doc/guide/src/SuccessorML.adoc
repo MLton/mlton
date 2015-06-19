@@ -42,14 +42,14 @@ do print "Hello world.\n"
 This feature allows for binary literals to be used.
 Additionally, underscores may be used throughout
 literals to group digits together for convenience.
-Note: literals cannot be ended with underscores.
+Note: literals cannot be started or ended with underscores.
 +
 Below are some examples of extended literal syntax.
 +
 [source,sml]
 ----
 val b = 0b10101
-val nb = ~0b_10_10_10
+val nb = ~0b10_10_10
 val bw = 0wb1010
 val bw' = 0bw10_10
 val x = 4_327_829
@@ -60,7 +60,9 @@ Below are some non-examples of extended literal syntax.
 [source,sml]
 ----
 val b = 0b101_
-val nb = ~0b10_10__
+val nb = ~0b_10_10_
+val h = 0x_09_a
+val x - _12_3
 ----
 
 * Line Comments: +allowLineComments {false|true}+
