@@ -2195,15 +2195,23 @@ fun elaborateDec (d, {env = E, nest}) =
                                                            ", "))],
                                                 lay ())
                                             end
+                                   val funcCon = Avid.toCon (Avid.fromVar func)
+                                   val _ = Acon.ensureRedefine funcCon
+                                   val _ =
+                                      case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
+                                         NONE => ()
+                                       | SOME _ =>
+                                            Control.error
+                                            (region,
+                                             seq [str "constructor can not be redefined by fun: ",
+                                                  Avar.layout func],
+                                             empty)
                                    val var = Var.fromAst func
                                    val ty = Type.new ()
                                    val _ = Env.extendVar (E, func, var,
                                                           Scheme.fromType ty,
                                                           {isRebind = false})
                                    val _ = markFunc var
-                                   val _ =
-                                      Acon.ensureRedefine
-                                      (Avid.toCon (Avid.fromVar func))
                                 in
                                    {clauses = clauses,
                                     func = func,
