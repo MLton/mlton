@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2015 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -115,6 +115,7 @@ signature CONTROL_FLAGS =
             val redundantMatch: (DiagEIW.t,DiagEIW.t) t
             val resolveScope: (ResolveScope.t,ResolveScope.t) t
             val sequenceNonUnit: (DiagEIW.t,DiagEIW.t) t
+            val valrecConstr: (DiagEIW.t,DiagEIW.t) t
             val warnUnused: (bool,bool) t
 
             val current: ('args, 'st) t -> 'st

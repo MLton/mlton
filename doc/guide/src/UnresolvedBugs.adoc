@@ -34,20 +34,27 @@ would be a mistake, since using parentheses is clearer and no SML
 compiler has ever allowed them.  Furthermore, implementing this would
 require serious yacc grammar rewriting followed by postprocessing.
 
- * MLton rejects rebinding of constructors with `val rec`
-declarations, as in
+ * MLton does not raise the `Bind` exception at run time when
+evaluating `val rec` (and `fun`) declarations that redefine
+identifiers that previously had constructor status.  (By default,
+MLton does warn at compile time about `val rec` (and `fun`)
+declarations that redefine identifiers that previously had
+constructors status; see the `valrecConstr` <:MLBasisAnnotations:ML
+Basis annotation>.)  For example, the Definition requires the
+following program to type check, but also (bizarelly) requires it to
+raise the `Bind` exception
 +
 [source,sml]
 ----
 val rec NONE = fn () => ()
 ----
 +
-The Definition (bizarrely) requires this program to type check, but to
-raise `Bind`.
-+
-We have no plans to change this behavior, as the Definition's behavior
-is clearly an error, a mismatch between the static semantics and the
-dynamic semantics.
+The Definition's behavior is obviously an error, a mismatch between
+the static semantics (rule 26) and the dynamic semantics (rule 126).
+Given the comments on rule 26 in the Definition, it seems clear that
+the authors meant for `val rec` to allow an identifier's constructor
+status to be overridden both statically and dynamically.  Hence, MLton
+and most SML compilers follow rule 26, but do not follow rule 126.
 
 * MLton does not hide the equality aspect of types declared in
 `abstype` declarations. So, MLton accepts programs like the following,
