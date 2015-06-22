@@ -1,5 +1,10 @@
 Here are the changes from version 20130715 to version YYYYMMDD.
 
+* 2015-06-22
+  - Introduce an MLB annotation to control elaboration of 'val rec'
+    and 'fun' declarations that redefine identifiers that previously
+    had constructor status: "valrecConstr {warn|error|ignore}".
+
 * 2015-06-10
   - Hide equality status of poly (and mono) vector and array slices.
   - Hide type equality of mono and poly Word8.word arrays and vectors.

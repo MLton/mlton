@@ -71,6 +71,12 @@ sequence expression `(e1; e2)`.  This can be helpful in detecting
 curried applications that are mistakenly not fully applied.  To
 silence spurious messages, you can use `ignore e1`.
 
+* +valrecConstr {warn|error|ignore}+
++
+If `error` or `warn`, report when a `val rec` (or `fun`) declaration
+redefines an identifier that previously had constructor status.  An
+error will abort a compile, while a warning will not.
+
 * +warnUnused {false|true}+
 +
 Report unused identifiers.

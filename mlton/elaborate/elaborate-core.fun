@@ -21,6 +21,7 @@ in
    val redundantMatch = fn () => current redundantMatch
    val resolveScope = fn () => current resolveScope
    val sequenceNonUnit = fn () => current sequenceNonUnit
+   val valrecConstr = fn () => current valrecConstr
    fun check (c: (bool,bool) t, keyword: string, region) =
       if current c
          then ()
@@ -791,17 +792,21 @@ val elaboratePat:
                                      Cpat.make (Cpat.Wild, Type.new ())
                                   end
                           | SOME (c, s) =>
-                               let
-                                  val _ =
-                                     if not isRvb
-                                        then ()
-                                     else
-                                        Control.error
-                                        (region,
-                                         seq [str "constructor can not be redefined by val rec: ",
-                                              Ast.Longvid.layout name],
-                                         empty)
-                               in
+                               if List.isEmpty strids andalso isRvb
+                                  then let
+                                          val _ =
+                                             (case valrecConstr () of
+                                                 Control.Elaborate.DiagEIW.Error => Control.error
+                                               | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
+                                               | Control.Elaborate.DiagEIW.Warn => Control.warning)
+                                             (region,
+                                              seq [str "constructor redefined by val rec: ",
+                                                   Ast.Longvid.layout name],
+                                              empty)
+                                       in
+                                          var ()
+                                       end
+                               else
                                   case s of
                                      NONE => dontCare ()
                                    | SOME s =>
@@ -824,7 +829,6 @@ val elaboratePat:
                                                          targs = args ()},
                                                instance)
                                         end
-                               end
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
@@ -2201,9 +2205,12 @@ fun elaborateDec (d, {env = E, nest}) =
                                       case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
                                          NONE => ()
                                        | SOME _ =>
-                                            Control.error
+                                            (case valrecConstr () of
+                                                Control.Elaborate.DiagEIW.Error => Control.error
+                                              | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
+                                              | Control.Elaborate.DiagEIW.Warn => Control.warning)
                                             (region,
-                                             seq [str "constructor can not be redefined by fun: ",
+                                             seq [str "constructor redefined by fun: ",
                                                   Avar.layout func],
                                              empty)
                                    val var = Var.fromAst func
