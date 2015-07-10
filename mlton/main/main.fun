@@ -193,6 +193,7 @@ fun defaultAlignIs8 () =
          Alpha => true
        | AMD64 => true
        | ARM => true
+       | ARM64 => true
        | HPPA => true
        | IA64 => true
        | MIPS => true
