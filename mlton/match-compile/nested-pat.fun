@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -69,7 +70,6 @@ fun make (p, t) =
     | _ => T {pat = p, ty = t}
 
 fun flatten p = 
-
    case node p of
       Wild => Vector.new1 p
     | Var _ => Vector.new1 p
@@ -100,6 +100,10 @@ fun flatten p =
                    in
                       Vector.map (tpss, fn tps => make (Tuple (Vector.fromList tps), ty p))
                    end)
+
+val flatten =
+   Trace.trace ("NestedPat.flatten", layout, Vector.layout layout)
+   flatten
 
 fun isRefutable p =
    case node p of
