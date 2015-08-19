@@ -14,9 +14,9 @@ open S
 
 datatype t = T of {pat: node, ty: Type.t}
 and node =
-   Con of {arg: t option,
-           con: Con.t,
-           targs: Type.t vector}
+    Con of {arg: t option,
+            con: Con.t,
+            targs: Type.t vector}
   | Const of {const: Const.t,
               isChar: bool,
               isInt: bool}
@@ -69,37 +69,32 @@ fun make (p, t) =
          else T {pat = p, ty = t}
     | _ => T {pat = p, ty = t}
 
-fun flatten p = 
-   case node p of
-      Wild => Vector.new1 p
-    | Var _ => Vector.new1 p
-    | Const _ => Vector.new1 p
-    | Con {arg, con, targs} => (case arg of
-                                   NONE => Vector.new1 p
-                                 | SOME arg' => (let
-                                                    val fargs = flatten arg'
-                                                 in
-                                                    Vector.map (fargs, fn farg => make (Con {arg = SOME farg, con = con, targs=targs}, ty p))
-                                                 end))
-    | Layered (x, p') => (let
-                             val ps = flatten p'
-                          in
-                             Vector.map (ps, fn fp => make (Layered (x, fp), ty p))
-                         end)
-    | Or ps => (let
-                   val fps = Vector.map (ps, fn p' => flatten p')
-                in
-                   Vector.concatV fps
-                end)
-    | Tuple ps => (let
-                      val tpss = 
-                         Vector.foldr
-                         (Vector.map (ps, flatten), Vector.new1 [], fn (fps, tpss) =>
-                          Vector.concatV
-                          (Vector.map (fps, fn fp => Vector.map (tpss, fn tps => fp :: tps))))
-                   in
-                      Vector.map (tpss, fn tps => make (Tuple (Vector.fromList tps), ty p))
-                   end)
+fun flatten p =
+   let
+      val ty = ty p
+      val make = fn p => make (p, ty)
+   in
+      case node p of
+         Con {arg, con, targs} =>
+            (case arg of
+                NONE => Vector.new1 p
+              | SOME arg => Vector.map (flatten arg, fn arg =>
+                                        make (Con {arg = SOME arg, con = con, targs = targs})))
+       | Const _ => Vector.new1 p
+       | Layered (x, p) => Vector.map (flatten p, fn p => make (Layered (x, p)))
+       | Or ps => Vector.concatV (Vector.map (ps, flatten))
+       | Tuple ps => let
+                        val fpss =
+                           Vector.foldr
+                           (Vector.map (ps, flatten), [[]], fn (fps, fpss) =>
+                            List.concat (Vector.toListMap (fps, fn fp =>
+                                                           List.map (fpss, fn fps => fp :: fps))))
+                     in
+                        Vector.fromListMap (fpss, fn fps => make (Tuple (Vector.fromList fps)))
+                     end
+       | Var _ => Vector.new1 p
+       | Wild => Vector.new1 p
+   end
 
 val flatten =
    Trace.trace ("NestedPat.flatten", layout, Vector.layout layout)
