@@ -55,11 +55,11 @@ fun layout p =
             end
        | Const {const = c, ...} => Const.layout c
        | Layered (x, p) => paren (seq [Var.layout x, str " as ", layout p])
-       | Or ps => list (Vector.toListMap (ps, layout))
+       | Or ps => paren (mayAlign (separateRight (Vector.toListMap (ps, layout), "|")))
        | Tuple ps => tuple (Vector.toListMap (ps, layout))
        | Var x => Var.layout x
        | Wild => str "_"
-end
+   end
 
 fun make (p, t) =
    case p of
