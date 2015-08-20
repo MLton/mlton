@@ -128,12 +128,9 @@ structure Pat =
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
              | Or ps =>
-                  delimit
+                  paren
                   (mayAlign (separate
-                             (Vector.toListMap
-                              (ps, fn p =>
-                               case node p of Or _ => layoutF p | _ => layoutT p),
-                              "|")))
+                             (Vector.toListMap (ps, layoutT), "|")))
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
