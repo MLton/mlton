@@ -3542,13 +3542,7 @@ fun elaborateDec (d, {env = E, nest}) =
                 Env.scope
                 (E, fn () =>
                  let
-                    fun lay () =
-                       let
-                          open Layout
-                       in
-                          approximate
-                          (seq [Apat.layout pat, str " => ", Aexp.layout exp])
-                       end
+                    fun lay () = approximate (Amatch.layoutRule (pat, exp))
                     val patOrig = pat
                     val (pat, _) =
                        elaboratePat () (pat, E, {bind = true, isRvb = false},

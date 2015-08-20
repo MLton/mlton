@@ -661,6 +661,13 @@ structure Exp =
       val layout = layoutExpT
    end
 
+structure Match =
+   struct
+      open Match
+      val layout = layoutMatch
+      val layoutRule = layoutRule
+   end
+
 structure Dec =
    struct
       open Wrap
