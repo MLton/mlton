@@ -770,55 +770,50 @@ fun defunctorize (CoreML.Program.T {decs}) =
                          val pat = loopPat pat
                          fun vd (x: Var.t) = valDec (tyvars, x, exp, expType, e)
                       in
-                         if Vector.isEmpty tyvars orelse isExpansive
+                         if Vector.isEmpty tyvars
+                            then patDec (pat, exp, e, bodyType, true)
+                         else if isExpansive
                             then
                                let
-                                  val (pat, exp) =
-                                     if Vector.isEmpty tyvars
-                                        then (pat, exp)
-                                     else
-                                        let
-                                           val x = Var.newNoname ()
-                                           val thunk =
-                                              let
-                                                 open Xexp
-                                              in
-                                                 toExp
-                                                 (lambda
-                                                  {arg = Var.newNoname (),
-                                                   argType = Xtype.unit,
-                                                   body = exp,
-                                                   bodyType = expType,
-                                                   mayInline = true})
-                                              end
-                                           val thunkTy =
-                                              Xtype.arrow (Xtype.unit, expType)
-                                           fun subst t =
-                                              Xtype.substitute
-                                              (t, Vector.map (tyvars, fn a =>
-                                                              (a, Xtype.unit)))
-                                           val body =
-                                              Xexp.app
-                                              {arg = Xexp.unit (),
-                                               func =
-                                               Xexp.var
-                                               {targs = (Vector.map
-                                                         (tyvars, fn _ =>
-                                                          Xtype.unit)),
-                                                ty = subst thunkTy,
-                                                var = x},
-                                               ty = subst expType}
-                                           val decs =
-                                              [Xdec.PolyVal {exp = thunk, 
-                                                             ty = thunkTy,
-                                                             tyvars = tyvars,
-                                                             var = x}]
-                                        in
-                                           (NestedPat.replaceTypes (pat, subst),
-                                            Xexp.lett {body = body, decs = decs})
-                                        end
+                                  val x = Var.newNoname ()
+                                  val thunk =
+                                     let
+                                        open Xexp
+                                     in
+                                        toExp
+                                        (lambda
+                                         {arg = Var.newNoname (),
+                                          argType = Xtype.unit,
+                                          body = exp,
+                                          bodyType = expType,
+                                          mayInline = true})
+                                     end
+                                  val thunkTy =
+                                     Xtype.arrow (Xtype.unit, expType)
+                                  fun subst t =
+                                     Xtype.substitute
+                                     (t, Vector.map (tyvars, fn a =>
+                                                     (a, Xtype.unit)))
+                                  val body =
+                                     Xexp.app
+                                     {arg = Xexp.unit (),
+                                      func =
+                                      Xexp.var
+                                      {targs = (Vector.map
+                                                (tyvars, fn _ =>
+                                                 Xtype.unit)),
+                                       ty = subst thunkTy,
+                                       var = x},
+                                      ty = subst expType}
+                                  val decs =
+                                     [Xdec.PolyVal {exp = thunk,
+                                                    ty = thunkTy,
+                                                    tyvars = tyvars,
+                                                    var = x}]
                                in
-                                  patDec (pat, exp, e, bodyType, true)
+                                  patDec (NestedPat.replaceTypes (pat, subst),
+                                          Xexp.lett {body = body, decs = decs},
+                                          e, bodyType, true)
                                end
                          else
                             case NestedPat.node pat of
