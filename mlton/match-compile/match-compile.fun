@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -762,7 +763,7 @@ fun matchCompile {caseType: Type.t,
 
 val matchCompile =
    fn {caseType: Type.t,
-       cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
+       cases: (NestedPat.t * (int -> (Var.t -> Var.t) -> Exp.t)) vector,
        conTycon: Con.t -> Tycon.t,
        region: Region.t,
        test: Var.t,
@@ -772,8 +773,13 @@ val matchCompile =
    let
       val cases =
          Vector.map
-         (cases, fn (npat, mk) =>
-          Vector.map (NestedPat.flatten npat, fn fpat => (fpat, mk)))
+         (cases, fn (pat, mk) =>
+          let
+             val pats = NestedPat.flatten pat
+             val mk = mk (Vector.length pats)
+          in
+             Vector.map (pats, fn pat => (pat, mk))
+          end)
       val cases = Vector.concatV cases
    in
       matchCompile {caseType = caseType,
@@ -797,4 +803,3 @@ val matchCompile =
    matchCompile
 
 end
-

@@ -124,6 +124,7 @@ fun casee {caseType: Xtype.t,
                               {exp = fn () => exp,
                                isDefault = false,
                                lay = lay,
+                               numPats = ref 0,
                                numUses = ref 0,
                                pat = pat})
       fun raiseExn (f, mayWrap) =
@@ -154,6 +155,7 @@ fun casee {caseType: Xtype.t,
              Vector.new1 {exp = exp,
                           isDefault = true,
                           lay = NONE,
+                          numPats = ref 0,
                           numUses = ref 0,
                           pat = NestedPat.make (NestedPat.Var e, testType)}]
          end
@@ -175,7 +177,7 @@ fun casee {caseType: Xtype.t,
             val decs = ref []
             val cases =
                Vector.map
-               (cases, fn {exp = e, numUses, pat = p, ...} =>
+               (cases, fn {exp = e, numPats, numUses, pat = p, ...} =>
                 let
                    val args = Vector.fromList (NestedPat.varsAndTypes p)
                    val (vars, tys) = Vector.unzip args
@@ -198,17 +200,19 @@ fun casee {caseType: Xtype.t,
                                    components = vars,
                                    body = e ()})),
                          mayInline = true})}
-                   fun finish rename =
-                      (if 0 = !numUses then List.push (decs, dec ()) else ()
-                       ; Int.inc numUses
-                       ; (Xexp.app
-                          {func = Xexp.monoVar (func, funcType),
-                           arg =
-                           Xexp.tuple {exps = (Vector.map
-                                               (args, fn (x, t) =>
-                                                Xexp.monoVar (rename x, t))),
-                                       ty = argType},
-                           ty = caseType}))
+                   fun finish np =
+                      (numPats := np
+                       ; fn rename =>
+                         (if 0 = !numUses then List.push (decs, dec ()) else ()
+                          ; Int.inc numUses
+                          ; (Xexp.app
+                             {func = Xexp.monoVar (func, funcType),
+                              arg =
+                              Xexp.tuple {exps = (Vector.map
+                                                  (args, fn (x, t) =>
+                                                   Xexp.monoVar (rename x, t))),
+                                          ty = argType},
+                              ty = caseType})))
                 in
                    (p, finish)
                 end)
@@ -237,8 +241,8 @@ fun casee {caseType: Xtype.t,
             then Error.bug "Defunctorize.casee: case with no patterns"
          else
             let
-               val {exp = e, pat = p, numUses, ...} = Vector.sub (cases, 0)
-               fun use () = Int.inc numUses 
+               val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
+               fun use () = (numPats := 1; numUses := 1)
             in
                case NestedPat.node p of
                   Wild => (use (); wild (e ()))
@@ -317,8 +321,8 @@ fun casee {caseType: Xtype.t,
       fun diagnoseRedundantMatch () =
          let
             val redundant =
-                Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
-                                not isDefault andalso !numUses = 0)
+                Vector.keepAll (cases, fn {isDefault, numPats, numUses, ...} =>
+                                not isDefault andalso !numUses < !numPats)
          in
             if 0 = Vector.length redundant
                then ()
