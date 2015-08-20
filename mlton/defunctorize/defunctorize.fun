@@ -320,30 +320,38 @@ fun casee {caseType: Xtype.t,
                end
       fun diagnoseRedundantMatch () =
          let
-            val redundant =
-                Vector.keepAll (cases, fn {isDefault, numPats, numUses, ...} =>
-                                not isDefault andalso !numUses < !numPats)
+            (* Rules with no uses; fully redundant. *)
+            val redundantRules =
+               Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
+                               not isDefault andalso !numUses = 0)
+            (* Rules with some uses but fewer uses than pats; partially redundant. *)
+            val rulesWithRedundancy =
+               Vector.keepAll (cases, fn {isDefault, numPats, numUses, ...} =>
+                               not isDefault andalso !numUses > 0 andalso !numUses < !numPats)
+            fun doit (rules, msg) =
+               if 0 = Vector.length rules
+                  then ()
+               else
+                  let
+                     open Layout
+                  in
+                     (if redundantMatch = Control.Elaborate.DiagEIW.Error
+                         then Control.error
+                         else Control.warning)
+                     (region,
+                      str (concat [kind, msg]),
+                      align
+                         [seq [str "rules: ",
+                               (align o Vector.toListMap)
+                               (rules, fn {lay, ...} =>
+                                case lay of
+                                   NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
+                                 | SOME l => l ())],
+                          lay ()])
+                  end
          in
-            if 0 = Vector.length redundant
-               then ()
-            else 
-               let
-                  open Layout
-               in
-                  (if redundantMatch = Control.Elaborate.DiagEIW.Error
-                      then Control.error
-                      else Control.warning)
-                  (region,
-                   str (concat [kind, " has redundant rules"]),
-                   align
-                      [seq [str "rules: ",
-                            align (Vector.toListMap
-                                      (redundant, fn {lay, ...} =>
-                                       case lay of
-                                          NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
-                                        | SOME l => l ()))],
-                       lay ()])
-               end
+            doit (rulesWithRedundancy, " has rules with redundancy")
+            ; doit (redundantRules, " has redundant rules")
          end
    in
       if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
