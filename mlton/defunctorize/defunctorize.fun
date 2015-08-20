@@ -829,7 +829,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                    *  val 'a Foo (y1, y2) = e
                                    * Expands to
                                    *  val 'a x = e
-                                   *  val Foo _ = x
+                                   *  val Foo (_, _) = x  (* for match warnings *)
                                    *  val 'a y1 = case x of Foo (y1', _) => y1'
                                    *  val 'a y2 = case x of Foo (_, y2') => y2'
                                    *)
