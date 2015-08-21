@@ -2048,7 +2048,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                str "do declaration not of type unit",		
                                align [seq [str "do declaration type: ", l1], lay ()]))		
                          val vbs = {exp = exp',		
-                                    lay = lay,		
+                                    lay = fn () => {dec = lay (), pat = Apat.layout Apat.wild},
                                     nest = nest,		
                                     pat = pat,		
                                     patRegion = patRegion}		
@@ -2056,6 +2056,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          Decs.single		
                          (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),		
                                     nonexhaustiveMatch = nonexhaustiveMatch (),		
+                                    redundantMatch = redundantMatch (),
                                     rvbs = Vector.new0 (),		
                                     tyvars = bound,		
                                     vbs = Vector.new1 vbs})		
@@ -2533,13 +2534,14 @@ fun elaborateDec (d, {env = E, nest}) =
                             Vector.map
                             (vbs, fn {exp, pat, ...} =>
                              let
-                                fun lay () =
+                                fun layPat () = Apat.layout pat
+                                fun layDec () =
                                    let
                                       open Layout
                                    in
                                       seq [str "in: ",
                                            approximate
-                                           (seq [Apat.layout pat,
+                                           (seq [layPat (),
                                                  str " = ", Aexp.layout exp])]
                                    end
                                 val patRegion = Apat.region pat
@@ -2565,7 +2567,8 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 {exp = exp,
                                  expRegion = expRegion,
-                                 lay = lay,
+                                 layDec = layDec,
+                                 layPat = layPat,
                                  pat = pat,
                                  patRegion = patRegion}
                              end)
@@ -2665,7 +2668,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val vbs =
                             Vector.map
                             (vbs,
-                             fn {exp, expRegion, lay, pat, patRegion, ...} =>
+                             fn {exp, expRegion, layDec, layPat, pat, patRegion, ...} =>
                              let
                                 val (pat, bound) =
                                    elaboratePat (pat, E, {bind = false,
@@ -2677,12 +2680,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                      str "pattern and expression disagree",
                                      align [seq [str "pattern:    ", p],
                                             seq [str "expression: ", e],
-                                            lay ()]))
+                                            layDec ()]))
                              in
                                 {bound = bound,
                                  exp = exp,
                                  expRegion = expRegion,
-                                 lay = lay,
+                                 layDec = layDec,
+                                 layPat = layPat,
                                  pat = pat,
                                  patRegion = patRegion}
                              end)
@@ -2713,9 +2717,9 @@ fun elaborateDec (d, {env = E, nest}) =
                              Env.extendVar (E, x, x', scheme,
                                             {isRebind = isRebind}))
                          val vbs =
-                            Vector.map (vbs, fn {exp, lay, pat, patRegion, ...} =>
+                            Vector.map (vbs, fn {exp, layDec, layPat, pat, patRegion, ...} =>
                                         {exp = exp,
-                                         lay = lay,
+                                         lay = fn () => {dec = layDec (), pat = layPat ()},
                                          nest = nest,
                                          pat = pat,
                                          patRegion = patRegion})
@@ -2728,6 +2732,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          Decs.single
                          (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                     nonexhaustiveMatch = nonexhaustiveMatch (),
+                                    redundantMatch = redundantMatch (),
                                     rvbs = rvbs,
                                     tyvars = bound,
                                     vbs = vbs})

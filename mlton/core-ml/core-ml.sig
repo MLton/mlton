@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -165,11 +166,12 @@ signature CORE_ML =
                        tyvars: unit -> Tyvar.t vector}
              | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
                        nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+                       redundantMatch: Control.Elaborate.DiagEIW.t,
                        rvbs: {lambda: Lambda.t,
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector,
                        vbs: {exp: Exp.t,
-                             lay: unit -> Layout.t,
+                             lay: unit -> {dec: Layout.t, pat: Layout.t},
                              nest: string list,
                              pat: Pat.t,
                              patRegion: Region.t} vector}

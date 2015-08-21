@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2010,2015 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -17,6 +17,7 @@ local
 in
    val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
    val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
+   val redundantMatch = fn () => current redundantMatch
    val warnUnused = fn () => current warnUnused
 end
 
@@ -2974,11 +2975,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                   (decs,
                                    Dec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                             nonexhaustiveMatch = nonexhaustiveMatch (),
+                                            redundantMatch = redundantMatch (),
                                             rvbs = Vector.new0 (),
                                             tyvars = fn () => sigArgs,
                                             vbs = (Vector.new1
                                                    {exp = e,
-                                                    lay = fn _ => Layout.empty,
+                                                    lay = fn _ => {dec = Layout.empty, pat = Layout.empty},
                                                     nest = [],
                                                     pat = Pat.var (x, strType),
                                                     patRegion = region})})

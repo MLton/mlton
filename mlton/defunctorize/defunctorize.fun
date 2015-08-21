@@ -747,7 +747,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Fun {decs, tyvars} =>
                   prefix (Xdec.Fun {decs = processLambdas decs,
                                     tyvars = tyvars ()})
-             | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, rvbs, tyvars, vbs} =>
+             | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch,
+                    rvbs, tyvars, vbs} =>
                let
                   val tyvars = tyvars ()
                   val bodyType = et
@@ -762,18 +763,20 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                      mayWarn: bool) =
                             casee {caseType = bodyType,
                                    cases = Vector.new1 {exp = body,
-                                                        lay = SOME lay,
+                                                        lay = SOME (#pat o lay),
                                                         pat = p},
                                    conTycon = conTycon,
                                    kind = "declaration",
-                                   lay = lay,
+                                   lay = #dec o lay,
                                    nest = nest,
                                    noMatch = Cexp.RaiseBind,
                                    nonexhaustiveExnMatch = nonexhaustiveExnMatch,
                                    nonexhaustiveMatch = if mayWarn
                                                            then nonexhaustiveMatch
                                                         else Control.Elaborate.DiagEIW.Ignore,
-                                   redundantMatch = Control.Elaborate.DiagEIW.Ignore,
+                                   redundantMatch = if mayWarn
+                                                       then redundantMatch
+                                                    else Control.Elaborate.DiagEIW.Ignore,
                                    region = patRegion,
                                    test = (e, NestedPat.ty p),
                                    tyconCons = tyconCons}
