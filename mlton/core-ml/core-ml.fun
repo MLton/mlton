@@ -172,7 +172,7 @@ and exp = Exp of {node: expNode,
                   ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {kind: string,
+  | Case of {kind: string * string,
              lay: unit -> Layout.t,
              nest: string list,
              noMatch: noMatch,
@@ -402,7 +402,7 @@ structure Exp =
          else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-         casee {kind = "if",
+         casee {kind = ("if", "branches"),
                 lay = fn () => Layout.empty,
                 nest = [],
                 noMatch = Impossible,

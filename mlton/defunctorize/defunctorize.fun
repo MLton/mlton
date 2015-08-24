@@ -109,7 +109,7 @@ fun casee {caseType: Xtype.t,
                    lay: (unit -> Layout.t) option,
                    pat: NestedPat.t} vector,
            conTycon,
-           kind: string,
+           kind: (string * string),
            lay: unit -> Layout.t,
            nest: string list,
            noMatch,
@@ -312,7 +312,7 @@ fun casee {caseType: Xtype.t,
                          then Control.error
                          else Control.warning)
                      (region,
-                      str (concat [kind, " is not exhaustive"]),
+                      str (concat [#1 kind, " is not exhaustive"]),
                       align [seq [str "missing pattern: ",
                                   Layout.alignPrefix
                                      (Vector.toList es, "| ")],
@@ -339,9 +339,9 @@ fun casee {caseType: Xtype.t,
                          then Control.error
                          else Control.warning)
                      (region,
-                      str (concat [kind, msg]),
+                      str (concat [#1 kind, msg]),
                       align
-                         [seq [str "rules: ",
+                         [seq [str (concat [#2 kind, ": "]),
                                (align o Vector.toListMap)
                                (rules, fn {lay, ...} =>
                                 case lay of
@@ -350,15 +350,15 @@ fun casee {caseType: Xtype.t,
                           lay ()])
                   end
          in
-            doit (rulesWithRedundancy, " has rules with redundancy")
-            ; doit (redundantRules, " has redundant rules")
+            doit (rulesWithRedundancy, " has " ^ #2 kind ^ " with redundancy")
+            ; doit (redundantRules, " has redundant " ^ #2 kind)
          end
    in
-      if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
-         then List.push (diagnostics, diagnoseRedundantMatch)
+      if nonexhaustiveMatch <> Control.Elaborate.DiagEIW.Ignore
+         then List.push (diagnostics, diagnoseNonexhaustiveMatch)
          else ()
-      ; if nonexhaustiveMatch  <> Control.Elaborate.DiagEIW.Ignore
-           then List.push (diagnostics, diagnoseNonexhaustiveMatch)
+      ; if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
+           then List.push (diagnostics, diagnoseRedundantMatch)
            else ()
       ; exp
    end
@@ -766,7 +766,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                                         lay = SOME (#pat o lay),
                                                         pat = p},
                                    conTycon = conTycon,
-                                   kind = "declaration",
+                                   kind = ("declaration", "pattern"),
                                    lay = #dec o lay,
                                    nest = nest,
                                    noMatch = Cexp.RaiseBind,

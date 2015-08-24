@@ -1249,7 +1249,7 @@ local
                                  else expandedCbTy}
       in
          if not isBool then fetchExp else
-         Cexp.casee {kind = "",
+         Cexp.casee {kind = ("", ""),
                      lay = fn () => Layout.empty,
                      nest = [],
                      noMatch = Cexp.Impossible,
@@ -1271,7 +1271,7 @@ local
       let
          val valueExp =
             if not isBool then valueExp else
-            Cexp.casee {kind = "",
+            Cexp.casee {kind = ("", ""),
                         lay = fn () => Layout.empty,
                         nest = [],
                         noMatch = Cexp.Impossible,
@@ -2363,7 +2363,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                          let
                                             val e =
                                                Cexp.casee
-                                               {kind = "function",
+                                               {kind = ("function", "clauses"),
                                                 lay = lay,
                                                 nest = nest,
                                                 noMatch = Cexp.RaiseMatch,
@@ -2631,7 +2631,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 val arg = Var.newNoname ()
                                 val body =
                                    Cexp.enterLeave
-                                   (Cexp.casee {kind = "function",
+                                   (Cexp.casee {kind = ("function", "rules"),
                                                 lay = lay,
                                                 nest = nest,
                                                 noMatch = Cexp.RaiseMatch,
@@ -2826,7 +2826,7 @@ fun elaborateDec (d, {env = E, nest}) =
                            align [seq [str "object type:  ", l1],
                                   seq [str "rules expect: ", l2]]))
                    in
-                      Cexp.casee {kind = "case",
+                      Cexp.casee {kind = ("case", "rules"),
                                   lay = lay,
                                   nest = nest,
                                   noMatch = Cexp.RaiseMatch,
@@ -2864,7 +2864,7 @@ fun elaborateDec (d, {env = E, nest}) =
                             NONE => "fn" :: nest
                           | SOME s => s :: nest
                       val {arg, argType, body} =
-                         elabMatchFn (m, preError, nest, "function", lay,
+                         elabMatchFn (m, preError, nest, ("function", "rules"), lay,
                                       Cexp.RaiseMatch)
                       val body =
                          Cexp.enterLeave
@@ -2883,7 +2883,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    let
                       val try = elab try
                       val {arg, argType, body} =
-                         elabMatchFn (match, preError, nest, "handler", lay,
+                         elabMatchFn (match, preError, nest, ("handler", "rules"), lay,
                                       Cexp.RaiseAgain)
                       val _ =
                          unify
@@ -3026,7 +3026,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   (Var.newNoname (), t))
                                            in
                                               Cexp.casee
-                                              {kind = "",
+                                              {kind = ("", ""),
                                                lay = fn _ => Layout.empty,
                                                nest = [],
                                                noMatch = Cexp.Impossible,

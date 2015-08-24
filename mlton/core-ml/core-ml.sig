@@ -74,7 +74,7 @@ signature CORE_ML =
             datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
             datatype node =
                App of t * t
-             | Case of {kind: string,
+             | Case of {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
                         noMatch: noMatch,
@@ -104,7 +104,7 @@ signature CORE_ML =
              | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
             val andAlso: t * t -> t
-            val casee: {kind: string,
+            val casee: {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
                         noMatch: noMatch,
