@@ -39,27 +39,27 @@ fun tuple ps =
    else T {pat = Tuple ps,
            ty = Type.tuple (Vector.map (ps, ty))}
 
-fun layout p =
+fun layout (p, isDelimited) =
    let
       open Layout
+      fun delimit t = if isDelimited then t else paren t
    in
       case node p of
          Con {arg, con, targs} =>
-            let
-               val z =
-                  Pretty.conApp {arg = Option.map (arg, layout),
-                                 con = Con.layout con,
-                                 targs = Vector.map (targs, Type.layout)}
-            in
-               if isSome arg then paren z else z
-            end
+            delimit (Pretty.conApp {arg = Option.map (arg, layoutF),
+                                    con = Con.layout con,
+                                    targs = Vector.map (targs, Type.layout)})
        | Const {const = c, ...} => Const.layout c
-       | Layered (x, p) => paren (seq [Var.layout x, str " as ", layout p])
-       | Or ps => paren (mayAlign (separateRight (Vector.toListMap (ps, layout), "|")))
-       | Tuple ps => tuple (Vector.toListMap (ps, layout))
+       | Layered (x, p) => delimit (seq [Var.layout x, str " as ", layoutT p])
+       | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "|")))
+       | Tuple ps => tuple (Vector.toListMap (ps, layoutT))
        | Var x => Var.layout x
        | Wild => str "_"
    end
+and layoutF p = layout (p, false)
+and layoutT p = layout (p, true)
+
+val layout = layoutT
 
 fun make (p, t) =
    case p of
