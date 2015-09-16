@@ -314,8 +314,9 @@ fun casee {caseType: Xtype.t,
                      (region,
                       str (concat [#1 kind, " is not exhaustive"]),
                       align [seq [str "missing pattern: ",
-                                  Layout.alignPrefix
-                                     (Vector.toList es, "| ")],
+                                  if 1 = Vector.length es
+                                     then Vector.sub (es, 0)
+                                     else paren (mayAlign (separateLeft (Vector.toListRev es, "| ")))],
                              lay ()])
                end
       fun diagnoseRedundantMatch () =

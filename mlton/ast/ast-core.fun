@@ -128,7 +128,7 @@ structure Pat =
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
              | Or ps =>
-                  paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "|")))
+                  paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -477,7 +477,7 @@ and layoutMatch m =
    end
 
 and layoutRule (pat, exp) =
-   mayAlign [seq [Pat.layoutF pat, str " =>"],
+   mayAlign [seq [Pat.layoutT pat, str " =>"],
              layoutExpF exp]
 
 and layoutDec d =

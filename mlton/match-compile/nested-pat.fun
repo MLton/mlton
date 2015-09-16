@@ -51,7 +51,7 @@ fun layout (p, isDelimited) =
                                     targs = Vector.map (targs, Type.layout)})
        | Const {const = c, ...} => Const.layout c
        | Layered (x, p) => delimit (seq [Var.layout x, str " as ", layoutT p])
-       | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "|")))
+       | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
        | Tuple ps => tuple (Vector.toListMap (ps, layoutT))
        | Var x => Var.layout x
        | Wild => str "_"
