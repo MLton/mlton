@@ -1249,7 +1249,7 @@ local
                                  else expandedCbTy}
       in
          if not isBool then fetchExp else
-         Cexp.casee {kind = "",
+         Cexp.casee {kind = ("", ""),
                      lay = fn () => Layout.empty,
                      nest = [],
                      noMatch = Cexp.Impossible,
@@ -1271,7 +1271,7 @@ local
       let
          val valueExp =
             if not isBool then valueExp else
-            Cexp.casee {kind = "",
+            Cexp.casee {kind = ("", ""),
                         lay = fn () => Layout.empty,
                         nest = [],
                         noMatch = Cexp.Impossible,
@@ -2048,7 +2048,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                str "do declaration not of type unit",		
                                align [seq [str "do declaration type: ", l1], lay ()]))		
                          val vbs = {exp = exp',		
-                                    lay = lay,		
+                                    lay = fn () => {dec = lay (), pat = Apat.layout Apat.wild},
                                     nest = nest,		
                                     pat = pat,		
                                     patRegion = patRegion}		
@@ -2056,6 +2056,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          Decs.single		
                          (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),		
                                     nonexhaustiveMatch = nonexhaustiveMatch (),		
+                                    redundantMatch = redundantMatch (),
                                     rvbs = Vector.new0 (),		
                                     tyvars = bound,		
                                     vbs = Vector.new1 vbs})		
@@ -2362,7 +2363,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                          let
                                             val e =
                                                Cexp.casee
-                                               {kind = "function",
+                                               {kind = ("function", "clauses"),
                                                 lay = lay,
                                                 nest = nest,
                                                 noMatch = Cexp.RaiseMatch,
@@ -2533,13 +2534,14 @@ fun elaborateDec (d, {env = E, nest}) =
                             Vector.map
                             (vbs, fn {exp, pat, ...} =>
                              let
-                                fun lay () =
+                                fun layPat () = Apat.layout pat
+                                fun layDec () =
                                    let
                                       open Layout
                                    in
                                       seq [str "in: ",
                                            approximate
-                                           (seq [Apat.layout pat,
+                                           (seq [layPat (),
                                                  str " = ", Aexp.layout exp])]
                                    end
                                 val patRegion = Apat.region pat
@@ -2565,7 +2567,8 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 {exp = exp,
                                  expRegion = expRegion,
-                                 lay = lay,
+                                 layDec = layDec,
+                                 layPat = layPat,
                                  pat = pat,
                                  patRegion = patRegion}
                              end)
@@ -2628,7 +2631,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 val arg = Var.newNoname ()
                                 val body =
                                    Cexp.enterLeave
-                                   (Cexp.casee {kind = "function",
+                                   (Cexp.casee {kind = ("function", "rules"),
                                                 lay = lay,
                                                 nest = nest,
                                                 noMatch = Cexp.RaiseMatch,
@@ -2665,7 +2668,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val vbs =
                             Vector.map
                             (vbs,
-                             fn {exp, expRegion, lay, pat, patRegion, ...} =>
+                             fn {exp, expRegion, layDec, layPat, pat, patRegion, ...} =>
                              let
                                 val (pat, bound) =
                                    elaboratePat (pat, E, {bind = false,
@@ -2677,12 +2680,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                      str "pattern and expression disagree",
                                      align [seq [str "pattern:    ", p],
                                             seq [str "expression: ", e],
-                                            lay ()]))
+                                            layDec ()]))
                              in
                                 {bound = bound,
                                  exp = exp,
                                  expRegion = expRegion,
-                                 lay = lay,
+                                 layDec = layDec,
+                                 layPat = layPat,
                                  pat = pat,
                                  patRegion = patRegion}
                              end)
@@ -2713,9 +2717,9 @@ fun elaborateDec (d, {env = E, nest}) =
                              Env.extendVar (E, x, x', scheme,
                                             {isRebind = isRebind}))
                          val vbs =
-                            Vector.map (vbs, fn {exp, lay, pat, patRegion, ...} =>
+                            Vector.map (vbs, fn {exp, layDec, layPat, pat, patRegion, ...} =>
                                         {exp = exp,
-                                         lay = lay,
+                                         lay = fn () => {dec = layDec (), pat = layPat ()},
                                          nest = nest,
                                          pat = pat,
                                          patRegion = patRegion})
@@ -2728,6 +2732,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          Decs.single
                          (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                     nonexhaustiveMatch = nonexhaustiveMatch (),
+                                    redundantMatch = redundantMatch (),
                                     rvbs = rvbs,
                                     tyvars = bound,
                                     vbs = vbs})
@@ -2821,7 +2826,7 @@ fun elaborateDec (d, {env = E, nest}) =
                            align [seq [str "object type:  ", l1],
                                   seq [str "rules expect: ", l2]]))
                    in
-                      Cexp.casee {kind = "case",
+                      Cexp.casee {kind = ("case", "rules"),
                                   lay = lay,
                                   nest = nest,
                                   noMatch = Cexp.RaiseMatch,
@@ -2859,7 +2864,7 @@ fun elaborateDec (d, {env = E, nest}) =
                             NONE => "fn" :: nest
                           | SOME s => s :: nest
                       val {arg, argType, body} =
-                         elabMatchFn (m, preError, nest, "function", lay,
+                         elabMatchFn (m, preError, nest, ("function", "rules"), lay,
                                       Cexp.RaiseMatch)
                       val body =
                          Cexp.enterLeave
@@ -2878,7 +2883,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    let
                       val try = elab try
                       val {arg, argType, body} =
-                         elabMatchFn (match, preError, nest, "handler", lay,
+                         elabMatchFn (match, preError, nest, ("handler", "rules"), lay,
                                       Cexp.RaiseAgain)
                       val _ =
                          unify
@@ -3021,7 +3026,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   (Var.newNoname (), t))
                                            in
                                               Cexp.casee
-                                              {kind = "",
+                                              {kind = ("", ""),
                                                lay = fn _ => Layout.empty,
                                                nest = [],
                                                noMatch = Cexp.Impossible,
@@ -3542,13 +3547,7 @@ fun elaborateDec (d, {env = E, nest}) =
                 Env.scope
                 (E, fn () =>
                  let
-                    fun lay () =
-                       let
-                          open Layout
-                       in
-                          approximate
-                          (seq [Apat.layout pat, str " => ", Aexp.layout exp])
-                       end
+                    fun lay () = approximate (Amatch.layoutRule (pat, exp))
                     val patOrig = pat
                     val (pat, _) =
                        elaboratePat () (pat, E, {bind = true, isRvb = false},

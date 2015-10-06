@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -13,9 +14,9 @@ open S
 
 datatype t = T of {pat: node, ty: Type.t}
 and node =
-   Con of {arg: t option,
-           con: Con.t,
-           targs: Type.t vector}
+    Con of {arg: t option,
+            con: Con.t,
+            targs: Type.t vector}
   | Const of {const: Const.t,
               isChar: bool,
               isInt: bool}
@@ -38,27 +39,27 @@ fun tuple ps =
    else T {pat = Tuple ps,
            ty = Type.tuple (Vector.map (ps, ty))}
 
-fun layout p =
+fun layout (p, isDelimited) =
    let
       open Layout
+      fun delimit t = if isDelimited then t else paren t
    in
       case node p of
          Con {arg, con, targs} =>
-            let
-               val z =
-                  Pretty.conApp {arg = Option.map (arg, layout),
-                                 con = Con.layout con,
-                                 targs = Vector.map (targs, Type.layout)}
-            in
-               if isSome arg then paren z else z
-            end
+            delimit (Pretty.conApp {arg = Option.map (arg, layoutF),
+                                    con = Con.layout con,
+                                    targs = Vector.map (targs, Type.layout)})
        | Const {const = c, ...} => Const.layout c
-       | Layered (x, p) => paren (seq [Var.layout x, str " as ", layout p])
-       | Or ps => list (Vector.toListMap (ps, layout))
-       | Tuple ps => tuple (Vector.toListMap (ps, layout))
+       | Layered (x, p) => delimit (seq [Var.layout x, str " as ", layoutT p])
+       | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
+       | Tuple ps => tuple (Vector.toListMap (ps, layoutT))
        | Var x => Var.layout x
        | Wild => str "_"
-end
+   end
+and layoutF p = layout (p, false)
+and layoutT p = layout (p, true)
+
+val layout = layoutT
 
 fun make (p, t) =
    case p of
@@ -68,38 +69,36 @@ fun make (p, t) =
          else T {pat = p, ty = t}
     | _ => T {pat = p, ty = t}
 
-fun flatten p = 
+fun flatten p =
+   let
+      val ty = ty p
+      val make = fn p => make (p, ty)
+   in
+      case node p of
+         Con {arg, con, targs} =>
+            (case arg of
+                NONE => Vector.new1 p
+              | SOME arg => Vector.map (flatten arg, fn arg =>
+                                        make (Con {arg = SOME arg, con = con, targs = targs})))
+       | Const _ => Vector.new1 p
+       | Layered (x, p) => Vector.map (flatten p, fn p => make (Layered (x, p)))
+       | Or ps => Vector.concatV (Vector.map (ps, flatten))
+       | Tuple ps => let
+                        val fpss =
+                           Vector.foldr
+                           (Vector.map (ps, flatten), [[]], fn (fps, fpss) =>
+                            List.concat (Vector.toListMap (fps, fn fp =>
+                                                           List.map (fpss, fn fps => fp :: fps))))
+                     in
+                        Vector.fromListMap (fpss, fn fps => make (Tuple (Vector.fromList fps)))
+                     end
+       | Var _ => Vector.new1 p
+       | Wild => Vector.new1 p
+   end
 
-   case node p of
-      Wild => Vector.new1 p
-    | Var _ => Vector.new1 p
-    | Const _ => Vector.new1 p
-    | Con {arg, con, targs} => (case arg of
-                                   NONE => Vector.new1 p
-                                 | SOME arg' => (let
-                                                    val fargs = flatten arg'
-                                                 in
-                                                    Vector.map (fargs, fn farg => make (Con {arg = SOME farg, con = con, targs=targs}, ty p))
-                                                 end))
-    | Layered (x, p') => (let
-                             val ps = flatten p'
-                          in
-                             Vector.map (ps, fn fp => make (Layered (x, fp), ty p))
-                         end)
-    | Or ps => (let
-                   val fps = Vector.map (ps, fn p' => flatten p')
-                in
-                   Vector.concatV fps
-                end)
-    | Tuple ps => (let
-                      val tpss = 
-                         Vector.foldr
-                         (Vector.map (ps, flatten), Vector.new1 [], fn (fps, tpss) =>
-                          Vector.concatV
-                          (Vector.map (fps, fn fp => Vector.map (tpss, fn tps => fp :: tps))))
-                   in
-                      Vector.map (tpss, fn tps => make (Tuple (Vector.fromList tps), ty p))
-                   end)
+val flatten =
+   Trace.trace ("NestedPat.flatten", layout, Vector.layout layout)
+   flatten
 
 fun isRefutable p =
    case node p of
@@ -190,7 +189,7 @@ fun varsAndTypes (p: t): (Var.t * Type.t) list =
             Wild => accum
           | Const _ => accum
           | Var x => (x, ty p) :: accum
-          | Or ps => Vector.fold (ps, accum, loop)
+          | Or ps => loop (Vector.sub (ps, 0), accum)
           | Tuple ps => Vector.fold (ps, accum, loop)
           | Con {arg, ...} => (case arg of
                                 NONE => accum

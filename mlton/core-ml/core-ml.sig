@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -73,7 +74,7 @@ signature CORE_ML =
             datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
             datatype node =
                App of t * t
-             | Case of {kind: string,
+             | Case of {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
                         noMatch: noMatch,
@@ -103,7 +104,7 @@ signature CORE_ML =
              | Var of (unit -> Var.t) * (unit -> Type.t vector)
 
             val andAlso: t * t -> t
-            val casee: {kind: string,
+            val casee: {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
                         noMatch: noMatch,
@@ -165,11 +166,12 @@ signature CORE_ML =
                        tyvars: unit -> Tyvar.t vector}
              | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
                        nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+                       redundantMatch: Control.Elaborate.DiagEIW.t,
                        rvbs: {lambda: Lambda.t,
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector,
                        vbs: {exp: Exp.t,
-                             lay: unit -> Layout.t,
+                             lay: unit -> {dec: Layout.t, pat: Layout.t},
                              nest: string list,
                              pat: Pat.t,
                              patRegion: Region.t} vector}

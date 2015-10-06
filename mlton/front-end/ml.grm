@@ -246,13 +246,13 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
          aexp of Exp.node
        | andspecs of wherespec list
        | apat of Pat.t
-       | apat' of Pat.t
        | apatnode of Pat.node
        | apats of Pat.t list
        | app_exp of Exp.t list
        | app_exp1 of Exp.t list
        | arg_fct of Strexp.t
        | ieattributes of PrimKind.ImportExportAttribute.t list
+       | barcpats of Pat.t list
        | clause of clause
        | clauses of clause list
        | clausesTop of clauses
@@ -265,6 +265,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constrs of (Con.t * Type.t option) list
        | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
+       | cpat of Pat.t
+       | cpatnode of Pat.node
        | datBind of DatBind.t
        | datatypeRhs of DatatypeRhs.t
        | datatypeRhsnode of DatatypeRhs.node
@@ -320,13 +322,11 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | match of Match.t
        | opaspat of Pat.t option
        | opcon of Con.t
-       | orpats of Pat.t list
        | ot_list of Exp.t list
        | pat of Pat.t
        | pat_2c of Pat.t list
        | patitem of (Field.t * Pat.Item.t)
        | patitems of ((Field.t * Pat.Item.t) list * bool)
-       | patnode of Pat.node
        | pats of Pat.t list
        | priority of Priority.t
        | program of Program.t
@@ -1110,11 +1110,15 @@ exp_list : exp                  ([exp])
 (*                     Patterns                      *)
 (*---------------------------------------------------*)
 
-pat : patnode (Pat.makeRegion' (patnode, patnodeleft, patnoderight))
+pat : cpat BAR barcpats  (Pat.makeRegion' (Pat.Or (Vector.fromList (cpat::barcpats)),
+                                           cpatleft, barcpatsright))
+    | cpat               (cpat)
 
-patnode : pat AS pat    (Pat.makeAs (pat1, pat2))
-        | pat COLON ty  (Pat.Constraint (pat, ty))
-        | apats         (Pat.FlatApp (Vector.fromList apats))
+cpat : cpatnode (Pat.makeRegion' (cpatnode, cpatnodeleft, cpatnoderight))
+
+cpatnode : cpat AS cpat   (Pat.makeAs (cpat1, cpat2))
+         | cpat COLON ty  (Pat.Constraint (cpat, ty))
+         | apats          (Pat.FlatApp (Vector.fromList apats))
 
 apats   : apat                  ([apat])
         | apat apats            (apat :: apats)
@@ -1146,7 +1150,6 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
         | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
-        | LPAREN pat BAR orpats RPAREN    (Pat.Or (Vector.fromList (pat :: orpats)))
         | LBRACE RBRACE          (Pat.unit)
         | LBRACE patitems RBRACE
           (let
@@ -1156,11 +1159,11 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
                           items = Vector.fromList items}
            end)
 
-pats: ([])
-    | pat commapats (pat :: commapats)
+pats : ([])
+     | pat commapats (pat :: commapats)
      
-orpats  : pat ([pat])
-        | pat BAR orpats (pat :: orpats)
+barcpats : cpat ([cpat])
+         | cpat BAR barcpats (cpat :: barcpats)
 
 commapats : ([])
           | COMMA pat commapats (pat :: commapats)

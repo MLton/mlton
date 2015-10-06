@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -108,7 +109,7 @@ fun casee {caseType: Xtype.t,
                    lay: (unit -> Layout.t) option,
                    pat: NestedPat.t} vector,
            conTycon,
-           kind: string,
+           kind: (string * string),
            lay: unit -> Layout.t,
            nest: string list,
            noMatch,
@@ -123,6 +124,7 @@ fun casee {caseType: Xtype.t,
                               {exp = fn () => exp,
                                isDefault = false,
                                lay = lay,
+                               numPats = ref 0,
                                numUses = ref 0,
                                pat = pat})
       fun raiseExn (f, mayWrap) =
@@ -153,6 +155,7 @@ fun casee {caseType: Xtype.t,
              Vector.new1 {exp = exp,
                           isDefault = true,
                           lay = NONE,
+                          numPats = ref 0,
                           numUses = ref 0,
                           pat = NestedPat.make (NestedPat.Var e, testType)}]
          end
@@ -174,7 +177,7 @@ fun casee {caseType: Xtype.t,
             val decs = ref []
             val cases =
                Vector.map
-               (cases, fn {exp = e, numUses, pat = p, ...} =>
+               (cases, fn {exp = e, numPats, numUses, pat = p, ...} =>
                 let
                    val args = Vector.fromList (NestedPat.varsAndTypes p)
                    val (vars, tys) = Vector.unzip args
@@ -197,17 +200,19 @@ fun casee {caseType: Xtype.t,
                                    components = vars,
                                    body = e ()})),
                          mayInline = true})}
-                   fun finish rename =
-                      (if 0 = !numUses then List.push (decs, dec ()) else ()
-                       ; Int.inc numUses
-                       ; (Xexp.app
-                          {func = Xexp.monoVar (func, funcType),
-                           arg =
-                           Xexp.tuple {exps = (Vector.map
-                                               (args, fn (x, t) =>
-                                                Xexp.monoVar (rename x, t))),
-                                       ty = argType},
-                           ty = caseType}))
+                   fun finish np =
+                      (numPats := np
+                       ; fn rename =>
+                         (if 0 = !numUses then List.push (decs, dec ()) else ()
+                          ; Int.inc numUses
+                          ; (Xexp.app
+                             {func = Xexp.monoVar (func, funcType),
+                              arg =
+                              Xexp.tuple {exps = (Vector.map
+                                                  (args, fn (x, t) =>
+                                                   Xexp.monoVar (rename x, t))),
+                                          ty = argType},
+                              ty = caseType})))
                 in
                    (p, finish)
                 end)
@@ -236,8 +241,8 @@ fun casee {caseType: Xtype.t,
             then Error.bug "Defunctorize.casee: case with no patterns"
          else
             let
-               val {exp = e, pat = p, numUses, ...} = Vector.sub (cases, 0)
-               fun use () = Int.inc numUses 
+               val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
+               fun use () = (numPats := 1; numUses := 1)
             in
                case NestedPat.node p of
                   Wild => (use (); wild (e ()))
@@ -280,13 +285,13 @@ fun casee {caseType: Xtype.t,
          if noMatch = Cexp.RaiseAgain
             then ()
          else
-            case Vector.peeki (cases,
-                               fn (_, {isDefault, numUses, ...}) =>
-                                  isDefault andalso !numUses > 0) of
-               NONE => ()
-             | SOME (i, _) =>
+            if not (Vector.exists (cases,
+                                   fn {isDefault, numUses, ...} =>
+                                   isDefault andalso !numUses > 0))
+               then ()
+               else
                let
-                  val es = Vector.sub (!examples (), i)
+                  val es = Vector.last (!examples ())
                   val es =
                      case nonexhaustiveExnMatch of
                         Control.Elaborate.DiagDI.Default =>
@@ -307,45 +312,54 @@ fun casee {caseType: Xtype.t,
                          then Control.error
                          else Control.warning)
                      (region,
-                      str (concat [kind, " is not exhaustive"]),
+                      str (concat [#1 kind, " is not exhaustive"]),
                       align [seq [str "missing pattern: ",
-                                  Layout.alignPrefix
-                                     (Vector.toList es, "| ")],
+                                  if 1 = Vector.length es
+                                     then Vector.sub (es, 0)
+                                     else paren (mayAlign (separateLeft (Vector.toListRev es, "| ")))],
                              lay ()])
                end
       fun diagnoseRedundantMatch () =
          let
-            val redundant =
-                Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
-                                not isDefault andalso !numUses = 0)
+            (* Rules with no uses; fully redundant. *)
+            val redundantRules =
+               Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
+                               not isDefault andalso !numUses = 0)
+            (* Rules with some uses but fewer uses than pats; partially redundant. *)
+            val rulesWithRedundancy =
+               Vector.keepAll (cases, fn {isDefault, numPats, numUses, ...} =>
+                               not isDefault andalso !numUses > 0 andalso !numUses < !numPats)
+            fun doit (rules, msg) =
+               if 0 = Vector.length rules
+                  then ()
+               else
+                  let
+                     open Layout
+                  in
+                     (if redundantMatch = Control.Elaborate.DiagEIW.Error
+                         then Control.error
+                         else Control.warning)
+                     (region,
+                      str (concat [#1 kind, msg]),
+                      align
+                         [seq [str (concat [#2 kind, ": "]),
+                               (align o Vector.toListMap)
+                               (rules, fn {lay, ...} =>
+                                case lay of
+                                   NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
+                                 | SOME l => l ())],
+                          lay ()])
+                  end
          in
-            if 0 = Vector.length redundant
-               then ()
-            else 
-               let
-                  open Layout
-               in
-                  (if redundantMatch = Control.Elaborate.DiagEIW.Error
-                      then Control.error
-                      else Control.warning)
-                  (region,
-                   str (concat [kind, " has redundant rules"]),
-                   align
-                      [seq [str "rules: ",
-                            align (Vector.toListMap
-                                      (redundant, fn {lay, ...} =>
-                                       case lay of
-                                          NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
-                                        | SOME l => l ()))],
-                       lay ()])
-               end
+            doit (rulesWithRedundancy, " has " ^ #2 kind ^ " with redundancy")
+            ; doit (redundantRules, " has redundant " ^ #2 kind)
          end
    in
-      if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
-         then List.push (diagnostics, diagnoseRedundantMatch)
+      if nonexhaustiveMatch <> Control.Elaborate.DiagEIW.Ignore
+         then List.push (diagnostics, diagnoseNonexhaustiveMatch)
          else ()
-      ; if nonexhaustiveMatch  <> Control.Elaborate.DiagEIW.Ignore
-           then List.push (diagnostics, diagnoseNonexhaustiveMatch)
+      ; if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
+           then List.push (diagnostics, diagnoseRedundantMatch)
            else ()
       ; exp
    end
@@ -734,7 +748,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Fun {decs, tyvars} =>
                   prefix (Xdec.Fun {decs = processLambdas decs,
                                     tyvars = tyvars ()})
-             | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, rvbs, tyvars, vbs} =>
+             | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch,
+                    rvbs, tyvars, vbs} =>
                let
                   val tyvars = tyvars ()
                   val bodyType = et
@@ -749,18 +764,20 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                      mayWarn: bool) =
                             casee {caseType = bodyType,
                                    cases = Vector.new1 {exp = body,
-                                                        lay = SOME lay,
+                                                        lay = SOME (#pat o lay),
                                                         pat = p},
                                    conTycon = conTycon,
-                                   kind = "declaration",
-                                   lay = lay,
+                                   kind = ("declaration", "pattern"),
+                                   lay = #dec o lay,
                                    nest = nest,
                                    noMatch = Cexp.RaiseBind,
                                    nonexhaustiveExnMatch = nonexhaustiveExnMatch,
                                    nonexhaustiveMatch = if mayWarn
                                                            then nonexhaustiveMatch
                                                         else Control.Elaborate.DiagEIW.Ignore,
-                                   redundantMatch = Control.Elaborate.DiagEIW.Ignore,
+                                   redundantMatch = if mayWarn
+                                                       then redundantMatch
+                                                    else Control.Elaborate.DiagEIW.Ignore,
                                    region = patRegion,
                                    test = (e, NestedPat.ty p),
                                    tyconCons = tyconCons}
@@ -769,55 +786,50 @@ fun defunctorize (CoreML.Program.T {decs}) =
                          val pat = loopPat pat
                          fun vd (x: Var.t) = valDec (tyvars, x, exp, expType, e)
                       in
-                         if Vector.isEmpty tyvars orelse isExpansive
+                         if Vector.isEmpty tyvars
+                            then patDec (pat, exp, e, bodyType, true)
+                         else if isExpansive
                             then
                                let
-                                  val (pat, exp) =
-                                     if Vector.isEmpty tyvars
-                                        then (pat, exp)
-                                     else
-                                        let
-                                           val x = Var.newNoname ()
-                                           val thunk =
-                                              let
-                                                 open Xexp
-                                              in
-                                                 toExp
-                                                 (lambda
-                                                  {arg = Var.newNoname (),
-                                                   argType = Xtype.unit,
-                                                   body = exp,
-                                                   bodyType = expType,
-                                                   mayInline = true})
-                                              end
-                                           val thunkTy =
-                                              Xtype.arrow (Xtype.unit, expType)
-                                           fun subst t =
-                                              Xtype.substitute
-                                              (t, Vector.map (tyvars, fn a =>
-                                                              (a, Xtype.unit)))
-                                           val body =
-                                              Xexp.app
-                                              {arg = Xexp.unit (),
-                                               func =
-                                               Xexp.var
-                                               {targs = (Vector.map
-                                                         (tyvars, fn _ =>
-                                                          Xtype.unit)),
-                                                ty = subst thunkTy,
-                                                var = x},
-                                               ty = subst expType}
-                                           val decs =
-                                              [Xdec.PolyVal {exp = thunk, 
-                                                             ty = thunkTy,
-                                                             tyvars = tyvars,
-                                                             var = x}]
-                                        in
-                                           (NestedPat.replaceTypes (pat, subst),
-                                            Xexp.lett {body = body, decs = decs})
-                                        end
+                                  val x = Var.newNoname ()
+                                  val thunk =
+                                     let
+                                        open Xexp
+                                     in
+                                        toExp
+                                        (lambda
+                                         {arg = Var.newNoname (),
+                                          argType = Xtype.unit,
+                                          body = exp,
+                                          bodyType = expType,
+                                          mayInline = true})
+                                     end
+                                  val thunkTy =
+                                     Xtype.arrow (Xtype.unit, expType)
+                                  fun subst t =
+                                     Xtype.substitute
+                                     (t, Vector.map (tyvars, fn a =>
+                                                     (a, Xtype.unit)))
+                                  val body =
+                                     Xexp.app
+                                     {arg = Xexp.unit (),
+                                      func =
+                                      Xexp.var
+                                      {targs = (Vector.map
+                                                (tyvars, fn _ =>
+                                                 Xtype.unit)),
+                                       ty = subst thunkTy,
+                                       var = x},
+                                      ty = subst expType}
+                                  val decs =
+                                     [Xdec.PolyVal {exp = thunk,
+                                                    ty = thunkTy,
+                                                    tyvars = tyvars,
+                                                    var = x}]
                                in
-                                  patDec (pat, exp, e, bodyType, true)
+                                  patDec (NestedPat.replaceTypes (pat, subst),
+                                          Xexp.lett {body = body, decs = decs},
+                                          e, bodyType, true)
                                end
                          else
                             case NestedPat.node pat of
@@ -828,7 +840,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                    *  val 'a Foo (y1, y2) = e
                                    * Expands to
                                    *  val 'a x = e
-                                   *  val Foo _ = x
+                                   *  val Foo (_, _) = x  (* for match warnings *)
                                    *  val 'a y1 = case x of Foo (y1', _) => y1'
                                    *  val 'a y2 = case x of Foo (_, y2') => y2'
                                    *)

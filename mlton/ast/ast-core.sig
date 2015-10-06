@@ -178,7 +178,9 @@ signature AST_CORE =
             datatype node = T of (Pat.t * Exp.t) vector
             include WRAPPED sharing type node' = node
                             sharing type obj = t
-         end 
+            val layout : t -> Layout.t
+            val layoutRule : Pat.t * Exp.t -> Layout.t
+         end
       sharing type Exp.match  = Match.t
 
       structure EbRhs:

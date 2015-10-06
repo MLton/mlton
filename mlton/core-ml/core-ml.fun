@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -158,11 +159,12 @@ datatype dec =
            tyvars: unit -> Tyvar.t vector}
  | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
            nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
+           redundantMatch: Control.Elaborate.DiagEIW.t,
            rvbs: {lambda: lambda,
                   var: Var.t} vector,
            tyvars: unit -> Tyvar.t vector,
            vbs: {exp: exp,
-                 lay: unit -> Layout.t,
+                 lay: unit -> {dec: Layout.t, pat: Layout.t},
                  nest: string list,
                  pat: Pat.t,
                  patRegion: Region.t} vector}
@@ -170,7 +172,7 @@ and exp = Exp of {node: expNode,
                   ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {kind: string,
+  | Case of {kind: string * string,
              lay: unit -> Layout.t,
              nest: string list,
              noMatch: noMatch,
@@ -400,7 +402,7 @@ structure Exp =
          else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-         casee {kind = "if",
+         casee {kind = ("if", "branches"),
                 lay = fn () => Layout.empty,
                 nest = [],
                 noMatch = Impossible,

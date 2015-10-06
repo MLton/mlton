@@ -127,10 +127,8 @@ structure Pat =
                               constraint),
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
-             | Or ps => seq [str "(",
-                             mayAlign (separate 
-                                       (Vector.toListMap (ps, layoutF), "|")),
-                             str ")"]
+             | Or ps =>
+                  paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -141,7 +139,7 @@ structure Pat =
                                     else ", ...")
                        else empty,
                        str "}"]
-             | Tuple ps => Vector.layout layoutT ps
+             | Tuple ps => Layout.tuple (Vector.toListMap (ps, layoutT))
              | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
              | Wild => str "_"
          end
@@ -479,7 +477,7 @@ and layoutMatch m =
    end
 
 and layoutRule (pat, exp) =
-   mayAlign [seq [Pat.layoutF pat, str " =>"],
+   mayAlign [seq [Pat.layoutT pat, str " =>"],
              layoutExpF exp]
 
 and layoutDec d =
@@ -656,6 +654,13 @@ structure Exp =
       val unit: t = tuple (Vector.new0 ())
 
       val layout = layoutExpT
+   end
+
+structure Match =
+   struct
+      open Match
+      val layout = layoutMatch
+      val layoutRule = layoutRule
    end
 
 structure Dec =
