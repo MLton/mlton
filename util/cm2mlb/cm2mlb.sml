@@ -9,6 +9,7 @@
  *
  * To use from the REPL, do the following:
  * CM2MLB.cm2mlb {defines = ["MLton"],
+ *                binds = [],
  *                maps = [],
  *                sources = "sources.cm",
  *                out = TextIO.stdOut}
@@ -23,15 +24,17 @@
  * 3. mv cm2mlb.x86-linux <smlnj>/bin/.heap
  *
  * Once it is installed, the usage is as follows:
- *   cm2mlb [-Dsym ...] [-map file] sources.cm
+ *   cm2mlb [-Dsym ...] [-bind file] [-map file] sources.cm
  *
  * -Dsym can be used to define CM preprocessor symbols.
+ * -bind file can be used to add cm anchor bindings.
  * -map file can be used to add cm2mlb mappings.
  *)
 
 structure CM2MLB :
 sig
    val cm2mlb : {defines: string list,
+                 binds: string list,
                  maps: string list,
                  out: TextIO.outstream,
                  sources: string} -> unit
@@ -56,6 +59,44 @@ struct
                   (Graph.graph src)
                   handle _ => NONE
             end
+      end
+
+   structure AnchorBind =
+      struct
+
+         fun make (file : string) =
+            if OS.FileSys.access (file, [OS.FileSys.A_READ])
+               then
+                  let
+                     val lines =
+                        let
+                           val f = TextIO.openIn file
+                        in
+                           let
+                              fun loop lines =
+                                 case TextIO.inputLine f of
+                                    NONE => List.rev lines
+                                  | SOME l => loop (l::lines)
+                           in
+                              loop []
+                              before TextIO.closeIn f
+                           end handle e => (TextIO.closeIn f; raise e)
+                        end handle _ => []
+                  in
+                     List.mapPartial
+                     (fn line =>
+                      if CharVector.all Char.isSpace line
+                         orelse CharVector.sub (line, 0) = #"#"
+                         then NONE
+                         else
+                            case String.tokens Char.isSpace line of
+                               [anchor, value] =>
+                                  SOME {anchor = anchor, value = value}
+                             | _ =>  die (concat ["strange anchor->value mapping: ",
+                                                  file, ":: ", line]))
+                     lines
+                  end
+               else []
       end
 
    structure AnchorMap =
@@ -98,7 +139,7 @@ struct
          val default = make "cm2mlb-map"
       end
 
-   fun cm2mlb {defines, maps, out, sources} =
+   fun cm2mlb {defines, binds, maps, out, sources} =
       let
          (* Define preprocessor symbols *)
          val _ = 
@@ -110,11 +151,10 @@ struct
          val _ = Control.printWarnings := false
 
          val _ =
-            if OS.FileSys.access (sources, [OS.FileSys.A_READ])
-               then ()
-               else die (concat ["file not found: ", sources])
-         val {dir, file = sources} = OS.Path.splitDirFile sources
-         val () = if dir <> "" then OS.FileSys.chDir dir else ()
+            List.app
+            (fn {anchor, value} =>
+             #set (CM.Anchor.anchor anchor) (SOME value))
+            (List.concat (List.map AnchorBind.make binds))
 
          local
             val anchorMap =
@@ -129,6 +169,13 @@ struct
          in
             val peekAnchorMap = peekAnchorMap
          end
+
+         val _ =
+            if OS.FileSys.access (sources, [OS.FileSys.A_READ])
+               then ()
+               else die (concat ["file not found: ", sources])
+         val {dir, file = sources} = OS.Path.splitDirFile sources
+         val () = if dir <> "" then OS.FileSys.chDir dir else ()
       in
          case CM.Graph.graph sources of
             SOME {graph as PG.GRAPH {imports, ...}, imports = importLibs, nativesrc} =>
@@ -211,17 +258,19 @@ struct
       end
 
    fun usage msg =
-      (message "Usage: cm2mlb [-Dsym ...] [-map file] sources.cm"
+      (message "Usage: cm2mlb [-Dsym ...] [-bind file] [-map file] sources.cm"
        ; die msg)
 
    fun main (_, args) =
       let
          val defines = ref ["MLton"]
+         val binds = ref []
          val maps = ref []
          fun loop args = 
             case args of
                [file] =>
                   cm2mlb {defines = !defines,
+                          binds = !binds,
                           maps = !maps,
                           out = TextIO.stdOut,
                           sources = file}
@@ -230,6 +279,11 @@ struct
                      then
                         (defines := String.extract (flag, 2, NONE) :: !defines
                          ; loop args)
+                  else if "-bind" = flag
+                     then case args of
+                            file :: args => (binds := file :: !binds
+                                             ; loop args)
+                          | _ => usage "missing map file"
                   else if "-map" = flag
                      then case args of
                             file :: args => (maps := file :: !maps
