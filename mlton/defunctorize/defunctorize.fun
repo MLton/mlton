@@ -323,12 +323,16 @@ fun casee {caseType: Xtype.t,
          let
             (* Rules with no uses; fully redundant. *)
             val redundantRules =
-               Vector.keepAll (cases, fn {isDefault, numUses, ...} =>
-                               not isDefault andalso !numUses = 0)
+               Vector.keepAllMap (cases, fn {isDefault, lay, numUses, ...} =>
+                                  if not isDefault andalso !numUses = 0
+                                     then SOME lay
+                                     else NONE)
             (* Rules with some uses but fewer uses than pats; partially redundant. *)
             val rulesWithRedundancy =
-               Vector.keepAll (cases, fn {isDefault, numPats, numUses, ...} =>
-                               not isDefault andalso !numUses > 0 andalso !numUses < !numPats)
+               Vector.keepAllMap (cases, fn {isDefault, lay, numPats, numUses, ...} =>
+                                  if not isDefault andalso !numUses > 0 andalso !numUses < !numPats
+                                     then SOME lay
+                                     else NONE)
             fun doit (rules, msg) =
                if 0 = Vector.length rules
                   then ()
@@ -344,10 +348,10 @@ fun casee {caseType: Xtype.t,
                       align
                          [seq [str (concat [#2 kind, ": "]),
                                (align o Vector.toListMap)
-                               (rules, fn {lay, ...} =>
+                               (rules, fn lay =>
                                 case lay of
                                    NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
-                                 | SOME l => l ())],
+                                 | SOME lay => lay ())],
                           lay ()])
                   end
          in
