@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2015 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -358,6 +358,10 @@ structure TypeStr =
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
           | Tycon t => Type.con (t, tys)
+
+      val apply =
+         Trace.trace ("Interface.TypeStr.apply", Layout.tuple2 (layout, Vector.layout Type.layout), Type.layout)
+         apply
 
       fun cons t =
          case node t of
