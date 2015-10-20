@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2012 Matthew Fluet.
+(* Copyright (C) 2010,2012,2015 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -204,18 +204,14 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 fun elabTypBind (typBind: TypBind.t, E) = 
    let
       val TypBind.T types = TypBind.node typBind
-      val () = (if (Vector.length (types) > 0)
-                then (check (Control.Elaborate.allowSigWithtype, "allowSigWithtype", TypBind.region typBind))
-                else ())
+      val () = if Vector.length types > 0
+                  then check (Control.Elaborate.allowSigWithtype, "allowSigWithtype", TypBind.region typBind)
+                  else ()
       val strs =
          Vector.map
          (types, fn {def, tyvars, ...} =>
-          (let
-              val (_, ty) = elaborateType (def, E)
-              val scheme = Scheme.make (tyvars, ty)
-           in
-              TypeStr.def (scheme, Kind.Arity (Vector.length tyvars))
-           end))
+          TypeStr.def (elaborateScheme (tyvars, def, E),
+                       Kind.Arity (Vector.length tyvars)))
    in
       Vector.foreach2
       (types, strs, fn ({tycon, ...}, str) =>
