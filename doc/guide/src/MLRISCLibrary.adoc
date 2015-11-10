@@ -58,9 +58,7 @@ import in the output `.mlb` file.
 The following changes were made to the MLRISC Library, in addition to
 deriving the `.mlb` files from the `.cm` files:
 
-* eliminate or-patterns: Duplicate the whole match (`p => e`) at each of the patterns.
 * eliminate vector constants: Change `#[` to `Vector.fromList [`.
-* eliminate `withtype` in signatures.
 * eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 * eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
