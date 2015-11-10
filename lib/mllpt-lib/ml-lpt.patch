@@ -1,8 +1,8 @@
 diff --git a/lib/ml-lpt-lib.mlb b/lib/ml-lpt-lib.mlb
-index 77fd389..f185db8 100644
+index 77fd389..828a82a 100644
 --- a/lib/ml-lpt-lib.mlb
 +++ b/lib/ml-lpt-lib.mlb
-@@ -1,38 +1,150 @@
+@@ -1,38 +1,151 @@
 -(* ml-lpt-lib.mlb
 - *
 - * COPYRIGHT (c) 2008
@@ -68,42 +68,43 @@ index 77fd389..f185db8 100644
 +   local
 +      open l8
 +   in
-+      structure gs_2 = Position
++      structure gs_2 = List
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_3 = Int
++      structure gs_3 = Position
 +   end
 +   local
-+      structure Int = gs_3
-+      structure Position = gs_2
++      open l8
++   in
++      structure gs_4 = Int
++   end
++   local
++      structure Int = gs_4
++      structure Position = gs_3
 +      structure String = gs_1
 +      stream-pos.sml
 +   in
-+      structure gs_4 = AntlrStreamPos
++      structure gs_5 = AntlrStreamPos
 +   end
 +   local
-+      structure AntlrStreamPos = gs_4
++      structure AntlrStreamPos = gs_5
++      structure List = gs_2
 +      structure String = gs_1
 +      repair.sml
 +   in
-+      structure gs_5 = AntlrRepair
++      structure gs_6 = AntlrRepair
 +   end
 +   local
-+      open l8
-+   in
-+      structure gs_6 = List
-+   end
-+   local
-+      structure AntlrStreamPos = gs_4
-+      structure List = gs_6
++      structure AntlrStreamPos = gs_5
++      structure List = gs_2
 +      ebnf.sml
 +   in
 +      functor gs_7 = AntlrEBNF
 +   end
 +   local
-+      structure AntlrStreamPos = gs_4
++      structure AntlrStreamPos = gs_5
 +      antlr-lexer-sig.sml
 +   in
 +      signature gs_8 = ANTLR_LEXER
@@ -121,9 +122,9 @@ index 77fd389..f185db8 100644
 +   local
 +      signature ANTLR_LEXER = gs_8
 +      signature ANTLR_TOKENS = gs_0
-+      structure AntlrRepair = gs_5
-+      structure AntlrStreamPos = gs_4
-+      structure Int = gs_3
++      structure AntlrRepair = gs_6
++      structure AntlrStreamPos = gs_5
++      structure Int = gs_4
 +      structure ListPair = gs_10
 +      structure String = gs_1
 +      wrapped-strm.sml
@@ -133,11 +134,11 @@ index 77fd389..f185db8 100644
 +   local
 +      signature ANTLR_LEXER = gs_8
 +      signature ANTLR_TOKENS = gs_0
-+      structure AntlrRepair = gs_5
-+      structure AntlrStreamPos = gs_4
++      structure AntlrRepair = gs_6
++      structure AntlrStreamPos = gs_5
 +      functor AntlrWrappedStream = gs_11
-+      structure Int = gs_3
-+      structure List = gs_6
++      structure Int = gs_4
++      structure List = gs_2
 +      structure SMLofNJ = gs_9
 +      err-handler.sml
 +   in
@@ -159,7 +160,7 @@ index 77fd389..f185db8 100644
 +      structure gs_15 = Char
 +   end
 +   local
-+      structure AntlrStreamPos = gs_4
++      structure AntlrStreamPos = gs_5
 +      structure Char = gs_15
 +      structure String = gs_1
 +      structure Substring = gs_14
@@ -178,8 +179,8 @@ index 77fd389..f185db8 100644
 +   signature ANTLR_TOKENS = gs_0
 +   functor AntlrEBNF = gs_7
 +   functor AntlrErrHandler = gs_12
-+   structure AntlrRepair = gs_5
-+   structure AntlrStreamPos = gs_4
++   structure AntlrRepair = gs_6
++   structure AntlrStreamPos = gs_5
 +   structure ULexBuffer = gs_16
 +   structure UTF8 = gs_17
 +end

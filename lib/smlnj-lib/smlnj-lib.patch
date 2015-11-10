@@ -174,121 +174,6 @@ index 0000000..90f2fa7
 +end
 +
 +end
-diff --git a/HTML/html-attrs-fn.sml b/HTML/html-attrs-fn.sml
-index fde0845..e5b5dd5 100644
---- a/HTML/html-attrs-fn.sml
-+++ b/HTML/html-attrs-fn.sml
-@@ -89,19 +89,24 @@ functor HTMLAttrsFn (Err : HTML_ERROR) : HTML_ATTRS =
- 		fun error () = (
- 		      Err.badAttrVal ctx (attrName, attrValToString attrVal);
- 		      NONE)
--		fun cvt (AT_IMPLICIT, IMPLICIT) = SOME IMPLICIT
--		  | cvt (AT_INSTANCE, IMPLICIT) = SOME(NAME attrName)
--		  | cvt (AT_TEXT, v) = SOME v
--		  | cvt (AT_NUMBER, v) = SOME v
--		  | cvt (AT_NAMES names, (NAME s | STRING s)) = (
-+		fun atNames (names, s) = (
- 		      case (List.find (eqName s) names)
- 		       of NONE => error()
- 			| (SOME name) => SOME(NAME name)
- 		      (* end case *))
--		  | cvt (AT_IMPLICIT, (NAME s | STRING s)) =
-+		fun atImplicit (s) =
- 		      if (s = attrName)
- 			then SOME IMPLICIT
- 			else error()
-+
-+		fun cvt (AT_IMPLICIT, IMPLICIT) = SOME IMPLICIT
-+		  | cvt (AT_INSTANCE, IMPLICIT) = SOME(NAME attrName)
-+		  | cvt (AT_TEXT, v) = SOME v
-+		  | cvt (AT_NUMBER, v) = SOME v
-+		  | cvt (AT_NAMES names, NAME s) = atNames (names, s)
-+		  | cvt (AT_NAMES names, STRING s) = atNames (names, s)
-+		  | cvt (AT_IMPLICIT, NAME s) = atImplicit (s)
-+		  | cvt (AT_IMPLICIT, STRING s) = atImplicit (s)
- 		  | cvt _ = error()
- 		in
- 		  case (HTbl.find attrTbl attrName)
-@@ -138,7 +143,8 @@ functor HTMLAttrsFn (Err : HTML_ERROR) : HTML_ATTRS =
- 	  val getFn = bindFindAttr (attrMap, attr)
- 	  fun get attrVec = (case (getFn attrVec)
- 		 of NONE => NONE
--		  | (SOME((STRING s) | (NAME s))) => SOME s
-+		  | SOME (STRING s) => SOME s
-+		  | SOME (NAME s) => SOME s
- 		  | _ => (
- 		      Err.missingAttrVal (getContext attrVec) attr;
- 		      NONE)
-@@ -162,31 +168,41 @@ functor HTMLAttrsFn (Err : HTML_ERROR) : HTML_ATTRS =
- 	  end
-     fun getNUMBER (attrMap, attr) = let
- 	  val getFn = bindFindAttr (attrMap, attr)
--	  fun get attrVec = (case (getFn attrVec)
-+	  fun get attrVec = let
-+	  fun doitStringName s = (case (Int.fromString s)
-+		 of NONE =>  (
-+		      Err.badAttrVal (getContext attrVec) (attr, s);
-+		      NONE)
-+		  | someN => someN
-+		(* end case *))
-+          in
-+             (case (getFn attrVec)
- 		 of NONE => NONE
--		  | (SOME((STRING s) | (NAME s))) => (case (Int.fromString s)
--		       of NONE =>  (
--			    Err.badAttrVal (getContext attrVec) (attr, s);
--			    NONE)
--			| someN => someN
--		      (* end case *))
-+		  | SOME (STRING s) => doitStringName s
-+		  | SOME (NAME s) => doitStringName s
- 		  | SOME IMPLICIT => raise Fail "getNUMBER: IMPLICIT unexpected"
- 		(* end case *))
-+          end
- 	  in
- 	    get
- 	  end
-     fun getChar (attrMap, attr) = let
- 	  val getFn = bindFindAttr (attrMap, attr)
--	  fun get attrVec = (case (getFn attrVec)
--		 of NONE => NONE
--		  | (SOME((STRING s) | (NAME s))) =>
--		      if (size s = 1) then SOME(String.sub(s, 0))
-+	  fun get attrVec = let
-+	  fun doitStringName s =
-+		if (size s = 1) then SOME(String.sub(s, 0))
- (** NOTE: we should probably accept &#xx; as a character value **)
--			else  (
--			Err.badAttrVal (getContext attrVec) (attr, s);
--			NONE)
-+		  else  (
-+		  Err.badAttrVal (getContext attrVec) (attr, s);
-+		  NONE)
-+          in
-+             (case (getFn attrVec)
-+		 of NONE => NONE
-+		  | SOME (STRING s) => doitStringName s
-+		  | SOME (NAME s) => doitStringName s
- 		  | SOME IMPLICIT => raise Fail "getChar: IMPLICIT unexpected"
- 		(* end case *))
-+	  end
- 	  in
- 	    get
- 	  end
-diff --git a/HTML/html-elements-fn.sml b/HTML/html-elements-fn.sml
-index 9495983..fade6d7 100644
---- a/HTML/html-elements-fn.sml
-+++ b/HTML/html-elements-fn.sml
-@@ -144,7 +144,8 @@ functor HTMLElementsFn (
-    *   3) a string literal enclosed in ''
-    *)
-     fun scanAttrVal (ctx, attrName, ss) = let
--	  fun isNameChar (#"." | #"-") = true
-+	  fun isNameChar #"." = true
-+	    | isNameChar #"-" = true
- 	    | isNameChar c = (Char.isAlphaNum c)
- 	  in
- 	    case SS.getc ss
 diff --git a/HTML/html-gram.desc b/HTML/html-gram.desc
 new file mode 100644
 index 0000000..8a23ad2
@@ -9657,15 +9542,16 @@ index 0000000..331d859
 +end
 diff --git a/HTML/html-lib.mlb b/HTML/html-lib.mlb
 new file mode 100644
-index 0000000..fc014d3
+index 0000000..6808d27
 --- /dev/null
 +++ b/HTML/html-lib.mlb
-@@ -0,0 +1,299 @@
+@@ -0,0 +1,300 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
++  "allowOrPats true"
 +in
 +
 +local
@@ -9960,43 +9846,26 @@ index 0000000..fc014d3
 +end
 +
 +end
-diff --git a/HTML4/html4-attr.l.sml b/HTML4/html4-attr.l.sml
-index a48df45..bf0dd3e 100644
---- a/HTML4/html4-attr.l.sml
-+++ b/HTML4/html4-attr.l.sml
-@@ -58,7 +58,7 @@ Vector.fromList []
-         (* start position of token -- can be updated via skip() *)
- 	  val yystartPos = ref (yygetPos())
- 	(* get one char of input *)
--	  fun yygetc strm = (case UTF8.getu ULexBuffer.getc strm
-+	  fun yygetc strm = (case ULexBuffer.getu strm
-                 of (SOME (0w10, s')) => 
- 		     (AntlrStreamPos.markNewLine yysm (ULexBuffer.getpos strm);
- 		      SOME (0w10, s'))
 diff --git a/HTML4/html4-lib.cm b/HTML4/html4-lib.cm
-index 68cdc5a..bac8d74 100644
+index 8248a55..dba213b 100644
 --- a/HTML4/html4-lib.cm
 +++ b/HTML4/html4-lib.cm
-@@ -15,11 +15,10 @@ Library
- is
-     $/basis.cm
-     $/smlnj-lib.cm
-+    $/pp-lib.cm
-     $/ml-lpt-lib.cm
+@@ -23,6 +23,9 @@ is
+   $/smlnj-lib.cm
+   $/ml-lpt-lib.cm
  
--    (* XXX IMO, the following should not be required to be able to
--    "see" the PrettyPrint structure. *)
--    $smlnj/compiler/current.cm
-+    pp-init.sml
++  $/pp-lib.cm
++  pp-init.sml
++
+   html4.g : ml-antlr
+   html4.l : ml-ulex
  
-     html4.g : ml-antlr
-     html4.l : ml-ulex
 diff --git a/HTML4/html4-lib.mlb b/HTML4/html4-lib.mlb
 new file mode 100644
-index 0000000..8a3e0a6
+index 0000000..cf6652b
 --- /dev/null
 +++ b/HTML4/html4-lib.mlb
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,283 @@
 +
 +ann
 +  "nonexhaustiveMatch ignore" "redundantMatch warn"
@@ -10013,11 +9882,7 @@ index 0000000..8a3e0a6
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
-+  basis l23 =
-+    bas
-+      (* $/pp-lib.cm ====> *) $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
-+    end
-+  basis l64 =
++  basis l55 =
 +    bas
 +      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
 +    end
@@ -10042,256 +9907,248 @@ index 0000000..8a3e0a6
 +      structure gs_2 = HTML4Utils
 +   end
 +   local
-+      open l4
++      open l8
 +   in
-+      structure gs_3 = IntInf
++      structure gs_3 = Format
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_4 = List
-+   end
-+   local
-+      open l23
-+   in
-+      functor gs_5 = PPStreamFn
-+   end
-+   local
-+      open l23
-+   in
-+      structure gs_6 = StringToken
-+   end
-+   local
-+      open l23
-+   in
-+      signature gs_7 = PP_STREAM
++      structure gs_4 = IntInf
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_8 = StringCvt
-+   end
-+   local
-+      structure List = gs_4
-+      functor PPStreamFn = gs_5
-+      signature PP_STREAM = gs_7
-+      structure String = gs_0
-+      structure StringCvt = gs_8
-+      structure StringToken = gs_6
-+      pp-init.sml
-+   in
-+      signature gs_9 = PRETTYPRINT
-+      structure gs_10 = PrettyPrint
++      structure gs_5 = List
 +   end
 +   local
 +      structure Atom = gs_1
-+      structure IntInf = gs_3
++      structure IntInf = gs_4
 +      html4.sig
 +   in
-+      signature gs_11 = HTML4
++      signature gs_6 = HTML4
 +   end
 +   local
 +      structure Atom = gs_1
-+      signature HTML4 = gs_11
-+      structure IntInf = gs_3
++      signature HTML4 = gs_6
++      structure IntInf = gs_4
 +      html4.sml
 +   in
-+      structure gs_12 = HTML4
++      structure gs_7 = HTML4
 +   end
 +   local
 +      structure Atom = gs_1
-+      structure HTML4 = gs_12
-+      structure HTML4Utils = gs_2
-+      structure IntInf = gs_3
-+      signature PRETTYPRINT = gs_9
-+      structure PrettyPrint = gs_10
++      structure Format = gs_3
++      structure HTML4 = gs_7
++      structure IntInf = gs_4
++      structure List = gs_5
 +      structure String = gs_0
-+      html4-printer.sml
++      html4-print.sml
 +   in
-+      structure gs_13 = HTML4Printer
++      structure gs_8 = HTML4Print
++   end
++   local
++      structure Atom = gs_1
++      html4-attrs.sml
++   in
++      structure gs_9 = HTML4Attrs
 +   end
 +   local
 +      open l8
 +   in
-+      signature gs_14 = ORD_MAP
++      signature gs_10 = ORD_MAP
 +   end
 +   local
 +      open l8
 +   in
-+      functor gs_15 = RedBlackMapFn
++      functor gs_11 = RedBlackMapFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_16 = Substring
++      structure gs_12 = CharVectorSlice
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_17 = Char
-+   end
-+   local
-+      open l64
-+   in
-+      structure gs_18 = AntlrStreamPos
++      structure gs_13 = Substring
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_19 = TextIO
++      structure gs_14 = Char
 +   end
 +   local
-+      open l64
++      open l55
 +   in
-+      functor gs_20 = AntlrEBNF
++      structure gs_15 = AntlrStreamPos
 +   end
 +   local
-+      open l64
++      open l4
 +   in
-+      functor gs_21 = AntlrErrHandler
++      structure gs_16 = TextIO
 +   end
 +   local
-+      open l64
++      open l55
 +   in
-+      signature gs_22 = ANTLR_LEXER
++      functor gs_17 = AntlrEBNF
 +   end
 +   local
-+      signature ANTLR_LEXER = gs_22
-+      functor AntlrEBNF = gs_20
-+      functor AntlrErrHandler = gs_21
++      open l55
++   in
++      functor gs_18 = AntlrErrHandler
++   end
++   local
++      open l55
++   in
++      signature gs_19 = ANTLR_LEXER
++   end
++   local
++      signature ANTLR_LEXER = gs_19
++      functor AntlrEBNF = gs_17
++      functor AntlrErrHandler = gs_18
 +      structure Atom = gs_1
 +      structure HTML4Utils = gs_2
-+      structure IntInf = gs_3
-+      structure String = gs_0
++      structure IntInf = gs_4
 +      html4.g.sml
 +   in
-+      functor gs_23 = HTML4ParseFn
-+      structure gs_24 = HTML4Tokens
++      functor gs_20 = HTML4ParseFn
++      structure gs_21 = HTML4Tokens
 +   end
 +   local
-+      signature ANTLR_LEXER = gs_22
-+      functor AntlrEBNF = gs_20
-+      functor AntlrErrHandler = gs_21
++      signature ANTLR_LEXER = gs_19
++      functor AntlrEBNF = gs_17
++      functor AntlrErrHandler = gs_18
 +      structure Atom = gs_1
 +      structure String = gs_0
 +      html4-attr.g.sml
 +   in
-+      functor gs_25 = HTML4AttrParseFn
-+      structure gs_26 = HTML4AttrTokens
++      functor gs_22 = HTML4AttrParseFn
++      structure gs_23 = HTML4AttrTokens
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_27 = Vector
++      structure gs_24 = Vector
 +   end
 +   local
-+      open l64
++      open l55
 +   in
-+      structure gs_28 = ULexBuffer
++      structure gs_25 = ULexBuffer
 +   end
 +   local
-+      open l64
++      open l55
 +   in
-+      structure gs_29 = UTF8
++      structure gs_26 = UTF8
 +   end
 +   local
-+      structure AntlrStreamPos = gs_18
++      structure AntlrStreamPos = gs_15
 +      structure Atom = gs_1
-+      functor HTML4AttrParseFn = gs_25
-+      structure HTML4AttrTokens = gs_26
++      functor HTML4AttrParseFn = gs_22
++      structure HTML4AttrTokens = gs_23
++      structure List = gs_5
 +      structure String = gs_0
-+      structure Substring = gs_16
-+      structure TextIO = gs_19
-+      structure ULexBuffer = gs_28
-+      structure UTF8 = gs_29
-+      structure Vector = gs_27
++      structure Substring = gs_13
++      structure TextIO = gs_16
++      structure ULexBuffer = gs_25
++      structure UTF8 = gs_26
++      structure Vector = gs_24
 +      html4-attr.l.sml
 +   in
-+      structure gs_30 = HTML4AttrLexer
++      structure gs_27 = HTML4AttrLexer
 +   end
 +   local
-+      structure AntlrStreamPos = gs_18
++      structure AntlrStreamPos = gs_15
 +      structure Atom = gs_1
-+      structure Char = gs_17
-+      structure HTML4AttrLexer = gs_30
-+      functor HTML4AttrParseFn = gs_25
-+      structure HTML4AttrTokens = gs_26
-+      functor HTML4ParseFn = gs_23
-+      structure HTML4Tokens = gs_24
++      structure Char = gs_14
++      structure CharVectorSlice = gs_12
++      structure HTML4AttrLexer = gs_27
++      functor HTML4AttrParseFn = gs_22
++      structure HTML4AttrTokens = gs_23
++      functor HTML4ParseFn = gs_20
++      structure HTML4Tokens = gs_21
 +      structure HTML4Utils = gs_2
-+      structure IntInf = gs_3
-+      signature ORD_MAP = gs_14
-+      functor RedBlackMapFn = gs_15
++      structure IntInf = gs_4
++      signature ORD_MAP = gs_10
++      functor RedBlackMapFn = gs_11
 +      structure String = gs_0
-+      structure Substring = gs_16
-+      structure TextIO = gs_19
++      structure Substring = gs_13
++      structure TextIO = gs_16
 +      html4-token-utils.sml
 +   in
-+      structure gs_31 = HTML4TokenUtils
++      structure gs_28 = HTML4TokenUtils
++   end
++   local
++      structure Atom = gs_1
++      structure HTML4 = gs_7
++      html4-entities.sml
++   in
++      structure gs_29 = HTML4Entities
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_32 = Option
++      structure gs_30 = CharVector
 +   end
 +   local
-+      structure AntlrStreamPos = gs_18
++      open l4
++   in
++      structure gs_31 = Option
++   end
++   local
++      open l4
++   in
++      structure gs_32 = StringCvt
++   end
++   local
++      structure AntlrStreamPos = gs_15
 +      structure Atom = gs_1
-+      structure HTML4TokenUtils = gs_31
-+      structure IntInf = gs_3
-+      structure List = gs_4
++      structure HTML4TokenUtils = gs_28
++      structure IntInf = gs_4
++      structure List = gs_5
 +      structure String = gs_0
-+      structure Substring = gs_16
-+      structure TextIO = gs_19
-+      structure ULexBuffer = gs_28
-+      structure UTF8 = gs_29
-+      structure Vector = gs_27
++      structure StringCvt = gs_32
++      structure Substring = gs_13
++      structure TextIO = gs_16
++      structure ULexBuffer = gs_25
++      structure UTF8 = gs_26
++      structure Vector = gs_24
 +      html4.l.sml
 +   in
 +      structure gs_33 = HTML4Lexer
 +   end
 +   local
-+      structure AntlrStreamPos = gs_18
++      structure AntlrStreamPos = gs_15
 +      structure Atom = gs_1
-+      structure Char = gs_17
-+      structure HTML4 = gs_12
++      structure Char = gs_14
++      structure CharVector = gs_30
++      structure HTML4 = gs_7
 +      structure HTML4Lexer = gs_33
-+      functor HTML4ParseFn = gs_23
-+      structure HTML4TokenUtils = gs_31
-+      structure HTML4Tokens = gs_24
++      functor HTML4ParseFn = gs_20
++      structure HTML4TokenUtils = gs_28
++      structure HTML4Tokens = gs_21
 +      structure HTML4Utils = gs_2
-+      structure Option = gs_32
++      structure Option = gs_31
 +      structure String = gs_0
-+      structure TextIO = gs_19
++      structure TextIO = gs_16
 +      html4-parser.sml
 +   in
 +      structure gs_34 = HTML4Parser
 +   end
 +in
-+   signature HTML4 = gs_11
-+   structure HTML4 = gs_12
++   signature HTML4 = gs_6
++   structure HTML4 = gs_7
++   structure HTML4Attrs = gs_9
++   structure HTML4Entities = gs_29
 +   structure HTML4Parser = gs_34
-+   structure HTML4Printer = gs_13
-+   structure HTML4TokenUtils = gs_31
-+   structure HTML4Tokens = gs_24
++   structure HTML4Print = gs_8
++   structure HTML4TokenUtils = gs_28
++   structure HTML4Tokens = gs_21
 +   structure HTML4Utils = gs_2
 +end
 +end
 +
 +end
-diff --git a/HTML4/html4.l.sml b/HTML4/html4.l.sml
-index 03c06f2..8f795e1 100644
---- a/HTML4/html4.l.sml
-+++ b/HTML4/html4.l.sml
-@@ -76,7 +76,7 @@ Vector.fromList []
-         (* start position of token -- can be updated via skip() *)
- 	  val yystartPos = ref (yygetPos())
- 	(* get one char of input *)
--	  fun yygetc strm = (case UTF8.getu ULexBuffer.getc strm
-+	  fun yygetc strm = (case ULexBuffer.getu strm
-                 of (SOME (0w10, s')) => 
- 		     (AntlrStreamPos.markNewLine yysm (ULexBuffer.getpos strm);
- 		      SOME (0w10, s'))
 diff --git a/HTML4/pp-init.sml b/HTML4/pp-init.sml
 new file mode 100644
 index 0000000..ca97b62
@@ -10889,9 +10746,29 @@ index 477d0bf..d2650b6 100644
  
  end
 diff --git a/JSON/json.lex.sml b/JSON/json.lex.sml
-index 87e5f17..0e85457 100644
+index 87e5f17..d488353 100644
 --- a/JSON/json.lex.sml
 +++ b/JSON/json.lex.sml
+@@ -2,6 +2,8 @@ structure JSONLexer  = struct
+ 
+     datatype yystart_state = 
+ S | INITIAL
++    local
++
+     structure UserDeclarations = 
+       struct
+ 
+@@ -23,10 +25,8 @@ S | INITIAL
+ 	end
+   fun finishString () = (T.STRING(String.concat(List.rev(!sbuf))) before sbuf := [])
+ 
+-
+       end
+ 
+-    local
+     datatype yymatch 
+       = yyNO_MATCH
+       | yyMATCH of ULexBuffer.stream * action * yymatch
 @@ -70,7 +70,7 @@ Vector.fromList []
          (* start position of token -- can be updated via skip() *)
  	  val yystartPos = ref (yygetPos())
@@ -10901,6 +10778,15 @@ index 87e5f17..0e85457 100644
                  of (SOME (0w10, s')) => 
  		     (AntlrStreamPos.markNewLine yysm (ULexBuffer.getpos strm);
  		      SOME (0w10, s'))
+@@ -104,7 +104,7 @@ Vector.fromList []
+ 		(fn (~1, _, oldMatches) => yystuck oldMatches
+ 		  | (curState, strm, oldMatches) => let
+ 		      val (transitions, finals') = Vector.sub (yytable, curState)
+-		      val finals = map (fn i => Vector.sub (actTable, i)) finals'
++		      val finals = List.map (fn i => Vector.sub (actTable, i)) finals'
+ 		      fun tryfinal() = 
+ 		            yystuck (yyactsToMatches (strm, finals, oldMatches))
+ 		      fun find (c, []) = NONE
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
 index 0000000..5961278
@@ -11121,15 +11007,13 @@ index 0000000..5961278
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..befffe1
+index 0000000..51c6b22
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,26 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
-+* `HTML/html-attrs-fn.sml` (modified): Rewrote use of or-patterns.
-+* `HTML/html-elements-fn.sml` (modified): Rewrote use of or-patterns.
 +* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
 +* `Util/bit-array.sml` (modified): The computation of the `maxLen` is given by:
@@ -11150,6 +11034,7 @@ index 0000000..befffe1
 +* `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/spaly-set-fn.sml` (modified): Fixed bug in `all` function (base cases should return `true`, not `false`).
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 diff --git a/Reactive/reactive-lib.mlb b/Reactive/reactive-lib.mlb
@@ -11693,18 +11578,38 @@ index d7287e5..b56607e 100644
  
  end
 diff --git a/SExp/sexp.lex.sml b/SExp/sexp.lex.sml
-index 995ae5e..623beb8 100644
+index 9a5cb8e..7c0b9a6 100644
 --- a/SExp/sexp.lex.sml
 +++ b/SExp/sexp.lex.sml
-@@ -70,7 +70,7 @@ Vector.fromList []
-         (* start position of token -- can be updated via skip() *)
- 	  val yystartPos = ref (yygetPos())
- 	(* get one char of input *)
--	  fun yygetc strm = (case UTF8.getu ULexBuffer.getc strm
-+	  fun yygetc strm = (case ULexBuffer.getu strm
-                 of (SOME (0w10, s')) => 
- 		     (AntlrStreamPos.markNewLine yysm (ULexBuffer.getpos strm);
- 		      SOME (0w10, s'))
+@@ -2,6 +2,8 @@ structure SExpLexer  = struct
+ 
+     datatype yystart_state = 
+ S | INITIAL
++    local
++
+     structure UserDeclarations = 
+       struct
+ 
+@@ -23,10 +25,8 @@ S | INITIAL
+ 	end
+   fun finishString () = (T.STRING(String.concat(List.rev(!sbuf))) before sbuf := [])
+ 
+-
+       end
+ 
+-    local
+     datatype yymatch 
+       = yyNO_MATCH
+       | yyMATCH of ULexBuffer.stream * action * yymatch
+@@ -104,7 +104,7 @@ Vector.fromList []
+ 		(fn (~1, _, oldMatches) => yystuck oldMatches
+ 		  | (curState, strm, oldMatches) => let
+ 		      val (transitions, finals') = Vector.sub (yytable, curState)
+-		      val finals = map (fn i => Vector.sub (actTable, i)) finals'
++		      val finals = List.map (fn i => Vector.sub (actTable, i)) finals'
+ 		      fun tryfinal() = 
+ 		            yystuck (yyactsToMatches (strm, finals, oldMatches))
+ 		      fun find (c, []) = NONE
 diff --git a/Unix/unix-lib.mlb b/Unix/unix-lib.mlb
 new file mode 100644
 index 0000000..ebceb6d
@@ -11936,63 +11841,12 @@ index 0dc3b32..4ae2d01 100644
    struct
      structure Nd = Nd
  
-diff --git a/Util/real-order-stats.sml b/Util/real-order-stats.sml
-index 9dc231c..98edf74 100644
---- a/Util/real-order-stats.sml
-+++ b/Util/real-order-stats.sml
-@@ -23,7 +23,7 @@ structure RealOrderStats : sig
- 
- end = struct
- 
--    infix 8 $  val op $ = Unsafe.Array.sub
-+    infix 8 $$  val op $$ = Unsafe.Array.sub
-     infix 3 <- fun (a, i) <- x = Unsafe.Array.update (a, i, x)
- 
-     (* initialize random number generator *)
-@@ -36,12 +36,12 @@ end = struct
- 	    fun x - y = Word.toIntX (Word.- (Word.fromInt x, Word.fromInt y))
- 	    (* random partition: *)
- 	    fun rp (p, r) =
--		let fun sw(i,j) = let val t=a$i in (a,i)<-a$j; (a,j)<-t end
-+		let fun sw(i,j) = let val t=a$$i in (a,i)<-a$$j; (a,j)<-t end
- 		    val q = Random.randRange (p, r) rand
--		    val qv = a$q
--		    val _ = if q<>p then ((a,q)<-a$p; (a,p)<-qv) else ()
--		    fun up i = if i>r orelse qv < a$i then i else up(i+1)
--		    fun dn i = if i>=p andalso qv < a$i then dn(i-1) else i
-+		    val qv = a$$q
-+		    val _ = if q<>p then ((a,q)<-a$$p; (a,p)<-qv) else ()
-+		    fun up i = if i>r orelse qv < a$$i then i else up(i+1)
-+		    fun dn i = if i>=p andalso qv < a$$i then dn(i-1) else i
- 		    fun lp (i, j) =
- 			let val (i, j) = (up i, dn j)
- 			in if i>j then let val q' = i-1 in sw(p,q'); (q',qv) end
-@@ -50,7 +50,7 @@ end = struct
- 		in lp (p+1, r) end
- 	    (* random select: *)
- 	    fun rs (p, r) =
--		if p=r then a$r
-+		if p=r then a$$r
- 		else let val (q, qv) = rp (p, r)
- 		     in if i=q then qv else if i<q then rs(p,q-1) else rs(q+1,r)
- 		     end
-@@ -64,8 +64,8 @@ end = struct
- 	let val mid = p + len div 2
- 	    val r = p + len - 1
- 	    val m0 = select0 (a, p, r, mid)
--	    fun l(i,m) = if i>=mid then m else l(i+1, Real.max(a$i,m))
--	in if len mod 2 = 1 then m0 else (l(p+1,a$p) + m0) / 2.0
-+	    fun l(i,m) = if i>=mid then m else l(i+1, Real.max(a$$i,m))
-+	in if len mod 2 = 1 then m0 else (l(p+1,a$$p) + m0) / 2.0
- 	end
- 
-     fun median a = median0 (a, 0, Array.length a)
 diff --git a/Util/redblack-map-fn.sml b/Util/redblack-map-fn.sml
-index 5c1af51..92284dc 100644
+index 526bdc1..c26cb8f 100644
 --- a/Util/redblack-map-fn.sml
 +++ b/Util/redblack-map-fn.sml
 @@ -23,7 +23,7 @@
-  * its child will be a red leaf.
+  * will be black and its child will be a red leaf.
   *)
  
 -functor RedBlackMapFn (K : ORD_KEY) :> ORD_MAP where Key = K =
@@ -12001,11 +11855,11 @@ index 5c1af51..92284dc 100644
  
      structure Key = K
 diff --git a/Util/redblack-set-fn.sml b/Util/redblack-set-fn.sml
-index acf007f..f5a1160 100644
+index 5ccde19..f3e7d87 100644
 --- a/Util/redblack-set-fn.sml
 +++ b/Util/redblack-set-fn.sml
-@@ -20,7 +20,7 @@
-  * its child will be a red leaf.
+@@ -23,7 +23,7 @@
+  * will be black and its child will be a red leaf.
   *)
  
 -functor RedBlackSetFn (K : ORD_KEY) :> ORD_SET where Key = K =
@@ -12015,13 +11869,13 @@ index acf007f..f5a1160 100644
      structure Key = K
 diff --git a/Util/smlnj-lib.mlb b/Util/smlnj-lib.mlb
 new file mode 100644
-index 0000000..a6e9873
+index 0000000..7d6157f
 --- /dev/null
 +++ b/Util/smlnj-lib.mlb
-@@ -0,0 +1,1166 @@
+@@ -0,0 +1,1165 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveMatch ignore" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -12965,7 +12819,6 @@ index 0000000..a6e9873
 +   end
 +   local
 +      signature LIST_SORT = gs_131
-+      structure LibBase = gs_5
 +      list-mergesort.sml
 +   in
 +      structure gs_132 = ListMergeSort
@@ -13185,6 +13038,22 @@ index 0000000..a6e9873
 +end
 +
 +end
+diff --git a/Util/splay-set-fn.sml b/Util/splay-set-fn.sml
+index 12a149f..511418b 100644
+--- a/Util/splay-set-fn.sml
++++ b/Util/splay-set-fn.sml
+@@ -328,9 +328,9 @@ functor SplaySetFn (K : ORD_KEY) : ORD_SET =
+             ex (!root)
+           end
+ 
+-    fun all p EMPTY = false
++    fun all p EMPTY = true
+       | all p (SET{root,...}) = let
+-          fun all' SplayNil = false
++          fun all' SplayNil = true
+             | all' (SplayObj{value=v,left=l,right=r}) = all' l andalso p v andalso all' r
+           in
+             all' (!root)
 diff --git a/Util/time-limit.mlb b/Util/time-limit.mlb
 new file mode 100644
 index 0000000..c4ca078
@@ -13237,12 +13106,217 @@ index 0000000..0f585b7
 +       | Engine.Raise exn => raise exn
 +       | Engine.TimeOut _ => raise TimeOut
 +end
+diff --git a/XML/xml-lexer.lex.sml b/XML/xml-lexer.lex.sml
+index a162cf4..6652b22 100644
+--- a/XML/xml-lexer.lex.sml
++++ b/XML/xml-lexer.lex.sml
+@@ -2,6 +2,8 @@ structure XMLLexer  = struct
+ 
+     datatype yystart_state = 
+ COM | TAG | LIT1 | LIT2 | INITIAL | DOCTYPE
++    local
++
+     structure UserDeclarations = 
+       struct
+ 
+@@ -24,10 +26,8 @@ COM | TAG | LIT1 | LIT2 | INITIAL | DOCTYPE
+ (* trim m characters from the left and n characters from the right *)
+   fun trim (m, ss, n) = Substring.string(Substring.triml m (Substring.trimr n ss))
+ 
+-
+       end
+ 
+-    local
+     datatype yymatch 
+       = yyNO_MATCH
+       | yyMATCH of ULexBuffer.stream * action * yymatch
+@@ -105,7 +105,7 @@ Vector.fromList []
+ 		(fn (~1, _, oldMatches) => yystuck oldMatches
+ 		  | (curState, strm, oldMatches) => let
+ 		      val (transitions, finals') = Vector.sub (yytable, curState)
+-		      val finals = map (fn i => Vector.sub (actTable, i)) finals'
++		      val finals = List.map (fn i => Vector.sub (actTable, i)) finals'
+ 		      fun tryfinal() = 
+ 		            yystuck (yyactsToMatches (strm, finals, oldMatches))
+ 		      fun find (c, []) = NONE
+diff --git a/XML/xml-lib.mlb b/XML/xml-lib.mlb
+new file mode 100644
+index 0000000..c1c4c44
+--- /dev/null
++++ b/XML/xml-lib.mlb
+@@ -0,0 +1,166 @@
++
++ann
++  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 =
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb
++    end
++  basis l11 =
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++  basis l30 =
++    bas
++      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = CharVector
++   end
++   local
++      open l4
++   in
++      structure gs_1 = Char
++   end
++   local
++      open l11
++   in
++      structure gs_2 = Atom
++   end
++   local
++      xml-schema-sig.sml
++   in
++      signature gs_3 = XML_SCHEMA
++   end
++   local
++      signature XML_SCHEMA = gs_3
++      xml-tree-sig.sml
++   in
++      signature gs_4 = XML_TREE
++   end
++   local
++      signature XML_SCHEMA = gs_3
++      signature XML_TREE = gs_4
++      xml-tree-fn.sml
++   in
++      functor gs_5 = XMLTreeFn
++   end
++   local
++      structure Atom = gs_2
++      structure Char = gs_1
++      structure CharVector = gs_0
++      functor XMLTreeFn = gs_5
++      generic-xml-tree.sml
++   in
++      structure gs_6 = GenericXMLTree
++   end
++   local
++      open l30
++   in
++      structure gs_7 = AntlrStreamPos
++   end
++   local
++      open l4
++   in
++      structure gs_8 = TextIO
++   end
++   local
++      open l4
++   in
++      structure gs_9 = String
++   end
++   local
++      open l4
++   in
++      structure gs_10 = List
++   end
++   local
++      open l4
++   in
++      structure gs_11 = Substring
++   end
++   local
++      open l4
++   in
++      structure gs_12 = Vector
++   end
++   local
++      open l30
++   in
++      structure gs_13 = ULexBuffer
++   end
++   local
++      open l4
++   in
++      structure gs_14 = Option
++   end
++   local
++      open l4
++   in
++      structure gs_15 = Word
++   end
++   local
++      open l30
++   in
++      structure gs_16 = UTF8
++   end
++   local
++      open l4
++   in
++      structure gs_17 = Int
++   end
++   local
++      xml-tokens.sml
++   in
++      structure gs_18 = XMLTokens
++   end
++   local
++      structure AntlrStreamPos = gs_7
++      structure Int = gs_17
++      structure List = gs_10
++      structure Option = gs_14
++      structure String = gs_9
++      structure Substring = gs_11
++      structure TextIO = gs_8
++      structure ULexBuffer = gs_13
++      structure UTF8 = gs_16
++      structure Vector = gs_12
++      structure Word = gs_15
++      structure XMLTokens = gs_18
++      xml-lexer.lex.sml
++   in
++      structure gs_19 = XMLLexer
++   end
++   local
++      structure AntlrStreamPos = gs_7
++      structure List = gs_10
++      structure String = gs_9
++      structure TextIO = gs_8
++      structure XMLLexer = gs_19
++      structure XMLTokens = gs_18
++      signature XML_TREE = gs_4
++      xml-parser-fn.sml
++   in
++      functor gs_20 = XMLParserFn
++      signature gs_21 = XML_PARSER
++   end
++in
++   structure GenericXMLTree = gs_6
++   functor XMLParserFn = gs_20
++   functor XMLTreeFn = gs_5
++   signature XML_PARSER = gs_21
++   signature XML_SCHEMA = gs_3
++   signature XML_TREE = gs_4
++end
++end
++
++end
 diff --git a/smlnj-lib.mlb b/smlnj-lib.mlb
 new file mode 100644
-index 0000000..846951a
+index 0000000..6a916cf
 --- /dev/null
 +++ b/smlnj-lib.mlb
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +local
 +   Controls/controls-lib.mlb
 +   HTML/html-lib.mlb
@@ -13257,5 +13331,6 @@ index 0000000..846951a
 +   Unix/unix-lib.mlb
 +   Util/smlnj-lib.mlb
 +   Util/time-limit.mlb
++   XML/xml-lib.mlb
 +in
 +end

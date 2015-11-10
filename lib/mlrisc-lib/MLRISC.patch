@@ -534,36 +534,52 @@ index c7b22a3..6ffe6e8 100644
 -    )
  
 -  functor Multiply64 = MLTreeMult
-+     val trapping = true
-+     val multCost = multCost
-+     fun addv{r1,r2,d} = [I.operatev{oper=I.ADDLV,ra=r1,rb=I.REGop r2,rc=d}]
-+     fun subv{r1,r2,d} = [I.operatev{oper=I.SUBLV,ra=r1,rb=I.REGop r2,rc=d}]
-+     val sh1addv = NONE
-+     val sh2addv = NONE
-+     val sh3addv = NONE
-+
-+     val signed = true)
-+
-+  (* unsigned, non-trapping version of multiply and divide *)
-+  structure Mulu32 = MLTreeMult
-     (structure I = I
-      structure T = T
-      structure CB = CellsBasis
-    
+-    (structure I = I
+-     structure T = T
+-     structure CB = CellsBasis
+-   
 -     val intTy = 64
-+     val intTy = 32
- 
+-
 -     type arg  = {r1:CB.cell, r2:CB.cell, d:CB.cell}
 -     type argi = {r:CB.cell, i:int, d:CB.cell}
-+     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
-+     type argi = {r:CB.cell,i:int,d:CB.cell}
- 
-      fun mov{r,d}    = I.COPY{k=CB.GP, sz=intTy, dst=[d],src=[r],tmp=NONE}
+-
+-     fun mov{r,d}    = I.COPY{k=CB.GP, sz=intTy, dst=[d],src=[r],tmp=NONE}
 -     fun add{r1,r2,d}= I.operate{oper=I.ADDQ,ra=r1,rb=I.REGop r2,rc=d}
 -     fun slli{r,i,d} = [I.operate{oper=I.SLL,ra=r,rb=I.IMMop i,rc=d}]
 -     fun srli{r,i,d} = [I.operate{oper=I.SRL,ra=r,rb=I.IMMop i,rc=d}]
 -     fun srai{r,i,d} = [I.operate{oper=I.SRA,ra=r,rb=I.IMMop i,rc=d}]
 -    )
+-
+-  (* signed, trapping version of multiply and divide *)
+-  structure Mult32 = Multiply32
+-    (val trapping = true
++     val trapping = true
+      val multCost = multCost
+      fun addv{r1,r2,d} = [I.operatev{oper=I.ADDLV,ra=r1,rb=I.REGop r2,rc=d}]
+      fun subv{r1,r2,d} = [I.operatev{oper=I.SUBLV,ra=r1,rb=I.REGop r2,rc=d}]
+      val sh1addv = NONE
+      val sh2addv = NONE
+      val sh3addv = NONE
+-    )
+-    (val signed = true)
+ 
+-  (* non-trapping version of multiply and divide *)
+-  functor Mul32 = Multiply32
+-    (val trapping = false
++     val signed = true)
++
++  (* unsigned, non-trapping version of multiply and divide *)
++  structure Mulu32 = MLTreeMult
++    (structure I = I
++     structure T = T
++     structure CB = CellsBasis
++   
++     val intTy = 32
++
++     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
++     type argi = {r:CB.cell,i:int,d:CB.cell}
++
++     fun mov{r,d}    = I.COPY{k=CB.GP, sz=intTy, dst=[d],src=[r],tmp=NONE}
 +     fun add{r1,r2,d} = I.operate{oper=I.ADDL,ra=r1,rb=I.REGop r2,rc=d}
 +     (*
 +      * How to left shift by a constant (32bits)
@@ -576,10 +592,7 @@ index c7b22a3..6ffe6e8 100644
 +          in  [I.operate{oper=I.SLL,ra=r,rb=I.IMMop i,rc=tmp},
 +               I.operate{oper=I.ADDL,ra=tmp,rb=zeroOpn,rc=d}]
 +          end
- 
--  (* signed, trapping version of multiply and divide *)
--  structure Mult32 = Multiply32
--    (val trapping = true
++
 +     (*
 +      * How to right shift (unsigned) by a constant (32bits)
 +      *)
@@ -599,16 +612,10 @@ index c7b22a3..6ffe6e8 100644
 +         end
 +
 +     val trapping = false
-      val multCost = multCost
--     fun addv{r1,r2,d} = [I.operatev{oper=I.ADDLV,ra=r1,rb=I.REGop r2,rc=d}]
--     fun subv{r1,r2,d} = [I.operatev{oper=I.SUBLV,ra=r1,rb=I.REGop r2,rc=d}]
++     val multCost = multCost
 +     fun addv{r1,r2,d} = [I.operate{oper=I.ADDL,ra=r1,rb=I.REGop r2,rc=d}]
 +     fun subv{r1,r2,d} = [I.operate{oper=I.SUBL,ra=r1,rb=I.REGop r2,rc=d}]
-      val sh1addv = NONE
--     val sh2addv = NONE
--     val sh3addv = NONE
--    )
--    (val signed = true)
++     val sh1addv = NONE
 +     val sh2addv = SOME(fn {r1,r2,d} =>
 +                    [I.operate{oper=I.S4ADDL,ra=r1,rb=I.REGop r2,rc=d}])
 +     val sh3addv = SOME(fn {r1,r2,d} =>
@@ -657,10 +664,7 @@ index c7b22a3..6ffe6e8 100644
 +         in  [I.operate{oper=I.ADDL,ra=r,rb=zeroOpn,rc=tmp},
 +              I.operate{oper=I.SRA,ra=tmp,rb=I.IMMop i,rc=d}]
 +         end
- 
--  (* non-trapping version of multiply and divide *)
--  functor Mul32 = Multiply32
--    (val trapping = false
++
 +     val trapping = false
       val multCost = multCost
       fun addv{r1,r2,d} = [I.operate{oper=I.ADDL,ra=r1,rb=I.REGop r2,rc=d}]
@@ -1814,14 +1818,14 @@ index 5ff322a..f8834de 100644
  	      case multDivOp
 -	       of (I.IDIVL1 | I.DIVL1 | I.IDIVQ1 | I.DIVQ1) => 
 +	       of (I.IDIVL1) =>
-+	           (raxPair, C.rdx::C.rax::uses)
+ 	           (raxPair, C.rdx::C.rax::uses)
+-	        | (I.IMULL1 | I.MULL1 | I.IMULQ1 | I.MULQ1) => 
 +                | (I.DIVL1) =>
 +	           (raxPair, C.rdx::C.rax::uses)
 +                | (I.IDIVQ1) =>
 +	           (raxPair, C.rdx::C.rax::uses)
 +                | (I.DIVQ1) =>
- 	           (raxPair, C.rdx::C.rax::uses)
--	        | (I.IMULL1 | I.MULL1 | I.IMULQ1 | I.MULQ1) => 
++	           (raxPair, C.rdx::C.rax::uses)
 +	        | (I.IMULL1) =>
 +	          (raxPair, C.rax::uses)
 +	        | (I.MULL1) =>
@@ -1881,11 +1885,11 @@ index 5ff322a..f8834de 100644
  	     | I.MULTDIV arg => multDiv arg
 -	     | ( I.MUL3  {src1, dst, ...} | I.MULQ3 {src1, dst, ...} ) => 
 +	     | ( I.MUL3  {src1, dst, ...} ) =>
-+	       ([dst], operandUse src1)
-+	     | ( I.MULQ3 {src1, dst, ...} ) =>
  	       ([dst], operandUse src1)
 -	     | ( I.UNARY{opnd, ...} | I.SET {opnd, ...} ) => unary opnd
 -	     | (I.PUSHQ arg | I.PUSHL arg | I.PUSHW arg | I.PUSHB arg ) => push arg
++	     | ( I.MULQ3 {src1, dst, ...} ) =>
++	       ([dst], operandUse src1)
 +	     | ( I.UNARY{opnd, ...} ) => unary opnd
 +	     | ( I.SET {opnd, ...} ) => unary opnd
 +	     | ( I.PUSHQ arg ) => push arg
@@ -3188,31 +3192,31 @@ index f39eece..17153d4 100644
 +		  T.MV (w, tmp, sx{fromWidth=w', toWidth=w, e=T.LOAD (w', T.ADD(wordTy, e, off), rgn)}) :: stms
 +	        end
 +	    | (ARG e, SA.BLOCK_OFFSET(w, (K.GPR), offset)) => let
-+	      (* expression to stack (gpr) *)
-+		val tmp = C.newReg ()
-+	        in
-+		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, e) :: stms
-+	        end
-+	    | (ARG e, SA.BLOCK_OFFSET(w, (K.STK), offset)) => let
  	      (* expression to stack (gpr) *)
  		val tmp = C.newReg ()
  	        in
  		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, e) :: stms
  	        end
 -	    | (ARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.GPR | K.STK), offset), w', K.GPR)) => let
++	    | (ARG e, SA.BLOCK_OFFSET(w, (K.STK), offset)) => let
++	      (* expression to stack (gpr) *)
++		val tmp = C.newReg ()
++	        in
++		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, e) :: stms
++	        end
 +	    | (ARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.GPR), offset), w', K.GPR)) => let
++	      (* expression to stack with conversion (gpr) *)
++		val tmp = C.newReg ()
++	        in
++		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, sx{fromWidth=w', toWidth=w, e=e}) :: stms
++	        end
++	    | (ARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.STK), offset), w', K.GPR)) => let
  	      (* expression to stack with conversion (gpr) *)
  		val tmp = C.newReg ()
  	        in
  		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, sx{fromWidth=w', toWidth=w, e=e}) :: stms
  	        end
 -	    | (FARG (e as T.FREG _), SA.BLOCK_OFFSET(w, (K.FPR | K.FSTK), offset)) =>
-+	    | (ARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.STK), offset), w', K.GPR)) => let
-+	      (* expression to stack with conversion (gpr) *)
-+		val tmp = C.newReg ()
-+	        in
-+		  T.STORE (w, offSp offset, T.REG (w, tmp), stack) :: T.MV (w, tmp, sx{fromWidth=w', toWidth=w, e=e}) :: stms
-+	        end
 +	    | (FARG (e as T.FREG _), SA.BLOCK_OFFSET(w, (K.FPR), offset)) =>
 +	      (* register to stack (fpr) *)
 +	      T.FSTORE (w, offSp offset, e, stack) :: stms
@@ -3286,18 +3290,18 @@ index f39eece..17153d4 100644
 +		  T.FMV (w', tmp, f2f{fromWidth=w, toWidth=w', e=T.FLOAD (w, T.ADD(wordTy, e, off), rgn)}) :: stms
 +	        end
 +	    | (FARG e, SA.BLOCK_OFFSET(w, (K.FPR), offset)) => let
++              (* expression to stack (fpr) *)
++		val tmp = C.newFreg ()
++	        in
++		  T.FSTORE (w, offSp offset, T.FREG (w, tmp), stack) :: T.FMV (w, tmp, e) :: stms
++	        end
++	    | (FARG e, SA.BLOCK_OFFSET(w, (K.FSTK), offset)) => let
                (* expression to stack (fpr) *)
  		val tmp = C.newFreg ()
  	        in
  		  T.FSTORE (w, offSp offset, T.FREG (w, tmp), stack) :: T.FMV (w, tmp, e) :: stms
  	        end
 -	    | (FARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.FPR | K.FSTK), offset), w', K.FPR)) => let
-+	    | (FARG e, SA.BLOCK_OFFSET(w, (K.FSTK), offset)) => let
-+              (* expression to stack (fpr) *)
-+		val tmp = C.newFreg ()
-+	        in
-+		  T.FSTORE (w, offSp offset, T.FREG (w, tmp), stack) :: T.FMV (w, tmp, e) :: stms
-+	        end
 +	    | (FARG e, SA.NARROW(SA.BLOCK_OFFSET(w, (K.FPR), offset), w', K.FPR)) => let
 +              (* expression to stack (fpr) *)
 +		val tmp = C.newFreg ()
@@ -4541,26 +4545,42 @@ index 50a58b4..ea04970 100644
     val costOfMultiply : int ref
     val costOfDivision : int ref
    ) : MLTREECOMP =
-@@ -52,7 +144,9 @@ struct
+@@ -52,24 +144,23 @@ struct
     fun mkfcopy{dst, src, tmp} =
         I.COPY{k=CB.FP, sz=64, dst=dst, src=src, tmp=tmp}
     structure W = Word32
 -   functor Multiply32 = MLTreeMult
-+
-+   (* signed, trapping version of multiply and divide *)
-+   structure Mult32 = MLTreeMult
-     (structure I = I
-      structure T = T
-      structure CB = CB
-@@ -65,11 +159,8 @@ struct
-      fun slli{r,i,d} = [I.shift{s=I.ZDEP,r=r,p=31-i,len=32-i,t=d}]
-      fun srli{r,i,d} = [I.shift{s=I.EXTRU,r=r,p=31-i,len=32-i,t=d}]
-      fun srai{r,i,d} = [I.shift{s=I.EXTRS,r=r,p=31-i,len=32-i,t=d}]
+-    (structure I = I
+-     structure T = T
+-     structure CB = CB
+-     val intTy = 32
+-     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
+-     type argi = {r:CB.cell,i:int,d:CB.cell}
+-
+-     fun mov{r,d} = mkcopy{dst=[d],src=[r],tmp=NONE}
+-     fun add{r1,r2,d} = I.arith{a=I.ADD,r1=r1,r2=r2,t=d}
+-     fun slli{r,i,d} = [I.shift{s=I.ZDEP,r=r,p=31-i,len=32-i,t=d}]
+-     fun srli{r,i,d} = [I.shift{s=I.EXTRU,r=r,p=31-i,len=32-i,t=d}]
+-     fun srai{r,i,d} = [I.shift{s=I.EXTRS,r=r,p=31-i,len=32-i,t=d}]
 -    )
  
--   (* signed, trapping version of multiply and divide *)
+    (* signed, trapping version of multiply and divide *)
 -   structure Mult32 = Multiply32
 -    (val trapping = true
++   structure Mult32 = MLTreeMult
++    (structure I = I
++     structure T = T
++     structure CB = CB
++     val intTy = 32
++     type arg  = {r1:CB.cell,r2:CB.cell,d:CB.cell}
++     type argi = {r:CB.cell,i:int,d:CB.cell}
++
++     fun mov{r,d} = mkcopy{dst=[d],src=[r],tmp=NONE}
++     fun add{r1,r2,d} = I.arith{a=I.ADD,r1=r1,r2=r2,t=d}
++     fun slli{r,i,d} = [I.shift{s=I.ZDEP,r=r,p=31-i,len=32-i,t=d}]
++     fun srli{r,i,d} = [I.shift{s=I.EXTRU,r=r,p=31-i,len=32-i,t=d}]
++     fun srai{r,i,d} = [I.shift{s=I.EXTRS,r=r,p=31-i,len=32-i,t=d}]
++
 +     val trapping = true
       val multCost = costOfMultiply
       val divCost  = costOfDivision
@@ -15291,12 +15311,12 @@ index 6a27f75..413756f 100644
 -		 Ty.C_signed (Ty.I_int | Ty.I_long) |
 -		 Ty.C_unsigned (Ty.I_int | Ty.I_long)) =>
 +	      | Ty.C_PTR =>
-+		[T.GPR (T.REG (32, oreg 0))]
+ 		[T.GPR (T.REG (32, oreg 0))]
+-	      | (Ty.C_signed Ty.I_char | Ty.C_unsigned Ty.I_char) =>
 +	      | Ty.C_void =>
 +		[T.GPR (T.REG (32, oreg 0))]
 +	      | Ty.C_signed Ty.I_int =>
- 		[T.GPR (T.REG (32, oreg 0))]
--	      | (Ty.C_signed Ty.I_char | Ty.C_unsigned Ty.I_char) =>
++		[T.GPR (T.REG (32, oreg 0))]
 +	      | Ty.C_signed Ty.I_long =>
 +		[T.GPR (T.REG (32, oreg 0))]
 +	      | Ty.C_unsigned Ty.I_int =>
@@ -15304,10 +15324,10 @@ index 6a27f75..413756f 100644
 +	      | Ty.C_unsigned Ty.I_long =>
 +		[T.GPR (T.REG (32, oreg 0))]
 +	      | Ty.C_signed Ty.I_char =>
++		[T.GPR (T.REG (8, oreg 0))]
++	      | Ty.C_unsigned Ty.I_char =>
  		[T.GPR (T.REG (8, oreg 0))]
 -	      | (Ty.C_signed Ty.I_short | Ty.C_unsigned Ty.I_short) =>
-+	      | Ty.C_unsigned Ty.I_char =>
-+		[T.GPR (T.REG (8, oreg 0))]
 +	      | Ty.C_signed Ty.I_short =>
 +		[T.GPR (T.REG (16, oreg 0))]
 +	      | Ty.C_unsigned Ty.I_short =>
@@ -15824,37 +15844,20 @@ index b8e7e40..403e89c 100644
        
 -     val intTy = 64    
 +     val intTy = 32
-      fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
-      fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
--     fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
--     fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
--     fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
--    )
++     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
++     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
 +     fun slli{r,i,d} = [I.shift{s=I.SLL,r=r,i=I.IMMED i,d=d}]
 +     fun srli{r,i,d} = [I.shift{s=I.SRL,r=r,i=I.IMMED i,d=d}]
 +     fun srai{r,i,d} = [I.shift{s=I.SRA,r=r,i=I.IMMED i,d=d}]
- 
--  (* signed, trapping version of multiply and divide *)
--  structure Mult32 = Multiply32
--    (val trapping = true
--     val multCost = multCost 
--     fun addv{r1,r2,d} = 
--         I.arith{a=I.ADDCC,r=r1,i=I.REG r2,d=d}::PseudoInstrs.overflowtrap32 
--     fun subv{r1,r2,d} = 
--         I.arith{a=I.SUBCC,r=r1,i=I.REG r2,d=d}::PseudoInstrs.overflowtrap32 
++
 +     val trapping = false
 +     val multCost = muluCost
 +     fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
 +     fun subv{r1,r2,d} = [I.arith{a=I.SUB,r=r1,i=I.REG r2,d=d}]
-      val sh1addv = NONE 
-      val sh2addv = NONE 
-      val sh3addv = NONE 
--    )
--    (val signed = true)
- 
--  (* unsigned, non-trapping version of multiply and divide *)
--  functor Mul32 = Multiply32
--    (val trapping = false
++     val sh1addv = NONE 
++     val sh2addv = NONE 
++     val sh3addv = NONE 
++
 +     val signed = false)
 +
 +  (* signed, non-trapping version of multiply and divide *)
@@ -15873,21 +15876,16 @@ index b8e7e40..403e89c 100644
 +     fun srai{r,i,d} = [I.shift{s=I.SRA,r=r,i=I.IMMED i,d=d}]
 +
 +     val trapping = false
-      val multCost = muluCost
-      fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
-      fun subv{r1,r2,d} = [I.arith{a=I.SUB,r=r1,i=I.REG r2,d=d}]
-      val sh1addv = NONE 
-      val sh2addv = NONE 
-      val sh3addv = NONE 
--    )
--  structure Mulu32 = Mul32(val signed = false)
- 
--  structure Muls32 = Mul32(val signed = true)
++     val multCost = muluCost
++     fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
++     fun subv{r1,r2,d} = [I.arith{a=I.SUB,r=r1,i=I.REG r2,d=d}]
++     val sh1addv = NONE 
++     val sh2addv = NONE 
++     val sh3addv = NONE 
++
 +     val signed = true)
- 
-   (* signed, trapping version of multiply and divide *)
--  structure Mult64 = Multiply64
--    (val trapping = true
++
++  (* signed, trapping version of multiply and divide *)
 +  structure Mult64 = MLTreeMult
 +    (structure I = I
 +     structure T = T
@@ -15896,12 +15894,44 @@ index b8e7e40..403e89c 100644
 +     type argi = {r:CB.cell,i:int,d:CB.cell}
 +
 +     val intTy = 64
-+     fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
-+     fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
-+     fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
-+     fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
-+     fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
-+
+      fun mov{r,d} = COPY{dst=[d],src=[r],tmp=NONE}
+      fun add{r1,r2,d} = I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}
+      fun slli{r,i,d} = [I.shift{s=I.SLLX,r=r,i=I.IMMED i,d=d}]
+      fun srli{r,i,d} = [I.shift{s=I.SRLX,r=r,i=I.IMMED i,d=d}]
+      fun srai{r,i,d} = [I.shift{s=I.SRAX,r=r,i=I.IMMED i,d=d}]
+-    )
+ 
+-  (* signed, trapping version of multiply and divide *)
+-  structure Mult32 = Multiply32
+-    (val trapping = true
+-     val multCost = multCost 
+-     fun addv{r1,r2,d} = 
+-         I.arith{a=I.ADDCC,r=r1,i=I.REG r2,d=d}::PseudoInstrs.overflowtrap32 
+-     fun subv{r1,r2,d} = 
+-         I.arith{a=I.SUBCC,r=r1,i=I.REG r2,d=d}::PseudoInstrs.overflowtrap32 
+-     val sh1addv = NONE 
+-     val sh2addv = NONE 
+-     val sh3addv = NONE 
+-    )
+-    (val signed = true)
+-
+-  (* unsigned, non-trapping version of multiply and divide *)
+-  functor Mul32 = Multiply32
+-    (val trapping = false
+-     val multCost = muluCost
+-     fun addv{r1,r2,d} = [I.arith{a=I.ADD,r=r1,i=I.REG r2,d=d}]
+-     fun subv{r1,r2,d} = [I.arith{a=I.SUB,r=r1,i=I.REG r2,d=d}]
+-     val sh1addv = NONE 
+-     val sh2addv = NONE 
+-     val sh3addv = NONE 
+-    )
+-  structure Mulu32 = Mul32(val signed = false)
+-
+-  structure Muls32 = Mul32(val signed = true)
+-
+-  (* signed, trapping version of multiply and divide *)
+-  structure Mult64 = Multiply64
+-    (val trapping = true
 +     val trapping = true
       val multCost = multCost 
       fun addv{r1,r2,d} = 
