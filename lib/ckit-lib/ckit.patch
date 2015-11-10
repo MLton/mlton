@@ -1,21 +1,15 @@
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..56e6f38
+index 0000000..943da85
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,9 @@
 +The following changes were made to the ckit Library, in addition to
 +deriving the `.mlb` file from the `.cm` file:
 +
-+* `ast/ast-sig.sml` (modified): Rewrote use of `withtype` in signature.
-+* `ast/build-ast.sml` (modified): Rewrote use of or-patterns.
-+* `ast/initializer-normalizer.sml` (modified): Rewrote use of or-patterns.
 +* `ast/pp/pp-ast-adornment-sig.sml` (modified): Rewrote use of `signature` in `local`.
 +* `ast/pp/pp-ast-ext-sig.sml` (modified): Rewrote use of `signature` in `local`.
-+* `ast/pp/pp-lib.sml` (modified): Rewrote use of or-patterns.
-+* `ast/sizeof.sml` (modified): Rewrote use of or-patterns.
 +* `ast/type-util-sig.sml` (modified): Rewrote use of `signature` in `local`.
-+* `ast/type-util.sml` (modified): Rewrote use of or-patterns.
 +* `parser/grammar/c.lex.sml` (modified): Rewrote use of vector literal.
 +* `parser/parse-tree-sig.sml` (modified): Rewrote use of (sequential) `withtype` in signature.
 +* `parser/parse-tree.sml` (modified): Rewrote use of (sequential) `withtype`.
@@ -26,230 +20,6 @@ index 0000000..abc601f
 +++ b/ckit-lib.mlb
 @@ -0,0 +1 @@
 +src/ckit-lib.mlb
-diff --git a/src/ast/ast-sig.sml b/src/ast/ast-sig.sml
-index 29f5eb2..367fb5a 100644
---- a/src/ast/ast-sig.sml
-+++ b/src/ast/ast-sig.sml
-@@ -67,7 +67,12 @@ sig
-   datatype declaration
-     = TypeDecl of {shadow: {strct:bool} option, tid:tid}
-         (* placeholder to indicate where typedefs/enums/structs should be printed *)
--    | VarDecl of id * initExpression option
-+    | VarDecl of
-+        (* id *) {name: Symbol.symbol, uid: Pid.uid,
-+                  location: SourceMap.location, ctype: ctype,
-+                  stClass: storageClass, status: declStatus,
-+                  global: bool, kind: idKind} *
-+        initExpression option
- 
- 
-   (* STATEMENTS *)
-@@ -106,15 +111,31 @@ sig
-     | Assign of expression * expression
-     | Comma of expression * expression
-     | Sub of expression * expression          
--    | Member of expression * member
--    | Arrow of expression * member
-+    | Member of
-+        expression *
-+        (* member *) {name: Symbol.symbol, uid : Pid.uid,
-+                      location : SourceMap.location,
-+                      ctype: ctype, kind: memberKind}
-+    | Arrow of
-+        expression *
-+        (* member *) {name: Symbol.symbol, uid : Pid.uid,
-+                      location : SourceMap.location,
-+                      ctype: ctype, kind: memberKind}
-     | Deref of expression                     
-     | AddrOf of expression                    
-     | Binop of binop * expression * expression
-     | Unop of unop * expression
-     | Cast of ctype * expression
--    | Id of id
--    | EnumId of member * LargeInt.int
-+    | Id of
-+        (* id *) {name: Symbol.symbol, uid: Pid.uid,
-+                  location: SourceMap.location, ctype: ctype,
-+                  stClass: storageClass, status: declStatus,
-+                  global: bool, kind: idKind}
-+    | EnumId of
-+        (* member *) {name: Symbol.symbol, uid : Pid.uid,
-+                      location : SourceMap.location,
-+                      ctype: ctype, kind: memberKind} *
-+	LargeInt.int
-     | SizeOf of ctype  (* not used in compiler mode; sizeof expr becomes sizeof (typeof expr)  *)
-     | ExprExt of (expression, statement, binop, unop) AstExt.expressionExt
-     | ErrorExpr
-@@ -131,7 +152,13 @@ sig
-                                        * signednessTag
-     | Array of (LargeInt.int * expression) option * ctype
-     | Pointer of ctype
--    | Function of ctype * (ctype * id option) list
-+    | Function of
-+        ctype *
-+        (ctype *
-+         (* id *) {name: Symbol.symbol, uid: Pid.uid,
-+                   location: SourceMap.location, ctype: ctype,
-+                   stClass: storageClass, status: declStatus,
-+                   global: bool, kind: idKind} option) list
-     | StructRef of tid (* reference to a tid bound by a struct decl *)
-     | UnionRef of tid  (* reference to a tid bound by a union decl *)
-     | EnumRef of tid   (* reference to a tid bound by a enumeration decl *)
-@@ -151,7 +178,7 @@ sig
-     | UNIONmem
-     | ENUMmem of LargeInt.int
- 
--  withtype member =
-+  type member =
-     {name: Symbol.symbol,  (* the name of the member *)
-      uid : Pid.uid,        (* unique identifier *)
-      location : SourceMap.location,
-diff --git a/src/ast/build-ast.sml b/src/ast/build-ast.sml
-index 9e8e7c7..65e32bf 100644
---- a/src/ast/build-ast.sml
-+++ b/src/ast/build-ast.sml
-@@ -290,7 +290,8 @@ let
- 	of SOME{ntype=NONE,...} => true
- 	 | _ => false
- 
--  fun isPartialTy(Ast.StructRef tid | Ast.UnionRef tid) = isPartial tid
-+  fun isPartialTy(Ast.StructRef tid) = isPartial tid
-+    | isPartialTy(Ast.UnionRef tid) = isPartial tid
-     | isPartialTy _ = false
- 
- 
-@@ -443,7 +444,10 @@ let
-       case expr
- 	of Ast.Member(Ast.EXPR (expr'', aid, _), _) => 
- 	    isLval (expr'', lookAid aid)
--	 | (Ast.Id _ | Ast.Sub _ | Ast.Arrow _ | Ast.Deref _) => true
-+	 | Ast.Id _ => true
-+	 | Ast.Sub _ => true
-+	 | Ast.Arrow _ => true
-+	 | Ast.Deref _ => true
- 	 | _ => false
- 
-   fun checkAssignableLval (expr, ty, s) =
-@@ -602,7 +606,9 @@ let
-        NB 2: if type is array then *do* generate errors when initializer is simple  *)
- 
- 
--  fun TCInitializer(ctype as (Ast.TypeRef _ | Ast.Qual _), expr) =
-+  fun TCInitializer(ctype as Ast.TypeRef _, expr) =
-+        TCInitializer(getCoreType ctype, expr)  (* the following TCInitializer cases expect coretypes *)
-+    | TCInitializer(ctype as Ast.Qual _, expr) =
-         TCInitializer(getCoreType ctype, expr)  (* the following TCInitializer cases expect coretypes *)
-     | TCInitializer (Ast.Array(opt, ctype), Ast.Aggregate exprs) = 
- 	(case (opt, LargeInt.fromInt(List.length exprs))
-@@ -650,7 +656,11 @@ let
- 	      error "empty union"
- 	  | NONE => bug "TCInitializer: lookTid failed"
- 	  | _ => error "TCInitializer: ill-formed UnionRef type")
--    | TCInitializer (ty as (Ast.StructRef _ | Ast.UnionRef _), Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
-+    | TCInitializer (ty as Ast.StructRef _, Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
-+	if isAssignableTys {lhsTy=ty, rhsTy=lookAid aid, rhsExprOpt=SOME coreExp}
-+	  then ()
-+	else error "type of initializer is incompatible with type of lval"
-+    | TCInitializer (ty as Ast.UnionRef _, Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
- 	if isAssignableTys {lhsTy=ty, rhsTy=lookAid aid, rhsExprOpt=SOME coreExp} 
- 	  then ()
- 	else error "type of initializer is incompatible with type of lval"
-@@ -804,7 +814,9 @@ let
-             b) the object has static storage duration			      
-           *)
- 	 (* Note: should really reduce constants arith exprs to simple constants *)
--	  fun constCheck(Ast.EXPR((Ast.StringConst _ | Ast.IntConst _ | Ast.RealConst _),_,_)) = true
-+	  fun constCheck(Ast.EXPR(Ast.StringConst _,_,_)) = true
-+	    | constCheck(Ast.EXPR(Ast.IntConst _,_,_)) = true
-+	    | constCheck(Ast.EXPR(Ast.RealConst _,_,_)) = true
- 	    | constCheck(Ast.EXPR(Ast.QuestionColon(e1, e2, e3), _, _))
- 	    = constCheck e1 andalso constCheck e2 andalso constCheck e3
- 	    | constCheck(Ast.EXPR(Ast.Binop(_, e1, e2), _, _))
-@@ -2371,7 +2383,11 @@ end old code ******)
- 		  (case spec 
- 		     of PT.Signed =>
- 			 (case !kind
--			    of SOME (Ast.FLOAT | Ast.DOUBLE | Ast.LONGDOUBLE) => 
-+			    of SOME Ast.FLOAT =>
-+				 error "illegal combination of signed with float/double/long double"
-+			     | SOME Ast.DOUBLE =>
-+				 error "illegal combination of signed with float/double/long double"
-+			     | SOME Ast.LONGDOUBLE =>
- 				 error "illegal combination of signed with float/double/long double"
- 			     | _ => ();
- 			  case !signed
-@@ -2379,7 +2395,11 @@ end old code ******)
- 			     | SOME _ => error "Multiple signed/unsigned")
- 		      | PT.Unsigned =>
- 			 (case !kind
--			    of SOME (Ast.FLOAT | Ast.DOUBLE | Ast.LONGDOUBLE) => 
-+			    of SOME Ast.FLOAT =>
-+				 error "illegal combination of unsigned with float/double/long double"
-+			     | SOME Ast.DOUBLE =>
-+				 error "illegal combination of unsigned with float/double/long double"
-+			     | SOME Ast.LONGDOUBLE =>
- 				 error "illegal combination of unsigned with float/double/long double"
- 			     | _ => ();
- 			  case !signed
-@@ -2394,7 +2414,8 @@ end old code ******)
- 					  | _ => "illegal use of char specifier"))
- 		      | PT.Short =>
- 			 (case !kind
--			    of (NONE | SOME Ast.INT) => (kind := SOME Ast.SHORT)
-+			    of NONE => (kind := SOME Ast.SHORT)
-+			     | SOME Ast.INT => (kind := SOME Ast.SHORT)
- 			     | SOME ct =>
- 				error (case ct
- 					 of Ast.SHORT => "duplicate short specifier"
-@@ -2402,7 +2423,9 @@ end old code ******)
- 		      | PT.Int =>
- 			 (case !kind
- 			    of NONE => (kind := SOME Ast.INT)
--			     | SOME (Ast.SHORT | Ast.LONG | Ast.LONGLONG) => ()
-+			     | SOME Ast.SHORT => ()
-+			     | SOME Ast.LONG => ()
-+			     | SOME Ast.LONGLONG => ()
- 			     | SOME ct =>
- 				error (case ct
- 					 of Ast.INT => "duplicate int specifier"
-@@ -2687,7 +2710,17 @@ end old code ******)
- 				   (case lookLocalScope sym
- 				      of SOME(TAG{ctype=ty,location=loc',...}) => 
- 					 (case ty
--					    of (Ast.UnionRef tid | Ast.StructRef tid) => 
-+					    of Ast.UnionRef tid =>
-+					       if isPartial tid
-+					       then SOME{tid=tid, alreadyDefined=false}
-+					       else if repeated_declarations_ok
-+					       then SOME{tid=tid, alreadyDefined=true}
-+					       else (error("Redeclaration of type tag `"
-+						       ^ tagname
-+						       ^ "'; previous declaration at "
-+						       ^ SM.locToString loc');
-+						     NONE)
-+					     | Ast.StructRef tid =>
- 					       if isPartial tid
- 					       then SOME{tid=tid, alreadyDefined=false}
- 					       else if repeated_declarations_ok
-diff --git a/src/ast/initializer-normalizer.sml b/src/ast/initializer-normalizer.sml
-index 5ea8dbc..2e7a563 100644
---- a/src/ast/initializer-normalizer.sml
-+++ b/src/ast/initializer-normalizer.sml
-@@ -156,7 +156,13 @@ let
- 		   feed (unionNorm (ctype, fields), inits)
- 		| SOME _ => fail "Incomplete type for union ref"
- 		| NONE => fail "Inconsistent table for union ref")
--	 | (Ast.Numeric _ | Ast.Pointer _ | Ast.Function _ | Ast.EnumRef _) =>
-+	 | Ast.Numeric _ =>
-+	    feed (scalarNorm ctype, inits)
-+	 | Ast.Pointer _ =>
-+	    feed (scalarNorm ctype, inits)
-+	 | Ast.Function _ =>
-+	    feed (scalarNorm ctype, inits)
-+	 | Ast.EnumRef _ =>
- 	    feed (scalarNorm ctype, inits)
- 	 | Ast.Void => fail "Incomplete type: void"
- 	 | Ast.Ellipses => fail "Cannot initialize ellipses"
 diff --git a/src/ast/pp/pp-ast-adornment-sig.sml b/src/ast/pp/pp-ast-adornment-sig.sml
 index a7b937b..ab6e0a9 100644
 --- a/src/ast/pp/pp-ast-adornment-sig.sml
@@ -298,37 +68,6 @@ index 4169fc7..c7291ab 100644
  
 -end
 +(* end *)
-diff --git a/src/ast/pp/pp-lib.sml b/src/ast/pp/pp-lib.sml
-index f6386d3..70f8504 100644
---- a/src/ast/pp/pp-lib.sml
-+++ b/src/ast/pp/pp-lib.sml
-@@ -115,7 +115,10 @@ structure PPLib = struct
- 
-   fun ppId pps ({name,uid,kind,stClass,global,...}: Ast.id) = 
-       case (stClass,global)
--	of ((Ast.EXTERN,_) | (_, true)) => (* globals *)
-+	of (Ast.EXTERN,_) => (* globals *)
-+	     if !suppressPidGlobalUnderscores then ppSymbol' pps name
-+	     else ppSymbol pps (name,uid)
-+	 | (_, true) => (* globals *)
- 	     if !suppressPidGlobalUnderscores then ppSymbol' pps name
- 	     else ppSymbol pps (name,uid)
- 	 | _ => ppSymbol pps (name,uid)
-diff --git a/src/ast/sizeof.sml b/src/ast/sizeof.sml
-index 02705c2..aebd826 100644
---- a/src/ast/sizeof.sml
-+++ b/src/ast/sizeof.sml
-@@ -321,7 +321,9 @@ struct
-   and process (sizesErrWarnBug as {sizes, err, warn, bug}) tidtab ty =
-       case ty
- 	of Ast.TypeRef tid => processTid sizesErrWarnBug tidtab tid
--	 | (Ast.StructRef tid | Ast.UnionRef tid) =>
-+	 | Ast.StructRef tid =>
-+	     processTid sizesErrWarnBug tidtab tid
-+	 | Ast.UnionRef tid =>
- 	     processTid sizesErrWarnBug tidtab tid
- 	 | Ast.EnumRef _ => 
- 	     let val {bits,align} = #int sizes
 diff --git a/src/ast/type-util-sig.sml b/src/ast/type-util-sig.sml
 index b03260b..a262146 100644
 --- a/src/ast/type-util-sig.sml
@@ -352,71 +91,18 @@ index b03260b..a262146 100644
  
 -end (* local *)
 +(* end (* local *) *)
-diff --git a/src/ast/type-util.sml b/src/ast/type-util.sml
-index 8dc30d3..851cfe8 100644
---- a/src/ast/type-util.sml
-+++ b/src/ast/type-util.sml
-@@ -282,7 +282,8 @@ struct
-   fun isStructOrUnion tidtab ty =
-     case reduceTypedef tidtab ty
-       of Ast.Qual (_,ty) => isStructOrUnion tidtab ty
--       | (Ast.StructRef tid | Ast.UnionRef tid) => SOME tid
-+       | Ast.StructRef tid => SOME tid
-+       | Ast.UnionRef tid => SOME tid
-        | _ => NONE
- 
-   fun isEnum tidtab (ty,member as {uid,kind=Ast.ENUMmem _,...}: Ast.member) =
-@@ -553,7 +554,9 @@ struct
- 	    | (Pointer ct1, Pointer ct2) => (case compose (ct1, ct2) of
- 					       (SOME ct, eml) => (SOME(Pointer ct), eml)
- 					     | (NONE, eml) => (NONE, eml))
--	    | ((StructRef tid1, StructRef tid2) | (UnionRef tid1, UnionRef tid2)) =>
-+	    | (StructRef tid1, StructRef tid2) =>
-+		if Tid.equal (tid1, tid2) then (SOME ty1, nil) else (NONE, nil)
-+	    | (UnionRef tid1, UnionRef tid2) =>
- 		if Tid.equal (tid1, tid2) then (SOME ty1, nil) else (NONE, nil)
- 	    | _ => (NONE, nil)
- 	end
-@@ -651,8 +654,10 @@ struct
-   fun conditionalExp tidtab {ty1, exp1Zero, ty2, exp2Zero} = (* for Eq and Neq *)
-     (case (usualUnaryCnv tidtab ty1, exp1Zero, usualUnaryCnv tidtab ty2, exp2Zero) of  
-        (Ast.Numeric _, _, Ast.Numeric _, _) => usualBinaryCnv tidtab (ty1, ty2) (* get common type *)
--     | ((Ast.StructRef tid1, _, Ast.StructRef tid2, _) |
--	(Ast.UnionRef tid1, _, Ast.UnionRef tid2, _)) =>
-+     | (Ast.StructRef tid1, _, Ast.StructRef tid2, _) =>
-+	  if Tid.equal (tid1, tid2) then SOME ty1
-+	  else NONE
-+     | (Ast.UnionRef tid1, _, Ast.UnionRef tid2, _) =>
- 	  if Tid.equal (tid1, tid2) then SOME ty1
- 	  else NONE
-      | (Ast.Void, _, Ast.Void, _) => SOME ty1
-@@ -745,9 +750,12 @@ struct
- 	     | ([Ast.Void], nil) => (nil, nil) (* bugfix 15/jun/99: a function with a single void argument
-                                                * is a function of no args  *)
-      *)
--	     | ((_, nil, _) | (_, _, nil)) => ( ["Type Warning: function call has too few args"]
--					       , nil
--					       )
-+	     | (_, nil, _) => (["Type Warning: function call has too few args"]
-+                               , nil
-+			       )
-+	     | (_, _, nil) => (["Type Warning: function call has too few args"]
-+			       , nil
-+			       )
- 	     | (nil, argl, _) => (["Type Warning: function call has too many args"]
- 				  , List.map (functionArgConv tidtab) argl
- 				  )
 diff --git a/src/ckit-lib.mlb b/src/ckit-lib.mlb
 new file mode 100644
-index 0000000..57c9c92
+index 0000000..acb6431
 --- /dev/null
 +++ b/src/ckit-lib.mlb
-@@ -0,0 +1,888 @@
+@@ -0,0 +1,889 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
++  "allowOrPats true" "allowSigWithtype true"
 +in
 +
 +local
@@ -11465,15 +11151,14 @@ index 4ac8151..a50f78c 100644
          body : statement}        (* function body *)
      | MARKexternalDecl of (SourceMap.location * externalDecl)
 -    | ExternalDeclExt of externalDeclExt
--
--  withtype ctype =
 +    | ExternalDeclExt of
 +        (specifier, declarator,
 +         (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},
 +         (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list},
 +         operator, expression, statement)
 +        ParseTreeExt.externalDeclExt
-+
+ 
+-  withtype ctype =
 +  type ctype =
        {qualifiers : qualifier list,
         specifiers : specifier list}
