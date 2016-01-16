@@ -1,0 +1,21 @@
+diff -P -C 2 gdtoa/misc.c gdtoa-new/misc.c
+*** gdtoa/misc.c	Sun Mar  1 22:08:46 2015
+--- gdtoa-new/misc.c	Sun Mar  1 22:09:56 2015
+***************
+*** 845,859 ****
+  		};
+  
+-  char *
+- #ifdef KR_headers
+- strcp_D2A(a, b) char *a; char *b;
+- #else
+- strcp_D2A(char *a, CONST char *b)
+- #endif
+- {
+- 	while((*a = *b++))
+- 		a++;
+- 	return a;
+- 	}
+  
+  #ifdef NO_STRING_H
+--- 845,848 ----

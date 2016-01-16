@@ -284,7 +284,7 @@ check:
 # puts them.
 DESTDIR := $(CURDIR)/install
 PREFIX := /usr
-ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
+ifeq ($(findstring $(TARGET_OS), darwin freebsd openbsd solaris), $(TARGET_OS))
 PREFIX := /usr/local
 endif
 ifeq ($(TARGET_OS), mingw)
@@ -303,7 +303,7 @@ endif
 TEXM := $(TDOC)/examples
 
 GZIP_MAN := true
-ifeq ($(TARGET_OS), solaris)
+ifeq ($(findstring $(TARGET_OS), openbsd solaris), $(TARGET_OS))
 GZIP_MAN := false
 endif
 

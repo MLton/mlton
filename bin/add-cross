@@ -151,7 +151,7 @@ netbsd)
         osOpts='-I/usr/pkg/include -Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'
 ;;
 openbsd)
-        osOpts='-I/usr/local/include -L/usr/local/lib/'
+        osOpts='-fPIC -I/usr/local/include -L/usr/local/lib/'
 ;;
 solaris)
         osOpts='-lnsl -lsocket -lrt'
