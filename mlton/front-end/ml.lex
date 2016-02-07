@@ -194,6 +194,7 @@ binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
 <INITIAL>":>" => (tok (Tokens.COLONGT, source, yypos, yypos + 1));
 <INITIAL>"=" => (tok (Tokens.EQUALOP, source, yypos, yypos + 1));
 <INITIAL>"#" => (tok (Tokens.HASH, source, yypos, yypos + 1));
+<INITIAL>"#[" => (tok (Tokens.HASHBRACKET, source, yypos, yypos + 1));
 <INITIAL>"->" => (tok (Tokens.ARROW, source, yypos, yypos + 2));
 <INITIAL>"=>" => (tok (Tokens.DARROW, source, yypos, yypos + 2));
 <INITIAL>"and" => (tok (Tokens.AND, source, yypos, yypos + 3));

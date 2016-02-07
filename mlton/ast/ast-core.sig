@@ -146,6 +146,7 @@ signature AST_CORE =
              | If of t * t * t
              | Let of dec * t
              | List of t vector
+	     | Vector of t vector
              | Orelse of t * t
              | Prim of PrimKind.t
              | Raise of t

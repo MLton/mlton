@@ -664,6 +664,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Lambda l => loopLambda l
              | Let (ds, e) => (Vector.foreach (ds, loopDec); loopExp e)
              | List es => Vector.foreach (es, loopExp)
+	     | Vector es => Vector.foreach (es, loopExp)
              | PrimApp {args, ...} => Vector.foreach (args, loopExp)
              | Raise e => loopExp e
              | Record r => Record.foreach (r, loopExp)

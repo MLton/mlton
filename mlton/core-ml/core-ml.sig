@@ -95,6 +95,7 @@ signature CORE_ML =
              | Lambda of lambda
              | Let of dec vector * t
              | List of t vector
+	     | Vector of t vector
              | PrimApp of {args: t vector,
                            prim: Type.t Prim.t,
                            targs: Type.t vector}

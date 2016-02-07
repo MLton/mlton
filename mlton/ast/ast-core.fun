@@ -320,6 +320,7 @@ datatype expNode =
   | Const of Const.t
   | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
   | List of exp vector
+  | Vector of exp vector
   | Selector of Field.t
   | Constraint of exp * Type.t
   | Handle of exp * match
@@ -393,6 +394,7 @@ fun expNodeName e =
     | If _ => "If"
     | Let _ => "Let"
     | List _ => "List"
+    | Vector _ => "Vector"
     | Orelse _ => "Orelse"
     | Prim _ => "Prim"
     | Raise _ => "Raise"
@@ -440,6 +442,7 @@ fun layoutExp arg =
                                seq [str "else ", layoutExpT elseCase]])
        | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
        | List es => list (Vector.toListMap (es, layoutExpT))
+       | Vector es => list (Vector.toListMap (es, layoutExpT))
        | Orelse (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "orelse ", layoutExpF e']])
@@ -542,6 +545,7 @@ fun checkSyntaxExp (e: exp): unit =
        | If (e1, e2, e3) => (c e1; c e2; c e3)
        | Let (d, e) => (checkSyntaxDec d; c e)
        | List es => Vector.foreach (es, c)
+       | Vector es => Vector.foreach (es, c)
        | Orelse (e1, e2) => (c e1; c e2)
        | Prim _ => ()
        | Raise e => c e

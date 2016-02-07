@@ -193,6 +193,7 @@ and expNode =
   | Lambda of lambda
   | Let of dec vector * exp
   | List of exp vector
+  | Vector of exp vector
   | PrimApp of {args: exp vector,
                 prim: Type.t Prim.t,
                 targs: Type.t vector}
@@ -266,6 +267,7 @@ in
             Pretty.lett (align (Vector.toListMap (ds, layoutDec)),
                          layoutExp e)
        | List es => list (Vector.toListMap (es, layoutExp))
+       | Vector es => list (Vector.toListMap (es, layoutExp))
        | PrimApp {args, prim, targs} =>
             Pretty.primApp {args = Vector.map (args, layoutExp),
                             prim = Prim.layout prim,
@@ -372,6 +374,7 @@ structure Exp =
           | Lambda _ => false
           | Let _ => true
           | List es => Vector.exists (es, isExpansive)
+	  | Vector es => Vector.exists (es, isExpansive)
           | PrimApp _ => true
           | Raise _ => true
           | Record r => Record.exists (r, isExpansive)
@@ -462,6 +465,7 @@ structure Exp =
                      (Vector.foreach (ds, loopDec)
                       ; loop e)
                 | List es => Vector.foreach (es, loop)
+                | Vector es => Vector.foreach (es, loop)
                 | PrimApp {args, ...} => Vector.foreach (args, loop)
                 | Raise e => loop e
                 | Record r => Record.foreach (r, loop)

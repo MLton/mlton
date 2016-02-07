@@ -2961,6 +2961,16 @@ fun elaborateDec (d, {env = E, nest}) =
                                                (Cexp.ty e', Aexp.region e)),
                                   preError, lay))
                    end
+	      | Aexp.Vector es =>
+		   let
+		       val es' = Vector.map (es, elab)
+		   in
+		       Cexp.make (Cexp.Vector es',
+				  unifyList
+				  (Vector.map2 (es, es', fn (e, e') =>
+						(Cexp.ty e', Aexp.region e)),
+				   preError, lay))
+		   end
               | Aexp.Orelse (e, e') =>
                    let
                       val ce = elab e
@@ -3415,7 +3425,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.make (Cexp.Seq es', Cexp.ty (Vector.sub (es', last)))
                    end
-              | Aexp.Var {name = id, ...} =>
+	      | Aexp.Var {name = id, ...} =>
                    let
                       val (vid, scheme) = Env.lookupLongvid (E, id)
                       fun dontCare () =
