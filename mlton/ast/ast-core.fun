@@ -442,7 +442,7 @@ fun layoutExp arg =
                                seq [str "else ", layoutExpT elseCase]])
        | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
        | List es => list (Vector.toListMap (es, layoutExpT))
-       | Vector es => list (Vector.toListMap (es, layoutExpT))
+       | Vector es => vector (Vector.map (es, layoutExpT))
        | Orelse (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "orelse ", layoutExpF e']])

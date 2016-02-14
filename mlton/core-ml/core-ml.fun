@@ -267,7 +267,7 @@ in
             Pretty.lett (align (Vector.toListMap (ds, layoutDec)),
                          layoutExp e)
        | List es => list (Vector.toListMap (es, layoutExp))
-       | Vector es => list (Vector.toListMap (es, layoutExp))
+       | Vector es => vector (Vector.map (es, layoutExp))
        | PrimApp {args, prim, targs} =>
             Pretty.primApp {args = Vector.map (args, layoutExp),
                             prim = Prim.layout prim,

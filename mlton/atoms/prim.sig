@@ -215,6 +215,7 @@ signature PRIM =
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
       val array: 'a t
       val arrayLength: 'a t
+      val arrayUpdate: 'a t
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
