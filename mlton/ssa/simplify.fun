@@ -25,6 +25,8 @@ structure KnownCase = KnownCase (S)
 structure LocalFlatten = LocalFlatten (S)
 structure LocalRef = LocalRef (S)
 structure LoopInvariant = LoopInvariant (S)
+structure LoopUnroll = LoopUnroll (S)
+structure LoopUnswitch = LoopUnswitch (S)
 structure PolyEqual = PolyEqual (S)
 structure PolyHash = PolyHash (S)
 structure Profile = Profile (S)
@@ -86,6 +88,8 @@ val ssaPassesDefault =
    {name = "redundant", doit = Redundant.transform} ::
    {name = "knownCase", doit = KnownCase.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
+   {name = "loopUnroll", doit = LoopUnroll.transform} ::
+   {name = "loopUnswitch", doit = LoopUnswitch.transform} ::
    nil
 
 val ssaPassesMinimal =
@@ -198,6 +202,8 @@ local
                  ("localFlatten", LocalFlatten.transform),
                  ("localRef", LocalRef.transform),
                  ("loopInvariant", LoopInvariant.transform),
+                 ("loopUnroll", LoopUnroll.transform),
+                 ("loopUnswitch", LoopUnswitch.transform),
                  ("polyEqual", PolyEqual.transform),
                  ("polyHash", PolyHash.transform),
                  ("redundant", Redundant.transform),
