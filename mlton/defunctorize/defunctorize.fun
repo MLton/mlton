@@ -1052,48 +1052,49 @@ fun defunctorize (CoreML.Program.T {decs}) =
                      end
 		| Vector es =>
 		     let
-			 (* TODO *)
-		     (* create a variable and make it an uninit array *)
-                     (*             create some variables and use array update to punch in values one by one *)
-                     (*             Use all of these to create a list of decs, one by one, and append them all *)
-                     (*             Pass this list of decs to the 'lett' portion of the XML code *)
-			 
 			 val args = Vector.map (es, #1 o loopExp)
 			 val ety = Xtype.deVector ty
 			 val aty = Xtype.array ety
-			 
-			 (* Const.intInf expects some value of type Time.int
-			    Const.intInf (Vector.length args) does not work because of this
-			  *)
-			 val a = Xexp.primApp {args = Vector.new1 (Xexp.const (Const.intInf (Vector.length args))),
-					       prim = Prim.array,
-					       targs = Vector.new1 Xtype.intInf,
-					       ty = ty}
-			 (* Have to also figure out what types these expressions themselves will have
-			    (the ty portion of the primApp expression).
-			    Also since vector can have many types of values, have to figure out how to
-			    convert these values to a Xexp.const using some generic method
-			  *)
-			 val b = Xexp.primApp {args = Vector.new2 (a,
-								   Xexp.const (Const.intInf 1)),
-						prim = Prim.arrayUpdate,
-						targs = Vector.new1 Xtype.intInf,
-						ty = ty}
-			 (* Once the above is done, then it would be easy to write a map function
-			    on all the values args has, and punch them into the array one by one
-			  *)
+			 val arrayVar = Var.newString "a"
+			 val arrayExp = Xexp.primApp
+					    {args = (Vector.new1 
+							 (Xexp.const
+							      (Const.word 
+								   (WordX.fromIntInf
+									(IntInf.fromInt (Vector.length args),
+									 WordSize.seqIndex ()))))),
+					     prim = Prim.array,
+					     targs = Vector.new1 ety,
+					     ty = aty}
+			 val arrayDecs = Xexp.vall {var = arrayVar, exp = arrayExp}
+			 val arrayUpdates = Vector.mapi
+						(args,
+						 (fn (index, arg) =>
+						     (Xexp.primApp
+							  {args = Vector.new3
+								      (Xexp.monoVar (arrayVar, aty),
+								       (Xexp.const
+									    (Const.word 
+										 (WordX.fromIntInf
+										      (IntInf.fromInt index,
+										       WordSize.seqIndex ())))),
+								       arg),
+							   prim = Prim.arrayUpdate,
+							   targs = Vector.new1 ety,
+							   ty = Xtype.unit})))
+		     	 val arrayUpdateDecs = Vector.fold
+						   (arrayUpdates,
+						    arrayDecs,
+						    (fn (xmlExp, decsList) => decsList @
+									      (Xexp.vall
+										   {var = (Var.newNoname ()),
+										    exp = xmlExp})))
 		     in
-			 (*Xexp.lett {decs = ?decs?,
-					    body = Xexp.primApp {args = Vector.new1 (Xexp.monoVar (a, aty)),
-								 prim = Prim.arrayToVector,
-                          					 targs = Vector.new1 ety,
-								 ty = ty}}*)
-
-			 (* returning placeholder expression for now *)
-			 Xexp.primApp {args = Vector.new1 (Xexp.const (Const.intInf 1)),
-				       prim = Prim.array,
-				       targs = Vector.new1 Xtype.intInf,
-				       ty = ty}
+			 Xexp.lett {decs = arrayUpdateDecs,
+				    body = Xexp.primApp {args = Vector.new1 (Xexp.monoVar (arrayVar, aty)),
+							 prim = Prim.arrayToVector,
+                          				 targs = Vector.new1 ety,
+							 ty = ty}}
 		     end
                 | PrimApp {args, prim, targs} =>
                      let

@@ -395,6 +395,27 @@ fun unifyList (trs: (Type.t * Region.t) vector,
          Type.list t
       end
 
+fun unifyVector (trs: (Type.t * Region.t) vector,
+		 z,
+		 lay: unit -> Layout.t): Type.t =
+  if 0 = Vector.length trs
+  then Type.vector (Type.new ())
+  else
+      let
+          val (t, _) = Vector.sub (trs, 0)
+          val _ =
+              Vector.foreach
+		  (trs, fn (t', r) =>
+			   unify (t, t', z, fn (l, l') =>
+					       (r,
+                     str "vector element types disagree",
+                     align [seq [str "element:  ", l'],
+                            seq [str "previous: ", l],
+                            lay ()])))
+      in
+          Type.vector t
+      end
+
 val elabPatInfo = Trace.info "ElaborateCore.elabPat"
 
 structure Var =
@@ -2966,7 +2987,7 @@ fun elaborateDec (d, {env = E, nest}) =
 		       val es' = Vector.map (es, elab)
 		   in
 		       Cexp.make (Cexp.Vector es',
-				  unifyList
+				  unifyVector
 				  (Vector.map2 (es, es', fn (e, e') =>
 						(Cexp.ty e', Aexp.region e)),
 				   preError, lay))

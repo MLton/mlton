@@ -663,6 +663,7 @@ val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 val array = Array_array
 val arrayLength = Array_length
 val arrayUpdate = Array_update
+val arrayToVector = Array_toVector
 val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
