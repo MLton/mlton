@@ -36,6 +36,12 @@ CP := /bin/cp -fpR
 GZIP := gzip --force --best
 RANLIB := ranlib
 
+WITH_GMP :=
+ifneq ($(WITH_GMP),)
+WITH_GMP_INC_DIR := $(WITH_GMP)/include
+WITH_GMP_LIB_DIR := $(WITH_GMP)/lib
+endif
+
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
 # stubs.
@@ -213,7 +219,8 @@ runtime:
 
 .PHONY: script
 script:
-	$(CP) bin/mlton-script "$(MLTON)"
+	sed -e "/^gmpIncDir=/s;.*;gmpIncDir='$(WITH_GMP_INC_DIR)';" -e "/^gmpLibDir=/s;.*;gmpLibDir='$(WITH_GMP_LIB_DIR)';"	\
+		<bin/mlton-script >"$(MLTON)"
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
