@@ -21,6 +21,12 @@ AR := $(TARGET)-ar rc
 RANLIB := $(TARGET)-ranlib
 endif
 
+WITH_GMP :=
+ifneq ($(WITH_GMP),)
+WITH_GMP_INC_DIR := "$(WITH_GMP)/include"
+WITH_GMP_LIB_DIR := "$(WITH_GMP)/lib"
+endif
+
 TARGET_ARCH := $(shell ../bin/host-arch)
 TARGET_OS := $(shell ../bin/host-os)
 GCC_MAJOR_VERSION :=						\
@@ -142,32 +148,19 @@ ifeq ($(TARGET_OS), cygwin)
 EXE := .exe
 endif
 
-ifeq ($(TARGET_OS), darwin)
-XCFLAGS += -I/usr/local/include -I/sw/include -I/opt/local/include
-endif
-
-ifeq ($(TARGET_OS), freebsd)
-XCFLAGS += -I/usr/local/include
-endif
-
 ifeq ($(TARGET_OS), mingw)
 EXE := .exe
 # GCC doesn't recognize the %I64 format specifier which means %ll on windows
 XCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
 
-ifeq ($(TARGET_OS), netbsd)
-XCFLAGS += -I/usr/pkg/include
-endif
-
-ifeq ($(TARGET_OS), openbsd)
-XCFLAGS += -I/usr/local/include
-endif
-
 ifeq ($(TARGET_OS), solaris)
 XCFLAGS += -funroll-all-loops
 endif
 
+ifneq ($(WITH_GMP_INC_DIR),)
+XCFLAGS += -I$(WITH_GMP_INC_DIR)
+endif
 
 XCFLAGS += -I. -Iplatform
 OPTCFLAGS := $(CFLAGS) $(CPPFLAGS) $(XCFLAGS) $(OPTXCFLAGS)
@@ -391,6 +384,7 @@ flags:
 	echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
 	echo GCC_VERSION = $(GCC_VERSION)
 	echo EXE = $(EXE)
+	echo XCFLAGS = $(XCFLAGS)
 	echo OPTXCFLAGS = $(OPTXCFLAGS)
 	echo DEBUGXCFLAGS = $(DEBUGXCFLAGS)
 	echo PICXCFLAGS = $(PICXCFLAGS)
