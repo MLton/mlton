@@ -65,6 +65,13 @@ and tl ({headers, child}, labelNode, nodeBlock, depth) =
       tf ((Forest.dest child), labelNode, nodeBlock, depth + 1)
    end
 
+fun traverseForest ({loops, notInLoop}, labelNode, nodeBlock) =
+  let
+    val () = logs (concat[(Int.toString (Vector.length loops)), " total loops"])
+  in
+    Vector.foreach(loops, fn l => tl(l, labelNode, nodeBlock, 1))
+  end
+
 fun optimizeFunction(function: Function.t): Function.t =
    let
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
@@ -72,7 +79,7 @@ fun optimizeFunction(function: Function.t): Function.t =
       val () = logl (Func.layout name)
       val root = labelNode start
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
-      val _ = tf((Forest.dest forest), labelNode, nodeBlock, 1)
+      val _ = traverseForest((Forest.dest forest), labelNode, nodeBlock)
    in
       function
    end
