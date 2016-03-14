@@ -9,6 +9,6 @@ fun loop n i s =
 			loop n (i+1) (s+a)
 		end
 	else
-		0
+		s
 
 val () = print (Int.toString (loop 13 0 0))
