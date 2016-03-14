@@ -90,6 +90,7 @@ val ssaPassesDefault =
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
    {name = "loopUnroll", doit = LoopUnroll.transform} ::
    {name = "loopUnswitch", doit = LoopUnswitch.transform} ::
+   {name = "knownCase2", doit = KnownCase.transform} ::
    nil
 
 val ssaPassesMinimal =
