@@ -166,7 +166,7 @@ fun detectCases(block: Block.t, vars: Var.t list, labels: Label.t vector) =
         val labelsInsideLoop = Vector.forall(tlabels,
                                 fn l => Vector.contains(labels, l, Label.equals))
         val noDefault = case tdefault of NONE => true | _ => false
-        val canOptimize = varOutsideLoop andalso labelsInsideLoop (* andalso
+        val canOptimize = varOutsideLoop (*andalso labelsInsideLoop  andalso
         			zeroStatements andalso noDefault*)
       in
         if canOptimize then
@@ -180,15 +180,6 @@ fun detectCases(block: Block.t, vars: Var.t list, labels: Label.t vector) =
             val () = if not varOutsideLoop then
                         logs ("Can't optimize: condition not invariant")
                       else ()
-            val () = if not labelsInsideLoop then
-                        logs ("Can't optimize: branches outside loop")
-                      else ()
-            val () = if not zeroStatements then
-                        logs ("Can't optimize: block has statements")
-                      else ()
-            val () = if not noDefault then
-            			logs ("Can't optimize: case has default")
-            		  else ()
           in
             NONE
           end
@@ -224,7 +215,9 @@ fun makeBranch (loopBody: Block.t vector,
                 loopHeader: Block.t,
                 branchLabel: Label.t,
                 blockInfo: Label.t -> BlockInfo,
-                setBlockInfo: Label.t * BlockInfo -> unit)
+                setBlockInfo: Label.t * BlockInfo -> unit,
+                labelNode: Label.t -> unit Node.t,
+                nodeBlock: unit Node.t -> Block.t)
                 : Block.t vector * Label.t =
    let
       (* Copy the loop body *)
@@ -238,7 +231,19 @@ fun makeBranch (loopBody: Block.t vector,
       val newLoopEntryTransfer = Transfer.Goto {args = newLoopArgs,
                                                dst = newLoopHeaderLabel}
       val newLoopEntryLabel = Label.newNoname()
-      val (_, newLoopEntryArgs) = blockInfo(branchLabel)
+      val newLoopEntryArgs =
+         if Vector.contains (loopBodyLabels, branchLabel, Label.equals) then
+            let
+               val (_, args) = blockInfo(branchLabel)
+            in
+               args
+            end
+         else
+            let
+               val block = nodeBlock (labelNode branchLabel)
+            in
+               Block.args block
+            end
       val newLoopEntry = Block.T {args = newLoopEntryArgs,
                                  label = newLoopEntryLabel,
                                  statements = Vector.new0(),
@@ -270,14 +275,15 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
       NONE => ([], [])
     | SOME((label, cases, check, default), header) =>
         let
+         val mkBranch = fn lbl => makeBranch(blocks, header, lbl, blockInfo,
+                                             setBlockInfo, labelNode, nodeBlock)
          (* Copy the loop body for the default case if necessary *)
           val (newDefaultLoop, newDefault) =
             case default of
               NONE => ([], NONE)
             | SOME(defaultLabel) =>
                 let
-                  val (newLoop, newLoopEntryLabel) =
-                     makeBranch(blocks, header, defaultLabel, blockInfo, setBlockInfo)
+                  val (newLoop, newLoopEntryLabel) = mkBranch(defaultLabel)
                 in
                   (Vector.toList newLoop, SOME(newLoopEntryLabel))
                 end
@@ -290,8 +296,7 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
                     Vector.map(v,
                       fn (con, lbl) =>
                         let
-                          val (newLoop, newLoopEntryLabel) =
-                              makeBranch(blocks, header, lbl, blockInfo, setBlockInfo)
+                          val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
                           val newCase = (con, newLoopEntryLabel)
                         in
                           (newLoop, newCase)
@@ -307,8 +312,7 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
                     Vector.map(v,
                       fn (wrd, lbl) =>
                         let
-                          val (newLoop, newLoopEntryLabel) =
-                              makeBranch(blocks, header, lbl, blockInfo, setBlockInfo)
+                          val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
                           val newCase = (wrd, newLoopEntryLabel)
                         in
                           (newLoop, newCase)
@@ -342,14 +346,14 @@ fun traverseSubForest ({loops, notInLoop},
                        enclosingHeaders,
                        labelNode, nodeBlock, depth): Block.t list * Label.t list =
   let
-    (*val () = logsi ("Not in loop:", depth)
+    val () = logsi ("Not in loop:", depth)
     val () = Vector.foreach (notInLoop, fn n =>
       let
         val block = nodeBlock n
         val blockName = Label.layout (Block.label block)
       in
         logli (blockName, depth)
-      end)*)
+      end)
       val () = ()
   in
     if (Vector.length loops) = 0 then
