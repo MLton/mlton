@@ -1280,7 +1280,7 @@ structure Function =
                   in
                      treeLayout
                   end
-               (*
+               
                fun loopForestLayout () =
                   let
                      val {get = nodeName, set = setNodeName, ...} =
@@ -1299,11 +1299,12 @@ structure Function =
                   in
                      loopForestLayout
                   end
-               *)
+               
             in
                {destroy = destroy,
                 graph = graphLayout,
-                tree = treeLayout}
+                tree = treeLayout,
+                loopForest = loopForestLayout}
             end
       end
 
@@ -1366,7 +1367,7 @@ structure Function =
                   then ()
                else
                   let
-                     val {destroy, graph, tree} = 
+                     val {destroy, graph, tree, loopForest} = 
                         layoutDot (f, global)
                      val name = Func.toString name
                      fun doit (s, g) =
@@ -1381,10 +1382,10 @@ structure Function =
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout cfg"
                      val _ = doit ("dom", tree ())
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout dom"
-                     (*
+                     
                      val _ = doit ("lf", loopForest ())
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout lf"
-                     *)
+                     
                      val () = destroy ()
                   in
                      ()

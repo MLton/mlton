@@ -258,7 +258,8 @@ signature SSA_TREE =
             val layoutDot:
                t * (Var.t -> string option) -> {destroy: unit -> unit,
                                                 graph: Layout.t,
-                                                tree: unit -> Layout.t}
+                                                tree: unit -> Layout.t,
+                                                loopForest: unit -> Layout.t}
             val mayInline: t -> bool
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
