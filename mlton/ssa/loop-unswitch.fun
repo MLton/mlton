@@ -45,18 +45,18 @@ fun loglli (ll: Label.t list, i: int): unit =
 fun loglvi (lv: Label.t vector, i: int): unit =
 	loglli (Vector.toList(lv), i)
 
-(* If a block was renamed, return the new name *)
+(* If a block was renamed, return the new name. Otherwise return the old name. *)
 fun fixLabel (getBlockInfo: Label.t -> BlockInfo, 
-              origLabel: Label.t,
-              labels: Label.t vector): Label.t =
-  if Vector.contains(labels, origLabel, Label.equals) then
+              label: Label.t,
+              origLabels: Label.t vector): Label.t =
+  if Vector.contains(origLabels, label, Label.equals) then
     let
-      val (name, _) = getBlockInfo(origLabel)
+      val (name, _) = getBlockInfo(label)
     in
       name
     end
   else
-    origLabel
+    label
 
 (* Copy an entire loop *)
 fun copyLoop(blocks: Block.t vector,
@@ -166,8 +166,8 @@ fun detectCases(block: Block.t, vars: Var.t list, labels: Label.t vector) =
         val labelsInsideLoop = Vector.forall(tlabels,
                                 fn l => Vector.contains(labels, l, Label.equals))
         val noDefault = case tdefault of NONE => true | _ => false
-        val canOptimize = varOutsideLoop andalso labelsInsideLoop andalso
-        			zeroStatements andalso noDefault
+        val canOptimize = varOutsideLoop andalso labelsInsideLoop (* andalso
+        			zeroStatements andalso noDefault*)
       in
         if canOptimize then
           let
@@ -233,7 +233,7 @@ fun makeBranch (loopBody: Block.t vector,
                              blockInfo, setBlockInfo)
       (* Set up a goto for the loop *)
       val (newLoopHeaderLabel, _) = blockInfo(Block.label loopHeader)
-      val newLoopArgs = Vector.map (Block.args header,
+      val newLoopArgs = Vector.map (Block.args loopHeader,
                                     fn (v, _) => v)
       val newLoopEntryTransfer = Transfer.Goto {args = newLoopArgs,
                                                dst = newLoopHeaderLabel}
@@ -251,7 +251,8 @@ fun makeBranch (loopBody: Block.t vector,
       (returnBlocks, newLoopEntryLabel)
    end
 
-(* Attempt to optimize a single loop *)
+(* Attempt to optimize a single loop. Returns a list of blocks to add to the program
+   and a list of blocks to remove from the program. *)
 fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
                                                         Block.t list * Label.t list =
   let
@@ -269,25 +270,18 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
       NONE => ([], [])
     | SOME((label, cases, check, default), header) =>
         let
-          val (newDefaultLoop, newDefault) = ([], default)
-            (*case default of
+         (* Copy the loop body for the default case if necessary *)
+          val (newDefaultLoop, newDefault) =
+            case default of
               NONE => ([], NONE)
             | SOME(defaultLabel) =>
                 let
-                  val newLoop = copyLoop(blocks, blockNames, blockInfo, setBlockInfo)
-                  val (newLoopHeader, _) = blockInfo(Block.label header)
-                  val newLoopArgs = Vector.map (Block.args header,
-                                                        fn (v, _) => v)
-                  val newLoopEntryTransfer = Transfer.Goto {args = newLoopArgs,
-                                                            dst = newLoopHeader}
-                  val newLoopEntryLabel = Label.newNoname()
-                  val newLoopEntry = Block.T {args = Vector.new0(),
-                                              label = newLoopEntryLabel,
-                                              statements = Vector.new0(),
-                                              transfer = newLoopEntryTransfer}
+                  val (newLoop, newLoopEntryLabel) =
+                     makeBranch(blocks, header, defaultLabel, blockInfo, setBlockInfo)
                 in
-                  (newLoopEntry::(Vector.toList newLoop), SOME(newLoopEntryLabel))
-                end*)
+                  (Vector.toList newLoop, SOME(newLoopEntryLabel))
+                end
+          (* Copy the loop body for each case (except default) *)
           val (newLoops, newCases) =
             case cases of
               Cases.Con v =>
@@ -296,64 +290,40 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
                     Vector.map(v,
                       fn (con, lbl) =>
                         let
-                          val newLoop = copyLoop(blocks, blockNames,
-                                                 blockInfo, setBlockInfo)
-                          val (newLoopHeader, _) = blockInfo(Block.label header)
-                          val newLoopArgs = Vector.map (Block.args header,
-                                                        fn (v, _) => v)
-                          val newLoopEntryTransfer = Transfer.Goto {args = newLoopArgs,
-                                                                    dst = newLoopHeader}
-                          val newLoopEntryLabel = Label.newNoname()
-                          val (_, newLoopEntryArgs) = blockInfo(lbl)
-                          val newLoopEntry = Block.T {args = newLoopEntryArgs,
-                                                      label = newLoopEntryLabel,
-                                                      statements = Vector.new0(),
-                                                      transfer = newLoopEntryTransfer}
+                          val (newLoop, newLoopEntryLabel) =
+                              makeBranch(blocks, header, lbl, blockInfo, setBlockInfo)
                           val newCase = (con, newLoopEntryLabel)
-                          val returnBlocks =
-                            Vector.concat [newLoop, (Vector.new1(newLoopEntry))]
                         in
-                          (returnBlocks, newCase)
+                          (newLoop, newCase)
                         end)
                   val (newLoops, newCaseList) = Vector.unzip newLoopCases
                   val newCases = Cases.Con (newCaseList)
                 in
                   (newLoops, newCases)
-                end
-                
+                end 
             | Cases.Word (size, v) =>
                 let
                   val newLoopCases =
                     Vector.map(v,
                       fn (wrd, lbl) =>
                         let
-                          val newLoop = copyLoop(blocks, blockNames,
-                                                 blockInfo, setBlockInfo)
-                          val (newLoopHeader, _) = blockInfo(Block.label header)
-                          val newLoopArgs = Vector.map (Block.args header,
-                                                        fn (v, _) => v)
-                          val newLoopEntryTransfer = Transfer.Goto {args = newLoopArgs,
-                                                                    dst = newLoopHeader}
-                          val newLoopEntryLabel = Label.newNoname()
-                          val (_, newLoopEntryArgs) = blockInfo(lbl)
-                          val newLoopEntry = Block.T {args = newLoopEntryArgs,
-                                                      label = newLoopEntryLabel,
-                                                      statements = Vector.new0(),
-                                                      transfer = newLoopEntryTransfer}
+                          val (newLoop, newLoopEntryLabel) =
+                              makeBranch(blocks, header, lbl, blockInfo, setBlockInfo)
                           val newCase = (wrd, newLoopEntryLabel)
-                          val returnBlocks =
-                            Vector.concat [newLoop, (Vector.new1(newLoopEntry))]
                         in
-                          (returnBlocks, newCase)
+                          (newLoop, newCase)
                         end)
                   val (newLoops, newCaseList) = Vector.unzip newLoopCases
                   val newCases = Cases.Word (size, newCaseList)
                 in
                   (newLoops, newCases)
                 end
-          val loopBlocks = Vector.fold(newLoops, [], fn (loop, acc) =>
+
+         (* Produce a single list of new blocks *)
+          val loopBlocks = Vector.fold(newLoops, newDefaultLoop, fn (loop, acc) =>
                               acc @ (Vector.toList loop))
-          val loopBlocks' = loopBlocks @ newDefaultLoop
+
+          (* Produce a new entry block with the same label as the old loop header *)
           val newTransfer = Transfer.Case {cases = newCases,
                                            default = newDefault,
                                            test = check}
@@ -363,7 +333,7 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
                                   transfer = newTransfer}
           val () = destroy()
         in
-          (newEntry::loopBlocks', (Vector.toList blockNames))
+          (newEntry::loopBlocks, (Vector.toList blockNames))
         end
   end
 
