@@ -40,10 +40,10 @@ fun logs (s: string): unit =
    logsi(s, 0)
 
 fun loglli (ll: Label.t list, i: int): unit =
-	logli (Layout.align (List.map (ll, Label.layout)), i)
+   logli (Layout.align (List.map (ll, Label.layout)), i)
 
 fun loglvi (lv: Label.t vector, i: int): unit =
-	loglli (Vector.toList(lv), i)
+   loglli (Vector.toList(lv), i)
 
 (* If a block was renamed, return the new name. Otherwise return the old name. *)
 fun fixLabel (getBlockInfo: Label.t -> BlockInfo, 
@@ -58,7 +58,7 @@ fun fixLabel (getBlockInfo: Label.t -> BlockInfo,
   else
     label
 
-(* Copy an entire loop *)
+(* Copy an entire loop. *)
 fun copyLoop(blocks: Block.t vector,
              labels: Label.t vector,
              blockInfo: Label.t -> BlockInfo,
@@ -129,6 +129,7 @@ fun copyLoop(blocks: Block.t vector,
     fixedBlocks
   end
 
+(* Find all variables introduced in a block. *)
 fun blockVars (block: Block.t): Var.t list =
   let
     val args = Vector.fold ((Block.args block), [], (fn ((var, _), lst) => var::lst))
@@ -140,74 +141,39 @@ fun blockVars (block: Block.t): Var.t list =
     args @ stmts
   end
 
-fun caseLabels (cases: Cases.t): Label.t vector =
-  case cases of
-    Cases.Con(c) => Vector.map(c, fn (_, label) => label)
-  | Cases.Word(_, w) => Vector.map(w, fn (_, label) => label)
-
-fun detectCases(block: Block.t, vars: Var.t list, labels: Label.t vector) =
-  let
-    val zeroStatements = Vector.length(Block.statements block) = 0
-    val transfer = Block.transfer block
-    val tdata =
-      (case transfer of
-        Case {cases, default, test} => SOME(test, cases, default)
-      | _ => NONE)
-  in
-    case tdata of
-      NONE => NONE
-    | SOME(tvar, tcases, tdefault) =>
-      (let
+(* Determine if the block can be unswitched. *)
+fun detectCases(block: Block.t, loopVars: Var.t list) =
+   case Block.transfer block of
+     Case {cases, default, test} =>
+      let
         val blockName = Block.label block
         val () = logs (concat ["Evaluating ", Label.toString(blockName)])
-        val () = logl(Transfer.layout transfer)
-        val tlabels = caseLabels tcases
-        val varOutsideLoop = not (List.contains(vars, tvar, Var.equals))
-        val labelsInsideLoop = Vector.forall(tlabels,
-                                fn l => Vector.contains(labels, l, Label.equals))
-        val noDefault = case tdefault of NONE => true | _ => false
-        val canOptimize = varOutsideLoop (*andalso labelsInsideLoop  andalso
-        			zeroStatements andalso noDefault*)
+        val () = logl(Transfer.layout (Block.transfer block))
+        val testIsInvariant = not (List.contains(loopVars, test, Var.equals))
       in
-        if canOptimize then
-          let
-            val () = logs("Can optimize!") 
-          in
-            SOME(blockName, tcases, tvar, tdefault)
-          end
+        if testIsInvariant then
+            (logs("Can optimize!") ; SOME(cases, test, default))
         else
-          let
-            val () = if not varOutsideLoop then
-                        logs ("Can't optimize: condition not invariant")
-                      else ()
-          in
-            NONE
-          end
-      end)
-  end
+            (logs ("Can't optimize: condition not invariant") ; NONE)
+      end
+   | _ => NONE
 
-(* Look for any optimization opportunities *)
-fun findOpportunity(blocks: Block.t vector,
-                    headers: Block.t vector,
+(* Look for any optimization opportunities in the loop. *)
+fun findOpportunity(loopBody: Block.t vector,
+                    loopHeaders: Block.t vector,
                     depth: int)
-                    : ((Label.t * Cases.t * Var.t * Label.t option) * Block.t) option =
+                    : ((Cases.t * Var.t * Label.t option) * Block.t) option =
   let
-    val vars = Vector.fold (blocks, [], (fn (b, lst) => (blockVars b) @ lst))
-    (*val _ = List.foreach (vars, (fn v => logli(Var.layout v, depth)))*)
-    val blockNames = Vector.map (blocks, Block.label)
-    val canOptimize = Vector.keepAllMap (blocks,
-                                         fn b => detectCases (b, vars, blockNames))
+    val vars = Vector.fold (loopBody, [], (fn (b, lst) => (blockVars b) @ lst))
+    val canOptimize = Vector.keepAllMap (loopBody,
+                                         fn b => detectCases (b, vars))
   in
-    if (Vector.length headers) = 1 then
+    if (Vector.length loopHeaders) = 1 then
       case Vector.length canOptimize of
         0 => NONE
-      | _ => SOME(Vector.sub(canOptimize, 0), Vector.sub(headers, 0))
+      | _ => SOME(Vector.sub(canOptimize, 0), Vector.sub(loopHeaders, 0))
     else
-    	let
-    		val () = logsi ("Can't optimize, loop has more than 1 header", depth)
-		in
-			NONE
-		end
+      (logsi ("Can't optimize: loop has more than 1 header", depth) ; NONE)
   end
 
 (* Copy a loop and set up the transfer *)
@@ -273,8 +239,10 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
   in
     case condLabelOpt of
       NONE => ([], [])
-    | SOME((label, cases, check, default), header) =>
+    | SOME((cases, check, default), header) =>
         let
+         val () = logsi("Optimizing loop with body:", depth)
+         val () = loglvi(blockNames, depth)
          val mkBranch = fn lbl => makeBranch(blocks, header, lbl, blockInfo,
                                              setBlockInfo, labelNode, nodeBlock)
          (* Copy the loop body for the default case if necessary *)
@@ -341,32 +309,21 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
         end
   end
 
-(* Traverse sub-forests until the innermost loop is found *)
+(* Traverse sub-forests until the innermost loop is found. *)
 fun traverseSubForest ({loops, notInLoop},
                        enclosingHeaders,
                        labelNode, nodeBlock, depth): Block.t list * Label.t list =
-  let
-    val () = logsi ("Not in loop:", depth)
-    val () = Vector.foreach (notInLoop, fn n =>
-      let
-        val block = nodeBlock n
-        val blockName = Label.layout (Block.label block)
-      in
-        logli (blockName, depth)
-      end)
-      val () = ()
-  in
-    if (Vector.length loops) = 0 then
+   if (Vector.length loops) = 0 then
       optimizeLoop(enclosingHeaders, notInLoop, labelNode, nodeBlock, depth)
-    else
+   else
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
-        let
-          val (nBlocks, rBlocks) = traverseLoop(loop, labelNode, nodeBlock, depth + 1)
-        in
-          ((new @ nBlocks), (remove @ rBlocks))
-        end)
-  end
-(* Traverse loops in the loop forest *)
+         let
+            val (nBlocks, rBlocks) = traverseLoop(loop, labelNode, nodeBlock, depth + 1)
+         in
+            ((new @ nBlocks), (remove @ rBlocks))
+         end)
+
+(* Traverse loops in the loop forest. *)
 and traverseLoop ({headers, child},
                   labelNode, nodeBlock, depth): Block.t list * Label.t list =
    let
@@ -377,10 +334,11 @@ and traverseLoop ({headers, child},
       traverseSubForest ((Forest.dest child), headers, labelNode, nodeBlock, depth + 1)
    end
 
-(* Traverse the top-level loop forest *)
-fun traverseForest ({loops, notInLoop}, allBlocks, labelNode, nodeBlock): Block.t list =
+(* Traverse the top-level loop forest. *)
+fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list =
   let
     val () = logs (concat[(Int.toString (Vector.length loops)), " total loops"])
+    (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
         let
@@ -401,7 +359,7 @@ fun traverseForest ({loops, notInLoop}, allBlocks, labelNode, nodeBlock): Block.
     (Vector.toList reducedBlocks) @ newBlocks
   end
 
-(* Performs the optimization on the body of a single function *)
+(* Performs the optimization on the body of a single function. *)
 fun optimizeFunction(function: Function.t): Function.t =
    let
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
@@ -420,7 +378,7 @@ fun optimizeFunction(function: Function.t): Function.t =
                     start = start}
    end
 
-(* Entry point *)
+(* Entry point. *)
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val () = logs "Unswitching loops"
