@@ -61,7 +61,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      ; setLabelInfo (label, {hasVectorPrim = true}))
               in
                  Vector.foreach
-                 (statements, fn stmt as Statement.T {exp, ...} =>
+                 (statements, fn Statement.T {exp, ...} =>
                   (case exp of
                       PrimApp {prim, ...} =>
                          (case Prim.name prim of
@@ -118,7 +118,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
 
       fun transformStatement (stmt as Statement.T {exp, var, ty, ...}) =
         (case exp of
-             PrimApp {prim, targs, args, ...} =>
+             PrimApp {prim, args, ...} =>
              (case Prim.name prim of
                   Prim.Name.Vector_vector =>
                   let
@@ -150,7 +150,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
         Vector.foldr
             (statements,
              ({label = label, args = args, statements = []}),
-             fn (stmt as Statement.T {exp, var, ty, ...},
+             fn (stmt,
                  {label, args, statements}) =>
                 let
                     fun adds ss = ({label = label,
@@ -158,7 +158,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                     statements = ss @ statements})
                 in
                     adds (transformStatement stmt)
-                end
+                end)
                    (*
                     case exp of
                         PrimApp {prim, targs, args, ...} =>
