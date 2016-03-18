@@ -26,7 +26,7 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_array (* backend *)
+               Array_uninit (* backend *)
              | Array_array0Const (* constant propagation *)
              | Array_length (* ssa to rssa *)
              | Array_sub (* ssa to ssa2 *)
@@ -147,6 +147,7 @@ signature PRIM =
              | TopLevel_getSuffix (* implement suffix *)
              | TopLevel_setHandler (* implement exceptions *)
              | TopLevel_setSuffix (* implement suffix *)
+             | Vector_vector (* ssa to ssa2 *)
              | Vector_length (* ssa to ssa2 *)
              | Vector_sub (* ssa to ssa2 *)
              | Weak_canGet (* ssa to rssa *)
@@ -270,7 +271,7 @@ signature PRIM =
        *   same args and has no side effects.
        * isFuntional implies not maySideEffect.
        * examples: Array_length, MLton_equal, Word_add
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * not examples: Array_uninit, Array_sub, Ref_deref, Ref_ref
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
@@ -279,7 +280,7 @@ signature PRIM =
       (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
       val mayOverflow: 'a t -> bool
       (* examples: Array_update, Ref_assign
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * not examples: Array_uninit, Array_sub, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
       val name: 'a t -> 'a Name.t
@@ -287,6 +288,7 @@ signature PRIM =
       val reff: 'a t
       val toString: 'a t -> string
       val touch: 'a t
+      val vector: 'a t
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t

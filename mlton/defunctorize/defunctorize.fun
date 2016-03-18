@@ -1050,52 +1050,17 @@ fun defunctorize (CoreML.Program.T {decs}) =
                         Xexp.list (Vector.map (es, #1 o loopExp), ty,
                                    {forceLeftToRight = 2 <= numExpansive})
                      end
-		| Vector es =>
-		     let
-			 val args = Vector.map (es, #1 o loopExp)
-			 val ety = Xtype.deVector ty
-			 val aty = Xtype.array ety
-			 val arrayVar = Var.newString "a"
-			 val arrayExp = Xexp.primApp
-					    {args = (Vector.new1 
-							 (Xexp.const
-							      (Const.word 
-								   (WordX.fromIntInf
-									(IntInf.fromInt (Vector.length args),
-									 WordSize.seqIndex ()))))),
-					     prim = Prim.array,
-					     targs = Vector.new1 ety,
-					     ty = aty}
-			 val arrayDecs = Xexp.vall {var = arrayVar, exp = arrayExp}
-			 val arrayUpdates = Vector.mapi
-						(args,
-						 (fn (index, arg) =>
-						     (Xexp.primApp
-							  {args = Vector.new3
-								      (Xexp.monoVar (arrayVar, aty),
-								       (Xexp.const
-									    (Const.word 
-										 (WordX.fromIntInf
-										      (IntInf.fromInt index,
-										       WordSize.seqIndex ())))),
-								       arg),
-							   prim = Prim.arrayUpdate,
-							   targs = Vector.new1 ety,
-							   ty = Xtype.unit})))
-		     	 val arrayUpdateDecs = Vector.fold
-						   (arrayUpdates,
-						    arrayDecs,
-						    (fn (xmlExp, decsList) => decsList @
-									      (Xexp.vall
-										   {var = (Var.newNoname ()),
-										    exp = xmlExp})))
-		     in
-			 Xexp.lett {decs = arrayUpdateDecs,
-				    body = Xexp.primApp {args = Vector.new1 (Xexp.monoVar (arrayVar, aty)),
-							 prim = Prim.arrayToVector,
-                          				 targs = Vector.new1 ety,
-							 ty = ty}}
-		     end
+                | Vector es =>
+                  let
+                      val args = Vector.map (es, #1 o loopExp)
+                      val ety = Xtype.deVector ty
+                  in
+                      Xexp.primApp
+                          {args = args,
+                           prim = Prim.vector,
+                           targs = Vector.new1 ety,
+                           ty = ty}
+                  end
                 | PrimApp {args, prim, targs} =>
                      let
                         val args = Vector.map (args, #1 o loopExp)

@@ -212,7 +212,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                            datatype z = datatype Prim.Name.t
                                         in
                                            case Prim.name prim of
-                                              Array_array => knownLength (arg ())
+                                              Array_uninit => knownLength (arg ())
                                             | Array_length => length ()
                                             | Array_toVector => conv ()
                                             | Vector_length => length ()

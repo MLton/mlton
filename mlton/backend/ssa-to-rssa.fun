@@ -1178,7 +1178,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
-                                 Array_array => array (a 0)
+                                 Array_uninit => array (a 0)
                                | Array_length => arrayOrVectorLength ()
                                | Array_toVector =>
                                     let

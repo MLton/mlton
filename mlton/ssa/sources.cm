@@ -73,6 +73,7 @@ constant-propagation.fun
 contify.fun
 deep-flatten.fun
 flatten.fun
+implementVectors.fun
 inline.sig
 inline.fun
 introduce-loops.fun

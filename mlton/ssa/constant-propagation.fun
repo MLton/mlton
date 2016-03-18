@@ -849,7 +849,7 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_array => array (arg 0, bear ())
+                  Array_uninit => array (arg 0, bear ())
                 | Array_array0Const =>
                      array (zero (WordSize.seqIndex ()), Birth.here ())
                 | Array_length => arrayLength (arg 0)

@@ -15,7 +15,7 @@ open Primitive
 structure Array =
    struct
       open Array
-      val arrayUnsafe = _prim "Array_array": SeqIndex.int -> 'a array;
+      val arrayUnsafe = _prim "Array_uninit": SeqIndex.int -> 'a array;
       val array0Const = _prim "Array_array0Const": unit -> 'a array;
       val length = _prim "Array_length": 'a array -> SeqIndex.int;
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)

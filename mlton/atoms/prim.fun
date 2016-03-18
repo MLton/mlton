@@ -34,7 +34,7 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_array (* backend *)
+   Array_uninit (* backend *)
  | Array_array0Const (* constant propagation *)
  | Array_length (* ssa to rssa *)
  | Array_sub (* backend *)
@@ -155,6 +155,7 @@ datatype 'a t =
  | TopLevel_getSuffix (* implement suffix *)
  | TopLevel_setHandler (* implement exceptions *)
  | TopLevel_setSuffix (* implement suffix *)
+ | Vector_vector (* ssa to rssa *)
  | Vector_length (* ssa to rssa *)
  | Vector_sub (* ssa to rssa *)
  | Weak_canGet (* ssa to rssa *)
@@ -219,7 +220,7 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_array => "Array_array"
+         Array_uninit => "Array_uninit"
        | Array_array0Const => "Array_array0Const"
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
@@ -319,6 +320,7 @@ fun toString (n: 'a t): string =
        | TopLevel_getSuffix => "TopLevel_getSuffix"
        | TopLevel_setHandler => "TopLevel_setHandler"
        | TopLevel_setSuffix => "TopLevel_setSuffix"
+       | Vector_vector => "Vector_vector"
        | Vector_length => "Vector_length"
        | Vector_sub => "Vector_sub"
        | Weak_canGet => "Weak_canGet"
@@ -359,7 +361,7 @@ fun toString (n: 'a t): string =
 fun layout p = Layout.str (toString p)
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_array, Array_array) => true
+   fn (Array_uninit, Array_uninit) => true
     | (Array_array0Const, Array_array0Const) => true
     | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
@@ -465,6 +467,7 @@ val equals: 'a t * 'a t -> bool =
     | (TopLevel_getSuffix, TopLevel_getSuffix) => true
     | (TopLevel_setHandler, TopLevel_setHandler) => true
     | (TopLevel_setSuffix, TopLevel_setSuffix) => true
+    | (Vector_vector, Vector_vector) => true
     | (Vector_length, Vector_length) => true
     | (Vector_sub, Vector_sub) => true
     | (Weak_canGet, Weak_canGet) => true
@@ -521,7 +524,7 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_array => Array_array
+      Array_uninit => Array_uninit
     | Array_array0Const => Array_array0Const
     | Array_length => Array_length
     | Array_sub => Array_sub
@@ -622,6 +625,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | TopLevel_getSuffix => TopLevel_getSuffix
     | TopLevel_setHandler => TopLevel_setHandler
     | TopLevel_setSuffix => TopLevel_setSuffix
+    | Vector_vector => Vector_vector
     | Vector_length => Vector_length
     | Vector_sub => Vector_sub
     | Weak_canGet => Weak_canGet
@@ -660,7 +664,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val array = Array_array
+val array = Array_uninit
 val arrayLength = Array_length
 val arrayUpdate = Array_update
 val arrayToVector = Array_toVector
@@ -720,6 +724,7 @@ val intInfNotb = IntInf_notb
 val realCastToWord = Real_castToWord
 val reff = Ref_ref
 val touch = MLton_touch
+val vector = Vector_vector
 val vectorLength = Vector_length
 val vectorSub = Vector_sub
 val wordAdd = Word_add
@@ -770,7 +775,7 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_array => Moveable
+         Array_uninit => Moveable
        | Array_array0Const => Moveable
        | Array_length => Functional
        | Array_sub => DependsOnState
@@ -873,6 +878,7 @@ val kind: 'a t -> Kind.t =
        | TopLevel_getSuffix => DependsOnState
        | TopLevel_setHandler => SideEffect
        | TopLevel_setSuffix => SideEffect
+       | Vector_vector => Functional
        | Vector_length => Functional
        | Vector_sub => Functional
        | Weak_canGet => DependsOnState
@@ -978,7 +984,7 @@ local
        (Word8Vector_subWord s)]
 in
    val all: unit t list =
-      [Array_array,
+      [Array_uninit,
        Array_array0Const,
        Array_length,
        Array_sub,
@@ -1044,6 +1050,7 @@ in
        TopLevel_getSuffix,
        TopLevel_setHandler,
        TopLevel_setSuffix,
+       Vector_vector,
        Vector_length,
        Vector_sub,
        Weak_canGet,
@@ -1212,7 +1219,7 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_array => oneTarg (fn targ => (oneArg seqIndex, array targ))
+         Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
        | Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
@@ -1337,6 +1344,7 @@ fun 'a checkApp (prim: 'a t,
             noTargs (fn () => (oneArg (arrow (unit, unit)), unit))
        | String_toWord8Vector =>
             noTargs (fn () => (oneArg string, word8Vector))
+       | Vector_vector => oneTarg (fn targ => (nArgs (Vector.tabulate (Vector.length args, fn _ => targ)), vector targ))
        | Vector_length => oneTarg (fn t => (oneArg (vector t), seqIndex))
        | Vector_sub => oneTarg (fn t => (twoArgs (vector t, seqIndex), t))
        | Weak_canGet => oneTarg (fn t => (oneArg (weak t), bool))
@@ -1400,7 +1408,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_array => one (deArray result)
+         Array_uninit => one (deArray result)
        | Array_array0Const => one (deArray result)
        | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
@@ -1422,6 +1430,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | Ref_assign => one (deRef (arg 0))
        | Ref_deref => one (deRef (arg 0))
        | Ref_ref => one (deRef result)
+       | Vector_vector => one (deVector result)
        | Vector_length => one (deVector (arg 0))
        | Vector_sub => one (deVector (arg 0))
        | Weak_canGet => one (deWeak (arg 0))
