@@ -298,7 +298,7 @@ fun mkconv (lhs, opr, fromty, arg, toty) =
 (* Makes a getelementptr instruction:
  * <lhs> = getelementptr inbounds <ty>, <ty>* <arg>, [i32 <idx>]+
  * where <idcs> is a list of integer offsets
- * and <ty> must be a pointer type
+ * and ty must be a pointer type
  *)
 fun mkgep (lhs, ty, arg, idcs) =
     let
@@ -309,7 +309,7 @@ fun mkgep (lhs, ty, arg, idcs) =
 
 (* Makes a load instruction:
  * <lhs> = load <ty>, <ty>* <arg>
- * where <ty>* must be a pointer type
+ * where ty must be a pointer type
  *)
 fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", getTypeFromPointer ty,", ", ty, " ", arg, "\n"]
 
