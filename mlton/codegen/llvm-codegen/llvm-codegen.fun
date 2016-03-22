@@ -256,6 +256,22 @@ fun typeOfGlobal global =
         array
     end
 
+fun getTypeFromPointer (typ: string):string =
+    case typ of
+        "%Pointer" => "i8"
+      | "%CPointer" => "i8"
+      | "%Objptr" => "i8"
+      | t =>
+        let
+            val str_list = String.explode t
+            val len = List.length str_list
+            val last_char = List.nth (str_list, len - 1)
+        in
+          if Char.equals (last_char, #"*")
+          then String.implode (List.firstN (str_list, len - 1))
+          else t
+        end
+
 (* Makes a two-operand instruction:
  * <lhs> = <opr> <ty> <a0>, <a1>
 *)
@@ -280,22 +296,22 @@ fun mkconv (lhs, opr, fromty, arg, toty) =
     concat ["\t", lhs, " = ", opr, " ", fromty, " ", arg, " to ", toty, "\n"]
 
 (* Makes a getelementptr instruction:
- * <lhs> = getelementptr inbounds <ty> <arg>, [i32 <idx>]+
+ * <lhs> = getelementptr inbounds <ty>, <ty>* <arg>, [i32 <idx>]+
  * where <idcs> is a list of integer offsets
- * and <ty> must be a pointer type
+ * and ty must be a pointer type
  *)
 fun mkgep (lhs, ty, arg, idcs) =
     let
         val indices = String.concatWith (List.map (idcs, fn (ity, i) => ity ^ " " ^ i), ", ")
     in
-        concat ["\t", lhs, " = getelementptr inbounds ", ty, " ", arg, ", ", indices, "\n"]
+        concat ["\t", lhs, " = getelementptr inbounds ", getTypeFromPointer ty, ", ", ty, " ", arg, ", ", indices, "\n"]
     end
 
 (* Makes a load instruction:
- * <lhs> = load <ty> <arg>
- * where <ty> must be a pointer type
+ * <lhs> = load <ty>, <ty>* <arg>
+ * where ty must be a pointer type
  *)
-fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", ty, " ", arg, "\n"]
+fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", getTypeFromPointer ty,", ", ty, " ", arg, "\n"]
 
 (* Makes a store instruction:
  * store <ty> <arg>, <ty>* <loc>
