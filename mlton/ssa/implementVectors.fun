@@ -28,16 +28,6 @@ structure Dexp =
       open DirectExp
    end
 
-
-(* SSA requires any value being used be bound to a variable.
-   Overcome this by using the DirectExp from the other modules
-   to generate such statements for us. We invoke directExp
-   functions to carry out operations like binding the use of a
-   new variable to a value, and making sure that there is not a
-   global that is already bound to the said value.
-*)
-
-
 fun transform (Program.T {datatypes, globals, functions, main}) =
   let
       val {get = funcInfo: Func.t -> {hasVectorPrim: bool},
@@ -71,6 +61,24 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
               end)
           end)
 
+      (*
+       * Build a pair of (statement, hasVectorPrim) for each Statement
+       * in globals. Later, use hasVectorPrim to invoke transformStatements
+       * on those statements with the Vector_vector primitive.
+       *)
+      val globalsPair =
+          Vector.foldr
+              (globals,
+               [],
+               fn (stmt as Statement.T {exp, ...}, statements) =>
+                  (case exp of
+                       PrimApp {prim, ...} =>
+                       (case Prim.name prim of
+                            Prim.Name.Vector_vector =>
+                            (stmt, true)::statements
+                         | _ => (stmt, false)::statements)
+                     | _ => (stmt, false)::statements))
+
       fun makeVector (args, ty) =
           let
               val ety = Type.deVector ty
@@ -89,7 +97,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                              (buildIndexExp (Vector.length args)),
                                   prim = Prim.array,
                                   targs = Vector.new1 ety,
-                                  ty = ty}
+                                  ty = aty}
               val arrayDecs = [{var = arrayVar, exp = arrayExp}]
               val arrayUpdates = Vector.mapi
                                      (args,
@@ -101,7 +109,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                             Dexp.var (arg, ety)),
                                                 prim = Prim.arrayUpdate,
                                                 targs = Vector.new1 ety,
-                                                ty = ty})))
+                                                ty = Type.unit})))
               val arrayUpdateDecs = Vector.fold
                                         (arrayUpdates,
                                          arrayDecs,
@@ -135,7 +143,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                        {args = args, ...}, ...}] => (Vector.sub(args, 0), stmts)
                             | _ => Error.bug "ImplementVectors.Value.vstmts"
                       val vstmtsList =
-                          Vector.fold
+                          Vector.foldr
                               (vstmts,
                                [],
                                fn (vstmt, vlist) => vstmt::vlist)
@@ -159,41 +167,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                 in
                     adds (transformStatement stmt)
                 end)
-                   (*
-                    case exp of
-                        PrimApp {prim, targs, args, ...} =>
-                        (case Prim.name prim of
-                             Prim.Name.Vector_vector =>
-                             let
-                                 val vect = makeVector (args, ty)
-                                 val l = Label.newNoname ()
-                                 val (_, bs) = Dexp.linearizeGoto
-                                                   (vect,
-                                                    Handler.Dead,
-                                                    l)
-                                 val (vx, vstmts) =
-                                     case bs of
-                                         [Block.T {statements = stmts,
-                                                   transfer = Transfer.Goto
-                                                                  {args = args, ...}, ...}] => (Vector.sub(args, 0), stmts)
-                                       | _ => Error.bug "ImplementVectors.Value.vstmts"
-                                 val vstmtsList =
-                                     Vector.fold
-                                         (vstmts,
-                                          [],
-                                          fn (vstmt, vlist) => vstmt::vlist)
-                             in
-                                 adds (vstmtsList @
-                                       [Statement.T {var = var, ty = ty, exp = (Exp.Var vx)}])
-                             end
-                           | _ => normal ())
-                      | _ => normal ()
-                end) *)
 
       fun doit blocks =
           let
               val blocks =
-               Vector.fold
+               Vector.foldr
                (blocks, [],
                 fn (block as Block.T {label, args, statements, transfer}, blocks) =>
                 if not (#hasVectorPrim (labelInfo label))
@@ -217,9 +195,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val globals =
          let
              val globals =
-                 Vector.fold
-                 (globals, [], fn (stmt, statements) =>
-                                  (transformStatement stmt) @ statements)
+                 List.foldr
+                 (globalsPair, [], (fn ((stmt, hasVector), statements) =>
+                                      if hasVector
+                                      then (transformStatement stmt) @ statements
+                                      else stmt::statements))
          in
              Vector.fromList globals
          end
