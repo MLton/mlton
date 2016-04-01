@@ -39,7 +39,6 @@ type pass = {name: string,
              doit: Program.t -> Program.t}
 
 val ssaPassesDefault =
-   {name = "implementVectors", doit = ImplementVectors.transform} ::
    {name = "removeUnused1", doit = RemoveUnused.transform} ::
    {name = "introduceLoops1", doit = IntroduceLoops.transform} ::
    {name = "loopInvariant1", doit = LoopInvariant.transform} ::
@@ -49,6 +48,7 @@ val ssaPassesDefault =
     Inline.inlineLeaf (p, !Control.inlineLeafB)} ::
    {name = "contify1", doit = Contify.transform} ::
    {name = "localFlatten1", doit = LocalFlatten.transform} ::
+   {name = "implementVectors", doit = ImplementVectors.transform} ::
    {name = "constantPropagation", doit = ConstantPropagation.transform} ::
    (* useless should run 
     *   - after constant propagation because constant propagation makes

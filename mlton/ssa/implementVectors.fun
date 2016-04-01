@@ -61,23 +61,34 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
               end)
           end)
 
+      val xformGlobals =
+          Vector.exists
+              (globals,
+               fn (stmt as Statement.T {exp, ...}) =>
+                  (case exp of
+                       PrimApp {prim, ...} =>
+                       (case Prim.name prim of
+                            Prim.Name.Vector_vector => true
+                         | _ => false)
+                     | _ => false))
+
       (*
        * Build a pair of (statement, hasVectorPrim) for each Statement
        * in globals. Later, use hasVectorPrim to invoke transformStatements
        * on those statements with the Vector_vector primitive.
        *)
-      val globalsPair =
-          Vector.foldr
-              (globals,
-               [],
-               fn (stmt as Statement.T {exp, ...}, statements) =>
-                  (case exp of
-                       PrimApp {prim, ...} =>
-                       (case Prim.name prim of
-                            Prim.Name.Vector_vector =>
-                            (stmt, true)::statements
-                         | _ => (stmt, false)::statements)
-                     | _ => (stmt, false)::statements))
+      (* val globalsPair = *)
+      (*     Vector.foldr *)
+      (*         (globals, *)
+      (*          [], *)
+      (*          fn (stmt as Statement.T {exp, ...}, statements) => *)
+      (*             (case exp of *)
+      (*                  PrimApp {prim, ...} => *)
+      (*                  (case Prim.name prim of *)
+      (*                       Prim.Name.Vector_vector => *)
+      (*                       (stmt, true)::statements *)
+      (*                    | _ => (stmt, false)::statements) *)
+      (*                | _ => (stmt, false)::statements)) *)
 
       fun makeVector (args, ty) =
           let
@@ -154,55 +165,42 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                 | _ => [stmt])
            | _ => [stmt])
 
-      fun buildLAS (label, args, statements) =
+      fun transformStatements (stmts) =
         Vector.foldr
-            (statements,
-             ({label = label, args = args, statements = []}),
-             fn (stmt,
-                 {label, args, statements}) =>
-                let
-                    fun adds ss = ({label = label,
-                                    args = args,
-                                    statements = ss @ statements})
-                in
-                    adds (transformStatement stmt)
-                end)
+            (stmts, [], (fn (stmt, statements) =>
+                            (transformStatement stmt) @ statements))
 
       fun doit blocks =
           let
               val blocks =
                Vector.foldr
-               (blocks, [],
-                fn (block as Block.T {label, args, statements, transfer}, blocks) =>
-                if not (#hasVectorPrim (labelInfo label))
-                   then block::blocks
-                else
-                let
-                   fun finish ({label, args, statements}, transfer) =
-                      Block.T {label = label,
-                               args = args,
-                               statements = Vector.fromList statements,
-                               transfer = transfer}
-                    val las = buildLAS (label, args, statements)
-                in
-                    finish (las, transfer)
-                    :: blocks
-                end)
+                   (blocks, [],
+                    fn (block as Block.T {label, args, statements, transfer}, blocks) =>
+                       if not (#hasVectorPrim (labelInfo label))
+                       then block::blocks
+                       else
+                           let
+                               val block =
+                                   Block.T {label = label,
+                                            args = args,
+                                            statements = Vector.fromList (transformStatements statements),
+                                            transfer = transfer}
+                           in
+                               block::blocks
+                           end)
           in
               Vector.fromList blocks
           end
 
       val globals =
-         let
-             val globals =
-                 List.foldr
-                 (globalsPair, [], (fn ((stmt, hasVector), statements) =>
-                                      if hasVector
-                                      then (transformStatement stmt) @ statements
-                                      else stmt::statements))
-         in
-             Vector.fromList globals
-         end
+         if xformGlobals
+         then
+             let
+                 val globals = transformStatements globals
+             in
+                 Vector.fromList globals
+             end
+         else globals
 
       val functions =
          List.revMap
