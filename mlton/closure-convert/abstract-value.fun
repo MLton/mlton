@@ -303,6 +303,12 @@ fun deArray v =
     | Unify (_, v) => v
     | _ => Error.bug "AbstractValue.deArray"
 
+fun deVector v =
+   case tree v of
+      Type t => fromType (Type.deVector t)
+    | Unify (_, v) => v
+    | _ => Error.bug "AbstractValue.deVector"
+
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
 
