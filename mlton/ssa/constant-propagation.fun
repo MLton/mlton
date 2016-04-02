@@ -847,6 +847,17 @@ fun transform (program: Program.t): Program.t =
                   in
                      a
                   end
+               fun vector (length) =
+                  let
+                      val a = fromType resultType
+                      val len = const (S.Const.word
+                                           (WordX.fromIntInf
+                                                (IntInf.fromInt length,
+                                                 WordSize.seqIndex ())))
+                      val _ = coerce {from = len, to = vectorLength a}
+                  in
+                      a
+                  end
             in
                case Prim.name prim of
                   Array_uninit => array (arg 0, bear ())
@@ -869,6 +880,7 @@ fun transform (program: Program.t): Program.t =
                      in
                         r
                      end
+                | Vector_vector => vector (Vector.length args)
                 | Vector_length => vectorLength (arg 0)
                 | Vector_sub => devector (arg 0)
                 | Weak_get => deweak (arg 0)

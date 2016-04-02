@@ -64,31 +64,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val xformGlobals =
           Vector.exists
               (globals,
-               fn (stmt as Statement.T {exp, ...}) =>
+               fn (Statement.T {exp, ...}) =>
                   (case exp of
                        PrimApp {prim, ...} =>
                        (case Prim.name prim of
                             Prim.Name.Vector_vector => true
                          | _ => false)
                      | _ => false))
-
-      (*
-       * Build a pair of (statement, hasVectorPrim) for each Statement
-       * in globals. Later, use hasVectorPrim to invoke transformStatements
-       * on those statements with the Vector_vector primitive.
-       *)
-      (* val globalsPair = *)
-      (*     Vector.foldr *)
-      (*         (globals, *)
-      (*          [], *)
-      (*          fn (stmt as Statement.T {exp, ...}, statements) => *)
-      (*             (case exp of *)
-      (*                  PrimApp {prim, ...} => *)
-      (*                  (case Prim.name prim of *)
-      (*                       Prim.Name.Vector_vector => *)
-      (*                       (stmt, true)::statements *)
-      (*                    | _ => (stmt, false)::statements) *)
-      (*                | _ => (stmt, false)::statements)) *)
 
       fun makeVector (args, ty) =
           let
@@ -97,7 +79,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
 
               fun buildIndexExp len =
                   Dexp.const
-                      (Const.word
+                     (Const.word
                            (WordX.fromIntInf
                                 (IntInf.fromInt len,
                                  WordSize.seqIndex ())))
