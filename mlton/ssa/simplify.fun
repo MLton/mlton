@@ -69,6 +69,12 @@ val ssaPassesDefault =
    {name = "polyHash", doit = PolyHash.transform} ::
    {name = "introduceLoops2", doit = IntroduceLoops.transform} ::
    {name = "loopInvariant2", doit = LoopInvariant.transform} ::
+   (* loopUnswitch should run
+    *   - after loop invariant code motion so invariant conditions are obvious 
+    *   - before a knownCase pass to cleanup after unswitching
+    *)
+   {name = "loopUnswitch", doit = LoopUnswitch.transform} ::
+   {name = "knownCase", doit = KnownCase.transform} ::
    {name = "contify2", doit = Contify.transform} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
@@ -86,11 +92,10 @@ val ssaPassesDefault =
    {name = "commonBlock", doit = CommonBlock.transform} ::
    {name = "redundantTests", doit = RedundantTests.transform} ::
    {name = "redundant", doit = Redundant.transform} ::
-   {name = "knownCase", doit = KnownCase.transform} ::
+   {name = "loopUnswitch2", doit = LoopUnswitch.transform} ::
+   {name = "knownCase2", doit = KnownCase.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
    {name = "loopUnroll", doit = LoopUnroll.transform} ::
-   {name = "loopUnswitch", doit = LoopUnswitch.transform} ::
-   {name = "knownCase2", doit = KnownCase.transform} ::
    nil
 
 val ssaPassesMinimal =

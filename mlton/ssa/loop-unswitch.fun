@@ -23,6 +23,10 @@ in
    structure Forest = LoopForest
 end
 
+val optCount = ref 0
+val notInvariant = ref 0
+val multiHeaders = ref 0
+
 type BlockInfo = Label.t * (Var.t * Type.t) vector
 
 fun logli (l: Layout.t, i: int): unit =
@@ -38,12 +42,6 @@ fun logsi (s: string, i: int): unit =
 
 fun logs (s: string): unit =
    logsi(s, 0)
-
-fun loglli (ll: Label.t list, i: int): unit =
-   logli (Layout.align (List.map (ll, Label.layout)), i)
-
-fun loglvi (lv: Label.t vector, i: int): unit =
-   loglli (Vector.toList(lv), i)
 
 (* If a block was renamed, return the new name. Otherwise return the old name. *)
 fun fixLabel (getBlockInfo: Label.t -> BlockInfo, 
@@ -154,7 +152,9 @@ fun detectCases(block: Block.t, loopVars: Var.t list) =
         if testIsInvariant then
             (logs("Can optimize!") ; SOME(cases, test, default))
         else
-            (logs ("Can't optimize: condition not invariant") ; NONE)
+            (logs ("Can't optimize: condition not invariant") ;
+             notInvariant := (!notInvariant) + 1 ; 
+             NONE)
       end
    | _ => NONE
 
@@ -173,7 +173,9 @@ fun findOpportunity(loopBody: Block.t vector,
         0 => NONE
       | _ => SOME(Vector.sub(canOptimize, 0), Vector.sub(loopHeaders, 0))
     else
-      (logsi ("Can't optimize: loop has more than 1 header", depth) ; NONE)
+      (logsi ("Can't optimize: loop has more than 1 header", depth) ;
+       multiHeaders := (!multiHeaders) + 1 ;
+       NONE)
   end
 
 (* Copy a loop and set up the transfer *)
@@ -241,8 +243,7 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
       NONE => ([], [])
     | SOME((cases, check, default), header) =>
         let
-         val () = logsi("Optimizing loop with body:", depth)
-         val () = loglvi(blockNames, depth)
+         val () = optCount := (!optCount) + 1
          val mkBranch = fn lbl => makeBranch(blocks, header, lbl, blockInfo,
                                              setBlockInfo, labelNode, nodeBlock)
          (* Copy the loop body for the default case if necessary *)
@@ -326,13 +327,7 @@ fun traverseSubForest ({loops, notInLoop},
 (* Traverse loops in the loop forest. *)
 and traverseLoop ({headers, child},
                   labelNode, nodeBlock, depth): Block.t list * Label.t list =
-   let
-      val () = logsi ("Loop with headers:", depth)
-      val nToL = Label.layout o Block.label o nodeBlock
-      val () = logli ((Layout.align (Vector.toList(Vector.map(headers, nToL)))), depth)
-   in
       traverseSubForest ((Forest.dest child), headers, labelNode, nodeBlock, depth + 1)
-   end
 
 (* Traverse the top-level loop forest. *)
 fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list =
@@ -346,12 +341,6 @@ fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list
         in
           ((new @ nBlocks), (remove @ rBlocks))
         end)
-    val () = logs("Removing blocks:")
-    val btrl = List.map (blocksToRemove, Label.layout)
-    val () = logl(Layout.align btrl)
-    val () = logs("Adding blocks:")
-    val btal = List.map (newBlocks, Label.layout o Block.label)
-    val () = logl(Layout.align btal)
     val keep: Block.t -> bool =
       (fn b => not (List.contains(blocksToRemove, (Block.label b), Label.equals)))
     val reducedBlocks = Vector.keepAll(allBlocks, keep)
@@ -381,11 +370,17 @@ fun optimizeFunction(function: Function.t): Function.t =
 (* Entry point. *)
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
+      val () = optCount := 0
+      val () = notInvariant := 0
+      val () = multiHeaders := 0
       val () = logs "Unswitching loops"
       val optimizedFunctions = List.map (functions, optimizeFunction)
       val restore = restoreFunction {globals = globals}
       val () = logs "Performing SSA restore"
       val cleanedFunctions = List.map (optimizedFunctions, restore)
+      val () = logs (concat[Int.toString(!optCount), " loops optimized"])
+      val () = logs (concat[Int.toString(!notInvariant), " loops had variant conditions"])
+      val () = logs (concat[Int.toString(!multiHeaders), " loops had multiple headers"])
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
