@@ -10,10 +10,10 @@ index 24d393f..6e58ea0 100755
  #
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..5164d95
+index 0000000..05232c5
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,9 @@
 +The following changes were made to the MLRISC Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
@@ -21,6 +21,8 @@ index 0000000..5164d95
 +* eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 +* eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 +* eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
++* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the Basis Library, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may math `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
++* `library/dynamic-array.sml` and `library/hash-array.sml` (modifed): Replace `include ARRAY` with `include ARRAY_NONEQ`; see above.
 diff --git a/aliasing/pointsTo.sig b/aliasing/pointsTo.sig
 index 9abcd4b..35655ef 100644
 --- a/aliasing/pointsTo.sig
@@ -3070,10 +3072,10 @@ index 36c14af..39d87eb 100644
       * The branch probability of conditional branches. 
 diff --git a/library/array-noneq.sig b/library/array-noneq.sig
 new file mode 100644
-index 0000000..541d419
+index 0000000..544c0fd
 --- /dev/null
 +++ b/library/array-noneq.sig
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,41 @@
 +signature ARRAY_NONEQ =
 +   sig
 +      type 'a array
@@ -3102,35 +3104,62 @@ index 0000000..541d419
 +      val tabulate: int * (int -> 'a) -> 'a array
 +      val update: 'a array * int * 'a -> unit
 +      val vector: 'a array -> 'a vector
++
++(*
++      val toList: 'a array -> 'a list
++      val fromVector: 'a vector -> 'a array
++      val toVector: 'a array -> 'a vector
++*)
 +   end
++(*
++functor Chk(A : ARRAY) : ARRAY_NONEQ = A
++functor Chk(A : ARRAY_NONEQ
++                where type 'a array = 'a array
++                where type 'a vector = 'a vector) : ARRAY = A
++*)
 diff --git a/library/dynamic-array.sml b/library/dynamic-array.sml
-index 7733a6f..cc4125b 100644
+index dc16832..5bd96e4 100644
 --- a/library/dynamic-array.sml
 +++ b/library/dynamic-array.sml
-@@ -5,7 +5,8 @@
-  *)
+@@ -10,7 +10,7 @@
  
- structure DynArray : 
--  sig include ARRAY
-+  sig include ARRAY_NONEQ
+ structure DynArray : sig
+ 
+-    include ARRAY
++    include ARRAY_NONEQ
+ 
+     val fromArray : 'a Array.array * 'a * int -> 'a array
+     val baseArray : 'a array -> 'a Array.array
+@@ -97,6 +97,8 @@ structure DynArray : sig
+    (* additional operations from Basis Library proposal 2015-003 *)
+      fun toList arr = foldr (op ::) [] arr
+ 
 +
-       val fromArray : 'a Array.array * 'a * int -> 'a array
-       val baseArray : 'a array -> 'a Array.array
-       val checkArray: 'a array * 'a Array.array -> unit
++(*
+      fun fromVector v = let
+ 	    val arr = A.fromVector v
+ 	    val default = A.sub(arr, 0)
+@@ -104,6 +106,7 @@ structure DynArray : sig
+ 	      ARRAY(ref arr, default, ref (A.length arr))
+ 	    end
+ 	      handle _ => raise Size
++*)
+ 
+      val toVector = vector
+ 
 diff --git a/library/hash-array.sml b/library/hash-array.sml
-index e50b34e..d285410 100644
+index 074f3e8..1a76b66 100644
 --- a/library/hash-array.sml
 +++ b/library/hash-array.sml
-@@ -5,7 +5,8 @@
-  *)
+@@ -10,7 +10,7 @@
  
- structure HashArray : 
--     sig include ARRAY
-+     sig include ARRAY_NONEQ
-+
-          val array' : int * (int -> 'a) -> 'a array
-          val array'': int * (int -> 'a) -> 'a array
-          val clear  : 'a array -> unit 
+ structure HashArray : sig
+ 
+-    include ARRAY
++    include ARRAY_NONEQ
+ 
+     val array' : int * (int -> 'a) -> 'a array
+     val array'': int * (int -> 'a) -> 'a array
 diff --git a/library/sources.cm b/library/sources.cm
 index 016ee18..cac4fae 100644
 --- a/library/sources.cm
@@ -7180,10 +7209,10 @@ index 0000000..b44aac9
 +end
 diff --git a/mlb/Lib.mlb b/mlb/Lib.mlb
 new file mode 100644
-index 0000000..9e499e8
+index 0000000..954aedd
 --- /dev/null
 +++ b/mlb/Lib.mlb
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,271 @@
 +
 +ann
 +  "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -7228,82 +7257,81 @@ index 0000000..9e499e8
 +   local
 +      open l8
 +   in
-+      structure gs_5 = List
-+   end
-+   local
-+      open l8
-+   in
-+      structure gs_6 = Int
++      structure gs_5 = Int
 +   end
 +   local
 +      signature ARRAY_NONEQ = gs_0
 +      structure Array = gs_2
 +      structure ArraySlice = gs_1
 +      structure General = gs_4
-+      structure Int = gs_6
-+      structure List = gs_5
++      structure Int = gs_5
 +      structure Vector = gs_3
 +      ../library/dynamic-array.sml
 +   in
-+      structure gs_7 = DynArray
++      structure gs_6 = DynArray
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_8 = String
++      structure gs_7 = String
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_9 = Word
++      structure gs_8 = Word
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_10 = Word8
++      structure gs_9 = Word8
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_11 = Word8Array
++      structure gs_10 = Word8Array
 +   end
 +   local
 +      ../library/bitset.sig
 +   in
-+      signature gs_12 = BITSET
++      signature gs_11 = BITSET
 +   end
 +   local
-+      signature BITSET = gs_12
-+      structure String = gs_8
-+      structure Word = gs_9
-+      structure Word8 = gs_10
-+      structure Word8Array = gs_11
++      signature BITSET = gs_11
++      structure String = gs_7
++      structure Word = gs_8
++      structure Word8 = gs_9
++      structure Word8Array = gs_10
 +      ../library/bitset.sml
 +   in
-+      structure gs_13 = BitSet
++      structure gs_12 = BitSet
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_14 = TextIO
++      structure gs_13 = TextIO
 +   end
 +   local
-+      structure TextIO = gs_14
++      structure TextIO = gs_13
 +      ../library/stringOutStream.sig
 +   in
-+      signature gs_15 = STRING_OUTSTREAM
++      signature gs_14 = STRING_OUTSTREAM
 +   end
 +   local
-+      structure String = gs_8
++      structure String = gs_7
 +      ../library/line-break.sml
 +   in
-+      signature gs_16 = LINE_BREAK
-+      structure gs_17 = LineBreak
++      signature gs_15 = LINE_BREAK
++      structure gs_16 = LineBreak
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_18 = Real
++      structure gs_17 = Real
++   end
++   local
++      open l8
++   in
++      structure gs_18 = List
 +   end
 +   local
 +      open l8
@@ -7311,10 +7339,10 @@ index 0000000..9e499e8
 +      structure gs_19 = IntInf
 +   end
 +   local
-+      structure Int = gs_6
++      structure Int = gs_5
 +      structure IntInf = gs_19
-+      structure List = gs_5
-+      structure Real = gs_18
++      structure List = gs_18
++      structure Real = gs_17
 +      ../library/probability.sml
 +   in
 +      signature gs_20 = PROBABILITY
@@ -7344,10 +7372,10 @@ index 0000000..9e499e8
 +      structure CharArraySlice = gs_23
 +      structure CharVectorSlice = gs_24
 +      structure IO = gs_25
-+      structure List = gs_5
-+      signature STRING_OUTSTREAM = gs_15
-+      structure String = gs_8
-+      structure TextIO = gs_14
++      structure List = gs_18
++      signature STRING_OUTSTREAM = gs_14
++      structure String = gs_7
++      structure TextIO = gs_13
 +      structure TextPrimIO = gs_22
 +      ../library/stringOutStream.sml
 +   in
@@ -7385,9 +7413,9 @@ index 0000000..9e499e8
 +   local
 +      signature ARRAY_NONEQ = gs_0
 +      structure Array = gs_2
-+      structure List = gs_5
++      structure List = gs_18
 +      structure Vector = gs_3
-+      structure Word = gs_9
++      structure Word = gs_8
 +      ../library/hash-array.sml
 +   in
 +      structure gs_33 = HashArray
@@ -7404,7 +7432,7 @@ index 0000000..9e499e8
 +      structure gs_36 = SortedList
 +   end
 +   local
-+      structure Int = gs_6
++      structure Int = gs_5
 +      signature PRIORITY_QUEUE = gs_29
 +      ../library/priQueue.sml
 +   in
@@ -7423,7 +7451,7 @@ index 0000000..9e499e8
 +   end
 +   local
 +      signature FREQ = gs_39
-+      structure Int = gs_6
++      structure Int = gs_5
 +      ../library/freq.sml
 +   in
 +      structure gs_40 = Freq
@@ -7432,24 +7460,24 @@ index 0000000..9e499e8
 +   signature ANNOTATIONS = gs_31
 +   signature ARRAY_NONEQ = gs_0
 +   structure Annotations = gs_32
-+   signature BITSET = gs_12
-+   structure BitSet = gs_13
++   signature BITSET = gs_11
++   structure BitSet = gs_12
 +   signature CACHE_REF = gs_34
 +   signature CATNETABLE_LIST = gs_27
 +   structure CacheRef = gs_35
 +   structure CatnetableList = gs_28
-+   structure DynArray = gs_7
++   structure DynArray = gs_6
 +   signature FREQ = gs_39
 +   structure Freq = gs_40
 +   structure HashArray = gs_33
-+   signature LINE_BREAK = gs_16
-+   structure LineBreak = gs_17
++   signature LINE_BREAK = gs_15
++   structure LineBreak = gs_16
 +   signature PRIORITY_QUEUE = gs_29
 +   signature PROBABILITY = gs_20
 +   structure PriorityHeap = gs_30
 +   structure PriorityQueue = gs_37
 +   structure Probability = gs_21
-+   signature STRING_OUTSTREAM = gs_15
++   signature STRING_OUTSTREAM = gs_14
 +   structure SortedList = gs_36
 +   structure StringOutStream = gs_26
 +end

@@ -6,8 +6,8 @@ collection of libraries that are distributed with SML/NJ.  Due to
 differences between SML/NJ and MLton, these libraries will not work
 out-of-the box with MLton.
 
-As of 20151110, MLton includes a port of the SML/NJ Library
-synchronized with SML/NJ version 110.78.
+As of 20160406, MLton includes a port of the SML/NJ Library
+synchronized with SML/NJ version 110.79.
 
 == Usage ==
 
@@ -82,6 +82,7 @@ val maxLen = (8*Word8Array.maxLen) handle Overflow => Word8Array.maxLen
 * `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
+* `Util/splay-set-fn.sml` (modified): Fixed bug in `all` function (base cases should return `true`, not `false`).
 * `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 * `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 
