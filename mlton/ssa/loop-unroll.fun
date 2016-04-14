@@ -24,6 +24,14 @@ end
 
 val optCount = ref 0
 val multiHeaders = ref 0
+val varEntryArg = ref 0
+val multiTransfer = ref 0
+val nonGoto = ref 0
+val ccTransfer = ref 0
+val ccBound = ref 0
+
+fun inc (v: int ref): unit =
+  v := (!v) + 1
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
 
@@ -125,6 +133,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
    case entryArg of
       NONE => (logs "Can't unroll: entry arg not constant" ;
                logl (Var.layout argVar) ;
+               inc(varEntryArg) ;
                NONE)
    | SOME (entryX) =>
       let
@@ -163,16 +172,22 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
             | _ => NONE)
       in
          if (Vector.length loopVars) > 1 then
-            (logs "Can't unroll: more than 1 transfer to head of loop"; NONE)
+            (logs "Can't unroll: more than 1 transfer to head of loop" ;
+             inc(multiTransfer) ;
+             NONE)
             (* TODO: This should only need to verify that all the variables are the same*)
          else if (!nonGotoTransfer) then
-            (logs "Can't unroll: non-goto transfer to head of loop"; NONE)
+            (logs "Can't unroll: non-goto transfer to head of loop" ;
+             inc(nonGoto) ;
+             NONE)
          else
             let
                val loopVar = Vector.sub (loopVars, 0)
             in
                case varChain (argVar, loopVar, loopBody, loadVar) of
-                 NONE => (logs "Can't unroll: can't compute transfer"; NONE)
+                 NONE => (logs "Can't unroll: can't compute transfer" ; 
+                          inc(ccTransfer) ;
+                          NONE)
                | SOME (step) =>
                   let
                   	(* TODO: This should look for a case statement anywhere *)
@@ -182,7 +197,9 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                        | _ => NONE
                   in
                      case headerTransferVar of
-                       NONE => NONE
+                       NONE => (logs "Can't unroll: can't compute bound" ;
+                                inc(ccBound) ;
+                                NONE)
                      | SOME (var) =>
                         let
                            val bound = Vector.peekMap (Block.statements header,
@@ -208,14 +225,16 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
 (* Check all of a loop's entry point arguments to see if a constant value.
    Returns a list of int options where SOME(x) is always x for each entry. *)
 fun findConstantStart (entryArgs: ((IntInf.t option) vector) vector):
-												(IntInf.t option) vector =
-  Vector.fold (entryArgs, Vector.sub (entryArgs, 0),
+                                                          (IntInf.t option) vector =
+  if (Vector.length entryArgs) > 0 then                                                         
+    Vector.fold (entryArgs, Vector.sub (entryArgs, 0),
       fn (v1, v2) => Vector.fromList (Vector.fold2 (v1, v2, [], fn (a1, a2, lst) =>
         case (a1, a2) of
           (SOME(x1), SOME(x2)) =>
             if x1 = x2 then SOME(x1)::lst
             else NONE::lst
         | _ => NONE::lst)))
+  else Vector.new0 ()
 
 (* Look for any optimization opportunities in the loop. *)
 fun findOpportunity(functionBody: Block.t vector,
@@ -287,10 +306,10 @@ fun findOpportunity(functionBody: Block.t vector,
 fun makeHeader(oldHeader, argi, argStart, argStep, argMax, newEntry) =
   let
     val oldArgs = Block.args oldHeader
-    val (_, oldType) = Vector.sub (oldArgs, 0)
+    val (_, oldType) = Vector.sub (oldArgs, argi)
     val argSize = case Type.dest oldType of
                     Type.Word wsize => wsize
-                  | _ => raise Fail "Argument is of type word"
+                  | _ => raise Fail "Argument is not of type word"
     
     val newArgs = Vector.concat [Vector.prefix(oldArgs, argi),
                                  Vector.dropPrefix(oldArgs, argi + 1)]
@@ -539,6 +558,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
         NONE => ([], [])
       | SOME (argi, argStart, argStep, argMax) =>
          let
+            val () = inc(optCount)
             val oldHeader = Vector.sub (headers, 0)
             val () = logs(concat["Index: ", Int.toString argi,
                                  " Init: ", IntInf.toString argStart,
@@ -561,14 +581,8 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                    transfer = transfer'}
             val newBlocks' = newHeader::(newHead::(listPop newBlocks))
             val () = destroy()
-            val () = List.foreach (newBlocks', fn b =>
-              let
-                val () = logs "Adding blocks"
-                val () = logl (Block.layout b)
-                val () = logs "Done"
-              in
-                ()
-              end)
+            val () = logs "Adding blocks"
+            val () = List.foreach (newBlocks', fn b => logl (Block.layout b))
          in
             (newBlocks', (Vector.toList loopBlockNames))
          end
@@ -660,6 +674,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          end
       val () = optCount := 0
       val () = multiHeaders := 0
+      val () = varEntryArg := 0
+      val () = multiTransfer := 0
+      val () = nonGoto := 0
+      val () = ccTransfer := 0
+      val () = ccBound := 0
       val () = logs "Unrolling loops\n"
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
       val restore = restoreFunction {globals = globals}
@@ -667,6 +686,16 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val cleanedFunctions = List.map (optimizedFunctions, restore)
       val () = logs (concat[Int.toString(!optCount), " loops optimized"])
       val () = logs (concat[Int.toString(!multiHeaders), " loops had multiple headers"])
+      val () = logs (concat[Int.toString(!varEntryArg),
+                                         " loops had variable entry values"])
+      val () = logs (concat[Int.toString(!multiTransfer),
+                                         " loops had multiple transfers to the header"])
+      val () = logs (concat[Int.toString(!nonGoto),
+                                         " loops had non-goto transfers to the header"])
+      val () = logs (concat[Int.toString(!ccTransfer),
+                                         " loops had non-computable steps"])
+      val () = logs (concat[Int.toString(!ccBound),
+                                         " loops had non-computable bounds"])
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
