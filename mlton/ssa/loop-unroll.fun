@@ -68,6 +68,8 @@ fun varOptEquals (v1: Var.t, v2: Var.t option): bool =
      NONE => false
    | SOME (v2') => Var.equals (v1, v2')
 
+(* For an arithmetic operation where one argument is a constant,
+   load that constant. *)
 fun varConst (args, loadVar) =
    let
       val a1 = Vector.sub (args, 0)
@@ -205,7 +207,8 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
       end
 (* Check all of a loop's entry point arguments to see if a constant value.
    Returns a list of int options where SOME(x) is always x for each entry. *)
-fun findConstantStart (entryArgs: ((int option) vector) vector): (int option) vector =
+fun findConstantStart (entryArgs: ((IntInf.t option) vector) vector):
+												(IntInf.t option) vector =
   Vector.fold (entryArgs, Vector.sub (entryArgs, 0),
       fn (v1, v2) => Vector.fromList (Vector.fold2 (v1, v2, [], fn (a1, a2, lst) =>
         case (a1, a2) of
@@ -218,8 +221,9 @@ fun findConstantStart (entryArgs: ((int option) vector) vector): (int option) ve
 fun findOpportunity(functionBody: Block.t vector,
                     loopBody: Block.t vector,
                     loopHeaders: Block.t vector,
-                    loadGlobal: Var.t -> int option,
-                    depth: int) =
+                    loadGlobal: Var.t -> IntInf.t option,
+                    depth: int):
+                    (int * IntInf.t * IntInf.t * IntInf.t) option =
    if (Vector.length loopHeaders) = 1 then
       let
          val header = Vector.sub (loopHeaders, 0)
@@ -298,7 +302,7 @@ fun makeHeader(oldHeader, argi, argStart, argStep, argMax, newEntry) =
     fun mkConstants (start, step, max) =
         if start < max then
             let
-                val newWord = WordX.fromIntInf (IntInf.fromInt start, argSize)
+                val newWord = WordX.fromIntInf (start, argSize)
                 val newConst = Const.word newWord
                 val newExp = Exp.Const (newConst)
                 val newType = Type.word argSize
@@ -537,9 +541,9 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
          let
             val oldHeader = Vector.sub (headers, 0)
             val () = logs(concat["Index: ", Int.toString argi,
-                                 " Init: ", Int.toString argStart,
-                                 " Step: ", Int.toString argStep,
-                                 " Max: ", Int.toString argMax])
+                                 " Init: ", IntInf.toString argStart,
+                                 " Step: ", IntInf.toString argStep,
+                                 " Max: ", IntInf.toString argMax])
             val newEntry = Label.newNoname()
             val (newHeader, argLabels) =
               makeHeader (oldHeader, argi, argStart, argStep, argMax, newEntry)
@@ -637,10 +641,8 @@ fun optimizeFunction loadGlobal function =
 (* Entry point. *)
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
-      fun loadGlobal (var : Var.t): int option =
+      fun loadGlobal (var : Var.t): IntInf.t option =
          let
-            val () = logs "Trying to load global"
-            val () = logl (Var.layout var)
             fun matchGlobal v g =
                case Statement.var g of
                  NONE => false
@@ -652,10 +654,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                (case Statement.exp stmt of
                   Exp.Const c =>
                      (case c of
-                        Const.Word w =>
-                           if not (WordSize.equals(WordX.size w, WordSize.word64)) then
-                              SOME(WordX.toInt w)
-                           else NONE
+                        Const.Word w => SOME(WordX.toIntInf w)
                       | _ => NONE)
                 | _ => NONE)
          end
