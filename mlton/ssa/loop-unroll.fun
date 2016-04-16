@@ -50,7 +50,7 @@ fun logs (s: string): unit =
    logsi(s, 0)
 
 fun vectorDrop (v, i) =
-	Vector.concat [Vector.prefix(v, i),
+  Vector.concat [Vector.prefix(v, i),
                  Vector.dropPrefix(v, i + 1)]
 
 fun listPop lst =
@@ -131,8 +131,7 @@ fun varChain (origVar, endVar, blocks, loadVar) =
 (* Check a loop phi value to see if it is an induction variable suitable for unrolling *)
 fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
    case entryArg of
-      NONE => (logs "Can't unroll: entry arg not constant" ;
-               logl (Var.layout argVar) ;
+      NONE => (logsi ("Can't unroll: entry arg not constant", 2) ;
                inc(varEntryArg) ;
                NONE)
    | SOME (entryX) =>
@@ -172,12 +171,12 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
             | _ => NONE)
       in
          if (Vector.length loopVars) > 1 then
-            (logs "Can't unroll: more than 1 transfer to head of loop" ;
+            (logsi ("Can't unroll: more than 1 transfer to head of loop", 2) ;
              inc(multiTransfer) ;
              NONE)
             (* TODO: This should only need to verify that all the variables are the same*)
          else if (!nonGotoTransfer) then
-            (logs "Can't unroll: non-goto transfer to head of loop" ;
+            (logsi ("Can't unroll: non-goto transfer to head of loop", 2) ;
              inc(nonGoto) ;
              NONE)
          else
@@ -185,19 +184,19 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                val loopVar = Vector.sub (loopVars, 0)
             in
                case varChain (argVar, loopVar, loopBody, loadVar) of
-                 NONE => (logs "Can't unroll: can't compute transfer" ; 
+                 NONE => (logsi ("Can't unroll: can't compute transfer", 2) ; 
                           inc(ccTransfer) ;
                           NONE)
                | SOME (step) =>
                   let
-                  	(* TODO: This should look for a case statement anywhere *)
+                    (* TODO: This should look for a case statement anywhere *)
                      val headerTransferVar =
                        case Block.transfer header of
                          Transfer.Case {test, ...} => SOME(test)
                        | _ => NONE
                   in
                      case headerTransferVar of
-                       NONE => (logs "Can't unroll: can't compute bound" ;
+                       NONE => (logsi ("Can't unroll: can't compute bound", 2) ;
                                 inc(ccBound) ;
                                 NONE)
                      | SOME (var) =>
@@ -210,14 +209,20 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                                   case Statement.exp s of
                                     PrimApp {args, prim, ...} =>
                                        (case Prim.name prim of
-                                          Name.Word_lt _ => varConst (args, loadVar)
+                                          Name.Word_lt _ => 
+                                            if not (Vector.contains
+                                                (args, argVar, Var.equals)) then
+                                               NONE
+                                            else
+                                              varConst (args, loadVar)
                                         | _ => NONE)
                                   | _ => NONE
                                 else NONE)
                         in
                            case bound of
                              NONE => NONE
-                           | SOME(_, max) => SOME (argIndex, entryX, step, max)
+                           | SOME(_, max) => (logsi ("Can unroll on this arg!", 2) ;
+                                              SOME (argIndex, entryX, step, max))
                         end
                   end
             end
@@ -289,9 +294,11 @@ fun findOpportunity(functionBody: Block.t vector,
          val () = logs "Got constant args"
          val unrollableArgs =
           Vector.keepAllMapi
-            (headerArgs, fn (i, arg) =>
+            (headerArgs, fn (i, arg) => (
+               logs "Checking arg:" ;
+               logli (Var.layout (#1 arg), 1) ;
                checkArg (arg, i, Vector.sub (constantArgs, i),
-                         header, loopBody, loadGlobal))
+                         header, loopBody, loadGlobal)))
       in
          if (Vector.length unrollableArgs) > 0 then
                   (logs "Found at least one unrollable argument" ;
