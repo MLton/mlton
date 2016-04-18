@@ -41,14 +41,23 @@ structure Loop =
     datatype Bound = Eq of IntInf.t | Lt of IntInf.t | Gt of IntInf.t
     type Start = IntInf.t
     type Step = IntInf.t
-    datatype t = T of {start: Start, step: Step, bound: Bound}
+    datatype t = T of {start: Start, step: Step, bound: Bound, invert: bool}
 
-    fun toString (T {start, step, bound}): string =
+    fun toString (T {start, step, bound, invert}): string =
       let
         val boundStr = case bound of
-          Eq b => concat ["= ", IntInf.toString b]
-        | Lt b => concat ["< ", IntInf.toString b]
-        | Gt b => concat ["> ", IntInf.toString b]
+          Eq b => if invert then
+                    concat ["!= ", IntInf.toString b]
+                  else
+                    concat ["= ", IntInf.toString b]
+        | Lt b => if invert then
+                    concat ["!< ", IntInf.toString b]
+                  else
+                    concat ["< ", IntInf.toString b]
+        | Gt b => if invert then
+                    concat ["!> ", IntInf.toString b]
+                  else
+                    concat ["> ", IntInf.toString b]
       in
         concat[" Start: ", IntInf.toString start,
                " Step: ", IntInf.toString step,
@@ -56,7 +65,7 @@ structure Loop =
       end
       
 
-    fun isInfiniteLoop (T {start, step, bound}): bool =
+    fun isInfiniteLoop (T {start, step, bound, invert}): bool =
       case bound of
         Eq b =>
           if start = b then
@@ -85,15 +94,18 @@ structure Loop =
       end
 
     (* Assumes isInfiniteLoop is false. *)
-    fun makeConstants (T {start, step, bound},
+    fun makeConstants (T {start, step, bound, invert},
                      wsize: WordSize.t)
                      : Var.t list * Statement.t list =
       case bound of
         Eq b =>
-          if not (start = b) then
+          if (not (start = b)) <> invert then
             let
               val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step, step = step, bound = bound}
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
               val (rVars, rStmts) = makeConstants (nextIter, wsize)
             in
               (newVar::rVars, newStatement::rStmts)
@@ -101,10 +113,13 @@ structure Loop =
           else
             ([], [])
       | Lt b =>
-          if start < b then
+          if (start < b) <> invert then
             let
               val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step, step = step, bound = bound}
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
               val (rVars, rStmts) = makeConstants (nextIter, wsize)
             in
               (newVar::rVars, newStatement::rStmts)
@@ -112,10 +127,13 @@ structure Loop =
           else
             ([], [])
       | Gt b =>
-          if start > b then
+          if (start > b) <> invert then
             let
               val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step, step = step, bound = bound}
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
               val (rVars, rStmts) = makeConstants (nextIter, wsize)
             in
               (newVar::rVars, newStatement::rStmts)
@@ -230,6 +248,62 @@ fun varChain (origVar, endVar, blocks, loadVar) =
              | SOME (y) => SOME(x + y))
       end
 
+(* Given a transfer on a boolean and a list of loop body labels, returns:
+    - the label that exits the loop
+    - the label that continues the loop
+    - true if the continue branch is the true branch
+ *)
+fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Label.t * bool) =
+  case transfer of
+    (* This should be a case statement on a boolean,
+       so all dsts should be unary.
+       One should transfer outside the loop, the other inside. *)
+    Transfer.Case {cases, default, ...} =>
+      (case default of
+        SOME(defaultLabel) =>
+          let
+            val (caseCon, caseLabel) =
+              case cases of
+                Cases.Con v => Vector.sub (v, 0)
+              (*| Cases.Word (_, v) =>
+                  let
+                    val (_, lbl) = Vector.sub (v, 0)
+                  in
+                    lbl
+                  end*)
+              | _ => raise Fail "This should be a con"
+          in
+            if Vector.contains (loopLabels, defaultLabel, Label.equals) then
+              (caseLabel, defaultLabel, Con.equals (Con.fromBool false, caseCon))
+            else
+              (defaultLabel, caseLabel, Con.equals (Con.fromBool true, caseCon))
+          end    
+      | NONE =>
+          (case cases of
+            Cases.Con v =>
+              let
+                val (c1, d1) = Vector.sub (v, 0)
+                val (c2, d2) = Vector.sub (v, 1)
+              in
+                if Vector.contains (loopLabels, d1, Label.equals) then
+                  (d2, d1, Con.equals (Con.fromBool true, c1))
+                else
+                  (d1, d2, Con.equals (Con.fromBool true, c2))
+              end
+          (*| Cases.Word (_, v) =>
+              let
+                val (w, d1) = Vector.sub (v, 0)
+                val (w1, d2) = Vector.sub (v, 1)
+              in
+                if Vector.contains (loopLabels, d1, Label.equals) then
+                  (d2, d1)
+                else
+                  (d1, d2)
+              end*)
+            | _ => raise Fail "This should be a con"))
+          
+  | _ => raise Fail "This should be a case statement"
+
 (* Check a loop phi value to see if it is an induction variable suitable for unrolling *)
 fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
    case entryArg of
@@ -332,14 +406,23 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                                         | _ => NONE)
                                   | _ => NONE
                                 else NONE)
+
                         in
                            case bound of
                              NONE => NONE
-                           | SOME(b) => (logsi ("Can unroll on this arg!", 2) ;
-                                              SOME (argIndex,
-                                                    Loop.T {start = entryX,
-                                                            step = step,
-                                                            bound = b}))
+                           | SOME(b) =>
+                              let
+                                val () = logsi ("Can unroll on this arg!", 2)
+                                val loopLabels = Vector.map (loopBody, Block.label)
+                                val (_, _, contIsTrue) =
+                                      loopExit (loopLabels ,Block.transfer header)
+                              in
+                                SOME (argIndex,
+                                      Loop.T {start = entryX,
+                                              step = step,
+                                              bound = b,
+                                              invert = not contIsTrue})
+                              end
                         end
                   end
             end
@@ -457,60 +540,6 @@ fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
      newVars)
   end
 
-(* Given a transfer on a boolean, return the label that exits the loop and the one that
-   continues. *)
-fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Label.t) =
-  case transfer of
-    (* This should be a case statement on a boolean,
-       so all dsts should be unary.
-       One should transfer outside the loop, the other inside. *)
-    Transfer.Case {cases, default, ...} =>
-      (case default of
-        SOME(defaultLabel) =>
-          let
-            val caseLabel =
-              case cases of
-                Cases.Con v =>
-                  let
-                    val (_, lbl) = Vector.sub (v, 0)
-                  in
-                    lbl
-                  end
-              | Cases.Word (_, v) =>
-                  let
-                    val (_, lbl) = Vector.sub (v, 0)
-                  in
-                    lbl
-                  end
-          in
-            if Vector.contains (loopLabels, defaultLabel, Label.equals) then
-              (caseLabel, defaultLabel)
-            else
-              (defaultLabel, caseLabel)
-          end    
-      | NONE =>
-          (case cases of
-            Cases.Con v =>
-              let
-                val (_, d1) = Vector.sub (v, 0)
-                val (_, d2) = Vector.sub (v, 1)
-              in
-                if Vector.contains (loopLabels, d1, Label.equals) then
-                  (d2, d1)
-                else (d1, d2)
-              end
-          | Cases.Word (_, v) =>
-              let
-                val (_, d1) = Vector.sub (v, 0)
-                val (_, d2) = Vector.sub (v, 1)
-              in
-                if Vector.contains (loopLabels, d1, Label.equals) then
-                  (d2, d1)
-                else
-                  (d1, d2)
-              end))
-  | _ => raise Fail "This should be a case statement"
-
 (* Copy an entire loop. In the header, rewrite the transfer to take the loop branch.
    In the transfers to the top of the loop, rewrite the transfer to goto next.
    Ensure that the header is the first element in the list.
@@ -566,7 +595,7 @@ fun copyLoop(blocks: Block.t vector,
         val newTransfer =
           if isHeader then
             let
-              val (_, contLabel) = loopExit(labels, transfer)
+              val (_, contLabel, _) = loopExit(labels, transfer)
             in
               Transfer.Goto {args = Vector.new0 (), dst = f(contLabel)}
             end
@@ -632,7 +661,7 @@ fun unrollLoop (oldHeader, argi, loopBlocks, argLabels, blockInfo, setBlockInfo)
     case argLabels of
       [] =>
         let
-          val (exitLabel, _) = loopExit (loopLabels, oldTransfer)
+          val (exitLabel, _, _) = loopExit (loopLabels, oldTransfer)
           val newTransfer = Transfer.Goto {args = Vector.new0 (),
                                            dst = exitLabel}
         in
