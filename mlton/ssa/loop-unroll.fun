@@ -29,11 +29,100 @@ val multiTransfer = ref 0
 val nonGoto = ref 0
 val ccTransfer = ref 0
 val ccBound = ref 0
+val infinite = ref 0
 
 fun inc (v: int ref): unit =
   v := (!v) + 1
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
+
+structure Loop =
+  struct
+    datatype Bound = Eq of IntInf.t | Lt of IntInf.t | Gt of IntInf.t
+    type Start = IntInf.t
+    type Step = IntInf.t
+    datatype t = T of {start: Start, step: Step, bound: Bound}
+
+    fun toString (T {start, step, bound}): string =
+      let
+        val boundStr = case bound of
+          Eq b => concat ["= ", IntInf.toString b]
+        | Lt b => concat ["< ", IntInf.toString b]
+        | Gt b => concat ["> ", IntInf.toString b]
+      in
+        concat[" Start: ", IntInf.toString start,
+               " Step: ", IntInf.toString step,
+               " Bound: ", boundStr]
+      end
+      
+
+    fun isInfiniteLoop (T {start, step, bound}): bool =
+      case bound of
+        Eq b =>
+          if start = b then
+            false
+          else if start < b andalso step > 0 then
+            not (((b - start) mod step) = 0)
+          else if start > b andalso step < 0 then
+            not (((start - b) mod (~step)) = 0)
+          else
+            true
+      | Lt b => start < b andalso step <= 0
+      | Gt b => start > b andalso step >= 0
+
+    fun makeStatement (v: IntInf.t, wsize: WordSize.t): Var.t * Statement.t =
+      let
+        val newWord = WordX.fromIntInf (v, wsize)
+        val newConst = Const.word newWord
+        val newExp = Exp.Const (newConst)
+        val newType = Type.word wsize
+        val newVar = Var.newNoname()
+        val newStatement = Statement.T {exp = newExp,
+                                        ty = newType,
+                                        var = SOME(newVar)}
+      in
+        (newVar, newStatement)
+      end
+
+    (* Assumes isInfiniteLoop is false. *)
+    fun makeConstants (T {start, step, bound},
+                     wsize: WordSize.t)
+                     : Var.t list * Statement.t list =
+      case bound of
+        Eq b =>
+          if not (start = b) then
+            let
+              val (newVar, newStatement) = makeStatement(start, wsize)
+              val nextIter = T {start = start + step, step = step, bound = bound}
+              val (rVars, rStmts) = makeConstants (nextIter, wsize)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+      | Lt b =>
+          if start < b then
+            let
+              val (newVar, newStatement) = makeStatement(start, wsize)
+              val nextIter = T {start = start + step, step = step, bound = bound}
+              val (rVars, rStmts) = makeConstants (nextIter, wsize)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+      | Gt b =>
+          if start > b then
+            let
+              val (newVar, newStatement) = makeStatement(start, wsize)
+              val nextIter = T {start = start + step, step = step, bound = bound}
+              val (rVars, rStmts) = makeConstants (nextIter, wsize)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+  end
 
 fun logli (l: Layout.t, i: int): unit =
    Control.diagnostics
@@ -76,8 +165,9 @@ fun varOptEquals (v1: Var.t, v2: Var.t option): bool =
      NONE => false
    | SOME (v2') => Var.equals (v1, v2')
 
-(* For an arithmetic operation where one argument is a constant,
-   load that constant. *)
+(* For an binary operation where one argument is a constant,
+   load that constant.
+   Returns the variable, the constant, and true if the var was the first arg *)
 fun varConst (args, loadVar) =
    let
       val a1 = Vector.sub (args, 0)
@@ -86,8 +176,8 @@ fun varConst (args, loadVar) =
       val a2v = loadVar(a2)
    in
       case (a1v, a2v) of
-        (SOME x, NONE) => SOME (a2, x)
-      | (NONE, SOME x) => SOME (a1, x)
+        (SOME x, NONE) => SOME (a2, x, false)
+      | (NONE, SOME x) => SOME (a1, x, true)
       | _ => NONE
    end
 
@@ -109,9 +199,21 @@ fun varChain (origVar, endVar, blocks, loadVar) =
                         Exp.PrimApp {args, prim, ...} =>
                            (case Prim.name prim of
                               Name.Word_add _ =>
-                                 (case varConst(args, loadVar) of
-                                    SOME(nextVar, x) => SOME (nextVar, x)
-                                  | NONE => NONE)
+                                (case varConst(args, loadVar) of
+                                  SOME(nextVar, x, _) => SOME (nextVar, x)
+                                | NONE => NONE)
+                            | Name.Word_addCheck _ =>
+                                (case varConst(args, loadVar) of
+                                  SOME(nextVar, x, _) => SOME(nextVar, x)
+                                | NONE => NONE)
+                            | Name.Word_sub _ =>
+                                (case varConst(args, loadVar) of
+                                  SOME(nextVar, x, _) => SOME (nextVar, ~x)
+                                | NONE => NONE)
+                            | Name.Word_subCheck _ =>
+                                (case varConst(args, loadVar) of
+                                  SOME(nextVar, x, _) => SOME (nextVar, ~x)
+                                | NONE => NONE)
                             | _ => NONE)
                         | _ => NONE))
             in
@@ -121,7 +223,7 @@ fun varChain (origVar, endVar, blocks, loadVar) =
             end)
       in
          case endVarAssign of
-            NONE => NONE
+           NONE => NONE
          | SOME (nextVar, x) =>
             (case varChain(origVar, nextVar, blocks, loadVar) of
                NONE => NONE
@@ -189,6 +291,18 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                           NONE)
                | SOME (step) =>
                   let
+                    fun ltOrGt (vc) =
+                      case vc of
+                        NONE => NONE
+                      | SOME (_, c, b) =>
+                          if b then
+                            SOME(Loop.Lt (c))
+                          else
+                            SOME(Loop.Gt (c))
+                    fun eq (vc) =
+                      case vc of
+                        NONE => NONE
+                      | SOME (_, c, _) => SOME(Loop.Eq (c))
                     (* TODO: This should look for a case statement anywhere *)
                      val headerTransferVar =
                        case Block.transfer header of
@@ -208,21 +322,24 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                                 if Var.equals (var, var') then
                                   case Statement.exp s of
                                     PrimApp {args, prim, ...} =>
-                                       (case Prim.name prim of
-                                          Name.Word_lt _ => 
-                                            if not (Vector.contains
-                                                (args, argVar, Var.equals)) then
-                                               NONE
-                                            else
-                                              varConst (args, loadVar)
+                                      if not (Vector.contains (args, argVar, Var.equals))
+                                      then
+                                         NONE
+                                      else
+                                        (case Prim.name prim of
+                                          Name.Word_lt _ => ltOrGt (varConst (args, loadVar))
+                                        | Name.Word_equal _ => eq (varConst (args, loadVar))
                                         | _ => NONE)
                                   | _ => NONE
                                 else NONE)
                         in
                            case bound of
                              NONE => NONE
-                           | SOME(_, max) => (logsi ("Can unroll on this arg!", 2) ;
-                                              SOME (argIndex, entryX, step, max))
+                           | SOME(b) => (logsi ("Can unroll on this arg!", 2) ;
+                                              SOME (argIndex,
+                                                    Loop.T {start = entryX,
+                                                            step = step,
+                                                            bound = b}))
                         end
                   end
             end
@@ -232,13 +349,13 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
 fun findConstantStart (entryArgs: ((IntInf.t option) vector) vector):
                                                           (IntInf.t option) vector =
   if (Vector.length entryArgs) > 0 then                                                         
-    Vector.fold (entryArgs, Vector.sub (entryArgs, 0),
+    Vector.rev (Vector.fold (entryArgs, Vector.sub (entryArgs, 0),
       fn (v1, v2) => Vector.fromList (Vector.fold2 (v1, v2, [], fn (a1, a2, lst) =>
         case (a1, a2) of
           (SOME(x1), SOME(x2)) =>
             if x1 = x2 then SOME(x1)::lst
             else NONE::lst
-        | _ => NONE::lst)))
+        | _ => NONE::lst))))
   else Vector.new0 ()
 
 (* Look for any optimization opportunities in the loop. *)
@@ -247,7 +364,7 @@ fun findOpportunity(functionBody: Block.t vector,
                     loopHeaders: Block.t vector,
                     loadGlobal: Var.t -> IntInf.t option,
                     depth: int):
-                    (int * IntInf.t * IntInf.t * IntInf.t) option =
+                    (int * Loop.t) option =
    if (Vector.length loopHeaders) = 1 then
       let
          val header = Vector.sub (loopHeaders, 0)
@@ -289,9 +406,15 @@ fun findOpportunity(functionBody: Block.t vector,
                                 SOME(Vector.map (args, loadGlobal))
                               else NONE
                           | _ => NONE)
-         val () = logs "Got entry args"
+         val () = logs (concat["Loop has ",
+                               Int.toString (Vector.length entryArgs),
+                               " entry points"])
          val constantArgs = findConstantStart entryArgs
          val () = logs "Got constant args"
+         val () = Vector.foreach (constantArgs, fn a =>
+                    case a of
+                      NONE => logsi ("None", 1)
+                    | SOME (v) => logsi (IntInf.toString v, 1))
          val unrollableArgs =
           Vector.keepAllMapi
             (headerArgs, fn (i, arg) => (
@@ -310,7 +433,7 @@ fun findOpportunity(functionBody: Block.t vector,
        multiHeaders := (!multiHeaders) + 1 ;
        NONE)
 
-fun makeHeader(oldHeader, argi, argStart, argStep, argMax, newEntry) =
+fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
   let
     val oldArgs = Block.args oldHeader
     val (_, oldType) = Vector.sub (oldArgs, argi)
@@ -325,23 +448,6 @@ fun makeHeader(oldHeader, argi, argStart, argStep, argMax, newEntry) =
     val () = Vector.foreach(oldArgs, fn (a, t) => logl(Var.layout a))
     val () = logs("New args")
     val () = Vector.foreach(newArgs, fn (a, t) => logl(Var.layout a))*)
-    fun mkConstants (start, step, max) =
-        if start < max then
-            let
-                val newWord = WordX.fromIntInf (start, argSize)
-                val newConst = Const.word newWord
-                val newExp = Exp.Const (newConst)
-                val newType = Type.word argSize
-                val newVar = Var.newNoname()
-                val newStatement = Statement.T {exp = newExp,
-                                                ty = newType,
-                                                var = SOME(newVar)}
-                val (rVars, rStmts) = mkConstants (start + step, step, max)
-            in
-              (newVar::rVars, newStatement::rStmts)
-            end
-        else ([], [])
-    val (newVars, newStmts) = mkConstants (argStart, argStep, argMax)
     val newTransfer = Transfer.Goto {args = newArgs', dst = newEntry}
   in
     (Block.T {args = oldArgs,
@@ -563,36 +669,44 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
    in
       case optOpt of
         NONE => ([], [])
-      | SOME (argi, argStart, argStep, argMax) =>
-         let
-            val () = inc(optCount)
-            val oldHeader = Vector.sub (headers, 0)
-            val () = logs(concat["Index: ", Int.toString argi,
-                                 " Init: ", IntInf.toString argStart,
-                                 " Step: ", IntInf.toString argStep,
-                                 " Max: ", IntInf.toString argMax])
-            val newEntry = Label.newNoname()
-            val (newHeader, argLabels) =
-              makeHeader (oldHeader, argi, argStart, argStep, argMax, newEntry)
-            (* For each induction variable value, copy the loop's body *)
-            val newBlocks = unrollLoop (oldHeader, argi, loopBlocks, argLabels,
-                                        blockInfo, setBlockInfo)
-            (* Fix the first entry's label *)
-            val firstBlock = List.first newBlocks
-            val args' = Block.args firstBlock
-            val statements' = Block.statements firstBlock
-            val transfer' = Block.transfer firstBlock
-            val newHead = Block.T {args = args',
-                                   label = newEntry,
-                                   statements = statements',
-                                   transfer = transfer'}
-            val newBlocks' = newHeader::(newHead::(listPop newBlocks))
-            val () = destroy()
-            val () = logs "Adding blocks"
-            val () = List.foreach (newBlocks', fn b => logl (Block.layout b))
-         in
-            (newBlocks', (Vector.toList loopBlockNames))
-         end
+      | SOME (argi, loop) =>
+          if Loop.isInfiniteLoop loop then
+            (logs "Can't unroll: infinite loop" ;
+             logs (concat["Index: ", Int.toString argi, Loop.toString loop]) ;
+             ([], []))
+          else 
+            let
+              val () = inc(optCount)
+              val oldHeader = Vector.sub (headers, 0)
+              val oldArgs = Block.args oldHeader
+              val (_, oldType) = Vector.sub (oldArgs, argi)
+              val argSize = case Type.dest oldType of
+                              Type.Word wsize => wsize
+                            | _ => raise Fail "Argument is not of type word"
+              val () = logs(concat["Index: ", Int.toString argi,
+                                   Loop.toString loop])
+              val newEntry = Label.newNoname()
+              val (newHeader, argLabels) =
+                makeHeader (oldHeader, argi, Loop.makeConstants (loop, argSize), newEntry)
+              (* For each induction variable value, copy the loop's body *)
+              val newBlocks = unrollLoop (oldHeader, argi, loopBlocks, argLabels,
+                                          blockInfo, setBlockInfo)
+              (* Fix the first entry's label *)
+              val firstBlock = List.first newBlocks
+              val args' = Block.args firstBlock
+              val statements' = Block.statements firstBlock
+              val transfer' = Block.transfer firstBlock
+              val newHead = Block.T {args = args',
+                                     label = newEntry,
+                                     statements = statements',
+                                     transfer = transfer'}
+              val newBlocks' = newHeader::(newHead::(listPop newBlocks))
+              val () = destroy()
+              val () = logs "Adding blocks"
+              val () = List.foreach (newBlocks', fn b => logl (Block.layout b))
+            in
+              (newBlocks', (Vector.toList loopBlockNames))
+            end
    end
 
 (* Traverse sub-forests until the innermost loop is found. *)
@@ -686,11 +800,15 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = nonGoto := 0
       val () = ccTransfer := 0
       val () = ccBound := 0
+      val () = infinite := 0
       val () = logs "Unrolling loops\n"
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
       val restore = restoreFunction {globals = globals}
       val () = logs "Performing SSA restore"
       val cleanedFunctions = List.map (optimizedFunctions, restore)
+      val shrink = shrinkFunction {globals = globals}
+      val () = logs "Performing shrink"
+      val shrunkFunctions = List.map (cleanedFunctions, shrink)
       val () = logs (concat[Int.toString(!optCount), " loops optimized"])
       val () = logs (concat[Int.toString(!multiHeaders), " loops had multiple headers"])
       val () = logs (concat[Int.toString(!varEntryArg),
@@ -703,11 +821,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                          " loops had non-computable steps"])
       val () = logs (concat[Int.toString(!ccBound),
                                          " loops had non-computable bounds"])
+      val () = logs (concat[Int.toString(!infinite),
+                                         " infinite loops"])
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
                  globals = globals,
-                 functions = cleanedFunctions,
+                 functions = shrunkFunctions,
                  main = main}
    end
 
