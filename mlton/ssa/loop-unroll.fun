@@ -99,7 +99,7 @@ structure Loop =
                      : Var.t list * Statement.t list =
       case bound of
         Eq b =>
-          if (not (start = b)) <> invert then
+          if (start = b) <> invert then
             let
               val (newVar, newStatement) = makeStatement(start, wsize)
               val nextIter = T {start = start + step,
@@ -206,7 +206,26 @@ fun varChain (origVar, endVar, blocks, loadVar) =
      true => SOME (0)
    | false =>
       let
-         val endVarAssign = Vector.peekMap (blocks, fn b =>
+        fun checkPrim (args, prim) =
+          case Prim.name prim of
+            Name.Word_add _ =>
+              (case varConst(args, loadVar) of
+                SOME(nextVar, x, _) => SOME (nextVar, x)
+              | NONE => NONE)
+          | Name.Word_addCheck _ =>
+              (case varConst(args, loadVar) of
+                SOME(nextVar, x, _) => SOME(nextVar, x)
+              | NONE => NONE)
+          | Name.Word_sub _ =>
+              (case varConst(args, loadVar) of
+                SOME(nextVar, x, _) => SOME (nextVar, ~x)
+              | NONE => NONE)
+          | Name.Word_subCheck _ =>
+              (case varConst(args, loadVar) of
+                SOME(nextVar, x, _) => SOME (nextVar, ~x)
+              | NONE => NONE)
+          | _ => NONE
+          val endVarAssign = Vector.peekMap (blocks, fn b =>
             let
                val stmts = Block.statements b
                val assignments = Vector.keepAllMap (stmts, fn s =>
@@ -214,30 +233,77 @@ fun varChain (origVar, endVar, blocks, loadVar) =
                     false => NONE
                   | true =>
                      (case Statement.exp s of
-                        Exp.PrimApp {args, prim, ...} =>
-                           (case Prim.name prim of
-                              Name.Word_add _ =>
-                                (case varConst(args, loadVar) of
-                                  SOME(nextVar, x, _) => SOME (nextVar, x)
-                                | NONE => NONE)
-                            | Name.Word_addCheck _ =>
-                                (case varConst(args, loadVar) of
-                                  SOME(nextVar, x, _) => SOME(nextVar, x)
-                                | NONE => NONE)
-                            | Name.Word_sub _ =>
-                                (case varConst(args, loadVar) of
-                                  SOME(nextVar, x, _) => SOME (nextVar, ~x)
-                                | NONE => NONE)
-                            | Name.Word_subCheck _ =>
-                                (case varConst(args, loadVar) of
-                                  SOME(nextVar, x, _) => SOME (nextVar, ~x)
-                                | NONE => NONE)
-                            | _ => NONE)
+                        Exp.PrimApp {args, prim, ...} => checkPrim (args, prim)
                         | _ => NONE))
+               val label = Block.label b
+               val blockArgs = Block.args b
+               val () = logl (Block.layout b)
+               (* If we found the assignment or the block isn't unary, skip this step *)
+               val arithTransfers =
+                if ((Vector.length assignments) > 0) orelse ((Vector.length blockArgs) <> 1)
+                then
+                  Vector.new0 ()
+                else
+                  let
+                    val (blockArg, _) = Vector.sub (blockArgs, 0)
+                    val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
+                      case Block.transfer b' of
+                        Transfer.Arith {args, prim, success, ...} =>
+                          if Label.equals (label, success) then
+                             SOME(checkPrim(args, prim))
+                          else NONE
+                      | Transfer.Call {return, ...} =>
+                          (case return of
+                             Return.NonTail {cont, ...} =>
+                                if Label.equals (label, cont) then
+                                   SOME(NONE)
+                                else NONE
+                           | _ => NONE)
+                      | Transfer.Case {cases, ...} =>
+                          (case cases of
+                             Cases.Con v =>
+                                if Vector.exists (v, fn (_, lbl) =>
+                                   Label.equals (label, lbl)) then
+                                     SOME(NONE)
+                                else
+                                   NONE
+                           | Cases.Word (_, v) =>
+                                if Vector.exists (v, fn (_, lbl) =>
+                                   Label.equals (label, lbl)) then
+                                     SOME(NONE)
+                                else NONE)
+                      | Transfer.Goto {args, dst} =>
+                          if Label.equals (label, dst) then
+                            SOME(SOME(Vector.sub (args, 0), 0))
+                          else NONE
+                      | _ => NONE)
+                  in
+                    if Var.equals (endVar, blockArg) then
+                      blockEntrys
+                    else
+                      Vector.new0 ()
+                  end  
+               val assignments' =
+                if Vector.length (arithTransfers) > 0 then
+                  case (Vector.fold (arithTransfers,
+                                  Vector.sub (arithTransfers, 0),
+                                  fn (trans, trans') =>
+                                    case (trans, trans') of
+                                      (SOME(a1, v1), SOME(a2, v2)) =>
+                                        if Var.equals (a1, a2) andalso v1 = v2 then
+                                          trans
+                                        else
+                                          NONE
+                                    | _ => NONE)) of
+                    SOME(a, v) => Vector.new1 (a, v)
+                  | NONE => assignments
+                else
+                  assignments
             in
-               case Vector.length assignments of
+               case Vector.length assignments' of
                   0 => NONE
-                | _ => SOME (Vector.sub (assignments, 0))
+                | 1 => SOME (Vector.sub (assignments', 0))
+                | _ => raise Fail "Multiple assignments in SSA form!"
             end)
       in
          case endVarAssign of
@@ -265,12 +331,6 @@ fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Labe
             val (caseCon, caseLabel) =
               case cases of
                 Cases.Con v => Vector.sub (v, 0)
-              (*| Cases.Word (_, v) =>
-                  let
-                    val (_, lbl) = Vector.sub (v, 0)
-                  in
-                    lbl
-                  end*)
               | _ => raise Fail "This should be a con"
           in
             if Vector.contains (loopLabels, defaultLabel, Label.equals) then
@@ -290,16 +350,6 @@ fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Labe
                 else
                   (d1, d2, Con.equals (Con.fromBool true, c2))
               end
-          (*| Cases.Word (_, v) =>
-              let
-                val (w, d1) = Vector.sub (v, 0)
-                val (w1, d2) = Vector.sub (v, 1)
-              in
-                if Vector.contains (loopLabels, d1, Label.equals) then
-                  (d2, d1)
-                else
-                  (d1, d2)
-              end*)
             | _ => raise Fail "This should be a con"))
           
   | _ => raise Fail "This should be a case statement"
