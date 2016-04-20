@@ -26,14 +26,12 @@ val loopCount = ref 0
 val optCount = ref 0
 val multiHeaders = ref 0
 val varEntryArg = ref 0
-val multiTransfer = ref 0
-val nonGoto = ref 0
+val variantTransfer = ref 0
+val unsupported = ref 0
 val ccTransfer = ref 0
 val ccBound = ref 0
 val varBound = ref 0
 val infinite = ref 0
-
-val arith = ref 0
 
 fun ++ (v: int ref): unit =
   v := (!v) + 1
@@ -150,9 +148,6 @@ fun logli (l: Layout.t, i: int): unit =
    (fn display =>
       display(Layout.indent(l, i)))
 
-fun logl(l: Layout.t): unit =
-   logli(l, 0)
-
 fun logsi (s: string, i: int): unit =
    logli((Layout.str s), i)
 
@@ -206,124 +201,130 @@ fun varConst (args, loadVar) =
    end
 
 (* Given:
+    - an argument vector with two arguments
+    - a primative operaton that is an addition or subtraction of a const value
+    - a function from variables to their constant values
+   Returns:
+    -  The non-const variable and the constant value in terms of addition *)
+fun checkPrim (args, prim, loadVar) =
+  case Prim.name prim of
+    Name.Word_add _ =>
+      (case varConst(args, loadVar) of
+        SOME(nextVar, x, _) => SOME (nextVar, x)
+      | NONE => NONE)
+  | Name.Word_addCheck _ =>
+      (case varConst(args, loadVar) of
+        SOME(nextVar, x, _) => SOME(nextVar, x)
+      | NONE => NONE)
+  | Name.Word_sub _ =>
+      (case varConst(args, loadVar) of
+        SOME(nextVar, x, _) => SOME (nextVar, ~x)
+      | NONE => NONE)
+  | Name.Word_subCheck _ =>
+      (case varConst(args, loadVar) of
+        SOME(nextVar, x, _) => SOME (nextVar, ~x)
+      | NONE => NONE)
+  | _ => NONE
+
+(* Given:
     - a variable in the loop
     - another variable in the loop
     - the loop body
     - a function from variables to their constant values
+    - a starting value, if the transfer to the header is an arith transfer
    Returns:
     - Some x such that the value of origVar in loop iteration i+1 is equal to
       (the value of origVar in iteration i) + x,
       or None if the step couldn't be computed *)
-fun varChain (origVar, endVar, blocks, loadVar) =
+fun varChain (origVar, endVar, blocks, loadVar, total) =
    case Var.equals (origVar, endVar) of
-     true => SOME (0)
+     true => SOME (total)
    | false =>
       let
-        fun checkPrim (args, prim) =
-          case Prim.name prim of
-            Name.Word_add _ =>
-              (case varConst(args, loadVar) of
-                SOME(nextVar, x, _) => SOME (nextVar, x)
-              | NONE => NONE)
-          | Name.Word_addCheck _ =>
-              (case varConst(args, loadVar) of
-                SOME(nextVar, x, _) => SOME(nextVar, x)
-              | NONE => NONE)
-          | Name.Word_sub _ =>
-              (case varConst(args, loadVar) of
-                SOME(nextVar, x, _) => SOME (nextVar, ~x)
-              | NONE => NONE)
-          | Name.Word_subCheck _ =>
-              (case varConst(args, loadVar) of
-                SOME(nextVar, x, _) => SOME (nextVar, ~x)
-              | NONE => NONE)
-          | _ => NONE
-          val endVarAssign = Vector.peekMap (blocks, fn b =>
-            let
-               val stmts = Block.statements b
-               val assignments = Vector.keepAllMap (stmts, fn s =>
-                  case varOptEquals (endVar, Statement.var s) of
-                    false => NONE
-                  | true =>
-                     (case Statement.exp s of
-                        Exp.PrimApp {args, prim, ...} => checkPrim (args, prim)
-                        | _ => NONE))
-               val label = Block.label b
-               val blockArgs = Block.args b
-               (* If we found the assignment or the block isn't unary, skip this step *)
-               val arithTransfers =
-                if ((Vector.length assignments) > 0) orelse ((Vector.length blockArgs) <> 1)
-                then
-                  Vector.new0 ()
-                else
-                  let
-                    val (blockArg, _) = Vector.sub (blockArgs, 0)
-                    val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
-                      case Block.transfer b' of
-                        Transfer.Arith {args, prim, success, ...} =>
-                          if Label.equals (label, success) then
-                             SOME(checkPrim(args, prim))
-                          else NONE
-                      | Transfer.Call {return, ...} =>
-                          (case return of
-                             Return.NonTail {cont, ...} =>
-                                if Label.equals (label, cont) then
+        val endVarAssign = Vector.peekMap (blocks, fn b =>
+          let
+             val stmts = Block.statements b
+             val assignments = Vector.keepAllMap (stmts, fn s =>
+                case varOptEquals (endVar, Statement.var s) of
+                  false => NONE
+                | true =>
+                   (case Statement.exp s of
+                      Exp.PrimApp {args, prim, ...} => checkPrim (args, prim, loadVar)
+                      | _ => NONE))
+             val label = Block.label b
+             val blockArgs = Block.args b
+             (* If we found the assignment or the block isn't unary, skip this step *)
+             val arithTransfers =
+              if ((Vector.length assignments) > 0) orelse ((Vector.length blockArgs) <> 1)
+              then
+                Vector.new0 ()
+              else
+                let
+                  val (blockArg, _) = Vector.sub (blockArgs, 0)
+                  val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
+                    case Block.transfer b' of
+                      Transfer.Arith {args, prim, success, ...} =>
+                        if Label.equals (label, success) then
+                           SOME(checkPrim(args, prim, loadVar))
+                        else NONE
+                    | Transfer.Call {return, ...} =>
+                        (case return of
+                           Return.NonTail {cont, ...} =>
+                              if Label.equals (label, cont) then
+                                 SOME(NONE)
+                              else NONE
+                         | _ => NONE)
+                    | Transfer.Case {cases, ...} =>
+                        (case cases of
+                           Cases.Con v =>
+                              if Vector.exists (v, fn (_, lbl) =>
+                                 Label.equals (label, lbl)) then
                                    SOME(NONE)
-                                else NONE
-                           | _ => NONE)
-                      | Transfer.Case {cases, ...} =>
-                          (case cases of
-                             Cases.Con v =>
-                                if Vector.exists (v, fn (_, lbl) =>
-                                   Label.equals (label, lbl)) then
-                                     SOME(NONE)
-                                else
-                                   NONE
-                           | Cases.Word (_, v) =>
-                                if Vector.exists (v, fn (_, lbl) =>
-                                   Label.equals (label, lbl)) then
-                                     SOME(NONE)
-                                else NONE)
-                      | Transfer.Goto {args, dst} =>
-                          if Label.equals (label, dst) then
-                            SOME(SOME(Vector.sub (args, 0), 0))
-                          else NONE
-                      | _ => NONE)
-                  in
-                    if Var.equals (endVar, blockArg) then
-                      blockEntrys
-                    else
-                      Vector.new0 ()
-                  end  
-               val assignments' =
-                if Vector.length (arithTransfers) > 0 then
-                  case (Vector.fold (arithTransfers,
-                                  Vector.sub (arithTransfers, 0),
-                                  fn (trans, trans') =>
-                                    case (trans, trans') of
-                                      (SOME(a1, v1), SOME(a2, v2)) =>
-                                        if Var.equals (a1, a2) andalso v1 = v2 then
-                                          trans
-                                        else
-                                          NONE
-                                    | _ => NONE)) of
-                    SOME(a, v) => Vector.new1 (a, v)
-                  | NONE => assignments
-                else
-                  assignments
-            in
-               case Vector.length assignments' of
-                  0 => NONE
-                | 1 => SOME (Vector.sub (assignments', 0))
-                | _ => raise Fail "Multiple assignments in SSA form!"
-            end)
+                              else
+                                 NONE
+                         | Cases.Word (_, v) =>
+                              if Vector.exists (v, fn (_, lbl) =>
+                                 Label.equals (label, lbl)) then
+                                   SOME(NONE)
+                              else NONE)
+                    | Transfer.Goto {args, dst} =>
+                        if Label.equals (label, dst) then
+                          SOME(SOME(Vector.sub (args, 0), 0))
+                        else NONE
+                    | _ => NONE)
+                in
+                  if Var.equals (endVar, blockArg) then
+                    blockEntrys
+                  else
+                    Vector.new0 ()
+                end  
+             val assignments' =
+              if Vector.length (arithTransfers) > 0 then
+                case (Vector.fold (arithTransfers,
+                                Vector.sub (arithTransfers, 0),
+                                fn (trans, trans') =>
+                                  case (trans, trans') of
+                                    (SOME(a1, v1), SOME(a2, v2)) =>
+                                      if Var.equals (a1, a2) andalso v1 = v2 then
+                                        trans
+                                      else
+                                        NONE
+                                  | _ => NONE)) of
+                  SOME(a, v) => Vector.new1 (a, v)
+                | NONE => assignments
+              else
+                assignments
+          in
+             case Vector.length assignments' of
+                0 => NONE
+              | 1 => SOME (Vector.sub (assignments', 0))
+              | _ => raise Fail "Multiple assignments in SSA form!"
+          end)
       in
          case endVarAssign of
            NONE => NONE
          | SOME (nextVar, x) =>
-            (case varChain(origVar, nextVar, blocks, loadVar) of
-               NONE => NONE
-             | SOME (y) => SOME(x + y))
+            varChain(origVar, nextVar, blocks, loadVar, x + total)
       end
 
 (* Given:
@@ -386,19 +387,22 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar, depth)
    | SOME (entryX) =>
       let
          val headerLabel = Block.label header
+         val unsupportedTransfer = ref false
+
          (* For every transfer to the start of the loop, get the variable at argIndex *)
-         val nonGotoTransfer = ref false
          val loopVars = Vector.keepAllMap (loopBody, fn block => 
             case Block.transfer block of
-               Transfer.Arith {success, ...} =>
+               Transfer.Arith {args, prim, success, ...} =>
                   if Label.equals (headerLabel, success) then
-                     (nonGotoTransfer := true ; ++arith ; NONE)
+                     case checkPrim (args, prim, loadVar) of
+                       NONE => (unsupportedTransfer := true ; NONE)
+                     | SOME (arg, x) => SOME (arg, x)
                   else NONE
              | Transfer.Call {return, ...} =>
                   (case return of
                      Return.NonTail {cont, ...} =>
                         if Label.equals (headerLabel, cont) then
-                           (nonGotoTransfer := true; NONE)
+                           (unsupportedTransfer := true ; NONE)
                         else NONE
                    | _ => NONE)
              | Transfer.Case {cases, ...} =>
@@ -406,36 +410,40 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar, depth)
                     Cases.Con v =>
                      if Vector.exists(v, fn (_, lbl) =>
                                            Label.equals (headerLabel, lbl)) then
-                        (nonGotoTransfer := true ; NONE)
+                        (unsupportedTransfer := true ; NONE)
                      else NONE
                   | Cases.Word (_, v) =>
                      if Vector.exists(v, fn (_, lbl) =>
                                            Label.equals (headerLabel, lbl)) then
-                        (nonGotoTransfer := true ; NONE)
+                        (unsupportedTransfer := true ; NONE)
                      else NONE)
              | Transfer.Goto {args, dst} =>
                   if Label.equals (headerLabel, dst) then
-                     SOME (Vector.sub (args, argIndex))
+                     SOME (Vector.sub (args, argIndex), 0)
                   else NONE
             | _ => NONE)
       in
          if (Vector.length loopVars) > 1
          andalso not (Vector.forall
-                      (loopVars, fn v =>
-                        Var.equals (v, Vector.sub (loopVars, 0)))) 
+                      (loopVars, fn (arg, x) =>
+                        let
+                          val (arg0, x0) = Vector.sub (loopVars, 0)
+                        in
+                          Var.equals (arg0, arg) andalso (x0 = x)
+                        end))
          then
-            (logsi ("Can't unroll: inconsistent transfer to head of loop", depth) ;
-             ++multiTransfer ;
+            (logsi ("Can't unroll: variant transfer to head of loop", depth) ;
+             ++variantTransfer ;
              NONE)
-         else if (!nonGotoTransfer) then
-            (logsi ("Can't unroll: non-goto transfer to head of loop", depth) ;
-             ++nonGoto ;
+         else if (!unsupportedTransfer) then
+            (logsi ("Can't unroll: unsupported transfer to head of loop", depth) ;
+             ++unsupported ;
              NONE)
          else
             let
-               val loopVar = Vector.sub (loopVars, 0)
+               val (loopVar, x) = Vector.sub (loopVars, 0)
             in
-               case varChain (argVar, loopVar, loopBody, loadVar) of
+               case varChain (argVar, loopVar, loopBody, loadVar, x) of
                  NONE => (logsi ("Can't unroll: can't compute transfer", depth) ; 
                           ++ccTransfer ;
                           NONE)
@@ -590,10 +598,8 @@ fun findOpportunity(functionBody: Block.t vector,
 fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
   let
     val oldArgs = Block.args oldHeader
-    val newArgs = Vector.concat [Vector.prefix(oldArgs, argi),
-                                 Vector.dropPrefix(oldArgs, argi + 1)]
-    val newArgs' = Vector.map (newArgs, fn (arg, _) => arg)
-    val newTransfer = Transfer.Goto {args = newArgs', dst = newEntry}
+    val newArgs = Vector.map (oldArgs, fn (arg, _) => arg)
+    val newTransfer = Transfer.Goto {args = newArgs, dst = newEntry}
   in
     (Block.T {args = oldArgs,
               label = Block.label oldHeader,
@@ -634,13 +640,13 @@ fun copyLoop(blocks: Block.t vector,
       let
         val f = fn l => fixLabel(blockInfo, l, labels)
         val isHeader = Label.equals (label, f(headerLabel))
-        val (newArgs, removedArg) =
+        val (newArgs, unrolledArg) =
           if isHeader then
-            (vectorDrop(args, argi), SOME(Vector.sub (args, argi)))
+            (args, SOME(Vector.sub (args, argi)))
           else (args, NONE)
         val newStmts =
           if isHeader then
-            case removedArg of
+            case unrolledArg of
               NONE => statements
             | SOME(var, ty) =>
                 let
@@ -664,11 +670,18 @@ fun copyLoop(blocks: Block.t vector,
           else
             case transfer of
               Transfer.Arith {args, overflow, prim, success, ty} =>
-                Transfer.Arith {args = args,
-                                overflow = f(overflow),
-                                prim = prim,
-                                success = f(success),
-                                ty = ty}
+                if Label.equals (success, headerLabel) then
+                  Transfer.Arith {args = args,
+                                  overflow = f(overflow),
+                                  prim = prim,
+                                  success = nextLabel,
+                                  ty = ty}
+                else
+                  Transfer.Arith {args = args,
+                                  overflow = f(overflow),
+                                  prim = prim,
+                                  success = f(success),
+                                  ty = ty}
             | Transfer.Call {args, func, return} =>
                 let
                   val newReturn =
@@ -696,7 +709,7 @@ fun copyLoop(blocks: Block.t vector,
                 end
             | Transfer.Goto {args, dst} =>
                 if Label.equals (dst, headerLabel) then
-                  Transfer.Goto {args = vectorDrop(args, argi), dst = nextLabel}
+                  Transfer.Goto {args = args, dst = nextLabel}
                 else
                   Transfer.Goto {args = args, dst = f(dst)}
             | Transfer.Runtime {args, prim, return} =>
@@ -727,7 +740,7 @@ fun unrollLoop (oldHeader, argi, loopBlocks, argLabels, blockInfo, setBlockInfo)
           val newTransfer = Transfer.Goto {args = Vector.new0 (),
                                            dst = exitLabel}
         in
-          [Block.T {args = vectorDrop(oldHeaderArgs, argi),
+          [Block.T {args = oldHeaderArgs,
                     label = Label.newNoname (),
                     statements = Vector.new0 (),
                     transfer = newTransfer}]
@@ -795,6 +808,8 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                      transfer = transfer'}
               val newBlocks' = newHeader::(newHead::(listPop newBlocks))
               val () = destroy()
+              val () = logs "Adding blocks"   
+              val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))
             in
               (newBlocks', (Vector.toList loopBlockNames))
             end
@@ -804,10 +819,10 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
 fun traverseSubForest ({loops, notInLoop},
                        allBlocks,
                        enclosingHeaders,
-                       labelNode, nodeBlock, loadGlobal, depth) =
+                       labelNode, nodeBlock, loadGlobal) =
    if (Vector.length loops) = 0 then
       optimizeLoop(allBlocks, enclosingHeaders, notInLoop,
-                   nodeBlock, loadGlobal, 0)
+                   nodeBlock, loadGlobal, 1)
    else
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
          let
@@ -832,7 +847,7 @@ fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal) =
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
         let
           val (nBlocks, rBlocks) =
-            traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal, 1)
+            traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal)
         in
           ((new @ nBlocks), (remove @ rBlocks))
         end)
@@ -887,8 +902,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = optCount := 0
       val () = multiHeaders := 0
       val () = varEntryArg := 0
-      val () = multiTransfer := 0
-      val () = nonGoto := 0
+      val () = variantTransfer := 0
+      val () = unsupported := 0
       val () = ccTransfer := 0
       val () = ccBound := 0
       val () = varBound := 0
@@ -901,17 +916,26 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val shrink = shrinkFunction {globals = globals}
       val () = logs "Performing shrink"
       val shrunkFunctions = List.map (cleanedFunctions, shrink)
-      val () = logstat (loopCount,     "total innermost loops")
-      val () = logstat (optCount,      "loops optimized")
-      val () = logstat (multiHeaders,  "loops had multiple headers")
-      val () = logstat (varEntryArg,   "loops had variable entry values")
-      val () = logstat (multiTransfer, "loops had multiple transfers to the header")
-      val () = logstat (nonGoto,       "loops had non-goto transfers to the header")
-      val () = logstat (ccTransfer,    "loops had non-computable steps")
-      val () = logstat (ccBound,       "loops had non-computable bounds")
-      val () = logstat (varBound,      "loops had variable bounds")
-      val () = logstat (infinite,      "infinite loops")
-      val () = logstat (arith,         "arith to top")
+      val () = logstat (loopCount,
+                        "total innermost loops")
+      val () = logstat (optCount,
+                        "loops optimized")
+      val () = logstat (multiHeaders,
+                        "loops had multiple headers")
+      val () = logstat (varEntryArg,
+                        "loops had variable entry values")
+      val () = logstat (variantTransfer,
+                        "loops had variant transfers to the header")
+      val () = logstat (unsupported,
+                        "loops had unsupported transfers to the header")
+      val () = logstat (ccTransfer,
+                        "loops had non-computable steps")
+      val () = logstat (ccBound,
+                        "loops had non-computable bounds")
+      val () = logstat (varBound,
+                        "loops had variable bounds")
+      val () = logstat (infinite,
+                        "infinite loops")
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
