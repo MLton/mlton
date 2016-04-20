@@ -22,6 +22,7 @@ in
    structure Forest = LoopForest
 end
 
+val loopCount = ref 0
 val optCount = ref 0
 val multiHeaders = ref 0
 val varEntryArg = ref 0
@@ -29,9 +30,12 @@ val multiTransfer = ref 0
 val nonGoto = ref 0
 val ccTransfer = ref 0
 val ccBound = ref 0
+val varBound = ref 0
 val infinite = ref 0
 
-fun inc (v: int ref): unit =
+val arith = ref 0
+
+fun ++ (v: int ref): unit =
   v := (!v) + 1
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
@@ -64,7 +68,6 @@ structure Loop =
                " Bound: ", boundStr]
       end
       
-
     fun isInfiniteLoop (T {start, step, bound, invert}): bool =
       case bound of
         Eq b =>
@@ -93,7 +96,7 @@ structure Loop =
         (newVar, newStatement)
       end
 
-    (* Assumes isInfiniteLoop is false. *)
+    (* Assumes isInfiniteLoop is false, otherwise this will run forever. *)
     fun makeConstants (T {start, step, bound, invert},
                      wsize: WordSize.t)
                      : Var.t list * Statement.t list =
@@ -156,6 +159,9 @@ fun logsi (s: string, i: int): unit =
 fun logs (s: string): unit =
    logsi(s, 0)
 
+fun logstat (x: int ref, s: string): unit =
+  logs (concat[Int.toString(!x), " ", s])
+
 fun vectorDrop (v, i) =
   Vector.concat [Vector.prefix(v, i),
                  Vector.dropPrefix(v, i + 1)]
@@ -199,8 +205,15 @@ fun varConst (args, loadVar) =
       | _ => NONE
    end
 
-(* Compute the transformation from the entry var to the next entry var *)
-(* TODO: Include arithmetic transfers *)
+(* Given:
+    - a variable in the loop
+    - another variable in the loop
+    - the loop body
+    - a function from variables to their constant values
+   Returns:
+    - Some x such that the value of origVar in loop iteration i+1 is equal to
+      (the value of origVar in iteration i) + x,
+      or None if the step couldn't be computed *)
 fun varChain (origVar, endVar, blocks, loadVar) =
    case Var.equals (origVar, endVar) of
      true => SOME (0)
@@ -237,7 +250,6 @@ fun varChain (origVar, endVar, blocks, loadVar) =
                         | _ => NONE))
                val label = Block.label b
                val blockArgs = Block.args b
-               val () = logl (Block.layout b)
                (* If we found the assignment or the block isn't unary, skip this step *)
                val arithTransfers =
                 if ((Vector.length assignments) > 0) orelse ((Vector.length blockArgs) <> 1)
@@ -314,7 +326,10 @@ fun varChain (origVar, endVar, blocks, loadVar) =
              | SOME (y) => SOME(x + y))
       end
 
-(* Given a transfer on a boolean and a list of loop body labels, returns:
+(* Given:
+    - a list of loop body labels
+    - a transfer on a boolean value
+   Returns:
     - the label that exits the loop
     - the label that continues the loop
     - true if the continue branch is the true branch
@@ -354,11 +369,19 @@ fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Labe
           
   | _ => raise Fail "This should be a case statement"
 
-(* Check a loop phi value to see if it is an induction variable suitable for unrolling *)
-fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
+(* Given:
+    - a loop phi variable
+    - that variables index in the loop header's arguments
+    - that variables constant entry value (if it has one)
+    - the loop header block
+    - the loop body block
+    - a function from variables to their constant values
+   Returns:
+    - a Loop structure for unrolling that phi var, if one exists *)
+fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar, depth) =
    case entryArg of
-      NONE => (logsi ("Can't unroll: entry arg not constant", 2) ;
-               inc(varEntryArg) ;
+      NONE => (logsi ("Can't unroll: entry arg not constant", depth) ;
+               ++varEntryArg ;
                NONE)
    | SOME (entryX) =>
       let
@@ -369,7 +392,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
             case Block.transfer block of
                Transfer.Arith {success, ...} =>
                   if Label.equals (headerLabel, success) then
-                     (nonGotoTransfer := true ; NONE)
+                     (nonGotoTransfer := true ; ++arith ; NONE)
                   else NONE
              | Transfer.Call {return, ...} =>
                   (case return of
@@ -396,22 +419,25 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                   else NONE
             | _ => NONE)
       in
-         if (Vector.length loopVars) > 1 then
-            (logsi ("Can't unroll: more than 1 transfer to head of loop", 2) ;
-             inc(multiTransfer) ;
+         if (Vector.length loopVars) > 1
+         andalso not (Vector.forall
+                      (loopVars, fn v =>
+                        Var.equals (v, Vector.sub (loopVars, 0)))) 
+         then
+            (logsi ("Can't unroll: inconsistent transfer to head of loop", depth) ;
+             ++multiTransfer ;
              NONE)
-            (* TODO: This should only need to verify that all the variables are the same*)
          else if (!nonGotoTransfer) then
-            (logsi ("Can't unroll: non-goto transfer to head of loop", 2) ;
-             inc(nonGoto) ;
+            (logsi ("Can't unroll: non-goto transfer to head of loop", depth) ;
+             ++nonGoto ;
              NONE)
          else
             let
                val loopVar = Vector.sub (loopVars, 0)
             in
                case varChain (argVar, loopVar, loopBody, loadVar) of
-                 NONE => (logsi ("Can't unroll: can't compute transfer", 2) ; 
-                          inc(ccTransfer) ;
+                 NONE => (logsi ("Can't unroll: can't compute transfer", depth) ; 
+                          ++ccTransfer ;
                           NONE)
                | SOME (step) =>
                   let
@@ -434,8 +460,8 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
                        | _ => NONE
                   in
                      case headerTransferVar of
-                       NONE => (logsi ("Can't unroll: can't compute bound", 2) ;
-                                inc(ccBound) ;
+                       NONE => (logsi ("Can't unroll: can't compute bound", depth) ;
+                                ++ccBound ;
                                 NONE)
                      | SOME (var) =>
                         let
@@ -459,10 +485,12 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar) =
 
                         in
                            case bound of
-                             NONE => NONE
+                             NONE =>
+                              (logsi ("Can't unroll: bound compared to non-const", depth) ;
+                               ++varBound ;
+                               NONE)
                            | SOME(b) =>
                               let
-                                val () = logsi ("Can unroll on this arg!", 2)
                                 val loopLabels = Vector.map (loopBody, Block.label)
                                 val (_, _, contIsTrue) =
                                       loopExit (loopLabels ,Block.transfer header)
@@ -503,8 +531,8 @@ fun findOpportunity(functionBody: Block.t vector,
          val header = Vector.sub (loopHeaders, 0)
          val headerArgs = Block.args header
          val headerLabel = Block.label header
-         val () = logs "Evaluating loop with header"
-         val () = logl (Label.layout headerLabel)
+         val () = logsi (concat["Evaluating loop with header: ",
+                                Label.toString headerLabel], depth)
          fun blockEquals (b1, b2) = Label.equals (Block.label b1, Block.label b2)
          val emptyArgs = SOME(Vector.new (Vector.length headerArgs, NONE))
          val entryArgs = Vector.keepAllMap(functionBody, fn block =>
@@ -539,27 +567,20 @@ fun findOpportunity(functionBody: Block.t vector,
                                 SOME(Vector.map (args, loadGlobal))
                               else NONE
                           | _ => NONE)
-         val () = logs (concat["Loop has ",
+         val () = logsi (concat["Loop has ",
                                Int.toString (Vector.length entryArgs),
-                               " entry points"])
+                               " entry points"], depth)
          val constantArgs = findConstantStart entryArgs
-         val () = logs "Got constant args"
-         val () = Vector.foreach (constantArgs, fn a =>
-                    case a of
-                      NONE => logsi ("None", 1)
-                    | SOME (v) => logsi (IntInf.toString v, 1))
          val unrollableArgs =
           Vector.keepAllMapi
             (headerArgs, fn (i, arg) => (
-               logs "Checking arg:" ;
-               logli (Var.layout (#1 arg), 1) ;
+               logsi (concat["Checking arg: ", Var.toString (#1 arg)], depth) ;
                checkArg (arg, i, Vector.sub (constantArgs, i),
-                         header, loopBody, loadGlobal)))
+                         header, loopBody, loadGlobal, depth + 1)))
       in
-         if (Vector.length unrollableArgs) > 0 then
-                  (logs "Found at least one unrollable argument" ;
-                     SOME(Vector.sub (unrollableArgs, 0)))
-         else NONE
+        if (Vector.length unrollableArgs) > 0 then
+          SOME(Vector.sub (unrollableArgs, 0))
+        else NONE
       end
    else
       (logsi ("Can't optimize: loop has more than 1 header", depth) ;
@@ -569,18 +590,9 @@ fun findOpportunity(functionBody: Block.t vector,
 fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
   let
     val oldArgs = Block.args oldHeader
-    val (_, oldType) = Vector.sub (oldArgs, argi)
-    val argSize = case Type.dest oldType of
-                    Type.Word wsize => wsize
-                  | _ => raise Fail "Argument is not of type word"
-    
     val newArgs = Vector.concat [Vector.prefix(oldArgs, argi),
                                  Vector.dropPrefix(oldArgs, argi + 1)]
     val newArgs' = Vector.map (newArgs, fn (arg, _) => arg)
-    (*val () = logs("Old args")
-    val () = Vector.foreach(oldArgs, fn (a, t) => logl(Var.layout a))
-    val () = logs("New args")
-    val () = Vector.foreach(newArgs, fn (a, t) => logl(Var.layout a))*)
     val newTransfer = Transfer.Goto {args = newArgs', dst = newEntry}
   in
     (Block.T {args = oldArgs,
@@ -593,7 +605,7 @@ fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
 (* Copy an entire loop. In the header, rewrite the transfer to take the loop branch.
    In the transfers to the top of the loop, rewrite the transfer to goto next.
    Ensure that the header is the first element in the list.
-   Replace all instances of argi with argVar*)
+   Replace all instances of argi with argVar *)
 fun copyLoop(blocks: Block.t vector,
              nextLabel: Label.t,
              headerLabel: Label.t,
@@ -734,8 +746,9 @@ fun unrollLoop (oldHeader, argi, loopBlocks, argLabels, blockInfo, setBlockInfo)
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the program
    and a list of blocks to remove from the program. *)
 fun optimizeLoop(allBlocks, headerNodes, loopNodes,
-                 labelNode, nodeBlock, loadGlobal, depth) =
+                 nodeBlock, loadGlobal, depth) =
    let
+      val () = ++loopCount
       val headers = Vector.map (headerNodes, nodeBlock)
       val loopBlocks = Vector.map (loopNodes, nodeBlock)
       val loopBlockNames = Vector.map (loopBlocks, Block.label)
@@ -750,20 +763,21 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
         NONE => ([], [])
       | SOME (argi, loop) =>
           if Loop.isInfiniteLoop loop then
-            (logs "Can't unroll: infinite loop" ;
-             logs (concat["Index: ", Int.toString argi, Loop.toString loop]) ;
+            (logsi ("Can't unroll: infinite loop", depth) ;
+             logsi (concat["Index: ", Int.toString argi, Loop.toString loop], depth) ;
              ([], []))
           else 
             let
-              val () = inc(optCount)
+              val () = ++optCount
+              val () = logsi ("Can optimize loop!", depth)
+              val () = logsi (concat["Index: ", Int.toString argi,
+                                   Loop.toString loop], depth)
               val oldHeader = Vector.sub (headers, 0)
               val oldArgs = Block.args oldHeader
               val (_, oldType) = Vector.sub (oldArgs, argi)
               val argSize = case Type.dest oldType of
                               Type.Word wsize => wsize
                             | _ => raise Fail "Argument is not of type word"
-              val () = logs(concat["Index: ", Int.toString argi,
-                                   Loop.toString loop])
               val newEntry = Label.newNoname()
               val (newHeader, argLabels) =
                 makeHeader (oldHeader, argi, Loop.makeConstants (loop, argSize), newEntry)
@@ -781,8 +795,6 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                      transfer = transfer'}
               val newBlocks' = newHeader::(newHead::(listPop newBlocks))
               val () = destroy()
-              val () = logs "Adding blocks"
-              val () = List.foreach (newBlocks', fn b => logl (Block.layout b))
             in
               (newBlocks', (Vector.toList loopBlockNames))
             end
@@ -795,12 +807,12 @@ fun traverseSubForest ({loops, notInLoop},
                        labelNode, nodeBlock, loadGlobal, depth) =
    if (Vector.length loops) = 0 then
       optimizeLoop(allBlocks, enclosingHeaders, notInLoop,
-                   labelNode, nodeBlock, loadGlobal, depth)
+                   nodeBlock, loadGlobal, 0)
    else
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
          let
             val (nBlocks, rBlocks) =
-               traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal, depth + 1)
+               traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal)
          in
             ((new @ nBlocks), (remove @ rBlocks))
          end)
@@ -808,14 +820,13 @@ fun traverseSubForest ({loops, notInLoop},
 (* Traverse loops in the loop forest. *)
 and traverseLoop ({headers, child},
                   allBlocks,
-                  labelNode, nodeBlock, loadGlobal, depth) =
+                  labelNode, nodeBlock, loadGlobal) =
       traverseSubForest ((Forest.dest child), allBlocks,
-                         headers, labelNode, nodeBlock, loadGlobal, depth + 1)
+                         headers, labelNode, nodeBlock, loadGlobal)
 
 (* Traverse the top-level loop forest. *)
 fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal) =
   let
-    val () = logs (concat[(Int.toString (Vector.length loops)), " total loops"])
     (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
@@ -837,7 +848,7 @@ fun optimizeFunction loadGlobal function =
    let
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} = Function.dest function
-      val () = logl (Func.layout name)
+      val () = logs (concat["Optimizing function: ", Func.toString name])
       val root = labelNode start
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
       val newBlocks = traverseForest((Forest.dest forest),
@@ -872,6 +883,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       | _ => NONE)
                 | _ => NONE)
          end
+      val () = loopCount := 0
       val () = optCount := 0
       val () = multiHeaders := 0
       val () = varEntryArg := 0
@@ -879,6 +891,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = nonGoto := 0
       val () = ccTransfer := 0
       val () = ccBound := 0
+      val () = varBound := 0
       val () = infinite := 0
       val () = logs "Unrolling loops\n"
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
@@ -888,20 +901,17 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val shrink = shrinkFunction {globals = globals}
       val () = logs "Performing shrink"
       val shrunkFunctions = List.map (cleanedFunctions, shrink)
-      val () = logs (concat[Int.toString(!optCount), " loops optimized"])
-      val () = logs (concat[Int.toString(!multiHeaders), " loops had multiple headers"])
-      val () = logs (concat[Int.toString(!varEntryArg),
-                                         " loops had variable entry values"])
-      val () = logs (concat[Int.toString(!multiTransfer),
-                                         " loops had multiple transfers to the header"])
-      val () = logs (concat[Int.toString(!nonGoto),
-                                         " loops had non-goto transfers to the header"])
-      val () = logs (concat[Int.toString(!ccTransfer),
-                                         " loops had non-computable steps"])
-      val () = logs (concat[Int.toString(!ccBound),
-                                         " loops had non-computable bounds"])
-      val () = logs (concat[Int.toString(!infinite),
-                                         " infinite loops"])
+      val () = logstat (loopCount,     "total innermost loops")
+      val () = logstat (optCount,      "loops optimized")
+      val () = logstat (multiHeaders,  "loops had multiple headers")
+      val () = logstat (varEntryArg,   "loops had variable entry values")
+      val () = logstat (multiTransfer, "loops had multiple transfers to the header")
+      val () = logstat (nonGoto,       "loops had non-goto transfers to the header")
+      val () = logstat (ccTransfer,    "loops had non-computable steps")
+      val () = logstat (ccBound,       "loops had non-computable bounds")
+      val () = logstat (varBound,      "loops had variable bounds")
+      val () = logstat (infinite,      "infinite loops")
+      val () = logstat (arith,         "arith to top")
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
