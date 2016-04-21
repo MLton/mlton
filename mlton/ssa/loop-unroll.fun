@@ -31,6 +31,7 @@ val unsupported = ref 0
 val ccTransfer = ref 0
 val varBound = ref 0
 val infinite = ref 0
+val tooBig = ref 0
 
 fun ++ (v: int ref): unit =
   v := (!v) + 1
@@ -68,16 +69,63 @@ structure Loop =
     fun isInfiniteLoop (T {start, step, bound, invert}): bool =
       case bound of
         Eq b =>
-          if start = b then
-            false
-          else if start < b andalso step > 0 then
-            not (((b - start) mod step) = 0)
-          else if start > b andalso step < 0 then
-            not (((start - b) mod (~step)) = 0)
+          if invert then
+            (if start = b then
+              false
+            else if start < b andalso step > 0 then
+              not (((b - start) mod step) = 0)
+            else if start > b andalso step < 0 then
+              not (((start - b) mod (~step)) = 0)
+            else
+              true)
           else
-            true
-      | Lt b => start < b andalso step <= 0
-      | Gt b => start > b andalso step >= 0
+            step = 0
+      | Lt b =>
+        if invert then
+          start >= b andalso step >= 0
+        else
+          start < b andalso step <= 0
+      | Gt b =>
+        if invert then
+          start <= b andalso step <= 0
+        else
+          start > b andalso step >= 0
+
+
+    fun iters (start: IntInf.t, step: IntInf.t, max: IntInf.t): IntInf.t =
+      let
+        val range = max - start
+        val iters = range div step
+        val adds = range mod step
+      in
+        if step > range then
+          1
+        else
+          iters + adds
+      end
+
+    (* Assumes isInfiniteLoop is false, otherwise the result is undefined. *)
+    fun iterCount (T {start, step, bound, invert}): IntInf.t =
+      case bound of
+        Eq b =>
+          if invert then
+            (b - start) div step
+          else
+            1
+      | Lt b =>
+        if (start > b) andalso (not invert) then
+          0
+        else if invert then
+          iters (b - 1, ~step, start)
+        else
+          iters (start, step, b)
+      | Gt b =>
+        if (start < b) andalso (not invert) then
+          0
+        else if invert then
+          iters (start, step, b + 1)
+        else
+          iters (b, ~step, start)
 
     fun makeStatement (v: IntInf.t, wsize: WordSize.t): Var.t * Statement.t =
       let
@@ -145,7 +193,7 @@ structure Loop =
 fun logli (l: Layout.t, i: int): unit =
    Control.diagnostics
    (fn display =>
-      display(Layout.indent(l, i)))
+      display(Layout.indent(l, i * 2)))
 
 fun logsi (s: string, i: int): unit =
    logli((Layout.str s), i)
@@ -155,10 +203,6 @@ fun logs (s: string): unit =
 
 fun logstat (x: int ref, s: string): unit =
   logs (concat[Int.toString(!x), " ", s])
-
-fun vectorDrop (v, i) =
-  Vector.concat [Vector.prefix(v, i),
-                 Vector.dropPrefix(v, i + 1)]
 
 fun listPop lst =
   case lst of
@@ -599,7 +643,7 @@ fun findOpportunity(functionBody: Block.t vector,
        multiHeaders := (!multiHeaders) + 1 ;
        NONE)
 
-fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
+fun makeHeader(oldHeader, (newVars, newStmts), newEntry) =
   let
     val oldArgs = Block.args oldHeader
     val newArgs = Vector.map (oldArgs, fn (arg, _) => arg)
@@ -762,6 +806,10 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBl
         end
   end
 
+fun shouldOptimize (iterCount) =
+  if iterCount > 10 then false
+  else true
+
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the program
    and a list of blocks to remove from the program. *)
 fun optimizeLoop(allBlocks, headerNodes, loopNodes,
@@ -783,41 +831,55 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
       | SOME (argi, tBlock, loop) =>
           if Loop.isInfiniteLoop loop then
             (logsi ("Can't unroll: infinite loop", depth) ;
+             ++infinite ;
              logsi (concat["Index: ", Int.toString argi, Loop.toString loop], depth) ;
              ([], []))
-          else 
+          else
             let
               val () = ++optCount
               val () = logsi ("Can optimize loop!", depth)
               val () = logsi (concat["Index: ", Int.toString argi,
                                    Loop.toString loop], depth)
-              val oldHeader = Vector.sub (headers, 0)
-              val oldArgs = Block.args oldHeader
-              val (_, oldType) = Vector.sub (oldArgs, argi)
-              val argSize = case Type.dest oldType of
-                              Type.Word wsize => wsize
-                            | _ => raise Fail "Argument is not of type word"
-              val newEntry = Label.newNoname()
-              val (newHeader, argLabels) =
-                makeHeader (oldHeader, argi, Loop.makeConstants (loop, argSize), newEntry)
-              (* For each induction variable value, copy the loop's body *)
-              val newBlocks = unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
-                                          blockInfo, setBlockInfo)
-              (* Fix the first entry's label *)
-              val firstBlock = List.first newBlocks
-              val args' = Block.args firstBlock
-              val statements' = Block.statements firstBlock
-              val transfer' = Block.transfer firstBlock
-              val newHead = Block.T {args = args',
-                                     label = newEntry,
-                                     statements = statements',
-                                     transfer = transfer'}
-              val newBlocks' = newHeader::(newHead::(listPop newBlocks))
-              val () = destroy()
-              val () = logs "Adding blocks"   
-              val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))
+              val iterCount = Loop.iterCount loop
+              val () = logsi (concat["Loop will run ",
+                                     IntInf.toString iterCount,
+                                     " times"], depth)
+              val go = shouldOptimize (iterCount)
             in
-              (newBlocks', (Vector.toList loopBlockNames))
+              if go then
+                let
+                  val oldHeader = Vector.sub (headers, 0)
+                  val oldArgs = Block.args oldHeader
+                  val (_, oldType) = Vector.sub (oldArgs, argi)
+                  val argSize = case Type.dest oldType of
+                                  Type.Word wsize => wsize
+                                | _ => raise Fail "Argument is not of type word"
+                  val newEntry = Label.newNoname()
+                  val (newHeader, argLabels) =
+                    makeHeader (oldHeader, Loop.makeConstants (loop, argSize), newEntry)
+                  (* For each induction variable value, copy the loop's body *)
+                  val newBlocks = unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
+                                              blockInfo, setBlockInfo)
+                  (* Fix the first entry's label *)
+                  val firstBlock = List.first newBlocks
+                  val args' = Block.args firstBlock
+                  val statements' = Block.statements firstBlock
+                  val transfer' = Block.transfer firstBlock
+                  val newHead = Block.T {args = args',
+                                         label = newEntry,
+                                         statements = statements',
+                                         transfer = transfer'}
+                  val newBlocks' = newHeader::(newHead::(listPop newBlocks))
+                  val () = destroy()
+                  (*val () = logs "Adding blocks"   
+                  val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))*)
+                in
+                  (newBlocks', (Vector.toList loopBlockNames))
+                end
+              else
+                (logsi ("Can't unroll: loop too big", depth) ;
+                 ++tooBig ;
+                ([], []))
             end
    end
 
@@ -913,6 +975,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = ccTransfer := 0
       val () = varBound := 0
       val () = infinite := 0
+      val () = tooBig := 0
       val () = logs "Unrolling loops\n"
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
       val restore = restoreFunction {globals = globals}
@@ -928,7 +991,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = logstat (multiHeaders,
                         "loops had multiple headers")
       val () = logstat (varEntryArg,
-                        "loops had variable entry values")
+                        "variable entry values")
       val () = logstat (variantTransfer,
                         "loops had variant transfers to the header")
       val () = logstat (unsupported,
@@ -939,6 +1002,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         "loops had variable bounds")
       val () = logstat (infinite,
                         "infinite loops")
+      val () = logstat (tooBig,
+                        "loops too large to unroll")
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
