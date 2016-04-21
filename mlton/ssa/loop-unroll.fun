@@ -29,7 +29,6 @@ val varEntryArg = ref 0
 val variantTransfer = ref 0
 val unsupported = ref 0
 val ccTransfer = ref 0
-val ccBound = ref 0
 val varBound = ref 0
 val infinite = ref 0
 
@@ -457,58 +456,63 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar, depth)
                             SOME(Loop.Lt (c))
                           else
                             SOME(Loop.Gt (c))
+
                     fun eq (vc) =
                       case vc of
                         NONE => NONE
                       | SOME (_, c, _) => SOME(Loop.Eq (c))
-                    (* TODO: This should look for a case statement anywhere *)
-                     val headerTransferVar =
-                       case Block.transfer header of
-                         Transfer.Case {test, ...} => SOME(test)
-                       | _ => NONE
-                  in
-                     case headerTransferVar of
-                       NONE => (logsi ("Can't unroll: can't compute bound", depth) ;
-                                ++ccBound ;
-                                NONE)
-                     | SOME (var) =>
-                        let
-                           val bound = Vector.peekMap (Block.statements header,
-                              fn s => case Statement.var s of
-                                NONE => NONE
-                              | SOME (var') =>
-                                if Var.equals (var, var') then
-                                  case Statement.exp s of
-                                    PrimApp {args, prim, ...} =>
-                                      if not (Vector.contains (args, argVar, Var.equals))
-                                      then
-                                         NONE
-                                      else
-                                        (case Prim.name prim of
-                                          Name.Word_lt _ => ltOrGt (varConst (args, loadVar))
-                                        | Name.Word_equal _ => eq (varConst (args, loadVar))
-                                        | _ => NONE)
-                                  | _ => NONE
-                                else NONE)
 
+                    val transferVarBlock = Vector.peekMap (loopBody, (fn b =>
+                      let
+                        val transferVar =
+                          case Block.transfer b of
+                            Transfer.Case {test, ...} => SOME(test)
+                          | _ => NONE
+                        val loopBound =
+                          case (transferVar) of
+                            NONE => NONE
+                          | SOME (tVar) =>
+                              Vector.peekMap (Block.statements b,
+                                (fn s => case Statement.var s of
+                                  NONE => NONE
+                                | SOME (sVar) =>
+                                  if Var.equals (tVar, sVar) then
+                                    case Statement.exp s of
+                                      PrimApp {args, prim, ...} =>
+                                        if not (Vector.contains (args, argVar, Var.equals))
+                                        then
+                                           NONE
+                                        else
+                                          (case Prim.name prim of
+                                            Name.Word_lt _ => ltOrGt (varConst (args, loadVar))
+                                          | Name.Word_equal _ => eq (varConst (args, loadVar))
+                                          | _ => NONE)
+                                    | _ => NONE
+                                  else NONE))
+                      in
+                        case loopBound of
+                          NONE => NONE
+                        | SOME (bound) =>
+                            SOME(bound, b)
+                      end))
+                  in
+                    case transferVarBlock of
+                      NONE =>
+                        (logsi ("Can't unroll: can't determine bound", depth) ;
+                         ++varBound ;
+                         NONE)
+                    | SOME(bound, block) =>
+                        let
+                          val loopLabels = Vector.map (loopBody, Block.label)
+                          val (_, _, contIsTrue) =
+                                loopExit (loopLabels, Block.transfer block)
                         in
-                           case bound of
-                             NONE =>
-                              (logsi ("Can't unroll: bound compared to non-const", depth) ;
-                               ++varBound ;
-                               NONE)
-                           | SOME(b) =>
-                              let
-                                val loopLabels = Vector.map (loopBody, Block.label)
-                                val (_, _, contIsTrue) =
-                                      loopExit (loopLabels ,Block.transfer header)
-                              in
-                                SOME (argIndex,
-                                      Loop.T {start = entryX,
-                                              step = step,
-                                              bound = b,
-                                              invert = not contIsTrue})
-                              end
+                          SOME (argIndex,
+                                block,
+                                Loop.T {start = entryX,
+                                        step = step,
+                                        bound = bound,
+                                        invert = not contIsTrue})
                         end
                   end
             end
@@ -533,7 +537,7 @@ fun findOpportunity(functionBody: Block.t vector,
                     loopHeaders: Block.t vector,
                     loadGlobal: Var.t -> IntInf.t option,
                     depth: int):
-                    (int * Loop.t) option =
+                    (int * Block.t * Loop.t) option =
    if (Vector.length loopHeaders) = 1 then
       let
          val header = Vector.sub (loopHeaders, 0)
@@ -615,6 +619,7 @@ fun makeHeader(oldHeader, argi, (newVars, newStmts), newEntry) =
 fun copyLoop(blocks: Block.t vector,
              nextLabel: Label.t,
              headerLabel: Label.t,
+             tBlock: Block.t,
              argi: int,
              argVar: Var.t,
              blockInfo: Label.t -> BlockInfo,
@@ -661,7 +666,7 @@ fun copyLoop(blocks: Block.t vector,
           else
             statements
         val newTransfer =
-          if isHeader then
+          if Label.equals (label, Block.label tBlock) then
             let
               val (_, contLabel, _) = loopExit(labels, transfer)
             in
@@ -726,7 +731,7 @@ fun copyLoop(blocks: Block.t vector,
   end
 
 (* Unroll a loop. The header should ALWAYS be the first element in the returned list. *)
-fun unrollLoop (oldHeader, argi, loopBlocks, argLabels, blockInfo, setBlockInfo) =
+fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBlockInfo) =
   let
     val oldHeaderLabel = Block.label oldHeader
     val oldHeaderArgs = Block.args oldHeader
@@ -747,9 +752,10 @@ fun unrollLoop (oldHeader, argi, loopBlocks, argLabels, blockInfo, setBlockInfo)
         end
     | hd::tl =>
         let
-          val res = unrollLoop (oldHeader, argi, loopBlocks, tl, blockInfo, setBlockInfo)
+          val res = unrollLoop (oldHeader, tBlock, argi,
+                                loopBlocks, tl, blockInfo, setBlockInfo)
           val nextBlockLabel = Block.label (List.first res)
-          val newLoop = copyLoop(loopBlocks, nextBlockLabel, oldHeaderLabel,
+          val newLoop = copyLoop(loopBlocks, nextBlockLabel, oldHeaderLabel, tBlock,
                                  argi, hd, blockInfo, setBlockInfo)
         in
           (Vector.toList newLoop) @ res
@@ -774,7 +780,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
    in
       case optOpt of
         NONE => ([], [])
-      | SOME (argi, loop) =>
+      | SOME (argi, tBlock, loop) =>
           if Loop.isInfiniteLoop loop then
             (logsi ("Can't unroll: infinite loop", depth) ;
              logsi (concat["Index: ", Int.toString argi, Loop.toString loop], depth) ;
@@ -795,7 +801,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
               val (newHeader, argLabels) =
                 makeHeader (oldHeader, argi, Loop.makeConstants (loop, argSize), newEntry)
               (* For each induction variable value, copy the loop's body *)
-              val newBlocks = unrollLoop (oldHeader, argi, loopBlocks, argLabels,
+              val newBlocks = unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
                                           blockInfo, setBlockInfo)
               (* Fix the first entry's label *)
               val firstBlock = List.first newBlocks
@@ -905,7 +911,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = variantTransfer := 0
       val () = unsupported := 0
       val () = ccTransfer := 0
-      val () = ccBound := 0
       val () = varBound := 0
       val () = infinite := 0
       val () = logs "Unrolling loops\n"
@@ -930,8 +935,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         "loops had unsupported transfers to the header")
       val () = logstat (ccTransfer,
                         "loops had non-computable steps")
-      val () = logstat (ccBound,
-                        "loops had non-computable bounds")
       val () = logstat (varBound,
                         "loops had variable bounds")
       val () = logstat (infinite,
