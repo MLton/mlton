@@ -28,5 +28,19 @@ structure Vector =
           * See src/basis-library/arrays-and-vectors/sequence.fun.
           *)
          val concat = Pervasive.Vector.concat
+
+         val new0 = fn () => #[]
+
+         val new1 = fn x => #[x]
+
+         val new2 = fn (x0, x1) => #[x0, x1]
+
+         val new3 = fn (x0, x1, x2) => #[x0, x1, x2]
+
+         val new4 = fn (x0, x1, x2, x3) => #[x0, x1, x2, x3]
+
+         val new5 = fn (x0, x1, x2, x3, x4) => #[x0, x1, x2, x3, x4]
+
+         val new6 = fn (x0, x1, x2, x3, x4, x5) => #[x0, x1, x2, x3, x4, x5]
       end
    end

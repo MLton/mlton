@@ -975,17 +975,8 @@ fun closureConvert
                                   let
                                       val args = Vector.map (args, varExpInfo)
                                       val v = Value.deVector v
-                                      val targs = Prim.extractTargs
-                                                      (prim,
-                                                       {args = Vector.map (args, varInfoType),
-                                                        result = ty,
-                                                        typeOps = {deArray = Type.deArray,
-                                                                   deArrow = fn _ => Error.bug "ClosureConvert.convertPrimExp: deArrow",
-                                                                   deRef = Type.deRef,
-                                                                   deVector = Type.deVector,
-                                                                   deWeak = Type.deWeak}})
                                   in
-                                      primApp (targs, Vector.map (args, fn x => coerce (convertVarInfo x,
+                                      primApp (v1 (valueType v), Vector.map (args, fn x => coerce (convertVarInfo x,
                                                                                         VarInfo.value x, v)))
                                   end
                              | MLton_eq =>

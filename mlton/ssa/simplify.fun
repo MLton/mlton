@@ -48,7 +48,6 @@ val ssaPassesDefault =
     Inline.inlineLeaf (p, !Control.inlineLeafB)} ::
    {name = "contify1", doit = Contify.transform} ::
    {name = "localFlatten1", doit = LocalFlatten.transform} ::
-   {name = "implementVectors", doit = ImplementVectors.transform} ::
    {name = "constantPropagation", doit = ConstantPropagation.transform} ::
    (* useless should run 
     *   - after constant propagation because constant propagation makes
@@ -88,6 +87,7 @@ val ssaPassesDefault =
    {name = "redundant", doit = Redundant.transform} ::
    {name = "knownCase", doit = KnownCase.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
+   {name = "implementVectors", doit = ImplementVectors.transform} ::
    nil
 
 val ssaPassesMinimal =

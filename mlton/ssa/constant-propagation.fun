@@ -849,14 +849,16 @@ fun transform (program: Program.t): Program.t =
                   end
                fun vector (length) =
                   let
-                      val a = fromType resultType
+                      val ety = Type.deVector resultType
+                      val v = fromType resultType
                       val len = const (S.Const.word
                                            (WordX.fromIntInf
                                                 (IntInf.fromInt length,
                                                  WordSize.seqIndex ())))
-                      val _ = coerce {from = len, to = vectorLength a}
+                      val _ = coerce {from = len, to = vectorLength v}
+                      val _ = coerce {from = unknown ety, to = devector v}
                   in
-                      a
+                      v
                   end
             in
                case Prim.name prim of
