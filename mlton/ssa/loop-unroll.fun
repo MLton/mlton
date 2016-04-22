@@ -32,6 +32,7 @@ val ccTransfer = ref 0
 val varBound = ref 0
 val infinite = ref 0
 val tooBig = ref 0
+val floops = ref 0
 
 fun ++ (v: int ref): unit =
   v := (!v) + 1
@@ -113,14 +114,14 @@ structure Loop =
           else
             1
       | Lt b =>
-        if (start > b) andalso (not invert) then
+        if (start >= b) andalso (not invert) then
           0
         else if invert then
           iters (b - 1, ~step, start)
         else
           iters (start, step, b)
       | Gt b =>
-        if (start < b) andalso (not invert) then
+        if (start <= b) andalso (not invert) then
           0
         else if invert then
           iters (start, step, b + 1)
@@ -145,49 +146,58 @@ structure Loop =
     fun makeConstants (T {start, step, bound, invert},
                      wsize: WordSize.t)
                      : Var.t list * Statement.t list =
-      case bound of
-        Eq b =>
-          if (start = b) <> invert then
-            let
-              val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step,
-                                step = step,
-                                bound = bound,
-                                invert = invert}
-              val (rVars, rStmts) = makeConstants (nextIter, wsize)
-            in
-              (newVar::rVars, newStatement::rStmts)
-            end
-          else
-            ([], [])
-      | Lt b =>
-          if (start < b) <> invert then
-            let
-              val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step,
-                                step = step,
-                                bound = bound,
-                                invert = invert}
-              val (rVars, rStmts) = makeConstants (nextIter, wsize)
-            in
-              (newVar::rVars, newStatement::rStmts)
-            end
-          else
-            ([], [])
-      | Gt b =>
-          if (start > b) <> invert then
-            let
-              val (newVar, newStatement) = makeStatement(start, wsize)
-              val nextIter = T {start = start + step,
-                                step = step,
-                                bound = bound,
-                                invert = invert}
-              val (rVars, rStmts) = makeConstants (nextIter, wsize)
-            in
-              (newVar::rVars, newStatement::rStmts)
-            end
-          else
-            ([], [])
+      (* Even if the loop never runs, include a single iteration so that
+         pre-transfer code won't be lost *)
+      if (iterCount (T {start = start, step = step, bound = bound, invert = invert})) = 0 then
+        let
+          val (newVar, newStatement) = makeStatement(start, wsize)
+        in
+          ([newVar], [newStatement])
+        end
+      else
+        case bound of
+          Eq b =>
+            if (start = b) <> invert then
+              let
+                val (newVar, newStatement) = makeStatement(start, wsize)
+                val nextIter = T {start = start + step,
+                                  step = step,
+                                  bound = bound,
+                                  invert = invert}
+                val (rVars, rStmts) = makeConstants (nextIter, wsize)
+              in
+                (newVar::rVars, newStatement::rStmts)
+              end
+            else
+              ([], [])
+        | Lt b =>
+            if (start < b) <> invert then
+              let
+                val (newVar, newStatement) = makeStatement(start, wsize)
+                val nextIter = T {start = start + step,
+                                  step = step,
+                                  bound = bound,
+                                  invert = invert}
+                val (rVars, rStmts) = makeConstants (nextIter, wsize)
+              in
+                (newVar::rVars, newStatement::rStmts)
+              end
+            else
+              ([], [])
+        | Gt b =>
+            if (start > b) <> invert then
+              let
+                val (newVar, newStatement) = makeStatement(start, wsize)
+                val nextIter = T {start = start + step,
+                                  step = step,
+                                  bound = bound,
+                                  invert = invert}
+                val (rVars, rStmts) = makeConstants (nextIter, wsize)
+              in
+                (newVar::rVars, newStatement::rStmts)
+              end
+            else
+              ([], [])
   end
 
 fun logli (l: Layout.t, i: int): unit =
@@ -372,7 +382,7 @@ fun varChain (origVar, endVar, blocks, loadVar, total) =
 
 (* Given:
     - a list of loop body labels
-    - a transfer on a boolean value
+    - a transfer on a boolean value where one branch exits the loop and the other continues
    Returns:
     - the label that exits the loop
     - the label that continues the loop
@@ -412,6 +422,49 @@ fun loopExit (loopLabels: Label.t vector, transfer: Transfer.t): (Label.t * Labe
             | _ => raise Fail "This should be a con"))
           
   | _ => raise Fail "This should be a case statement"
+
+fun isLoopBranch (loopLabels, cases, default) =
+  case default of
+    SOME (defaultLabel) =>
+      (case cases of
+        Cases.Con v =>
+          if (Vector.length v) = 1 then
+            let
+              val (_, caseLabel) = Vector.sub (v, 0)
+              val defaultInLoop = Vector.contains (loopLabels, defaultLabel, Label.equals)
+              val caseInLoop = Vector.contains (loopLabels, caseLabel, Label.equals)
+              val () = logsi (concat["Comparing ",
+                                     Label.toString defaultLabel,
+                                     " and ",
+                                     Label.toString caseLabel], 5)
+              val () = logsi (Bool.toString (defaultInLoop <> caseInLoop), 5)
+            in
+              defaultInLoop <> caseInLoop 
+            end
+          else
+            false
+      | _ => false)
+  | NONE =>
+    (case cases of
+      Cases.Con v =>
+        if (Vector.length v) = 2 then
+          let
+            val (_, c1) = Vector.sub (v, 0)
+            val (_, c2) = Vector.sub (v, 1)
+            val () = logsi (concat["Comparing ",
+                                   Label.toString c1,
+                                   " and ",
+                                   Label.toString c2], 5)
+            val c1il = Vector.contains (loopLabels, c1, Label.equals)
+            val c2il = Vector.contains (loopLabels, c2, Label.equals)
+            val () = logsi (Bool.toString (c1il <> c2il), 5)
+          in
+            c1il <> c2il
+          end
+        else
+          false
+    | _ => false)
+
 
 (* Given:
     - a loop phi variable
@@ -505,12 +558,15 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody, loadVar, depth)
                       case vc of
                         NONE => NONE
                       | SOME (_, c, _) => SOME(Loop.Eq (c))
-
+                    val loopLabels = Vector.map (loopBody, Block.label)
                     val transferVarBlock = Vector.peekMap (loopBody, (fn b =>
                       let
                         val transferVar =
                           case Block.transfer b of
-                            Transfer.Case {test, ...} => SOME(test)
+                            Transfer.Case {cases, default, test} =>
+                              if isLoopBranch (loopLabels, cases, default) then
+                                SOME(test)
+                              else NONE
                           | _ => NONE
                         val loopBound =
                           case (transferVar) of
@@ -779,13 +835,12 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBl
   let
     val oldHeaderLabel = Block.label oldHeader
     val oldHeaderArgs = Block.args oldHeader
-    val oldTransfer = Block.transfer oldHeader
     val loopLabels = Vector.map (loopBlocks, Block.label)
   in
     case argLabels of
       [] =>
         let
-          val (exitLabel, _, _) = loopExit (loopLabels, oldTransfer)
+          val (exitLabel, _, _) = loopExit (loopLabels, Block.transfer tBlock)
           val newTransfer = Transfer.Goto {args = Vector.new0 (),
                                            dst = exitLabel}
         in
@@ -820,7 +875,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
       val loopBlocks = Vector.map (loopNodes, nodeBlock)
       val loopBlockNames = Vector.map (loopBlocks, Block.label)
       val optOpt =
-            findOpportunity(allBlocks, loopBlocks, headers, loadGlobal, depth)
+            findOpportunity(allBlocks, loopBlocks, headers, loadGlobal, depth + 1)
       val {get = blockInfo: Label.t -> BlockInfo,
          set = setBlockInfo: Label.t * BlockInfo -> unit, destroy} =
             Property.destGetSet(Label.plist,
@@ -837,20 +892,24 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
           else
             let
               val () = ++optCount
-              val () = logsi ("Can optimize loop!", depth)
+              val oldHeader = Vector.sub (headers, 0)
+              val oldArgs = Block.args oldHeader
+              val (oldArg, oldType) = Vector.sub (oldArgs, argi)
+              val () = logsi (concat["Can unroll loop on ",
+                                     Var.toString oldArg], depth)
               val () = logsi (concat["Index: ", Int.toString argi,
                                    Loop.toString loop], depth)
               val iterCount = Loop.iterCount loop
               val () = logsi (concat["Loop will run ",
                                      IntInf.toString iterCount,
                                      " times"], depth)
+              val () = logsi (concat["Transfer block is ",
+                                      Label.toString (Block.label tBlock)], depth)
               val go = shouldOptimize (iterCount)
             in
-              if go then
+              if go (*andalso (!floops < 6)*) then
                 let
-                  val oldHeader = Vector.sub (headers, 0)
-                  val oldArgs = Block.args oldHeader
-                  val (_, oldType) = Vector.sub (oldArgs, argi)
+                  val () = ++floops
                   val argSize = case Type.dest oldType of
                                   Type.Word wsize => wsize
                                 | _ => raise Fail "Argument is not of type word"
@@ -871,8 +930,8 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                          transfer = transfer'}
                   val newBlocks' = newHeader::(newHead::(listPop newBlocks))
                   val () = destroy()
-                  (*val () = logs "Adding blocks"   
-                  val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))*)
+                  val () = logs "Adding blocks"   
+                  val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))
                 in
                   (newBlocks', (Vector.toList loopBlockNames))
                 end
@@ -929,6 +988,7 @@ fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal) =
 (* Performs the optimization on the body of a single function. *)
 fun optimizeFunction loadGlobal function =
    let
+      val () = floops := 0
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} = Function.dest function
       val () = logs (concat["Optimizing function: ", Func.toString name])
@@ -936,6 +996,7 @@ fun optimizeFunction loadGlobal function =
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
       val newBlocks = traverseForest((Forest.dest forest),
                                      blocks, labelNode, nodeBlock, loadGlobal)
+      val () = logstat (floops, "loops optimized")
    in
       Function.new {args = args,
                     blocks = Vector.fromList(newBlocks),
