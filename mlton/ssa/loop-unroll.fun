@@ -22,6 +22,74 @@ in
    structure Forest = LoopForest
 end
 
+(* Copied from inline.fun *)
+structure Size =
+   struct
+      val check : (int * int option) -> bool =
+         fn (_, NONE) => false
+          | (size, SOME size') => size > size'
+
+      val defaultExpSize : Exp.t -> int = 
+         fn ConApp {args, ...} => 1 + Vector.length args
+          | Const _ => 0
+          | PrimApp {args, ...} => 1 + Vector.length args
+          | Profile _ => 0
+          | Select _ => 1 + 1
+          | Tuple xs => 1 + Vector.length xs
+          | Var _ => 0
+      fun expSize (size, max) (doExp, _) exp =
+         let
+            val size' = doExp exp
+            val size = size + size'
+         in
+            (size, check (size, max))
+         end
+      fun statementSize (size, max) (doExp, doTransfer) =
+         fn Statement.T {exp, ...} => expSize (size, max) (doExp, doTransfer) exp
+      fun statementsSize (size, max) (doExp, doTransfer) statements =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (statements, (size, false), fn (statement, (size, check)) =>
+           if check
+              then escape (size, check)
+           else statementSize (size, max) (doExp, doTransfer) statement))
+      val defaultTransferSize =
+         fn Arith {args, ...} => 1 + Vector.length args
+          | Bug => 1
+          | Call {args, ...} => 1 + Vector.length args
+          | Case {cases, ...} => 1 + Cases.length cases
+          | Goto {args, ...} => 1 + Vector.length args
+          | Raise xs => 1 + Vector.length xs
+          | Return xs => 1 + Vector.length xs
+          | Runtime {args, ...} => 1 + Vector.length args
+      fun transferSize (size, max) (_, doTransfer) transfer =
+         let
+            val size' = doTransfer transfer
+            val size = size + size'
+         in
+            (size, check (size, max))
+         end
+      fun blockSize (size, max) (doExp, doTransfer) =
+         fn Block.T {statements, transfer, ...} =>
+         case statementsSize (size, max) (doExp, doTransfer) statements of
+            (size, true) => (size, true)
+          | (size, false) => transferSize (size, max) (doExp, doTransfer) transfer
+      fun blocksSize (size, max) (doExp, doTransfer) blocks =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (blocks, (size, false), fn (block, (size, check)) =>
+           if check
+              then escape (size, check)
+           else blockSize (size, max) (doExp, doTransfer) block))
+      fun functionSize (size, max) (doExp, doTransfer) f =
+         blocksSize (size, max) (doExp, doTransfer) (#blocks (Function.dest f))
+
+      val default = (defaultExpSize, defaultTransferSize)
+      fun functionGT max = #2 o (functionSize (0, max) default)
+   end
+
 val loopCount = ref 0
 val optCount = ref 0
 val multiHeaders = ref 0
@@ -148,7 +216,8 @@ structure Loop =
                      : Var.t list * Statement.t list =
       (* Even if the loop never runs, include a single iteration so that
          pre-transfer code won't be lost *)
-      if (iterCount (T {start = start, step = step, bound = bound, invert = invert})) = 0 then
+      if (iterCount (T {start = start, step = step, bound = bound, invert = invert})) = 0
+      then
         let
           val (newVar, newStatement) = makeStatement(start, wsize)
         in
@@ -433,11 +502,6 @@ fun isLoopBranch (loopLabels, cases, default) =
               val (_, caseLabel) = Vector.sub (v, 0)
               val defaultInLoop = Vector.contains (loopLabels, defaultLabel, Label.equals)
               val caseInLoop = Vector.contains (loopLabels, caseLabel, Label.equals)
-              val () = logsi (concat["Comparing ",
-                                     Label.toString defaultLabel,
-                                     " and ",
-                                     Label.toString caseLabel], 5)
-              val () = logsi (Bool.toString (defaultInLoop <> caseInLoop), 5)
             in
               defaultInLoop <> caseInLoop 
             end
@@ -451,13 +515,8 @@ fun isLoopBranch (loopLabels, cases, default) =
           let
             val (_, c1) = Vector.sub (v, 0)
             val (_, c2) = Vector.sub (v, 1)
-            val () = logsi (concat["Comparing ",
-                                   Label.toString c1,
-                                   " and ",
-                                   Label.toString c2], 5)
             val c1il = Vector.contains (loopLabels, c1, Label.equals)
             val c2il = Vector.contains (loopLabels, c2, Label.equals)
-            val () = logsi (Bool.toString (c1il <> c2il), 5)
           in
             c1il <> c2il
           end
@@ -861,9 +920,18 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBl
         end
   end
 
-fun shouldOptimize (iterCount) =
-  if iterCount > 10 then false
-  else true
+fun shouldOptimize (iterCount, loopBlocks, depth) =
+  let
+    val iterCount' = IntInf.toInt iterCount
+    val (loopSize, _) = Size.blocksSize (0, NONE) Size.default loopBlocks
+    val unrollFactor = !Control.loopUnrollFactor
+    val () = logsi ("iterations * loop size < unroll factor", depth)
+    val () = logsi (concat[Int.toString iterCount', " * ",
+                           Int.toString loopSize, " < ",
+                           Int.toString unrollFactor], depth)
+  in
+    (iterCount' * loopSize) < unrollFactor
+  end
 
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the program
    and a list of blocks to remove from the program. *)
@@ -905,9 +973,9 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                      " times"], depth)
               val () = logsi (concat["Transfer block is ",
                                       Label.toString (Block.label tBlock)], depth)
-              val go = shouldOptimize (iterCount)
+              val go = shouldOptimize (iterCount, loopBlocks, depth + 1)
             in
-              if go (*andalso (!floops < 6)*) then
+              if go then
                 let
                   val () = ++floops
                   val argSize = case Type.dest oldType of
@@ -991,7 +1059,9 @@ fun optimizeFunction loadGlobal function =
       val () = floops := 0
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} = Function.dest function
-      val () = logs (concat["Optimizing function: ", Func.toString name])
+      val (fsize, _) = Size.functionSize (0, NONE) Size.default function
+      val () = logs (concat["Optimizing function: ", Func.toString name,
+      	                    " of size ", Int.toString fsize])
       val root = labelNode start
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
       val newBlocks = traverseForest((Forest.dest forest),
@@ -1037,7 +1107,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = varBound := 0
       val () = infinite := 0
       val () = tooBig := 0
-      val () = logs "Unrolling loops\n"
+      val () = logs (concat["Unrolling loops. Unrolling factor = ",
+      					    Int.toString (!Control.loopUnrollFactor)])
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
       val restore = restoreFunction {globals = globals}
       val () = logs "Performing SSA restore"
