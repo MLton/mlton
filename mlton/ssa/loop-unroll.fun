@@ -22,6 +22,9 @@ in
    structure Forest = LoopForest
 end
 
+fun ++ (v: int ref): unit =
+  v := (!v) + 1
+
 (* Copied from inline.fun *)
 structure Size =
    struct
@@ -90,6 +93,35 @@ structure Size =
       fun functionGT max = #2 o (functionSize (0, max) default)
    end
 
+structure Histogram =
+  struct
+    type t = (IntInf.t * int ref) HashSet.t
+
+    fun inc (set: t, key: IntInf.t): unit =
+      let
+        val _ = HashSet.insertIfNew (set, IntInf.hash key,
+                                     (fn (k, _) => k = key),
+                                     (fn () => (key, ref 1)),
+                                     (fn (_, r) => ++r))
+      in
+        ()
+      end
+
+    fun new (): t =
+      HashSet.new {hash = fn (k, _) => IntInf.hash k}
+
+    fun toList (set: t): (IntInf.t * int ref) list =
+      HashSet.toList set
+
+    fun toString (set: t) : string =
+      let
+        val eles = toList set
+      in
+        List.fold (eles, "", fn ((k, r), s) => concat[s, IntInf.toString k, ": ",
+                                                      Int.toString (!r), "\n"])
+      end
+  end
+
 val loopCount = ref 0
 val optCount = ref 0
 val multiHeaders = ref 0
@@ -101,9 +133,7 @@ val varBound = ref 0
 val infinite = ref 0
 val tooBig = ref 0
 val floops = ref 0
-
-fun ++ (v: int ref): unit =
-  v := (!v) + 1
+val histogram = ref (Histogram.new ())
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
 
@@ -973,6 +1003,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                      " times"], depth)
               val () = logsi (concat["Transfer block is ",
                                       Label.toString (Block.label tBlock)], depth)
+              val () = Histogram.inc ((!histogram), iterCount)
               val go = shouldOptimize (iterCount, loopBlocks, depth + 1)
             in
               if go then
@@ -1107,6 +1138,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = varBound := 0
       val () = infinite := 0
       val () = tooBig := 0
+      val () = histogram := Histogram.new ()
       val () = logs (concat["Unrolling loops. Unrolling factor = ",
       					    Int.toString (!Control.loopUnrollFactor)])
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
@@ -1136,6 +1168,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         "infinite loops")
       val () = logstat (tooBig,
                         "loops too large to unroll")
+      val () = logs ("Iterations: Occurences")
+      val () = logs (Histogram.toString (!histogram))
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,
