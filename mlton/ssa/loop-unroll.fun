@@ -144,6 +144,9 @@ structure Loop =
     type Step = IntInf.t
     datatype t = T of {start: Start, step: Step, bound: Bound, invert: bool}
 
+    fun step (T {step, ...}): Step =
+      step
+
     fun toString (T {start, step, bound, invert}): string =
       let
         val boundStr = case bound of
@@ -226,7 +229,15 @@ structure Loop =
         else
           iters (b, ~step, start)
 
-    fun makeStatement (v: IntInf.t, wsize: WordSize.t): Var.t * Statement.t =
+    fun maxValue (T {start, step, bound, invert}): IntInf.t =
+      let
+        val iters = iterCount (T {start = start, step = step,
+                                  bound = bound, invert = invert})
+      in
+        start + (step * (iters - 1))
+      end
+
+    fun makeConstStmt (v: IntInf.t, wsize: WordSize.t): Var.t * Statement.t =
       let
         val newWord = WordX.fromIntInf (v, wsize)
         val newConst = Const.word newWord
@@ -240,63 +251,138 @@ structure Loop =
         (newVar, newStatement)
       end
 
+    fun makeVarStmt (v: IntInf.t, wsize: WordSize.t, var: Var.t)
+                    : Var.t * Statement.t list =
+      let
+        val (cVar, cStmt) = makeConstStmt (v, wsize)
+        val newExp = Exp.PrimApp {args = Vector.new2 (var, cVar),
+                                  prim = Prim.wordAdd wsize,
+                                  targs = Vector.new0 ()}
+        val newType = Type.word wsize
+        val newVar = Var.newNoname()
+        val newStatement = Statement.T {exp = newExp,
+                                        ty = newType,
+                                        var = SOME(newVar)}
+      in
+        (newVar, [cStmt, newStatement])
+      end
+
+    fun makeConstantsRec (T {start, step, bound, invert},
+                          wsize: WordSize.t,
+                          limit: IntInf.t)
+                         : Var.t list * Statement.t list =
+      case bound of
+        Eq b =>
+          if (start = b) <> invert andalso limit > 0 then
+            let
+              val (newVar, newStatement) = makeConstStmt(start, wsize)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeConstantsRec (nextIter, wsize, limit - 1)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+      | Lt b =>
+          if (start < b) <> invert andalso limit > 0 then
+            let
+              val (newVar, newStatement) = makeConstStmt(start, wsize)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeConstantsRec (nextIter, wsize, limit - 1)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+      | Gt b =>
+          if (start > b) <> invert andalso limit > 0 then
+            let
+              val (newVar, newStatement) = makeConstStmt(start, wsize)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeConstantsRec (nextIter, wsize, limit - 1)
+            in
+              (newVar::rVars, newStatement::rStmts)
+            end
+          else
+            ([], [])
+
     (* Assumes isInfiniteLoop is false, otherwise this will run forever. *)
     fun makeConstants (T {start, step, bound, invert},
-                     wsize: WordSize.t)
-                     : Var.t list * Statement.t list =
+                       wsize: WordSize.t,
+                       limit: IntInf.t)
+                      : Var.t list * Statement.t list =
       (* Even if the loop never runs, include a single iteration so that
          pre-transfer code won't be lost *)
       if (iterCount (T {start = start, step = step, bound = bound, invert = invert})) = 0
       then
         let
-          val (newVar, newStatement) = makeStatement(start, wsize)
+          val (newVar, newStatement) = makeConstStmt(start, wsize)
         in
           ([newVar], [newStatement])
         end
       else
-        case bound of
-          Eq b =>
-            if (start = b) <> invert then
-              let
-                val (newVar, newStatement) = makeStatement(start, wsize)
-                val nextIter = T {start = start + step,
-                                  step = step,
-                                  bound = bound,
-                                  invert = invert}
-                val (rVars, rStmts) = makeConstants (nextIter, wsize)
-              in
-                (newVar::rVars, newStatement::rStmts)
-              end
-            else
-              ([], [])
-        | Lt b =>
-            if (start < b) <> invert then
-              let
-                val (newVar, newStatement) = makeStatement(start, wsize)
-                val nextIter = T {start = start + step,
-                                  step = step,
-                                  bound = bound,
-                                  invert = invert}
-                val (rVars, rStmts) = makeConstants (nextIter, wsize)
-              in
-                (newVar::rVars, newStatement::rStmts)
-              end
-            else
-              ([], [])
-        | Gt b =>
-            if (start > b) <> invert then
-              let
-                val (newVar, newStatement) = makeStatement(start, wsize)
-                val nextIter = T {start = start + step,
-                                  step = step,
-                                  bound = bound,
-                                  invert = invert}
-                val (rVars, rStmts) = makeConstants (nextIter, wsize)
-              in
-                (newVar::rVars, newStatement::rStmts)
-              end
-            else
-              ([], [])
+        makeConstantsRec (T {start = start, step = step, bound = bound, invert = invert},
+                          wsize,
+                          limit)
+
+    fun makeSteps (T {start, step, bound, invert},
+                   wsize: WordSize.t,
+                   var: Var.t,
+                   times: int)
+                  : Var.t list * Statement.t list =
+      case bound of
+        Eq b =>
+          if (start = b) <> invert andalso times > 0 then
+            let
+              val (newVar, newStatements) = makeVarStmt(start, wsize, var)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeSteps (nextIter, wsize, var, times - 1)
+            in
+              (newVar::rVars, newStatements @ rStmts)
+            end
+          else
+            ([], [])
+      | Lt b =>
+          if (start < b) <> invert andalso times > 0 then
+            let
+              val (newVar, newStatements) = makeVarStmt(start, wsize, var)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeSteps (nextIter, wsize, var, times - 1)
+            in
+              (newVar::rVars, newStatements @ rStmts)
+            end
+          else
+            ([], [])
+      | Gt b =>
+          if (start > b) <> invert andalso times > 0 then
+            let
+              val (newVar, newStatements) = makeVarStmt(start, wsize, var)
+              val nextIter = T {start = start + step,
+                                step = step,
+                                bound = bound,
+                                invert = invert}
+              val (rVars, rStmts) = makeSteps (nextIter, wsize, var, times- 1)
+            in
+              (newVar::rVars, newStatements @ rStmts)
+            end
+          else
+            ([], [])
+
   end
 
 fun logli (l: Layout.t, i: int): unit =
@@ -920,28 +1006,19 @@ fun copyLoop(blocks: Block.t vector,
   end
 
 (* Unroll a loop. The header should ALWAYS be the first element in the returned list. *)
-fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBlockInfo) =
+fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
+                exit, blockInfo, setBlockInfo) =
   let
     val oldHeaderLabel = Block.label oldHeader
     val oldHeaderArgs = Block.args oldHeader
     val loopLabels = Vector.map (loopBlocks, Block.label)
   in
     case argLabels of
-      [] =>
-        let
-          val (exitLabel, _, _) = loopExit (loopLabels, Block.transfer tBlock)
-          val newTransfer = Transfer.Goto {args = Vector.new0 (),
-                                           dst = exitLabel}
-        in
-          [Block.T {args = oldHeaderArgs,
-                    label = Label.newNoname (),
-                    statements = Vector.new0 (),
-                    transfer = newTransfer}]
-        end
+      [] => [exit]
     | hd::tl =>
         let
           val res = unrollLoop (oldHeader, tBlock, argi,
-                                loopBlocks, tl, blockInfo, setBlockInfo)
+                                loopBlocks, tl, exit, blockInfo, setBlockInfo)
           val nextBlockLabel = Block.label (List.first res)
           val newLoop = copyLoop(loopBlocks, nextBlockLabel, oldHeaderLabel, tBlock,
                                  argi, hd, blockInfo, setBlockInfo)
@@ -950,17 +1027,133 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels, blockInfo, setBl
         end
   end
 
+(* Given:
+    - an itertion count
+    - a loop body
+   Returns (b, x, y, z) such that:
+      if b is true
+        - unroll the loop completely
+        - x, y, and z are undefined.
+      if b is false
+        - x is the number of times to expand the loop body
+        - y is the number of iterations to run the expanded body
+        - z is the number of times to peel the loop body
+ *)
 fun shouldOptimize (iterCount, loopBlocks, depth) =
   let
     val iterCount' = IntInf.toInt iterCount
     val (loopSize, _) = Size.blocksSize (0, NONE) Size.default loopBlocks
     val unrollFactor = !Control.loopUnrollFactor
-    val () = logsi ("iterations * loop size < unroll factor", depth)
+    val () = logsi ("iterations * loop size < unroll factor = can total unroll", depth)
+    val canTotalUnroll = (iterCount' * loopSize) < unrollFactor
     val () = logsi (concat[Int.toString iterCount', " * ",
                            Int.toString loopSize, " < ",
-                           Int.toString unrollFactor], depth)
+                           Int.toString unrollFactor, " = ",
+                           Bool.toString canTotalUnroll], depth)
   in
-    (iterCount' * loopSize) < unrollFactor
+    if (iterCount' = 1) orelse canTotalUnroll then
+      (true, 0, 0, 0)
+    else if loopSize >= unrollFactor then
+      (false, 1, iterCount' - 1, 1)
+    else
+      let
+        val exBodySize = unrollFactor div loopSize
+        val exIters = iterCount' div exBodySize
+        val leftovers = iterCount' - (exIters * exBodySize)
+      in
+        if leftovers = 0 then
+          (false, exBodySize, exIters - 1, exBodySize)
+        else
+          (false, exBodySize, exIters, leftovers)
+      end
+  end
+
+fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg, exBody, iterBody,
+                  blockInfo, setBlockInfo) =
+  let
+    val loopBlockNames = Vector.map (loopBlocks, Block.label)
+    (* Make a new loop header with an additional arg *)
+    val newLoopEntry = Label.newNoname()
+    val (newLoopHeader, loopArgLabels) =
+      makeHeader (oldHeader,
+                  Loop.makeSteps (loop, argSize, oldArg, exBody),
+                  newLoopEntry)
+    val iterVar = Var.newNoname ()
+    val newLoopHeaderArgs' = Vector.concat
+                              [Block.args newLoopHeader,
+                               Vector.new1 (iterVar, Type.word argSize)]
+    val newLoopHeader' = 
+      Block.T {args = newLoopHeaderArgs',
+               label = Label.newNoname (), (* We don't want to use the original label *)
+               statements = Block.statements newLoopHeader,
+               transfer = Block.transfer newLoopHeader}
+
+    (* Make a new goto to the top of the loop increasing the iter by 1 *)
+    val loopHeaderGoto =
+      let
+        val (newVar, newVarStmts) = Loop.makeVarStmt (1, argSize, iterVar)
+        val nonIterArgs = Vector.map (Block.args oldHeader, fn (a, _) => a)
+        val newArgs = Vector.concat [nonIterArgs, Vector.new1 (newVar)]
+        val newTransfer = Transfer.Goto {args = newArgs,
+                                         dst = Block.label newLoopHeader'}
+      in
+        Block.T {args = Vector.new0 (),
+                label = Label.newNoname (),
+                statements = Vector.fromList newVarStmts,
+                transfer = newTransfer}
+      end
+
+    val newLoopExit =
+      let
+        val (newLimitVar, newLimitStmt) =
+          Loop.makeConstStmt (iterBody, argSize)
+        val (exitLabel, _, _) = loopExit (loopBlockNames,
+                                          Block.transfer tBlock)
+        val (newComp, newCompVar) =
+          let
+            val newVar = Var.newNoname ()
+            val newTy = Type.datatypee Tycon.bool
+            val newExp =
+              PrimApp {args = Vector.new2 (iterVar, newLimitVar),
+                       prim = Prim.wordLt (argSize, {signed = true}),
+                       targs = Vector.new0 ()}
+          in
+            (Statement.T {exp = newExp,
+                          ty = newTy,
+                          var = SOME(newVar)},
+             newVar)
+          end
+        val exitStatements = Vector.new2(newLimitStmt, newComp)
+        val exitCases = Cases.Con (
+                          Vector.new1 (Con.fromBool true,
+                                       Block.label loopHeaderGoto))
+        val exitTransfer = Transfer.Case {cases = exitCases,
+                                          default = SOME(exitLabel),
+                                          test = newCompVar}
+      in
+        Block.T {args = Block.args oldHeader,
+                 label = Label.newNoname (),
+                 statements = exitStatements,
+                 transfer = exitTransfer}
+      end
+
+    val newLoopBlocks = unrollLoop (oldHeader, tBlock, argi,
+                                loopBlocks, loopArgLabels, newLoopExit,
+                                blockInfo, setBlockInfo)
+    val firstLoopBlock = List.first newLoopBlocks
+    val loopArgs' = Block.args firstLoopBlock
+    val loopStatements' = Block.statements firstLoopBlock
+    val loopTransfer' = Block.transfer firstLoopBlock
+    val newLoopHead = Block.T {args = loopArgs',
+                           label = newLoopEntry,
+                           statements = loopStatements',
+                           transfer = loopTransfer'}
+    val newLoopBlocks' = newLoopHeader'::
+                          (loopHeaderGoto::
+                            (newLoopHead::
+                              (listPop newLoopBlocks)))
+  in
+    newLoopBlocks'
   end
 
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the program
@@ -1004,19 +1197,32 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
               val () = logsi (concat["Transfer block is ",
                                       Label.toString (Block.label tBlock)], depth)
               val () = Histogram.inc ((!histogram), iterCount)
-              val go = shouldOptimize (iterCount, loopBlocks, depth + 1)
+              val (total, exBody, iterBody, peel) =
+                    shouldOptimize (iterCount, loopBlocks, depth + 1)
+              val argSize = case Type.dest oldType of
+                              Type.Word wsize => wsize
+                            | _ => raise Fail "Argument is not of type word"
             in
-              if go then
+              if total then
                 let
+                  val () = logsi ("Completely unrolling loop", depth)
                   val () = ++floops
-                  val argSize = case Type.dest oldType of
-                                  Type.Word wsize => wsize
-                                | _ => raise Fail "Argument is not of type word"
                   val newEntry = Label.newNoname()
                   val (newHeader, argLabels) =
-                    makeHeader (oldHeader, Loop.makeConstants (loop, argSize), newEntry)
+                    makeHeader (oldHeader,
+                                Loop.makeConstants (loop, argSize, iterCount),
+                                newEntry)
+                  val (exitLabel, _, _) = loopExit (loopBlockNames,
+                                                    Block.transfer tBlock)
+                  val newTransfer = Transfer.Goto {args = Vector.new0 (),
+                                                   dst = exitLabel}
+                  val exitBlock = Block.T {args = oldArgs,
+                                           label = Label.newNoname (),
+                                           statements = Vector.new0 (),
+                                           transfer = newTransfer}
                   (* For each induction variable value, copy the loop's body *)
-                  val newBlocks = unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
+                  val newBlocks = unrollLoop (oldHeader, tBlock, argi,
+                                              loopBlocks, argLabels, exitBlock,
                                               blockInfo, setBlockInfo)
                   (* Fix the first entry's label *)
                   val firstBlock = List.first newBlocks
@@ -1035,9 +1241,66 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   (newBlocks', (Vector.toList loopBlockNames))
                 end
               else
-                (logsi ("Can't unroll: loop too big", depth) ;
+                let
+                  val () = logsi ("Partially unrolling loop", depth)
+                  val () = logsi (concat["Body expansion: ",
+                                         Int.toString exBody,
+                                         " Body iterations: ",
+                                         Int.toString iterBody,
+                                         " Peel iterations: ",
+                                         Int.toString peel],
+                                  depth)
+                  (* Expand the loop *)
+                  val exLoopBlocks = expandLoop (oldHeader, loopBlocks, loop, tBlock,
+                                                  argi, argSize,
+                                                  oldArg, exBody, IntInf.fromInt iterBody,
+                                                  blockInfo, setBlockInfo)
+                  (* Make an entry to the expanded loop *)
+                  val exLoopEntry =
+                    let
+                      val (zeroVar, zeroStmt) = Loop.makeConstStmt(0, argSize)
+                      val exLoopHeader = Block.label (List.first exLoopBlocks)
+                      val oldArgLabels = Vector.map (oldArgs, fn (a, _) => a)
+                      val transferArgs = Vector.concat [oldArgLabels, Vector.new1(zeroVar)]
+                      val newTransfer = Transfer.Goto {args = transferArgs,
+                                                       dst = exLoopHeader}
+                    in
+                      Block.T {args = oldArgs,
+                               label = Label.newNoname(),
+                               statements = Vector.new1 zeroStmt,
+                               transfer = newTransfer}
+                    end
+                  (* Make a replacement loop entry *)
+                  val newEntry = Label.newNoname()
+                  val (newHeader, argLabels) =
+                    makeHeader (oldHeader,
+                                Loop.makeConstants (loop, argSize, IntInf.fromInt peel),
+                                newEntry)
+                  (* For each induction variable value, copy the loop's body *)
+                  val newBlocks = unrollLoop (oldHeader, tBlock, argi,
+                                              loopBlocks, argLabels, exLoopEntry,
+                                              blockInfo, setBlockInfo)
+                  (* Fix the first entry's label *)
+                  val firstBlock = List.first newBlocks
+                  val args' = Block.args firstBlock
+                  val statements' = Block.statements firstBlock
+                  val transfer' = Block.transfer firstBlock
+                  val newHead = Block.T {args = args',
+                                         label = newEntry,
+                                         statements = statements',
+                                         transfer = transfer'}
+                  val newBlocks' = newHeader::(newHead::(listPop newBlocks))
+
+                  val () = logsi ("Peel expansion", depth)
+                  val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))
+                  val () = logsi ("Loop expansion", depth)
+                  val () = List.foreach (exLoopBlocks, fn b => logli (Block.layout b, depth))
+                in
+                  (newBlocks' @ exLoopBlocks, (Vector.toList loopBlockNames))
+                end
+                (*(logsi ("Can't unroll: loop too big", depth) ;
                  ++tooBig ;
-                ([], []))
+                ([], []))*)
             end
    end
 
