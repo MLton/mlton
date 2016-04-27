@@ -950,7 +950,7 @@ fun copyLoop(blocks: Block.t vector,
           else
             statements
         val newTransfer =
-          if rewriteTransfer andalso Label.equals (label, Block.label tBlock) then
+          if rewriteTransfer andalso Label.equals (label, f(Block.label tBlock)) then
             let
               val (_, contLabel, _) = loopExit(labels, transfer)
             in
@@ -1016,7 +1016,7 @@ fun copyLoop(blocks: Block.t vector,
 
 (* Unroll a loop. The header should ALWAYS be the first element in the returned list. *)
 fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
-                exit, blockInfo, setBlockInfo) =
+                exit, rewriteTransfer, blockInfo, setBlockInfo) =
   let
     val oldHeaderLabel = Block.label oldHeader
     val oldHeaderArgs = Block.args oldHeader
@@ -1027,10 +1027,11 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
     | hd::tl =>
         let
           val res = unrollLoop (oldHeader, tBlock, argi,
-                                loopBlocks, tl, exit, blockInfo, setBlockInfo)
+                                loopBlocks, tl, exit, rewriteTransfer,
+                                blockInfo, setBlockInfo)
           val nextBlockLabel = Block.label (List.first res)
           val newLoop = copyLoop(loopBlocks, nextBlockLabel, oldHeaderLabel, tBlock,
-                                 argi, hd, blockInfo, setBlockInfo)
+                                 argi, hd, rewriteTransfer, blockInfo, setBlockInfo)
         in
           (Vector.toList newLoop) @ res
         end
@@ -1144,9 +1145,12 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg, exBo
                  transfer = exitTransfer}
       end
 
+    (* Expand the loop exBody times. Rewrite the bound's transfer,
+       because we know it will always be true and it won't be eliminated
+       by shrink. *)
     val newLoopBlocks = unrollLoop (oldHeader, tBlock, argi,
                                 loopBlocks, loopArgLabels, newLoopExit,
-                                blockInfo, setBlockInfo)
+                                true, blockInfo, setBlockInfo)
     val firstLoopBlock = List.first newLoopBlocks
     val loopArgs' = Block.args firstLoopBlock
     val loopStatements' = Block.statements firstLoopBlock
@@ -1228,7 +1232,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   (* For each induction variable value, copy the loop's body *)
                   val newBlocks = unrollLoop (oldHeader, tBlock, argi,
                                               loopBlocks, argLabels, exitBlock,
-                                              blockInfo, setBlockInfo)
+                                              false, blockInfo, setBlockInfo)
                   (* Fix the first entry's label *)
                   val firstBlock = List.first newBlocks
                   val args' = Block.args firstBlock
@@ -1272,7 +1276,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                                            transfer = Transfer.Bug}
                   val exitBlocks = unrollLoop (oldHeader, tBlock, argi,
                                               loopBlocks, exitConsts, exitBlock,
-                                              blockInfo, setBlockInfo)
+                                              false, blockInfo, setBlockInfo)
                   val exitFirstBlock = List.first exitBlocks
                   val exitArgs = Block.args exitFirstBlock
                   val exitStatements = Block.statements exitFirstBlock
@@ -1318,7 +1322,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   (* For each induction variable value, copy the loop's body *)
                   val newBlocks = unrollLoop (oldHeader, tBlock, argi,
                                               loopBlocks, argLabels, exLoopEntry,
-                                              blockInfo, setBlockInfo)
+                                              false, blockInfo, setBlockInfo)
                   (* Fix the first entry's label *)
                   val firstBlock = List.first newBlocks
                   val args' = Block.args firstBlock
