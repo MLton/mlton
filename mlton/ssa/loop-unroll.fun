@@ -270,6 +270,25 @@ structure Loop =
     (* Given:
         - a loop
         - a word size
+       Returns:
+        A variable and statement for the constant value after the loops final
+        iteration. This value will make the loop exit.
+      Assumes isInfiniteLoop is false, otherwise the result is undefined.
+    *)
+    fun makeLastConstant (T {start, step, bound, invert},
+                          wsize: WordSize.t)
+                          : Var.t list * Statement.t list =
+      let
+        val ic = iterCount (T {start = start, step = step, bound = bound, invert = invert})
+        val last = start + (step * ic)
+        val (newVar, newStatement) = makeConstStmt(last, wsize)
+      in
+        ([newVar], [newStatement])
+      end
+
+    (* Given:
+        - a loop
+        - a word size
         - an iteration limit
       Returns:
         A pair of variables and statements for those variables
@@ -358,9 +377,9 @@ structure Loop =
     fun makeSteps (T {start, step, bound, invert},
                    wsize: WordSize.t,
                    var: Var.t,
-                   times: int)
+                   times: IntInf.t)
                   : Var.t list * Statement.t list =
-      makeStepsRec (step, wsize, var, IntInf.fromInt times, [], [])
+      makeStepsRec (step, wsize, var, times, [], [])
 
   end
 
@@ -886,6 +905,7 @@ fun copyLoop(blocks: Block.t vector,
              tBlock: Block.t,
              argi: int,
              argVar: Var.t,
+             rewriteTransfer: bool,
              blockInfo: Label.t -> BlockInfo,
              setBlockInfo: Label.t * BlockInfo -> unit): Block.t vector =
   let
@@ -930,13 +950,13 @@ fun copyLoop(blocks: Block.t vector,
           else
             statements
         val newTransfer =
-          (*if Label.equals (label, Block.label tBlock) then
+          if rewriteTransfer andalso Label.equals (label, Block.label tBlock) then
             let
               val (_, contLabel, _) = loopExit(labels, transfer)
             in
               Transfer.Goto {args = Vector.new0 (), dst = f(contLabel)}
             end
-          else*)
+          else
             case transfer of
               Transfer.Arith {args, overflow, prim, success, ty} =>
                 if Label.equals (success, headerLabel) then
@@ -1058,7 +1078,7 @@ fun shouldOptimize (iterCount, loopBlocks, depth) =
   end
 
 fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg, exBody, iterBody,
-                  blockInfo, setBlockInfo) =
+                exitLabel,  blockInfo, setBlockInfo) =
   let
     val loopBlockNames = Vector.map (loopBlocks, Block.label)
     (* Make a new loop header with an additional arg *)
@@ -1096,8 +1116,6 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg, exBo
       let
         val (newLimitVar, newLimitStmt) =
           Loop.makeConstStmt (iterBody - 1, argSize)
-        val (exitLabel, _, _) = loopExit (loopBlockNames,
-                                          Block.transfer tBlock)
         val (newComp, newCompVar) =
           let
             val newVar = Var.newNoname ()
@@ -1193,8 +1211,8 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                             | _ => raise Fail "Argument is not of type word"
               val () = ++floops
             in
-              if total andalso (!floops) >= (!Control.skip) 
-                       andalso (!floops) < (!Control.floop) then
+              if total (*andalso (!floops) >= (!Control.skip) 
+                       andalso (!floops) < (!Control.floop)*) then
                 let
                   val () = logsi ("Completely unrolling loop", depth)
                   
@@ -1228,26 +1246,60 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   (newBlocks', (Vector.toList loopBlockNames))
                 end
               else
-                (*let
+                let
                   val () = logsi ("Partially unrolling loop", depth)
                   val () = logsi (concat["Body expansion: ",
-                                         Int.toString exBody,
+                                         IntInf.toString exBody,
                                          " Body iterations: ",
-                                         Int.toString iterBody,
+                                         IntInf.toString iterBody,
                                          " Peel iterations: ",
-                                         Int.toString peel],
+                                         IntInf.toString peel],
                                   depth)
+                  val oldArgLabels = Vector.map (oldArgs, fn (a, _) => a)
+                  (* Produce an exit loop iteration. *)
+                  val exitEntry = Label.newNoname()
+                  val (exitHeader, exitConsts) =
+                    makeHeader (oldHeader,
+                                Loop.makeLastConstant (loop, argSize),
+                                exitEntry)
+                  val exitHeader' = Block.T {args = Block.args exitHeader,
+                                             label = Label.newNoname (),
+                                             statements = Block.statements exitHeader,
+                                             transfer = Block.transfer exitHeader}
+                  val exitBlock = Block.T {args = oldArgs,
+                                           label = Label.newNoname (),
+                                           statements = Vector.new0 (),
+                                           transfer = Transfer.Bug}
+                  val exitBlocks = unrollLoop (oldHeader, tBlock, argi,
+                                              loopBlocks, exitConsts, exitBlock,
+                                              blockInfo, setBlockInfo)
+                  val exitFirstBlock = List.first exitBlocks
+                  val exitArgs = Block.args exitFirstBlock
+                  val exitStatements = Block.statements exitFirstBlock
+                  val exitTransfer = Block.transfer exitFirstBlock
+                  val exitHead = Block.T {args = exitArgs,
+                                         label = exitEntry,
+                                         statements = exitStatements,
+                                         transfer = exitTransfer}
+                  val exitGotoLabel = Label.newNoname()
+                  val exitGoto = Block.T {args = Vector.new0 (),
+                                          label = exitGotoLabel,
+                                          statements = Vector.new0 (),
+                                          transfer = Transfer.Goto
+                                                        {args = oldArgLabels,
+                                                         dst = Block.label exitHeader'}}
+                  val exitBlocks' = exitGoto::exitHeader'::(exitHead::(listPop exitBlocks))
+
                   (* Expand the loop *)
                   val exLoopBlocks = expandLoop (oldHeader, loopBlocks, loop, tBlock,
                                                   argi, argSize,
-                                                  oldArg, exBody, IntInf.fromInt iterBody,
-                                                  blockInfo, setBlockInfo)
+                                                  oldArg, exBody, iterBody,
+                                                  exitGotoLabel, blockInfo, setBlockInfo)
                   (* Make an entry to the expanded loop *)
                   val exLoopEntry =
                     let
                       val (zeroVar, zeroStmt) = Loop.makeConstStmt(0, argSize)
                       val exLoopHeader = Block.label (List.first exLoopBlocks)
-                      val oldArgLabels = Vector.map (oldArgs, fn (a, _) => a)
                       val transferArgs = Vector.concat [oldArgLabels, Vector.new1(zeroVar)]
                       val newTransfer = Transfer.Goto {args = transferArgs,
                                                        dst = exLoopHeader}
@@ -1261,7 +1313,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   val newEntry = Label.newNoname()
                   val (newHeader, argLabels) =
                     makeHeader (oldHeader,
-                                Loop.makeConstants (loop, argSize, IntInf.fromInt peel),
+                                Loop.makeConstants (loop, argSize, peel),
                                 newEntry)
                   (* For each induction variable value, copy the loop's body *)
                   val newBlocks = unrollLoop (oldHeader, tBlock, argi,
@@ -1282,12 +1334,14 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                   val () = List.foreach (newBlocks', fn b => logli (Block.layout b, depth))
                   val () = logsi ("Loop expansion", depth)
                   val () = List.foreach (exLoopBlocks, fn b => logli (Block.layout b, depth))
+                  val () = logsi ("Exit expansion", depth)
+                  val () = List.foreach (exitBlocks', fn b => logli (Block.layout b, depth))
                 in
-                  (newBlocks' @ exLoopBlocks, (Vector.toList loopBlockNames))
-                end *)
-                (logsi ("Can't unroll: loop too big", depth) ;
+                  (newBlocks' @ exLoopBlocks @ exitBlocks', (Vector.toList loopBlockNames))
+                end
+                (*(logsi ("Can't unroll: loop too big", depth) ;
                  ++tooBig ;
-                ([], []))
+                ([], []))*)
             end
    end
 
