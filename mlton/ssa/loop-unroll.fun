@@ -133,6 +133,7 @@ val unsupported = ref 0
 val ccTransfer = ref 0
 val varBound = ref 0
 val infinite = ref 0
+val z = ref 0
 val histogram = ref (Histogram.new ())
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
@@ -1072,7 +1073,7 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
         - x, y, and z are undefined.
       if b is false
         - x is the number of times to expand the loop body
-        - y is the number of iterations to run the expanded body
+        - y is the number of iterations to run the expanded body (must never be 0)
         - z is the number of times to peel the loop body
  *)
 fun shouldOptimize (iterCount, loopBlocks, depth) =
@@ -1089,8 +1090,10 @@ fun shouldOptimize (iterCount, loopBlocks, depth) =
                            Bool.toString canTotalUnroll], depth)
   in
     if (iterCount = 1) orelse canTotalUnroll then
+      (* Loop runs once or it's small enough to unroll *)
       (true, 0, 0, 0)
     else if loopSize >= unrollFactor then
+      (* Loop is too big to unroll at all, peel off 1 iteration *)
       (false, 1, iterCount - 1, 1)
     else
       let
@@ -1098,10 +1101,17 @@ fun shouldOptimize (iterCount, loopBlocks, depth) =
         val exIters = iterCount div exBodySize
         val leftovers = iterCount - (exIters * exBodySize)
       in
-        if leftovers = 0 then
-          (false, exBodySize, exIters - 1, exBodySize)
+        if (exIters - 1) < 2 then
+          (* If the unpeeled loop would run 1 or 0 times, just unroll the
+             whole thing *)
+          (true, 0, 0, 0)
         else
-          (false, exBodySize, exIters, leftovers)
+          if leftovers = 0 then
+            (* If we don't get any unpeelings naturally, force one *)
+            (false, exBodySize, exIters - 1, exBodySize)
+          else
+            (* Otherwise stick them on the front of the loop *)
+            (false, exBodySize, exIters, leftovers)
       end
   end
 
@@ -1242,8 +1252,13 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                               Type.Word wsize => wsize
                             | _ => raise Fail "Argument is not of type word"
             in
+              if not (!z < !Control.floop) then
+                (logs("Skipping") ;
+                ([], []))
+              else
               if totalUnroll then
                 let
+                  val () = ++z
                   val () = ++total
                   val () = logsi ("Completely unrolling loop", depth)
                   val newEntry = Label.newNoname()
@@ -1275,6 +1290,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                 end
               else
                 let
+                  val () = ++z
                   val () = ++partial
                   val () = logsi ("Partially unrolling loop", depth)
                   val () = logsi (concat["Body expansion: ",
