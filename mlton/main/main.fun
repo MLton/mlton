@@ -558,12 +558,18 @@ fun makeOptions {usage} =
          if i >= 1
             then loopPasses := i
             else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
-       (Expert, "loop-unroll-factor", " <n>", "limit code growth from loop unrolling",
+       (Expert, "loop-unroll-factor", " <n>", "limit code growth by loop unrolling",
         Int
         (fn i =>
          if i >= 0
             then loopUnrollFactor := i
             else usage (concat ["invalid -loop-unroll-factor: ", Int.toString i]))),
+       (Expert, "loop-unswitch-factor", " <n>", "limit code growth by loop unswitching",
+        Int
+        (fn i =>
+          if i >= 0
+            then loopUnswitchFactor := i
+            else usage (concat ["invalid -loop-unswitch-factor: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
         boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",

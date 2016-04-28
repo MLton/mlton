@@ -9,7 +9,7 @@
 (* Moves a conditional statement outside a loop by duplicating the loops body
  * under each branch of the conditional.
  *)
-functor LoopUnswitch(S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
+functor LoopUnswitch (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
 struct
 
 open S
@@ -23,7 +23,78 @@ in
    structure Forest = LoopForest
 end
 
+(* Copied from inline.fun *)
+structure Size =
+   struct
+      val check : (int * int option) -> bool =
+         fn (_, NONE) => false
+          | (size, SOME size') => size > size'
+
+      val defaultExpSize : Exp.t -> int = 
+         fn ConApp {args, ...} => 1 + Vector.length args
+          | Const _ => 0
+          | PrimApp {args, ...} => 1 + Vector.length args
+          | Profile _ => 0
+          | Select _ => 1 + 1
+          | Tuple xs => 1 + Vector.length xs
+          | Var _ => 0
+      fun expSize (size, max) (doExp, _) exp =
+         let
+            val size' = doExp exp
+            val size = size + size'
+         in
+            (size, check (size, max))
+         end
+      fun statementSize (size, max) (doExp, doTransfer) =
+         fn Statement.T {exp, ...} => expSize (size, max) (doExp, doTransfer) exp
+      fun statementsSize (size, max) (doExp, doTransfer) statements =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (statements, (size, false), fn (statement, (size, check)) =>
+           if check
+              then escape (size, check)
+           else statementSize (size, max) (doExp, doTransfer) statement))
+      val defaultTransferSize =
+         fn Arith {args, ...} => 1 + Vector.length args
+          | Bug => 1
+          | Call {args, ...} => 1 + Vector.length args
+          | Case {cases, ...} => 1 + Cases.length cases
+          | Goto {args, ...} => 1 + Vector.length args
+          | Raise xs => 1 + Vector.length xs
+          | Return xs => 1 + Vector.length xs
+          | Runtime {args, ...} => 1 + Vector.length args
+      fun transferSize (size, max) (_, doTransfer) transfer =
+         let
+            val size' = doTransfer transfer
+            val size = size + size'
+         in
+            (size, check (size, max))
+         end
+      fun blockSize (size, max) (doExp, doTransfer) =
+         fn Block.T {statements, transfer, ...} =>
+         case statementsSize (size, max) (doExp, doTransfer) statements of
+            (size, true) => (size, true)
+          | (size, false) => transferSize (size, max) (doExp, doTransfer) transfer
+      fun blocksSize (size, max) (doExp, doTransfer) blocks =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (blocks, (size, false), fn (block, (size, check)) =>
+           if check
+              then escape (size, check)
+           else blockSize (size, max) (doExp, doTransfer) block))
+      fun functionSize (size, max) (doExp, doTransfer) f =
+         blocksSize (size, max) (doExp, doTransfer) (#blocks (Function.dest f))
+
+      val default = (defaultExpSize, defaultTransferSize)
+   end
+
+fun ++ (v: int ref): unit =
+  v := (!v) + 1
+
 val optCount = ref 0
+val tooBig = ref 0
 val notInvariant = ref 0
 val multiHeaders = ref 0
 
@@ -42,6 +113,9 @@ fun logsi (s: string, i: int): unit =
 
 fun logs (s: string): unit =
    logsi(s, 0)
+
+fun logstat (x: int ref, s: string): unit =
+  logs (concat[Int.toString(!x), " ", s])
 
 (* If a block was renamed, return the new name. Otherwise return the old name. *)
 fun fixLabel (getBlockInfo: Label.t -> BlockInfo, 
@@ -140,20 +214,20 @@ fun blockVars (block: Block.t): Var.t list =
   end
 
 (* Determine if the block can be unswitched. *)
-fun detectCases(block: Block.t, loopVars: Var.t list) =
+fun detectCases(block: Block.t, loopVars: Var.t list, depth: int) =
    case Block.transfer block of
      Case {cases, default, test} =>
       let
         val blockName = Block.label block
-        val () = logs (concat ["Evaluating ", Label.toString(blockName)])
-        val () = logl(Transfer.layout (Block.transfer block))
+        val () = logsi (concat ["Evaluating ", Label.toString(blockName)], depth)
+        val () = logli(Transfer.layout (Block.transfer block), depth)
         val testIsInvariant = not (List.contains(loopVars, test, Var.equals))
       in
         if testIsInvariant then
-            (logs("Can optimize!") ; SOME(cases, test, default))
+            (logsi("Can optimize!", depth) ; SOME(cases, test, default))
         else
-            (logs ("Can't optimize: condition not invariant") ;
-             notInvariant := (!notInvariant) + 1 ; 
+            (logsi ("Can't optimize: condition not invariant", depth) ;
+             ++notInvariant ; 
              NONE)
       end
    | _ => NONE
@@ -166,7 +240,7 @@ fun findOpportunity(loopBody: Block.t vector,
   let
     val vars = Vector.fold (loopBody, [], (fn (b, lst) => (blockVars b) @ lst))
     val canOptimize = Vector.keepAllMap (loopBody,
-                                         fn b => detectCases (b, vars))
+                                         fn b => detectCases (b, vars, depth + 1))
   in
     if (Vector.length loopHeaders) = 1 then
       case Vector.length canOptimize of
@@ -174,7 +248,7 @@ fun findOpportunity(loopBody: Block.t vector,
       | _ => SOME(Vector.sub(canOptimize, 0), Vector.sub(loopHeaders, 0))
     else
       (logsi ("Can't optimize: loop has more than 1 header", depth) ;
-       multiHeaders := (!multiHeaders) + 1 ;
+       ++multiHeaders ;
        NONE)
   end
 
@@ -224,6 +298,31 @@ fun makeBranch (loopBody: Block.t vector,
       (returnBlocks, newLoopEntryLabel)
    end
 
+fun shouldOptimize (cases, default, loopBlocks, depth) =
+  let
+    val (loopSize', _) = Size.blocksSize (0, NONE) Size.default loopBlocks
+    val loopSize = IntInf.fromInt (loopSize')
+    val branchCount =
+      IntInf.fromInt (
+        (case cases of
+          Cases.Con v => Vector.length v
+        | Cases.Word (_, v) => Vector.length v)
+        +
+        (case default of
+          NONE => 0
+        | SOME _ => 1))
+    val unswitchFactor = IntInf.fromInt (!Control.loopUnswitchFactor)
+    val shouldUnswitch = (branchCount * loopSize) < unswitchFactor
+    val () = logsi ("branches * loop size < unswitch factor = can unswitch",
+                    depth)
+    val () = logsi (concat[IntInf.toString branchCount, " * ",
+                           IntInf.toString loopSize, " < ",
+                           IntInf.toString unswitchFactor, " = ",
+                           Bool.toString shouldUnswitch], depth)
+  in
+    shouldUnswitch
+  end
+
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the program
    and a list of blocks to remove from the program. *)
 fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
@@ -242,72 +341,77 @@ fun optimizeLoop(headerNodes, loopNodes, labelNode, nodeBlock, depth):
     case condLabelOpt of
       NONE => ([], [])
     | SOME((cases, check, default), header) =>
-        let
-         val () = optCount := (!optCount) + 1
-         val mkBranch = fn lbl => makeBranch(blocks, header, lbl, blockInfo,
-                                             setBlockInfo, labelNode, nodeBlock)
-         (* Copy the loop body for the default case if necessary *)
-          val (newDefaultLoop, newDefault) =
-            case default of
-              NONE => ([], NONE)
-            | SOME(defaultLabel) =>
-                let
-                  val (newLoop, newLoopEntryLabel) = mkBranch(defaultLabel)
-                in
-                  (Vector.toList newLoop, SOME(newLoopEntryLabel))
-                end
-          (* Copy the loop body for each case (except default) *)
-          val (newLoops, newCases) =
-            case cases of
-              Cases.Con v =>
-                let
-                  val newLoopCases =
-                    Vector.map(v,
-                      fn (con, lbl) =>
-                        let
-                          val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
-                          val newCase = (con, newLoopEntryLabel)
-                        in
-                          (newLoop, newCase)
-                        end)
-                  val (newLoops, newCaseList) = Vector.unzip newLoopCases
-                  val newCases = Cases.Con (newCaseList)
-                in
-                  (newLoops, newCases)
-                end 
-            | Cases.Word (size, v) =>
-                let
-                  val newLoopCases =
-                    Vector.map(v,
-                      fn (wrd, lbl) =>
-                        let
-                          val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
-                          val newCase = (wrd, newLoopEntryLabel)
-                        in
-                          (newLoop, newCase)
-                        end)
-                  val (newLoops, newCaseList) = Vector.unzip newLoopCases
-                  val newCases = Cases.Word (size, newCaseList)
-                in
-                  (newLoops, newCases)
-                end
+        if shouldOptimize (cases, default, blocks, depth + 1) then
+          let
+           val () = ++optCount
+           val mkBranch = fn lbl => makeBranch(blocks, header, lbl, blockInfo,
+                                               setBlockInfo, labelNode, nodeBlock)
+           (* Copy the loop body for the default case if necessary *)
+            val (newDefaultLoop, newDefault) =
+              case default of
+                NONE => ([], NONE)
+              | SOME(defaultLabel) =>
+                  let
+                    val (newLoop, newLoopEntryLabel) = mkBranch(defaultLabel)
+                  in
+                    (Vector.toList newLoop, SOME(newLoopEntryLabel))
+                  end
+            (* Copy the loop body for each case (except default) *)
+            val (newLoops, newCases) =
+              case cases of
+                Cases.Con v =>
+                  let
+                    val newLoopCases =
+                      Vector.map(v,
+                        fn (con, lbl) =>
+                          let
+                            val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
+                            val newCase = (con, newLoopEntryLabel)
+                          in
+                            (newLoop, newCase)
+                          end)
+                    val (newLoops, newCaseList) = Vector.unzip newLoopCases
+                    val newCases = Cases.Con (newCaseList)
+                  in
+                    (newLoops, newCases)
+                  end 
+              | Cases.Word (size, v) =>
+                  let
+                    val newLoopCases =
+                      Vector.map(v,
+                        fn (wrd, lbl) =>
+                          let
+                            val (newLoop, newLoopEntryLabel) = mkBranch(lbl)
+                            val newCase = (wrd, newLoopEntryLabel)
+                          in
+                            (newLoop, newCase)
+                          end)
+                    val (newLoops, newCaseList) = Vector.unzip newLoopCases
+                    val newCases = Cases.Word (size, newCaseList)
+                  in
+                    (newLoops, newCases)
+                  end
 
-         (* Produce a single list of new blocks *)
-          val loopBlocks = Vector.fold(newLoops, newDefaultLoop, fn (loop, acc) =>
-                              acc @ (Vector.toList loop))
+           (* Produce a single list of new blocks *)
+            val loopBlocks = Vector.fold(newLoops, newDefaultLoop, fn (loop, acc) =>
+                                acc @ (Vector.toList loop))
 
-          (* Produce a new entry block with the same label as the old loop header *)
-          val newTransfer = Transfer.Case {cases = newCases,
-                                           default = newDefault,
-                                           test = check}
-          val newEntry = Block.T {args = Block.args header,
-                                  label = Block.label header,
-                                  statements = Vector.new0(),
-                                  transfer = newTransfer}
-          val () = destroy()
-        in
-          (newEntry::loopBlocks, (Vector.toList blockNames))
-        end
+            (* Produce a new entry block with the same label as the old loop header *)
+            val newTransfer = Transfer.Case {cases = newCases,
+                                             default = newDefault,
+                                             test = check}
+            val newEntry = Block.T {args = Block.args header,
+                                    label = Block.label header,
+                                    statements = Vector.new0(),
+                                    transfer = newTransfer}
+            val () = destroy()
+          in
+            (newEntry::loopBlocks, (Vector.toList blockNames))
+          end
+        else
+          (logsi ("Can't unswitch: too big", depth) ;
+           ++tooBig ;
+           ([], []))
   end
 
 (* Traverse sub-forests until the innermost loop is found. *)
@@ -332,7 +436,6 @@ and traverseLoop ({headers, child},
 (* Traverse the top-level loop forest. *)
 fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list =
   let
-    val () = logs (concat[(Int.toString (Vector.length loops)), " total loops"])
     (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
@@ -352,8 +455,11 @@ fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list
 fun optimizeFunction(function: Function.t): Function.t =
    let
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
-      val {args, blocks, mayInline, name, raises, returns, start} = Function.dest function
-      val () = logl (Func.layout name)
+      val {args, blocks, mayInline, name, raises, returns, start} =
+        Function.dest function
+      val (fsize, _) = Size.functionSize (0, NONE) Size.default function
+      val () = logs (concat["Optimizing function: ", Func.toString name,
+                            " of size ", Int.toString fsize])
       val root = labelNode start
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
       val newBlocks = traverseForest((Forest.dest forest), blocks, labelNode, nodeBlock)
@@ -371,6 +477,7 @@ fun optimizeFunction(function: Function.t): Function.t =
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val () = optCount := 0
+      val () = tooBig := 0
       val () = notInvariant := 0
       val () = multiHeaders := 0
       val () = logs "Unswitching loops"
@@ -378,9 +485,14 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val restore = restoreFunction {globals = globals}
       val () = logs "Performing SSA restore"
       val cleanedFunctions = List.map (optimizedFunctions, restore)
-      val () = logs (concat[Int.toString(!optCount), " loops optimized"])
-      val () = logs (concat[Int.toString(!notInvariant), " loops had variant conditions"])
-      val () = logs (concat[Int.toString(!multiHeaders), " loops had multiple headers"])
+      val () = logstat (optCount,
+                        "loops optimized")
+      val () = logstat (tooBig,
+                        "loops too big to unswitch")
+      val () = logstat (notInvariant,
+                        "loops had variant conditions")
+      val () = logstat (multiHeaders,
+                        "loops had multiple headers")
       val () = logs "Done."
    in
       Program.T {datatypes = datatypes,

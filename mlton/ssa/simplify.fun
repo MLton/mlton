@@ -55,6 +55,10 @@ val ssaPassesDefault =
     *     slots of tuples that are constant useless
     *)
    {name = "useless", doit = Useless.transform} ::
+   (* loopUnroll should run
+    *   - after constants have been globalized
+    *)
+   {name = "loopUnroll1", doit = LoopUnroll.transform} ::
    {name = "removeUnused2", doit = RemoveUnused.transform} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform} ::
    (* polyEqual should run
@@ -73,8 +77,8 @@ val ssaPassesDefault =
     *   - after loop invariant code motion so invariant conditions are obvious 
     *   - before a knownCase pass to cleanup after unswitching
     *)
-   {name = "loopUnswitch", doit = LoopUnswitch.transform} ::
-   {name = "knownCase", doit = KnownCase.transform} ::
+   {name = "loopUnswitch1", doit = LoopUnswitch.transform} ::
+   {name = "knownCase1", doit = KnownCase.transform} ::
    {name = "contify2", doit = Contify.transform} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
@@ -94,8 +98,8 @@ val ssaPassesDefault =
    {name = "redundant", doit = Redundant.transform} ::
    {name = "loopUnswitch2", doit = LoopUnswitch.transform} ::
    {name = "knownCase2", doit = KnownCase.transform} ::
+   {name = "loopUnroll2", doit = LoopUnroll.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
-   {name = "loopUnroll", doit = LoopUnroll.transform} ::
    nil
 
 val ssaPassesMinimal =
