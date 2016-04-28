@@ -133,7 +133,6 @@ val unsupported = ref 0
 val ccTransfer = ref 0
 val varBound = ref 0
 val infinite = ref 0
-val z = ref 0
 val histogram = ref (Histogram.new ())
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
@@ -1252,13 +1251,8 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                               Type.Word wsize => wsize
                             | _ => raise Fail "Argument is not of type word"
             in
-              if not (!z < !Control.floop) then
-                (logs("Skipping") ;
-                ([], []))
-              else
               if totalUnroll then
                 let
-                  val () = ++z
                   val () = ++total
                   val () = logsi ("Completely unrolling loop", depth)
                   val newEntry = Label.newNoname()
@@ -1290,7 +1284,6 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                 end
               else
                 let
-                  val () = ++z
                   val () = ++partial
                   val () = logsi ("Partially unrolling loop", depth)
                   val () = logsi (concat["Body expansion: ",

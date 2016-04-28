@@ -105,9 +105,6 @@ fun logli (l: Layout.t, i: int): unit =
    (fn display =>
       display(Layout.indent(l, i)))
 
-fun logl(l: Layout.t): unit =
-   logli(l, 0)
-
 fun logsi (s: string, i: int): unit =
    logli((Layout.str s), i)
 
