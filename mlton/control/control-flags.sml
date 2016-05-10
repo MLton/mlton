@@ -836,7 +836,7 @@ val loopPasses = control {name = "loop passes",
                           toString = Int.toString}
 
 val loopUnrollFactor = control {name = "loop unrolling factor",
-                                default = 300,
+                                default = 150,
                                 toString = Int.toString}
 val loopUnswitchFactor = control {name = "loop unswitching factor",
                                   default = 300,
