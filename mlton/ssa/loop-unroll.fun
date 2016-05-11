@@ -1079,24 +1079,24 @@ fun shouldOptimize (iterCount, loopBlocks, depth) =
   let
     val (loopSize', _) = Size.blocksSize (0, NONE) Size.default loopBlocks
     val loopSize = IntInf.fromInt loopSize'
-    val unrollFactor = IntInf.fromInt (!Control.loopUnrollFactor)
+    val unrollLimit = IntInf.fromInt (!Control.loopUnrollLimit)
     val () = logsi ("iterations * loop size < unroll factor = can total unroll",
                     depth)
-    val canTotalUnroll = (iterCount * loopSize) < unrollFactor
+    val canTotalUnroll = (iterCount * loopSize) < unrollLimit
     val () = logsi (concat[IntInf.toString iterCount, " * ",
                            IntInf.toString loopSize, " < ",
-                           IntInf.toString unrollFactor, " = ",
+                           IntInf.toString unrollLimit, " = ",
                            Bool.toString canTotalUnroll], depth)
   in
     if (iterCount = 1) orelse canTotalUnroll then
       (* Loop runs once or it's small enough to unroll *)
       (true, 0, 0, 0)
-    else if loopSize >= unrollFactor then
+    else if loopSize >= unrollLimit then
       (* Loop is too big to unroll at all, peel off 1 iteration *)
       (false, 1, iterCount - 1, 1)
     else
       let
-        val exBodySize = unrollFactor div loopSize
+        val exBodySize = unrollLimit div loopSize
         val exIters = iterCount div exBodySize
         val leftovers = iterCount - (exIters * exBodySize)
       in
@@ -1484,7 +1484,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = infinite := 0
       val () = histogram := Histogram.new ()
       val () = logs (concat["Unrolling loops. Unrolling factor = ",
-                    Int.toString (!Control.loopUnrollFactor)])
+                    Int.toString (!Control.loopUnrollLimit)])
       val optimizedFunctions = List.map (functions, optimizeFunction loadGlobal)
       val restore = restoreFunction {globals = globals}
       val () = logs "Performing SSA restore"

@@ -92,13 +92,14 @@ val ssaPassesDefault =
    {name = "localFlatten3", doit = LocalFlatten.transform} ::
    {name = "combineConversions", doit = CombineConversions.transform} ::
    {name = "commonArg", doit = CommonArg.transform} ::
-   {name = "commonSubexp", doit = CommonSubexp.transform} ::
+   {name = "commonSubexp1", doit = CommonSubexp.transform} ::
    {name = "commonBlock", doit = CommonBlock.transform} ::
    {name = "redundantTests", doit = RedundantTests.transform} ::
    {name = "redundant", doit = Redundant.transform} ::
    {name = "loopUnswitch2", doit = LoopUnswitch.transform} ::
    {name = "knownCase2", doit = KnownCase.transform} ::
    {name = "loopUnroll2", doit = LoopUnroll.transform} ::
+   {name = "commonSubexp2", doit = CommonSubexp.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
    nil
 

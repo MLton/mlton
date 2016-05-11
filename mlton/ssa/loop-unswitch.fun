@@ -308,13 +308,13 @@ fun shouldOptimize (cases, default, loopBlocks, depth) =
         (case default of
           NONE => 0
         | SOME _ => 1))
-    val unswitchFactor = IntInf.fromInt (!Control.loopUnswitchFactor)
-    val shouldUnswitch = (branchCount * loopSize) < unswitchFactor
+    val unswitchLimit = IntInf.fromInt (!Control.loopUnswitchLimit)
+    val shouldUnswitch = (branchCount * loopSize) < unswitchLimit
     val () = logsi ("branches * loop size < unswitch factor = can unswitch",
                     depth)
     val () = logsi (concat[IntInf.toString branchCount, " * ",
                            IntInf.toString loopSize, " < ",
-                           IntInf.toString unswitchFactor, " = ",
+                           IntInf.toString unswitchLimit, " = ",
                            Bool.toString shouldUnswitch], depth)
   in
     shouldUnswitch
