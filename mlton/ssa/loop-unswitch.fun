@@ -129,10 +129,10 @@ fun fixLabel (getBlockInfo: Label.t -> BlockInfo,
 
 (* Copy an entire loop. *)
 fun copyLoop(blocks: Block.t vector,
-             labels: Label.t vector,
              blockInfo: Label.t -> BlockInfo,
              setBlockInfo: Label.t * BlockInfo -> unit): Block.t vector =
   let
+    val labels = Vector.map (blocks, Block.label)
     (* Assign a new label for each block *)
     val newBlocks = Vector.map (blocks, fn b =>
         let
@@ -151,43 +151,7 @@ fun copyLoop(blocks: Block.t vector,
                                   fn Block.T {args, label, statements, transfer} =>
       let
         val f = fn l => fixLabel(blockInfo, l, labels)
-        val newTransfer =
-          case transfer of
-            Transfer.Arith {args, overflow, prim, success, ty} =>
-              Transfer.Arith {args = args,
-                              overflow = f(overflow),
-                              prim = prim,
-                              success = f(success),
-                              ty = ty}
-          | Transfer.Call {args, func, return} =>
-              let
-                val newReturn =
-                  case return of
-                    Return.NonTail {cont, handler} =>
-                      let
-                        val newHandler = case handler of
-                                           Handler.Handle l => Handler.Handle(f(l))
-                                         | _ => handler
-                      in
-                        Return.NonTail {cont = f(cont), handler = newHandler}
-                      end
-                  | _ => return
-              in
-                Transfer.Call {args = args, func = func, return = newReturn}
-              end
-          | Transfer.Case {cases, default, test} =>
-              let
-                val newCases = Cases.map(cases, f)
-                val newDefault = case default of
-                                   NONE => default
-                                 | SOME(l) => SOME(f(l))
-              in
-                Transfer.Case {cases = newCases, default = newDefault, test = test}
-              end
-          | Transfer.Goto {args, dst} => Transfer.Goto {args = args, dst = f(dst)}
-          | Transfer.Runtime {args, prim, return} =>
-              Transfer.Runtime {args = args, prim = prim, return = f(return)}
-          | _ => transfer
+        val newTransfer = Transfer.replaceLabel(transfer, f)
       in
         Block.T {args = args,
                  label = label,
@@ -261,8 +225,7 @@ fun makeBranch (loopBody: Block.t vector,
    let
       (* Copy the loop body *)
       val loopBodyLabels = Vector.map (loopBody, Block.label)
-      val newLoop = copyLoop(loopBody, loopBodyLabels,
-                             blockInfo, setBlockInfo)
+      val newLoop = copyLoop(loopBody, blockInfo, setBlockInfo)
       (* Set up a goto for the loop *)
       val (newLoopHeaderLabel, _) = blockInfo(Block.label loopHeader)
       val newLoopArgs = Vector.map (Block.args loopHeader,
