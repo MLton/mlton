@@ -133,6 +133,7 @@ val unsupported = ref 0
 val ccTransfer = ref 0
 val varBound = ref 0
 val infinite = ref 0
+val boundDom = ref 0
 val histogram = ref (Histogram.new ())
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
@@ -642,6 +643,29 @@ fun isLoopBranch (loopLabels, cases, default) =
           false
     | _ => false)
 
+fun transfersToHeader (headerLabel, block) =
+  case Block.transfer block of
+    Transfer.Arith {success, ...} =>
+      Label.equals (headerLabel, success)
+  | Transfer.Call {return, ...} =>
+      (case return of
+        Return.NonTail {handler, ...} =>
+          (case handler of
+            Handler.Handle l => Label.equals (headerLabel, l)
+          | _ => false)
+      | _ => false)
+  | Transfer.Case {cases, ...} =>
+      (* We don't have to check default because we know the header isn't nullary *)
+      (case cases of
+        Cases.Con v =>
+          Vector.exists (v, (fn (_, lbl) => Label.equals (headerLabel, lbl)))
+      | Cases.Word (_, v) =>
+          Vector.exists (v, (fn (_, lbl) => Label.equals (headerLabel, lbl))))
+  | Transfer.Goto {dst, ...} =>
+      Label.equals (headerLabel, dst)
+  | Transfer.Runtime {return, ...} =>
+      Label.equals(headerLabel, return)
+  | _ => false
 
 (* Given:
     - a loop phi variable
@@ -653,7 +677,7 @@ fun isLoopBranch (loopLabels, cases, default) =
    Returns:
     - a Loop structure for unrolling that phi var, if one exists *)
 fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
-              loadVar: Var.t * bool -> IntInf.t option, depth) =
+              loadVar: Var.t * bool -> IntInf.t option, domInfo, depth) =
    case entryArg of
       NONE => (logsi ("Can't unroll: entry arg not constant", depth) ;
                ++varEntryArg ;
@@ -795,18 +819,30 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                          NONE)
                     | SOME(bound, block, signed) =>
                         let
+                          val headerTransferBlocks =
+                            Vector.keepAll(loopBody, (fn b =>
+                              transfersToHeader (headerLabel, b)))
+                          val boundDominates = Vector.forall (headerTransferBlocks,
+                            (fn b => List.exists ((domInfo (Block.label b)),
+                              (fn l => Label.equals
+                                ((Block.label block), l)))))
                           val loopLabels = Vector.map (loopBody, Block.label)
                           val (_, _, contIsTrue) =
                                 loopExit (loopLabels, Block.transfer block)
                           val entryVal = if signed then entryXSigned
                                          else entryX
                         in
-                          SOME (argIndex,
-                                block,
-                                Loop.T {start = entryVal,
-                                        step = step,
-                                        bound = bound,
-                                        invert = not contIsTrue})
+                          if boundDominates then
+                            SOME (argIndex,
+                                  block,
+                                  Loop.T {start = entryVal,
+                                          step = step,
+                                          bound = bound,
+                                          invert = not contIsTrue})
+                          else
+                            (logsi ("Can't unroll: bound doesn't dominate", depth) ;
+                             ++boundDom ;
+                             NONE)
                         end
                   end
             end
@@ -832,6 +868,7 @@ fun findOpportunity(functionBody: Block.t vector,
                     loopBody: Block.t vector,
                     loopHeaders: Block.t vector,
                     loadGlobal: Var.t * bool -> IntInf.t option,
+                    domInfo: Label.t -> Label.t list,
                     depth: int):
                     (int * Block.t * Loop.t) option =
    if (Vector.length loopHeaders) = 1 then
@@ -892,7 +929,7 @@ fun findOpportunity(functionBody: Block.t vector,
             (headerArgs, fn (i, arg) => (
                logsi (concat["Checking arg: ", Var.toString (#1 arg)], depth) ;
                checkArg (arg, i, Vector.sub (constantArgs, i),
-                         header, loopBody, loadGlobal, depth + 1)))
+                         header, loopBody, loadGlobal, domInfo, depth + 1)))
       in
         if (Vector.length unrollableArgs) > 0 then
           SOME(Vector.sub (unrollableArgs, 0))
@@ -1205,14 +1242,14 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg,
 (* Attempt to optimize a single loop. Returns a list of blocks to add to the
    program and a list of blocks to remove from the program. *)
 fun optimizeLoop(allBlocks, headerNodes, loopNodes,
-                 nodeBlock, loadGlobal, depth) =
+                 nodeBlock, loadGlobal, domInfo, depth) =
    let
       val () = ++loopCount
       val headers = Vector.map (headerNodes, nodeBlock)
       val loopBlocks = Vector.map (loopNodes, nodeBlock)
       val loopBlockNames = Vector.map (loopBlocks, Block.label)
       val optOpt = findOpportunity (allBlocks, loopBlocks, headers,
-                                    loadGlobal, depth + 1)
+                                    loadGlobal, domInfo, depth + 1)
       val {get = blockInfo: Label.t -> BlockInfo,
          set = setBlockInfo: Label.t * BlockInfo -> unit, destroy} =
             Property.destGetSet(Label.plist,
@@ -1385,15 +1422,15 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
 fun traverseSubForest ({loops, notInLoop},
                        allBlocks,
                        enclosingHeaders,
-                       labelNode, nodeBlock, loadGlobal) =
+                       labelNode, nodeBlock, loadGlobal, domInfo) =
    if (Vector.length loops) = 0 then
       optimizeLoop(allBlocks, enclosingHeaders, notInLoop,
-                   nodeBlock, loadGlobal, 1)
+                   nodeBlock, loadGlobal, domInfo, 1)
    else
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
          let
             val (nBlocks, rBlocks) =
-               traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal)
+               traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal, domInfo)
          in
             ((new @ nBlocks), (remove @ rBlocks))
          end)
@@ -1401,19 +1438,19 @@ fun traverseSubForest ({loops, notInLoop},
 (* Traverse loops in the loop forest. *)
 and traverseLoop ({headers, child},
                   allBlocks,
-                  labelNode, nodeBlock, loadGlobal) =
+                  labelNode, nodeBlock, loadGlobal, domInfo) =
       traverseSubForest ((Forest.dest child), allBlocks,
-                         headers, labelNode, nodeBlock, loadGlobal)
+                         headers, labelNode, nodeBlock, loadGlobal, domInfo)
 
 (* Traverse the top-level loop forest. *)
-fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal) =
+fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal, domInfo) =
   let
     (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =
       Vector.fold(loops, ([], []), fn (loop, (new, remove)) =>
         let
           val (nBlocks, rBlocks) =
-            traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal)
+            traverseLoop(loop, allBlocks, labelNode, nodeBlock, loadGlobal, domInfo)
         in
           ((new @ nBlocks), (remove @ rBlocks))
         end)
@@ -1422,6 +1459,23 @@ fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal) =
     val reducedBlocks = Vector.keepAll(allBlocks, keep)
   in
     (Vector.toList reducedBlocks) @ newBlocks
+  end
+
+fun setDoms tree =
+  let
+    val {get = domInfo: Label.t -> Label.t list,
+         set = setDomInfo: Label.t * Label.t list -> unit, destroy} =
+            Property.destGetSet(Label.plist,
+                                Property.initRaise("domInfo", Label.layout))
+    fun loop (tree, doms) =
+      case tree of
+        Tree.T (block, children) =>
+          (setDomInfo (Block.label block, doms) ;
+           Vector.foreach (children, fn tree => loop(tree,
+                                                     (Block.label block)::doms)))
+    val () = loop (tree, [])
+  in
+    (domInfo, destroy)
   end
 
 (* Performs the optimization on the body of a single function. *)
@@ -1435,8 +1489,11 @@ fun optimizeFunction loadGlobal function =
                             " of size ", Int.toString fsize])
       val root = labelNode start
       val forest = Graph.loopForestSteensgaard(graph, {root = root})
+      val dtree = Function.dominatorTree function
+      val (domInfo, destroy) = setDoms dtree
       val newBlocks = traverseForest((Forest.dest forest),
-                                     blocks, labelNode, nodeBlock, loadGlobal)
+                                     blocks, labelNode, nodeBlock, loadGlobal, domInfo)
+      val () = destroy()
    in
       Function.new {args = args,
                     blocks = Vector.fromList(newBlocks),
@@ -1482,6 +1539,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val () = ccTransfer := 0
       val () = varBound := 0
       val () = infinite := 0
+      val () = boundDom := 0
       val () = histogram := Histogram.new ()
       val () = logs (concat["Unrolling loops. Unrolling factor = ",
                     Int.toString (!Control.loopUnrollLimit)])
@@ -1514,6 +1572,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         "loops had variable bounds")
       val () = logstat (infinite,
                         "infinite loops")
+      val () = logstat (boundDom,
+                        "loops had non-dominating bounds")
       val () = logs ("Iterations: Occurences")
       val () = logs (Histogram.toString (!histogram))
       val () = logs "Done."
