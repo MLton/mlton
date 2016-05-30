@@ -542,7 +542,7 @@ let
             datatype z = datatype R.Statement.t
          in
             case s of
-               Bind {dst = (var, _), _, src} =>
+               Bind {dst = (var, _), src, ...} =>
                   (Vector.new1
                            (M.Statement.move {dst = varOperand var,
                                               src = translateOperand src}))

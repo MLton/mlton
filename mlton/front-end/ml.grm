@@ -13,6 +13,7 @@ local
 in
    val allowOptBar = fn () => current allowOptBar
    val allowOptSemicolon = fn () => current allowOptSemicolon
+   val allowVectorExp = fn () => current allowVectorExp
    val allowRecPunning = fn () => current allowRecPunning
 end
 
@@ -1017,8 +1018,14 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
                                           fixop = Fixop.Op})
         | const                 (Exp.Const const)
         | HASH field            (Exp.Selector field)
-	| HASHBRACKET exp_list RBRACKET (Exp.Vector (Vector.fromList exp_list))
-	| HASHBRACKET RBRACKET (Exp.Vector (Vector.new0 ()))
+        | HASHBRACKET exp_list RBRACKET (if allowVectorExp ()
+                                         then ()
+                                         else error (reg (HASHBRACKETleft, RBRACKETright), "Vector Expressions disallowed, compile with -default-ann 'allowVectorExp true'")
+                                        ;(Exp.Vector (Vector.fromList exp_list)))
+        | HASHBRACKET RBRACKET (if allowVectorExp ()
+                                         then ()
+                                         else error (reg (HASHBRACKETleft, RBRACKETright), "Vector Expressions disallowed, compile with -default-ann 'allowVectorExp true'")
+                                        ;(Exp.Vector (Vector.new0 ())))
         | LBRACE elabels RBRACE
           (Exp.Record (Record.fromVector (Vector.fromList elabels)))
         | LBRACE RBRACE         (Exp.unit)

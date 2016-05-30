@@ -476,6 +476,9 @@ structure Elaborate =
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)
+         val (allowVectorExp, ac) =
+            makeBool ({name = "allowVectorExp",
+                       default = false, expert = false}, ac)
          val (deadCode, ac) =
             makeBool ({name = "deadCode", 
                        default = false, expert = true}, ac)
