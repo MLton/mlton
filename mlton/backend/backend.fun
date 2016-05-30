@@ -542,15 +542,10 @@ let
             datatype z = datatype R.Statement.t
          in
             case s of
-               Bind {dst = (var, _), isMutable, src} =>
-                  if isMutable
-                     orelse (case #operand (varInfo var) of
-                                VarOperand.Const _ => false
-                              | _ => true)
-                     then (Vector.new1
+               Bind {dst = (var, _), _, src} =>
+                  (Vector.new1
                            (M.Statement.move {dst = varOperand var,
                                               src = translateOperand src}))
-                  else Vector.new0 ()
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,
