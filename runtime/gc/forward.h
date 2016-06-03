@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,8 +15,6 @@ struct GC_forwardState {
   pointer toStart;
   pointer toLimit;
 };
-
-#define GC_FORWARDED ~((GC_header)0)
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 

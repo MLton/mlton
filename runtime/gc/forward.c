@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -40,9 +40,9 @@ void forwardObjptr (GC_state s, objptr *opp) {
              (uintptr_t)opp, op, (uintptr_t)p);
   assert (isObjptrInFromSpace (s, *opp));
   header = getHeader (p);
-  if (DEBUG_DETAILED and header == GC_FORWARDED)
+  if (DEBUG_DETAILED and not (GC_VALID_HEADER_MASK & header))
     fprintf (stderr, "  already FORWARDED\n");
-  if (header != GC_FORWARDED) { /* forward the object */
+  if (GC_VALID_HEADER_MASK & header) { /* forward the object */
     size_t size, skip;
 
     size_t headerBytes, objectBytes;
@@ -110,16 +110,16 @@ void forwardObjptr (GC_state s, objptr *opp) {
           fprintf (stderr, "not linking\n");
       }
     }
-    /* Store the forwarding pointer in the old object. */
-    *((GC_header*)(p - GC_HEADER_SIZE)) = GC_FORWARDED;
-    *((objptr*)p) = pointerToObjptr (s->forwardState.back + headerBytes,
-                                     s->forwardState.toStart);
+    /* Store the forwarding pointer in the old object header. */
+    *((objptr*)(p - GC_HEADER_SIZE)) = pointerToObjptr (s->forwardState.back + headerBytes,
+                                                        s->forwardState.toStart);
+    assert (not (GC_VALID_HEADER_MASK & getHeader (p)));
     /* Update the back of the queue. */
     s->forwardState.back += size + skip;
     assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE,
                        s->alignment));
   }
-  *opp = *((objptr*)p);
+  *opp = *((objptr*)(p - GC_HEADER_SIZE));
   if (DEBUG_DETAILED)
     fprintf (stderr,
              "forwardObjptr --> *opp = "FMTPTR"\n",
