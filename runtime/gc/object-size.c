@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,11 +13,6 @@ size_t sizeofArrayNoHeader (GC_state s,
   size_t result;
 
   result = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-  /* Very small (including empty) arrays have OBJPTR_SIZE bytes for
-   * the forwarding pointer. 
-   */
-  if (result < OBJPTR_SIZE) 
-    result = OBJPTR_SIZE;
   return alignWithExtra (s, result, GC_ARRAY_HEADER_SIZE);
 }
 

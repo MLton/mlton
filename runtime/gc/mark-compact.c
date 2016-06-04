@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -162,16 +162,11 @@ thread:
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
                  (uintptr_t)p, (uintmax_t)size);
-      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
+      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE) {
         pointer newArray = endOfLastMarked;
         /* Compress all of the unmarked into one vector.  We require
-         * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
-         * because that is the smallest possible array.  You cannot
-         * use GC_ARRAY_HEADER_SIZE because even very small (including
-         * zero-length) arrays require extra space for the forwarding
-         * pointer.  If you did use GC_ARRAY_HEADER_SIZE,
-         * updateBackwardPointersAndSlideForMarkCompact would skip the
-         * extra space and be completely busted.
+         * GC_ARRAY_HEADER_SIZE space to be available because that is
+         * the smallest possible array.
          */
         if (DEBUG_MARK_COMPACT)
           fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %"PRIuMAX")\n",
