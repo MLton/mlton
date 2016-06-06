@@ -25,9 +25,8 @@ pointer GC_arrayAllocate (GC_state s,
              (uintmax_t)ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   /* Check for overflow when computing arraySize.
-   * Note: bytesPerElement > 0
    */
-  if (numElements > (SIZE_MAX / bytesPerElement)) {
+  if (bytesPerElement > 0 and numElements > (SIZE_MAX / bytesPerElement)) {
     goto doOverflow;
   }
   arraySize = bytesPerElement * numElements;
