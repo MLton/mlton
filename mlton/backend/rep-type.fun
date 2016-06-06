@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -395,18 +395,16 @@ structure ObjectType =
                let
                   val b = Type.width elt
                in
-                  Bits.> (b, Bits.zero)
-                  andalso Bits.isByteAligned b
+                  Bits.isByteAligned b
                end
           | Normal {ty, ...} =>
                let
                   val b = Bits.+ (Type.width ty,
                                   Type.width (Type.objptrHeader ()))
                in
-                  not (Type.isUnit ty) 
-                  andalso (case !Control.align of
-                              Control.Align4 => Bits.isWord32Aligned b
-                            | Control.Align8 => Bits.isWord64Aligned b)
+                  case !Control.align of
+                     Control.Align4 => Bits.isWord32Aligned b
+                   | Control.Align8 => Bits.isWord64Aligned b
                end
           | Stack => true
           | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
