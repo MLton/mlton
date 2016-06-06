@@ -834,20 +834,18 @@ structure ObjptrRep =
                           Bytes.- (alignWidth, width)
                        end
                else let
-                       (* An object needs space for a forwarding objptr. *)
-                       val width' = Bytes.max (width, Runtime.objptrSize ())
                        (* Note that with Align8 and objptrSize == 64bits,
                         * the following ensures that objptrs will be
                         * mod 8 aligned.
                         *)
-                       val width'' = Bytes.+ (width', Runtime.headerSize ())
-                       val alignWidth'' =
+                       val width' = Bytes.+ (width, Runtime.headerSize ())
+                       val alignWidth' =
                           case !Control.align of
-                             Control.Align4 => Bytes.alignWord32 width''
-                           | Control.Align8 => Bytes.alignWord64 width''
-                       val alignWidth' = Bytes.- (alignWidth'', Runtime.headerSize ())
+                             Control.Align4 => Bytes.alignWord32 width'
+                           | Control.Align8 => Bytes.alignWord64 width'
+                       val alignWidth = Bytes.- (alignWidth', Runtime.headerSize ())
                     in
-                       Bytes.- (alignWidth', width)
+                       Bytes.- (alignWidth, width)
                     end
             val (components, selects) =
                if Bytes.isZero padBytes
@@ -895,13 +893,6 @@ structure ObjptrRep =
                   end
             val componentsTy =
                Type.seq (Vector.map (components, Component.ty o #component))
-            (* If there are no components, then add a pad. *)
-            val componentsTy =
-               if Bits.isZero (Type.width componentsTy)
-                  then Type.zero (case !Control.align of
-                                     Control.Align4 => Bits.inWord32
-                                   | Control.Align8 => Bits.inWord64)
-               else componentsTy
          in
             T {components = components,
                componentsTy = componentsTy,
@@ -2624,14 +2615,10 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                     TupleRep.ty tr
                                                | TupleRep.Indirect opr =>
                                                     ObjptrRep.componentsTy opr
-                                           val elt =
-                                              if Type.isUnit ty
-                                                 then Type.zero Bits.inByte
-                                              else ty
                                         in
                                            SOME (opt,
                                                  ObjectType.Array
-                                                 {elt = elt,
+                                                 {elt = ty,
                                                   hasIdentity = hasIdentity})
                                         end)
                                  in
