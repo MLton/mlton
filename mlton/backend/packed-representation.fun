@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -341,15 +342,14 @@ structure WordRep =
                 in
                    (SOME acc, Bits.+ (shift, Rep.width rep), ss :: statements)
                 end)
-            val (src, statements) =
-               case accOpt of
-                  NONE => (Operand.word (WordX.zero (WordSize.fromBits bits)), [])
-                | SOME acc => (acc, statements)
             val statements =
-               [Bind {dst = (dstVar, dstTy),
-                      isMutable = false,
-                      src = src}]
-               :: statements
+               case accOpt of
+                  NONE => []
+                | SOME src =>
+                     [Bind {dst = (dstVar, dstTy),
+                            isMutable = false,
+                            src = src}]
+                     :: statements
          in
             List.fold (statements, [], fn (ss, ac) => List.fold (ss, ac, op ::))
          end
@@ -965,14 +965,18 @@ structure ObjptrRep =
                 let
                    val tmpVar = Var.newNoname ()
                    val tmpTy = Component.ty component
+                   val statements =
+                      Component.tuple (component,
+                                       {dst = (tmpVar, tmpTy), src = src})
                 in
-                   Component.tuple (component,
-                                    {dst = (tmpVar, tmpTy), src = src})
-                   @ (Move {dst = Offset {base = object,
-                                          offset = offset,
-                                          ty = tmpTy},
-                            src = Var {ty = tmpTy, var = tmpVar}}
-                      :: ac)
+                   if List.isEmpty statements
+                      then ac
+                      else statements
+                           @ (Move {dst = Offset {base = object,
+                                                  offset = offset,
+                                                  ty = tmpTy},
+                                    src = Var {ty = tmpTy, var = tmpVar}}
+                              :: ac)
                 end)
          in
             Object {dst = (dst, ty),
