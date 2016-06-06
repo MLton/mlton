@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2014 Matthew Fluet.
+/* Copyright (C) 2011-2012,2014,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -21,11 +21,7 @@ size_t sizeofInitialBytesLive (GC_state s) {
     dataBytes =
       s->vectorInits[i].elementSize
       * s->vectorInits[i].length;
-    total += align (GC_ARRAY_HEADER_SIZE
-                    + ((dataBytes < OBJPTR_SIZE)
-                       ? OBJPTR_SIZE
-                       : dataBytes),
-                    s->alignment);
+    total += align (GC_ARRAY_HEADER_SIZE + dataBytes, s->alignment);
   }
   return total;
 }
@@ -46,11 +42,7 @@ void initVectors (GC_state s) {
 
     elementSize = inits[i].elementSize;
     dataBytes = elementSize * inits[i].length;
-    objectSize = align (GC_ARRAY_HEADER_SIZE
-                        + ((dataBytes < OBJPTR_SIZE)
-                           ? OBJPTR_SIZE
-                           : dataBytes),
-                        s->alignment);
+    objectSize = align (GC_ARRAY_HEADER_SIZE + dataBytes, s->alignment);
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
     *((GC_arrayCounter*)(frontier)) = 0;
     frontier = frontier + GC_ARRAY_COUNTER_SIZE;
