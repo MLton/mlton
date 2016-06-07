@@ -27,7 +27,6 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/metadata/metadata-$(METADATA_SIZE).sml
       ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
@@ -137,7 +136,6 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
@@ -170,7 +168,6 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
@@ -231,7 +228,6 @@ in
       ../config/bind/real-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
