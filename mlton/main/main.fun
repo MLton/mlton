@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2015 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2016 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1007,6 +1007,7 @@ fun commandLine (args: string list): unit =
              cptrdiff = lookup "cptrdiff",
              csize = lookup "csize",
              header = lookup "header",
+             metaData = lookup "metaData",
              mplimb = lookup "mplimb",
              objptr = lookup "objptr",
              seqIndex = lookup "seqIndex"}

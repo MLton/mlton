@@ -419,8 +419,8 @@ structure ObjectType =
                      case !Control.align of
                         Control.Align4 => Bytes.fromInt 4
                       | Control.Align8 => Bytes.fromInt 8
-                  val bytesHeader =
-                     Bits.toBytes (Control.Target.Size.header ())
+                  val bytesMetaData =
+                     Bits.toBytes (Control.Target.Size.metaData ())
                   val bytesCSize =
                      Bits.toBytes (Control.Target.Size.csize ())
                   val bytesExnStack =
@@ -429,7 +429,7 @@ structure ObjectType =
                      Bits.toBytes (Type.width (Type.stack ()))
 
                   val bytesObject =
-                     Bytes.+ (bytesHeader,
+                     Bytes.+ (bytesMetaData,
                      Bytes.+ (bytesCSize,
                      Bytes.+ (bytesExnStack,
                               bytesStack)))

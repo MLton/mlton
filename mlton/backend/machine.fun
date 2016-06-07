@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -394,7 +394,7 @@ structure Statement =
                    src = Word (WordX.fromIntInf (Word.toIntInf header,
                                                  WordSize.objptrHeader ()))},
              PrimApp {args = Vector.new2 (Frontier,
-                                          bytes (Runtime.headerSize ())),
+                                          bytes (Runtime.metaDataSize ())),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)

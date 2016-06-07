@@ -1,4 +1,5 @@
-/* Copyright (C) 2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -20,6 +21,7 @@ int main (__attribute__ ((unused)) int argc,
   fprintf (sizesFd, "cptrdiff = %"PRIuMAX"\n", (uintmax_t)sizeof(C_Ptrdiff_t));
   fprintf (sizesFd, "csize = %"PRIuMAX"\n",    (uintmax_t)sizeof(C_Size_t));
   fprintf (sizesFd, "header = %"PRIuMAX"\n",   (uintmax_t)sizeof(GC_header));
+  fprintf (sizesFd, "metaData = %"PRIuMAX"\n", (uintmax_t)GC_NORMAL_METADATA_SIZE);
   fprintf (sizesFd, "mplimb = %"PRIuMAX"\n",   (uintmax_t)sizeof(C_MPLimb_t));
   fprintf (sizesFd, "objptr = %"PRIuMAX"\n",   (uintmax_t)sizeof(objptr));
   fprintf (sizesFd, "seqIndex = %"PRIuMAX"\n", (uintmax_t)sizeof(GC_arrayLength));

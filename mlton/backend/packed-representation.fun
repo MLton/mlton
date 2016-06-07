@@ -838,12 +838,12 @@ structure ObjptrRep =
                         * the following ensures that objptrs will be
                         * mod 8 aligned.
                         *)
-                       val width' = Bytes.+ (width, Runtime.headerSize ())
+                       val width' = Bytes.+ (width, Runtime.metaDataSize ())
                        val alignWidth' =
                           case !Control.align of
                              Control.Align4 => Bytes.alignWord32 width'
                            | Control.Align8 => Bytes.alignWord64 width'
-                       val alignWidth = Bytes.- (alignWidth', Runtime.headerSize ())
+                       val alignWidth = Bytes.- (alignWidth', Runtime.metaDataSize ())
                     in
                        Bytes.- (alignWidth, width)
                     end
@@ -972,7 +972,7 @@ structure ObjptrRep =
          in
             Object {dst = (dst, ty),
                     header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
-                    size = Bytes.+ (Type.bytes componentsTy, Runtime.headerSize ())}
+                    size = Bytes.+ (Type.bytes componentsTy, Runtime.metaDataSize ())}
             :: stores
          end
 
