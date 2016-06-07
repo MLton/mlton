@@ -7,17 +7,17 @@
  * See the file MLton-LICENSE for details.
  */
 
-size_t sizeofArrayNoHeader (GC_state s, 
-                            GC_arrayLength numElements,
-                            uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
+size_t sizeofArrayNoMetaData (GC_state s,
+                              GC_arrayLength numElements,
+                              uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
   size_t result;
 
   result = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-  return alignWithExtra (s, result, GC_ARRAY_HEADER_SIZE);
+  return alignWithExtra (s, result, GC_ARRAY_METADATA_SIZE);
 }
 
-size_t sizeofStackNoHeader (__attribute__ ((unused)) GC_state s,
-                            GC_stack stack) {
+size_t sizeofStackNoMetaData (__attribute__ ((unused)) GC_state s,
+                              GC_stack stack) {
   size_t result;
 
   result = sizeof (struct GC_stack) + stack->reserved;
@@ -25,7 +25,7 @@ size_t sizeofStackNoHeader (__attribute__ ((unused)) GC_state s,
 }
 
 size_t sizeofObject (GC_state s, pointer p) {
-  size_t headerBytes, objectBytes;
+  size_t metaDataBytes, objectBytes;
   GC_header header;
   GC_objectTypeTag tag;
   uint16_t bytesNonObjptrs, numObjptrs;
@@ -33,16 +33,16 @@ size_t sizeofObject (GC_state s, pointer p) {
   header = getHeader (p);
   splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { 
-    headerBytes = GC_NORMAL_HEADER_SIZE;
+    metaDataBytes = GC_NORMAL_METADATA_SIZE;
     objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   } else if (ARRAY_TAG == tag) {
-    headerBytes = GC_ARRAY_HEADER_SIZE;
-    objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
-                                       bytesNonObjptrs, numObjptrs);
+    metaDataBytes = GC_ARRAY_METADATA_SIZE;
+    objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+                                         bytesNonObjptrs, numObjptrs);
   } else { /* Stack. */
     assert (STACK_TAG == tag);
-    headerBytes = GC_STACK_HEADER_SIZE;
-    objectBytes = sizeofStackNoHeader (s, (GC_stack)p);
+    metaDataBytes = GC_STACK_METADATA_SIZE;
+    objectBytes = sizeofStackNoMetaData (s, (GC_stack)p);
   }
-  return headerBytes + objectBytes;
+  return metaDataBytes + objectBytes;
 }

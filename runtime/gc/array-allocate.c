@@ -30,10 +30,10 @@ pointer GC_arrayAllocate (GC_state s,
     goto doOverflow;
   }
   arraySize = bytesPerElement * numElements;
-  if (arraySize > SIZE_MAX - GC_ARRAY_HEADER_SIZE) {
+  if (arraySize > SIZE_MAX - GC_ARRAY_METADATA_SIZE) {
     goto doOverflow;
   }
-  arraySize += GC_ARRAY_HEADER_SIZE;
+  arraySize += GC_ARRAY_METADATA_SIZE;
   arraySizeAligned = align (arraySize, s->alignment);
   if (arraySizeAligned < arraySize) {
     goto doOverflow;

@@ -113,7 +113,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       assert (p == last);
       p -= dataBytes;
     }
-    p += alignWithExtra (s, dataBytes, GC_ARRAY_HEADER_SIZE);
+    p += alignWithExtra (s, dataBytes, GC_ARRAY_METADATA_SIZE);
   } else { /* stack */
     GC_stack stack; 
     pointer top, bottom; 

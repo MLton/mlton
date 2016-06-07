@@ -123,7 +123,7 @@ thread:
       assert (GC_VALID_HEADER_MASK & header);
       assert (MARK_MASK & header);
 
-      size_t headerBytes, objectBytes;
+      size_t metaDataBytes, objectBytes;
       GC_objectTypeTag tag;
       uint16_t bytesNonObjptrs, numObjptrs;
 
@@ -132,14 +132,14 @@ thread:
 
       /* Compute the space taken by the header and object body. */
       if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
-        headerBytes = GC_NORMAL_HEADER_SIZE;
+        metaDataBytes = GC_NORMAL_METADATA_SIZE;
         objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
         skipFront = 0;
         skipGap = 0;
       } else if (ARRAY_TAG == tag) {
-        headerBytes = GC_ARRAY_HEADER_SIZE;
-        objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
-                                           bytesNonObjptrs, numObjptrs);
+        metaDataBytes = GC_ARRAY_METADATA_SIZE;
+        objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+                                             bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */
@@ -148,7 +148,7 @@ thread:
         GC_stack stack;
 
         assert (STACK_TAG == tag);
-        headerBytes = GC_STACK_HEADER_SIZE;
+        metaDataBytes = GC_STACK_METADATA_SIZE;
         stack = (GC_stack)p;
         current = currentStack == stack;
 
@@ -158,14 +158,14 @@ thread:
         skipFront = reservedOld - stack->used;
         skipGap = reservedOld - reservedNew;
       }
-      size = headerBytes + objectBytes;
+      size = metaDataBytes + objectBytes;
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
                  (uintptr_t)p, (uintmax_t)size);
-      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE) {
+      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_METADATA_SIZE) {
         pointer newArray = endOfLastMarked;
         /* Compress all of the unmarked into one vector.  We require
-         * GC_ARRAY_HEADER_SIZE space to be available because that is
+         * GC_ARRAY_METADATA_SIZE space to be available because that is
          * the smallest possible array.
          */
         if (DEBUG_MARK_COMPACT)
@@ -175,7 +175,7 @@ thread:
         *((GC_arrayCounter*)(newArray)) = 0;
         newArray += GC_ARRAY_COUNTER_SIZE;
         *((GC_arrayLength*)(newArray)) =
-          ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
+          ((size_t)(front - endOfLastMarked)) - GC_ARRAY_METADATA_SIZE;
         newArray += GC_ARRAY_LENGTH_SIZE;
         *((GC_header*)(newArray)) = GC_WORD8_VECTOR_HEADER;
       }
@@ -254,7 +254,7 @@ unmark:
       assert (GC_VALID_HEADER_MASK & header);
       assert (MARK_MASK & header);
 
-      size_t headerBytes, objectBytes;
+      size_t metaDataBytes, objectBytes;
       GC_objectTypeTag tag;
       uint16_t bytesNonObjptrs, numObjptrs;
 
@@ -263,14 +263,14 @@ unmark:
 
       /* Compute the space taken by the header and object body. */
       if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
-        headerBytes = GC_NORMAL_HEADER_SIZE;
+        metaDataBytes = GC_NORMAL_METADATA_SIZE;
         objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
         skipFront = 0;
         skipGap = 0;
       } else if (ARRAY_TAG == tag) {
-        headerBytes = GC_ARRAY_HEADER_SIZE;
-        objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
-                                           bytesNonObjptrs, numObjptrs);
+        metaDataBytes = GC_ARRAY_METADATA_SIZE;
+        objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+                                             bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */
@@ -279,7 +279,7 @@ unmark:
         GC_stack stack;
 
         assert (STACK_TAG == tag);
-        headerBytes = GC_STACK_HEADER_SIZE;
+        metaDataBytes = GC_STACK_METADATA_SIZE;
         stack = (GC_stack)p;
         current = currentStack == stack;
 
@@ -298,7 +298,7 @@ unmark:
         skipFront = reservedOld - stack->used;
         skipGap = reservedOld - reservedNew;
       }
-      size = headerBytes + objectBytes;
+      size = metaDataBytes + objectBytes;
       /* unmark */
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "unmarking "FMTPTR" of size %"PRIuMAX"\n",
