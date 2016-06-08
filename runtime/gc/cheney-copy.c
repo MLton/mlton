@@ -21,12 +21,11 @@ void updateWeaksForCheneyCopy (GC_state s) {
     if (DEBUG_WEAK)
       fprintf (stderr, "updateWeaksForCheneyCopy  w = "FMTPTR"  ", (uintptr_t)w);
     p = objptrToPointer (w->objptr, s->heap.start);
-    if (not (GC_VALID_HEADER_MASK & getHeader (p))) {
+    if (hasFwdPtr(p)) {
       if (DEBUG_WEAK)
         fprintf (stderr, "forwarded from "FMTOBJPTR" to "FMTOBJPTR"\n",
-                 w->objptr,
-                 *((objptr*)(p - GC_HEADER_SIZE)));
-      w->objptr = *((objptr*)(p - GC_HEADER_SIZE));
+                 w->objptr, getFwdPtr(p));
+      w->objptr = getFwdPtr(p);
     } else {
       if (DEBUG_WEAK)
         fprintf (stderr, "cleared\n");

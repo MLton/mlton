@@ -23,6 +23,30 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
 }
 #endif
 
+/* getFwdPtrp (p)
+ *
+ * Returns a pointer to the forwarding pointer for the object pointed to by p.
+ */
+objptr* getFwdPtrp (pointer p) {
+  return (objptr*)(getHeaderp(p));
+}
+
+/* getFwdPtr (p)
+ *
+ * Returns the forwarding pointer for the object pointed to by p.
+ */
+objptr getFwdPtr (pointer p) {
+  return *(getFwdPtrp(p));
+}
+
+/* hasFwdPtr (p)
+ *
+ * Returns true if the object pointed to by p has a valid forwarding pointer.
+ */
+bool hasFwdPtr (pointer p) {
+  return (not (GC_VALID_HEADER_MASK & getHeader(p)));
+}
+
 /* forward (s, opp)
  * Forwards the object pointed to by *opp and updates *opp to point to
  * the new object.
@@ -30,7 +54,6 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
 void forwardObjptr (GC_state s, objptr *opp) {
   objptr op;
   pointer p;
-  GC_header header;
 
   op = *opp;
   p = objptrToPointer (op, s->heap.start);
@@ -39,17 +62,16 @@ void forwardObjptr (GC_state s, objptr *opp) {
              "forwardObjptr  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
   assert (isObjptrInFromSpace (s, *opp));
-  header = getHeader (p);
-  if (DEBUG_DETAILED and not (GC_VALID_HEADER_MASK & header))
+  if (DEBUG_DETAILED and hasFwdPtr(p))
     fprintf (stderr, "  already FORWARDED\n");
-  if (GC_VALID_HEADER_MASK & header) { /* forward the object */
+  if (not (hasFwdPtr(p))) { /* forward the object */
     size_t size, skip;
 
     size_t headerBytes, objectBytes;
     GC_objectTypeTag tag;
     uint16_t bytesNonObjptrs, numObjptrs;
 
-    splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+    splitHeader(s, getHeader(p), &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
     /* Compute the space taken by the header and object body. */
     if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
@@ -111,15 +133,15 @@ void forwardObjptr (GC_state s, objptr *opp) {
       }
     }
     /* Store the forwarding pointer in the old object header. */
-    *((objptr*)(p - GC_HEADER_SIZE)) = pointerToObjptr (s->forwardState.back + headerBytes,
-                                                        s->forwardState.toStart);
-    assert (not (GC_VALID_HEADER_MASK & getHeader (p)));
+    *(getFwdPtrp(p)) = pointerToObjptr (s->forwardState.back + headerBytes,
+                                        s->forwardState.toStart);
+    assert (hasFwdPtr(p));
     /* Update the back of the queue. */
     s->forwardState.back += size + skip;
     assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE,
                        s->alignment));
   }
-  *opp = *((objptr*)(p - GC_HEADER_SIZE));
+  *opp = getFwdPtr(p);
   if (DEBUG_DETAILED)
     fprintf (stderr,
              "forwardObjptr --> *opp = "FMTPTR"\n",
