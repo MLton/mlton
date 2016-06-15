@@ -933,6 +933,7 @@ fun commandLine (args: string list): unit =
           | (Darwin, X86, Executable) => false
           | (Darwin, X86, Archive) => false
           | (Darwin, _, _) => true
+          | (OpenBSD, _, _) => true
             (* On ELF systems, we only need PIC for LibArchive/Library *)
           | (_, _, Library) => true
           | (_, _, LibArchive) => true
