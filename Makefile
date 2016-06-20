@@ -310,7 +310,7 @@ endif
 TEXM := $(TDOC)/examples
 
 GZIP_MAN := true
-ifeq ($(TARGET_OS), solaris)
+ifeq ($(findstring $(TARGET_OS), openbsd solaris), $(TARGET_OS))
 GZIP_MAN := false
 endif
 
