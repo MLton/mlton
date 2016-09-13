@@ -67,9 +67,7 @@ all: $(AOUT)
 
 control/version.sml: control/version_sml.src
 	cat control/version_sml.src |				\
-		sed "s/MLTONVERSION/$$(TZ=UTC git log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$(git status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')/" |	\
-		sed "s/MLTONBUILDDATE/$$(LANG=en_us date)/" |	\
-		sed "s/MLTONBUILDNODE/$$(uname -n)/" >		\
+		sed "s/MLTONVERSION/$$(TZ=UTC git log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$(git status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')/" >	\
 		control/version.sml
 
 front-end/%.lex.sml: front-end/%.lex
