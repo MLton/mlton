@@ -58,7 +58,6 @@ FRONT_END_SOURCES :=		\
 
 SOURCES :=			\
 	$(FILE)			\
-	upgrade-basis.sml	\
 	$(FRONT_END_SOURCES)	\
 	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE) | grep -v " "; fi))
 
@@ -75,18 +74,12 @@ front-end/%.lex.sml: front-end/%.lex
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(MAKE) -C front-end $(<F).sig $(<F).sml
 
-# Pass $(PATH) to upgrade-basis because it is run via
-# #!/usr/bin/env bash, which resets the path.
-upgrade-basis.sml:
-	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >upgrade-basis.sml
-
 mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell mlton -stop f mlton.mlb)
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
 		echo '$$(SML_LIB)/basis/mlton.mlb';				\
 		echo '$$(SML_LIB)/basis/basis.mlb';				\
-		echo 'upgrade-basis.sml';					\
 		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
 		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
 			grep -v 'mlb$$' | 					\
@@ -99,8 +92,6 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 	) > mlton-stubs.mlb
 
 $(AOUT): $(SOURCES)
-	rm -f upgrade-basis.sml
-	$(MAKE) upgrade-basis.sml
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton (takes a while)'
