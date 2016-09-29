@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1634,6 +1634,7 @@ fun ('a, 'b) apply (p: 'a t,
          (case (p, cs) of
              (MLton_eq, [c1, c2]) => eq (c1, c2)
            | (MLton_equal, [c1, c2]) => equal (c1, c2)
+           | (CPointer_equal, [Null, Null]) => bool true
            | (CPointer_fromWord, [Word w]) =>
                  if WordX.isZero w
                     then null
