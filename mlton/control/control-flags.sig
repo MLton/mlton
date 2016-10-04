@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2015 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -97,14 +97,6 @@ signature CONTROL_FLAGS =
             val allowConstant: (bool,bool) t
             val allowFFI: (bool,bool) t
             val allowOverload: (bool,bool) t
-            val allowOptBar: (bool,bool) t
-            val allowOptSemicolon: (bool,bool) t
-            val allowLineComments: (bool,bool) t
-            val allowDoDecls: (bool,bool) t
-            val allowOrPats: (bool,bool) t
-            val allowRecPunning: (bool,bool) t
-            val allowExtendedLiterals: (bool,bool) t
-            val allowSigWithtype: (bool,bool) t
             val allowPrim: (bool,bool) t
             val allowRebindEquals: (bool,bool) t
             val deadCode: (bool,bool) t
@@ -117,6 +109,16 @@ signature CONTROL_FLAGS =
             val sequenceNonUnit: (DiagEIW.t,DiagEIW.t) t
             val valrecConstr: (DiagEIW.t,DiagEIW.t) t
             val warnUnused: (bool,bool) t
+
+            (* Successor ML *)
+            val allowDoDecls: (bool,bool) t
+            val allowExtendedLiterals: (bool,bool) t
+            val allowLineComments: (bool,bool) t
+            val allowOptBar: (bool,bool) t
+            val allowOptSemicolon: (bool,bool) t
+            val allowOrPats: (bool,bool) t
+            val allowRecPunning: (bool,bool) t
+            val allowSigWithtype: (bool,bool) t
 
             val current: ('args, 'st) t -> 'st
             val default: ('args, 'st) t -> 'st
