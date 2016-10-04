@@ -261,7 +261,7 @@ structure Elaborate =
                     newDef: 'st * 'args -> 'st,
                     parseArgs: string list -> 'args option},
                    {parseId: string -> (Id.t list, Id.t) parseResult,
-                    parseIdAndArgs: string -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult,
+                    parseIdAndArgs: string list -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult,
                     withDef: unit -> (unit -> unit),
                     snapshot: unit -> unit -> (unit -> unit)}) =
             let
@@ -290,8 +290,8 @@ structure Elaborate =
                   if String.equals (name', name) 
                      then Good id 
                      else parseId name'
-               val parseIdAndArgs = fn s =>
-                  case String.tokens (s, Char.isSpace) of
+               val parseIdAndArgs = fn ss =>
+                  case ss of
                      name'::args' =>
                         if String.equals (name', name)
                            then 
@@ -327,7 +327,7 @@ structure Elaborate =
                                        Good (id, args)
                                     end
                                | NONE => Bad
-                           else parseIdAndArgs s
+                           else parseIdAndArgs ss
                    | _ => Bad
                val withDef : unit -> (unit -> unit) =
                   fn () =>
@@ -545,16 +545,16 @@ structure Elaborate =
       local
          fun makeDeprecated ({alts: string list,
                               name: string,
-                              parseArgs: string list -> string list option},
+                              parseArgs: string list -> string list list option},
                              {parseId: string -> (Id.t list, Id.t) parseResult,
-                              parseIdAndArgs: string -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult}) =
+                              parseIdAndArgs: string list -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult}) =
             let
                val parseId = fn name' =>
                   if String.equals (name', name) 
                      then Deprecated (List.map (alts, deGood o parseId))
                      else parseId name'
-               val parseIdAndArgs = fn s =>
-                  case String.tokens (s, Char.isSpace) of
+               val parseIdAndArgs = fn ss =>
+                  case ss of
                      name'::args' =>
                         if String.equals (name', name)
                            then 
@@ -562,7 +562,7 @@ structure Elaborate =
                                  SOME alts => 
                                     Deprecated (List.map (alts, deGood o parseIdAndArgs))
                                | NONE => Bad
-                           else parseIdAndArgs s
+                           else parseIdAndArgs ss
                    | _ => Bad
             in
                {parseId = parseId,
@@ -577,7 +577,7 @@ structure Elaborate =
                   fun make b =
                      List.map2
                      (altIds, altArgs b, fn (altId, altArgs) =>
-                      String.concatWith (altId::altArgs, " "))
+                      altId::altArgs)
                in
                   val trueAltIdAndArgs = make true
                   val falseAltIdAndArgs = make false
@@ -617,7 +617,7 @@ structure Elaborate =
                   end
       in
          val parseId = fn s => checkPrefix (s, parseId)
-         val parseIdAndArgs = fn s => checkPrefix (s, parseIdAndArgs)
+         val parseIdAndArgs = fn s => checkPrefix (s, fn s => parseIdAndArgs (String.tokens (s, Char.isSpace)))
       end
 
       val processDefault = fn s =>
