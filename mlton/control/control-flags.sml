@@ -218,8 +218,8 @@ structure Elaborate =
       fun name ctrl = Id.name (id ctrl)
       fun equalsId (ctrl, id') = Id.equals (id ctrl, id')
 
-      datatype ('a, 'b) parseResult =
-         Bad | Deprecated of 'a | Good of 'b | Other
+      datatype 'a parseResult =
+         Bad | Good of 'a | Other | Proxy of 'a list * {deprecated: bool}
       val deGood = 
          fn Good z => z
           | _ => Error.bug "Control.Elaborate.deGood"
@@ -260,8 +260,8 @@ structure Elaborate =
                     newCur: 'st * 'args -> 'st,
                     newDef: 'st * 'args -> 'st,
                     parseArgs: string list -> 'args option},
-                   {parseId: string -> (Id.t list, Id.t) parseResult,
-                    parseIdAndArgs: string list -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult,
+                   {parseId: string -> Id.t parseResult,
+                    parseIdAndArgs: string list -> (Id.t * Args.t) parseResult,
                     withDef: unit -> (unit -> unit),
                     snapshot: unit -> unit -> (unit -> unit)}) =
             let
@@ -546,12 +546,12 @@ structure Elaborate =
          fun makeDeprecated ({alts: string list,
                               name: string,
                               parseArgs: string list -> string list list option},
-                             {parseId: string -> (Id.t list, Id.t) parseResult,
-                              parseIdAndArgs: string list -> ((Id.t * Args.t) list, (Id.t * Args.t)) parseResult}) =
+                             {parseId: string -> Id.t parseResult,
+                              parseIdAndArgs: string list -> (Id.t * Args.t) parseResult}) =
             let
                val parseId = fn name' =>
                   if String.equals (name', name) 
-                     then Deprecated (List.map (alts, deGood o parseId))
+                     then Proxy (List.map (alts, deGood o parseId), {deprecated = true})
                      else parseId name'
                val parseIdAndArgs = fn ss =>
                   case ss of
@@ -560,7 +560,7 @@ structure Elaborate =
                            then 
                               case parseArgs args' of
                                  SOME alts => 
-                                    Deprecated (List.map (alts, deGood o parseIdAndArgs))
+                                    Proxy (List.map (alts, deGood o parseIdAndArgs), {deprecated = true})
                                | NONE => Bad
                            else parseIdAndArgs ss
                    | _ => Bad
@@ -623,21 +623,23 @@ structure Elaborate =
       val processDefault = fn s =>
          case parseIdAndArgs s of
             Bad => Bad
-          | Deprecated alts =>
+          | Good (id, args) => if Args.processDef args then Good id else Bad
+          | Proxy (alts, {deprecated}) =>
                List.fold
-               (alts, Deprecated (List.map (alts, #1)), fn ((_,args),res) =>
+               (alts, Proxy (List.map (alts, #1), {deprecated = deprecated}),
+                fn ((_,args),res) =>
                 if Args.processDef args then res else Bad)
-          | Good (_, args) => if Args.processDef args then Good () else Bad
           | Other => Bad
 
       val processEnabled = fn (s, b) =>
          case parseId s of
             Bad => Bad
-          | Deprecated alts => 
+          | Proxy (alts, {deprecated}) =>
                List.fold
-               (alts, Deprecated alts, fn (id,res) =>
+               (alts, Proxy (alts, {deprecated = deprecated}),
+                fn (id, res) =>
                 if Id.setEnabled (id, b) then res else Bad)
-          | Good id => if Id.setEnabled (id, b) then Good () else Bad
+          | Good id => if Id.setEnabled (id, b) then Good id else Bad
           | Other => Bad
 
       val withDef : (unit -> 'a) -> 'a = fn f =>

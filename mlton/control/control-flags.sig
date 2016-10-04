@@ -126,8 +126,8 @@ signature CONTROL_FLAGS =
             val expert: ('args, 'st) t -> bool
             val name: ('args, 'st) t -> string
 
-            datatype ('a, 'b) parseResult =
-               Bad | Deprecated of 'a | Good of 'b | Other
+            datatype 'a parseResult =
+               Bad | Good of 'a | Other | Proxy of 'a list * {deprecated: bool}
 
             structure Id :
                sig
@@ -135,17 +135,17 @@ signature CONTROL_FLAGS =
                   val name: t -> string
                end
             val equalsId: ('args, 'st) t * Id.t -> bool
-            val parseId: string -> (Id.t list , Id.t) parseResult
+            val parseId: string -> Id.t parseResult
 
             structure Args :
                sig
                   type t
                   val processAnn: t -> (unit -> unit)
                end
-            val parseIdAndArgs: string -> ((Id.t * Args.t) list, Id.t * Args.t) parseResult
+            val parseIdAndArgs: string -> (Id.t * Args.t) parseResult
 
-            val processDefault: string -> (Id.t list, unit) parseResult
-            val processEnabled: string * bool -> (Id.t list, unit) parseResult
+            val processDefault: string -> Id.t parseResult
+            val processEnabled: string * bool -> Id.t parseResult
 
             val withDef: (unit -> 'a) -> 'a
             val snapshot: unit -> (unit -> 'a) -> 'a
