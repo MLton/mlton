@@ -437,6 +437,8 @@ structure Elaborate =
              parseIdAndArgs = fn _ => Bad,
              withDef = fn () => (fn () => ()),
              snapshot = fn () => fn () => (fn () => ())}
+
+
          val (allowConstant, ac) =
             makeBool ({name = "allowConstant", 
                        default = false, expert = true}, ac)
@@ -538,6 +540,11 @@ structure Elaborate =
          val (allowSigWithtype, ac) =
             makeBool ({name = "allowSigWithtype",
                        default = false, expert = false}, ac)
+         val successorMLCtrls =
+            [allowDoDecls, allowExtendedLiterals, allowLineComments,
+             allowOptBar, allowOptSemicolon, allowOrPats, allowRecPunning,
+             allowSigWithtype]
+
 
          val {parseId, parseIdAndArgs, withDef, snapshot} = ac
       end
@@ -609,6 +616,13 @@ structure Elaborate =
       in
          val ac = {parseId = parseId, parseIdAndArgs = parseIdAndArgs}
 
+         (* Successor ML *)
+         val ac =
+            makeProxyBoolSimple ({alts = List.map (successorMLCtrls, id),
+                                  default = false,
+                                  deprecated = false,
+                                  expert = false,
+                                  name = "allowSuccessorML"}, ac)
 
          val {parseId, parseIdAndArgs} = ac
       end

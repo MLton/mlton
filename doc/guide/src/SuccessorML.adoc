@@ -1,19 +1,21 @@
 SuccessorML
 ===========
 
-The purpose of http://successor-ml.org[successor ML], or sML for
-short, is to provide a vehicle for the continued evolution of ML,
-using Standard ML as a starting point. The intention is for successor
-ML to be a living, evolving dialect of ML that is responsive to
-community needs and advances in language design, implementation, and
-semantics.
+The purpose of http://sml-family.org/successor-ml/[successor ML], or
+sML for short, is to provide a vehicle for the continued evolution of
+ML, using Standard ML as a starting point. The intention is for
+successor ML to be a living, evolving dialect of ML that is responsive
+to community needs and advances in language design, implementation,
+and semantics.
 
 == SuccessorML Features in MLton ==
 
 The following SuccessorML features have been implemented in MLton.
-The features are disabled by default, and may be enabled utilizing
-the feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
-which is listed directly after the feature name.
+The features are disabled by default, and may be enabled utilizing the
+feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
+which is listed directly after the feature name.  In addition, the
++allowSuccessorML {false|true}+ annotation can be used to
+simultaneously enable all of the features.
 
 * Do Declarations: +allowDoDecls {false|true}+
 +
