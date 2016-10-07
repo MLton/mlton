@@ -543,24 +543,44 @@ structure Elaborate =
       end
 
       local
-         fun makeDeprecated ({alts: string list,
-                              name: string,
-                              parseArgs: string list -> string list list option},
-                             {parseId: string -> Id.t parseResult,
-                              parseIdAndArgs: string list -> (Id.t * Args.t) parseResult}) =
+         fun makeProxy ({alts: (Id.t * ('args -> string list option)) list,
+                         choices: 'args list option,
+                         deprecated: bool,
+                         expert: bool,
+                         toString: 'args -> string,
+                         name: string,
+                         parseArgs: string list -> 'args option},
+                        {parseId: string -> Id.t parseResult,
+                         parseIdAndArgs: string list -> (Id.t * Args.t) parseResult}) =
             let
+               val () =
+                  if deprecated then () else
+                  List.push
+                  (documentation,
+                   {choices = Option.map (choices, fn cs =>
+                                          List.map (cs, toString)),
+                    expert = expert,
+                    name = name})
                val parseId = fn name' =>
                   if String.equals (name', name) 
-                     then Proxy (List.map (alts, deGood o parseId), {deprecated = true})
+                     then Proxy (List.map (alts, fn (id, _) => id), {deprecated = deprecated})
                      else parseId name'
                val parseIdAndArgs = fn ss =>
                   case ss of
                      name'::args' =>
                         if String.equals (name', name)
-                           then 
+                           then
                               case parseArgs args' of
-                                 SOME alts => 
-                                    Proxy (List.map (alts, deGood o parseIdAndArgs), {deprecated = true})
+                                 SOME v => let
+                                              val alts =
+                                                 List.keepAllMap
+                                                 (alts, fn (id, mkArgs) =>
+                                                  Option.map
+                                                  (mkArgs v, fn ss =>
+                                                   deGood (parseIdAndArgs ((Id.name id)::ss))))
+                                           in
+                                              Proxy (alts, {deprecated = deprecated})
+                                           end
                                | NONE => Bad
                            else parseIdAndArgs ss
                    | _ => Bad
@@ -568,36 +588,28 @@ structure Elaborate =
                {parseId = parseId,
                 parseIdAndArgs = parseIdAndArgs}
             end
-         fun makeDeprecatedBool ({altIds: string list,
-                                  altArgs: bool -> string list list,
-                                  name: string},
-                                 ac) =
-            let
-               local
-                  fun make b =
-                     List.map2
-                     (altIds, altArgs b, fn (altId, altArgs) =>
-                      altId::altArgs)
-               in
-                  val trueAltIdAndArgs = make true
-                  val falseAltIdAndArgs = make false
-               end
-            in
-               makeDeprecated ({alts = altIds,
-                                name = name,
-                                parseArgs = fn args' =>
-                                            case args' of
-                                               [arg'] => 
-                                                  (case Bool.fromString arg' of
-                                                      SOME true => SOME trueAltIdAndArgs
-                                                    | SOME false => SOME falseAltIdAndArgs
-                                                    | NONE => NONE)
-                                             | _ => NONE}, 
-                               ac)
-            end
-         val _ = makeDeprecatedBool
+
+         fun makeProxyBoolSimple ({alts: Id.t list,
+                                   default: bool,
+                                   deprecated: bool,
+                                   expert: bool,
+                                   name: string}, ac) =
+            makeProxy ({alts = List.map (alts, fn id => (id, fn b => SOME [Bool.toString b])),
+                        choices = SOME (if default then [true, false]
+                                                   else [false, true]),
+                        deprecated = deprecated,
+                        expert = expert,
+                        toString = Bool.toString,
+                        name = name,
+                        parseArgs = fn args' =>
+                                    case args' of
+                                       [arg'] => Bool.fromString arg'
+                                     | _ => NONE},
+                       ac)
       in
          val ac = {parseId = parseId, parseIdAndArgs = parseIdAndArgs}
+
+
          val {parseId, parseIdAndArgs} = ac
       end
 
