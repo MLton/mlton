@@ -519,8 +519,8 @@ structure Elaborate =
          val (allowDoDecls, ac) =
             makeBool ({name = "allowDoDecls",
                        default = false, expert = false}, ac)
-         val (allowExtendedLiterals, ac) =
-            makeBool ({name = "allowExtendedLiterals",
+         val (allowExtendedNumConsts, ac) =
+            makeBool ({name = "allowExtendedNumConsts",
                        default = false, expert = false}, ac)
          val (allowLineComments, ac) =
             makeBool ({name = "allowLineComments",
@@ -540,8 +540,10 @@ structure Elaborate =
          val (allowSigWithtype, ac) =
             makeBool ({name = "allowSigWithtype",
                        default = false, expert = false}, ac)
+         val extendedConstsCtrls =
+            [allowExtendedNumConsts]
          val successorMLCtrls =
-            [allowDoDecls, allowExtendedLiterals, allowLineComments,
+            [allowDoDecls, allowExtendedNumConsts, allowLineComments,
              allowOptBar, allowOptSemicolon, allowOrPats, allowRecPunning,
              allowSigWithtype]
 
@@ -617,6 +619,12 @@ structure Elaborate =
          val ac = {parseId = parseId, parseIdAndArgs = parseIdAndArgs}
 
          (* Successor ML *)
+         val ac =
+            makeProxyBoolSimple ({alts = List.map (extendedConstsCtrls, id),
+                                  default = false,
+                                  deprecated = false,
+                                  expert = false,
+                                  name = "allowExtendedConsts"}, ac)
          val ac =
             makeProxyBoolSimple ({alts = List.map (successorMLCtrls, id),
                                   default = false,

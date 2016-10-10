@@ -39,14 +39,18 @@ Instead, the following syntax may be used:
 do print "Hello world.\n"
 ----
 
-* Extended Literals: +allowExtendedLiterals {false|true}+
+* Extended Constants: +allowExtendedConsts {false|true}+
 +
-This feature allows for binary literals to be used.
-Additionally, underscores may be used throughout
-literals to group digits together for convenience.
-Note: literals cannot be started or ended with underscores.
+--
+Allow or disallow all of the extended constants features.  This is a
+proxy for all of the following annoations.
+
+** Extended Numeric Constants: +allowExtendedNumConsts {false|true}+
 +
-Below are some examples of extended literal syntax.
+Allow underscores as a separator in numeric literal and allow binary
+integer and word constants.
++
+Below are some examples of extended numeric constant syntax.
 +
 [source,sml]
 ----
@@ -54,6 +58,7 @@ val b = 0b10101
 val nb = ~0b10_10_10
 val bw = 0wb1010
 val x = 4_327_829
+val r = 6.022_140_9e23
 ----
 +
 Below are some non-examples of extended literal syntax.
@@ -63,8 +68,10 @@ Below are some non-examples of extended literal syntax.
 val b = 0b101_
 val nb = ~0b_10_10_
 val h = 0x_09_a
-val x - _12_3
+val x = _12_3
+val r = 3.14_19_
 ----
+--
 
 * Line Comments: +allowLineComments {false|true}+
 +

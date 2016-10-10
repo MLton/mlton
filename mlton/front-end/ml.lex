@@ -59,7 +59,7 @@ local
    open Control.Elaborate
 in
    val allowLineComments = fn () => current allowLineComments
-   val allowExtendedLiterals = fn () => current allowExtendedLiterals
+   val allowExtendedNumConsts = fn () => current allowExtendedNumConsts
 end
 
 fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
@@ -111,7 +111,7 @@ fun doit (yytext, source, yypos, drop, {extended: bool}, mkTok) =
       val left = yypos
       val right = yypos + size yytext
       val _ =
-         if extended andalso not (allowExtendedLiterals ())
+         if extended andalso not (allowExtendedNumConsts ())
             then error (source, left, right,
                         "Extended literals disallowed, compile with -default-ann 'allowExtendedLiterals true'")
             else ()

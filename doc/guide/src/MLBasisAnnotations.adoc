@@ -38,9 +38,16 @@ proxy for all of the following annotations.
 +
 If `true`, allow `do` declarations.
 
-** +allowExtendedLiterals {false|true}+
+** +allowExtendedConsts {false|true}+
 +
-If `true`, allow extended literals.
+--
+Allow or disallow all of the extended constants features.  This is a
+proxy for all of the following annoations.
+
+*** +allowExtendedNumConsts {false|true}+
++
+If `true`, allow extended numeric constants.
+--
 
 ** +allowLineComments {false|true}+
 +
