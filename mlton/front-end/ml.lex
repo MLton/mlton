@@ -113,7 +113,7 @@ fun doit (yytext, source, yypos, drop, {extended: bool}, mkTok) =
       val _ =
          if extended andalso not (allowExtendedNumConsts ())
             then error (source, left, right,
-                        "Extended literals disallowed, compile with -default-ann 'allowExtendedLiterals true'")
+                        "Extended numeric constants disallowed, compile with -default-ann 'allowExtendedNumConsts true'")
             else ()
    in
       mkTok (String.keepAll (String.dropPrefix (yytext, drop), fn c => not (c = #"_")),
