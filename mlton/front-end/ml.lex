@@ -149,14 +149,15 @@ nrws=("\012"|[\t\ ])+;
 cr="\013";
 nl="\010";
 eol=({cr}{nl}|{nl}|{cr});
-num=([0-9]([0-9]|"_")*[0-9])|([0-9]+);
-frac="."{num};
-exp=[eE](~?){num};
-real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
+decDigit=[0-9];
+decnum={decDigit}("_"*{decDigit})*;
 hexDigit=[0-9a-fA-F];
-hexnum=({hexDigit}({hexDigit}|"_")*{hexDigit})|({hexDigit}+);
+hexnum={hexDigit}("_"*{hexDigit})*;
 binDigit=[0-1];
-binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
+binnum={binDigit}("_"*{binDigit})*;
+frac="."{decnum};
+exp=[eE](~?){decnum};
+real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 
 %%
 <INITIAL>{ws}   => (continue ());
@@ -245,10 +246,10 @@ binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
 <INITIAL>{real} =>
    ((extLiteral (yytext, source, yypos, yypos + size yytext));
    (tok' (Tokens.REAL, stripUscores yytext, source, yypos)));
-<INITIAL>{num} =>
+<INITIAL>{decnum} =>
    ((extLiteral (yytext, source, yypos, yypos + size yytext));
    (int (yytext, 0, source, yypos, {negate = false}, StringCvt.DEC)));
-<INITIAL>"~"{num} =>
+<INITIAL>"~"{decnum} =>
    ((extLiteral (yytext, source, yypos, yypos + 1 + size yytext));
    (int (yytext, 1, source, yypos, {negate = true}, StringCvt.DEC)));
 <INITIAL>"0x"{hexnum} =>
@@ -263,7 +264,7 @@ binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
 <INITIAL>"~0b"{binnum} =>
    ((binLiteral (yytext, source, yypos, yypos + 3 + size yytext));
    (int (yytext, 3, source, yypos, {negate = true}, StringCvt.BIN)));
-<INITIAL>"0w"{num} =>
+<INITIAL>"0w"{decnum} =>
    ((extLiteral (yytext, source, yypos, yypos + 2 + size yytext));
    (word (yytext, 2, source, yypos, StringCvt.DEC)));
 <INITIAL>("0wx"|"0xw"){hexnum} =>
@@ -409,4 +410,3 @@ binnum=({binDigit}({binDigit}|"_")*{binDigit})|({binDigit}+);
                     ; continue ());
 <F>.            => (stringError (source, yypos, "unclosed string")
                     ; continue ());
-
