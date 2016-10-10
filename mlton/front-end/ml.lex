@@ -328,7 +328,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
                        else (inc commentLevel; continue ())
                    );
 <A>"(*"         => (inc commentLevel; continue ());
-<A>\n           => (Source.newline (source, yypos) ; continue ());
+<A>{eol}        => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
                     ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
                     ; continue ());
