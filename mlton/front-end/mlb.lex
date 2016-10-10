@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2016 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -78,7 +78,7 @@ fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
 %% 
 %reject
-%s A S F L LL LLC LLCQ;
+%s A B C S F L LL LLC LLCQ;
 %header (functor MLBLexFun (structure Tokens : MLB_TOKENS));
 %arg ({source});
 alphanum=[A-Za-z'_0-9]*;
@@ -133,6 +133,9 @@ hexDigit=[0-9a-fA-F];
                     ; stringStart := Source.getPos (source, yypos)
                     ; YYBEGIN S
                     ; continue ());
+<INITIAL>"(*)"  => (YYBEGIN B
+                    ; commentStart := Source.getPos (source, yypos)
+                    ; continue ());
 <INITIAL>"(*#line"{nrws}
                 => (YYBEGIN L
                     ; commentStart := Source.getPos (source, yypos)
@@ -169,12 +172,19 @@ hexDigit=[0-9a-fA-F];
                 => (YYBEGIN INITIAL; commentLevel := 0; charlist := []; continue ());
 <L,LLC,LLCQ>.   => (YYBEGIN A; continue ());
 
+<A>"(*)"        => (YYBEGIN C ; continue ());
 <A>"(*"         => (inc commentLevel; continue ());
-<A>\n           => (Source.newline (source, yypos) ; continue ());
+<A>{eol}        => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
                     ; if 0 = !commentLevel then YYBEGIN INITIAL else ()
                     ; continue ());
 <A>.            => (continue ());
+<B>{eol}        => (YYBEGIN INITIAL
+                    ; Source.newline (source, yypos) ; continue ());
+<B>.            => (continue ());
+<C>{eol}        => (YYBEGIN A
+                    ; Source.newline (source, yypos) ; continue ());
+<C>.            => (continue ());
 
 <S>\"           => (let
                        val s = concat (rev (!charlist))
