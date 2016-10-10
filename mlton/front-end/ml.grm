@@ -222,6 +222,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
   %term
       CHAR of IntInf.t
     | INT of {digits: string,
+              extended: bool,
               negate: bool,
               radix: StringCvt.radix}
     | LONGID of string
@@ -320,6 +321,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | longvid of Longvid.t
        | longvidNoEqual of Longvid.t
        | match of Match.t
+       | numeric of int
        | opaspat of Pat.t option
        | opcon of Con.t
        | ot_list of Exp.t list
@@ -451,7 +453,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
         -> IN LONGID END | -> ELSE LONGID
 
 %value CHAR (IntInf.fromInt (Char.ord #"a"))
-%value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
+%value INT ({digits = "0", extended = false, negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")
 %value STRING (Vector.fromList [])
@@ -879,7 +881,7 @@ priority :                      (Priority.T NONE)
 
 int : INT
    (let
-       val {digits, negate, radix} = INT
+       val {digits, negate, radix, ...} = INT
     in
        case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
           NONE => Error.bug "parser saw invalid int"
@@ -897,9 +899,9 @@ word : WORD
 
 digit : INT
    (let
-       val {digits, negate, radix} = INT
+       val {digits, extended, negate, radix} = INT
     in
-       if 1 = String.size digits andalso not negate andalso radix = StringCvt.DEC
+       if 1 = String.size digits andalso not extended andalso not negate andalso radix = StringCvt.DEC
           then valOf (Int.fromString digits)
        else let
                open Layout
@@ -910,6 +912,28 @@ digit : INT
             in
                0
             end
+    end)
+
+numeric : INT
+   (let
+       val {digits, extended, negate, radix} = INT
+       fun err () =
+          let
+             open Layout
+             val _ =
+                Control.error (reg (INTleft, INTright),
+                               str "invalid numeric label",
+                               empty)
+          in
+             1
+          end
+    in
+       if String.sub (digits, 0) <> #"0" andalso not extended andalso not negate andalso radix = StringCvt.DEC
+          then case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
+                  NONE => Error.bug "parser saw invalid int"
+                | SOME i => (IntInf.toInt (if negate then ~ i else i)
+                             handle Exn.Overflow => err ())
+       else err ()
     end)
 
 datatypeRhs
@@ -1281,22 +1305,8 @@ tycon : idNoAsterisk           (Tycon.fromSymbol idNoAsterisk)
 tyvar : TYVAR                  (Tyvar.newString (TYVAR, {left = TYVARleft,
                                                          right = TYVARright}))
 field : id                     (Field.Symbol (#1 id))
-      | int                    (let
-                                   val int =
-                                      IntInf.toInt int
-                                      handle Exn.Overflow =>
-                                         (error (reg (intleft, intright),
-                                                 "field too huge")
-                                          ; 0)
-                                in
-                                   Field.Int
-                                   (if int <= 0
-                                       then (error (reg (intleft, intright),
-                                                    "nonpositive field")
-                                             ; ~1)
-                                    else
-                                       int - 1)
-                                end) (* int - 1 because fields are 0-based *)
+      | numeric                (Field.Int (numeric - 1))
+                               (* numeric - 1 because fields are 0-based *)
 
 strid : id                     (Strid.fromSymbol id)
 sigid : id                     (Sigid.fromSymbol id)

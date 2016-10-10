@@ -117,20 +117,22 @@ fun doit (yytext, source, yypos, drop, {extended: bool}, mkTok) =
             else ()
    in
       mkTok (String.keepAll (String.dropPrefix (yytext, drop), fn c => not (c = #"_")),
+             {extended = extended},
              Source.getPos (source, left), Source.getPos (source, right))
    end
 in
 fun real (yytext, source, yypos) =
-   doit (yytext, source, yypos, 0, {extended = false}, fn (digits, l, r) =>
+   doit (yytext, source, yypos, 0, {extended = false}, fn (digits, {extended: bool}, l, r) =>
          Tokens.REAL (digits, l, r))
 fun int (yytext, source, yypos, drop, {extended: bool}, {negate: bool}, radix) =
-   doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, l, r) =>
+   doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.INT ({digits = digits,
+                      extended = extended,
                       negate = negate,
                       radix = radix},
                      l, r))
 fun word (yytext, source, yypos, drop, {extended: bool}, radix) =
-   doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, l, r) =>
+   doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.WORD ({digits = digits,
                        radix = radix},
                       l, r))
