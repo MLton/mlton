@@ -266,9 +266,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
    (word (yytext, source, yypos, 2, {extended = false}, StringCvt.DEC));
 <INITIAL>"0wx"{hexnum} =>
    (word (yytext, source, yypos, 3, {extended = false}, StringCvt.HEX));
-<INITIAL>"0xw"{hexnum} =>
-   (word (yytext, source, yypos, 3, {extended = true}, StringCvt.HEX));
-<INITIAL>("0wb"|"0bw"){binnum} =>
+<INITIAL>"0wb"{binnum} =>
    (word (yytext, source, yypos, 3, {extended = true}, StringCvt.BIN));
 <INITIAL>\"     => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)

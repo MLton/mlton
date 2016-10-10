@@ -53,7 +53,6 @@ Below are some examples of extended literal syntax.
 val b = 0b10101
 val nb = ~0b10_10_10
 val bw = 0wb1010
-val bw' = 0bw10_10
 val x = 4_327_829
 ----
 +
