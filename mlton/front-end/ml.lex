@@ -324,9 +324,8 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 
 <A>"(*)"        => (if allowLineComments ()
                        then (YYBEGIN C
-                            ; continue ())
-                       else (inc commentLevel; continue ())
-                   );
+                             ; continue ())
+                       else (inc commentLevel; continue ()));
 <A>"(*"         => (inc commentLevel; continue ());
 <A>{eol}        => (Source.newline (source, yypos) ; continue ());
 <A>"*)"         => (dec commentLevel
