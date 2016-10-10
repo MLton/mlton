@@ -336,7 +336,8 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <B>{eol}        => (YYBEGIN INITIAL
                     ; Source.newline (source, yypos) ; continue ());
 <B>.            => (continue ());
-<C>{eol}        => (YYBEGIN A; continue ());
+<C>{eol}        => (YYBEGIN A
+                    ; Source.newline (source, yypos) ; continue ());
 <C>.            => (continue ());
 <S>\"           => (let
                        val s = Vector.fromListRev (!charlist)
