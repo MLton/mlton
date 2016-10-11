@@ -63,21 +63,22 @@ fun stringError (source, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
-fun addNumEsc (yytext, source, yypos, drop, {extended: bool}, radix): unit =
+fun addNumEsc (yytext, source, yypos, drop, {extended: string option}, radix): unit =
    let
       val left = yypos
       val right = yypos + size yytext
       val _ =
-         (* \Uxxxxxxxx string constants are used in Basis Library
-          * implementation and regression suite.
-          *)
-         if false (* extended andalso not (allowExtendedTextConsts ()) *)
-            then stringError (source, right,
-                              "Extended text constants disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
-            else ()
+         case extended of
+            NONE => ()
+          | SOME msg =>
+               if allowExtendedTextConsts ()
+                  then ()
+                  else error (source, left, right,
+                              concat ["Extended text constants (using ", msg,
+                                      ") disallowed, compile with -default-ann 'allowExtendedTextConsts true'"])
    in
       case StringCvt.scanString (fn r => IntInf.scan (radix, r)) (String.dropPrefix (yytext, drop)) of
-         NONE => stringError (source, yypos, "illegal numeric escape")
+         NONE => error (source, left, right, "illegal numeric escape in string")
        | SOME i => List.push (charlist, i)
    end
 
@@ -87,8 +88,8 @@ fun addUTF8 (yytext, source, yypos): unit =
       val right = yypos + size yytext
    in
       if not (allowExtendedTextConsts ())
-         then stringError (source, right,
-                           "Extended text constants disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
+         then error (source, left, right,
+                     "Extended text constants (using UTF-8 byte sequences) disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
          else addString yytext
    end
 
@@ -129,33 +130,42 @@ fun tok (t, s, l, r) =
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
 local
-fun doit (yytext, source, yypos, drop, {extended: bool}, mkTok) =
+fun doit (yytext, source, yypos, drop, {extended: string option}, mkTok) =
    let
-      val extended = extended orelse String.contains (yytext, #"_")
       val left = yypos
       val right = yypos + size yytext
+      val extended =
+         if String.contains (yytext, #"_")
+            then SOME (Option.fold
+                       (extended, "'_' separators", fn (msg1, msg2) =>
+                        msg1 ^ " and " ^ msg2))
+            else extended
       val _ =
-         if extended andalso not (allowExtendedNumConsts ())
-            then error (source, left, right,
-                        "Extended numeric constants disallowed, compile with -default-ann 'allowExtendedNumConsts true'")
-            else ()
+         case extended of
+            NONE => ()
+          | SOME msg =>
+               if allowExtendedNumConsts ()
+                  then ()
+                  else error (source, left, right,
+                              concat ["Extended numeric constants (using ", msg,
+                                      ") disallowed, compile with -default-ann 'allowExtendedNumConsts true'"])
    in
       mkTok (String.keepAll (String.dropPrefix (yytext, drop), fn c => not (c = #"_")),
-             {extended = extended},
+             {extended = Option.isSome extended},
              Source.getPos (source, left), Source.getPos (source, right))
    end
 in
 fun real (yytext, source, yypos) =
-   doit (yytext, source, yypos, 0, {extended = false}, fn (digits, {extended: bool}, l, r) =>
+   doit (yytext, source, yypos, 0, {extended = NONE}, fn (digits, {extended: bool}, l, r) =>
          Tokens.REAL (digits, l, r))
-fun int (yytext, source, yypos, drop, {extended: bool}, {negate: bool}, radix) =
+fun int (yytext, source, yypos, drop, {extended: string option}, {negate: bool}, radix) =
    doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.INT ({digits = digits,
                       extended = extended,
                       negate = negate,
                       radix = radix},
                      l, r))
-fun word (yytext, source, yypos, drop, {extended: bool}, radix) =
+fun word (yytext, source, yypos, drop, {extended: string option}, radix) =
    doit (yytext, source, yypos, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.WORD ({digits = digits,
                        radix = radix},
@@ -276,23 +286,23 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <INITIAL>{real} =>
    (real (yytext, source, yypos));
 <INITIAL>{decnum} =>
-   (int (yytext, source, yypos, 0, {extended = false}, {negate = false}, StringCvt.DEC));
+   (int (yytext, source, yypos, 0, {extended = NONE}, {negate = false}, StringCvt.DEC));
 <INITIAL>"~"{decnum} =>
-   (int (yytext, source, yypos, 1, {extended = false}, {negate = true}, StringCvt.DEC));
+   (int (yytext, source, yypos, 1, {extended = NONE}, {negate = true}, StringCvt.DEC));
 <INITIAL>"0x"{hexnum} =>
-   (int (yytext, source, yypos, 2, {extended = false}, {negate = false}, StringCvt.HEX));
+   (int (yytext, source, yypos, 2, {extended = NONE}, {negate = false}, StringCvt.HEX));
 <INITIAL>"~0x"{hexnum} =>
-   (int (yytext, source, yypos, 3, {extended = false}, {negate = true}, StringCvt.HEX));
+   (int (yytext, source, yypos, 3, {extended = NONE}, {negate = true}, StringCvt.HEX));
 <INITIAL>"0b"{binnum} =>
-   (int (yytext, source, yypos, 2, {extended = true}, {negate = false}, StringCvt.BIN));
+   (int (yytext, source, yypos, 2, {extended = SOME "binary notation"}, {negate = false}, StringCvt.BIN));
 <INITIAL>"~0b"{binnum} =>
-   (int (yytext, source, yypos, 3, {extended = true}, {negate = true}, StringCvt.BIN));
+   (int (yytext, source, yypos, 3, {extended = SOME "binary notation"}, {negate = true}, StringCvt.BIN));
 <INITIAL>"0w"{decnum} =>
-   (word (yytext, source, yypos, 2, {extended = false}, StringCvt.DEC));
+   (word (yytext, source, yypos, 2, {extended = NONE}, StringCvt.DEC));
 <INITIAL>"0wx"{hexnum} =>
-   (word (yytext, source, yypos, 3, {extended = false}, StringCvt.HEX));
+   (word (yytext, source, yypos, 3, {extended = NONE}, StringCvt.HEX));
 <INITIAL>"0wb"{binnum} =>
-   (word (yytext, source, yypos, 3, {extended = true}, StringCvt.BIN));
+   (word (yytext, source, yypos, 3, {extended = SOME "binary notation"}, StringCvt.BIN));
 <INITIAL>\"     => (charlist := []
                     ; stringStart := Source.getPos (source, yypos)
                     ; stringtype := true
@@ -334,7 +344,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
                     ; (colNum := valOf (Int.fromString yytext))
                       handle Overflow => YYBEGIN A
                     ; continue ());
-<LL>.          => (YYBEGIN LLC; continue ()
+<LL>.           => (YYBEGIN LLC; continue ()
                 (* note hack, since ml-lex chokes on the empty string for 0* *));
 <LLC>"*)"       => (YYBEGIN INITIAL
                     ; lineDirective (source, NONE, yypos + 2)
@@ -389,27 +399,31 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <S>\\r          => (addChar #"\r"; continue ());
 <S>\\t          => (addChar #"\t"; continue ());
 <S>\\v          => (addChar #"\v"; continue ());
-<S>\\\^[@-_]    => (addChar (Char.chr(Char.ord(String.sub(yytext, 2))
-                                      -Char.ord #"@"));
+<S>\\\^[@-_]    => (addChar (Char.chr(Char.ord(String.sub(yytext, 2)) -Char.ord #"@"));
                     continue ());
-<S>\\\^.        =>
-        (error (source, yypos, yypos + 2,
-                "illegal control escape; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
-        continue ());
-<S>\\[0-9]{3}       => (addNumEsc (yytext, source, yypos, 1,
-                                   {extended = false}, StringCvt.DEC)
-                        ; continue ());
-<S>\\u{hexDigit}{4} => (addNumEsc (yytext, source, yypos, 2,
-                                   {extended = false}, StringCvt.HEX)
-                        ; continue ());
-<S>\\U{hexDigit}{8} => (addNumEsc (yytext, source, yypos, 2,
-                                   {extended = true}, StringCvt.HEX)
-                        ; continue ());
+<S>\\\^.        => (error (source, yypos, yypos + 2,
+                           "illegal control escape in string; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
+                    continue ());
+<S>\\[0-9]{3}   => (addNumEsc (yytext, source, yypos, 1,
+                               {extended = NONE}, StringCvt.DEC)
+                    ; continue ());
+<S>\\u{hexDigit}{4} =>
+                   (addNumEsc (yytext, source, yypos, 2,
+                               {extended = NONE}, StringCvt.HEX)
+                    ; continue ());
+<S>\\U{hexDigit}{8} =>
+                   (addNumEsc (yytext, source, yypos, 2,
+                               (* \Uxxxxxxxx string constants are used in Basis Library
+                                * implementation and regression suite.
+                                *)
+                               (* {extended = SOME "\\Uxxxxxxxx numeric escapes"}, *)
+                               {extended = NONE}, StringCvt.HEX)
+                    ; continue ());
 <S>\\\"         => (addString "\""; continue ());
 <S>\\\\         => (addString "\\"; continue ());
 <S>\\{nrws}     => (YYBEGIN F; continue ());
 <S>\\{eol}      => (Source.newline (source, yypos + 1) ; YYBEGIN F ; continue ());
-<S>\\           => (stringError (source, yypos, "illegal string escape")
+<S>\\           => (error (source, yypos, yypos, "illegal escape in string")
                     ; continue ());
 <S>{eol}        => (Source.newline (source, yypos)
                     ; stringError (source, yypos, "unclosed string")
@@ -422,13 +436,13 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
                    (addUTF8 (yytext, source, yypos); continue());
 <S>[\240-\247][\128-\191][\128-\191][\128-\191] =>
                    (addUTF8 (yytext, source, yypos); continue());
-<S>. =>  (stringError (source, yypos + 1, "illegal character in string")
-          ; continue ());
+<S>. =>            (error (source, yypos, yypos, "illegal character in string")
+                    ; continue ());
 
-<F>{eol}        => (Source.newline (source, yypos) ; continue ());
-<F>{ws}         => (continue ());
-<F>\\           => (YYBEGIN S
-                    ; stringStart := Source.getPos (source, yypos)
-                    ; continue ());
-<F>.            => (stringError (source, yypos, "unclosed string")
-                    ; continue ());
+<F>{eol}         => (Source.newline (source, yypos) ; continue ());
+<F>{ws}          => (continue ());
+<F>\\            => (YYBEGIN S
+                     ; stringStart := Source.getPos (source, yypos)
+                     ; continue ());
+<F>.             => (stringError (source, yypos, "unclosed string")
+                     ; continue ());
