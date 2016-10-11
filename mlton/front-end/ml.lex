@@ -21,6 +21,14 @@ type lexarg = {source: Source.t}
 type arg = lexarg
 type ('a,'b) token = ('a,'b) Tokens.token
 
+local
+   open Control.Elaborate
+in
+   val allowLineComments = fn () => current allowLineComments
+   val allowExtendedNumConsts = fn () => current allowExtendedNumConsts
+   val allowExtendedTextConsts = fn () => current allowExtendedTextConsts
+end
+
 val charlist: IntInf.t list ref = ref []
 val colNum: int ref = ref 0
 val commentLevel: int ref = ref 0
@@ -55,19 +63,25 @@ fun stringError (source, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
-local
-   open Control.Elaborate
-in
-   val allowLineComments = fn () => current allowLineComments
-   val allowExtendedNumConsts = fn () => current allowExtendedNumConsts
-end
+fun addNumEsc (yytext, source, yypos, drop, {extended: bool}, radix): unit =
+   let
+      val left = yypos
+      val right = yypos + size yytext
+      val _ =
+         (* \Uxxxxxxxx string constants are used in Basis Library
+          * implementation and regression suite.
+          *)
+         if false (* extended andalso not (allowExtendedTextConsts ()) *)
+            then stringError (source, right,
+                              "Extended text constants disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
+            else ()
+   in
+      case StringCvt.scanString (fn r => IntInf.scan (radix, r)) (String.dropPrefix (yytext, drop)) of
+         NONE => stringError (source, yypos, "illegal numeric escape")
+       | SOME i => List.push (charlist, i)
+   end
 
-fun addOrd (i: IntInf.t): unit = List.push (charlist, i)
 
-fun addHexEscape (s: string, source, yypos): unit =
-   case StringCvt.scanString (Pervasive.IntInf.scan StringCvt.HEX) s of
-      NONE => stringError (source, yypos, "illegal unicode escape")
-    | SOME i => addOrd i
 
 val eof: lexarg -> lexresult =
    fn {source, ...} =>
@@ -371,20 +385,14 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
         (error (source, yypos, yypos + 2,
                 "illegal control escape; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
         continue ());
-<S>\\[0-9]{3}   => (let
-                       fun c (i, scale) =
-                          scale * (Char.ord (String.sub (yytext, i))
-                                   - Char.ord #"0")
-                       val () = addOrd (IntInf.fromInt
-                                        (c (1, 100) + c (2, 10) + c (3, 1)))
-                    in
-                       continue ()
-                    end);
-<S>\\u{hexDigit}{4} => (addHexEscape (String.substring (yytext, 2, 4),
-                                      source, yypos)
+<S>\\[0-9]{3}       => (addNumEsc (yytext, source, yypos, 1,
+                                   {extended = false}, StringCvt.DEC)
                         ; continue ());
-<S>\\U{hexDigit}{8} => (addHexEscape (String.substring (yytext, 2, 8),
-                                      source, yypos)
+<S>\\u{hexDigit}{4} => (addNumEsc (yytext, source, yypos, 2,
+                                   {extended = false}, StringCvt.HEX)
+                        ; continue ());
+<S>\\U{hexDigit}{8} => (addNumEsc (yytext, source, yypos, 2,
+                                   {extended = true}, StringCvt.HEX)
                         ; continue ());
 <S>\\\"         => (addString "\""; continue ());
 <S>\\\\         => (addString "\\"; continue ());
