@@ -522,6 +522,9 @@ structure Elaborate =
          val (allowExtendedNumConsts, ac) =
             makeBool ({name = "allowExtendedNumConsts",
                        default = false, expert = false}, ac)
+         val (allowExtendedTextConsts, ac) =
+            makeBool ({name = "allowExtendedTextConsts",
+                       default = false, expert = false}, ac)
          val (allowLineComments, ac) =
             makeBool ({name = "allowLineComments",
                        default = false, expert = false}, ac)
@@ -541,10 +544,11 @@ structure Elaborate =
             makeBool ({name = "allowSigWithtype",
                        default = false, expert = false}, ac)
          val extendedConstsCtrls =
-            [allowExtendedNumConsts]
+            [allowExtendedNumConsts, allowExtendedTextConsts]
          val successorMLCtrls =
-            [allowDoDecls, allowExtendedNumConsts, allowLineComments,
-             allowOptBar, allowOptSemicolon, allowOrPats, allowRecPunning,
+            [allowDoDecls, allowExtendedNumConsts,
+             allowExtendedTextConsts, allowLineComments, allowOptBar,
+             allowOptSemicolon, allowOrPats, allowRecPunning,
              allowSigWithtype]
 
 

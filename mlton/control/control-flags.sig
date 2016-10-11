@@ -113,6 +113,7 @@ signature CONTROL_FLAGS =
             (* Successor ML *)
             val allowDoDecls: (bool,bool) t
             val allowExtendedNumConsts: (bool,bool) t
+            val allowExtendedTextConsts: (bool,bool) t
             val allowLineComments: (bool,bool) t
             val allowOptBar: (bool,bool) t
             val allowOptSemicolon: (bool,bool) t
