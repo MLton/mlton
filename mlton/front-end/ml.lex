@@ -81,6 +81,16 @@ fun addNumEsc (yytext, source, yypos, drop, {extended: bool}, radix): unit =
        | SOME i => List.push (charlist, i)
    end
 
+fun addUTF8 (yytext, source, yypos): unit =
+   let
+      val left = yypos
+      val right = yypos + size yytext
+   in
+      if not (allowExtendedTextConsts ())
+         then stringError (source, right,
+                           "Extended text constants disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
+         else addString yytext
+   end
 
 
 val eof: lexarg -> lexresult =
@@ -153,6 +163,7 @@ fun word (yytext, source, yypos, drop, {extended: bool}, radix) =
 end
 
 %% 
+%full
 %reject
 %s A B C S F L LL LLC LLCQ;
 %header (functor MLLexFun (structure Tokens : ML_TOKENS));
@@ -403,7 +414,14 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <S>{eol}        => (Source.newline (source, yypos)
                     ; stringError (source, yypos, "unclosed string")
                     ; continue ());
-<S>" "|[\033-\126]  => (addString yytext; continue ());
+<S>" "|[\033-\126] =>
+                   (addString yytext; continue ());
+<S>[\192-\223][\128-\191] =>
+                   (addUTF8 (yytext, source, yypos); continue());
+<S>[\224-\239][\128-\191][\128-\191] =>
+                   (addUTF8 (yytext, source, yypos); continue());
+<S>[\240-\247][\128-\191][\128-\191][\128-\191] =>
+                   (addUTF8 (yytext, source, yypos); continue());
 <S>. =>  (stringError (source, yypos + 1, "illegal character in string")
           ; continue ());
 
