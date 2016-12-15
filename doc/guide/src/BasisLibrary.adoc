@@ -6,11 +6,11 @@ The <:StandardML:Standard ML> Basis Library is a collection of modules
 dealing with basic types, input/output, OS interfaces, and simple
 datatypes.  It is intended as a portable library usable across all
 implementations of SML.  For the official online version of the Basis
-Library specification, see http://www.standardml.org/Basis.
+Library specification, see http://www.sml-family.org/Basis.
 <!Cite(GansnerReppy04, The Standard ML Basis Library)> is a book
 version that includes all of the online version and more.  For a
 reverse chronological list of changes to the specification, see
-http://www.standardml.org/Basis/history.html.
+http://www.sml-family.org/Basis/history.html.
 
 MLton implements all of the required portions of the Basis Library.
 MLton also implements many of the optional structures.  You can obtain

@@ -33,7 +33,7 @@ The one ground type that can not be compared is `real`.  So,
 reals for equality, but beware that this has different algebraic
 properties than polymorphic equality.
 
-See http://standardml.org/Basis/real.html for a discussion of why
+See http://sml-family.org/Basis/real.html for a discussion of why
 `real` is not an equality type.
 
 

@@ -8,7 +8,7 @@ MLKit supports:
 
 * <:DefinitionOfStandardML:SML'97>
 ** including most of the latest <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification],
+http://www.sml-family.org/Basis[specification],
 * <:MLBasis:ML Basis> files
 ** and separate compilation,
 * <:Regions:Region-Based Memory Management>

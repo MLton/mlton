@@ -8,7 +8,7 @@ languages, including <:StandardML:Standard ML>.
 While POPLOG is actively developed, the <:ML:> support predates
 <:DefinitionOfStandardML:SML'97>, and there is no support for the
 <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification].
+http://www.sml-family.org/Basis[specification].
 
 == Also see ==
 

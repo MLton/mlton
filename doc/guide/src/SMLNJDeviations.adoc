@@ -336,7 +336,7 @@ These structures are allowed by the Definition.
 == Deviations from the Basis Library Specification ==
 
 Here are some deviations of SML/NJ from the <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification].
+http://www.sml-family.org/Basis[specification].
 
 * SML/NJ exposes the equality of the `vector` type in structures such
 as `Word8Vector` that abstractly match `MONO_VECTOR`, which says
