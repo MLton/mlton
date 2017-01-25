@@ -150,6 +150,7 @@ mlton -stop g -target <target> mlton.mlb
 rm -rf self
 mv <target> self
 ----
+Also make sure you have all the header files in build/lib/include. You can copy them from a host machine that has run `make runtime`.
 
 4. On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like:
 +
@@ -167,6 +168,8 @@ gcc -o build/lib/mlton-compile \
 ----
 make basis-no-check script mlbpathmap targetmap constants libraries tools
 ----
+
+6. Making the last tool, mlyacc, will fail, because mlyacc cannot bootstrap its own yacc.grm.* files. On the host machine, run `make -C mlyacc src/yacc.grm.sml`. Then copy both files to the target machine, and compile mlyacc, making sure to supply the path to your newly compile mllex: `make -C mlyacc MLLEX=mllex/mllex`. 
 
 There are other details to get right, like making sure that the tools
 directories were clean so that the tools are rebuilt on the new
