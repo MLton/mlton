@@ -166,7 +166,7 @@ gcc -o build/lib/mlton-compile \
 5. At this point, MLton should be working and you can finish the rest of a usual make on the target machine.
 +
 ----
-make basis-no-check script mlbpathmap targetmap constants libraries tools
+make basis-no-check script mlbpathmap constants libraries tools
 ----
 
 6. Making the last tool, mlyacc, will fail, because mlyacc cannot bootstrap its own yacc.grm.* files. On the host machine, run `make -C mlyacc src/yacc.grm.sml`. Then copy both files to the target machine, and compile mlyacc, making sure to supply the path to your newly compile mllex: `make -C mlyacc MLLEX=mllex/mllex`. 
