@@ -15,10 +15,8 @@ val isMLton = true
 (* The ref stuff is so that the (de)serializer always deals with pointers
  * to heap objects.
  *)
-(*       val serialize = fn x => serialize (ref x)
- *       val deserialize = fn x => !(deserialize x)
- *)
-
+val serialize = fn x => Primitive.MLton.serialize (ref x)
+val deserialize = fn x => !(Primitive.MLton.deserialize x)
 val share = Primitive.MLton.share
 
 structure GC = MLtonGC
@@ -81,20 +79,20 @@ structure Process = MLtonProcess
 (* structure Ptrace = MLtonPtrace *)
 structure Profile = MLtonProfile
 structure Random = MLtonRandom
-structure Real = 
+structure Real =
    struct
       open Real
       type t = real
    end
-structure Real32 = 
+structure Real32 =
    struct
       open Real32
       type t = real
       open Primitive.PackReal32
    end
-structure Real64 = 
+structure Real64 =
    struct
-      open Real64 
+      open Real64
       type t = real
       open Primitive.PackReal64
    end
@@ -141,7 +139,7 @@ structure Word8Vector = struct
    type t = vector
 end
 
-val _ = 
+val _ =
    (Primitive.TopLevel.setHandler MLtonExn.defaultTopLevelHandler
     ; Primitive.TopLevel.setSuffix Exit.defaultTopLevelSuffix)
 end

@@ -8,11 +8,6 @@
  */
 
 #if ASSERT
-bool isPointerInToSpace (GC_state s, pointer p) {
-  return (not (isPointer (p))
-          or (s->forwardState.toStart <= p and p < s->forwardState.toLimit));
-}
-
 bool isObjptrInToSpace (GC_state s, objptr op) {
   pointer p;
 
@@ -22,6 +17,129 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
   return isPointerInToSpace (s, p);
 }
 #endif
+
+bool isPointerInToSpace (GC_state s, pointer p) {
+  return (not (isPointer (p))
+          or (s->forwardState.toStart <= p and p < s->forwardState.toLimit));
+}
+
+/* copyObjptr (s, opp)
+ * Copies the object pointed to by *opp
+ */
+void copyObjptr (GC_state s, objptr *opp) {
+  objptr op;
+  pointer p;
+  GC_header header;
+
+  op = *opp;
+  p = objptrToPointer (op, s->heap.start);
+  if (DEBUG_DETAILED)
+    fprintf (stderr,
+             "copyObjptr opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             (uintptr_t)opp, op, (uintptr_t)p);
+  assert (isObjptrInFromSpace (s, *opp));
+  header = getHeader (p);
+
+  CopyObjectMap* e = NULL;
+  HASH_FIND_PTR (s->copyObjectMap, &p, e);
+  if (e) { //We have already copied the object to toSpace
+    *opp = (objptr)e->newP;
+    if (DEBUG_DETAILED)
+      fprintf (stderr, "copyObjptr: Already copied newP="FMTPTR"\n", (uintptr_t)*opp);
+    return;
+  }
+
+  size_t size, skip;
+
+  size_t headerBytes, objectBytes;
+  GC_objectTypeTag tag;
+  uint16_t bytesNonObjptrs, numObjptrs;
+
+  splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+
+  /* Compute the space taken by the header and object body. */
+  if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
+    headerBytes = GC_NORMAL_HEADER_SIZE;
+    objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
+    skip = 0;
+  } else if (ARRAY_TAG == tag) {
+    headerBytes = GC_ARRAY_HEADER_SIZE;
+    objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
+                                        bytesNonObjptrs, numObjptrs);
+    skip = 0;
+  } else { /* Stack. */
+    bool current;
+    size_t reservedNew;
+    GC_stack stack;
+
+    assert (STACK_TAG == tag);
+    headerBytes = GC_STACK_HEADER_SIZE;
+    stack = (GC_stack)p;
+    current = getStackCurrent(s) == stack;
+
+    reservedNew = sizeofStackShrinkReserved (s, stack, current);
+    if (reservedNew < stack->reserved) {
+      if (DEBUG_STACKS or s->controls.messages)
+        fprintf (stderr,
+                  "[GC: Shrinking stack of size %s bytes to size %s bytes, using %s bytes.]\n",
+                  uintmaxToCommaString(stack->reserved),
+                  uintmaxToCommaString(reservedNew),
+                  uintmaxToCommaString(stack->used));
+      stack->reserved = reservedNew;
+    }
+    objectBytes = sizeof (struct GC_stack) + stack->used;
+    skip = stack->reserved - stack->used;
+  }
+  size = headerBytes + objectBytes;
+  assert (s->forwardState.back + size + skip <= s->forwardState.toLimit);
+  /* Copy the object. */
+  GC_memcpy (p - headerBytes, s->forwardState.back, size);
+  /* If the object has a valid weak pointer, link it into the weaks
+    * for update after the copying GC is done.
+    */
+  if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
+    GC_weak w;
+
+    w = (GC_weak)(s->forwardState.back + GC_NORMAL_HEADER_SIZE + offsetofWeak (s));
+    if (DEBUG_WEAK)
+      fprintf (stderr, "forwarding weak "FMTPTR" ",
+                (uintptr_t)w);
+    if (isObjptr (w->objptr)
+        and (not s->forwardState.amInMinorGC
+              or isObjptrInNursery (s, w->objptr))) {
+      if (DEBUG_WEAK)
+        fprintf (stderr, "linking\n");
+      w->link = s->weaks;
+      s->weaks = w;
+    } else {
+      if (DEBUG_WEAK)
+        fprintf (stderr, "not linking\n");
+    }
+  }
+
+  e = (CopyObjectMap*) malloc_safe (sizeof (CopyObjectMap));
+  e->oldP = (pointer)*opp;
+  e->newP = (pointer) s->forwardState.back + headerBytes;
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "copyObjptr: Adding oldP="FMTPTR" newP="FMTPTR"\n",
+             (uintptr_t)e->oldP, (uintptr_t)e->newP);
+  HASH_ADD_PTR (s->copyObjectMap, oldP, e);
+
+  /* Only update the pointer if it is in toSpace to avoid mucking with the
+   * original object. */
+  if (isPointerInToSpace (s, (pointer)opp)) {
+    *opp = pointerToObjptr (s->forwardState.back + headerBytes,
+                            s->forwardState.toStart);
+    if (DEBUG_DETAILED)
+      fprintf (stderr, "copyObjptr --> *opp = "FMTPTR"\n", (uintptr_t)*opp);
+  }
+
+  /* Update the back of the queue. */
+  s->forwardState.back += skip + size;
+  assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE,
+                      s->alignment));
+}
+
 
 /* forward (s, opp)
  * Forwards the object pointed to by *opp and updates *opp to point to

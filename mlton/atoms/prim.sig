@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature PRIM_STRUCTS = 
+signature PRIM_STRUCTS =
    sig
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
@@ -19,7 +19,7 @@ signature PRIM_STRUCTS =
       sharing WordSize = Const.WordX.WordSize
    end
 
-signature PRIM = 
+signature PRIM =
    sig
       include PRIM_STRUCTS
 
@@ -77,7 +77,7 @@ signature PRIM =
               * Makes a bogus value of any type.
               *)
              | MLton_bug (* ssa to rssa *)
-             | MLton_deserialize (* unused *)
+             | MLton_deserialize (* backend *)
              | MLton_eq (* ssa to rssa *)
              | MLton_equal (* polymorphic equality *)
              | MLton_halt (* ssa to rssa *)
@@ -96,7 +96,7 @@ signature PRIM =
               *)
              | MLton_handlesSignals (* closure conversion *)
              | MLton_installSignalHandler (* backend *)
-             | MLton_serialize (* unused *)
+             | MLton_serialize (* ssa to rssa *)
              | MLton_share
              | MLton_size (* ssa to rssa *)
              | MLton_touch (* backend *)
@@ -238,9 +238,9 @@ signature PRIM =
       val cpointerAdd: 'a t
       val cpointerDiff: 'a t
       val cpointerEqual: 'a t
-      val cpointerGet: CType.t -> 'a t 
+      val cpointerGet: CType.t -> 'a t
       val cpointerLt: 'a t
-      val cpointerSet: CType.t -> 'a t 
+      val cpointerSet: CType.t -> 'a t
       val cpointerSub: 'a t
       val cpointerToWord: 'a t
       val deref: 'a t
@@ -255,8 +255,8 @@ signature PRIM =
                                           deVector: 'b -> 'b,
                                           deWeak: 'b -> 'b}} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
-      val ffiSymbol: {name: string, 
-                      cty: CType.t option, 
+      val ffiSymbol: {name: string,
+                      cty: CType.t option,
                       symbolScope: CFunction.SymbolScope.t } -> 'a t
       val fromString: string -> 'a t option
       val hash: 'a t (* polymorphic hash *)

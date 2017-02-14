@@ -154,5 +154,6 @@ COMPILE_TIME_ASSERT(address_bits__lte__pointer_bits,
                     ADDRESS_BITS <= POINTER_BITS);
 
 #include "export.h"
+#include "uthash.h"
 
 #endif /* _MLTON_CENV_H_ */

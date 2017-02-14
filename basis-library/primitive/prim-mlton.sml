@@ -17,10 +17,10 @@ structure MLton = struct
 
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
 val equal = _prim "MLton_equal": 'a * 'a -> bool;
-(* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
+val deserialize = _prim "MLton_deserialize": Word8.word vector -> 'a ref;
 val halt = _prim "MLton_halt": C_Status.t -> unit;
 val hash = _prim "MLton_hash": 'a -> Word32.word;
-(* val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
+val serialize = _prim "MLton_serialize": 'a ref -> Word8.word vector;
 val share = _prim "MLton_share": 'a -> unit;
 val size = _prim "MLton_size": 'a ref -> C_Size.t;
 

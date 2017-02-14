@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor DeepFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM = 
+functor DeepFlatten (S: SSA2_TRANSFORM_STRUCTS): SSA2_TRANSFORM =
 struct
 
 open S
@@ -286,7 +286,7 @@ structure Value =
                Ground t => Type.layout t
              | Object e =>
                   Equatable.layout
-                  (e, fn {args, con, flat, ...} => 
+                  (e, fn {args, con, flat, ...} =>
                    seq [str "Object ",
                         record [("args", Prod.layout (args, layout)),
                                 ("con", ObjectCon.layout con),
@@ -700,12 +700,14 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                    * be flattened.
                    *)
                   dontFlatten ()
+             | MLton_deserialize => dontFlatten ()
              | MLton_eq => equal ()
              | MLton_equal => equal ()
+             | MLton_serialize => dontFlatten ()
              | MLton_size => dontFlatten ()
              | MLton_share => dontFlatten ()
              | Weak_get => deWeak (arg 0)
-             | Weak_new => 
+             | Weak_new =>
                   let val a = arg 0
                   in (Value.dontFlatten a; weak a)
                   end
@@ -793,7 +795,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                     val args =
                        case ! (conValue con) of
                           NONE => args
-                        | SOME v => 
+                        | SOME v =>
                              case Type.dest (Value.finalType v) of
                                 Type.Object {args, ...} => args
                               | _ => Error.bug "DeepFlatten.datatypes: strange con"
@@ -925,7 +927,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                          in
                             case Value.deObject (varValue baseVar) of
                                NONE => simple ()
-                             | SOME obj => 
+                             | SOME obj =>
                                   let
                                      val Tree.T (info, children) =
                                         varTree baseVar
@@ -977,7 +979,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   in
                      case Value.deObject (varValue baseVar) of
                         NONE => simple ()
-                      | SOME object => 
+                      | SOME object =>
                            let
                               val ss = ref []
                               val child =
