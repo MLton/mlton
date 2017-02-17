@@ -47,6 +47,10 @@ proxy for all of the following annoations.
 *** +allowExtendedNumConsts {false|true}+
 +
 If `true`, allow extended numeric constants.
+
+*** +allowExtendedTextConsts {false|true}+
++
+If `true`, allow extended text constants.
 --
 
 ** +allowLineComments {false|true}+
