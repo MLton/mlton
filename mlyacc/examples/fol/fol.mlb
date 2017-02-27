@@ -1,0 +1,12 @@
+local
+ $(SML_LIB)/basis/basis.mlb
+ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+ absyn.sml
+ interface.sml
+ fol.grm.sig
+ fol.grm.sml
+ fol.lex.sml
+ parse.sml
+in
+ link.sml
+end
