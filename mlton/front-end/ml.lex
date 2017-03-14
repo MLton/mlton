@@ -436,11 +436,8 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
                      ; continue ());
 <TEXT>\\U{hexDigit}{8} =>
                     (addTextNumEsc (source, yypos, yytext, 2,
-                                    (* \Uxxxxxxxx string constants are used in Basis Library
-                                     * implementation and regression suite.
-                                     *)
-                                    (* {extended = SOME "\\Uxxxxxxxx numeric escapes"}, *)
-                                    {extended = NONE}, StringCvt.HEX)
+                                    {extended = SOME "\\Uxxxxxxxx numeric escapes"},
+                                    StringCvt.HEX)
                      ; continue ());
 <TEXT>"\\\""     => (addTextString "\""; continue ());
 <TEXT>\\\\       => (addTextString "\\"; continue ());
