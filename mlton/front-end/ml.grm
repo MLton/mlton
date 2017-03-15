@@ -13,7 +13,7 @@ local
 in
    val allowOptBar = fn () => current allowOptBar
    val allowOptSemicolon = fn () => current allowOptSemicolon
-   val allowRecPunning = fn () => current allowRecPunning
+   val allowRecordPunExps = fn () => current allowRecordPunExps
 end
 
 open Ast
@@ -993,15 +993,30 @@ rules : rule            ([rule])
 rule    : pat DARROW exp        ((pat,exp))
 
 elabel  : field EQUALOP exp     (field,exp)
-        | vidNoEqual            (if allowRecPunning ()
+        | vidNoEqual constraint (if allowRecordPunExps ()
                                     then ()
-                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning disallowed, compile with -default-ann 'allowRecPunning true'")
-                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual), 
-                                    Exp.makeRegion' (Exp.FlatApp 
-                                    (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
-                                                                            fixop = Fixop.None}, 
-                                                                   vidNoEqualleft, vidNoEqualright))), 
-                                    vidNoEqualleft, vidNoEqualright)))
+                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning expressions disallowed, compile with -default-ann 'allowRecordPunExps true'")
+                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual),
+                                    let
+                                      val exp =
+                                        Exp.makeRegion'
+                                        (Exp.FlatApp
+                                         (Vector.new1
+                                          (Exp.makeRegion'
+                                           (Exp.Var {name = Longvid.short vidNoEqual,
+                                                     fixop = Fixop.None},
+                                            vidNoEqualleft, vidNoEqualright))),
+                                         vidNoEqualleft, vidNoEqualright)
+                                      val exp =
+                                        case constraint of
+                                           NONE => exp
+                                         | SOME ty =>
+                                             Exp.makeRegion'
+                                             (Exp.Constraint (exp, ty),
+                                              vidNoEqualleft, constraintright)
+                                    in
+                                      exp
+                                    end))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])

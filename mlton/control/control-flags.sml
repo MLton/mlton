@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2016 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -537,8 +537,8 @@ structure Elaborate =
          val (allowOrPats, ac) =
             makeBool ({name = "allowOrPats",
                        default = false, expert = false}, ac)
-         val (allowRecPunning, ac) =
-            makeBool ({name = "allowRecPunning",
+         val (allowRecordPunExps, ac) =
+            makeBool ({name = "allowRecordPunExps",
                        default = false, expert = false}, ac)
          val (allowSigWithtype, ac) =
             makeBool ({name = "allowSigWithtype",
@@ -548,7 +548,7 @@ structure Elaborate =
          val successorMLCtrls =
             [allowDoDecls, allowExtendedNumConsts,
              allowExtendedTextConsts, allowLineComments, allowOptBar,
-             allowOptSemicolon, allowOrPats, allowRecPunning,
+             allowOptSemicolon, allowOrPats, allowRecordPunExps,
              allowSigWithtype]
 
 
