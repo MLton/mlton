@@ -36,13 +36,13 @@ proxy for all of the following annotations.
 
 ** +allowDoDecls {false|true}+
 +
-If `true`, allow `do` declarations.
+If `true`, allow a +do _exp_+ declaration form.
 
 ** +allowExtendedConsts {false|true}+
 +
 --
 Allow or disallow all of the extended constants features.  This is a
-proxy for all of the following annoations.
+proxy for all of the following annotations.
 
 *** +allowExtendedNumConsts {false|true}+
 +
@@ -55,13 +55,15 @@ If `true`, allow extended text constants.
 
 ** +allowLineComments {false|true}+
 +
-If `true`, allow line comments.
+If `true`, allow line comments beginning with the token ++(*)++.
 
 ** +allowOptBar {false|true}+
 +
-If `true`, allow a bar to appear before the first constructor of a
-`datatype` declaration or specification and allow a bar to appear
-before the first matchrule of `case`, `fn`, and `handle` expressions.
+If `true`, allow a bar to appear before the first match rule of a
+`case`, `fn`, or `handle` expression, allow a bar to appear before the
+first function-value binding of a `fun` declaration, and allow a bar
+to appear before the first constructor binding or description of a
+`datatype` declaration or specification.
 
 ** +allowOptSemicolon {false|true}+
 +
@@ -70,16 +72,17 @@ sequence expression or `let` body.
 
 ** +allowOrPats {false|true}+
 +
-If `true`, allows disjunctive patterns.
+If `true`, allows disjunctive (a.k.a., "or") patterns of the form
++_pat_ | _pat_+.
 
-** +allowRecPunning {false|true}+
+** +allowRecordPunExps {false|true}+
 +
-If `true`, allows record punning.
+If `true`, allows record punning expressions.
 
 ** +allowSigWithtype {false|true}+
 +
-If `true`, allows `withtype` to modify datatype specifications in
-signatures.
+If `true`, allows `withtype` to modify a `datatype` specification in a
+signature.
 --
 
 * +forceUsed+
