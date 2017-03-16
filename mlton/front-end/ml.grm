@@ -13,7 +13,7 @@ local
 in
    val allowOptBar = fn () => current allowOptBar
    val allowOptSemicolon = fn () => current allowOptSemicolon
-   val allowRecPunning = fn () => current allowRecPunning
+   val allowRecordPunExps = fn () => current allowRecordPunExps
 end
 
 open Ast
@@ -222,6 +222,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
   %term
       CHAR of IntInf.t
     | INT of {digits: string,
+              extended: bool,
               negate: bool,
               radix: StringCvt.radix}
     | LONGID of string
@@ -263,7 +264,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
-       | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
        | cpat of Pat.t
        | cpatnode of Pat.node
@@ -320,11 +320,13 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | longvid of Longvid.t
        | longvidNoEqual of Longvid.t
        | match of Match.t
+       | numeric of int
        | opaspat of Pat.t option
        | opcon of Con.t
-       | ot_list of Exp.t list
+       | optbar of unit
+       | optbar' of unit
+       | optsemicolon of unit
        | pat of Pat.t
-       | pat_2c of Pat.t list
        | patitem of (Field.t * Pat.Item.t)
        | patitems of ((Field.t * Pat.Item.t) list * bool)
        | pats of Pat.t list
@@ -333,7 +335,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
-       | rulesTop of rule list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -383,7 +384,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | ty' of Type.t
        | ty'node of Type.node
        | ty0_pc of Type.t list
-       | ty1 of Type.t
        | tyOpt of Type.t option
        | tycon of Tycon.t
        | tynode of Type.node
@@ -451,7 +451,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
         -> IN LONGID END | -> ELSE LONGID
 
 %value CHAR (IntInf.fromInt (Char.ord #"a"))
-%value INT ({digits = "0", negate = false, radix = StringCvt.DEC})
+%value INT ({digits = "0", extended = false, negate = false, radix = StringCvt.DEC})
 %value LONGID ("bogus")
 %value REAL ("13.0")
 %value STRING (Vector.fromList [])
@@ -789,11 +789,8 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
-          | BAR clauses (if allowOptBar ()
-                            then ()
-                            else error (reg (BARleft, BARright), "Optional clauses bar disallowed, compile with -default-ann 'allowOptBar true'")
-                         ;(Vector.fromList clauses))
-          
+          | optbar' clauses (Vector.fromList clauses)
+
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
 
@@ -840,12 +837,6 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
-constrsTop : constrs            (constrs)
-           | BAR constrs        (if allowOptBar ()
-                                    then ()
-                                    else error (reg (BARleft, BARright), "Optional constrs bar disallowed, compile with -default-ann 'allowOptBar true'")
-                                ;(constrs))
-        
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
 
@@ -879,7 +870,7 @@ priority :                      (Priority.T NONE)
 
 int : INT
    (let
-       val {digits, negate, radix} = INT
+       val {digits, negate, radix, ...} = INT
     in
        case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
           NONE => Error.bug "parser saw invalid int"
@@ -897,9 +888,9 @@ word : WORD
 
 digit : INT
    (let
-       val {digits, negate, radix} = INT
+       val {digits, extended, negate, radix} = INT
     in
-       if 1 = String.size digits andalso not negate andalso radix = StringCvt.DEC
+       if 1 = String.size digits andalso not extended andalso not negate andalso radix = StringCvt.DEC
           then valOf (Int.fromString digits)
        else let
                open Layout
@@ -910,6 +901,28 @@ digit : INT
             in
                0
             end
+    end)
+
+numeric : INT
+   (let
+       val {digits, extended, negate, radix} = INT
+       fun err () =
+          let
+             open Layout
+             val _ =
+                Control.error (reg (INTleft, INTright),
+                               str "invalid numeric label",
+                               empty)
+          in
+             1
+          end
+    in
+       if String.sub (digits, 0) <> #"0" andalso not extended andalso not negate andalso radix = StringCvt.DEC
+          then case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
+                  NONE => Error.bug "parser saw invalid int"
+                | SOME i => (IntInf.toInt (if negate then ~ i else i)
+                             handle Exn.Overflow => err ())
+       else err ()
     end)
 
 datatypeRhs
@@ -940,8 +953,8 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrsTop
-     ({cons = Vector.fromList constrsTop,
+db : tyvars tycon EQUALOP optbar constrs
+     ({cons = Vector.fromList constrs,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -954,40 +967,45 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rulesTop           (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
-                                            rulesTopleft, rulesTopright))
+match : optbar rules    (Match.makeRegion' (Match.T (Vector.fromList rules),
+                                            rulesleft, rulesright))
 
-rulesTop : rules        (rules)
-         | BAR rules    (if allowOptBar ()
-                            then ()
-                            else error (reg (BARleft, BARright), "Optional rules bar disallowed, compile with -default-ann 'allowOptBar true'")
-                         ;(rules))
-                                            
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
 rule    : pat DARROW exp        ((pat,exp))
 
 elabel  : field EQUALOP exp     (field,exp)
-        | vidNoEqual            (if allowRecPunning ()
+        | vidNoEqual constraint (if allowRecordPunExps ()
                                     then ()
-                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning disallowed, compile with -default-ann 'allowRecPunning true'")
-                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual), 
-                                    Exp.makeRegion' (Exp.FlatApp 
-                                    (Vector.new1 (Exp.makeRegion' (Exp.Var {name = (Longvid.short vidNoEqual), 
-                                                                            fixop = Fixop.None}, 
-                                                                   vidNoEqualleft, vidNoEqualright))), 
-                                    vidNoEqualleft, vidNoEqualright)))
+                                    else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning expressions disallowed, compile with -default-ann 'allowRecordPunExps true'")
+                                 ; (Field.Symbol (Vid.toSymbol vidNoEqual),
+                                    let
+                                      val exp =
+                                        Exp.makeRegion'
+                                        (Exp.FlatApp
+                                         (Vector.new1
+                                          (Exp.makeRegion'
+                                           (Exp.Var {name = Longvid.short vidNoEqual,
+                                                     fixop = Fixop.None},
+                                            vidNoEqualleft, vidNoEqualright))),
+                                         vidNoEqualleft, vidNoEqualright)
+                                      val exp =
+                                        case constraint of
+                                           NONE => exp
+                                         | SOME ty =>
+                                             Exp.makeRegion'
+                                             (Exp.Constraint (exp, ty),
+                                              vidNoEqualleft, constraintright)
+                                    in
+                                      exp
+                                    end))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
 
-exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
+exp_ps  : exp optsemicolon      ([exp])
         | exp SEMICOLON exp_ps  (exp :: exp_ps)
-        | exp SEMICOLON exp SEMICOLON (if allowOptSemicolon ()
-                                          then ()
-                                          else error (reg (SEMICOLON2left, SEMICOLON2right), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'")
-                                       ;([exp1, exp2]))
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 
@@ -1020,16 +1038,19 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
           (Exp.Record (Record.fromVector (Vector.fromList elabels)))
         | LBRACE RBRACE         (Exp.unit)
         | LPAREN RPAREN         (Exp.unit)
-        | LPAREN expnode RPAREN (expnode)
-        | LPAREN exp_ps RPAREN  (Exp.Seq (Vector.fromList exp_ps))
+        | LPAREN exp_ps RPAREN
+            (case exp_ps of
+                [exp] => Exp.node exp
+              | _ => Exp.Seq (Vector.fromList exp_ps))
         | LPAREN exp_2c RPAREN  (Exp.tuple (Vector.fromList exp_2c))
         | LBRACKET exp_list RBRACKET  (Exp.List (Vector.fromList exp_list))
         | LBRACKET RBRACKET           (Exp.List (Vector.new0 ()))
-        | LET decs IN exp END   (Exp.Let (decs, exp))
         | LET decs IN exp_ps END
-            (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
-                                             exp_psleft,
-                                             exp_psright)))
+            (Exp.Let (decs,
+                      case exp_ps of
+                         [exp] => exp
+                       | _ => Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
+                                               exp_psleft, exp_psright)))
         | ADDRESS string symattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Address {attributes = symattributes,
                                        name = string,
@@ -1161,7 +1182,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 
 pats : ([])
      | pat commapats (pat :: commapats)
-     
+
 barcpats : cpat ([cpat])
          | cpat BAR barcpats (cpat :: barcpats)
 
@@ -1223,6 +1244,21 @@ ty0_pc  : ty COMMA ty           ([ty1, ty2])
 (*                       Atoms                       *)
 (*---------------------------------------------------*)
 
+optbar
+   : (* empty *) ()
+   | optbar'     ()
+
+optbar'
+   : BAR         (if allowOptBar ()
+                    then ()
+                    else error (reg (BARleft, BARright), "Optional bar disallowed, compile with -default-ann 'allowOptBar true'"))
+
+optsemicolon
+   : (* empty *) ()
+   | SEMICOLON   (if allowOptSemicolon ()
+                    then ()
+                    else error (reg (SEMICOLONleft, SEMICOLONright), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'"))
+
 constOrBool
    : const (const)
    | id (let
@@ -1281,22 +1317,8 @@ tycon : idNoAsterisk           (Tycon.fromSymbol idNoAsterisk)
 tyvar : TYVAR                  (Tyvar.newString (TYVAR, {left = TYVARleft,
                                                          right = TYVARright}))
 field : id                     (Field.Symbol (#1 id))
-      | int                    (let
-                                   val int =
-                                      IntInf.toInt int
-                                      handle Exn.Overflow =>
-                                         (error (reg (intleft, intright),
-                                                 "field too huge")
-                                          ; 0)
-                                in
-                                   Field.Int
-                                   (if int <= 0
-                                       then (error (reg (intleft, intright),
-                                                    "nonpositive field")
-                                             ; ~1)
-                                    else
-                                       int - 1)
-                                end) (* int - 1 because fields are 0-based *)
+      | numeric                (Field.Int (numeric - 1))
+                               (* numeric - 1 because fields are 0-based *)
 
 strid : id                     (Strid.fromSymbol id)
 sigid : id                     (Sigid.fromSymbol id)

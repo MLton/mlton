@@ -193,6 +193,7 @@ for f in *.sml; do
                         ann 
                                 \"allowFFI true\"
                                 \"allowOverload true\"
+                                \"allowExtendedTextConsts true\"
                                 \"nonexhaustiveMatch ignore\"
                                 \"redundantMatch ignore\"
                         in $f.sml 
