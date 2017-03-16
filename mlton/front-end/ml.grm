@@ -264,7 +264,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | constr of Con.t * Type.t option
        | constraint of Type.t option
        | constrs of (Con.t * Type.t option) list
-       | constrsTop of (Con.t * Type.t option) list
        | constOrBool of Const.t
        | cpat of Pat.t
        | cpatnode of Pat.node
@@ -324,9 +323,10 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | numeric of int
        | opaspat of Pat.t option
        | opcon of Con.t
-       | ot_list of Exp.t list
+       | optbar of unit
+       | optbar' of unit
+       | optsemicolon of unit
        | pat of Pat.t
-       | pat_2c of Pat.t list
        | patitem of (Field.t * Pat.Item.t)
        | patitems of ((Field.t * Pat.Item.t) list * bool)
        | pats of Pat.t list
@@ -335,7 +335,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | repl of DatatypeRhs.node
        | rule of rule
        | rules of rule list
-       | rulesTop of rule list
        | rvalbind of rvb list
        | rvalbindRest of rvb list
        | sdec of Dec.t
@@ -385,7 +384,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | ty' of Type.t
        | ty'node of Type.node
        | ty0_pc of Type.t list
-       | ty1 of Type.t
        | tyOpt of Type.t option
        | tycon of Tycon.t
        | tynode of Type.node
@@ -791,11 +789,8 @@ funs    : clausesTop               ([clausesTop])
         | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
-          | BAR clauses (if allowOptBar ()
-                            then ()
-                            else error (reg (BARleft, BARright), "Optional clauses bar disallowed, compile with -default-ann 'allowOptBar true'")
-                         ;(Vector.fromList clauses))
-          
+          | optbar' clauses (Vector.fromList clauses)
+
 clauses : clause                ([clause])
         | clause BAR clauses    (clause :: clauses)
 
@@ -842,12 +837,6 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
-constrsTop : constrs            (constrs)
-           | BAR constrs        (if allowOptBar ()
-                                    then ()
-                                    else error (reg (BARleft, BARright), "Optional constrs bar disallowed, compile with -default-ann 'allowOptBar true'")
-                                ;(constrs))
-        
 constrs : constr                ([constr])
         | constr BAR constrs    (constr :: constrs)
 
@@ -964,8 +953,8 @@ dbs'
    | db AND dbs'
      (db :: dbs')
 
-db : tyvars tycon EQUALOP constrsTop
-     ({cons = Vector.fromList constrsTop,
+db : tyvars tycon EQUALOP optbar constrs
+     ({cons = Vector.fromList constrs,
        tycon = tycon,
        tyvars = tyvars})
 
@@ -978,15 +967,9 @@ withtypes
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
 
-match : rulesTop           (Match.makeRegion' (Match.T (Vector.fromList rulesTop),
-                                            rulesTopleft, rulesTopright))
+match : optbar rules    (Match.makeRegion' (Match.T (Vector.fromList rules),
+                                            rulesleft, rulesright))
 
-rulesTop : rules        (rules)
-         | BAR rules    (if allowOptBar ()
-                            then ()
-                            else error (reg (BARleft, BARright), "Optional rules bar disallowed, compile with -default-ann 'allowOptBar true'")
-                         ;(rules))
-                                            
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
@@ -1021,12 +1004,8 @@ elabel  : field EQUALOP exp     (field,exp)
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
 
-exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
+exp_ps  : exp optsemicolon      ([exp])
         | exp SEMICOLON exp_ps  (exp :: exp_ps)
-        | exp SEMICOLON exp SEMICOLON (if allowOptSemicolon ()
-                                          then ()
-                                          else error (reg (SEMICOLON2left, SEMICOLON2right), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'")
-                                       ;([exp1, exp2]))
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 
@@ -1059,16 +1038,19 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
           (Exp.Record (Record.fromVector (Vector.fromList elabels)))
         | LBRACE RBRACE         (Exp.unit)
         | LPAREN RPAREN         (Exp.unit)
-        | LPAREN expnode RPAREN (expnode)
-        | LPAREN exp_ps RPAREN  (Exp.Seq (Vector.fromList exp_ps))
+        | LPAREN exp_ps RPAREN
+            (case exp_ps of
+                [exp] => Exp.node exp
+              | _ => Exp.Seq (Vector.fromList exp_ps))
         | LPAREN exp_2c RPAREN  (Exp.tuple (Vector.fromList exp_2c))
         | LBRACKET exp_list RBRACKET  (Exp.List (Vector.fromList exp_list))
         | LBRACKET RBRACKET           (Exp.List (Vector.new0 ()))
-        | LET decs IN exp END   (Exp.Let (decs, exp))
         | LET decs IN exp_ps END
-            (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
-                                             exp_psleft,
-                                             exp_psright)))
+            (Exp.Let (decs,
+                      case exp_ps of
+                         [exp] => exp
+                       | _ => Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
+                                               exp_psleft, exp_psright)))
         | ADDRESS string symattributes COLON ty SEMICOLON
           (Exp.Prim (PrimKind.Address {attributes = symattributes,
                                        name = string,
@@ -1200,7 +1182,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 
 pats : ([])
      | pat commapats (pat :: commapats)
-     
+
 barcpats : cpat ([cpat])
          | cpat BAR barcpats (cpat :: barcpats)
 
@@ -1261,6 +1243,21 @@ ty0_pc  : ty COMMA ty           ([ty1, ty2])
 (*---------------------------------------------------*)
 (*                       Atoms                       *)
 (*---------------------------------------------------*)
+
+optbar
+   : (* empty *) ()
+   | optbar'     ()
+
+optbar'
+   : BAR         (if allowOptBar ()
+                    then ()
+                    else error (reg (BARleft, BARright), "Optional bar disallowed, compile with -default-ann 'allowOptBar true'"))
+
+optsemicolon
+   : (* empty *) ()
+   | SEMICOLON   (if allowOptSemicolon ()
+                    then ()
+                    else error (reg (SEMICOLONleft, SEMICOLONright), "Optional semicolon disallowed, compile with -default-ann 'allowOptSemicolon true'"))
 
 constOrBool
    : const (const)
