@@ -446,7 +446,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <TEXT>"\\\""     => (addTextString "\""; continue ());
 <TEXT>\\\\       => (addTextString "\\"; continue ());
 <TEXT>\\{ws}+    => (YYBEGIN TEXT_FMT; continue ());
-<TEXT>\\{eol}    => (Source.newline (source, newLinePos (yypos + 1) yytext); YYBEGIN TEXT_FMT; continue ());
+<TEXT>\\{eol}    => (Source.newline (source, newLinePos yypos yytext); YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\         => (error (source, yypos, yypos, "Illegal escape in text constant")
                      ; continue ());
 <TEXT>{eol}      => (Source.newline (source, newLinePos yypos yytext)
