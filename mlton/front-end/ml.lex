@@ -47,10 +47,8 @@ fun error (source, left, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
+fun lastPos (yypos, yytext) = yypos + size yytext - 1
 
-(* Windows line endings are two characters.  We want to record the position of
- * the last end-of-line character, for accurate column number reporting.  *)
-fun newLinePos yypos yytext = yypos + size yytext - 1
 
 (* Comments *)
 local
@@ -284,7 +282,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 
 %%
 <INITIAL>{ws}+  => (continue ());
-<INITIAL>{eol}  => (Source.newline (source, newLinePos yypos yytext); continue ());
+<INITIAL>{eol}  => (Source.newline (source, lastPos (yypos, yytext)); continue ());
 
 
 <INITIAL>"_address" => (tok (Tokens.ADDRESS, source, yypos, yypos + size yytext));
@@ -446,17 +444,17 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <TEXT>"\\\""     => (addTextString "\""; continue ());
 <TEXT>\\\\       => (addTextString "\\"; continue ());
 <TEXT>\\{ws}+    => (YYBEGIN TEXT_FMT; continue ());
-<TEXT>\\{eol}    => (Source.newline (source, newLinePos yypos yytext); YYBEGIN TEXT_FMT; continue ());
+<TEXT>\\{eol}    => (Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\         => (error (source, yypos, yypos, "Illegal escape in text constant")
                      ; continue ());
-<TEXT>{eol}      => (Source.newline (source, newLinePos yypos yytext)
+<TEXT>{eol}      => (Source.newline (source, lastPos (yypos, yytext))
                      ; textError (Source.getPos (source, yypos), "Unclosed text constant at end of line")
                      ; continue ());
 <TEXT>.          => (error (source, yypos, yypos, "Illegal character in text constant")
                      ; continue ());
 
 <TEXT_FMT>{ws}+  => (continue ());
-<TEXT_FMT>{eol}  => (Source.newline (source, newLinePos yypos yytext); continue ());
+<TEXT_FMT>{eol}  => (Source.newline (source, lastPos (yypos, yytext)); continue ());
 <TEXT_FMT>\\     => (YYBEGIN TEXT; continue ());
 <TEXT_FMT>.      => (error (source, yypos, yypos, "Illegal formatting character in text continuation")
                      ; continue ());
@@ -478,7 +476,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
     ; continue ());
 
 <LINE_COMMENT>{eol} =>
-   (Source.newline (source, newLinePos yypos yytext)
+   (Source.newline (source, lastPos (yypos, yytext))
     ; finishComment ()
     ; continue ());
 <LINE_COMMENT>. =>
@@ -502,7 +500,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
    (finishComment ()
     ; continue ());
 <BLOCK_COMMENT>{eol} =>
-   (Source.newline (source, newLinePos yypos yytext)
+   (Source.newline (source, lastPos (yypos, yytext))
     ; continue ());
 <BLOCK_COMMENT>. =>
    (continue ());
