@@ -23,10 +23,10 @@ fun tok (t, s, l, r) =
 
 fun tok' (t, x, s, l) = tok (fn (l, r) => t (x, l, r), s, l, l + size x)
 
+fun error' (left, right, msg) =
+   Control.errorStr (Region.make {left = left, right = right}, msg)
 fun error (source, left, right, msg) =
-   Control.errorStr (Region.make {left = Source.getPos (source, left),
-                                  right = Source.getPos (source, right)},
-                     msg)
+   error' (Source.getPos (source, left), Source.getPos (source, right), msg)
 
 fun lastPos (yypos, yytext) = yypos + size yytext - 1
 
@@ -36,10 +36,8 @@ local
    val commentLeft = ref SourcePos.bogus
    val commentStack: (unit -> unit) list ref = ref []
 in
-   fun commentError (right, msg) =
-      Control.errorStr (Region.make {left = !commentLeft,
-                                     right = right},
-                        msg)
+   fun commentError msg =
+      error' (!commentLeft, !commentLeft, msg)
    val inComment = fn () => not (List.isEmpty (!commentStack))
    fun startComment (source, yypos, th) =
       let
@@ -105,12 +103,8 @@ local
    val chars: char list ref = ref []
    val inText = ref false
    val textLeft = ref SourcePos.bogus
-   val textFinishFn: (string * SourcePos.t * SourcePos.t -> unit -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
+   val textFinishFn: (string * SourcePos.t * SourcePos.t -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
 in
-   fun textError (right, msg) =
-      Control.errorStr (Region.make {left = !textLeft,
-                                     right = right},
-                        msg)
    fun startText (tl, tf) =
       let
          val _ = chars := []
@@ -120,16 +114,18 @@ in
       in
          ()
       end
-   fun finishText (textRight) =
+   fun finishText textRight =
       let
-         val cs = String.fromListRev (!chars)
-         val tf = (!textFinishFn) (cs, !textLeft, textRight)
+         val cs = Vector.fromListRev (!chars)
+         val tl = !textLeft
+         val tr = textRight
+         val tf = !textFinishFn
          val _ = chars := []
          val _ = inText := false
          val _ = textLeft := SourcePos.bogus
          val _ = textFinishFn := (fn _ => raise Fail "textFinish")
       in
-         tf ()
+         tf (cs, tl, tr)
       end
    fun addTextString (s: string) =
       chars := String.fold (s, !chars, fn (c, ac) => c :: ac)
@@ -157,14 +153,15 @@ fun addTextUTF8 (source, yypos, yytext): unit =
 val eof: lexarg -> lexresult =
    fn {source, ...} =>
    let
-      val pos = Source.lineStart source
+      val _ = Source.newline (source, ~1)
+      val pos = Source.getPos (source, ~1)
       val _ =
          if inComment ()
-            then commentError (SourcePos.bogus, "Unclosed comment at end of file")
+            then error' (pos, pos, "Unclosed comment at end of file")
             else ()
       val _ =
          if inText ()
-            then textError (SourcePos.bogus, "Unclosed text constant at end of file")
+            then error' (pos, pos, "Unclosed text constant at end of file")
             else ()
    in
       Tokens.EOF (pos, pos)
@@ -226,7 +223,7 @@ hexDigit=[0-9a-fA-F];
 <INITIAL>{file} => (tok' (Tokens.FILE, yytext, source, yypos));
 
 <INITIAL>"\"" =>
-   (startText (Source.getPos (source, yypos), fn (s, l, r) => fn () =>
+   (startText (Source.getPos (source, yypos), fn (s, l, r) =>
                (YYBEGIN INITIAL;
                 Tokens.STRING (s, l, r)))
     ; YYBEGIN TEXT
@@ -267,18 +264,18 @@ hexDigit=[0-9a-fA-F];
 <TEXT>\\\\       => (addTextString "\\"; continue ());
 <TEXT>\\{ws}+    => (YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\{eol}    => (Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ());
-<TEXT>\\         => (error (source, yypos, yypos, "Illegal escape in text constant")
+<TEXT>\\         => (error (source, yypos, yypos + 1, "Illegal escape in text constant")
                      ; continue ());
-<TEXT>{eol}      => (Source.newline (source, lastPos (yypos, yytext))
-                     ; textError (Source.getPos (source, yypos), "Unclosed text constant at end of line")
+<TEXT>{eol}      => (error (source, yypos, yypos + size yytext, "Unclosed text constant at end of line")
+                     ; Source.newline (source, lastPos (yypos, yytext))
                      ; continue ());
-<TEXT>.          => (error (source, yypos, yypos, "Illegal character in text constant")
+<TEXT>.          => (error (source, yypos, yypos + 1, "Illegal character in text constant")
                      ; continue ());
 
 <TEXT_FMT>{ws}+  => (continue ());
 <TEXT_FMT>{eol}  => (Source.newline (source, lastPos (yypos, yytext)); continue ());
 <TEXT_FMT>\\     => (YYBEGIN TEXT; continue ());
-<TEXT_FMT>.      => (error (source, yypos, yypos, "Illegal formatting character in text continuation")
+<TEXT_FMT>.      => (error (source, yypos, yypos + 1, "Illegal formatting character in text continuation")
                      ; continue ());
 
 
@@ -329,7 +326,7 @@ hexDigit=[0-9a-fA-F];
 <LINE_DIR1>{decDigit}+"."{decDigit}+ =>
    (let
        fun err () =
-          (commentError (Source.getPos (source, yypos), "Illegal line directive")
+          (commentError "Illegal line directive"
            ; YYBEGIN BLOCK_COMMENT)
      in
         case String.split (yytext, #".") of
@@ -351,7 +348,7 @@ hexDigit=[0-9a-fA-F];
    (finishLineDir (source, yypos + size yytext)
     ; continue ());
 <LINE_DIR1,LINE_DIR2,LINE_DIR3,LINE_DIR4>. =>
-   (commentError (Source.getPos (source, yypos), "Illegal line directive")
+   (commentError "Illegal line directive"
     ; YYBEGIN BLOCK_COMMENT
     ; continue ());
 
