@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2015 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2016 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -209,17 +209,17 @@ fun makeOptions {usage} =
          case e of
             Control.Elaborate.Bad =>
                usage (concat ["invalid -", flag, " flag: ", s])
-          | Control.Elaborate.Deprecated ids =>
-               if !Control.warnDeprecated
+          | Control.Elaborate.Good _ => ()
+          | Control.Elaborate.Other =>
+               usage (concat ["invalid -", flag, " flag: ", s])
+          | Control.Elaborate.Proxy (ids, {deprecated}) =>
+               if deprecated andalso !Control.warnDeprecated
                   then
                      Out.output
                      (Out.error,
                       concat ["Warning: ", "deprecated annotation: ", s, ", use ",
                               List.toString Control.Elaborate.Id.name ids, ".\n"])
                else ()
-          | Control.Elaborate.Good () => ()
-          | Control.Elaborate.Other =>
-               usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       datatype z = datatype MLton.Platform.Arch.t
       datatype z = datatype MLton.Platform.OS.t
@@ -933,6 +933,7 @@ fun commandLine (args: string list): unit =
           | (Darwin, X86, Executable) => false
           | (Darwin, X86, Archive) => false
           | (Darwin, _, _) => true
+          | (OpenBSD, _, _) => true
             (* On ELF systems, we only need PIC for LibArchive/Library *)
           | (_, _, Library) => true
           | (_, _, LibArchive) => true

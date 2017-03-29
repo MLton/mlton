@@ -44,3 +44,4 @@ $regexp-lib.cm                          $(SML_LIB)/smlnj-lib/RegExp
 $sexp-lib.cm                            $(SML_LIB)/smlnj-lib/SExp
 $smlnj-lib.cm                           $(SML_LIB)/smlnj-lib/Util
 $unix-lib.cm                            $(SML_LIB)/smlnj-lib/Unix
+$xml-lib.cm                             $(SML_LIB)/smlnj-lib/XML

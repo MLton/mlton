@@ -57,7 +57,7 @@ original=`pwd`
 dir=`dirname "$0"`
 src=`cd "$dir/.." && pwd`
 
-PATH="$dir":$PATH
+PATH="$src"/bin:$PATH
 
 # libDir is the mlton lib directory where you would like the
 # cross-compiler information to be installed.  If you have installed

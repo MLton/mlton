@@ -28,6 +28,63 @@ If `true`, allow `_address`, `_export`, `_import`, and `_symbol`
 expressions to appear in source files.  See
 <:ForeignFunctionInterface:>.
 
+* +allowSuccessorML {false|true}+
++
+--
+Allow or disallow all of the <:SuccessorML:> features.  This is a
+proxy for all of the following annotations.
+
+** +allowDoDecls {false|true}+
++
+If `true`, allow a +do _exp_+ declaration form.
+
+** +allowExtendedConsts {false|true}+
++
+--
+Allow or disallow all of the extended constants features.  This is a
+proxy for all of the following annotations.
+
+*** +allowExtendedNumConsts {false|true}+
++
+If `true`, allow extended numeric constants.
+
+*** +allowExtendedTextConsts {false|true}+
++
+If `true`, allow extended text constants.
+--
+
+** +allowLineComments {false|true}+
++
+If `true`, allow line comments beginning with the token ++(*)++.
+
+** +allowOptBar {false|true}+
++
+If `true`, allow a bar to appear before the first match rule of a
+`case`, `fn`, or `handle` expression, allow a bar to appear before the
+first function-value binding of a `fun` declaration, and allow a bar
+to appear before the first constructor binding or description of a
+`datatype` declaration or specification.
+
+** +allowOptSemicolon {false|true}+
++
+If `true`, allows a semicolon to appear after the last expression in a
+sequence expression or `let` body.
+
+** +allowOrPats {false|true}+
++
+If `true`, allows disjunctive (a.k.a., "or") patterns of the form
++_pat_ | _pat_+.
+
+** +allowRecordPunExps {false|true}+
++
+If `true`, allows record punning expressions.
+
+** +allowSigWithtype {false|true}+
++
+If `true`, allows `withtype` to modify a `datatype` specification in a
+signature.
+--
+
 * +forceUsed+
 +
 Force all identifiers in the basis denoted by the body of the `ann` to
@@ -80,46 +137,6 @@ error will abort a compile, while a warning will not.
 * +warnUnused {false|true}+
 +
 Report unused identifiers.
-
-Here are the annotations for enabling SuccessorML
-features.  The default value for all of these annotations is false,
-the SuccessorML features are all disabled by default.
-For information on the SuccessorML features
-see <:SuccessorML:>.
-
-* +allowDoDecls {false|true}+
-+
-If `true` allows for the usage of do declarations.
-
-* +allowExtendedLiterals {false|true}+
-+
-If `true` allows for the usage of extended literals.
-
-* +allowLineComments {false|true}+
-+
-If `true` allows for the usage of line comments.
-
-* +allowOptBar {false|true}+
-+
-If `true` allows for a pattern bar to optionally be placed before the
-first match in a case expression.
-
-* +allowOptSemicolon {false|true}+
-+
-If `true` allows for a semicolon to optionally be placed after the last
-expression in a series.
-
-* +allowOrPats {false|true}+
-+
-If `true` allows for the usage of disjunctive patterns.
-
-* +allowRecPunning {false|true}+
-+
-If `true` allows for the usage record punning.
-
-* +allowSigWithtype {false|true}+
-+
-If `true` allows for the usage the withtype keyword in signatures.
 
 == Next Steps ==
 

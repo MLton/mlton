@@ -1,47 +1,57 @@
 Unicode
 =======
 
-The current release of MLton does not support Unicode.  We are working
-on adding support.
+== Support in The Definition of Standard ML ==
 
- * `WideChar` structure.
- * UTF-8 encoded source files.
+There is no real support for Unicode in the
+<:DefinitionOfStandardML:Definition>; there are only a few throw-away
+sentences along the lines of "the characters with numbers 0 to 127
+coincide with the ASCII character set."
 
-There is no real support for Unicode in the <:DefinitionOfStandardML:Definition>;
-there are only a few throw-away sentences along the lines of "ASCII
-must be a subset of the character set in programs".
+== Support in The Standard ML Basis Library ==
 
-Neither is there real support for Unicode in the <:BasisLibrary:Basis Library>.
-The general consensus (which includes the opinions of the
-editors of the Basis Library) is that the `WideChar` structure is
-insufficient for the purposes of Unicode.  There is no `LargeChar`
-structure, which in itself is a deficiency, since a programmer can not
-program against the largest supported character size.
+Neither is there real support for Unicode in the <:BasisLibrary:Basis
+Library>.  The general consensus (which includes the opinions of the
+editors of the Basis Library) is that the `WideChar` and `WideString`
+structures are insufficient for the purposes of Unicode.  There is no
+`LargeChar` structure, which in itself is a deficiency, since a
+programmer can not program against the largest supported character
+size.
 
-MLton has some preliminary support for 16 and 32 bit characters and
-strings.  It is even possible to include arbitrary Unicode characters
-in 32-bit strings using a `\Uxxxxxxxx` escape sequence.  (This
-longer escape sequence is a minor extension over the Definition which
-only allows `\uxxxx`.)  This is by no means completely
-satisfactory in terms of support for Unicode, but it is what is
-currently available.
+== Current Support in MLton ==
+
+MLton, as a minor extension over the Definition, supports UTF-8 byte
+sequences in text constants.  This feature enables "UTF-8 convenience"
+(but not comprehensive Unicode support); in particular, it allows one
+to copy text from a browser and paste it into a string constant in an
+editor and, furthermore, if the string is printed to a terminal, then
+will (typically) appear as the original text.  See the
+<:SuccessorML#ExtendedTextConsts:extended text constants feature of
+Successor ML> for more details.
+
+MLton, also as a minor extension over the Definition, supports
+`\Uxxxxxxxx` numeric escapes in text constants and has preliminary
+internal support for 16- and 32-bit characters and strings.
+
+MLton provides `WideChar` and `WideString` structures, corresponding
+to 32-bit characters and strings, respectively.
+
+== Questions and Discussions ==
 
 There are periodic flurries of questions and discussion about Unicode
 in MLton/SML.  In December 2004, there was a discussion that led to
 some seemingly sound design decisions.  The discussion started at:
 
-   http://www.mlton.org/pipermail/mlton/2004-December/026396.html
+ * http://www.mlton.org/pipermail/mlton/2004-December/026396.html
 
 There is a good summary of points at:
 
-   http://www.mlton.org/pipermail/mlton/2004-December/026440.html
+ * http://www.mlton.org/pipermail/mlton/2004-December/026440.html
 
 In November 2005, there was a followup discussion and the beginning of
 some coding.
 
-  http://www.mlton.org/pipermail/mlton/2005-November/028300.html
-
-We are optimistic that support will appear in the next MLton release.
+ * http://www.mlton.org/pipermail/mlton/2005-November/028300.html
 
 == Also see ==
 
