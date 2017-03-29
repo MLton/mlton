@@ -28,6 +28,8 @@ fun error (source, left, right, msg) =
                                   right = Source.getPos (source, right)},
                      msg)
 
+fun lastPos (yypos, yytext) = yypos + size yytext - 1
+
 
 (* Comments *)
 local
@@ -199,7 +201,7 @@ hexDigit=[0-9a-fA-F];
 
 %%
 <INITIAL>{ws}+  => (continue ());
-<INITIAL>{eol}  => (Source.newline (source, yypos); continue ());
+<INITIAL>{eol}  => (Source.newline (source, lastPos (yypos, yytext)); continue ());
 
 <INITIAL>"_prim" => (tok (Tokens.PRIM, source, yypos, yypos + size yytext));
 
@@ -264,17 +266,17 @@ hexDigit=[0-9a-fA-F];
 <TEXT>"\\\""     => (addTextString "\""; continue ());
 <TEXT>\\\\       => (addTextString "\\"; continue ());
 <TEXT>\\{ws}+    => (YYBEGIN TEXT_FMT; continue ());
-<TEXT>\\{eol}    => (Source.newline (source, yypos + 1); YYBEGIN TEXT_FMT; continue ());
+<TEXT>\\{eol}    => (Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\         => (error (source, yypos, yypos, "Illegal escape in text constant")
                      ; continue ());
-<TEXT>{eol}      => (Source.newline (source, yypos)
+<TEXT>{eol}      => (Source.newline (source, lastPos (yypos, yytext))
                      ; textError (Source.getPos (source, yypos), "Unclosed text constant at end of line")
                      ; continue ());
 <TEXT>.          => (error (source, yypos, yypos, "Illegal character in text constant")
                      ; continue ());
 
 <TEXT_FMT>{ws}+  => (continue ());
-<TEXT_FMT>{eol}  => (Source.newline (source, yypos); continue ());
+<TEXT_FMT>{eol}  => (Source.newline (source, lastPos (yypos, yytext)); continue ());
 <TEXT_FMT>\\     => (YYBEGIN TEXT; continue ());
 <TEXT_FMT>.      => (error (source, yypos, yypos, "Illegal formatting character in text continuation")
                      ; continue ());
@@ -292,7 +294,7 @@ hexDigit=[0-9a-fA-F];
     ; continue ());
 
 <LINE_COMMENT>{eol} =>
-   (Source.newline (source, yypos)
+   (Source.newline (source, lastPos (yypos, yytext))
     ; finishComment ()
     ; continue ());
 <LINE_COMMENT>. =>
@@ -312,7 +314,7 @@ hexDigit=[0-9a-fA-F];
    (finishComment ()
     ; continue ());
 <BLOCK_COMMENT>{eol} =>
-   (Source.newline (source, yypos)
+   (Source.newline (source, lastPos (yypos, yytext))
     ; continue ());
 <BLOCK_COMMENT>. =>
    (continue ());
