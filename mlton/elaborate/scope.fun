@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -428,7 +429,6 @@ fun ('down, 'up)
                    | If (e1, e2, e3) => do3 (loop e1, loop e2, loop e3, If)
                    | Let (dec, e) => do2 (loopDec (dec, d), loop e, Let)
                    | List ts => doVec (ts, List)
-		   | Vector vs => doVec (vs, Vector)
                    | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
                    | Prim kind => do1 (loopPrimKind (kind, d), Prim)
                    | Raise exn => do1 (loop exn, Raise)
@@ -442,6 +442,7 @@ fun ('down, 'up)
                    | Selector _ => empty ()
                    | Seq es => doVec (es, Seq)
                    | Var _ => empty ()
+                   | Vector vs => doVec (vs, Vector)
                    | While {expr, test} =>
                         do2 (loop expr, loop test, fn (expr, test) =>
                              While {expr = expr, test = test})

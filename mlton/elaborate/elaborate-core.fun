@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2015 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -2982,16 +2982,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                                (Cexp.ty e', Aexp.region e)),
                                   preError, lay))
                    end
-	      | Aexp.Vector es =>
-		   let
-		       val es' = Vector.map (es, elab)
-		   in
-		       Cexp.make (Cexp.Vector es',
-				  unifyVector
-				  (Vector.map2 (es, es', fn (e, e') =>
-						(Cexp.ty e', Aexp.region e)),
-				   preError, lay))
-		   end
               | Aexp.Orelse (e, e') =>
                    let
                       val ce = elab e
@@ -3510,6 +3500,16 @@ fun elaborateDec (d, {env = E, nest}) =
                             in
                                Cexp.make (e, instance)
                             end
+                   end
+              | Aexp.Vector es =>
+                   let
+                       val es' = Vector.map (es, elab)
+                   in
+                       Cexp.make (Cexp.Vector es',
+                                  unifyVector
+                                  (Vector.map2 (es, es', fn (e, e') =>
+                                                (Cexp.ty e', Aexp.region e)),
+                                   preError, lay))
                    end
               | Aexp.While {expr, test} =>
                    let

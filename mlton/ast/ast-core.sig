@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -146,7 +146,6 @@ signature AST_CORE =
              | If of t * t * t
              | Let of dec * t
              | List of t vector
-	     | Vector of t vector
              | Orelse of t * t
              | Prim of PrimKind.t
              | Raise of t
@@ -155,6 +154,7 @@ signature AST_CORE =
              | Seq of t vector
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
+             | Vector of t vector
              | While of {expr: t,
                          test: t}
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -82,7 +82,7 @@ structure Pat =
        | Wild
       and item =
          Field of t
-        | Vid of Vid.t * Type.t option * t option 
+       | Vid of Vid.t * Type.t option * t option
       withtype t = node Wrap.t
       type node' = node
       type obj = t
@@ -310,31 +310,31 @@ structure Priority =
    end
 
 datatype expNode =
-   Var of {name: Longvid.t, fixop: Fixop.t}
-  | Fn of match
-  | FlatApp of exp vector
+    Andalso of exp * exp
   | App of exp * exp
   | Case of exp * match
-  | Let of dec * exp
-  | Seq of exp vector
   | Const of Const.t
-  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
-  | List of exp vector
-  | Vector of exp vector
-  | Selector of Field.t
   | Constraint of exp * Type.t
+  | FlatApp of exp vector
+  | Fn of match
   | Handle of exp * match
-  | Raise of exp
   | If of exp * exp * exp
-  | Andalso of exp * exp
+  | Let of dec * exp
+  | List of exp vector
   | Orelse of exp * exp
-  | While of {test: exp, expr: exp}
   | Prim of PrimKind.t
+  | Raise of exp
+  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
+  | Selector of Field.t
+  | Seq of exp vector
+  | Var of {name: Longvid.t, fixop: Fixop.t}
+  | Vector of exp vector
+  | While of {test: exp, expr: exp}
 and decNode =
-   Abstype of {body: dec,
-               datBind: DatBind.t}
-  | DoDec of exp
+    Abstype of {body: dec,
+                datBind: DatBind.t}
   | Datatype of DatatypeRhs.t
+  | DoDec of exp
   | Exception of Eb.t vector
   | Fix of {fixity: Fixity.t,
             ops: Vid.t vector}
@@ -394,7 +394,6 @@ fun expNodeName e =
     | If _ => "If"
     | Let _ => "Let"
     | List _ => "List"
-    | Vector _ => "Vector"
     | Orelse _ => "Orelse"
     | Prim _ => "Prim"
     | Raise _ => "Raise"
@@ -402,6 +401,7 @@ fun expNodeName e =
     | Selector _ => "Selector"
     | Seq _ => "Seq"
     | Var _ => "Var"
+    | Vector _ => "Vector"
     | While _ => "While"
 
 val traceLayoutExp =
@@ -442,7 +442,6 @@ fun layoutExp arg =
                                seq [str "else ", layoutExpT elseCase]])
        | Let (dec, expr) => Pretty.lett (layoutDec dec, layoutExpT expr)
        | List es => list (Vector.toListMap (es, layoutExpT))
-       | Vector es => vector (Vector.map (es, layoutExpT))
        | Orelse (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "orelse ", layoutExpF e']])
@@ -464,6 +463,7 @@ fun layoutExp arg =
        | Selector f => seq [str "#", Field.layout f]
        | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
        | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+       | Vector es => vector (Vector.map (es, layoutExpT))
        | While {test, expr} =>
             delimit (align [seq [str "while ", layoutExpT test],
                             seq [str "do ", layoutExpT expr]])
@@ -545,7 +545,6 @@ fun checkSyntaxExp (e: exp): unit =
        | If (e1, e2, e3) => (c e1; c e2; c e3)
        | Let (d, e) => (checkSyntaxDec d; c e)
        | List es => Vector.foreach (es, c)
-       | Vector es => Vector.foreach (es, c)
        | Orelse (e1, e2) => (c e1; c e2)
        | Prim _ => ()
        | Raise e => c e
@@ -557,6 +556,7 @@ fun checkSyntaxExp (e: exp): unit =
        | Selector _ => ()
        | Seq es => Vector.foreach (es, c)
        | Var _ => ()
+       | Vector es => Vector.foreach (es, c)
        | While {expr, test} => (c expr; c test)
    end
 
