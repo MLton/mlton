@@ -293,7 +293,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <INITIAL>"_symbol" => (tok (Tokens.SYMBOL, source, yypos, yypos + size yytext));
 
 <INITIAL>"#" => (tok (Tokens.HASH, source, yypos, yypos + size yytext));
-<INITIAL>"#[" => (tok (Tokens.HASHBRACKET, source, yypos, yypos + size yytext));
+<INITIAL>"#[" => (tok (Tokens.HASHLBRACKET, source, yypos, yypos + size yytext));
 <INITIAL>"(" => (tok (Tokens.LPAREN, source, yypos, yypos + size yytext));
 <INITIAL>")" => (tok (Tokens.RPAREN, source, yypos, yypos + size yytext));
 <INITIAL>"," => (tok (Tokens.COMMA, source, yypos, yypos + size yytext));
