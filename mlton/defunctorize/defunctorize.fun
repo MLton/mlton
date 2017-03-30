@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -664,12 +664,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Lambda l => loopLambda l
              | Let (ds, e) => (Vector.foreach (ds, loopDec); loopExp e)
              | List es => Vector.foreach (es, loopExp)
-	     | Vector es => Vector.foreach (es, loopExp)
              | PrimApp {args, ...} => Vector.foreach (args, loopExp)
              | Raise e => loopExp e
              | Record r => Record.foreach (r, loopExp)
              | Seq es => Vector.foreach (es, loopExp)
              | Var _ => ()
+             | Vector es => Vector.foreach (es, loopExp)
          end
       and loopLambda (l: Clambda.t): unit =
          loopExp (#body (Clambda.dest l))
@@ -1050,17 +1050,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
                         Xexp.list (Vector.map (es, #1 o loopExp), ty,
                                    {forceLeftToRight = 2 <= numExpansive})
                      end
-                | Vector es =>
-                  let
-                      val args = Vector.map (es, #1 o loopExp)
-                      val ety = Xtype.deVector ty
-                  in
-                      Xexp.primApp
-                          {args = args,
-                           prim = Prim.vector,
-                           targs = Vector.new1 ety,
-                           ty = ty}
-                  end
                 | PrimApp {args, prim, targs} =>
                      let
                         val args = Vector.map (args, #1 o loopExp)
@@ -1103,6 +1092,11 @@ fun defunctorize (CoreML.Program.T {decs}) =
                      Xexp.var {targs = Vector.map (targs (), loopTy),
                                ty = ty,
                                var = var ()}
+                | Vector es =>
+                     Xexp.primApp {args = Vector.map (es, #1 o loopExp),
+                                   prim = Prim.vector,
+                                   targs = Vector.new1 (Xtype.deVector ty),
+                                   ty = ty}
          in
             (exp, ty)
          end

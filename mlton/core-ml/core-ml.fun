@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet
+(* Copyright (C) 2015,2017 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -193,7 +193,6 @@ and expNode =
   | Lambda of lambda
   | Let of dec vector * exp
   | List of exp vector
-  | Vector of exp vector
   | PrimApp of {args: exp vector,
                 prim: Type.t Prim.t,
                 targs: Type.t vector}
@@ -201,6 +200,7 @@ and expNode =
   | Record of exp Record.t
   | Seq of exp vector
   | Var of (unit -> Var.t) * (unit -> Type.t vector)
+  | Vector of exp vector
 and lambda = Lam of {arg: Var.t,
                      argType: Type.t,
                      body: exp,
@@ -267,7 +267,6 @@ in
             Pretty.lett (align (Vector.toListMap (ds, layoutDec)),
                          layoutExp e)
        | List es => list (Vector.toListMap (es, layoutExp))
-       | Vector es => vector (Vector.map (es, layoutExp))
        | PrimApp {args, prim, targs} =>
             Pretty.primApp {args = Vector.map (args, layoutExp),
                             prim = Prim.layout prim,
@@ -293,6 +292,7 @@ in
                                  Vector.layout Type.layout targs]
                     end
             else Var.layout (var ())
+       | Vector es => vector (Vector.map (es, layoutExp))
    and layoutFuns (tyvars, decs)  =
       if 0 = Vector.length decs
          then empty
@@ -374,12 +374,12 @@ structure Exp =
           | Lambda _ => false
           | Let _ => true
           | List es => Vector.exists (es, isExpansive)
-	  | Vector es => Vector.exists (es, isExpansive)
           | PrimApp _ => true
           | Raise _ => true
           | Record r => Record.exists (r, isExpansive)
           | Seq _ => true
           | Var _ => false
+          | Vector es => Vector.exists (es, isExpansive)
 
       fun tuple es =
          if 1 = Vector.length es
@@ -465,12 +465,12 @@ structure Exp =
                      (Vector.foreach (ds, loopDec)
                       ; loop e)
                 | List es => Vector.foreach (es, loop)
-                | Vector es => Vector.foreach (es, loop)
                 | PrimApp {args, ...} => Vector.foreach (args, loop)
                 | Raise e => loop e
                 | Record r => Record.foreach (r, loop)
                 | Seq es => Vector.foreach (es, loop)
                 | Var (x, _) => f (x ())
+                | Vector es => Vector.foreach (es, loop)
             and loopDec d =
                case d of
                   Datatype _ => ()

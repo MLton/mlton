@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet
+(* Copyright (C) 2015,2017 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -95,7 +95,6 @@ signature CORE_ML =
              | Lambda of lambda
              | Let of dec vector * t
              | List of t vector
-	     | Vector of t vector
              | PrimApp of {args: t vector,
                            prim: Type.t Prim.t,
                            targs: Type.t vector}
@@ -103,6 +102,7 @@ signature CORE_ML =
              | Record of t Record.t
              | Seq of t vector
              | Var of (unit -> Var.t) * (unit -> Type.t vector)
+             | Vector of t vector
 
             val andAlso: t * t -> t
             val casee: {kind: string * string,
