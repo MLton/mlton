@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -971,14 +972,6 @@ fun closureConvert
                                                   coerce (convertVarInfo y,
                                                           VarInfo.value y, v)))
                                   end
-                             | Vector_vector =>
-                                  let
-                                      val args = Vector.map (args, varExpInfo)
-                                      val v = Value.deVector v
-                                  in
-                                      primApp (v1 (valueType v), Vector.map (args, fn x => coerce (convertVarInfo x,
-                                                                                        VarInfo.value x, v)))
-                                  end
                              | MLton_eq =>
                                   let
                                      val a0 = varExpInfo (arg 0)
@@ -1046,6 +1039,14 @@ fun closureConvert
                                      primApp (v1 (valueType v),
                                               v1 (coerce (convertVarInfo y,
                                                           VarInfo.value y, v)))
+                                  end
+                             | Vector_vector =>
+                                  let
+                                      val args = Vector.map (args, varExpInfo)
+                                      val v = Value.deVector v
+                                  in
+                                      primApp (v1 (valueType v), Vector.map (args, fn x => coerce (convertVarInfo x,
+                                                                                        VarInfo.value x, v)))
                                   end
                              | Weak_new =>
                                   let

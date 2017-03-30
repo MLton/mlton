@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -137,7 +138,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                                  var = SOME zeroVar},
                                 S2.Statement.Bind
                                 {exp = S2.Exp.PrimApp {args = Vector.new1 zeroVar,
-                                                       prim = Prim.array},
+                                                       prim = Prim.arrayUninit},
                                  ty = ty,
                                  var = var})
                             end

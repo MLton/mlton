@@ -85,7 +85,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
               val arrayExp = Dexp.primApp
                                  {args = Vector.new1
                                              (buildIndexExp (Vector.length args)),
-                                  prim = Prim.array,
+                                  prim = Prim.arrayUninit,
                                   targs = Vector.new1 ety,
                                   ty = aty}
               val arrayDecs = [{var = arrayVar, exp = arrayExp}]

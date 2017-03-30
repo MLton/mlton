@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -418,7 +419,7 @@ structure Value =
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.array,
+                                                   prim = Prim.arrayUninit,
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
@@ -862,12 +863,12 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_uninit => array (arg 0, bear ())
-                | Array_array0Const =>
+                  Array_array0Const =>
                      array (zero (WordSize.seqIndex ()), Birth.here ())
                 | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
+                | Array_uninit => array (arg 0, bear ())
                 | Array_update => update (arg 0, arg 2)
                 | Ref_assign =>
                      (coerce {from = arg 1, to = deref (arg 0)}; unit ())
@@ -882,9 +883,9 @@ fun transform (program: Program.t): Program.t =
                      in
                         r
                      end
-                | Vector_vector => vector (Vector.length args)
                 | Vector_length => vectorLength (arg 0)
                 | Vector_sub => devector (arg 0)
+                | Vector_vector => vector (Vector.length args)
                 | Weak_get => deweak (arg 0)
                 | Weak_new =>
                      let

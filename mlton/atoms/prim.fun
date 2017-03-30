@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,11 +34,11 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_uninit (* backend *)
- | Array_array0Const (* constant propagation *)
+   Array_array0Const (* constant propagation *)
  | Array_length (* ssa to rssa *)
  | Array_sub (* backend *)
  | Array_toVector (* backend *)
+ | Array_uninit (* backend *)
  | Array_update (* backend *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
@@ -155,9 +155,9 @@ datatype 'a t =
  | TopLevel_getSuffix (* implement suffix *)
  | TopLevel_setHandler (* implement exceptions *)
  | TopLevel_setSuffix (* implement suffix *)
- | Vector_vector (* ssa to rssa *)
  | Vector_length (* ssa to rssa *)
  | Vector_sub (* ssa to rssa *)
+ | Vector_vector (* implement vectors *)
  | Weak_canGet (* ssa to rssa *)
  | Weak_get (* ssa to rssa *)
  | Weak_new (* ssa to rssa *)
@@ -220,11 +220,11 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_uninit => "Array_uninit"
-       | Array_array0Const => "Array_array0Const"
+         Array_array0Const => "Array_array0Const"
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
+       | Array_uninit => "Array_uninit"
        | Array_update => "Array_update"
        | CPointer_add => "CPointer_add"
        | CPointer_diff => "CPointer_diff"
@@ -320,9 +320,9 @@ fun toString (n: 'a t): string =
        | TopLevel_getSuffix => "TopLevel_getSuffix"
        | TopLevel_setHandler => "TopLevel_setHandler"
        | TopLevel_setSuffix => "TopLevel_setSuffix"
-       | Vector_vector => "Vector_vector"
        | Vector_length => "Vector_length"
        | Vector_sub => "Vector_sub"
+       | Vector_vector => "Vector_vector"
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
@@ -361,11 +361,11 @@ fun toString (n: 'a t): string =
 fun layout p = Layout.str (toString p)
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_uninit, Array_uninit) => true
-    | (Array_array0Const, Array_array0Const) => true
+   fn (Array_array0Const, Array_array0Const) => true
     | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
+    | (Array_uninit, Array_uninit) => true
     | (Array_update, Array_update) => true
     | (CPointer_add, CPointer_add) => true
     | (CPointer_diff, CPointer_diff) => true
@@ -467,9 +467,9 @@ val equals: 'a t * 'a t -> bool =
     | (TopLevel_getSuffix, TopLevel_getSuffix) => true
     | (TopLevel_setHandler, TopLevel_setHandler) => true
     | (TopLevel_setSuffix, TopLevel_setSuffix) => true
-    | (Vector_vector, Vector_vector) => true
     | (Vector_length, Vector_length) => true
     | (Vector_sub, Vector_sub) => true
+    | (Vector_vector, Vector_vector) => true
     | (Weak_canGet, Weak_canGet) => true
     | (Weak_get, Weak_get) => true
     | (Weak_new, Weak_new) => true
@@ -524,11 +524,11 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_uninit => Array_uninit
-    | Array_array0Const => Array_array0Const
+      Array_array0Const => Array_array0Const
     | Array_length => Array_length
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
+    | Array_uninit => Array_uninit
     | Array_update => Array_update
     | CPointer_add => CPointer_add
     | CPointer_diff => CPointer_diff
@@ -625,9 +625,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | TopLevel_getSuffix => TopLevel_getSuffix
     | TopLevel_setHandler => TopLevel_setHandler
     | TopLevel_setSuffix => TopLevel_setSuffix
-    | Vector_vector => Vector_vector
     | Vector_length => Vector_length
     | Vector_sub => Vector_sub
+    | Vector_vector => Vector_vector
     | Weak_canGet => Weak_canGet
     | Weak_get => Weak_get
     | Weak_new => Weak_new
@@ -664,10 +664,10 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val array = Array_uninit
 val arrayLength = Array_length
-val arrayUpdate = Array_update
 val arrayToVector = Array_toVector
+val arrayUninit = Array_uninit
+val arrayUpdate = Array_update
 val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
@@ -775,11 +775,11 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_uninit => Moveable
-       | Array_array0Const => Moveable
+         Array_array0Const => Moveable
        | Array_length => Functional
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
+       | Array_uninit => Moveable
        | Array_update => SideEffect
        | CPointer_add => Functional
        | CPointer_diff => Functional
@@ -878,9 +878,9 @@ val kind: 'a t -> Kind.t =
        | TopLevel_getSuffix => DependsOnState
        | TopLevel_setHandler => SideEffect
        | TopLevel_setSuffix => SideEffect
-       | Vector_vector => Functional
        | Vector_length => Functional
        | Vector_sub => Functional
+       | Vector_vector => Functional
        | Weak_canGet => DependsOnState
        | Weak_get => DependsOnState
        | Weak_new => Moveable
@@ -984,11 +984,11 @@ local
        (Word8Vector_subWord s)]
 in
    val all: unit t list =
-      [Array_uninit,
-       Array_array0Const,
+      [Array_array0Const,
        Array_length,
        Array_sub,
        Array_toVector,
+       Array_uninit,
        Array_update,
        CPointer_add,
        CPointer_diff,
@@ -1050,9 +1050,9 @@ in
        TopLevel_getSuffix,
        TopLevel_setHandler,
        TopLevel_setSuffix,
-       Vector_vector,
        Vector_length,
        Vector_sub,
+       Vector_vector,
        Weak_canGet,
        Weak_get,
        Weak_new,
@@ -1219,11 +1219,11 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
-       | Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
+         Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
+       | Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
        | CPointer_add =>
@@ -1344,9 +1344,9 @@ fun 'a checkApp (prim: 'a t,
             noTargs (fn () => (oneArg (arrow (unit, unit)), unit))
        | String_toWord8Vector =>
             noTargs (fn () => (oneArg string, word8Vector))
-       | Vector_vector => oneTarg (fn targ => (nArgs (Vector.tabulate (Vector.length args, fn _ => targ)), vector targ))
        | Vector_length => oneTarg (fn t => (oneArg (vector t), seqIndex))
        | Vector_sub => oneTarg (fn t => (twoArgs (vector t, seqIndex), t))
+       | Vector_vector => oneTarg (fn targ => (nArgs (Vector.map (args, fn _ => targ)), vector targ))
        | Weak_canGet => oneTarg (fn t => (oneArg (weak t), bool))
        | Weak_get => oneTarg (fn t => (oneArg (weak t), t))
        | Weak_new => oneTarg (fn t => (oneArg t, weak t))
@@ -1408,11 +1408,11 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_uninit => one (deArray result)
-       | Array_array0Const => one (deArray result)
+         Array_array0Const => one (deArray result)
        | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
+       | Array_uninit => one (deArray result)
        | Array_update => one (deArray (arg 0))
        | CPointer_getObjptr => one result
        | CPointer_setObjptr => one (arg 2)
@@ -1430,9 +1430,9 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | Ref_assign => one (deRef (arg 0))
        | Ref_deref => one (deRef (arg 0))
        | Ref_ref => one (deRef result)
-       | Vector_vector => one (deVector result)
        | Vector_length => one (deVector (arg 0))
        | Vector_sub => one (deVector (arg 0))
+       | Vector_vector => one (deVector result)
        | Weak_canGet => one (deWeak (arg 0))
        | Weak_get => one result
        | Weak_new => one (arg 0)

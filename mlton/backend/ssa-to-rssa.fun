@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2014 Matthew Fluet.
+(* Copyright (C) 2009,2011,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1178,8 +1178,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
-                                 Array_uninit => array (a 0)
-                               | Array_length => arrayOrVectorLength ()
+                                 Array_length => arrayOrVectorLength ()
                                | Array_toVector =>
                                     let
                                        val array = a 0
@@ -1203,6 +1202,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         :: ss,
                                         t)
                                     end
+                               | Array_uninit => array (a 0)
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()

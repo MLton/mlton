@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -212,9 +212,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                            datatype z = datatype Prim.Name.t
                                         in
                                            case Prim.name prim of
-                                              Array_uninit => knownLength (arg ())
-                                            | Array_length => length ()
+                                              Array_length => length ()
                                             | Array_toVector => conv ()
+                                            | Array_uninit => knownLength (arg ())
                                             | Vector_length => length ()
                                             | _ => if Prim.isFunctional prim
                                                       then doit ()

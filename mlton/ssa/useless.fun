@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -508,9 +508,7 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_uninit =>
-                        coerce {from = arg 0, to = arrayLength result}
-                   | Array_array0Const => ()
+                     Array_array0Const => ()
                    | Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
                    | Array_toVector =>
@@ -519,6 +517,8 @@ fun transform (program: Program.t): Program.t =
                              Vector {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
+                   | Array_uninit =>
+                        coerce {from = arg 0, to = arrayLength result}
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);

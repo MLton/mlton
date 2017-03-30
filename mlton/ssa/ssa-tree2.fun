@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -351,10 +351,7 @@ structure Type =
             val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
-               Array_uninit =>
-                  oneArg (fn n =>
-                          equals (n, seqIndex) andalso isVector result)
-             | Array_length =>
+               Array_length =>
                   oneArg (fn a =>
                           isVector a andalso equals (result, seqIndex))
              | Array_toVector =>
@@ -368,6 +365,9 @@ structure Type =
                                         (not vi orelse ai)
                                         andalso equals (ae, ve))
                     | _ => false)
+             | Array_uninit =>
+                  oneArg (fn n =>
+                          equals (n, seqIndex) andalso isVector result)
              | _ => default ()
          end
    end
