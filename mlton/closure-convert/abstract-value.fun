@@ -477,13 +477,14 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
               | _ => typeError ())
        | Vector_vector =>
             let
-                val res = result ()
+                val r = result ()
+                val _ =
+                   case dest r of
+                      Vector x => Vector.foreach (args, fn arg => coerce {from = arg, to = x})
+                    | Type _ => ()
+                    | _ => typeError ()
             in
-                (case dest res of
-                     Vector x' => (Vector.foreach (args, fn x => coerce {from = x, to = x'})
-                                  ; res)
-                   | Type _ => res
-                   | _ => typeError ())
+               r
             end
        | Weak_get =>
             (case dest (oneArg ()) of

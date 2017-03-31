@@ -1042,11 +1042,13 @@ fun closureConvert
                                   end
                              | Vector_vector =>
                                   let
-                                      val args = Vector.map (args, varExpInfo)
-                                      val v = Value.deVector v
+                                     val ys = Vector.map (args, varExpInfo)
+                                     val v = Value.deVector v
                                   in
-                                      primApp (v1 (valueType v), Vector.map (args, fn x => coerce (convertVarInfo x,
-                                                                                        VarInfo.value x, v)))
+                                     primApp (v1 (valueType v),
+                                              Vector.map (ys, fn y =>
+                                                          coerce (convertVarInfo y,
+                                                                  VarInfo.value y, v)))
                                   end
                              | Weak_new =>
                                   let
