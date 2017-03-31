@@ -99,7 +99,6 @@ signature CONTROL_FLAGS =
             val allowOverload: (bool,bool) t
             val allowPrim: (bool,bool) t
             val allowRebindEquals: (bool,bool) t
-            val allowVectorExp: (bool,bool) t
             val deadCode: (bool,bool) t
             val forceUsed: (unit,bool) t
             val ffiStr: (string,string option) t
@@ -121,6 +120,7 @@ signature CONTROL_FLAGS =
             val allowOrPats: (bool,bool) t
             val allowRecordPunExps: (bool,bool) t
             val allowSigWithtype: (bool,bool) t
+            val allowVectorExps: (bool,bool) t
 
             val current: ('args, 'st) t -> 'st
             val default: ('args, 'st) t -> 'st

@@ -454,9 +454,6 @@ structure Elaborate =
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)
-         val (allowVectorExp, ac) =
-            makeBool ({name = "allowVectorExp",
-                       default = false, expert = false}, ac)
          val (deadCode, ac) =
             makeBool ({name = "deadCode", 
                        default = false, expert = true}, ac)
@@ -546,13 +543,16 @@ structure Elaborate =
          val (allowSigWithtype, ac) =
             makeBool ({name = "allowSigWithtype",
                        default = false, expert = false}, ac)
+         val (allowVectorExps, ac) =
+            makeBool ({name = "allowVectorExps",
+                       default = false, expert = false}, ac)
          val extendedConstsCtrls =
             [allowExtendedNumConsts, allowExtendedTextConsts]
          val successorMLCtrls =
             [allowDoDecls, allowExtendedNumConsts,
              allowExtendedTextConsts, allowLineComments, allowOptBar,
              allowOptSemicolon, allowOrPats, allowRecordPunExps,
-             allowSigWithtype]
+             allowSigWithtype, allowVectorExps]
 
 
          val {parseId, parseIdAndArgs, withDef, snapshot} = ac

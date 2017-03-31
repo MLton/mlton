@@ -3503,7 +3503,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    end
               | Aexp.Vector es =>
                    let
-                      val _ = check (ElabControl.allowVectorExp, "Vector expressions", Aexp.region e)
+                      val _ = check (ElabControl.allowVectorExps, "Vector expressions", Aexp.region e)
                       val es' = Vector.map (es, elab)
                    in
                       Cexp.make (Cexp.Vector es',
