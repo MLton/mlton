@@ -374,47 +374,35 @@ val unify =
    Type.unify (t, t', {error = Control.error o error,
                        preError = preError})
 
-fun unifyList (trs: (Type.t * Region.t) vector,
-               z,
-               lay: unit -> Layout.t): Type.t =
+local
+fun unifySeq (seqTy, seqStr,
+              trs: (Type.t * Region.t) vector,
+              preError, lay): Type.t =
    if 0 = Vector.length trs
-      then Type.list (Type.new ())
+      then seqTy (Type.new ())
    else
       let
          val (t, _) = Vector.sub (trs, 0)
          val _ =
             Vector.foreach
             (trs, fn (t', r) =>
-             unify (t, t', z, fn (l, l') =>
+             unify (t, t', preError, fn (l, l') =>
                     (r,
-                     str "list element types disagree",
+                     str (seqStr ^ " element types disagree"),
                      align [seq [str "element:  ", l'],
                             seq [str "previous: ", l],
                             lay ()])))
       in
-         Type.list t
+         seqTy t
       end
-
+in
+fun unifyList (trs: (Type.t * Region.t) vector,
+               preError, lay): Type.t =
+   unifySeq (Type.list, "list", trs, preError, lay)
 fun unifyVector (trs: (Type.t * Region.t) vector,
-		 z,
-		 lay: unit -> Layout.t): Type.t =
-  if 0 = Vector.length trs
-  then Type.vector (Type.new ())
-  else
-      let
-          val (t, _) = Vector.sub (trs, 0)
-          val _ =
-              Vector.foreach
-		  (trs, fn (t', r) =>
-			   unify (t, t', z, fn (l, l') =>
-					       (r,
-                     str "vector element types disagree",
-                     align [seq [str "element:  ", l'],
-                            seq [str "previous: ", l],
-                            lay ()])))
-      in
-          Type.vector t
-      end
+                 preError, lay): Type.t =
+   unifySeq (Type.vector, "vector", trs, preError, lay)
+end
 
 val elabPatInfo = Trace.info "ElaborateCore.elabPat"
 
@@ -3436,7 +3424,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.make (Cexp.Seq es', Cexp.ty (Vector.sub (es', last)))
                    end
-	      | Aexp.Var {name = id, ...} =>
+              | Aexp.Var {name = id, ...} =>
                    let
                       val (vid, scheme) = Env.lookupLongvid (E, id)
                       fun dontCare () =
