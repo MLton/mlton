@@ -19,7 +19,6 @@ structure CombineConversions = CombineConversions (S)
 structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
 structure Flatten = Flatten (S)
-structure ImplementVectors = ImplementVectors (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
 structure KnownCase = KnownCase (S)
@@ -87,12 +86,9 @@ val ssaPassesDefault =
    {name = "redundant", doit = Redundant.transform} ::
    {name = "knownCase", doit = KnownCase.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
-   {name = "implementVectors", doit = ImplementVectors.transform} ::
    nil
 
 val ssaPassesMinimal =
-   (* implementVectors cannot be omitted. It implements Vector_vector *)
-   {name = "implementVectors", doit = ImplementVectors.transform} ::
    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
    {name = "polyEqual", doit = PolyEqual.transform} ::
    (* polyHash cannot be omitted.  It implements MLton_hash. *)
@@ -197,7 +193,6 @@ local
                  ("contify", Contify.transform),
                  ("dropProfile", Profile.dropProfile),
                  ("flatten", Flatten.transform),
-                 ("implementVectors", ImplementVectors.transform),
                  ("introduceLoops", IntroduceLoops.transform),
                  ("knownCase", KnownCase.transform),
                  ("localFlatten", LocalFlatten.transform),

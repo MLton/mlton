@@ -157,7 +157,7 @@ datatype 'a t =
  | TopLevel_setSuffix (* implement suffix *)
  | Vector_length (* ssa to ssa2 *)
  | Vector_sub (* ssa to ssa2 *)
- | Vector_vector (* implement vectors *)
+ | Vector_vector (* ssa to ssa2 *)
  | Weak_canGet (* ssa to rssa *)
  | Weak_get (* ssa to rssa *)
  | Weak_new (* ssa to rssa *)

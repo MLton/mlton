@@ -145,6 +145,15 @@ structure Type =
             Object {args, con = Vector} => SOME args
           | _ => NONE
 
+      val deVector1: t -> t =
+         fn t =>
+         case deVectorOpt t of
+            SOME args =>
+               if Prod.length args = 1
+                  then Prod.elt (args, 0)
+                  else Error.bug "SsaTree2.Type.deVector1"
+          | _ => Error.bug "SsaTree2.Type.deVector1"
+
       val isVector: t -> bool = isSome o deVectorOpt
 
       val deWeakOpt: t -> t option =
