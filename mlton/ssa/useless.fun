@@ -531,6 +531,18 @@ fun transform (program: Program.t): Program.t =
                    | Vector_length => return (vectorLength (arg 0))
                    | Vector_sub => (arg 1 dependsOn result
                                     ; return (devector (arg 0)))
+                   | Vector_vector =>
+                        let
+                           val l =
+                              (const o S.Const.word o WordX.fromIntInf)
+                              (IntInf.fromInt (Vector.length args),
+                               WordSize.seqIndex ())
+                        in
+                           (coerce {from = l, to = vectorLength result}
+                            ; Vector.foreach
+                              (args, fn arg =>
+                               coerce {from = arg, to = devector result}))
+                        end
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
                    | Word8Array_subWord _ => sub ()
@@ -747,11 +759,17 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
+                  datatype z = datatype Prim.Name.t
+                  val needed =
+                     case (Prim.name prim, resultValue) of
+                        (Vector_vector, SOME v) =>
+                           Value.isUseful (Value.devector v)
+                      | _ => true
                   val (args, argTypes) =
                      Vector.unzip
                      (Vector.map (args, fn x =>
-                                  let val (t, b) = Value.getNew (value x)
-                                  in if b then (x, t)
+                                  let val (t, useful) = Value.getNew (value x)
+                                  in if needed andalso useful then (x, t)
                                      else (unitVar, Type.unit)
                                   end))
                in
