@@ -848,15 +848,18 @@ fun transform (program: Program.t): Program.t =
                   in
                      a
                   end
-               fun vector length =
+               fun vector () =
                   let
-                     val ety = Type.deVector resultType
                      val v = fromType resultType
-                     val len =
+                     val l =
                         (const o S.Const.word o WordX.fromIntInf)
-                        (IntInf.fromInt length, WordSize.seqIndex ())
-                     val _ = coerce {from = len, to = vectorLength v}
-                     val _ = coerce {from = unknown ety, to = devector v}
+                        (IntInf.fromInt (Vector.length args),
+                         WordSize.seqIndex ())
+                     val _ = coerce {from = l, to = vectorLength v}
+                     val _ =
+                        Vector.foreach
+                        (args, fn arg =>
+                         coerce {from = arg, to = devector v})
                   in
                      v
                   end
@@ -884,7 +887,7 @@ fun transform (program: Program.t): Program.t =
                      end
                 | Vector_length => vectorLength (arg 0)
                 | Vector_sub => devector (arg 0)
-                | Vector_vector => vector (Vector.length args)
+                | Vector_vector => vector ()
                 | Weak_get => deweak (arg 0)
                 | Weak_new =>
                      let
