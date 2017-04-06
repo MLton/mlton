@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -38,6 +38,7 @@ signature CONST =
        | Word of WordX.t
        | WordVector of WordXVector.t
 
+      val deWord: t -> WordX.t
       val equals: t * t -> bool
       val intInf: IntInf.t -> t
       val hash: t -> word

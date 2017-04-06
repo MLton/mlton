@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -94,6 +94,11 @@ val null = Null
 val real = Real
 val word = Word
 val wordVector = WordVector
+
+fun deWord c =
+   case c of
+      Word w => w
+    | _ => Error.bug "Const.deWord"
 
 val string = wordVector o WordXVector.fromString
 

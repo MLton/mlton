@@ -1703,6 +1703,10 @@ fun ('a, 'b) apply (p: 'a t,
            | (Real_lt _, [Real r1, Real r2]) => boolOpt (RealX.lt (r1, r2))
            | (Real_qequal _, [Real r1, Real r2]) => boolOpt (RealX.qequal (r1, r2))
            | (Real_castToWord _, [Real r]) => wordOpt (RealX.castToWord r)
+           | (Vector_vector, (Word w)::_) =>
+                (wordVector o WordXVector.fromList)
+                ({elementSize = WordX.size w},
+                 List.map (cs, Const.deWord))
            | (Word_castToReal _, [Word w]) => realOpt (RealX.castFromWord w)
            | (Word_rndToReal (_, s, {signed}), [Word w]) =>
                 realOpt

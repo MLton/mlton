@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -24,6 +24,7 @@ signature WORD_X_VECTOR =
       val foldFrom: t * int * 'b * (WordX.t * 'b -> 'b) -> 'b
       val forall: t * (WordX.t -> bool) -> bool
       val fromString: string -> t
+      val fromList: {elementSize: WordSize.t} * WordX.t list -> t
       val fromListRev: {elementSize: WordSize.t} * WordX.t list -> t
       val hash : t -> word
       val layout: t -> Layout.t
