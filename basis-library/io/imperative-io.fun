@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2017 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -10,7 +10,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
    sig
       structure Array: sig
                           include MONO_ARRAY
-                          val arrayUninit: int -> array
+                          val uninit: int -> array
                           val unsafeSub: array * int -> elem
                        end
       structure ArraySlice: MONO_ARRAY_SLICE
@@ -219,7 +219,7 @@ datatype instream = In of {augmentedReader: PIO.reader,
 
 local
    val augmentedReader = PIO.nullRd ()
-   val buf = A.arrayUninit 0
+   val buf = A.uninit 0
    val first = ref 0
    val last = ref 0
    val reader = PIO.nullRd ()
@@ -374,7 +374,7 @@ fun inputN (ib as In {buf, first, last, ...}, n) =
                         (ib, "inputN", fn () =>
                          let
                             val readArr = readArr ib
-                            val inp = A.arrayUninit n
+                            val inp = A.uninit n
                             fun fill k =
                                if k >= size
                                   then ()

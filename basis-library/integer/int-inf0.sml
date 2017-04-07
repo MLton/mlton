@@ -1,4 +1,4 @@
-(* Copyright (C) 2013-2014 Matthew Fluet.
+(* Copyright (C) 2013-2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -542,7 +542,7 @@ structure IntInf =
                           if sextd andalso (#isNeg other) w
                              then loop ((#neg other) w, 1, [(0,0w1)])
                              else loop (w, 1, [(0,0w0)])
-                       val a = A.arrayUnsafe n
+                       val a = A.uninitUnsafe n
                        fun loop acc =
                           case acc of
                              [] => ()

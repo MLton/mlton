@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -248,7 +249,7 @@ local
             end
          fun readVec (fd, n) =
             let
-               val buf = Array.arrayUninit n
+               val buf = Array.uninit n
                val bytesRead = 
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 

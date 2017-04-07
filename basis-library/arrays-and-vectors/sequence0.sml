@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2017 Matthew Fluet.
  * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 2013 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
@@ -66,14 +66,16 @@ functor PrimSequence (S: sig
 
       fun length s = S.length s
 
+      fun unsafeArrayUninit n = Array.uninitUnsafe n
       fun arrayUninit n =
          if not S.isMutable andalso n = 0
             then Array.array0Const ()
             else if Primitive.Controls.safe
                     andalso gtu (n, maxLen)
                     then raise Size
-                    else Array.arrayUnsafe n
-      fun newUninit n = S.fromArray (arrayUninit n)
+                    else Array.uninitUnsafe n
+      fun unsafeUninit n = S.fromArray (unsafeArrayUninit n)
+      fun uninit n = S.fromArray (arrayUninit n)
 
       exception GenerateAlreadyGotVector
       exception GenerateVectorNotFull
