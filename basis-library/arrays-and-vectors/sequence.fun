@@ -96,9 +96,9 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
       fun uninit n = S.uninit (fromIntForLength n)
       fun unsafeUninit n = S.unsafeUninit (SeqIndex.fromIntUnsafe n)
 
-      fun generate n =
+      fun create n =
          let
-            val {done, sub, update} = S.generate (fromIntForLength n)
+            val {done, sub, update} = S.create (fromIntForLength n)
          in
             {done = done,
              sub = unwrap1 sub,

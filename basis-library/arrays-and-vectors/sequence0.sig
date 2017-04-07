@@ -50,11 +50,11 @@ signature PRIM_SEQUENCE =
 
       (* Extra *)
       val append: 'a sequence * 'a sequence -> 'a sequence
-      val duplicate: 'a sequence -> 'a sequence
-      val generate:
+      val create:
          SeqIndex.int -> {done: unit -> 'a sequence,
                           sub: SeqIndex.int -> 'a elt, 
                           update: SeqIndex.int * 'a elt -> unit}
+      val duplicate: 'a sequence -> 'a sequence
       val new: SeqIndex.int * 'a elt -> 'a sequence
       val unfoldi: SeqIndex.int * 'b * (SeqIndex.int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: SeqIndex.int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b

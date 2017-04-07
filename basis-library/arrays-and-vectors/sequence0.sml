@@ -77,9 +77,9 @@ functor PrimSequence (S: sig
       fun unsafeUninit n = S.fromArray (unsafeArrayUninit n)
       fun uninit n = S.fromArray (arrayUninit n)
 
-      exception GenerateAlreadyGotVector
-      exception GenerateVectorNotFull
-      fun generate n =
+      exception CreateAlreadyGotVector
+      exception CreateVectorNotFull
+      fun create n =
         let
            val a = arrayUninit n
            val subLim : SeqIndex.t ref = ref 0
@@ -102,14 +102,14 @@ functor PrimSequence (S: sig
            val gotIt = ref false
            fun done () =
               if !gotIt then
-                 raise GenerateAlreadyGotVector
+                 raise CreateAlreadyGotVector
               else
                  if n = !updateLim then
                     (gotIt := true;
                      updateLim := 0;
                      S.fromArray a)
                  else
-                    raise GenerateVectorNotFull
+                    raise CreateVectorNotFull
         in
            {done = done,
             sub = sub,

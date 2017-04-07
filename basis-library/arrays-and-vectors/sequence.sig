@@ -50,11 +50,11 @@ signature SEQUENCE =
 
       (* Extra *)
       val append: 'a sequence * 'a sequence -> 'a sequence 
-      val duplicate: 'a sequence -> 'a sequence
-      val generate:
+      val create:
          int -> {done: unit -> 'a sequence,
                  sub: int -> 'a elt, 
                  update: int * 'a elt -> unit} 
+      val duplicate: 'a sequence -> 'a sequence
       val new: int * 'a elt -> 'a sequence 
       val unfoldi: int * 'b * (int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
