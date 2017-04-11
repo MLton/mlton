@@ -315,6 +315,13 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
+      fun deConst v =
+         case value v of
+            Const (Const.T {const, ...}) =>
+               (case !const of
+                   Const.Const c => SOME c
+                 | _ => NONE)
+          | _ => NONE
 
       local
          open Layout
@@ -448,7 +455,38 @@ structure Value =
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
-                          | Vector _ => No
+                          | Vector {elt, length} =>
+                               (case Option.map (deConst length, S.Const.deWord) of
+                                   NONE => No
+                                 | SOME length =>
+                                      let
+                                         val length = WordX.toInt length
+                                         val eltTy = Type.deVector ty
+                                         fun mkVec args =
+                                            yes (Exp.PrimApp
+                                                 {args = args,
+                                                  prim = Prim.vector,
+                                                  targs = Vector.new1 eltTy})
+                                         fun mkConst (ws, elts) =
+                                            yes (Exp.Const
+                                                 (S.Const.wordVector
+                                                  (WordXVector.fromList
+                                                   ({elementSize = ws}, elts))))
+                                      in
+                                         case (Option.map (deConst elt, S.Const.deWordOpt),
+                                               global (elt, newGlobal)) of
+                                            (SOME (SOME w), _) =>
+                                               mkConst (Type.deWord eltTy,
+                                                        List.new (length, w))
+                                          | (_, SOME (x, _)) =>
+                                               mkVec (Vector.new (length, x))
+                                          | _ =>
+                                               if length = 0
+                                                  then case Type.deWordOpt eltTy of
+                                                          SOME ws => mkConst (ws, [])
+                                                        | NONE => mkVec (Vector.new0 ())
+                                                  else No
+                                      end)
                           | Weak _ => No
                       val _ = r := g
                    in
@@ -525,7 +563,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Vector {elt = elt, length = length}, ty)
+               new (Vector {elt = elt, length = length}, Type.vector (Type.deArray ty))
           | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
          end
 

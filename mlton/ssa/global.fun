@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -18,7 +19,8 @@ val expEquals =
    fn (ConApp {con = c, args}, ConApp {con = c', args = args'}) =>
          Con.equals (c, c') andalso equalss (args, args')
     | (Const c, Const c') => Const.equals (c, c')
-    | (PrimApp {prim = p, targs = t, ...}, PrimApp {prim = p', targs = t', ...}) =>
+    | (PrimApp {prim = p, targs = ts, args = xs},
+       PrimApp {prim = p', targs = ts', args = xs'}) =>
          let
             datatype z = datatype Prim.Name.t
             val n = Prim.name p
@@ -26,7 +28,10 @@ val expEquals =
          in
             case (n, n') of
                (Array_array0Const, Array_array0Const) =>
-                  Vector.equals (t, t', Type.equals)
+                  Vector.equals (ts, ts', Type.equals)
+             | (Vector_vector, Vector_vector) =>
+                  Vector.equals (ts, ts', Type.equals)
+                  andalso equalss (xs, xs')
              | _ => false
          end
     | (Tuple xs, Tuple xs') => equalss (xs, xs')
