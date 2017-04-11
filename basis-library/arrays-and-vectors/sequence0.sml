@@ -14,6 +14,7 @@ functor PrimSequence (S: sig
                             type 'a elt
                             (* fromArray should be constant time. *)
                             val fromArray: 'a elt array -> 'a sequence
+                            val new0: (unit -> 'a sequence) option
                             val isMutable: bool
                             val length: 'a sequence -> SeqIndex.int
                             val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
@@ -68,12 +69,10 @@ functor PrimSequence (S: sig
 
       fun unsafeArrayUninit n = Array.uninitUnsafe n
       fun arrayUninit n =
-         if not S.isMutable andalso n = 0
-            then Array.array0Const ()
-            else if Primitive.Controls.safe
-                    andalso gtu (n, maxLen)
-                    then raise Size
-                    else Array.uninitUnsafe n
+         if Primitive.Controls.safe
+            andalso gtu (n, maxLen)
+            then raise Size
+            else Array.uninitUnsafe n
       fun unsafeUninit n = S.fromArray (unsafeArrayUninit n)
       fun uninit n = S.fromArray (arrayUninit n)
 
@@ -133,6 +132,11 @@ functor PrimSequence (S: sig
          in
             (S.fromArray a, b)
          end
+      val unfoldi = fn (n, b, f) =>
+         case S.new0 of
+            NONE => unfoldi (n, b, f)
+          | SOME new0 =>
+               if n = 0 then (new0 (), b) else unfoldi (n, b, f)
 
       fun unfold (n, b, f) = unfoldi (n, b, f o #2)
 
@@ -404,6 +408,7 @@ structure Vector =
          structure P = PrimSequence (type 'a sequence = 'a vector
                                      type 'a elt = 'a
                                      val fromArray = Vector.fromArrayUnsafe
+                                     val new0 = SOME Vector.vector0
                                      val isMutable = false
                                      val length = Vector.length
                                      val subUnsafe = Vector.subUnsafe)
@@ -424,6 +429,7 @@ structure Array =
          structure P = PrimSequence (type 'a sequence = 'a array
                                      type 'a elt = 'a
                                      val fromArray = fn a => a
+                                     val new0 = NONE
                                      val isMutable = true
                                      val length = Array.length
                                      val subUnsafe = Array.subUnsafe)
