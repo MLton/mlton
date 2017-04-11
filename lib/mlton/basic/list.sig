@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -79,6 +79,7 @@ signature LIST =
       val map2: 'a t * 'b t * ('a * 'b -> 'c) -> 'c t
       val map3: 'a t * 'b t * 'c t * ('a * 'b * 'c -> 'd) -> 'd t
 (*      val map4: 'a t * 'b t * 'c t * 'd t * ('a * 'b * 'c * 'd -> 'e) -> 'e t *)
+      val new: int * 'a -> 'a t
       val nth: 'a t * int -> 'a
       val nthTail: 'a t * int -> 'a t
 (*       val ordered :
