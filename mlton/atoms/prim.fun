@@ -34,8 +34,7 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_array0Const (* constant propagation *)
- | Array_length (* ssa to rssa *)
+   Array_length (* ssa to rssa *)
  | Array_sub (* ssa to ssa2 *)
  | Array_toVector (* backend *)
  | Array_uninit (* backend *)
@@ -220,8 +219,7 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_array0Const => "Array_array0Const"
-       | Array_length => "Array_length"
+         Array_length => "Array_length"
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
        | Array_uninit => "Array_uninit"
@@ -361,8 +359,7 @@ fun toString (n: 'a t): string =
 fun layout p = Layout.str (toString p)
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_array0Const, Array_array0Const) => true
-    | (Array_length, Array_length) => true
+   fn (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
     | (Array_uninit, Array_uninit) => true
@@ -524,8 +521,7 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_array0Const => Array_array0Const
-    | Array_length => Array_length
+      Array_length => Array_length
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
     | Array_uninit => Array_uninit
@@ -775,8 +771,7 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_array0Const => Moveable
-       | Array_length => Functional
+         Array_length => Functional
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
        | Array_uninit => Moveable
@@ -984,8 +979,7 @@ local
        (Word8Vector_subWord s)]
 in
    val all: unit t list =
-      [Array_array0Const,
-       Array_length,
+      [Array_length,
        Array_sub,
        Array_toVector,
        Array_uninit,
@@ -1219,8 +1213,7 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
-       | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
+         Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
        | Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
@@ -1408,8 +1401,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_array0Const => one (deArray result)
-       | Array_length => one (deArray (arg 0))
+         Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
        | Array_uninit => one (deArray result)

@@ -508,8 +508,6 @@ structure Value =
                     in new (Const c', Type.ofConst c)
                     end
 
-      val zero = WordSize.memoize (fn s => const (S.Const.word (WordX.zero s)))
-
       fun constToEltLength (c, err) =
          let
             val v =
@@ -903,9 +901,7 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_array0Const =>
-                     array (zero (WordSize.seqIndex ()), Birth.here ())
-                | Array_length => arrayLength (arg 0)
+                  Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
                 | Array_uninit => array (arg 0, bear ())

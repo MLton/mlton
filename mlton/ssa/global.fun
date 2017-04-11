@@ -27,9 +27,7 @@ val expEquals =
             val n' = Prim.name p'
          in
             case (n, n') of
-               (Array_array0Const, Array_array0Const) =>
-                  Vector.equals (ts, ts', Type.equals)
-             | (Vector_vector, Vector_vector) =>
+               (Vector_vector, Vector_vector) =>
                   Vector.equals (ts, ts', Type.equals)
                   andalso equalss (xs, xs')
              | _ => false

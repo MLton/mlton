@@ -508,8 +508,7 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_array0Const => ()
-                   | Array_length => return (arrayLength (arg 0))
+                     Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
                    | Array_toVector =>
                         (case (value (arg 0), value result) of
