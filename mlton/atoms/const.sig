@@ -39,6 +39,7 @@ signature CONST =
        | WordVector of WordXVector.t
 
       val deWord: t -> WordX.t
+      val deWordOpt: t -> WordX.t option
       val equals: t * t -> bool
       val intInf: IntInf.t -> t
       val hash: t -> word
