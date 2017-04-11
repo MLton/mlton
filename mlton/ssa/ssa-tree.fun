@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -61,6 +61,7 @@ structure Type =
          val (deTupleOpt,deTuple,isTuple) = make (fn Tuple ts => SOME ts | _ => NONE)
          val (_,deVector,_) = make (fn Vector t => SOME t | _ => NONE)
          val (_,deWeak,_) = make (fn Weak t => SOME t | _ => NONE)
+         val (deWordOpt,deWord,_) = make (fn Word ws => SOME ws | _ => NONE)
       end
 
       local
