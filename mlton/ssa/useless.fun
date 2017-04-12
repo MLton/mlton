@@ -758,17 +758,11 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
-                  datatype z = datatype Prim.Name.t
-                  val needed =
-                     case (Prim.name prim, resultValue) of
-                        (Vector_vector, SOME v) =>
-                           Value.isUseful (Value.devector v)
-                      | _ => true
                   val (args, argTypes) =
                      Vector.unzip
                      (Vector.map (args, fn x =>
-                                  let val (t, useful) = Value.getNew (value x)
-                                  in if needed andalso useful then (x, t)
+                                  let val (t, b) = Value.getNew (value x)
+                                  in if b then (x, t)
                                      else (unitVar, Type.unit)
                                   end))
                in
