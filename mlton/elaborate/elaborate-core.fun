@@ -38,6 +38,7 @@ in
              empty)
          end
 end
+structure ElabControl = Control.Elaborate
 
 local
    open Ast
@@ -838,6 +839,18 @@ val elaboratePat:
                                                          targs = args ()},
                                                instance)
                                         end
+                      end
+                 | Apat.Vector ps =>
+                      let
+                         val _ = check (ElabControl.allowVectorPats, "Vector patterns", Apat.region p)
+                         val ps' = Vector.map (ps, loop)
+                      in
+                         Cpat.make (Cpat.Vector ps',
+                                    unifyVector
+                                    (Vector.map2 (ps, ps', fn (p, p') =>
+                                                  (Cpat.ty p', Apat.region p)),
+                                     preError,
+                                     fn () => seq [str "in:  ", lay ()]))
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
@@ -1752,8 +1765,6 @@ structure Cexp =
 val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
      ...} =
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
-
-structure ElabControl = Control.Elaborate
 
 fun elaborateDec (d, {env = E, nest}) =
    let

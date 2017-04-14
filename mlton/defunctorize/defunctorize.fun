@@ -81,6 +81,14 @@ structure MatchCompile =
                           body = fn xts => body (Vector.map
                                                  (xts, fn (x, t) =>
                                                   (XvarExp.var x, t)))}
+
+                      fun devector {vector, length, body} =
+                         Xexp.devector
+                         {vector = vector,
+                          length = length,
+                          body = fn xts => body (Vector.map
+                                                 (xts, fn (x, t) =>
+                                                  (XvarExp.var x, t)))}
                    end)
 
 structure Xexp =
@@ -717,6 +725,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                 | Or ps => NestedPat.Or (Vector.map (ps, loopPat))
                 | Tuple ps => NestedPat.Tuple (Vector.map (ps, loopPat))
                 | Var x => NestedPat.Var x
+                | Vector ps => NestedPat.Vector (Vector.map (ps, loopPat))
                 | Wild => NestedPat.Wild
          in
             NestedPat.make (p, t')

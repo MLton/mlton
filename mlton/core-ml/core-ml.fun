@@ -48,6 +48,7 @@ structure Pat =
        | Record of t Record.t
        | Tuple of t vector
        | Var of Var.t
+       | Vector of t vector
        | Wild
 
       local
@@ -83,6 +84,7 @@ structure Pat =
                            (Field.toString f, layout p)))
              | Tuple ps => tuple (Vector.toListMap (ps, layout))
              | Var x => maybeConstrain (Var.layout x, t)
+             | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
          end
 
@@ -120,6 +122,7 @@ structure Pat =
           | Record r => Record.exists (r, isRefutable)
           | Tuple ps => Vector.exists (ps, isRefutable)
           | Var _ => false
+          | Vector _ => true
           | Wild => false
 
       fun foreachVar (p: t, f: Var.t -> unit): unit =
@@ -134,6 +137,7 @@ structure Pat =
                 | Record r => Record.foreach (r, loop)
                 | Tuple ps => Vector.foreach (ps, loop)
                 | Var x => f x
+                | Vector ps => Vector.foreach (ps, loop)
                 | Wild => ()
          in
             loop p

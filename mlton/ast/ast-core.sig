@@ -60,6 +60,7 @@ signature AST_CORE =
              | Tuple of t vector
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
+             | Vector of t vector
              | Wild
 
             include WRAPPED sharing type node' = node

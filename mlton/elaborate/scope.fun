@@ -202,6 +202,7 @@ fun ('down, 'up)
                         end
                    | Tuple ps => do1 (loops (ps, loop), Tuple)
                    | Var _ => (p, initUp)
+                   | Vector ps => do1 (loops (ps, loop), Vector)
                    | Wild => (p, initUp)
 
                end

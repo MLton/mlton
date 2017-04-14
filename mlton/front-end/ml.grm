@@ -1174,6 +1174,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
         | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
+        | HASHLBRACKET pats RBRACKET (Pat.Vector (Vector.fromList pats))
         | LBRACE RBRACE          (Pat.unit)
         | LBRACE patitems RBRACE
           (let

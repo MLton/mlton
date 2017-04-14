@@ -47,6 +47,7 @@ signature CORE_ML =
              | Record of t Record.t
              | Tuple of t vector
              | Var of Var.t
+             | Vector of t vector
              | Wild
 
             val dest: t -> node * Type.t

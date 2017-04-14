@@ -79,6 +79,7 @@ structure Pat =
                     items: (Record.Field.t * item) vector}
        | Tuple of t vector
        | Var of {fixop: Fixop.t, name: Longvid.t}
+       | Vector of t vector
        | Wild
       and item =
          Field of t
@@ -141,6 +142,7 @@ structure Pat =
                        str "}"]
              | Tuple ps => Layout.tuple (Vector.toListMap (ps, layoutT))
              | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+             | Vector ps => vector (Vector.map (ps, layoutT))
              | Wild => str "_"
          end
       and layoutF p = layout (p, false)
@@ -185,6 +187,7 @@ structure Pat =
                                              term = fn () => layout p}))
              | Tuple ps => Vector.foreach (ps, c)
              | Var _ => ()
+             | Vector ps => Vector.foreach (ps, c)
              | Wild => ()
          end
    end
