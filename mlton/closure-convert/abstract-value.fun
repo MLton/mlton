@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -303,6 +304,12 @@ fun deArray v =
     | Unify (_, v) => v
     | _ => Error.bug "AbstractValue.deArray"
 
+fun deVector v =
+   case tree v of
+      Type t => fromType (Type.deVector t)
+    | Unify (_, v) => v
+    | _ => Error.bug "AbstractValue.deVector"
+
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
 
@@ -468,6 +475,17 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                 Vector x => x
               | Type _ => result ()
               | _ => typeError ())
+       | Vector_vector =>
+            let
+                val r = result ()
+                val _ =
+                   case dest r of
+                      Vector x => Vector.foreach (args, fn arg => coerce {from = arg, to = x})
+                    | Type _ => ()
+                    | _ => typeError ()
+            in
+               r
+            end
        | Weak_get =>
             (case dest (oneArg ()) of
                 Weak v => v

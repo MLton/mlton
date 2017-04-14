@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -15,8 +16,7 @@ open Primitive
 structure Array =
    struct
       open Array
-      val arrayUnsafe = _prim "Array_array": SeqIndex.int -> 'a array;
-      val array0Const = _prim "Array_array0Const": unit -> 'a array;
+      val uninitUnsafe = _prim "Array_uninit": SeqIndex.int -> 'a array;
       val length = _prim "Array_length": 'a array -> SeqIndex.int;
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)
       (* val maxLen': SeqIndex.int = SeqIndex.maxInt' *)
@@ -33,6 +33,7 @@ structure Vector =
       val fromArrayUnsafe = _prim "Array_toVector": 'a array -> 'a vector;
       val length = _prim "Vector_length": 'a vector -> SeqIndex.int;
       val subUnsafe = _prim "Vector_sub": 'a vector * SeqIndex.int -> 'a;
+      val vector0 = _prim "Vector_vector": unit -> 'a vector;
    end
 
 end

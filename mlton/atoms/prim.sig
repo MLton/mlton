@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -26,11 +26,10 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_array (* backend *)
-             | Array_array0Const (* constant propagation *)
-             | Array_length (* ssa to rssa *)
+               Array_length (* ssa to rssa *)
              | Array_sub (* ssa to ssa2 *)
              | Array_toVector (* backend *)
+             | Array_uninit (* backend *)
              | Array_update (* ssa to ssa2 *)
              | CPointer_add (* codegen *)
              | CPointer_diff (* codegen *)
@@ -149,6 +148,7 @@ signature PRIM =
              | TopLevel_setSuffix (* implement suffix *)
              | Vector_length (* ssa to ssa2 *)
              | Vector_sub (* ssa to ssa2 *)
+             | Vector_vector (* ssa to ssa2 *)
              | Weak_canGet (* ssa to rssa *)
              | Weak_get (* ssa to rssa *)
              | Weak_new (* ssa to rssa *)
@@ -213,8 +213,10 @@ signature PRIM =
       sharing type t = ApplyResult.prim
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
-      val array: 'a t
       val arrayLength: 'a t
+      val arrayToVector: 'a t
+      val arrayUninit: 'a t
+      val arrayUpdate: 'a t
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
@@ -267,8 +269,8 @@ signature PRIM =
        * isFunctional p = true iff p always returns same result when given
        *   same args and has no side effects.
        * isFuntional implies not maySideEffect.
-       * examples: Array_length, MLton_equal, Word_add
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * examples: Array_length, MLton_equal, Vector_vector, Word_add
+       * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
@@ -277,7 +279,7 @@ signature PRIM =
       (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
       val mayOverflow: 'a t -> bool
       (* examples: Array_update, Ref_assign
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
       val name: 'a t -> 'a Name.t
@@ -285,6 +287,7 @@ signature PRIM =
       val reff: 'a t
       val toString: 'a t -> string
       val touch: 'a t
+      val vector: 'a t
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t

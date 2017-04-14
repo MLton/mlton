@@ -1,4 +1,5 @@
-(* Copyright (C) 2014 Rob Simmons.
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -49,13 +50,14 @@ signature PRIM_SEQUENCE =
 
       (* Extra *)
       val append: 'a sequence * 'a sequence -> 'a sequence
-      val duplicate: 'a sequence -> 'a sequence
-      val generate:
+      val create:
          SeqIndex.int -> {done: unit -> 'a sequence,
                           sub: SeqIndex.int -> 'a elt, 
                           update: SeqIndex.int * 'a elt -> unit}
-      val newUninit: SeqIndex.int -> 'a sequence
+      val duplicate: 'a sequence -> 'a sequence
       val new: SeqIndex.int * 'a elt -> 'a sequence
       val unfoldi: SeqIndex.int * 'b * (SeqIndex.int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: SeqIndex.int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
+      val uninit: SeqIndex.int -> 'a sequence
+      val unsafeUninit: SeqIndex.int -> 'a sequence
    end

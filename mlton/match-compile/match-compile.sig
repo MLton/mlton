@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2015 Matthew Fluet.
+(* Copyright (C) 2009,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -45,10 +45,13 @@ signature MATCH_COMPILE_STRUCTS =
             val deref: t -> t
             val detuple: {tuple: t,
                           body: (Var.t * Type.t) vector -> t} -> t
+            val devector: {vector: t, length: int,
+                           body: (Var.t * Type.t) vector -> t} -> t
             val equal: t * t -> t
             val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
             val lett: {var: Var.t, exp: t, body: t} -> t
             val var: Var.t * Type.t -> t
+            val vectorLength: t -> t
          end
       sharing type Cases.exp = Exp.t
       structure NestedPat: NESTED_PAT

@@ -33,14 +33,14 @@ it also gets things like
 * {empty}
 +
 ----
-val a = Array_array n
+val a = Array_uninit n
 val b = Array_length a
 ----
 +
 rewritten to
 +
 ----
-val a = Array_array n
+val a = Array_uninit n
 val b = n
 ----
 

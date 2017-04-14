@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -201,6 +202,7 @@ fun ('down, 'up)
                         end
                    | Tuple ps => do1 (loops (ps, loop), Tuple)
                    | Var _ => (p, initUp)
+                   | Vector ps => do1 (loops (ps, loop), Vector)
                    | Wild => (p, initUp)
 
                end
@@ -441,6 +443,7 @@ fun ('down, 'up)
                    | Selector _ => empty ()
                    | Seq es => doVec (es, Seq)
                    | Var _ => empty ()
+                   | Vector vs => doVec (vs, Vector)
                    | While {expr, test} =>
                         do2 (loop expr, loop test, fn (expr, test) =>
                              While {expr = expr, test = test})

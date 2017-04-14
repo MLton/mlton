@@ -83,6 +83,21 @@ If `true`, allows record punning expressions.
 +
 If `true`, allows `withtype` to modify a `datatype` specification in a
 signature.
+
+** +allowVectorExpsAndPats {false|true}+
++
+--
+Allow or disallow vector expressions and vector patterns.  This is a
+proxy for all of the following annotations.
+
+*** +allowVectorExps {false|true}+
++
+If `true`, allow vector expressions.
+
+*** +allowVectorPats {false|true}+
++
+If `true`, allow vector patterns.
+--
 --
 
 * +forceUsed+

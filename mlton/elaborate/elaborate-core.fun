@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2015 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -38,6 +38,7 @@ in
              empty)
          end
 end
+structure ElabControl = Control.Elaborate
 
 local
    open Ast
@@ -374,26 +375,35 @@ val unify =
    Type.unify (t, t', {error = Control.error o error,
                        preError = preError})
 
-fun unifyList (trs: (Type.t * Region.t) vector,
-               z,
-               lay: unit -> Layout.t): Type.t =
+local
+fun unifySeq (seqTy, seqStr,
+              trs: (Type.t * Region.t) vector,
+              preError, lay): Type.t =
    if 0 = Vector.length trs
-      then Type.list (Type.new ())
+      then seqTy (Type.new ())
    else
       let
          val (t, _) = Vector.sub (trs, 0)
          val _ =
             Vector.foreach
             (trs, fn (t', r) =>
-             unify (t, t', z, fn (l, l') =>
+             unify (t, t', preError, fn (l, l') =>
                     (r,
-                     str "list element types disagree",
+                     str (seqStr ^ " element types disagree"),
                      align [seq [str "element:  ", l'],
                             seq [str "previous: ", l],
                             lay ()])))
       in
-         Type.list t
+         seqTy t
       end
+in
+fun unifyList (trs: (Type.t * Region.t) vector,
+               preError, lay): Type.t =
+   unifySeq (Type.list, "list", trs, preError, lay)
+fun unifyVector (trs: (Type.t * Region.t) vector,
+                 preError, lay): Type.t =
+   unifySeq (Type.vector, "vector", trs, preError, lay)
+end
 
 val elabPatInfo = Trace.info "ElaborateCore.elabPat"
 
@@ -829,6 +839,18 @@ val elaboratePat:
                                                          targs = args ()},
                                                instance)
                                         end
+                      end
+                 | Apat.Vector ps =>
+                      let
+                         val _ = check (ElabControl.allowVectorPats, "Vector patterns", Apat.region p)
+                         val ps' = Vector.map (ps, loop)
+                      in
+                         Cpat.make (Cpat.Vector ps',
+                                    unifyVector
+                                    (Vector.map2 (ps, ps', fn (p, p') =>
+                                                  (Cpat.ty p', Apat.region p)),
+                                     preError,
+                                     fn () => seq [str "in:  ", lay ()]))
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
@@ -1743,8 +1765,6 @@ structure Cexp =
 val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
      ...} =
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
-
-structure ElabControl = Control.Elaborate
 
 fun elaborateDec (d, {env = E, nest}) =
    let
@@ -3479,6 +3499,17 @@ fun elaborateDec (d, {env = E, nest}) =
                             in
                                Cexp.make (e, instance)
                             end
+                   end
+              | Aexp.Vector es =>
+                   let
+                      val _ = check (ElabControl.allowVectorExps, "Vector expressions", Aexp.region e)
+                      val es' = Vector.map (es, elab)
+                   in
+                      Cexp.make (Cexp.Vector es',
+                                 unifyVector
+                                 (Vector.map2 (es, es', fn (e, e') =>
+                                               (Cexp.ty e', Aexp.region e)),
+                                  preError, lay))
                    end
               | Aexp.While {expr, test} =>
                    let

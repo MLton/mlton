@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -144,6 +144,15 @@ structure Type =
          case dest t of
             Object {args, con = Vector} => SOME args
           | _ => NONE
+
+      val deVector1: t -> t =
+         fn t =>
+         case deVectorOpt t of
+            SOME args =>
+               if Prod.length args = 1
+                  then Prod.elt (args, 0)
+                  else Error.bug "SsaTree2.Type.deVector1"
+          | _ => Error.bug "SsaTree2.Type.deVector1"
 
       val isVector: t -> bool = isSome o deVectorOpt
 
@@ -351,10 +360,7 @@ structure Type =
             val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
-               Array_array =>
-                  oneArg (fn n =>
-                          equals (n, seqIndex) andalso isVector result)
-             | Array_length =>
+               Array_length =>
                   oneArg (fn a =>
                           isVector a andalso equals (result, seqIndex))
              | Array_toVector =>
@@ -368,6 +374,9 @@ structure Type =
                                         (not vi orelse ai)
                                         andalso equals (ae, ve))
                     | _ => false)
+             | Array_uninit =>
+                  oneArg (fn n =>
+                          equals (n, seqIndex) andalso isVector result)
              | _ => default ()
          end
    end

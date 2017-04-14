@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet
+(* Copyright (C) 2015,2017 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -48,6 +48,7 @@ structure Pat =
        | Record of t Record.t
        | Tuple of t vector
        | Var of Var.t
+       | Vector of t vector
        | Wild
 
       local
@@ -83,6 +84,7 @@ structure Pat =
                            (Field.toString f, layout p)))
              | Tuple ps => tuple (Vector.toListMap (ps, layout))
              | Var x => maybeConstrain (Var.layout x, t)
+             | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
          end
 
@@ -120,6 +122,7 @@ structure Pat =
           | Record r => Record.exists (r, isRefutable)
           | Tuple ps => Vector.exists (ps, isRefutable)
           | Var _ => false
+          | Vector _ => true
           | Wild => false
 
       fun foreachVar (p: t, f: Var.t -> unit): unit =
@@ -134,6 +137,7 @@ structure Pat =
                 | Record r => Record.foreach (r, loop)
                 | Tuple ps => Vector.foreach (ps, loop)
                 | Var x => f x
+                | Vector ps => Vector.foreach (ps, loop)
                 | Wild => ()
          in
             loop p
@@ -200,6 +204,7 @@ and expNode =
   | Record of exp Record.t
   | Seq of exp vector
   | Var of (unit -> Var.t) * (unit -> Type.t vector)
+  | Vector of exp vector
 and lambda = Lam of {arg: Var.t,
                      argType: Type.t,
                      body: exp,
@@ -291,6 +296,7 @@ in
                                  Vector.layout Type.layout targs]
                     end
             else Var.layout (var ())
+       | Vector es => vector (Vector.map (es, layoutExp))
    and layoutFuns (tyvars, decs)  =
       if 0 = Vector.length decs
          then empty
@@ -377,6 +383,7 @@ structure Exp =
           | Record r => Record.exists (r, isExpansive)
           | Seq _ => true
           | Var _ => false
+          | Vector es => Vector.exists (es, isExpansive)
 
       fun tuple es =
          if 1 = Vector.length es
@@ -467,6 +474,7 @@ structure Exp =
                 | Record r => Record.foreach (r, loop)
                 | Seq es => Vector.foreach (es, loop)
                 | Var (x, _) => f (x ())
+                | Vector es => Vector.foreach (es, loop)
             and loopDec d =
                case d of
                   Datatype _ => ()

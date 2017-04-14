@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -35,7 +35,7 @@ structure Example =
      fun or exs = fn isDelimited =>
         if 1 = Vector.length exs
            then Vector.sub (exs, 0) isDelimited
-           else Layout.paren
+           else (if isDelimited then fn x => x else Layout.paren)
                 (Layout.mayAlign
                  (Layout.separateLeft
                   (Vector.toListMap (exs, fn ex => ex true), "| ")))
@@ -43,7 +43,12 @@ structure Example =
      fun tuple exs = fn _ =>
         Layout.tuple (List.map (exs, fn ex => ex true))
 
+     fun vector exs = fn _ =>
+        Layout.vector (Vector.map (exs, fn ex => ex true))
+
      val wild = fn _ => Layout.str "_"
+
+     val dots = fn _ => Layout.str "..."
   end
 
 structure Env = MonoEnv (structure Domain = Var
@@ -55,6 +60,7 @@ structure Fact =
          Con of {arg: Var.t option,
                  con: Con.t}
        | Tuple of Var.t vector
+       | Vector of Var.t vector
 
       fun layout (f: t): Layout.t =
          let
@@ -67,6 +73,7 @@ structure Fact =
                           NONE => empty
                         | SOME x => seq [str " ", Var.layout x]]
              | Tuple xs => tuple (Vector.toListMap (xs, Var.layout))
+             | Vector xs => vector (Vector.map (xs, Var.layout))
          end
    end
 
@@ -124,6 +131,7 @@ structure Facts =
                                  | _ => Error.bug "MatchCompile.Facts.bind: Con:wrong fact"))
                    | Const _ => env
                    | Layered (y, p) => loop (p, x, Env.extend (env, y, x))
+                   | Or _ => Error.bug "MatchCompile.factbind: or pattern shouldn't be here"
                    | Tuple ps =>
                         if 0 = Vector.length ps
                            then env
@@ -132,8 +140,12 @@ structure Facts =
                                     Vector.fold2 (ps, xs, env, loop)
                                | _ => Error.bug "MatchCompile.Facts.bind: Tuple:wrong fact")
                    | Var y => Env.extend (env, y, x)
+                   | Vector ps =>
+                        (case fact x of
+                            Fact.Vector xs =>
+                               Vector.fold2 (ps, xs, env, loop)
+                          | _ => Error.bug "MatchCompile.Facts.bind: Vector:wrong fact")
                    | Wild => env
-                   | NestedPat.Or _ => Error.bug "MatchCompile.factbind: or pattern shouldn't be here"
                end
             val env = loop (p, x, Env.empty)
             val () = destroy ()
@@ -165,7 +177,9 @@ structure Facts =
                          Fact.Con {arg, con} =>
                             Example.conApp (con, Option.map (arg, loop))
                        | Fact.Tuple xs =>
-                            Example.tuple (Vector.toListMap (xs, loop)))
+                            Example.tuple (Vector.toListMap (xs, loop))
+                       | Fact.Vector xs =>
+                            Example.vector (Vector.map (xs, loop)))
             val res = loop x
             val () = destroy ()
          in
@@ -189,6 +203,7 @@ structure Pat =
                  con: Con.t,
                  targs: Type.t vector}
        | Tuple of t vector
+       | Vector of t vector
        | Wild
 
       fun layout (p: t): Layout.t =
@@ -203,6 +218,7 @@ structure Pat =
                           NONE => empty
                         | SOME (p, _) => seq [str " ", layout p]]
              | Tuple ps => tuple (Vector.toListMap (ps, layout))
+             | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
          end
 
@@ -223,10 +239,11 @@ structure Pat =
                      end
                 | NestedPat.Const r => Const r
                 | NestedPat.Layered (_, p) => loop p
+                | NestedPat.Or _ => Error.bug "MatchCompile.fromNestedPat: or pattern shouldn't be here"
                 | NestedPat.Tuple ps => Tuple (Vector.map (ps, loop))
                 | NestedPat.Var _ => Wild
+                | NestedPat.Vector ps => Vector (Vector.map (ps, loop))
                 | NestedPat.Wild => Wild
-                | NestedPat.Or _ => Error.bug "MatchCompile.fromNestedPat: or pattern shouldn't be here"
          in
             loop
          end
@@ -372,32 +389,52 @@ structure Exp =
    end
 
 val traceMatch =
-   Trace.trace4 ("MatchCompile.match",
-                 Vars.layout, Rules.layout, Facts.layout, Examples.layout,
+   Trace.trace ("MatchCompile.match",
+                fn (vars, rules, facts, es) =>
+                Layout.record [("vars", Vars.layout vars),
+                               ("rules", Rules.layout rules),
+                               ("facts", Facts.layout facts),
+                               ("examples", Examples.layout es)],
                  Exp.layout)
 val traceConst =
    Trace.trace ("MatchCompile.const",
-                fn (vars, rules, facts, es, _: Int.t, _: Exp.t) =>
-                Layout.tuple [Vars.layout vars,
-                              Rules.layout rules,
-                              Facts.layout facts,
-                              Examples.layout es],
+                fn (vars, rules, facts, es, i: Int.t, test: Exp.t) =>
+                Layout.record [("vars", Vars.layout vars),
+                               ("rules", Rules.layout rules),
+                               ("facts", Facts.layout facts),
+                               ("examples", Examples.layout es),
+                               ("index", Int.layout i),
+                               ("test", Exp.layout test)],
                 Exp.layout)
 val traceSum =
    Trace.trace ("MatchCompile.sum",
-                fn (vars, rules, facts, es, _: Int.t, _: Exp.t, _: Tycon.t) =>
-                Layout.tuple [Vars.layout vars,
-                              Rules.layout rules,
-                              Facts.layout facts,
-                              Examples.layout es],
+                fn (vars, rules, facts, es, i: Int.t, test: Exp.t, _: Tycon.t) =>
+                Layout.record [("vars", Vars.layout vars),
+                               ("rules", Rules.layout rules),
+                               ("facts", Facts.layout facts),
+                               ("examples", Examples.layout es),
+                               ("index", Int.layout i),
+                               ("test", Exp.layout test)],
                 Exp.layout)
 val traceTuple =
    Trace.trace ("MatchCompile.tuple",
-                fn (vars, rules, facts, es, _: Int.t, _: Exp.t) =>
-                Layout.tuple [Vars.layout vars,
-                              Rules.layout rules,
-                              Facts.layout facts,
-                              Examples.layout es],
+                fn (vars, rules, facts, es, i: Int.t, test: Exp.t) =>
+                Layout.record [("vars", Vars.layout vars),
+                               ("rules", Rules.layout rules),
+                               ("facts", Facts.layout facts),
+                               ("examples", Examples.layout es),
+                               ("index", Int.layout i),
+                               ("test", Exp.layout test)],
+                Exp.layout)
+val traceVector =
+   Trace.trace ("MatchCompile.vector",
+                fn (vars, rules, facts, es, i: Int.t, test: Exp.t) =>
+                Layout.record [("vars", Vars.layout vars),
+                               ("rules", Rules.layout rules),
+                               ("facts", Facts.layout facts),
+                               ("examples", Examples.layout es),
+                               ("index", Int.layout i),
+                               ("test", Exp.layout test)],
                 Exp.layout)
 
 (*---------------------------------------------------*)
@@ -453,6 +490,7 @@ fun matchCompile {caseType: Type.t,
                               sum (vars, rules, facts, es, i, test,
                                    conTycon con)
                          | Tuple _ => tuple (vars, rules, facts, es, i, test)
+                         | Vector _ => vector (vars, rules, facts, es, i, test)
                          | Wild => Error.bug "MatchCompile.match: Wild"
                      end
             end) arg
@@ -768,6 +806,109 @@ fun matchCompile {caseType: Type.t,
                end
          in
             Exp.detuple {body = body, tuple = test}
+         end) arg
+      and vector arg =
+         traceVector
+         (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es, i, test) =>
+         let
+            val (var, _) = Vector.sub (vars, i)
+            val (cases, defaults) =
+               Vector.foldr
+               (rules, ([], []),
+                fn (rule as Rule.T {pats, ...}, (cases, defaults)) =>
+                case Vector.sub (pats, i) of
+                   Pat.Vector args =>
+                      let
+                         fun oneCase () =
+                            {len = Vector.length args,
+                             rules = rule :: defaults}
+                         fun insert (cases, ac) =
+                            case cases of
+                               [] => oneCase () :: ac
+                             | ((casee as {len, rules})::cases) =>
+                                  if Vector.length args = len
+                                     then
+                                        {len = len, rules = rule :: rules}
+                                        :: List.appendRev (ac, cases)
+                                     else insert (cases, casee :: ac)
+                      in
+                         (insert (cases, []), defaults)
+                      end
+                 | Pat.Wild =>
+                      (List.map (cases, fn {len, rules} =>
+                                 {len = len, rules = rule :: rules}),
+                       rule :: defaults)
+                 | _ => Error.bug "MatchCompile.vector: expected Vector pat")
+            val default =
+               let
+                  val maxLen =
+                     List.fold
+                     (cases, ~1, fn ({len, ...}, max) =>
+                      Int.max (max, len))
+                  val unhandled =
+                     (Example.vector o Vector.concat)
+                     [Vector.new (maxLen + 1, Example.wild),
+                      Vector.new1 Example.dots]
+                  val unhandled =
+                     Int.foldDown
+                     (0, maxLen, [unhandled], fn (i, unhandled) =>
+                      if List.exists (cases, fn {len, ...} => i = len)
+                         then unhandled
+                         else (Example.vector (Vector.new (i, Example.wild))) :: unhandled)
+                  val unhandled =
+                     Example.or (Vector.fromList unhandled)
+               in
+                  match (Vector.dropNth (vars, i),
+                         Rules.dropNth (Vector.fromList defaults, i),
+                         facts,
+                         Examples.add (es, var, unhandled, {isOnlyExns = false}))
+               end
+            val cases =
+               Vector.fromListMap
+               (cases, fn {len, rules} =>
+                let
+                   fun body vars' =
+                      let
+                         val vars =
+                            Vector.concatV
+                            (Vector.mapi
+                             (vars, fn (i', x) =>
+                              if i = i'
+                                 then vars'
+                                 else Vector.new1 x))
+                         val rules =
+                            Vector.fromListMap
+                            (rules, fn Rule.T {pats, rest} =>
+                             let
+                                val pats =
+                                   Vector.concatV
+                                   (Vector.mapi
+                                    (pats, fn (i', p) =>
+                                     if i <> i'
+                                        then Vector.new1 p
+                                        else (case p of
+                                                 Pat.Vector ps => ps
+                                               | Pat.Wild => Vector.new (len, Pat.Wild)
+                                               | _ => Error.bug "MatchCompile.vector: devector")))
+                             in
+                                Rule.T {pats = pats, rest = rest}
+                             end)
+                      in
+                         match (vars, rules,
+                                Facts.add (facts, var,
+                                           Fact.Vector (Vector.map (vars', #1))),
+                                es)
+                      end
+                in
+                   (WordX.fromIntInf (IntInf.fromInt len, WordSize.seqIndex ()),
+                    Exp.devector {vector = test, length = len, body = body})
+                end)
+         in
+            Exp.casee
+            {cases = Cases.word (WordSize.seqIndex (), cases),
+             default = SOME (default, region),
+             test = Exp.vectorLength test,
+             ty = caseType}
          end) arg
       val examples = Vector.tabulate (Vector.length cases, fn _ => ref [])
       val res =

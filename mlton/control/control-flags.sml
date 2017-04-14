@@ -543,13 +543,21 @@ structure Elaborate =
          val (allowSigWithtype, ac) =
             makeBool ({name = "allowSigWithtype",
                        default = false, expert = false}, ac)
+         val (allowVectorExps, ac) =
+            makeBool ({name = "allowVectorExps",
+                       default = false, expert = false}, ac)
+         val (allowVectorPats, ac) =
+            makeBool ({name = "allowVectorPats",
+                       default = false, expert = false}, ac)
          val extendedConstsCtrls =
             [allowExtendedNumConsts, allowExtendedTextConsts]
+         val vectorCtrls =
+            [allowVectorExps, allowVectorPats]
          val successorMLCtrls =
             [allowDoDecls, allowExtendedNumConsts,
              allowExtendedTextConsts, allowLineComments, allowOptBar,
              allowOptSemicolon, allowOrPats, allowRecordPunExps,
-             allowSigWithtype]
+             allowSigWithtype, allowVectorExps, allowVectorPats]
 
 
          val {parseId, parseIdAndArgs, withDef, snapshot} = ac
@@ -629,6 +637,12 @@ structure Elaborate =
                                   deprecated = false,
                                   expert = false,
                                   name = "allowExtendedConsts"}, ac)
+         val ac =
+            makeProxyBoolSimple ({alts = List.map (vectorCtrls, id),
+                                  default = false,
+                                  deprecated = false,
+                                  expert = false,
+                                  name = "allowVectorExpsAndPats"}, ac)
          val ac =
             makeProxyBoolSimple ({alts = List.map (successorMLCtrls, id),
                                   default = false,

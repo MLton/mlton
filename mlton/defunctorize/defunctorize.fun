@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -78,6 +78,14 @@ structure MatchCompile =
                       fun detuple {tuple, body} =
                          Xexp.detuple
                          {tuple = tuple,
+                          body = fn xts => body (Vector.map
+                                                 (xts, fn (x, t) =>
+                                                  (XvarExp.var x, t)))}
+
+                      fun devector {vector, length, body} =
+                         Xexp.devector
+                         {vector = vector,
+                          length = length,
                           body = fn xts => body (Vector.map
                                                  (xts, fn (x, t) =>
                                                   (XvarExp.var x, t)))}
@@ -669,6 +677,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Record r => Record.foreach (r, loopExp)
              | Seq es => Vector.foreach (es, loopExp)
              | Var _ => ()
+             | Vector es => Vector.foreach (es, loopExp)
          end
       and loopLambda (l: Clambda.t): unit =
          loopExp (#body (Clambda.dest l))
@@ -716,6 +725,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                 | Or ps => NestedPat.Or (Vector.map (ps, loopPat))
                 | Tuple ps => NestedPat.Tuple (Vector.map (ps, loopPat))
                 | Var x => NestedPat.Var x
+                | Vector ps => NestedPat.Vector (Vector.map (ps, loopPat))
                 | Wild => NestedPat.Wild
          in
             NestedPat.make (p, t')
@@ -1091,6 +1101,11 @@ fun defunctorize (CoreML.Program.T {decs}) =
                      Xexp.var {targs = Vector.map (targs (), loopTy),
                                ty = ty,
                                var = var ()}
+                | Vector es =>
+                     Xexp.primApp {args = Vector.map (es, #1 o loopExp),
+                                   prim = Prim.vector,
+                                   targs = Vector.new1 (Xtype.deVector ty),
+                                   ty = ty}
          in
             (exp, ty)
          end

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -715,6 +716,28 @@ structure DirectExp =
                       t)
                   end)
 
+      fun vectorLength (e: t): t =
+         convert (e, fn (x, t) =>
+                  let
+                     val t = Type.deVector t
+                  in
+                     (PrimApp {prim = Prim.vectorLength,
+                               targs = Vector.new1 t,
+                               args = Vector.new1 x},
+                      Type.word (WordSize.seqIndex ()))
+                  end)
+
+      fun vectorSub (e1: t, e2: t): t =
+         convert2 (e1, e2, fn ((x1, t1), (x2, _)) =>
+                   let
+                      val t = Type.deVector t1
+                   in
+                      (PrimApp {prim = Prim.vectorSub,
+                                targs = Vector.new1 t,
+                                args = Vector.new2 (x1, x2)},
+                       t)
+                   end)
+
       fun equal (e1, e2) =
          convert2 (e1, e2, fn ((x1, t), (x2, _)) =>
                    (PrimApp {prim = Prim.equal,
@@ -819,6 +842,17 @@ structure DirectExp =
                                           k))
                      end
           end)
+
+      fun devector {vector: t, length: int, body}: t =
+         fn k =>
+         let
+            val es =
+               Vector.tabulate
+               (length, fn i =>
+                vectorSub (vector, const (Const.word (WordX.fromIntInf (IntInf.fromInt i, WordSize.seqIndex ())))))
+         in
+            convertsGen (es, fn args => (body args) k)
+         end
    end
 
 (*---------------------------------------------------*)

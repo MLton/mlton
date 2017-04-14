@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -115,7 +116,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          val size: int ref = ref 1
-         fun make () = Array.arrayUninit (!size)
+         fun make () = Array.uninit (!size)
          val buffer = ref (make ())
 
          fun extractToChar (a, c) =

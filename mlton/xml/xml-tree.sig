@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -195,6 +195,7 @@ signature XML_TREE =
             val deref: t -> t
             val detuple: {tuple: t, body: (VarExp.t * Type.t) vector -> t} -> t
             val detupleBind: {tuple: t, components: Var.t vector, body: t} -> t
+            val devector: {vector: t, length: int, body: (VarExp.t * Type.t) vector -> t} -> t
             val equal: t * t -> t
             val falsee: unit -> t
             val fromExp: Exp.t * Type.t -> t
@@ -231,6 +232,7 @@ signature XML_TREE =
                       ty: Type.t,
                       var: Var.t} -> t
             val varExp: VarExp.t * Type.t -> t
+            val vectorLength: t -> t
          end
 
       structure Program:

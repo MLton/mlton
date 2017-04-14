@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -508,10 +508,7 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_array =>
-                        coerce {from = arg 0, to = arrayLength result}
-                   | Array_array0Const => ()
-                   | Array_length => return (arrayLength (arg 0))
+                     Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
                    | Array_toVector =>
                         (case (value (arg 0), value result) of
@@ -519,6 +516,8 @@ fun transform (program: Program.t): Program.t =
                              Vector {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
+                   | Array_uninit =>
+                        coerce {from = arg 0, to = arrayLength result}
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
@@ -531,6 +530,18 @@ fun transform (program: Program.t): Program.t =
                    | Vector_length => return (vectorLength (arg 0))
                    | Vector_sub => (arg 1 dependsOn result
                                     ; return (devector (arg 0)))
+                   | Vector_vector =>
+                        let
+                           val l =
+                              (const o S.Const.word o WordX.fromIntInf)
+                              (IntInf.fromInt (Vector.length args),
+                               WordSize.seqIndex ())
+                        in
+                           (coerce {from = l, to = vectorLength result}
+                            ; Vector.foreach
+                              (args, fn arg =>
+                               coerce {from = arg, to = devector result}))
+                        end
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
                    | Word8Array_subWord _ => sub ()

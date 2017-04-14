@@ -325,3 +325,18 @@ structure Stream : STREAM =
     type 'a t = unit -> 'a u
   end
 ----
+
+* Vector Expressions and Patterns: +allowVectorExpsAndPats {false|true}+
++
+--
+Allow or disallow vector expressions and vector patterns.  This is a
+proxy for all of the following annotations.
+
+** Vector Expressions: +allowVectorExps {false|true}+
++
+Allow vector expressions of the form +#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]+ (where _n ≥ 0_).  The expression has type +_τ_ vector+ when each expression _exp~i~_ has type +_τ_+.
+
+** Vector Patterns: +allowVectorPats {false|true}+
++
+Allow vector patterns of the form +#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]+ (where _n ≥ 0_).  The pattern matches values of type +_τ_ vector+ when each pattern _pat~i~_ matches values of type +_τ_+.
+--

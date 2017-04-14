@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -314,6 +315,13 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
+      fun deConst v =
+         case value v of
+            Const (Const.T {const, ...}) =>
+               (case !const of
+                   Const.Const c => SOME c
+                 | _ => NONE)
+          | _ => NONE
 
       local
          open Layout
@@ -418,7 +426,7 @@ structure Value =
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.array,
+                                                   prim = Prim.arrayUninit,
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
@@ -447,7 +455,38 @@ structure Value =
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
-                          | Vector _ => No
+                          | Vector {elt, length} =>
+                               (case Option.map (deConst length, S.Const.deWord) of
+                                   NONE => No
+                                 | SOME length =>
+                                      let
+                                         val length = WordX.toInt length
+                                         val eltTy = Type.deVector ty
+                                         fun mkVec args =
+                                            yes (Exp.PrimApp
+                                                 {args = args,
+                                                  prim = Prim.vector,
+                                                  targs = Vector.new1 eltTy})
+                                         fun mkConst (ws, elts) =
+                                            yes (Exp.Const
+                                                 (S.Const.wordVector
+                                                  (WordXVector.fromList
+                                                   ({elementSize = ws}, elts))))
+                                      in
+                                         case (Option.map (deConst elt, S.Const.deWordOpt),
+                                               global (elt, newGlobal)) of
+                                            (SOME (SOME w), _) =>
+                                               mkConst (Type.deWord eltTy,
+                                                        List.new (length, w))
+                                          | (_, SOME (x, _)) =>
+                                               mkVec (Vector.new (length, x))
+                                          | _ =>
+                                               if length = 0
+                                                  then case Type.deWordOpt eltTy of
+                                                          SOME ws => mkConst (ws, [])
+                                                        | NONE => mkVec (Vector.new0 ())
+                                                  else No
+                                      end)
                           | Weak _ => No
                       val _ = r := g
                    in
@@ -468,8 +507,6 @@ structure Value =
       fun const c = let val c' = Const.const c
                     in new (Const c', Type.ofConst c)
                     end
-
-      val zero = WordSize.memoize (fn s => const (S.Const.word (WordX.zero s)))
 
       fun constToEltLength (c, err) =
          let
@@ -524,7 +561,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Vector {elt = elt, length = length}, ty)
+               new (Vector {elt = elt, length = length}, Type.vector (Type.deArray ty))
           | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
          end
 
@@ -847,14 +884,27 @@ fun transform (program: Program.t): Program.t =
                   in
                      a
                   end
+               fun vector () =
+                  let
+                     val v = fromType resultType
+                     val l =
+                        (const o S.Const.word o WordX.fromIntInf)
+                        (IntInf.fromInt (Vector.length args),
+                         WordSize.seqIndex ())
+                     val _ = coerce {from = l, to = vectorLength v}
+                     val _ =
+                        Vector.foreach
+                        (args, fn arg =>
+                         coerce {from = arg, to = devector v})
+                  in
+                     v
+                  end
             in
                case Prim.name prim of
-                  Array_array => array (arg 0, bear ())
-                | Array_array0Const =>
-                     array (zero (WordSize.seqIndex ()), Birth.here ())
-                | Array_length => arrayLength (arg 0)
+                  Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
+                | Array_uninit => array (arg 0, bear ())
                 | Array_update => update (arg 0, arg 2)
                 | Ref_assign =>
                      (coerce {from = arg 1, to = deref (arg 0)}; unit ())
@@ -871,6 +921,7 @@ fun transform (program: Program.t): Program.t =
                      end
                 | Vector_length => vectorLength (arg 0)
                 | Vector_sub => devector (arg 0)
+                | Vector_vector => vector ()
                 | Weak_get => deweak (arg 0)
                 | Weak_new =>
                      let

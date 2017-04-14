@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -65,6 +65,10 @@ fun equals (v, v') =
 fun foldFrom (v, start, b, f) = Vector.foldFrom (elements v, start, b, f)
 
 fun forall (v, f) = Vector.forall (elements v, f)
+
+fun fromList ({elementSize}, l) =
+   T {elementSize = elementSize,
+      elements = Vector.fromList l}
 
 fun fromListRev ({elementSize}, l) =
    T {elementSize = elementSize,

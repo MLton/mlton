@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,7 +13,7 @@ functor UnsafeMonoArray (A: MONO_ARRAY_EXTRA): UNSAFE_MONO_ARRAY =
 
       val sub = unsafeSub
       val update = unsafeUpdate
-      val create = fromPoly o Array.arrayUninit
+      val create = fromPoly o Array.uninit
    end
 
 functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =

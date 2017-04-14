@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,12 +34,11 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_array (* backend *)
- | Array_array0Const (* constant propagation *)
- | Array_length (* ssa to rssa *)
- | Array_sub (* backend *)
+   Array_length (* ssa to rssa *)
+ | Array_sub (* ssa to ssa2 *)
  | Array_toVector (* backend *)
- | Array_update (* backend *)
+ | Array_uninit (* backend *)
+ | Array_update (* ssa to ssa2 *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
  | CPointer_equal (* codegen *)
@@ -155,8 +154,9 @@ datatype 'a t =
  | TopLevel_getSuffix (* implement suffix *)
  | TopLevel_setHandler (* implement exceptions *)
  | TopLevel_setSuffix (* implement suffix *)
- | Vector_length (* ssa to rssa *)
- | Vector_sub (* ssa to rssa *)
+ | Vector_length (* ssa to ssa2 *)
+ | Vector_sub (* ssa to ssa2 *)
+ | Vector_vector (* ssa to ssa2 *)
  | Weak_canGet (* ssa to rssa *)
  | Weak_get (* ssa to rssa *)
  | Weak_new (* ssa to rssa *)
@@ -219,11 +219,10 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_array => "Array_array"
-       | Array_array0Const => "Array_array0Const"
-       | Array_length => "Array_length"
+         Array_length => "Array_length"
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
+       | Array_uninit => "Array_uninit"
        | Array_update => "Array_update"
        | CPointer_add => "CPointer_add"
        | CPointer_diff => "CPointer_diff"
@@ -321,6 +320,7 @@ fun toString (n: 'a t): string =
        | TopLevel_setSuffix => "TopLevel_setSuffix"
        | Vector_length => "Vector_length"
        | Vector_sub => "Vector_sub"
+       | Vector_vector => "Vector_vector"
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
@@ -359,11 +359,10 @@ fun toString (n: 'a t): string =
 fun layout p = Layout.str (toString p)
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_array, Array_array) => true
-    | (Array_array0Const, Array_array0Const) => true
-    | (Array_length, Array_length) => true
+   fn (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
+    | (Array_uninit, Array_uninit) => true
     | (Array_update, Array_update) => true
     | (CPointer_add, CPointer_add) => true
     | (CPointer_diff, CPointer_diff) => true
@@ -467,6 +466,7 @@ val equals: 'a t * 'a t -> bool =
     | (TopLevel_setSuffix, TopLevel_setSuffix) => true
     | (Vector_length, Vector_length) => true
     | (Vector_sub, Vector_sub) => true
+    | (Vector_vector, Vector_vector) => true
     | (Weak_canGet, Weak_canGet) => true
     | (Weak_get, Weak_get) => true
     | (Weak_new, Weak_new) => true
@@ -521,11 +521,10 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_array => Array_array
-    | Array_array0Const => Array_array0Const
-    | Array_length => Array_length
+      Array_length => Array_length
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
+    | Array_uninit => Array_uninit
     | Array_update => Array_update
     | CPointer_add => CPointer_add
     | CPointer_diff => CPointer_diff
@@ -624,6 +623,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | TopLevel_setSuffix => TopLevel_setSuffix
     | Vector_length => Vector_length
     | Vector_sub => Vector_sub
+    | Vector_vector => Vector_vector
     | Weak_canGet => Weak_canGet
     | Weak_get => Weak_get
     | Weak_new => Weak_new
@@ -660,8 +660,10 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val array = Array_array
 val arrayLength = Array_length
+val arrayToVector = Array_toVector
+val arrayUninit = Array_uninit
+val arrayUpdate = Array_update
 val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
@@ -718,6 +720,7 @@ val intInfNotb = IntInf_notb
 val realCastToWord = Real_castToWord
 val reff = Ref_ref
 val touch = MLton_touch
+val vector = Vector_vector
 val vectorLength = Vector_length
 val vectorSub = Vector_sub
 val wordAdd = Word_add
@@ -768,11 +771,10 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_array => Moveable
-       | Array_array0Const => Moveable
-       | Array_length => Functional
+         Array_length => Functional
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
+       | Array_uninit => Moveable
        | Array_update => SideEffect
        | CPointer_add => Functional
        | CPointer_diff => Functional
@@ -873,6 +875,7 @@ val kind: 'a t -> Kind.t =
        | TopLevel_setSuffix => SideEffect
        | Vector_length => Functional
        | Vector_sub => Functional
+       | Vector_vector => Functional
        | Weak_canGet => DependsOnState
        | Weak_get => DependsOnState
        | Weak_new => Moveable
@@ -976,11 +979,10 @@ local
        (Word8Vector_subWord s)]
 in
    val all: unit t list =
-      [Array_array,
-       Array_array0Const,
-       Array_length,
+      [Array_length,
        Array_sub,
        Array_toVector,
+       Array_uninit,
        Array_update,
        CPointer_add,
        CPointer_diff,
@@ -1044,6 +1046,7 @@ in
        TopLevel_setSuffix,
        Vector_length,
        Vector_sub,
+       Vector_vector,
        Weak_canGet,
        Weak_get,
        Weak_new,
@@ -1210,11 +1213,10 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_array => oneTarg (fn targ => (oneArg seqIndex, array targ))
-       | Array_array0Const => oneTarg (fn targ => (noArgs, array targ))
-       | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
+         Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
+       | Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
        | CPointer_add =>
@@ -1337,6 +1339,7 @@ fun 'a checkApp (prim: 'a t,
             noTargs (fn () => (oneArg string, word8Vector))
        | Vector_length => oneTarg (fn t => (oneArg (vector t), seqIndex))
        | Vector_sub => oneTarg (fn t => (twoArgs (vector t, seqIndex), t))
+       | Vector_vector => oneTarg (fn targ => (nArgs (Vector.map (args, fn _ => targ)), vector targ))
        | Weak_canGet => oneTarg (fn t => (oneArg (weak t), bool))
        | Weak_get => oneTarg (fn t => (oneArg (weak t), t))
        | Weak_new => oneTarg (fn t => (oneArg t, weak t))
@@ -1398,11 +1401,10 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_array => one (deArray result)
-       | Array_array0Const => one (deArray result)
-       | Array_length => one (deArray (arg 0))
+         Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
+       | Array_uninit => one (deArray result)
        | Array_update => one (deArray (arg 0))
        | CPointer_getObjptr => one result
        | CPointer_setObjptr => one (arg 2)
@@ -1422,6 +1424,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | Ref_ref => one (deRef result)
        | Vector_length => one (deVector (arg 0))
        | Vector_sub => one (deVector (arg 0))
+       | Vector_vector => one (deVector result)
        | Weak_canGet => one (deWeak (arg 0))
        | Weak_get => one result
        | Weak_new => one (arg 0)
@@ -1692,6 +1695,10 @@ fun ('a, 'b) apply (p: 'a t,
            | (Real_lt _, [Real r1, Real r2]) => boolOpt (RealX.lt (r1, r2))
            | (Real_qequal _, [Real r1, Real r2]) => boolOpt (RealX.qequal (r1, r2))
            | (Real_castToWord _, [Real r]) => wordOpt (RealX.castToWord r)
+           | (Vector_vector, (Word w)::_) =>
+                (wordVector o WordXVector.fromList)
+                ({elementSize = WordX.size w},
+                 List.map (cs, Const.deWord))
            | (Word_castToReal _, [Word w]) => realOpt (RealX.castFromWord w)
            | (Word_rndToReal (_, s, {signed}), [Word w]) =>
                 realOpt

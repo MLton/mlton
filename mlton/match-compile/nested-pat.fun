@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,6 +24,7 @@ and node =
   | Or of t vector
   | Tuple of t vector
   | Var of Var.t
+  | Vector of t vector
   | Wild
 
 local
@@ -54,6 +55,7 @@ fun layout (p, isDelimited) =
        | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
        | Tuple ps => tuple (Vector.toListMap (ps, layoutT))
        | Var x => Var.layout x
+       | Vector ps => vector (Vector.map (ps, layoutT))
        | Wild => str "_"
    end
 and layoutF p = layout (p, false)
@@ -83,17 +85,20 @@ fun flatten p =
        | Const _ => Vector.new1 p
        | Layered (x, p) => Vector.map (flatten p, fn p => make (Layered (x, p)))
        | Or ps => Vector.concatV (Vector.map (ps, flatten))
-       | Tuple ps => let
-                        val fpss =
-                           Vector.foldr
-                           (Vector.map (ps, flatten), [[]], fn (fps, fpss) =>
-                            List.concat (Vector.toListMap (fps, fn fp =>
-                                                           List.map (fpss, fn fps => fp :: fps))))
-                     in
-                        Vector.fromListMap (fpss, fn fps => make (Tuple (Vector.fromList fps)))
-                     end
+       | Tuple ps => flattens (ps, make o Tuple)
        | Var _ => Vector.new1 p
+       | Vector ps => flattens (ps, make o Vector)
        | Wild => Vector.new1 p
+   end
+and flattens (ps, make) =
+   let
+      val fpss =
+         Vector.foldr
+         (Vector.map (ps, flatten), [[]], fn (fps, fpss) =>
+          List.concat (Vector.toListMap (fps, fn fp =>
+                                         List.map (fpss, fn fps => fp :: fps))))
+   in
+      Vector.fromListMap (fpss, fn fps => make (Vector.fromList fps))
    end
 
 val flatten =
@@ -102,13 +107,14 @@ val flatten =
 
 fun isRefutable p =
    case node p of
-      Wild => false
-    | Var _ => false
+      Con _ => true
     | Const _ => true
-    | Con _ => true
+    | Layered (_, p) => isRefutable p
     | Or ps => Vector.exists (ps, isRefutable)
     | Tuple ps => Vector.exists (ps, isRefutable)
-    | Layered (_, p) => isRefutable p
+    | Var _ => false
+    | Vector _ => true
+    | Wild => false
 
 fun isVar p =
    case node p of
@@ -140,6 +146,7 @@ fun removeOthersReplace (p, {new, old}) =
                      if Var.equals (x, old)
                         then Var new
                      else Wild
+                | Vector ps => Vector (Vector.map (ps, loop))
                 | Wild => Wild
          in
             T {pat = pat, ty = ty}
@@ -174,6 +181,7 @@ fun replaceTypes (p: t, f: Type.t -> Type.t): t =
                 | Or ps => Or (Vector.map (ps, loop))
                 | Tuple ps => Tuple (Vector.map (ps, loop))
                 | Var _ => pat
+                | Vector ps => Vector (Vector.map (ps, loop))
                 | Wild => pat
          in
             T {pat = pat, ty = f ty}
@@ -186,15 +194,16 @@ fun varsAndTypes (p: t): (Var.t * Type.t) list =
    let
       fun loop (p: t, accum: (Var.t * Type.t) list) =
          case node p of
-            Wild => accum
+            Con {arg, ...} => (case arg of
+                                  NONE => accum
+                                | SOME p => loop (p, accum))
           | Const _ => accum
-          | Var x => (x, ty p) :: accum
+          | Layered (x, p) => loop (p, (x, ty p) :: accum)
           | Or ps => loop (Vector.sub (ps, 0), accum)
           | Tuple ps => Vector.fold (ps, accum, loop)
-          | Con {arg, ...} => (case arg of
-                                NONE => accum
-                              | SOME p => loop (p, accum))
-          | Layered (x, p) => loop (p, (x, ty p) :: accum)
+          | Var x => (x, ty p) :: accum
+          | Vector ps => Vector.fold (ps, accum, loop)
+          | Wild => accum
    in loop (p, [])
    end
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -542,15 +542,10 @@ let
             datatype z = datatype R.Statement.t
          in
             case s of
-               Bind {dst = (var, _), isMutable, src} =>
-                  if isMutable
-                     orelse (case #operand (varInfo var) of
-                                VarOperand.Const _ => false
-                              | _ => true)
-                     then (Vector.new1
-                           (M.Statement.move {dst = varOperand var,
-                                              src = translateOperand src}))
-                  else Vector.new0 ()
+               Bind {dst = (var, _), src, ...} =>
+                  Vector.new1
+                  (M.Statement.move {dst = varOperand var,
+                                     src = translateOperand src})
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,

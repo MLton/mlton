@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -86,6 +86,8 @@ signature SSA_TREE =
             val deTupleOpt: t -> t vector option
             val deVector: t -> t
             val deWeak: t -> t
+            val deWord: t -> WordSize.t
+            val deWordOpt: t -> WordSize.t option
             val equals: t * t -> bool
             val hash: t -> word
             val intInf: t

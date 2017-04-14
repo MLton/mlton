@@ -234,10 +234,11 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
     | ABSTYPE | AND | ANDALSO | ARROW | AS | ASTERISK | BAR | CASE | COLON
     | COLONGT | COMMA | DATATYPE | DOTDOTDOT | ELSE | END | EOF | EQUALOP
     | EQTYPE | EXCEPTION | DO | DARROW | FN | FUN | FUNCTOR | HANDLE | HASH
-    | IF | IN | INCLUDE | INFIX | INFIXR | LBRACE | LBRACKET | LET | LOCAL
-    | LPAREN | NONFIX | ORELSE | OF | OP | OPEN | OVERLOAD | RAISE | RBRACE 
-    | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE | STRUCT
-    | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH | WITHTYPE
+    | HASHLBRACKET | IF | IN | INCLUDE | INFIX | INFIXR | LBRACE | LBRACKET | LET
+    | LOCAL | LPAREN | NONFIX | ORELSE | OF | OP | OPEN | OVERLOAD | RAISE
+    | RBRACE | RBRACKET | REC | RPAREN | SEMICOLON | SHARING | SIG | SIGNATURE
+    | STRUCT | STRUCTURE | THEN | TYPE | VAL | WHERE | WHILE | WILD | WITH
+    | WITHTYPE
       (* Extensions *)
     | BUILD_CONST | COMMAND_LINE_CONST | CONST 
     | ADDRESS | EXPORT | IMPORT | SYMBOL 
@@ -1034,6 +1035,8 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
                                           fixop = Fixop.Op})
         | const                 (Exp.Const const)
         | HASH field            (Exp.Selector field)
+        | HASHLBRACKET exp_list RBRACKET (Exp.Vector (Vector.fromList exp_list))
+        | HASHLBRACKET RBRACKET          (Exp.Vector (Vector.new0 ()))
         | LBRACE elabels RBRACE
           (Exp.Record (Record.fromVector (Vector.fromList elabels)))
         | LBRACE RBRACE         (Exp.unit)
@@ -1171,6 +1174,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
         | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
+        | HASHLBRACKET pats RBRACKET (Pat.Vector (Vector.fromList pats))
         | LBRACE RBRACE          (Pat.unit)
         | LBRACE patitems RBRACE
           (let

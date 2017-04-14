@@ -120,6 +120,8 @@ signature CONTROL_FLAGS =
             val allowOrPats: (bool,bool) t
             val allowRecordPunExps: (bool,bool) t
             val allowSigWithtype: (bool,bool) t
+            val allowVectorExps: (bool,bool) t
+            val allowVectorPats: (bool,bool) t
 
             val current: ('args, 'st) t -> 'st
             val default: ('args, 'st) t -> 'st

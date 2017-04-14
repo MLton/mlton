@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -273,6 +273,8 @@ fun unfoldr (a, f) =
 fun unfold (a, f) = rev (unfoldr (a, f))
 
 fun tabulate (n: int, f) = unfoldri (n, (), fn (i, ()) => (f i, ()))
+
+fun new (n, x) = tabulate (n, fn _ => x)
 
 fun duplicate (n, f) = tabulate (n, fn _ => f ())
 
