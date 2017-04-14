@@ -524,8 +524,8 @@ val elaboratePat:
              in
                 case Apat.node p of
                    Apat.Or ps =>
-                      (check (Control.Elaborate.allowOrPats, "allowOrPats", region)
-                      ; let
+                       let
+                         val _ = check (Control.Elaborate.allowOrPats, "Or patterns", region)
                          val xtsOrig = !xts
                          val n = Vector.length ps
                          val ps =
@@ -612,7 +612,7 @@ val elaboratePat:
                          val _ = xts := xtsMerge
                       in
                          Cpat.make (Cpat.Or ps', t)
-                      end)
+                      end
                  | Apat.App (c, p) =>
                       let
                          val (con, s) = Env.lookupLongcon (E, c)
@@ -2042,45 +2042,45 @@ fun elaborateDec (d, {env = E, nest}) =
                              in
                                 Decs.empty
                              end)
-				 | Adec.DoDec exp =>
-                      (check (ElabControl.allowDoDecls, "allowDoDecls", Aexp.region exp)
-					  ; let
-                         fun lay () =		
-                            let		
-                               open Layout		
-                            in		
-                               seq [str "in: ",		
-                                    approximate		
-                                    (seq [str "do ", Aexp.layout exp])]		
-                            end		
-                         val elaboratePat = elaboratePat ()		
-                         val pat = Apat.wild		
-                         val (pat, _) =		
-                                   elaboratePat (pat, E, {bind = false,		
-                                                          isRvb = false}, preError)		
-                         val patRegion = Region.bogus		
-                         val exp' = elabExp (exp, nest, NONE)		
-                         val bound = fn () => Vector.new0 ()		
-                         val _ =		
-                            unify		
-                            (Cexp.ty exp', Type.unit, fn (l1, _) =>		
-                            (Aexp.region exp,		
-                               str "do declaration not of type unit",		
-                               align [seq [str "do declaration type: ", l1], lay ()]))		
-                         val vbs = {exp = exp',		
+                 | Adec.DoDec exp =>
+                      let
+                         val _ = check (ElabControl.allowDoDecls, "do declarations", Adec.region d)
+                         fun lay () =
+                            let
+                               open Layout
+                            in
+                               seq [str "in: ",
+                                    approximate
+                                    (seq [str "do ", Aexp.layout exp])]
+                            end
+                         val elaboratePat = elaboratePat ()
+                         val pat = Apat.wild
+                         val (pat, _) =
+                            elaboratePat (pat, E, {bind = false,
+                                                   isRvb = false}, preError)
+                         val patRegion = Region.bogus
+                         val exp' = elabExp (exp, nest, NONE)
+                         val bound = fn () => Vector.new0 ()
+                         val _ =
+                            unify
+                            (Cexp.ty exp', Type.unit, fn (l1, _) =>
+                            (Aexp.region exp,
+                               str "do declaration not of type unit",
+                               align [seq [str "do declaration type: ", l1], lay ()]))
+                         val vbs = {exp = exp',
                                     lay = fn () => {dec = lay (), pat = Apat.layout Apat.wild},
-                                    nest = nest,		
-                                    pat = pat,		
-                                    patRegion = patRegion}		
-                      in		
-                         Decs.single		
-                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),		
-                                    nonexhaustiveMatch = nonexhaustiveMatch (),		
+                                    nest = nest,
+                                    pat = pat,
+                                    patRegion = patRegion}
+                      in
+                         Decs.single
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
+                                    nonexhaustiveMatch = nonexhaustiveMatch (),
                                     redundantMatch = redundantMatch (),
-                                    rvbs = Vector.new0 (),		
-                                    tyvars = bound,		
-                                    vbs = Vector.new1 vbs})		
-                      end)
+                                    rvbs = Vector.new0 (),
+                                    tyvars = bound,
+                                    vbs = Vector.new1 vbs})
+                      end
                  | Adec.Exception ebs =>
                       let
                          val decs =

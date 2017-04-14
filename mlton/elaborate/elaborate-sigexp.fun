@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2012,2015 Matthew Fluet.
+(* Copyright (C) 2010,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -205,7 +205,7 @@ fun elabTypBind (typBind: TypBind.t, E) =
    let
       val TypBind.T types = TypBind.node typBind
       val () = if Vector.length types > 0
-                  then check (Control.Elaborate.allowSigWithtype, "allowSigWithtype", TypBind.region typBind)
+                  then check (Control.Elaborate.allowSigWithtype, "withtype in signatures", TypBind.region typBind)
                   else ()
       val strs =
          Vector.map
