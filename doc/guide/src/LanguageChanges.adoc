@@ -2,8 +2,8 @@ LanguageChanges
 ===============
 
 We are sometimes asked to modify MLton to change the language it
-compiles.  In short, we are very conservative about making such
-changes.  There are a number of reasons for this.
+compiles.  In short, we are conservative about making such changes.
+There are a number of reasons for this.
 
 * <:DefinitionOfStandardML:The Definition of Standard ML> is an
 extremely high standard of specification.  The value of the Definition
@@ -29,17 +29,18 @@ Despite these drawbacks, we have extended SML in a couple of cases.
 
 * <:ForeignFunctionInterface: Foreign function interface>
 * <:MLBasis: ML Basis system>
+* <:SuccessorML: Successor ML features>
 
 We allow these language extensions because they provide functionality
-that is impossible to achieve without them.  The Definition does not
-define a foreign function interface.  So, we must either extend the
-language or greatly restrict the class of programs that can be
-written.  Similarly, the Definition does not provide a mechanism for
-namespace control at the module level, making it impossible to deliver
-packaged libraries and have a hope of users using them without name
-clashes.  The ML Basis system addresses this problem.  We have also
-provided a formal specification of the ML Basis system at the level of
-the Definition.
+that is impossible to achieve without them or have non-trivial
+community support.  The Definition does not define a foreign function
+interface.  So, we must either extend the language or greatly restrict
+the class of programs that can be written.  Similarly, the Definition
+does not provide a mechanism for namespace control at the module
+level, making it impossible to deliver packaged libraries and have a
+hope of users using them without name clashes.  The ML Basis system
+addresses this problem.  We have also provided a formal specification
+of the ML Basis system at the level of the Definition.
 
 == Also see ==
 
