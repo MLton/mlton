@@ -1,4 +1,4 @@
-/* Copyright (C) 2009,2012,2015 Matthew Fluet.
+/* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -116,6 +116,15 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
         } else if (0 == strcmp (arg, "gc-summary")) {
           i++;
           s->controls.summary = TRUE;
+        } else if (0 == strcmp (arg, "gc-summary-file")) {
+          i++;
+          if (i == argc)
+            die ("@MLton gc-summary-file missing argument.");
+          s->controls.summary = TRUE;
+          s->controls.summaryFile = fopen(argv[i++], "w");
+          if (s->controls.summaryFile == NULL) {
+            die ("Invalid @MLton gc-summary-file %s (%s).", argv[i-1], strerror(errno));
+          }
         } else if (0 == strcmp (arg, "grow-ratio")) {
           i++;
           if (i == argc)
@@ -291,6 +300,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.stackMaxReserved = 8.0f;
   s->controls.ratios.stackShrink = 0.5f;
   s->controls.summary = FALSE;
+  s->controls.summaryFile = stderr;
   s->cumulativeStatistics.bytesAllocated = 0;
   s->cumulativeStatistics.bytesCopied = 0;
   s->cumulativeStatistics.bytesCopiedMinor = 0;
