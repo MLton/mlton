@@ -116,7 +116,7 @@ in
       end
    fun finishText textRight =
       let
-         val cs = Vector.fromListRev (!chars)
+         val cs = String.fromListRev (!chars)
          val tl = !textLeft
          val tr = textRight
          val tf = !textFinishFn
