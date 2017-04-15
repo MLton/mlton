@@ -2,20 +2,23 @@ UnresolvedBugs
 ==============
 
 Here are the places where MLton deviates from
-<:DefinitionOfStandardML:The Definition of Standard ML (Revised)>.  In
-general, MLton complies with the <:DefinitionOfStandardML:Definition>
-quite closely, typically much more closely than other SML compilers
-(see, e.g., our list of <:SMLNJDeviations:SML/NJ's deviations>).  In
-fact, the four deviations listed here are the only known deviations,
-and we have no plans to fix them.  If you find a deviation not listed
-here, please report a <:Bug:>.
+<:DefinitionOfStandardML:The Definition of Standard ML (Revised)> and
+the <:BasisLibrary:Basis Library>.  In general, MLton complies with
+the <:DefinitionOfStandardML:Definition> quite closely, typically much
+more closely than other SML compilers (see, e.g., our list of
+<:SMLNJDeviations:SML/NJ's deviations>).  In fact, the four deviations
+listed here are the only known deviations, and we have no immediate
+plans to fix them.  If you find a deviation not listed here, please
+report a <:Bug:>.
 
 We don't plan to fix these bugs because the first (parsing nested
 cases) has historically never been accepted by any SML compiler, the
-other three clearly indicate problems in the
-<:DefinitionOfStandardML:Definition>.
+second clearly indicates a problem in the
+<:DefinitionOfStandardML:Definition>, and the remaining are difficult
+to resolve in the context of MLton's implementaton of Standard ML (and
+unlikely to be problematic in practice).
 
- * MLton does not correctly parse case expressions nested within other
+* MLton does not correctly parse case expressions nested within other
 matches. For example, the following fails.
 +
 [source,sml]
@@ -34,7 +37,7 @@ would be a mistake, since using parentheses is clearer and no SML
 compiler has ever allowed them.  Furthermore, implementing this would
 require serious yacc grammar rewriting followed by postprocessing.
 
- * MLton does not raise the `Bind` exception at run time when
+* MLton does not raise the `Bind` exception at run time when
 evaluating `val rec` (and `fun`) declarations that redefine
 identifiers that previously had constructor status.  (By default,
 MLton does warn at compile time about `val rec` (and `fun`)
