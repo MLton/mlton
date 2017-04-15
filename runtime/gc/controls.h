@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -50,6 +51,7 @@ struct GC_controls {
   struct GC_ratios ratios;
   bool rusageMeasureGC;
   bool summary; /* Print a summary of gc info when program exits. */
+  FILE* summaryFile;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

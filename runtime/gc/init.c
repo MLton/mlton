@@ -1,4 +1,4 @@
-/* Copyright (C) 2009,2012,2015 Matthew Fluet.
+/* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -92,21 +92,21 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
         arg = argv[i];
         if (0 == strcmp (arg, "copy-generational-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton copy-generational-ratio missing argument.");
           s->controls.ratios.copyGenerational = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.copyGenerational)
             die ("@MLton copy-generational-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "copy-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton copy-ratio missing argument.");
           s->controls.ratios.copy = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.copy)
             die ("@MLton copy-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "fixed-heap")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton fixed-heap missing argument.");
           s->controls.fixedHeap = align (stringToBytes (argv[i++]),
                                          2 * s->sysvals.pageSize);
@@ -116,16 +116,25 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
         } else if (0 == strcmp (arg, "gc-summary")) {
           i++;
           s->controls.summary = TRUE;
+        } else if (0 == strcmp (arg, "gc-summary-file")) {
+          i++;
+          if (i == argc || (0 == strcmp (argv[i], "--")))
+            die ("@MLton gc-summary-file missing argument.");
+          s->controls.summary = TRUE;
+          s->controls.summaryFile = fopen(argv[i++], "w");
+          if (s->controls.summaryFile == NULL) {
+            die ("Invalid @MLton gc-summary-file %s (%s).", argv[i-1], strerror(errno));
+          }
         } else if (0 == strcmp (arg, "grow-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton grow-ratio missing argument.");
           s->controls.ratios.grow = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.grow)
             die ("@MLton grow-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "hash-cons")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton hash-cons missing argument.");
           s->controls.ratios.hashCons = stringToFloat (argv[i++]);
           unless (0.0 <= s->controls.ratios.hashCons
@@ -133,7 +142,7 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
             die ("@MLton hash-cons argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "live-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton live-ratio missing argument.");
           s->controls.ratios.live = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.live)
@@ -143,32 +152,32 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
             die ("May not load world.");
           i++;
           s->amOriginal = FALSE;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton load-world missing argument.");
           *worldFile = argv[i++];
         } else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton mark-compact-generational-ratio missing argument.");
           s->controls.ratios.markCompactGenerational = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.markCompactGenerational)
             die ("@MLton mark-compact-generational-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "mark-compact-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton mark-compact-ratio missing argument.");
           s->controls.ratios.markCompact = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.markCompact)
             die ("@MLton mark-compact-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "max-heap")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton max-heap missing argument.");
           s->controls.maxHeap = align (stringToBytes (argv[i++]),
                                        2 * s->sysvals.pageSize);
         } else if (0 == strcmp (arg, "may-page-heap")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton may-page-heap missing argument.");
           s->controls.mayPageHeap = stringToBool (argv[i++]);
         } else if (0 == strcmp (arg, "no-load-world")) {
@@ -176,14 +185,14 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
           s->controls.mayLoadWorld = FALSE;
         } else if (0 == strcmp (arg, "nursery-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton nursery-ratio missing argument.");
           s->controls.ratios.nursery = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.nursery)
             die ("@MLton nursery-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "ram-slop")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton ram-slop missing argument.");
           s->controls.ratios.ramSlop = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "show-sources")) {
@@ -194,28 +203,28 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
           s->controls.mayProcessAtMLton = FALSE;
         } else if (0 == strcmp (arg, "stack-current-grow-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-current-grow-ratio missing argument.");
           s->controls.ratios.stackCurrentGrow = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.stackCurrentGrow)
             die ("@MLton stack-current-grow-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "stack-current-max-reserved-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-current-max-reserved-ratio missing argument.");
           s->controls.ratios.stackCurrentMaxReserved = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.stackCurrentMaxReserved)
             die ("@MLton stack-current-max-reserved-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "stack-current-permit-reserved-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-current-permit-reserved-ratio missing argument.");
           s->controls.ratios.stackCurrentPermitReserved = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.stackCurrentPermitReserved)
             die ("@MLton stack-current-permit-reserved-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "stack-current-shrink-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-current-shrink-ratio missing argument.");
           s->controls.ratios.stackCurrentShrink = stringToFloat (argv[i++]);
           unless (0.0 <= s->controls.ratios.stackCurrentShrink
@@ -223,14 +232,14 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
             die ("@MLton stack-current-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "stack-max-reserved-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-max-reserved-ratio missing argument.");
           s->controls.ratios.stackMaxReserved = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.stackMaxReserved)
             die ("@MLton stack-max-reserved-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "stack-shrink-ratio")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton stack-shrink-ratio missing argument.");
           s->controls.ratios.stackShrink = stringToFloat (argv[i++]);
           unless (0.0 <= s->controls.ratios.stackShrink
@@ -238,7 +247,7 @@ int processAtMLton (GC_state s, int start, int argc, char **argv,
             die ("@MLton stack-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "use-mmap")) {
           i++;
-          if (i == argc)
+          if (i == 0 || 0 == strcmp (argv[i], "--"))
             die ("@MLton use-mmap missing argument.");
           GC_setCygwinUseMmap (stringToBool (argv[i++]));
         } else if (0 == strcmp (arg, "--")) {
@@ -291,6 +300,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.stackMaxReserved = 8.0f;
   s->controls.ratios.stackShrink = 0.5f;
   s->controls.summary = FALSE;
+  s->controls.summaryFile = stderr;
   s->cumulativeStatistics.bytesAllocated = 0;
   s->cumulativeStatistics.bytesCopied = 0;
   s->cumulativeStatistics.bytesCopiedMinor = 0;
