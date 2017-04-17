@@ -120,9 +120,11 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
                       [] => ()
                     | history =>
                          (messageStr (verb, concat [name, " raised with history: "])
+                          ; indent ()
                           ; (List.foreach
                              (history, fn s =>
-                              messageStr (verb, concat ["\t", s])))))
+                              messageStr (verb, s)))
+                          ; unindent ()))
                 ; raise e)
          end
    else
@@ -170,9 +172,11 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
                       [] => ()
                     | history =>
                          (messageStr (verb, concat [name, " raised with history: "])
+                          ; indent ()
                           ; (List.foreach
                              (history, fn s =>
-                              messageStr (verb, concat ["\t", s])))))
+                              messageStr (verb, s)))
+                          ; unindent ()))
                 ; raise e)
           end
      else f a
