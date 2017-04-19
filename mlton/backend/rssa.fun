@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -617,6 +617,15 @@ structure Block =
                             Transfer.layout transfer],
                            2)]
          end
+
+      fun foreachDef (T {args, statements, transfer, ...}, f) =
+         (Vector.foreach (args, f)
+          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
+          ; Transfer.foreachDef (transfer, f))
+
+      fun foreachUse (T {statements, transfer, ...}, f) =
+         (Vector.foreach (statements, fn s => Statement.foreachUse (s, f))
+          ; Transfer.foreachUse (transfer, f))
    end
 
 structure Function =
@@ -674,13 +683,12 @@ structure Function =
                    indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
          end
 
-      fun foreachVar (T {args, blocks, ...}, f) =
+      fun foreachDef (T {args, blocks, ...}, f) =
          (Vector.foreach (args, f)
-          ; (Vector.foreach
-             (blocks, fn Block.T {args, statements, transfer, ...} =>
-              (Vector.foreach (args, f)
-               ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
-               ; Transfer.foreachDef (transfer, f)))))
+          ; (Vector.foreach (blocks, fn b => Block.foreachDef (b, f))))
+
+      fun foreachUse (T {blocks, ...}, f) =
+         Vector.foreach (blocks, fn b => Block.foreachUse (b, f))
 
       fun dfs (T {blocks, start, ...}, v) =
          let
