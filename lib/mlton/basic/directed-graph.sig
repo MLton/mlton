@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -124,6 +124,8 @@ signature DIRECTED_GRAPH =
          'a t * ('a Node.t vector vector)
          -> 'a u t * {destroy: unit -> unit,
                       newNode: 'a Node.t -> 'a u Node.t}
+      (* Removes node and incident edges. *)
+      val removeNode: 'a t * 'a Node.t -> unit
       val removeDuplicateEdges: 'a t -> unit
       (* Strongly-connected components.
        * Each component is given as a list of nodes.

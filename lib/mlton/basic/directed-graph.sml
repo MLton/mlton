@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -110,6 +111,20 @@ fun newNode (T {nodes, ...}) =
    let val n = Node.new ()
    in List.push (nodes, n)
       ; n
+   end
+
+fun removeNode (T {nodes, ...}, n) =
+   let
+      fun nodePred n' = Node.equals (n, n')
+      fun edgePred (Edge.Edge {to = n', ...}) = nodePred n'
+      val _ =
+         nodes := List.removeAll (!nodes, nodePred)
+      val _ =
+         List.foreach
+         (!nodes, fn Node.Node {successors, ...} =>
+          successors := List.removeAll (!successors, edgePred))
+   in
+      ()
    end
 
 fun addEdge (_, e as {from = Node.Node {successors, ...}, ...}) =
