@@ -139,7 +139,6 @@ signature SSA_TREE =
             val clear: t -> unit (* clear the var *)
             val exp: t -> Exp.t
             val layout: t -> Layout.t
-            val prettifyGlobals: t vector -> (Var.t -> string option)
             val profile: ProfileExp.t -> t
             val var: t -> Var.t option
          end
@@ -258,9 +257,9 @@ signature SSA_TREE =
             val foreachVar: t * (Var.t * Type.t -> unit) -> unit
             val layout: t -> Layout.t
             val layoutDot:
-               t * (Var.t -> string option) -> {destroy: unit -> unit,
-                                                graph: Layout.t,
-                                                tree: unit -> Layout.t}
+               t * (Var.t -> Layout.t) -> {destroy: unit -> unit,
+                                           graph: Layout.t,
+                                           tree: unit -> Layout.t}
             val mayInline: t -> bool
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
