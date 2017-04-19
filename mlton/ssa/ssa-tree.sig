@@ -258,8 +258,8 @@ signature SSA_TREE =
             val layout: t -> Layout.t
             val layoutDot:
                t * (Var.t -> Layout.t) -> {destroy: unit -> unit,
-                                           graph: Layout.t,
-                                           tree: unit -> Layout.t}
+                                           controlFlowGraph: Layout.t,
+                                           dominatorTree: unit -> Layout.t}
             val mayInline: t -> bool
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,

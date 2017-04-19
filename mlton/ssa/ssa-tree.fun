@@ -1236,7 +1236,7 @@ structure Function =
                   in
                      funNode
                   end
-               val graphLayout =
+               val controlFlowGraphLayout =
                   Graph.layoutDot
                   (graph, fn {nodeName} => 
                    {title = concat [Func.toString name, " control-flow graph"],
@@ -1248,7 +1248,7 @@ structure Function =
                                open NodeOption
                             in FontColor Black :: Shape Box :: l
                             end})
-               fun treeLayout () =
+               fun dominatorTreeLayout () =
                   let
                      val {get = nodeOptions, set = setNodeOptions, ...} =
                         Property.getSetOnce (Node.plist, Property.initConst [])
@@ -1257,7 +1257,7 @@ structure Function =
                         (blocks, fn Block.T {label, ...} =>
                          setNodeOptions (labelNode label,
                                          [NodeOption.label (Label.toString label)]))
-                     val treeLayout =
+                     val dominatorTreeLayout =
                         Tree.layoutDot
                         (Graph.dominatorTree (graph,
                                               {root = startNode,
@@ -1266,7 +1266,7 @@ structure Function =
                           options = [],
                           nodeOptions = nodeOptions})
                   in
-                     treeLayout
+                     dominatorTreeLayout
                   end
                (*
                fun loopForestLayout () =
@@ -1290,8 +1290,8 @@ structure Function =
                *)
             in
                {destroy = destroy,
-                graph = graphLayout,
-                tree = treeLayout}
+                controlFlowGraph = controlFlowGraphLayout,
+                dominatorTree = dominatorTreeLayout}
             end
       end
 
@@ -1365,7 +1365,7 @@ structure Function =
                   then ()
                else
                   let
-                     val {destroy, graph, tree} = 
+                     val {destroy, controlFlowGraph, dominatorTree} =
                         layoutDot (f, layoutVar)
                      val name = Func.toString name
                      fun doit (s, g) =
@@ -1376,9 +1376,9 @@ structure Function =
                            ({suffix = concat [name, ".", s, ".dot"]},
                             Dot, (), Layout (fn () => g))
                         end
-                     val _ = doit ("cfg", graph)
+                     val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout cfg"
-                     val _ = doit ("dom", tree ())
+                     val _ = doit ("dom", dominatorTree ())
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout dom"
                      (*
                      val _ = doit ("lf", loopForest ())
