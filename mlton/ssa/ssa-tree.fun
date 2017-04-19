@@ -1248,6 +1248,7 @@ structure Function =
                                open NodeOption
                             in FontColor Black :: Shape Box :: l
                             end})
+               val () = Graph.removeNode (graph, funNode)
                fun dominatorTreeLayout () =
                   let
                      val {get = nodeOptions, set = setNodeOptions, ...} =
@@ -1268,7 +1269,6 @@ structure Function =
                   in
                      dominatorTreeLayout
                   end
-               (*
                fun loopForestLayout () =
                   let
                      val {get = nodeName, set = setNodeName, ...} =
@@ -1280,18 +1280,18 @@ structure Function =
                      val loopForestLayout =
                         Graph.LoopForest.layoutDot
                         (Graph.loopForestSteensgaard (graph,
-                                                      {root = root}),
+                                                      {root = startNode}),
                          {title = concat [Func.toString name, " loop forest"],
                           options = [],
                           nodeName = nodeName})
                   in
                      loopForestLayout
                   end
-               *)
             in
                {destroy = destroy,
                 controlFlowGraph = controlFlowGraphLayout,
-                dominatorTree = dominatorTreeLayout}
+                dominatorTree = dominatorTreeLayout,
+                loopForest = loopForestLayout}
             end
       end
 
@@ -1365,7 +1365,7 @@ structure Function =
                   then ()
                else
                   let
-                     val {destroy, controlFlowGraph, dominatorTree} =
+                     val {destroy, controlFlowGraph, dominatorTree, loopForest} =
                         layoutDot (f, layoutVar)
                      val name = Func.toString name
                      fun doit (s, g) =
@@ -1380,10 +1380,8 @@ structure Function =
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout cfg"
                      val _ = doit ("dom", dominatorTree ())
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout dom"
-                     (*
                      val _ = doit ("lf", loopForest ())
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout lf"
-                     *)
                      val () = destroy ()
                   in
                      ()
