@@ -258,28 +258,28 @@ structure Statement =
             open Layout
          in
             fn Bind {dst = (x, t), src, ...} =>
-                  seq [Var.layout x, constrain t, str " = ", Operand.layout src]
+                  mayAlign
+                  [seq [Var.layout x, constrain t],
+                   indent (seq [str "= ", Operand.layout src], 2)]
              | Move {dst, src} =>
-                  mayAlign [Operand.layout dst,
-                            seq [str "= ", Operand.layout src]]
+                  mayAlign
+                  [Operand.layout dst,
+                   indent (seq [str ":= ", Operand.layout src], 2)]
              | Object {dst = (dst, ty), header, size} =>
                   mayAlign
                   [seq [Var.layout dst, constrain ty],
-                   seq [str "= Object ",
-                        record [("header", seq [str "0x", Word.layout header]),
-                                ("size", Bytes.layout size)]]]
+                   indent (seq [str "= Object ",
+                                record [("header", seq [str "0x", Word.layout header]),
+                                        ("size", Bytes.layout size)]],
+                           2)]
              | PrimApp {dst, prim, args, ...} =>
-                  let
-                     val rest =
-                        seq [Prim.layout prim, str " ",
-                             Vector.layout Operand.layout args]
-                  in
-                     case dst of
-                        NONE => rest
-                      | SOME (x, t) =>
-                           mayAlign [seq [Var.layout x, constrain t],
-                                     seq [str "= ", rest]]
-                  end
+                  mayAlign
+                  [case dst of
+                      NONE => seq [str "_", constrain (Type.unit)]
+                    | SOME (x, t) => seq [Var.layout x, constrain t],
+                   indent (seq [str "= ", Prim.layout prim, str " ",
+                                Vector.layout Operand.layout args],
+                           2)]
              | Profile e => ProfileExp.layout e
              | ProfileLabel p =>
                   seq [str "ProfileLabel ", ProfileLabel.layout p]
