@@ -1029,6 +1029,15 @@ structure Program =
                (Var.plist, Property.initRaise ("replacement", Var.layout))
             fun dontReplace (x: Var.t, t: Type.t): unit =
                setReplaceVar (x, Operand.Var {var = x, ty = t})
+            val setReplaceVar = fn (x: Var.t, t: Type.t, z: Operand.t) =>
+               let
+                  val z =
+                     if Type.equals (Operand.ty z, t)
+                        then z
+                        else Operand.Cast (z, t)
+               in
+                  setReplaceVar (x, z)
+               end
             fun loopStatement (s: Statement.t): Statement.t option =
                let
                   val s = Statement.replaceUses (s, replaceVar)
@@ -1053,29 +1062,23 @@ structure Program =
                               case getSrc src of
                                  NONE => keep ()
                                | SOME src =>
-                                    let
-                                       val src = 
-                                          if Type.equals (Operand.ty src, dstTy)
-                                             then src
-                                          else Cast (src, dstTy)
-                                    in
-                                       setReplaceVar (dst, src)
-                                       ; NONE
-                                    end
+                                    (setReplaceVar (dst, dstTy, src)
+                                     ; NONE)
                            end
                    | PrimApp {args, dst, prim} =>
                         let
                            fun replace (z: Operand.t): Statement.t option =
-                              (Option.app (dst, fn (x, _) =>
-                                           setReplaceVar (x, z))
+                              (Option.app (dst, fn (x, t) =>
+                                           setReplaceVar (x, t, z))
                                ; NONE)
-                           val applyArgs =
-                              Vector.keepAllMap
-                              (args, fn z =>
-                               case z of
-                                  Operand.Const c => SOME (ApplyArg.Const c)
-                                | Operand.Var x => SOME (ApplyArg.Var x)
-                                | _ => NONE)
+                           datatype z = datatype Operand.t
+                           fun getArg arg =
+                              case arg of
+                                 Cast (arg, _) => getArg arg
+                               | Const c => SOME (ApplyArg.Const c)
+                               | Var x => SOME (ApplyArg.Var x)
+                               | _ => NONE
+                           val applyArgs = Vector.keepAllMap (args, getArg)
                            datatype z = datatype ApplyResult.t
                         in
                            if Vector.length args <> Vector.length applyArgs
