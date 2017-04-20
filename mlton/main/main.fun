@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2016 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2017 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -520,6 +520,11 @@ fun makeOptions {usage} =
                                     in List.push (keepPasses, re)
                                     end
                    | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
+       (Expert, "layout-width", " <n>", "target width for pretty printer",
+        Int (fn n =>
+             if n > 0
+                then Layout.setDefaultWidth n
+                else usage (concat ["invalid -layout-width arg: ", Int.toString n]))),
        (Expert, "libname", " <basename>", "the name of the generated library",
         SpaceString (fn s => libname := s)),
        (Normal, "link-opt", " <opt>", "pass option to linker",

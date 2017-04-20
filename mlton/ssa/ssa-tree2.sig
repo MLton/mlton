@@ -141,7 +141,6 @@ signature SSA_TREE2 =
             val foreachDef: t * (Var.t * Type.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
-            val prettifyGlobals: t vector -> (Var.t -> string option)
             val profile: ProfileExp.t -> t
             val replaceUses: t * (Var.t -> Var.t) -> t
          end
@@ -258,9 +257,10 @@ signature SSA_TREE2 =
             val foreachVar: t * (Var.t * Type.t -> unit) -> unit
             val layout: t -> Layout.t
             val layoutDot:
-               t * (Var.t -> string option) -> {destroy: unit -> unit,
-                                                graph: Layout.t,
-                                                tree: unit -> Layout.t}
+               t * (Var.t -> Layout.t) -> {destroy: unit -> unit,
+                                           controlFlowGraph: Layout.t,
+                                           dominatorTree: unit -> Layout.t,
+                                           loopForest: unit -> Layout.t}
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
                       blocks: Block.t vector,

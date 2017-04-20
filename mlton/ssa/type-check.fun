@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -94,7 +94,7 @@ fun checkScopes (program as
          in
             ()
          end
-      fun loopStatement (Statement.T {var, ty, exp, ...}) =
+      fun loopStatement (s as Statement.T {var, ty, exp, ...}) =
          let
             val _ = loopExp exp
             val _ = loopType ty
@@ -102,6 +102,7 @@ fun checkScopes (program as
          in
             ()
          end
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Layout.toString (Statement.layout s)])
       val loopTransfer =
          fn Arith {args, ty, ...} => (getVars args; loopType ty)
           | Bug => ()
@@ -158,6 +159,10 @@ fun checkScopes (program as
           | Raise xs => getVars xs
           | Return xs => getVars xs
           | Runtime {args, ...} => getVars args
+      val loopTransfer =
+         fn t =>
+         (loopTransfer t)
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Layout.toString (Transfer.layout t)])
       fun loopFunc (f: Function.t) =
          let
             val {args, blocks, raises, returns, start, ...} = Function.dest f
@@ -166,10 +171,11 @@ fun checkScopes (program as
              *)
             fun loop (Tree.T (block, children)): unit =
                let
-                  val Block.T {args, statements, transfer, ...} = block
-                  val _ = Vector.foreach (args, bindVar)
-                  val _ = Vector.foreach (statements, loopStatement)
-                  val _ = loopTransfer transfer
+                  val Block.T {label, args, statements, transfer, ...} = block
+                  val _ = (Vector.foreach (args, bindVar)
+                           ; Vector.foreach (statements, loopStatement)
+                           ; loopTransfer transfer)
+                          handle exn => Error.reraiseSuffix (exn, concat [" in ", Label.toString label])
                   val _ = Vector.foreach (children, loop)
                   val _ = Vector.foreach 
                           (statements, fn s =>
@@ -198,16 +204,20 @@ fun checkScopes (program as
          in
              ()
          end
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Func.toString (Function.name f)])
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {tycon, cons} =>
                (bindTycon (tycon, Vector.length cons)
                 ; Vector.foreach (cons, fn {con, ...} =>
                                   bindCon con)))
+              handle exn => Error.reraiseSuffix (exn, concat [" in Datatypes"])
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {cons, ...} =>
                Vector.foreach (cons, fn {args, ...} =>
                                Vector.foreach (args, loopType)))
+              handle exn => Error.reraiseSuffix (exn, concat [" in Datatypes"])
       val _ = Vector.foreach (globals, loopStatement)
+              handle exn => Error.reraiseSuffix (exn, concat [" in Globals"])
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = getFunc main
       val _ = List.foreach (functions, loopFunc)
@@ -354,20 +364,14 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
          if !Control.profile <> Control.ProfileNone
             then checkProf program
          else ()
-      val out = Out.error
-      val print = Out.outputc out
-      exception TypeError
-      fun error (msg, lay) =
-         (print (concat ["Type error: ", msg, "\n"])
-          ; Layout.output (lay, out)
-          ; print "\n"
-          ; raise TypeError)
       fun coerce {from: Type.t, to: Type.t}: unit =
          if Type.equals (from, to)
             then ()
-         else error ("Ssa.TypeCheck.coerce",
-                     Layout.record [("from", Type.layout from),
-                                    ("to", Type.layout to)])
+            else Error.bug (concat ["Ssa.TypeCheck.coerce (",
+                                    (Layout.toString o Layout.record)
+                                    [("from", Type.layout from),
+                                     ("to", Type.layout to)],
+                                    ")"])
       fun coerces (from, to) =
          Vector.foreach2 (from, to, fn (from, to) =>
                          coerce {from = from, to = to})
@@ -380,13 +384,13 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                                     Unit.layout) coerce
       fun select {tuple: Type.t, offset: int, resultType = _}: Type.t =
          case Type.deTupleOpt tuple of
-            NONE => error ("select of non tuple", Layout.empty)
+            NONE => Error.bug ("Ssa.TypeCheck.select (non tuple)")
           | SOME ts => Vector.sub (ts, offset)
       val {get = conInfo: Con.t -> {args: Type.t vector,
                                     result: Type.t},
            set = setConInfo, ...} =
          Property.getSetOnce
-         (Con.plist, Property.initRaise ("TypeCheck.info", Con.layout))
+         (Con.plist, Property.initRaise ("Ssa.TypeCheck.conInfo", Con.layout))
       val _ =
          Vector.foreach
          (datatypes, fn Datatype.T {tycon, cons} =>
@@ -419,13 +423,19 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                                      result = resultType,
                                      targs = targs}
                   then ()
-               else error ("bad primapp",
-                           let
-                              open Layout
-                           in
-                              seq [Prim.layout prim,
-                                   tuple (Vector.toListMap (args, Type.layout))]
-                           end)
+               else Error.bug (concat ["Ssa.TypeCheck.primApp (",
+                                       let
+                                          open Layout
+                                       in
+                                          (toString o seq)
+                                          [Prim.layout prim,
+                                           if 0 = Vector.length targs
+                                              then empty
+                                              else Vector.layout Type.layout targs,
+                                           str " ",
+                                           Vector.layout Type.layout args]
+                                       end,
+                                       ")"])
          in
             resultType
          end
@@ -445,13 +455,14 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                   tuple = Type.tuple,
                   useFromTypeOnBinds = true
                   }
-         handle e => error (concat ["analyze raised exception ",
-                                    Layout.toString (Exn.layout e)],
-                            Layout.empty)
       val _ = Program.clear program
    in
       ()
    end
+
+val typeCheck = fn p =>
+   (typeCheck p)
+   handle exn => Error.reraisePrefix (exn, "TypeError (SSA): ")
 
 val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 

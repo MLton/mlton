@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -48,6 +48,7 @@ signature LAYOUT =
       val separateLeft: t list * string -> t list
       (* adds string at the end of all objects except last *) 
       val separateRight: t list * string -> t list
+      val setDefaultWidth: int -> unit
       (* layout the objects on the same line *)
       val seq: t list -> t
       (* convert a string to a layout object *)
