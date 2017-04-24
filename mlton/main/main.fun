@@ -1094,10 +1094,10 @@ fun commandLine (args: string list): unit =
                                 " target"])
          else ()
       val () =
-         Control.labelsHaveExtra_ := (case targetOS of
-                                         Cygwin => true
-                                       | Darwin => true
-                                       | MinGW => true
+         Control.labelsHaveExtra_ := (case (targetOS, targetArch) of
+                                         (Cygwin, X86) => true
+                                       | (Darwin, _) => true
+                                       | (MinGW, X86) => true
                                        | _ => false)
       val _ =
          chunk :=
