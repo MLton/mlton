@@ -30,7 +30,9 @@ structure Example =
 
      fun const c = fn _ => c
 
-     val exnVar = fn _ => Layout.str "e"
+     val exn = fn isDelimited =>
+        (if isDelimited then fn x => x else Layout.paren)
+        (Layout.str "_ : exn")
 
      fun or exs = fn isDelimited =>
         if 1 = Vector.length exs
@@ -717,7 +719,7 @@ fun matchCompile {caseType: Type.t,
                if Vector.isEmpty cases
                   then done (Example.wild, true)
                else if Tycon.equals (tycon, Tycon.exn)
-                  then done (Example.exnVar, true)
+                  then done (Example.exn, true)
                else
                   let
                      val cons = tyconCons tycon
