@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2015 Matthew Fluet.
+(* Copyright (C) 2009-2010,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,9 +15,6 @@ open S
 local
    open Control.Elaborate
 in
-   val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
-   val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
-   val redundantMatch = fn () => current redundantMatch
    val warnUnused = fn () => current warnUnused
 end
 
@@ -2973,9 +2970,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                val _ =
                                   List.push
                                   (decs,
-                                   Dec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                            nonexhaustiveMatch = nonexhaustiveMatch (),
-                                            redundantMatch = redundantMatch (),
+                                   Dec.Val {nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+                                            nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+                                            redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                                             rvbs = Vector.new0 (),
                                             tyvars = fn () => sigArgs,
                                             vbs = (Vector.new1
