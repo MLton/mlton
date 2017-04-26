@@ -178,7 +178,6 @@ fun casee {caseType: Xtype.t,
              | RaiseBind => raiseExn (fn _ => Xexp.bind, SOME "Bind")
              | RaiseMatch => raiseExn (fn _ => Xexp.match, SOME "Match")
          end
-      val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =                                  
          let
             val testVar = Var.newNoname ()
@@ -224,7 +223,7 @@ fun casee {caseType: Xtype.t,
                 in
                    (p, finish)
                 end)
-            val (body, es) =
+            val (body, nonexhaustiveExamples) =
                MatchCompile.matchCompile {caseType = caseType,
                                           cases = cases,
                                           conTycon = conTycon,
@@ -234,27 +233,29 @@ fun casee {caseType: Xtype.t,
                                           tyconCons = tyconCons}
             (* Must convert to a normal expression to force everything. *)
             val body = Xexp.toExp body
-            val () = examples := es
+            val nonexhaustiveExamples = nonexhaustiveExamples ()
          in
-            Xexp.let1 {var = testVar,
-                       exp = test,
-                       body = Xexp.lett {decs = !decs,
-                                         body = Xexp.fromExp (body, caseType)}}
+            (Xexp.let1 {var = testVar,
+                        exp = test,
+                        body = Xexp.lett {decs = !decs,
+                                          body = Xexp.fromExp (body, caseType)}},
+             nonexhaustiveExamples)
          end
       datatype z = datatype NestedPat.node
       fun lett (x, e) = Xexp.let1 {var = x, exp = test, body = e}
       fun wild e = lett (Var.newNoname (), e)
-      val exp =
+      val (exp, nonexhaustiveExamples) =
          if Vector.isEmpty cases
             then Error.bug "Defunctorize.casee: case with no patterns"
          else
             let
                val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
                fun use () = (numPats := 1; numUses := 1)
+               fun exhaustive exp = (exp, Vector.new0 ())
             in
                case NestedPat.node p of
-                  Wild => (use (); wild (e ()))
-                | Var x => (use (); lett (x, e ()))
+                  Wild => (use (); exhaustive (wild (e ())))
+                | Var x => (use (); exhaustive (lett (x, e ())))
                 | Tuple ps =>
                      if Vector.forall (ps, NestedPat.isVar)
                         then
@@ -282,9 +283,11 @@ fun casee {caseType: Xtype.t,
                                          :: decs)
                                    | _ => Error.bug "Defunctorize.casee: infer flat tuple")
                            in
-                              Xexp.let1 {var = t, exp = test,
-                                         body = Xexp.lett {decs = decs,
-                                                           body = e ()}}
+                              exhaustive (Xexp.let1
+                                          {var = t, exp = test,
+                                           body = Xexp.lett
+                                                  {decs = decs,
+                                                   body = e ()}})
                            end
                      else matchCompile ()
                 | _ => matchCompile ()
@@ -299,7 +302,7 @@ fun casee {caseType: Xtype.t,
                then ()
                else
                let
-                  val es = Vector.last (!examples ())
+                  val es = nonexhaustiveExamples
                   val es =
                      case nonexhaustiveExnMatch of
                         Control.Elaborate.DiagDI.Default =>

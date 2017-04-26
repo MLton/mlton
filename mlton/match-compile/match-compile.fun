@@ -922,11 +922,17 @@ fun matchCompile {caseType: Type.t,
                                              nestedPat = p}}),
                 Facts.empty,
                 Examples.empty)
+      val examples =
+         let
+            val r = Vector.last examples
+         in
+            fn () =>
+            Vector.fromListMap
+            (!r, fn (ex, {isOnlyExns}) =>
+             (ex true, {isOnlyExns = isOnlyExns}))
+         end
    in
-      (res, fn () =>
-       Vector.map (examples, fn r =>
-                   Vector.fromListMap (!r, fn (ex, {isOnlyExns}) =>
-                                       (ex true, {isOnlyExns = isOnlyExns}))))
+      (res, examples)
    end
 
 val matchCompile =
