@@ -483,14 +483,32 @@ structure Elaborate =
                                   [s] => SOME s
                                 | _ => NONE},
                   ac)
+         val (nonexhaustiveBind, ac) =
+             makeDiagEIW ({name = "nonexhaustiveBind",
+                           default = DiagEIW.Warn, expert = false}, ac)
+         val (nonexhaustiveExnBind, ac) =
+             makeDiagDI ({name = "nonexhaustiveExnBind",
+                          default = DiagDI.Default, expert = false}, ac)
+         val (redundantBind, ac) =
+             makeDiagEIW ({name = "redundantBind",
+                           default = DiagEIW.Warn, expert = false}, ac)
+         val (nonexhaustiveMatch, ac) =
+             makeDiagEIW ({name = "nonexhaustiveMatch",
+                           default = DiagEIW.Warn, expert = false}, ac)
          val (nonexhaustiveExnMatch, ac) =
              makeDiagDI ({name = "nonexhaustiveExnMatch",
                           default = DiagDI.Default, expert = false}, ac)
-         val (nonexhaustiveMatch, ac) =
-             makeDiagEIW ({name = "nonexhaustiveMatch", 
-                           default = DiagEIW.Warn, expert = false}, ac)
+         val (nonexhaustiveRaise, ac) =
+             makeDiagEIW ({name = "nonexhaustiveRaise",
+                           default = DiagEIW.Ignore, expert = false}, ac)
          val (redundantMatch, ac) =
-             makeDiagEIW ({name = "redundantMatch", 
+             makeDiagEIW ({name = "redundantMatch",
+                           default = DiagEIW.Warn, expert = false}, ac)
+         val (nonexhaustiveExnRaise, ac) =
+             makeDiagDI ({name = "nonexhaustiveExnRaise",
+                          default = DiagDI.Default, expert = false}, ac)
+         val (redundantRaise, ac) =
+             makeDiagEIW ({name = "redundantRaise",
                            default = DiagEIW.Warn, expert = false}, ac)
          val (resolveScope, ac) =
             make ({choices = SOME [ResolveScope.Dec, ResolveScope.Strdec, ResolveScope.Topdec, ResolveScope.Program],

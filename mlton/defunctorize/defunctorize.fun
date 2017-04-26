@@ -293,14 +293,11 @@ fun casee {caseType: Xtype.t,
                 | _ => matchCompile ()
             end
       fun diagnoseNonexhaustiveMatch () =
-         if noMatch = Cexp.RaiseAgain
+         if not (Vector.exists (cases,
+                                fn {isDefault, numUses, ...} =>
+                                isDefault andalso !numUses > 0))
             then ()
          else
-            if not (Vector.exists (cases,
-                                   fn {isDefault, numUses, ...} =>
-                                   isDefault andalso !numUses > 0))
-               then ()
-               else
                let
                   val es = nonexhaustiveExamples
                   val es =

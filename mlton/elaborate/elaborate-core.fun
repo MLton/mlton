@@ -16,9 +16,15 @@ local
    open Control.Elaborate
 in
    val allowRebindEquals = fn () => current allowRebindEquals
+   val nonexhaustiveBind = fn () => current nonexhaustiveBind
+   val nonexhaustiveExnBind = fn () => current nonexhaustiveExnBind
    val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
+   val nonexhaustiveExnRaise = fn () => current nonexhaustiveExnRaise
    val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
+   val nonexhaustiveRaise = fn () => current nonexhaustiveRaise
+   val redundantBind = fn () => current redundantBind
    val redundantMatch = fn () => current redundantMatch
+   val redundantRaise = fn () => current redundantRaise
    val resolveScope = fn () => current resolveScope
    val sequenceNonUnit = fn () => current sequenceNonUnit
    val valrecConstr = fn () => current valrecConstr
@@ -2074,9 +2080,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                     patRegion = patRegion}
                       in
                          Decs.single
-                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                    nonexhaustiveMatch = nonexhaustiveMatch (),
-                                    redundantMatch = redundantMatch (),
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
+                                    nonexhaustiveMatch = nonexhaustiveBind (),
+                                    redundantMatch = redundantBind (),
                                     rvbs = Vector.new0 (),
                                     tyvars = bound,
                                     vbs = Vector.new1 vbs})
@@ -2745,14 +2751,14 @@ fun elaborateDec (d, {env = E, nest}) =
                                          patRegion = patRegion})
                          (* According to page 28 of the Definition, we should
                           * issue warnings for nonexhaustive valdecs only when it's
-                          * not a top level dec.   It seems harmless enough to go
+                          * not a top level dec.  It seems harmless enough to go
                           * ahead and always issue them.
                           *)
                       in
                          Decs.single
-                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                    nonexhaustiveMatch = nonexhaustiveMatch (),
-                                    redundantMatch = redundantMatch (),
+                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
+                                    nonexhaustiveMatch = nonexhaustiveBind (),
+                                    redundantMatch = redundantBind (),
                                     rvbs = rvbs,
                                     tyvars = bound,
                                     vbs = vbs})
@@ -3550,14 +3556,32 @@ fun elaborateDec (d, {env = E, nest}) =
          let
             val arg = Var.newNoname ()
             val {argType, region, rules, ...} = elabMatch (m, preError, nest)
+            val {nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch} =
+               case noMatch of
+                  Cexp.Impossible =>
+                     {nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
+                      nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
+                      redundantMatch = Control.Elaborate.DiagEIW.Ignore}
+                | Cexp.RaiseAgain =>
+                     {nonexhaustiveExnMatch = nonexhaustiveExnRaise (),
+                      nonexhaustiveMatch = nonexhaustiveRaise (),
+                      redundantMatch = redundantRaise ()}
+                | Cexp.RaiseBind =>
+                     {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
+                      nonexhaustiveMatch = nonexhaustiveBind (),
+                      redundantMatch = redundantBind ()}
+                | Cexp.RaiseMatch =>
+                     {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
+                      nonexhaustiveMatch = nonexhaustiveMatch (),
+                      redundantMatch = redundantMatch ()}
             val body =
                Cexp.casee {kind = kind,
                            lay = lay,
                            nest = nest,
                            noMatch = noMatch,
-                           nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                           nonexhaustiveMatch = nonexhaustiveMatch (),
-                           redundantMatch = redundantMatch (),
+                           nonexhaustiveExnMatch = nonexhaustiveExnMatch,
+                           nonexhaustiveMatch = nonexhaustiveMatch,
+                           redundantMatch = redundantMatch,
                            region = region,
                            rules = rules,
                            test = Cexp.var (arg, argType)}
