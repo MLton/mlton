@@ -110,7 +110,18 @@ structure Xexp =
 fun enterLeave (e: Xexp.t, t, si): Xexp.t =
    Xexp.fromExp (Xml.Exp.enterLeave (Xexp.toExp e, t, si), t)
 
-val diagnostics: (unit -> unit) list ref = ref []
+local
+val matchDiagnostics: (unit -> unit) list ref = ref []
+in
+fun addMatchDiagnostic (diag, mkArg) =
+   case diag of
+      Control.Elaborate.DiagEIW.Error =>
+         List.push (matchDiagnostics, Control.error o mkArg)
+    | Control.Elaborate.DiagEIW.Ignore => ()
+    | Control.Elaborate.DiagEIW.Warn =>
+         List.push (matchDiagnostics, Control.warning o mkArg)
+fun showMatchDiagnostics () = List.foreach (!matchDiagnostics, fn th => th ())
+end
 
 fun casee {caseType: Xtype.t,
            cases: {exp: Xexp.t,
@@ -128,9 +139,9 @@ fun casee {caseType: Xtype.t,
            test = (test: Xexp.t, testType: Xtype.t),
            tyconCons}: Xexp.t =
    let
-      val nonexhaustiveExnMatch = #nonexhaustiveExn matchDiags
-      val nonexhaustiveMatch = #nonexhaustive matchDiags
-      val redundantMatch = #redundant matchDiags
+      val nonexhaustiveExnDiag = #nonexhaustiveExn matchDiags
+      val nonexhaustiveDiag = #nonexhaustive matchDiags
+      val redundantDiag = #redundant matchDiags
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
                               {exp = fn () => exp,
                                isDefault = false,
@@ -236,7 +247,10 @@ fun casee {caseType: Xtype.t,
                                           tyconCons = tyconCons}
             (* Must convert to a normal expression to force everything. *)
             val body = Xexp.toExp body
-            val nonexhaustiveExamples = nonexhaustiveExamples ()
+            val nonexhaustiveExamples =
+               if noMatch = Cexp.Impossible
+                  then Vector.new0 ()
+                  else nonexhaustiveExamples ()
          in
             (Xexp.let1 {var = testVar,
                         exp = test,
@@ -295,42 +309,40 @@ fun casee {caseType: Xtype.t,
                      else matchCompile ()
                 | _ => matchCompile ()
             end
-      fun diagnoseNonexhaustiveMatch () =
-         if not (Vector.exists (cases,
-                                fn {isDefault, numUses, ...} =>
-                                isDefault andalso !numUses > 0))
-            then ()
-         else
-               let
-                  val es = nonexhaustiveExamples
-                  val es =
-                     case nonexhaustiveExnMatch of
-                        Control.Elaborate.DiagDI.Default =>
-                           Vector.map (es, #1)
-                      | Control.Elaborate.DiagDI.Ignore =>
-                           Vector.keepAllMap
-                           (es, fn (e, {isOnlyExns}) =>
-                            if isOnlyExns
-                               then NONE
-                               else SOME e)
-
-                  open Layout
-               in
-                  if 0 = Vector.length es
-                     then ()
-                  else
-                     (if nonexhaustiveMatch = Control.Elaborate.DiagEIW.Error
-                         then Control.error
-                         else Control.warning)
-                     (region,
-                      str (concat [#1 kind, " is not exhaustive"]),
-                      align [seq [str "missing pattern: ",
-                                  if 1 = Vector.length es
-                                     then Vector.sub (es, 0)
-                                     else paren (mayAlign (separateLeft (Vector.toListRev es, "| ")))],
-                             lay ()])
-               end
-      fun diagnoseRedundantMatch () =
+      (* diagnoseNonexhaustive *)
+      val _ =
+         let
+            val es = nonexhaustiveExamples
+            val es =
+               case nonexhaustiveExnDiag of
+                  Control.Elaborate.DiagDI.Default =>
+                     Vector.map (es, #1)
+                | Control.Elaborate.DiagDI.Ignore =>
+                     Vector.keepAllMap
+                     (es, fn (e, {isOnlyExns}) =>
+                      if isOnlyExns
+                         then NONE
+                         else SOME e)
+         in
+            if 0 = Vector.length es
+               then ()
+               else let
+                       open Layout
+                    in
+                       addMatchDiagnostic
+                       (nonexhaustiveDiag,
+                        fn () =>
+                        (region,
+                         str (concat [#1 kind, " is not exhaustive"]),
+                         align [seq [str "missing pattern: ",
+                                     if 1 = Vector.length es
+                                        then Vector.sub (es, 0)
+                                        else paren (mayAlign (separateLeft (Vector.toListRev es, "| ")))],
+                                lay ()]))
+                    end
+         end
+      (* diagnoseRedundant *)
+      val _ =
          let
             (* Rules with no uses; fully redundant. *)
             val redundantRules =
@@ -351,32 +363,25 @@ fun casee {caseType: Xtype.t,
                   let
                      open Layout
                   in
-                     (if redundantMatch = Control.Elaborate.DiagEIW.Error
-                         then Control.error
-                         else Control.warning)
-                     (region,
-                      str (concat [#1 kind, msg]),
-                      align
-                         [seq [str (concat [#2 kind, ": "]),
-                               (align o Vector.toListMap)
-                               (rules, fn lay =>
-                                case lay of
-                                   NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
-                                 | SOME lay => lay ())],
-                          lay ()])
+                     addMatchDiagnostic
+                     (redundantDiag,
+                      fn () =>
+                      (region,
+                       str (concat [#1 kind, msg]),
+                       align [seq [str (concat [#2 kind, ": "]),
+                                   (align o Vector.toListMap)
+                                   (rules, fn lay =>
+                                    case lay of
+                                       NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
+                                     | SOME lay => lay ())],
+                              lay ()]))
                   end
          in
             doit (rulesWithRedundancy, " has " ^ #2 kind ^ " with redundancy")
             ; doit (redundantRules, " has redundant " ^ #2 kind)
          end
    in
-      if nonexhaustiveMatch <> Control.Elaborate.DiagEIW.Ignore
-         then List.push (diagnostics, diagnoseNonexhaustiveMatch)
-         else ()
-      ; if redundantMatch <> Control.Elaborate.DiagEIW.Ignore
-           then List.push (diagnostics, diagnoseRedundantMatch)
-           else ()
-      ; exp
+      exp
    end
 
 val casee =
@@ -572,9 +577,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
       (* Process all the datatypes. *)
       fun loopDec (d: Cdec.t) =
          let
-(*          Use open Cdec instead of the following due to an SML/NJ bug *)
-(*          datatype z = datatype Cdec.t *)
-            open Cdec
+            datatype z = datatype Cdec.t
          in
             case d of
                Datatype dbs =>
@@ -753,9 +756,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                     ty = Xtype.arrow (argType, bodyType),
                     var = var}
                 end)
-(* Use open Cdec instead of the following due to an SML/NJ bug *)
-(*          datatype z = datatype Cdec.t *)
-            open Cdec
+            datatype z = datatype Cdec.t
          in
             case d of
                Datatype _ => e
@@ -1117,7 +1118,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
              mayInline = mayInline}
          end
       val body = Xexp.toExp (loopDecs (decs, (Xexp.unit (), Xtype.unit)))
-      val _ = List.foreach (!diagnostics, fn f => f ())
+      val _ = showMatchDiagnostics ()
       val _ = (destroy1 (); destroy2 (); destroy3 ())
    in
       Xml.Program.T {body = body,
