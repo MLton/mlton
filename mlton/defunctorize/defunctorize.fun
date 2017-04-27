@@ -120,14 +120,17 @@ fun casee {caseType: Xtype.t,
            kind: (string * string),
            lay: unit -> Layout.t,
            nest: string list,
+           matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                        nonexhaustive: Control.Elaborate.DiagEIW.t,
+                        redundant: Control.Elaborate.DiagEIW.t},
            noMatch,
-           nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-           nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-           redundantMatch: Control.Elaborate.DiagEIW.t,
            region: Region.t,
            test = (test: Xexp.t, testType: Xtype.t),
            tyconCons}: Xexp.t =
    let
+      val nonexhaustiveExnMatch = #nonexhaustiveExn matchDiags
+      val nonexhaustiveMatch = #nonexhaustive matchDiags
+      val redundantMatch = #redundant matchDiags
       val cases = Vector.map (cases, fn {exp, lay, pat} =>
                               {exp = fn () => exp,
                                isDefault = false,
@@ -762,8 +765,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Fun {decs, tyvars} =>
                   prefix (Xdec.Fun {decs = processLambdas decs,
                                     tyvars = tyvars ()})
-             | Val {matchDiags = {nonexhaustiveExn, nonexhaustive, redundant},
-                    rvbs, tyvars, vbs} =>
+             | Val {matchDiags, rvbs, tyvars, vbs} =>
                let
                   val tyvars = tyvars ()
                   val bodyType = et
@@ -784,14 +786,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                    kind = ("declaration", "pattern"),
                                    lay = #dec o lay,
                                    nest = nest,
+                                   matchDiags = if mayWarn
+                                                   then matchDiags
+                                                   else {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
+                                                         nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
+                                                         redundant = Control.Elaborate.DiagEIW.Ignore},
                                    noMatch = Cexp.RaiseBind,
-                                   nonexhaustiveExnMatch = nonexhaustiveExn,
-                                   nonexhaustiveMatch = if mayWarn
-                                                           then nonexhaustive
-                                                        else Control.Elaborate.DiagEIW.Ignore,
-                                   redundantMatch = if mayWarn
-                                                       then redundant
-                                                    else Control.Elaborate.DiagEIW.Ignore,
                                    region = patRegion,
                                    test = (e, NestedPat.ty p),
                                    tyconCons = tyconCons}
@@ -975,9 +975,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                         func = #1 (loopExp e1),
                                         ty = ty}
                      end
-                | Case {kind, lay, nest,
-                        matchDiags = {nonexhaustiveExn, nonexhaustive, redundant},
-                        noMatch, region, rules, test, ...} =>
+                | Case {kind, lay, nest, matchDiags, noMatch, region, rules, test, ...} =>
                      casee {caseType = ty,
                             cases = Vector.map (rules, fn {exp, lay, pat} =>
                                                 {exp = #1 (loopExp exp),
@@ -987,10 +985,8 @@ fun defunctorize (CoreML.Program.T {decs}) =
                             kind = kind,
                             lay = lay,
                             nest = nest,
+                            matchDiags = matchDiags,
                             noMatch = noMatch,
-                            nonexhaustiveExnMatch = nonexhaustiveExn,
-                            nonexhaustiveMatch = nonexhaustive,
-                            redundantMatch = redundant,
                             region = region,
                             test = loopExp test,
                             tyconCons = tyconCons}
