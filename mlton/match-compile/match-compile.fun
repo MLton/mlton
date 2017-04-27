@@ -293,7 +293,7 @@ structure Rule =
    struct
       datatype t =
          T of {pats: Pat.t vector,
-               rest: {examples: (Example.t * {isOnlyExns: bool}) list ref,
+               rest: {examples: (Example.t * {isOnlyExns: bool}) list ref option,
                       finish: (Var.t -> Var.t) -> Exp.t,
                       nestedPat: NestedPat.t}}
 
@@ -496,9 +496,11 @@ fun matchCompile {caseType: Type.t,
                   val env = Facts.bind (facts, test, nestedPat)
                   val Examples.T {isOnlyExns, ...} = es
                   val () =
-                     List.push (examples,
-                                (Facts.example (facts, es, test),
-                                 {isOnlyExns = isOnlyExns}))
+                     Option.app
+                     (examples, fn examples =>
+                      List.push (examples,
+                                 (Facts.example (facts, es, test),
+                                  {isOnlyExns = isOnlyExns})))
                in
                   finish (fn x => Env.lookup (env, x))
                end
@@ -915,25 +917,23 @@ fun matchCompile {caseType: Type.t,
              test = Exp.vectorLength test,
              ty = caseType}
          end) arg
-      val examples = Vector.tabulate (Vector.length cases, fn _ => ref [])
+      val examples = ref []
       val res =
          match (Vector.new1 (test, testType),
-                Vector.map2 (cases, examples, fn ((p, f), r) =>
+                Vector.mapi (cases, fn (i, (p, f)) =>
                              Rule.T {pats = Vector.new1 (Pat.fromNestedPat p),
-                                     rest = {examples = r,
+                                     rest = {examples = if i = Vector.length cases - 1
+                                                           then SOME examples
+                                                           else NONE,
                                              finish = f,
                                              nestedPat = p}}),
                 Facts.empty,
                 Examples.empty)
       val examples =
-         let
-            val r = Vector.last examples
-         in
-            fn () =>
-            Vector.fromListMap
-            (!r, fn (ex, {isOnlyExns}) =>
-             (Example.layout ex, {isOnlyExns = isOnlyExns}))
-         end
+         fn () =>
+         Vector.fromListMap
+         (!examples, fn (ex, {isOnlyExns}) =>
+          (Example.layout ex, {isOnlyExns = isOnlyExns}))
    in
       (res, examples)
    end
