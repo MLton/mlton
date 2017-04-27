@@ -762,7 +762,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
              | Fun {decs, tyvars} =>
                   prefix (Xdec.Fun {decs = processLambdas decs,
                                     tyvars = tyvars ()})
-             | Val {nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch,
+             | Val {matchDiags = {nonexhaustiveExn, nonexhaustive, redundant},
                     rvbs, tyvars, vbs} =>
                let
                   val tyvars = tyvars ()
@@ -785,12 +785,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                    lay = #dec o lay,
                                    nest = nest,
                                    noMatch = Cexp.RaiseBind,
-                                   nonexhaustiveExnMatch = nonexhaustiveExnMatch,
+                                   nonexhaustiveExnMatch = nonexhaustiveExn,
                                    nonexhaustiveMatch = if mayWarn
-                                                           then nonexhaustiveMatch
+                                                           then nonexhaustive
                                                         else Control.Elaborate.DiagEIW.Ignore,
                                    redundantMatch = if mayWarn
-                                                       then redundantMatch
+                                                       then redundant
                                                     else Control.Elaborate.DiagEIW.Ignore,
                                    region = patRegion,
                                    test = (e, NestedPat.ty p),
@@ -975,9 +975,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                         func = #1 (loopExp e1),
                                         ty = ty}
                      end
-                | Case {kind, lay, nest, noMatch,
-                        nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch, 
-                        region, rules, test, ...} =>
+                | Case {kind, lay, nest,
+                        matchDiags = {nonexhaustiveExn, nonexhaustive, redundant},
+                        noMatch, region, rules, test, ...} =>
                      casee {caseType = ty,
                             cases = Vector.map (rules, fn {exp, lay, pat} =>
                                                 {exp = #1 (loopExp exp),
@@ -988,9 +988,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
                             lay = lay,
                             nest = nest,
                             noMatch = noMatch,
-                            nonexhaustiveExnMatch = nonexhaustiveExnMatch,
-                            nonexhaustiveMatch = nonexhaustiveMatch,
-                            redundantMatch = redundantMatch,
+                            nonexhaustiveExnMatch = nonexhaustiveExn,
+                            nonexhaustiveMatch = nonexhaustive,
+                            redundantMatch = redundant,
                             region = region,
                             test = loopExp test,
                             tyconCons = tyconCons}

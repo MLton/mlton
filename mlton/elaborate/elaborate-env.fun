@@ -2970,9 +2970,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                val _ =
                                   List.push
                                   (decs,
-                                   Dec.Val {nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                                            nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                                            redundantMatch = Control.Elaborate.DiagEIW.Ignore,
+                                   Dec.Val {matchDiags = {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
+                                                          nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
+                                                          redundant = Control.Elaborate.DiagEIW.Ignore},
                                             rvbs = Vector.new0 (),
                                             tyvars = fn () => sigArgs,
                                             vbs = (Vector.new1

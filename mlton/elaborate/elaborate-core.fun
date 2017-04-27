@@ -126,6 +126,25 @@ in
    structure WordXVector = WordXVector
 end
 
+fun matchDiagsFromNoMatch noMatch =
+   case noMatch of
+      Cexp.Impossible =>
+         {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
+          nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
+          redundant = Control.Elaborate.DiagEIW.Ignore}
+    | Cexp.RaiseAgain =>
+         {nonexhaustiveExn = nonexhaustiveExnRaise (),
+          nonexhaustive = nonexhaustiveRaise (),
+          redundant = redundantRaise ()}
+    | Cexp.RaiseBind =>
+         {nonexhaustiveExn = nonexhaustiveExnBind (),
+          nonexhaustive = nonexhaustiveBind (),
+          redundant = redundantBind ()}
+    | Cexp.RaiseMatch =>
+         {nonexhaustiveExn = nonexhaustiveExnMatch (),
+          nonexhaustive = nonexhaustiveMatch (),
+          redundant = redundantMatch ()}
+
 structure AdmitsEquality = Tycon.AdmitsEquality
 
 local
@@ -1280,10 +1299,8 @@ local
          Cexp.casee {kind = ("", ""),
                      lay = fn () => Layout.empty,
                      nest = [],
+                     matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
                      noMatch = Cexp.Impossible,
-                     nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                     nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                     redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                      region = Region.bogus,
                      rules = Vector.new2
                              ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
@@ -1302,10 +1319,8 @@ local
             Cexp.casee {kind = ("", ""),
                         lay = fn () => Layout.empty,
                         nest = [],
+                        matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
                         noMatch = Cexp.Impossible,
-                        nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                        nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                        redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                         region = Region.bogus,
                         rules = Vector.new2
                                 ({exp = oneExpBool, lay = NONE, pat = Cpat.truee},
@@ -2080,9 +2095,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                     patRegion = patRegion}
                       in
                          Decs.single
-                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
-                                    nonexhaustiveMatch = nonexhaustiveBind (),
-                                    redundantMatch = redundantBind (),
+                         (Cdec.Val {matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
                                     rvbs = Vector.new0 (),
                                     tyvars = bound,
                                     vbs = Vector.new1 vbs})
@@ -2392,10 +2405,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                {kind = ("function", "clauses"),
                                                 lay = lay,
                                                 nest = nest,
+                                                matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
                                                 noMatch = Cexp.RaiseMatch,
-                                                nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                                nonexhaustiveMatch = nonexhaustiveMatch (),
-                                                redundantMatch = redundantMatch (),
                                                 region = region,
                                                 rules =
                                                 Vector.map
@@ -2660,10 +2671,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                    (Cexp.casee {kind = ("function", "rules"),
                                                 lay = lay,
                                                 nest = nest,
+                                                matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
                                                 noMatch = Cexp.RaiseMatch,
-                                                nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                                nonexhaustiveMatch = nonexhaustiveMatch (),
-                                                redundantMatch = redundantMatch (),
                                                 region = region,
                                                 rules = rules,
                                                 test = Cexp.var (arg, argType)},
@@ -2756,9 +2765,7 @@ fun elaborateDec (d, {env = E, nest}) =
                           *)
                       in
                          Decs.single
-                         (Cdec.Val {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
-                                    nonexhaustiveMatch = nonexhaustiveBind (),
-                                    redundantMatch = redundantBind (),
+                         (Cdec.Val {matchDiags = matchDiagsFromNoMatch Cexp.RaiseBind,
                                     rvbs = rvbs,
                                     tyvars = bound,
                                     vbs = vbs})
@@ -2855,10 +2862,8 @@ fun elaborateDec (d, {env = E, nest}) =
                       Cexp.casee {kind = ("case", "rules"),
                                   lay = lay,
                                   nest = nest,
+                                  matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
                                   noMatch = Cexp.RaiseMatch,
-                                  nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                  nonexhaustiveMatch = nonexhaustiveMatch (),
-                                  redundantMatch = redundantMatch (),
                                   region = region,
                                   rules = rules,
                                   test = e}
@@ -3055,10 +3060,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                               {kind = ("", ""),
                                                lay = fn _ => Layout.empty,
                                                nest = [],
+                                               matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
                                                noMatch = Cexp.Impossible,
-                                               nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                                               nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                                               redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                                                region = Region.bogus,
                                                rules = Vector.new1
                                                        {exp = app (Vector.map
@@ -3556,32 +3559,12 @@ fun elaborateDec (d, {env = E, nest}) =
          let
             val arg = Var.newNoname ()
             val {argType, region, rules, ...} = elabMatch (m, preError, nest)
-            val {nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch} =
-               case noMatch of
-                  Cexp.Impossible =>
-                     {nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                      nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                      redundantMatch = Control.Elaborate.DiagEIW.Ignore}
-                | Cexp.RaiseAgain =>
-                     {nonexhaustiveExnMatch = nonexhaustiveExnRaise (),
-                      nonexhaustiveMatch = nonexhaustiveRaise (),
-                      redundantMatch = redundantRaise ()}
-                | Cexp.RaiseBind =>
-                     {nonexhaustiveExnMatch = nonexhaustiveExnBind (),
-                      nonexhaustiveMatch = nonexhaustiveBind (),
-                      redundantMatch = redundantBind ()}
-                | Cexp.RaiseMatch =>
-                     {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                      nonexhaustiveMatch = nonexhaustiveMatch (),
-                      redundantMatch = redundantMatch ()}
             val body =
                Cexp.casee {kind = kind,
                            lay = lay,
                            nest = nest,
+                           matchDiags = matchDiagsFromNoMatch noMatch,
                            noMatch = noMatch,
-                           nonexhaustiveExnMatch = nonexhaustiveExnMatch,
-                           nonexhaustiveMatch = nonexhaustiveMatch,
-                           redundantMatch = redundantMatch,
                            region = region,
                            rules = rules,
                            test = Cexp.var (arg, argType)}
