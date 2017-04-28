@@ -81,6 +81,102 @@ structure Example =
      and layoutT ex = layout (ex, true)
 
      val layout = layoutT
+
+     fun isWild ex =
+        case ex of
+           Wild => true
+         | _ => false
+
+     fun tuple exs =
+        if Vector.forall (exs, isWild)
+           then Wild
+           else Tuple exs
+
+     fun compare (ex1, ex2) =
+        case (ex1, ex2) of
+           (* Wild sorts last *)
+           (Wild, Wild) => EQUAL
+         | (_, Wild) => LESS
+         | (Wild, _) => GREATER
+         (* Exn sorts last *)
+         | (Exn, Exn) => EQUAL
+         | (_, Exn) => LESS
+         | (Exn, _) => GREATER
+         (* Dots sorts last *)
+         | (Dots, Dots) => EQUAL
+         | (_, Dots) => LESS
+         | (Dots, _) => GREATER
+         | (Const {const = const1, isInt, ...}, Const {const = const2, ...}) =>
+              (case (const1, const2) of
+                  (Const.Word w1, Const.Word w2) =>
+                     WordX.compare (w1, w2, {signed = isInt})
+                | (Const.IntInf ii1, Const.IntInf ii2) =>
+                     IntInf.compare (ii1, ii2)
+                | (Const.WordVector ws1, Const.WordVector ws2) =>
+                     List.compare (WordXVector.toListMap (ws1, fn w => w),
+                                   WordXVector.toListMap (ws2, fn w => w),
+                                   fn (w1, w2) => WordX.compare (w1, w2, {signed = isInt}))
+                | _ => Error.bug "MatchCompile.Example.compare: Const/Const")
+         | (ConApp {con = con1, arg = arg1}, ConApp {con = con2, arg = arg2}) =>
+              (case String.compare (Con.toString con1, Con.toString con2) of
+                  LESS => LESS
+                | EQUAL => (case (arg1, arg2) of
+                               (SOME arg1, SOME arg2) => compare' (arg1, arg2)
+                             | (NONE, NONE) => EQUAL
+                             | _ => Error.bug "MatchCompile.Example.compare: ConApp/ConApp")
+                | GREATER => GREATER)
+         | (Vector exs1, Vector exs2) =>
+              Vector.compare (exs1, exs2, compare')
+         | (Tuple exs1, Tuple exs2) =>
+              Vector.compare (exs1, exs2, compare')
+         | _ => Error.bug "MatchCompile.Example.compare"
+     and compare' (ex1, ex2) =
+        case (ex1, ex2) of
+           (Or ex1s, Or ex2s) => compares (Vector.toList ex1s, Vector.toList ex2s)
+         | (Or ex1s, _) => compares (Vector.toList ex1s, [ex2])
+         | (_, Or ex2s) => compares ([ex1], Vector.toList ex2s)
+         | _ => compare (ex1, ex2)
+     and compares (exs1, exs2) =
+        List.compare (exs1, exs2, compare)
+
+     fun or exs =
+        let
+           fun join (exs1, exs2) =
+              case (exs1, exs2) of
+                 ([], _) => exs2
+               | (_, []) => exs1
+               | ((ex1 as ConApp {con = con1, arg = arg1})::exs1',
+                  (ex2 as ConApp {con = con2, arg = arg2})::exs2') =>
+                    (case String.compare (Con.toString con1, Con.toString con2) of
+                        LESS => ex1::(join (exs1', exs2))
+                      | EQUAL =>
+                           let
+                              val arg =
+                                 case (arg1, arg2) of
+                                    (SOME arg1, SOME arg2) => or [arg1, arg2]
+                                  | (NONE, NONE) => NONE
+                                  | _ => Error.bug "MatchCompile.Example.or.join"
+                           in
+                              (ConApp {con = con1, arg = arg})::
+                              (join (exs1', exs2'))
+                           end
+                      | GREATER => ex2::(join (exs1, exs2')))
+                | (ex1::exs1', ex2::exs2') =>
+                    (case compare (ex1, ex2) of
+                        LESS => ex1::(join (exs1', exs2))
+                      | EQUAL => ex1::(join (exs1', exs2'))
+                      | GREATER => ex2::(join (exs1, exs2')))
+           val exss =
+              List.map (exs, fn Or exs => Vector.toList exs | ex => [ex])
+           val exs =
+              List.fold (exss, [], join)
+        in
+           case exs of
+              [] => NONE
+            | [ex] => SOME ex
+            | _ => SOME (Or (Vector.fromList exs))
+        end
+
   end
 
 structure Env = MonoEnv (structure Domain = Var
@@ -209,7 +305,7 @@ structure Facts =
                          Fact.Con {arg, con} =>
                             Example.ConApp {con = con, arg = Option.map (arg, loop)}
                        | Fact.Tuple xs =>
-                            Example.Tuple (Vector.map (xs, loop))
+                            Example.tuple (Vector.map (xs, loop))
                        | Fact.Vector xs =>
                             Example.Vector (Vector.map (xs, loop)))
             val res = loop x
@@ -728,26 +824,20 @@ fun matchCompile {caseType: Type.t,
                else
                   let
                      val cons = tyconCons tycon
+                     val unhandled =
+                        List.keepAllMap
+                        (Vector.toList cons, fn {con, hasArg, ...} =>
+                         if Vector.exists (cases, fn {con = con', ...} =>
+                                           Con.equals (con, con'))
+                            then NONE
+                            else SOME (Example.ConApp
+                                       {con = con,
+                                        arg = if hasArg
+                                                 then SOME Example.Wild
+                                                 else NONE}))
                   in
-                     if Vector.length cases = Vector.length cons
-                        then NONE
-                     else
-                        let
-                           val unhandled =
-                              Vector.keepAllMap
-                              (cons, fn {con, hasArg, ...} =>
-                               if Vector.exists (cases, fn {con = con', ...} =>
-                                                 Con.equals (con, con'))
-                                  then NONE
-                               else SOME (Example.ConApp
-                                          {con = con,
-                                           arg = if hasArg
-                                                    then SOME Example.Wild
-                                                    else NONE}))
-                           open Layout
-                        in
-                           done (Example.Or unhandled, false)
-                        end
+                     Option.fold
+                     (Example.or unhandled, NONE, fn (e, _) => done (e, false))
                   end
             fun normal () =
                Exp.casee {cases = Cases.con cases,
@@ -863,12 +953,14 @@ fun matchCompile {caseType: Type.t,
                          then unhandled
                          else (Example.Vector (Vector.new (i, Example.Wild))) :: unhandled)
                   val unhandled =
-                     Example.Or (Vector.fromList unhandled)
+                     Example.or unhandled
                in
                   match (Vector.dropNth (vars, i),
                          Rules.dropNth (Vector.fromList defaults, i),
                          facts,
-                         Examples.add (es, var, unhandled, {isOnlyExns = false}))
+                         Option.fold
+                         (unhandled, es, fn (unhandled, es) =>
+                          Examples.add (es, var, unhandled, {isOnlyExns = false})))
                end
             val cases =
                Vector.fromListMap
@@ -932,19 +1024,14 @@ fun matchCompile {caseType: Type.t,
       val examples =
          fn {dropOnlyExns} =>
          let
-            val examples =
-               (Example.Or o Vector.fromList o List.keepAllMap)
+            val example =
+               (Example.or o List.keepAllMap)
                (!examples, fn (ex, {isOnlyExns}) =>
                 if dropOnlyExns andalso isOnlyExns
                    then NONE
                    else SOME ex)
          in
-            case examples of
-               Example.Or es =>
-                  if Vector.isEmpty es
-                     then NONE
-                     else SOME (Example.layout examples)
-             | _ => SOME (Example.layout examples)
+            Option.map (example, Example.layout)
          end
    in
       (res, examples)
