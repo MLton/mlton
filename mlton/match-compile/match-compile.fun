@@ -17,11 +17,10 @@ structure Example =
      datatype t =
         ConApp of {arg: t option, con: Con.t}
       | Const of {const: Const.t, isChar: bool, isInt: bool}
-      | Dots
       | Exn
       | Or of t vector
       | Tuple of t vector
-      | Vector of t vector
+      | Vector of t vector * {dots: bool}
       | Wild
 
      fun layout (ex, isDelimited) =
@@ -64,7 +63,6 @@ structure Example =
                                            "strange int: ",
                                            Layout.toString (Const.layout c)])
                  else Const.layout c
-            | Dots => str "..."
             | Exn => delimit (str "_ : exn")
             | Or exs =>
                  if 1 = Vector.length exs
@@ -73,8 +71,14 @@ structure Example =
                        (Vector.toListMap (exs, layoutT), "| ")
             | Tuple exs =>
                  tuple (Vector.toListMap (exs, layoutT))
-            | Vector exs =>
-                 vector (Vector.map (exs, layoutT))
+            | Vector (exs, {dots}) =>
+                 let
+                    val exs = Vector.map (exs, layoutT)
+                 in
+                    vector (if dots
+                               then Vector.concat [exs, Vector.new1 (str "...")]
+                               else exs)
+                 end
             | Wild => str "_"
         end
      and layoutF ex = layout (ex, false)
@@ -92,6 +96,9 @@ structure Example =
            then Wild
            else Tuple exs
 
+     fun vector exs = Vector (exs, {dots = false})
+     fun vectorDots exs = Vector (exs, {dots = true})
+
      fun compare (ex1, ex2) =
         case (ex1, ex2) of
            (* Wild sorts last *)
@@ -102,10 +109,6 @@ structure Example =
          | (Exn, Exn) => EQUAL
          | (_, Exn) => LESS
          | (Exn, _) => GREATER
-         (* Dots sorts last *)
-         | (Dots, Dots) => EQUAL
-         | (_, Dots) => LESS
-         | (Dots, _) => GREATER
          | (Const {const = const1, isInt, ...}, Const {const = const2, ...}) =>
               (case (const1, const2) of
                   (Const.Word w1, Const.Word w2) =>
@@ -125,8 +128,11 @@ structure Example =
                              | (NONE, NONE) => EQUAL
                              | _ => Error.bug "MatchCompile.Example.compare: ConApp/ConApp")
                 | GREATER => GREATER)
-         | (Vector exs1, Vector exs2) =>
-              Vector.compare (exs1, exs2, compare')
+         | (Vector (exs1, {dots = dots1}), Vector (exs2, {dots = dots2})) =>
+              (case (dots1, dots2) of
+                  (false, true) => LESS
+                | (true, false) => GREATER
+                | _ => Vector.compare (exs1, exs2, compare'))
          | (Tuple exs1, Tuple exs2) =>
               Vector.compare (exs1, exs2, compare')
          | _ => Error.bug "MatchCompile.Example.compare"
@@ -307,7 +313,7 @@ structure Facts =
                        | Fact.Tuple xs =>
                             Example.tuple (Vector.map (xs, loop))
                        | Fact.Vector xs =>
-                            Example.Vector (Vector.map (xs, loop)))
+                            Example.vector (Vector.map (xs, loop)))
             val res = loop x
             val () = destroy ()
          in
@@ -943,15 +949,13 @@ fun matchCompile {caseType: Type.t,
                      (cases, ~1, fn ({len, ...}, max) =>
                       Int.max (max, len))
                   val unhandled =
-                     (Example.Vector o Vector.concat)
-                     [Vector.new (maxLen + 1, Example.Wild),
-                      Vector.new1 Example.Dots]
+                     Example.vectorDots (Vector.new (maxLen + 1, Example.Wild))
                   val unhandled =
                      Int.foldDown
                      (0, maxLen, [unhandled], fn (i, unhandled) =>
                       if List.exists (cases, fn {len, ...} => i = len)
                          then unhandled
-                         else (Example.Vector (Vector.new (i, Example.Wild))) :: unhandled)
+                         else (Example.vector (Vector.new (i, Example.Wild))) :: unhandled)
                   val unhandled =
                      Example.or unhandled
                in
