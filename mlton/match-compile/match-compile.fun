@@ -65,10 +65,8 @@ structure Example =
                  else Const.layout c
             | Exn => delimit (str "_ : exn")
             | Or exs =>
-                 if 1 = Vector.length exs
-                    then layout (Vector.sub (exs, 0), isDelimited)
-                    else (delimit o mayAlign o separateLeft)
-                       (Vector.toListMap (exs, layoutT), "| ")
+                 (delimit o mayAlign o separateLeft)
+                 (Vector.toListMap (exs, layoutT), "| ")
             | Tuple exs =>
                  tuple (Vector.toListMap (exs, layoutT))
             | Vector (exs, {dots}) =>
