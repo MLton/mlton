@@ -249,8 +249,17 @@ fun casee {caseType: Xtype.t,
             val body = Xexp.toExp body
             val nonexhaustiveExamples =
                if noMatch = Cexp.Impossible
-                  then Vector.new0 ()
-                  else nonexhaustiveExamples ()
+                  then NONE
+                  else let
+                          val dropOnlyExns =
+                             case nonexhaustiveExnDiag of
+                                Control.Elaborate.DiagDI.Default =>
+                                   {dropOnlyExns = false}
+                              | Control.Elaborate.DiagDI.Ignore =>
+                                   {dropOnlyExns = true}
+                       in
+                          nonexhaustiveExamples dropOnlyExns
+                       end
          in
             (Xexp.let1 {var = testVar,
                         exp = test,
@@ -268,7 +277,7 @@ fun casee {caseType: Xtype.t,
             let
                val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
                fun use () = (numPats := 1; numUses := 1)
-               fun exhaustive exp = (exp, Vector.new0 ())
+               fun exhaustive exp = (exp, NONE)
             in
                case NestedPat.node p of
                   Wild => (use (); exhaustive (wild (e ())))
@@ -311,36 +320,19 @@ fun casee {caseType: Xtype.t,
             end
       (* diagnoseNonexhaustive *)
       val _ =
-         let
-            val es = nonexhaustiveExamples
-            val es =
-               case nonexhaustiveExnDiag of
-                  Control.Elaborate.DiagDI.Default =>
-                     Vector.map (es, #1)
-                | Control.Elaborate.DiagDI.Ignore =>
-                     Vector.keepAllMap
-                     (es, fn (e, {isOnlyExns}) =>
-                      if isOnlyExns
-                         then NONE
-                         else SOME e)
-         in
-            if 0 = Vector.length es
-               then ()
-               else let
-                       open Layout
-                    in
-                       addMatchDiagnostic
-                       (nonexhaustiveDiag,
-                        fn () =>
-                        (region,
-                         str (concat [#1 kind, " is not exhaustive"]),
-                         align [seq [str "missing pattern: ",
-                                     if 1 = Vector.length es
-                                        then Vector.sub (es, 0)
-                                        else paren (mayAlign (separateLeft (Vector.toListRev es, "| ")))],
-                                lay ()]))
-                    end
-         end
+         Option.app
+         (nonexhaustiveExamples, fn es =>
+          let
+             open Layout
+          in
+             addMatchDiagnostic
+             (nonexhaustiveDiag,
+              fn () =>
+              (region,
+               str (concat [#1 kind, " is not exhaustive"]),
+               align [seq [str "missing pattern: ", es],
+                      lay ()]))
+          end)
       (* diagnoseRedundant *)
       val _ =
          let

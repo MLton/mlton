@@ -71,5 +71,5 @@ signature MATCH_COMPILE =
           test: Var.t,
           testType: Type.t,
           tyconCons: Tycon.t -> {con: Con.t, hasArg: bool} vector}
-         -> Exp.t * (unit -> (Layout.t * {isOnlyExns: bool}) vector)
+         -> Exp.t * ({dropOnlyExns: bool} -> Layout.t option)
    end

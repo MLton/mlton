@@ -930,10 +930,22 @@ fun matchCompile {caseType: Type.t,
                 Facts.empty,
                 Examples.empty)
       val examples =
-         fn () =>
-         Vector.fromListMap
-         (!examples, fn (ex, {isOnlyExns}) =>
-          (Example.layout ex, {isOnlyExns = isOnlyExns}))
+         fn {dropOnlyExns} =>
+         let
+            val examples =
+               (Example.Or o Vector.fromList o List.keepAllMap)
+               (!examples, fn (ex, {isOnlyExns}) =>
+                if dropOnlyExns andalso isOnlyExns
+                   then NONE
+                   else SOME ex)
+         in
+            case examples of
+               Example.Or es =>
+                  if Vector.isEmpty es
+                     then NONE
+                     else SOME (Example.layout examples)
+             | _ => SOME (Example.layout examples)
+         end
    in
       (res, examples)
    end
