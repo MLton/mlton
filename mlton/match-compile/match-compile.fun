@@ -54,28 +54,28 @@ structure Example =
                                           ["MatchCompile.Example.layout.layoutConst: ",
                                            "strange char: ",
                                            Layout.toString (Const.layout c)])
-                  else if isInt
-                     then
-                        case c of
-                           Const.IntInf i => IntInf.layout i
-                         | Const.Word w => IntInf.layout (WordX.toIntInfX w)
-                         | _ => Error.bug (concat
-                                           ["MatchCompile.Example.layout.layoutConst: ",
-                                            "strange int: ",
-                                            Layout.toString (Const.layout c)])
-                  else Const.layout c
+                 else if isInt
+                    then
+                       case c of
+                          Const.IntInf i => IntInf.layout i
+                        | Const.Word w => IntInf.layout (WordX.toIntInfX w)
+                        | _ => Error.bug (concat
+                                          ["MatchCompile.Example.layout.layoutConst: ",
+                                           "strange int: ",
+                                           Layout.toString (Const.layout c)])
+                 else Const.layout c
             | Dots => str "..."
             | Exn => delimit (str "_ : exn")
             | Or exs =>
-                  if 1 = Vector.length exs
-                     then layout (Vector.sub (exs, 0), isDelimited)
-                     else (delimit o mayAlign o separateLeft)
-                          (Vector.toListMap (exs, layoutT), "| ")
-             | Tuple exs =>
-                  tuple (Vector.toListMap (exs, layoutT))
-             | Vector exs =>
-                  vector (Vector.map (exs, layoutT))
-             | Wild => str "_"
+                 if 1 = Vector.length exs
+                    then layout (Vector.sub (exs, 0), isDelimited)
+                    else (delimit o mayAlign o separateLeft)
+                       (Vector.toListMap (exs, layoutT), "| ")
+            | Tuple exs =>
+                 tuple (Vector.toListMap (exs, layoutT))
+            | Vector exs =>
+                 vector (Vector.map (exs, layoutT))
+            | Wild => str "_"
         end
      and layoutF ex = layout (ex, false)
      and layoutT ex = layout (ex, true)
