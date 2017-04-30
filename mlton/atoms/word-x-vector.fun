@@ -59,12 +59,31 @@ val toString = Layout.toString o layout
 val hash = String.hash o toString
 
 fun equals (v, v') =
-    WordSize.equals (elementSize v, elementSize v')
-    andalso Vector.equals (elements v, elements v', WordX.equals)
+   WordSize.equals (elementSize v, elementSize v')
+   andalso Vector.equals (elements v, elements v', WordX.equals)
+
+fun compare (v, v') =
+   if WordSize.equals (elementSize v, elementSize v')
+      then case Int.compare (Vector.length (elements v), Vector.length (elements v')) of
+              LESS => LESS
+            | EQUAL => Vector.compare (elements v, elements v', fn (w, w') =>
+                                       WordX.compare (w, w', {signed = false}))
+            | GREATER => GREATER
+      else Error.bug "WordXVector.compare"
+
+fun le (v, v') =
+   case compare (v, v') of
+      LESS => true
+    | EQUAL => true
+    | GREATER => false
 
 fun foldFrom (v, start, b, f) = Vector.foldFrom (elements v, start, b, f)
 
 fun forall (v, f) = Vector.forall (elements v, f)
+
+fun fromVector ({elementSize}, v) =
+   T {elementSize = elementSize,
+      elements = v}
 
 fun fromList ({elementSize}, l) =
    T {elementSize = elementSize,

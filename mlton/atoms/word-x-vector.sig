@@ -19,15 +19,18 @@ signature WORD_X_VECTOR =
 
       type t
 
+      val compare: t * t -> order
       val elementSize: t -> WordSize.t
       val equals: t * t -> bool
       val foldFrom: t * int * 'b * (WordX.t * 'b -> 'b) -> 'b
       val forall: t * (WordX.t -> bool) -> bool
-      val fromString: string -> t
       val fromList: {elementSize: WordSize.t} * WordX.t list -> t
       val fromListRev: {elementSize: WordSize.t} * WordX.t list -> t
+      val fromString: string -> t
+      val fromVector: {elementSize: WordSize.t} * WordX.t vector -> t
       val hash : t -> word
       val layout: t -> Layout.t
+      val le : t * t -> bool
       val length: t -> int
       val sub: t * int -> WordX.t
       val tabulate: {elementSize: WordSize.t} * int * (int -> WordX.t) -> t
