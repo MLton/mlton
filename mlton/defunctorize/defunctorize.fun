@@ -721,7 +721,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
                           NONE => NestedPat.make (NestedPat.Wild, loopTy t)
                         | SOME p => loopPat p))
                 | Or ps => NestedPat.Or (Vector.map (ps, loopPat))
-                | Tuple ps => NestedPat.Tuple (Vector.map (ps, loopPat))
                 | Var x => NestedPat.Var x
                 | Vector ps => NestedPat.Vector (Vector.map (ps, loopPat))
                 | Wild => NestedPat.Wild

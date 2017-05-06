@@ -45,7 +45,6 @@ signature CORE_ML =
              | List of t vector
              | Or of t vector
              | Record of t Record.t
-             | Tuple of t vector
              | Var of Var.t
              | Vector of t vector
              | Wild

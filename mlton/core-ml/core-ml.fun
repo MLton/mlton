@@ -46,7 +46,6 @@ structure Pat =
        | List of t vector
        | Or of t vector
        | Record of t Record.t
-       | Tuple of t vector
        | Var of Var.t
        | Vector of t vector
        | Wild
@@ -79,10 +78,19 @@ structure Pat =
              | List ps => list (Vector.toListMap (ps, layout))
              | Or ps => list (Vector.toListMap (ps, layout))
              | Record r =>
-                  record (Vector.toListMap
-                          (Record.toVector r, fn (f, p) =>
-                           (Field.toString f, layout p)))
-             | Tuple ps => tuple (Vector.toListMap (ps, layout))
+                  let
+                     val extra =
+                        Vector.exists
+                        (Type.deRecord t, fn (f, _) =>
+                         Option.isNone (Record.peek (r, f)))
+                  in
+                     Record.layout
+                     {extra = if extra then ", ..." else "",
+                      layoutElt = layout,
+                      layoutTuple = fn ps => tuple (Vector.toListMap (ps, layout)),
+                      record = r,
+                      separator = " = "}
+                  end
              | Var x => maybeConstrain (Var.layout x, t)
              | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
@@ -92,7 +100,10 @@ structure Pat =
 
       fun var (x, t) = make (Var x, t)
 
-      fun tuple ps = make (Tuple ps, Type.tuple (Vector.map (ps, ty)))
+      fun tuple ps =
+         if 1 = Vector.length ps
+            then Vector.sub (ps, 0)
+            else make (Record (Record.tuple ps), Type.tuple (Vector.map (ps, ty)))
 
       local
          fun bool c = make (Con {arg = NONE, con = c, targs = Vector.new0 ()},
@@ -104,7 +115,7 @@ structure Pat =
 
       fun isUnit (p: t): bool =
          case node p of
-            Tuple v => 0 = Vector.length v
+            Record r => Record.forall (r, fn _ => false)
           | _ => false
 
       fun isWild (p: t): bool =
@@ -120,7 +131,6 @@ structure Pat =
           | List _ => true
           | Or ps => Vector.exists (ps, isRefutable)
           | Record r => Record.exists (r, isRefutable)
-          | Tuple ps => Vector.exists (ps, isRefutable)
           | Var _ => false
           | Vector _ => true
           | Wild => false
@@ -135,7 +145,6 @@ structure Pat =
                 | List ps => Vector.foreach (ps, loop)
                 | Or ps => Vector.foreach (ps, loop)
                 | Record r => Record.foreach (r, loop)
-                | Tuple ps => Vector.foreach (ps, loop)
                 | Var x => f x
                 | Vector ps => Vector.foreach (ps, loop)
                 | Wild => ()

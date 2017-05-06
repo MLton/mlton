@@ -795,12 +795,7 @@ val elaboratePat:
                           ty)
                       end
                  | Apat.Tuple ps =>
-                      let
-                         val ps = Vector.map (ps, loop)
-                      in
-                         Cpat.make (Cpat.Tuple ps,
-                                    Type.tuple (Vector.map (ps, Cpat.ty)))
-                      end
+                      Cpat.tuple (Vector.map (ps, loop))
                  | Apat.Var {name, ...} =>
                       let
                          val (strids, x) = Ast.Longvid.split name
@@ -2417,11 +2412,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                  in
                                                     {exp = body,
                                                      lay = SOME lay,
-                                                     pat =
-                                                     (Cpat.make
-                                                      (Cpat.Tuple pats,
-                                                       Type.tuple
-                                                       (Vector.map (pats, Cpat.ty))))}
+                                                     pat = Cpat.tuple pats}
                                                  end),
                                                 test =
                                                 Cexp.tuple
