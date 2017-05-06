@@ -1291,19 +1291,12 @@ local
                                  else expandedCbTy}
       in
          if not isBool then fetchExp else
-         Cexp.casee {kind = ("", ""),
-                     lay = fn () => Layout.empty,
-                     nest = [],
-                     matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
-                     noMatch = Cexp.Impossible,
-                     region = Region.bogus,
-                     rules = Vector.new2
-                             ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
-                              {exp = Cexp.falsee, lay = NONE, pat = Cpat.truee}),
-                     test = primApp
-                            {args = Vector.new2 (fetchExp, zeroExpBool),
-                             prim = Prim.wordEqual WordSize.bool,
-                             result = expandedCbTy}}
+         Cexp.iff (primApp
+                   {args = Vector.new2 (fetchExp, zeroExpBool),
+                    prim = Prim.wordEqual WordSize.bool,
+                    result = expandedCbTy},
+                   Cexp.falsee,
+                   Cexp.truee)
       end
 
    fun mkStore {ctypeCbTy, isBool,
@@ -1311,16 +1304,7 @@ local
       let
          val valueExp =
             if not isBool then valueExp else
-            Cexp.casee {kind = ("", ""),
-                        lay = fn () => Layout.empty,
-                        nest = [],
-                        matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
-                        noMatch = Cexp.Impossible,
-                        region = Region.bogus,
-                        rules = Vector.new2
-                                ({exp = oneExpBool, lay = NONE, pat = Cpat.truee},
-                                 {exp = zeroExpBool, lay = NONE, pat = Cpat.falsee}),
-                        test = valueExp}
+            Cexp.iff (valueExp, oneExpBool, zeroExpBool)
       in
          primApp {args = Vector.new3 (ptrExp, zeroExpPtrdiff (), valueExp),
                   prim = Prim.cpointerSet ctypeCbTy,
