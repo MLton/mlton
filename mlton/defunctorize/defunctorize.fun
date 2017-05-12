@@ -125,11 +125,12 @@ end
 
 fun casee {caseType: Xtype.t,
            cases: {exp: Xexp.t,
-                   lay: (unit -> Layout.t) option,
-                   pat: NestedPat.t} vector,
+                   layPat: (unit -> Layout.t) option,
+                   pat: NestedPat.t,
+                   regionPat: Region.t} vector,
            conTycon,
            kind: (string * string),
-           lay: unit -> Layout.t,
+           lay = layCasee: unit -> Layout.t,
            nest: string list,
            matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
                         nonexhaustive: Control.Elaborate.DiagEIW.t,
@@ -142,13 +143,14 @@ fun casee {caseType: Xtype.t,
       val nonexhaustiveExnDiag = #nonexhaustiveExn matchDiags
       val nonexhaustiveDiag = #nonexhaustive matchDiags
       val redundantDiag = #redundant matchDiags
-      val cases = Vector.map (cases, fn {exp, lay, pat} =>
+      val cases = Vector.map (cases, fn {exp, layPat, pat, regionPat} =>
                               {exp = fn () => exp,
                                isDefault = false,
-                               lay = lay,
+                               layPat = layPat,
                                numPats = ref 0,
                                numUses = ref 0,
-                               pat = pat})
+                               pat = pat,
+                               regionPat = regionPat})
       fun raiseExn (f, mayWrap) =
          let
             val e = Var.newNoname ()
@@ -176,10 +178,11 @@ fun casee {caseType: Xtype.t,
             [cases,
              Vector.new1 {exp = exp,
                           isDefault = true,
-                          lay = NONE,
+                          layPat = NONE,
                           numPats = ref 0,
                           numUses = ref 0,
-                          pat = NestedPat.make (NestedPat.Var e, testType)}]
+                          pat = NestedPat.make (NestedPat.Var e, testType),
+                          regionPat = Region.bogus}]
          end
       val cases =
          let
@@ -318,6 +321,38 @@ fun casee {caseType: Xtype.t,
                      else matchCompile ()
                 | _ => matchCompile ()
             end
+      (* diagnoseRedundant *)
+      val _ =
+         Vector.foreachr
+         (cases, fn {isDefault, layPat = layPat,
+                     numPats, numUses, regionPat = regionPat, ...} =>
+          let
+             fun doit (msg1, msg2) =
+                let
+                   open Layout
+                in
+                   addMatchDiagnostic
+                   (redundantDiag,
+                    fn () =>
+                    (regionPat,
+                     str (concat [#1 kind, msg1]),
+                     align [seq [str (concat [msg2, ": "]),
+                                 case layPat of
+                                    NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
+                                  | SOME layPat => layPat ()],
+                            layCasee ()]))
+                end
+          in
+             if not isDefault andalso !numUses = 0
+                then ((* Rule with no uses; fully redundant. *)
+                      doit (" has redundant " ^ #2 kind,
+                            "redundant pattern"))
+             else if not isDefault andalso !numUses > 0 andalso !numUses < !numPats
+                then ((* Rule with some uses but fewer uses than pats; partially redundant. *)
+                      doit (" has " ^ #2 kind ^ " with redundancy",
+                            "pattern with redundancy"))
+             else ()
+          end)
       (* diagnoseNonexhaustive *)
       val _ =
          Option.app
@@ -331,47 +366,8 @@ fun casee {caseType: Xtype.t,
               (region,
                str (concat [#1 kind, " is not exhaustive"]),
                align [seq [str "missing pattern: ", es],
-                      lay ()]))
+                      layCasee ()]))
           end)
-      (* diagnoseRedundant *)
-      val _ =
-         let
-            (* Rules with no uses; fully redundant. *)
-            val redundantRules =
-               Vector.keepAllMap (cases, fn {isDefault, lay, numUses, ...} =>
-                                  if not isDefault andalso !numUses = 0
-                                     then SOME lay
-                                     else NONE)
-            (* Rules with some uses but fewer uses than pats; partially redundant. *)
-            val rulesWithRedundancy =
-               Vector.keepAllMap (cases, fn {isDefault, lay, numPats, numUses, ...} =>
-                                  if not isDefault andalso !numUses > 0 andalso !numUses < !numPats
-                                     then SOME lay
-                                     else NONE)
-            fun doit (rules, msg) =
-               if 0 = Vector.length rules
-                  then ()
-               else
-                  let
-                     open Layout
-                  in
-                     addMatchDiagnostic
-                     (redundantDiag,
-                      fn () =>
-                      (region,
-                       str (concat [#1 kind, msg]),
-                       align [seq [str (concat [#2 kind, ": "]),
-                                   (align o Vector.toListMap)
-                                   (rules, fn lay =>
-                                    case lay of
-                                       NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
-                                     | SOME lay => lay ())],
-                              lay ()]))
-                  end
-         in
-            doit (rulesWithRedundancy, " has " ^ #2 kind ^ " with redundancy")
-            ; doit (redundantRules, " has redundant " ^ #2 kind)
-         end
    in
       exp
    end
@@ -735,7 +731,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                Xexp.lett {decs = [d], body = e}
             fun processLambdas v =
                Vector.map
-               (v, fn {lambda, var} =>
+               (Vector.rev v, fn {lambda, var} =>
                 let
                    val {arg, argType, body, bodyType, mayInline} =
                       loopLambda lambda
@@ -763,7 +759,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                   val bodyType = et
                   val e =
                      Vector.foldr
-                     (vbs, e, fn ({exp, lay, nest, pat, patRegion}, e) =>
+                     (vbs, e, fn ({exp, layDec, layPat, nest, pat, regionPat}, e) =>
                       let
                          fun patDec (p: NestedPat.t,
                                      e: Xexp.t,
@@ -772,11 +768,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                      mayWarn: bool) =
                             casee {caseType = bodyType,
                                    cases = Vector.new1 {exp = body,
-                                                        lay = SOME (#pat o lay),
-                                                        pat = p},
+                                                        layPat = SOME layPat,
+                                                        pat = p,
+                                                        regionPat = regionPat},
                                    conTycon = conTycon,
                                    kind = ("declaration", "pattern"),
-                                   lay = #dec o lay,
+                                   lay = layDec,
                                    nest = nest,
                                    matchDiags = if mayWarn
                                                    then matchDiags
@@ -784,7 +781,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                                          nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
                                                          redundant = Control.Elaborate.DiagEIW.Ignore},
                                    noMatch = Cexp.RaiseBind,
-                                   region = patRegion,
+                                   region = regionPat,
                                    test = (e, NestedPat.ty p),
                                    tyconCons = tyconCons}
                          val isExpansive = Cexp.isExpansive exp
@@ -969,10 +966,11 @@ fun defunctorize (CoreML.Program.T {decs}) =
                      end
                 | Case {kind, lay, nest, matchDiags, noMatch, region, rules, test, ...} =>
                      casee {caseType = ty,
-                            cases = Vector.map (rules, fn {exp, lay, pat} =>
+                            cases = Vector.map (rules, fn {exp, layPat, pat, regionPat} =>
                                                 {exp = #1 (loopExp exp),
-                                                 lay = lay,
-                                                 pat = loopPat pat}),
+                                                 layPat = layPat,
+                                                 pat = loopPat pat,
+                                                 regionPat = regionPat}),
                             conTycon = conTycon,
                             kind = kind,
                             lay = lay,

@@ -177,10 +177,11 @@ datatype dec =
                   var: Var.t} vector,
            tyvars: unit -> Tyvar.t vector,
            vbs: {exp: exp,
-                 lay: unit -> {dec: Layout.t, pat: Layout.t},
+                 layDec: unit -> Layout.t,
+                 layPat: unit -> Layout.t,
                  nest: string list,
                  pat: Pat.t,
-                 patRegion: Region.t} vector}
+                 regionPat: Region.t} vector}
 and exp = Exp of {node: expNode,
                   ty: Type.t}
 and expNode =
@@ -194,8 +195,9 @@ and expNode =
              noMatch: noMatch,
              region: Region.t,
              rules: {exp: exp,
-                     lay: (unit -> Layout.t) option,
-                     pat: Pat.t} vector,
+                     layPat: (unit -> Layout.t) option,
+                     pat: Pat.t,
+                     regionPat: Region.t} vector,
              test: exp}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
@@ -418,7 +420,7 @@ structure Exp =
          else make (Case z, ty (#exp (Vector.sub (rules, 0))))
 
       fun iff (test, thenCase, elseCase): t =
-         casee {kind = ("if", "branches"),
+         casee {kind = ("if", "branch"),
                 lay = fn () => Layout.empty,
                 nest = [],
                 matchDiags = {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
@@ -427,11 +429,13 @@ structure Exp =
                 noMatch = Impossible,
                 region = Region.bogus,
                 rules = Vector.new2 ({exp = thenCase,
-                                      lay = NONE,
-                                      pat = Pat.truee},
+                                      layPat = NONE,
+                                      pat = Pat.truee,
+                                      regionPat = Region.bogus},
                                      {exp = elseCase,
-                                      lay = NONE,
-                                      pat = Pat.falsee}),
+                                      layPat = NONE,
+                                      pat = Pat.falsee,
+                                      regionPat = Region.bogus}),
                 test = test}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)

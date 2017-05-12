@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -247,19 +248,23 @@ structure Type =
 
 fun bind (x, y) = mayAlign [seq [x, str " ="], y]
 
+fun 'a layoutAndsSusp (prefix: string,
+                       xs: 'a vector,
+                       layoutX: bool * Layout.t * 'a -> Layout.t): (unit -> Layout.t) vector =
+   Vector.mapi
+   (xs, fn (i, x) => fn () =>
+    layoutX (i = 0, if i = 0 then str (concat [prefix, " "]) else str "and ", x))
+
 fun 'a layoutAnds (prefix: string,
                    xs: 'a vector, 
                    layoutX: Layout.t * 'a -> Layout.t): Layout.t =
-   case Vector.toList xs of
-      [] => empty
-    | x :: xs => align (layoutX (str (concat [prefix, " "]), x)
-                        :: List.map (xs, fn x => layoutX (str "and ", x)))
+   align (Vector.toListMap (layoutAndsSusp (prefix, xs, fn (_, prefix, x) => layoutX (prefix, x)), fn th => th ()))
 
 datatype bindStyle = OneLine | Split of int
 
 fun 'a layoutBind (bind: string,
                    layout: 'a -> bindStyle * Layout.t * Layout.t)
-   (prefix: Layout.t, x: 'a): Layout.t =
+                  (prefix: Layout.t, x: 'a): Layout.t =
    let
       val (style, lhs, rhs) = layout x
       val lhs = seq [prefix, lhs, str " " , str bind]

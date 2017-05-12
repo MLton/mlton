@@ -738,8 +738,8 @@ decnolocal
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
         | DO exp                (Dec.DoDec exp)
-        | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
-        | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
+        | FUN funs              (Dec.Fun {tyvars = Vector.new0 (), fbs = Vector.fromList funs})
+        | FUN tyvarseq funs     (Dec.Fun {tyvars = tyvarseq, fbs = Vector.fromList funs})
         | TYPE typBind          (Dec.Type typBind)
         | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
         | ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,

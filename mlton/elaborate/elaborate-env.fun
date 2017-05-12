@@ -2977,10 +2977,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                             tyvars = fn () => sigArgs,
                                             vbs = (Vector.new1
                                                    {exp = e,
-                                                    lay = fn _ => {dec = Layout.empty, pat = Layout.empty},
+                                                    layDec = fn _ => Layout.empty,
+                                                    layPat = fn _ => Layout.empty,
                                                     nest = [],
                                                     pat = Pat.var (x, strType),
-                                                    patRegion = region})})
+                                                    regionPat = Region.bogus})})
                             in
                                Vid.Var x
                             end

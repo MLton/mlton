@@ -83,8 +83,9 @@ signature CORE_ML =
                         noMatch: noMatch,
                         region: Region.t,
                         rules: {exp: t,
-                                lay: (unit -> Layout.t) option,
-                                pat: Pat.t} vector,
+                                layPat: (unit -> Layout.t) option,
+                                pat: Pat.t,
+                                regionPat: Region.t} vector,
                         test: t}
              | Con of Con.t * Type.t vector
              | Const of unit -> Const.t
@@ -114,8 +115,9 @@ signature CORE_ML =
                         noMatch: noMatch,
                         region: Region.t,
                         rules: {exp: t,
-                                lay: (unit -> Layout.t) option,
-                                pat: Pat.t} vector,
+                                layPat: (unit -> Layout.t) option,
+                                pat: Pat.t,
+                                regionPat: Region.t} vector,
                         test: t} -> t
             val dest: t -> node * Type.t
             val iff: t * t * t -> t
@@ -172,10 +174,11 @@ signature CORE_ML =
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector,
                        vbs: {exp: Exp.t,
-                             lay: unit -> {dec: Layout.t, pat: Layout.t},
+                             layDec: unit -> Layout.t,
+                             layPat: unit -> Layout.t,
                              nest: string list,
                              pat: Pat.t,
-                             patRegion: Region.t} vector}
+                             regionPat: Region.t} vector}
 
             val layout: t -> Layout.t
          end
