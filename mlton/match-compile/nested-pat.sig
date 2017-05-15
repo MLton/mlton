@@ -33,7 +33,7 @@ signature NESTED_PAT =
                     isInt: bool}
         | Layered of Var.t * t
         | Or of t vector
-        | Tuple of t vector
+        | Record of t SortedRecord.t
         | Var of Var.t
         | Vector of t vector
         | Wild

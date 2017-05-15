@@ -19,7 +19,7 @@ structure Example =
       | ConstRange of {lo: Const.t option, hi: Const.t option, isChar: bool, isInt: bool}
       | Exn
       | Or of t vector
-      | Tuple of t vector
+      | Record of t SortedRecord.t
       | Vector of t vector * {dots: bool}
       | Wild
 
@@ -106,8 +106,13 @@ structure Example =
             | Or exs =>
                  (delimit o mayAlign o separateLeft)
                  (Vector.toListMap (exs, layoutT), "| ")
-            | Tuple exs =>
-                 tuple (Vector.toListMap (exs, layoutT))
+            | Record rexs =>
+                 SortedRecord.layout
+                 {extra = "",
+                  layoutElt = layoutT,
+                  layoutTuple = fn exs => tuple (Vector.toListMap (exs, layoutT)),
+                  record = rexs,
+                  separator = " = "}
             | Vector (exs, {dots}) =>
                  let
                     val exs = Vector.map (exs, layoutT)
@@ -135,10 +140,10 @@ structure Example =
         ConstRange {lo = lo, hi = hi,
                     isChar = isChar, isInt = isInt}
 
-     fun tuple exs =
-        if Vector.forall (exs, isWild)
+     fun record rexs =
+        if SortedRecord.forall (rexs, isWild)
            then Wild
-           else Tuple exs
+           else Record rexs
 
      fun vector exs = Vector (exs, {dots = false})
      fun vectorDots exs = Vector (exs, {dots = true})
@@ -188,8 +193,8 @@ structure Example =
                   (false, true) => LESS
                 | (true, false) => GREATER
                 | _ => Vector.compare (exs1, exs2, compare'))
-         | (Tuple exs1, Tuple exs2) =>
-              Vector.compare (exs1, exs2, compare')
+         | (Record rexs1, Record rexs2) =>
+              Vector.compare (SortedRecord.range rexs1, SortedRecord.range rexs2, compare')
          | _ => Error.bug "MatchCompile.Example.compare"
      and compare' (ex1, ex2) =
         case (ex1, ex2) of
@@ -248,7 +253,7 @@ structure Fact =
       datatype t =
          Con of {arg: Var.t option,
                  con: Con.t}
-       | Tuple of Var.t vector
+       | Record of Var.t SortedRecord.t
        | Vector of Var.t vector
 
       fun layout (f: t): Layout.t =
@@ -261,7 +266,13 @@ structure Fact =
                        case arg of
                           NONE => empty
                         | SOME x => seq [str " ", Var.layout x]]
-             | Tuple xs => tuple (Vector.toListMap (xs, Var.layout))
+             | Record r =>
+                  SortedRecord.layout
+                  {extra = "",
+                   layoutElt = Var.layout,
+                   layoutTuple = fn xs => tuple (Vector.toListMap (xs, Var.layout)),
+                   record = r,
+                   separator = " = "}
              | Vector xs => vector (Vector.map (xs, Var.layout))
          end
    end
@@ -321,13 +332,11 @@ structure Facts =
                    | Const _ => env
                    | Layered (y, p) => loop (p, x, Env.extend (env, y, x))
                    | Or _ => Error.bug "MatchCompile.factbind: or pattern shouldn't be here"
-                   | Tuple ps =>
-                        if 0 = Vector.length ps
-                           then env
-                        else (case fact x of
-                                 Fact.Tuple xs =>
-                                    Vector.fold2 (ps, xs, env, loop)
-                               | _ => Error.bug "MatchCompile.Facts.bind: Tuple:wrong fact")
+                   | Record rp =>
+                        (case fact x of
+                            Fact.Record rx =>
+                               Vector.fold2 (SortedRecord.range rp, SortedRecord.range rx, env, loop)
+                          | _ => Error.bug "MatchCompile.Facts.bind: Record:wrong fact")
                    | Var y => Env.extend (env, y, x)
                    | Vector ps =>
                         (case fact x of
@@ -365,8 +374,8 @@ structure Facts =
                      (case f of
                          Fact.Con {arg, con} =>
                             Example.ConApp {con = con, arg = Option.map (arg, loop)}
-                       | Fact.Tuple xs =>
-                            Example.tuple (Vector.map (xs, loop))
+                       | Fact.Record rxs =>
+                            Example.record (SortedRecord.map (rxs, loop))
                        | Fact.Vector xs =>
                             Example.vector (Vector.map (xs, loop)))
             val res = loop x
@@ -391,7 +400,7 @@ structure Pat =
        | Con of {arg: (t * Type.t) option,
                  con: Con.t,
                  targs: Type.t vector}
-       | Tuple of t vector
+       | Record of t SortedRecord.t
        | Vector of t vector
        | Wild
 
@@ -406,7 +415,13 @@ structure Pat =
                        case arg of
                           NONE => empty
                         | SOME (p, _) => seq [str " ", layout p]]
-             | Tuple ps => tuple (Vector.toListMap (ps, layout))
+             | Record rps =>
+                  SortedRecord.layout
+                  {extra = "",
+                   layoutElt = layout,
+                   layoutTuple = fn ps => tuple (Vector.toListMap (ps, layout)),
+                   record = rps,
+                   separator = " = "}
              | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
          end
@@ -429,7 +444,7 @@ structure Pat =
                 | NestedPat.Const r => Const r
                 | NestedPat.Layered (_, p) => loop p
                 | NestedPat.Or _ => Error.bug "MatchCompile.fromNestedPat: or pattern shouldn't be here"
-                | NestedPat.Tuple ps => Tuple (Vector.map (ps, loop))
+                | NestedPat.Record rps => Record (SortedRecord.map (rps, loop))
                 | NestedPat.Var _ => Wild
                 | NestedPat.Vector ps => Vector (Vector.map (ps, loop))
                 | NestedPat.Wild => Wild
@@ -681,9 +696,9 @@ val traceSum =
                                ("index", Int.layout i),
                                ("test", Exp.layout test)],
                 Exp.layout)
-val traceTuple =
-   Trace.trace ("MatchCompile.tuple",
-                fn (vars, rules, facts, es, i: Int.t, test: Exp.t) =>
+val traceRecord =
+   Trace.trace ("MatchCompile.record",
+                fn (vars, rules, facts, es, i: Int.t, test: Exp.t, _: Field.t vector) =>
                 Layout.record [("vars", Vars.layout vars),
                                ("rules", Rules.layout rules),
                                ("facts", Facts.layout facts),
@@ -754,9 +769,9 @@ fun matchCompile {caseType: Type.t,
                         case Vector.sub (pats, i) of
                            Const _ => const (vars, rules, facts, es, i, test)
                          | Con {con, ...} =>
-                              sum (vars, rules, facts, es, i, test,
-                                   conTycon con)
-                         | Tuple _ => tuple (vars, rules, facts, es, i, test)
+                              sum (vars, rules, facts, es, i, test, conTycon con)
+                         | Record rps =>
+                              record (vars, rules, facts, es, i, test, SortedRecord.domain rps)
                          | Vector _ => vector (vars, rules, facts, es, i, test)
                          | Wild => Error.bug "MatchCompile.match: Wild"
                      end
@@ -1002,9 +1017,9 @@ fun matchCompile {caseType: Type.t,
                                      var = var}
                end
          end) arg
-      and tuple arg =
-         traceTuple
-         (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es, i, test) =>
+      and record arg =
+         traceRecord
+         (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es, i, test, fs) =>
          let
             val (var, _) = Vector.sub (vars, i)
             fun body vars' =
@@ -1028,18 +1043,19 @@ fun matchCompile {caseType: Type.t,
                               if i <> i'
                                  then Vector.new1 p
                               else (case p of
-                                       Pat.Tuple ps => ps
+                                       Pat.Record rps => SortedRecord.range rps
                                      | Pat.Wild =>
                                           Vector.tabulate (n, fn _ => Pat.Wild)
-                                     | _ => Error.bug "MatchCompile.tuple: detuple")))
+                                     | _ => Error.bug "MatchCompile.record: derecord")))
                       in
                          Rule.T {pats = pats, rest = rest}
                       end)
+                  val facts =
+                     Facts.add
+                     (facts, var,
+                      Fact.Record (SortedRecord.zip (fs, Vector.map (vars', #1))))
                in
-                  match (vars, rules,
-                         Facts.add (facts, var,
-                                    Fact.Tuple (Vector.map (vars', #1))),
-                         es)
+                  match (vars, rules, facts, es)
                end
          in
             Exp.detuple {body = body, tuple = test}

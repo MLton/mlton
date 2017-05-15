@@ -23,6 +23,7 @@ in
    structure Prim = Prim
    structure RealSize = RealSize
    structure Record = Record
+   structure SortedRecord = SortedRecord
    structure SourceInfo = SourceInfo
    structure Ctype = Type
    structure WordSize = WordSize
@@ -285,8 +286,8 @@ fun casee {caseType: Xtype.t,
                case NestedPat.node p of
                   Wild => (use (); exhaustive (wild (e ())))
                 | Var x => (use (); exhaustive (lett (x, e ())))
-                | Tuple ps =>
-                     if Vector.forall (ps, NestedPat.isVar)
+                | Record rps =>
+                     if SortedRecord.forall (rps, NestedPat.isVar)
                         then
                            (* It's a flat tuple pattern.
                             * Generate the selects.
@@ -298,7 +299,7 @@ fun casee {caseType: Xtype.t,
                               val tys = Xtype.deTuple testType
                               val (_, decs) =
                                  Vector.fold2
-                                 (ps, tys, (0, []),
+                                 (SortedRecord.range rps, tys, (0, []),
                                   fn (p, ty, (i, decs)) =>
                                   case NestedPat.node p of
                                      Var x =>
@@ -710,12 +711,14 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                         targs = targs})
                      end
                 | Record r =>
-                     NestedPat.Tuple
-                     (Vector.map
-                      (Ctype.deRecord t, fn (f, t: Ctype.t) =>
-                       case Record.peek (r, f) of
-                          NONE => NestedPat.make (NestedPat.Wild, loopTy t)
-                        | SOME p => loopPat p))
+                     NestedPat.Record
+                     (SortedRecord.fromVector
+                      (Vector.map
+                       (Ctype.deRecord t, fn (f, t: Ctype.t) =>
+                        (f,
+                         case Record.peek (r, f) of
+                            NONE => NestedPat.make (NestedPat.Wild, loopTy t)
+                          | SOME p => loopPat p))))
                 | Or ps => NestedPat.Or (Vector.map (ps, loopPat))
                 | Var x => NestedPat.Var x
                 | Vector ps => NestedPat.Vector (Vector.map (ps, loopPat))

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -24,7 +25,9 @@ signature RECORD =
       val change: 'a t * ('a vector -> 'b vector * 'c) -> 'b t * 'c
       (* detuple r returns the components, if r is a tuple *)
       val detupleOpt: 'a t -> 'a vector option
+      val domain: 'a t -> Field.t vector
       val exists: 'a t * ('a -> bool) -> bool
+      val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val forall: 'a t * ('a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
       val fromVector: (Field.t * 'a) vector -> 'a t
@@ -40,5 +43,6 @@ signature RECORD =
       val toVector: 'a t -> (Field.t * 'a) vector
       (* tuple [a, b, c] creates {1 = a, 2 = b, 3 = c} *)
       val tuple: 'a vector -> 'a t
+      val unzip: 'a t -> Field.t vector * 'a vector
       val zip: Field.t vector * 'a vector -> 'a t
    end
