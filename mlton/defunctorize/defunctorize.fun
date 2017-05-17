@@ -287,9 +287,9 @@ fun casee {caseType: Xtype.t,
                   Wild => (use (); exhaustive (wild (e ())))
                 | Var x => (use (); exhaustive (lett (x, e ())))
                 | Record rps =>
-                     if SortedRecord.forall (rps, NestedPat.isVar)
+                     if SortedRecord.forall (rps, NestedPat.isVarOrWild)
                         then
-                           (* It's a flat tuple pattern.
+                           (* It's a flat record pattern.
                             * Generate the selects.
                             *)
                            let
@@ -311,7 +311,8 @@ fun casee {caseType: Xtype.t,
                                                  {tuple = tuple,
                                                   offset = i})}
                                          :: decs)
-                                   | _ => Error.bug "Defunctorize.casee: infer flat tuple")
+                                   | Wild => (i + 1, decs)
+                                   | _ => Error.bug "Defunctorize.casee: flat record")
                            in
                               exhaustive (Xexp.let1
                                           {var = t, exp = test,

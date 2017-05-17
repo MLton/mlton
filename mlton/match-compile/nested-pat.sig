@@ -41,7 +41,7 @@ signature NESTED_PAT =
       val flatten: t -> t vector
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool
-      val isVar: t -> bool
+      val isVarOrWild: t -> bool
       val layout: t -> Layout.t
       val make: node * Type.t -> t
       val node: t -> node

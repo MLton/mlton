@@ -133,9 +133,10 @@ fun isRefutable p =
     | Vector _ => true
     | Wild => false
 
-fun isVar p =
+fun isVarOrWild p =
    case node p of
       Var _ => true
+    | Wild => true
     | _ => false
 
 fun removeOthersReplace (p, {new, old}) =
