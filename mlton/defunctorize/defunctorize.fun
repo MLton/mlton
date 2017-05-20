@@ -282,46 +282,55 @@ fun casee {caseType: Xtype.t,
                val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
                fun use () = (numPats := 1; numUses := 1)
                fun exhaustive exp = (exp, NONE)
+               fun loop p =
+                  case NestedPat.node p of
+                     Wild => (use (); exhaustive (wild (e ())))
+                   | Var x => (use (); exhaustive (lett (x, e ())))
+                   | Record rps =>
+                        let
+                           val ps = SortedRecord.range rps
+                           fun doitRecord () =
+                              (* It's a flat record pattern.
+                               * Generate the selects.
+                               *)
+                              let
+                                 val _ = use ()
+                                 val t = Var.newNoname ()
+                                 val tuple = XvarExp.mono t
+                                 val tys = Xtype.deTuple testType
+                                 val (_, decs) =
+                                    Vector.fold2
+                                    (ps, tys, (0, []),
+                                     fn (p, ty, (i, decs)) =>
+                                     case NestedPat.node p of
+                                        Var x =>
+                                           (i + 1,
+                                            Xdec.MonoVal
+                                            {var = x,
+                                             ty = ty,
+                                             exp = (XprimExp.Select
+                                                    {tuple = tuple,
+                                                     offset = i})}
+                                            :: decs)
+                                      | Wild => (i + 1, decs)
+                                      | _ => Error.bug "Defunctorize.casee: flat record")
+                              in
+                                 exhaustive (Xexp.let1
+                                             {var = t, exp = test,
+                                              body = Xexp.lett
+                                              {decs = decs,
+                                               body = e ()}})
+                              end
+                        in
+                           if Vector.forall (ps, NestedPat.isVarOrWild)
+                              then if Vector.length ps = 1
+                                      then loop (Vector.sub (ps, 0))
+                                      else doitRecord ()
+                           else matchCompile ()
+                        end
+                   | _ => matchCompile ()
             in
-               case NestedPat.node p of
-                  Wild => (use (); exhaustive (wild (e ())))
-                | Var x => (use (); exhaustive (lett (x, e ())))
-                | Record rps =>
-                     if SortedRecord.forall (rps, NestedPat.isVarOrWild)
-                        then
-                           (* It's a flat record pattern.
-                            * Generate the selects.
-                            *)
-                           let
-                              val _ = use ()
-                              val t = Var.newNoname ()
-                              val tuple = XvarExp.mono t
-                              val tys = Xtype.deTuple testType
-                              val (_, decs) =
-                                 Vector.fold2
-                                 (SortedRecord.range rps, tys, (0, []),
-                                  fn (p, ty, (i, decs)) =>
-                                  case NestedPat.node p of
-                                     Var x =>
-                                        (i + 1,
-                                         Xdec.MonoVal
-                                         {var = x,
-                                          ty = ty,
-                                          exp = (XprimExp.Select
-                                                 {tuple = tuple,
-                                                  offset = i})}
-                                         :: decs)
-                                   | Wild => (i + 1, decs)
-                                   | _ => Error.bug "Defunctorize.casee: flat record")
-                           in
-                              exhaustive (Xexp.let1
-                                          {var = t, exp = test,
-                                           body = Xexp.lett
-                                                  {decs = decs,
-                                                   body = e ()}})
-                           end
-                     else matchCompile ()
-                | _ => matchCompile ()
+               loop p
             end
       (* diagnoseRedundant *)
       val _ =

@@ -35,10 +35,8 @@ in
 end
 
 fun tuple ps =
-   if 1 = Vector.length ps
-      then Vector.sub (ps, 0)
-   else T {pat = Record (SortedRecord.tuple ps),
-           ty = Type.tuple (Vector.map (ps, ty))}
+   T {pat = Record (SortedRecord.tuple ps),
+      ty = Type.tuple (Vector.map (ps, ty))}
 
 fun layout (p, isDelimited) =
    let
@@ -70,16 +68,7 @@ and layoutT p = layout (p, true)
 val layout = layoutT
 
 fun make (p, t) =
-   case p of
-      Record rps =>
-         let
-            val ps = SortedRecord.range rps
-         in
-            if 1 = Vector.length ps
-               then Vector.sub (ps, 0)
-               else T {pat = p, ty = t}
-         end
-      | _ => T {pat = p, ty = t}
+   T {pat = p, ty = t}
 
 fun flatten p =
    let

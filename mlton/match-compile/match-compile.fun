@@ -1021,7 +1021,7 @@ fun matchCompile {caseType: Type.t,
          traceRecord
          (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es, i, test, fs) =>
          let
-            val (var, _) = Vector.sub (vars, i)
+            val (var, varTy) = Vector.sub (vars, i)
             fun body vars' =
                let
                   val n = Vector.length vars'
@@ -1058,7 +1058,17 @@ fun matchCompile {caseType: Type.t,
                   match (vars, rules, facts, es)
                end
          in
-            Exp.detuple {body = body, tuple = test}
+            if Vector.length fs = 1
+               then let val var' = Var.newNoname ()
+                    in
+                       (* Although 'test' is likely a variable,
+                        * must bind to a fresh variable to maintain
+                        * a unique Fact.t per variable in Facts.t.
+                        *)
+                       Exp.lett {var = var', exp = test,
+                                 body = body (Vector.new1 (var', varTy))}
+                    end
+               else Exp.detuple {body = body, tuple = test}
          end) arg
       and vector arg =
          traceVector
