@@ -1,12 +1,11 @@
 diff --git a/Controls/controls-lib.mlb b/Controls/controls-lib.mlb
 new file mode 100644
-index 0000000..cdf0eef
+index 0000000..3490089
 --- /dev/null
 +++ b/Controls/controls-lib.mlb
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,176 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -196,13 +195,13 @@ index f1de5c0..9cbaaee 100644
  		      fun find (c, []) = NONE
 diff --git a/HTML/html-lib.mlb b/HTML/html-lib.mlb
 new file mode 100644
-index 0000000..6299c8e
+index 0000000..bfb1e91
 --- /dev/null
 +++ b/HTML/html-lib.mlb
 @@ -0,0 +1,301 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowVectorExpsAndPats true"
@@ -573,13 +572,13 @@ index 8248a55..dba213b 100644
  
 diff --git a/HTML4/html4-lib.mlb b/HTML4/html4-lib.mlb
 new file mode 100644
-index 0000000..b1d349a
+index 0000000..87bc424
 --- /dev/null
 +++ b/HTML4/html4-lib.mlb
 @@ -0,0 +1,278 @@
 +
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -986,13 +985,12 @@ index 0000000..ca97b62
 +end (* structure PrettyPrint *)
 diff --git a/HashCons/hash-cons-lib.mlb b/HashCons/hash-cons-lib.mlb
 new file mode 100644
-index 0000000..2364e93
+index 0000000..75bf4fd
 --- /dev/null
 +++ b/HashCons/hash-cons-lib.mlb
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,143 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -1136,13 +1134,12 @@ index 0000000..2364e93
 +end
 diff --git a/INet/inet-lib.mlb b/INet/inet-lib.mlb
 new file mode 100644
-index 0000000..ad7f940
+index 0000000..3ce9a83
 --- /dev/null
 +++ b/INet/inet-lib.mlb
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,143 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -1285,7 +1282,7 @@ index 0000000..ad7f940
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index 477d0bf..d2650b6 100644
+index 477d0bf..4ecd767 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
 @@ -1,47 +1,176 @@
@@ -1325,7 +1322,7 @@ index 477d0bf..d2650b6 100644
 -  end
  
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "nonexhaustiveBind ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
  in
@@ -1551,13 +1548,12 @@ index 87e5f17..d488353 100644
  		      fun find (c, []) = NONE
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
-index 0000000..5961278
+index 0000000..f0b6f7d
 --- /dev/null
 +++ b/PP/pp-lib.mlb
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,211 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -1786,13 +1782,12 @@ index 0000000..96eeebc
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 diff --git a/Reactive/reactive-lib.mlb b/Reactive/reactive-lib.mlb
 new file mode 100644
-index 0000000..3f13994
+index 0000000..165b30f
 --- /dev/null
 +++ b/Reactive/reactive-lib.mlb
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,70 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -1863,13 +1858,13 @@ index 0000000..3f13994
 +end
 diff --git a/RegExp/regexp-lib.mlb b/RegExp/regexp-lib.mlb
 new file mode 100644
-index 0000000..0dae724
+index 0000000..76cd198
 --- /dev/null
 +++ b/RegExp/regexp-lib.mlb
 @@ -0,0 +1,235 @@
 +
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -2103,7 +2098,7 @@ index 0000000..0dae724
 +
 +end
 diff --git a/SExp/sexp-lib.mlb b/SExp/sexp-lib.mlb
-index d7287e5..b56607e 100644
+index d7287e5..083a102 100644
 --- a/SExp/sexp-lib.mlb
 +++ b/SExp/sexp-lib.mlb
 @@ -1,51 +1,171 @@
@@ -2145,7 +2140,7 @@ index d7287e5..b56607e 100644
 -  end
  
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "nonexhaustiveBind ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
  in
@@ -2359,13 +2354,12 @@ index 9a5cb8e..7c0b9a6 100644
  		      fun find (c, []) = NONE
 diff --git a/Unix/unix-lib.mlb b/Unix/unix-lib.mlb
 new file mode 100644
-index 0000000..ebceb6d
+index 0000000..2525eeb
 --- /dev/null
 +++ b/Unix/unix-lib.mlb
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,44 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -2601,13 +2595,13 @@ index 3a16a82..ebfbb5a 100644
      structure Key = K
 diff --git a/Util/smlnj-lib.mlb b/Util/smlnj-lib.mlb
 new file mode 100644
-index 0000000..8d7696b
+index 0000000..73af8a9
 --- /dev/null
 +++ b/Util/smlnj-lib.mlb
 @@ -0,0 +1,1172 @@
 +
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in
@@ -3864,13 +3858,12 @@ index a162cf4..6652b22 100644
  		      fun find (c, []) = NONE
 diff --git a/XML/xml-lib.mlb b/XML/xml-lib.mlb
 new file mode 100644
-index 0000000..c1c4c44
+index 0000000..e7777c7
 --- /dev/null
 +++ b/XML/xml-lib.mlb
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,165 @@
 +
 +ann
-+  "nonexhaustiveMatch ignore" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +in

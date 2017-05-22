@@ -3179,13 +3179,12 @@ index 016ee18..cac4fae 100644
  	annotations.sml
 diff --git a/mlb/ALPHA.mlb b/mlb/ALPHA.mlb
 new file mode 100644
-index 0000000..3356ca4
+index 0000000..54f471b
 --- /dev/null
 +++ b/mlb/ALPHA.mlb
-@@ -0,0 +1,475 @@
+@@ -0,0 +1,474 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -3660,13 +3659,12 @@ index 0000000..3356ca4
 +end
 diff --git a/mlb/AMD64-Peephole.mlb b/mlb/AMD64-Peephole.mlb
 new file mode 100644
-index 0000000..cc97db6
+index 0000000..b04fd55
 --- /dev/null
 +++ b/mlb/AMD64-Peephole.mlb
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,60 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -3727,13 +3725,12 @@ index 0000000..cc97db6
 +end
 diff --git a/mlb/AMD64.mlb b/mlb/AMD64.mlb
 new file mode 100644
-index 0000000..2cb8313
+index 0000000..6445296
 --- /dev/null
 +++ b/mlb/AMD64.mlb
-@@ -0,0 +1,748 @@
+@@ -0,0 +1,747 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -4481,13 +4478,12 @@ index 0000000..2cb8313
 +end
 diff --git a/mlb/CCall-sparc.mlb b/mlb/CCall-sparc.mlb
 new file mode 100644
-index 0000000..487915d
+index 0000000..0724fe9
 --- /dev/null
 +++ b/mlb/CCall-sparc.mlb
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,118 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -4606,13 +4602,12 @@ index 0000000..487915d
 +end
 diff --git a/mlb/CCall-x86-64.mlb b/mlb/CCall-x86-64.mlb
 new file mode 100644
-index 0000000..600ae82
+index 0000000..a349284
 --- /dev/null
 +++ b/mlb/CCall-x86-64.mlb
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,125 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -4738,13 +4733,12 @@ index 0000000..600ae82
 +end
 diff --git a/mlb/CCall-x86.mlb b/mlb/CCall-x86.mlb
 new file mode 100644
-index 0000000..1db012a
+index 0000000..76af940
 --- /dev/null
 +++ b/mlb/CCall-x86.mlb
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,155 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -4900,13 +4894,12 @@ index 0000000..1db012a
 +end
 diff --git a/mlb/CCall.mlb b/mlb/CCall.mlb
 new file mode 100644
-index 0000000..0e8922a
+index 0000000..813b14c
 --- /dev/null
 +++ b/mlb/CCall.mlb
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,96 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -5003,13 +4996,12 @@ index 0000000..0e8922a
 +end
 diff --git a/mlb/Control.mlb b/mlb/Control.mlb
 new file mode 100644
-index 0000000..fddfd5e
+index 0000000..437b3c7
 --- /dev/null
 +++ b/mlb/Control.mlb
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,104 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -5114,13 +5106,12 @@ index 0000000..fddfd5e
 +end
 diff --git a/mlb/Graphs.mlb b/mlb/Graphs.mlb
 new file mode 100644
-index 0000000..3bf624e
+index 0000000..1f78236
 --- /dev/null
 +++ b/mlb/Graphs.mlb
-@@ -0,0 +1,715 @@
+@@ -0,0 +1,714 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -5835,13 +5826,12 @@ index 0000000..3bf624e
 +end
 diff --git a/mlb/HPPA.mlb b/mlb/HPPA.mlb
 new file mode 100644
-index 0000000..eeecf47
+index 0000000..430eb64
 --- /dev/null
 +++ b/mlb/HPPA.mlb
-@@ -0,0 +1,493 @@
+@@ -0,0 +1,492 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -6334,13 +6324,12 @@ index 0000000..eeecf47
 +end
 diff --git a/mlb/IA32-Peephole.mlb b/mlb/IA32-Peephole.mlb
 new file mode 100644
-index 0000000..daa6681
+index 0000000..00d1d03
 --- /dev/null
 +++ b/mlb/IA32-Peephole.mlb
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,60 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -6401,13 +6390,12 @@ index 0000000..daa6681
 +end
 diff --git a/mlb/IA32.mlb b/mlb/IA32.mlb
 new file mode 100644
-index 0000000..3a4ba9f
+index 0000000..e3571af
 --- /dev/null
 +++ b/mlb/IA32.mlb
-@@ -0,0 +1,801 @@
+@@ -0,0 +1,800 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -7208,13 +7196,12 @@ index 0000000..3a4ba9f
 +end
 diff --git a/mlb/Lib.mlb b/mlb/Lib.mlb
 new file mode 100644
-index 0000000..0b978d0
+index 0000000..d4dc380
 --- /dev/null
 +++ b/mlb/Lib.mlb
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,270 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -7485,13 +7472,12 @@ index 0000000..0b978d0
 +end
 diff --git a/mlb/MLRISC.mlb b/mlb/MLRISC.mlb
 new file mode 100644
-index 0000000..b50a654
+index 0000000..743fd6d
 --- /dev/null
 +++ b/mlb/MLRISC.mlb
-@@ -0,0 +1,1747 @@
+@@ -0,0 +1,1746 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -9238,13 +9224,12 @@ index 0000000..b50a654
 +end
 diff --git a/mlb/MLTREE.mlb b/mlb/MLTREE.mlb
 new file mode 100644
-index 0000000..8f8ca72
+index 0000000..a509f4e
 --- /dev/null
 +++ b/mlb/MLTREE.mlb
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,209 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -9454,13 +9439,12 @@ index 0000000..8f8ca72
 +end
 diff --git a/mlb/PPC.mlb b/mlb/PPC.mlb
 new file mode 100644
-index 0000000..1fc56e9
+index 0000000..cb999d8
 --- /dev/null
 +++ b/mlb/PPC.mlb
-@@ -0,0 +1,574 @@
+@@ -0,0 +1,573 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -10034,13 +10018,12 @@ index 0000000..1fc56e9
 +end
 diff --git a/mlb/Peephole.mlb b/mlb/Peephole.mlb
 new file mode 100644
-index 0000000..6539f08
+index 0000000..aab668a
 --- /dev/null
 +++ b/mlb/Peephole.mlb
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,61 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -10102,13 +10085,12 @@ index 0000000..6539f08
 +end
 diff --git a/mlb/RA.mlb b/mlb/RA.mlb
 new file mode 100644
-index 0000000..24c17f2
+index 0000000..7356459
 --- /dev/null
 +++ b/mlb/RA.mlb
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,152 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -10261,13 +10243,12 @@ index 0000000..24c17f2
 +end
 diff --git a/mlb/SPARC.mlb b/mlb/SPARC.mlb
 new file mode 100644
-index 0000000..c50472c
+index 0000000..b65589e
 --- /dev/null
 +++ b/mlb/SPARC.mlb
-@@ -0,0 +1,539 @@
+@@ -0,0 +1,538 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -10806,13 +10787,12 @@ index 0000000..c50472c
 +end
 diff --git a/mlb/StagedAlloc.mlb b/mlb/StagedAlloc.mlb
 new file mode 100644
-index 0000000..439b0f5
+index 0000000..26d7e59
 --- /dev/null
 +++ b/mlb/StagedAlloc.mlb
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,91 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
@@ -10904,13 +10884,12 @@ index 0000000..439b0f5
 +end
 diff --git a/mlb/Visual.mlb b/mlb/Visual.mlb
 new file mode 100644
-index 0000000..b907d12
+index 0000000..f499f78
 --- /dev/null
 +++ b/mlb/Visual.mlb
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,252 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"

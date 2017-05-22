@@ -92,13 +92,12 @@ index b03260b..a262146 100644
 +(* end (* local *) *)
 diff --git a/src/ckit-lib.mlb b/src/ckit-lib.mlb
 new file mode 100644
-index 0000000..d019575
+index 0000000..2945733
 --- /dev/null
 +++ b/src/ckit-lib.mlb
-@@ -0,0 +1,889 @@
+@@ -0,0 +1,888 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
 +  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
