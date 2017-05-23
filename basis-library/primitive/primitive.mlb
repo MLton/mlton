@@ -5,13 +5,13 @@
  * See the file MLton-LICENSE for details.
  *)
 
-ann 
+ann
    "allowConstant true"
    "allowFFI true"
    "allowPrim true"
    "deadCode true"
-   "nonexhaustiveMatch warn"
-   "redundantMatch warn"
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
    "warnUnused false"
 in
