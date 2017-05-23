@@ -323,11 +323,11 @@ fun ('down, 'up)
                      (doit (Exception ebs), u)
                   end
              | Fix _ => (d, initUp)
-             | Fun (tyvars, decs) =>
+             | Fun {tyvars, fbs} =>
                   let
                      val (down, finish) = bindFunVal (down, tyvars)
-                     val (decs, u) =
-                        loops (decs, fn clauses =>
+                     val (fbs, u) =
+                        loops (fbs, fn clauses =>
                                let
                                   val (clauses, u) =
                                      loops
@@ -350,7 +350,7 @@ fun ('down, 'up)
                                  end)
                      val (tyvars, u) = finish u
                   in
-                     (doit (Fun (tyvars, decs)), u)
+                     (doit (Fun {tyvars = tyvars, fbs = fbs}), u)
                   end
              | Local (d, d') =>
                   do2 (loopDec (d, down), loopDec (d', down), Local)

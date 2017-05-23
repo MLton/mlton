@@ -102,9 +102,15 @@ signature CONTROL_FLAGS =
             val deadCode: (bool,bool) t
             val forceUsed: (unit,bool) t
             val ffiStr: (string,string option) t
-            val nonexhaustiveExnMatch: (DiagDI.t,DiagDI.t) t
+            val nonexhaustiveBind: (DiagEIW.t,DiagEIW.t) t
+            val nonexhaustiveExnBind: (DiagDI.t,DiagDI.t) t
+            val redundantBind: (DiagEIW.t,DiagEIW.t) t
             val nonexhaustiveMatch: (DiagEIW.t,DiagEIW.t) t
+            val nonexhaustiveExnMatch: (DiagDI.t,DiagDI.t) t
             val redundantMatch: (DiagEIW.t,DiagEIW.t) t
+            val nonexhaustiveRaise: (DiagEIW.t,DiagEIW.t) t
+            val nonexhaustiveExnRaise: (DiagDI.t,DiagDI.t) t
+            val redundantRaise: (DiagEIW.t,DiagEIW.t) t
             val resolveScope: (ResolveScope.t,ResolveScope.t) t
             val sequenceNonUnit: (DiagEIW.t,DiagEIW.t) t
             val valrecConstr: (DiagEIW.t,DiagEIW.t) t

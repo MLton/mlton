@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -47,6 +48,9 @@ fun fromVector v =
       else Record v
    end
 
+fun unzip r = Vector.unzip (toVector r)
+fun zip z = fromVector (Vector.zip z)
+
 val peek: 'a t * Field.t -> 'a option =
    fn (r, f) =>
    case r of
@@ -64,6 +68,11 @@ val peek: 'a t * Field.t -> 'a option =
                      else NONE
                 | Field.Symbol _ => NONE)
 
+fun domain r =
+   case r of
+      Tuple v => Vector.mapi (v, fn (i, _) => Field.Int i)
+    | Record r => Vector.map (r, #1)
+
 fun range r =
    case r of
       Tuple t => t
@@ -75,6 +84,11 @@ fun exists (r, p) =
     | Record r => Vector.exists (r, fn (_, x) => p x)
 
 fun forall (r, p) = not (exists (r, not o p))
+
+fun fold (r: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
+   case r of
+      Tuple xs => Vector.fold (xs, b, f)
+    | Record r => Vector.fold (r, b, fn ((_, x), b) => f (x, b))
 
 fun map (r: 'a t, f: 'a -> 'b): 'b t =
    case r of
@@ -95,8 +109,6 @@ fun change (r: 'a t, f: 'a vector -> 'b vector * 'c): 'b t * 'c =
                       val (ys, c) = f xs
                   in (Record (Vector.zip (fs, ys)), c)
                   end
-
-fun zip z = fromVector (Vector.zip z)
 
 fun layout {record, layoutTuple, separator, extra, layoutElt} =
    case (record, extra) of

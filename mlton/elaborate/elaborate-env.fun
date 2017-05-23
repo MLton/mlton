@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2015 Matthew Fluet.
+(* Copyright (C) 2009-2010,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,9 +15,6 @@ open S
 local
    open Control.Elaborate
 in
-   val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
-   val nonexhaustiveMatch = fn () => current nonexhaustiveMatch
-   val redundantMatch = fn () => current redundantMatch
    val warnUnused = fn () => current warnUnused
 end
 
@@ -2973,17 +2970,18 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                val _ =
                                   List.push
                                   (decs,
-                                   Dec.Val {nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
-                                            nonexhaustiveMatch = nonexhaustiveMatch (),
-                                            redundantMatch = redundantMatch (),
+                                   Dec.Val {matchDiags = {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
+                                                          nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
+                                                          redundant = Control.Elaborate.DiagEIW.Ignore},
                                             rvbs = Vector.new0 (),
                                             tyvars = fn () => sigArgs,
                                             vbs = (Vector.new1
                                                    {exp = e,
-                                                    lay = fn _ => {dec = Layout.empty, pat = Layout.empty},
+                                                    layDec = fn _ => Layout.empty,
+                                                    layPat = fn _ => Layout.empty,
                                                     nest = [],
                                                     pat = Pat.var (x, strType),
-                                                    patRegion = region})})
+                                                    regionPat = Region.bogus})})
                             in
                                Vid.Var x
                             end

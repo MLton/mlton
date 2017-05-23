@@ -6,18 +6,22 @@ Here are some example uses of <:MLBasisAnnotations:>.
 == Eliminate spurious warnings in automatically generated code ==
 
 Programs that automatically generate source code can often produce
-nonexhaustive matches, relying on invariants of the generated code to
-ensure that the matches never fail.  A programmer may wish to elide
-the nonexhaustive match warnings from this code, in order that
+nonexhaustive patterns, relying on invariants of the generated code to
+ensure that the pattern matchings never fail.  A programmer may wish
+to elide the nonexhaustive warnings from this code, in order that
 legitimate warnings are not missed in a flurry of false positives.  To
 do so, the programmer simply annotates the generated code with the
-`nonexhaustiveMatch ignore` annotation:
+`nonexhaustiveBind ignore` and `nonexhaustiveMatch ignore`
+annotations:
 
 ----
 local
   $(GEN_ROOT)/gen-lib.mlb
 
-  ann "nonexhaustiveMatch ignore" in
+  ann
+    "nonexhaustiveBind ignore"
+    "nonexhaustiveMatch ignore"
+  in
     foo.gen.sml
   end
 in
@@ -42,7 +46,8 @@ to deliver a library as follows:
 
 ----
 ann
-  "nonexhaustiveMatch warn" "redundantMatch warn"
+  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+  "redundantBind warn" "redundantMatch warn"
   "sequenceNonUnit warn"
   "warnUnused true" "forceUsed"
 in
@@ -61,11 +66,12 @@ in
 end
 ----
 
-The annotations `nonexhaustiveMatch warn`, `redundantMatch warn`, and
-`sequenceNonUnit warn` have the obvious effect on elaboration.  The
-annotations `warnUnused true` and `forceUsed` work in conjunction --
-warning on any identifiers that do not contribute to the exported
-modules, and preventing warnings on exported modules that are not used
-in the remainder of the program.  Many of the
+The annotations `nonexhaustiveBind warn`, `redundantBind warn`,
+`nonexhaustiveMatch warn`, `redundantMatch warn`, and `sequenceNonUnit
+warn` have the obvious effect on elaboration.  The annotations
+`warnUnused true` and `forceUsed` work in conjunction -- warning on
+any identifiers that do not contribute to the exported modules, and
+preventing warnings on exported modules that are not used in the
+remainder of the program.  Many of the
 <:MLBasisAvailableLibraries:available libraries> are delivered with
 these annotations.
