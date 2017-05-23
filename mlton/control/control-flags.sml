@@ -498,12 +498,12 @@ structure Elaborate =
          val (nonexhaustiveExnMatch, ac) =
              makeDiagDI ({name = "nonexhaustiveExnMatch",
                           default = DiagDI.Default, expert = false}, ac)
-         val (nonexhaustiveRaise, ac) =
-             makeDiagEIW ({name = "nonexhaustiveRaise",
-                           default = DiagEIW.Ignore, expert = false}, ac)
          val (redundantMatch, ac) =
              makeDiagEIW ({name = "redundantMatch",
                            default = DiagEIW.Warn, expert = false}, ac)
+         val (nonexhaustiveRaise, ac) =
+             makeDiagEIW ({name = "nonexhaustiveRaise",
+                           default = DiagEIW.Ignore, expert = false}, ac)
          val (nonexhaustiveExnRaise, ac) =
              makeDiagDI ({name = "nonexhaustiveExnRaise",
                           default = DiagDI.Default, expert = false}, ac)
