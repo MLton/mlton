@@ -124,12 +124,25 @@ in `fn` expressions, `case` expressions, and `fun` declarations that
 areise solely from unmatched exceptions.  If `default`, follow the
 behavior of `nonexhaustiveMatch`.
 
+* +nonexhaustiveExnRaise {ignore|default}+
++
+If `ignore`, suppress errors and warnings about nonexhaustive matches
+in `handle` expressions that areise solely from unmatched exceptions.
+If `default`, follow the behavior of `nonexhaustiveRaise`.
+
 * +nonexhaustiveMatch {warn|error|ignore}+
 +
 If `error` or `warn`, report nonexhaustive patterns in `fn`
 expressions, `case` expressions, and `fun` declarations (i.e.,
 pattern-match failures that raise the `Match` exception).  An error
 will abort a compile, while a warning will not.
+
+* +nonexhaustiveRaise {ignore|warn|error}+
++
+If `error` or `warn`, report nonexhaustive patterns in `handle`
+expressions (i.e., pattern-match failures that implicitly (re)raise
+the unmatched exception).  An error will abort a compile, while a
+warning will not.
 
 * +redundantBind {warn|error|ignore}+
 +
@@ -141,6 +154,11 @@ An error will abort a compile, while a warning will not.
 If `error` or `warn`, report redundant patterns in `fn` expressions,
 `case` expressions, and `fun` declarations.  An error will abort a
 compile, while a warning will not.
+
+* +redundantRaise {warn|error|ignore}+
++
+If `error` or `warn`, report redundant patterns in `handle`
+expressions.  An error will abort a compile, while a warning will not.
 
 * +resolveScope {strdec|dec|topdec|program}+
 +
