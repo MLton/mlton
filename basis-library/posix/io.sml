@@ -312,8 +312,8 @@ local
                   (ensureOpen ();
                    if !blocking then blockingOff () else ();
                    (SOME (f x)
-                    handle (e as PosixError.SysErr (_, SOME cause)) =>
-                       if cause = PosixError.again then NONE else raise e))
+                    handle (e as PosixError.SysErr (_, cause)) =>
+                       if cause = SOME PosixError.again then NONE else raise e))
                val close = 
                   fn () => if !closed then () else (closed := true; close fd)
                val avail = 
@@ -369,8 +369,8 @@ local
                   (ensureOpen (); ensureBlock block; put (fd, arg))
                fun handleBlock writer arg = 
                   SOME(writer arg)
-                  handle (e as PosixError.SysErr (_, SOME cause)) =>
-                     if cause = PosixError.again then NONE else raise e
+                  handle (e as PosixError.SysErr (_, cause)) =>
+                     if cause = SOME PosixError.again then NONE else raise e
                val close = 
                   fn () => if !closed then () else (closed := true; close fd)
                val () = setMode fd
