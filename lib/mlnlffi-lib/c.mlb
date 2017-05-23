@@ -15,9 +15,10 @@
  * author: Matthias Blume (blume@research.bell-labs.com)
  *)
 ann
-   "forceUsed"
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
-   "warnUnused true"
+   "warnUnused true" "forceUsed"
 in
    local
       internals/c-int.mlb
