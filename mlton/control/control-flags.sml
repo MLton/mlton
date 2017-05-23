@@ -506,7 +506,7 @@ structure Elaborate =
                            default = DiagEIW.Ignore, expert = false}, ac)
          val (nonexhaustiveExnRaise, ac) =
              makeDiagDI ({name = "nonexhaustiveExnRaise",
-                          default = DiagDI.Default, expert = false}, ac)
+                          default = DiagDI.Ignore, expert = false}, ac)
          val (redundantRaise, ac) =
              makeDiagEIW ({name = "redundantRaise",
                            default = DiagEIW.Warn, expert = false}, ac)
