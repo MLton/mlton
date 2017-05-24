@@ -194,7 +194,9 @@ for f in *.sml; do
                                 \"allowFFI true\"
                                 \"allowOverload true\"
                                 \"allowExtendedTextConsts true\"
+                                \"nonexhaustiveBind ignore\"
                                 \"nonexhaustiveMatch ignore\"
+                                \"redundantBind ignore\"
                                 \"redundantMatch ignore\"
                         in $f.sml 
                         end" >"$mlb"
@@ -272,7 +274,9 @@ for f in *.sml; do
                 echo "testing $f"
                 echo "val _ = Main.doit 0" | cat "$f.sml" - > "$tmpf.sml"
                 $mlton -output "$tmpf" "${flags[@]}"            \
+                        -default-ann 'nonexhaustiveBind ignore'\
                         -default-ann 'nonexhaustiveMatch ignore'\
+                        -default-ann 'redundantBind ignore'    \
                         -default-ann 'redundantMatch ignore'    \
                         "$tmpf.sml"
                 if [ $? -ne 0 ]; then
