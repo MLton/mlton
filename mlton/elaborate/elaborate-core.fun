@@ -2202,42 +2202,26 @@ fun elaborateDec (d, {env = E, nest}) =
                                    val numArgs = Vector.length args
                                    val _ =
                                       Vector.foreach
-                                      (clauses, fn {args, layClause = layN, regionPat = regionN, ...} =>
-                                       if numArgs = Vector.length args
-                                          then  ()
-                                       else
-                                          let
-                                             val layN = fn () =>
-                                                seq [str "clause:   ", approximate (layN ())]
-                                          in
+                                      (clauses, fn {func = funcN, args = argsN, layClause = layN, regionPat = regionN, ...} =>
+                                       let
+                                          val layN = fn () =>
+                                             seq [str "clause:   ", approximate (layN ())]
+                                          fun err msg =
                                              Control.error
                                              (regionN,
-                                              seq [str "function defined with different numbers of arguments"],
+                                              seq [str msg],
                                               align [layN (), lay0 (), layFb ()])
-                                          end)
-                                   val diff =
-                                      Vector.foldr
-                                      (clauses, [], fn ({func = func', ...}, ac) =>
-                                       if Avar.equals (func, func')
-                                          then ac
-                                       else func' :: ac)
-                                   val _ =
-                                      case diff of
-                                         [] => ()
-                                       | _ =>
-                                            let
-                                               val diff =
-                                                  List.removeDuplicates
-                                                  (func :: diff, Avar.equals)
-                                            in
-                                               Control.error
-                                               (regionFb,
-                                                seq [str "function defined with multiple names: ",
-                                                     seq (Layout.separateRight
-                                                          (List.revMap (diff, Avar.layout),
-                                                           ", "))],
-                                                layFb ())
-                                            end
+                                          val _ =
+                                             if Avar.equals (func, funcN)
+                                                then ()
+                                                else err "function defined with different names"
+                                          val _ =
+                                             if numArgs = Vector.length argsN
+                                                then ()
+                                                else err "function defined with different numbers of arguments"
+                                       in
+                                          ()
+                                       end)
                                    val funcCon = Avid.toCon (Avid.fromVar func)
                                    val _ = Acon.ensureRedefine funcCon
                                    val _ =
