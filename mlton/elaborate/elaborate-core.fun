@@ -2197,30 +2197,33 @@ fun elaborateDec (d, {env = E, nest}) =
                                 then Error.bug "ElaborateCore.elabDec: Fun:no clauses"
                              else
                                 let
-                                   val {args, func, layClause = lay0, ...} =
+                                   val {args = args0, func as func0, layClause = layClause0, ...} =
                                       Vector.sub (clauses, 0)
-                                   val lay0 = fn () =>
-                                      seq [str "previous: ", approximate (lay0 ())]
-                                   val numArgs = Vector.length args
+                                   val layFunc0 = fn () => str (Avar.toString func0)
+                                   fun err (reg, msg, desc, layN, lay0) =
+                                      Control.error
+                                      (reg,
+                                       seq [str msg],
+                                       align [seq [str desc, approximate (layN ())],
+                                              seq [str "previous: ", approximate (lay0 ())],
+                                              layFb ()])
                                    val _ =
                                       Vector.foreach
-                                      (clauses, fn {func = funcN, args = argsN, layClause = layN, regionPat = regionN, ...} =>
+                                      (clauses, fn {func = funcN, args = argsN, layClause = layClauseN, regionPat = regionPatN, ...} =>
                                        let
-                                          val layN = fn () =>
-                                             seq [str "clause:   ", approximate (layN ())]
-                                          fun err msg =
-                                             Control.error
-                                             (regionN,
-                                              seq [str msg],
-                                              align [layN (), lay0 (), layFb ()])
+                                          val layFuncN = fn () => str (Avar.toString funcN)
                                           val _ =
                                              if Avar.equals (func, funcN)
                                                 then ()
-                                                else err "function defined with different names"
+                                                else err (Avar.region funcN,
+                                                          "function defined with different name",
+                                                          "name:     ", layFuncN, layFunc0)
                                           val _ =
-                                             if numArgs = Vector.length argsN
+                                             if Vector.length args0 = Vector.length argsN
                                                 then ()
-                                                else err "function defined with different numbers of arguments"
+                                                else err (regionPatN,
+                                                          "function defined with different number of arguments",
+                                                          "clause:   ", layClauseN, layClause0)
                                        in
                                           ()
                                        end)
