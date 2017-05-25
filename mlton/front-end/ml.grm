@@ -251,7 +251,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | apatnode of Pat.node
        | apats of Pat.t list
        | app_exp of Exp.t list
-       | app_exp1 of Exp.t list
        | arg_fct of Strexp.t
        | ieattributes of PrimKind.ImportExportAttribute.t list
        | barcpats of Pat.t list
@@ -1021,15 +1020,16 @@ expnode : exp HANDLE match      (Exp.Handle (exp, match))
         | IF exp THEN exp ELSE exp (Exp.If (exp1, exp2, exp3))
         | RAISE exp             (Exp.Raise exp)
 
-app_exp : aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
-                             :: app_exp1)
-        | longvid app_exp1  (Exp.makeRegion' (Exp.Var {name = longvid,
+app_exp : aexp             ([Exp.makeRegion' (aexp, aexpleft, aexpright)])
+        | aexp app_exp     (Exp.makeRegion' (aexp, aexpleft, aexpright)
+                            :: app_exp)
+        | longvid          ([Exp.makeRegion' (Exp.Var {name = longvid,
                                                        fixop = Fixop.None},
+                                              longvidleft, longvidright)])
+        | longvid app_exp  (Exp.makeRegion' (Exp.Var {name = longvid,
+                                                      fixop = Fixop.None},
                                              longvidleft, longvidright)
-                             :: app_exp1)
-
-app_exp1 :         ([])
-         | app_exp (app_exp)
+                            :: app_exp)
 
 aexp    : OP longvid            (Exp.Var {name = longvid,
                                           fixop = Fixop.Op})
