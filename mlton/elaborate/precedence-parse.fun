@@ -186,14 +186,15 @@ val parseExp =
 fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
    let
       val pats = Vector.toList pats
-      fun error msg =
+      fun error (region, msg) =
          (Control.error (region, msg, lay ())
           ; {func = Ast.Var.bogus,
              args = Vector.new0 ()})
       fun done (func: Pat.t, args: Pat.t list) =
          let
             fun illegal () =
-               error (Layout.seq [Layout.str "illegal function symbol: ",
+               error (Pat.region func,
+                      Layout.seq [Layout.str "illegal function symbol: ",
                                   Pat.layout func])
          in
             case Pat.node func of
@@ -211,7 +212,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
                let
                   fun continue () =
                      case rest of
-                        [] => error (Layout.str "function with no arguments")
+                        [] => error (region, Layout.str "function with no arguments")
                       | _ => done (p, rest)
                in
                   case Pat.node p of
