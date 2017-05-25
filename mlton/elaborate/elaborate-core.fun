@@ -2216,7 +2216,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                               align [layN (), lay0 (), layFb ()])
                                           end)
                                    val diff =
-                                      Vector.fold
+                                      Vector.foldr
                                       (clauses, [], fn ({func = func', ...}, ac) =>
                                        if Avar.equals (func, func')
                                           then ac
