@@ -2202,7 +2202,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    val numArgs = Vector.length args
                                    val _ =
                                       Vector.foreach
-                                      (clauses, fn {args, layClause = layN, regionClause = regionN, ...} =>
+                                      (clauses, fn {args, layClause = layN, regionPat = regionN, ...} =>
                                        if numArgs = Vector.length args
                                           then  ()
                                        else
