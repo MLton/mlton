@@ -225,6 +225,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
                               in done (p 1, tuple (p 0, p 2) :: rest)
                               end
                         else continue ()
+                   | Pat.Paren p => parse (p :: rest)
                    | _ => continue ()
                end
           | _ => Error.bug "PrecedenceParse.parseClause: empty"

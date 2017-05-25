@@ -235,6 +235,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                         else normal ()
                    | _ => normal ()
                end
+          | Atype.Paren t => loop t
           | Atype.Record r => (* rules 45, 49 *)
                Type.record (SortedRecord.map (r, loop))
    in
@@ -740,6 +741,7 @@ val elaboratePat:
                                      preError,
                                      fn () => seq [str "in:  ", lay ()]))
                       end
+                 | Apat.Paren p => loop p
                  | Apat.Record {flexible, items} =>
                       (* rules 36, 38, 39 and Appendix A, p.57 *)
                       let
@@ -3007,6 +3009,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.orElse (cel, cer)
                    end
+              | Aexp.Paren e => elab e
               | Aexp.Prim kind =>
                    let
                       fun elabAndExpandTy ty =

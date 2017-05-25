@@ -124,6 +124,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                         else normal ()
                    | _ => normal ()
                end
+          | Atype.Paren t => loop t
           | Atype.Record r => (* rules 45, 49 *)
                Type.record (SortedRecord.map (r, loop))
       val ty = loop ty

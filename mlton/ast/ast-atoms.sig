@@ -91,6 +91,7 @@ signature AST_ATOMS =
             type t
             datatype node =
                Con of Longtycon.t * t vector
+             | Paren of t
              | Record of t SortedRecord.t
              | Var of Tyvar.t
 

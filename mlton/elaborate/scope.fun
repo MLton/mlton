@@ -73,6 +73,12 @@ fun ('down, 'up)
                            in
                               (Con (c, ts), u)
                            end
+                      | Paren t =>
+                           let
+                              val (t, u) = loop t
+                           in
+                              (Paren t, u)
+                           end
                       | Record r =>
                            let
                               val (r, u) = SortedRecord.change (r, fn ts =>
@@ -169,6 +175,7 @@ fun ('down, 'up)
                                       var = var})
                    | List ps => do1 (loops (ps, loop), List)
                    | Or ps => do1 (loops (ps, loop), Or)
+                   | Paren p => do1 (loop p, Paren)
                    | Record {flexible, items} =>
                         let
                            val (items, u) =
@@ -431,6 +438,7 @@ fun ('down, 'up)
                    | Let (dec, e) => do2 (loopDec (dec, d), loop e, Let)
                    | List ts => doVec (ts, List)
                    | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
+                   | Paren e => do1 (loop e, Paren)
                    | Prim kind => do1 (loopPrimKind (kind, d), Prim)
                    | Raise exn => do1 (loop exn, Raise)
                    | Record r =>

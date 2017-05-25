@@ -46,7 +46,7 @@ structure Pat =
 
       fun tuple ps =
          if 1 = Vector.length ps
-            then node (Vector.sub (ps, 0))
+            then Paren (Vector.sub (ps, 0))
          else Tuple ps
 
       val unit = tuple (Vector.new0 ())
@@ -100,7 +100,7 @@ structure Exp =
 
       fun tuple es =
          if 1 = Vector.length es
-            then node (Vector.sub (es, 0))
+            then Paren (Vector.sub (es, 0))
          else Record (Record.tuple es)
 
       val unit = tuple (Vector.new0 ())
@@ -1043,7 +1043,7 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
         | LPAREN RPAREN         (Exp.unit)
         | LPAREN exp_ps RPAREN
             (case exp_ps of
-                [exp] => Exp.node exp
+                [exp] => Exp.Paren exp
               | _ => Exp.Seq (Vector.fromList exp_ps))
         | LPAREN exp_2c RPAREN  (Exp.tuple (Vector.fromList exp_2c))
         | LBRACKET exp_list RBRACKET  (Exp.List (Vector.fromList exp_list))
@@ -1227,7 +1227,7 @@ ty'node : tyvar                           (Type.Var tyvar)
         | LBRACE RBRACE                   (Type.unit)
         | LPAREN ty0_pc RPAREN longtycon  (Type.Con (longtycon,
                                                      Vector.fromList ty0_pc))
-        | LPAREN ty RPAREN                (Type.node ty)
+        | LPAREN ty RPAREN                (Type.Paren ty)
         | ty' longtycon                   (Type.Con (longtycon,
                                                      Vector.new1 ty'))
         | longtycon                       (Type.Con (longtycon,

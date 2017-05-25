@@ -75,6 +75,7 @@ structure Pat =
                      pat: t}
        | List of t vector
        | Or of t vector
+       | Paren of t
        | Record of {flexible: bool,
                     items: (Record.Field.t * item) vector}
        | Tuple of t vector
@@ -134,6 +135,7 @@ structure Pat =
              | Or ps =>
                   delimit
                   (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
+             | Paren p => layout (p, isDelimited)
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -178,6 +180,7 @@ structure Pat =
              | Layered {constraint, pat, ...} =>
                   (c pat; Option.app (constraint, Type.checkSyntax))
              | List ps => Vector.foreach (ps, c)
+             | Paren p => c p
              | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
                   (Vector.foreach (items, fn (_, i) =>
@@ -329,6 +332,7 @@ datatype expNode =
   | Let of dec * exp
   | List of exp vector
   | Orelse of exp * exp
+  | Paren of exp
   | Prim of PrimKind.t
   | Raise of exp
   | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
@@ -399,6 +403,7 @@ fun expNodeName e =
     | Let _ => "Let"
     | List _ => "List"
     | Orelse _ => "Orelse"
+    | Paren _ => "Paren"
     | Prim _ => "Prim"
     | Raise _ => "Raise"
     | Record _ => "Record"
@@ -449,6 +454,7 @@ fun layoutExp arg =
        | Orelse (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "orelse ", layoutExpF e']])
+       | Paren e => layoutExp (e, isDelimited)
        | Prim kind => str (PrimKind.name kind)
        | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | Record r =>
@@ -573,6 +579,7 @@ fun checkSyntaxExp (e: exp): unit =
        | Let (d, e) => (checkSyntaxDec d; c e)
        | List es => Vector.foreach (es, c)
        | Orelse (e1, e2) => (c e1; c e2)
+       | Paren e => c e
        | Prim _ => ()
        | Raise e => c e
        | Record r =>

@@ -181,6 +181,7 @@ structure Type =
       open Wrap
       datatype node =
          Con of Longtycon.t * t vector
+       | Paren of t
        | Record of t Record.t
        | Var of Tyvar.t
       withtype t = node Wrap.t
@@ -219,6 +220,7 @@ structure Type =
                                           layout (Vector.sub (tys, 1))]])
                        else Error.bug "AstAtoms.Type.layout: non-binary -> tyc"
                else layoutApp (Longtycon.layout c, tys, layout)
+          | Paren t => layout t
           | Record r => Record.layout {record = r,
                                        separator = ":", extra = "",
                                        layoutElt = layout,
@@ -238,6 +240,7 @@ structure Type =
       fun checkSyntax (t: t): unit =
          case node t of
             Con (_, ts) => Vector.foreach (ts, checkSyntax)
+          | Paren t => checkSyntax t
           | Record r =>
                (reportDuplicateFields (Record.toVector r,
                                        {region = region t,
