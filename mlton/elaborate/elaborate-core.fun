@@ -2807,22 +2807,26 @@ fun elaborateDec (d, {env = E, nest}) =
              fun elab e = elabExp (e, nest, NONE)
           in
              case Aexp.node e of
-                Aexp.Andalso (e, e') =>
+                Aexp.Andalso (el, er) =>
                    let
-                      val ce = elab e
-                      val ce' = elab e'
-                      fun doit (ce, br) =
-                         unify
-                         (Cexp.ty ce, Type.bool,
-                          fn (l, _) =>
-                          (Aexp.region e,
-                           str (concat
-                                [br, " branch of andalso not of type bool"]),
-                           seq [str " branch: ", l]))
-                      val _ = doit (ce, "left")
-                      val _ = doit (ce', "right")
+                      fun doit (e, br) =
+                         let
+                            val ce = elab e
+                            val _ =
+                               unify
+                               (Cexp.ty ce, Type.bool,
+                                fn (l, _) =>
+                                (Aexp.region e,
+                                 str (concat
+                                      [br, " branch of andalso not of type bool"]),
+                                 seq [str " branch: ", l]))
+                         in
+                            ce
+                         end
+                      val cel = doit (el, "left")
+                      val cer = doit (er, "right")
                    in
-                      Cexp.andAlso (ce, ce')
+                      Cexp.andAlso (cel, cer)
                    end
               | Aexp.App (e1, e2) =>
                    let
@@ -2998,22 +3002,26 @@ fun elaborateDec (d, {env = E, nest}) =
                                                (Cexp.ty e', Aexp.region e)),
                                   preError, lay))
                    end
-              | Aexp.Orelse (e, e') =>
+              | Aexp.Orelse (el, er) =>
                    let
-                      val ce = elab e
-                      val ce' = elab e'
-                      fun doit (ce, br) =
-                         unify
-                         (Cexp.ty ce, Type.bool,
-                          fn (l, _) =>
-                          (Aexp.region e,
-                           str (concat
-                                [br, " branch of orelse not of type bool"]),
-                           seq [str " branch: ", l]))
-                      val _ = doit (ce, "left")
-                      val _ = doit (ce', "right")
+                      fun doit (e, br) =
+                         let
+                            val ce = elab e
+                            val _ =
+                               unify
+                               (Cexp.ty ce, Type.bool,
+                                fn (l, _) =>
+                                (Aexp.region e,
+                                 str (concat
+                                      [br, " branch of orelse not of type bool"]),
+                                 seq [str " branch: ", l]))
+                         in
+                            ce
+                         end
+                      val cel = doit (el, "left")
+                      val cer = doit (er, "right")
                    in
-                      Cexp.orElse (ce, ce')
+                      Cexp.orElse (cel, cer)
                    end
               | Aexp.Prim kind =>
                    let
