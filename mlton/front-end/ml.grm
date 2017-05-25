@@ -336,7 +336,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | rule of rule
        | rules of rule list
        | rvalbind of rvb list
-       | rvalbindRest of rvb list
        | sdec of Dec.t
        | sdecs of Dec.t
        | sdecsPlus of Dec.t
@@ -401,7 +400,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | tyvars of Tyvar.t vector
        | tyvarseq of Tyvar.t vector
        | valbind of vb list * rvb list
-       | valbindRest of vb list * rvb list
        | valbindTop of vb vector * rvb vector
        | valdesc of valdesc
        | valdescs of valdesc list
@@ -762,25 +760,22 @@ valbindTop : valbind (let
                           Vector.fromList rvbs)
                       end)
 
-valbind : pat EQUALOP exp valbindRest
-          (let
-              val (vbs, rvbs) = valbindRest
-           in
-              ({pat = pat, exp = exp} :: vbs,
-               rvbs)
-           end)
+valbind : pat EQUALOP exp
+             (([{pat = pat, exp = exp}], []))
+        | pat EQUALOP exp AND valbind
+             (let
+                 val (vbs, rvbs) = valbind
+              in
+                 ({pat = pat, exp = exp} :: vbs,
+                  rvbs)
+              end)
         | REC rvalbind                 (([], rvalbind))
 
-
-valbindRest :                          (([], []))
-            | AND valbind              (valbind)
-
 rvalbind : REC rvalbind                (rvalbind)
-         | pat EQUALOP FN match rvalbindRest
-            ({pat = pat, match = match} :: rvalbindRest)
-
-rvalbindRest :               ([])
-             | AND rvalbind  (rvalbind)
+         | pat EQUALOP FN match
+             ([{pat = pat, match = match}])
+         | pat EQUALOP FN match AND rvalbind
+             ({pat = pat, match = match} :: rvalbind)
 
 constraint :                    (NONE)
            | COLON ty           (SOME ty)
