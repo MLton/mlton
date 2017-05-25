@@ -1,4 +1,4 @@
-(* Heavily modified from the SML/NJ sources by sweeks@research.nj.nec.com. *)
+(* Heavily modified from the SML/NJ sources. *)
 
 (* Copyright 1996 by AT&T Bell Laboratories *)
 (* precedence.sml *)
@@ -183,9 +183,8 @@ val parseExp =
 (*                    parseClause                    *)
 (*---------------------------------------------------*)
 
-fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
+fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
    let
-      val pats = Vector.toList pats
       fun error (region, msg) =
          (Control.error (region, msg, lay ())
           ; {func = Ast.Var.bogus,
@@ -212,7 +211,9 @@ fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
                let
                   fun continue () =
                      case rest of
-                        [] => error (region, Layout.str "function with no arguments")
+                        [] => error (Region.append (Pat.region (Vector.sub (pats, 0)),
+                                                    Pat.region (Vector.last pats)),
+                                     Layout.str "function with no arguments")
                       | _ => done (p, rest)
                in
                   case Pat.node p of
@@ -227,6 +228,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
                    | _ => continue ()
                end
           | _ => Error.bug "PrecedenceParse.parseClause: empty"
+      val pats = Vector.toList pats
    in
       case pats of
          [a, b, c] => (case Fixval.makePat (b, E) of

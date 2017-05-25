@@ -2165,7 +2165,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                        val regionClause =
                                           Region.append (regionPat, regionBody)
                                        val {args, func} =
-                                          Parse.parseClause (pats, E, region, lay)
+                                          Parse.parseClause (pats, E, lay)
                                     in
                                        {args = args,
                                         body = body,
