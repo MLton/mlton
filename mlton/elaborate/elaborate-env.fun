@@ -1905,7 +1905,7 @@ fun unbound (r: Region.t, className, x: Layout.t): unit =
    Control.error
    (r,
     let open Layout
-    in seq [str "undefined ", str className, str " ", x]
+    in seq [str "undefined ", str className, str ": ", x]
     end,
     Layout.empty)
 

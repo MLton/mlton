@@ -415,7 +415,7 @@ fun unifySeq (seqTy, seqStr,
             (trs, fn (t', r) =>
              unify (t, t', preError, fn (l, l') =>
                     (r,
-                     str (seqStr ^ " element types disagree"),
+                     str (seqStr ^ " with element of different type"),
                      align [seq [str "element:  ", l'],
                             seq [str "previous: ", l],
                             lay ()])))
@@ -513,9 +513,7 @@ val elaboratePat:
                            val _ =
                               Control.error
                               (Avar.region x,
-                               seq [str "variable ",
-                                    Avar.layout x,
-                                    str " occurs more than once in pattern"],
+                               seq [str "duplicate variable in pattern: ", Avar.layout x],
                                seq [str "in: ", layTop ()])
                         in
                            ()
@@ -541,105 +539,15 @@ val elaboratePat:
                    (p, c, fn (l1, l2) =>
                     (region,
                      str "pattern and constraint disagree",
-                     align [seq [str "expects: ", l2],
-                            seq [str "but got: ", l1],
+                     align [seq [str "pattern:    ", l1],
+                            seq [str "constraint: ", l2],
                             seq [str "in: ", lay ()]]))
                 fun lay () = approximate (Apat.layout p)
                 fun dontCare () =
                    Cpat.wild (Type.new ())
              in
                 case Apat.node p of
-                   Apat.Or ps =>
-                       let
-                         val _ = check (Control.Elaborate.allowOrPats, "Or patterns", region)
-                         val xtsOrig = !xts
-                         val n = Vector.length ps
-                         val ps =
-                            Vector.map
-                            (ps, fn p =>
-                             let
-                                val _ = xts := []
-                                val p' = loop p
-                             in
-                                (p, p', !xts)
-                             end)
-                         val ps' = Vector.map (ps, fn (_, p', _) => p')
-
-                         val xtsPats =
-                            Vector.fold
-                            (ps, [], fn ((p, _, xtsPat), xtsPats) =>
-                             List.fold
-                             (xtsPat, xtsPats, fn ((x, x', t), xtsPats) =>
-                              case List.peek (xtsPats, fn (y, _, _, _) => Avar.equals (x, y)) of
-                                 NONE => (x, x', t, ref 1)::xtsPats
-                               | SOME (_, _, t', c) =>
-                                    let
-                                       val _ = Int.inc c
-                                       val _ =
-                                          unify
-                                          (t', t, fn (l', l) =>
-                                           (Avar.region x,
-                                            str "variable used at different types in sub-patterns of or-pattern",
-                                            align [seq [str "variable ", Avar.layout x],
-                                                   seq [str "type: ", l],
-                                                   seq [str "previous: ", l'],
-                                                   seq [str "in: ", approximate (Apat.layout p)],
-                                                   seq [str "in: ", lay ()]]))
-
-                                    in
-                                       xtsPats
-                                    end))
-                         val _ =
-                            List.foreach
-                            (xtsPats, fn (x, _, _, c) =>
-                             if !c <> n
-                                then let 
-                                        val _ =
-                                           Control.error
-                                           (Apat.region p,
-                                            seq [str "variable ",
-                                                 Avar.layout x,
-                                                 str " does not occur in all sub-patterns of or-pattern"],
-                                            seq [str "in: ", lay ()])
-                                     in
-                                        ()
-                                     end
-                             else ())
-                         val t = Type.new ()
-                         val _ =
-                            Vector.foreach
-                            (ps, fn (p, p', _) =>
-                             unify
-                             (t, Cpat.ty p', fn (l, l') =>
-                              (Apat.region p,
-                               str "or-patterns disagree",
-                               align [seq [str "pattern:  ", l'],
-                                      seq [str "previous: ", l],
-                                      seq [str "in: ", approximate (Apat.layout p)],
-                                      seq [str "in: ", lay ()]])))
-                         val xtsMerge =
-                            List.fold
-                            (xtsPats, xtsOrig, fn ((x, x', t, _), xtsMerge) =>
-                             case List.peek (xtsMerge, fn (y, _, _) => Avar.equals (x, y)) of
-                                NONE => (x, x', t)::xtsMerge
-                              | SOME _ =>
-                                   let
-                                      open Layout
-                                      val _ =
-                                         Control.error
-                                         (Avar.region x,
-                                          seq [str "variable ",
-                                               Avar.layout x,
-                                               str " occurs more than once in pattern"],
-                                          seq [str "in: ", layTop ()])
-                                   in
-                                      (x, x', t)::xtsMerge
-                                   end)
-                         val _ = xts := xtsMerge
-                      in
-                         Cpat.make (Cpat.Or ps', t)
-                      end
-                 | Apat.App (c, p) =>
+                   Apat.App (c, p) =>
                       let
                          val (con, s) = Env.lookupLongcon (E, c)
                       in
@@ -662,7 +570,7 @@ val elaboratePat:
                                                  (instance, Type.arrow types,
                                                   fn _ =>
                                                   (region,
-                                                   str "constant constructor applied to argument",
+                                                   str "constant constructor applied to argument in pattern",
                                                    seq [str "in: ", lay ()]))
                                            in
                                               types
@@ -671,7 +579,7 @@ val elaboratePat:
                                      unify
                                      (Cpat.ty p, argType, fn (l, l') =>
                                       (region,
-                                       str "constructor applied to incorrect argument",
+                                       str "constructor applied to incorrect argument in pattern",
                                        align [seq [str "expects: ", l'],
                                               seq [str "but got: ", l],
                                               seq [str "in: ", lay ()]]))
@@ -716,7 +624,7 @@ val elaboratePat:
                                      val _ =
                                         Control.error
                                         (region,
-                                         seq [str "constructor can not be redefined by as: ",
+                                         seq [str "constructor cannot be redefined by as: ",
                                               Avar.layout x],
                                          seq [str "in: ", lay ()])
                                   in
@@ -740,6 +648,95 @@ val elaboratePat:
                                                   (Cpat.ty p', Apat.region p)),
                                      preError,
                                      fn () => seq [str "in:  ", lay ()]))
+                      end
+                 | Apat.Or ps =>
+                      let
+                         val _ = check (Control.Elaborate.allowOrPats, "Or patterns", region)
+                         val xtsOrig = !xts
+                         val n = Vector.length ps
+                         val ps =
+                            Vector.map
+                            (ps, fn p =>
+                             let
+                                val _ = xts := []
+                                val p' = loop p
+                             in
+                                (p, p', !xts)
+                             end)
+                         val ps' = Vector.map (ps, fn (_, p', _) => p')
+
+                         val xtsPats =
+                            Vector.fold
+                            (ps, [], fn ((p, _, xtsPat), xtsPats) =>
+                             List.fold
+                             (xtsPat, xtsPats, fn ((x, x', t), xtsPats) =>
+                              case List.peek (xtsPats, fn (y, _, _, _) => Avar.equals (x, y)) of
+                                 NONE => (x, x', t, ref [x])::xtsPats
+                               | SOME (_, _, t', l) =>
+                                    let
+                                       val _ = List.push (l, x)
+                                       val _ =
+                                          unify
+                                          (t', t, fn (l', l) =>
+                                           (Avar.region x,
+                                            seq [str "or-pattern with variable of different type: ",
+                                                 Avar.layout x],
+                                            align [seq [str "variable: ", l],
+                                                   seq [str "previous: ", l'],
+                                                   seq [str "in: ", approximate (Apat.layout p)],
+                                                   seq [str "in: ", lay ()]]))
+
+                                    in
+                                       xtsPats
+                                    end))
+                         val _ =
+                            List.foreach
+                            (xtsPats, fn (x, _, _, l) =>
+                             if List.length (!l) <> n
+                                then let
+                                        val _ =
+                                           Control.error
+                                           (Apat.region p,
+                                            seq [str "variable does not occur in all patterns of or-pattern: ",
+                                                 Avar.layout x],
+                                            seq [str "in: ", lay ()])
+                                     in
+                                        ()
+                                     end
+                             else ())
+                         val t = Type.new ()
+                         val _ =
+                            Vector.foreach
+                            (ps, fn (p, p', _) =>
+                             unify
+                             (t, Cpat.ty p', fn (l, l') =>
+                              (Apat.region p,
+                               str "or-pattern with pattern of different type",
+                               align [seq [str "pattern:  ", l'],
+                                      seq [str "previous: ", l],
+                                      seq [str "in: ", approximate (Apat.layout p)],
+                                      seq [str "in: ", lay ()]])))
+                         val xtsMerge =
+                            List.fold
+                            (xtsPats, xtsOrig, fn ((x, x', t, l), xtsMerge) =>
+                             case List.peek (xtsMerge, fn (y, _, _) => Avar.equals (x, y)) of
+                                NONE => (x, x', t)::xtsMerge
+                              | SOME _ =>
+                                   let
+                                      open Layout
+                                      val _ =
+                                         List.foreach
+                                         (List.rev (!l), fn x =>
+                                          Control.error
+                                          (Avar.region x,
+                                           seq [str "duplicate variable in pattern: ", Avar.layout x],
+                                           seq [str "in: ", layTop ()]))
+                                   in
+                                      (x, x', t)::xtsMerge
+                                   end)
+                         val _ = xts := xtsMerge
+                      in
+                         Cpat.make (Cpat.Or ps', t)
                       end
                  | Apat.Paren p => loop p
                  | Apat.Record {flexible, items} =>
@@ -850,7 +847,7 @@ val elaboratePat:
                                               then
                                                  (Control.error
                                                   (region,
-                                                   seq [str "constructor must be used with argument in pattern: ",
+                                                   seq [str "constructor used without argument in pattern: ",
                                                         Ast.Longvid.layout name],
                                                    empty)
                                                   ; dontCare ())
@@ -894,13 +891,12 @@ val elaboratePat:
                       open Layout
                    in
                       Control.error
-                      (Apat.region p,
-                       seq [str "variable ",
-                            Avar.layout x,
-                            str " occurs in multiple patterns"],
-                       align [seq [str "in: ",
+                      (Avar.region x,
+                       seq [str "variable bound in multiple patterns: ",
+                            Avar.layout x],
+                       align [seq [str "pattern:  ",
                                    approximate (Apat.layout p)],
-                              seq [str "and in: ",
+                              seq [str "previous: ",
                                    approximate (Apat.layout p')]])
                    end)
          val _ = List.push (others, (p, xts))
@@ -1952,9 +1948,9 @@ fun elaborateDec (d, {env = E, nest}) =
                      Control.error
                      (region,
                       seq [str (concat
-                                ["can't bind type variable",
+                                ["type variable",
                                  if Vector.length unable > 1 then "s" else "",
-                                 ": "]),
+                                 " cannot be bound at declaration: "]),
                            seq (List.separate
                                 (Vector.toListMap (unable, Tyvar.layout),
                                  str ", "))],
@@ -1963,18 +1959,16 @@ fun elaborateDec (d, {env = E, nest}) =
              fun useBeforeDef (c: Tycon.t) =
                 let
                    val _ = preError ()
+                   val regionTycon =
+                      case ! (TypeEnv.tyconRegion c) of
+                         NONE => Region.bogus
+                       | SOME r => r
                    open Layout
                 in
                    Control.error
                    (region,
-                    seq [str "type escapes the scope of its definition at ",
-                         str (case ! (TypeEnv.tyconRegion c) of
-                                 NONE => "<bogus>"
-                               | SOME r =>
-                                    case Region.left r of
-                                       NONE => "<bogus>"
-                                     | SOME p => SourcePos.toString p)],
-                    align [seq [str "type: ", Tycon.layout c],
+                    seq [str "type escapes the scope of its definition: ", Tycon.layout c],
+                    align [seq [str "definition at: ", str (Region.toString regionTycon)],
                            lay ()])
                 end
              val () = TypeEnv.tick {useBeforeDef = useBeforeDef}
@@ -2216,13 +2210,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                              if Avar.equals (func, funcN)
                                                 then ()
                                                 else err (Avar.region funcN,
-                                                          "function defined with different name",
+                                                          "function clause with different name",
                                                           "name:     ", layFuncN, layFunc0)
                                           val _ =
                                              if Vector.length args0 = Vector.length argsN
                                                 then ()
                                                 else err (regionPatN,
-                                                          "function defined with different number of arguments",
+                                                          "function clause with different number of arguments",
                                                           "clause:   ", layClauseN, layClause0)
                                        in
                                           ()
@@ -2262,7 +2256,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 then
                                    (Control.error
                                     (Avar.region f,
-                                     seq [str "function defined multiple times: ",
+                                     seq [str "duplicate function definition: ",
                                           Avar.layout f],
                                      lay ())
                                     ; ac)
@@ -2331,11 +2325,11 @@ fun elaborateDec (d, {env = E, nest}) =
                                             unify
                                             (elabType t, Cexp.ty body,
                                              fn (l1, l2) =>
-                                             (Atype.region t,
-                                              str "function result type disagrees with expression",
+                                             (Region.append (Atype.region t, regionBody),
+                                              str "function result constraint and expression disagree",
                                               align
-                                              [seq [str "result type: ", l1],
-                                               seq [str "expression:  ", l2],
+                                              [seq [str "constraint: ", l1],
+                                               seq [str "expression: ", l2],
                                                layFb ()])))
                                      in
                                         {body = body,
@@ -2366,7 +2360,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                       unify
                                                       (t, Cpat.ty pat, fn (l1, l2) =>
                                                        (region,
-                                                        str "function with argument of different types",
+                                                        str "function clause with argument of different type",
                                                         align [seq [str "argument: ", l2],
                                                                seq [str "previous: ", l1],
                                                                layFb ()]))
@@ -2382,9 +2376,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                     unify
                                     (t, Cexp.ty body, fn (l1, l2) =>
                                      (regionBody,
-                                      str "function with result of different types",
-                                      align [seq [str "result:   ", l2],
-                                             seq [str "previous: ", l1],
+                                      str "function clause with expression of different type",
+                                      align [seq [str "expression: ", l2],
+                                             seq [str "previous:   ", l1],
                                              layFb ()])))
                                 val xs =
                                    Vector.tabulate (numArgs, fn _ =>
@@ -2440,9 +2434,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                    unify
                                    (Cexp.ty lambda, ty, fn (l1, l2) =>
                                     (Avar.region func,
-                                     str "Recursive use of function disagrees with its type",
-                                     align [seq [str "function type:  ", l1],
-                                            seq [str "recursive uses: ", l2],
+                                     str "recursive use of function disagrees with its type",
+                                     align [seq [str "function type: ", l1],
+                                            seq [str "recursive use: ", l2],
                                             lay ()]))
                                 val lambda =
                                    case Cexp.node lambda of
@@ -2595,6 +2589,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                  layDec = layDec,
                                  layPat = layPat,
                                  pat = pat,
+                                 regionExp = regionExp,
                                  regionPat = regionPat}
                              end)
                          val {markFunc, setBound, unmarkFunc} = recursiveFun ()
@@ -2647,7 +2642,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val vbs =
                             Vector.map
                             (vbs,
-                             fn {exp, layDec, layPat, pat, regionPat, ...} =>
+                             fn {exp, layDec, layPat, pat, regionExp, regionPat, ...} =>
                              let
                                 val (pat, bound) =
                                    elaboratePat (pat, E, {bind = false,
@@ -2655,7 +2650,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 val _ =
                                    unify
                                    (Cpat.ty pat, Cexp.ty exp, fn (p, e) =>
-                                    (regionPat,
+                                    (Region.append (regionPat, regionExp),
                                      str "pattern and expression disagree",
                                      align [seq [str "pattern:    ", p],
                                             seq [str "expression: ", e],
@@ -2679,10 +2674,10 @@ fun elaborateDec (d, {env = E, nest}) =
                                    (Cpat.ty pat,
                                     Type.arrow (argType, resultType),
                                     fn (l1, l2) =>
-                                    (regionPat,
-                                     str "Recursive use of function disagrees with its type",
-                                     align [seq [str "function type:  ", l2],
-                                            seq [str "recursive uses: ", l1],
+                                    (Region.append (regionPat, Amatch.region match),
+                                     str "Recursive function pattern and expression disagree",
+                                     align [seq [str "pattern:    ", l1],
+                                            seq [str "expression: ", l2],
                                             lay ()]))
                                 val arg = Var.newNoname ()
                                 val body =
@@ -2808,7 +2803,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 (Aexp.region e,
                                  str (concat
                                       [br, " branch of andalso not of type bool"]),
-                                 seq [str " branch: ", l]))
+                                 seq [str "branch: ", l]))
                          in
                             ce
                          end
@@ -2817,34 +2812,43 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.andAlso (cel, cer)
                    end
-              | Aexp.App (e1, e2) =>
+              | Aexp.App (ef, ea) =>
                    let
-                      val e1 = elab e1
-                      val e2 = elab e2
+                      val cef = elab ef
+                      val cea = elab ea
+                      val isCon =
+                         case Cexp.node cef of
+                            Cexp.Con _ => true
+                          | _ => false
                       val (argType, resultType) =
-                         case Type.deArrowOpt (Cexp.ty e1) of
+                         case Type.deArrowOpt (Cexp.ty cef) of
                             SOME types => types
                           | NONE =>
                                let
                                   val types = (Type.new (), Type.new ())
                                   val _ =
-                                     unify (Cexp.ty e1, Type.arrow types,
+                                     unify (Cexp.ty cef, Type.arrow types,
                                             fn (l, _) =>
-                                            (region,
-                                             str "function not of arrow type",
-                                             seq [str "function: ", l]))
+                                            if isCon
+                                               then (Aexp.region ef,
+                                                     str "constant constructor applied to argument",
+                                                     seq [str "constructor: ", l])
+                                               else (Aexp.region ef,
+                                                     str "function not of arrow type",
+                                                     seq [str "function: ", l]))
                                in
                                   types
                                end
                       val _ =
                          unify
-                         (argType, Cexp.ty e2, fn (l1, l2) =>
+                         (argType, Cexp.ty cea, fn (l1, l2) =>
                           (region,
-                           str "function applied to incorrect argument",
+                           seq [str (if isCon then "constructor" else "function"),
+                                str " applied to incorrect argument"],
                            align [seq [str "expects: ", l1],
                                   seq [str "but got: ", l2]]))
                    in
-                      Cexp.make (Cexp.App (e1, e2), resultType)
+                      Cexp.make (Cexp.App (cef, cea), resultType)
                    end
               | Aexp.Case (e, m) =>
                    let
@@ -2854,9 +2858,9 @@ fun elaborateDec (d, {env = E, nest}) =
                          unify
                          (Cexp.ty e, argType, fn (l1, l2) =>
                           (region,
-                           str "case object and rules disagree",
-                           align [seq [str "object type:  ", l1],
-                                  seq [str "rules expect: ", l2]]))
+                           str "case object and match argument disagree",
+                           align [seq [str "case object:    ", l1],
+                                  seq [str "match argument: ", l2]]))
                    in
                       Cexp.casee {kind = ("case", "rule"),
                                   lay = lay,
@@ -2881,8 +2885,8 @@ fun elaborateDec (d, {env = E, nest}) =
                          (Cexp.ty e, elabType t', fn (l1, l2) =>
                           (region,
                            str "expression and constraint disagree",
-                           align [seq [str "expects: ", l2],
-                                  seq [str "but got: ", l1]]))
+                           align [seq [str "expression: ", l1],
+                                  seq [str "constraint: ", l2]]))
                    in
                       e
                    end
@@ -2926,8 +2930,8 @@ fun elaborateDec (d, {env = E, nest}) =
                          unify
                          (argType, Type.exn, fn (l1, _) =>
                           (Amatch.region match,
-                           seq [str "handler handles wrong type: ", l1],
-                           empty))
+                           str "handler match argument not of type exn",
+                           seq [str "argument: ", l1]))
                    in
                       Cexp.make (Cexp.Handle {catch = (arg, Type.exn),
                                               handler = body,
@@ -2944,7 +2948,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          (Cexp.ty a', Type.bool, fn (l1, _) =>
                           (Aexp.region a,
                            str "if test not of type bool",
-                           seq [str "test type: ", l1]))
+                           seq [str "test: ", l1]))
                       val _ =
                          unify
                          (Cexp.ty b', Cexp.ty c', fn (l1, l2) =>
@@ -3003,7 +3007,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 (Aexp.region e,
                                  str (concat
                                       [br, " branch of orelse not of type bool"]),
-                                 seq [str " branch: ", l]))
+                                 seq [str "branch: ", l]))
                          in
                             ce
                          end
@@ -3390,8 +3394,8 @@ fun elaborateDec (d, {env = E, nest}) =
                          unify
                          (Cexp.ty exn, Type.exn, fn (l1, _) =>
                           (region,
-                           str "raise of non exception",
-                           seq [str "exp type: ", l1]))
+                           str "raise object not of type exn",
+                           seq [str "object: ", l1]))
                       val resultType = Type.new ()
                    in
                       Cexp.enterLeave
@@ -3533,7 +3537,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          (Cexp.ty test', Type.bool, fn (l1, _) =>
                           (Aexp.region test,
                            str "while test not of type bool",
-                           seq [str "test type: ", l1]))
+                           seq [str "type: ", l1]))
                       val expr' = elab expr
                       (* Diagnose if expr is not of type unit. *)
                       val _ =
@@ -3548,7 +3552,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                       then ()
                                       else f (Aexp.region expr,
                                               str "while body not of type unit",
-                                              seq [str "body type: ", Type.layoutPrettyBracket ty])
+                                              seq [str "body: ", Type.layoutPrettyBracket ty])
                                 end)
                          in
                             case sequenceNonUnit () of
@@ -3600,7 +3604,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        unify
                        (Cpat.ty pat, argType, preError, fn (l1, l2) =>
                         (Apat.region patOrig,
-                         str "rule patterns disagree",
+                         str "rule with pattern of different type",
                          align [seq [str "pattern:  ", l1],
                                 seq [str "previous: ", l2],
                                 seq [str "in: ", lay ()]]))
@@ -3610,7 +3614,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        unify
                        (Cexp.ty exp, resultType, preError, fn (l1, l2) =>
                         (Aexp.region expOrig,
-                         str "rule results disagree",
+                         str "rule with result of different type",
                          align [seq [str "result:   ", l1],
                                 seq [str "previous: ", l2],
                                 seq [str "in: ", lay ()]]))

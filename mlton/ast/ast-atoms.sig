@@ -118,7 +118,7 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntax: t * string -> unit
             val empty: t
             val layout: t -> Layout.t
          end
@@ -133,7 +133,7 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntax: t * string -> unit
             val layout: string * t -> Layout.t
          end
       structure DatatypeRhs:
@@ -145,7 +145,7 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntax: t * string -> unit
             val layout: t -> Layout.t
          end
       structure ModIdBind:

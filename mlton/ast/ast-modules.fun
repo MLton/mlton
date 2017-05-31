@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -164,13 +165,13 @@ and checkSyntaxSpec (s: spec): unit =
       fun term () = layoutSpec s
    in
       case node s of
-         Datatype d => DatatypeRhs.checkSyntax d
+         Datatype d => DatatypeRhs.checkSyntax (d, "specification")
        | Eqtype v =>
             reportDuplicates
             (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
                            Tycon.equals (c, c')),
                  layout = Tycon.layout o #tycon,
-                 name = "type",
+                 name = "type specification",
                  region = Tycon.region o #tycon,
                  term = term})
        | Empty => ()
@@ -180,7 +181,7 @@ and checkSyntaxSpec (s: spec): unit =
              ; (reportDuplicates
                 (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                      layout = Con.layout o #1,
-                     name = "exception",
+                     name = "exception specification",
                      region = Con.region o #1,
                      term = term})))
        | IncludeSigexp e => checkSyntaxSigexp e
@@ -203,7 +204,7 @@ and checkSyntaxSpec (s: spec): unit =
                  name = "type specification",
                  region = Tycon.region o #tycon,
                  term = term})
-       | TypeDefs b => TypBind.checkSyntax b
+       | TypeDefs b => TypBind.checkSyntax (b, "specification")
        | Val v =>
             (Vector.foreach (v, fn (_, t) => Type.checkSyntax t)
              ; (reportDuplicates

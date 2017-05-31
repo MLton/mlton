@@ -500,9 +500,8 @@ fun scope (dec: Dec.t): Dec.t =
                          val _ =
                             Control.error
                             (Tyvar.region a,
-                             seq [str "type variable ",
-                                  Tyvar.layout a,
-                                  str " scoped at an outer declaration"],
+                             seq [str "type variable scoped at an outer declaration: ",
+                                  Tyvar.layout a],
                              empty)
                       in
                          false

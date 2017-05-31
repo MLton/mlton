@@ -211,7 +211,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
          let
             fun illegal () =
                error (Pat.region func,
-                      Layout.seq [Layout.str "illegal function symbol: ",
+                      Layout.seq [Layout.str "function defined with illegal name: ",
                                   Pat.layout func])
          in
             case Pat.node func of
@@ -231,7 +231,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
                      case rest of
                         [] => error (Region.append (Pat.region (Vector.sub (pats, 0)),
                                                     Pat.region (Vector.last pats)),
-                                     Layout.str "function with no arguments")
+                                     Layout.str "function defined with no arguments")
                       | _ => done (p, rest)
                in
                   case Pat.node p of

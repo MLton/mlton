@@ -310,7 +310,7 @@ structure TypBind =
 
       val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
 
-      fun checkSyntax (b: t): unit =
+      fun checkSyntax (b: t, kind: string): unit =
          let
             val T v = node b
             val () = Vector.foreach (v, fn {def, ...} => Type.checkSyntax def)
@@ -319,7 +319,7 @@ structure TypBind =
             (v, {equals = (fn ({tycon = t, ...}, {tycon = t', ...}) =>
                            Tycon.equals (t, t')),
                  layout = Tycon.layout o #tycon,
-                 name = "type definition",
+                 name = "type " ^ kind,
                  region = Tycon.region o #tycon,
                  term = fn () => layout b})
          end
@@ -362,7 +362,7 @@ structure DatBind =
                    else seq [str "with", TypBind.layout withtypes]]
          end
 
-      fun checkSyntax (b: t): unit =
+      fun checkSyntax (b: t, kind: string): unit =
          let
             val T {datatypes, withtypes} = node b
             val () =
@@ -377,7 +377,7 @@ structure DatBind =
                (Vector.concatV (Vector.map (datatypes, #cons)),
                 {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                  layout = Con.layout o #1,
-                 name = "constructor",
+                 name = "constructor " ^ kind,
                  region = Con.region o #1,
                  term = term})
             val () =
@@ -390,7 +390,7 @@ structure DatBind =
                                end],
                 {equals = Tycon.equals,
                  layout = Tycon.layout,
-                 name = "type definition",
+                 name = "type " ^ kind,
                  region = Tycon.region,
                  term = term})
          in
@@ -416,9 +416,9 @@ structure DatatypeRhs =
                seq [str "datatype ", Tycon.layout lhs,
                    str " = datatype ", Longtycon.layout rhs]
 
-      fun checkSyntax (rhs: t): unit =
+      fun checkSyntax (rhs: t, kind: string): unit =
          case node rhs of
-            DatBind b => DatBind.checkSyntax b
+            DatBind b => DatBind.checkSyntax (b, kind)
           | Repl _ => ()
    end
 

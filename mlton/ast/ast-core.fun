@@ -604,16 +604,16 @@ and checkSyntaxMatch (m: match): unit =
 and checkSyntaxDec (d: dec): unit =
    case node d of
       Abstype {datBind, body} =>
-         (DatBind.checkSyntax datBind
+         (DatBind.checkSyntax (datBind, "definition")
           ; checkSyntaxDec body)
-    | Datatype rhs => DatatypeRhs.checkSyntax rhs
+    | Datatype rhs => DatatypeRhs.checkSyntax (rhs, "definition")
     | DoDec exp => checkSyntaxExp exp
     | Exception v =>
          (Vector.foreach (v, fn (_, ebrhs) => EbRhs.checkSyntax ebrhs)
           ; (reportDuplicates
              (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                   layout = Con.layout o #1,
-                  name = "exception declaration",
+                  name = "exception definition",
                   region = Con.region o #1,
                   term = fn () => layoutDec d})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
@@ -628,7 +628,7 @@ and checkSyntaxDec (d: dec): unit =
     | Open _ => ()
     | Overload (_, _, _, ty, _) => Type.checkSyntax ty
     | SeqDec v => Vector.foreach (v, checkSyntaxDec)
-    | Type b => TypBind.checkSyntax b
+    | Type b => TypBind.checkSyntax (b, "definition")
     | Val {rvbs, vbs, ...} =>
          (Vector.foreach (rvbs, fn {match, pat} =>
                           (checkSyntaxMatch match
