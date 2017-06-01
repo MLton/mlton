@@ -92,7 +92,7 @@ signature AST_ATOMS =
             datatype node =
                Con of Longtycon.t * t vector
              | Paren of t
-             | Record of (Region.t * t) SortedRecord.t
+             | Record of (Region.t * t) Record.t
              | Var of Tyvar.t
 
             include WRAPPED sharing type node' = node
@@ -104,7 +104,7 @@ signature AST_ATOMS =
             val layout: t -> Layout.t
             val layoutApp: Layout.t * 'a vector * ('a -> Layout.t) -> Layout.t
             val layoutOption: t option -> Layout.t
-            val record: (Region.t * t) SortedRecord.t -> t
+            val record: (Region.t * t) Record.t -> t
             val tuple: t vector -> t
             val unit: t
             val var: Tyvar.t -> t

@@ -176,7 +176,6 @@ fun reportDuplicateFields (v: (Field.t * (Region.t * 'a)) vector,
 
 structure Type =
    struct
-      structure Record = SortedRecord
       open Wrap
       datatype node =
          Con of Longtycon.t * t vector
@@ -241,19 +240,9 @@ structure Type =
             Con (_, ts) => Vector.foreach (ts, checkSyntax)
           | Paren t => checkSyntax t
           | Record r =>
-               let
-                  val v =
-                     QuickSort.sortVector
-                     (Record.toVector r, fn ((f1, (r1, _)), (f2, (r2, _))) =>
-                      case Region.compare (r1, r2) of
-                         LESS => true
-                       | EQUAL => Field.<= (f1, f2)
-                       | GREATER => false)
-               in
-                  reportDuplicateFields (v,
-                                         {term = fn () => layout t})
-                  ; Record.foreach (r, checkSyntax o #2)
-               end
+               (reportDuplicateFields (Record.toVector r,
+                                       {term = fn () => layout t})
+                ; Record.foreach (r, checkSyntax o #2))
           | Var _ => ()
    end
 

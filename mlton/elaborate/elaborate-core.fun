@@ -232,7 +232,11 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                end
           | Atype.Paren t => loop t
           | Atype.Record r => (* rules 45, 49 *)
-               Type.record (SortedRecord.map (r, loop o #2))
+               Type.record
+               (SortedRecord.fromVector
+                (Vector.map
+                 (Record.toVector r,
+                  fn (f, (_, t)) => (f, loop t))))
    in
       loop ty
    end

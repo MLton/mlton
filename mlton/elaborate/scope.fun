@@ -82,7 +82,7 @@ fun ('down, 'up)
                       | Record r =>
                            let
                               val (r, u) =
-                                 SortedRecord.change
+                                 Record.change
                                  (r, fn rts =>
                                   loops (rts, fn (r, t) =>
                                          let val (t', u) = loop t

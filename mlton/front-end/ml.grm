@@ -25,7 +25,7 @@ structure Type =
       open Type
 
       fun tuple ts =
-         Record (Srecord.tuple (Vector.map (ts, fn t => (Region.bogus, t))))
+         Record (Record.tuple (Vector.map (ts, fn t => (Region.bogus, t))))
 
       val unit = tuple (Vector.new0 ())
 
@@ -1221,7 +1221,7 @@ ty' : ty'node (Type.makeRegion' (ty'node, ty'nodeleft, ty'noderight))
 
 ty'node : tyvar                           (Type.Var tyvar)
         | LBRACE tlabels RBRACE
-          (Type.Record (Srecord.fromVector (Vector.fromList tlabels)))
+          (Type.Record (Record.fromVector (Vector.fromList tlabels)))
         | LBRACE RBRACE                   (Type.unit)
         | LPAREN ty0_pc RPAREN longtycon  (Type.Con (longtycon,
                                                      Vector.fromList ty0_pc))
