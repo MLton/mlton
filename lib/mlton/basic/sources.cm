@@ -159,6 +159,7 @@ functor Pair
 functor PolyEnv
 functor Ring
 functor RingWithIdentity
+functor StreamTransformer
 functor Sum
 functor Tree
 functor UniqueId
@@ -229,9 +230,11 @@ bool.sml
 char.sml
 string.sig
 stream.sig
+stream-transformer.sig
 promise.sig
 promise.sml
 stream.sml
+stream-transformer.fun
 ring.sig
 ring-with-identity.sig
 euclidean-ring.sig

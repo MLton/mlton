@@ -74,6 +74,8 @@ in
       char.sml
       string.sig
       stream.sig
+      stream-transformer.sig
+      stream-transformer.fun
       promise.sig
       promise.sml
       stream.sml
