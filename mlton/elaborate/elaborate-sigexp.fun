@@ -98,19 +98,13 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                               else
                                  let
                                     open Layout
-                                    val () = 
+                                    val _ =
                                        Control.error
                                        (Atype.region ty,
-                                        seq [str "type constructor ",
-                                             Ast.Longtycon.layout c,
-                                             str " given ",
-                                             Int.layout numArgs,
-                                             str (if numArgs = 1
-                                                     then " argument"
-                                                  else " arguments"),
-                                             str " but wants ",
-                                             Kind.layout kind],
-                                        empty)
+                                        seq [str "type constructor applied to incorrect number of type arguments: ",
+                                             Ast.Longtycon.layout c],
+                                        align [seq [str "expects: ", Kind.layout kind],
+                                               seq [str "but got: ", Int.layout numArgs]])
                                  in
                                     Type.bogus
                                  end

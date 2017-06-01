@@ -212,16 +212,10 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                                     val _ =
                                        Control.error
                                        (Atype.region ty,
-                                        seq [str "type ",
-                                             Ast.Longtycon.layout c,
-                                             str " given ",
-                                             Int.layout numArgs,
-                                             str (if numArgs = 1
-                                                     then " argument"
-                                                  else " arguments"),
-                                             str " but wants ",
-                                             Kind.layout kind],
-                                        empty)
+                                        seq [str "type constructor applied to incorrect number of type arguments: ",
+                                             Ast.Longtycon.layout c],
+                                        align [seq [str "expects: ", Kind.layout kind],
+                                               seq [str "but got: ", Int.layout numArgs]])
                                  in
                                     Type.new ()
                                  end
