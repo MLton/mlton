@@ -81,8 +81,13 @@ fun ('down, 'up)
                            end
                       | Record r =>
                            let
-                              val (r, u) = SortedRecord.change (r, fn ts =>
-                                                                loops (ts, loop))
+                              val (r, u) =
+                                 SortedRecord.change
+                                 (r, fn rts =>
+                                  loops (rts, fn (r, t) =>
+                                         let val (t', u) = loop t
+                                         in ((r, t'), u)
+                                         end))
                            in
                               (Record r, u)
                            end
@@ -180,7 +185,7 @@ fun ('down, 'up)
                         let
                            val (items, u) =
                               Vector.mapAndFold
-                              (items, initUp, fn ((f, i), u) =>
+                              (items, initUp, fn ((f, r, i), u) =>
                                let
                                   datatype z = datatype Pat.Item.t
                                   val (i, u') =
@@ -200,7 +205,7 @@ fun ('down, 'up)
                                                combineUp (u, u'))
                                            end
                                in
-                                  ((f, i), combineUp (u, u'))
+                                  ((f, r, i), combineUp (u, u'))
                                end)
                         in
                            (doit (Record {flexible = flexible,
@@ -443,8 +448,13 @@ fun ('down, 'up)
                    | Raise exn => do1 (loop exn, Raise)
                    | Record r =>
                         let
-                           val (r, u) = Record.change (r, fn es =>
-                                                       loops (es, loop))
+                           val (r, u) =
+                              Record.change
+                              (r, fn res =>
+                               loops (res, fn (r, e) =>
+                                      let val (e', u) = loop e
+                                      in ((r, e'), u)
+                                      end))
                         in
                            (doit (Record r), u)
                         end

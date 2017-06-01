@@ -215,7 +215,8 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                                         seq [str "type constructor applied to incorrect number of type arguments: ",
                                              Ast.Longtycon.layout c],
                                         align [seq [str "expects: ", Kind.layout kind],
-                                               seq [str "but got: ", Int.layout numArgs]])
+                                               seq [str "but got: ", Int.layout numArgs],
+                                               seq [str "in: ", Atype.layout ty]])
                                  in
                                     Type.new ()
                                  end
@@ -231,7 +232,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                end
           | Atype.Paren t => loop t
           | Atype.Record r => (* rules 45, 49 *)
-               Type.record (SortedRecord.map (r, loop))
+               Type.record (SortedRecord.map (r, loop o #2))
    in
       loop ty
    end
@@ -740,7 +741,7 @@ val elaboratePat:
                             Vector.unzip
                             (Vector.map
                              (items,
-                              fn (f, i) =>
+                              fn (f, _, i) =>
                               (f,
                                case i of
                                   Apat.Item.Field p => p
@@ -1719,7 +1720,7 @@ structure Aexp =
             fnn (Vector.new1
                  (Apat.makeRegion
                   (Apat.Record {flexible = true,
-                                items = Vector.new1 (f, xField)},
+                                items = Vector.new1 (f, Region.bogus, xField)},
                    r),
                   xVar))
       end
@@ -3400,7 +3401,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    end
               | Aexp.Record r =>
                    let
-                      val r = Record.map (r, elab)
+                      val r = Record.map (r, elab o #2)
                       val ty =
                          Type.record
                          (SortedRecord.fromVector

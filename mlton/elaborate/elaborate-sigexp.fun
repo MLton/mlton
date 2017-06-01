@@ -104,7 +104,8 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                         seq [str "type constructor applied to incorrect number of type arguments: ",
                                              Ast.Longtycon.layout c],
                                         align [seq [str "expects: ", Kind.layout kind],
-                                               seq [str "but got: ", Int.layout numArgs]])
+                                               seq [str "but got: ", Int.layout numArgs],
+                                               seq [str "in: ", Atype.layout ty]])
                                  in
                                     Type.bogus
                                  end
@@ -120,7 +121,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                end
           | Atype.Paren t => loop t
           | Atype.Record r => (* rules 45, 49 *)
-               Type.record (SortedRecord.map (r, loop))
+               Type.record (SortedRecord.map (r, loop o #2))
       val ty = loop ty
    in
       (Vector.fromList (!tyvars), ty)

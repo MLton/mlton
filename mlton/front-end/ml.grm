@@ -24,7 +24,8 @@ structure Type =
    struct
       open Type
 
-      val tuple = Record o Srecord.tuple
+      fun tuple ts =
+         Record (Srecord.tuple (Vector.map (ts, fn t => (Region.bogus, t))))
 
       val unit = tuple (Vector.new0 ())
 
@@ -101,7 +102,7 @@ structure Exp =
       fun tuple es =
          if 1 = Vector.length es
             then Paren (Vector.sub (es, 0))
-         else Record (Record.tuple es)
+         else Record (Record.tuple (Vector.map (es, fn e => (Region.bogus, e))))
 
       val unit = tuple (Vector.new0 ())
    end
@@ -283,8 +284,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | ebrhs of EbRhs.t
        | ebrhsnode of EbRhs.node
        | ebs of eb list
-       | elabel of (Field.t * Exp.t)
-       | elabels of (Field.t * Exp.t) list
+       | elabel of (Field.t * (Region.t * Exp.t))
+       | elabels of (Field.t * (Region.t * Exp.t)) list
        | exndesc of exndesc
        | exndescs of exndesc list
        | exp of Exp.t
@@ -327,8 +328,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | optbar' of unit
        | optsemicolon of unit
        | pat of Pat.t
-       | patitem of (Field.t * Pat.Item.t)
-       | patitems of ((Field.t * Pat.Item.t) list * bool)
+       | patitem of (Field.t * Region.t * Pat.Item.t)
+       | patitems of ((Field.t * Region.t * Pat.Item.t) list * bool)
        | pats of Pat.t list
        | priority of Priority.t
        | program of Program.t
@@ -373,8 +374,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | strid of Strid.t
        | string of string
        | symattributes of PrimKind.SymbolAttribute.t list
-       | tlabel of (Field.t * Type.t)
-       | tlabels  of (Field.t * Type.t) list
+       | tlabel of (Field.t * (Region.t * Type.t))
+       | tlabels  of (Field.t * (Region.t * Type.t)) list
        | topdec of Topdec.t
        | topdecnode of Topdec.node
        | topdecs of Topdec.t list list
@@ -970,31 +971,32 @@ rules : rule            ([rule])
 
 rule    : pat DARROW exp        ((pat,exp))
 
-elabel  : field EQUALOP exp     (field,exp)
+elabel  : field EQUALOP exp     (field, (reg (fieldleft, fieldright), exp))
         | vidNoEqual constraint (if allowRecordPunExps ()
                                     then ()
                                     else error (reg (vidNoEqualleft, vidNoEqualright), "Record punning expressions disallowed, compile with -default-ann 'allowRecordPunExps true'")
                                  ; (Field.Symbol (Vid.toSymbol vidNoEqual),
-                                    let
-                                      val exp =
-                                        Exp.makeRegion'
-                                        (Exp.FlatApp
-                                         (Vector.new1
-                                          (Exp.makeRegion'
-                                           (Exp.Var {name = Longvid.short vidNoEqual,
-                                                     fixop = Fixop.None},
-                                            vidNoEqualleft, vidNoEqualright))),
-                                         vidNoEqualleft, vidNoEqualright)
-                                      val exp =
-                                        case constraint of
-                                           NONE => exp
-                                         | SOME ty =>
-                                             Exp.makeRegion'
-                                             (Exp.Constraint (exp, ty),
-                                              vidNoEqualleft, constraintright)
-                                    in
-                                      exp
-                                    end))
+                                    (reg (vidNoEqualleft, vidNoEqualright),
+                                     let
+                                        val exp =
+                                           Exp.makeRegion'
+                                           (Exp.FlatApp
+                                            (Vector.new1
+                                             (Exp.makeRegion'
+                                              (Exp.Var {name = Longvid.short vidNoEqual,
+                                                        fixop = Fixop.None},
+                                               vidNoEqualleft, vidNoEqualright))),
+                                            vidNoEqualleft, vidNoEqualright)
+                                        val exp =
+                                           case constraint of
+                                              NONE => exp
+                                            | SOME ty =>
+                                                 Exp.makeRegion'
+                                                 (Exp.Constraint (exp, ty),
+                                                  vidNoEqualleft, constraintright)
+                                     in
+                                        exp
+                                     end)))
 
 elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
@@ -1196,9 +1198,10 @@ patitems : patitem COMMA patitems  (let val (items, f) = patitems
 
 patitem
    : field EQUALOP pat
-     ((field, Pat.Item.Field pat))
+     ((field, reg (fieldleft, fieldright), Pat.Item.Field pat))
    | vidNoEqual constraint opaspat
      (Field.Symbol (Vid.toSymbol vidNoEqual),
+      reg (vidNoEqualleft, vidNoEqualright),
       Pat.Item.Vid (vidNoEqual, constraint, opaspat))
 
 opaspat :         (NONE)
@@ -1228,7 +1231,7 @@ ty'node : tyvar                           (Type.Var tyvar)
         | longtycon                       (Type.Con (longtycon,
                                                      Vector.new0 ()))
 
-tlabel  : field COLON ty        (field, ty)
+tlabel  : field COLON ty        (field, (reg (fieldleft, fieldright), ty))
 
 tlabels : tlabel COMMA tlabels  (tlabel :: tlabels)
         | tlabel                ([tlabel])

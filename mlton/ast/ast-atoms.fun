@@ -165,14 +165,13 @@ fun reportDuplicates (v: 'a vector,
        loop 0
     end)
 
-fun reportDuplicateFields (v: (Field.t * 'a) vector,
-                           {region: Region.t,
-                            term: unit -> Layout.t}): unit =
+fun reportDuplicateFields (v: (Field.t * (Region.t * 'a)) vector,
+                           {term: unit -> Layout.t}): unit =
    reportDuplicates (v,
                      {equals = fn ((f, _), (f', _)) => Field.equals (f, f'),
                       layout = Field.layout o #1,
                       name = "label",
-                      region = fn _ => region,
+                      region = #1 o #2,
                       term = term})
 
 structure Type =
@@ -182,7 +181,7 @@ structure Type =
       datatype node =
          Con of Longtycon.t * t vector
        | Paren of t
-       | Record of t Record.t
+       | Record of (Region.t * t) Record.t
        | Var of Tyvar.t
       withtype t = node Wrap.t
       type node' = node
@@ -191,7 +190,7 @@ structure Type =
       fun make n = makeRegion (n, Region.bogus)
       val var = make o Var
       val record = make o Record
-      val tuple = record o Record.tuple
+      val tuple = record o Record.tuple o (fn tys => Vector.map (tys, fn ty => (Region.bogus, ty)))
       val unit = tuple (Vector.new0 ())
 
       fun con (c: Tycon.t, ts: t vector): t =
@@ -223,8 +222,8 @@ structure Type =
           | Paren t => layout t
           | Record r => Record.layout {record = r,
                                        separator = ":", extra = "",
-                                       layoutElt = layout,
-                                       layoutTuple = layoutTupleTy}
+                                       layoutElt = layout o #2,
+                                       layoutTuple = fn rtys => layoutTupleTy (Vector.map (rtys, #2))}
       and layoutTupleTy tys =
          case Vector.length tys of
             0 => str "unit"
@@ -242,10 +241,19 @@ structure Type =
             Con (_, ts) => Vector.foreach (ts, checkSyntax)
           | Paren t => checkSyntax t
           | Record r =>
-               (reportDuplicateFields (Record.toVector r,
-                                       {region = region t,
-                                        term = fn () => layout t})
-                ; Record.foreach (r, checkSyntax))
+               let
+                  val v =
+                     QuickSort.sortVector
+                     (Record.toVector r, fn ((f1, (r1, _)), (f2, (r2, _))) =>
+                      case Region.compare (r1, r2) of
+                         LESS => true
+                       | EQUAL => Field.<= (f1, f2)
+                       | GREATER => false)
+               in
+                  reportDuplicateFields (v,
+                                         {term = fn () => layout t})
+                  ; Record.foreach (r, checkSyntax o #2)
+               end
           | Var _ => ()
    end
 

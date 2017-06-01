@@ -77,7 +77,7 @@ structure Pat =
        | Or of t vector
        | Paren of t
        | Record of {flexible: bool,
-                    items: (Record.Field.t * item) vector}
+                    items: (Record.Field.t * Region.t * item) vector}
        | Tuple of t vector
        | Var of {fixop: Fixop.t, name: Longvid.t}
        | Vector of t vector
@@ -154,7 +154,7 @@ structure Pat =
       and layoutF p = layout (p, false)
       and layoutT p = layout (p, true)
       and layoutFlatApp ps = seq (separate (Vector.toListMap (ps, layoutF), " "))
-      and layoutItem (f, i) =
+      and layoutItem (f, _, i) =
          seq [Field.layout f,
               case i of
                  Field p => seq [str " = ", layoutT p]
@@ -183,15 +183,14 @@ structure Pat =
              | Paren p => c p
              | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
-                  (Vector.foreach (items, fn (_, i) =>
-                                   case i of
-                                      Item.Field p => c p
-                                    | Item.Vid (_, to, po) =>
-                                         (Option.app (to, Type.checkSyntax)
-                                          ; Option.app (po, c)))
-                   ; reportDuplicateFields (items,
-                                            {region = region p,
-                                             term = fn () => layout p}))
+                  (reportDuplicateFields (Vector.map (items, fn (f, r, i) => (f, (r, i))),
+                                          {term = fn () => layout p})
+                   ; Vector.foreach (items, fn (_, _, i) =>
+                                     case i of
+                                        Item.Field p => c p
+                                      | Item.Vid (_, to, po) =>
+                                           (Option.app (to, Type.checkSyntax)
+                                            ; Option.app (po, c))))
              | Tuple ps => Vector.foreach (ps, c)
              | Var _ => ()
              | Vector ps => Vector.foreach (ps, c)
@@ -335,7 +334,7 @@ datatype expNode =
   | Paren of exp
   | Prim of PrimKind.t
   | Raise of exp
-  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
+  | Record of (Region.t * exp) Record.t
   | Selector of Field.t
   | Seq of exp vector
   | Var of {name: Longvid.t, fixop: Fixop.t}
@@ -467,8 +466,8 @@ fun layoutExp arg =
                Record.layout {record = r,
                               separator = " = ",
                               extra = "",
-                              layoutTuple = layoutTuple,
-                              layoutElt = layoutExpT}
+                              layoutTuple = fn res => layoutTuple (Vector.map (res, #2)),
+                              layoutElt = layoutExpT o #2}
             end
        | Selector f => seq [str "#", Field.layout f]
        | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
@@ -583,10 +582,9 @@ fun checkSyntaxExp (e: exp): unit =
        | Prim _ => ()
        | Raise e => c e
        | Record r =>
-            (Record.foreach (r, c)
-             ; reportDuplicateFields (Record.toVector r,
-                                      {region = region e,
-                                       term = fn () => layoutExp (e, true)}))
+            (reportDuplicateFields (Record.toVector r,
+                                    {term = fn () => layoutExpT e})
+             ; Record.foreach (r, c o #2))
        | Selector _ => ()
        | Seq es => Vector.foreach (es, c)
        | Var _ => ()
@@ -685,8 +683,10 @@ structure Exp =
                      then Region.bogus
                   else Region.append (region (Vector.sub (es, 0)),
                                       region (Vector.last es))
+               val res =
+                  Vector.map (es, fn e => (Region.bogus, e))
             in
-               makeRegion (Record (Record.tuple es), r)
+               makeRegion (Record (Record.tuple res), r)
             end
 
       val unit: t = tuple (Vector.new0 ())
