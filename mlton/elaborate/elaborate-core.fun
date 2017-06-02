@@ -15,7 +15,6 @@ open S
 local
    open Control.Elaborate
 in
-   val allowRebindEquals = fn () => current allowRebindEquals
    val nonexhaustiveBind = fn () => current nonexhaustiveBind
    val nonexhaustiveExnBind = fn () => current nonexhaustiveExnBind
    val nonexhaustiveExnMatch = fn () => current nonexhaustiveExnMatch
@@ -438,20 +437,6 @@ structure Var =
       val fromAst = fromString o Avar.toString
    end
 
-local
-   val eq = Avar.fromSymbol (Symbol.equal, Region.bogus)
-in
-   fun ensureNotEquals x =
-      if not (allowRebindEquals ()) andalso Avar.equals (x, eq)
-         then
-            let
-               open Layout
-            in
-               Control.error (Avar.region x, str "= can't be redefined", empty)
-            end
-      else ()
-end
-
 fun approximateN (l: Layout.t, prefixMax, suffixMax): Layout.t =
    let
       val s = Layout.toString l
@@ -500,7 +485,12 @@ val elaboratePat:
          val xts: (Avar.t * Var.t * Type.t) list ref = ref []
          fun bindToType (x: Avar.t, t: Type.t): Var.t =
             let
-               val _ = ensureNotEquals x
+               val _ =
+                  Avid.checkRedefineSpecial
+                  (Avid.fromVar x,
+                   {allowIt = true,
+                    keyword = if isRvb then "val rec" else "pattern",
+                    term = layTop})
                val x' = rename x
                val () =
                   case List.peek (!xts, fn (y, _, _) => Avar.equals (x, y)) of

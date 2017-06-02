@@ -72,12 +72,15 @@ structure Vid =
       end
 
       val it = fromSymbol (Symbol.itt, Region.bogus)
+      val equal = fromSymbol (Symbol.equal, Region.bogus)
       val specialCons = List.map (Con.special, fromCon)
 
       fun checkSpecial (oper, ctrl) (vid, {allowIt, keyword, term}) =
          if not (Control.Elaborate.current ctrl)
             andalso
             ((not allowIt andalso equals (vid, it))
+             orelse
+             equals (vid, equal)
              orelse
              List.exists (specialCons, fn vid' => equals (vid, vid')))
             then
