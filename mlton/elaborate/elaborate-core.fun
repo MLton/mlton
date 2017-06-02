@@ -49,7 +49,6 @@ structure ElabControl = Control.Elaborate
 local
    open Ast
 in
-   structure Acon = Con
    structure Aconst = Const
    structure Adec = Dec
    structure Aexp = Exp
@@ -2208,8 +2207,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                        in
                                           ()
                                        end)
-                                   val funcCon = Avid.toCon (Avid.fromVar func)
-                                   val _ = Acon.ensureRedefined (funcCon, layFb)
+                                   val funcVid = Avid.fromVar func
+                                   val funcCon = Avid.toCon funcVid
+                                   val _ = Avid.checkRedefineSpecial (funcVid, layFb)
                                    val _ =
                                       case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
                                          NONE => ()
@@ -2613,10 +2613,11 @@ fun elaborateDec (d, {env = E, nest}) =
                                    Vector.map
                                    (bound, fn (x, _, _) =>
                                     let
-                                       val varCon = Avid.toCon (Avid.fromVar x)
-                                       val _ = Acon.ensureRedefined (Avid.toCon (Avid.fromVar x), layRvb)
+                                       val xAvid = Avid.fromVar x
+                                       val xCon = Avid.toCon xAvid
+                                       val _ = Avid.checkRedefineSpecial (xAvid, layRvb)
                                        val _ =
-                                          case Env.peekLongcon (E, Ast.Longcon.short varCon) of
+                                          case Env.peekLongcon (E, Ast.Longcon.short xCon) of
                                              NONE => ()
                                            | SOME _ =>
                                                 (case valrecConstr () of

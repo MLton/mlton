@@ -607,9 +607,10 @@ and checkSyntaxDec (d: dec): unit =
     | Datatype rhs => DatatypeRhs.checkSyntaxDef rhs
     | DoDec exp => checkSyntaxExp exp
     | Exception v =>
-         (Vector.foreach (v, fn (con, ebrhs) =>
-                          (Con.ensureRedefined (con, fn () => layoutDec d)
-                           ; EbRhs.checkSyntax ebrhs))
+         (Vector.foreach
+          (v, fn (con, ebrhs) =>
+           (Vid.checkRedefineSpecial (Vid.fromCon con, fn () => layoutDec d)
+            ; EbRhs.checkSyntax ebrhs))
           ; (reportDuplicates
              (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                   layout = Con.layout o #1,

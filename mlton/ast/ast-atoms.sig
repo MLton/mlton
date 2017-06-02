@@ -42,9 +42,6 @@ signature AST_ATOMS =
             include AST_ID
             include PRIM_CONS
             sharing type con = t
-
-            val ensureRedefined: t * (unit -> Layout.t) -> unit
-            val ensureSpecified: t * (unit -> Layout.t)  -> unit
          end
 
       structure Basid: AST_ID
@@ -61,6 +58,10 @@ signature AST_ATOMS =
             val fromCon: Con.t -> t
             val toVar: t -> Var.t
             val toCon: t -> Con.t
+
+            (* check special ids *)
+            val checkRedefineSpecial: t * (unit -> Layout.t) -> unit
+            val checkSpecifySpecial: t * (unit -> Layout.t)  -> unit
          end
 
       structure Longtycon:

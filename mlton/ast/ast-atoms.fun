@@ -48,31 +48,8 @@ structure Con =
 
       open P
 
-      val it = fromSymbol (Symbol.itt, Region.bogus)
-
-      fun ensure (oper, ctrl) (c, lay) =
-         if not (Control.Elaborate.current ctrl)
-            andalso
-            List.exists ([cons, falsee, it, nill, reff, truee],
-                         fn c' => equals (c, c'))
-            then 
-               let
-                  open Layout
-               in
-                  Control.error (region c,
-                                 seq [str "special identifier cannot be ",
-                                      str oper,
-                                      str ": ",
-                                      layout c],
-                                 seq [str "in: ", lay ()])
-               end
-         else ()
-
-      val ensureRedefined =
-         ensure ("redefined", Control.Elaborate.allowRedefineSpecialIds)
-
-      val ensureSpecified =
-         ensure ("specified", Control.Elaborate.allowSpecifySpecialIds)
+      val special =
+         [cons, falsee, nill, reff, truee]
    end
 
 structure Basid = AstId (structure Symbol = Symbol)
@@ -93,6 +70,33 @@ structure Vid =
          val toCon = make Con.fromSymbol
          val toVar = make Var.fromSymbol
       end
+
+      val it = fromSymbol (Symbol.itt, Region.bogus)
+      val special =
+         it :: (List.map (Con.special, fromCon))
+
+      fun checkSpecial (oper, ctrl) (vid, lay) =
+         if not (Control.Elaborate.current ctrl)
+            andalso
+            List.exists (special, fn vid' => equals (vid, vid'))
+            then
+               let
+                  open Layout
+               in
+                  Control.error (region vid,
+                                 seq [str "special identifier cannot be ",
+                                      str oper,
+                                      str ": ",
+                                      layout vid],
+                                 seq [str "in: ", lay ()])
+               end
+         else ()
+
+      val checkRedefineSpecial =
+         checkSpecial ("redefined", Control.Elaborate.allowRedefineSpecialIds)
+
+      val checkSpecifySpecial =
+         checkSpecial ("specified", Control.Elaborate.allowSpecifySpecialIds)
    end
 
 structure Longtycon =
@@ -368,7 +372,7 @@ structure DatBind =
          end
 
       fun checkSyntax (b: t, kind: string,
-                       conEnsure: Con.t * (unit -> Layout.t) -> unit): unit =
+                       vidCheckSpecial: Vid.t * (unit -> Layout.t) -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
             fun term () = layout ("datatype", b)
@@ -376,7 +380,7 @@ structure DatBind =
                Vector.foreach
                (datatypes, fn {cons, ...} =>
                 Vector.foreach (cons, fn (c, to) =>
-                                (conEnsure (c, term)
+                                (vidCheckSpecial (Vid.fromCon c, term)
                                  ; Option.app (to, Type.checkSyntax))))
             val () =
                reportDuplicates
@@ -403,9 +407,9 @@ structure DatBind =
             ()
          end
       fun checkSyntaxDef b =
-         checkSyntax (b, "definition", Con.ensureRedefined)
+         checkSyntax (b, "definition", Vid.checkRedefineSpecial)
       fun checkSyntaxSpec b =
-         checkSyntax (b, "specification", Con.ensureSpecified)
+         checkSyntax (b, "specification", Vid.checkSpecifySpecial)
    end
 
 structure DatatypeRhs =
