@@ -2211,7 +2211,10 @@ fun elaborateDec (d, {env = E, nest}) =
                                    val funcCon = Avid.toCon funcVid
                                    val _ =
                                       Avid.checkRedefineSpecial
-                                      (funcVid, {allowIt = true, term = layFb})
+                                      (funcVid,
+                                       {allowIt = true,
+                                        keyword = "fun",
+                                        term = layFb})
                                    val _ =
                                       case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
                                          NONE => ()
@@ -2619,7 +2622,10 @@ fun elaborateDec (d, {env = E, nest}) =
                                        val xCon = Avid.toCon xAvid
                                        val _ =
                                           Avid.checkRedefineSpecial
-                                          (xAvid, {allowIt = true, term = layRvb})
+                                          (xAvid,
+                                           {allowIt = true,
+                                            keyword = "val rec",
+                                            term = layRvb})
                                        val _ =
                                           case Env.peekLongcon (E, Ast.Longcon.short xCon) of
                                              NONE => ()

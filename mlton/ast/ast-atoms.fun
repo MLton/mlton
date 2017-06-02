@@ -74,7 +74,7 @@ structure Vid =
       val it = fromSymbol (Symbol.itt, Region.bogus)
       val specialCons = List.map (Con.special, fromCon)
 
-      fun checkSpecial (oper, ctrl) (vid, {allowIt, term}) =
+      fun checkSpecial (oper, ctrl) (vid, {allowIt, keyword, term}) =
          if not (Control.Elaborate.current ctrl)
             andalso
             ((not allowIt andalso equals (vid, it))
@@ -87,6 +87,8 @@ structure Vid =
                   Control.error (region vid,
                                  seq [str "special identifier cannot be ",
                                       str oper,
+                                      str " by ",
+                                      str keyword,
                                       str ": ",
                                       layout vid],
                                  seq [str "in: ", term ()])
@@ -373,17 +375,21 @@ structure DatBind =
          end
 
       fun checkSyntax (b: t, kind: string,
-                       vidCheckSpecial: Vid.t * {allowIt: bool, term: unit -> Layout.t} -> unit): unit =
+                       vidCheckSpecial: Vid.t * {allowIt: bool, keyword: string, term: unit -> Layout.t} -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
             fun term () = layout ("datatype", b)
             val () =
                Vector.foreach
                (datatypes, fn {cons, ...} =>
-                Vector.foreach (cons, fn (c, to) =>
-                                (vidCheckSpecial (Vid.fromCon c,
-                                                  {allowIt = false, term = term})
-                                 ; Option.app (to, Type.checkSyntax))))
+                Vector.foreach
+                (cons, fn (c, to) =>
+                 (vidCheckSpecial
+                  (Vid.fromCon c,
+                   {allowIt = false,
+                    keyword = "datatype",
+                    term = term})
+                  ; Option.app (to, Type.checkSyntax))))
             val () =
                reportDuplicates
                (Vector.concatV (Vector.map (datatypes, #cons)),

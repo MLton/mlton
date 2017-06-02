@@ -62,9 +62,11 @@ signature AST_ATOMS =
             (* check special ids *)
             val checkRedefineSpecial:
                t * {allowIt: bool,
+                    keyword: string,
                     term: unit -> Layout.t} -> unit
             val checkSpecifySpecial:
                t * {allowIt: bool,
+                    keyword: string,
                     term: unit -> Layout.t} -> unit
          end
 

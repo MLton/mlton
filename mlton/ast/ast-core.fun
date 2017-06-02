@@ -609,9 +609,11 @@ and checkSyntaxDec (d: dec): unit =
     | Exception v =>
          (Vector.foreach
           (v, fn (con, ebrhs) =>
-           (Vid.checkRedefineSpecial (Vid.fromCon con,
-                                      {allowIt = false,
-                                       term = fn () => layoutDec d})
+           (Vid.checkRedefineSpecial
+            (Vid.fromCon con,
+             {allowIt = false,
+              keyword = "exception",
+              term = fn () => layoutDec d})
             ; EbRhs.checkSyntax ebrhs))
           ; (reportDuplicates
              (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),

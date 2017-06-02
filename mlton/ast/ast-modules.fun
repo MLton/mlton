@@ -178,8 +178,11 @@ and checkSyntaxSpec (s: spec): unit =
        | Exception v =>
             (Vector.foreach
              (v, fn (con, to) =>
-              (Vid.checkSpecifySpecial (Vid.fromCon con,
-                                        {allowIt = false, term = term})
+              (Vid.checkSpecifySpecial
+               (Vid.fromCon con,
+                {allowIt = false,
+                 keyword = "exception",
+                 term = term})
                ; Option.app (to, Type.checkSyntax)))
              ; (reportDuplicates
                 (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
@@ -211,8 +214,11 @@ and checkSyntaxSpec (s: spec): unit =
        | Val v =>
             (Vector.foreach
              (v, fn (v, t) =>
-              (Vid.checkSpecifySpecial (Vid.fromVar v,
-                                        {allowIt = true, term = term})
+              (Vid.checkSpecifySpecial
+               (Vid.fromVar v,
+                {allowIt = true,
+                 keyword = "val",
+                 term = term})
                ; Type.checkSyntax t))
              ; (reportDuplicates
                 (v, {equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
