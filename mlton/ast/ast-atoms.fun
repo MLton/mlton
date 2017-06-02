@@ -72,13 +72,14 @@ structure Vid =
       end
 
       val it = fromSymbol (Symbol.itt, Region.bogus)
-      val special =
-         it :: (List.map (Con.special, fromCon))
+      val specialCons = List.map (Con.special, fromCon)
 
-      fun checkSpecial (oper, ctrl) (vid, lay) =
+      fun checkSpecial (oper, ctrl) (vid, {allowIt, term}) =
          if not (Control.Elaborate.current ctrl)
             andalso
-            List.exists (special, fn vid' => equals (vid, vid'))
+            ((not allowIt andalso equals (vid, it))
+             orelse
+             List.exists (specialCons, fn vid' => equals (vid, vid')))
             then
                let
                   open Layout
@@ -88,7 +89,7 @@ structure Vid =
                                       str oper,
                                       str ": ",
                                       layout vid],
-                                 seq [str "in: ", lay ()])
+                                 seq [str "in: ", term ()])
                end
          else ()
 
@@ -372,7 +373,7 @@ structure DatBind =
          end
 
       fun checkSyntax (b: t, kind: string,
-                       vidCheckSpecial: Vid.t * (unit -> Layout.t) -> unit): unit =
+                       vidCheckSpecial: Vid.t * {allowIt: bool, term: unit -> Layout.t} -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
             fun term () = layout ("datatype", b)
@@ -380,7 +381,8 @@ structure DatBind =
                Vector.foreach
                (datatypes, fn {cons, ...} =>
                 Vector.foreach (cons, fn (c, to) =>
-                                (vidCheckSpecial (Vid.fromCon c, term)
+                                (vidCheckSpecial (Vid.fromCon c,
+                                                  {allowIt = false, term = term})
                                  ; Option.app (to, Type.checkSyntax))))
             val () =
                reportDuplicates

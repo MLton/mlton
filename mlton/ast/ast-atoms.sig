@@ -60,8 +60,12 @@ signature AST_ATOMS =
             val toCon: t -> Con.t
 
             (* check special ids *)
-            val checkRedefineSpecial: t * (unit -> Layout.t) -> unit
-            val checkSpecifySpecial: t * (unit -> Layout.t)  -> unit
+            val checkRedefineSpecial:
+               t * {allowIt: bool,
+                    term: unit -> Layout.t} -> unit
+            val checkSpecifySpecial:
+               t * {allowIt: bool,
+                    term: unit -> Layout.t} -> unit
          end
 
       structure Longtycon:
