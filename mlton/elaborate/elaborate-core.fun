@@ -2614,12 +2614,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                     let
                                        val xVid = Avid.fromVar x
                                        val _ =
-                                          Avid.checkRedefineSpecial
-                                          (xVid,
-                                           {allowIt = true,
-                                            keyword = "val rec",
-                                            term = layRvb})
-                                       val _ =
                                           checkConRedefine
                                           (xVid, "val rec", layRvb)
                                        val _ =
