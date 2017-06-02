@@ -1983,6 +1983,20 @@ fun elaborateDec (d, {env = E, nest}) =
                               end
                         else ()))
                 else ()
+             fun checkConRedefine (vid, keyword, lay) =
+                case Env.peekLongcon (E, Ast.Longcon.short (Avid.toCon vid)) of
+                   NONE => ()
+                 | SOME _ =>
+                      (case valrecConstr () of
+                          Control.Elaborate.DiagEIW.Error => Control.error
+                        | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
+                        | Control.Elaborate.DiagEIW.Warn => Control.warning)
+                      (Avid.region vid,
+                       seq [str "constructor redefined by ",
+                            str keyword,
+                            str ": ",
+                            Avid.layout vid],
+                       lay ())
              val elabDec = fn (d, isTop) => elabDec (d, nest, isTop)
              val decs =
                 case Adec.node d of
@@ -2208,7 +2222,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                           ()
                                        end)
                                    val funcVid = Avid.fromVar func
-                                   val funcCon = Avid.toCon funcVid
                                    val _ =
                                       Avid.checkRedefineSpecial
                                       (funcVid,
@@ -2216,17 +2229,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                         keyword = "fun",
                                         term = layFb})
                                    val _ =
-                                      case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
-                                         NONE => ()
-                                       | SOME _ =>
-                                            (case valrecConstr () of
-                                                Control.Elaborate.DiagEIW.Error => Control.error
-                                              | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
-                                              | Control.Elaborate.DiagEIW.Warn => Control.warning)
-                                            (Avar.region func,
-                                             seq [str "constructor redefined by fun: ",
-                                                  Avar.layout func],
-                                             layFb ())
+                                      checkConRedefine
+                                      (funcVid, "fun", layFb)
                                    val var = Var.fromAst func
                                    val ty = Type.new ()
                                    val _ = Env.extendVar (E, func, var,
@@ -2618,26 +2622,16 @@ fun elaborateDec (d, {env = E, nest}) =
                                    Vector.map
                                    (bound, fn (x, _, _) =>
                                     let
-                                       val xAvid = Avid.fromVar x
-                                       val xCon = Avid.toCon xAvid
+                                       val xVid = Avid.fromVar x
                                        val _ =
                                           Avid.checkRedefineSpecial
-                                          (xAvid,
+                                          (xVid,
                                            {allowIt = true,
                                             keyword = "val rec",
                                             term = layRvb})
                                        val _ =
-                                          case Env.peekLongcon (E, Ast.Longcon.short xCon) of
-                                             NONE => ()
-                                           | SOME _ =>
-                                                (case valrecConstr () of
-                                                    Control.Elaborate.DiagEIW.Error => Control.error
-                                                  | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
-                                                  | Control.Elaborate.DiagEIW.Warn => Control.warning)
-                                                (Avar.region x,
-                                                 seq [str "constructor redefined by val rec: ",
-                                                      Avar.layout x],
-                                                 layRvb ())
+                                          checkConRedefine
+                                          (xVid, "val rec", layRvb)
                                        val _ =
                                           Env.extendVar (E, x, var, scheme,
                                                          {isRebind = false})
