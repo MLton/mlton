@@ -263,11 +263,12 @@ eol=({cr}{nl}|{nl}|{cr});
 
 alphanum=[A-Za-z0-9'_];
 alphanumId=[A-Za-z]{alphanum}*;
-tyvarId="'"{alphanum}*;
 sym="!"|"%"|"&"|"$"|"#"|"+"|"-"|"/"|":"|"<"|"="|">"|"?"|"@"|"\\"|"~"|"`"|"^"|"|"|"*";
 symId={sym}+;
-id={alphanumId}|{symId};
-longId={id}("."{id})*;
+
+tyvarId="'"{alphanum}*;
+longSymId=({alphanumId}".")+{symId};
+longAlphanumId=({alphanumId}".")+{alphanumId};
 
 decDigit=[0-9];
 decnum={decDigit}("_"*{decDigit})*;
@@ -356,11 +357,14 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
 <INITIAL>"withtype" => (tok (Tokens.WITHTYPE, yytext, source, yypos));
 
 
-<INITIAL>{tyvarId} => (tok' (Tokens.TYVAR, yytext, source, yypos));
-<INITIAL>{longId} =>
+<INITIAL>{alphanumId} => (tok' (Tokens.SHORTALPHANUMID, yytext, source, yypos));
+<INITIAL>{symId} =>
    (case yytext of
        "*" => tok (Tokens.ASTERISK, yytext, source, yypos)
-     | _ => tok' (Tokens.LONGID, yytext, source, yypos));
+     | _ => tok' (Tokens.SHORTSYMID, yytext, source, yypos));
+<INITIAL>{tyvarId} => (tok' (Tokens.TYVAR, yytext, source, yypos));
+<INITIAL>{longAlphanumId} => (tok' (Tokens.LONGALPHANUMID, yytext, source, yypos));
+<INITIAL>{longSymId} => (tok' (Tokens.LONGSYMID, yytext, source, yypos));
 
 
 <INITIAL>{real} =>
