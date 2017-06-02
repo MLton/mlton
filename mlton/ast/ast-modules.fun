@@ -165,7 +165,7 @@ and checkSyntaxSpec (s: spec): unit =
       fun term () = layoutSpec s
    in
       case node s of
-         Datatype d => DatatypeRhs.checkSyntax (d, "specification")
+         Datatype d => DatatypeRhs.checkSyntaxSpec d
        | Eqtype v =>
             reportDuplicates
             (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
@@ -176,8 +176,9 @@ and checkSyntaxSpec (s: spec): unit =
                  term = term})
        | Empty => ()
        | Exception v =>
-            (Vector.foreach (v, fn (_, to) =>
-                             Option.app (to, Type.checkSyntax))
+            (Vector.foreach (v, fn (con, to) =>
+                             (Con.ensureSpecified (con, term)
+                              ; Option.app (to, Type.checkSyntax)))
              ; (reportDuplicates
                 (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                      layout = Con.layout o #1,
@@ -204,9 +205,11 @@ and checkSyntaxSpec (s: spec): unit =
                  name = "type specification",
                  region = Tycon.region o #tycon,
                  term = term})
-       | TypeDefs b => TypBind.checkSyntax (b, "specification")
+       | TypeDefs b => TypBind.checkSyntaxSpec b
        | Val v =>
-            (Vector.foreach (v, fn (_, t) => Type.checkSyntax t)
+            (Vector.foreach (v, fn (v, t) =>
+                             (Con.ensureSpecified (Vid.toCon (Vid.fromVar v), term)
+                              ; Type.checkSyntax t))
              ; (reportDuplicates
                 (v, {equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
                      layout = Var.layout o #1,

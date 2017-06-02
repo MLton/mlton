@@ -675,13 +675,12 @@ typdesc : tyvars tycon ({tyvars = tyvars,
 valdescs : valdesc                ([valdesc])
          | valdesc AND valdescs   (valdesc :: valdescs)
 
-valdesc : var COLON ty  (Con.ensureSpecify (Vid.toCon (Vid.fromVar var))
-                         ; (var, ty))
+valdesc : var COLON ty  (var, ty)
 
 exndescs : exndesc                ([exndesc])
          | exndesc AND exndescs   (exndesc :: exndescs)
 
-exndesc : con tyOpt  (Con.ensureSpecify con; (con, tyOpt))
+exndesc : con tyOpt  (con, tyOpt)
 
 tyOpt :         (NONE)
       | OF ty   (SOME ty)
@@ -742,8 +741,7 @@ decnolocal
         | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
         | ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,
                                                         body = decs})
-        | EXCEPTION ebs
-          (Dec.Exception (Vector.fromList ebs))
+        | EXCEPTION ebs         (Dec.Exception (Vector.fromList ebs))
         | OPEN longstrids       (Dec.Open (Vector.fromList longstrids))
         | fixity vids           (Dec.Fix {fixity = fixity,
                                           ops = Vector.fromList vids})
@@ -845,7 +843,7 @@ opcon   : con           (con)
 ebs     : eb              ([eb])
         | eb AND ebs      (eb::ebs)
 
-eb      : opcon ebrhs     (Con.ensureRedefine opcon; (opcon, ebrhs))
+eb      : opcon ebrhs     (opcon, ebrhs)
 
 ebrhs : ebrhsnode (EbRhs.makeRegion' (ebrhsnode,
                                      ebrhsnodeleft, ebrhsnoderight))

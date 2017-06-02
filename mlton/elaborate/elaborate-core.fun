@@ -821,19 +821,7 @@ val elaboratePat:
                                   end
                           | SOME (c, s) =>
                                if List.isEmpty strids andalso isRvb
-                                  then let
-                                          val _ =
-                                             (case valrecConstr () of
-                                                 Control.Elaborate.DiagEIW.Error => Control.error
-                                               | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
-                                               | Control.Elaborate.DiagEIW.Warn => Control.warning)
-                                             (region,
-                                              seq [str "constructor redefined by val rec: ",
-                                                   Ast.Longvid.layout name],
-                                              empty)
-                                       in
-                                          var ()
-                                       end
+                                  then var ()
                                else
                                   case s of
                                      NONE => dontCare ()
@@ -2221,7 +2209,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                           ()
                                        end)
                                    val funcCon = Avid.toCon (Avid.fromVar func)
-                                   val _ = Acon.ensureRedefine funcCon
+                                   val _ = Acon.ensureRedefined (funcCon, layFb)
                                    val _ =
                                       case Env.peekLongcon (E, Ast.Longcon.short funcCon) of
                                          NONE => ()
@@ -2624,11 +2612,27 @@ fun elaborateDec (d, {env = E, nest}) =
                                 val bound =
                                    Vector.map
                                    (bound, fn (x, _, _) =>
-                                    (Acon.ensureRedefine (Avid.toCon
-                                                          (Avid.fromVar x))
-                                     ; Env.extendVar (E, x, var, scheme,
-                                                      {isRebind = false})
-                                     ; (x, var, ty)))
+                                    let
+                                       val varCon = Avid.toCon (Avid.fromVar x)
+                                       val _ = Acon.ensureRedefined (Avid.toCon (Avid.fromVar x), layRvb)
+                                       val _ =
+                                          case Env.peekLongcon (E, Ast.Longcon.short varCon) of
+                                             NONE => ()
+                                           | SOME _ =>
+                                                (case valrecConstr () of
+                                                    Control.Elaborate.DiagEIW.Error => Control.error
+                                                  | Control.Elaborate.DiagEIW.Ignore => (fn _ => ())
+                                                  | Control.Elaborate.DiagEIW.Warn => Control.warning)
+                                                (Avar.region x,
+                                                 seq [str "constructor redefined by val rec: ",
+                                                      Avar.layout x],
+                                                 layRvb ())
+                                       val _ =
+                                          Env.extendVar (E, x, var, scheme,
+                                                         {isRebind = false})
+                                    in
+                                       (x, var, ty)
+                                    end)
                              in
                                 {bound = bound,
                                  layDec = layDec,

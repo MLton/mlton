@@ -50,7 +50,7 @@ structure Con =
 
       val it = fromSymbol (Symbol.itt, Region.bogus)
 
-      fun ensure oper c =
+      fun ensure oper (c, lay) =
          if List.exists ([cons, falsee, it, nill, reff, truee],
                          fn c' => equals (c, c'))
             then 
@@ -58,15 +58,17 @@ structure Con =
                   open Layout
                in
                   Control.error (region c,
-                                 seq [str (concat ["can not ", oper, " "]),
+                                 seq [str "special identifier cannot be ",
+                                      str oper,
+                                      str ": ",
                                       layout c],
-                                 empty)
+                                 seq [str "in: ", lay ()])
                end
          else ()
 
-      val ensureRedefine = ensure "redefine"
+      val ensureRedefined = ensure "redefined"
 
-      val ensureSpecify = ensure "specify"
+      val ensureSpecified = ensure "specified"
    end
 
 structure Basid = AstId (structure Symbol = Symbol)
@@ -320,6 +322,8 @@ structure TypBind =
                  region = Tycon.region o #tycon,
                  term = fn () => layout b})
          end
+      fun checkSyntaxDef b = checkSyntax (b, "definition")
+      fun checkSyntaxSpec b = checkSyntax (b, "specification")
    end
 
 (*---------------------------------------------------*)
@@ -359,16 +363,17 @@ structure DatBind =
                    else seq [str "with", TypBind.layout withtypes]]
          end
 
-      fun checkSyntax (b: t, kind: string): unit =
+      fun checkSyntax (b: t, kind: string,
+                       conEnsure: Con.t * (unit -> Layout.t) -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
+            fun term () = layout ("datatype", b)
             val () =
                Vector.foreach
                (datatypes, fn {cons, ...} =>
                 Vector.foreach (cons, fn (c, to) =>
-                                (Con.ensureRedefine c
+                                (conEnsure (c, term)
                                  ; Option.app (to, Type.checkSyntax))))
-            fun term () = layout ("datatype", b)
             val () =
                reportDuplicates
                (Vector.concatV (Vector.map (datatypes, #cons)),
@@ -393,6 +398,10 @@ structure DatBind =
          in
             ()
          end
+      fun checkSyntaxDef b =
+         checkSyntax (b, "definition", Con.ensureRedefined)
+      fun checkSyntaxSpec b =
+         checkSyntax (b, "specification", Con.ensureSpecified)
    end
 
 structure DatatypeRhs =
@@ -411,12 +420,14 @@ structure DatatypeRhs =
             DatBind d => DatBind.layout ("datatype", d)
           | Repl {lhs, rhs} =>
                seq [str "datatype ", Tycon.layout lhs,
-                   str " = datatype ", Longtycon.layout rhs]
+                    str " = datatype ", Longtycon.layout rhs]
 
-      fun checkSyntax (rhs: t, kind: string): unit =
+      fun checkSyntax (rhs: t, datBindCheckSyntax) =
          case node rhs of
-            DatBind b => DatBind.checkSyntax (b, kind)
+            DatBind b => datBindCheckSyntax b
           | Repl _ => ()
+      fun checkSyntaxDef rhs = checkSyntax (rhs, DatBind.checkSyntaxDef)
+      fun checkSyntaxSpec rhs = checkSyntax (rhs, DatBind.checkSyntaxSpec)
    end
 
 (*---------------------------------------------------*)

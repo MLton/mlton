@@ -43,8 +43,8 @@ signature AST_ATOMS =
             include PRIM_CONS
             sharing type con = t
 
-            val ensureRedefine: t -> unit
-            val ensureSpecify: t -> unit
+            val ensureRedefined: t * (unit -> Layout.t) -> unit
+            val ensureSpecified: t * (unit -> Layout.t)  -> unit
          end
 
       structure Basid: AST_ID
@@ -118,7 +118,8 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t * string -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val empty: t
             val layout: t -> Layout.t
          end
@@ -133,7 +134,8 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t * string -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val layout: string * t -> Layout.t
          end
       structure DatatypeRhs:
@@ -145,7 +147,8 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t * string -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val layout: t -> Layout.t
          end
       structure ModIdBind:
