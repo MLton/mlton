@@ -50,8 +50,10 @@ structure Con =
 
       val it = fromSymbol (Symbol.itt, Region.bogus)
 
-      fun ensure oper (c, lay) =
-         if List.exists ([cons, falsee, it, nill, reff, truee],
+      fun ensure (oper, ctrl) (c, lay) =
+         if not (Control.Elaborate.current ctrl)
+            andalso
+            List.exists ([cons, falsee, it, nill, reff, truee],
                          fn c' => equals (c, c'))
             then 
                let
@@ -66,9 +68,11 @@ structure Con =
                end
          else ()
 
-      val ensureRedefined = ensure "redefined"
+      val ensureRedefined =
+         ensure ("redefined", Control.Elaborate.allowRedefineSpecialIds)
 
-      val ensureSpecified = ensure "specified"
+      val ensureSpecified =
+         ensure ("specified", Control.Elaborate.allowSpecifySpecialIds)
    end
 
 structure Basid = AstId (structure Symbol = Symbol)
