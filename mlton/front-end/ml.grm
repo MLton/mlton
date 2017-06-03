@@ -200,12 +200,6 @@ fun shortIdFromTok (s, left, right) =
 
 fun longIdFromShortId (sym, reg) = ([sym], reg)
 
-fun ensureNonqualified (ss: Symbol.t list, r: Region.t): Symbol.t * Region.t =
-   case ss of
-      [s] => (s, r)
-    | _ => (error (r, "expected nonqualified id")
-            ; (Symbol.bogus, r))
-
 fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
 fun augment (id, sigexp, (wherespecs, right, binds)) =
