@@ -499,7 +499,7 @@ and layoutDec d =
                 seq [str "with ", layoutDec body],
                 str "end"]
     | Datatype rhs => DatatypeRhs.layout rhs
-    | DoDec exp => layoutExpT exp
+    | DoDec exp => seq [str "do ", layoutExpT exp]
     | Exception ebs =>
          layoutAnds ("exception", ebs,
                      fn (prefix, eb) => seq [prefix, Eb.layout eb])

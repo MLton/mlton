@@ -2031,14 +2031,6 @@ fun elaborateDec (d, {env = E, nest}) =
                  | Adec.DoDec exp =>
                       let
                          val _ = check (ElabControl.allowDoDecls, "do declarations", Adec.region d)
-                         fun lay () =
-                            let
-                               open Layout
-                            in
-                               seq [str "in: ",
-                                    approximate
-                                    (seq [str "do ", Aexp.layout exp])]
-                            end
                          val elaboratePat = elaboratePat ()
                          val pat = Apat.wild
                          val (pat, _) =
