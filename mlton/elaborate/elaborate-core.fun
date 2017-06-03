@@ -3427,9 +3427,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                                         val _ =
                                                            Control.error
                                                            (region,
-                                                            seq [str "impossible use of overloaded var: ",
+                                                            seq [str "variable not overloaded at type: ",
                                                                  str (Longvid.toString id)],
-                                                            Type.layoutPretty instance)
+                                                            seq [str "type: ", Type.layoutPretty instance])
                                                      in
                                                         {id = Var.newNoname (),
                                                          args = Vector.new0 ()}
