@@ -41,6 +41,9 @@ structure Fixop =
           | None => empty
    end
 
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
+
 fun layoutConstraint (t, ty) =
    mayAlign [seq [t, str ":"], Type.layout ty]
 
@@ -184,7 +187,7 @@ structure Pat =
              | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
                   (reportDuplicateFields (Vector.map (items, fn (f, r, i) => (f, (r, i))),
-                                          {term = fn () => layout p})
+                                          {ctxt = mkCtxt (p, layout)})
                    ; Vector.foreach (items, fn (_, _, i) =>
                                      case i of
                                         Item.Field p => c p
@@ -583,7 +586,7 @@ fun checkSyntaxExp (e: exp): unit =
        | Raise e => c e
        | Record r =>
             (reportDuplicateFields (Record.toVector r,
-                                    {term = fn () => layoutExpT e})
+                                    {ctxt = mkCtxt (e, layoutExpT)})
              ; Record.foreach (r, c o #2))
        | Selector _ => ()
        | Seq es => Vector.foreach (es, c)
@@ -612,15 +615,15 @@ and checkSyntaxDec (d: dec): unit =
            (Vid.checkRedefineSpecial
             (Vid.fromCon con,
              {allowIt = false,
-              keyword = "exception",
-              term = fn () => layoutDec d})
+              ctxt = mkCtxt (d, layoutDec),
+              keyword = "exception"})
             ; EbRhs.checkSyntax ebrhs))
           ; (reportDuplicates
-             (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+             (v, {ctxt = mkCtxt (d, layoutDec),
+                  equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                   layout = Con.layout o #1,
                   name = "exception definition",
-                  region = Con.region o #1,
-                  term = fn () => layoutDec d})))
+                  region = Con.region o #1})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
     | Fun {fbs, ...} =>
          Vector.foreach (fbs, fn clauses =>

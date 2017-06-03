@@ -62,12 +62,12 @@ signature AST_ATOMS =
             (* check special ids *)
             val checkRedefineSpecial:
                t * {allowIt: bool,
-                    keyword: string,
-                    term: unit -> Layout.t} -> unit
+                    ctxt: unit -> Layout.t,
+                    keyword: string} -> unit
             val checkSpecifySpecial:
                t * {allowIt: bool,
-                    keyword: string,
-                    term: unit -> Layout.t} -> unit
+                    ctxt: unit -> Layout.t,
+                    keyword: string} -> unit
          end
 
       structure Longtycon:
@@ -184,11 +184,11 @@ signature AST_ATOMS =
       val layoutAndsSusp: string * 'a vector * (bool * Layout.t * 'a -> Layout.t)
                           -> (unit -> Layout.t) vector
       val reportDuplicates:
-         'a vector * {equals: 'a * 'a -> bool,
+         'a vector * {ctxt: unit -> Layout.t,
+                      equals: 'a * 'a -> bool,
                       layout: 'a -> Layout.t,
                       name: string,
-                      region: 'a -> Region.t,
-                      term: unit -> Layout.t} -> unit
+                      region: 'a -> Region.t} -> unit
       val reportDuplicateFields:
-         (Record.Field.t * (Region.t * 'a)) vector * {term: unit -> Layout.t} -> unit
+         (Record.Field.t * (Region.t * 'a)) vector * {ctxt: unit -> Layout.t} -> unit
    end

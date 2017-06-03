@@ -34,7 +34,7 @@ structure Pat =
 struct
    open Pat
    local
-      fun finishApply {func, arg, region, lay} =
+      fun finishApply {func, arg, region, ctxt} =
          case Pat.node func of
             Pat.Var {name, ...} =>
                Pat.makeRegion (Pat.App (Longvid.toLongcon name, arg),
@@ -45,22 +45,22 @@ struct
                      Control.error
                      (region,
                       Layout.str "non-constructor applied to argument in pattern",
-                      lay ())
+                      ctxt ())
                in
                   Pat.wild
                end
    in
-      fun apply lay {func, arg} =
+      fun apply ctxt {func, arg} =
          finishApply {func = func, arg = arg,
                       region = Region.append (Pat.region func, Pat.region arg),
-                      lay = lay}
-      fun applyInfix lay {func, argl, argr} =
+                      ctxt = ctxt}
+      fun applyInfix ctxt {func, argl, argr} =
          let
             val arg = Pat.tuple (Vector.new2 (argl, argr))
          in
             finishApply {func = func, arg = arg,
                          region = Pat.region arg,
-                         lay = lay}
+                         ctxt = ctxt}
          end
    end
 end
@@ -107,15 +107,15 @@ datatype 'a precStack =
 
 fun 'a parse {apply: {func: 'a, arg: 'a} -> 'a,
               applyInfix: {func: 'a, argl: 'a, argr: 'a} -> 'a,
+              ctxt: unit -> Layout.t,
               fixval: 'a -> Fixval.t,
               items: 'a vector,
-              lay: unit -> Layout.t,
               name: string,
               region: 'a -> Region.t,
               toString: 'a -> string}: 'a =
    let
       fun error (r: Region.t, msg: string) =
-         Control.error (r, Layout.str msg, lay ())
+         Control.error (r, Layout.str msg, ctxt ())
       fun ensureNONf ((e, f), p, start) =
          let
             val _ =
@@ -176,12 +176,12 @@ fun 'a parse {apply: {func: 'a, arg: 'a} -> 'a,
          end
    end
 
-fun parsePat (ps, E, lay) =
-   parse {apply = Pat.apply lay,
-          applyInfix = Pat.applyInfix lay,
+fun parsePat (ps, E, ctxt) =
+   parse {apply = Pat.apply ctxt,
+          applyInfix = Pat.applyInfix ctxt,
+          ctxt = ctxt,
           fixval = fn p => Fixval.makePat (p, E),
           items = ps,
-          lay = lay,
           name = "pattern",
           region = Pat.region,
           toString = Layout.toString o Pat.layout}
@@ -192,12 +192,12 @@ val parsePat =
                 Ast.Pat.layout)
    parsePat
 
-fun parseExp (es, E, lay) =
+fun parseExp (es, E, ctxt) =
    parse {apply = Exp.apply,
           applyInfix = Exp.applyInfix,
+          ctxt = ctxt,
           fixval = fn e => Fixval.makeExp (e, E),
           items = es,
-          lay = lay,
           name = "expression",
           region = Exp.region,
           toString = Layout.toString o Exp.layout}
@@ -255,21 +255,21 @@ structure ClausePat =
       end
    end
 
-fun parseClausePats (ps, E, lay) =
+fun parseClausePats (ps, E, ctxt) =
    parse {apply = ClausePat.Apply,
           applyInfix = ClausePat.ApplyInfix,
+          ctxt = ctxt,
           fixval = fn ClausePat.Pat p => Fixval.makePat (p, E)
                     | _ => Fixval.Nonfix,
           items = Vector.map (ps, ClausePat.Pat),
-          lay = lay,
           name = "function clause",
           region = ClausePat.region,
           toString = Layout.toString o ClausePat.layout}
 
-fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
+fun parseClause (pats: Pat.t vector, E: Env.t, ctxt) =
    let
       fun error (region, msg) =
-         Control.error (region, msg, lay ())
+         Control.error (region, msg, ctxt ())
       fun improper region =
          error
          (region, Layout.str "function clause with improper infix pattern")
@@ -278,11 +278,11 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
          case p of
             ClausePat.Pat p => p
           | ClausePat.Apply {func, arg} =>
-               Pat.apply lay
+               Pat.apply ctxt
                {func = toPat func,
                 arg = toPat arg}
           | ClausePat.ApplyInfix {func, argl, argr} =>
-               Pat.applyInfix lay
+               Pat.applyInfix ctxt
                {func = toPat func,
                 argl = toPat argl,
                 argr = toPat argr}
@@ -335,7 +335,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
             done (func, (Pat.tuple (Vector.new2 (argl, argr)))::rest)
          end
    in
-      case parseClausePats (pats, E, lay) of
+      case parseClausePats (pats, E, ctxt) of
          ClausePat.ApplyInfix func_argl_argr =>
             doneApplyInfix (func_argl_argr, [])
        | p =>
@@ -351,7 +351,7 @@ fun parseClause (pats: Pat.t vector, E: Env.t, lay) =
                          Pat.Paren p' =>
                             (case Pat.node p' of
                                 Pat.FlatApp pats =>
-                                   (case parseClausePats (pats, E, lay) of
+                                   (case parseClausePats (pats, E, ctxt) of
                                        ClausePat.ApplyInfix func_argl_argr =>
                                           doneApplyInfix (func_argl_argr, rest)
                                      | _ => improper ())

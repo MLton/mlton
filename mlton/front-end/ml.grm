@@ -824,12 +824,14 @@ tyvarseq: tyvar                   (Vector.new1 tyvar)
               val v = Vector.fromList tyvar_pc
               val () =
                  reportDuplicates
-                 (v, {equals = Tyvar.sameName,
+                 (v, {ctxt = fn () =>
+                             Layout.seq [Layout.str "in: ",
+                                         Layout.tuple (Vector.toListMap
+                                                       (v, Tyvar.layout))],
+                      equals = Tyvar.sameName,
                       layout = Tyvar.layout,
                       name = "type variable",
-                      region = Tyvar.region,
-                      term = fn () => Layout.tuple (Vector.toListMap
-                                                    (v, Tyvar.layout))})
+                      region = Tyvar.region})
            in
               v
            end)

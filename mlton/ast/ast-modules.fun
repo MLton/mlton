@@ -16,6 +16,9 @@ structure AstCore = AstCore (AstAtoms (S))
 
 open AstCore Layout
 
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
+
 val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node
@@ -162,18 +165,18 @@ and checkSyntaxSigConst (s: sigConst): unit =
 
 and checkSyntaxSpec (s: spec): unit =
    let
-      fun term () = layoutSpec s
+      val ctxt = mkCtxt (s, layoutSpec)
    in
       case node s of
          Datatype d => DatatypeRhs.checkSyntaxSpec d
        | Eqtype v =>
             reportDuplicates
-            (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+            (v, {ctxt = ctxt,
+                 equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
                            Tycon.equals (c, c')),
                  layout = Tycon.layout o #tycon,
                  name = "type specification",
-                 region = Tycon.region o #tycon,
-                 term = term})
+                 region = Tycon.region o #tycon})
        | Empty => ()
        | Exception v =>
             (Vector.foreach
@@ -181,15 +184,15 @@ and checkSyntaxSpec (s: spec): unit =
               (Vid.checkSpecifySpecial
                (Vid.fromCon con,
                 {allowIt = false,
-                 keyword = "exception",
-                 term = term})
+                 ctxt = ctxt,
+                 keyword = "exception"})
                ; Option.app (to, Type.checkSyntax)))
              ; (reportDuplicates
-                (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                      layout = Con.layout o #1,
                      name = "exception specification",
-                     region = Con.region o #1,
-                     term = term})))
+                     region = Con.region o #1})))
        | IncludeSigexp e => checkSyntaxSigexp e
        | IncludeSigids _ => ()
        | Seq (s, s') => (checkSyntaxSpec s; checkSyntaxSpec s')
@@ -197,19 +200,19 @@ and checkSyntaxSpec (s: spec): unit =
        | Structure v =>
             (Vector.foreach (v, checkSyntaxSigexp o #2)
              ; (reportDuplicates
-                (v, {equals = fn ((s, _), (s', _)) => Strid.equals (s, s'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((s, _), (s', _)) => Strid.equals (s, s'),
                      layout = Strid.layout o #1,
                      name = "structure specification",
-                     region = Strid.region o #1,
-                     term = term})))
+                     region = Strid.region o #1})))
        | Type v =>
             reportDuplicates
-            (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+            (v, {ctxt = ctxt,
+                 equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
                            Tycon.equals (c, c')),
                  layout = Tycon.layout o #tycon,
                  name = "type specification",
-                 region = Tycon.region o #tycon,
-                 term = term})
+                 region = Tycon.region o #tycon})
        | TypeDefs b => TypBind.checkSyntaxSpec b
        | Val v =>
             (Vector.foreach
@@ -217,15 +220,15 @@ and checkSyntaxSpec (s: spec): unit =
               (Vid.checkSpecifySpecial
                (Vid.fromVar v,
                 {allowIt = true,
-                 keyword = "val",
-                 term = term})
+                 ctxt = ctxt,
+                 keyword = "val"})
                ; Type.checkSyntax t))
              ; (reportDuplicates
-                (v, {equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
                      layout = Var.layout o #1,
                      name = "value specification",
-                     region = Var.region o #1,
-                     term = term})))
+                     region = Var.region o #1})))
    end
 
 structure Sigexp =
@@ -328,12 +331,12 @@ fun checkSyntaxStrdec (d: strdec): unit =
                           (SigConst.checkSyntax constraint
                            ; checkSyntaxStrexp def))
           ; (reportDuplicates
-             (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+             (v, {ctxt = mkCtxt (d, layoutStrdec),
+                  equals = (fn ({name = n, ...}, {name = n', ...}) =>
                             Strid.equals (n, n')),
                   layout = Strid.layout o #name,
                   name = "structure definition",
-                  region = Strid.region o #name,
-                  term = fn () => layoutStrdec d})))
+                  region = Strid.region o #name})))
 and checkSyntaxStrexp (e: strexp): unit =
    case node e of
       App (_, e) => checkSyntaxStrexp e
@@ -507,21 +510,21 @@ structure Topdec =
                   ; Strexp.checkSyntax body
                   ; SigConst.checkSyntax result))
                 ; (reportDuplicates
-                   (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+                   (v, {ctxt = mkCtxt (d, layout),
+                        equals = (fn ({name = n, ...}, {name = n', ...}) =>
                                   Fctid.equals (n, n')),
                         layout = Fctid.layout o #name,
                         name = "functor definition",
-                        region = Fctid.region o #name,
-                        term = fn () => layout d})))
+                        region = Fctid.region o #name})))
           | Signature bs =>
                (Vector.foreach (bs, Sigexp.checkSyntax o #2)
                 ; (reportDuplicates
                    (bs,
-                    {equals = fn ((s, _), (s', _)) => Sigid.equals (s, s'),
+                    {ctxt = mkCtxt (d, layout),
+                     equals = fn ((s, _), (s', _)) => Sigid.equals (s, s'),
                      layout = Sigid.layout o #1,
                      name = "signature definition",
-                     region = Sigid.region o #1,
-                     term = fn () => layout d})))
+                     region = Sigid.region o #1})))
           | Strdec d => Strdec.checkSyntax d
    end
 
