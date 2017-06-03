@@ -3472,7 +3472,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          (Cexp.ty test', Type.bool, fn (l1, _) =>
                           (Aexp.region test,
                            str "while test not of type bool",
-                           seq [str "type: ", l1]))
+                           seq [str "test: ", l1]))
                       val expr' = elab expr
                       (* Diagnose if expr is not of type unit. *)
                       val _ =
