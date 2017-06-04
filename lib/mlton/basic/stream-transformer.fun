@@ -2,6 +2,11 @@
 functor StreamTransformer(S: STREAM_TRANSFORMER_STRUCTS):STREAM_TRANSFORMER = 
 struct
 
+infix 3 <*> <* *> <$
+infixr 4 <$> <$$> <$$$>
+
+
+
 open S
 
 type pos = int
@@ -27,30 +32,35 @@ fun parse(p, str) =
 fun pure a s =
   (a, s)
 
-infix 3 <*>
-infixr 3 <* *>
 fun tf <*> tx = fn s =>
    case tf s
     of (f, s') =>
           case tx s'
              of (b, s'') =>
                    (f b, s'')
+
+
+   
+
 fun fst a _ = a
 fun snd _ b = b
 
+fun curry f a b = f (a, b)
+fun curry3 f a b c = f (a, b, c)
 
-infixr 4 <$>
-(*fun <$> f p = raise Parse "Undefined"*)
 fun f <$> p = (pure f) <*> p
+fun f <$$> (p1, p2) = curry <$> (pure f) <*> p1 <*> p2
+fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
 fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
+fun v <$ p = (fn _ => v) <$> p
 
 
 fun one s = case Stream.force s 
    of NONE => raise Parse "Eof"
     | SOME((h, _), r) => (h, r)
 
-fun any([]) = (fn _ => raise Parse "No parse")
+fun any([]) = (fn _ => raise Parse "No valid parse")
   | any(p::ps) = fn s =>
        (p s) 
           handle Parse msg => any(ps) s
@@ -73,7 +83,6 @@ fun equals c s = case Stream.force s
             then (h, r)
             else raise Parse ("Syntax error")
 
-fun curry f a b = f (a, b)
 
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)

@@ -13,8 +13,15 @@ signature STREAM_TRANSFORMER =
       exception Parse of string
 
       val pure: 'b -> ('a, 'b) t
+      (*
+       * infix 3 <*> <* *> <$
+       * infixr 4 <$> <$$> <$$$>
+       *)
       val <*> : ('a, 'b -> 'c) t * ('a, 'b) t -> ('a, 'c) t
       val <$> : ('b -> 'c) * ('a, 'b) t -> ('a, 'c) t
+      val <$ : 'c * ('a, 'b) t -> ('a, 'c) t
+      val <$$> : ('b * 'c -> 'd) * (('a, 'b) t * ('a, 'c) t) -> ('a, 'd) t
+      val <$$$> : ('b * 'c * 'd -> 'e) * (('a, 'b) t * ('a, 'c) t * ('a, 'd) t) -> ('a, 'e) t
       val <* : ('a, 'b) t * ('a, 'c) t -> ('a, 'b) t
       val *> : ('a, 'b) t * ('a, 'c) t -> ('a, 'c) t
       
