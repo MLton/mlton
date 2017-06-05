@@ -1,5 +1,5 @@
 
-functor StreamTransformer(S: STREAM_TRANSFORMER_STRUCTS):STREAM_TRANSFORMER = 
+functor StreamParser(S: STREAM_PARSER_STRUCTS):STREAM_PARSER = 
 struct
 
 infix 3 <*> <* *> <$
@@ -10,8 +10,8 @@ infixr 4 <$> <$$> <$$$>
 open S
 
 type pos = int
-type ('a, 'b) t = 
-   ('a * pos) Stream.t -> ('b * ('a * pos) Stream.t)
+type 'b t = 
+   (char * pos) Stream.t -> ('b * (char * pos) Stream.t)
 
 exception Parse of string
 

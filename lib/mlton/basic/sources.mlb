@@ -74,8 +74,8 @@ in
       char.sml
       string.sig
       stream.sig
-      stream-transformer.sig
-      stream-transformer.fun
+      stream-parser.sig
+      stream-parser.fun
       promise.sig
       promise.sml
       stream.sml
@@ -298,7 +298,7 @@ in
       functor MonoVector
       functor OrderedField
       functor PolyEnv
-      functor StreamTransformer
+      functor StreamParser
       functor Ring
       functor RingWithIdentity
       functor Tree
