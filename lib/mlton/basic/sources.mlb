@@ -75,7 +75,6 @@ in
       string.sig
       stream.sig
       stream-parser.sig
-      stream-parser.fun
       promise.sig
       promise.sml
       stream.sml
@@ -110,6 +109,7 @@ in
       hash-set.sig
       hash-set.sml
       string.sml
+      stream-parser.fun
       instream.sml
       file.sig
       file.sml

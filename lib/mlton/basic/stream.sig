@@ -22,6 +22,7 @@ signature STREAM =
       val delay: (unit -> 'a t) -> 'a t
       val empty: unit -> 'a t
       val firstN: 'a t * int -> 'a list
+      val firstNSafe: 'a t * int -> 'a list
       val force: 'a t -> ('a * 'a t) option
       val infinite: 'a * ('a -> 'a) -> 'a t
       val isEmpty: 'a t -> bool

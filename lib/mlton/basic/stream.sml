@@ -100,6 +100,17 @@ fun firstN (s, n: int) =
    in loop (n, s, [])
    end
 
+fun firstNSafe (s, n: int) =
+   let
+      fun loop (n, s, ac) =
+         if n <= 0
+            then rev ac
+         else (case force s of
+                  NONE => ac
+                | SOME (x, s) => loop (n - 1, s, x :: ac))
+   in loop (n, s, [])
+   end
+
 fun nth (s, n: int) =
    case force s of
       NONE => Error.bug "nth"

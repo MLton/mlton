@@ -2,8 +2,9 @@
 functor StreamParser(S: STREAM_PARSER_STRUCTS):STREAM_PARSER = 
 struct
 
+infix 2 <|>
 infix 3 <*> <* *> <$
-infixr 4 <$> <$$> <$$$>
+infixr 4 <$> <$$> <$$$> 
 
 
 
@@ -54,40 +55,51 @@ fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
 fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
+fun a <|> b = fn s => (a s) handle Parse _ => (b s)
 
+fun fail msg s = raise Parse (msg ^ "\n\tNear " ^ implode 
+  (List.map(Stream.firstNSafe(s, 20), fn (c, _) => c)))
 
-fun one s = case Stream.force s 
+fun next s = case Stream.force s 
    of NONE => raise Parse "Eof"
     | SOME((h, _), r) => (h, r)
 
-fun any([]) = (fn _ => raise Parse "No valid parse")
-  | any(p::ps) = fn s =>
+fun sat(t, p) s = 
+  let 
+     val (s', r) = t s
+  in case p s' of true => (s', r)
+                | false => fail "Syntax error" s
+  end
+
+fun any([]) s = (fail "No valid parse" s)
+  | any(p::ps) s = 
        (p s) 
-          handle Parse msg => any(ps) s
+          handle Parse _ => any(ps) s
 
 fun many t = fn s =>
-   case t s of
+   (case t s of
       (b, s') =>
          case many t s' of
             (bs, s'') =>
-               (b::bs, s'')
+               (b::bs, s''))
    handle Parse _ =>
       ([], s)
 
 fun optional t = any [SOME <$> t, pure NONE]
 
-fun equals c s = case Stream.force s
-   of NONE => raise Parse "Eof"
+fun char c s = case Stream.force s
+   of NONE => raise Parse "End of file"
     | SOME((h, n), r) => 
          if h = c 
             then (h, r)
-            else raise Parse ("Syntax error")
+            else fail ("Expected " ^ 
+                        String.fromChar c ^ 
+                        "; Got " ^ String.fromChar h) s
 
 
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
-
-fun string str = implode <$> each (List.map ((explode str), equals))
+fun string str = String.implode <$> each (List.map ((String.explode str), char))
 
 end
