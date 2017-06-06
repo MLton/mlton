@@ -28,7 +28,7 @@ fun layout (T {tyvars, ty}) =
    let open Layout
       val ty = Type.layout ty
    in
-      if 0 = Vector.length tyvars
+      if Vector.isEmpty tyvars
          then ty
       else
          align [seq [str "Forall ",

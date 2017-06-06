@@ -105,10 +105,10 @@ structure Pat =
 
       fun tuple ps =
          if 1 = Vector.length ps
-            then Vector.sub (ps, 0)
+            then Vector.first ps
          else makeRegion (Tuple ps,
                           Region.append
-                          (region (Vector.sub (ps, 0)),
+                          (region (Vector.first ps),
                            region (Vector.last ps)))
 
       fun layout (p, isDelimited) =
@@ -122,7 +122,7 @@ structure Pat =
              | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
              | FlatApp ps =>
                   if Vector.length ps = 1
-                     then layout (Vector.sub (ps, 0), isDelimited)
+                     then layout (Vector.first ps, isDelimited)
                   else delimit (layoutFlatApp ps)
              | Layered {fixop, var, constraint, pat} =>
                   delimit
@@ -434,7 +434,7 @@ fun layoutExp arg =
             delimit (layoutConstraint (layoutExpF expr, constraint))
        | FlatApp es =>
             if Vector.length es = 1
-               then layoutExp (Vector.sub (es, 0), isDelimited)
+               then layoutExp (Vector.first es, isDelimited)
             else delimit (seq (separate (Vector.toListMap (es, layoutExpF), " ")))
        | Fn m => delimit (seq [str "fn ", layoutMatch m])
        | Handle (try, match) =>
@@ -455,7 +455,7 @@ fun layoutExp arg =
             let
                fun layoutTuple es =
                   if 1 = Vector.length es
-                     then layoutExp (Vector.sub (es, 0), isDelimited)
+                     then layoutExp (Vector.first es, isDelimited)
                   else tuple (layoutExpsT es)
             in
                Record.layout {record = r,
@@ -647,9 +647,9 @@ structure Exp =
       fun fnn rs =
          let
             val r =
-               if 0 = Vector.length rs
+               if Vector.isEmpty rs
                   then Region.bogus
-               else Region.append (Pat.region (#1 (Vector.sub (rs, 0))),
+               else Region.append (Pat.region (#1 (Vector.first rs)),
                                    region (#2 (Vector.last rs)))
          in
             makeRegion (Fn (Match.makeRegion (Match.T rs, r)), r)
@@ -670,13 +670,13 @@ structure Exp =
 
       fun tuple (es: t vector): t =
          if 1 = Vector.length es
-            then Vector.sub (es, 0)
+            then Vector.first es
          else
             let
                val r =
-                  if 0 = Vector.length es
+                  if Vector.isEmpty es
                      then Region.bogus
-                  else Region.append (region (Vector.sub (es, 0)),
+                  else Region.append (region (Vector.first es),
                                       region (Vector.last es))
             in
                makeRegion (Record (Record.tuple es), r)

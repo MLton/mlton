@@ -182,7 +182,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                            then Error.bug "Xml.TypeCheck.equalss"
                         else
                            let
-                              val t = Vector.sub (v, 0)
+                              val t = Vector.first v
                            in
                               if Vector.forall (v, fn t' => Type.equals (t, t'))
                                  then SOME t
@@ -325,7 +325,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
           | SOME x =>
                let val {tyvars, ty} = getVar x
                in
-                  0 = Vector.length tyvars
+                  Vector.isEmpty tyvars
                   andalso Type.equals (ty, Type.exn)
                end
       val _ = Program.clear program

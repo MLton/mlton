@@ -429,7 +429,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                                        in
                                           (toString o seq)
                                           [Prim.layout prim,
-                                           if 0 = Vector.length targs
+                                           if Vector.isEmpty targs
                                               then empty
                                               else Vector.layout Type.layout targs,
                                            str " ",

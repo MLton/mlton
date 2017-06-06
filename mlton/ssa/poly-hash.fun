@@ -716,8 +716,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                (case (Prim.name prim, Vector.length targs) of
                                    (Prim.Name.MLton_hash, 1) =>
                                       let
-                                         val ty = Vector.sub (targs, 0)
-                                         val x = Vector.sub (args, 0)
+                                         val ty = Vector.first targs
+                                         val x = Vector.first args
                                          val l = Label.newNoname ()
                                       in
                                         (finish 

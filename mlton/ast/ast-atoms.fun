@@ -203,7 +203,7 @@ structure Type =
       fun layoutApp (tycon, args: 'a vector, layoutArg) =
          case Vector.length args of
             0 => tycon
-          | 1 => seq [layoutArg (Vector.sub (args, 0)), str " ", tycon]
+          | 1 => seq [layoutArg (Vector.first args), str " ", tycon]
           | _ => seq [Vector.layout layoutArg args, str " ", tycon]
 
       fun layout ty =
@@ -214,7 +214,7 @@ structure Type =
                   then if 2 = Vector.length tys
                           then
                              paren (mayAlign
-                                    [layout (Vector.sub (tys, 0)),
+                                    [layout (Vector.first tys),
                                      seq [str "-> ",
                                           layout (Vector.sub (tys, 1))]])
                        else Error.bug "AstAtoms.Type.layout: non-binary -> tyc"
@@ -226,7 +226,7 @@ structure Type =
       and layoutTupleTy tys =
          case Vector.length tys of
             0 => str "unit"
-          | 1 => layout (Vector.sub (tys, 0))
+          | 1 => layout (Vector.first tys)
           | _ => paren (mayAlign (separateLeft (Vector.toListMap (tys, layout),
                                                 "* ")))
 
@@ -354,7 +354,7 @@ structure DatBind =
                            "| "))),
              case TypBind.node withtypes of
                 TypBind.T v =>
-                   if 0 = Vector.length v
+                   if Vector.isEmpty v
                       then empty
                    else seq [str "with", TypBind.layout withtypes]]
          end

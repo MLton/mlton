@@ -168,7 +168,7 @@ structure Apat =
           | Constraint (p, _) => getName p
           | FlatApp v =>
                if 1 = Vector.length v
-                  then getName (Vector.sub (v, 0))
+                  then getName (Vector.first v)
                else NONE
           | Layered {var, ...} => SOME (Avar.toString var)
           | _ => NONE
@@ -404,11 +404,11 @@ local
 fun unifySeq (seqTy, seqStr,
               trs: (Type.t * Region.t) vector,
               preError, lay): Type.t =
-   if 0 = Vector.length trs
+   if Vector.isEmpty trs
       then seqTy (Type.new ())
    else
       let
-         val (t, _) = Vector.sub (trs, 0)
+         val (t, _) = Vector.first trs
          val _ =
             Vector.foreach
             (trs, fn (t', r) =>
@@ -1006,7 +1006,7 @@ structure Type =
           | SOME (c, ts) =>
                if List.exists (unary, fn c' => Tycon.equals (c, c'))
                   andalso 1 = Vector.length ts
-                  andalso isSome (toCType (Vector.sub (ts, 0)))
+                  andalso isSome (toCType (Vector.first ts))
                   then SOME {ctype = CType.objptr, name = "Objptr"}
                   else NONE
 
@@ -1447,7 +1447,7 @@ in
                                        NONE => invalidType ()
                                      | SOME tys => tys
                                  val (getArgTy, getResTy) =
-                                    doit (Vector.sub (tys, 0))
+                                    doit (Vector.first tys)
                                  val (setArgTy, setResTy) =
                                     doit (Vector.sub (tys, 1))
                                  val () =
@@ -1941,7 +1941,7 @@ fun elaborateDec (d, {env = E, nest}) =
              fun lay () = seq [str "in: ", approximate (Adec.layout d)]
              val preError = Promise.lazy (fn () => Env.setTyconNames E)
              fun reportUnable (unable: Tyvar.t vector) =
-               if 0 = Vector.length unable
+               if Vector.isEmpty unable
                   then ()
                else
                   let
@@ -2145,7 +2145,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                           approximate (Apat.layoutFlatApp pats)
                                        val regionPat =
                                           Region.append
-                                          (Apat.region (Vector.sub (pats, 0)),
+                                          (Apat.region (Vector.first pats),
                                            Apat.region (Vector.last pats))
                                        val regionBody =
                                           Aexp.region body
@@ -2178,7 +2178,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                     end)
                                 val regionFb =
                                    Region.append
-                                   (#regionClause (Vector.sub (clauses, 0)),
+                                   (#regionClause (Vector.first clauses),
                                     #regionClause (Vector.last clauses))
                              in
                                 {clauses = clauses,
@@ -2196,7 +2196,7 @@ fun elaborateDec (d, {env = E, nest}) =
                              else
                                 let
                                    val {args, func, layClause = lay0, ...} =
-                                      Vector.sub (clauses, 0)
+                                      Vector.first clauses
                                    val lay0 = fn () =>
                                       seq [str "previous: ", approximate (lay0 ())]
                                    val numArgs = Vector.length args
@@ -2358,7 +2358,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                      end))
                                 val numArgs =
                                    Vector.fold
-                                   (rs, Vector.length (#pats (Vector.sub (rs, 0))),
+                                   (rs, Vector.length (#pats (Vector.first rs)),
                                     fn (r,numArgs) =>
                                     Int.max (Vector.length (#pats r), numArgs))
                                 val argTypes =
@@ -2386,7 +2386,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                     in
                                        t
                                     end)
-                                val t = Cexp.ty (#body (Vector.sub (rs, 0)))
+                                val t = Cexp.ty (#body (Vector.first rs))
                                 val _ =
                                    Vector.foreach
                                    (rs, fn {body, regionBody, ...} =>
@@ -2626,13 +2626,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                                           isRvb = true},
                                                  preError)
                                 val (nest, var, ty) =
-                                   if 0 = Vector.length bound
+                                   if Vector.isEmpty bound
                                       then ("rec" :: nest,
                                             Var.newNoname (),
                                             Type.new ())
                                    else
                                       let
-                                         val (x, x', t) = Vector.sub (bound, 0)
+                                         val (x, x', t) = Vector.first bound
                                       in
                                          (Avar.toString x :: nest, x', t)
                                       end
@@ -3134,7 +3134,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                            andalso 1 = Vector.length ts
                                            andalso
                                            (case (Type.deConOpt
-                                                  (Vector.sub (ts, 0))) of
+                                                  (Vector.first ts)) of
                                                NONE => false
                                              | SOME (c, _) =>
                                                   Tycon.isCharX c

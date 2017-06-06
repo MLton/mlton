@@ -28,7 +28,7 @@ fun addProfileFunction (f: Function.t)  =
          (blocks, fn Block.T {args, label, statements, transfer} =>
           let
              val (enterFL, enterL, leaveL, leaveLF) =
-                if Vector.length statements = 0
+                if Vector.isEmpty statements
                    then (fn () => Vector.new1 (enterF ()),
                          fn () => Vector.new0 (),
                          fn () => Vector.new0 (),

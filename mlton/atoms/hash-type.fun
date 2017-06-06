@@ -150,7 +150,7 @@ fun ofConst c =
 
 fun isUnit t =
    case dest t of
-      Con (c, ts) => 0 = Vector.length ts andalso Tycon.equals (c, Tycon.tuple)
+      Con (c, ts) => Vector.isEmpty ts andalso Tycon.equals (c, Tycon.tuple)
     | _ => false
 
 fun substitute (ty, v) =

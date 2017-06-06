@@ -102,7 +102,7 @@ structure Pat =
 
       fun tuple ps =
          if 1 = Vector.length ps
-            then Vector.sub (ps, 0)
+            then Vector.first ps
             else make (Record (Record.tuple ps), Type.tuple (Vector.map (ps, ty)))
 
       local
@@ -309,7 +309,7 @@ in
             else Var.layout (var ())
        | Vector es => vector (Vector.map (es, layoutExp))
    and layoutFuns (tyvars, decs)  =
-      if 0 = Vector.length decs
+      if Vector.isEmpty decs
          then empty
       else
          align [seq [str "val rec", layoutTyvars (tyvars ())],
@@ -398,7 +398,7 @@ structure Exp =
 
       fun tuple es =
          if 1 = Vector.length es
-            then Vector.sub (es, 0)
+            then Vector.first es
          else make (Record (Record.tuple es),
                     Type.tuple (Vector.map (es, ty)))
 
@@ -415,9 +415,9 @@ structure Exp =
          make (Lambda l, Type.arrow (argType, ty body))
 
       fun casee (z as {rules, ...}) =
-         if 0 = Vector.length rules
+         if Vector.isEmpty rules
             then Error.bug "CoreML.Exp.casee"
-         else make (Case z, ty (#exp (Vector.sub (rules, 0))))
+         else make (Case z, ty (#exp (Vector.first rules)))
 
       fun iff (test, thenCase, elseCase): t =
          casee {kind = ("if", "branch"),
@@ -548,7 +548,7 @@ structure Program =
  *                         end
  *                    | Case {rules, test} =>
  *                         let
- *                            val {pat, exp} = Vector.sub (rules, 0)
+ *                            val {pat, exp} = Vector.first rules
  *                         in
  *                            Vector.foreach (rules, fn {pat, exp} =>
  *                                            Type.equals
