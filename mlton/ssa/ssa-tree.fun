@@ -137,7 +137,7 @@ structure Type =
       in
          fun tuple ts =
             if 1 = Vector.length ts
-               then Vector.sub (ts, 0)
+               then Vector.first ts
             else lookup (Vector.fold (ts, w, fn (t, w) =>
                                       Word.xorb (w * generator, hash t)),
                          Tuple ts)
@@ -247,7 +247,7 @@ structure Cases =
          let
             fun doit v =
                if Vector.length v >= 1
-                  then let val (_, a) = Vector.sub (v, 0)
+                  then let val (_, a) = Vector.first v
                        in a
                        end
                else Error.bug "SsaTree.Cases.hd"
@@ -259,7 +259,7 @@ structure Cases =
 
       fun isEmpty (c: t): bool =
          let
-            fun doit v = 0 = Vector.length v
+            fun doit v = Vector.isEmpty v
          in
             case c of
                Con cs => doit cs
@@ -360,7 +360,7 @@ structure Exp =
              | PrimApp {prim, targs, args} =>
                   seq [Prim.layout prim,
                        if !Control.showTypes
-                          then if 0 = Vector.length targs
+                          then if Vector.isEmpty targs
                                   then empty
                                else Vector.layout Type.layout targs
                           else empty,

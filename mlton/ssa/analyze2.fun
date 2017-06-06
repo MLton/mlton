@@ -134,7 +134,7 @@ fun 'a analyze
                                              WordSize.toString s,
                                              ")"])
                   fun ensureNullary j =
-                     if 0 = Vector.length (labelValues j)
+                     if Vector.isEmpty (labelValues j)
                         then ()
                      else Error.bug (concat ["Analyze2.loopTransfer (case:",
                                              Label.toString j,
@@ -152,7 +152,7 @@ fun 'a analyze
                          val variant =
                             case Vector.length v of
                                0 => NONE
-                             | 1 => SOME (Vector.sub (v, 0))
+                             | 1 => SOME (Vector.first v)
                              | _ => Error.bug "Analyze2.loopTransfer (case conApp with >1 arg)"
                       in
                          filter {con = c,
@@ -180,11 +180,11 @@ fun 'a analyze
                let
                   val xts = labelArgs return
                   val (resultVar, resultType) =
-                     if 0 = Vector.length xts
+                     if Vector.isEmpty xts
                         then (NONE, Type.unit)
                      else
                         let
-                           val (x, t) = Vector.sub (xts, 0)
+                           val (x, t) = Vector.first xts
                         in
                            (SOME x, t)
                         end

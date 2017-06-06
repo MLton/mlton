@@ -194,7 +194,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                   case exp of
                                      PrimApp ({args, prim, ...}) =>
                                         let
-                                           fun arg () = Vector.sub (args, 0)
+                                           fun arg () = Vector.first args
                                            fun knownLength var' =
                                               let
                                                  val _ = setLength (var, SOME var')
@@ -251,7 +251,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                     else (if !succInDeg = 1
                                              then let
                                                      val (var', _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      setReplace (var', SOME var)
                                                   end
@@ -261,7 +261,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                | NONE => (if !succInDeg = 1
                                              then let
                                                      val (var, _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      List.push
                                                      (succAdd, (var, exp))

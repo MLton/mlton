@@ -375,7 +375,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                       ; incLabel success
                       ; normal ())
                 | Bug =>
-                     if 0 = Vector.length statements
+                     if Vector.isEmpty statements
                         andalso (case returns of
                                     NONE => true
                                   | SOME ts =>
@@ -405,7 +405,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                            andalso not (Array.sub (isHeader, i))
                            andalso 1 = Vector.length args
                            andalso 1 = numVarOccurrences test
-                           andalso Var.equals (test, #1 (Vector.sub (args, 0)))
+                           andalso Var.equals (test, #1 (Vector.first args))
                            then
                               doit (LabelMeaning.Case {canMove = canMove (),
                                                        cases = cases,
@@ -423,7 +423,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                            then (incLabelMeaning m
                                  ; normal ())
                         else
-                           if 0 = Vector.length statements
+                           if Vector.isEmpty statements
                               andalso
                               Vector.equals (args, actuals, fn ((x, _), x') =>
                                              Var.equals (x, x')
@@ -991,7 +991,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                      val l = Cases.hd cases
                      fun isOk (l': Label.t): bool = Label.equals (l, l')
                   in
-                     if 0 = Vector.length (labelArgs l)
+                     if Vector.isEmpty (labelArgs l)
                         andalso Cases.forall (cases, isOk)
                         andalso (case default of
                                     NONE => true
@@ -1007,7 +1007,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                  fun doit (l, args) =
                                     let
                                        val args =
-                                          if 0 = Vector.length (labelArgs l)
+                                          if Vector.isEmpty (labelArgs l)
                                              then Vector.new0 ()
                                           else args
                                        val m = labelMeaning l
@@ -1110,7 +1110,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                     cases = cases,
                                     default = default,
                                     gone = fn () => deleteLabelMeaning m,
-                                    test = Vector.sub (args, 0)}
+                                    test = Vector.first args}
                  | Goto {canMove, dst, args} =>
                       if Array.sub (isHeader, i)
                          orelse Array.sub (isBlock, i)

@@ -214,7 +214,7 @@ in
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | 1 => seq [Tyvar.layout (Vector.sub (ts, 0)), str " "]
+       | 1 => seq [Tyvar.layout (Vector.first ts), str " "]
        | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
@@ -640,7 +640,7 @@ structure DirectExp =
 
       fun tuple {exps: t vector, ty: Type.t}: t =
          if 1 = Vector.length exps
-            then Vector.sub (exps, 0)
+            then Vector.first exps
          else converts (exps, fn xs =>
                         (PrimExp.Tuple (Vector.map (xs, #1)), ty))
 
@@ -672,7 +672,7 @@ structure DirectExp =
 
       fun convert2 (e1, e2, make) =
          converts (Vector.new2 (e1, e2),
-                   fn xs => make (Vector.sub (xs, 0), Vector.sub (xs, 1)))
+                   fn xs => make (Vector.first xs, Vector.sub (xs, 1)))
 
       fun app {func, arg, ty} =
          convert2 (func, arg, fn ((func, _), (arg, _)) =>
@@ -802,7 +802,7 @@ structure DirectExp =
          (body,
           case Vector.length components of
              0 => []
-           | 1 => [MonoVal {var = Vector.sub (components, 0), ty = t, exp = e}]
+           | 1 => [MonoVal {var = Vector.first components, ty = t, exp = e}]
            | _ =>
                 let
                    val ts = Type.deTuple t

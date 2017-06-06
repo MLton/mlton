@@ -1799,7 +1799,7 @@ structure Program =
                                         andalso
                                         let
                                            val expects =
-                                              #2 (Vector.sub (args, 0))
+                                              #2 (Vector.first args)
                                         in
                                            Type.isSubtype (return, expects) 
                                            andalso
@@ -1847,7 +1847,7 @@ structure Program =
                 let
                    val {args, ...} = Function.dest f
                 in
-                   0 = Vector.length args
+                   Vector.isEmpty args
                 end,
                 Function.layout)
             val _ = clear p

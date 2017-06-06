@@ -401,7 +401,7 @@ structure Cases =
          let
             fun doit v =
                if Vector.length v >= 1
-                  then let val (_, a) = Vector.sub (v, 0)
+                  then let val (_, a) = Vector.first v
                        in a
                        end
                else Error.bug "SsaTree2.Cases.hd"
@@ -413,7 +413,7 @@ structure Cases =
 
       fun isEmpty (c: t): bool =
          let
-            fun doit v = 0 = Vector.length v
+            fun doit v = Vector.isEmpty v
          in
             case c of
                Con cs => doit cs
