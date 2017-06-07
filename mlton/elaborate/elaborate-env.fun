@@ -23,14 +23,12 @@ local
 in
    structure Basid = Basid
    structure Fctid = Fctid
-   structure Field = SortedRecord.Field
    structure Strid = Strid
    structure Longvid = Longvid
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Priority = Priority
    structure Sigid = Sigid
-   structure SortedRecord = SortedRecord
    structure Strid = Strid
    structure Symbol = Symbol
 end
@@ -69,85 +67,6 @@ structure Tycon =
       open Tycon
 
       val admitsEquality = TypeEnv.tyconAdmitsEquality
-   end
-
-structure Type =
-   struct
-      open Type
-
-      fun bracket l = let open Layout in seq [str "[", l, str "]"] end
-
-      fun explainDoesNotAdmitEquality (t: t): Layout.t =
-         let
-            open Layout
-            val wild = (str "_", ({isChar = false}, Tycon.BindingStrength.unit))
-            fun con (c, ts) =
-               let
-                  fun keep {showInside: bool} =
-                     Tycon.layoutApp
-                     (c, Vector.map (ts, fn t =>
-                                     if showInside
-                                        then
-                                           case t of
-                                              NONE => wild
-                                            | SOME t => t
-                                     else wild))
-                  datatype z = datatype AdmitsEquality.t
-               in
-                  case ! (Tycon.admitsEquality c) of
-                     Always => NONE
-                   | Never => SOME (bracket (#1 (keep {showInside = false})),
-                                    ({isChar = false},
-                                     Tycon.BindingStrength.unit))
-                   | Sometimes =>
-                        if Vector.exists (ts, Option.isSome)
-                           then SOME (keep {showInside = true})
-                        else NONE
-               end
-            fun record r =
-               if SortedRecord.forall (r, Option.isNone)
-                  then NONE
-               else
-                  SOME
-                  (case SortedRecord.detupleOpt r of
-                      NONE =>
-                         let
-                            val v = SortedRecord.toVector r
-                            val ending =
-                               if SortedRecord.exists (r, Option.isNone) then
-                                  ", ...}"
-                               else
-                                  "}"
-                         in
-                            (seq
-                             [str "{",
-                              mayAlign
-                              (separateRight
-                               (Vector.foldr
-                                (v, [], fn ((f, z), ac) =>
-                                 case z of
-                                    NONE => ac
-                                  | SOME (z, _) =>
-                                       seq [Field.layout f, str ": ", z] :: ac),
-                                ",")),
-                              str ending],
-                             ({isChar = false}, Tycon.BindingStrength.unit))
-                         end
-                    | SOME v =>
-                         Tycon.layoutApp
-                         (Tycon.tuple,
-                          Vector.map (v, fn NONE => wild | SOME t => t)))
-            val exp =
-               hom (t, {con = con,
-                        expandOpaque = false,
-                        record = record,
-                        replaceSynonyms = false,
-                        var = fn _ => NONE})
-         in
-            case exp of
-               NONE => str "???"
-             | SOME (exp, _) => exp
-         end
    end
 
 structure Scheme =

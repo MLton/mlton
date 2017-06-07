@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2012 Matthew Fluet.
+(* Copyright (C) 2009-2010,2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -137,7 +137,7 @@ structure Equality:>
       val fromBool: bool -> t
       val toBoolOpt: t -> bool option
       val truee: t
-      val unify: t * t -> UnifyResult.t
+      val unify: t * t -> bool
       val unknown: unit -> t
    end =
    struct
@@ -257,24 +257,6 @@ structure Equality:>
                   end
              | Never => falsee
          end
-
-      val unify: t * t -> UnifyResult.t =
-         fn (e, e') =>
-         if unify (e, e')
-            then UnifyResult.Unified
-         else
-            let
-               fun lay e =
-                  Lay.simple
-                  (Layout.str (case toBoolOpt e of
-                                  NONE => Error.bug "TypeEnv.Equality.unify"
-                                | SOME b =>
-                                     if b
-                                        then "[<equality>]"
-                                     else "[<non-equality>]"))
-            in
-               UnifyResult.NotUnifiable (lay e, lay e')
-            end
    end
 
 structure Unknown =
@@ -396,14 +378,12 @@ val tyvarTime =
    Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 local
-   type z = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
    open Layout
 in
-   fun simple (l: Layout.t): z =
-      (l, ({isChar = false}, Tycon.BindingStrength.unit))
-   val dontCare: z = simple (str "_")
+   val simple = Lay.simple
+   val dontCare: Lay.t = simple (str "_")
    fun bracket l = seq [str "[", l, str "]"]
-   fun layoutRecord (ds: (Field.t * bool * z) list, flexible: bool) =
+   fun layoutRecord (ds: (Field.t * bool * Lay.t) list, flexible: bool) =
       simple (case ds of
                  [] => if flexible then str "{...}" else str "{}"
                | _ => 
@@ -424,8 +404,8 @@ in
                          str (if flexible
                                  then ", ...}"
                               else "}")])
-   fun layoutTuple (zs: z vector): z =
-      Tycon.layoutApp (Tycon.tuple, zs)
+   fun layoutTuple (ls: Lay.t vector): Lay.t =
+      Tycon.layoutApp (Tycon.tuple, ls)
 end
 
 structure Type =
@@ -467,7 +447,7 @@ structure Type =
                          time: Time.t ref,
                          ty: ty} Set.t
       and ty =
-         Con of Tycon.t * t vector
+          Con of Tycon.t * t vector
         | FlexRecord of {fields: fields,
                          spine: Spine.t}
         (* GenFlexRecord only appears in type schemes.
@@ -660,7 +640,7 @@ structure Type =
                      layoutRecord (Vector.toListMap (Srecord.toVector r,
                                                      fn (f, t) => (f, false, t)),
                                    false)
-                | SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
+                | SOME ts => layoutTuple ts
             fun recursive _ = simple (str "<recur>")
             fun unknown _ = simple (str "???")
             val (destroy, prettyTyvar) =
@@ -861,6 +841,94 @@ structure Type =
       end
 
       fun unresolvedString () = vector (unresolvedChar ())
+
+      local
+         open Layout
+         fun bracket l = let open Layout in seq [str "[", l, str "]"] end
+      in
+         fun explainAdmitsEquality (T s) =
+            let
+               val {ty, ...} = Set.! s
+            in
+               case ty of
+                  Var tyvar => Lay.simple (bracket (Tyvar.layout tyvar))
+                | _ => Lay.simple (bracket (str "<equality>"))
+            end
+         fun explainDoesNotAdmitEquality t =
+            let
+               val wild = Lay.simple (str "_")
+               fun deopt lo = Option.fold (lo, wild, fn (l, _) => l)
+               val noneq = Lay.simple (bracket (str "<non-equality>"))
+               fun con (_, c, los) =
+                  let
+                     datatype z = datatype AdmitsEquality.t
+                  in
+                     case ! (tyconAdmitsEquality c) of
+                        Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
+                      | Never =>
+                           (SOME o Lay.simple o bracket o #1 o Tycon.layoutApp)
+                           (c, Vector.map (los, fn _ => wild))
+                      | Sometimes =>
+                           (SOME o Tycon.layoutApp)
+                           (c, Vector.map (los, deopt))
+                  end
+               fun doRecord (fls, extra) =
+                  SOME (layoutRecord (fls, extra))
+               fun flexRecord (_, {fields, spine = _}) =
+                  doRecord (List.keepAllMap (fields, fn (f, lo) =>
+                                             case lo of
+                                                NONE => NONE
+                                              | SOME l => SOME (f, false, l)),
+                            true)
+               fun genFlexRecord (_, {extra = _, fields, spine = _}) =
+                  doRecord (List.keepAllMap (fields, fn (f, lo) =>
+                                             case lo of
+                                                NONE => NONE
+                                              | SOME l => SOME (f, false, l)),
+                            true)
+               fun overload (_, ov) =
+                  case ov of
+                     Overload.Real => SOME (Lay.simple (bracket (str "<real?>")))
+                   | _ => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.overload"
+               fun record (_, r) =
+                  case Srecord.detupleOpt r of
+                     NONE =>
+                        let
+                           val r = Srecord.toVector r
+                           val r' =
+                              Vector.keepAllMap
+                              (r, fn (f, lo) =>
+                               case lo of
+                                  NONE => NONE
+                                | SOME l => SOME (f, false, l))
+                        in
+                           doRecord (Vector.toList r',
+                                     not (Vector.length r = Vector.length r'))
+                        end
+                   | SOME los => SOME (layoutTuple (Vector.map (los, deopt)))
+               fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
+               fun unknown (_, _) = SOME noneq
+               fun var (_, a) = SOME (Lay.simple (bracket (Tyvar.layout a)))
+               fun wrap (f, sel) arg =
+                  if admitsEquality (sel arg)
+                     then NONE
+                     else f arg
+               val res =
+                  hom (t, {con = wrap (con, #1),
+                           expandOpaque = false,
+                           flexRecord = wrap (flexRecord, #1),
+                           genFlexRecord = wrap (genFlexRecord, #1),
+                           overload = wrap (overload, #1),
+                           record = wrap (record, #1),
+                           recursive = wrap (recursive, fn t => t),
+                           unknown = wrap (unknown, #1),
+                           var = wrap (var, #1)})
+            in
+               case res of
+                  NONE => noneq
+                | SOME l => l
+            end
+      end
 
       val traceCanUnify =
          Trace.trace2 
@@ -1204,28 +1272,35 @@ structure Type =
                          case res of
                             NotUnifiable _ => res
                           | Unified =>
+                               (if Equality.unify (e, e')
+                                   then Unified
+                                   else let
+                                           val _ = preError ()
+                                           fun explain t =
+                                              if admitsEquality t
+                                                 then explainAdmitsEquality t
+                                                 else explainDoesNotAdmitEquality t
+                                        in
+                                           NotUnifiable (explain outer,
+                                                         explain outer')
+                                        end)
+                      val () =
+                         case res of
+                            NotUnifiable _ => ()
+                          | Unified =>
                                let
-                                  val res = Equality.unify (e, e')
+                                  val () = Set.union (s, s')
                                   val () =
-                                     case res of
-                                        NotUnifiable _ => ()
-                                      | Unified =>
-                                           let
-                                              val () = Set.union (s, s')
-                                              val () =
-                                                 if Time.<= (!time, !time')
-                                                    then ()
-                                                 else time := !time'
-                                              val () =
-                                                 Set.:= (s, {equality = e,
-                                                             plist = plist,
-                                                             time = time,
-                                                             ty = t})
-                                           in
-                                              ()
-                                           end
+                                     if Time.<= (!time, !time')
+                                        then ()
+                                        else time := !time'
+                                  val () =
+                                     Set.:= (s, {equality = e,
+                                                 plist = plist,
+                                                 time = time,
+                                                 ty = t})
                                in
-                                  res
+                                  ()
                                end
                    in
                       res
@@ -1305,6 +1380,8 @@ structure Type =
             UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
           | UnifyResult.Unified => Unified
 
+      val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
+
       local
          val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
             Property.getSetOnce (Tycon.plist, Property.initConst NONE)
@@ -1353,7 +1430,7 @@ structure Type =
                in
                   Array.toVector a
                end
-            fun unsorted (t, fields: (Field.t *  'a) list) =
+            fun unsorted (t, fields: (Field.t * 'a) list) =
                let
                   val v = sortFields fields
                in
