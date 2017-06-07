@@ -28,6 +28,8 @@ signature RING
 signature RING_WITH_IDENTITY
 signature SET
 signature STRING
+signature STREAM
+signature STREAM_PARSER
 signature SUM
 signature T
 signature UNIQUE_ID
@@ -173,6 +175,7 @@ functor PolyEnv
 functor Ring
 functor RingWithIdentity
 (* functor SplayMonoEnv *)
+functor StreamParser
 functor Sum
 functor Tree
 functor UniqueId

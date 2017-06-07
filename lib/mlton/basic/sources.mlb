@@ -74,7 +74,6 @@ in
       char.sml
       string.sig
       stream.sig
-      stream-parser.sig
       promise.sig
       promise.sml
       stream.sml
@@ -109,10 +108,11 @@ in
       hash-set.sig
       hash-set.sml
       string.sml
-      stream-parser.fun
       instream.sml
       file.sig
       file.sml
+      stream-parser.sig
+      stream-parser.fun
       signal.sml
       process.sig
       dir.sig
@@ -199,6 +199,8 @@ in
       signature RING
       signature RING_WITH_IDENTITY
       signature STRING
+      signature STREAM
+      signature STREAM_PARSER
       signature T
       signature UNIQUE_ID
       signature VECTOR
@@ -298,9 +300,9 @@ in
       functor MonoVector
       functor OrderedField
       functor PolyEnv
-      functor StreamParser
       functor Ring
       functor RingWithIdentity
+      functor StreamParser
       functor Tree
       functor UniqueId
       functor UniqueSet

@@ -25,6 +25,8 @@ signature REAL
 signature RING
 signature RING_WITH_IDENTITY
 signature STRING
+signature STREAM
+signature STREAM_PARSER
 signature SUM
 signature T
 signature UNIQUE_ID
@@ -230,11 +232,9 @@ bool.sml
 char.sml
 string.sig
 stream.sig
-stream-parser.sig
 promise.sig
 promise.sml
 stream.sml
-stream-parser.fun
 ring.sig
 ring-with-identity.sig
 euclidean-ring.sig
@@ -269,6 +269,8 @@ string.sml
 instream.sml
 file.sig
 file.sml
+stream-parser.sig
+stream-parser.fun
 signal.sml
 process.sig
 dir.sig
