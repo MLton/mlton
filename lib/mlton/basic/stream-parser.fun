@@ -2,45 +2,51 @@
 functor StreamParser(S: STREAM_PARSER_STRUCTS):STREAM_PARSER = 
 struct
 
-infix 2 <|>
-infix 3 <*> <* *> <$
-infixr 4 <$> <$$> <$$$> 
+infixr 1 <|>
+infixr 2 <&>
+infix  3 <*> <* *> 
+infixr 4 <$> <$$> <$$$> <$
 
 
 
 open S
 
-type pos = int
+type location = {line: int, column: int}
+type info = File.t
+(* this is here to make some of our annotations a bit nicer to read *)
+type ins = info * (char * location) Stream.t
 type 'b t = 
-   (char * pos) Stream.t -> ('b * (char * pos) Stream.t)
+   (info * (char * location) Stream.t) -> ('b * (char * location) Stream.t)
 
 exception Parse of string
 
-fun indexStream(n, s) = 
+fun indexStream({line, column}, s) = 
    case Stream.force s of
       NONE => Stream.empty ()
     | SOME(h, r) =>
-         Stream.cons((h, n), 
+         Stream.cons((h, {line=line, column=column}), 
             Stream.delay(fn () =>
-               indexStream(n + 1, r)
-               )
+               if h = #"\n"
+               then 
+                  indexStream({line=line, column=column+1}, r)
+               else
+                  indexStream({line=line+1, column=0}, r)
             )
+         )
 
-fun parse(p, str) =
-  case p(indexStream(0, str)) 
+fun 'b parse(p : 'b t, f, s) : 'b =
+   case p (f, indexStream({line=1, column=1}, s)) 
    of (b, _) => b
 
-fun pure a s =
-  (a, s)
+fun pure a (s : ins)  =
+  (a, #2 s)
 
-fun tf <*> tx = fn s =>
+fun tf <*> tx = fn (s : ins) => 
    case tf s
     of (f, s') =>
-          case tx s'
+          case tx (#1 s, s')
              of (b, s'') =>
                    (f b, s'')
-
-
    
 
 fun fst a _ = a
@@ -56,38 +62,65 @@ fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
 fun a <|> b = fn s => (a s) handle Parse _ => (b s)
+fun a <&> b = fn s => 
+   let
+      val _ = (a s) 
+   in
+      (b s)
+   end
 
-fun fail msg s = raise Parse (msg ^ "\n\tNear " ^ implode 
-  (List.map(Stream.firstNSafe(s, 20), fn (c, _) => c)))
+fun fail msg (s : ins) = raise Parse ("Parse error: " ^ msg ^ "\n    Near " ^ implode 
+   (List.map(Stream.firstNSafe(#2 s, 20), fn (c, _) => c)))
 
-fun next s = case Stream.force s 
-   of NONE => raise Parse "Eof"
+fun delay p = fn s => p () s
+
+fun next (s : ins)  = case Stream.force (#2 s) 
+   of NONE => raise Parse "End of file"
     | SOME((h, _), r) => (h, r)
 
 fun sat(t, p) s = 
-  let 
-     val (s', r) = t s
-  in case p s' of true => (s', r)
+   let 
+      val (h', r) = t s
+   in case p h' of true => (h', r)
                 | false => fail "Syntax error" s
-  end
+   end
+
+fun peek p (s : ins) =
+   let 
+      val (h', _) = p s
+   in
+      (h', #2 s)
+   end
+
+
+fun failing p s =
+   let
+      val _ = p s
+   in
+      fail "Suceeded on parser intended to fail" s
+   end
+   handle
+      Parse _ => ((), #2 s)
+
+fun notFollowedBy(p, c) =
+   fst <$> p <*> (peek (failing c))
+   
+
 
 fun any([]) s = (fail "No valid parse" s)
   | any(p::ps) s = 
        (p s) 
           handle Parse _ => any(ps) s
 
-fun many t = fn s =>
-   (case t s of
-      (b, s') =>
-         case many t s' of
-            (bs, s'') =>
-               (b::bs, s''))
-   handle Parse _ =>
-      ([], s)
+fun 'b many (t : 'b t) = (op ::) <$$> ((t), fn s => many t s) <|> pure []
+fun 'b many1 (t : 'b t) = (op ::) <$$> (t, many t)
 
-fun optional t = any [SOME <$> t, pure NONE]
+fun sepBy1(t, sep) = (op ::) <$$> (t, many (sep *> t))
+fun sepBy(t, sep) = sepBy1(t, sep) <|> pure []
+   
+fun optional t = SOME <$> t <|> pure NONE
 
-fun char c s = case Stream.force s
+fun char c s = case Stream.force (#2 s)
    of NONE => raise Parse "End of file"
     | SOME((h, n), r) => 
          if h = c 
@@ -100,6 +133,12 @@ fun char c s = case Stream.force s
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
-fun string str = String.implode <$> each (List.map ((String.explode str), char))
+fun string str = String.implode <$> each (List.map((String.explode str), char))
+
+fun info (s : ins) = (#1 s, #2 s)
+fun location (s : ins) = case Stream.force (#2 s) of
+       NONE => raise Parse "End of file"
+     | SOME((h, n), r) => (n, #2 s)
+
 
 end
