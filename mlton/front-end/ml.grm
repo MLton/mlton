@@ -513,9 +513,6 @@ strdecnode
      (let
          val strbinds = Vector.fromList strbinds
          val d = Strdec.Structure strbinds
-
-
-
       in
          d
       end)
@@ -576,12 +573,14 @@ strexp2node
         : longstrid                  (Strexp.Var longstrid)
         | STRUCT strdecs END         (Strexp.Struct strdecs)
         | fctid arg_fct              (Strexp.App (fctid, arg_fct))
-        | LET strdecs IN strexp END  (Strexp.Let (strdecs,strexp))
+        | LET strdecs IN strexp END  (Strexp.Let (strdecs, strexp))
 
-arg_fct : LPAREN strexp RPAREN   (strexp)
+arg_fct : LPAREN strexp RPAREN   (Strexp.makeRegion'
+                                  (Strexp.node strexp,
+                                   LPARENleft, RPARENright))
         | LPAREN strdecs RPAREN  (Strexp.makeRegion'
                                   (Strexp.Struct strdecs,
-                                   strdecsleft, strdecsright))
+                                   LPARENleft, RPARENright))
 
 (*---------------------------------------------------*)
 (*                    Signatures                     *)
