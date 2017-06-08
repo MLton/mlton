@@ -106,7 +106,7 @@ fun firstNSafe (s, n: int) =
          if n <= 0
             then rev ac
          else (case force s of
-                  NONE => ac
+                  NONE => rev ac
                 | SOME (x, s) => loop (n - 1, s, x :: ac))
    in loop (n, s, [])
    end
