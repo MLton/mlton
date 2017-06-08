@@ -64,4 +64,8 @@ signature STREAM_PARSER =
        (* matches the given string *)
        val string: string -> string t
 
+
+       val info: info t
+       val location: location t
+
     end

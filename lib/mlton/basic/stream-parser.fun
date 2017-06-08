@@ -95,13 +95,14 @@ fun peek p (s : ins) =
 
 fun failing p s =
    let
-      val _ = p s
+      val (succeeded, s') = (true <$ p) s handle
+         Parse _ => (false, #2 s)
    in
-      fail "Suceeded on parser intended to fail" s
+      if succeeded
+         then fail "Suceeded on parser intended to fail" s
+         else ((), s')
    end
-   handle
-      Parse _ => ((), #2 s)
-
+   
 fun notFollowedBy(p, c) =
    fst <$> p <*> (peek (failing c))
    
@@ -112,7 +113,7 @@ fun any([]) s = (fail "No valid parse" s)
        (p s) 
           handle Parse _ => any(ps) s
 
-fun 'b many (t : 'b t) = (op ::) <$$> ((t), fn s => many t s) <|> pure []
+fun 'b many (t : 'b t) = (op ::) <$$> (t, fn s => many t s) <|> pure []
 fun 'b many1 (t : 'b t) = (op ::) <$$> (t, many t)
 
 fun sepBy1(t, sep) = (op ::) <$$> (t, many (sep *> t))
