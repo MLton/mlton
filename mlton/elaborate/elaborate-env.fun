@@ -829,11 +829,10 @@ structure Structure =
                   let
                      fun simple s =
                         seq [str s, str " ", Ast.Vid.layout d,
-                             if Ast.Vid.isSymbolic d then str " " else empty,
-                                str ": ",
-                                case scheme of
-                                   NONE => str "<NONE>"
-                                 | SOME s => Scheme.layoutPretty s]
+                             if Ast.Vid.isSymbolic d then str " : " else str ": ",
+                             case scheme of
+                                NONE => str "???"
+                              | SOME s => Scheme.layoutPretty s]
                      datatype z = datatype Vid.t
                   in
                      case vid of
@@ -842,7 +841,7 @@ structure Structure =
                            SOME
                            (seq [str "exception ", Con.layout c,
                                  case scheme of
-                                    NONE => str " of <NONE>"
+                                    NONE => str " of ???"
                                   | SOME s => 
                                        case Type.deArrowOpt (Scheme.ty s) of
                                           NONE => empty
@@ -2443,24 +2442,26 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                   ; setTyconNames E)))
       val decs = ref []
       (* pre: arities are equal. *)
-      fun equalSchemes (structScheme: Scheme.t,
+      fun equalSchemes (strScheme: Scheme.t,
                         sigScheme: Scheme.t,
-                        name: string,
                         thing: string,
                         lay: unit -> Layout.t,
+                        defnRegion: Region.t,
+                        specRegion: Region.t,
                         r: Region.t): unit =
          let
-            fun error (l1, l2) =
+            fun error (strMsg, sigMsg) =
                let
                   open Layout
                in
                   Control.error
                   (r,
-                   seq [str (concat [thing, " in structure disagrees with ",
-                                     sign])],
-                   align [seq [str (concat [name, ": "]), lay ()],
-                          seq [str "structure: ", l1],
-                          seq [str "signature: ", l2]])
+                   seq [str thing, str " in structure disagrees with ",
+                        str sign, str ": ", lay ()],
+                   align [seq [str "structure: ", strMsg],
+                          seq [str "defn at:   ", Region.layout defnRegion],
+                          seq [str "signature: ", sigMsg],
+                          seq [str "spec at:   ", Region.layout specRegion]])
                end
             val (tyvars', ty') = Scheme.dest sigScheme
             val tyvars =
@@ -2469,7 +2470,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                 Type.var (Tyvar.newNoname {equality = false}))
          in
             Type.unify
-            (Scheme.apply (structScheme, tyvars),
+            (Scheme.apply (strScheme, tyvars),
              Scheme.apply (Scheme.make {canGeneralize = true,
                                         ty = ty',
                                         tyvars = tyvars'},
@@ -2480,15 +2481,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val equalSchemes =
          Trace.trace
          ("ElaborateEnv.transparentCut.equalSchemes",
-          fn (s, s', _, _, _, _) => Layout.tuple [Scheme.layout s,
-                                                  Scheme.layout s'],
+          fn (s, s', _, _, _, _, _) => Layout.tuple [Scheme.layout s,
+                                                     Scheme.layout s'],
           Unit.layout)
          equalSchemes
       fun layout (strids, x) =
          layoutLong (List.fold (strids, [x], fn (s, ac) => Strid.layout s :: ac))
-      fun checkCons (Cons.T v, Cons.T v',
-                     strids: Strid.t list,
-                     tycon: Ast.Tycon.t): unit =
+      fun checkCons (_ (* strTycon *): Ast.Tycon.t, Cons.T v,
+                     sigTycon: Ast.Tycon.t, Cons.T v',
+                     strids: Strid.t list): unit =
          let
             fun lay (c: Ast.Con.t) = layout (strids, Ast.Con.layout c)
             val extraStr =
@@ -2497,12 +2498,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                 case Vector.peek (v', fn {name = n', ...} =>
                                   Ast.Con.equals (n, n')) of
                    NONE => SOME n
-                 | SOME {scheme = s', ...} =>
+                 | SOME {name = n', scheme = s', ...} =>
                       let
                          val _ =
                             equalSchemes
-                            (s, s', "constructor", "constructor type",
-                             fn () => lay n, region)
+                            (s, s', "constructor",
+                             fn () => lay n,
+                             Ast.Con.region n,
+                             Ast.Con.region n',
+                             region)
                       in
                          NONE
                       end)
@@ -2516,7 +2520,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                      Control.error
                      (region,
                       seq [str "type ",
-                           layout (strids, Ast.Tycon.layout tycon),
+                           layout (strids, Ast.Tycon.layout sigTycon),
                            str (concat [" has constructors in ", name,
                                         " only: "]),
                            seq (List.separate (Vector.toListMap (v, lay),
@@ -2597,18 +2601,19 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                         end
                   else true
             end
-      fun handleType (structStr: TypeStr.t,
+      fun handleType (strName: Ast.Tycon.t,
+                      strStr: TypeStr.t,
+                      sigName: Ast.Tycon.t,
                       sigStr: Interface.TypeStr.t,
-                      strids: Strid.t list,
-                      name: Ast.Tycon.t): TypeStr.t =
+                      strids: Strid.t list): TypeStr.t =
          case Interface.TypeStr.toEnv sigStr of
-            NONE => structStr
+            NONE => strStr
           | SOME sigStr => 
                let
                   fun tyconScheme (c: Tycon.t): Scheme.t =
                      let
                         val tyvars =
-                           case TypeStr.kind structStr of
+                           case TypeStr.kind strStr of
                               Kind.Arity n =>
                                  Vector.tabulate
                                  (n, fn _ =>
@@ -2623,26 +2628,31 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                   datatype z = datatype TypeStr.node
                   fun checkScheme (sigScheme: Scheme.t) =
                      let
-                        val structScheme =
-                           case TypeStr.node structStr of
+                        val strScheme =
+                           case TypeStr.node strStr of
                               Datatype {tycon = c, ...} => tyconScheme c
                             | Scheme s => s
                             | Tycon c => tyconScheme c
                      in
                         equalSchemes
-                        (structScheme, sigScheme,
-                         "type", "type definition", fn () =>
-                         layout (strids, Ast.Tycon.layout name), region)
+                        (strScheme,
+                         sigScheme,
+                         "type",
+                         fn () => layout (strids, Ast.Tycon.layout sigName),
+                         Ast.Tycon.region strName,
+                         Ast.Tycon.region sigName,
+                         region)
                      end
                   val (return, consMismatch) =
                      case TypeStr.node sigStr of
                         Datatype {cons = sigCons, ...} =>
-                           (case TypeStr.node structStr of
-                               Datatype {cons = structCons, ...} =>
+                           (case TypeStr.node strStr of
+                               Datatype {cons = strCons, ...} =>
                                   (fn () =>
-                                   (checkCons (structCons, sigCons, strids,
-                                               name)
-                                    ; structStr),
+                                   (checkCons (strName, strCons,
+                                               sigName, sigCons,
+                                               strids)
+                                    ; strStr),
                                    false)
                              | _ => (fn () => sigStr, true))
                       | Scheme s =>
@@ -2652,7 +2662,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                            (fn () => (checkScheme (tyconScheme c); sigStr),
                             false)
                in
-                  if isPlausible (structStr, strids, name,
+                  if isPlausible (strStr, strids, sigName,
                                   TypeStr.admitsEquality sigStr,
                                   TypeStr.kind sigStr,
                                   consMismatch) then
@@ -2660,51 +2670,58 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                   else
                      sigStr
                end
-      fun map (structInfo: ('a, 'b) Info.t,
-               sigArray: ('a * 'c) array,
+      fun map {strInfo: ('name, 'strRange) Info.t,
+               sigArray: ('name * 'sigRange) array,
                strids: Strid.t list,
-               nameSpace: string,
-               namesEqual: 'a * 'a -> bool,
-               layoutName: 'a -> Layout.t,
-               bogus: 'c -> 'd,
-               doit: 'a * 'b * 'c -> 'd): ('a, 'd) Info.t =
+               nameEquals: 'name * 'name -> bool,
+               nameLayout: 'name -> Layout.t,
+               nameRegion: 'name -> Region.t,
+               notFound: 'name * 'sigRange -> {range: 'range,
+                                               spec: Layout.t option,
+                                               thing: string},
+               doit: 'name * 'strRange * 'name * 'sigRange -> 'range}: ('name, 'range) Info.t =
          let
-            val Info.T structArray = structInfo
-            val n = Array.length structArray
+            val Info.T strArray = strInfo
+            val n = Array.length strArray
             val r = ref 0
             val array =
                Array.map
-               (sigArray, fn (name, c) =>
+               (sigArray, fn (sigName, sigRange) =>
                 let
                    fun find i =
                       if i = n
                          then
                             let
+                               val {range, spec, thing} = notFound (sigName, sigRange)
                                open Layout
                                val _ =
                                   Control.error
                                   (region,
-                                   seq [str (concat [nameSpace, " "]),
-                                        layout (strids, layoutName name),
-                                        str (concat
-                                             [" in ", sign,
-                                              " but not in structure"])],
-                                   empty)
+                                   seq [str thing,
+                                        str " in ",
+                                        str sign,
+                                        str " but not in structure: ",
+                                        layout (strids, nameLayout sigName)],
+                                   align [case spec of
+                                             NONE => empty
+                                           | SOME spec => seq [str "signature: ", spec],
+                                          seq [str "spec at:   ",
+                                               Region.layout (nameRegion sigName)]])
                             in
-                               {domain = name,
-                                range = bogus c,
+                               {domain = sigName,
+                                range = range,
                                 time = Time.next (),
                                 uses = Uses.new ()}
                             end
                       else
                          let
-                            val {domain, range, time, uses} =
-                               Array.sub (structArray, i)
+                            val {domain = strName, range = strRange, time, uses} =
+                               Array.sub (strArray, i)
                          in
-                            if namesEqual (domain, name)
+                            if nameEquals (strName, sigName)
                                then (r := i + 1
-                                     ; {domain = domain,
-                                        range = doit (name, range, c),
+                                     ; {domain = strName,
+                                        range = doit (strName, strRange, sigName, sigRange),
                                         time = time,
                                         uses = uses})
                             else find (i + 1)
@@ -2733,13 +2750,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
             val _ =
                foreach2Sorted
                (types, typesS, Ast.Tycon.equals,
-                fn (name, _, opt) =>
+                fn (sigName, _, opt) =>
                 case opt of
                    NONE => Error.bug "ElaborateEnv.transparentCut.checkMatch: type"
                  | SOME (i, typeStr) =>
                       ignore (handleType
-                              (typeStr, #2 (Array.sub (typesI, i)),
-                               strids, name)))
+                              (Ast.Tycon.bogus, typeStr,
+                               sigName, #2 (Array.sub (typesI, i)),
+                               strids)))
          in
             ()
          end
@@ -2794,38 +2812,62 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                   end
              | SOME (_, S) => S
          end
-      and reallyCut (Structure.T {strs = structStrs,
-                                  types = structTypes,
-                                  vals = structVals, ...},
+      and reallyCut (Structure.T {strs = strStrs,
+                                  types = strTypes,
+                                  vals = strVals, ...},
                      I, strids) =
          let
             val {strs = sigStrs, types = sigTypes, vals = sigVals} =
                Interface.dest I
             val strs =
-               map (structStrs, sigStrs, strids,
-                    "structure", Strid.equals, Strid.layout,
-                    fn I => #1 (dummyStructure (I, {prefix = ""})),
-                    fn (name, S, I) => cut (S, I, name :: strids))
+               map {strInfo = strStrs, sigArray = sigStrs, strids = strids,
+                    nameEquals = Strid.equals, nameLayout = Strid.layout, nameRegion = Strid.region,
+                    notFound = fn (_, I) =>
+                    let
+                       val (S', _) = dummyStructure (I, {prefix = ""})
+                    in
+                       {range = S',
+                        spec = NONE,
+                        thing = "structure"}
+                    end,
+                    doit = fn (_, S, name, I) => cut (S, I, name :: strids)}
             val types =
-               map (structTypes, sigTypes, strids,
-                    "type", Ast.Tycon.equals, Ast.Tycon.layout,
-                    Interface.TypeStr.toEnvNoNone,
-                    fn (name, s, s') => handleType (s, s', strids, name))
+               map {strInfo = strTypes, sigArray = sigTypes, strids = strids,
+                    nameEquals = Ast.Tycon.equals, nameLayout = Ast.Tycon.layout, nameRegion = Ast.Tycon.region,
+                    notFound = fn (_, sigStr) =>
+                    let
+                       val sigStr = Interface.TypeStr.toEnvNoNone sigStr
+                    in
+                       {range = sigStr,
+                        spec = NONE,
+                        thing = "type"}
+                    end,
+                    doit = fn (strName, strStr, sigName, sigStr) =>
+                    handleType (strName, strStr, sigName, sigStr, strids)}
             val vals =
                map
-               (structVals, sigVals, strids,
-                "variable", Ast.Vid.equals, Ast.Vid.layout,
-                fn (status, sigScheme) =>
+               {strInfo = strVals, sigArray = sigVals, strids = strids,
+                nameEquals = Ast.Vid.equals, nameLayout = Ast.Vid.layout, nameRegion = Ast.Vid.region,
+                notFound = fn (name, (status, sigScheme)) =>
                 let
+                   val con = Con.fromString o Ast.Vid.toString
+                   val var = Var.fromString o Ast.Vid.toString
                    val vid =
                       case status of
-                         Status.Con => Vid.Con (Con.newNoname ())
-                       | Status.Exn => Vid.Exn (Con.newNoname ())
-                       | Status.Var => Vid.Var (Var.newNoname ())
+                         Status.Con => Vid.Con (con name)
+                       | Status.Exn => Vid.Exn (con name)
+                       | Status.Var => Vid.Var (var name)
+                   val sigScheme = Interface.Scheme.toEnv sigScheme
+                   val spec =
+                      (#valSpec (Structure.layouts ({showUsed = false}, fn _ => NONE)))
+                      (name, (vid, sigScheme))
+                   val thing = Status.pretty status
                 in
-                   (vid, Interface.Scheme.toEnv sigScheme)
+                   {range = (vid, sigScheme),
+                    spec = spec,
+                    thing = thing}
                 end,
-                fn (name, (vid, strScheme), (status, sigScheme)) =>
+                doit = fn (strName, (vid, strScheme), sigName, (status, sigScheme)) =>
                 case (strScheme, Interface.Scheme.toEnv sigScheme) of
                    (SOME strScheme, SOME sigScheme) =>
                       let
@@ -2833,30 +2875,45 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                          val generalize = TypeEnv.generalize sigArgs
                          val {args = strArgs, instance = strType} =
                             Scheme.instantiate strScheme
-                         fun error rest =
-                            let
-                               open Layout
-                            in
-                               Control.error
-                               (region,
-                                seq [str "variable type in structure disagrees with ",
-                                     str sign],
-                                align [seq [str "variable: ",
-                                            Longvid.layout      
-                                            (Longvid.long (rev strids, name))],
-                                       rest])
-                            end
+                         val unifyError = ref NONE
+                         val genError = ref NONE
+                         val statusError = ref NONE
+                         fun reportError () =
+                            if Option.isSome (!unifyError) orelse Option.isSome (!genError) orelse Option.isSome (!statusError)
+                               then let
+                                       open Layout
+                                       fun get (space, sel) r =
+                                          case !r of
+                                             NONE => empty
+                                           | SOME msgs => seq [str space, str ": ", sel msgs]
+                                       val getStr = get ("structure", #1)
+                                       val getSig = get ("signature", #2)
+                                    in
+                                       Control.error
+                                       (region,
+                                        seq [if Option.isSome (!statusError)
+                                                then str "value identifier"
+                                                else str (Status.pretty status),
+                                             str " in structure disagrees with ",
+                                             str sign,
+                                             str ": ",
+                                             Longvid.layout (Longvid.long (rev strids, sigName))],
+                                        align [getStr statusError,
+                                               getStr unifyError,
+                                               getStr genError,
+                                               seq [str "defn at:   ",
+                                                    Region.layout (Ast.Vid.region strName)],
+                                               getSig statusError,
+                                               getSig unifyError,
+                                               getSig genError,
+                                               seq [str "spec at:   ",
+                                                    Region.layout (Ast.Vid.region sigName)]])
+                                    end
+                               else ()
                          val _ =
                             Type.unify
                             (strType, sigType,
-                             {error = (fn (l, l') =>
-                                       let
-                                          open Layout
-                                       in
-                                          error (align
-                                                 [seq [str "structure: ", l],
-                                                  seq [str "signature: ", l']])
-                                       end),
+                             {error = fn (l, l') => unifyError := SOME (l, l'),
                               preError = preError})
                          (* Now that we've unified, find any type variables that
                           * can't be generalized because they occur at an earlier
@@ -2871,15 +2928,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                   val () = preError ()
                                   open Layout
                                in
-                                  error
-                                  (align
-                                   [seq [str "unable to generalize: ",
-                                         seq (List.separate (Vector.toListMap
-                                                             (unable, Tyvar.layout),
-                                                             str ", "))],
-                                    seq [str "signature: ",
-                                         Scheme.layoutPretty sigScheme]])
-
+                                  genError := SOME (seq [(seq o List.separate)
+                                                         (Vector.toListMap (unable, Tyvar.layout),
+                                                          str ", "),
+                                                         str " cannot be generalized"],
+                                                    Scheme.layoutPretty sigScheme)
                                end
                          val strArgs = strArgs ()
                          fun addDec (name: string, n: Exp.node): Vid.t =
@@ -2922,18 +2975,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                   let
                                      open Layout
                                      val _ =
-                                        Control.error
-                                        (region,
-                                         seq [str (concat
-                                                   [Vid.statusPretty vid,
-                                                    " in structure but ",
-                                                    Status.pretty status, " in ",
-                                                    sign, ": "]),
-                                              layout (strids, Ast.Vid.layout name)],
-                                         Layout.empty)
+                                        statusError := SOME (seq [str "<", str (Vid.statusPretty vid), str ">"],
+                                                             seq [str "<", str (Status.pretty status), str ">"])
                                   in
                                      vid
                                   end
+                         val () = reportError ()
                       in
                          (vid, SOME sigScheme)
                       end
@@ -2943,7 +2990,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        * wrong, because it isn't what the signature says --
                        * it might expose stuff hidden by the signature.
                        *)
-                      (vid, NONE))
+                      (vid, NONE)}
 
          in
             Structure.T {interface = SOME I,
