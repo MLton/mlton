@@ -25,6 +25,8 @@ structure KnownCase = KnownCase (S)
 structure LocalFlatten = LocalFlatten (S)
 structure LocalRef = LocalRef (S)
 structure LoopInvariant = LoopInvariant (S)
+structure LoopUnroll = LoopUnroll (S)
+structure LoopUnswitch = LoopUnswitch (S)
 structure PolyEqual = PolyEqual (S)
 structure PolyHash = PolyHash (S)
 structure Profile = Profile (S)
@@ -53,6 +55,10 @@ val ssaPassesDefault =
     *     slots of tuples that are constant useless
     *)
    {name = "useless", doit = Useless.transform} ::
+   (* loopUnroll should run
+    *   - after constants have been globalized
+    *)
+   {name = "loopUnroll1", doit = LoopUnroll.transform} ::
    {name = "removeUnused2", doit = RemoveUnused.transform} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform} ::
    (* polyEqual should run
@@ -67,6 +73,12 @@ val ssaPassesDefault =
    {name = "polyHash", doit = PolyHash.transform} ::
    {name = "introduceLoops2", doit = IntroduceLoops.transform} ::
    {name = "loopInvariant2", doit = LoopInvariant.transform} ::
+   (* loopUnswitch should run
+    *   - after loop invariant code motion so invariant conditions are obvious 
+    *   - before a knownCase pass to cleanup after unswitching
+    *)
+   {name = "loopUnswitch1", doit = LoopUnswitch.transform} ::
+   {name = "knownCase1", doit = KnownCase.transform} ::
    {name = "contify2", doit = Contify.transform} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
@@ -80,11 +92,14 @@ val ssaPassesDefault =
    {name = "localFlatten3", doit = LocalFlatten.transform} ::
    {name = "combineConversions", doit = CombineConversions.transform} ::
    {name = "commonArg", doit = CommonArg.transform} ::
-   {name = "commonSubexp", doit = CommonSubexp.transform} ::
+   {name = "commonSubexp1", doit = CommonSubexp.transform} ::
    {name = "commonBlock", doit = CommonBlock.transform} ::
    {name = "redundantTests", doit = RedundantTests.transform} ::
    {name = "redundant", doit = Redundant.transform} ::
-   {name = "knownCase", doit = KnownCase.transform} ::
+   {name = "loopUnswitch2", doit = LoopUnswitch.transform} ::
+   {name = "knownCase2", doit = KnownCase.transform} ::
+   {name = "loopUnroll2", doit = LoopUnroll.transform} ::
+   {name = "commonSubexp2", doit = CommonSubexp.transform} ::
    {name = "removeUnused4", doit = RemoveUnused.transform} ::
    nil
 
@@ -198,6 +213,8 @@ local
                  ("localFlatten", LocalFlatten.transform),
                  ("localRef", LocalRef.transform),
                  ("loopInvariant", LoopInvariant.transform),
+		 ("loopUnroll", LoopUnroll.transform),
+                 ("loopUnswitch", LoopUnswitch.transform),
                  ("polyEqual", PolyEqual.transform),
                  ("polyHash", PolyHash.transform),
                  ("redundant", Redundant.transform),
