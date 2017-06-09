@@ -48,7 +48,7 @@ structure Function =
             before (destroy ())
          end
    end
-
+(*
 structure Size =
    struct
       val check : (int * int option) -> bool =
@@ -115,7 +115,7 @@ structure Size =
       val default = (defaultExpSize, defaultTransferSize)
       fun functionGT max = #2 o (functionSize (0, max) default)
    end
-
+*)
 local
    fun 'a make (dontInlineFunc: Function.t * 'a -> bool)
       (Program.T {functions, ...}, a: 'a): Func.t -> bool =
@@ -147,10 +147,10 @@ local
       end
 in
    val leafOnce = make (fn (f, {size}) =>
-                        Size.functionGT size f
+                        Function.functionGT size f
                         orelse Function.containsCall f)
    val leafOnceNoLoop = make (fn (f, {size}) =>
-                              Size.functionGT size f
+                              Function.functionGT size f
                               orelse Function.containsCall f
                               orelse Function.containsLoop f)
 end
@@ -225,9 +225,9 @@ local
                               (fn escape =>
                                let
                                   val (n, check) =
-                                     Size.functionSize
+                                     Function.functionSize
                                      (0, max)
-                                     (Size.defaultExpSize,
+                                     (Exp.defaultExpSize,
                                       fn t =>
                                       case t of
                                          Call {func, ...} =>
@@ -239,7 +239,7 @@ local
                                                   then !size
                                                else escape ()
                                             end
-                                       | _ => Size.defaultTransferSize t)
+                                       | _ => Transfer.defaultTransferSize t)
                                      function
                                in
                                   if check
@@ -336,18 +336,18 @@ fun nonRecursive (Program.T {functions, ...}, {small: int, product: int}) =
          andalso not (!doesCallSelf)
          andalso let
                     val (n, _) = 
-                       Size.functionSize
+                       Function.functionSize
                        (0, NONE)
-                       (Size.defaultExpSize,
+                       (Exp.defaultExpSize,
                         fn t as Call {func, ...} =>
                               let
                                 val {shouldInline, size, ...} = funcInfo func
                               in
                                 if !shouldInline
                                    then !size
-                                else Size.defaultTransferSize t
+                                else Transfer.defaultTransferSize t
                               end
-                         | t => Size.defaultTransferSize t)
+                         | t => Transfer.defaultTransferSize t)
                        function
                  in
                     if setSize

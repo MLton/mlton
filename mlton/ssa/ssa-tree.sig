@@ -121,6 +121,9 @@ signature SSA_TREE =
              | Tuple of Var.t vector
              | Var of Var.t
 
+	    val check: (int * int option) -> bool
+	    val defaultExpSize: t -> int
+	    val expSize: int * int option -> ( t -> int ) * unit -> t -> int * bool
             val equals: t * t -> bool
             val foreachVar: t * (Var.t -> unit) -> unit
             val hash: t -> Word.t
@@ -128,19 +131,6 @@ signature SSA_TREE =
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
             val unit: t
-         end
-
-      structure Statement:
-         sig
-            datatype t = T of {exp: Exp.t,
-                               ty: Type.t,
-                               var: Var.t option}
-
-            val clear: t -> unit (* clear the var *)
-            val exp: t -> Exp.t
-            val layout: t -> Layout.t
-            val profile: ProfileExp.t -> t
-            val var: t -> Var.t option
          end
 
       structure Cases:
@@ -180,7 +170,7 @@ signature SSA_TREE =
                         test: Var.t}
              | Goto of {args: Var.t vector,
                         dst: Label.t}
-             (* Raise implicitly raises to the caller.  
+             (* Raise implicitly raises to the caller.
               * I.E. the local handler stack must be empty.
               *)
              | Raise of Var.t vector
@@ -189,16 +179,35 @@ signature SSA_TREE =
                            prim: Type.t Prim.t,
                            return: Label.t} (* Must be nullary. *)
 
+            val check: (int * int option) -> bool
+            val defaultTransferSize: t -> int
+            val transferSize: int * int option -> unit * (t -> int) -> t -> int * bool
             val equals: t * t -> bool
             val foreachFunc : t * (Func.t -> unit) -> unit
             val foreachLabel: t * (Label.t -> unit) -> unit
             val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
             val foreachVar: t * (Var.t -> unit) -> unit
-            val hash: t -> Word.t 
+            val hash: t -> Word.t
             val layout: t -> Layout.t
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
             val replaceVar: t * (Var.t -> Var.t) -> t
+         end
+
+      structure Statement:
+         sig
+            datatype t = T of {exp: Exp.t,
+                               ty: Type.t,
+                               var: Var.t option}
+
+	    val check: (int * int option) -> bool
+            val statementSize: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
+            val statementsSize: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
+            val clear: t -> unit (* clear the var *)
+            val exp: t -> Exp.t
+            val layout: t -> Layout.t
+            val profile: ProfileExp.t -> t
+            val var: t -> Var.t option
          end
 
       structure Block:
@@ -209,6 +218,9 @@ signature SSA_TREE =
                      statements: Statement.t vector,
                      transfer: Transfer.t}
 
+	    val check: (int * int option) -> bool
+            val blockSize: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
+            val blocksSize: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
             val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit
             val label: t -> Label.t
@@ -252,6 +264,9 @@ signature SSA_TREE =
              * for block b to yield v', then visiting b's descendents,
              * then applying v' ().
              *)
+	    val functionSize: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
+	    val default: (Exp.t -> int) * (Transfer.t -> int)
+	    val functionGT: int option -> t -> bool
             val dfs: t * (Block.t -> unit -> unit) -> unit
             val dominatorTree: t -> Block.t Tree.t
             val foreachVar: t * (Var.t * Type.t -> unit) -> unit
