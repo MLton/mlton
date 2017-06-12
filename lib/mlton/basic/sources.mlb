@@ -298,6 +298,7 @@ in
       functor MonoVector
       functor OrderedField
       functor PolyEnv
+      functor StreamTransformer
       functor Ring
       functor RingWithIdentity
       functor Tree
