@@ -39,9 +39,15 @@ local
    sxml-simplify.fun
    sxml.sig
    sxml.fun
+   parse-sxml.sig
+   parse-sxml.fun
+   test.sml
+
 in
    signature SXML
    signature XML
+
+   structure Z
 
    functor Monomorphise
    functor Xml
