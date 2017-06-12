@@ -12,16 +12,18 @@ signature STREAM_PARSER =
 
        type location = {line: int, column: int}
        type info = File.t
-       val parse: 'b t * File.t * char Stream.t -> 'b
+       val parse: 'b t * char Stream.t -> 'b
+       val parseWithFile: 'b t * File.t * char Stream.t -> 'b
        exception Parse of string
 
        val pure: 'b -> 'b t
        (*
-        * infixr 1 <|>
-        * infixr 2 <&>
+        * infix 1 <|> >>=
+        * infix 2 <&>
         * infix  3 <*> <* *> 
         * infixr 4 <$> <$$> <$$$> <$
         *)
+       val >>= : 'a t * ('a -> 'b t) -> 'b t
        val <*> : ('b -> 'c) t * 'b t -> 'c t
        val <$> : ('b -> 'c) * 'b t -> 'c t
        val <$ : 'c * 'b t -> 'c t
@@ -63,7 +65,6 @@ signature STREAM_PARSER =
        val char: char -> char t
        (* matches the given string *)
        val string: string -> string t
-
 
        val info: info t
        val location: location t

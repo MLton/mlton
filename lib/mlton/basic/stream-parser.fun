@@ -2,8 +2,8 @@
 functor StreamParser(S: STREAM_PARSER_STRUCTS):STREAM_PARSER = 
 struct
 
-infixr 1 <|>
-infixr 2 <&>
+infix 1 <|> >>=
+infix 2 <&>
 infix  3 <*> <* *> 
 infixr 4 <$> <$$> <$$$> <$
 
@@ -34,20 +34,28 @@ fun indexStream({line, column}, s) =
             )
          )
 
-fun 'b parse(p : 'b t, f, s) : 'b =
+
+fun 'b parseWithFile(p : 'b t, f, s) : 'b =
    case p (f, indexStream({line=1, column=1}, s)) 
    of (b, _) => b
+
+fun 'b parse(p : 'b t, s) : 'b = parseWithFile(p, #1 (File.temp{prefix="<none>",suffix=""}), s)
 
 fun pure a (s : ins)  =
   (a, #2 s)
 
 fun tf <*> tx = fn (s : ins) => 
    case tf s
-    of (f, s') =>
+      of (f, s') =>
           case tx (#1 s, s')
              of (b, s'') =>
                    (f b, s'')
-   
+
+fun ta >>= f = fn (s : ins) =>
+   case ta s
+      of (a, s') =>
+         f a (#1 s, s')
+            
 
 fun fst a _ = a
 fun snd _ b = b
@@ -134,7 +142,8 @@ fun char c s = case Stream.force (#2 s)
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
-fun string str = String.implode <$> each (List.map((String.explode str), char))
+fun string str = (String.implode <$> each (List.map((String.explode str), char))) <|>
+                 (fail ("Expected " ^ str))
 
 fun info (s : ins) = (#1 s, #2 s)
 fun location (s : ins) = case Stream.force (#2 s) of
