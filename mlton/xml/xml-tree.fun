@@ -32,7 +32,7 @@ fun maybeConstrain (x, t) =
       open Layout
    in
       if !Control.showTypes
-         then seq [x, str ": ", Type.layout t]
+         then seq [x, str ": ", Type.layoutFormal t]
       else x
    end
 
@@ -42,7 +42,7 @@ in
    fun layoutTargs (ts: Type.t vector) =
       if !Control.showTypes
          andalso 0 < Vector.length ts
-         then list (Vector.toListMap (ts, Type.layout))
+         then list (Vector.toListMap (ts, Type.layoutFormal))
       else empty
 end
 
@@ -148,7 +148,7 @@ structure VarExp =
                     if Vector.isEmpty targs
                        then Var.layout var
                     else seq [Var.layout var, str " ",
-                              Vector.layout Type.layout targs]
+                              Vector.layout Type.layoutFormal targs]
                  end
          else Var.layout var
    end
@@ -210,11 +210,11 @@ in
       seq [Con.layout con,
            case arg of
               NONE => empty
-            | SOME t => seq [str " of ", Type.layout t]]
+            | SOME t => seq [str " of ", Type.layoutFormal t]]
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | 1 => seq [Tyvar.layout (Vector.sub (ts, 0)), str " "]
+       | 1 => seq [str "(", Tyvar.layout (Vector.sub (ts, 0)), str ") "]
        | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
