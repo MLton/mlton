@@ -135,6 +135,12 @@ struct
          fun makeLet(decs, body) = DE.lett{decs=decs, body=body}
          fun makeValDec(var, ty, exp) = Dec.MonoVal{exp=exp, ty=ty, var=var}
          val var = resolveVar <$> ident
+         fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
+         val varExp = makeVarExp <$> (var <* spaces)
+       
+         fun makeApp(func, arg) = {arg=arg, func=func}
+         val appExp = makeApp <$$> (varExp, varExp)
+
          val constString = String.implode <$> (T.char #"\"" *> 
                (T.many(T.failing (T.char #"\"") *> T.next)) <* T.char #"\"")
          fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
@@ -168,7 +174,8 @@ struct
                      (token "=" *> spaces *> primexp typ2 <* spaces) >>= (fn primexp => 
                      T.pure(var, typ2, primexp) ))))]
          and primexp typ = T.any 
-            [PrimExp.Const <$> constExp (Type.tycon typ)]
+            [PrimExp.Const <$> constExp (Type.tycon typ),
+             PrimExp.App <$> appExp]
       in
          exp' ()
       end
