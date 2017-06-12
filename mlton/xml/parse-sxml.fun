@@ -86,7 +86,7 @@ struct
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$> 
-         (((tupleOf (T.delay (typ' resolveTycon))) <|> pure (Vector.fromList [])),
+         (((tupleOf (T.delay (typ' resolveTycon))) <|> pure (Vector.new0 ())),
          (spaces *> ident <* spaces))
    in
       fun typ resolveTycon = typ' resolveTycon () 
@@ -102,7 +102,7 @@ struct
 
    
    fun makeDt resolveTycon (tycon, cons) = 
-      {tyvars = Vector.fromList [], 
+      {tyvars = Vector.new0 (), 
        tycon = resolveTycon tycon, cons = cons}
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
@@ -125,8 +125,8 @@ struct
           overflow = overflow
          }
    
-   fun body _ _ _ = pure (Exp.fromPrimExp (PrimExp.Tuple (Vector.fromList []),
-   Type.tuple (Vector.fromList [])))
+   fun body _ _ _ = pure (Exp.fromPrimExp (PrimExp.Tuple (Vector.new0 ()),
+   Type.tuple (Vector.new0 ())))
 
    
 
@@ -192,16 +192,4 @@ struct
       end
 end
 
-functor TestParseSxml (S: PARSE_SXML): sig end =
-struct
-
-open S
-
-val _ =
-   Assert.assert
-   ("TestParseSxml", fn () => 
-      false
-   )
-
-end
 
