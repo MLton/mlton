@@ -1,3 +1,4 @@
+
 functor StreamTransformer(S: STREAM_TRANSFORMER_STRUCTS):STREAM_TRANSFORMER = 
 struct
 
@@ -26,8 +27,9 @@ fun parse(p, str) =
 fun pure a s =
   (a, s)
 
-infix 3 <*> <* *>
-fun op <*> (tf, tx) = fn s => 
+infix 3 <*>
+infixr 3 <* *>
+fun tf <*> tx = fn s =>
    case tf s
     of (f, s') =>
           case tx s'
@@ -39,9 +41,9 @@ fun snd _ b = b
 
 infixr 4 <$>
 (*fun <$> f p = raise Parse "Undefined"*)
-fun op <$> (f, p) = (pure f) <*> p 
-fun op <* (a, b) = fst <$> a <*> b
-fun op *> (a, b) = snd <$> a <*> b
+fun f <$> p = (pure f) <*> p
+fun a <* b = fst <$> a <*> b
+fun a *> b = snd <$> a <*> b
 
 
 fun one s = case Stream.force s 
@@ -80,4 +82,3 @@ fun each([]) = pure []
 fun string str = implode <$> each (List.map ((explode str), equals))
 
 end
-
