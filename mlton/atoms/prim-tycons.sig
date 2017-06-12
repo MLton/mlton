@@ -68,6 +68,9 @@ signature PRIM_TYCONS =
       val layoutApp:
          tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
          -> Layout.t * ({isChar: bool} * BindingStrength.t)
+      val layoutFormal:
+         tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
+         -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon
       val prims: {admitsEquality: AdmitsEquality.t,
                   kind: Kind.t,

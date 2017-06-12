@@ -234,4 +234,39 @@ fun layoutApp (c: t,
       else normal ()
    end
 
+fun layoutFormal (c: t, args: (Layout.t * ({isChar: bool}* BindingStrength.t)) vector) =
+   let
+      local
+         open Layout
+         open BindingStrength
+      in
+         val mayAlign = mayAlign
+         val seq = seq
+         val str = str
+         val Unit = Unit
+         val Tuple = Tuple
+      end
+      val ({isChar}, lay) =
+         case Vector.length args of
+            0 => if equals (c, tuple)
+                    then (({isChar = false}, str "unit"))
+                    else ({isChar = equals (c, defaultChar ())}, layout c)
+          | 1 => ({isChar = false},
+                   seq [(Layout.paren o #1) (Vector.sub (args, 0)),
+                   str " ", 
+                      if equals (c, tuple)
+                         then str "tuple"  
+                         else layout c])
+          | _ => ({isChar = false},
+                   seq [Layout.tuple
+                   (Vector.toListMap (args, #1)),
+                    str " ", 
+                       if equals (c, tuple)
+                          then str "tuple"
+                       else if equals (c, arrow)
+                         then str "arrow"
+                       else layout c])
+         in
+            (lay, ({isChar = isChar}, BindingStrength.unit))
+         end
 end
