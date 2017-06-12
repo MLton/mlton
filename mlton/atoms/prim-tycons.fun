@@ -243,8 +243,6 @@ fun layoutFormal (c: t, args: (Layout.t * ({isChar: bool}* BindingStrength.t)) v
          val mayAlign = mayAlign
          val seq = seq
          val str = str
-         val Unit = Unit
-         val Tuple = Tuple
       end
       val ({isChar}, lay) =
          case Vector.length args of
