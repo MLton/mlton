@@ -32,4 +32,5 @@ signature STREAM =
       val nth: 'a t * int -> 'a
       val single: 'a -> 'a t
       val toList: 'a t -> 'a list
+      val fromList: 'a list -> 'a t
    end
