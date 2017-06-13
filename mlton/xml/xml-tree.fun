@@ -259,7 +259,8 @@ in
                       | SOME (e, _) => seq [str "_ => ", layoutExp e]],
                     2)]
        | ConApp {arg, con, targs, ...} =>
-            seq [Con.layout con,
+            seq [str "new ",
+                 Con.layout con,
                  layoutTargs targs,
                  case arg of
                     NONE => empty
@@ -268,15 +269,19 @@ in
        | Handle {catch, handler, try} =>
             align [layoutExp try,
                    seq [str "handle ",
-                        Var.layout (#1 catch),
+                        maybeConstrain (Var.layout (#1 catch), #2 catch),
                         str " => ", layoutExp handler]]
        | Lambda l => layoutLambda l
        | PrimApp {args, prim, targs} =>
-            seq [Prim.layout prim,
+            seq [str "prim ",
+                 Prim.layout prim,
                  layoutTargs targs,
                  str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e
-       | Raise {exn, ...} => seq [str "raise ", VarExp.layout exn]
+       | Raise {exn, extend} =>
+            seq [str "raise ",
+                 str (if extend then "extend " else ""),
+                 VarExp.layout exn]
        | Select {offset, tuple} =>
             seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
        | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
