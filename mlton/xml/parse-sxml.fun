@@ -36,20 +36,26 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
       
 
-   val ident = String.implode <$> (T.any
-       [(op ::) <$$> 
-           (T.sat(T.next, isIdentFirst),
-            T.many (T.sat(T.next, isIdentRest))),
-        List.append <$$> 
-           (T.many (T.sat(T.next, isInfixChar)),
-            T.many (T.sat(T.next, isIdentRest)) (* just for collecting _0 *)
-            )])
+   val ident = T.failing (token "in" <|> token "val") *>
+      String.implode <$> (T.any
+         [(op ::) <$$>
+             (T.sat(T.next, isIdentFirst),
+              T.many (T.sat(T.next, isIdentRest))),
+          List.append <$$>
+             (T.many1 (T.sat(T.next, isInfixChar)),
+              T.many (T.sat(T.next, isIdentRest)) (* just for collecting _0 *)
+              )])
 
        
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$> 
       (T.char #"(" *> T.sepBy1(p, T.char #"," *> spaces) <* T.char #")")
+   
+   fun casesOf con left right = T.sepBy1
+      (con <$$> (left <* spaces <* T.string "=>" <* spaces, right),
+       spaces *> T.char #"|" *> spaces)
+
 
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) =
@@ -57,12 +63,20 @@ struct
          fun makeNullary() =
             case ident of
                "bool" => Type.bool
+             (*| "char" => Type.char*)
              | "cpointer" => Type.cpointer
-             | "intInf" => Type.intInf
+             | "intinf" => Type.intInf
              | "thread" => Type.thread
              | "unit" => Type.unit
-             | "word8" => Type.unit
+             (*| "int8" => Type.int8*)
+             (*| "int16" => Type.int16*)
+             (*| "int32" => Type.int32*)
+             (*| "int64" => Type.int64*)
+             | "intInf" => Type.intInf
+             | "word8" => Type.word8
+             | "word16" => Type.word Type.WordSize.word16
              | "word32" => Type.word32
+             | "word64" => Type.word Type.WordSize.word64
              | other => Type.con (resolveTycon other, args)
          fun makeUnary() = 
             let 
@@ -130,26 +144,18 @@ struct
       T.string "Datatypes:" *> spaces *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
 
    fun overflow resolveVar = T.string "Overflow:" *> spaces *> (
-          (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident) <|> 
+          (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
           (NONE <$ T.string "None" <* spaces))
 
 
-   fun makeProgram(datatypes, overflow, body) = 
-         Program.T {body = body,
-          datatypes = datatypes,
-          overflow = overflow
-         }
-   
-   fun body _ _ _ = pure (Exp.fromPrimExp (PrimExp.Tuple (Vector.new0 ()),
-   Type.tuple (Vector.new0 ())))
-
-   
-
    fun exp resolveCon resolveTycon resolveVar = 
       let
-         fun makeLet(decs, body) = DE.lett{decs=decs, body=body}
+         fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
          fun makeValDec(var, ty, exp) = Dec.MonoVal{exp=exp, ty=ty, var=var}
-         val var = resolveVar <$> ident
+         val var = resolveVar <$> ident <* spaces
+         val typedvar = (fn (x,y) => (x,y)) <$$>
+            (resolveVar <$> ident <* spaces,
+             token ":" *> spaces *> (typ resolveTycon) <* spaces)
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
          val varExp = makeVarExp <$> (var <* spaces)
        
@@ -164,36 +170,66 @@ struct
          T.many (T.sat(T.next, Char.isDigit)))
 
          fun makeWord typ int =
-            if Tycon.isWordX typ then T.pure (WordX.fromIntInf(int,
-            (Tycon.deWordX typ))) else fail "Invalid word"
+            if Tycon.isWordX typ
+               then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
+               else fail "Invalid word"
 
          fun constExp typ = 
             if Tycon.isWordX typ then
-               Const.Word <$> (constInt >>= makeWord typ) <|> fail "Expected word"
+               Const.Word <$> (constInt >>= makeWord typ) <|> T.fail "Expected word"
             else if Tycon.isRealX typ then
-               fail "Expected real"
+               T.fail "Expected real"
             else if Tycon.isIntX typ then
-               Const.IntInf <$> constInt <|> fail "Expected integer"
+               Const.IntInf <$> constInt <|> T.fail "Expected integer"
             else
-               Const.string <$> constString 
-         fun casesOf con left right = T.sepBy1(con <$$> (left <* spaces <*
-            T.string "=>" <* spaces, right),
-            spaces *> T.char #"|" *> spaces)
+               T.fail ("Invalid type for constant: " ^ Layout.toString (Tycon.layout typ))
+               (*Const.string <$> constString *)
+
+         fun makeRaise(exn, NONE) = {exn=exn, extend=false}
+           | makeRaise(exn, SOME _) = {exn=exn, extend=true}
+         val raiseExp = makeRaise <$$> (token "raise" *> varExp <* spaces, optional (token "extend"))
+
+         fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
+
+
+
 
          fun exp' () = makeLet <$$> 
-            (token "let" *> spaces *> T.many (dec ()) <* token "in" <* spaces, T.delay exp')
-         and dec () = T.any
-            [makeValDec <$> 
-               ((token "val" *> spaces *> var <* spaces) >>= (fn var => 
-                  (token ":" *> spaces *> (typ resolveTycon) <* spaces) >>= (fn typ2 =>
-                     (token "=" *> spaces *> primexp typ2 <* spaces) >>= (fn primexp => 
-                     T.pure(var, typ2, primexp) ))))]
-         and primexp typ = T.any 
+            (token "let" *> spaces *>
+            (*(fn x=> [x]) <$> dec () <* token "in" <* spaces, varExp)*)
+            T.many1 (dec ()) <* token "in" <* spaces, varExp)
+         and dec () = makeValDec <$>
+               ((token "val" *> spaces *> typedvar <* spaces) >>= (fn var =>
+                (token "=" *> spaces *> primexp (#2 var) <* spaces) >>= (fn primexp =>
+                     T.pure(#1 var, #2 var, primexp))))
+         and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.Const <$> constExp (Type.tycon typ),
-             PrimExp.App <$> appExp]
+             PrimExp.Handle <$> handleExp (),
+             PrimExp.Raise <$> raiseExp,
+             PrimExp.Tuple <$> (tupleOf varExp),
+             (* put these last, they just take identifiers so they're pretty greedy *)
+             PrimExp.Var <$> varExp,
+             PrimExp.App <$> makeApp <$$> (varExp, varExp)]
+         and handleExp () = makeHandle <$$$>
+            (delay exp' <* spaces,
+             token "handle" *> spaces *> typedvar <* spaces,
+             token "=>" *> spaces *> delay exp' <* spaces
+             )
+
       in
          exp' ()
       end
+
+      fun body resolveCon resolveTycon resolveVar = T.string "Body:" *> spaces
+         *> exp resolveCon resolveTycon resolveVar
+         (*pure (Exp.fromPrimExp (PrimExp.Tuple (Vector.new0 ()),
+   Type.tuple (Vector.new0 ())))*)
+
+   fun makeProgram(datatypes, overflow, body) =
+      Program.T
+         {body = body,
+          datatypes = datatypes,
+          overflow = overflow}
 
 
    val program : XmlTree.Program.t StreamParser.t =
