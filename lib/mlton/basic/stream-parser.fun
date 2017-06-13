@@ -80,6 +80,21 @@ fun a <&> b = fn s =>
       (b s)
    end
 
+structure Ops = struct
+   val (op >>=) = (op >>=)
+   val (op <*>) = (op <*>)
+   val (op <$>) = (op <$>)
+   val (op <$$>) = (op <$$>)
+   val (op <$$$>) = (op <$$$>)
+   val (op <*) = (op <*)
+   val (op *>) = (op *>)
+   val (op <$) = (op <$)
+   val (op <|>) = (op <|>)
+   val (op <&>) = (op <&>)
+end
+
+
+
 fun fail msg (s : state) = case Stream.force (#2 s) 
    of NONE => raise Parse "Parse error at end of file"
     | SOME((_, p : location), _) => raise Parse

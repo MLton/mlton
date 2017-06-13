@@ -2,7 +2,7 @@ functor ParseSxml(S: PARSE_SXML_STRUCTS) =
 struct
    open S
    structure T = StreamParser
-   open T
+   open T.Ops
    open XmlTree
    structure DE = DirectExp
    infix 1 <|> >>=
@@ -115,7 +115,7 @@ struct
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$> 
-         (((tupleOf (T.delay (typ' resolveTycon))) <|> pure (Vector.new0 ())),
+         (((tupleOf (T.delay (typ' resolveTycon))) <|> T.pure (Vector.new0 ())),
          (spaces *> ident <* spaces))
    in
       fun typ resolveTycon = typ' resolveTycon () 
@@ -136,7 +136,7 @@ struct
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
       ((spaces *> ident <* spaces <* T.char #"=" <* spaces),
-       (Vector.fromList <$> sepBy1
+       (Vector.fromList <$> T.sepBy1
           ((constructor resolveCon resolveTycon) <* spaces, 
            T.char #"|" *> spaces))) 
 
@@ -175,12 +175,12 @@ struct
          fun makeWord typ int =
             if Tycon.isWordX typ
                then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-               else fail "Invalid word"
+               else T.fail "Invalid word"
 
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          val conAppExp = makeConApp <$$$>
             (token "new" *> resolveCon <$> ident <* spaces,
-             pure (Vector.new0 ()),
+             T.pure (Vector.new0 ()),
              T.optional varExp)
 
          fun constExp typ = 
@@ -205,7 +205,7 @@ struct
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
          val primAppExp = makePrimApp <$$$>
             (token "prim" *> ident <* spaces >>= resolvePrim,
-             (vectorOf (typ resolveTycon) <|> pure (Vector.new0 ())) <* spaces,
+             (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
              tupleOf varExp <* spaces)
 
          fun exp' () = makeLet <$$> 
@@ -227,9 +227,9 @@ struct
              PrimExp.Var <$> varExp,
              PrimExp.App <$> makeApp <$$> (varExp, varExp)]
          and handleExp () = makeHandle <$$$>
-            (delay exp' <* spaces,
+            (T.delay exp' <* spaces,
              token "handle" *> typedvar <* spaces,
-             token "=>" *> delay exp' <* spaces
+             token "=>" *> T.delay exp' <* spaces
              )
 
       in
