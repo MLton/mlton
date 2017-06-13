@@ -13,7 +13,9 @@ struct
 
    val space = T.sat(T.next, Char.isSpace) 
    val spaces = T.many(space)
-   fun token s = T.notFollowedBy(T.string s, (T.char #"_") <|> (T.sat(T.next, Char.isAlphaNum)))
+   fun token s = T.notFollowedBy
+      (T.string s,
+       (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) *> spaces
    
    val clOptions = T.many (T.failing (T.string "Datatypes:") *> T.next)
 
@@ -189,7 +191,7 @@ struct
 
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
-         val raiseExp = makeRaise <$$> (token "raise" *> optional (token "extend"), varExp <* spaces)
+         val raiseExp = makeRaise <$$> (token "raise" *> T.optional (token "extend"), varExp <* spaces)
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
@@ -197,12 +199,12 @@ struct
 
 
          fun exp' () = makeLet <$$> 
-            (token "let" *> spaces *>
-            (*(fn x=> [x]) <$> dec () <* token "in" <* spaces, varExp)*)
-            T.many1 (dec ()) <* token "in" <* spaces, varExp)
+            (token "let" *> 
+            (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
+            T.many1 (dec ()) <* token "in", varExp)
          and dec () = makeValDec <$>
-               ((token "val" *> spaces *> typedvar <* spaces) >>= (fn var =>
-                (token "=" *> spaces *> primexp (#2 var) <* spaces) >>= (fn primexp =>
+               ((token "val" *> typedvar <* spaces) >>= (fn var =>
+                (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
                      T.pure(#1 var, #2 var, primexp))))
          and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.Const <$> constExp (Type.tycon typ),
@@ -214,8 +216,8 @@ struct
              PrimExp.App <$> makeApp <$$> (varExp, varExp)]
          and handleExp () = makeHandle <$$$>
             (delay exp' <* spaces,
-             token "handle" *> spaces *> typedvar <* spaces,
-             token "=>" *> spaces *> delay exp' <* spaces
+             token "handle" *> typedvar <* spaces,
+             token "=>" *> delay exp' <* spaces
              )
 
       in
