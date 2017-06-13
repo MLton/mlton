@@ -12,7 +12,7 @@ infixr 4 <$> <$$> <$$$> <$
 open S
 
 type location = {line: int, column: int}
-type info = File.t
+type info = string
 (* this is here to make some of our annotations a bit nicer to read *)
 type ins = info * (char * location) Stream.t
 type 'b t = 
@@ -28,18 +28,20 @@ fun indexStream({line, column}, s) =
             Stream.delay(fn () =>
                if h = #"\n"
                then 
-                  indexStream({line=line, column=column+1}, r)
-               else
                   indexStream({line=line+1, column=0}, r)
+               else
+                  indexStream({line=line, column=column+1}, r)
             )
          )
 
 
 fun 'b parseWithFile(p : 'b t, f, s) : 'b =
-   case p (f, indexStream({line=1, column=1}, s)) 
+   case p (File.toString f, indexStream({line=1, column=1}, s)) 
    of (b, _) => b
 
-fun 'b parse(p : 'b t, s) : 'b = parseWithFile(p, #1 (File.temp{prefix="<none>",suffix=""}), s)
+fun 'b parse(p : 'b t, s) : 'b = 
+   case p ("String input", indexStream({line=1, column=1}, s)) 
+   of (b, _) => b
 
 fun pure a (s : ins)  =
   (a, #2 s)
@@ -77,8 +79,11 @@ fun a <&> b = fn s =>
       (b s)
    end
 
-fun fail msg (s : ins) = raise Parse ("Parse error: " ^ msg ^ "\n    Near " ^ implode 
-   (List.map(Stream.firstNSafe(#2 s, 20), fn (c, _) => c)))
+fun fail msg (s : ins) = case Stream.force (#2 s) 
+   of NONE => raise Parse "Parse error at end of file"
+    | SOME((_, p : location), _) => raise Parse
+         ("Parse error at "^((Int.toString o #line) p)^":"^((Int.toString o #column) p)^" : " ^ msg ^ 
+        "\n    Near " ^ implode (List.map(Stream.firstNSafe(#2 s, 20), fn (c, _) => c)))
 
 fun delay p = fn s => p () s
 
@@ -90,7 +95,7 @@ fun sat(t, p) s =
    let 
       val (h', r) = t s
    in case p h' of true => (h', r)
-                | false => fail "Syntax error" s
+                 | false => fail "Syntax error" s
    end
 
 fun peek p (s : ins) =
