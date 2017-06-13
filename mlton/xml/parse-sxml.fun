@@ -162,13 +162,13 @@ struct
          fun makeApp(func, arg) = {arg=arg, func=func}
          val appExp = makeApp <$$> (varExp, varExp)
 
+         fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
+                                                 | SOME y => T.pure y)
 
          val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
                            (fn x      => [x]   ) <$> T.next
-         val constString = (String.implode o List.concat) <$> (T.char #"\"" *>
-               (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\"")
-         fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
-                                                 | SOME y => T.pure y)
+         val constString = possibly ((String.fromString o String.implode o List.concat) <$>
+         (T.char #"\"" *> (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\""))
          val constInt = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit)))
 
@@ -185,12 +185,11 @@ struct
             else if Tycon.isIntX typ then
                Const.IntInf <$> constInt <|> T.fail "Expected integer"
             else
-               T.fail ("Invalid type for constant: " ^ Layout.toString (Tycon.layout typ))
-               (*Const.string <$> constString *)
+               Const.string <$> constString
 
-         fun makeRaise(exn, NONE) = {exn=exn, extend=false}
-           | makeRaise(exn, SOME _) = {exn=exn, extend=true}
-         val raiseExp = makeRaise <$$> (token "raise" *> varExp <* spaces, optional (token "extend"))
+         fun makeRaise(NONE, exn) = {exn=exn, extend=false}
+           | makeRaise(SOME _, exn) = {exn=exn, extend=true}
+         val raiseExp = makeRaise <$$> (token "raise" *> optional (token "extend"), varExp <* spaces)
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
