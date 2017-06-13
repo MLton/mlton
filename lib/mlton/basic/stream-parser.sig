@@ -9,9 +9,10 @@ signature STREAM_PARSER =
        include STREAM_PARSER_STRUCTS
 
        type 'b t
+       type state
 
        type location = {line: int, column: int}
-       type info = File.t
+       type info = string
        val parse: 'b t * char Stream.t -> 'b
        val parseWithFile: 'b t * File.t * char Stream.t -> 'b
        exception Parse of string
@@ -44,8 +45,8 @@ signature STREAM_PARSER =
        val sat: 'b t * ('b -> bool) -> 'b t
        (* succeeds if and only if its argument fails to parse*)
        val failing: 'b t -> unit t
-       (* succeeds if the first parser succeeds and the second fails *)
-       (* the second parser will never consume any input *)
+       (* succeeds if the first parser succeeds and the second fails 
+        * the second parser will never consume any input *)
        val notFollowedBy: 'b t * 'c t -> 'b t
        (* succeeds if any of the parsers succeed, effectively folding with <|> *)
        val any: 'b t list -> 'b t 
@@ -65,8 +66,14 @@ signature STREAM_PARSER =
        val char: char -> char t
        (* matches the given string *)
        val string: string -> string t
-
+       (* returns the info for the parse, usually a filename *)
        val info: info t
+       (* returns the current source location of the parser *)
        val location: location t
+       (* returns a reader representation of the parser. This and fromReader below
+        * expose a few internals, but it's hardly more than is already usable *)
+       val toReader: 'b t -> state -> ('b * state) option
+       (* return the parser representation of a given reader *)
+       val fromReader: (state -> ('b * state) option)-> 'b t
 
     end

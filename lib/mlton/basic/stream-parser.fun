@@ -13,10 +13,11 @@ open S
 
 type location = {line: int, column: int}
 type info = string
-(* this is here to make some of our annotations a bit nicer to read *)
-type ins = info * (char * location) Stream.t
+(* this is our state representation for readers, but info is unchanging *)
+type state = info * (char * location) Stream.t
 type 'b t = 
    (info * (char * location) Stream.t) -> ('b * (char * location) Stream.t)
+
 
 exception Parse of string
 
@@ -43,17 +44,17 @@ fun 'b parse(p : 'b t, s) : 'b =
    case p ("String input", indexStream({line=1, column=1}, s)) 
    of (b, _) => b
 
-fun pure a (s : ins)  =
+fun pure a (s : state)  =
   (a, #2 s)
 
-fun tf <*> tx = fn (s : ins) => 
+fun tf <*> tx = fn (s : state) => 
    case tf s
       of (f, s') =>
           case tx (#1 s, s')
              of (b, s'') =>
                    (f b, s'')
 
-fun ta >>= f = fn (s : ins) =>
+fun ta >>= f = fn (s : state) =>
    case ta s
       of (a, s') =>
          f a (#1 s, s')
@@ -79,7 +80,7 @@ fun a <&> b = fn s =>
       (b s)
    end
 
-fun fail msg (s : ins) = case Stream.force (#2 s) 
+fun fail msg (s : state) = case Stream.force (#2 s) 
    of NONE => raise Parse "Parse error at end of file"
     | SOME((_, p : location), _) => raise Parse
          ("Parse error at "^((Int.toString o #line) p)^":"^((Int.toString o #column) p)^" : " ^ msg ^ 
@@ -87,7 +88,7 @@ fun fail msg (s : ins) = case Stream.force (#2 s)
 
 fun delay p = fn s => p () s
 
-fun next (s : ins)  = case Stream.force (#2 s) 
+fun next (s : state)  = case Stream.force (#2 s) 
    of NONE => raise Parse "End of file"
     | SOME((h, _), r) => (h, r)
 
@@ -98,7 +99,7 @@ fun sat(t, p) s =
                  | false => fail "Syntax error" s
    end
 
-fun peek p (s : ins) =
+fun peek p (s : state) =
    let 
       val (h', _) = p s
    in
@@ -150,10 +151,26 @@ fun each([]) = pure []
 fun string str = (String.implode <$> each (List.map((String.explode str), char))) <|>
                  (fail ("Expected " ^ str))
 
-fun info (s : ins) = (#1 s, #2 s)
-fun location (s : ins) = case Stream.force (#2 s) of
+fun info (s : state) = (#1 s, #2 s)
+fun location (s : state) = case Stream.force (#2 s) of
        NONE => raise Parse "End of file"
      | SOME((h, n), r) => (n, #2 s)
+
+fun toReader (p : 'b t) (s : state) : ('b * state) option = 
+   let
+      val res = p s
+   in
+      SOME (#1 res, (#1 s, #2 res))
+   end 
+   handle Parse _ =>
+      NONE
+
+fun fromReader (r : state -> ('b * state) option) (s : state) = 
+   case r s of 
+      SOME (b, s') => 
+         (b, #2 s')
+    | NONE => raise Parse "fromReader"
+
 
 
 end
