@@ -38,7 +38,7 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
       
 
-   val ident = T.failing (token "in" <|> token "val") *>
+   val ident = T.failing (token "in" <|> token "val" <|> token "prim") *>
       String.implode <$> (T.any
          [(op ::) <$$>
              (T.sat(T.next, isIdentFirst),
@@ -70,14 +70,9 @@ struct
                "bool" => Type.bool
              (*| "char" => Type.char*)
              | "cpointer" => Type.cpointer
-             | "intinf" => Type.intInf
+             | "intInf" => Type.intInf
              | "thread" => Type.thread
              | "unit" => Type.unit
-             (*| "int8" => Type.int8*)
-             (*| "int16" => Type.int16*)
-             (*| "int32" => Type.int32*)
-             (*| "int64" => Type.int64*)
-             | "intInf" => Type.intInf
              | "word8" => Type.word8
              | "word16" => Type.word Type.WordSize.word16
              | "word32" => Type.word32
@@ -204,12 +199,14 @@ struct
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
-         fun resolvePrim _ = raise Domain
+         fun resolvePrim p = case XmlTree.Prim.fromString p
+            of SOME p' => T.pure p'
+             | NONE => T.fail ("Invalid primitive application: " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
          val primAppExp = makePrimApp <$$$>
-            (token "prim" *> resolvePrim <$> ident,
-             vectorOf typ <|> pure (Vector.new0 ()),
-             varExp)
+            (token "prim" *> ident <* spaces >>= resolvePrim,
+             (vectorOf (typ resolveTycon) <|> pure (Vector.new0 ())) <* spaces,
+             tupleOf varExp <* spaces)
 
          fun exp' () = makeLet <$$> 
             (token "let" *>
@@ -222,10 +219,10 @@ struct
          and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.ConApp <$> conAppExp,
              PrimExp.Const <$> constExp (Type.tycon typ),
-             PrimExp.Handle <$> handleExp (),
              PrimExp.PrimApp <$> primAppExp,
              PrimExp.Raise <$> raiseExp,
              PrimExp.Tuple <$> (tupleOf varExp),
+             PrimExp.Handle <$> handleExp (),
              (* put these last, they just take identifiers so they're pretty greedy *)
              PrimExp.Var <$> varExp,
              PrimExp.App <$> makeApp <$$> (varExp, varExp)]
