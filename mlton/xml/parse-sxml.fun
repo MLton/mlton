@@ -26,11 +26,26 @@ struct
          fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
       end
 
+   fun isInfixChar b = case List.index
+      (String.explode "!%&$#+-/:<=>?@\\~'^|*",
+       fn c => b = c) of
+          SOME _ => true
+        | NONE   => false
 
+   fun isIdentFirst b = Char.isAlpha b orelse b = #"'" 
+   fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
+      
 
-   val ident = String.implode <$> (op ::) <$$> 
-      (T.any [T.char #"_", T.sat(T.next, Char.isAlpha)], 
-       T.many (T.any [T.char #"_", T.char #".", T.sat(T.next, Char.isAlphaNum)]))
+   val ident = String.implode <$> (T.any
+       [(op ::) <$$> 
+           (T.sat(T.next, isIdentFirst),
+            T.many (T.sat(T.next, isIdentRest))),
+        List.append <$$> 
+           (T.many (T.sat(T.next, isInfixChar)),
+            T.many (T.sat(T.next, isIdentRest)) (* just for collecting _0 *)
+            )])
+
+       
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$> 
