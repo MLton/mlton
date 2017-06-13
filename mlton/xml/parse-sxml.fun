@@ -162,8 +162,11 @@ struct
          fun makeApp(func, arg) = {arg=arg, func=func}
          val appExp = makeApp <$$> (varExp, varExp)
 
-         val constString = String.implode <$> (T.char #"\"" *> 
-               (T.many(T.failing (T.char #"\"") *> T.next)) <* T.char #"\"")
+
+         val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
+                           (fn x      => [x]   ) <$> T.next
+         val constString = (String.implode o List.concat) <$> (T.char #"\"" *>
+               (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\"")
          fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
                                                  | SOME y => T.pure y)
          val constInt = possibly ((IntInf.fromString o String.implode) <$>
