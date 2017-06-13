@@ -51,9 +51,12 @@ struct
        
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
-   fun tupleOf p = Vector.fromList <$> 
+   fun tupleOf p = Vector.fromList <$>
       (T.char #"(" *> T.sepBy1(p, T.char #"," *> spaces) <* T.char #")")
-   
+
+   fun vectorOf p = Vector.fromList <$>
+      (T.char #"[" *> T.sepBy1(p, T.char #"," *> spaces) <* T.char #"]")
+
    fun casesOf con left right = T.sepBy1
       (con <$$> (left <* spaces <* T.string "=>" <* spaces, right),
        spaces *> T.char #"|" *> spaces)
@@ -179,6 +182,12 @@ struct
                then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
                else fail "Invalid word"
 
+         fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
+         val conAppExp = makeConApp <$$$>
+            (token "new" *> resolveCon <$> ident <* spaces,
+             pure (Vector.new0 ()),
+             T.optional varExp)
+
          fun constExp typ = 
             if Tycon.isWordX typ then
                Const.Word <$> (constInt >>= makeWord typ) <|> T.fail "Expected word"
@@ -195,11 +204,15 @@ struct
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
-
-
+         fun resolvePrim _ = raise Domain
+         fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
+         val primAppExp = makePrimApp <$$$>
+            (token "prim" *> resolvePrim <$> ident,
+             vectorOf typ <|> pure (Vector.new0 ()),
+             varExp)
 
          fun exp' () = makeLet <$$> 
-            (token "let" *> 
+            (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
             T.many1 (dec ()) <* token "in", varExp)
          and dec () = makeValDec <$>
@@ -207,8 +220,10 @@ struct
                 (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
                      T.pure(#1 var, #2 var, primexp))))
          and primexp typ = T.failing(token "in") *> T.any
-            [PrimExp.Const <$> constExp (Type.tycon typ),
+            [PrimExp.ConApp <$> conAppExp,
+             PrimExp.Const <$> constExp (Type.tycon typ),
              PrimExp.Handle <$> handleExp (),
+             PrimExp.PrimApp <$> primAppExp,
              PrimExp.Raise <$> raiseExp,
              PrimExp.Tuple <$> (tupleOf varExp),
              (* put these last, they just take identifiers so they're pretty greedy *)
