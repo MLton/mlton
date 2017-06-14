@@ -174,11 +174,14 @@ struct
          open XmlTree
 
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
-         fun makeValDec(var, ty, exp) = Dec.MonoVal{exp=exp, ty=ty, var=var}
+         fun makeValDec(var, ty, exp) = Dec.MonoVal {exp=exp, ty=ty, var=var}
+         fun makeFunDecs(lambdas) = Dec.Fun {decs=Vector.fromList lambdas, tyvars=Vector.new0 ()}
+         fun makeFunDec((var, ty), lambda) = {lambda=lambda, ty=ty, var=var}
+
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (resolveVar <$> ident <* spaces,
-             token ":" *> spaces *> (typ resolveTycon) <* spaces)
+             T.char #":" *> spaces *> (typ resolveTycon) <* spaces)
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
          val varExp = makeVarExp <$> (var <* spaces)
        
@@ -257,10 +260,13 @@ struct
             (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
             T.many (dec ()) <* token "in", varExp <* T.string "end")
-         and dec () = makeValDec <$>
-               ((token "val" *> typedvar <* spaces) >>= (fn var =>
-                (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
-                     T.pure(#1 var, #2 var, primexp))))
+         and dec () = T.any
+            [token "val rec" *> makeFunDecs <$>
+               T.many (makeFunDec <$$> (typedvar <* T.char #"=" <* spaces, lambdaExp ())),
+             makeValDec <$>
+                ((token "val" *> typedvar) >>= (fn var =>
+                 (T.char #"=" *> spaces *> primexp (#2 var) <* spaces) >>= (fn primexp =>
+                     T.pure(#1 var, #2 var, primexp))))]
          and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
