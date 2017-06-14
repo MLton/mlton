@@ -197,7 +197,7 @@ signature SSA_TREE =
                                var: Var.t option}
 
             val size: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
-            val sizes: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
+            val sizeV: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
             val clear: t -> unit (* clear the var *)
             val exp: t -> Exp.t
             val layout: t -> Layout.t
@@ -214,7 +214,7 @@ signature SSA_TREE =
                      transfer: Transfer.t}
 
             val size: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
-            val sizes: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
+            val sizeV: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
             val default: (Exp.t -> int) * (Transfer.t -> int)
 	    val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit

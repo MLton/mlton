@@ -467,7 +467,7 @@ structure Statement =
       (* Vals to determine the size for inline.fun and loop optimization*)
       fun size (size, max) (doExp, doTransfer) =
          fn T {exp, ...} => Exp.size2 (size, max) (doExp, doTransfer) exp
-      fun sizes (s, max) (doExp, doTransfer) statements =
+      fun sizeV (s, max) (doExp, doTransfer) statements =
          Exn.withEscape
          (fn escape =>
            Vector.fold
@@ -967,10 +967,10 @@ structure Block =
       (* Vals to determine the size for inline.fun and loop optimization*)
       fun size (size, max) (doExp, doTransfer) =
          fn T {statements, transfer, ...} =>
-         case Statement.sizes (size, max) (doExp, doTransfer) statements of
+         case Statement.sizeV (size, max) (doExp, doTransfer) statements of
             (size, true) => (size, true)
           | (size, false) => Transfer.size2 (size, max) (doExp, doTransfer) transfer
-      fun sizes (s, max) (doExp, doTransfer) blocks =
+      fun sizeV (s, max) (doExp, doTransfer) blocks =
          Exn.withEscape
          (fn escape =>
           Vector.fold
@@ -1073,7 +1073,7 @@ structure Function =
 
       (* Vals to determine the size for inline.fun and loop optimization*)
       fun size (size, max) (doExp, doTransfer) f =
-         Block.sizes (size, max) (doExp, doTransfer) (#blocks (dest f))
+         Block.sizeV (size, max) (doExp, doTransfer) (#blocks (dest f))
 
       val default = (Exp.size, Transfer.size)
       fun functionGT max = #2 o (size (0, max) default)
