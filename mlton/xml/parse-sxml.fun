@@ -147,6 +147,7 @@ struct
           (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
           (NONE <$ T.string "None" <* spaces))
 
+   val parseWord = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
@@ -185,7 +186,7 @@ struct
 
          fun constExp typ = 
             if Tycon.isWordX typ then
-               Const.Word <$> (constInt >>= makeWord typ) <|> T.fail "Expected word"
+               Const.Word <$> (T.string "0x" *> parseWord >>= makeWord typ) <|> T.fail "Expected word"
             else if Tycon.isRealX typ then
                T.fail "Expected real"
             else if Tycon.isIntX typ then
