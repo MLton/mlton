@@ -298,6 +298,13 @@ structure Cases =
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
    end
 
+structure Size = 
+   struct
+      val check: (int * int option) -> bool =
+	fn (_, NONE) => false
+	 | (size, SOME size') => size > size'
+   end
+
 structure Exp =
    struct
       datatype t =
@@ -314,6 +321,24 @@ structure Exp =
        | Var of Var.t
 
       val unit = Tuple (Vector.new0 ())
+
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      val size : t -> int = 
+         fn ConApp {args, ...} => 1 + Vector.length args
+          | Const _ => 0
+          | PrimApp {args, ...} => 1 + Vector.length args
+          | Profile _ => 0
+          | Select _ => 1 + 1
+          | Tuple xs => 1 + Vector.length xs
+          | Var _ => 0
+
+      fun size2 (size, max) (doExp, _) exp =
+         let
+            val size' = doExp exp
+            val size = size + size'
+         in
+            (size, Size.check (size, max))
+         end
 
       fun foreachVar (e, v) =
          let
@@ -439,6 +464,17 @@ structure Statement =
          val exp = make #exp
       end
 
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      fun size (size, max) (doExp, doTransfer) =
+         fn T {exp, ...} => Exp.size2 (size, max) (doExp, doTransfer) exp
+      fun sizeV (s, max) (doExp, doTransfer) statements =
+         Exn.withEscape
+         (fn escape =>
+           Vector.fold
+           (statements, (s, false), fn (statement, (s, check)) =>
+            if check
+               then escape (s, check)
+            else size (s, max) (doExp, doTransfer) statement))
       fun layout' (T {var, ty, exp}, layoutVar) =
          let
             open Layout
@@ -671,6 +707,24 @@ structure Transfer =
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
                      return: Label.t} (* Must be nullary. *)
+
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      val size =
+         fn Arith {args, ...} => 1 + Vector.length args
+          | Bug => 1
+          | Call {args, ...} => 1 + Vector.length args
+          | Case {cases, ...} => 1 + Cases.length cases
+          | Goto {args, ...} => 1 + Vector.length args
+          | Raise xs => 1 + Vector.length xs
+          | Return xs => 1 + Vector.length xs
+          | Runtime {args, ...} => 1 + Vector.length args
+      fun size2 (size, max) (_, doTransfer) transfer =
+         let
+            val size' = doTransfer transfer
+            val size = size + size'
+         in
+            (size, Size.check (size, max))
+         end
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
@@ -910,6 +964,23 @@ structure Block =
          val transfer = make #transfer
       end
 
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      fun size (size, max) (doExp, doTransfer) =
+         fn T {statements, transfer, ...} =>
+         case Statement.sizeV (size, max) (doExp, doTransfer) statements of
+            (size, true) => (size, true)
+          | (size, false) => Transfer.size2 (size, max) (doExp, doTransfer) transfer
+      fun sizeV (s, max) (doExp, doTransfer) blocks =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (blocks, (s, false), fn (block, (s, check)) =>
+           if check
+              then escape (s, check)
+           else size (s, max) (doExp, doTransfer) block))
+
+      val default = (Exp.size, Transfer.size)
+
       fun layout' (T {label, args, statements, transfer}, layoutVar) =
          let
             open Layout
@@ -999,6 +1070,13 @@ structure Function =
          val mayInline = make #mayInline
          val name = make #name
       end
+
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      fun size (size, max) (doExp, doTransfer) f =
+         Block.sizeV (size, max) (doExp, doTransfer) (#blocks (dest f))
+
+      val default = (Exp.size, Transfer.size)
+      fun functionGT max = #2 o (size (0, max) default)
 
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =
          let

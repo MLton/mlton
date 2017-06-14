@@ -249,6 +249,10 @@ signature CONTROL_FLAGS =
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
 
+      (* Limit the code growth loop unrolling/unswitching will allow. *)
+      val loopUnrollLimit: int ref
+      val loopUnswitchLimit: int ref
+
       (* Should the mutator mark cards? *)
       val markCards: bool ref
 
