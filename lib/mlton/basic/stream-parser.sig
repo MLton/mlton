@@ -48,8 +48,12 @@ signature STREAM_PARSER =
       end
 
 
+      (* succeeds if any of the parsers succeed, effectively folding with <|> *)
+      val any: 'b t list -> 'b t 
       (* delays a stream lazily, for recursive combinations *)
       val delay: (unit -> 'b t) -> 'b t
+      (* succeeds if all of the parsers succeed and puts them together in a list*)
+      val each: 'b t list -> 'b list t 
       (* run a parser but consume no input *)
       val peek: 'b t -> 'b t
       (* gets the next char of input *)
@@ -61,8 +65,6 @@ signature STREAM_PARSER =
       (* succeeds if the first parser succeeds and the second fails 
        * the second parser will never consume any input *)
       val notFollowedBy: 'b t * 'c t -> 'b t
-      (* succeeds if any of the parsers succeed, effectively folding with <|> *)
-      val any: 'b t list -> 'b t 
       (* succeeds for each time the parser succeeds in succession *)
       val many: 'b t -> 'b list t
       (* as many, but one or more, rather than zero or more times *)
