@@ -250,7 +250,10 @@ in
       case e of
          App {arg, func} => seq [VarExp.layout func, str " ", VarExp.layout arg]
        | Case {test, cases, default} =>
-            align [seq [str "case ", VarExp.layout test, str " of"],
+            align [seq [str "case",
+                        case cases of Cases.Con  _ => empty
+                                    | Cases.Word (size, _) => str (WordSize.toString size),
+                        str " ", VarExp.layout test, str " of"],
                    Cases.layout (cases, layoutExp),
                    indent
                    (align

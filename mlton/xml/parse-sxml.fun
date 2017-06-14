@@ -39,7 +39,7 @@ struct
       
 
    val ident = T.failing (token "in" <|> token "val" <|> token "fn" <|> token
-   "_" <|> token "=>") *>
+   "_" <|> token "=>" <|> token "case") *>
       String.implode <$> (T.any
          [(op ::) <$$>
              (T.sat(T.next, isIdentFirst),
@@ -54,13 +54,14 @@ struct
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$>
-      (T.char #"(" *> T.sepBy1(p, T.char #"," *> spaces) <* T.char #")")
+      (T.char #"(" *> T.sepBy(p, T.char #"," *> spaces) <* T.char #")")
 
    fun vectorOf p = Vector.fromList <$>
-      (T.char #"[" *> T.sepBy1(p, T.char #"," *> spaces) <* T.char #"]")
+      (T.char #"[" *> T.sepBy(p, T.char #"," *> spaces) <* T.char #"]")
 
-   fun casesOf con left right = T.sepBy1
-      (con <$$> (left <* spaces <* T.string "=>" <* spaces, right),
+   fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
+      (left <* spaces <* token "=>" >>= (fn l =>  
+         right >>= (fn r => con (l, r))),
        spaces *> T.char #"|" *> spaces)
 
 
@@ -151,15 +152,15 @@ struct
 
    fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
                                            | SOME y => T.pure y)
-   
+
    val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
                            (fn x      => [x]   ) <$> T.next
    val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
          (T.char #"\"" *> (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit)))
-
-
+   val parseInt = possibly ((Int.fromString o String.implode) <$>
+         T.many (T.sat(T.next, Char.isDigit)))
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
 
    fun makeWord typ int =
@@ -170,7 +171,7 @@ struct
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
-         open XmlTree 
+         open XmlTree
 
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
          fun makeValDec(var, ty, exp) = Dec.MonoVal{exp=exp, ty=ty, var=var}
@@ -184,13 +185,13 @@ struct
          fun makeApp(func, arg) = {arg=arg, func=func}
          val appExp = makeApp <$$> (varExp, varExp)
 
-
-         
+      
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
-         val conAppExp = makeConApp <$$$>
-            (token "new" *> resolveCon <$> (T.string "()" <|> ident) <* spaces,
+         fun conApp v = makeConApp <$$$>
+            (resolveCon <$> ident <* spaces,
              T.pure (Vector.new0 ()),
-             T.optional varExp)
+             T.optional v)
+         val conAppExp = token "new" *> conApp varExp
 
          fun constExp typ = 
             if Tycon.isWordX typ then
@@ -218,15 +219,40 @@ struct
             (token "prim" *> ident <* spaces >>= resolvePrim,
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
              tupleOf varExp <* spaces)
-             
+
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = makeSelect <$$>
-            (T.char #"#" *> spaces *> possibly ((Int.fromString o String.implode) <$>
-                T.many (T.sat(T.next, Char.isDigit))) <* spaces,
+            (T.char #"#" *> spaces *> parseInt <* spaces,
              varExp)
 
          val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info )
+
+         fun makeConCases var (cons, def) = 
+            {test=var, 
+             cases=Cases.Con cons, 
+             default=Option.map(def, fn x => (x, Region.bogus))}
+            
+         fun makeWordCases var s (wds, def) = 
+            {test=var,
+             cases=Cases.Word (case s of 
+                 8 => Type.WordSize.word8
+               | 16 => Type.WordSize.word16
+               | 32 => Type.WordSize.word32
+               | 64 => Type.WordSize.word64
+               | _ => raise Fail "makeWordCases" (* can't happen *)
+               , wds),
+             default=Option.map(def, fn x => (x, Region.bogus))}
+             
+         fun makePat(con, exp) = T.pure (Pat.T con, exp)
+         fun makeCaseWord size (int, exp) = case size of
+            8 => T.pure((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
+          | 16 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
+          | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
+          | 64 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
+          | _ => T.fail "Invalid word size for cases"
+            
+
          fun exp' () = makeLet <$$> 
             (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
@@ -236,7 +262,7 @@ struct
                 (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
                      T.pure(#1 var, #2 var, primexp))))
          and primexp typ = T.failing(token "in") *> T.any
-            [(*PrimExp.Cases <$> casesExp,*)
+            [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
              PrimExp.Lambda <$> lambdaExp (),
              PrimExp.Const <$> constExp (Type.tycon typ),
@@ -258,10 +284,17 @@ struct
          and lambdaExp () = makeLambda <$$>
             (token "fn" *> typedvar,
              token "=>" *> T.delay exp' <* spaces)
-         (*and casesExp () = makeCases <$$>*)
-            (*(string "case" *> T.optional (T.char #"W" *> parseIntInf) <* T.many1
-             * space,*)
-             (*typedvar <* token "of")*)
+         and casesExp () = 
+            (T.string "case" *> T.optional (parseInt) <* T.many1 space >>= (fn size =>
+               varExp <* token "of" <* spaces >>= (fn var =>
+                  case size of
+                      NONE => makeConCases var <$$> 
+                        (casesOf(makePat, conApp typedvar, T.delay exp'),
+                         T.optional(token "_" *> token "=>" *> T.delay exp'))
+                    | SOME s => makeWordCases var s <$$> 
+                        (casesOf(makeCaseWord s, T.string "0x" *> parseHex, T.delay exp'),
+                         T.optional(token "_" *> token "=>" *> T.delay exp'))
+                      )))
       in
          exp' ()
       end
