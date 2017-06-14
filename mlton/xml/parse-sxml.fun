@@ -38,7 +38,8 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
       
 
-   val ident = T.failing (token "in" <|> token "val" <|> token "prim") *>
+   val ident = T.failing (token "in" <|> token "val" <|> token "fn" <|> token
+   "_" <|> token "=>") *>
       String.implode <$> (T.any
          [(op ::) <$$>
              (T.sat(T.next, isIdentFirst),
@@ -127,7 +128,7 @@ struct
    (* parse in a constructor (to Con.t) *) 
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> 
       (ident, 
-      T.optional (T.many1 space *> T.string "of" *> T.many1 space *> (typ resolveTycon))) <* spaces
+      T.optional (T.many space *> token "of" *> (typ resolveTycon))) <* spaces
 
    
    fun makeDt resolveTycon (tycon, cons) = 
@@ -147,7 +148,7 @@ struct
           (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
           (NONE <$ T.string "None" <* spaces))
 
-   val parseWord = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
+   val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
@@ -180,13 +181,13 @@ struct
 
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          val conAppExp = makeConApp <$$$>
-            (token "new" *> resolveCon <$> ident <* spaces,
+            (token "new" *> resolveCon <$> (T.string "()" <|> ident) <* spaces,
              T.pure (Vector.new0 ()),
              T.optional varExp)
 
          fun constExp typ = 
             if Tycon.isWordX typ then
-               Const.Word <$> (T.string "0x" *> parseWord >>= makeWord typ) <|> T.fail "Expected word"
+               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "Expected word"
             else if Tycon.isRealX typ then
                T.fail "Expected real"
             else if Tycon.isIntX typ then
@@ -200,6 +201,8 @@ struct
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
+         fun makeLambda((var, typ), exp) = XmlTree.Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
+
          fun resolvePrim p = case XmlTree.Prim.fromString p
             of SOME p' => T.pure p'
              | NONE => T.fail ("Invalid primitive application: " ^ p)
@@ -212,27 +215,36 @@ struct
          fun exp' () = makeLet <$$> 
             (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
-            T.many1 (dec ()) <* token "in", varExp)
+            T.many1 (dec ()) <* token "in", varExp <* T.string "end")
          and dec () = makeValDec <$>
                ((token "val" *> typedvar <* spaces) >>= (fn var =>
                 (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
                      T.pure(#1 var, #2 var, primexp))))
          and primexp typ = T.failing(token "in") *> T.any
-            [PrimExp.ConApp <$> conAppExp,
+            [(*PrimExp.Cases <$> casesExp,*)
+             PrimExp.ConApp <$> conAppExp,
+             PrimExp.Lambda <$> lambdaExp (),
              PrimExp.Const <$> constExp (Type.tycon typ),
+             PrimExp.Handle <$> handleExp (),
              PrimExp.PrimApp <$> primAppExp,
              PrimExp.Raise <$> raiseExp,
-             PrimExp.Tuple <$> (tupleOf varExp),
-             PrimExp.Handle <$> handleExp (),
+             PrimExp.Tuple <$> (tupleOf varExp) <* spaces,
              (* put these last, they just take identifiers so they're pretty greedy *)
-             PrimExp.Var <$> varExp,
-             PrimExp.App <$> makeApp <$$> (varExp, varExp)]
+             (* App *must* procede var, due to greediness *)
+             PrimExp.App <$> makeApp <$$> (varExp, varExp),
+             PrimExp.Var <$> varExp]
          and handleExp () = makeHandle <$$$>
             (T.delay exp' <* spaces,
-             token "handle" *> typedvar <* spaces,
+             token "handle" *> typedvar,
              token "=>" *> T.delay exp' <* spaces
              )
-
+         and lambdaExp () = makeLambda <$$>
+            (token "fn" *> typedvar,
+             token "=>" *> T.delay exp' <* spaces)
+         (*and casesExp () = makeCases <$$>*)
+            (*(string "case" *> T.optional (T.char #"W" *> constInt) <* T.many1
+             * space,*)
+             (*typedvar <* token "of")*)
       in
          exp' ()
       end
