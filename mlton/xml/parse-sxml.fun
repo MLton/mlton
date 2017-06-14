@@ -256,7 +256,7 @@ struct
          fun exp' () = makeLet <$$> 
             (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
-            T.many1 (dec ()) <* token "in", varExp <* T.string "end")
+            T.many (dec ()) <* token "in", varExp <* T.string "end")
          and dec () = makeValDec <$>
                ((token "val" *> typedvar <* spaces) >>= (fn var =>
                 (token "="  *> primexp (#2 var) <* spaces) >>= (fn primexp =>
