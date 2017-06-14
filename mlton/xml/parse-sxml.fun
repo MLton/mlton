@@ -46,7 +46,8 @@ struct
               T.many (T.sat(T.next, isIdentRest))),
           List.append <$$>
              (T.many1 (T.sat(T.next, isInfixChar)),
-              T.many (T.sat(T.next, isIdentRest)) (* just for collecting _0 *)
+              (op ::) <$$> (T.char #"_", T.many (T.sat(T.next, Char.isDigit))) <|> T.pure []
+              (* just for collecting _0 *)
               )])
 
        
@@ -148,10 +149,29 @@ struct
           (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
           (NONE <$ T.string "None" <* spaces))
 
+   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
+                                           | SOME y => T.pure y)
+   
+   val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
+                           (fn x      => [x]   ) <$> T.next
+   val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
+         (T.char #"\"" *> (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\""))
+   val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
+         T.many (T.sat(T.next, Char.isDigit)))
+
+
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
+
+   fun makeWord typ int =
+      if Tycon.isWordX typ
+         then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
+         else T.fail "Invalid word"
+
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
+         open XmlTree 
+
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
          fun makeValDec(var, ty, exp) = Dec.MonoVal{exp=exp, ty=ty, var=var}
          val var = resolveVar <$> ident <* spaces
@@ -164,21 +184,8 @@ struct
          fun makeApp(func, arg) = {arg=arg, func=func}
          val appExp = makeApp <$$> (varExp, varExp)
 
-         fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
-                                                 | SOME y => T.pure y)
 
-         val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
-                           (fn x      => [x]   ) <$> T.next
-         val constString = possibly ((String.fromString o String.implode o List.concat) <$>
-         (T.char #"\"" *> (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\""))
-         val constInt = possibly ((IntInf.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit)))
-
-         fun makeWord typ int =
-            if Tycon.isWordX typ
-               then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-               else T.fail "Invalid word"
-
+         
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          val conAppExp = makeConApp <$$$>
             (token "new" *> resolveCon <$> (T.string "()" <|> ident) <* spaces,
@@ -191,9 +198,9 @@ struct
             else if Tycon.isRealX typ then
                T.fail "Expected real"
             else if Tycon.isIntX typ then
-               Const.IntInf <$> constInt <|> T.fail "Expected integer"
+               Const.IntInf <$> parseIntInf <|> T.fail "Expected integer"
             else
-               Const.string <$> constString
+               Const.string <$> parseString
 
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
@@ -201,9 +208,9 @@ struct
 
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
 
-         fun makeLambda((var, typ), exp) = XmlTree.Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
+         fun makeLambda((var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
 
-         fun resolvePrim p = case XmlTree.Prim.fromString p
+         fun resolvePrim p = case Prim.fromString p
             of SOME p' => T.pure p'
              | NONE => T.fail ("Invalid primitive application: " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
@@ -211,7 +218,15 @@ struct
             (token "prim" *> ident <* spaces >>= resolvePrim,
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
              tupleOf varExp <* spaces)
+             
+         fun makeSelect(offset, var) = {offset=offset, tuple=var}
+         val selectExp = makeSelect <$$>
+            (T.char #"#" *> spaces *> possibly ((Int.fromString o String.implode) <$>
+                T.many (T.sat(T.next, Char.isDigit))) <* spaces,
+             varExp)
 
+         val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
+                          ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info )
          fun exp' () = makeLet <$$> 
             (token "let" *>
             (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
@@ -227,7 +242,9 @@ struct
              PrimExp.Const <$> constExp (Type.tycon typ),
              PrimExp.Handle <$> handleExp (),
              PrimExp.PrimApp <$> primAppExp,
+             PrimExp.Profile <$> profileExp,
              PrimExp.Raise <$> raiseExp,
+             PrimExp.Select <$> selectExp,
              PrimExp.Tuple <$> (tupleOf varExp) <* spaces,
              (* put these last, they just take identifiers so they're pretty greedy *)
              (* App *must* procede var, due to greediness *)
@@ -242,7 +259,7 @@ struct
             (token "fn" *> typedvar,
              token "=>" *> T.delay exp' <* spaces)
          (*and casesExp () = makeCases <$$>*)
-            (*(string "case" *> T.optional (T.char #"W" *> constInt) <* T.many1
+            (*(string "case" *> T.optional (T.char #"W" *> parseIntInf) <* T.many1
              * space,*)
              (*typedvar <* token "of")*)
       in
