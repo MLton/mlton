@@ -1048,7 +1048,7 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
  *)
 fun shouldOptimize (iterCount, loopBlocks, depth) =
   let
-    val (loopSize', _) = Block.sizes (0, NONE) Block.default loopBlocks
+    val (loopSize', _) = Block.sizeV (0, NONE) Block.default loopBlocks
     val loopSize = IntInf.fromInt loopSize'
     val unrollLimit = IntInf.fromInt (!Control.loopUnrollLimit)
     val () = logsi ("iterations * loop size < unroll factor = can total unroll",

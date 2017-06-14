@@ -193,7 +193,7 @@ fun makeBranch (loopBody: Block.t vector,
 
 fun shouldOptimize (cases, default, loopBlocks, depth) =
   let
-    val (loopSize', _) = Block.sizes (0, NONE) Block.default loopBlocks
+    val (loopSize', _) = Block.sizeV (0, NONE) Block.default loopBlocks
     val loopSize = IntInf.fromInt (loopSize')
     val branchCount =
       IntInf.fromInt (
