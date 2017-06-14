@@ -62,7 +62,7 @@ struct
    fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
       (left <* spaces <* token "=>" >>= (fn l =>  
          right >>= (fn r => con (l, r))),
-       spaces *> T.char #"|" *> spaces)
+       spaces)
 
 
    (* too many arguments for the maps, curried to use <*> instead *)
