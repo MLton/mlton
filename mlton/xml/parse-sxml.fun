@@ -39,7 +39,7 @@ struct
       
 
    val ident = T.failing (token "in" <|> token "val" <|> token "fn" <|> token
-   "_" <|> token "=>" <|> token "case") *>
+   "_" <|> token "=>" <|> token "case" <|> token "prim") *>
       String.implode <$> (T.any
          [(op ::) <$$>
              (T.sat(T.next, isIdentFirst),
@@ -290,10 +290,10 @@ struct
                   case size of
                       NONE => makeConCases var <$$> 
                         (casesOf(makePat, conApp typedvar, T.delay exp'),
-                         T.optional(token "_" *> token "=>" *> T.delay exp'))
+                         spaces *> T.optional(token "_" *> token "=>" *> T.delay exp'))
                     | SOME s => makeWordCases var s <$$> 
                         (casesOf(makeCaseWord s, T.string "0x" *> parseHex, T.delay exp'),
-                         T.optional(token "_" *> token "=>" *> T.delay exp'))
+                         spaces *> T.optional(token "_" *> token "=>" *> T.delay exp'))
                       )))
       in
          exp' ()
