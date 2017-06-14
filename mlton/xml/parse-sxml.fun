@@ -10,16 +10,28 @@ struct
    infix  3 <*> <* *>
    infixr 4 <$> <$$> <$$$> <$
 
+   fun isInfixChar b = case List.index
+      (String.explode "!%&$#+-/:<=>?@\\~'^|*",
+       fn c => b = c) of
+          SOME _ => true
+        | NONE   => false
+
+   fun isIdentFirst b = Char.isAlpha b orelse b = #"'"
+   fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
+
 
    val space = T.sat(T.next, Char.isSpace) 
    val spaces = T.many(space)
    fun token s = T.notFollowedBy
       (T.string s,
-       (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) *> spaces
-   
+       (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) <* spaces
+   fun symbol s = T.notFollowedBy
+      (T.string s,
+       (T.sat(T.next,fn b => Char.isDigit b orelse isInfixChar b orelse b = #"_"))) <* spaces
+
    val clOptions = T.many (T.failing (T.string "Datatypes:") *> T.next)
 
-   fun 'a makeNameResolver(f: string -> 'a): string -> 'a  =
+   fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
          val hash = String.hash 
          val map = HashSet.new{hash= hash o #1}
@@ -28,15 +40,6 @@ struct
          fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
       end
 
-   fun isInfixChar b = case List.index
-      (String.explode "!%&$#+-/:<=>?@\\~'^|*",
-       fn c => b = c) of
-          SOME _ => true
-        | NONE   => false
-
-   fun isIdentFirst b = Char.isAlpha b orelse b = #"'" 
-   fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
-      
 
    val ident = T.failing (token "in" <|> token "val" <|> token "fn" <|> token
    "_" <|> token "=>" <|> token "case" <|> token "prim") *>
@@ -138,7 +141,7 @@ struct
        tycon = resolveTycon tycon, cons = cons}
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
-      ((spaces *> ident <* spaces <* T.char #"=" <* spaces),
+      ((spaces *> ident <* spaces <* symbol "="),
        (Vector.fromList <$> T.sepBy1
           ((constructor resolveCon resolveTycon) <* spaces, 
            T.char #"|" *> spaces))) 
@@ -181,7 +184,7 @@ struct
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (resolveVar <$> ident <* spaces,
-             T.char #":" *> spaces *> (typ resolveTycon) <* spaces)
+             symbol ":" *> (typ resolveTycon) <* spaces)
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
          val varExp = makeVarExp <$> (var <* spaces)
        
@@ -225,7 +228,7 @@ struct
 
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = makeSelect <$$>
-            (T.char #"#" *> spaces *> parseInt <* spaces,
+            (symbol "#" *> parseInt <* spaces,
              varExp)
 
          val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
@@ -258,14 +261,13 @@ struct
 
          fun exp' () = makeLet <$$> 
             (token "let" *>
-            (*(fn x=> [x]) <$> dec () <* token "in", varExp)*)
             T.many (dec ()) <* token "in", varExp <* T.string "end")
          and dec () = T.any
             [token "val rec" *> makeFunDecs <$>
-               T.many (makeFunDec <$$> (typedvar <* T.char #"=" <* spaces, lambdaExp ())),
+                T.many (makeFunDec <$$> (typedvar <* symbol "=" <* spaces, lambdaExp ())),
              makeValDec <$>
                 ((token "val" *> typedvar) >>= (fn var =>
-                 (T.char #"=" *> spaces *> primexp (#2 var) <* spaces) >>= (fn primexp =>
+                 (symbol "=" *> primexp (#2 var) <* spaces) >>= (fn primexp =>
                      T.pure(#1 var, #2 var, primexp))))]
          and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.Case <$> casesExp (),
