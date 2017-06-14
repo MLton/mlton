@@ -23,73 +23,6 @@ in
    structure Forest = LoopForest
 end
 
-(* Copied from inline.fun *)
-structure Size =
-   struct
-      val check : (int * int option) -> bool =
-         fn (_, NONE) => false
-          | (size, SOME size') => size > size'
-
-      val defaultExpSize : Exp.t -> int = 
-         fn ConApp {args, ...} => 1 + Vector.length args
-          | Const _ => 0
-          | PrimApp {args, ...} => 1 + Vector.length args
-          | Profile _ => 0
-          | Select _ => 1 + 1
-          | Tuple xs => 1 + Vector.length xs
-          | Var _ => 0
-      fun expSize (size, max) (doExp, _) exp =
-         let
-            val size' = doExp exp
-            val size = size + size'
-         in
-            (size, check (size, max))
-         end
-      fun statementSize (size, max) (doExp, doTransfer) =
-         fn Statement.T {exp, ...} => expSize (size, max) (doExp, doTransfer) exp
-      fun statementsSize (size, max) (doExp, doTransfer) statements =
-         Exn.withEscape
-         (fn escape =>
-          Vector.fold
-          (statements, (size, false), fn (statement, (size, check)) =>
-           if check
-              then escape (size, check)
-           else statementSize (size, max) (doExp, doTransfer) statement))
-      val defaultTransferSize =
-         fn Arith {args, ...} => 1 + Vector.length args
-          | Bug => 1
-          | Call {args, ...} => 1 + Vector.length args
-          | Case {cases, ...} => 1 + Cases.length cases
-          | Goto {args, ...} => 1 + Vector.length args
-          | Raise xs => 1 + Vector.length xs
-          | Return xs => 1 + Vector.length xs
-          | Runtime {args, ...} => 1 + Vector.length args
-      fun transferSize (size, max) (_, doTransfer) transfer =
-         let
-            val size' = doTransfer transfer
-            val size = size + size'
-         in
-            (size, check (size, max))
-         end
-      fun blockSize (size, max) (doExp, doTransfer) =
-         fn Block.T {statements, transfer, ...} =>
-         case statementsSize (size, max) (doExp, doTransfer) statements of
-            (size, true) => (size, true)
-          | (size, false) => transferSize (size, max) (doExp, doTransfer) transfer
-      fun blocksSize (size, max) (doExp, doTransfer) blocks =
-         Exn.withEscape
-         (fn escape =>
-          Vector.fold
-          (blocks, (size, false), fn (block, (size, check)) =>
-           if check
-              then escape (size, check)
-           else blockSize (size, max) (doExp, doTransfer) block))
-      fun functionSize (size, max) (doExp, doTransfer) f =
-         blocksSize (size, max) (doExp, doTransfer) (#blocks (Function.dest f))
-
-      val default = (defaultExpSize, defaultTransferSize)
-   end
-
 fun ++ (v: int ref): unit =
   v := (!v) + 1
 
@@ -260,7 +193,7 @@ fun makeBranch (loopBody: Block.t vector,
 
 fun shouldOptimize (cases, default, loopBlocks, depth) =
   let
-    val (loopSize', _) = Size.blocksSize (0, NONE) Size.default loopBlocks
+    val (loopSize', _) = Block.sizes (0, NONE) Block.default loopBlocks
     val loopSize = IntInf.fromInt (loopSize')
     val branchCount =
       IntInf.fromInt (
@@ -417,7 +350,7 @@ fun optimizeFunction(function: Function.t): Function.t =
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} =
         Function.dest function
-      val (fsize, _) = Size.functionSize (0, NONE) Size.default function
+      val (fsize, _) = Function.size (0, NONE) Function.default function
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start

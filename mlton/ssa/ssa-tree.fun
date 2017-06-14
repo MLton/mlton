@@ -298,6 +298,13 @@ structure Cases =
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
    end
 
+structure Size = 
+   struct
+      val check: (int * int option) -> bool =
+	fn (_, NONE) => false
+	 | (size, SOME size') => size > size'
+   end
+
 structure Exp =
    struct
       datatype t =
@@ -316,11 +323,7 @@ structure Exp =
       val unit = Tuple (Vector.new0 ())
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      val check : (int * int option) -> bool =
-         fn (_, NONE) => false
-          | (size, SOME size') => size > size'
-
-      val defaultExpSize : t -> int = 
+      val size : t -> int = 
          fn ConApp {args, ...} => 1 + Vector.length args
           | Const _ => 0
           | PrimApp {args, ...} => 1 + Vector.length args
@@ -329,12 +332,12 @@ structure Exp =
           | Tuple xs => 1 + Vector.length xs
           | Var _ => 0
 
-      fun expSize (size, max) (doExp, _) exp =
+      fun size2 (size, max) (doExp, _) exp =
          let
             val size' = doExp exp
             val size = size + size'
          in
-            (size, check (size, max))
+            (size, Size.check (size, max))
          end
 
       fun foreachVar (e, v) =
@@ -462,21 +465,16 @@ structure Statement =
       end
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      val check : (int * int option) -> bool =
-         fn (_, NONE) => false
-          | (size, SOME size') => size > size'
-
-      fun statementSize (size, max) (doExp, doTransfer) =
-         fn T {exp, ...} => Exp.expSize (size, max) (doExp, doTransfer) exp
-      fun statementsSize (size, max) (doExp, doTransfer) statements =
+      fun size (size, max) (doExp, doTransfer) =
+         fn T {exp, ...} => Exp.size2 (size, max) (doExp, doTransfer) exp
+      fun sizes (s, max) (doExp, doTransfer) statements =
          Exn.withEscape
          (fn escape =>
-          Vector.fold
-          (statements, (size, false), fn (statement, (size, check)) =>
-           if check
-              then escape (size, check)
-           else statementSize (size, max) (doExp, doTransfer) statement))
-
+           Vector.fold
+           (statements, (s, false), fn (statement, (s, check)) =>
+            if check
+               then escape (s, check)
+            else size (s, max) (doExp, doTransfer) statement))
       fun layout' (T {var, ty, exp}, layoutVar) =
          let
             open Layout
@@ -711,11 +709,7 @@ structure Transfer =
                      return: Label.t} (* Must be nullary. *)
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      val check : (int * int option) -> bool =
-         fn (_, NONE) => false
-          | (size, SOME size') => size > size'
-
-      val defaultTransferSize =
+      val size =
          fn Arith {args, ...} => 1 + Vector.length args
           | Bug => 1
           | Call {args, ...} => 1 + Vector.length args
@@ -724,12 +718,12 @@ structure Transfer =
           | Raise xs => 1 + Vector.length xs
           | Return xs => 1 + Vector.length xs
           | Runtime {args, ...} => 1 + Vector.length args
-      fun transferSize (size, max) (_, doTransfer) transfer =
+      fun size2 (size, max) (_, doTransfer) transfer =
          let
             val size' = doTransfer transfer
             val size = size + size'
          in
-            (size, check (size, max))
+            (size, Size.check (size, max))
          end
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
@@ -971,23 +965,21 @@ structure Block =
       end
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      val check : (int * int option) -> bool =
-         fn (_, NONE) => false
-          | (size, SOME size') => size > size'
-
-      fun blockSize (size, max) (doExp, doTransfer) =
+      fun size (size, max) (doExp, doTransfer) =
          fn T {statements, transfer, ...} =>
-         case Statement.statementsSize (size, max) (doExp, doTransfer) statements of
+         case Statement.sizes (size, max) (doExp, doTransfer) statements of
             (size, true) => (size, true)
-          | (size, false) => Transfer.transferSize (size, max) (doExp, doTransfer) transfer
-      fun blocksSize (size, max) (doExp, doTransfer) blocks =
+          | (size, false) => Transfer.size2 (size, max) (doExp, doTransfer) transfer
+      fun sizes (s, max) (doExp, doTransfer) blocks =
          Exn.withEscape
          (fn escape =>
           Vector.fold
-          (blocks, (size, false), fn (block, (size, check)) =>
+          (blocks, (s, false), fn (block, (s, check)) =>
            if check
-              then escape (size, check)
-           else blockSize (size, max) (doExp, doTransfer) block))
+              then escape (s, check)
+           else size (s, max) (doExp, doTransfer) block))
+
+      val default = (Exp.size, Transfer.size)
 
       fun layout' (T {label, args, statements, transfer}, layoutVar) =
          let
@@ -1080,11 +1072,11 @@ structure Function =
       end
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      fun functionSize (size, max) (doExp, doTransfer) f =
-         Block.blocksSize (size, max) (doExp, doTransfer) (#blocks (dest f))
+      fun size (size, max) (doExp, doTransfer) f =
+         Block.sizes (size, max) (doExp, doTransfer) (#blocks (dest f))
 
-      val default = (Exp.defaultExpSize, Transfer.defaultTransferSize)
-      fun functionGT max = #2 o (functionSize (0, max) default)
+      val default = (Exp.size, Transfer.size)
+      fun functionGT max = #2 o (size (0, max) default)
 
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =
          let
