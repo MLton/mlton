@@ -51,6 +51,9 @@ signature STREAM_PARSER =
       val any: 'b t list -> 'b t 
       (* matches the given character *)
       val char: char -> char t
+      (* composes two parsers in turn, the characters used for the second come
+       * from the first *)
+      val compose : char t * 'b t -> 'b t
       (* if the parser fails, it will fail as a cut *)
       val cut: 'b t -> 'b t 
       (* delays a stream lazily, for recursive combinations *)
