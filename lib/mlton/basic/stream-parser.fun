@@ -134,9 +134,14 @@ fun failCut m (s : state) = case Stream.force (#2 s)
     | SOME((_, p : location), _) => FailCut [failString (m, p, #2 s)]
 
 fun cut p s = case p s
-   of Success (a, s') => Success (a, s')
+   of Success x => Success x
     | Failure m => FailCut m
     | FailCut m => FailCut m
+
+fun uncut p s = case p s of
+    Success x => Success x
+  | Failure m => Failure m
+  | FailCut m => Failure m
 
 fun delay p = fn s => p () s
 
@@ -165,23 +170,27 @@ fun failing p s =
       
 fun notFollowedBy(p, c) =
    fst <$> p <*> (peek (failing c))
-   
 
-
-fun any([]) s = Failure []
-  | any(p::ps) s =
+fun any'([]) s = Failure []
+  | any'(p::ps) s =
        case p s of
           Success (a, s) => Success (a, s)
-        | Failure m => (case any(ps) s
+        | Failure m => (case any'(ps) s
            of Failure m2 => Failure (List.append(m, m2))
             | succ => succ)
-        | FailCut m => Failure m
+        | FailCut m => FailCut m
+fun 'b any ps = uncut (any' ps)
 
-fun 'b many (t : 'b t) = (op ::) <$$> (t, fn s => many t s) <|> pure []
-fun 'b many1 (t : 'b t) = (op ::) <$$> (t, many t)
 
-fun sepBy1(t, sep) = (op ::) <$$> (t, many (sep *> t))
-fun sepBy(t, sep) = sepBy1(t, sep) <|> pure []
+fun 'b many' (t : 'b t) s = case ((op ::) <$$> (t, fn s' => many' t s')) s of
+    Success x => Success x
+  | Failure y => pure [] s
+  | FailCut z => FailCut z
+fun 'b many t = uncut (many' t)
+fun 'b many1 (t : 'b t) = uncut ((op ::) <$$> (t, many' t))
+
+fun sepBy1(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)))
+fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
    
 fun optional t = SOME <$> t <|> pure NONE
 
@@ -227,7 +236,6 @@ fun compose (p1 : char t, p2 : 'a t) (s : state) =
               | Failure m => raise ComposeFail m
               | FailCut m => raise ComposeFail m)
    in
-      p2 (#1 s, makeStr (#2 s)) handle ComposeFail m => Failure m
-   end
+      p2 (#1 s, makeStr (#2 s)) handle ComposeFail m => Failure m end
 
 end
