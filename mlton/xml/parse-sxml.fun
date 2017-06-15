@@ -180,25 +180,20 @@ struct
          fun makeValDec(var, ty, exp) = Dec.MonoVal {exp=exp, ty=ty, var=var}
          fun makeFunDecs(lambdas) = Dec.Fun {decs=Vector.fromList lambdas, tyvars=Vector.new0 ()}
          fun makeFunDec((var, ty), lambda) = {lambda=lambda, ty=ty, var=var}
-
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (resolveVar <$> ident <* spaces,
              symbol ":" *> (typ resolveTycon) <* spaces)
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
          val varExp = makeVarExp <$> (var <* spaces)
-       
          fun makeApp(func, arg) = {arg=arg, func=func}
          val appExp = makeApp <$$> (varExp, varExp)
-
-      
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          fun conApp v = makeConApp <$$$>
             (resolveCon <$> ident <* spaces,
              T.pure (Vector.new0 ()),
              T.optional v)
          val conAppExp = token "new" *> conApp varExp
-
          fun constExp typ = 
             if Tycon.isWordX typ then
                Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "Expected word"
@@ -208,15 +203,11 @@ struct
                Const.IntInf <$> parseIntInf <|> T.fail "Expected integer"
             else
                Const.string <$> parseString
-
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
          val raiseExp = makeRaise <$$> (token "raise" *> T.optional (token "extend"), varExp <* spaces)
-
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
-
          fun makeLambda((var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
-
          fun resolvePrim p = case Prim.fromString p
             of SOME p' => T.pure p'
              | NONE => T.fail ("Invalid primitive application: " ^ p)
@@ -225,20 +216,16 @@ struct
             (token "prim" *> ident <* spaces >>= resolvePrim,
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
              tupleOf varExp <* spaces)
-
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = makeSelect <$$>
             (symbol "#" *> parseInt <* spaces,
              varExp)
-
          val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info )
-
          fun makeConCases var (cons, def) = 
             {test=var, 
              cases=Cases.Con cons, 
              default=Option.map(def, fn x => (x, Region.bogus))}
-            
          fun makeWordCases var s (wds, def) = 
             {test=var,
              cases=Cases.Word (case s of 
@@ -249,7 +236,6 @@ struct
                | _ => raise Fail "makeWordCases" (* can't happen *)
                , wds),
              default=Option.map(def, fn x => (x, Region.bogus))}
-             
          fun makePat(con, exp) = T.pure (Pat.T con, exp)
          fun makeCaseWord size (int, exp) = case size of
             8 => T.pure((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
