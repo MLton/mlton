@@ -15,8 +15,8 @@ type location = {line: int, column: int}
 type info = string
 (* this is our state representation for readers, but info is unchanging *)
 datatype 'b result = Success of 'b * (char * location) Stream.t
-                   | Failure of (string * location) list (* expected values *)
-                   | FailCut of (string * location) list (* as failure, but the
+                   | Failure of string list (* expected values *)
+                   | FailCut of string list (* as failure, but the
                    closest upstream choice point won't try other options, and
                    their errors will be silenced *)
 type state = info * (char * location) Stream.t
@@ -39,13 +39,21 @@ fun indexStream({line, column}, s) =
          )
 
 
-fun 'b parseWithFile(p : 'b t, f, s) : 'b =
-   case p (File.toString f, indexStream({line=1, column=1}, s)) 
-   of Success (b, _) => b
+
+
+fun doFail([]) = raise Fail("Parse error")
+  | doFail([msg]) = raise Fail ("Parse error: Expected " ^ msg)
+  | doFail(msgs) = raise Fail ("Parse error: Expected one of \n" ^
+       (String.concat(List.map(msgs, fn x => x ^ "\n\n"))))
 
 fun 'b parse(p : 'b t, s) : 'b = 
-   case p ("String input", indexStream({line=1, column=1}, s)) 
+   case p ("", indexStream({line=1, column=1}, s)) 
    of Success (b, _) => b
+    | Failure ms => doFail ms
+    | FailCut ms => doFail ms
+
+fun 'b parseWithFile(p : 'b t, f, s) : 'b =
+   parse(p, s)
 
 fun pure a (s : state)  =
   Success (a, #2 s)
@@ -57,8 +65,8 @@ fun tf <*> tx = fn (s : state) =>
              of Success (b, s'') =>
                    Success (f b, s'')
               (* constructors have to be explict to typecheck *)
-              | FailCut err => FailCut err
-              | Failure err => Failure err)
+              | Failure err => Failure err
+              | FailCut err => FailCut err)
        | Failure err => Failure err
        | FailCut err => FailCut err
 
@@ -112,15 +120,23 @@ structure Ops = struct
 end
 
 
+fun failString (m, p : location, s : (char * location) Stream.t) = 
+   (m ^ " at " ^ 
+      (Int.toString (#line p)) ^ ":" ^ (Int.toString (#column p)) ^ 
+      "\n     Near: " ^ (String.implode (List.map(Stream.firstNSafe(s, 20), #1))))
 
 fun fail m (s : state) = case Stream.force (#2 s) 
    of NONE => Failure []
-    | SOME((_, p : location), _) => Failure [(m, p)]
+    | SOME((_, p : location), _) => Failure [failString (m, p, #2 s)]
 
 fun failCut m (s : state) = case Stream.force (#2 s) 
    of NONE => FailCut []
-    | SOME((_, p : location), _) => FailCut [(m, p)]
+    | SOME((_, p : location), _) => FailCut [failString (m, p, #2 s)]
 
+fun cut p s = case p s
+   of Success (a, s') => Success (a, s')
+    | Failure m => FailCut m
+    | FailCut m => FailCut m
 
 fun delay p = fn s => p () s
 
@@ -156,9 +172,9 @@ fun any([]) s = Failure []
   | any(p::ps) s =
        case p s of
           Success (a, s) => Success (a, s)
-        | Failure m => case any(ps) s
+        | Failure m => (case any(ps) s
            of Failure m2 => Failure (List.append(m, m2))
-            | succ => succ
+            | succ => succ)
         | FailCut m => Failure m
 
 fun 'b many (t : 'b t) = (op ::) <$$> (t, fn s => many t s) <|> pure []
