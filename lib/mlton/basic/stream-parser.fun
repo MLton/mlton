@@ -95,7 +95,7 @@ fun a <|> b = fn s => case (a s)
     | Failure err1 => (case (b s) of
         Success r => Success r
       | Failure err2 => Failure (List.append(err1, err2))
-      | FailCut err2 => Failure (List.append(err1, err2)))
+      | FailCut err2 => Failure (err2))
     | FailCut err1 => Failure err1
 fun a <&> b = fn s => case (a s) 
    of Success r => (case (b s) of
@@ -197,7 +197,7 @@ fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
 fun string str = (String.implode <$> each (List.map((String.explode str), char))) <|>
-                 (fail str)
+                 (failCut str)
 
 fun info (s : state) = Success (#1 s, #2 s)
 fun location (s : state) = case Stream.force (#2 s) of
