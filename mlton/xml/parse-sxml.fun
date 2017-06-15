@@ -19,6 +19,9 @@ struct
    fun isIdentFirst b = Char.isAlpha b orelse b = #"'"
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
+   val skipComments = T.optional(
+      T.string "(*" *> T.cut (T.many (T.failing (T.string "*)") *> T.next) *> T.string "*)" <|> T.failCut "Closing comment")
+      ) *> T.next
 
    val space = T.sat(T.next, Char.isSpace) 
    val spaces = T.many(space)
@@ -314,11 +317,12 @@ struct
          val resolveTycon = makeNameResolver(Tycon.fromString o strip_unique)
          val resolveVar = makeNameResolver(Var.fromString o strip_unique)
       in
+         T.compose(skipComments,
          clOptions *>
          (makeProgram <$$$>
             (datatypes resolveCon resolveTycon,
             overflow resolveVar,
-            body resolveCon resolveTycon resolveVar))
+            body resolveCon resolveTycon resolveVar)))
 
       end
 end
