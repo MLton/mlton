@@ -27,7 +27,7 @@ struct
        (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) <* spaces
    fun symbol s = T.notFollowedBy
       (T.string s,
-       (T.sat(T.next,fn b => Char.isDigit b orelse isInfixChar b orelse b = #"_"))) <* spaces
+       (T.sat(T.next,fn b => isInfixChar b orelse b = #"_"))) <* spaces
 
    val clOptions = T.many (T.failing (T.string "Datatypes:") *> T.next)
 
