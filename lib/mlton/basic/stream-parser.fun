@@ -14,12 +14,15 @@ open S
 type location = {line: int, column: int}
 type info = string
 (* this is our state representation for readers, but info is unchanging *)
+datatype 'b result = Success of 'b * (char * location) Stream.t
+                   | Failure of (string * location) list (* expected values *)
+                   | FailCut of (string * location) list (* as failure, but the
+                   closest upstream choice point won't try other options, and
+                   their errors will be silenced *)
 type state = info * (char * location) Stream.t
 type 'b t = 
-   (info * (char * location) Stream.t) -> ('b * (char * location) Stream.t)
+   state -> 'b result
 
-
-exception Parse of string
 
 fun indexStream({line, column}, s) = 
    case Stream.force s of
@@ -38,26 +41,33 @@ fun indexStream({line, column}, s) =
 
 fun 'b parseWithFile(p : 'b t, f, s) : 'b =
    case p (File.toString f, indexStream({line=1, column=1}, s)) 
-   of (b, _) => b
+   of Success (b, _) => b
 
 fun 'b parse(p : 'b t, s) : 'b = 
    case p ("String input", indexStream({line=1, column=1}, s)) 
-   of (b, _) => b
+   of Success (b, _) => b
 
 fun pure a (s : state)  =
-  (a, #2 s)
+  Success (a, #2 s)
 
 fun tf <*> tx = fn (s : state) => 
    case tf s
-      of (f, s') =>
-          case tx (#1 s, s')
-             of (b, s'') =>
-                   (f b, s'')
+      of Success (f, s') =>
+          (case tx (#1 s, s')
+             of Success (b, s'') =>
+                   Success (f b, s'')
+              (* constructors have to be explict to typecheck *)
+              | FailCut err => FailCut err
+              | Failure err => Failure err)
+       | Failure err => Failure err
+       | FailCut err => FailCut err
 
 fun ta >>= f = fn (s : state) =>
    case ta s
-      of (a, s') =>
+      of Success (a, s') =>
          f a (#1 s, s')
+       | Failure err => Failure err
+       | FailCut err => FailCut err
             
 
 fun fst a _ = a
@@ -72,13 +82,21 @@ fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
 fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
-fun a <|> b = fn s => (a s) handle Parse _ => (b s)
-fun a <&> b = fn s => 
-   let
-      val _ = (a s) 
-   in
-      (b s)
-   end
+fun a <|> b = fn s => case (a s) 
+   of Success r => Success r
+    | Failure err1 => (case (b s) of
+        Success r => Success r
+      | Failure err2 => Failure (List.append(err1, err2))
+      | FailCut err2 => Failure (List.append(err1, err2)))
+    | FailCut err1 => Failure err1
+fun a <&> b = fn s => case (a s) 
+   of Success r => (case (b s) of
+        Success r' => Success r'
+      | Failure err => Failure err
+      | FailCut err => Failure err)
+    | Failure err => Failure err
+    | FailCut err => Failure err
+
 
 structure Ops = struct
    val (op >>=) = (op >>=)
@@ -95,52 +113,53 @@ end
 
 
 
-fun fail msg (s : state) = case Stream.force (#2 s) 
-   of NONE => raise Parse "Parse error at end of file"
-    | SOME((_, p : location), _) => raise Parse
-         ("Parse error at "^((Int.toString o #line) p)^":"^((Int.toString o #column) p)^" : " ^ msg ^ 
-        "\n    Near " ^ implode (List.map(Stream.firstNSafe(#2 s, 20), fn (c, _) => c)))
+fun fail m (s : state) = case Stream.force (#2 s) 
+   of NONE => Failure []
+    | SOME((_, p : location), _) => Failure [(m, p)]
+
+fun failCut m (s : state) = case Stream.force (#2 s) 
+   of NONE => FailCut []
+    | SOME((_, p : location), _) => FailCut [(m, p)]
+
 
 fun delay p = fn s => p () s
 
 fun next (s : state)  = case Stream.force (#2 s) 
-   of NONE => raise Parse "End of file"
-    | SOME((h, _), r) => (h, r)
+   of NONE => Failure []
+    | SOME((h, _), r) => Success (h, r)
 
-fun sat(t, p) s = 
-   let 
-      val (h', r) = t s
-   in case p h' of true => (h', r)
-                 | false => fail "Syntax error" s
-   end
+fun satExpects(t, p, m) s =
+   case t s of
+       Success (a, s') =>
+         (if p a then Success (a, s') else fail m s)
+     | Failure err => Failure err
+     | FailCut err => FailCut err
+
+fun sat(t, p) s = satExpects(t, p, "Syntax error") s
+
 
 fun peek p (s : state) =
-   let 
-      val (h', _) = p s
-   in
-      (h', #2 s)
-   end
-
+   case p s of Success (h', _) => Success (h', #2 s)
+             | err => err
 
 fun failing p s =
-   let
-      val (succeeded, s') = (true <$ p) s handle
-         Parse _ => (false, #2 s)
-   in
-      if succeeded
-         then fail "Suceeded on parser intended to fail" s
-         else ((), s')
-   end
-   
+   case p s
+      of Success _ => fail "failure" s
+       | _ => Success ((), #2 s)
+      
 fun notFollowedBy(p, c) =
    fst <$> p <*> (peek (failing c))
    
 
 
-fun any([]) s = (fail "No valid parse" s)
-  | any(p::ps) s = 
-       (p s) 
-          handle Parse _ => any(ps) s
+fun any([]) s = Failure []
+  | any(p::ps) s =
+       case p s of
+          Success (a, s) => Success (a, s)
+        | Failure m => case any(ps) s
+           of Failure m2 => Failure (List.append(m, m2))
+            | succ => succ
+        | FailCut m => Failure m
 
 fun 'b many (t : 'b t) = (op ::) <$$> (t, fn s => many t s) <|> pure []
 fun 'b many1 (t : 'b t) = (op ::) <$$> (t, many t)
@@ -151,40 +170,34 @@ fun sepBy(t, sep) = sepBy1(t, sep) <|> pure []
 fun optional t = SOME <$> t <|> pure NONE
 
 fun char c s = case Stream.force (#2 s)
-   of NONE => raise Parse "End of file"
+   of NONE => Failure []
     | SOME((h, n), r) => 
          if h = c 
-            then (h, r)
-            else fail ("Expected " ^ 
-                        String.fromChar c ^ 
-                        "; Got " ^ String.fromChar h) s
+            then Success (h, r)
+            else fail (String.fromChar c) s
 
 
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
 fun string str = (String.implode <$> each (List.map((String.explode str), char))) <|>
-                 (fail ("Expected " ^ str))
+                 (fail str)
 
-fun info (s : state) = (#1 s, #2 s)
+fun info (s : state) = Success (#1 s, #2 s)
 fun location (s : state) = case Stream.force (#2 s) of
-       NONE => raise Parse "End of file"
-     | SOME((h, n), r) => (n, #2 s)
+       NONE => Failure []
+     | SOME((h, n), r) => Success (n, #2 s)
 
 fun toReader (p : 'b t) (s : state) : ('b * state) option = 
-   let
-      val res = p s
-   in
-      SOME (#1 res, (#1 s, #2 res))
-   end 
-   handle Parse _ =>
-      NONE
+   case p s of
+      Success (a, s') => SOME (a, (#1 s, s'))
+    | _ => NONE
 
 fun fromReader (r : state -> ('b * state) option) (s : state) = 
    case r s of 
       SOME (b, s') => 
-         (b, #2 s')
-    | NONE => raise Parse "fromReader"
+         Success (b, #2 s')
+    | NONE => fail "fromReader" s
 
 
 

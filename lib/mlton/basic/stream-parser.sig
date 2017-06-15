@@ -15,7 +15,6 @@ signature STREAM_PARSER =
       type info = string
       val parse: 'b t * char Stream.t -> 'b
       val parseWithFile: 'b t * File.t * char Stream.t -> 'b
-      exception Parse of string
 
       val pure: 'b -> 'b t
       (*
