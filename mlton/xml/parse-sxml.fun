@@ -44,7 +44,7 @@ struct
       end
 
 
-   val ident = T.failing (token "in" <|> token "val" <|> token "fn" <|> token
+   val ident = (T.failing (token "in" <|> token "val" <|> token "fn" <|> token
    "_" <|> token "=>" <|> token "case" <|> token "prim") *>
       String.implode <$> (T.any
          [(op ::) <$$>
@@ -54,7 +54,7 @@ struct
              (T.many1 (T.sat(T.next, isInfixChar)),
               (op ::) <$$> (T.char #"_", T.many (T.sat(T.next, Char.isDigit))) <|> T.pure []
               (* just for collecting _0 *)
-              )])
+              )])) <|> T.failCut "identifier"
 
        
 
@@ -166,7 +166,7 @@ struct
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit)))
    val parseInt = possibly ((Int.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit)))
+         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "Integer"
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
 
    fun makeWord typ int =
@@ -196,33 +196,33 @@ struct
             (resolveCon <$> ident <* spaces,
              T.pure (Vector.new0 ()),
              T.optional v)
-         val conAppExp = token "new" *> conApp varExp
+         val conAppExp = token "new" *> T.cut (conApp varExp)
          fun constExp typ = 
             if Tycon.isWordX typ then
-               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "Expected word"
+               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "word"
             else if Tycon.isRealX typ then
-               T.fail "Expected real"
+               T.fail "real"
             else if Tycon.isIntX typ then
-               Const.IntInf <$> parseIntInf <|> T.fail "Expected integer"
+               Const.IntInf <$> parseIntInf <|> T.fail "integer"
             else
                Const.string <$> parseString
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
-         val raiseExp = makeRaise <$$> (token "raise" *> T.optional (token "extend"), varExp <* spaces)
+         val raiseExp = token "raise" *> T.cut (makeRaise <$$> (T.optional (token "extend"), varExp <* spaces))
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
          fun makeLambda((var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
          fun resolvePrim p = case Prim.fromString p
             of SOME p' => T.pure p'
-             | NONE => T.fail ("Invalid primitive application: " ^ p)
+             | NONE => T.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
-         val primAppExp = makePrimApp <$$$>
-            (token "prim" *> ident <* spaces >>= resolvePrim,
+         val primAppExp = token "prim" *> T.cut (makePrimApp <$$$>
+            (ident <* spaces >>= resolvePrim,
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
-             tupleOf varExp <* spaces)
+             tupleOf varExp <* spaces))
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
-         val selectExp = makeSelect <$$>
-            (symbol "#" *> parseInt <* spaces,
-             varExp)
+         val selectExp = symbol "#" *> T.cut(makeSelect <$$>
+            (parseInt <* spaces,
+             varExp))
          val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info )
          fun makeConCases var (cons, def) = 
@@ -245,19 +245,19 @@ struct
           | 16 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
           | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
           | 64 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
-          | _ => T.fail "Invalid word size for cases"
+          | _ => T.fail "valid word size for cases (8, 16, 32 or 64)"
             
 
          fun exp' () = makeLet <$$> 
             (token "let" *>
             T.many (dec ()) <* token "in", varExp <* T.string "end")
-         and dec () = T.any
-            [token "val rec" *> makeFunDecs <$>
-                T.many (makeFunDec <$$> (typedvar <* symbol "=" <* spaces, lambdaExp ())),
+         and dec () = token "val" *> T.cut(T.any
+            [token "rec" *> T.cut(makeFunDecs <$>
+                T.many (makeFunDec <$$> (typedvar <* symbol "=" <* spaces, lambdaExp ()))),
              makeValDec <$>
-                ((token "val" *> typedvar) >>= (fn var =>
-                 (symbol "=" *> primexp (#2 var) <* spaces) >>= (fn primexp =>
-                     T.pure(#1 var, #2 var, primexp))))]
+                ((typedvar) >>= (fn var =>
+                 T.cut ((symbol "=" *> primexp (#2 var) <* spaces) >>= (fn primexp =>
+                     T.pure(#1 var, #2 var, primexp)))))])
          and primexp typ = T.failing(token "in") *> T.any
             [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
@@ -275,14 +275,14 @@ struct
              PrimExp.Var <$> varExp]
          and handleExp () = makeHandle <$$$>
             (T.delay exp' <* spaces,
-             token "handle" *> typedvar,
-             token "=>" *> T.delay exp' <* spaces
+             token "handle" *> T.cut typedvar,
+             T.cut (token "=>" *> T.delay exp' <* spaces)
              )
-         and lambdaExp () = makeLambda <$$>
-            (token "fn" *> typedvar,
-             token "=>" *> T.delay exp' <* spaces)
-         and casesExp () = 
-            (T.string "case" *> T.optional (parseInt) <* T.many1 space >>= (fn size =>
+         and lambdaExp () = token "fn" *> T.cut(makeLambda <$$>
+            (typedvar,
+             token "=>" *> T.delay exp' <* spaces))
+         and casesExp () = T.string "case" *> T.cut
+            (T.optional parseInt <* T.many1 space >>= (fn size =>
                varExp <* token "of" <* spaces >>= (fn var =>
                   case size of
                       NONE => makeConCases var <$$> 
