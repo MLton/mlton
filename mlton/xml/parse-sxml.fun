@@ -20,7 +20,8 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
    val skipComments = T.optional(
-      T.string "(*" *> T.cut (T.many (T.failing (T.string "*)") *> T.next) *> T.string "*)" <|> T.failCut "Closing comment")
+      T.string "(*" *> T.cut (T.many (T.failing (T.string "*)") *> T.next) *> T.string "*)" 
+         <|> T.failCut "Closing comment")
       ) *> T.next
 
    val space = T.sat(T.next, Char.isSpace) 
@@ -86,6 +87,8 @@ struct
              | "word16" => Type.word Type.WordSize.word16
              | "word32" => Type.word32
              | "word64" => Type.word Type.WordSize.word64
+             | "real32" => Type.real Type.RealSize.R32
+             | "real64" => Type.real Type.RealSize.R64
              | other => Type.con (resolveTycon other, args)
          fun makeUnary() = 
             let 
@@ -166,7 +169,13 @@ struct
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit)))
    val parseInt = possibly ((Int.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "Integer"
+         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
+   fun parseReal sz = possibly (RealX.make <$$> (String.implode <$>
+         List.concat <$> T.each
+         [T.many (T.sat(T.next, Char.isDigit)),
+          T.char #"." *> T.pure [#"."] <|> T.pure [],
+          T.many (T.sat(T.next, Char.isDigit))],
+         T.pure sz))
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
 
    fun makeWord typ int =
@@ -201,7 +210,7 @@ struct
             if Tycon.isWordX typ then
                Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "word"
             else if Tycon.isRealX typ then
-               T.fail "real"
+               Const.Real <$> parseReal (Tycon.deRealX typ)
             else if Tycon.isIntX typ then
                Const.IntInf <$> parseIntInf <|> T.fail "integer"
             else
