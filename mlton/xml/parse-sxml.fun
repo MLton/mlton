@@ -66,10 +66,18 @@ struct
    fun vectorOf p = Vector.fromList <$>
       (T.char #"[" *> T.sepBy(p, T.char #"," *> spaces) <* T.char #"]")
 
+   fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
+   val doneRecord = doneRecord' ()
+   fun fromRecord name p = T.peek 
+      (T.char #"{" *> T.many (() <$ T.delay doneRecord' <|> () <$ T.failing (token name <* symbol "=") <* T.next)
+       *> token name *> symbol "=" *> p)
+
    fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
       (left <* spaces <* token "=>" >>= (fn l =>  
          right >>= (fn r => con (l, r))),
        spaces)
+   
+   fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
 
 
    (* too many arguments for the maps, curried to use <*> instead *)
@@ -133,6 +141,20 @@ struct
       fun typ resolveTycon = typ' resolveTycon () 
    end
 
+   val ctype = T.any
+      [CType.CPointer <$ token "CPointer",
+       CType.Int8 <$ token "Int8",
+       CType.Int16 <$ token "Int16",
+       CType.Int32 <$ token "Int32",
+       CType.Int64 <$ token "Int64",
+       CType.Objptr <$ token "Objptr",
+       CType.Real32 <$ token "Real32",
+       CType.Real64 <$ token "Real64",
+       CType.Word8 <$ token "Word8",
+       CType.Word16 <$ token "Word16",
+       CType.Word32 <$ token "Word32",
+       CType.Word64 <$ token "Word64"]
+
    
    fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
 
@@ -170,13 +192,15 @@ struct
          T.many (T.sat(T.next, Char.isDigit)))
    val parseInt = possibly ((Int.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
-   fun parseReal sz = possibly (RealX.make <$$> (String.implode <$>
+   fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
+   fun parseReal sz = possibly (makeReal <$$> (String.implode <$>
          List.concat <$> T.each
          [T.many (T.sat(T.next, Char.isDigit)),
           T.char #"." *> T.pure [#"."] <|> T.pure [],
           T.many (T.sat(T.next, Char.isDigit))],
          T.pure sz))
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
+   val parseBool = true <$ token "true" <|> false <$ token "false"
 
    fun makeWord typ int =
       if Tycon.isWordX typ
@@ -220,12 +244,69 @@ struct
          val raiseExp = token "raise" *> T.cut (makeRaise <$$> (T.optional (token "extend"), varExp <* spaces))
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
          fun makeLambda((var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
+
+         val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
+                                    CFunction.Convention.Stdcall <$ token "stdcall"
+         fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
+            CFunction.Kind.Runtime ({bytesNeeded=bytes, ensuresBytesFree=ens,
+            mayGC=mayGC, maySwitchThreads=maySwitch, modifiesFrontier=modifies,
+            readsStackTop=readsSt, writesStackTop=writesSt})
+         val parseRuntimeTarget = makeRuntimeTarget 
+            <$> fromRecord "bytesNeeded" (optionOf parseInt)
+            <*> fromRecord "ensuresBytesFree" parseBool
+            <*> fromRecord "mayGC" parseBool
+            <*> fromRecord "maySwitchThreads" parseBool
+            <*> fromRecord "modifiesFrontier" parseBool
+            <*> fromRecord "readsStackTop" parseBool
+            <*> fromRecord "writesStackTop" parseBool
+            <* doneRecord
+         val parseKind = CFunction.Kind.Impure <$ token "Impure" <|>
+                         CFunction.Kind.Pure <$ token "Pure" <|>
+                         token "Runtime" *> T.cut parseRuntimeTarget
+                         
+         val parsePrototype = (fn x => x) <$$> 
+            (fromRecord "args" (tupleOf ctype),
+             fromRecord "res" (optionOf ctype)) <* doneRecord
+         val parseSymbolScope = T.any
+            [CFunction.SymbolScope.External <$ token "external",
+             CFunction.SymbolScope.Private <$ token "private",
+             CFunction.SymbolScope.Public <$ token "public"]
+           
+
+         val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
+                           CFunction.Target.Direct <$> ident
+         fun makeFFI args conv kind prototype return symbolScope target = 
+            Prim.ffi (CFunction.T 
+               {args=args, convention=conv, kind=kind,
+                prototype=prototype, return=return, symbolScope=symbolScope,
+                target = target})
+         val resolveFFI = token "FFI" *> T.cut(
+            makeFFI 
+            <$> fromRecord "args" (tupleOf (typ resolveTycon))
+            <*> fromRecord "convention" parseConvention
+            <*> fromRecord "kind" parseKind
+            <*> fromRecord "prototype" parsePrototype
+            <*> fromRecord "return" (typ resolveTycon) 
+            <*> fromRecord "symbolScope" parseSymbolScope
+            <*> fromRecord "target" parseTarget
+            <* doneRecord)
+         fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
+         val resolveFFISym = token "FFI_Symbol" *> T.cut(
+            makeFFISym 
+            <$> fromRecord "name" ident
+            <*> fromRecord "cty" (optionOf ctype)
+            <*> fromRecord "symbolScope" parseSymbolScope
+            <* doneRecord)
+            
          fun resolvePrim p = case Prim.fromString p
             of SOME p' => T.pure p'
              | NONE => T.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
          val primAppExp = token "prim" *> T.cut (makePrimApp <$$$>
-            (ident <* spaces >>= resolvePrim,
+            (T.any [
+               resolveFFI,
+               resolveFFISym,
+               (ident <* spaces >>= resolvePrim)],
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
              tupleOf varExp <* spaces))
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
