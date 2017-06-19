@@ -1030,9 +1030,9 @@ let
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
                         then
-                           case (if 0 = Vector.length statements
+                           case (if Vector.isEmpty statements
                                     then NONE
-                                 else (case Vector.sub (statements, 0) of
+                                 else (case Vector.first statements of
                                           s as M.Statement.ProfileLabel _ =>
                                              SOME s
                                         | _ => NONE)) of

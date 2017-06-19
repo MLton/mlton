@@ -5,11 +5,12 @@
  * See the file MLton-LICENSE for details.
  *)
 
-ann  
+ann
    "deadCode true"
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
-   "nonexhaustiveMatch warn" "redundantMatch warn"
-   "warnUnused true" "forceUsed" 
+   "warnUnused true" "forceUsed"
 in
    local
       basis-2002.mlb

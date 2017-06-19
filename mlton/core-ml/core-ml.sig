@@ -45,7 +45,6 @@ signature CORE_ML =
              | List of t vector
              | Or of t vector
              | Record of t Record.t
-             | Tuple of t vector
              | Var of Var.t
              | Vector of t vector
              | Wild
@@ -78,14 +77,15 @@ signature CORE_ML =
              | Case of {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
+                        matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                                     nonexhaustive: Control.Elaborate.DiagEIW.t,
+                                     redundant: Control.Elaborate.DiagEIW.t},
                         noMatch: noMatch,
-                        nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-                        nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-                        redundantMatch: Control.Elaborate.DiagEIW.t,
                         region: Region.t,
                         rules: {exp: t,
-                                lay: (unit -> Layout.t) option,
-                                pat: Pat.t} vector,
+                                layPat: (unit -> Layout.t) option,
+                                pat: Pat.t,
+                                regionPat: Region.t} vector,
                         test: t}
              | Con of Con.t * Type.t vector
              | Const of unit -> Const.t
@@ -109,14 +109,15 @@ signature CORE_ML =
             val casee: {kind: string * string,
                         lay: unit -> Layout.t,
                         nest: string list,
+                        matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                                     nonexhaustive: Control.Elaborate.DiagEIW.t,
+                                     redundant: Control.Elaborate.DiagEIW.t},
                         noMatch: noMatch,
-                        nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-                        nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-                        redundantMatch: Control.Elaborate.DiagEIW.t,
                         region: Region.t,
                         rules: {exp: t,
-                                lay: (unit -> Layout.t) option,
-                                pat: Pat.t} vector,
+                                layPat: (unit -> Layout.t) option,
+                                pat: Pat.t,
+                                regionPat: Region.t} vector,
                         test: t} -> t
             val dest: t -> node * Type.t
             val iff: t * t * t -> t
@@ -166,17 +167,18 @@ signature CORE_ML =
              | Fun of {decs: {lambda: Lambda.t,
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector}
-             | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-                       nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-                       redundantMatch: Control.Elaborate.DiagEIW.t,
+             | Val of {matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                                    nonexhaustive: Control.Elaborate.DiagEIW.t,
+                                    redundant: Control.Elaborate.DiagEIW.t},
                        rvbs: {lambda: Lambda.t,
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector,
                        vbs: {exp: Exp.t,
-                             lay: unit -> {dec: Layout.t, pat: Layout.t},
+                             layDec: unit -> Layout.t,
+                             layPat: unit -> Layout.t,
                              nest: string list,
                              pat: Pat.t,
-                             patRegion: Region.t} vector}
+                             regionPat: Region.t} vector}
 
             val layout: t -> Layout.t
          end

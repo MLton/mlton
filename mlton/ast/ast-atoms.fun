@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -202,7 +203,7 @@ structure Type =
       fun layoutApp (tycon, args: 'a vector, layoutArg) =
          case Vector.length args of
             0 => tycon
-          | 1 => seq [layoutArg (Vector.sub (args, 0)), str " ", tycon]
+          | 1 => seq [layoutArg (Vector.first args), str " ", tycon]
           | _ => seq [Vector.layout layoutArg args, str " ", tycon]
 
       fun layout ty =
@@ -213,7 +214,7 @@ structure Type =
                   then if 2 = Vector.length tys
                           then
                              paren (mayAlign
-                                    [layout (Vector.sub (tys, 0)),
+                                    [layout (Vector.first tys),
                                      seq [str "-> ",
                                           layout (Vector.sub (tys, 1))]])
                        else Error.bug "AstAtoms.Type.layout: non-binary -> tyc"
@@ -225,7 +226,7 @@ structure Type =
       and layoutTupleTy tys =
          case Vector.length tys of
             0 => str "unit"
-          | 1 => layout (Vector.sub (tys, 0))
+          | 1 => layout (Vector.first tys)
           | _ => paren (mayAlign (separateLeft (Vector.toListMap (tys, layout),
                                                 "* ")))
 
@@ -247,19 +248,23 @@ structure Type =
 
 fun bind (x, y) = mayAlign [seq [x, str " ="], y]
 
+fun 'a layoutAndsSusp (prefix: string,
+                       xs: 'a vector,
+                       layoutX: bool * Layout.t * 'a -> Layout.t): (unit -> Layout.t) vector =
+   Vector.mapi
+   (xs, fn (i, x) => fn () =>
+    layoutX (i = 0, if i = 0 then str (concat [prefix, " "]) else str "and ", x))
+
 fun 'a layoutAnds (prefix: string,
                    xs: 'a vector, 
                    layoutX: Layout.t * 'a -> Layout.t): Layout.t =
-   case Vector.toList xs of
-      [] => empty
-    | x :: xs => align (layoutX (str (concat [prefix, " "]), x)
-                        :: List.map (xs, fn x => layoutX (str "and ", x)))
+   align (Vector.toListMap (layoutAndsSusp (prefix, xs, fn (_, prefix, x) => layoutX (prefix, x)), fn th => th ()))
 
 datatype bindStyle = OneLine | Split of int
 
 fun 'a layoutBind (bind: string,
                    layout: 'a -> bindStyle * Layout.t * Layout.t)
-   (prefix: Layout.t, x: 'a): Layout.t =
+                  (prefix: Layout.t, x: 'a): Layout.t =
    let
       val (style, lhs, rhs) = layout x
       val lhs = seq [prefix, lhs, str " " , str bind]
@@ -349,7 +354,7 @@ structure DatBind =
                            "| "))),
              case TypBind.node withtypes of
                 TypBind.T v =>
-                   if 0 = Vector.length v
+                   if Vector.isEmpty v
                       then empty
                    else seq [str "with", TypBind.layout withtypes]]
          end

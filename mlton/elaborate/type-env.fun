@@ -787,7 +787,7 @@ structure Type =
 
       fun tuple ts =
          if 1 = Vector.length ts
-            then Vector.sub (ts, 0)
+            then Vector.first ts
          else newTy (Record (Srecord.tuple ts),
                      Equality.andd (Vector.map (ts, equality)))
 
@@ -847,7 +847,7 @@ structure Type =
             Record r =>
                (case Srecord.detupleOpt r of
                    NONE => false
-                 | SOME v => 0 = Vector.length v)
+                 | SOME v => Vector.isEmpty v)
           | _ => false
 
       local
@@ -892,7 +892,7 @@ structure Type =
                Tycon.equals (c, c')
                andalso Vector.forall2 (ts, ts', canUnify)
           | Overload ov =>
-               0 = Vector.length ts andalso Overload.matchesTycon (ov, c)
+               Vector.isEmpty ts andalso Overload.matchesTycon (ov, c)
           | _ => false
 
       (* minTime (t, bound) ensures that all components of t have times no larger
@@ -1453,7 +1453,7 @@ structure Scheme =
       fun dest s = (bound s, ty s)
 
       fun make {canGeneralize, tyvars, ty} =
-         if 0 = Vector.length tyvars
+         if Vector.isEmpty tyvars
             then Type ty
          else General {bound = fn () => tyvars,
                        canGeneralize = canGeneralize,
@@ -1822,7 +1822,7 @@ structure Type =
          let
             fun tuple (t, ts) =
                if 1 = Vector.length ts
-                  then Vector.sub (ts, 0)
+                  then Vector.first ts
                else con (t, Tycon.tuple, ts)
          in
             simpleHom {con = con,

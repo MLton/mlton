@@ -206,7 +206,7 @@ fun layoutApp (c: t,
                case Vector.length args of
                   0 => ({isChar = equals (c, defaultChar ())}, layout c)
                 | 1 => ({isChar = false},
-                        seq [maybe Tyseq1 (Vector.sub (args, 0)),
+                        seq [maybe Tyseq1 (Vector.first args),
                              str " ", layout c])
                 | _ => ({isChar = false},
                         seq [Layout.tuple
@@ -217,18 +217,18 @@ fun layoutApp (c: t,
          end
    in
       if equals (c, arrow)
-         then (mayAlign [maybe ArrowLhs (Vector.sub (args, 0)),
+         then (mayAlign [maybe ArrowLhs (Vector.first args),
                          seq [str "-> ",
                               maybe ArrowRhs (Vector.sub (args, 1))]],
                ({isChar = false}, Arrow))
       else if equals (c, tuple)
-         then if 0 = Vector.length args
+         then if Vector.isEmpty args
                  then (str "unit", ({isChar = false}, Unit))
               else (mayAlign (Layout.separateLeft
                               (Vector.toListMap (args, maybe TupleElem), "* ")),
                     ({isChar = false}, Tuple))
       else if equals (c, vector)
-         then if #isChar (#1 (#2 (Vector.sub (args, 0))))
+         then if #isChar (#1 (#2 (Vector.first args)))
                  then (str "string", ({isChar = false}, Unit))
               else normal ()
       else normal ()

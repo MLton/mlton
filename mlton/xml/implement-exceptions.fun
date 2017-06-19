@@ -32,9 +32,9 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                     PrimApp {prim, targs, ...} =>
                        (case Prim.name prim of
                            Prim.Name.Exn_extra =>
-                              escape (Vector.sub (targs, 0))
+                              escape (Vector.first targs)
                          | Prim.Name.Exn_setExtendExtra =>
-                              escape (Vector.sub (targs, 0))
+                              escape (Vector.first targs)
                          | _ => ())
                   | _ => ())
           in
@@ -292,7 +292,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                            else
                               let
                                  val (Pat.T {con, ...}, _) =
-                                    Vector.sub (cases, 0)
+                                    Vector.first cases
                               in
                                  if not (isExcon con)
                                     then normal ()
@@ -399,16 +399,16 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                         (PrimApp {prim = Prim.assign,
                                   targs = Vector.new1 ty,
                                   args = Vector.new2 (VarExp.mono var,
-                                                      Vector.sub (args, 0))})
+                                                      Vector.first args)})
                   in
                      case Prim.name prim of
                         Exn_extra =>
                            (makeExp o projectExtra)
-                           (VarExp.var (Vector.sub (args, 0)))
+                           (VarExp.var (Vector.first args))
                       | Exn_name =>
                            (primExp o App)
                            {func = VarExp.mono exnNameVar,
-                            arg = Vector.sub (args, 0)}
+                            arg = Vector.first args}
                       | Exn_setExtendExtra =>
                            assign (extendExtraVar,
                                    extendExtraType)

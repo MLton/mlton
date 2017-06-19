@@ -190,7 +190,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
                                  in if isOK (if Vector.isEmpty lambdas
                                                 then Error.bug "Polyvariance.loopExp.loopDecs: empty lambdas"
                                              else
-                                                #var (Vector.sub (lambdas, 0)),
+                                                #var (Vector.first lambdas),
                                              size, numOccurrences)
                                        then (List.foreach
                                              (dups,

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -69,8 +70,8 @@ structure Program =
                   case Dec.node d of
                      Abstype {body, ...} => dec body
                    | Exception cs => Vector.foreach (cs, fn _ => inc ())
-                   | Fun (_, ds) =>
-                        Vector.foreach (ds, fn clauses =>
+                   | Fun {fbs, ...} =>
+                        Vector.foreach (fbs, fn clauses =>
                                         Vector.foreach (clauses, exp o #body))
                    | Local (d, d') => (dec d; dec d')
                    | SeqDec ds => Vector.foreach (ds, dec)

@@ -127,7 +127,7 @@ fun 'a analyze
                let
                   val test = value test
                   fun ensureNullary j =
-                     if 0 = Vector.length (labelValues j)
+                     if Vector.isEmpty (labelValues j)
                         then ()
                      else Error.bug (concat ["Analyze.loopTransfer (case ",
                                              Label.toString j,
@@ -169,11 +169,11 @@ fun 'a analyze
                let
                   val xts = labelArgs return
                   val (resultVar, resultType) =
-                     if 0 = Vector.length xts
+                     if Vector.isEmpty xts
                         then (NONE, Type.unit)
                      else
                         let
-                           val (x, t) = Vector.sub (xts, 0)
+                           val (x, t) = Vector.first xts
                         in
                            (SOME x, t)
                         end

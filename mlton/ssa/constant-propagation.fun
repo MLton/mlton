@@ -738,7 +738,7 @@ fun transform (program: Program.t): Program.t =
                      | ConApp {con = con', uniq = uniq', ...} =>
                           if Unique.equals (uniq, uniq')
                              orelse (Con.equals (con, con')
-                                     andalso 0 = Vector.length args)
+                                     andalso Vector.isEmpty args)
                              then ()
                           else makeDataUnknown d) arg
              in loop d

@@ -802,7 +802,7 @@ fun transform (program: Program.t): Program.t =
                       else NONE)
                in
                   if 1 = Vector.length xs
-                     then Var (Vector.sub (xs, 0))
+                     then Var (Vector.first xs)
                   else Tuple xs
                end
           | Var _ => e
@@ -875,7 +875,7 @@ fun transform (program: Program.t): Program.t =
                   val res = Vector.new1 v
                   val sargs = label success
                in
-                  if agree (v, Vector.sub (sargs, 0))
+                  if agree (v, Vector.first sargs)
                      then ([], t)
                   else let
                           val (l, b) = dropUseless

@@ -891,7 +891,7 @@ structure Program =
                               Kind.Func => true
                             | _ => false)
                           orelse (0 < Vector.length statements
-                                  andalso (case Vector.sub (statements, 0) of
+                                  andalso (case Vector.first statements of
                                               Statement.ProfileLabel _ => true
                                             | _ => false))
                           then ()

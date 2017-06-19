@@ -46,7 +46,6 @@ structure Pat =
        | List of t vector
        | Or of t vector
        | Record of t Record.t
-       | Tuple of t vector
        | Var of Var.t
        | Vector of t vector
        | Wild
@@ -79,10 +78,19 @@ structure Pat =
              | List ps => list (Vector.toListMap (ps, layout))
              | Or ps => list (Vector.toListMap (ps, layout))
              | Record r =>
-                  record (Vector.toListMap
-                          (Record.toVector r, fn (f, p) =>
-                           (Field.toString f, layout p)))
-             | Tuple ps => tuple (Vector.toListMap (ps, layout))
+                  let
+                     val extra =
+                        Vector.exists
+                        (Type.deRecord t, fn (f, _) =>
+                         Option.isNone (Record.peek (r, f)))
+                  in
+                     Record.layout
+                     {extra = if extra then ", ..." else "",
+                      layoutElt = layout,
+                      layoutTuple = fn ps => tuple (Vector.toListMap (ps, layout)),
+                      record = r,
+                      separator = " = "}
+                  end
              | Var x => maybeConstrain (Var.layout x, t)
              | Vector ps => vector (Vector.map (ps, layout))
              | Wild => str "_"
@@ -92,7 +100,10 @@ structure Pat =
 
       fun var (x, t) = make (Var x, t)
 
-      fun tuple ps = make (Tuple ps, Type.tuple (Vector.map (ps, ty)))
+      fun tuple ps =
+         if 1 = Vector.length ps
+            then Vector.first ps
+            else make (Record (Record.tuple ps), Type.tuple (Vector.map (ps, ty)))
 
       local
          fun bool c = make (Con {arg = NONE, con = c, targs = Vector.new0 ()},
@@ -104,7 +115,7 @@ structure Pat =
 
       fun isUnit (p: t): bool =
          case node p of
-            Tuple v => 0 = Vector.length v
+            Record r => Record.forall (r, fn _ => false)
           | _ => false
 
       fun isWild (p: t): bool =
@@ -120,7 +131,6 @@ structure Pat =
           | List _ => true
           | Or ps => Vector.exists (ps, isRefutable)
           | Record r => Record.exists (r, isRefutable)
-          | Tuple ps => Vector.exists (ps, isRefutable)
           | Var _ => false
           | Vector _ => true
           | Wild => false
@@ -135,7 +145,6 @@ structure Pat =
                 | List ps => Vector.foreach (ps, loop)
                 | Or ps => Vector.foreach (ps, loop)
                 | Record r => Record.foreach (r, loop)
-                | Tuple ps => Vector.foreach (ps, loop)
                 | Var x => f x
                 | Vector ps => Vector.foreach (ps, loop)
                 | Wild => ()
@@ -161,17 +170,18 @@ datatype dec =
  | Fun of {decs: {lambda: lambda,
                   var: Var.t} vector,
            tyvars: unit -> Tyvar.t vector}
- | Val of {nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-           nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-           redundantMatch: Control.Elaborate.DiagEIW.t,
+ | Val of {matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                        nonexhaustive: Control.Elaborate.DiagEIW.t,
+                        redundant: Control.Elaborate.DiagEIW.t},
            rvbs: {lambda: lambda,
                   var: Var.t} vector,
            tyvars: unit -> Tyvar.t vector,
            vbs: {exp: exp,
-                 lay: unit -> {dec: Layout.t, pat: Layout.t},
+                 layDec: unit -> Layout.t,
+                 layPat: unit -> Layout.t,
                  nest: string list,
                  pat: Pat.t,
-                 patRegion: Region.t} vector}
+                 regionPat: Region.t} vector}
 and exp = Exp of {node: expNode,
                   ty: Type.t}
 and expNode =
@@ -179,14 +189,15 @@ and expNode =
   | Case of {kind: string * string,
              lay: unit -> Layout.t,
              nest: string list,
+             matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
+                          nonexhaustive: Control.Elaborate.DiagEIW.t,
+                          redundant: Control.Elaborate.DiagEIW.t},
              noMatch: noMatch,
-             nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
-             nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
-             redundantMatch: Control.Elaborate.DiagEIW.t,
              region: Region.t,
              rules: {exp: exp,
-                     lay: (unit -> Layout.t) option,
-                     pat: Pat.t} vector,
+                     layPat: (unit -> Layout.t) option,
+                     pat: Pat.t,
+                     regionPat: Region.t} vector,
              test: exp}
   | Con of Con.t * Type.t vector
   | Const of unit -> Const.t
@@ -298,7 +309,7 @@ in
             else Var.layout (var ())
        | Vector es => vector (Vector.map (es, layoutExp))
    and layoutFuns (tyvars, decs)  =
-      if 0 = Vector.length decs
+      if Vector.isEmpty decs
          then empty
       else
          align [seq [str "val rec", layoutTyvars (tyvars ())],
@@ -387,7 +398,7 @@ structure Exp =
 
       fun tuple es =
          if 1 = Vector.length es
-            then Vector.sub (es, 0)
+            then Vector.first es
          else make (Record (Record.tuple es),
                     Type.tuple (Vector.map (es, ty)))
 
@@ -404,25 +415,27 @@ structure Exp =
          make (Lambda l, Type.arrow (argType, ty body))
 
       fun casee (z as {rules, ...}) =
-         if 0 = Vector.length rules
+         if Vector.isEmpty rules
             then Error.bug "CoreML.Exp.casee"
-         else make (Case z, ty (#exp (Vector.sub (rules, 0))))
+         else make (Case z, ty (#exp (Vector.first rules)))
 
       fun iff (test, thenCase, elseCase): t =
-         casee {kind = ("if", "branches"),
+         casee {kind = ("if", "branch"),
                 lay = fn () => Layout.empty,
                 nest = [],
+                matchDiags = {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
+                              nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
+                              redundant = Control.Elaborate.DiagEIW.Ignore},
                 noMatch = Impossible,
-                nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
-                nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
-                redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                 region = Region.bogus,
                 rules = Vector.new2 ({exp = thenCase,
-                                      lay = NONE,
-                                      pat = Pat.truee},
+                                      layPat = NONE,
+                                      pat = Pat.truee,
+                                      regionPat = Region.bogus},
                                      {exp = elseCase,
-                                      lay = NONE,
-                                      pat = Pat.falsee}),
+                                      layPat = NONE,
+                                      pat = Pat.falsee,
+                                      regionPat = Region.bogus}),
                 test = test}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)
@@ -535,7 +548,7 @@ structure Program =
  *                         end
  *                    | Case {rules, test} =>
  *                         let
- *                            val {pat, exp} = Vector.sub (rules, 0)
+ *                            val {pat, exp} = Vector.first rules
  *                         in
  *                            Vector.foreach (rules, fn {pat, exp} =>
  *                                            Type.equals

@@ -83,7 +83,7 @@ val word = Const o Const.word
 
 fun tuple (r as {exps, ...}) =
    if 1 = Vector.length exps
-      then Vector.sub (exps, 0)
+      then Vector.first exps
    else Tuple r
 
 val var = Var
@@ -481,7 +481,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
                      case Vector.length components of
                         0 => []
                       | 1 => [Statement.T
-                              {var = SOME (Vector.sub (components, 0)),
+                              {var = SOME (Vector.first components),
                                ty = tupleTy,
                                exp = Exp.Var tuple}]
                       | _ => selects (tuple, tupleTy, components)
@@ -547,7 +547,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
                                 Vector.new1 (Var (res, ty)))
                             end
                        | SOME ts =>
-                            if 0 = Vector.length ts
+                            if Vector.isEmpty ts
                                then (Vector.new0 (), Vector.new0 ())
                             else
                                Error.bug

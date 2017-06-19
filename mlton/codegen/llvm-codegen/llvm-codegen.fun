@@ -1203,7 +1203,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                             case default of
                                 SOME d => (cases, "%" ^ Label.toString d)
                               | NONE => (Vector.dropPrefix (cases, 1),
-                                         "%" ^ Label.toString (#2 (Vector.sub (cases, 0))))
+                                         "%" ^ Label.toString (#2 (Vector.first cases)))
                         val branches = String.concatV (Vector.map (switchCases, fn (w, l) =>
                                            concat ["\t\t", llws (WordX.size w), " ", llwordx w,
                                                    ", label %", Label.toString l, "\n"]))

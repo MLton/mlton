@@ -22,7 +22,7 @@ and node =
               isInt: bool}
   | Layered of Var.t * t
   | Or of t vector
-  | Tuple of t vector
+  | Record of t SortedRecord.t
   | Var of Var.t
   | Vector of t vector
   | Wild
@@ -35,10 +35,8 @@ in
 end
 
 fun tuple ps =
-   if 1 = Vector.length ps
-      then Vector.sub (ps, 0)
-   else T {pat = Tuple ps,
-           ty = Type.tuple (Vector.map (ps, ty))}
+   T {pat = Record (SortedRecord.tuple ps),
+      ty = Type.tuple (Vector.map (ps, ty))}
 
 fun layout (p, isDelimited) =
    let
@@ -53,7 +51,13 @@ fun layout (p, isDelimited) =
        | Const {const = c, ...} => Const.layout c
        | Layered (x, p) => delimit (seq [Var.layout x, str " as ", layoutT p])
        | Or ps => paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
-       | Tuple ps => tuple (Vector.toListMap (ps, layoutT))
+       | Record rps =>
+            SortedRecord.layout
+            {extra = "",
+             layoutElt = layoutT,
+             layoutTuple = fn ps => tuple (Vector.toListMap (ps, layoutT)),
+             record = rps,
+             separator = " = "}
        | Var x => Var.layout x
        | Vector ps => vector (Vector.map (ps, layoutT))
        | Wild => str "_"
@@ -64,12 +68,7 @@ and layoutT p = layout (p, true)
 val layout = layoutT
 
 fun make (p, t) =
-   case p of
-      Tuple ps =>
-         if 1 = Vector.length ps
-            then Vector.sub (ps, 0)
-         else T {pat = p, ty = t}
-    | _ => T {pat = p, ty = t}
+   T {pat = p, ty = t}
 
 fun flatten p =
    let
@@ -85,7 +84,14 @@ fun flatten p =
        | Const _ => Vector.new1 p
        | Layered (x, p) => Vector.map (flatten p, fn p => make (Layered (x, p)))
        | Or ps => Vector.concatV (Vector.map (ps, flatten))
-       | Tuple ps => flattens (ps, make o Tuple)
+       | Record rps =>
+            let
+               val (fs, ps) = SortedRecord.unzip rps
+               val record = fn ps =>
+                  Record (SortedRecord.zip (fs, ps))
+            in
+               flattens (ps, make o record)
+            end
        | Var _ => Vector.new1 p
        | Vector ps => flattens (ps, make o Vector)
        | Wild => Vector.new1 p
@@ -111,14 +117,15 @@ fun isRefutable p =
     | Const _ => true
     | Layered (_, p) => isRefutable p
     | Or ps => Vector.exists (ps, isRefutable)
-    | Tuple ps => Vector.exists (ps, isRefutable)
+    | Record rps => SortedRecord.exists (rps, isRefutable)
     | Var _ => false
     | Vector _ => true
     | Wild => false
 
-fun isVar p =
+fun isVarOrWild p =
    case node p of
       Var _ => true
+    | Wild => true
     | _ => false
 
 fun removeOthersReplace (p, {new, old}) =
@@ -141,7 +148,7 @@ fun removeOthersReplace (p, {new, old}) =
                         else node p
                      end
                 | Or ps => Or (Vector.map (ps, loop))
-                | Tuple ps => Tuple (Vector.map (ps, loop))
+                | Record rps => Record (SortedRecord.map (rps, loop))
                 | Var x =>
                      if Var.equals (x, old)
                         then Var new
@@ -179,7 +186,7 @@ fun replaceTypes (p: t, f: Type.t -> Type.t): t =
                 | Const _ => pat
                 | Layered (x, p) => Layered (x, loop p)
                 | Or ps => Or (Vector.map (ps, loop))
-                | Tuple ps => Tuple (Vector.map (ps, loop))
+                | Record rps => Record (SortedRecord.map (rps, loop))
                 | Var _ => pat
                 | Vector ps => Vector (Vector.map (ps, loop))
                 | Wild => pat
@@ -199,8 +206,8 @@ fun varsAndTypes (p: t): (Var.t * Type.t) list =
                                 | SOME p => loop (p, accum))
           | Const _ => accum
           | Layered (x, p) => loop (p, (x, ty p) :: accum)
-          | Or ps => loop (Vector.sub (ps, 0), accum)
-          | Tuple ps => Vector.fold (ps, accum, loop)
+          | Or ps => loop (Vector.first ps, accum)
+          | Record rps => SortedRecord.fold (rps, accum, loop)
           | Var x => (x, ty p) :: accum
           | Vector ps => Vector.fold (ps, accum, loop)
           | Wild => accum
