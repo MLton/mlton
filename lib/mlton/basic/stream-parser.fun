@@ -146,7 +146,7 @@ fun uncut p s = case p s of
 fun delay p = fn s => p () s
 
 fun next (s : state)  = case Stream.force (#2 s) 
-   of NONE => Failure []
+   of NONE => Failure ["Any character at end of file"]
     | SOME((h, _), r) => Success (h, r)
 
 fun satExpects(t, p, m) s =
@@ -195,7 +195,7 @@ fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
 fun optional t = SOME <$> t <|> pure NONE
 
 fun char c s = case Stream.force (#2 s)
-   of NONE => Failure []
+   of NONE => Failure [String.fromChar c ^ " at end of file"] 
     | SOME((h, n), r) => 
          if h = c 
             then Success (h, r)
@@ -210,7 +210,7 @@ fun string str = (String.implode <$> each (List.map((String.explode str), char))
 
 fun info (s : state) = Success (#1 s, #2 s)
 fun location (s : state) = case Stream.force (#2 s) of
-       NONE => Failure []
+       NONE => Failure ["any character end of file (location)"]
      | SOME((h, n), r) => Success (n, #2 s)
 
 fun toReader (p : 'b t) (s : state) : ('b * state) option = 
