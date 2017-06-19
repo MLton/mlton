@@ -274,6 +274,7 @@ signature PRIM =
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
+      val layoutFull: ('a -> Layout.t) -> 'a t -> Layout.t
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
