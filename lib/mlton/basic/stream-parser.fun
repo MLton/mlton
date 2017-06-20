@@ -169,7 +169,7 @@ fun failing p s =
        | _ => Success ((), #2 s)
       
 fun notFollowedBy(p, c) =
-   fst <$> p <*> (peek (failing c))
+   p <* failing c
 
 fun any'([]) s = Failure []
   | any'(p::ps) s =
@@ -188,6 +188,9 @@ fun 'b many' (t : 'b t) s = case ((op ::) <$$> (t, fn s' => many' t s')) s of
   | FailCut z => FailCut z
 fun 'b many t = uncut (many' t)
 fun 'b many1 (t : 'b t) = uncut ((op ::) <$$> (t, many' t))
+
+fun manyFailing(p, f) = many (failing f *> p)
+fun manyCharsFailing f = many (failing f *> next)
 
 fun sepBy1(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)))
 fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])

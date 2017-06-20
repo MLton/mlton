@@ -20,7 +20,7 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
    val skipComments = T.optional(
-      T.string "(*" *> T.cut (T.many (T.failing (T.string "*)") *> T.next) *> T.string "*)" 
+      T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)") *> T.string "*)" 
          <|> T.failCut "Closing comment")
       ) *> T.next
 
@@ -33,7 +33,7 @@ struct
       (T.string s,
        (T.sat(T.next,fn b => isInfixChar b orelse b = #"_"))) <* spaces
 
-   val clOptions = T.many (T.failing (T.string "Datatypes:") *> T.next)
+   val clOptions = T.manyCharsFailing(T.string "Datatypes:")
 
    fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
@@ -154,14 +154,13 @@ struct
        CType.Word16 <$ token "Word16",
        CType.Word32 <$ token "Word32",
        CType.Word64 <$ token "Word64"]
-
    
    fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
 
    (* parse in a constructor (to Con.t) *) 
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> 
-      (ident, 
-      T.optional (T.many space *> token "of" *> (typ resolveTycon))) <* spaces
+      (ident <* spaces, 
+      T.optional (token "of" *> (typ resolveTycon) <* spaces) )
 
    
    fun makeDt resolveTycon (tycon, cons) = 
@@ -175,7 +174,7 @@ struct
            T.char #"|" *> spaces))) 
 
    fun datatypes resolveCon resolveTycon = 
-      T.string "Datatypes:" *> spaces *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
+      token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
 
    fun overflow resolveVar = T.string "Overflow:" *> spaces *> (
           (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
@@ -187,7 +186,7 @@ struct
    val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
                            (fn x      => [x]   ) <$> T.next
    val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
-         (T.char #"\"" *> (T.many(T.failing (T.char #"\"") *> stringToken)) <* T.char #"\""))
+         (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit)))
    val parseInt = possibly ((Int.fromString o String.implode) <$>
@@ -331,6 +330,7 @@ struct
              default=Option.map(def, fn x => (x, Region.bogus))}
          fun makePat(con, exp) = T.pure (Pat.T con, exp)
          fun makeCaseWord size (int, exp) = case size of
+             (* this is repetetive, but it's a bit awkward to rework around the fail *)
             8 => T.pure((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
           | 16 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
           | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
@@ -401,7 +401,7 @@ struct
    val program : XmlTree.Program.t StreamParser.t =
       let
          fun strip_unique s  = T.parse
-            (String.implode <$> T.many(T.failing(T.char #"_") *> T.next),
+            (String.implode <$> T.manyCharsFailing(T.char #"_"),
              Stream.fromList (String.explode s))
          val resolveCon = makeNameResolver(Con.fromString o strip_unique)
          val resolveTycon = makeNameResolver(Tycon.fromString o strip_unique)
@@ -416,5 +416,3 @@ struct
 
       end
 end
-
-

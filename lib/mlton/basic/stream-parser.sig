@@ -76,6 +76,10 @@ signature STREAM_PARSER =
       val many: 'b t -> 'b list t
       (* as many, but one or more, rather than zero or more times *)
       val many1: 'b t -> 'b list t
+      (* as many, but with failures of the second parser before each parse from the first *)
+      val manyFailing: ('b t * 'c t) -> 'b list t
+      (* manyFailing, specialized to the case that p is next *)
+      val manyCharsFailing: 'b t -> char list t
       (* gets the next char of input *)
       val next: char t
       (* succeeds if the first parser succeeds and the second fails 
