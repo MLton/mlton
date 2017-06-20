@@ -208,8 +208,14 @@ fun char c s = case Stream.force (#2 s)
 fun each([]) = pure []
   | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
 
-fun string str = (String.implode <$> each (List.map((String.explode str), char))) <|>
-                 (failCut str)
+
+fun matchList s1 l2 = case (Stream.force s1, l2)
+   of (_, []) => Success ((), s1)
+    | (NONE, (_::_)) => Failure []
+    | (SOME ((h, _), r), (x :: xs)) => if h = x then matchList r xs else Failure []
+fun string str s = case matchList (#2 s) (String.explode str)
+   of Success ((), r) => Success (str, r)
+    | _ => fail str s
 
 fun info (s : state) = Success (#1 s, #2 s)
 fun location (s : state) = case Stream.force (#2 s) of
