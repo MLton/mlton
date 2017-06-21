@@ -32,7 +32,7 @@ fun maybeConstrain (x, t) =
       open Layout
    in
       if !Control.showTypes
-         then seq [x, str ": ", Type.layoutFormal t]
+         then seq [x, str " : ", Type.layoutFormal t]
       else x
    end
 

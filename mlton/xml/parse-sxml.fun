@@ -1,9 +1,9 @@
 functor ParseSxml(S: PARSE_SXML_STRUCTS) = 
 struct
    open S
+   open XmlTree
    structure T = StreamParser
    open T.Ops
-   open XmlTree
    structure DE = DirectExp
    infix 1 <|> >>=
    infix 2 <&>
@@ -86,7 +86,6 @@ struct
          fun makeNullary() =
             case ident of
                "bool" => Type.bool
-             (*| "char" => Type.char*)
              | "cpointer" => Type.cpointer
              | "intInf" => Type.intInf
              | "thread" => Type.thread
@@ -209,8 +208,6 @@ struct
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
-         open XmlTree
-
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
          fun makeValDec(var, ty, exp) = Dec.MonoVal {exp=exp, ty=ty, var=var}
          fun makeFunDecs(lambdas) = Dec.Fun {decs=Vector.fromList lambdas, tyvars=Vector.new0 ()}
@@ -333,7 +330,7 @@ struct
              (* this is repetetive, but it's a bit awkward to rework around the fail *)
             8 => T.pure((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
           | 16 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
-          | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
+          | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word32)), exp)
           | 64 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
           | _ => T.fail "valid word size for cases (8, 16, 32 or 64)"
             
@@ -398,13 +395,20 @@ struct
           overflow = overflow}
 
 
-   val program : XmlTree.Program.t StreamParser.t =
+   val program : Program.t StreamParser.t =
       let
          fun strip_unique s  = T.parse
             (String.implode <$> T.manyCharsFailing(T.char #"_"),
              Stream.fromList (String.explode s))
-         val resolveCon = makeNameResolver(Con.fromString o strip_unique)
-         val resolveTycon = makeNameResolver(Tycon.fromString o strip_unique)
+         val resolveCon0 = makeNameResolver(Con.fromString o strip_unique)
+         fun resolveCon name = case name of
+             "true" => Con.truee
+           | "false" => Con.falsee
+           | _ => resolveCon0 name
+         val resolveTycon0 = makeNameResolver(Tycon.fromString o strip_unique)
+         fun resolveTycon "bool" = Tycon.bool (* special case *)
+           | resolveTycon "exn" = Tycon.exn (* special case *)
+           | resolveTycon name = resolveTycon0 name
          val resolveVar = makeNameResolver(Var.fromString o strip_unique)
       in
          T.compose(skipComments,
@@ -415,4 +419,6 @@ struct
             body resolveCon resolveTycon resolveVar)))
 
       end
+
+   fun parse s = T.parse(program, s)
 end

@@ -34,7 +34,17 @@ signature COMPILE =
                        outputS: unit -> {file: File.t,
                                          print: string -> unit,
                                          done: unit -> unit}} -> unit
-      val elaborateMLB: {input: File.t} -> unit
+      val compileSXML: {input: File.t list,
+                       outputC: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit},
+                       outputLL: unit -> {file: File.t,
+                                          print: string -> unit,
+                                          done: unit -> unit},
+                       outputS: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit}} -> unit
+       val elaborateMLB: {input: File.t} -> unit
       val elaborateSML: {input: File.t list} -> unit
       val setCommandLineConstant: {name: string, value: string} -> unit
       val sourceFilesMLB: {input: File.t} -> File.t vector
