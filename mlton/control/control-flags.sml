@@ -114,12 +114,13 @@ val diagPasses =
                        (Layout.toString o 
                         Regexp.Compiled.layout)}
 
-val dropPasses =
-   control {name = "drop passes",
+val doPasses =
+   control {name = "do passes",
             default = [],
             toString = List.toString
                        (Layout.toString o
-                        Regexp.Compiled.layout)}
+			(Layout.tuple2
+			  (Regexp.Compiled.layout, Bool.layout)))}
 
 structure Elaborate =
    struct

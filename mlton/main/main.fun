@@ -67,7 +67,7 @@ val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
 datatype debugFormat = Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
 val debugFormat: debugFormat option ref = ref NONE
-val expert: bool ref = ref false
+val expert: bool ref = ref true
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunk: Control.chunk option ref = ref NONE
 datatype explicitCodegen = Native | Explicit of Control.Codegen.t
@@ -383,11 +383,18 @@ fun makeOptions {usage} =
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, false))))
        end,
-       (Expert, "drop-pass", " <pass>", "omit optimization pass",
+       (Expert, "disable-pass", " <pass>", "disable optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
                      SOME (re,_) => let val re = Regexp.compileDFA re
-                                    in List.push (dropPasses, re)
+                                    in List.push (doPasses, (re, false))
+                                    end
+                   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
+       (Expert, "enable-pass", " <pass>", "enable optimization pass",
+        SpaceString
+        (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (doPasses, (re, true))
                                     end
                    | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
        let

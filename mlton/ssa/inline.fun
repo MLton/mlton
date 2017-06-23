@@ -80,10 +80,14 @@ local
       end
 in
    val leafOnce = make (fn (f, {size}) =>
-                        Function.functionGT size f
-                        orelse Function.containsCall f)
+                              Option.isNone (Function.sizeMax (f, {max = size,
+                                                             sizeExp = Exp.size,
+                                                             sizeTransfer =Transfer.size}))
+			      orelse Function.containsCall f)
    val leafOnceNoLoop = make (fn (f, {size}) =>
-                              Function.functionGT size f
+                              Option.isNone (Function.sizeMax (f, {max = size,
+                                                             sizeExp = Exp.size,
+                                                             sizeTransfer =Transfer.size}))
                               orelse Function.containsCall f
                               orelse Function.containsLoop f)
 end
@@ -154,33 +158,34 @@ local
                    in 
                       if Function.mayInline function
                          andalso not (dontInline function)
-                         then Exn.withEscape
+                      	 then Exn.withEscape
                               (fn escape =>
                                let
-                                  val (n, check) =
-                                     Function.size
-                                     (0, max)
-                                     (Exp.size,
-                                      fn t =>
-                                      case t of
-                                         Call {func, ...} =>
-                                            let
-                                               val {shouldInline, size, ...} = 
-                                                  funcInfo func
-                                            in
-                                               if !shouldInline
-                                                  then !size
-                                               else escape ()
-                                            end
-                                       | _ => Transfer.size t)
-                                     function
+                                  val res =
+                                     Function.sizeMax
+                                     (function,
+                                       {max = max,
+                                       sizeExp = Exp.size,
+                                       sizeTransfer =
+                                       fn t =>
+                                       case t of
+                                          Call {func, ...} =>
+                                             let
+                                                val {shouldInline, size, ...} =
+                                                   funcInfo func
+                                             in
+                                                if !shouldInline
+                                                   then !size
+                                                   else escape ()
+                                             end
+                                        | _ => Transfer.size t})
                                in
-                                  if check
-                                     then ()
-                                  else (shouldInline := true
-                                        ; size := n)
+                                  case res of
+                                     NONE => ()
+                                   | SOME n => (shouldInline := true
+                                                ; size := n)
                                end)
-                      else ()
+			 else ()
                    end
               | _ => ())
          val _ =
@@ -268,26 +273,25 @@ fun nonRecursive (Program.T {functions, ...}, {small: int, product: int}) =
          Function.mayInline function
          andalso not (!doesCallSelf)
          andalso let
-                    val (n, _) = 
-                       Function.size
-                       (0, NONE)
-                       (Exp.size,
-                        fn t as Call {func, ...} =>
-                              let
-                                val {shouldInline, size, ...} = funcInfo func
-                              in
-                                if !shouldInline
-                                   then !size
-                                else Transfer.size t
-                              end
-                         | t => Transfer.size t)
-                       function
-                 in
-                    if setSize
-                       then size := n
-                    else ()
-                    ; (!numCalls - 1) * (n - small) <= product
-                 end
+                     val n =
+                        Function.size
+                        (function,
+                         {sizeExp = Exp.size,
+                          sizeTransfer =
+                          fn t as Call {func, ...} => let
+                                                         val {shouldInline, size, ...} = funcInfo func
+                                                      in
+                                                         if !shouldInline
+                                                            then !size
+                                                            else Transfer.size t
+                                                      end
+                           | t => Transfer.size t})
+                  in
+                     if setSize
+                        then size := n
+                        else ()
+                           ; (!numCalls - 1) * (n - small) <= product
+                  end
       (* Build the call graph.  Do not include functions that we already know
        * will not be inlined.
        *)

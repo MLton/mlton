@@ -1048,7 +1048,7 @@ fun unrollLoop (oldHeader, tBlock, argi, loopBlocks, argLabels,
  *)
 fun shouldOptimize (iterCount, loopBlocks, depth) =
   let
-    val (loopSize', _) = Block.sizeV (0, NONE) Block.default loopBlocks
+    val loopSize' = Block.sizeV (loopBlocks, {sizeExp = Exp.size, sizeTransfer = Transfer.size})
     val loopSize = IntInf.fromInt loopSize'
     val unrollLimit = IntInf.fromInt (!Control.loopUnrollLimit)
     val () = logsi ("iterations * loop size < unroll factor = can total unroll",
@@ -1418,7 +1418,7 @@ fun optimizeFunction loadGlobal function =
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} =
         Function.dest function
-      val (fsize, _) = Function.size (0, NONE) Function.default function
+      val fsize = Function.size (function, {sizeExp = Exp.size, sizeTransfer = Transfer.size})
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start

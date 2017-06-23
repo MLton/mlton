@@ -64,7 +64,7 @@ signature CONTROL_FLAGS =
       val diagPasses: Regexp.Compiled.t list ref
 
       (* List of optimization passes to skip. *)
-      val dropPasses: Regexp.Compiled.t list ref
+      val doPasses: (Regexp.Compiled.t * bool) list ref
 
       structure Elaborate:
          sig

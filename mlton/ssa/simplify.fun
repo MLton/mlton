@@ -281,11 +281,14 @@ fun pass ({name, doit, midfix}, p) =
    in
       p
    end 
-fun maybePass ({name, doit, midfix}, p) =
-   if List.exists (!Control.dropPasses, fn re =>
-                   Regexp.Compiled.matchesAll (re, name))
-      then p
-   else pass ({name = name, doit = doit, midfix = midfix}, p)
+
+fun maybePass ({name, doit, execute, midfix}, p) =
+   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+      then pass ({name = name, doit = doit, midfix = midfix}, p)
+      else p
 
 fun simplify p =
    let
@@ -301,7 +304,7 @@ fun simplify p =
                  (n + 1)
                  (List.fold
                   (!ssaPasses, p, fn ({name, doit}, p) =>
-                   maybePass ({name = name, doit = doit, midfix = midfix}, p)))
+                   maybePass ({name = name, doit = doit, execute = true, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
    in
@@ -324,6 +327,7 @@ val simplify = fn p => let
                             else p
                          val p = maybePass ({name = "orderFunctions1",
                                              doit = S.orderFunctions,
+					     execute = true,
                                              midfix = ""}, p)
                          val _ = typeCheck p
                        in

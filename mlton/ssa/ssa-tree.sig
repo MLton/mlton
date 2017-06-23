@@ -196,8 +196,6 @@ signature SSA_TREE =
                                ty: Type.t,
                                var: Var.t option}
 
-            val size: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
-            val sizeV: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
             val clear: t -> unit (* clear the var *)
             val exp: t -> Exp.t
             val layout: t -> Layout.t
@@ -213,9 +211,7 @@ signature SSA_TREE =
                      statements: Statement.t vector,
                      transfer: Transfer.t}
 
-            val size: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool
-            val sizeV: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t vector -> int * bool
-            val default: (Exp.t -> int) * (Transfer.t -> int)
+	    val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
 	    val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit
             val label: t -> Label.t
@@ -256,9 +252,8 @@ signature SSA_TREE =
                             returns: Type.t vector option,
                             start: Label.t}
            
-	    val size: int * int option -> (Exp.t -> int) * (Transfer.t -> int) -> t -> int * bool	    
-	    val default: (Exp.t -> int) * (Transfer.t -> int)
-	    val functionGT: int option -> t -> bool
+	    val size: t * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
+	    val sizeMax: t * {max: int option, sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int option
 
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
              * for block b to yield v', then visiting b's descendents,

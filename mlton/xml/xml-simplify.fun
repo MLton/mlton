@@ -95,18 +95,19 @@ fun pass ({name, doit}, p) =
    in
       p
    end
-fun maybePass ({name, doit}, p) =
-   if List.exists (!Control.dropPasses, fn re =>
-                   Regexp.Compiled.matchesAll (re, name))
-      then p
-   else pass ({name = name, doit = doit}, p)
-
+fun maybePass ({name, doit, execute}, p) =
+   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+      then pass ({name = name, doit = doit}, p)
+      else p
 fun simplify p =
    let
       fun simplify' p =
          List.fold
          (!xmlPasses, p, fn ({name, doit}, p) =>
-          maybePass ({name = name, doit = doit}, p))
+          maybePass ({name = name, doit = doit, execute = true}, p))
       val p = simplify' p
    in
       p

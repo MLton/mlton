@@ -193,7 +193,7 @@ fun makeBranch (loopBody: Block.t vector,
 
 fun shouldOptimize (cases, default, loopBlocks, depth) =
   let
-    val (loopSize', _) = Block.sizeV (0, NONE) Block.default loopBlocks
+    val loopSize' = Block.sizeV (loopBlocks, {sizeExp = Exp.size, sizeTransfer = Transfer.size})
     val loopSize = IntInf.fromInt (loopSize')
     val branchCount =
       IntInf.fromInt (
@@ -350,7 +350,7 @@ fun optimizeFunction(function: Function.t): Function.t =
       val {graph, labelNode, nodeBlock} = Function.controlFlow function
       val {args, blocks, mayInline, name, raises, returns, start} =
         Function.dest function
-      val (fsize, _) = Function.size (0, NONE) Function.default function
+      val fsize = Function.size (function, {sizeExp = Exp.size, sizeTransfer = Transfer.size})
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start
