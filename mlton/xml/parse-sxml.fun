@@ -398,18 +398,21 @@ struct
    val program : Program.t StreamParser.t =
       let
          fun strip_unique s  = T.parse
-            (String.implode <$> T.manyCharsFailing(T.char #"_"),
+            (String.implode <$> T.manyCharsFailing(
+               T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
              Stream.fromList (String.explode s))
-         val resolveCon0 = makeNameResolver(Con.fromString o strip_unique)
+         val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
          fun resolveCon name = case name of
              "true" => Con.truee
            | "false" => Con.falsee
+           | "ref" => Con.reff
+           | "Overflow" => Con.overflow
            | _ => resolveCon0 name
-         val resolveTycon0 = makeNameResolver(Tycon.fromString o strip_unique)
+         val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
          fun resolveTycon "bool" = Tycon.bool (* special case *)
            | resolveTycon "exn" = Tycon.exn (* special case *)
            | resolveTycon name = resolveTycon0 name
-         val resolveVar = makeNameResolver(Var.fromString o strip_unique)
+         val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
          T.compose(skipComments,
          clOptions *>
