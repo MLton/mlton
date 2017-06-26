@@ -48,14 +48,19 @@ fun doFail([]) = raise Fail("Parse error")
   | doFail(msgs) = raise Fail ("Parse error: Expected one of \n" ^
        (String.concat(List.map(msgs, fn x => x ^ "\n\n"))))
 
-fun 'b parse(p : 'b t, s) : 'b = 
-   case p ("", indexStream({line=1, column=1}, s)) 
+fun doParse(p : 'b t, info, s) = 
+   case p (info, indexStream({line=1, column=1}, s)) 
    of Success (b, _) => b
     | Failure ms => doFail ms
     | FailCut ms => doFail ms
 
+fun 'b parse(p : 'b t, s) : 'b = 
+   doParse(p, "<input>", s)
+
 fun 'b parseWithFile(p : 'b t, f, s) : 'b =
-   parse(p, s)
+   doParse(p, f, s)
+
+
 
 fun pure a (s : state)  =
   Success (a, #2 s)
