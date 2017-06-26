@@ -1,3 +1,8 @@
+(* Copyright (C) 2017 Jason Carr.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
 
 functor StreamParser(S: STREAM_PARSER_STRUCTS):STREAM_PARSER = 
 struct
@@ -37,9 +42,6 @@ fun indexStream({line, column}, s) =
                   indexStream({line=line, column=column+1}, r)
             )
          )
-
-
-
 
 fun doFail([]) = raise Fail("Parse error")
   | doFail([msg]) = raise Fail ("Parse error: Expected " ^ msg)
@@ -199,7 +201,7 @@ fun optional t = SOME <$> t <|> pure NONE
 
 fun char c s = case Stream.force (#2 s)
    of NONE => Failure [String.fromChar c ^ " at end of file"] 
-    | SOME((h, n), r) => 
+    | SOME((h, _), r) =>
          if h = c 
             then Success (h, r)
             else fail (String.fromChar c) s

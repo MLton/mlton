@@ -1,3 +1,9 @@
+(* Copyright (C) 2017 Jason Carr.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 signature STREAM_PARSER_STRUCTS = 
     sig
       structure Stream: STREAM
@@ -26,12 +32,17 @@ signature STREAM_PARSER =
       val >>= : 'a t * ('a -> 'b t) -> 'b t
       val <*> : ('b -> 'c) t * 'b t -> 'c t
       val <$> : ('b -> 'c) * 'b t -> 'c t
+      (* replace the result of a parser witih a constant *)
       val <$ : 'c * 'b t -> 'c t
+      (* map over pairs of parsers, joining their results together *)
       val <$$> : ('b * 'c -> 'd) * ('b t * 'c t) -> 'd t
       val <$$$> : ('b * 'c * 'd -> 'e) * ('b t * 'c t * 'd t) -> 'e t
+      (* match both parsers, and discard the right or left result respectively *)
       val <* : 'b t * 'c t -> 'b t
       val *> : 'b t * 'c t -> 'c t
+      (* try both parsers, take the result of the first success *)
       val <|> : 'b t * 'b t -> 'b t 
+      (* try both parsers, fail if either fails, or take the last success *)
       val <&> : 'b t * 'b t -> 'b t 
       structure Ops : sig
          val >>= : 'a t * ('a -> 'b t) -> 'b t
