@@ -35,13 +35,14 @@ structure RemoveUnused2 = RemoveUnused2 (S)
 structure Zone = Zone (S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+	     execute: bool}
 
 val ssa2PassesDefault = 
-   {name = "deepFlatten", doit = DeepFlatten.transform2} ::
-   {name = "refFlatten", doit = RefFlatten.transform2} ::
-   {name = "removeUnused5", doit = RemoveUnused2.transform2} ::
-   {name = "zone", doit = Zone.transform2} ::
+   {name = "deepFlatten", doit = DeepFlatten.transform2, execute = true} ::
+   {name = "refFlatten", doit = RefFlatten.transform2, execute = true} ::
+   {name = "removeUnused5", doit = RemoveUnused2.transform2, execute = true} ::
+   {name = "zone", doit = Zone.transform2, execute = true} ::
    nil
 
 val ssa2PassesMinimal =
@@ -52,27 +53,28 @@ val ssa2Passes : pass list ref = ref ssa2PassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit): passGen =
+   fun mkSimplePassGen (name, doit, execute): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+			       execute = execute}
                     else NONE
       end
 
 
    val passGens = 
-      List.map([("addProfile", Profile2.addProfile),
-                ("deepFlatten", DeepFlatten.transform2),
-                ("dropProfile", Profile2.dropProfile),
-                ("refFlatten", RefFlatten.transform2),
-                ("removeUnused", RemoveUnused2.transform2), 
-                ("zone", Zone.transform2),
-                ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                ("orderFunctions",S.orderFunctions),
-                ("reverseFunctions",S.reverseFunctions),
-                ("shrink", S.shrink)],
+      List.map([("addProfile", Profile2.addProfile, true),
+                ("deepFlatten", DeepFlatten.transform2, true),
+                ("dropProfile", Profile2.dropProfile, true),
+                ("refFlatten", RefFlatten.transform2, true),
+                ("removeUnused", RemoveUnused2.transform2, true), 
+                ("zone", Zone.transform2, true),
+                ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
+                ("orderFunctions",S.orderFunctions, true),
+                ("reverseFunctions",S.reverseFunctions, true),
+                ("shrink", S.shrink, true)],
                mkSimplePassGen)
 in
    fun ssa2PassesSetCustom s =
@@ -105,7 +107,7 @@ val ssa2PassesSet = fn s =>
 val _ = List.push (Control.optimizationPasses,
                    {il = "ssa2", get = ssa2PassesGet, set = ssa2PassesSet})
 
-fun pass ({name, doit, midfix}, p) =
+fun pass ({name, doit, midfix, execute}, p) =
    let
       val _ =
          let open Control
@@ -127,11 +129,11 @@ fun pass ({name, doit, midfix}, p) =
       p
    end 
 fun maybePass ({name, doit, execute, midfix}, p) =
-   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
-      then pass ({name = name, doit = doit, midfix = midfix}, p)
+      then pass ({name = name, doit = doit, midfix = midfix, execute = execute}, p)
       else p
 
 fun simplify p =
@@ -147,7 +149,7 @@ fun simplify p =
             else simplify' 
                  (n + 1)
                  (List.fold
-                  (!ssa2Passes, p, fn ({name, doit}, p) =>
+                  (!ssa2Passes, p, fn ({name, doit, execute}, p) =>
                    maybePass ({name = name, doit = doit, execute = true, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
@@ -167,7 +169,8 @@ val simplify = fn p => let
                                andalso !Control.profileIL = Control.ProfileSSA2
                                then pass ({name = "addProfile2",
                                            doit = Profile2.addProfile,
-                                           midfix = ""}, p)
+                                           midfix = "",
+					   execute = true}, p)
                             else p
                          val p = maybePass ({name = "orderFunctions2",
                                              doit = S.orderFunctions,

@@ -121,14 +121,27 @@ signature SSA_TREE =
              | Tuple of Var.t vector
              | Var of Var.t
 
-	    val size: t -> int
             val equals: t * t -> bool
             val foreachVar: t * (Var.t -> unit) -> unit
             val hash: t -> Word.t
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
-            val unit: t
+            val size: t -> int
+	    val unit: t
+         end
+
+      structure Statement:
+         sig
+            datatype t = T of {exp: Exp.t,
+                               ty: Type.t,
+                               var: Var.t option}
+
+            val clear: t -> unit (* clear the var *)
+            val exp: t -> Exp.t
+            val layout: t -> Layout.t
+            val profile: ProfileExp.t -> t
+            val var: t -> Var.t option
          end
 
       structure Cases:
@@ -177,7 +190,6 @@ signature SSA_TREE =
                            prim: Type.t Prim.t,
                            return: Label.t} (* Must be nullary. *)
 
-            val size: t -> int
             val equals: t * t -> bool
             val foreachFunc : t * (Func.t -> unit) -> unit
             val foreachLabel: t * (Label.t -> unit) -> unit
@@ -188,19 +200,7 @@ signature SSA_TREE =
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
             val replaceVar: t * (Var.t -> Var.t) -> t
-         end
-
-      structure Statement:
-         sig
-            datatype t = T of {exp: Exp.t,
-                               ty: Type.t,
-                               var: Var.t option}
-
-            val clear: t -> unit (* clear the var *)
-            val exp: t -> Exp.t
-            val layout: t -> Layout.t
-            val profile: ProfileExp.t -> t
-            val var: t -> Var.t option
+	    val size: t -> int
          end
 
       structure Block:
@@ -211,11 +211,11 @@ signature SSA_TREE =
                      statements: Statement.t vector,
                      transfer: Transfer.t}
 
-	    val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
 	    val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit
             val label: t -> Label.t
             val layout: t -> Layout.t
+	    val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
             val statements: t -> Statement.t vector
             val transfer: t -> Transfer.t
          end
@@ -252,9 +252,6 @@ signature SSA_TREE =
                             returns: Type.t vector option,
                             start: Label.t}
            
-	    val size: t * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
-	    val sizeMax: t * {max: int option, sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int option
-
 	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
              * for block b to yield v', then visiting b's descendents,
              * then applying v' ().
@@ -278,7 +275,9 @@ signature SSA_TREE =
                       returns: Type.t vector option,
                       start: Label.t} -> t
             val profile: t * SourceInfo.t -> t
-         end
+            val size: t * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
+            val sizeMax: t * {max: int option, sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int option
+	 end
 
       structure Program:
          sig

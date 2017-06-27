@@ -331,15 +331,7 @@ structure Exp =
           | Select _ => 1 + 1
           | Tuple xs => 1 + Vector.length xs
           | Var _ => 0
-
-      fun size2 (size, max) (doExp, _) exp =
-         let
-            val size' = doExp exp
-            val size = size + size'
-         in
-            (size, Size.check (size, max))
-         end
-
+      
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)
@@ -710,14 +702,7 @@ structure Transfer =
           | Raise xs => 1 + Vector.length xs
           | Return xs => 1 + Vector.length xs
           | Runtime {args, ...} => 1 + Vector.length args
-      fun size2 (size, max) (_, doTransfer) transfer =
-         let
-            val size' = doTransfer transfer
-            val size = size + size'
-         in
-            (size, Size.check (size, max))
-         end
-
+      
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
             fun vars xs = Vector.foreach (xs, var)

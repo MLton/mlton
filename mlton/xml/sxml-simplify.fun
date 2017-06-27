@@ -24,31 +24,32 @@ fun polyvariance (hofo, rounds, small, product) p =
     fn () => Polyvariance.transform p)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+  	     execute: bool}
 
 val sxmlPassesDefault =
-   {name = "sxmlShrink1", doit = S.shrink} ::
-   {name = "implementSuffix", doit = ImplementSuffix.transform} ::
-   {name = "sxmlShrink2", doit = S.shrink} ::
-   {name = "implementExceptions", doit = ImplementExceptions.transform} ::
-   {name = "sxmlShrink3", doit = S.shrink} ::
-   (* {name = "uncurry", doit = Uncurry.transform} :: *)
-   (* {name = "sxmlShrink4", doit = S.shrink} :: *)
-   {name = "polyvariance", doit = Polyvariance.transform} ::
-   {name = "sxmlShrink4", doit = S.shrink} ::
+   {name = "sxmlShrink1", doit = S.shrink, execute = true} ::
+   {name = "implementSuffix", doit = ImplementSuffix.transform, execute = true} ::
+   {name = "sxmlShrink2", doit = S.shrink, execute = true} ::
+   {name = "implementExceptions", doit = ImplementExceptions.transform, execute = true} ::
+   {name = "sxmlShrink3", doit = S.shrink, execute = true} ::
+   (* {name = "uncurry", doit = Uncurry.transform, execute = true} :: *)
+   (* {name = "sxmlShrink4", doit = S.shrink, execute = true} :: *)
+   {name = "polyvariance", doit = Polyvariance.transform, execute = true} ::
+   {name = "sxmlShrink4", doit = S.shrink, execute = true} ::
    nil
 
 val sxmlPassesCpsTransform =
    sxmlPassesDefault @
-   {name = "cpsTransform", doit = CPSTransform.transform} ::
-   {name = "cpsSxmlShrink5", doit = S.shrink} ::
-   {name = "cpsPolyvariance", doit = Polyvariance.transform} ::
-   {name = "cpsSxmlShrink6", doit = S.shrink} ::
+   {name = "cpsTransform", doit = CPSTransform.transform, execute = true} ::
+   {name = "cpsSxmlShrink5", doit = S.shrink, execute = true} ::
+   {name = "cpsPolyvariance", doit = Polyvariance.transform, execute = true} ::
+   {name = "cpsSxmlShrink6", doit = S.shrink, execute = true} ::
    nil
 
 val sxmlPassesMinimal =
-   {name = "implementSuffix", doit = ImplementSuffix.transform} ::
-   {name = "implementExceptions", doit = ImplementExceptions.transform} ::
+   {name = "implementSuffix", doit = ImplementSuffix.transform, execute = true} ::
+   {name = "implementExceptions", doit = ImplementExceptions.transform, execute = true} ::
    nil
 
 val sxmlPasses : pass list ref = ref sxmlPassesDefault
@@ -56,12 +57,13 @@ val sxmlPasses : pass list ref = ref sxmlPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit): passGen =
+   fun mkSimplePassGen (name, doit, execute): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = name ^ "#" ^ 
                                (Int.toString (Counter.next count)),
-                               doit = doit}
+                               doit = doit,
+			       execute = execute}
                     else NONE
       end
 
@@ -96,7 +98,8 @@ local
                                             Int.toString small, ",",
                                             Int.toString product, ")#",
                                             Int.toString (Counter.next count)],
-                             doit = polyvariance (hofo, rounds, small, product)}
+                             doit = polyvariance (hofo, rounds, small, product),
+			     execute = true}
                     val s = String.dropPrefix (s, String.size "polyvariance")
                  in
                     case nums s of
@@ -110,9 +113,9 @@ local
 
    val passGens =
       polyvariancePassGen ::
-      (List.map([("sxmlShrink", S.shrink),
-                 ("implementExceptions", ImplementExceptions.transform), 
-                 ("implementSuffix", ImplementSuffix.transform)],
+      (List.map([("sxmlShrink", S.shrink, true),
+                 ("implementExceptions", ImplementExceptions.transform, true), 
+                 ("implementSuffix", ImplementSuffix.transform, true)],
                 mkSimplePassGen))
 in
    fun sxmlPassesSetCustom s =
@@ -169,7 +172,7 @@ fun pass ({name, doit}, p) =
       p
    end
 fun maybePass ({name, doit, execute}, p) =
-   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
@@ -180,7 +183,7 @@ fun simplify p =
    let
       fun simplify' p =
          List.fold
-         (!sxmlPasses, p, fn ({name, doit}, p) =>
+         (!sxmlPasses, p, fn ({name, doit, execute}, p) =>
           maybePass ({name = name, doit = doit, execute = true}, p))
       val p = simplify' p
    in

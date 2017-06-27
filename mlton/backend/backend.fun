@@ -183,8 +183,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             fun pass ({name, doit}, p) =
                pass' ({name = name, doit = doit}, fn p => p, p)
             
-	    fun maybePass ({name, doit, execute, midfix}, p) =
-   	       if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+	    fun maybePass ({name, doit, execute}, p) =
+   	       if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
@@ -193,7 +193,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
 
 
 	    val p = maybePass ({name = "rssaShrink1", 
-                                doit = Program.shrink, execute = true, midfix = ""}, p)
+                                doit = Program.shrink, execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
@@ -201,14 +201,14 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink, execute = true, midfix = ""}, p)
+                                doit = Program.shrink, execute = true}, p)
             val () = Program.checkHandlers p
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},
                       fn (p,_) => p, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions, execute = true, midfix = ""}, p)
+                                doit = Program.orderFunctions, execute = true}, p)
          in
             (p, makeProfileInfo)
          end

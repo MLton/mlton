@@ -37,77 +37,78 @@ structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+	     execute: bool}
 
 val ssaPassesDefault =
-   {name = "removeUnused1", doit = RemoveUnused.transform} ::
-   {name = "introduceLoops1", doit = IntroduceLoops.transform} ::
-   {name = "loopInvariant1", doit = LoopInvariant.transform} ::
+   {name = "removeUnused1", doit = RemoveUnused.transform, execute = true} ::
+   {name = "introduceLoops1", doit = IntroduceLoops.transform, execute = true} ::
+   {name = "loopInvariant1", doit = LoopInvariant.transform, execute = true} ::
    {name = "inlineLeaf1", doit = fn p => 
-    Inline.inlineLeaf (p, !Control.inlineLeafA)} ::
+    Inline.inlineLeaf (p, !Control.inlineLeafA), execute = true} ::
    {name = "inlineLeaf2", doit = fn p => 
-    Inline.inlineLeaf (p, !Control.inlineLeafB)} ::
-   {name = "contify1", doit = Contify.transform} ::
-   {name = "localFlatten1", doit = LocalFlatten.transform} ::
-   {name = "constantPropagation", doit = ConstantPropagation.transform} ::
+    Inline.inlineLeaf (p, !Control.inlineLeafB), execute = true} ::
+   {name = "contify1", doit = Contify.transform, execute = true} ::
+   {name = "localFlatten1", doit = LocalFlatten.transform, execute = true} ::
+   {name = "constantPropagation", doit = ConstantPropagation.transform, execute = true} ::
    (* useless should run 
     *   - after constant propagation because constant propagation makes
     *     slots of tuples that are constant useless
     *)
-   {name = "useless", doit = Useless.transform} ::
+   {name = "useless", doit = Useless.transform, execute = true} ::
    (* loopUnroll should run
     *   - after constants have been globalized
     *)
-   {name = "loopUnroll1", doit = LoopUnroll.transform} ::
-   {name = "removeUnused2", doit = RemoveUnused.transform} ::
-   {name = "simplifyTypes", doit = SimplifyTypes.transform} ::
+   {name = "loopUnroll1", doit = LoopUnroll.transform, execute = true} ::
+   {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
+   {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
     *   - before inlining so that equality functions can be inlined
     *)
-   {name = "polyEqual", doit = PolyEqual.transform} ::
+   {name = "polyEqual", doit = PolyEqual.transform, execute = true} ::
    (* polyHash should run
     *   - after types are simplified
     *   - before inlining so that hash functions can be inlined
     *)
-   {name = "polyHash", doit = PolyHash.transform} ::
-   {name = "introduceLoops2", doit = IntroduceLoops.transform} ::
-   {name = "loopInvariant2", doit = LoopInvariant.transform} ::
+   {name = "polyHash", doit = PolyHash.transform, execute = true} ::
+   {name = "introduceLoops2", doit = IntroduceLoops.transform, execute = true} ::
+   {name = "loopInvariant2", doit = LoopInvariant.transform, execute = true} ::
    (* loopUnswitch should run
     *   - after loop invariant code motion so invariant conditions are obvious 
     *   - before a knownCase pass to cleanup after unswitching
     *)
-   {name = "loopUnswitch1", doit = LoopUnswitch.transform} ::
-   {name = "knownCase1", doit = KnownCase.transform} ::
-   {name = "contify2", doit = Contify.transform} ::
+   {name = "loopUnswitch1", doit = LoopUnswitch.transform, execute = true} ::
+   {name = "knownCase1", doit = KnownCase.transform, execute = true} ::
+   {name = "contify2", doit = Contify.transform, execute = true} ::
    {name = "inlineNonRecursive", doit = fn p =>
-    Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
-   {name = "localFlatten2", doit = LocalFlatten.transform} ::
-   {name = "removeUnused3", doit = RemoveUnused.transform} ::
-   {name = "contify3", doit = Contify.transform} ::
-   {name = "introduceLoops3", doit = IntroduceLoops.transform} ::
-   {name = "loopInvariant3", doit = LoopInvariant.transform} ::
-   {name = "localRef", doit = LocalRef.transform} ::
-   {name = "flatten", doit = Flatten.transform} ::
-   {name = "localFlatten3", doit = LocalFlatten.transform} ::
-   {name = "combineConversions", doit = CombineConversions.transform} ::
-   {name = "commonArg", doit = CommonArg.transform} ::
-   {name = "commonSubexp1", doit = CommonSubexp.transform} ::
-   {name = "commonBlock", doit = CommonBlock.transform} ::
-   {name = "redundantTests", doit = RedundantTests.transform} ::
-   {name = "redundant", doit = Redundant.transform} ::
-   {name = "loopUnswitch2", doit = LoopUnswitch.transform} ::
-   {name = "knownCase2", doit = KnownCase.transform} ::
-   {name = "loopUnroll2", doit = LoopUnroll.transform} ::
-   {name = "commonSubexp2", doit = CommonSubexp.transform} ::
-   {name = "removeUnused4", doit = RemoveUnused.transform} ::
+    Inline.inlineNonRecursive (p, !Control.inlineNonRec), execute = true} ::
+   {name = "localFlatten2", doit = LocalFlatten.transform, execute = true} ::
+   {name = "removeUnused3", doit = RemoveUnused.transform, execute = true} ::
+   {name = "contify3", doit = Contify.transform, execute = true} ::
+   {name = "introduceLoops3", doit = IntroduceLoops.transform, execute = true} ::
+   {name = "loopInvariant3", doit = LoopInvariant.transform, execute = true} ::
+   {name = "localRef", doit = LocalRef.transform, execute = true} ::
+   {name = "flatten", doit = Flatten.transform, execute = true} ::
+   {name = "localFlatten3", doit = LocalFlatten.transform, execute = true} ::
+   {name = "combineConversions", doit = CombineConversions.transform, execute = true} ::
+   {name = "commonArg", doit = CommonArg.transform, execute = true} ::
+   {name = "commonSubexp1", doit = CommonSubexp.transform, execute = true} ::
+   {name = "commonBlock", doit = CommonBlock.transform, execute = true} ::
+   {name = "redundantTests", doit = RedundantTests.transform, execute = true} ::
+   {name = "redundant", doit = Redundant.transform, execute = true} ::
+   {name = "loopUnswitch2", doit = LoopUnswitch.transform, execute = true} ::
+   {name = "knownCase2", doit = KnownCase.transform, execute = true} ::
+   {name = "loopUnroll2", doit = LoopUnroll.transform, execute = true} ::
+   {name = "commonSubexp2", doit = CommonSubexp.transform, execute = true} ::
+   {name = "removeUnused4", doit = RemoveUnused.transform, execute = true} ::
    nil
 
 val ssaPassesMinimal =
    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
-   {name = "polyEqual", doit = PolyEqual.transform} ::
+   {name = "polyEqual", doit = PolyEqual.transform, execute = true} ::
    (* polyHash cannot be omitted.  It implements MLton_hash. *)
-   {name = "polyHash", doit = PolyHash.transform} ::
+   {name = "polyHash", doit = PolyHash.transform, execute = true} ::
    nil
 
 val ssaPasses : pass list ref = ref ssaPassesDefault
@@ -115,12 +116,13 @@ val ssaPasses : pass list ref = ref ssaPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit): passGen =
+   fun mkSimplePassGen (name, doit, execute): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+			       execute = execute}
                     else NONE
       end
 
@@ -168,7 +170,8 @@ local
                                             Int.toString (Counter.next count)],
                              doit = (fn p => 
                                      Inline.inlineNonRecursive 
-                                     (p, {small = small, product = product}))}
+                                     (p, {small = small, product = product})),
+			     execute = true}
                     val s = String.dropPrefix (s, String.size "inlineNonRecursive")
                  in
                     case nums s of
@@ -186,7 +189,8 @@ local
                                             Int.toString (Counter.next count)],
                              doit = (fn p => 
                                      Inline.inlineLeaf
-                                     (p, {loops = loops, repeat = repeat, size = size}))}
+                                     (p, {loops = loops, repeat = repeat, size = size})),
+			     execute = true}
                     val s = String.dropPrefix (s, String.size "inlineLeaf")
                  in
                     case nums s of
@@ -199,35 +203,35 @@ local
 
    val passGens = 
       inlinePassGen ::
-      (List.map([("addProfile", Profile.addProfile),
-                 ("combineConversions",  CombineConversions.transform),
-                 ("commonArg", CommonArg.transform),
-                 ("commonBlock", CommonBlock.transform),
-                 ("commonSubexp", CommonSubexp.transform),
-                 ("constantPropagation", ConstantPropagation.transform),
-                 ("contify", Contify.transform),
-                 ("dropProfile", Profile.dropProfile),
-                 ("flatten", Flatten.transform),
-                 ("introduceLoops", IntroduceLoops.transform),
-                 ("knownCase", KnownCase.transform),
-                 ("localFlatten", LocalFlatten.transform),
-                 ("localRef", LocalRef.transform),
-                 ("loopInvariant", LoopInvariant.transform),
-                 ("loopUnroll", LoopUnroll.transform),
-                 ("loopUnswitch", LoopUnswitch.transform),
-                 ("polyEqual", PolyEqual.transform),
-                 ("polyHash", PolyHash.transform),
-                 ("redundant", Redundant.transform),
-                 ("redundantTests", RedundantTests.transform),
-                 ("removeUnused", RemoveUnused.transform),
-                 ("simplifyTypes", SimplifyTypes.transform),
-                 ("useless", Useless.transform),
+      (List.map([("addProfile", Profile.addProfile, true),
+                 ("combineConversions",  CombineConversions.transform, true),
+                 ("commonArg", CommonArg.transform, true),
+                 ("commonBlock", CommonBlock.transform, true ),
+                 ("commonSubexp", CommonSubexp.transform, true),
+                 ("constantPropagation", ConstantPropagation.transform, true),
+                 ("contify", Contify.transform, true),
+                 ("dropProfile", Profile.dropProfile, true),
+                 ("flatten", Flatten.transform, true),
+                 ("introduceLoops", IntroduceLoops.transform, true),
+                 ("knownCase", KnownCase.transform, true),
+                 ("localFlatten", LocalFlatten.transform, true),
+                 ("localRef", LocalRef.transform, true),
+                 ("loopInvariant", LoopInvariant.transform, true),
+		 ("loopUnroll", LoopUnroll.transform, true),
+                 ("loopUnswitch", LoopUnswitch.transform, true),
+                 ("polyEqual", PolyEqual.transform, true),
+                 ("polyHash", PolyHash.transform, true),
+                 ("redundant", Redundant.transform, true),
+                 ("redundantTests", RedundantTests.transform, true),
+                 ("removeUnused", RemoveUnused.transform, true),
+                 ("simplifyTypes", SimplifyTypes.transform, true),
+                 ("useless", Useless.transform, true),
                  ("breakCriticalEdges",fn p => 
-                  S.breakCriticalEdges (p, {codeMotion = true})),
-                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                 ("orderFunctions",S.orderFunctions),
-                 ("reverseFunctions",S.reverseFunctions),
-                 ("shrink", S.shrink)], 
+                  S.breakCriticalEdges (p, {codeMotion = true}), true),
+                 ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
+                 ("orderFunctions",S.orderFunctions, true),
+                 ("reverseFunctions",S.reverseFunctions, true),
+                 ("shrink", S.shrink, true)], 
                 mkSimplePassGen))
 in
    fun ssaPassesSetCustom s =
@@ -283,12 +287,12 @@ fun pass ({name, doit, midfix}, p) =
    end 
 
 fun maybePass ({name, doit, execute, midfix}, p) =
-   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
       then pass ({name = name, doit = doit, midfix = midfix}, p)
-      else p
+      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 
 fun simplify p =
    let
@@ -303,8 +307,8 @@ fun simplify p =
             else simplify' 
                  (n + 1)
                  (List.fold
-                  (!ssaPasses, p, fn ({name, doit}, p) =>
-                   maybePass ({name = name, doit = doit, execute = true, midfix = midfix}, p)))
+                  (!ssaPasses, p, fn ({name, doit, execute}, p) =>
+                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
    in

@@ -15,11 +15,12 @@ structure SimplifyTypes = SimplifyTypes (structure Input = S
                                          structure Output = S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+	     execute: bool}
 
 val xmlPassesDefault =
-   {name = "xmlShrink", doit = S.shrink} ::
-   {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes} ::
+   {name = "xmlShrink", doit = S.shrink, execute = true} ::
+   {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes, execute = true} ::
    nil
 
 val xmlPassesMinimal =
@@ -30,18 +31,19 @@ val xmlPasses : pass list ref = ref xmlPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit): passGen =
+   fun mkSimplePassGen (name, doit, execute): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+			       execute = execute}
                     else NONE
       end
 
    val passGens =
-      (List.map([("xmlShrink", S.shrink),
-                 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
+      (List.map([("xmlShrink", S.shrink, true),
+                 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes, true)],
                 mkSimplePassGen))
 in
    fun xmlPassesSetCustom s =
@@ -96,7 +98,7 @@ fun pass ({name, doit}, p) =
       p
    end
 fun maybePass ({name, doit, execute}, p) =
-   if List.foldr (!Control.doPasses, execute, fn ((re, new), old) =>
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
@@ -106,7 +108,7 @@ fun simplify p =
    let
       fun simplify' p =
          List.fold
-         (!xmlPasses, p, fn ({name, doit}, p) =>
+         (!xmlPasses, p, fn ({name, doit, execute}, p) =>
           maybePass ({name = name, doit = doit, execute = true}, p))
       val p = simplify' p
    in
