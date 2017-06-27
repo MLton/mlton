@@ -248,12 +248,39 @@ fun layoutFormal (c: t, args: (Layout.t * ({isChar: bool}* BindingStrength.t)) v
          case Vector.length args of
             0 => if equals (c, tuple)
                     then (({isChar = false}, str "unit"))
-                    else ({isChar = equals (c, defaultChar ())}, layout c)
+                 else
+                    ({isChar = equals (c, defaultChar ())},
+                     (* always use canonical names, even if synonyms exist *)
+                     if equals (c, real RealSize.R32)
+                        then str "real32"
+                     else if equals(c, real RealSize.R64)
+                        then str "real64"
+                     else if equals(c, word WordSize.word8)
+                        then str "word8"
+                     else if equals(c, word WordSize.word16)
+                        then str "word16"
+                     else if equals(c, word WordSize.word32)
+                        then str "word32"
+                     else if equals(c, word WordSize.word64)
+                        then str "word64"
+                     else if equals(c, intInf)
+                        then str "intInf"
+                     else if equals(c, bool)
+                        then str "bool"
+                     else layout c)
           | 1 => ({isChar = false},
                    seq [(Layout.paren o #1) (Vector.sub (args, 0)),
                    str " ", 
                       if equals (c, tuple)
                          then str "tuple"  
+                      else if equals(c, vector)
+                         then str "vector"
+                      else if equals(c, array)
+                         then str "array"
+                      else if equals(c, reff)
+                         then str "ref"
+                      else if equals(c, weak)
+                         then str "weak"
                          else layout c])
           | _ => ({isChar = false},
                    seq [Layout.tuple
