@@ -193,9 +193,9 @@ struct
    fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
    fun parseReal sz = possibly (makeReal <$$> (String.implode <$>
          List.concat <$> T.each
-         [T.many (T.sat(T.next, Char.isDigit)),
+         [T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")),
           T.char #"." *> T.pure [#"."] <|> T.pure [],
-          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"E" orelsec = #"~"))],
+          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
          T.pure sz))
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
