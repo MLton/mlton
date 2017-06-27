@@ -187,7 +187,7 @@ struct
    val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
          (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit)))
+         T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")))
    val parseInt = possibly ((Int.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
    fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
@@ -195,7 +195,7 @@ struct
          List.concat <$> T.each
          [T.many (T.sat(T.next, Char.isDigit)),
           T.char #"." *> T.pure [#"."] <|> T.pure [],
-          T.many (T.sat(T.next, Char.isDigit))],
+          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"E" orelsec = #"~"))],
          T.pure sz))
    val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
@@ -204,7 +204,9 @@ struct
       if Tycon.isWordX typ
          then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
          else T.fail "Invalid word"
-
+   val parseWord8Vector = WordXVector.fromVector <$$>
+        (T.pure {elementSize=WordSize.word8},
+         T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
    fun exp resolveCon resolveTycon resolveVar = 
       let
@@ -228,13 +230,20 @@ struct
          val conAppExp = token "new" *> T.cut (conApp varExp)
          fun constExp typ = 
             if Tycon.isWordX typ then
-               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.fail "word"
+               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
             else if Tycon.isRealX typ then
-               Const.Real <$> parseReal (Tycon.deRealX typ)
+               Const.Real <$> parseReal (Tycon.deRealX typ) <|> T.failCut "real"
             else if Tycon.isIntX typ then
-               Const.IntInf <$> parseIntInf <|> T.fail "integer"
+               Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+            else if Tycon.equals(typ, Tycon.vector) then
+               (* assume it's a word8 vector *)
+               T.any
+               [Const.string <$> parseString,
+                Const.wordVector <$> parseWord8Vector,
+                T.failCut "string constant"]
+
             else
-               Const.string <$> parseString
+               T.fail "constant"
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
          val raiseExp = token "raise" *> T.cut (makeRaise <$$> (T.optional (token "extend"), varExp <* spaces))
@@ -329,7 +338,7 @@ struct
          fun makePat(con, exp) = T.pure (Pat.T con, exp)
          fun makeCaseWord size (int, exp) = case size of
              (* this is repetetive, but it's a bit awkward to rework around the fail *)
-            8 => T.pure((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
+            8 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
           | 16 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
           | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word32)), exp)
           | 64 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
@@ -350,6 +359,7 @@ struct
             [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
              PrimExp.Lambda <$> lambdaExp (),
+             (* const must come before select due to vector constants *)
              PrimExp.Const <$> constExp (Type.tycon typ),
              PrimExp.Handle <$> handleExp (),
              PrimExp.PrimApp <$> primAppExp,
