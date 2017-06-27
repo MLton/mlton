@@ -239,7 +239,7 @@ struct
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
          val raiseExp = token "raise" *> T.cut (makeRaise <$$> (T.optional (token "extend"), varExp <* spaces))
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
-         fun makeLambda((var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=false}
+         fun makeLambda(mayInline, (var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=mayInline}
 
          val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                     CFunction.Convention.Stdcall <$ token "stdcall"
@@ -366,8 +366,9 @@ struct
              token "handle" *> T.cut typedvar,
              T.cut (token "=>" *> T.delay exp' <* spaces)
              )
-         and lambdaExp () = token "fn" *> T.cut(makeLambda <$$>
-            (typedvar,
+         and lambdaExp () = token "fn" *> T.cut(makeLambda <$$$>
+            (false <$ (token "noinline") <|> T.pure true,
+             typedvar,
              token "=>" *> T.delay exp' <* spaces))
          and casesExp () = T.string "case" *> T.cut
             (T.optional parseInt <* T.many1 space >>= (fn size =>

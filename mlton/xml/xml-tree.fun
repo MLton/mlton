@@ -289,8 +289,10 @@ in
             seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
        | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
        | Var x => VarExp.layout x
-   and layoutLambda (Lam {arg, argType, body, ...}) =
-      align [seq [str "fn ", maybeConstrain (Var.layout arg, argType),
+   and layoutLambda (Lam {arg, argType, body, mayInline, ...}) =
+      align [seq [str "fn ",
+                  str (if not mayInline then "noinline " else ""),
+                  maybeConstrain (Var.layout arg, argType),
                   str " => "],
              layoutExp body]
 
