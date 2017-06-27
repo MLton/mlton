@@ -61,10 +61,10 @@ struct
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$>
-      (T.char #"(" *> T.sepBy(p, T.char #"," *> spaces) <* T.char #")")
+      (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
    fun vectorOf p = Vector.fromList <$>
-      (T.char #"[" *> T.sepBy(p, T.char #"," *> spaces) <* T.char #"]")
+      (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
 
    fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
    val doneRecord = doneRecord' ()

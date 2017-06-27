@@ -287,7 +287,15 @@ in
                  VarExp.layout exn]
        | Select {offset, tuple} =>
             seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
-       | Tuple xs => tuple (Vector.toListMap (xs, VarExp.layout))
+       | Tuple xs => tuple (Vector.toList
+            (Vector.mapi(xs, fn (i, x) => seq
+            (* very specific case to prevent open comments *)
+                [str (if i = 0 andalso
+                        (case x of (VarExp.T {var, ...}) =>
+                           String.sub(Var.toString var, 0) = #"*")
+                      then " "
+                      else ""),
+                 VarExp.layout x])))
        | Var x => VarExp.layout x
    and layoutLambda (Lam {arg, argType, body, mayInline, ...}) =
       align [seq [str "fn ",
