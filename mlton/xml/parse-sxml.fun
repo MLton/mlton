@@ -309,8 +309,9 @@ struct
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
             (parseInt <* spaces,
              varExp))
-         val profileExp = ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
-                          ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info )
+         val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
+                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
+            <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
          fun makeConCases var (cons, def) = 
             {test=var, 
              cases=Cases.Con cons, 
