@@ -383,13 +383,13 @@ fun makeOptions {usage} =
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, false))))
        end,
-       (Expert, "drop-pass", " <pass>", "omit optimization pass",
+       (Expert, "disable-pass", " <pass>", "disable optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
                      SOME (re,_) => let val re = Regexp.compileDFA re
-                                    in List.push (dropPasses, re)
+                                    in List.push (executePasses, (re, false))
                                     end
-                   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
+                   | NONE => usage (concat ["invalid -disable-pass flag: ", s])))),
        let
           val flag = "enable-ann"
        in
@@ -399,6 +399,13 @@ fun makeOptions {usage} =
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, true))))
        end,
+       (Expert, "enable-pass", " <pass>", "enable optimization pass",
+        SpaceString
+        (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (executePasses, (re, true))
+                                    end
+                   | NONE => usage (concat ["invalid -enable-pass flag: ", s])))),
        (Expert, "error-threshhold", " <n>", "error threshhold (20)",
         intRef errorThreshhold),
        (Expert, "emit-main", " {true|false}", "emit main() startup function",
@@ -563,6 +570,18 @@ fun makeOptions {usage} =
          if i >= 1
             then loopPasses := i
             else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
+       (Expert, "loop-unroll-limit", " <n>", "limit code growth by loop unrolling",
+        Int
+        (fn i =>
+         if i >= 0
+            then loopUnrollLimit := i
+            else usage (concat ["invalid -loop-unroll-limit: ", Int.toString i]))),
+       (Expert, "loop-unswitch-limit", " <n>", "limit code growth by loop unswitching",
+        Int
+        (fn i =>
+          if i >= 0
+            then loopUnswitchLimit := i
+            else usage (concat ["invalid -loop-unswitch-limit: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
         boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",

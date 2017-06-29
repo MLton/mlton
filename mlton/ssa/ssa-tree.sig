@@ -127,6 +127,7 @@ signature SSA_TREE =
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
+            val size: t -> int
             val unit: t
          end
 
@@ -180,7 +181,7 @@ signature SSA_TREE =
                         test: Var.t}
              | Goto of {args: Var.t vector,
                         dst: Label.t}
-             (* Raise implicitly raises to the caller.  
+             (* Raise implicitly raises to the caller.
               * I.E. the local handler stack must be empty.
               *)
              | Raise of Var.t vector
@@ -194,11 +195,12 @@ signature SSA_TREE =
             val foreachLabel: t * (Label.t -> unit) -> unit
             val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
             val foreachVar: t * (Var.t -> unit) -> unit
-            val hash: t -> Word.t 
+            val hash: t -> Word.t
             val layout: t -> Layout.t
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
             val replaceVar: t * (Var.t -> Var.t) -> t
+            val size: t -> int
          end
 
       structure Block:
@@ -213,6 +215,7 @@ signature SSA_TREE =
             val clear: t -> unit
             val label: t -> Label.t
             val layout: t -> Layout.t
+            val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
             val statements: t -> Statement.t vector
             val transfer: t -> Transfer.t
          end
@@ -271,6 +274,8 @@ signature SSA_TREE =
                       returns: Type.t vector option,
                       start: Label.t} -> t
             val profile: t * SourceInfo.t -> t
+            val size: t * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
+            val sizeMax: t * {max: int option, sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int option
          end
 
       structure Program:
