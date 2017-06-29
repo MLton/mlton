@@ -182,17 +182,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                end 
             fun pass ({name, doit}, p) =
                pass' ({name = name, doit = doit}, fn p => p, p)
-            
-	    fun maybePass ({name, doit, execute}, p) =
-   	       if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+
+            fun maybePass ({name, doit, execute}, p) =
+               if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
-      	       then pass ({name = name, doit = doit}, p)
-      	       else p
+               then pass ({name = name, doit = doit}, p)
+               else p
 
-
-	    val p = maybePass ({name = "rssaShrink1", 
+            val p = maybePass ({name = "rssaShrink1",
                                 doit = Program.shrink, execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 
                            doit = LimitCheck.transform}, p)

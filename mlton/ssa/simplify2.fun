@@ -36,7 +36,7 @@ structure Zone = Zone (S)
 
 type pass = {name: string,
              doit: Program.t -> Program.t,
-	     execute: bool}
+             execute: bool}
 
 val ssa2PassesDefault = 
    {name = "deepFlatten", doit = DeepFlatten.transform2, execute = true} ::
@@ -59,7 +59,7 @@ local
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-			       execute = execute}
+                               execute = execute}
                     else NONE
       end
 
@@ -69,7 +69,7 @@ local
                 ("deepFlatten", DeepFlatten.transform2, true),
                 ("dropProfile", Profile2.dropProfile, true),
                 ("refFlatten", RefFlatten.transform2, true),
-                ("removeUnused", RemoveUnused2.transform2, true), 
+                ("removeUnused", RemoveUnused2.transform2, true),
                 ("zone", Zone.transform2, true),
                 ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
                 ("orderFunctions",S.orderFunctions, true),
@@ -173,7 +173,7 @@ val simplify = fn p => let
                             else p
                          val p = maybePass ({name = "orderFunctions2",
                                              doit = S.orderFunctions,
-					     execute = true,
+                                             execute = true,
                                              midfix = ""}, p)
                          val _ = typeCheck p
                        in

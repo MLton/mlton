@@ -16,7 +16,7 @@ structure SimplifyTypes = SimplifyTypes (structure Input = S
 
 type pass = {name: string,
              doit: Program.t -> Program.t,
-	     execute: bool}
+             execute: bool}
 
 val xmlPassesDefault =
    {name = "xmlShrink", doit = S.shrink, execute = true} ::
@@ -37,7 +37,7 @@ local
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-			       execute = execute}
+                               execute = execute}
                     else NONE
       end
 

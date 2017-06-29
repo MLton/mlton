@@ -119,8 +119,8 @@ val executePasses =
             default = [],
             toString = List.toString
                        (Layout.toString o
-			(Layout.tuple2
-			  (Regexp.Compiled.layout, Bool.layout)))}
+                        (Layout.tuple2
+                         (Regexp.Compiled.layout, Bool.layout)))}
 
 structure Elaborate =
    struct

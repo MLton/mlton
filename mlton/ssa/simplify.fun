@@ -38,7 +38,7 @@ structure Useless = Useless (S)
 
 type pass = {name: string,
              doit: Program.t -> Program.t,
-	     execute: bool}
+             execute: bool}
 
 val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.transform, execute = true} ::
@@ -75,7 +75,7 @@ val ssaPassesDefault =
    {name = "introduceLoops2", doit = IntroduceLoops.transform, execute = true} ::
    {name = "loopInvariant2", doit = LoopInvariant.transform, execute = true} ::
    (* loopUnswitch should run
-    *   - after loop invariant code motion so invariant conditions are obvious 
+    *   - after loop invariant code motion so invariant conditions are obvious
     *   - before a knownCase pass to cleanup after unswitching
     *)
    {name = "loopUnswitch1", doit = LoopUnswitch.transform, execute = true} ::
@@ -122,7 +122,7 @@ local
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-			       execute = execute}
+                               execute = execute}
                     else NONE
       end
 
@@ -171,7 +171,7 @@ local
                              doit = (fn p => 
                                      Inline.inlineNonRecursive 
                                      (p, {small = small, product = product})),
-			     execute = true}
+                             execute = true}
                     val s = String.dropPrefix (s, String.size "inlineNonRecursive")
                  in
                     case nums s of
@@ -190,7 +190,7 @@ local
                              doit = (fn p => 
                                      Inline.inlineLeaf
                                      (p, {loops = loops, repeat = repeat, size = size})),
-			     execute = true}
+                             execute = true}
                     val s = String.dropPrefix (s, String.size "inlineLeaf")
                  in
                     case nums s of
@@ -217,7 +217,7 @@ local
                  ("localFlatten", LocalFlatten.transform, true),
                  ("localRef", LocalRef.transform, true),
                  ("loopInvariant", LoopInvariant.transform, true),
-		 ("loopUnroll", LoopUnroll.transform, true),
+                 ("loopUnroll", LoopUnroll.transform, true),
                  ("loopUnswitch", LoopUnswitch.transform, true),
                  ("polyEqual", PolyEqual.transform, true),
                  ("polyHash", PolyHash.transform, true),
@@ -231,7 +231,7 @@ local
                  ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
                  ("orderFunctions",S.orderFunctions, true),
                  ("reverseFunctions",S.reverseFunctions, true),
-                 ("shrink", S.shrink, true)], 
+                 ("shrink", S.shrink, true)],
                 mkSimplePassGen))
 in
    fun ssaPassesSetCustom s =
@@ -331,7 +331,7 @@ val simplify = fn p => let
                             else p
                          val p = maybePass ({name = "orderFunctions1",
                                              doit = S.orderFunctions,
-					     execute = true,
+                                             execute = true,
                                              midfix = ""}, p)
                          val _ = typeCheck p
                        in

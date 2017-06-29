@@ -25,7 +25,7 @@ fun polyvariance (hofo, rounds, small, product) p =
 
 type pass = {name: string,
              doit: Program.t -> Program.t,
-  	     execute: bool}
+             execute: bool}
 
 val sxmlPassesDefault =
    {name = "sxmlShrink1", doit = S.shrink, execute = true} ::
@@ -63,7 +63,7 @@ local
                     then SOME {name = name ^ "#" ^ 
                                (Int.toString (Counter.next count)),
                                doit = doit,
-			       execute = execute}
+                               execute = execute}
                     else NONE
       end
 
@@ -99,7 +99,7 @@ local
                                             Int.toString product, ")#",
                                             Int.toString (Counter.next count)],
                              doit = polyvariance (hofo, rounds, small, product),
-			     execute = true}
+                             execute = true}
                     val s = String.dropPrefix (s, String.size "polyvariance")
                  in
                     case nums s of
@@ -114,7 +114,7 @@ local
    val passGens =
       polyvariancePassGen ::
       (List.map([("sxmlShrink", S.shrink, true),
-                 ("implementExceptions", ImplementExceptions.transform, true), 
+                 ("implementExceptions", ImplementExceptions.transform, true),
                  ("implementSuffix", ImplementSuffix.transform, true)],
                 mkSimplePassGen))
 in

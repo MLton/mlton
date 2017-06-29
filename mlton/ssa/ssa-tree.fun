@@ -298,11 +298,11 @@ structure Cases =
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
    end
 
-structure Size = 
+structure Size =
    struct
       val check: int * int option -> int *bool =
-	fn (size, NONE) => (size,false)
-	 | (size, SOME max) => (size,size > max)
+         fn (size, NONE) => (size,false)
+          | (size, SOME max) => (size,size > max)
    end
 
 structure Exp =
@@ -323,7 +323,7 @@ structure Exp =
       val unit = Tuple (Vector.new0 ())
 
       (* Vals to determine the size for inline.fun and loop optimization*)
-      val size : t -> int = 
+      val size : t -> int =
          fn ConApp {args, ...} => 1 + Vector.length args
           | Const _ => 0
           | PrimApp {args, ...} => 1 + Vector.length args
@@ -331,7 +331,7 @@ structure Exp =
           | Select _ => 1 + 1
           | Tuple xs => 1 + Vector.length xs
           | Var _ => 0
-      
+
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)
@@ -702,7 +702,7 @@ structure Transfer =
           | Raise xs => 1 + Vector.length xs
           | Return xs => 1 + Vector.length xs
           | Runtime {args, ...} => 1 + Vector.length args
-      
+
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
             fun vars xs = Vector.foreach (xs, var)
@@ -1059,7 +1059,7 @@ structure Function =
 
       fun size (f, {sizeExp, sizeTransfer}) =
          #1 (sizeAux (f, 0, NONE, sizeExp, sizeTransfer))
-      
+
       fun sizeMax (f, {max, sizeExp, sizeTransfer}) =
          let
             val (s, chk) = sizeAux (f, 0, max, sizeExp, sizeTransfer)
@@ -1068,7 +1068,7 @@ structure Function =
                then NONE
                else SOME s
          end
- 
+
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =
          let
             val {args, blocks, ...} = dest f

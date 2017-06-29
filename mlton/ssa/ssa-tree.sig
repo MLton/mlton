@@ -128,7 +128,7 @@ signature SSA_TREE =
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
             val size: t -> int
-	    val unit: t
+            val unit: t
          end
 
       structure Statement:
@@ -200,7 +200,7 @@ signature SSA_TREE =
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
             val replaceVar: t * (Var.t -> Var.t) -> t
-	    val size: t -> int
+            val size: t -> int
          end
 
       structure Block:
@@ -211,11 +211,11 @@ signature SSA_TREE =
                      statements: Statement.t vector,
                      transfer: Transfer.t}
 
-	    val args: t -> (Var.t * Type.t) vector
+            val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit
             val label: t -> Label.t
             val layout: t -> Layout.t
-	    val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
+            val sizeV: t vector * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
             val statements: t -> Statement.t vector
             val transfer: t -> Transfer.t
          end
@@ -251,8 +251,7 @@ signature SSA_TREE =
                             raises: Type.t vector option,
                             returns: Type.t vector option,
                             start: Label.t}
-           
-	    (* dfs (f, v) visits the blocks in depth-first order, applying v b
+            (* dfs (f, v) visits the blocks in depth-first order, applying v b
              * for block b to yield v', then visiting b's descendents,
              * then applying v' ().
              *)
@@ -277,7 +276,7 @@ signature SSA_TREE =
             val profile: t * SourceInfo.t -> t
             val size: t * {sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int
             val sizeMax: t * {max: int option, sizeExp: Exp.t -> int, sizeTransfer: Transfer.t -> int} -> int option
-	 end
+         end
 
       structure Program:
          sig
