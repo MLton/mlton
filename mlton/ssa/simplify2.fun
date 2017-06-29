@@ -107,7 +107,7 @@ val ssa2PassesSet = fn s =>
 val _ = List.push (Control.optimizationPasses,
                    {il = "ssa2", get = ssa2PassesGet, set = ssa2PassesSet})
 
-fun pass ({name, doit, midfix, execute}, p) =
+fun pass ({name, doit, midfix}, p) =
    let
       val _ =
          let open Control
@@ -133,7 +133,7 @@ fun maybePass ({name, doit, execute, midfix}, p) =
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
-      then pass ({name = name, doit = doit, midfix = midfix, execute = execute}, p)
+      then pass ({name = name, doit = doit, midfix = midfix}, p)
       else p
 
 fun simplify p =
@@ -150,7 +150,7 @@ fun simplify p =
                  (n + 1)
                  (List.fold
                   (!ssa2Passes, p, fn ({name, doit, execute}, p) =>
-                   maybePass ({name = name, doit = doit, execute = true, midfix = midfix}, p)))
+                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
    in
@@ -169,8 +169,7 @@ val simplify = fn p => let
                                andalso !Control.profileIL = Control.ProfileSSA2
                                then pass ({name = "addProfile2",
                                            doit = Profile2.addProfile,
-                                           midfix = "",
-					   execute = true}, p)
+                                           midfix = ""}, p)
                             else p
                          val p = maybePass ({name = "orderFunctions2",
                                              doit = S.orderFunctions,

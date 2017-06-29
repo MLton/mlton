@@ -184,7 +184,7 @@ fun simplify p =
       fun simplify' p =
          List.fold
          (!sxmlPasses, p, fn ({name, doit, execute}, p) =>
-          maybePass ({name = name, doit = doit, execute = true}, p))
+          maybePass ({name = name, doit = doit, execute = execute}, p))
       val p = simplify' p
    in
       p
