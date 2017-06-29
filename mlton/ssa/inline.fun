@@ -278,13 +278,14 @@ fun nonRecursive (Program.T {functions, ...}, {small: int, product: int}) =
                        (function,
                         {sizeExp = Exp.size,
                          sizeTransfer =
-                         fn t as Call {func, ...} => let
-                                                        val {shouldInline, size, ...} = funcInfo func
-                                                     in
-                                                        if !shouldInline
-                                                           then !size
-                                                           else Transfer.size t
-                                                     end
+                         fn t as Call {func, ...} =>
+                               let
+                                  val {shouldInline, size, ...} = funcInfo func
+                               in
+                                  if !shouldInline
+                                     then !size
+                                     else Transfer.size t
+                               end
                           | t => Transfer.size t})
                  in
                     if setSize
