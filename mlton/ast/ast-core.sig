@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,6 +60,7 @@ signature AST_CORE =
              | Tuple of t vector
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
+             | Vector of t vector
              | Wild
 
             include WRAPPED sharing type node' = node
@@ -154,6 +155,7 @@ signature AST_CORE =
              | Seq of t vector
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
+             | Vector of t vector
              | While of {expr: t,
                          test: t}
 
@@ -204,9 +206,10 @@ signature AST_CORE =
              | Exception of (Con.t * EbRhs.t) vector
              | Fix of {fixity: Fixity.t,
                        ops: Vid.t vector}
-             | Fun of Tyvar.t vector * {body: Exp.t,
-                                        pats: Pat.t vector,
-                                        resultType: Type.t option} vector vector
+             | Fun of {tyvars: Tyvar.t vector,
+                       fbs: {body: Exp.t,
+                             pats: Pat.t vector,
+                             resultType: Type.t option} vector vector}
              | Local of t * t
              | Open of Longstrid.t vector
              | Overload of Priority.t *
@@ -226,6 +229,20 @@ signature AST_CORE =
             val checkSyntax: t -> unit
             val fromExp: Exp.t -> t
             val layout: t -> Layout.t
+            val layoutFun:
+               {tyvars: Tyvar.t vector,
+                fbs: {body: Exp.t,
+                      pats: Pat.t vector,
+                      resultType: Type.t option} vector vector}
+               -> (unit -> Layout.t) vector
+            val layoutVal:
+               {rvbs: {match: Match.t,
+                       pat: Pat.t} vector,
+                tyvars: Tyvar.t vector,
+                vbs: {exp: Exp.t,
+                      pat: Pat.t} vector}
+               -> {rvbs: (unit -> Layout.t) vector,
+                   vbs: (unit -> Layout.t) vector}
             val openn: Longstrid.t vector -> t
             val vall: Tyvar.t vector * Var.t * Exp.t -> t
          end

@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010,2016 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -214,31 +214,10 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                          else ()
                 in
                    case parseIdAndArgs ann of
-                      Control.Elaborate.Bad => 
+                      ElabControl.Bad =>
                          (warn ()
                           ; elabBasdec basdec)
-                    | Control.Elaborate.Deprecated alts =>
-                         let
-                            val (ids, args) = List.unzip alts
-                            val () =
-                               if !Control.warnDeprecated
-                                  then
-                                     let open Layout
-                                     in
-                                        Control.warning
-                                        (reg, seq [str "deprecated annotation: ", str ann, str ", use ",
-                                                   List.layout (str o Control.Elaborate.Id.name) ids],
-                                         empty)
-                                     end
-                               else ()
-                            val restores =
-                               List.map (args, Args.processAnn)
-                         in
-                            Exn.finally
-                            (fn () => elabBasdec basdec,
-                             fn () => List.foreach (List.rev restores, fn restore => restore ()))
-                         end
-                    | Control.Elaborate.Good (id, args) =>
+                    | ElabControl.Good (id, args) =>
                          let
                             val restore = Args.processAnn args
                          in
@@ -265,7 +244,29 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                              else elabBasdec basdec, 
                              restore)
                          end
-                    | Other => elabBasdec basdec
+                    | ElabControl.Other => elabBasdec basdec
+                    | ElabControl.Proxy (alts, {deprecated}) =>
+                         let
+                            val (ids, args) = List.unzip alts
+                            val () =
+                               if !Control.warnDeprecated andalso deprecated
+                                  then
+                                     let open Layout
+                                     in
+                                        Control.warning
+                                        (reg, seq [str "deprecated annotation: ", str ann, str ", use ",
+                                                   List.layout (str o ElabControl.Id.name) ids],
+                                         empty)
+                                     end
+                               else ()
+                            val restores =
+                               List.map (args, Args.processAnn)
+                         in
+                            Exn.finally
+                            (fn () => elabBasdec basdec,
+                             fn () => List.foreach (List.rev restores, fn restore => restore ()))
+                         end
+
                 end) basdec
       val _ = withDef (fn () => elabBasdec mlb)
    in

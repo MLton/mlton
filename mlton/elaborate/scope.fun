@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -201,6 +202,7 @@ fun ('down, 'up)
                         end
                    | Tuple ps => do1 (loops (ps, loop), Tuple)
                    | Var _ => (p, initUp)
+                   | Vector ps => do1 (loops (ps, loop), Vector)
                    | Wild => (p, initUp)
 
                end
@@ -321,11 +323,11 @@ fun ('down, 'up)
                      (doit (Exception ebs), u)
                   end
              | Fix _ => (d, initUp)
-             | Fun (tyvars, decs) =>
+             | Fun {tyvars, fbs} =>
                   let
                      val (down, finish) = bindFunVal (down, tyvars)
-                     val (decs, u) =
-                        loops (decs, fn clauses =>
+                     val (fbs, u) =
+                        loops (fbs, fn clauses =>
                                let
                                   val (clauses, u) =
                                      loops
@@ -348,7 +350,7 @@ fun ('down, 'up)
                                  end)
                      val (tyvars, u) = finish u
                   in
-                     (doit (Fun (tyvars, decs)), u)
+                     (doit (Fun {tyvars = tyvars, fbs = fbs}), u)
                   end
              | Local (d, d') =>
                   do2 (loopDec (d, down), loopDec (d', down), Local)
@@ -441,6 +443,7 @@ fun ('down, 'up)
                    | Selector _ => empty ()
                    | Seq es => doVec (es, Seq)
                    | Var _ => empty ()
+                   | Vector vs => doVec (vs, Vector)
                    | While {expr, test} =>
                         do2 (loop expr, loop test, fn (expr, test) =>
                              While {expr = expr, test = test})

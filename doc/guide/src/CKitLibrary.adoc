@@ -7,8 +7,8 @@ into abstract syntax represented as a set of SML datatypes.  The ckit
 Library is distributed with SML/NJ.  Due to differences between SML/NJ
 and MLton, this library will not work out-of-the box with MLton.
 
-As of 20151110, MLton includes a port of the ckit Library synchronized
-with SML/NJ version 110.78.
+As of 20170414, MLton includes a port of the ckit Library synchronized
+with SML/NJ version 110.80.
 
 == Usage ==
 
@@ -42,8 +42,6 @@ deriving the `.mlb` file from the `.cm` file:
 * `ast/pp/pp-ast-adornment-sig.sml` (modified): Rewrote use of `signature` in `local`.
 * `ast/pp/pp-ast-ext-sig.sml` (modified): Rewrote use of `signature` in `local`.
 * `ast/type-util-sig.sml` (modified): Rewrote use of `signature` in `local`.
-* `ast/type-util.sml` (modified): Rewrote use of or-patterns.
-* `parser/grammar/c.lex.sml` (modified): Rewrote use of vector literal.
 * `parser/parse-tree-sig.sml` (modified): Rewrote use of (sequential) `withtype` in signature.
 * `parser/parse-tree.sml` (modified): Rewrote use of (sequential) `withtype`.
 

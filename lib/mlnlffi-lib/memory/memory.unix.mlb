@@ -4,9 +4,10 @@ local
    $(SML_LIB)/basis/c-types.mlb
 in
    ann
-      "forceUsed"
+      "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+      "redundantBind warn" "redundantMatch warn"
       "sequenceNonUnit warn"
-      "warnUnused true"
+      "warnUnused true" "forceUsed"
    in
       local
          linkage.sig

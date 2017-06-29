@@ -1,81 +1,193 @@
 SuccessorML
 ===========
 
-The purpose of http://successor-ml.org[successor ML], or sML for
-short, is to provide a vehicle for the continued evolution of ML,
-using Standard ML as a starting point. The intention is for successor
-ML to be a living, evolving dialect of ML that is responsive to
-community needs and advances in language design, implementation, and
-semantics.
+The purpose of http://sml-family.org/successor-ml/[successor ML], or
+sML for short, is to provide a vehicle for the continued evolution of
+ML, using Standard ML as a starting point. The intention is for
+successor ML to be a living, evolving dialect of ML that is responsive
+to community needs and advances in language design, implementation,
+and semantics.
 
 == SuccessorML Features in MLton ==
 
 The following SuccessorML features have been implemented in MLton.
-The features are disabled by default, and may be enabled utilizing
-the feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
-which is listed directly after the feature name.
+The features are disabled by default, and may be enabled utilizing the
+feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
+which is listed directly after the feature name.  In addition, the
++allowSuccessorML {false|true}+ annotation can be used to
+simultaneously enable all of the features.
 
-* Do Declarations: +allowDoDecls {false|true}+
+* <!Anchor(DoDecls)>
+`do` Declarations: +allowDoDecls {false|true}+
 +
-Evaluating functions for their side effects is a common idiom seen
-in SML.  This feature allows for the same functionality but in an
-alternative syntax.  It is requried that the expression being
-evaluated has the type of unit in order to use a do declaration.
-+
-Commonly one may perform either of the following:
-+
-[source,sml]
-----
-val _ = print "Hello world.\n"
-val () = print "Hello world.\n"
-----
-+
-Instead, the following syntax may be used:
+Allow a +do _exp_+ declaration form, which evaluates _exp_ for its
+side effects.  The following example uses a `do` declaration:
 +
 [source,sml]
 ----
 do print "Hello world.\n"
 ----
-
-* Extended Literals: +allowExtendedLiterals {false|true}+
 +
-This feature allows for binary literals to be used.
-Additionally, underscores may be used throughout
-literals to group digits together for convenience.
-Note: literals cannot be started or ended with underscores.
-+
-Below are some examples of extended literal syntax.
+and is equivalent to:
 +
 [source,sml]
 ----
-val b = 0b10101
+val () = print "Hello world.\n"
+----
+
+* <!Anchor(ExtendedConsts)>
+Extended Constants: +allowExtendedConsts {false|true}+
++
+--
+Allow or disallow all of the extended constants features.  This is a
+proxy for all of the following annotations.
+
+** <!Anchor(ExtendedNumConsts)>
+Extended Numeric Constants: +allowExtendedNumConsts {false|true}+
++
+Allow underscores as a separator in numeric constants and allow binary
+integer and word constants.
++
+Underscores in a numeric constant must occur between digits and
+consecutive underscores are allowed.
++
+Binary integer constants use the prefix +0b+ and binary word constants
+use the prefix +0wb+.
++
+The following example uses extended numeric constants (although it may
+be incorrectly syntax highlighted):
++
+[source,sml]
+----
+val pb = 0b10101
 val nb = ~0b10_10_10
-val bw = 0wb1010
-val bw' = 0bw10_10
-val x = 4_327_829
+val wb = 0wb1010
+val i = 4__327__829
+val r = 6.022_140_9e23
 ----
+
+** <!Anchor(ExtendedTextConsts)> Extended Text Constants: +allowExtendedTextConsts {false|true}+
 +
-Below are some non-examples of extended literal syntax.
+Allow characters with integer codes &ge; 128 and &le; 247 that
+correspond to syntactically well-formed UTF-8 byte sequences in text
+constants.
++
+////
+and allow `\Uxxxxxxxx` numeric escapes in text constants.
+////
++
+Any 1, 2, 3, or 4 byte sequence that can be properly decoded to a
+binary number according to the UTF-8 encoding/decoding scheme is
+allowed in a text constant (but invalid sequences are not explicitly
+rejected) and denotes the corresponding sequence of characters with
+integer codes &ge; 128 and &le; 247.  This feature enables "UTF-8
+convenience" (but not comprehensive Unicode support); in particular,
+it allows one to copy text from a browser and paste it into a string
+constant in an editor and, furthermore, if the string is printed to a
+terminal, then will (typically) appear as the original text.  The
+following example uses UTF-8 byte sequences:
 +
 [source,sml]
 ----
-val b = 0b101_
-val nb = ~0b_10_10_
-val h = 0x_09_a
-val x - _12_3
+val s1 : String.string = "\240\159\130\161"
+val s2 : String.string = "🂡"
+val _ = print ("s1 --> " ^ s1 ^ "\n")
+val _ = print ("s2 --> " ^ s2 ^ "\n")
+val _ = print ("String.size s1 --> " ^ Int.toString (String.size s1) ^ "\n")
+val _ = print ("String.size s2 --> " ^ Int.toString (String.size s2) ^ "\n")
+val _ = print ("s1 = s2 --> " ^ Bool.toString (s1 = s2) ^ "\n")
 ----
-
-* Line Comments: +allowLineComments {false|true}+
 +
-Line comments may be may be started with ++(*)++.
+and, when compiled and executed, will display:
++
+----
+s1 --> 🂡
+s2 --> 🂡
+String.size s1 --> 4
+String.size s2 --> 4
+s1 = s2 --> true
+----
++
+Note that the `String.string` type corresponds to any sequence of
+8-bit values, including invalid UTF-8 sequences; hence the string
+constant `"\192"` (a UTF-8 leading byte with no UTF-8 continuation
+byte) is valid.  Similarly, the `Char.char` type corresponds to a
+single 8-bit value; hence the char constant `#"α"` is not valid, as
+the text constant `"α"` denotes a sequence of two 8-bit values.
++
+////
+A `\Uxxxxxxxx` numeric escape denotes a single character with the
+hexadecimal integer code `xxxxxxxx`.  Such numeric escapes are not
+necessary for the `String.string` and `Char.char` types, since
+characters in such text constants must have integer codes &le; 255 and
+the `\ddd` and `\uxxxx` numeric escapes suffice.  However, the
+`\Uxxxxxxxx` numeric escapes are useful for the `WideString.string`
+and `WideChar.char` types, since characters in such text constants may
+have integer codes &le; 2^32^-1.  The following uses a `\Uxxxxxxxx`
+numeric escape (although it may be incorrectly syntax highlighted):
++
+[source,sml]
+----
+val s1 : WideString.string = "\U0001F0A1" (* 'PLAYING CARD ACE OF SPADES' (U+1F0A1) *)
+val _ = print ("WideString.size s1 --> " ^ Int.toString (WideString.size s1) ^ "\n")
+----
++
+and, when compiled and executed, will display:
++
+----
+WideString.size s1 --> 1
+----
++
+Note that the `WideString.string` type corresponds to any sequence of
+32-bit values, including invalid Unicode code points; hence, the
+string constants `"\U001F0000"` and `"\U40000000"` are valid (but the
+corresponding integer codes are not valid Unicode code points).
+Similarly, the `WideChar.char` type corresponds to a single 32-bit
+value.
++
+Finally, note that a UTF-8 byte sequence in a `WideString.string` or
+`WideChar.char` text constant does not denote a single 32-bit value,
+but rather a sequence of 32-bit values &ge; 128 and &le; 247.  The
+following example uses both UTF-8 byte sequences and `\Uxxxxxxxx`
+numeric escapes (although it may be incorrectly syntax highlighted):
++
+[source,sml]
+----
+val s1 : WideString.string = "\U0001F0A1" (* 'PLAYING CARD ACE OF SPADES' (U+1F0A1) *)
+val s2 : WideString.string = "🂡"
+val s3 : WideString.string = "\U000000F0\U0000009F\U00000082\U000000A1"
+val _ = print ("WideString.size s1 --> " ^ Int.toString (WideString.size s1) ^ "\n")
+val _ = print ("WideString.size s2 --> " ^ Int.toString (WideString.size s2) ^ "\n")
+val _ = print ("WideString.size s3 --> " ^ Int.toString (WideString.size s3) ^ "\n")
+val _ = print ("s1 = s2 --> " ^ Bool.toString (s1 = s2) ^ "\n")
+val _ = print ("s2 = s3 --> " ^ Bool.toString (s2 = s3) ^ "\n")
+----
++
+and, when compiled and executed, will display:
++
+----
+WideString.size s1 --> 1
+WideString.size s2 --> 4
+WideString.size s3 --> 4
+s1 = s2 --> false
+s2 = s3 --> true
+----
+////
+--
+
+* <!Anchor(LineComments)>
+Line Comments: +allowLineComments {false|true}+
++
+Allow line comments beginning with the token ++(*)++.  The following
+example uses a line comment:
 +
 [source,sml]
 ----
 (*) This is a line comment
 ----
 +
-Line comments may also be nested inside block comments.
-The following is valid SML code utilizing line comments.
+Line comments properly nest within block comments.  The following
+example uses line comments nested within block comments:
 +
 [source,sml]
 ----
@@ -87,95 +199,156 @@ val x = 4 (*) This is a line comment
 val y = 5 (*) This is a line comment *)
 *)
 ----
+
+* <!Anchor(OptBar)>
+Optional Pattern Bars: +allowOptBar {false|true}+
 +
-Please note that with this feature enabled the following
-SML code which would previously compile will now result
-in a compilation error due to the unexpected `*)`.
+Allow a bar to appear before the first match rule of a `case`, `fn`,
+or `handle` expression, allow a bar to appear before the first
+function-value binding of a `fun` declaration, and allow a bar to
+appear before the first constructor binding or description of a
+`datatype` declaration or specification.  The following example uses
+leading bars in a `datatype` declaration, a `fun` declaration, and a
+`case` expression:
 +
 [source,sml]
 ----
-(*)
-val x = 0
-*)
+datatype t =
+  | C
+  | B
+  | A
+
+fun
+  | f NONE = 0
+  | f (SOME t) =
+     (case t of
+        | A => 1
+        | B => 2
+        | C => 3)
+----
++
+By eliminating the special case of the first element, this feature
+allows for simpler refactoring (e.g., sorting the lines of the
+`datatype` declaration's constructor bindings to put the constructors
+in alphabetical order).
+
+* <!Anchor(OptSemicolon)>
+Optional Semicolons: +allowOptSemicolon {false|true}+
++
+Allow a semicolon to appear after the last expression in a sequence or
+`let`-body expression.  The following example uses a trailing
+semicolon in the body of a `let` expression:
++
+[source,sml]
+----
+fun h z =
+  let
+    val x = 3 * z
+  in
+     f x ;
+     g x ;
+  end
+----
++
+By eliminating the special case of the last element, this feature
+allows for simpler refactoring.
+
+* <!Anchor(OrPats)>
+Disjunctive (Or) Patterns: +allowOrPats {false|true}+
++
+Allow disjunctive (a.k.a., "or") patterns of the form +_pat~1~_ |
+_pat~2~_+, which matches a value that matches either +_pat~1~_+ or
++_pat~2~_+.  Disjunctive patterns have lower precedence than `as`
+patterns and constraint patterns, much as `orelse` expressions have
+lower precedence than `andalso` expressions and constraint
+expressions.  Both sub-patterns of a disjunctive pattern must bind the
+same variables with the same types.  The following example uses
+disjunctive patterns:
++
+[source,sml]
+----
+datatype t = A of int | B of int | C of int | D of int * int | E of int * int
+
+fun f t =
+  case t of
+     A x | B x | C x => x + 1
+   | D (x, _) | E (_, x) => x * 2
 ----
 
-* Optional Pattern Bars: +allowOptBar {false|true}+
+* <!Anchor(RecordPunExps)>
+Record Punning Expressions: +allowRecordPunExps {false|true}+
 +
-A bar may be optionally placed before the first rule of a match.
-By eliminating the special case of the first match requiring no
-bar, this allows for easier refactoring.
-+
-[source,sml]
-----
-case exp of
-  | A => 1
-  | B => 2
-  | C => 3
-----
-+
-This optional bar may also be placed for `fn` and `handle`,
-function declarations, and `datatype` declarations.
-
-* Optional Semicolons: +allowOptSemicolon {false|true}+
-+
-In the same spirit, a semicolon may be optionally placed
-after the the last expression in a sequence.
+Allow record punning expressions, whereby an identifier +_vid_+ as an
+expression row in a record expression denotes the expression row
++_vid_ = _vid_+ (i.e., treating a label as a variable).  The following
+example uses record punning expressions (and also record punning
+patterns):
 +
 [source,sml]
 ----
-let
-   val x = 3
-in
-   f x;
-   g x;
-end
+fun incB r =
+  case r of {a, b, c} => {a, b = b + 1, c}
+----
++
+and is equivalent to:
++
+[source,sml]
+----
+fun incB r =
+  case r of {a = a, b = b, c = c} => {a = a, b = b + 1, c = c}
 ----
 
-* Disjunctive (Or) Patterns: +allowOrPats {false|true}+
+* <!Anchor(SigWithtype)>
+`withtype` in Signatures: +allowSigWithtype {false|true}+
 +
-This feature allows for being able to utilize "or-patterns".
-One can "or" multiple matches together without having to re-write
-the same resultant right-hand-side expression.  Note that
-disjunctive patterns require an additional surrounding parenthesis.
-+
-For example `exp` could be matched as follows:
+Allow `withtype` to modify a `datatype` specification in a signature.
+The following example uses `withtype` in a signature (and also
+`withtype` in a declaration):
 +
 [source,sml]
 ----
-case exp of
-    (A | B | C) =>  1
-  | (D | E) => 2
+signature STREAM =
+  sig
+    datatype 'a u = Nil | Cons of 'a * 'a t
+    withtype 'a t = unit -> 'a u
+  end
+structure Stream : STREAM =
+  struct
+    datatype 'a u = Nil | Cons of 'a * 'a t
+    withtype 'a t = unit -> 'a u
+  end
+----
++
+and is equivalent to:
++
+[source,sml]
+----
+signature STREAM =
+  sig
+    datatype 'a u = Nil | Cons of 'a * (unit -> 'a u)
+    type 'a t = unit -> 'a u
+  end
+structure Stream : STREAM =
+  struct
+    datatype 'a u = Nil | Cons of 'a * (unit -> 'a u)
+    type 'a t = unit -> 'a u
+  end
 ----
 
-* Record Punning: +allowRecPunning {false|true}+
+* <!Anchor(VectorExpsAndPats)>
+Vector Expressions and Patterns: +allowVectorExpsAndPats {false|true}+
 +
-Records with fields that are of the form id=id can be abbreviated
-to id.  Previously this was only allowed in patterns.
-+
-For example:
-+
-[source,sml]
-----
-fn {a, b, c} => {a=a, b=b+1, c=c}
-----
-+
-May be abbreviated to:
-+
-[source,sml]
-----
-fn {a, b, c} => {a, b=b+1, c}
-----
+--
+Allow or disallow vector expressions and vector patterns.  This is a
+proxy for all of the following annotations.
 
-* Withtype for Signatures: +allowSigWithtype {false|true}+
+** <!Anchor(VectorExps)>
+Vector Expressions: +allowVectorExps {false|true}+
 +
-This feature allows for the use of the `withtype` keyword in
-signatures.  Previously, `withtype` was only allowed in structures.
+Allow vector expressions of the form +#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]+ (where _n ≥ 0_).  The expression has type +_τ_ vector+ when each expression _exp~i~_ has type +_τ_+.
+
+** <!Anchor(VectorExps)>
+Vector Patterns: +allowVectorPats {false|true}+
 +
-[source,sml]
-----
-signature S =
-   sig
-      datatype a = A1 of int | A2 of int * t
-      withtype t = int * a option
-   end
-----
+Allow vector patterns of the form +#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]+ (where _n ≥ 0_).  The pattern matches values of type +_τ_ vector+ when each pattern _pat~i~_ matches values of type +_τ_+.
+--

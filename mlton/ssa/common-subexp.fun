@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -194,7 +194,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                   case exp of
                                      PrimApp ({args, prim, ...}) =>
                                         let
-                                           fun arg () = Vector.sub (args, 0)
+                                           fun arg () = Vector.first args
                                            fun knownLength var' =
                                               let
                                                  val _ = setLength (var, SOME var')
@@ -212,9 +212,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                            datatype z = datatype Prim.Name.t
                                         in
                                            case Prim.name prim of
-                                              Array_array => knownLength (arg ())
-                                            | Array_length => length ()
+                                              Array_length => length ()
                                             | Array_toVector => conv ()
+                                            | Array_uninit => knownLength (arg ())
                                             | Vector_length => length ()
                                             | _ => if Prim.isFunctional prim
                                                       then doit ()
@@ -251,7 +251,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                     else (if !succInDeg = 1
                                              then let
                                                      val (var', _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      setReplace (var', SOME var)
                                                   end
@@ -261,7 +261,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                | NONE => (if !succInDeg = 1
                                              then let
                                                      val (var, _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      List.push
                                                      (succAdd, (var, exp))

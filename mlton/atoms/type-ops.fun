@@ -59,7 +59,7 @@ val arrow =
 fun deUnaryOpt tycon t =
    case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, tycon)
-                         then SOME (Vector.sub (ts, 0))
+                         then SOME (Vector.first ts)
                       else NONE
     | _ => NONE
 
@@ -75,7 +75,7 @@ val deWeak = deUnary Tycon.weak
 
 fun tuple ts =
    if 1 = Vector.length ts
-      then Vector.sub (ts, 0)
+      then Vector.first ts
    else con (Tycon.tuple, ts)
 
 val unit = tuple (Vector.new0 ())

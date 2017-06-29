@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -23,8 +24,8 @@ fun mkstemps {prefix, suffix}: string * outstream =
                               in flags [irusr, iwusr]
                               end),
                      name))
-         end handle e as PosixError.SysErr (_, SOME s) =>
-            if s = Posix.Error.exist
+         end handle e as PosixError.SysErr (_, s) =>
+            if s = SOME Posix.Error.exist
                then loop ()
             else raise e
    in

@@ -6,7 +6,7 @@ collection of libraries that are distributed with SML/NJ.  Due to
 differences between SML/NJ and MLton, these libraries will not work
 out-of-the box with MLton.
 
-As of 20151110, MLton includes a port of the SML/NJ Library
+As of 20170414, MLton includes a port of the SML/NJ Library
 synchronized with SML/NJ version 110.78.
 
 == Usage ==
@@ -64,20 +64,6 @@ deriving the `.mlb` files from the `.cm` files:
 
 * `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
 * `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
-* `Util/bit-array.sml` (modified): The computation of the `maxLen` is given by:
-+
-[source,sml]
-----
-val maxLen = 8*Word8Array.maxLen
-----
-+
-This is fine in SML/NJ where `Word8Array.maxLen` is 16777215, but in MLton, `Word8Array.maxLen` is equal to `valOf(Int.maxInt)`, so the computation overflows. To accommodate both SML/NJ and MLton, the computation is replaced by
-+
-[source,sml]
-----
-val maxLen = (8*Word8Array.maxLen) handle Overflow => Word8Array.maxLen
-----
-
 * `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
 * `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.

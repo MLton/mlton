@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -126,6 +126,7 @@ fun checkScopes (program as
          in
             ()
          end
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Layout.toString (Statement.layout s)])
       val loopTransfer =
          fn Arith {args, ty, ...} => (getVars args; loopType ty)
           | Bug => ()
@@ -146,7 +147,7 @@ fun checkScopes (program as
                                   HashSet.insertIfNew
                                   (table, hash x, fn y => equals (x, y),
                                    fn () => x,
-                                   fn _ => Error.bug "Ssa.TypeCheck.loopTransfer: redundant branch in case")
+                                   fn _ => Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case")
                             in
                                ()
                             end)
@@ -154,9 +155,9 @@ fun checkScopes (program as
                      in
                         case (IntInf.equals (numCases, numExhaustiveCases), isSome default) of
                            (true, true) =>
-                              Error.bug "Ssa.TypeCheck.loopTransfer: exhaustive case has default"
+                              Error.bug "Ssa2.TypeCheck2.loopTransfer: exhaustive case has default"
                          | (false, false) =>
-                              Error.bug "Ssa.TypeCheck.loopTransfer: non-exhaustive case has no default"
+                              Error.bug "Ssa2.TypeCheck2.loopTransfer: non-exhaustive case has no default"
                          | _ => ()
                      end
                   fun doitWord (ws, cases) =
@@ -166,7 +167,7 @@ fun checkScopes (program as
                         val numExhaustiveCases =
                            case Type.dest (getVar' test) of
                               Type.Datatype t => Int.toIntInf (getTycon' t)
-                            | _ => Error.bug "Ssa.TypeCheck.loopTransfer: case test is not a datatype"
+                            | _ => Error.bug "Ssa2.TypeCheck2.loopTransfer: case test is not a datatype"
                      in
                         doit (cases, Con.equals, Con.hash, numExhaustiveCases)
                      end
@@ -182,6 +183,10 @@ fun checkScopes (program as
           | Raise xs => getVars xs
           | Return xs => getVars xs
           | Runtime {args, ...} => getVars args
+      val loopTransfer =
+         fn t =>
+         (loopTransfer t)
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Layout.toString (Transfer.layout t)])
       fun loopFunc (f: Function.t) =
          let
             val {args, blocks, raises, returns, start, ...} = Function.dest f
@@ -190,10 +195,11 @@ fun checkScopes (program as
              *)
             fun loop (Tree.T (block, children)): unit =
                let
-                  val Block.T {args, statements, transfer, ...} = block
-                  val _ = Vector.foreach (args, bindVar)
-                  val _ = Vector.foreach (statements, loopStatement)
-                  val _ = loopTransfer transfer
+                  val Block.T {label, args, statements, transfer, ...} = block
+                  val _ = (Vector.foreach (args, bindVar)
+                           ; Vector.foreach (statements, loopStatement)
+                           ; loopTransfer transfer)
+                          handle exn => Error.reraiseSuffix (exn, concat [" in ", Label.toString label])
                   val _ = Vector.foreach (children, loop)
                   val _ = Vector.foreach 
                           (statements, fn s =>
@@ -222,16 +228,20 @@ fun checkScopes (program as
          in
              ()
          end
+         handle exn => Error.reraiseSuffix (exn, concat [" in ", Func.toString (Function.name f)])
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {tycon, cons} =>
                (bindTycon (tycon, Vector.length cons)
                 ; Vector.foreach (cons, fn {con, ...} =>
                                   bindCon con)))
+              handle exn => Error.reraiseSuffix (exn, concat [" in Datatypes"])
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {cons, ...} =>
                Vector.foreach (cons, fn {args, ...} =>
                                Prod.foreach (args, loopType)))
+              handle exn => Error.reraiseSuffix (exn, concat [" in Datatypes"])
       val _ = Vector.foreach (globals, loopStatement)
+              handle exn => Error.reraiseSuffix (exn, concat [" in Globals"])
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = List.foreach (functions, loopFunc)
       val _ = getFunc main
@@ -377,20 +387,12 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
          if !Control.profile <> Control.ProfileNone
             then checkProf program
          else ()
-      val out = Out.error
-      val print = Out.outputc out
-      exception TypeError
-      fun error (msg, lay) =
-         (print (concat ["Type error: ", msg, "\n"])
-          ; Layout.output (lay, out)
-          ; print "\n"
-          ; raise TypeError)
       val {get = conInfo: Con.t -> {result: Type.t,
                                     ty: Type.t,
                                     tycon: Tycon.t},
            set = setConInfo, ...} =
          Property.getSetOnce
-         (Con.plist, Property.initRaise ("TypeCheck.info", Con.layout))
+         (Con.plist, Property.initRaise ("Ssa2.TypeCheck2.conInfo", Con.layout))
       val conTycon = #tycon o conInfo
       val _ =
          Vector.foreach
@@ -406,9 +408,12 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun inject {sum: Tycon.t, variant: Type.t}: Type.t =
          let
             val error = fn msg =>
-               error (concat ["inject: ", msg],
-                      Layout.record [("sum", Tycon.layout sum),
-                                     ("variant", Type.layout variant)])
+               Error.bug (concat ["Ssa2.TypeCheck2.inject (",
+                                  msg, " ",
+                                  (Layout.toString o Layout.record)
+                                  [("sum", Tycon.layout sum),
+                                   ("variant", Type.layout variant)],
+                                  ")"])
          in
             case Type.dest variant of
                Type.Object {con, ...} =>
@@ -416,16 +421,18 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                       ObjectCon.Con c =>
                          if Tycon.equals (conTycon c, sum)
                             then Type.datatypee sum
-                         else error "inject into wrong sum"
-                    | _ => error "inject")
-             | _ => error "inject of no object"
+                         else error "wrong sum"
+                    | _ => error "no object-con")
+             | _ => error "no object"
          end
       fun coerce {from: Type.t, to: Type.t}: unit =
          if Type.equals (from, to)
             then ()
-         else error ("SSa2.TypeCheck2.coerce",
-                     Layout.record [("from", Type.layout from),
-                                    ("to", Type.layout to)])
+         else Error.bug (concat ["SSa2.TypeCheck2.coerce (",
+                                 (Layout.toString o Layout.record)
+                                 [("from", Type.layout from),
+                                  ("to", Type.layout to)],
+                                 ")"])
       val coerce =
          Trace.trace ("Ssa2.TypeCheck2.coerce",
                       fn {from, to} => let open Layout
@@ -435,7 +442,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                                     Unit.layout) coerce
       fun object {args, con, resultType} =
          let
-            fun err () = error ("bad object", Layout.empty)
+            fun err () = Error.bug "Ssa2.TypeCheck2.object (bad object)"
          in
             case Type.dest resultType of
                Type.Object {args = args', con = con'} =>
@@ -461,15 +468,15 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                           val _ =
                              if Type.equals (index, Type.word (WordSize.seqIndex ()))
                                 then ()
-                             else error ("vector-sub of non seqIndex", Layout.empty)
+                             else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non seqIndex)"
                        in
                           vector
                        end
-               else error ("vector-sub of non vector", Layout.empty)
+               else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non vector)"
       fun select {base: Type.t, offset: int, resultType = _}: Type.t =
          case Type.dest base of
             Type.Object {args, ...} => Prod.elt (args, offset)
-          | _ => error ("select of non object", Layout.empty)
+          | _ => Error.bug "Ssa2.TypeCheck2.select (non object)"
       fun update {base, offset, value} =
          case Type.dest base of
             Type.Object {args, ...} =>
@@ -479,11 +486,11 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                   val () =
                      if isMutable
                         then ()
-                     else error ("update of non-mutable field", Layout.empty)
+                     else Error.bug "Ssa2.TypeCheck2.update (non-mutable field)"
                in
                   ()
                end
-          | _ => error ("update of non object", Layout.empty)
+          | _ => Error.bug "Ssa2.TypeCheck2.update (non object)"
       fun filter {con, test, variant} =
          let
             val {result, ty, ...} = conInfo con
@@ -501,13 +508,16 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                                      prim = prim,
                                      result = resultType}
                   then ()
-               else error ("bad primapp",
-                           let
-                              open Layout
-                           in
-                              seq [Prim.layout prim, str " ",
-                                   tuple (Vector.toListMap (args, Type.layout))]
-                           end)
+               else Error.bug (concat ["Ssa2.TypeCheck2.primApp (",
+                                       let
+                                          open Layout
+                                       in
+                                          (toString o seq)
+                                          [Prim.layout prim,
+                                           str " ",
+                                           Vector.layout Type.layout args]
+                                       end,
+                                       ")"])
          in
             resultType
          end
@@ -526,13 +536,14 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                   select = select,
                   update = update,
                   useFromTypeOnBinds = true}
-         handle e => error (concat ["analyze raised exception ",
-                                    Layout.toString (Exn.layout e)],
-                            Layout.empty)
       val _ = Program.clear program
    in
       ()
    end
+
+val typeCheck = fn p =>
+   (typeCheck p)
+   handle exn => Error.reraisePrefix (exn, "TypeError (SSA2): ")
 
 val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 

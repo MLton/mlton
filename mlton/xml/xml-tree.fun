@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -213,7 +214,7 @@ in
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | 1 => seq [Tyvar.layout (Vector.sub (ts, 0)), str " "]
+       | 1 => seq [Tyvar.layout (Vector.first ts), str " "]
        | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
@@ -639,7 +640,7 @@ structure DirectExp =
 
       fun tuple {exps: t vector, ty: Type.t}: t =
          if 1 = Vector.length exps
-            then Vector.sub (exps, 0)
+            then Vector.first exps
          else converts (exps, fn xs =>
                         (PrimExp.Tuple (Vector.map (xs, #1)), ty))
 
@@ -671,7 +672,7 @@ structure DirectExp =
 
       fun convert2 (e1, e2, make) =
          converts (Vector.new2 (e1, e2),
-                   fn xs => make (Vector.sub (xs, 0), Vector.sub (xs, 1)))
+                   fn xs => make (Vector.first xs, Vector.sub (xs, 1)))
 
       fun app {func, arg, ty} =
          convert2 (func, arg, fn ((func, _), (arg, _)) =>
@@ -714,6 +715,28 @@ structure DirectExp =
                                args = Vector.new1 x},
                       t)
                   end)
+
+      fun vectorLength (e: t): t =
+         convert (e, fn (x, t) =>
+                  let
+                     val t = Type.deVector t
+                  in
+                     (PrimApp {prim = Prim.vectorLength,
+                               targs = Vector.new1 t,
+                               args = Vector.new1 x},
+                      Type.word (WordSize.seqIndex ()))
+                  end)
+
+      fun vectorSub (e1: t, e2: t): t =
+         convert2 (e1, e2, fn ((x1, t1), (x2, _)) =>
+                   let
+                      val t = Type.deVector t1
+                   in
+                      (PrimApp {prim = Prim.vectorSub,
+                                targs = Vector.new1 t,
+                                args = Vector.new2 (x1, x2)},
+                       t)
+                   end)
 
       fun equal (e1, e2) =
          convert2 (e1, e2, fn ((x1, t), (x2, _)) =>
@@ -779,7 +802,7 @@ structure DirectExp =
          (body,
           case Vector.length components of
              0 => []
-           | 1 => [MonoVal {var = Vector.sub (components, 0), ty = t, exp = e}]
+           | 1 => [MonoVal {var = Vector.first components, ty = t, exp = e}]
            | _ =>
                 let
                    val ts = Type.deTuple t
@@ -819,6 +842,17 @@ structure DirectExp =
                                           k))
                      end
           end)
+
+      fun devector {vector: t, length: int, body}: t =
+         fn k =>
+         let
+            val es =
+               Vector.tabulate
+               (length, fn i =>
+                vectorSub (vector, const (Const.word (WordX.fromIntInf (IntInf.fromInt i, WordSize.seqIndex ())))))
+         in
+            convertsGen (es, fn args => (body args) k)
+         end
    end
 
 (*---------------------------------------------------*)

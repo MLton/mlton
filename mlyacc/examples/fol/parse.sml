@@ -74,6 +74,9 @@ fun file_parse name =
     end
 
 fun top_parse () =
-    parse (Tokens.PARSEQUERY,0,(fn i => TextIO.inputLine TextIO.stdIn))
+    parse (Tokens.PARSEQUERY,0,(fn i =>
+                                   (case TextIO.inputLine TextIO.stdIn
+                                     of SOME s => s
+                                      | _ => "")))
 
 end  (* functor Parse *)

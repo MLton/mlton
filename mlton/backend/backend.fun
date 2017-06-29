@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -542,15 +542,10 @@ let
             datatype z = datatype R.Statement.t
          in
             case s of
-               Bind {dst = (var, _), isMutable, src} =>
-                  if isMutable
-                     orelse (case #operand (varInfo var) of
-                                VarOperand.Const _ => false
-                              | _ => true)
-                     then (Vector.new1
-                           (M.Statement.move {dst = varOperand var,
-                                              src = translateOperand src}))
-                  else Vector.new0 ()
+               Bind {dst = (var, _), src, ...} =>
+                  Vector.new1
+                  (M.Statement.move {dst = varOperand var,
+                                     src = translateOperand src})
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,
@@ -665,6 +660,22 @@ let
          valOf o M.Live.fromOperand
       val operandsLive: M.Operand.t vector -> M.Live.t vector =
          fn ops => Vector.map (ops, operandLive)
+      val isGlobal =
+         let
+            val {get: Var.t -> bool, set, rem, ...} =
+               Property.getSet
+               (Var.plist,
+                Property.initRaise ("Backend.toMachine.isGlobal", Var.layout))
+            val _ =
+               Function.foreachDef (main, fn (x, _) => set (x, false))
+            val _ =
+               List.foreach
+               (functions, fn f =>
+                (Function.foreachUse (f, fn x => set (x, true))
+                 ; Function.foreachDef (f, fn (x, _) => rem x)))
+         in
+            get
+         end
       fun genFunc (f: Function.t, isMain: bool): unit =
          let
             val f = eliminateDeadCode f
@@ -680,10 +691,25 @@ let
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
-                     if isMain
-                        then VarOperand.Const (M.Operand.Global
-                                               (M.Global.new {isRoot = true,
-                                                              ty = ty}))
+                     if isMain andalso isGlobal x
+                        then let
+                                val _ =
+                                   Control.diagnostics
+                                   (fn display =>
+                                    let
+                                       open Layout
+                                    in
+                                       display (seq
+                                                [str "Global: ",
+                                                 R.Var.layout x,
+                                                 str ": ",
+                                                 R.Type.layout ty])
+                                    end)
+                             in
+                                VarOperand.Const (M.Operand.Global
+                                                  (M.Global.new {isRoot = true,
+                                                                 ty = ty}))
+                             end
                      else VarOperand.Allocate {operand = ref NONE}
                in
                   setVarInfo (x, {operand = operand,
@@ -1004,9 +1030,9 @@ let
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
                         then
-                           case (if 0 = Vector.length statements
+                           case (if Vector.isEmpty statements
                                     then NONE
-                                 else (case Vector.sub (statements, 0) of
+                                 else (case Vector.first statements of
                                           s as M.Statement.ProfileLabel _ =>
                                              SOME s
                                         | _ => NONE)) of

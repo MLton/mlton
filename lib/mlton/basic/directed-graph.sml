@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -110,6 +111,20 @@ fun newNode (T {nodes, ...}) =
    let val n = Node.new ()
    in List.push (nodes, n)
       ; n
+   end
+
+fun removeNode (T {nodes, ...}, n) =
+   let
+      fun nodePred n' = Node.equals (n, n')
+      fun edgePred (Edge.Edge {to = n', ...}) = nodePred n'
+      val _ =
+         nodes := List.removeAll (!nodes, nodePred)
+      val _ =
+         List.foreach
+         (!nodes, fn Node.Node {successors, ...} =>
+          successors := List.removeAll (!successors, edgePred))
+   in
+      ()
    end
 
 fun addEdge (_, e as {from = Node.Node {successors, ...}, ...}) =
@@ -544,37 +559,68 @@ structure LoopForest =
                       title: string}) =
          let
             open Dot
-            fun label ns =
-               NodeOption.label
-               (Layout.toString (Vector.layout (Layout.str o nodeName) ns))
+            fun label (ns, max) =
+               let
+                  val pred =
+                     case max of
+                        NONE => (fn _ => true)
+                      | SOME max => (fn (i, _) => i < max)
+                  fun loop ns =
+                     let
+                        val {no = ms, yes = ns} = Vector.partitioni (ns, pred)
+                        val ns = String.concatWith (Vector.toListMap (ns, nodeName), ", ")
+                     in
+                        if Vector.isEmpty ms
+                           then [(ns, Center)]
+                           else (ns, Center)::(loop ms)
+                     end
+               in
+                  NodeOption.Label (loop ns)
+               end
             val c = Counter.new 0
             fun newName () = concat ["n", Int.toString (Counter.next c)]
             val nodes = ref []
-            fun loop (T {loops, notInLoop}) =
+            fun loop (T {loops, notInLoop}, root) =
                let
-                  val n = newName ()
-                  val _ = List.push (nodes, {name = n,
-                                             options = [label notInLoop,
-                                                        NodeOption.Shape Box],
-                                             successors = []})
-               in
-                  Vector.fold
-                  (loops, [n], fn ({headers, child}, ac) =>
-                   let
-                      val n = newName ()
-                      val _ =
-                         List.push
-                         (nodes, {name = n,
-                                  options = [label headers,
-                                             NodeOption.Shape Ellipse],
-                                  successors =
-                                  List.revMap (loop child, fn n =>
+                  val ms =
+                     Vector.fold
+                     (loops, [], fn ({headers, child}, ac) =>
+                      let
+                         val n = newName ()
+                         val _ =
+                            List.push
+                            (nodes, {name = n,
+                                     options = [label (headers, SOME 5),
+                                                NodeOption.Shape Ellipse],
+                                     successors =
+                                     List.map (loop (child, false), fn n =>
                                                {name = n, options = []})})
-                   in
-                      n :: ac
-                   end)
+                      in
+                         n :: ac
+                      end)
+                  val n = newName ()
+                  val (max, successors) =
+                     if root
+                        then (SOME 10,
+                              case ms of
+                                 [] => []
+                               | m :: _ => [{name = m,
+                                             options = [EdgeOption.Style Invisible]}])
+                        else (SOME 5, [])
+                  val _ = List.push (nodes, {name = n,
+                                             options = [label (notInLoop, max),
+                                                        NodeOption.Shape Box],
+                                             successors = successors})
+               in
+                  n :: (List.rev ms)
                end
-            val _ = loop forest
+            val ns = loop (forest, true)
+            val options =
+               case ns of
+                  [] => options
+                | _ :: ns =>
+                     (GraphOption.Rank (Same, List.map (ns, fn n => {nodeName = n})))
+                     :: options
          in
             Dot.layout {nodes = !nodes,
                         options = options,

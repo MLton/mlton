@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -162,14 +162,16 @@ signature AST_ATOMS =
          end
 
       val bind: Layout.t * Layout.t -> Layout.t
-      val layoutAnds: (string * 'a vector * (Layout.t * 'a -> Layout.t)
-                       -> Layout.t)
+      val layoutAnds: string * 'a vector * (Layout.t * 'a -> Layout.t)
+                      -> Layout.t
       datatype bindStyle =
          OneLine
        | Split of int
       val layoutAndsBind:
          string * string * 'a vector * ('a -> bindStyle * Layout.t * Layout.t)
          -> Layout.t
+      val layoutAndsSusp: string * 'a vector * (bool * Layout.t * 'a -> Layout.t)
+                          -> (unit -> Layout.t) vector
       val reportDuplicates:
          'a vector * {equals: 'a * 'a -> bool,
                       layout: 'a -> Layout.t,

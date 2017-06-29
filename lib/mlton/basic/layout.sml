@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -186,11 +186,12 @@ fun outputWidth (t, width, out) =
           print = Out.outputc out}
 
 local
-   val defaultWidth: int = 80
+   val defaultWidth: int ref = ref 80
 in
-   fun output (t, out) = outputWidth (t, defaultWidth, out)
+   fun setDefaultWidth w = defaultWidth := w
+   fun output (t, out) = outputWidth (t, !defaultWidth, out)
    val print =
-      fn (t, p) => print {tree = t, lineWidth = defaultWidth, print = p}
+      fn (t, p) => print {tree = t, lineWidth = !defaultWidth, print = p}
 end
 
 fun outputl (t, out) = (output (t, out); Out.newline out)

@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2012,2015 Matthew Fluet.
+(* Copyright (C) 2010,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -143,13 +143,13 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
          (tyvars', fn a =>
           not (Vector.exists (tyvars, fn a' => Tyvar.sameName (a, a'))))
       val ty =
-         if 0 = Vector.length unbound then
+         if Vector.isEmpty unbound then
             ty
          else
             let
                open Layout
                val () =
-                  Control.error (Tyvar.region (Vector.sub (tyvars', 0)),
+                  Control.error (Tyvar.region (Vector.first tyvars'),
                                  seq [str (concat ["undefined type variable",
                                                    if Vector.length unbound > 1
                                                       then "s"
@@ -205,7 +205,7 @@ fun elabTypBind (typBind: TypBind.t, E) =
    let
       val TypBind.T types = TypBind.node typBind
       val () = if Vector.length types > 0
-                  then check (Control.Elaborate.allowSigWithtype, "allowSigWithtype", TypBind.region typBind)
+                  then check (Control.Elaborate.allowSigWithtype, "withtype in signatures", TypBind.region typBind)
                   else ()
       val strs =
          Vector.map

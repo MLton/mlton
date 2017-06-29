@@ -10,17 +10,18 @@ index 24d393f..6e58ea0 100755
  #
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..5164d95
+index 0000000..8d31e04
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,8 @@
 +The following changes were made to the MLRISC Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
-+* eliminate vector constants: Change `#[` to `Vector.fromList [`.
 +* eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 +* eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 +* eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
++* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the Basis Library, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may math `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
++* `library/dynamic-array.sml` and `library/hash-array.sml` (modifed): Replace `include ARRAY` with `include ARRAY_NONEQ`; see above.
 diff --git a/aliasing/pointsTo.sig b/aliasing/pointsTo.sig
 index 9abcd4b..35655ef 100644
 --- a/aliasing/pointsTo.sig
@@ -166,7 +167,7 @@ index df1d5ff..5636e24 100644
  struct
    structure I = Instr
 diff --git a/alpha/emit/alphaAsm.sml b/alpha/emit/alphaAsm.sml
-index 293fe84..0cd9fca 100644
+index e4a7e47..b9671b0 100644
 --- a/alpha/emit/alphaAsm.sml
 +++ b/alpha/emit/alphaAsm.sml
 @@ -6,12 +6,88 @@
@@ -265,7 +266,7 @@ index 293fe84..0cd9fca 100644
  struct
     structure I  = Instr
 diff --git a/alpha/emit/alphaMC.sml b/alpha/emit/alphaMC.sml
-index 8548877..be61bb7 100644
+index e9f2444..fe10caf 100644
 --- a/alpha/emit/alphaMC.sml
 +++ b/alpha/emit/alphaMC.sml
 @@ -6,7 +6,27 @@
@@ -338,7 +339,7 @@ index 5f6a34c..d715a2b 100644
  
  struct
 diff --git a/alpha/instructions/alphaInstr.sml b/alpha/instructions/alphaInstr.sml
-index e1ceb2b..216c8ae 100644
+index af0fb93..9c40c19 100644
 --- a/alpha/instructions/alphaInstr.sml
 +++ b/alpha/instructions/alphaInstr.sml
 @@ -8,7 +8,16 @@
@@ -878,7 +879,7 @@ index 539bf54..0958cf8 100644
    structure I = Instr
    structure C = I.C
 diff --git a/amd64/emit/amd64Asm.sml b/amd64/emit/amd64Asm.sml
-index a275515..988525f 100644
+index b732ca4..ed7d10a 100644
 --- a/amd64/emit/amd64Asm.sml
 +++ b/amd64/emit/amd64Asm.sml
 @@ -6,12 +6,85 @@
@@ -1164,7 +1165,7 @@ index 981d4de..9afe8d7 100644
  struct
    structure CFG = CFG
 diff --git a/amd64/instructions/amd64Instr.sml b/amd64/instructions/amd64Instr.sml
-index 7f117cf..01c16e0 100644
+index ee0f136..a7ebf05 100644
 --- a/amd64/instructions/amd64Instr.sml
 +++ b/amd64/instructions/amd64Instr.sml
 @@ -8,7 +8,16 @@
@@ -1318,7 +1319,7 @@ index 5ff322a..427c8f2 100644
  	 | I.SOURCE {} => IK_SOURCE
  	 | I.SINK {} => IK_SINK
 diff --git a/amd64/mltree/amd64-gen.sml b/amd64/mltree/amd64-gen.sml
-index 9cd49d3..a4d1851 100644
+index f8e6d49..0d5ac05 100644
 --- a/amd64/mltree/amd64-gen.sml
 +++ b/amd64/mltree/amd64-gen.sml
 @@ -5,10 +5,53 @@
@@ -2541,7 +2542,7 @@ index df66191..fc3e049 100644
  struct
    structure I = Instr
 diff --git a/hppa/emit/hppaAsm.sml b/hppa/emit/hppaAsm.sml
-index ead6d50..ba1a410 100644
+index 734e0d1..be2453a 100644
 --- a/hppa/emit/hppaAsm.sml
 +++ b/hppa/emit/hppaAsm.sml
 @@ -6,12 +6,96 @@
@@ -2648,7 +2649,7 @@ index ead6d50..ba1a410 100644
  struct
     structure I  = Instr
 diff --git a/hppa/emit/hppaMC.sml b/hppa/emit/hppaMC.sml
-index e4d5ad4..37805e3 100644
+index 17f49d6..681a610 100644
 --- a/hppa/emit/hppaMC.sml
 +++ b/hppa/emit/hppaMC.sml
 @@ -6,7 +6,27 @@
@@ -2721,7 +2722,7 @@ index 8e77f26..859cb7a 100644
  
  struct
 diff --git a/hppa/instructions/hppaInstr.sml b/hppa/instructions/hppaInstr.sml
-index 34a89b2..a2d0e29 100644
+index 069c26c..ff579c9 100644
 --- a/hppa/instructions/hppaInstr.sml
 +++ b/hppa/instructions/hppaInstr.sml
 @@ -8,7 +8,16 @@
@@ -3070,10 +3071,10 @@ index 36c14af..39d87eb 100644
       * The branch probability of conditional branches. 
 diff --git a/library/array-noneq.sig b/library/array-noneq.sig
 new file mode 100644
-index 0000000..541d419
+index 0000000..544c0fd
 --- /dev/null
 +++ b/library/array-noneq.sig
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,41 @@
 +signature ARRAY_NONEQ =
 +   sig
 +      type 'a array
@@ -3102,35 +3103,62 @@ index 0000000..541d419
 +      val tabulate: int * (int -> 'a) -> 'a array
 +      val update: 'a array * int * 'a -> unit
 +      val vector: 'a array -> 'a vector
++
++(*
++      val toList: 'a array -> 'a list
++      val fromVector: 'a vector -> 'a array
++      val toVector: 'a array -> 'a vector
++*)
 +   end
++(*
++functor Chk(A : ARRAY) : ARRAY_NONEQ = A
++functor Chk(A : ARRAY_NONEQ
++                where type 'a array = 'a array
++                where type 'a vector = 'a vector) : ARRAY = A
++*)
 diff --git a/library/dynamic-array.sml b/library/dynamic-array.sml
-index 7733a6f..cc4125b 100644
+index dc16832..5bd96e4 100644
 --- a/library/dynamic-array.sml
 +++ b/library/dynamic-array.sml
-@@ -5,7 +5,8 @@
-  *)
+@@ -10,7 +10,7 @@
  
- structure DynArray : 
--  sig include ARRAY
-+  sig include ARRAY_NONEQ
+ structure DynArray : sig
+ 
+-    include ARRAY
++    include ARRAY_NONEQ
+ 
+     val fromArray : 'a Array.array * 'a * int -> 'a array
+     val baseArray : 'a array -> 'a Array.array
+@@ -97,6 +97,8 @@ structure DynArray : sig
+    (* additional operations from Basis Library proposal 2015-003 *)
+      fun toList arr = foldr (op ::) [] arr
+ 
 +
-       val fromArray : 'a Array.array * 'a * int -> 'a array
-       val baseArray : 'a array -> 'a Array.array
-       val checkArray: 'a array * 'a Array.array -> unit
++(*
+      fun fromVector v = let
+ 	    val arr = A.fromVector v
+ 	    val default = A.sub(arr, 0)
+@@ -104,6 +106,7 @@ structure DynArray : sig
+ 	      ARRAY(ref arr, default, ref (A.length arr))
+ 	    end
+ 	      handle _ => raise Size
++*)
+ 
+      val toVector = vector
+ 
 diff --git a/library/hash-array.sml b/library/hash-array.sml
-index e50b34e..d285410 100644
+index 074f3e8..1a76b66 100644
 --- a/library/hash-array.sml
 +++ b/library/hash-array.sml
-@@ -5,7 +5,8 @@
-  *)
+@@ -10,7 +10,7 @@
  
- structure HashArray : 
--     sig include ARRAY
-+     sig include ARRAY_NONEQ
-+
-          val array' : int * (int -> 'a) -> 'a array
-          val array'': int * (int -> 'a) -> 'a array
-          val clear  : 'a array -> unit 
+ structure HashArray : sig
+ 
+-    include ARRAY
++    include ARRAY_NONEQ
+ 
+     val array' : int * (int -> 'a) -> 'a array
+     val array'': int * (int -> 'a) -> 'a array
 diff --git a/library/sources.cm b/library/sources.cm
 index 016ee18..cac4fae 100644
 --- a/library/sources.cm
@@ -3151,16 +3179,17 @@ index 016ee18..cac4fae 100644
  	annotations.sml
 diff --git a/mlb/ALPHA.mlb b/mlb/ALPHA.mlb
 new file mode 100644
-index 0000000..c10fc5f
+index 0000000..57a929c
 --- /dev/null
 +++ b/mlb/ALPHA.mlb
-@@ -0,0 +1,475 @@
+@@ -0,0 +1,476 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -3632,16 +3661,17 @@ index 0000000..c10fc5f
 +end
 diff --git a/mlb/AMD64-Peephole.mlb b/mlb/AMD64-Peephole.mlb
 new file mode 100644
-index 0000000..c5a3655
+index 0000000..5002b9b
 --- /dev/null
 +++ b/mlb/AMD64-Peephole.mlb
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -3699,16 +3729,17 @@ index 0000000..c5a3655
 +end
 diff --git a/mlb/AMD64.mlb b/mlb/AMD64.mlb
 new file mode 100644
-index 0000000..f65e2f8
+index 0000000..15a15dd
 --- /dev/null
 +++ b/mlb/AMD64.mlb
-@@ -0,0 +1,748 @@
+@@ -0,0 +1,749 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -4453,16 +4484,17 @@ index 0000000..f65e2f8
 +end
 diff --git a/mlb/CCall-sparc.mlb b/mlb/CCall-sparc.mlb
 new file mode 100644
-index 0000000..2b80d9f
+index 0000000..82e45ff
 --- /dev/null
 +++ b/mlb/CCall-sparc.mlb
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,120 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -4578,16 +4610,17 @@ index 0000000..2b80d9f
 +end
 diff --git a/mlb/CCall-x86-64.mlb b/mlb/CCall-x86-64.mlb
 new file mode 100644
-index 0000000..ead8589
+index 0000000..bd053f7
 --- /dev/null
 +++ b/mlb/CCall-x86-64.mlb
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,127 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -4710,16 +4743,17 @@ index 0000000..ead8589
 +end
 diff --git a/mlb/CCall-x86.mlb b/mlb/CCall-x86.mlb
 new file mode 100644
-index 0000000..c055ce6
+index 0000000..0f1961e
 --- /dev/null
 +++ b/mlb/CCall-x86.mlb
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,157 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -4872,16 +4906,17 @@ index 0000000..c055ce6
 +end
 diff --git a/mlb/CCall.mlb b/mlb/CCall.mlb
 new file mode 100644
-index 0000000..3b9034f
+index 0000000..0f1bd8d
 --- /dev/null
 +++ b/mlb/CCall.mlb
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,98 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -4975,16 +5010,17 @@ index 0000000..3b9034f
 +end
 diff --git a/mlb/Control.mlb b/mlb/Control.mlb
 new file mode 100644
-index 0000000..4e2f284
+index 0000000..78b7d84
 --- /dev/null
 +++ b/mlb/Control.mlb
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,106 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -5086,16 +5122,17 @@ index 0000000..4e2f284
 +end
 diff --git a/mlb/Graphs.mlb b/mlb/Graphs.mlb
 new file mode 100644
-index 0000000..23c456c
+index 0000000..03e2731
 --- /dev/null
 +++ b/mlb/Graphs.mlb
-@@ -0,0 +1,715 @@
+@@ -0,0 +1,716 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -5807,16 +5844,17 @@ index 0000000..23c456c
 +end
 diff --git a/mlb/HPPA.mlb b/mlb/HPPA.mlb
 new file mode 100644
-index 0000000..caf1e68
+index 0000000..4e0d097
 --- /dev/null
 +++ b/mlb/HPPA.mlb
-@@ -0,0 +1,493 @@
+@@ -0,0 +1,494 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -6306,16 +6344,17 @@ index 0000000..caf1e68
 +end
 diff --git a/mlb/IA32-Peephole.mlb b/mlb/IA32-Peephole.mlb
 new file mode 100644
-index 0000000..fe56aed
+index 0000000..d9ee357
 --- /dev/null
 +++ b/mlb/IA32-Peephole.mlb
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -6373,16 +6412,17 @@ index 0000000..fe56aed
 +end
 diff --git a/mlb/IA32.mlb b/mlb/IA32.mlb
 new file mode 100644
-index 0000000..b44aac9
+index 0000000..83c09d3
 --- /dev/null
 +++ b/mlb/IA32.mlb
-@@ -0,0 +1,801 @@
+@@ -0,0 +1,802 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -7180,16 +7220,17 @@ index 0000000..b44aac9
 +end
 diff --git a/mlb/Lib.mlb b/mlb/Lib.mlb
 new file mode 100644
-index 0000000..9e499e8
+index 0000000..3748f93
 --- /dev/null
 +++ b/mlb/Lib.mlb
 @@ -0,0 +1,272 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -7228,82 +7269,81 @@ index 0000000..9e499e8
 +   local
 +      open l8
 +   in
-+      structure gs_5 = List
-+   end
-+   local
-+      open l8
-+   in
-+      structure gs_6 = Int
++      structure gs_5 = Int
 +   end
 +   local
 +      signature ARRAY_NONEQ = gs_0
 +      structure Array = gs_2
 +      structure ArraySlice = gs_1
 +      structure General = gs_4
-+      structure Int = gs_6
-+      structure List = gs_5
++      structure Int = gs_5
 +      structure Vector = gs_3
 +      ../library/dynamic-array.sml
 +   in
-+      structure gs_7 = DynArray
++      structure gs_6 = DynArray
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_8 = String
++      structure gs_7 = String
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_9 = Word
++      structure gs_8 = Word
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_10 = Word8
++      structure gs_9 = Word8
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_11 = Word8Array
++      structure gs_10 = Word8Array
 +   end
 +   local
 +      ../library/bitset.sig
 +   in
-+      signature gs_12 = BITSET
++      signature gs_11 = BITSET
 +   end
 +   local
-+      signature BITSET = gs_12
-+      structure String = gs_8
-+      structure Word = gs_9
-+      structure Word8 = gs_10
-+      structure Word8Array = gs_11
++      signature BITSET = gs_11
++      structure String = gs_7
++      structure Word = gs_8
++      structure Word8 = gs_9
++      structure Word8Array = gs_10
 +      ../library/bitset.sml
 +   in
-+      structure gs_13 = BitSet
++      structure gs_12 = BitSet
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_14 = TextIO
++      structure gs_13 = TextIO
 +   end
 +   local
-+      structure TextIO = gs_14
++      structure TextIO = gs_13
 +      ../library/stringOutStream.sig
 +   in
-+      signature gs_15 = STRING_OUTSTREAM
++      signature gs_14 = STRING_OUTSTREAM
 +   end
 +   local
-+      structure String = gs_8
++      structure String = gs_7
 +      ../library/line-break.sml
 +   in
-+      signature gs_16 = LINE_BREAK
-+      structure gs_17 = LineBreak
++      signature gs_15 = LINE_BREAK
++      structure gs_16 = LineBreak
 +   end
 +   local
 +      open l8
 +   in
-+      structure gs_18 = Real
++      structure gs_17 = Real
++   end
++   local
++      open l8
++   in
++      structure gs_18 = List
 +   end
 +   local
 +      open l8
@@ -7311,10 +7351,10 @@ index 0000000..9e499e8
 +      structure gs_19 = IntInf
 +   end
 +   local
-+      structure Int = gs_6
++      structure Int = gs_5
 +      structure IntInf = gs_19
-+      structure List = gs_5
-+      structure Real = gs_18
++      structure List = gs_18
++      structure Real = gs_17
 +      ../library/probability.sml
 +   in
 +      signature gs_20 = PROBABILITY
@@ -7344,10 +7384,10 @@ index 0000000..9e499e8
 +      structure CharArraySlice = gs_23
 +      structure CharVectorSlice = gs_24
 +      structure IO = gs_25
-+      structure List = gs_5
-+      signature STRING_OUTSTREAM = gs_15
-+      structure String = gs_8
-+      structure TextIO = gs_14
++      structure List = gs_18
++      signature STRING_OUTSTREAM = gs_14
++      structure String = gs_7
++      structure TextIO = gs_13
 +      structure TextPrimIO = gs_22
 +      ../library/stringOutStream.sml
 +   in
@@ -7385,9 +7425,9 @@ index 0000000..9e499e8
 +   local
 +      signature ARRAY_NONEQ = gs_0
 +      structure Array = gs_2
-+      structure List = gs_5
++      structure List = gs_18
 +      structure Vector = gs_3
-+      structure Word = gs_9
++      structure Word = gs_8
 +      ../library/hash-array.sml
 +   in
 +      structure gs_33 = HashArray
@@ -7404,7 +7444,7 @@ index 0000000..9e499e8
 +      structure gs_36 = SortedList
 +   end
 +   local
-+      structure Int = gs_6
++      structure Int = gs_5
 +      signature PRIORITY_QUEUE = gs_29
 +      ../library/priQueue.sml
 +   in
@@ -7423,7 +7463,7 @@ index 0000000..9e499e8
 +   end
 +   local
 +      signature FREQ = gs_39
-+      structure Int = gs_6
++      structure Int = gs_5
 +      ../library/freq.sml
 +   in
 +      structure gs_40 = Freq
@@ -7432,24 +7472,24 @@ index 0000000..9e499e8
 +   signature ANNOTATIONS = gs_31
 +   signature ARRAY_NONEQ = gs_0
 +   structure Annotations = gs_32
-+   signature BITSET = gs_12
-+   structure BitSet = gs_13
++   signature BITSET = gs_11
++   structure BitSet = gs_12
 +   signature CACHE_REF = gs_34
 +   signature CATNETABLE_LIST = gs_27
 +   structure CacheRef = gs_35
 +   structure CatnetableList = gs_28
-+   structure DynArray = gs_7
++   structure DynArray = gs_6
 +   signature FREQ = gs_39
 +   structure Freq = gs_40
 +   structure HashArray = gs_33
-+   signature LINE_BREAK = gs_16
-+   structure LineBreak = gs_17
++   signature LINE_BREAK = gs_15
++   structure LineBreak = gs_16
 +   signature PRIORITY_QUEUE = gs_29
 +   signature PROBABILITY = gs_20
 +   structure PriorityHeap = gs_30
 +   structure PriorityQueue = gs_37
 +   structure Probability = gs_21
-+   signature STRING_OUTSTREAM = gs_15
++   signature STRING_OUTSTREAM = gs_14
 +   structure SortedList = gs_36
 +   structure StringOutStream = gs_26
 +end
@@ -7458,16 +7498,17 @@ index 0000000..9e499e8
 +end
 diff --git a/mlb/MLRISC.mlb b/mlb/MLRISC.mlb
 new file mode 100644
-index 0000000..7b1b30c
+index 0000000..0124642
 --- /dev/null
 +++ b/mlb/MLRISC.mlb
-@@ -0,0 +1,1747 @@
+@@ -0,0 +1,1748 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -9211,16 +9252,17 @@ index 0000000..7b1b30c
 +end
 diff --git a/mlb/MLTREE.mlb b/mlb/MLTREE.mlb
 new file mode 100644
-index 0000000..a5d8eb1
+index 0000000..16030cf
 --- /dev/null
 +++ b/mlb/MLTREE.mlb
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,211 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -9427,16 +9469,17 @@ index 0000000..a5d8eb1
 +end
 diff --git a/mlb/PPC.mlb b/mlb/PPC.mlb
 new file mode 100644
-index 0000000..701fa96
+index 0000000..22161b0
 --- /dev/null
 +++ b/mlb/PPC.mlb
-@@ -0,0 +1,574 @@
+@@ -0,0 +1,575 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -10007,16 +10050,17 @@ index 0000000..701fa96
 +end
 diff --git a/mlb/Peephole.mlb b/mlb/Peephole.mlb
 new file mode 100644
-index 0000000..83fe2c8
+index 0000000..7fd857c
 --- /dev/null
 +++ b/mlb/Peephole.mlb
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,63 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -10075,16 +10119,17 @@ index 0000000..83fe2c8
 +end
 diff --git a/mlb/RA.mlb b/mlb/RA.mlb
 new file mode 100644
-index 0000000..d64d2cd
+index 0000000..17f5023
 --- /dev/null
 +++ b/mlb/RA.mlb
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,154 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -10234,16 +10279,17 @@ index 0000000..d64d2cd
 +end
 diff --git a/mlb/SPARC.mlb b/mlb/SPARC.mlb
 new file mode 100644
-index 0000000..cc9f19c
+index 0000000..79a0cfb
 --- /dev/null
 +++ b/mlb/SPARC.mlb
-@@ -0,0 +1,539 @@
+@@ -0,0 +1,540 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -10779,16 +10825,17 @@ index 0000000..cc9f19c
 +end
 diff --git a/mlb/StagedAlloc.mlb b/mlb/StagedAlloc.mlb
 new file mode 100644
-index 0000000..ec37d41
+index 0000000..4a9ddf8
 --- /dev/null
 +++ b/mlb/StagedAlloc.mlb
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,93 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -10877,16 +10924,17 @@ index 0000000..ec37d41
 +end
 diff --git a/mlb/Visual.mlb b/mlb/Visual.mlb
 new file mode 100644
-index 0000000..829d1d5
+index 0000000..7b85fd5
 --- /dev/null
 +++ b/mlb/Visual.mlb
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,254 @@
 +
 +ann
-+  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
++  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
-+  "allowOrPats true" "allowSigWithtype true"
++  "allowOrPats true" "allowSigWithtype true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -11693,7 +11741,7 @@ index e12d7d2..7f27356 100644
  struct
    structure I = Instr
 diff --git a/ppc/emit/ppcAsm.sml b/ppc/emit/ppcAsm.sml
-index 1d241bb..13b3d1e 100644
+index 646f56e..1eeb794 100644
 --- a/ppc/emit/ppcAsm.sml
 +++ b/ppc/emit/ppcAsm.sml
 @@ -6,12 +6,92 @@
@@ -11796,7 +11844,7 @@ index 1d241bb..13b3d1e 100644
  struct
     structure I  = Instr
 diff --git a/ppc/emit/ppcMC.sml b/ppc/emit/ppcMC.sml
-index fcd3e4a..0ecaf67 100644
+index 1951264..29ee9cb 100644
 --- a/ppc/emit/ppcMC.sml
 +++ b/ppc/emit/ppcMC.sml
 @@ -6,7 +6,27 @@
@@ -12027,7 +12075,7 @@ index b2354cd..d7b6562 100644
  
      structure CFG = CFG
 diff --git a/ppc/instructions/ppcInstr.sml b/ppc/instructions/ppcInstr.sml
-index 5839cc9..a6dcdc0 100644
+index c6d3ec4..4d654e2 100644
 --- a/ppc/instructions/ppcInstr.sml
 +++ b/ppc/instructions/ppcInstr.sml
 @@ -8,7 +8,16 @@
@@ -12875,7 +12923,7 @@ index 43763bd..95e3c31 100644
  struct
    structure I = Instr
 diff --git a/sparc/emit/sparcAsm.sml b/sparc/emit/sparcAsm.sml
-index 821445a..bd88ce1 100644
+index 510b7bb..3c29ded 100644
 --- a/sparc/emit/sparcAsm.sml
 +++ b/sparc/emit/sparcAsm.sml
 @@ -6,12 +6,88 @@
@@ -12974,7 +13022,7 @@ index 821445a..bd88ce1 100644
  (*#line 466.21 "sparc/sparc.mdl"*)
                          val V9 : bool
 diff --git a/sparc/emit/sparcMC.sml b/sparc/emit/sparcMC.sml
-index 4aa4e00..079645d 100644
+index a90f30c..a6a2f09 100644
 --- a/sparc/emit/sparcMC.sml
 +++ b/sparc/emit/sparcMC.sml
 @@ -6,7 +6,27 @@
@@ -13047,7 +13095,7 @@ index 3675d5f..66f08f0 100644
  
  struct
 diff --git a/sparc/instructions/sparcInstr.sml b/sparc/instructions/sparcInstr.sml
-index 1cd82fc..f8581c9 100644
+index dd319d5..0c5f5fc 100644
 --- a/sparc/instructions/sparcInstr.sml
 +++ b/sparc/instructions/sparcInstr.sml
 @@ -8,7 +8,16 @@
@@ -13542,7 +13590,7 @@ index 120792e..ddf292e 100644
    structure I = Instr
    structure C = I.C
 diff --git a/x86/emit/x86Asm.sml b/x86/emit/x86Asm.sml
-index 04ac150..fc4ae04 100644
+index a6062a1..c633b83 100644
 --- a/x86/emit/x86Asm.sml
 +++ b/x86/emit/x86Asm.sml
 @@ -6,15 +6,126 @@
@@ -13746,7 +13794,7 @@ index 5b441e1..2e79f3e 100644
  
  struct
 diff --git a/x86/instructions/x86Instr.sml b/x86/instructions/x86Instr.sml
-index c9827a7..fdd52b4 100644
+index 11da42c..735cc76 100644
 --- a/x86/instructions/x86Instr.sml
 +++ b/x86/instructions/x86Instr.sml
 @@ -8,7 +8,16 @@
@@ -14127,7 +14175,7 @@ index 60a8610..43977b8 100644
 -
 -end (* local *)
 diff --git a/x86/mltree/x86.sml b/x86/mltree/x86.sml
-index 69fbd74..f7ef27b 100644
+index bb55f6c..8c2220d 100644
 --- a/x86/mltree/x86.sml
 +++ b/x86/mltree/x86.sml
 @@ -32,19 +32,77 @@
@@ -14217,10 +14265,10 @@ index 69fbd74..f7ef27b 100644
 +                              and type T.stm = ExtensionComp.T.stm
      datatype arch = Pentium | PentiumPro | PentiumII | PentiumIII
      val arch : arch ref
-     val cvti2f : 
+     val cvti2f :
 @@ -65,6 +123,9 @@ functor X86
            val rewriteMemReg : bool
-       end = 
+       end =
  struct
 +  val rewriteMemReg = true (* should we rewrite memRegs *)
 +  val enableFastFPMode = true (* set this to false to disable the mode *)
@@ -14228,8 +14276,8 @@ index 69fbd74..f7ef27b 100644
    structure I = X86Instr
    structure T = I.T
    structure TS = ExtensionComp.TS
-@@ -2010,5 +2071,3 @@ struct
-   end 
+@@ -2011,5 +2072,3 @@ struct
+   end
  
  end (* functor *)
 -

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -119,7 +120,7 @@ structure Accum =
                                         "shrinker didn't completely simplify"])
              else
                 let
-                   val ss = Block.statements (Vector.sub (blocks, 0))
+                   val ss = Block.statements (Vector.first blocks)
                    val vs = 
                       case Ssa.Statement.exp (Vector.last ss) of
                          Ssa.Exp.Tuple vs =>
@@ -437,7 +438,7 @@ fun closureConvert
 
             fun unary make v =
                if 1 = Vector.length v
-                  then make (Vector.sub (v, 0))
+                  then make (Vector.first v)
                else Error.bug "ClosureConvert.convertType.unary: bogus application of unary tycon"
             val tycons =
                [(Tycon.arrow, fn _ => Error.bug "ClosureConvert.convertType.array"),
@@ -797,7 +798,7 @@ fun closureConvert
                          then (binds, ac)
                       else
                          let 
-                            val {lambda, var, ...} = Vector.sub (decs, 0)
+                            val {lambda, var, ...} = Vector.first decs
                             val info = lambdaInfo lambda
                             val tupleVar = Var.newString "tuple"
                             val tupleTy = lambdaInfoType info
@@ -1033,11 +1034,21 @@ fun closureConvert
                                   let
                                      val y = varExpInfo (arg 0)
                                      val v =
-                                        Value.serialValue (Vector.sub (targs, 0))
+                                        Value.serialValue (Vector.first targs)
                                   in
                                      primApp (v1 (valueType v),
                                               v1 (coerce (convertVarInfo y,
                                                           VarInfo.value y, v)))
+                                  end
+                             | Vector_vector =>
+                                  let
+                                     val ys = Vector.map (args, varExpInfo)
+                                     val v = Value.deVector v
+                                  in
+                                     primApp (v1 (valueType v),
+                                              Vector.map (ys, fn y =>
+                                                          coerce (convertVarInfo y,
+                                                                  VarInfo.value y, v)))
                                   end
                              | Weak_new =>
                                   let

@@ -68,6 +68,8 @@ expressions and patterns like the following:
 val v = #[1,2,3]
 val #[x,y,z] = v
 ----
++
+MLton supports vector expressions and patterns with the <:SuccessorML#VectorExpsAndPats:`allowVectorExpsAndPats`> <:MLBasisAnnotations:ML Basis annotation>.
 
 * SML/NJ extends the syntax of the language to allow _or patterns_
 like the following:
@@ -77,6 +79,8 @@ like the following:
 datatype foo = Foo of int | Bar of int
 val (Foo x | Bar x) = Foo 13
 ----
++
+MLton supports or patterns with the <:SuccessorML#OrPats:`allowOrPats`> <:MLBasisAnnotations:ML Basis annotation>.
 
 * SML/NJ allows higher-order functors, that is, functors can be
 components of structures and can be passed as functor arguments and
@@ -214,6 +218,8 @@ type t = int
 ----
 
 * SML/NJ allows `withtype` specifications in signatures.
++
+MLton supports `withtype` specifications in signatures with the <:SuccessorML#SigWithtype:`allowSigWithtype`> <:MLBasisAnnotations:ML Basis annotation>.
 
 * SML/NJ allows a `where` structure specification that is similar to a
 `where type` specification.  For example:

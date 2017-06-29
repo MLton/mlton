@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -236,13 +236,21 @@ smlnj-mlton:
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: smlnj-mlton-dual
-smlnj-mlton-dual:
+.PHONY: smlnj-mlton-x2
+smlnj-mlton-x2:
 	$(MAKE) SMLNJ_CM_SERVERS_NUM=2 smlnj-mlton
 
-.PHONY: smlnj-mlton-quad
-smlnj-mlton-quad:
+.PHONY: smlnj-mlton-x4
+smlnj-mlton-x4:
 	$(MAKE) SMLNJ_CM_SERVERS_NUM=4 smlnj-mlton
+
+.PHONY: smlnj-mlton-x8
+smlnj-mlton-x8:
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=8 smlnj-mlton
+
+.PHONY: smlnj-mlton-x16
+smlnj-mlton-x16:
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=16 smlnj-mlton
 
 .PHONY: traced
 traced:
@@ -310,7 +318,7 @@ endif
 TEXM := $(TDOC)/examples
 
 GZIP_MAN := true
-ifeq ($(TARGET_OS), solaris)
+ifeq ($(findstring $(TARGET_OS), openbsd solaris), $(TARGET_OS))
 GZIP_MAN := false
 endif
 

@@ -58,7 +58,12 @@ Print a message at the start and end of every garbage collection.
 * ++gc-summary++
 +
 Print a summary of garbage collection statistics upon program
-termination.
+termination to standard error.
+
+* ++gc-summary-file __file__++
++
+Print a summary of garbage collection statistics upon program
+termination to the file specified by _file_.
 
 * ++load-world __world__++
 +

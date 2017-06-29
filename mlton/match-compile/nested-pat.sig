@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -32,14 +33,15 @@ signature NESTED_PAT =
                     isInt: bool}
         | Layered of Var.t * t
         | Or of t vector
-        | Tuple of t vector
+        | Record of t SortedRecord.t
         | Var of Var.t
+        | Vector of t vector
         | Wild
 
       val flatten: t -> t vector
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool
-      val isVar: t -> bool
+      val isVarOrWild: t -> bool
       val layout: t -> Layout.t
       val make: node * Type.t -> t
       val node: t -> node

@@ -50,13 +50,15 @@ The solution is to install (or build) the GnuMP on your machine.  If
 you install it at a different location, put the new path in
 ++runtime/platform/__<os>__.h++.
 
-* The following error indicates that a binary version of MLton could
+* The following errors indicates that a binary version of MLton could
 not be found in your path.
 +
 ----
-.../upgrade-basis: mlton: command not found
-Error: cannot upgrade basis because the compiler doesn't work
-make[3]: *** [upgrade-basis.sml] Error 1
+/bin/sh: mlton: command not found
+----
++
+----
+make[2]: mlton: Command not found
 ----
 +
 You need to have `mlton` in your path to build MLton from source.
@@ -64,10 +66,7 @@ You need to have `mlton` in your path to build MLton from source.
 During the build process, there are various times that the `Makefile`s
 look for a `mlton` in your path and in `src/build/bin`.  It is OK if
 the latter doesn't exist when the build starts; it is the target being
-built.  While not finding `build/bin/mlton` also results in
-`mlton: command not found` error messages, such errors are benign and
-will not abort the build.  Failure to find a `mlton` in your path will
-abort the build.
+built.  Failure to find a `mlton` in your path will abort the build.
 
 * Mac OS X executables do not seem to like static libraries to have a
 different path location at runtime compared to when the executable was

@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -93,11 +93,12 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                  handle Overflow => raise Fail "Sequence.length"
             else SeqIndex.toIntUnsafe (S.length s)
 
-      fun newUninit n = S.newUninit (fromIntForLength n)
+      fun uninit n = S.uninit (fromIntForLength n)
+      fun unsafeUninit n = S.unsafeUninit (SeqIndex.fromIntUnsafe n)
 
-      fun generate n =
+      fun create n =
          let
-            val {done, sub, update} = S.generate (fromIntForLength n)
+            val {done, sub, update} = S.create (fromIntForLength n)
          in
             {done = done,
              sub = unwrap1 sub,

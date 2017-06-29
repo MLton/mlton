@@ -528,7 +528,7 @@ fun restoreFunction {globals: Statement.t vector}
                 val li = labelInfo dst
                 val phiArgs = LabelInfo.phiArgs' li
               in
-                if Vector.length phiArgs = 0
+                if Vector.isEmpty phiArgs
                   then dst
                   else let
                          val phiArgs = Vector.map

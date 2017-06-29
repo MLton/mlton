@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -79,10 +79,11 @@ structure Pat =
                     items: (Record.Field.t * item) vector}
        | Tuple of t vector
        | Var of {fixop: Fixop.t, name: Longvid.t}
+       | Vector of t vector
        | Wild
       and item =
          Field of t
-        | Vid of Vid.t * Type.t option * t option 
+       | Vid of Vid.t * Type.t option * t option
       withtype t = node Wrap.t
       type node' = node
       type obj = t
@@ -104,8 +105,11 @@ structure Pat =
 
       fun tuple ps =
          if 1 = Vector.length ps
-            then Vector.sub (ps, 0)
-         else make (Tuple ps)
+            then Vector.first ps
+         else makeRegion (Tuple ps,
+                          Region.append
+                          (region (Vector.first ps),
+                           region (Vector.last ps)))
 
       fun layout (p, isDelimited) =
          let
@@ -118,7 +122,7 @@ structure Pat =
              | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
              | FlatApp ps =>
                   if Vector.length ps = 1
-                     then layout (Vector.sub (ps, 0), isDelimited)
+                     then layout (Vector.first ps, isDelimited)
                   else delimit (layoutFlatApp ps)
              | Layered {fixop, var, constraint, pat} =>
                   delimit
@@ -128,7 +132,8 @@ structure Pat =
                              seq [str "as ", layoutT pat]])
              | List ps => list (Vector.toListMap (ps, layoutT))
              | Or ps =>
-                  paren (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
+                  delimit
+                  (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -141,6 +146,7 @@ structure Pat =
                        str "}"]
              | Tuple ps => Layout.tuple (Vector.toListMap (ps, layoutT))
              | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+             | Vector ps => vector (Vector.map (ps, layoutT))
              | Wild => str "_"
          end
       and layoutF p = layout (p, false)
@@ -185,6 +191,7 @@ structure Pat =
                                              term = fn () => layout p}))
              | Tuple ps => Vector.foreach (ps, c)
              | Var _ => ()
+             | Vector ps => Vector.foreach (ps, c)
              | Wild => ()
          end
    end
@@ -310,36 +317,38 @@ structure Priority =
    end
 
 datatype expNode =
-   Var of {name: Longvid.t, fixop: Fixop.t}
-  | Fn of match
-  | FlatApp of exp vector
+    Andalso of exp * exp
   | App of exp * exp
   | Case of exp * match
-  | Let of dec * exp
-  | Seq of exp vector
   | Const of Const.t
-  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
-  | List of exp vector
-  | Selector of Field.t
   | Constraint of exp * Type.t
+  | FlatApp of exp vector
+  | Fn of match
   | Handle of exp * match
-  | Raise of exp
   | If of exp * exp * exp
-  | Andalso of exp * exp
+  | Let of dec * exp
+  | List of exp vector
   | Orelse of exp * exp
-  | While of {test: exp, expr: exp}
   | Prim of PrimKind.t
+  | Raise of exp
+  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
+  | Selector of Field.t
+  | Seq of exp vector
+  | Var of {name: Longvid.t, fixop: Fixop.t}
+  | Vector of exp vector
+  | While of {test: exp, expr: exp}
 and decNode =
-   Abstype of {body: dec,
-               datBind: DatBind.t}
-  | DoDec of exp
+    Abstype of {body: dec,
+                datBind: DatBind.t}
   | Datatype of DatatypeRhs.t
+  | DoDec of exp
   | Exception of Eb.t vector
   | Fix of {fixity: Fixity.t,
             ops: Vid.t vector}
-  | Fun of Tyvar.t vector * {body: exp,
-                             pats: Pat.t vector,
-                             resultType: Type.t option} vector vector
+  | Fun of {tyvars: Tyvar.t vector,
+            fbs: {body: exp,
+                  pats: Pat.t vector,
+                  resultType: Type.t option} vector vector}
   | Local of dec * dec
   | Open of Longstrid.t vector
   | Overload of Priority.t * Var.t * 
@@ -369,16 +378,12 @@ structure Match =
       type obj = t
    end
 
-fun layoutAndsTyvars (prefix, (tyvars, xs), layoutX) =
-   layoutAnds (prefix,
-               Vector.fromList
-               (case Vector.toListMap (xs, layoutX) of
-                   [] => []
-                 | x :: xs =>
-                      (if Vector.isEmpty tyvars
-                          then x
-                       else seq [Tyvar.layouts tyvars, str " ", x]) :: xs),
-              fn (prefix, x) => seq [prefix, x])
+fun layoutTyvarsAndsSusp (prefix, (tyvars, xs), layoutX) =
+   layoutAndsSusp
+   (prefix, xs, fn (first, prefix, x) =>
+    if first andalso not (Vector.isEmpty tyvars)
+       then seq [prefix, Tyvar.layouts tyvars, str " ", layoutX x]
+       else seq [prefix, layoutX x])
 
 fun expNodeName e =
    case node e of
@@ -400,6 +405,7 @@ fun expNodeName e =
     | Selector _ => "Selector"
     | Seq _ => "Seq"
     | Var _ => "Var"
+    | Vector _ => "Vector"
     | While _ => "While"
 
 val traceLayoutExp =
@@ -428,7 +434,7 @@ fun layoutExp arg =
             delimit (layoutConstraint (layoutExpF expr, constraint))
        | FlatApp es =>
             if Vector.length es = 1
-               then layoutExp (Vector.sub (es, 0), isDelimited)
+               then layoutExp (Vector.first es, isDelimited)
             else delimit (seq (separate (Vector.toListMap (es, layoutExpF), " ")))
        | Fn m => delimit (seq [str "fn ", layoutMatch m])
        | Handle (try, match) =>
@@ -449,7 +455,7 @@ fun layoutExp arg =
             let
                fun layoutTuple es =
                   if 1 = Vector.length es
-                     then layoutExp (Vector.sub (es, 0), isDelimited)
+                     then layoutExp (Vector.first es, isDelimited)
                   else tuple (layoutExpsT es)
             in
                Record.layout {record = r,
@@ -461,6 +467,7 @@ fun layoutExp arg =
        | Selector f => seq [str "#", Field.layout f]
        | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
        | Var {name, fixop} => seq [Fixop.layout fixop, layoutLongvid name]
+       | Vector es => vector (Vector.map (es, layoutExpT))
        | While {test, expr} =>
             delimit (align [seq [str "while ", layoutExpT test],
                             seq [str "do ", layoutExpT expr]])
@@ -494,7 +501,12 @@ and layoutDec d =
     | Fix {fixity, ops} =>
          seq [Fixity.layout fixity, str " ",
               seq (separate (Vector.toListMap (ops, Vid.layout), " "))]
-    | Fun fbs => layoutAndsTyvars ("fun", fbs, layoutFb)
+    | Fun {tyvars, fbs} =>
+         let
+            val fbs = layoutFun {tyvars = tyvars, fbs = fbs}
+         in
+            align (Vector.toListMap (fbs, fn th => th ()))
+         end
     | Local (d, d') => Pretty.locall (layoutDec d, layoutDec d')
     | Open ss => seq [str "open ",
                       seq (separate (Vector.toListMap (ss, Longstrid.layout),
@@ -507,14 +519,16 @@ and layoutDec d =
     | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
     | Type typBind => TypBind.layout typBind
     | Val {tyvars, vbs, rvbs} =>
-         align [layoutAndsTyvars ("val", (tyvars, vbs), layoutVb),
-                layoutAndsTyvars ("val rec", (tyvars, rvbs), layoutRvb)]
+         let
+            val {vbs, rvbs} =
+               layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
+         in
+            align [align (Vector.toListMap (vbs, fn th => th ())),
+                   align (Vector.toListMap (rvbs, fn th => th ()))]
+         end
 
-and layoutVb {pat, exp} =
-   bind (Pat.layoutT pat, layoutExpT exp)
-
-and layoutRvb {pat, match, ...} =
-   bind (Pat.layout pat, seq [str "fn ", layoutMatch match])
+and layoutFun {tyvars, fbs} =
+   layoutTyvarsAndsSusp ("fun", (tyvars, fbs), layoutFb)
 
 and layoutFb clauses =
    alignPrefix (Vector.toListMap (clauses, layoutClause), "| ")
@@ -525,6 +539,22 @@ and layoutClause ({pats, resultType, body}) =
                   str " ="],
              layoutExpF body] (* this has to be layoutExpF in case body
                                  is a case expression *)
+
+and layoutVal {tyvars, vbs, rvbs} =
+   if Vector.isEmpty rvbs
+      then {vbs = layoutTyvarsAndsSusp ("val", (tyvars, vbs), layoutVb),
+            rvbs = Vector.new0 ()}
+   else if Vector.isEmpty vbs
+      then {vbs = Vector.new0 (),
+            rvbs = layoutTyvarsAndsSusp ("val rec", (tyvars, rvbs), layoutRvb)}
+   else {vbs = layoutTyvarsAndsSusp ("val", (tyvars, vbs), layoutVb),
+         rvbs = layoutTyvarsAndsSusp ("and rec", (Vector.new0 (), rvbs), layoutRvb)}
+
+and layoutVb {pat, exp} =
+   bind (Pat.layoutT pat, layoutExpT exp)
+
+and layoutRvb {pat, match, ...} =
+   bind (Pat.layout pat, seq [str "fn ", layoutMatch match])
 
 fun checkSyntaxExp (e: exp): unit =
    let
@@ -553,6 +583,7 @@ fun checkSyntaxExp (e: exp): unit =
        | Selector _ => ()
        | Seq es => Vector.foreach (es, c)
        | Var _ => ()
+       | Vector es => Vector.foreach (es, c)
        | While {expr, test} => (c expr; c test)
    end
 
@@ -579,8 +610,8 @@ and checkSyntaxDec (d: dec): unit =
                   region = Con.region o #1,
                   term = fn () => layoutDec d})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
-    | Fun (_, fs) =>
-         Vector.foreach (fs, fn clauses =>
+    | Fun {fbs, ...} =>
+         Vector.foreach (fbs, fn clauses =>
                          Vector.foreach
                          (clauses, fn {body, pats, resultType} =>
                           (checkSyntaxExp body
@@ -616,9 +647,9 @@ structure Exp =
       fun fnn rs =
          let
             val r =
-               if 0 = Vector.length rs
+               if Vector.isEmpty rs
                   then Region.bogus
-               else Region.append (Pat.region (#1 (Vector.sub (rs, 0))),
+               else Region.append (Pat.region (#1 (Vector.first rs)),
                                    region (#2 (Vector.last rs)))
          in
             makeRegion (Fn (Match.makeRegion (Match.T rs, r)), r)
@@ -639,13 +670,13 @@ structure Exp =
 
       fun tuple (es: t vector): t =
          if 1 = Vector.length es
-            then Vector.sub (es, 0)
+            then Vector.first es
          else
             let
                val r =
-                  if 0 = Vector.length es
+                  if Vector.isEmpty es
                      then Region.bogus
-                  else Region.append (region (Vector.sub (es, 0)),
+                  else Region.append (region (Vector.first es),
                                       region (Vector.last es))
             in
                makeRegion (Record (Record.tuple es), r)
@@ -690,6 +721,8 @@ structure Dec =
       end
 
       val layout = layoutDec
+      val layoutFun = layoutFun
+      val layoutVal = layoutVal
    end
 
 end

@@ -145,7 +145,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
             val x' = Var.new x
             val ve = SvarExp.mono x'
             fun inst ts =
-               if 0 = Vector.length ts
+               if Vector.isEmpty ts
                   then ve
                else Error.bug "Monomorphise.renameMono: expected monomorphic instance"
             val _ = setVar (x, inst)

@@ -44,6 +44,7 @@ For some initial design discussion, see the thread at:
 
 * http://mlton.org/pipermail/mlton/2001-August/019689.html
 
-For a retrospective, see the thread at:
+For some retrospectives, see the threads at:
 
+* http://mlton.org/pipermail/mlton/2003-January/023054.html
 * http://mlton.org/pipermail/mlton/2007-February/029597.html

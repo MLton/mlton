@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2015 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2017 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -209,17 +209,17 @@ fun makeOptions {usage} =
          case e of
             Control.Elaborate.Bad =>
                usage (concat ["invalid -", flag, " flag: ", s])
-          | Control.Elaborate.Deprecated ids =>
-               if !Control.warnDeprecated
+          | Control.Elaborate.Good _ => ()
+          | Control.Elaborate.Other =>
+               usage (concat ["invalid -", flag, " flag: ", s])
+          | Control.Elaborate.Proxy (ids, {deprecated}) =>
+               if deprecated andalso !Control.warnDeprecated
                   then
                      Out.output
                      (Out.error,
                       concat ["Warning: ", "deprecated annotation: ", s, ", use ",
                               List.toString Control.Elaborate.Id.name ids, ".\n"])
                else ()
-          | Control.Elaborate.Good () => ()
-          | Control.Elaborate.Other =>
-               usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       datatype z = datatype MLton.Platform.Arch.t
       datatype z = datatype MLton.Platform.OS.t
@@ -520,6 +520,11 @@ fun makeOptions {usage} =
                                     in List.push (keepPasses, re)
                                     end
                    | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
+       (Expert, "layout-width", " <n>", "target width for pretty printer",
+        Int (fn n =>
+             if n > 0
+                then Layout.setDefaultWidth n
+                else usage (concat ["invalid -layout-width arg: ", Int.toString n]))),
        (Expert, "libname", " <basename>", "the name of the generated library",
         SpaceString (fn s => libname := s)),
        (Normal, "link-opt", " <opt>", "pass option to linker",
@@ -945,6 +950,7 @@ fun commandLine (args: string list): unit =
           | (Darwin, X86, Executable) => false
           | (Darwin, X86, Archive) => false
           | (Darwin, _, _) => true
+          | (OpenBSD, _, _) => true
             (* On ELF systems, we only need PIC for LibArchive/Library *)
           | (_, _, Library) => true
           | (_, _, LibArchive) => true
@@ -1100,10 +1106,10 @@ fun commandLine (args: string list): unit =
                                 " target"])
          else ()
       val () =
-         Control.labelsHaveExtra_ := (case targetOS of
-                                         Cygwin => true
-                                       | Darwin => true
-                                       | MinGW => true
+         Control.labelsHaveExtra_ := (case (targetOS, targetArch) of
+                                         (Cygwin, X86) => true
+                                       | (Darwin, _) => true
+                                       | (MinGW, X86) => true
                                        | _ => false)
       val _ =
          chunk :=
