@@ -31,19 +31,19 @@ val xmlPasses : pass list ref = ref xmlPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit, execute): passGen =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-                               execute = execute}
+                               execute = true}
                     else NONE
       end
 
    val passGens =
-      (List.map([("xmlShrink", S.shrink, true),
-                 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes, true)],
+      (List.map([("xmlShrink", S.shrink),
+                 ("xmlSimplifyTypes", SimplifyTypes.simplifyTypes)],
                 mkSimplePassGen))
 in
    fun xmlPassesSetCustom s =

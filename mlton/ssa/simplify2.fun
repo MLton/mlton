@@ -53,28 +53,28 @@ val ssa2Passes : pass list ref = ref ssa2PassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit, execute): passGen =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-                               execute = execute}
+                               execute = true}
                     else NONE
       end
 
 
    val passGens = 
-      List.map([("addProfile", Profile2.addProfile, true),
-                ("deepFlatten", DeepFlatten.transform2, true),
-                ("dropProfile", Profile2.dropProfile, true),
-                ("refFlatten", RefFlatten.transform2, true),
-                ("removeUnused", RemoveUnused2.transform2, true),
-                ("zone", Zone.transform2, true),
-                ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
-                ("orderFunctions",S.orderFunctions, true),
-                ("reverseFunctions",S.reverseFunctions, true),
-                ("shrink", S.shrink, true)],
+      List.map([("addProfile", Profile2.addProfile),
+                ("deepFlatten", DeepFlatten.transform2),
+                ("dropProfile", Profile2.dropProfile),
+                ("refFlatten", RefFlatten.transform2),
+                ("removeUnused", RemoveUnused2.transform2),
+                ("zone", Zone.transform2),
+                ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+                ("orderFunctions",S.orderFunctions),
+                ("reverseFunctions",S.reverseFunctions),
+                ("shrink", S.shrink)],
                mkSimplePassGen)
 in
    fun ssa2PassesSetCustom s =

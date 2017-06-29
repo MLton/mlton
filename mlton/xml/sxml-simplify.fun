@@ -57,13 +57,13 @@ val sxmlPasses : pass list ref = ref sxmlPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit, execute): passGen =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = name ^ "#" ^ 
                                (Int.toString (Counter.next count)),
                                doit = doit,
-                               execute = execute}
+                               execute = true}
                     else NONE
       end
 
@@ -113,9 +113,9 @@ local
 
    val passGens =
       polyvariancePassGen ::
-      (List.map([("sxmlShrink", S.shrink, true),
-                 ("implementExceptions", ImplementExceptions.transform, true),
-                 ("implementSuffix", ImplementSuffix.transform, true)],
+      (List.map([("sxmlShrink", S.shrink),
+                 ("implementExceptions", ImplementExceptions.transform),
+                 ("implementSuffix", ImplementSuffix.transform)],
                 mkSimplePassGen))
 in
    fun sxmlPassesSetCustom s =

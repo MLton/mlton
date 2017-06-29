@@ -116,13 +116,13 @@ val ssaPasses : pass list ref = ref ssaPassesDefault
 local
    type passGen = string -> pass option
 
-   fun mkSimplePassGen (name, doit, execute): passGen =
+   fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
                                doit = doit,
-                               execute = execute}
+                               execute = true}
                     else NONE
       end
 
@@ -203,35 +203,35 @@ local
 
    val passGens = 
       inlinePassGen ::
-      (List.map([("addProfile", Profile.addProfile, true),
-                 ("combineConversions",  CombineConversions.transform, true),
-                 ("commonArg", CommonArg.transform, true),
-                 ("commonBlock", CommonBlock.transform, true ),
-                 ("commonSubexp", CommonSubexp.transform, true),
-                 ("constantPropagation", ConstantPropagation.transform, true),
-                 ("contify", Contify.transform, true),
-                 ("dropProfile", Profile.dropProfile, true),
-                 ("flatten", Flatten.transform, true),
-                 ("introduceLoops", IntroduceLoops.transform, true),
-                 ("knownCase", KnownCase.transform, true),
-                 ("localFlatten", LocalFlatten.transform, true),
-                 ("localRef", LocalRef.transform, true),
-                 ("loopInvariant", LoopInvariant.transform, true),
-                 ("loopUnroll", LoopUnroll.transform, true),
-                 ("loopUnswitch", LoopUnswitch.transform, true),
-                 ("polyEqual", PolyEqual.transform, true),
-                 ("polyHash", PolyHash.transform, true),
-                 ("redundant", Redundant.transform, true),
-                 ("redundantTests", RedundantTests.transform, true),
-                 ("removeUnused", RemoveUnused.transform, true),
-                 ("simplifyTypes", SimplifyTypes.transform, true),
-                 ("useless", Useless.transform, true),
+      (List.map([("addProfile", Profile.addProfile),
+                 ("combineConversions",  CombineConversions.transform),
+                 ("commonArg", CommonArg.transform),
+                 ("commonBlock", CommonBlock.transform ),
+                 ("commonSubexp", CommonSubexp.transform),
+                 ("constantPropagation", ConstantPropagation.transform),
+                 ("contify", Contify.transform),
+                 ("dropProfile", Profile.dropProfile),
+                 ("flatten", Flatten.transform),
+                 ("introduceLoops", IntroduceLoops.transform),
+                 ("knownCase", KnownCase.transform),
+                 ("localFlatten", LocalFlatten.transform),
+                 ("localRef", LocalRef.transform),
+                 ("loopInvariant", LoopInvariant.transform),
+                 ("loopUnroll", LoopUnroll.transform),
+                 ("loopUnswitch", LoopUnswitch.transform),
+                 ("polyEqual", PolyEqual.transform),
+                 ("polyHash", PolyHash.transform),
+                 ("redundant", Redundant.transform),
+                 ("redundantTests", RedundantTests.transform),
+                 ("removeUnused", RemoveUnused.transform),
+                 ("simplifyTypes", SimplifyTypes.transform),
+                 ("useless", Useless.transform),
                  ("breakCriticalEdges",fn p => 
-                  S.breakCriticalEdges (p, {codeMotion = true}), true),
-                 ("eliminateDeadBlocks",S.eliminateDeadBlocks, true),
-                 ("orderFunctions",S.orderFunctions, true),
-                 ("reverseFunctions",S.reverseFunctions, true),
-                 ("shrink", S.shrink, true)],
+                  S.breakCriticalEdges (p, {codeMotion = true})),
+                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+                 ("orderFunctions",S.orderFunctions),
+                 ("reverseFunctions",S.reverseFunctions),
+                 ("shrink", S.shrink)],
                 mkSimplePassGen))
 in
    fun ssaPassesSetCustom s =
@@ -285,7 +285,6 @@ fun pass ({name, doit, midfix}, p) =
    in
       p
    end 
-
 fun maybePass ({name, doit, execute, midfix}, p) =
    if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
