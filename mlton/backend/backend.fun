@@ -60,9 +60,6 @@ structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
 
-nonfix ^
-fun ^ r = valOf (!r)
-
 structure VarOperand =
    struct
       datatype t =
@@ -82,7 +79,7 @@ structure VarOperand =
          end
 
       val operand: t -> M.Operand.t =
-         fn Allocate {operand, ...} => ^operand
+         fn Allocate {operand, ...} => valOf (!operand)
           | Const oper => oper
    end
 
