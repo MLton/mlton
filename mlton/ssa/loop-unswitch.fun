@@ -1,6 +1,4 @@
-(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
- *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-2000 NEC Research Institute.
+(* Copyright (C) 2016 Matthew Surawski.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
