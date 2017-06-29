@@ -59,7 +59,7 @@ val ssaPassesDefault =
    (* loopUnroll should run
     *   - after constants have been globalized
     *)
-   {name = "loopUnroll1", doit = LoopUnroll.transform, execute = true} ::
+   {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run
@@ -78,8 +78,8 @@ val ssaPassesDefault =
     *   - after loop invariant code motion so invariant conditions are obvious
     *   - before a knownCase pass to cleanup after unswitching
     *)
-   {name = "loopUnswitch1", doit = LoopUnswitch.transform, execute = true} ::
-   {name = "knownCase1", doit = KnownCase.transform, execute = true} ::
+   {name = "loopUnswitch1", doit = LoopUnswitch.transform, execute = false} ::
+   {name = "knownCase1", doit = KnownCase.transform, execute = false} ::
    {name = "contify2", doit = Contify.transform, execute = true} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec), execute = true} ::
@@ -97,10 +97,10 @@ val ssaPassesDefault =
    {name = "commonBlock", doit = CommonBlock.transform, execute = true} ::
    {name = "redundantTests", doit = RedundantTests.transform, execute = true} ::
    {name = "redundant", doit = Redundant.transform, execute = true} ::
-   {name = "loopUnswitch2", doit = LoopUnswitch.transform, execute = true} ::
+   {name = "loopUnswitch2", doit = LoopUnswitch.transform, execute = false} ::
    {name = "knownCase2", doit = KnownCase.transform, execute = true} ::
-   {name = "loopUnroll2", doit = LoopUnroll.transform, execute = true} ::
-   {name = "commonSubexp2", doit = CommonSubexp.transform, execute = true} ::
+   {name = "loopUnroll2", doit = LoopUnroll.transform, execute = false} ::
+   {name = "commonSubexp2", doit = CommonSubexp.transform, execute = false} ::
    {name = "removeUnused4", doit = RemoveUnused.transform, execute = true} ::
    nil
 
