@@ -179,15 +179,13 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                end 
             fun pass ({name, doit}, p) =
                pass' ({name = name, doit = doit}, fn p => p, p)
-
             fun maybePass ({name, doit, execute}, p) =
                if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
                      then new
                      else old)
                then pass ({name = name, doit = doit}, p)
-               else p
-
+               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
             val p = maybePass ({name = "rssaShrink1",
                                 doit = Program.shrink, execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 

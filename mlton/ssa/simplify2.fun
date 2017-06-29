@@ -134,7 +134,7 @@ fun maybePass ({name, doit, execute, midfix}, p) =
                      then new
                      else old)
       then pass ({name = name, doit = doit, midfix = midfix}, p)
-      else p
+      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 
 fun simplify p =
    let
