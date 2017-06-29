@@ -187,7 +187,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                then pass ({name = name, doit = doit}, p)
                else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
             val p = maybePass ({name = "rssaShrink1",
-                                doit = Program.shrink, execute = true}, p)
+                                doit = Program.shrink,
+                                execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
@@ -195,14 +196,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink, execute = true}, p)
+                                doit = Program.shrink,
+                                execute = true}, p)
             val () = Program.checkHandlers p
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},
                       fn (p,_) => p, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions, execute = true}, p)
+                                doit = Program.orderFunctions,
+                                execute = true}, p)
          in
             (p, makeProfileInfo)
          end
