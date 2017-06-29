@@ -389,7 +389,7 @@ fun makeOptions {usage} =
                      SOME (re,_) => let val re = Regexp.compileDFA re
                                     in List.push (executePasses, (re, false))
                                     end
-                   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
+                   | NONE => usage (concat ["invalid -disable-pass flag: ", s])))),
        let
           val flag = "enable-ann"
        in
@@ -405,7 +405,7 @@ fun makeOptions {usage} =
                      SOME (re,_) => let val re = Regexp.compileDFA re
                                     in List.push (executePasses, (re, true))
                                     end
-                   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
+                   | NONE => usage (concat ["invalid -enable-pass flag: ", s])))),
        (Expert, "error-threshhold", " <n>", "error threshhold (20)",
         intRef errorThreshhold),
        (Expert, "emit-main", " {true|false}", "emit main() startup function",
