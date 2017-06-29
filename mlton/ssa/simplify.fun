@@ -206,7 +206,7 @@ local
       (List.map([("addProfile", Profile.addProfile),
                  ("combineConversions",  CombineConversions.transform),
                  ("commonArg", CommonArg.transform),
-                 ("commonBlock", CommonBlock.transform ),
+                 ("commonBlock", CommonBlock.transform),
                  ("commonSubexp", CommonSubexp.transform),
                  ("constantPropagation", ConstantPropagation.transform),
                  ("contify", Contify.transform),
