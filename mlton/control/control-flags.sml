@@ -115,7 +115,7 @@ val diagPasses =
                         Regexp.Compiled.layout)}
 
 val executePasses =
-   control {name = "do passes",
+   control {name = "execute passes",
             default = [],
             toString = List.toString
                        (Layout.toString o
