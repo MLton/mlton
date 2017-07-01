@@ -4,25 +4,25 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature STREAM_PARSER_STRUCTS = 
-    sig
-      structure Stream: STREAM
-      structure File: FILE
-    end 
-
 signature STREAM_PARSER = 
    sig
-      include STREAM_PARSER_STRUCTS
+      type 'a t
+      structure State:
+         sig
+            type t
+         end
+      structure Location:
+         sig
+            type t = {line: int, column: int}
+         end
+      structure Info:
+         sig
+            type t = string
+         end
 
-      type 'b t
-      type state
+      val parse: 'a t * char Stream.t -> 'a
+      val parseWithFile: 'a t * File.t * char Stream.t -> 'a
 
-      type location = {line: int, column: int}
-      type info = string
-      val parse: 'b t * char Stream.t -> 'b
-      val parseWithFile: 'b t * File.t * char Stream.t -> 'b
-
-      val pure: 'b -> 'b t
       (*
        * infix 1 <|> >>=
        * infix 2 <&>
@@ -30,85 +30,85 @@ signature STREAM_PARSER =
        * infixr 4 <$> <$$> <$$$> <$
        *)
       val >>= : 'a t * ('a -> 'b t) -> 'b t
-      val <*> : ('b -> 'c) t * 'b t -> 'c t
-      val <$> : ('b -> 'c) * 'b t -> 'c t
+      val <*> : ('a -> 'b) t * 'a t -> 'b t
+      val <$> : ('a -> 'b) * 'a t -> 'b t
       (* replace the result of a parser witih a constant *)
-      val <$ : 'c * 'b t -> 'c t
+      val <$ : 'b * 'a t -> 'b t
       (* map over pairs of parsers, joining their results together *)
-      val <$$> : ('b * 'c -> 'd) * ('b t * 'c t) -> 'd t
-      val <$$$> : ('b * 'c * 'd -> 'e) * ('b t * 'c t * 'd t) -> 'e t
+      val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
+      val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
       (* match both parsers, and discard the right or left result respectively *)
-      val <* : 'b t * 'c t -> 'b t
-      val *> : 'b t * 'c t -> 'c t
+      val <* : 'a t * 'b t -> 'a t
+      val *> : 'a t * 'b t -> 'b t
       (* try both parsers, take the result of the first success *)
-      val <|> : 'b t * 'b t -> 'b t 
+      val <|> : 'a t * 'a t -> 'a t 
       (* try both parsers, fail if either fails, or take the last success *)
-      val <&> : 'b t * 'b t -> 'b t 
+      val <&> : 'a t * 'a t -> 'a t 
       structure Ops : sig
          val >>= : 'a t * ('a -> 'b t) -> 'b t
-         val <*> : ('b -> 'c) t * 'b t -> 'c t
-         val <$> : ('b -> 'c) * 'b t -> 'c t
-         val <$ : 'c * 'b t -> 'c t
-         val <$$> : ('b * 'c -> 'd) * ('b t * 'c t) -> 'd t
-         val <$$$> : ('b * 'c * 'd -> 'e) * ('b t * 'c t * 'd t) -> 'e t
-         val <* : 'b t * 'c t -> 'b t
-         val *> : 'b t * 'c t -> 'c t
-         val <|> : 'b t * 'b t -> 'b t 
-         val <&> : 'b t * 'b t -> 'b t 
+         val <*> : ('a -> 'b) t * 'a t -> 'b t
+         val <$> : ('a -> 'b) * 'a t -> 'b t
+         val <$ : 'b * 'a t -> 'b t
+         val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
+         val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
+         val <* : 'a t * 'b t -> 'a t
+         val *> : 'a t * 'b t -> 'b t
+         val <|> : 'a t * 'a t -> 'a t 
+         val <&> : 'a t * 'a t -> 'a t 
       end
 
-
-      (* succeeds if any of the parsers succeed, effectively folding with <|> *)
-      val any: 'b t list -> 'b t 
+      val pure: 'a -> 'a t
+      (* succeeds if any of the parsers succeed *)
+      val any: 'a t list -> 'a t 
       (* matches the given character *)
       val char: char -> char t
       (* composes two parsers in turn, the characters used for the second come
        * from the first *)
-      val compose : char t * 'b t -> 'b t
+      val compose : char t * 'a t -> 'a t
       (* if the parser fails, it will fail as a cut *)
-      val cut: 'b t -> 'b t 
+      val cut: 'a t -> 'a t 
       (* delays a stream lazily, for recursive combinations *)
-      val delay: (unit -> 'b t) -> 'b t
-      (* succeeds if all of the parsers succeed and puts them together in a list*)
-      val each: 'b t list -> 'b list t 
+      val delay: (unit -> 'a t) -> 'a t
+      (* succeeds if all of the parsers succeed and combines their results *)
+      val each: 'a t list -> 'a list t 
       (* fail with a specified error message *)
-      val fail: string -> 'b t
+      val fail: string -> 'a t
       (* as fail, but also cuts at the next choice point *)
-      val failCut: string -> 'b t
+      val failCut: string -> 'a t
       (* succeeds if and only if its argument fails to parse*)
-      val failing: 'b t -> unit t
+      val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
-      val fromReader: (state -> ('b * state) option)-> 'b t
+      val fromReader: (State.t -> ('a * State.t) option)-> 'a t
       (* returns the info for the parse, usually a filename *)
-      val info: info t
+      val info: Info.t t
       (* returns the current source location of the parser *)
-      val location: location t
+      val location: Location.t t
       (* succeeds for each time the parser succeeds in succession *)
-      val many: 'b t -> 'b list t
+      val many: 'a t -> 'a list t
       (* as many, but one or more, rather than zero or more times *)
-      val many1: 'b t -> 'b list t
+      val many1: 'a t -> 'a list t
       (* as many, but with failures of the second parser before each parse from the first *)
-      val manyFailing: ('b t * 'c t) -> 'b list t
+      val manyFailing: ('a t * 'b t) -> 'a list t
       (* manyFailing, specialized to the case that p is next *)
-      val manyCharsFailing: 'b t -> char list t
+      val manyCharsFailing: 'a t -> char list t
       (* gets the next char of input *)
       val next: char t
       (* succeeds if the first parser succeeds and the second fails 
        * the second parser will never consume any input *)
-      val notFollowedBy: 'b t * 'c t -> 'b t
+      val notFollowedBy: 'a t * 'b t -> 'a t
       (* succeeds with SOME if the parser succeeded and NONE otherwise *)
-      val optional: 'b t -> 'b option t
+      val optional: 'a t -> 'a option t
       (* run a parser but consume no input *)
-      val peek: 'b t -> 'b t
+      val peek: 'a t -> 'a t
       (* succeeds if the parser succeeded with an input that passed the predicate*) 
-      val sat: 'b t * ('b -> bool) -> 'b t
+      val sat: 'a t * ('a -> bool) -> 'a t
       (* as many, but an instance of the second parser separates each instance*)
-      val sepBy: 'b t * 'c t -> 'b list t
+      val sepBy: 'a t * 'b t -> 'a list t
       (* as many1, but an instance of the second parser separates each instance*)
-      val sepBy1: 'b t * 'c t -> 'b list t
+      val sepBy1: 'a t * 'b t -> 'a list t
       (* matches the given string *)
       val string: string -> string t
       (* returns a reader representation of the parser *)
-      val toReader: 'b t -> state -> ('b * state) option
+      val toReader: 'a t -> State.t -> ('a * State.t) option
 
    end

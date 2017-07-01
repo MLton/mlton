@@ -123,6 +123,7 @@ structure Sexp
 structure Signal
 structure Socket
 structure Stream
+structure StreamParser
 structure String
 structure StringCvt
 structure Substring
@@ -161,7 +162,6 @@ functor Pair
 functor PolyEnv
 functor Ring
 functor RingWithIdentity
-functor StreamParser
 functor Sum
 functor Tree
 functor UniqueId
@@ -270,7 +270,7 @@ instream.sml
 file.sig
 file.sml
 stream-parser.sig
-stream-parser.fun
+stream-parser.sml
 signal.sml
 process.sig
 dir.sig
