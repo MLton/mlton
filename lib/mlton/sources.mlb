@@ -109,6 +109,7 @@ ann "forceUsed" in
       structure Signal
       structure SMLofNJ
       structure Stream
+      structure StreamParser
       structure String
       structure StringCvt
       structure Substring
@@ -139,7 +140,6 @@ ann "forceUsed" in
       functor PolyEnv
       functor Ring
       functor RingWithIdentity
-      functor StreamParser
       functor Tree
       functor UniqueId
       functor UniqueSet

@@ -128,6 +128,7 @@ structure Signal
 structure SMLofNJ
 structure Socket
 structure Stream
+structure StreamParser
 structure String
 structure StringCvt
 structure Substring
@@ -175,7 +176,6 @@ functor PolyEnv
 functor Ring
 functor RingWithIdentity
 (* functor SplayMonoEnv *)
-functor StreamParser
 functor Sum
 functor Tree
 functor UniqueId

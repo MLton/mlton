@@ -49,9 +49,7 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure ParseSxml = ParseSxml(structure XmlTree = Xml
                                 structure Stream = Stream
-                                structure StreamParser =
-                                   StreamParser(structure Stream = Stream
-                                                structure File = File))
+                                structure StreamParser = StreamParser)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
