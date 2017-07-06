@@ -1,3 +1,9 @@
+(* Copyright (C) 2017 Jason Carr.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 functor ParseSxml(S: PARSE_SXML_STRUCTS) = 
 struct
    open S
