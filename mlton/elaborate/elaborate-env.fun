@@ -84,7 +84,7 @@ structure Type =
             fun con (c, ts) =
                let
                   fun keep {showInside: bool} =
-                     Tycon.layoutApp
+                     Tycon.layoutAppPretty
                      (c, Vector.map (ts, fn t =>
                                      if showInside
                                         then
@@ -134,7 +134,7 @@ structure Type =
                              ({isChar = false}, Tycon.BindingStrength.unit))
                          end
                     | SOME v =>
-                         Tycon.layoutApp
+                         Tycon.layoutAppPretty
                          (Tycon.tuple,
                           Vector.map (v, fn NONE => wild | SOME t => t)))
             val exp =

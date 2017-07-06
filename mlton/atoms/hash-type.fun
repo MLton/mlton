@@ -82,18 +82,16 @@ structure Type =
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
 
       fun layout (ty: t): Layout.t =
-         #1 (hom {con = Tycon.layoutApp,
+         #1 (hom {con = Tycon.layoutAppPretty,
                   ty = ty,
                   var = fn a => (Tyvar.layout a,
                                  ({isChar = false},
                                   Tycon.BindingStrength.unit))})
       
       fun layoutFormal(ty: t): Layout.t =
-         #1 (hom {con = Tycon.layoutFormal,
-                  ty = ty,
-                  var = fn a => (Tyvar.layout a,
-                                 ({isChar = false},
-                                  Tycon.BindingStrength.unit))})
+         hom {con = Tycon.layoutApp,
+              ty = ty,
+              var = Tyvar.layout}
 
       local
          val same: tree * tree -> bool =

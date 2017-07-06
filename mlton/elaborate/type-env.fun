@@ -425,7 +425,7 @@ in
                                  then ", ...}"
                               else "}")])
    fun layoutTuple (zs: z vector): z =
-      Tycon.layoutApp (Tycon.tuple, zs)
+      Tycon.layoutAppPretty (Tycon.tuple, zs)
 end
 
 structure Type =
@@ -634,8 +634,8 @@ structure Type =
           lay: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)} =
          let
             val str = Layout.str
-            fun con (_, c, ts) = Tycon.layoutApp (c, ts)
-            fun con0 c = Tycon.layoutApp (c, Vector.new0 ())
+            fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
+            fun con0 c = Tycon.layoutAppPretty (c, Vector.new0 ())
             fun flexRecord (_, {fields, spine}) =
                layoutRecord
                (List.fold
@@ -660,7 +660,7 @@ structure Type =
                      layoutRecord (Vector.toListMap (Srecord.toVector r,
                                                      fn (f, t) => (f, false, t)),
                                    false)
-                | SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
+                | SOME ts => Tycon.layoutAppPretty (Tycon.tuple, ts)
             fun recursive _ = simple (str "<recur>")
             fun unknown _ = simple (str "???")
             val (destroy, prettyTyvar) =
@@ -1076,7 +1076,7 @@ structure Type =
                                             fn (ls, ls') =>
                                             let 
                                                fun lay ls =
-                                                  Tycon.layoutApp (c, ls)
+                                                  Tycon.layoutAppPretty (c, ls)
                                             in
                                                notUnifiable
                                                (maybe (lay ls, lay ls'))
