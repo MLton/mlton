@@ -227,7 +227,6 @@ struct
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
          val varExp = makeVarExp <$> (var <* spaces)
          fun makeApp(func, arg) = {arg=arg, func=func}
-         val appExp = makeApp <$$> (varExp, varExp)
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          fun conApp v = makeConApp <$$$>
             (resolveCon <$> ident <* spaces,
