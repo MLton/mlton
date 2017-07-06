@@ -32,7 +32,7 @@ fun maybeConstrain (x, t) =
       open Layout
    in
       if !Control.showTypes
-         then seq [x, str " : ", Type.layoutFormal t]
+         then seq [x, str " : ", Type.layout t]
       else x
    end
 
@@ -42,7 +42,7 @@ in
    fun layoutTargs (ts: Type.t vector) =
       if !Control.showTypes
          andalso 0 < Vector.length ts
-         then list (Vector.toListMap (ts, Type.layoutFormal))
+         then list (Vector.toListMap (ts, Type.layout))
       else empty
 end
 
@@ -148,7 +148,7 @@ structure VarExp =
                     if Vector.isEmpty targs
                        then Var.layout var
                     else seq [Var.layout var, str " ",
-                              Vector.layout Type.layoutFormal targs]
+                              Vector.layout Type.layout targs]
                  end
          else Var.layout var
    end
@@ -210,7 +210,7 @@ in
       seq [Con.layout con,
            case arg of
               NONE => empty
-            | SOME t => seq [str " of ", Type.layoutFormal t]]
+            | SOME t => seq [str " of ", Type.layout t]]
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
@@ -277,7 +277,7 @@ in
        | Lambda l => layoutLambda l
        | PrimApp {args, prim, targs} =>
             seq [str "prim ",
-                 Prim.layoutFull Type.layoutFormal prim,
+                 Prim.layoutFull Type.layout prim,
                  layoutTargs targs,
                  str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e

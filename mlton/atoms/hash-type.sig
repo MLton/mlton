@@ -42,7 +42,7 @@ signature HASH_TYPE =
                 con: Tycon.t * 'a vector -> 'a} -> 'a
       val isUnit: t -> bool
       val layout: t -> Layout.t
-      val layoutFormal: t -> Layout.t
+      val layoutPretty: t -> Layout.t
       val makeHom:
          {var: t * Tyvar.t -> 'a,
           con: t * Tycon.t * 'a vector -> 'a}

@@ -1419,7 +1419,7 @@ structure Scheme =
 
       fun layout s =
          case s of
-            Type t => Type.layout t
+            Type t => Type.layoutPretty t
           | General {canGeneralize, tyvars, ty, ...} =>
                Layout.record [("canGeneralize", Bool.layout canGeneralize),
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
