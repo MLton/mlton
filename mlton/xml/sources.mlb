@@ -44,7 +44,6 @@ local
 in
    signature SXML
    signature XML
-   signature PARSE_SXML
 
    functor Monomorphise
    functor Xml
