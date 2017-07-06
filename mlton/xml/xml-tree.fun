@@ -214,7 +214,6 @@ in
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | 1 => seq [str "(", Tyvar.layout (Vector.first ts), str ") "]
        | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
