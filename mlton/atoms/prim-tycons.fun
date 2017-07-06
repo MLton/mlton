@@ -180,6 +180,7 @@ fun layoutAppPretty (c: t,
       local
          open Layout
       in
+         val mayAlign = mayAlign
          val seq = seq
          val str = str
       end
