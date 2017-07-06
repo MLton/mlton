@@ -276,7 +276,7 @@ in
        | Lambda l => layoutLambda l
        | PrimApp {args, prim, targs} =>
             seq [str "prim ",
-                 Prim.layoutFull Type.layout prim,
+                 Prim.layoutFull(prim, Type.layout),
                  layoutTargs targs,
                  str " ", tuple (Vector.toListMap (args, VarExp.layout))]
        | Profile e => ProfileExp.layout e
