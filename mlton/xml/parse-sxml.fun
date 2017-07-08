@@ -86,6 +86,10 @@ struct
    fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
 
 
+   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
+                                           | SOME y => T.pure y)
+   val parseInt = possibly ((Int.fromString o String.implode) <$>
+         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) =
       let
@@ -102,7 +106,13 @@ struct
              | "word64" => Type.word Type.WordSize.word64
              | "real32" => Type.real Type.RealSize.R32
              | "real64" => Type.real Type.RealSize.R64
-             | other => Type.con (resolveTycon other, args)
+             | other =>
+                  T.parse (T.string "word" *>
+                      ((Type.word o Type.WordSize.fromBits o Bits.fromInt) <$> parseInt)
+                       <* T.failing T.next, (* end of string *)
+                      Stream.fromList (String.explode other))
+                  handle Fail _ =>
+                     Type.con (resolveTycon other, args)
          fun makeUnary() = 
             let 
                val arg1 = Vector.sub(args, 0)
@@ -185,8 +195,6 @@ struct
           (T.string "Some" *> spaces *> SOME <$> resolveVar <$> ident <* spaces) <|>
           (NONE <$ T.string "None" <* spaces))
 
-   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
-                                           | SOME y => T.pure y)
 
    val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
                            (fn x      => [x]   ) <$> T.next
@@ -194,8 +202,6 @@ struct
          (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")))
-   val parseInt = possibly ((Int.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
    fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
    fun parseReal sz = possibly (makeReal <$$> (String.implode <$>
          List.concat <$> T.each
@@ -436,8 +442,8 @@ struct
          (makeProgram <$$$>
             (datatypes resolveCon resolveTycon,
             overflow resolveVar,
-            body resolveCon resolveTycon resolveVar)))
-
+            body resolveCon resolveTycon resolveVar <* spaces <* T.failing T.next)))
+            (* failing next to check for end of file *)
       end
 
    fun parse s = T.parse(program, s)
