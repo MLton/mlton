@@ -245,10 +245,17 @@ fun layoutApp (c: t, args: Layout.t vector) =
       end
    in
       case Vector.length args of
-         0 => if equals (c, tuple) 
-                 then str "unit"
-              else
-                 layout c
+         0 => (case List.peekMap
+                 ([(fn c => equals(c, tuple), fn _ => "unit"),
+                   (fn c => equals(c, intInf), fn _ => "intInf"),
+                   (fn c => equals(c, bool), fn _ => "bool"),
+                   (isWordX, fn w => "word" ^ (WordSize.toString (deWordX w))),
+                   (isRealX, fn w => "real" ^ (RealSize.toString (deRealX w))),
+                   (fn c => equals(c, exn), fn _ => "exn"),
+                   (fn c => equals(c, thread), fn _ => "thread")],
+                  fn (test, toStr) => if test c then SOME (toStr c) else NONE)
+              of SOME s => str s
+               | NONE => layout c)
        | 1 =>
               seq [Layout.paren (Vector.first args),
                  str " ", 
