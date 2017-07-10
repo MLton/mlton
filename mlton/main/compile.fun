@@ -819,12 +819,13 @@ in
       handle Done => ()
 end
 
-fun genFromSXML (input: char Stream.t): Machine.Program.t =
+fun genFromSXML (input: (In.t -> Sxml.Program.t) -> Sxml.Program.t): Machine.Program.t =
    let
+      fun toStream i = case In.inputChar i
+         of SOME c => Stream.cons(c, Stream.delay (fn () => toStream i))
+          | NONE => Stream.empty ()
       val _ = setupConstants()
-      val sxml = ParseSxml.parse(input)
-      (* can't quite run simplify twice *)
-      (*val sxml = simplifySxml sxml *)
+      val sxml = input (fn i => ParseSxml.parse(toStream i))
       open Control
       val _ =
          if !keepSXML
@@ -840,11 +841,10 @@ fun genFromSXML (input: char Stream.t): Machine.Program.t =
    end
 fun compileSXML {input: File.t list, outputC, outputLL, outputS}: unit =
    let
-      val inputs = case input of [i] => File.contents i
-                               | _ => ""
-      val stream = Stream.fromList (String.explode inputs)
+      fun withIn f = case input of [i] => File.withIn(i, f)
+                                 | _ => File.withStringIn("", f)
    in
-      compile {input = stream,
+      compile {input = withIn,
                resolve = genFromSXML,
                outputC = outputC,
                outputLL = outputLL,
