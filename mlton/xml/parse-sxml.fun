@@ -4,7 +4,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ParseSxml(S: PARSE_SXML_STRUCTS) =
+functor ParseSxml (S: PARSE_SXML_STRUCTS): PARSE_SXML =
 struct
    open S
    open XmlTree
