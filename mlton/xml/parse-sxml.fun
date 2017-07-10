@@ -10,7 +10,6 @@ struct
    open XmlTree
    structure T = StreamParser
    open T.Ops
-   structure DE = DirectExp
    infix 1 <|> >>=
    infix 2 <&>
    infix  3 <*> <* *>
