@@ -1486,10 +1486,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               (s1, s2, {signed = signed}))
                                        end
                                | WordVector_toIntInf => cast ()
-                               | Word8Array_subWord s => subWord s
-                               | Word8Array_updateWord s =>
+                               | WordArray_subWord s => subWord (#eleSize s)
+                               | WordArray_updateWord s =>
                                        let
-                                          val ty = Type.word s
+                                          val ty = Type.word (#eleSize s)
                                        in
                                           add (Move {dst = (ArrayOffset
                                                             {base = a 0,
@@ -1499,7 +1499,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                              ty = ty}),
                                                      src = a 2})
                                        end
-                               | Word8Vector_subWord s => subWord s
+                               | WordVector_subWord s => subWord (#eleSize s)
                                | World_save =>
                                     simpleCCallWithGCState
                                     (CFunction.worldSave ())

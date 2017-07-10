@@ -544,8 +544,8 @@ fun transform (program: Program.t): Program.t =
                         end
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
-                   | Word8Array_subWord _ => sub ()
-                   | Word8Array_updateWord _ => update ()
+                   | WordArray_subWord _ => sub ()
+                   | WordArray_updateWord _ => update ()
                    | _ =>
                         let (* allOrNothing so the type doesn't change *)
                            val res = allOrNothing result
@@ -842,7 +842,7 @@ fun transform (program: Program.t): Program.t =
                                  | Ref_assign =>
                                       Value.isUseful 
                                       (Value.deref (value (arg 0)))
-                                 | Word8Array_updateWord _ => array ()
+                                 | WordArray_updateWord _ => array ()
                                  | _ => true
                                 end
                         then yes ty

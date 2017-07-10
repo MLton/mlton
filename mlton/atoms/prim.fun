@@ -185,9 +185,9 @@ datatype 'a t =
  | Word_toIntInf (* ssa to rssa *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* ssa to rssa *)
- | Word8Array_subWord of WordSize.t (* ssa to rssa *)
- | Word8Array_updateWord of WordSize.t  (* ssa to rssa *)
- | Word8Vector_subWord of WordSize.t  (* ssa to rssa *)
+ | WordArray_subWord of {seqSize:WordSize.t, eleSize:WordSize.t} (* ssa to rssa *)
+ | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* ssa to rssa *)
+ | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* ssa to rssa *)
  | Word8Vector_toString (* defunctorize *)
  | World_save (* ssa to rssa *)
 
@@ -203,8 +203,8 @@ fun toString (n: 'a t): string =
       fun sign {signed} = if signed then "WordS" else "WordU"
       fun word (s: WordSize.t, str: string): string =
          concat ["Word", WordSize.toString s, "_", str]
-      fun word8Seq (seq: string, oper: string, s: WordSize.t): string =
-         concat ["Word8", seq, "_", oper, "Word", WordSize.toString s]
+      fun wordSeq (seq: string, oper: string, s:WordSize.t): string =
+         concat ["Word", seq, "_", oper, "Word", WordSize.toString s]
       fun wordS (s: WordSize.t, sg, str: string): string =
          concat [sign sg, WordSize.toString s, "_", str]
       val realC = ("Real", RealSize.toString)
@@ -324,9 +324,9 @@ fun toString (n: 'a t): string =
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
-       | Word8Array_subWord w => word8Seq ("Array", "sub", w)
-       | Word8Array_updateWord w => word8Seq ("Array", "update", w)
-       | Word8Vector_subWord w => word8Seq ("Vector", "sub", w)
+       | WordArray_subWord w => wordSeq ("Array", "sub", (#eleSize w))
+       | WordArray_updateWord w => wordSeq ("Array", "update", (#eleSize w))
+       | WordVector_subWord w => wordSeq ("Vector", "sub", (#eleSize w))
        | Word8Vector_toString => "Word8Vector_toString"
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
@@ -511,9 +511,9 @@ val equals: 'a t * 'a t -> bool =
     | (Word_toIntInf, Word_toIntInf) => true
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
-    | (Word8Array_subWord s, Word8Array_subWord s') => WordSize.equals (s, s')
-    | (Word8Array_updateWord s, Word8Array_updateWord s') => WordSize.equals (s, s')
-    | (Word8Vector_subWord s, Word8Vector_subWord s') => WordSize.equals (s, s')
+    | (WordArray_subWord s, WordArray_subWord s') => WordSize.equals ((#eleSize s), (#eleSize s'))
+    | (WordArray_updateWord s, WordArray_updateWord s') => WordSize.equals ((#eleSize s), (#eleSize s'))
+    | (WordVector_subWord s, WordVector_subWord s') => WordSize.equals ((#eleSize s), (#eleSize s'))
     | (Word8Vector_toString, Word8Vector_toString) => true
     | (World_save, World_save) => true
     | _ => false
@@ -652,9 +652,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_toIntInf => Word_toIntInf
     | Word_xorb z => Word_xorb z
     | WordVector_toIntInf => WordVector_toIntInf
-    | Word8Array_subWord z => Word8Array_subWord z
-    | Word8Array_updateWord z => Word8Array_updateWord z
-    | Word8Vector_subWord z => Word8Vector_subWord z
+    | WordArray_subWord z => WordArray_subWord z
+    | WordArray_updateWord z => WordArray_updateWord z
+    | WordVector_subWord z => WordVector_subWord z
     | Word8Vector_toString => Word8Vector_toString
     | World_save => World_save
 
@@ -879,9 +879,9 @@ val kind: 'a t -> Kind.t =
        | Weak_canGet => DependsOnState
        | Weak_get => DependsOnState
        | Weak_new => Moveable
-       | Word8Array_subWord _ => DependsOnState
-       | Word8Array_updateWord _ => SideEffect
-       | Word8Vector_subWord _ => Functional
+       | WordArray_subWord _ => DependsOnState
+       | WordArray_updateWord _ => SideEffect
+       | WordVector_subWord _ => Functional
        | Word8Vector_toString => Functional
        | WordVector_toIntInf => Functional
        | Word_add _ => Functional
@@ -973,10 +973,10 @@ local
        (Word_xorb s)]
       @ wordSigns (s, true)
       @ wordSigns (s, false)
-   fun word8Seqs (s: WordSize.t) =
-      [(Word8Array_subWord s),
-       (Word8Array_updateWord s),
-       (Word8Vector_subWord s)]
+   fun wordSeqs (s: WordSize.t) =
+      [(WordArray_subWord {eleSize = s, seqSize = s}),
+       (WordArray_updateWord {eleSize = s, seqSize = s}),
+       (WordVector_subWord {eleSize = s, seqSize = s})]
 in
    val all: unit t list =
       [Array_length,
@@ -1080,7 +1080,7 @@ in
            coercesS (Word_extdToWord, word, word,
            coercesS (Word_rndToReal, word, real, []))))))
         end
-     @ List.concatMap (WordSize.prims, word8Seqs)
+     @ List.concatMap (WordSize.prims, wordSeqs)
      @ let
           fun doit (all, get, set) =
              List.concatMap (all, fn s => [get s, set s])
@@ -1206,7 +1206,7 @@ fun 'a checkApp (prim: 'a t,
          noTargs (fn () => (twoArgs (intInf, csize), intInf))
       fun realTernary s =
          noTargs (fn () => (threeArgs (real s, real s, real s), real s))
-      val word8Array = array word8
+      val wordArray = array word8
       fun wordShift s =
          noTargs (fn () => (twoArgs (word s, shiftArg), word s))
       val word8Vector = vector word8
@@ -1343,12 +1343,12 @@ fun 'a checkApp (prim: 'a t,
        | Weak_canGet => oneTarg (fn t => (oneArg (weak t), bool))
        | Weak_get => oneTarg (fn t => (oneArg (weak t), t))
        | Weak_new => oneTarg (fn t => (oneArg t, weak t))
-       | Word8Array_subWord s =>
-            noTargs (fn () => (twoArgs (word8Array, seqIndex), word s))
-       | Word8Array_updateWord s =>
-            noTargs (fn () => (threeArgs (word8Array, seqIndex, word s), unit))
-       | Word8Vector_subWord s =>
-            noTargs (fn () => (twoArgs (word8Vector, seqIndex), word s))
+       | WordArray_subWord s =>
+            noTargs (fn () => (twoArgs (wordArray, seqIndex), word (#eleSize s)))
+       | WordArray_updateWord s =>
+            noTargs (fn () => (threeArgs (wordArray, seqIndex, (word (#eleSize s))), unit))
+       | WordVector_subWord s =>
+            noTargs (fn () => (twoArgs (word8Vector, seqIndex), word (#eleSize s)))
        | Word8Vector_toString =>
             noTargs (fn () => (oneArg (word8Vector), string))
        | WordVector_toIntInf =>
