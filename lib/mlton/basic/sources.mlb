@@ -199,9 +199,9 @@ in
       signature REAL
       signature RING
       signature RING_WITH_IDENTITY
-      signature STRING
       signature STREAM
       signature STREAM_PARSER
+      signature STRING
       signature T
       signature UNIQUE_ID
       signature VECTOR
