@@ -87,7 +87,7 @@ structure Type =
                   var = fn a => (Tyvar.layout a,
                                  ({isChar = false},
                                   Tycon.BindingStrength.unit))})
-      
+
       fun layout(ty: t): Layout.t =
          hom {con = Tycon.layoutApp,
               ty = ty,

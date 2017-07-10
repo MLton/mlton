@@ -4,23 +4,23 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure StreamParser:> STREAM_PARSER = 
+structure StreamParser:> STREAM_PARSER =
 struct
 
 infix 1 <|> >>=
 infix 2 <&>
-infix  3 <*> <* *> 
+infix  3 <*> <* *>
 infixr 4 <$> <$$> <$$$> <$
 
-structure Location = 
+structure Location =
    struct
       type t = {line: int, column: int}
    end
-structure Info = 
+structure Info =
    struct
       type t = string
    end
-structure State = 
+structure State =
    struct
       type t = Info.t * (char * Location.t) Stream.t
    end
@@ -32,18 +32,18 @@ datatype 'a result = Success of 'a * (char * Location.t) Stream.t
                    | FailCut of string list (* as failure, but the
                    closest upstream choice point won't try other options, and
                    their errors will be silenced *)
-type 'a t = 
+type 'a t =
    State.t -> 'a result
 
 
-fun indexStream({line, column}, s) = 
+fun indexStream({line, column}, s) =
    case Stream.force s of
       NONE => Stream.empty ()
     | SOME(h, r) =>
-         Stream.cons((h, {line=line, column=column}), 
+         Stream.cons((h, {line=line, column=column}),
             Stream.delay(fn () =>
                if h = #"\n"
-               then 
+               then
                   indexStream({line=line+1, column=0}, r)
                else
                   indexStream({line=line, column=column+1}, r)
@@ -55,13 +55,13 @@ fun doFail([]) = raise Fail("Parse error")
   | doFail(msgs) = raise Fail ("Parse error: Expected one of \n" ^
        (String.concat(List.map(msgs, fn x => x ^ "\n\n"))))
 
-fun doParse(p : 'a t, info, s) = 
-   case p (info, indexStream({line=1, column=1}, s)) 
+fun doParse(p : 'a t, info, s) =
+   case p (info, indexStream({line=1, column=1}, s))
    of Success (b, _) => b
     | Failure ms => doFail ms
     | FailCut ms => doFail ms
 
-fun 'a parse(p : 'a t, s) : 'a = 
+fun 'a parse(p : 'a t, s) : 'a =
    doParse(p, "<input>", s)
 
 fun 'a parseWithFile(p : 'a t, f, s) : 'a =
@@ -70,7 +70,7 @@ fun 'a parseWithFile(p : 'a t, f, s) : 'a =
 
 
 
-fun tf <*> tx = fn (s : State.t) => 
+fun tf <*> tx = fn (s : State.t) =>
    case tf s
       of Success (f, s') =>
           (case tx (#1 s, s')
@@ -88,7 +88,7 @@ fun ta >>= f = fn (s : State.t) =>
          f a (#1 s, s')
        | Failure err => Failure err
        | FailCut err => FailCut err
-            
+
 
 fun fst a _ = a
 fun snd _ b = b
@@ -105,14 +105,14 @@ fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
 fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
-fun a <|> b = fn s => case (a s) 
+fun a <|> b = fn s => case (a s)
    of Success r => Success r
     | Failure err1 => (case (b s) of
         Success r => Success r
       | Failure err2 => Failure (List.append(err1, err2))
       | FailCut err2 => Failure (err2))
     | FailCut err1 => Failure err1
-fun a <&> b = fn s => case (a s) 
+fun a <&> b = fn s => case (a s)
    of Success r => (case (b s) of
         Success r' => Success r'
       | Failure err => Failure err
@@ -136,16 +136,16 @@ end
 
 
 
-fun failString (m, p : Location.t, s : (char * Location.t) Stream.t) = 
-   (m ^ " at " ^ 
-      (Int.toString (#line p)) ^ ":" ^ (Int.toString (#column p)) ^ 
+fun failString (m, p : Location.t, s : (char * Location.t) Stream.t) =
+   (m ^ " at " ^
+      (Int.toString (#line p)) ^ ":" ^ (Int.toString (#column p)) ^
       "\n     Near: " ^ (String.implode (List.map(Stream.firstNSafe(s, 20), #1))))
 
-fun fail m (s : State.t) = case Stream.force (#2 s) 
+fun fail m (s : State.t) = case Stream.force (#2 s)
    of NONE => Failure []
     | SOME((_, p : Location.t), _) => Failure [failString (m, p, #2 s)]
 
-fun failCut m (s : State.t) = case Stream.force (#2 s) 
+fun failCut m (s : State.t) = case Stream.force (#2 s)
    of NONE => FailCut []
     | SOME((_, p : Location.t), _) => FailCut [failString (m, p, #2 s)]
 
@@ -161,7 +161,7 @@ fun uncut p s = case p s of
 
 fun delay p = fn s => p () s
 
-fun next (s : State.t)  = case Stream.force (#2 s) 
+fun next (s : State.t)  = case Stream.force (#2 s)
    of NONE => Failure ["Any character at end of file"]
     | SOME((h, _), r) => Success (h, r)
 
@@ -183,7 +183,7 @@ fun failing p s =
    case p s
       of Success _ => fail "failure" s
        | _ => Success ((), #2 s)
-      
+
 fun notFollowedBy(p, c) =
    p <* failing c
 
@@ -210,13 +210,13 @@ fun manyCharsFailing f = many (failing f *> next)
 
 fun sepBy1(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)))
 fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
-   
+
 fun optional t = SOME <$> t <|> pure NONE
 
 fun char c s = case Stream.force (#2 s)
-   of NONE => Failure [String.fromChar c ^ " at end of file"] 
+   of NONE => Failure [String.fromChar c ^ " at end of file"]
     | SOME((h, _), r) =>
-         if h = c 
+         if h = c
             then Success (h, r)
             else fail (String.fromChar c) s
 
@@ -238,14 +238,14 @@ fun location (s : State.t) = case Stream.force (#2 s) of
        NONE => Failure ["any character end of file location"]
      | SOME((h, n), r) => Success (n, #2 s)
 
-fun toReader (p : 'a t) (s : State.t) : ('a * State.t) option = 
+fun toReader (p : 'a t) (s : State.t) : ('a * State.t) option =
    case p s of
       Success (a, s') => SOME (a, (#1 s, s'))
     | _ => NONE
 
-fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) = 
-   case r s of 
-      SOME (b, s') => 
+fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) =
+   case r s of
+      SOME (b, s') =>
          Success (b, #2 s')
     | NONE => fail "fromReader" s
 

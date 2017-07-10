@@ -4,7 +4,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ParseSxml(S: PARSE_SXML_STRUCTS) = 
+functor ParseSxml(S: PARSE_SXML_STRUCTS) =
 struct
    open S
    open XmlTree
@@ -26,11 +26,11 @@ struct
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
    val skipComments = T.optional(
-      T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)") *> T.string "*)" 
+      T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)") *> T.string "*)"
          <|> T.failCut "Closing comment")
       ) *> T.next
 
-   val space = T.sat(T.next, Char.isSpace) 
+   val space = T.sat(T.next, Char.isSpace)
    val spaces = T.many(space)
    fun token s = T.notFollowedBy
       (T.string s,
@@ -43,7 +43,7 @@ struct
 
    fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
-         val hash = String.hash 
+         val hash = String.hash
          val map = HashSet.new{hash= hash o #1}
          fun eq x (a: string * 'a) = String.equals(x, #1 a)
       in
@@ -63,7 +63,7 @@ struct
               (* just for collecting _0 *)
               )])) <|> T.failCut "identifier"
 
-       
+
 
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$>
@@ -74,15 +74,15 @@ struct
 
    fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
    val doneRecord = doneRecord' ()
-   fun fromRecord name p = T.peek 
+   fun fromRecord name p = T.peek
       (T.char #"{" *> T.many (() <$ T.delay doneRecord' <|> () <$ T.failing (token name <* symbol "=") <* T.next)
        *> token name *> symbol "=" *> p)
 
    fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
-      (left <* spaces <* token "=>" >>= (fn l =>  
+      (left <* spaces <* token "=>" >>= (fn l =>
          right >>= (fn r => con (l, r))),
        spaces)
-   
+
    fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
 
 
@@ -113,8 +113,8 @@ struct
                       Stream.fromList (String.explode other))
                   handle Fail _ =>
                      Type.con (resolveTycon other, args)
-         fun makeUnary() = 
-            let 
+         fun makeUnary() =
+            let
                val arg1 = Vector.sub(args, 0)
             in
                case ident of
@@ -126,7 +126,7 @@ struct
                 | "weak" => Type.weak arg1
                 | other => Type.con (resolveTycon other, args)
             end
-         fun makeBinary() = 
+         fun makeBinary() =
             let
                val arg1 = Vector.sub(args, 0)
                val arg2 = Vector.sub(args, 1)
@@ -137,7 +137,7 @@ struct
                 | other => Type.con (resolveTycon other, args)
             end
          val numArgs = Vector.length args
-         val typ = case numArgs of 
+         val typ = case numArgs of
             0 => makeNullary()
           | 1 => makeUnary()
           | 2 => makeBinary()
@@ -149,11 +149,11 @@ struct
       end
 
    local
-      fun typ' resolveTycon () = (makeTyp resolveTycon) <$$> 
+      fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
          (((tupleOf (T.delay (typ' resolveTycon))) <|> T.pure (Vector.new0 ())),
          (spaces *> ident <* spaces))
    in
-      fun typ resolveTycon = typ' resolveTycon () 
+      fun typ resolveTycon = typ' resolveTycon ()
    end
 
    val ctype = T.any
@@ -169,26 +169,26 @@ struct
        CType.Word16 <$ token "Word16",
        CType.Word32 <$ token "Word32",
        CType.Word64 <$ token "Word64"]
-   
+
    fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
 
-   (* parse in a constructor (to Con.t) *) 
-   fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> 
-      (ident <* spaces, 
+   (* parse in a constructor (to Con.t) *)
+   fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
+      (ident <* spaces,
       T.optional (token "of" *> (typ resolveTycon) <* spaces) )
 
-   
-   fun makeDt resolveTycon (tycon, cons) = 
-      {tyvars = Vector.new0 (), 
+
+   fun makeDt resolveTycon (tycon, cons) =
+      {tyvars = Vector.new0 (),
        tycon = resolveTycon tycon, cons = cons}
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
       ((spaces *> ident <* spaces <* symbol "="),
        (Vector.fromList <$> T.sepBy1
-          ((constructor resolveCon resolveTycon) <* spaces, 
-           T.char #"|" *> spaces))) 
+          ((constructor resolveCon resolveTycon) <* spaces,
+           T.char #"|" *> spaces)))
 
-   fun datatypes resolveCon resolveTycon = 
+   fun datatypes resolveCon resolveTycon =
       token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
 
    fun overflow resolveVar = T.string "Overflow:" *> spaces *> (
@@ -220,7 +220,7 @@ struct
         (T.pure {elementSize=WordSize.word8},
          T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
-   fun exp resolveCon resolveTycon resolveVar = 
+   fun exp resolveCon resolveTycon resolveVar =
       let
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
          fun makeValDec(var, ty, exp) = Dec.MonoVal {exp=exp, ty=ty, var=var}
@@ -239,7 +239,7 @@ struct
              T.pure (Vector.new0 ()),
              T.optional v)
          val conAppExp = token "new" *> T.cut (conApp varExp)
-         fun constExp typ = 
+         fun constExp typ =
             if Tycon.isWordX typ then
                Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
             else if Tycon.isRealX typ then
@@ -267,7 +267,7 @@ struct
             CFunction.Kind.Runtime ({bytesNeeded=bytes, ensuresBytesFree=ens,
             mayGC=mayGC, maySwitchThreads=maySwitch, modifiesFrontier=modifies,
             readsStackTop=readsSt, writesStackTop=writesSt})
-         val parseRuntimeTarget = makeRuntimeTarget 
+         val parseRuntimeTarget = makeRuntimeTarget
             <$> fromRecord "bytesNeeded" (optionOf parseInt)
             <*> fromRecord "ensuresBytesFree" parseBool
             <*> fromRecord "mayGC" parseBool
@@ -279,41 +279,41 @@ struct
          val parseKind = CFunction.Kind.Impure <$ token "Impure" <|>
                          CFunction.Kind.Pure <$ token "Pure" <|>
                          token "Runtime" *> T.cut parseRuntimeTarget
-                         
-         val parsePrototype = (fn x => x) <$$> 
+
+         val parsePrototype = (fn x => x) <$$>
             (fromRecord "args" (tupleOf ctype),
              fromRecord "res" (optionOf ctype)) <* doneRecord
          val parseSymbolScope = T.any
             [CFunction.SymbolScope.External <$ token "external",
              CFunction.SymbolScope.Private <$ token "private",
              CFunction.SymbolScope.Public <$ token "public"]
-           
+
 
          val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
                            CFunction.Target.Direct <$> ident
-         fun makeFFI args conv kind prototype return symbolScope target = 
-            Prim.ffi (CFunction.T 
+         fun makeFFI args conv kind prototype return symbolScope target =
+            Prim.ffi (CFunction.T
                {args=args, convention=conv, kind=kind,
                 prototype=prototype, return=return, symbolScope=symbolScope,
                 target = target})
          val resolveFFI = token "FFI" *> T.cut(
-            makeFFI 
+            makeFFI
             <$> fromRecord "args" (tupleOf (typ resolveTycon))
             <*> fromRecord "convention" parseConvention
             <*> fromRecord "kind" parseKind
             <*> fromRecord "prototype" parsePrototype
-            <*> fromRecord "return" (typ resolveTycon) 
+            <*> fromRecord "return" (typ resolveTycon)
             <*> fromRecord "symbolScope" parseSymbolScope
             <*> fromRecord "target" parseTarget
             <* doneRecord)
          fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
          val resolveFFISym = token "FFI_Symbol" *> T.cut(
-            makeFFISym 
+            makeFFISym
             <$> fromRecord "name" ident
             <*> fromRecord "cty" (optionOf ctype)
             <*> fromRecord "symbolScope" parseSymbolScope
             <* doneRecord)
-            
+
          fun resolvePrim p = case Prim.fromString p
             of SOME p' => T.pure p'
              | NONE => T.fail ("valid primitive, got " ^ p)
@@ -332,13 +332,13 @@ struct
          val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                            ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
             <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
-         fun makeConCases var (cons, def) = 
-            {test=var, 
-             cases=Cases.Con cons, 
-             default=Option.map(def, fn x => (x, Region.bogus))}
-         fun makeWordCases var s (wds, def) = 
+         fun makeConCases var (cons, def) =
             {test=var,
-             cases=Cases.Word (case s of 
+             cases=Cases.Con cons,
+             default=Option.map(def, fn x => (x, Region.bogus))}
+         fun makeWordCases var s (wds, def) =
+            {test=var,
+             cases=Cases.Word (case s of
                  8 => Type.WordSize.word8
                | 16 => Type.WordSize.word16
                | 32 => Type.WordSize.word32
@@ -354,9 +354,9 @@ struct
           | 32 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word32)), exp)
           | 64 => T.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
           | _ => T.fail "valid word size for cases (8, 16, 32 or 64)"
-            
 
-         fun exp' () = makeLet <$$> 
+
+         fun exp' () = makeLet <$$>
             (token "let" *>
             T.many (dec ()) <* token "in", varExp <* T.string "end")
          and dec () = token "val" *> T.cut(T.any
@@ -395,10 +395,10 @@ struct
             (T.optional parseInt <* T.many1 space >>= (fn size =>
                varExp <* token "of" <* spaces >>= (fn var =>
                   case size of
-                      NONE => makeConCases var <$$> 
+                      NONE => makeConCases var <$$>
                         (casesOf(makePat, conApp typedvar, T.delay exp'),
                          spaces *> T.optional(token "_" *> token "=>" *> T.delay exp'))
-                    | SOME s => makeWordCases var s <$$> 
+                    | SOME s => makeWordCases var s <$$>
                         (casesOf(makeCaseWord s, T.string "0x" *> parseHex, T.delay exp'),
                          spaces *> T.optional(token "_" *> token "=>" *> T.delay exp'))
                       )))

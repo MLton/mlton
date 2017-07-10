@@ -10,7 +10,7 @@ signature PARSE_SXML_STRUCTS =
       structure StreamParser: STREAM_PARSER
    end
 
-signature PARSE_SXML = 
+signature PARSE_SXML =
    sig
       include PARSE_SXML_STRUCTS
 

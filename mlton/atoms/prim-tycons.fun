@@ -258,9 +258,9 @@ fun layoutApp (c: t, args: Layout.t vector) =
                | NONE => layout c)
        | 1 =>
               seq [Layout.paren (Vector.first args),
-                 str " ", 
+                 str " ",
                     if equals (c, tuple)
-                       then str "tuple"  
+                       then str "tuple"
                     else if equals(c, vector)
                        then str "vector"
                     else if equals(c, array)
@@ -270,10 +270,10 @@ fun layoutApp (c: t, args: Layout.t vector) =
                     else if equals(c, weak)
                        then str "weak"
                     else layout c]
-          | _ => 
-              seq 
+          | _ =>
+              seq
                  [Layout.tuple (Vector.toList args),
-                  str " ", 
+                  str " ",
                      if equals (c, tuple)
                         then str "tuple"
                      else if equals (c, arrow)
