@@ -238,7 +238,6 @@ fun layoutApp (c: t, args: Layout.t vector) =
    let
       local
          open Layout
-         open BindingStrength
       in
          val seq = seq
          val str = str
