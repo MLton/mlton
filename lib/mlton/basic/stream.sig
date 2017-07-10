@@ -25,6 +25,7 @@ signature STREAM =
       val firstN: 'a t * int -> 'a list
       val firstNSafe: 'a t * int -> 'a list
       val force: 'a t -> ('a * 'a t) option
+      val fromList: 'a list -> 'a t
       val infinite: 'a * ('a -> 'a) -> 'a t
       val isEmpty: 'a t -> bool
       val keep: 'a t * ('a -> bool) -> 'a t
@@ -34,5 +35,4 @@ signature STREAM =
       val nth: 'a t * int -> 'a
       val single: 'a -> 'a t
       val toList: 'a t -> 'a list
-      val fromList: 'a list -> 'a t
    end
