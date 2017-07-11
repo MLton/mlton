@@ -57,9 +57,11 @@ fun toList (s) =
       NONE => []
     | SOME (x, s) => x :: toList s
 
-fun fromList ([]) = empty ()
-  | fromList (x::xs) =
-       cons (x, delay (fn () => fromList xs))
+fun fromList l =
+   case l of
+      [] => empty ()
+    | x::xs =>
+         cons (x, delay (fn () => fromList xs))
 
 fun last (s) =
    let
