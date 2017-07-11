@@ -115,19 +115,9 @@ struct
       fun typ resolveTycon = typ' resolveTycon ()
    end
 
-   val ctype = T.any
-      [CType.CPointer <$ token "CPointer",
-       CType.Int8 <$ token "Int8",
-       CType.Int16 <$ token "Int16",
-       CType.Int32 <$ token "Int32",
-       CType.Int64 <$ token "Int64",
-       CType.Objptr <$ token "Objptr",
-       CType.Real32 <$ token "Real32",
-       CType.Real64 <$ token "Real64",
-       CType.Word8 <$ token "Word8",
-       CType.Word16 <$ token "Word16",
-       CType.Word32 <$ token "Word32",
-       CType.Word64 <$ token "Word64"]
+   val ctype = (T.any o List.map)
+               (CType.all, fn ct =>
+                ct <$ token (CType.toString ct))
 
    fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
 
