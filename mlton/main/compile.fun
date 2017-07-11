@@ -825,12 +825,7 @@ fun genFromSXML (input: (In.t -> Sxml.Program.t) -> Sxml.Program.t): Machine.Pro
           | NONE => Stream.empty ()
       val _ = setupConstants()
       val sxml = input (fn i => ParseSxml.parse(toStream i))
-      open Control
-      val _ =
-         if !keepSXML
-            then saveToFile ({suffix = "sxml"}, No, sxml,
-               Layouts Sxml.Program.layouts)
-            else ()
+      val sxml = simplifySxml sxml
       val ssa = makeSsa sxml
       val ssa = simplifySsa ssa
       val ssa2 = makeSsa2 ssa
