@@ -89,22 +89,7 @@ struct
    val parseInt = possibly ((Int.fromString o String.implode) <$>
          T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
    (* too many arguments for the maps, curried to use <*> instead *)
-   fun makeTyp resolveTycon (args, ident) =
-      let
-         val con =
-            case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
-                               if ident = name then SOME tycon else NONE) of
-               SOME con => con
-             | NONE => if ident = "arrow"
-                          then Tycon.arrow
-                       else if ident = "tuple"
-                          then Tycon.tuple
-                       else if ident = "unit"
-                          then Tycon.tuple
-                       else resolveTycon ident
-      in
-         Type.con (con, args)
-      end
+   fun makeTyp resolveTycon (args, ident) = Type.con (resolveTycon ident, args)
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
@@ -380,16 +365,23 @@ struct
                T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
              Stream.fromList (String.explode s))
          val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
-         fun resolveCon name = case name of
-             "true" => Con.truee
-           | "false" => Con.falsee
-           | "ref" => Con.reff
-           | "Overflow" => Con.overflow
-           | _ => resolveCon0 name
+         fun resolveCon ident =
+            case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
+                            ident = Con.toString con) of
+               SOME con => con
+             | NONE => resolveCon0 ident
          val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
-         fun resolveTycon "bool" = Tycon.bool (* special case *)
-           | resolveTycon "exn" = Tycon.exn (* special case *)
-           | resolveTycon name = resolveTycon0 name
+         fun resolveTycon ident =
+            case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
+                               if ident = name then SOME tycon else NONE) of
+               SOME con => con
+             | NONE => if ident = "arrow"
+                          then Tycon.arrow
+                       else if ident = "tuple"
+                          then Tycon.tuple
+                       else if ident = "unit"
+                          then Tycon.tuple
+                       else resolveTycon0 ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
          T.compose(skipComments,
