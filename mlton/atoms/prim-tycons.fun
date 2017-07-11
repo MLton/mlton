@@ -239,45 +239,25 @@ fun layoutApp (c: t, args: Layout.t vector) =
       local
          open Layout
       in
+         val empty = empty
          val seq = seq
          val str = str
       end
+      val args =
+         if Vector.isEmpty args
+            then empty
+            else seq [Layout.tuple (Vector.toList args), str " "]
+      val con =
+         if equals (c, arrow)
+            then str "arrow"
+         else if equals (c, tuple)
+            then if Layout.isEmpty args then str "unit" else str "tuple"
+         else (case List.peekMap (prims, fn {name, tycon, ...} =>
+                                  if equals (c, tycon) then SOME name else NONE) of
+                  SOME name => str name
+                | _ => layout c)
    in
-      case Vector.length args of
-         0 => (case List.peekMap
-                 ([(fn c => equals(c, tuple), fn _ => "unit"),
-                   (fn c => equals(c, intInf), fn _ => "intInf"),
-                   (fn c => equals(c, bool), fn _ => "bool"),
-                   (isWordX, fn w => "word" ^ (WordSize.toString (deWordX w))),
-                   (isRealX, fn w => "real" ^ (RealSize.toString (deRealX w))),
-                   (fn c => equals(c, exn), fn _ => "exn"),
-                   (fn c => equals(c, thread), fn _ => "thread")],
-                  fn (test, toStr) => if test c then SOME (toStr c) else NONE)
-              of SOME s => str s
-               | NONE => layout c)
-       | 1 =>
-              seq [Layout.paren (Vector.first args),
-                 str " ",
-                    if equals (c, tuple)
-                       then str "tuple"
-                    else if equals(c, vector)
-                       then str "vector"
-                    else if equals(c, array)
-                       then str "array"
-                    else if equals(c, reff)
-                       then str "ref"
-                    else if equals(c, weak)
-                       then str "weak"
-                    else layout c]
-          | _ =>
-              seq
-                 [Layout.tuple (Vector.toList args),
-                  str " ",
-                     if equals (c, tuple)
-                        then str "tuple"
-                     else if equals (c, arrow)
-                        then str "arrow"
-                     else layout c]
+      seq [args, con]
    end
-end
 
+end
