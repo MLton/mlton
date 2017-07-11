@@ -50,8 +50,7 @@ struct
       end
 
 
-   val ident = (T.failing (token "in" <|> token "exception" <|> token "val" <|> token "fn" <|> token
-   "_" <|> token "=>" <|> token "case" <|> token "prim") *>
+   val ident = (
       String.implode <$> (T.any
          [(op ::) <$$>
              (T.sat(T.next, isIdentFirst),
@@ -178,10 +177,12 @@ struct
          fun makeFunDec((var, ty), lambda) = {lambda=lambda, ty=ty, var=var}
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
-            (resolveVar <$> ident <* spaces,
+            (var,
              symbol ":" *> (typ resolveTycon) <* spaces)
          fun makeVarExp var = VarExp.T {var=var, targs = Vector.new0 ()}
-         val varExp = makeVarExp <$> (var <* spaces)
+         val varExp =
+            T.failing (token "in" <|> token "exception" <|> token "val") *>
+            makeVarExp <$> var
          fun makeApp(func, arg) = {arg=arg, func=func}
          fun makeConApp(con, targs, arg) = {arg=arg, con=con, targs=targs}
          fun conApp v = makeConApp <$$$>
