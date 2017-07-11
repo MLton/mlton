@@ -92,59 +92,19 @@ struct
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) =
       let
-         fun makeNullary() =
-            case ident of
-               "bool" => Type.bool
-             | "cpointer" => Type.cpointer
-             | "intInf" => Type.intInf
-             | "thread" => Type.thread
-             | "unit" => Type.unit
-             | "word8" => Type.word8
-             | "word16" => Type.word Type.WordSize.word16
-             | "word32" => Type.word32
-             | "word64" => Type.word Type.WordSize.word64
-             | "real32" => Type.real Type.RealSize.R32
-             | "real64" => Type.real Type.RealSize.R64
-             | other =>
-                  T.parse (T.string "word" *>
-                      ((Type.word o Type.WordSize.fromBits o Bits.fromInt) <$> parseInt)
-                       <* T.failing T.next, (* end of string *)
-                      Stream.fromList (String.explode other))
-                  handle Fail _ =>
-                     Type.con (resolveTycon other, args)
-         fun makeUnary() =
-            let
-               val arg1 = Vector.sub(args, 0)
-            in
-               case ident of
-                  "array" => Type.array arg1
-                | "list" => Type.list arg1
-                | "tuple" => Type.tuple args
-                | "ref" => Type.reff arg1
-                | "vector" => Type.vector arg1
-                | "weak" => Type.weak arg1
-                | other => Type.con (resolveTycon other, args)
-            end
-         fun makeBinary() =
-            let
-               val arg1 = Vector.sub(args, 0)
-               val arg2 = Vector.sub(args, 1)
-            in
-               case ident of
-                  "arrow" => Type.arrow(arg1, arg2)
-                | "tuple" => Type.tuple(args)
-                | other => Type.con (resolveTycon other, args)
-            end
-         val numArgs = Vector.length args
-         val typ = case numArgs of
-            0 => makeNullary()
-          | 1 => makeUnary()
-          | 2 => makeBinary()
-          | _ => case ident of
-                    "tuple" => Type.tuple args
-                  | other => Type.con(resolveTycon other, args)
+         val con =
+            case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
+                               if ident = name then SOME tycon else NONE) of
+               SOME con => con
+             | NONE => if ident = "arrow"
+                          then Tycon.arrow
+                       else if ident = "tuple"
+                          then Tycon.tuple
+                       else if ident = "unit"
+                          then Tycon.tuple
+                       else resolveTycon ident
       in
-         typ
+         Type.con (con, args)
       end
 
    local
