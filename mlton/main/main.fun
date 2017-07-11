@@ -16,7 +16,7 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = Files | Generated | MLB | O | OUT | SXML | SML | TypeCheck
+      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | TypeCheck
       val toInt: t -> int =
          fn MLB => 1
           | SML => 1
@@ -29,13 +29,13 @@ structure Place =
 
       val toString =
          fn Files => "files"
-          | SML => "sml"
-          | MLB => "mlb"
           | Generated => "g"
+          | MLB => "mlb"
           | O => "o"
           | OUT => "out"
-          | TypeCheck => "tc"
+          | SML => "sml"
           | SXML => "sxml"
+          | TypeCheck => "tc"
 
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
