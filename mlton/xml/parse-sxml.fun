@@ -375,11 +375,7 @@ struct
             case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
                                if ident = name then SOME tycon else NONE) of
                SOME con => con
-             | NONE => if ident = "arrow"
-                          then Tycon.arrow
-                       else if ident = "tuple"
-                          then Tycon.tuple
-                       else if ident = "unit"
+             | NONE => if ident = "unit"
                           then Tycon.tuple
                        else resolveTycon0 ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)

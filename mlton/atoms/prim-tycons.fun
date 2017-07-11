@@ -29,7 +29,7 @@ local
    fun make s = (s, fromString s)
 in
    val array = make "array"
-   val arrow = make "->"
+   val arrow = make "arrow"
    val bool = make "bool" 
    val cpointer = make "cpointer"
    val exn = make "exn"
@@ -37,7 +37,7 @@ in
    val list = make "list"
    val reff = make "ref"
    val thread = make "thread"
-   val tuple = make "*"
+   val tuple = make "tuple"
    val vector = make "vector"
    val weak = make "weak"
 end
@@ -243,19 +243,17 @@ fun layoutApp (c: t, args: Layout.t vector) =
          val seq = seq
          val str = str
       end
+      val con =
+         if equals (c, tuple) andalso Vector.isEmpty args
+            then str "unit"
+            else (case List.peekMap (prims, fn {name, tycon, ...} =>
+                                     if equals (c, tycon) then SOME name else NONE) of
+                     SOME name => str name
+                   | _ => layout c)
       val args =
          if Vector.isEmpty args
             then empty
             else seq [Layout.tuple (Vector.toList args), str " "]
-      val con =
-         if equals (c, arrow)
-            then str "arrow"
-         else if equals (c, tuple)
-            then if Layout.isEmpty args then str "unit" else str "tuple"
-         else (case List.peekMap (prims, fn {name, tycon, ...} =>
-                                  if equals (c, tycon) then SOME name else NONE) of
-                  SOME name => str name
-                | _ => layout c)
    in
       seq [args, con]
    end
