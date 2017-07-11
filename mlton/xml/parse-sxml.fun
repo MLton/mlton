@@ -50,7 +50,7 @@ struct
       end
 
 
-   val ident = (T.failing (token "in" <|> token "val" <|> token "fn" <|> token
+   val ident = (T.failing (token "in" <|> token "exception" <|> token "val" <|> token "fn" <|> token
    "_" <|> token "=>" <|> token "case" <|> token "prim") *>
       String.implode <$> (T.any
          [(op ::) <$$>
@@ -172,6 +172,7 @@ struct
    fun exp resolveCon resolveTycon resolveVar =
       let
          fun makeLet(decs, result) = Exp.make {decs=decs, result=result}
+         fun makeExnDec(ca) = Dec.Exception ca
          fun makeValDec(var, ty, exp) = Dec.MonoVal {exp=exp, ty=ty, var=var}
          fun makeFunDecs(lambdas) = Dec.Fun {decs=Vector.fromList lambdas, tyvars=Vector.new0 ()}
          fun makeFunDec((var, ty), lambda) = {lambda=lambda, ty=ty, var=var}
@@ -307,15 +308,19 @@ struct
 
          fun exp' () = makeLet <$$>
             (token "let" *>
-            T.many (dec ()) <* token "in", varExp <* T.string "end")
-         and dec () = token "val" *> T.cut(T.any
-            [token "rec" *> T.cut(makeFunDecs <$>
-                T.many (makeFunDec <$$> (typedvar <* symbol "=" <* spaces, lambdaExp ()))),
-             makeValDec <$>
-                ((typedvar) >>= (fn var =>
-                 T.cut ((symbol "=" *> primexp (#2 var) <* spaces) >>= (fn primexp =>
-                     T.pure(#1 var, #2 var, primexp)))))])
-         and primexp typ = T.failing(token "in") *> T.any
+             T.many (dec ()) <* token "in", varExp <* T.string "end")
+         and dec () = T.any
+            [token "exception" *>
+             T.cut (makeExnDec <$> (constructor resolveCon resolveTycon)),
+             token "val" *> token "rec" *>
+             T.cut (makeFunDecs <$>
+                    T.many (makeFunDec <$$> (typedvar <* symbol "=" <* spaces, lambdaExp ()))),
+             token "val" *>
+             T.cut (makeValDec <$>
+                    (typedvar >>= (fn (var, ty) =>
+                     (symbol "=" *> primexp ty <* spaces) >>= (fn primexp =>
+                      T.pure (var, ty, primexp)))))]
+         and primexp typ = T.any
             [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
              PrimExp.Lambda <$> lambdaExp (),
