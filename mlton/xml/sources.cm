@@ -13,9 +13,9 @@ signature XML
 signature XML_TYPE
 
 functor Monomorphise
-functor Xml
-functor Sxml
 functor ParseSxml
+functor Sxml
+functor Xml
 
 is
 

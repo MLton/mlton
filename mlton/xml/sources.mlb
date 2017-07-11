@@ -46,7 +46,7 @@ in
    signature XML
 
    functor Monomorphise
-   functor Xml
-   functor Sxml
    functor ParseSxml
+   functor Sxml
+   functor Xml
 end
