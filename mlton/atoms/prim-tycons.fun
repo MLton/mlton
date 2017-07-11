@@ -174,8 +174,8 @@ val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
 fun layoutAppPretty (c: t,
-               args: (Layout.t * ({isChar: bool}
-                                  * BindingStrength.t)) vector) =
+                     args: (Layout.t * ({isChar: bool}
+                                        * BindingStrength.t)) vector) =
    let
       local
          open Layout
