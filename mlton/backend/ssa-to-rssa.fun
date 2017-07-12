@@ -1486,20 +1486,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               (s1, s2, {signed = signed}))
                                        end
                                | WordVector_toIntInf => cast ()
-                               | Word8Array_subWord s => subWord s
-                               | Word8Array_updateWord s =>
-                                       let
-                                          val ty = Type.word s
-                                       in
-                                          add (Move {dst = (ArrayOffset
-                                                            {base = a 0,
-                                                             index = a 1,
-                                                             offset = Bytes.zero,
-                                                             scale = Type.scale ty,
-                                                             ty = ty}),
-                                                     src = a 2})
-                                       end
-                               | Word8Vector_subWord s => subWord s
+                               | WordArray_subWord {eleSize, ...} =>
+                                    subWord eleSize
+                               | WordArray_updateWord {eleSize, ...} =>
+                                    let
+                                       val ty = Type.word eleSize
+                                    in
+                                       add (Move {dst = (ArrayOffset
+                                                         {base = a 0,
+                                                          index = a 1,
+                                                          offset = Bytes.zero,
+                                                          scale = Type.scale ty,
+                                                          ty = ty}),
+                                                  src = a 2})
+                                    end
+                               | WordVector_subWord {eleSize, ...} =>
+                                    subWord eleSize
                                | World_save =>
                                     simpleCCallWithGCState
                                     (CFunction.worldSave ())
