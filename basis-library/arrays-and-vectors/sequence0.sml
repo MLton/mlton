@@ -12,6 +12,7 @@
 functor PrimSequence (S: sig
                             type 'a sequence
                             type 'a elt
+                            val copyUnsafe: 'a elt array * SeqIndex.int * 'a sequence * SeqIndex.int * SeqIndex.int -> unit
                             (* fromArray should be constant time. *)
                             val fromArray: 'a elt array -> 'a sequence
                             val new0: (unit -> 'a sequence) option
@@ -283,7 +284,12 @@ functor PrimSequence (S: sig
                end
             fun sequence (sl as T {seq, start, len}): 'a sequence =
                if S.isMutable orelse (start <> 0 orelse len <> S.length seq)
-                  then map (fn x => x) sl
+                  then let
+                          val a = arrayUninit len
+                       in
+                          S.copyUnsafe (a, 0, seq, start, len)
+                          ; S.fromArray a
+                       end
                else seq
             fun append (sl1: 'a slice, sl2: 'a slice): 'a sequence =
                if length sl1 = 0
@@ -292,17 +298,14 @@ functor PrimSequence (S: sig
                   then sequence sl1
                else
                   let
-                     val l1 = length sl1
-                     val l2 = length sl2
-                     val n = l1 +? l2
-                     fun loop (i, sl) =
-                        if i < length sl
-                           then (unsafeSub (sl, i),
-                                 (i +? 1, sl))
-                           else (unsafeSub (sl2, 0),
-                                 (1, sl2))
+                     val (seq1, start1, len1) = base sl1
+                     val (seq2, start2, len2) = base sl2
+                     val n = len1 +? len2
+                     val a = arrayUninit n
                   in
-                     #1 (unfoldi (n, (0, sl1), fn (_, ac) => loop ac))
+                     S.copyUnsafe (a, 0, seq1, start1, len1)
+                     ; S.copyUnsafe (a, len1, seq2, start2, len2)
+                     ; S.fromArray a
                   end
             fun split (T {seq, start, len}, i) =
                (unsafeSlice (seq, start, SOME (i -? start)),
@@ -407,6 +410,7 @@ structure Vector =
       local
          structure P = PrimSequence (type 'a sequence = 'a vector
                                      type 'a elt = 'a
+                                     val copyUnsafe = Array.copyVectorUnsafe
                                      val fromArray = Vector.fromArrayUnsafe
                                      val new0 = SOME Vector.vector0
                                      val isMutable = false
@@ -428,6 +432,7 @@ structure Array =
       local 
          structure P = PrimSequence (type 'a sequence = 'a array
                                      type 'a elt = 'a
+                                     val copyUnsafe = Array.copyArrayUnsafe
                                      val fromArray = fn a => a
                                      val new0 = NONE
                                      val isMutable = true

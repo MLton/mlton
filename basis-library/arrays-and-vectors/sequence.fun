@@ -208,6 +208,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
             val sequence = S.Slice.sequence
             val append = S.Slice.append
             
+            (* use COPY *)
             fun concat (sls: 'a slice list): 'a sequence =
                case sls of
                   [] => seq0 ()
