@@ -34,7 +34,7 @@ signature COMPILE =
                        outputS: unit -> {file: File.t,
                                          print: string -> unit,
                                          done: unit -> unit}} -> unit
-      val compileSXML: {input: File.t list,
+      val compileSXML: {input: File.t,
                         outputC: unit -> {file: File.t,
                                           print: string -> unit,
                                           done: unit -> unit},

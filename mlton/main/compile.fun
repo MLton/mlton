@@ -818,13 +818,28 @@ in
       handle Done => ()
 end
 
-fun genFromSXML (input: (In.t -> Sxml.Program.t) -> Sxml.Program.t): Machine.Program.t =
+fun genFromSXML (input: File.t): Machine.Program.t =
    let
-      fun toStream i = case In.inputChar i
-         of SOME c => Stream.cons(c, Stream.delay (fn () => toStream i))
-          | NONE => Stream.empty ()
       val _ = setupConstants()
-      val sxml = input (fn i => ParseSxml.parse(toStream i))
+      val sxml =
+         Control.passTypeCheck
+         {display = Control.Layouts Sxml.Program.layouts,
+          name = "sxmlParse",
+          stats = Sxml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "sxml",
+          thunk = (fn () =>
+                   File.withIn
+                   (input, fn i =>
+                    let
+                       fun toStream () =
+                          case In.inputChar i of
+                             SOME c => Stream.cons (c, Stream.delay toStream)
+                           | NONE => Stream.empty ()
+                    in
+                       ParseSxml.parse (toStream ())
+                    end)),
+          typeCheck = Sxml.typeCheck}
       val sxml = simplifySxml sxml
       val ssa = makeSsa sxml
       val ssa = simplifySsa ssa
@@ -833,16 +848,11 @@ fun genFromSXML (input: (In.t -> Sxml.Program.t) -> Sxml.Program.t): Machine.Pro
    in
       makeMachine ssa2
    end
-fun compileSXML {input: File.t list, outputC, outputLL, outputS}: unit =
-   let
-      fun withIn f = case input of [i] => File.withIn(i, f)
-                                 | _ => File.withStringIn("", f)
-   in
-      compile {input = withIn,
-               resolve = genFromSXML,
-               outputC = outputC,
-               outputLL = outputLL,
-               outputS = outputS}
-   end
+fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromSXML,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
 
 end

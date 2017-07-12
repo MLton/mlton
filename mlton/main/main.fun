@@ -1556,7 +1556,7 @@ fun commandLine (args: string list): unit =
                                    elaborate = Compile.elaborateMLB,
                                    compile = Compile.compileMLB}
                   val compileSXML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.fromList input,
+                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                    elaborate = fn _ => raise Fail "Unimplemented",
                                    compile = Compile.compileSXML}
                   fun compile () =
@@ -1565,7 +1565,7 @@ fun commandLine (args: string list): unit =
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
-                      | Place.SXML => compileSXML [input]
+                      | Place.SXML => compileSXML input
                       | _ => Error.bug "invalid start"
                   val doit
                     = trace (Top, "MLton")
