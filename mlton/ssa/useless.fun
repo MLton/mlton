@@ -508,7 +508,31 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_length => return (arrayLength (arg 0))
+                     Array_copyArray =>
+                        let
+                           val a = dearray (arg 0)
+                        in
+                           arg 1 dependsOn a
+                           ; arg 3 dependsOn a
+                           ; arg 4 dependsOn a
+                           ; case (value (arg 0), value (arg 2)) of
+                                (Array {elt = e, ...}, Array {elt = e', ...}) =>
+                                   unifySlot (e, e')
+                              | _ => Error.bug "Useless.primApp: Array_copyArray"
+                         end
+                   | Array_copyVector =>
+                        let
+                           val a = dearray (arg 0)
+                        in
+                           arg 1 dependsOn a
+                           ; arg 3 dependsOn a
+                           ; arg 4 dependsOn a
+                           ; case (value (arg 0), value (arg 2)) of
+                                (Array {elt = e, ...}, Vector {elt = e', ...}) =>
+                                   unifySlot (e, e')
+                              | _ => Error.bug "Useless.primApp: Array_copyVector"
+                         end
+                   | Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
                    | Array_toVector =>
                         (case (value (arg 0), value result) of
@@ -837,13 +861,16 @@ fun transform (program: Program.t): Program.t =
                                       Value.isUseful
                                       (Value.dearray (value (arg 0)))
                                    datatype z = datatype Prim.Name.t
-                                in case Prim.name prim of
-                                   Array_update => array ()
-                                 | Ref_assign =>
-                                      Value.isUseful 
-                                      (Value.deref (value (arg 0)))
-                                 | WordArray_updateWord _ => array ()
-                                 | _ => true
+                                in
+                                   case Prim.name prim of
+                                      Array_copyArray => array ()
+                                    | Array_copyVector => array ()
+                                    | Array_update => array ()
+                                    | Ref_assign =>
+                                         Value.isUseful 
+                                         (Value.deref (value (arg 0)))
+                                    | WordArray_updateWord _ => array ()
+                                    | _ => true
                                 end
                         then yes ty
                      else NONE

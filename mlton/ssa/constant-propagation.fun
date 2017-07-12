@@ -901,7 +901,11 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_length => arrayLength (arg 0)
+                  Array_copyArray =>
+                     update (arg 0, dearray (arg 2))
+                | Array_copyVector =>
+                     update (arg 0, devector (arg 2))
+                | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
                 | Array_uninit => array (arg 0, bear ())
