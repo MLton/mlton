@@ -1077,12 +1077,12 @@ in
            coercesS (Word_rndToReal, word, real, []))))))
         end
      @ List.concatMap
-  	(WordSize.prims, fn seqSize =>
-   	 List.concatMap
-   	  (WordSize.prims, fn eleSize =>
-    	   List.map
-    	   ([WordArray_subWord, WordArray_updateWord, WordVector_subWord], fn p =>
-     	    p {seqSize = seqSize, eleSize = eleSize}))) 
+       (WordSize.prims, fn seqSize =>
+        List.concatMap
+        (WordSize.prims, fn eleSize =>
+         List.map
+         ([WordArray_subWord, WordArray_updateWord, WordVector_subWord], fn p =>
+          p {seqSize = seqSize, eleSize = eleSize})))
      @ let
           fun doit (all, get, set) =
              List.concatMap (all, fn s => [get s, set s])
