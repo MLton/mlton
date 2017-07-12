@@ -203,7 +203,7 @@ fun toString (n: 'a t): string =
       fun sign {signed} = if signed then "WordS" else "WordU"
       fun word (s: WordSize.t, str: string): string =
          concat ["Word", WordSize.toString s, "_", str]
-      fun wordSeq (seqKind: string, oper: string, eleSize:WordSize.t, seqSize:WordSize.t): string =
+      fun wordSeq (seqSize: WordSize.t, seqKind: string, oper: string, eleSize: WordSize.t): string =
          concat ["Word", WordSize.toString seqSize, seqKind, "_", oper, "Word", WordSize.toString eleSize]
       fun wordS (s: WordSize.t, sg, str: string): string =
          concat [sign sg, WordSize.toString s, "_", str]
@@ -325,11 +325,11 @@ fun toString (n: 'a t): string =
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
        | WordArray_subWord {seqSize, eleSize} =>
-            wordSeq ("Array", "sub", eleSize, seqSize)
+            wordSeq (seqSize, "Array", "sub", eleSize)
        | WordArray_updateWord {seqSize, eleSize} =>
-            wordSeq ("Array", "update", eleSize, seqSize)
+            wordSeq (seqSize, "Array", "update", eleSize)
        | WordVector_subWord {seqSize, eleSize} =>
-            wordSeq ("Vector", "sub", eleSize, seqSize)
+            wordSeq (seqSize, "Vector", "sub", eleSize)
        | Word8Vector_toString => "Word8Vector_toString"
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
