@@ -120,6 +120,7 @@ val benchCounts: (string * int) list =
    ("raytrace", 96):: (* 37.27 sec *)
    ("simple", 768):: (* 36.10 sec *)
    ("smith-normal-form", 192):: (* 41.93 sec *)
+   ("string-concat", 192)::
    ("tailfib", 512):: (* 35.36 sec *)
    ("tak", 24):: (* 44.71 sec *)
    ("tensor", 6):: (* 34.63 sec *)
