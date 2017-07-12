@@ -357,6 +357,16 @@ fun toString (n: 'a t): string =
    end
 
 fun layout p = Layout.str (toString p)
+fun layoutFull (p, layoutX) =
+   case p of
+      FFI f => Layout.seq [Layout.str "FFI ", CFunction.layout (f, layoutX)]
+    | FFI_Symbol {name, cty, symbolScope} =>
+         Layout.seq [Layout.str "FFI_Symbol ",
+                     Layout.record
+                     [("name", Layout.str name),
+                      ("cty", Option.layout CType.layout cty),
+                      ("symbolScope", CFunction.SymbolScope.layout symbolScope)]]
+    | p => layout p
 
 val equals: 'a t * 'a t -> bool =
    fn (Array_length, Array_length) => true

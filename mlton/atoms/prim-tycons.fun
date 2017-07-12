@@ -29,7 +29,7 @@ local
    fun make s = (s, fromString s)
 in
    val array = make "array"
-   val arrow = make "->"
+   val arrow = make "arrow"
    val bool = make "bool" 
    val cpointer = make "cpointer"
    val exn = make "exn"
@@ -37,7 +37,7 @@ in
    val list = make "list"
    val reff = make "ref"
    val thread = make "thread"
-   val tuple = make "*"
+   val tuple = make "tuple"
    val vector = make "vector"
    val weak = make "weak"
 end
@@ -173,9 +173,9 @@ val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
-fun layoutApp (c: t,
-               args: (Layout.t * ({isChar: bool}
-                                  * BindingStrength.t)) vector) =
+fun layoutAppPretty (c: t,
+                     args: (Layout.t * ({isChar: bool}
+                                        * BindingStrength.t)) vector) =
    let
       local
          open Layout
@@ -232,6 +232,30 @@ fun layoutApp (c: t,
                  then (str "string", ({isChar = false}, Unit))
               else normal ()
       else normal ()
+   end
+
+fun layoutApp (c: t, args: Layout.t vector) =
+   let
+      local
+         open Layout
+      in
+         val empty = empty
+         val seq = seq
+         val str = str
+      end
+      val con =
+         if equals (c, tuple) andalso Vector.isEmpty args
+            then str "unit"
+            else (case List.peekMap (prims, fn {name, tycon, ...} =>
+                                     if equals (c, tycon) then SOME name else NONE) of
+                     SOME name => str name
+                   | _ => layout c)
+      val args =
+         if Vector.isEmpty args
+            then empty
+            else seq [Layout.tuple (Vector.toList args), str " "]
+   in
+      seq [args, con]
    end
 
 end

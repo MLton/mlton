@@ -112,6 +112,8 @@ in
       instream.sml
       file.sig
       file.sml
+      stream-parser.sig
+      stream-parser.sml
       signal.sml
       process.sig
       dir.sig
@@ -197,6 +199,8 @@ in
       signature REAL
       signature RING
       signature RING_WITH_IDENTITY
+      signature STREAM
+      signature STREAM_PARSER
       signature STRING
       signature T
       signature UNIQUE_ID
@@ -273,6 +277,7 @@ in
       structure Sexp
       structure Signal
       structure Stream
+      structure StreamParser
       structure String
       structure StringCvt
       structure Substring
