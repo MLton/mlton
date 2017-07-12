@@ -324,9 +324,12 @@ fun toString (n: 'a t): string =
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
-       | WordArray_subWord w => wordSeq ("Array", "sub", (#eleSize w), (#seqSize w))
-       | WordArray_updateWord w => wordSeq ("Array", "update", (#eleSize w), (#seqSize w))
-       | WordVector_subWord w => wordSeq ("Vector", "sub", (#eleSize w), (#seqSize w))
+       | WordArray_subWord {seqSize, eleSize} =>
+            wordSeq ("Array", "sub", eleSize, seqSize)
+       | WordArray_updateWord {seqSize, eleSize} =>
+            wordSeq ("Array", "update", eleSize, seqSize)
+       | WordVector_subWord {seqSize, eleSize} =>
+            wordSeq ("Vector", "sub", eleSize, seqSize)
        | Word8Vector_toString => "Word8Vector_toString"
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
@@ -511,9 +514,18 @@ val equals: 'a t * 'a t -> bool =
     | (Word_toIntInf, Word_toIntInf) => true
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
-    | (WordArray_subWord s, WordArray_subWord s') => WordSize.equals ((#eleSize s), (#eleSize s')) andalso WordSize.equals ((#seqSize s), (#seqSize s'))
-    | (WordArray_updateWord s, WordArray_updateWord s') => WordSize.equals ((#eleSize s), (#eleSize s')) andalso WordSize.equals ((#seqSize s), (#seqSize s'))
-    | (WordVector_subWord s, WordVector_subWord s') => WordSize.equals ((#eleSize s), (#eleSize s')) andalso WordSize.equals ((#seqSize s), (#seqSize s'))
+    | (WordArray_subWord {seqSize = seqSize, eleSize = eleSize},
+       WordArray_subWord {seqSize = seqSize', eleSize = eleSize'}) =>
+         WordSize.equals (seqSize, seqSize')
+         andalso WordSize.equals (eleSize, eleSize')
+    | (WordArray_updateWord {seqSize = seqSize, eleSize = eleSize},
+       WordArray_updateWord {seqSize = seqSize', eleSize = eleSize'}) =>
+         WordSize.equals (seqSize, seqSize')
+         andalso WordSize.equals (eleSize, eleSize')
+    | (WordVector_subWord {seqSize = seqSize, eleSize = eleSize},
+       WordVector_subWord {seqSize = seqSize', eleSize = eleSize'}) =>
+         WordSize.equals (seqSize, seqSize')
+         andalso WordSize.equals (eleSize, eleSize')
     | (Word8Vector_toString, Word8Vector_toString) => true
     | (World_save, World_save) => true
     | _ => false
