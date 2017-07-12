@@ -348,7 +348,7 @@ fun varOptEquals (v1: Var.t, v2: Var.t option): bool =
 (* For an binary operation where one argument is a constant,
    load that constant.
    Returns the variable, the constant, and true if the var was the first arg *)
-fun varConst (args, loadVar, signed) =
+fun varConst (args, loadVar, signed): (Var.t * IntInf.int * bool) option =
    let
       val a1 = Vector.sub (args, 0)
       val a2 = Vector.sub (args, 1)
@@ -1375,7 +1375,7 @@ and traverseLoop ({headers, child},
                          headers, labelNode, nodeBlock, loadGlobal, domInfo)
 
 (* Traverse the top-level loop forest. *)
-fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock, loadGlobal, domInfo) =
+fun traverseForest ({loops, notInLoop = _}, allBlocks, labelNode, nodeBlock, loadGlobal, domInfo) =
   let
     (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =

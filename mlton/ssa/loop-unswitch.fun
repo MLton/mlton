@@ -325,7 +325,7 @@ and traverseLoop ({headers, child},
       traverseSubForest ((Forest.dest child), headers, labelNode, nodeBlock, depth + 1)
 
 (* Traverse the top-level loop forest. *)
-fun traverseForest ({loops, ...}, allBlocks, labelNode, nodeBlock): Block.t list =
+fun traverseForest ({loops, notInLoop = _}, allBlocks, labelNode, nodeBlock): Block.t list =
   let
     (* Gather the blocks to add/remove *)
     val (newBlocks, blocksToRemove) =
