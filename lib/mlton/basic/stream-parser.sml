@@ -249,18 +249,23 @@ fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) =
          Success (b, #2 s')
     | NONE => fail "fromReader" s
 
-fun compose (p1 : char t, p2 : 'a t) (s : State.t) =
+fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
    let
       (* easiest way to escape here *)
       exception ComposeFail of string list
-      fun makeStr s' = case Stream.force s' of
+      fun makeStr s' () = case Stream.force s' of
          NONE => Stream.empty ()
        | SOME ((_, pos), r) =>
             (case p1 (#1 s, s') of
-                Success (b, r) => Stream.cons((b, pos), Stream.delay (fn () => makeStr r))
+                Success (b, r) => (case b of
+                    (* equivalent, but avoids the jumping from append of fromList *)
+                    c::[] => Stream.cons((c, pos), Stream.delay (makeStr r))
+                  | _  => Stream.append
+                        (indexStream(pos, Stream.fromList b),
+                         Stream.delay (makeStr r)))
               | Failure m => raise ComposeFail m
               | FailCut m => raise ComposeFail m)
    in
-      p2 (#1 s, makeStr (#2 s)) handle ComposeFail m => Failure m end
+      p2 (#1 s, makeStr (#2 s) () ) handle ComposeFail m => Failure m end
 
 end
