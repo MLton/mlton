@@ -172,7 +172,7 @@ fun satExpects(t, p, m) s =
      | Failure err => Failure err
      | FailCut err => FailCut err
 
-fun sat(t, p) s = satExpects(t, p, "Syntax error") s
+fun sat(t, p) s = satExpects(t, p, "Satisfying") s
 
 
 fun peek p (s : State.t) =
