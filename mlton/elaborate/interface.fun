@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2015 Matthew Fluet.
+(* Copyright (C) 2009,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -303,12 +303,49 @@ structure Scheme =
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
    end
 
-structure Cons =
+structure Cons :
+   sig
+      type t
+      val dest: t -> {name: Ast.Con.t,
+                      scheme: Scheme.t} vector
+      val empty: t
+      val fromSortedVector: {name: Ast.Con.t,
+                             scheme: Scheme.t} vector -> t
+      val fromVector: {name: Ast.Con.t,
+                       scheme: Scheme.t} vector -> t
+      val layout: t -> Layout.t
+      val map: t * ({name: Ast.Con.t,
+                     scheme: Scheme.t}
+                    -> {scheme: Scheme.t}) -> t
+   end =
    struct
       datatype t = T of {name: Ast.Con.t,
                          scheme: Scheme.t} vector
 
+      fun dest (T v) = v
+
+      val fromSortedVector = T
+
+      fun fromVector v =
+         (fromSortedVector o QuickSort.sortVector)
+         (v, fn ({name = name1, ...}, {name = name2, ...}) =>
+          case Ast.Con.compare (name1, name2) of
+             LESS => true
+           | EQUAL => true
+           | GREATER => false)
+
       val empty = T (Vector.new0 ())
+
+      fun map (T v, f) =
+         (T o Vector.map)
+         (v, fn elt as {name, ...} =>
+          let
+             val {scheme} =
+                f elt
+          in
+             {name = name,
+              scheme = scheme}
+          end)
 
       fun layout (T v) =
          Vector.layout (fn {name, scheme} =>
@@ -431,10 +468,9 @@ in
    val expandTy = expandTy
 end
 
-fun copyCons (Cons.T v): Cons.t =
-   Cons.T (Vector.map (v, fn {name, scheme} =>
-                       {name = name,
-                        scheme = copyScheme scheme}))
+fun copyCons cons: Cons.t =
+   Cons.map (cons, fn {scheme, ...} =>
+             {scheme = copyScheme scheme})
 and copyDefn (d: Defn.t): Defn.t =
    let
       open Defn

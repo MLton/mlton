@@ -284,7 +284,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                  Env.extendCon (E, name, scheme))
              val _ =
                 Env.extendTycon
-                (E, name, TypeStr.data (tycon, kind, Cons.T consSchemes))
+                (E, name, TypeStr.data (tycon, kind, Cons.fromVector consSchemes))
           in
              ()
           end)
@@ -387,10 +387,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                        (Env.lookupLongtycon (E, rhs), fn s =>
                         let
                            val _ = Env.extendTycon (E, lhs, s)
-                           val Cons.T v = TypeStr.cons s
                            val _ =
                               Vector.foreach
-                              (v, fn {name, scheme} =>
+                              (Cons.dest (TypeStr.cons s), fn {name, scheme} =>
                                Env.extendCon (E, name, scheme))
                         in
                            ()

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -116,11 +117,18 @@ signature INTERFACE =
          end
       structure Cons:
          sig
-            datatype t = T of {name: Ast.Con.t,
-                               scheme: Scheme.t} vector
-
+            type t
+            val dest: t -> {name: Ast.Con.t,
+                            scheme: Scheme.t} vector
             val empty: t
+            val fromSortedVector: {name: Ast.Con.t,
+                                   scheme: Scheme.t} vector -> t
+            val fromVector: {name: Ast.Con.t,
+                             scheme: Scheme.t} vector -> t
             val layout: t -> Layout.t
+            val map: t * ({name: Ast.Con.t,
+                           scheme: Scheme.t}
+                          -> {scheme: Scheme.t}) -> t
          end
       structure TypeStr:
          sig

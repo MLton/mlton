@@ -208,12 +208,60 @@ structure TypeStr =
       structure Kind = Kind
       structure Tycon = Tycon
 
-      structure Cons =
+      structure Cons :
+         sig
+            type t
+            val dest: t -> {con: Con.t,
+                            name: Ast.Con.t,
+                            scheme: Scheme.t,
+                            uses: Ast.Vid.t Uses.t} vector
+            val fromSortedVector: {con: Con.t,
+                                   name: Ast.Con.t,
+                                   scheme: Scheme.t,
+                                   uses: Ast.Vid.t Uses.t} vector -> t
+            val fromVector: {con: Con.t,
+                             name: Ast.Con.t,
+                             scheme: Scheme.t,
+                             uses: Ast.Vid.t Uses.t} vector -> t
+            val layout: t -> Layout.t
+            val map: t * ({con: Con.t,
+                           name: Ast.Con.t,
+                           scheme: Scheme.t,
+                           uses: Ast.Vid.t Uses.t}
+                          -> {con: Con.t,
+                              scheme: Scheme.t,
+                              uses: Ast.Vid.t Uses.t}) -> t
+         end =
          struct
             datatype t = T of {con: Con.t,
                                name: Ast.Con.t,
                                scheme: Scheme.t,
                                uses: Ast.Vid.t Uses.t} vector
+
+            fun dest (T v) = v
+
+            val fromSortedVector = T
+
+            fun fromVector v =
+               (fromSortedVector o QuickSort.sortVector)
+               (v, fn ({name = name1, ...}, {name = name2, ...}) =>
+                case Ast.Con.compare (name1, name2) of
+                   LESS => true
+                 | EQUAL => true
+                 | GREATER => false)
+
+            fun map (T v, f) =
+               (T o Vector.map)
+               (v, fn elt as {name, ...} =>
+                let
+                   val {con, scheme, uses} =
+                      f elt
+                in
+                   {con = con,
+                    name = name,
+                    scheme = scheme,
+                    uses = uses}
+                end)
 
             fun layout (T v) =
                Vector.layout (fn {name, scheme, ...} =>
@@ -268,11 +316,11 @@ structure TypeStr =
             open Layout
          in
             case node s of
-               Datatype {cons = Cons.T v, ...} =>
+               Datatype {cons, ...} =>
                   align
                   (Vector.toList
                    (Vector.keepAllMap
-                    (v, fn {name, scheme, ...} =>
+                    (Cons.dest cons, fn {name, scheme, ...} =>
                      case (Type.deArrowOpt
                            (#instance (Scheme.instantiate scheme))) of
                         NONE => NONE
@@ -381,16 +429,17 @@ structure Interface =
                                        NONE => escape NONE
                                      | SOME ty => ty),
                               tyvars = tyvars}))
-      and consToEnv (Cons.T v): Econs.t option =
+      and consToEnv cons: Econs.t option =
          Exn.withEscape
          (fn escape =>
-          SOME (Econs.T (Vector.map (v, fn {name, scheme} =>
-                                     {con = Con.newNoname (),
-                                      name = name,
-                                      scheme = (case schemeToEnv scheme of
-                                                   NONE => escape NONE
-                                                 | SOME s => s),
-                                      uses = Uses.new ()}))))
+          (SOME o Econs.fromSortedVector o Vector.map)
+          (Cons.dest cons, fn {name, scheme} =>
+           {con = Con.newNoname (),
+            name = name,
+            scheme = (case schemeToEnv scheme of
+                         NONE => escape NONE
+                       | SOME s => s),
+            uses = Uses.new ()}))
       and typeStrToEnv (s: TypeStr.t): EtypeStr.t option =
          let
             val k = TypeStr.kind s
@@ -474,10 +523,11 @@ structure Interface =
          struct
             open Cons
 
-            fun fromEnv (Econs.T v): t =
-               T (Vector.map (v, fn {name, scheme, ...} =>
-                              {name = name,
-                               scheme = Scheme.fromEnv scheme}))
+            fun fromEnv (cons): t =
+               (fromSortedVector o Vector.map)
+               (Econs.dest cons, fn {name, scheme, ...} =>
+                {name = name,
+                 scheme = Scheme.fromEnv scheme})
          end
 
       structure TypeStr =
@@ -801,21 +851,21 @@ structure Structure =
                      val def = seq [str t, str " ", args, name, str " = "]
                      val res = 
                         case TypeStr.node s of
-                           TypeStr.Datatype {cons = Cons.T cs, tycon} =>
+                           TypeStr.Datatype {cons, tycon} =>
                               if isWhere
                                  then seq [def, lay (Type.con (tycon, tyvars))]
                               else
                                  let
-                                    val cs =
+                                    val cons =
                                        Vector.toListMap
-                                       (cs, fn {name, scheme, ...} =>
+                                       (Cons.dest cons, fn {name, scheme, ...} =>
                                         seq [Ast.Con.layout name,
                                              case (Type.deArrowOpt
                                                    (Scheme.apply (scheme, tyvars))) of
                                                 NONE => empty
                                               | SOME (t, _) => seq [str " of ", lay t]])
                                  in
-                                    seq [def, alignPrefix (cs, "| ")]
+                                    seq [def, alignPrefix (cons, "| ")]
                                  end
                          | TypeStr.Scheme s =>
                               seq [def, lay (Scheme.apply (s, tyvars))]
@@ -1707,24 +1757,24 @@ fun newCons (T {vals, ...}, v) = fn v' =>
    let
       val forceUsed = 1 = Vector.length v
    in
-      Cons.T (Vector.map2
-              (v, v', fn ({con, name}, scheme) =>
-               let
-                  val uses = NameSpace.newUses (vals, Class.Con,
-                                                Ast.Vid.fromCon name,
-                                                if isSome (!Control.showDefUse)
-                                                   then [(Vid.Con con, SOME scheme)]
-                                                else [])
-                  val () = 
-                     if not (warnUnused ()) orelse forceUsed
-                        then Uses.forceUsed uses
-                     else ()
-               in
-                  {con = con,
-                   name = name,
-                   scheme = scheme,
-                   uses = uses}
-               end))
+      (Cons.fromVector o Vector.map2)
+      (v, v', fn ({con, name}, scheme) =>
+       let
+          val uses = NameSpace.newUses (vals, Class.Con,
+                                        Ast.Vid.fromCon name,
+                                        if isSome (!Control.showDefUse)
+                                           then [(Vid.Con con, SOME scheme)]
+                                           else [])
+          val () =
+             if not (warnUnused ()) orelse forceUsed
+                then Uses.forceUsed uses
+                else ()
+       in
+          {con = con,
+           name = name,
+           scheme = scheme,
+           uses = uses}
+       end)
    end
 
 (* ------------------------------------------------- *)
@@ -2024,9 +2074,9 @@ in
                datatype z = datatype TypeStr.node
             in
                case TypeStr.node s of
-                  Datatype {cons = Cons.T v , ...} =>
+                  Datatype {cons, ...} =>
                      Vector.foreach
-                     (v, fn {con, name, scheme, uses} => 
+                     (Cons.dest cons, fn {con, name, scheme, uses} =>
                       extendVals (E, Ast.Vid.fromCon name,
                                   (Vid.Con con, SOME scheme),
                                   ExtendUses.Old uses))
@@ -2338,19 +2388,18 @@ fun openBasis (E as T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, 
 
 fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
    let
-      fun fixCons (Cons.T cs, Cons.T cs') =
-         Cons.T
-         (Vector.map
-          (cs', fn {name, scheme, ...} =>
-           let
-              val (con, uses) =
-                 case Vector.peek (cs, fn {name = n, ...} =>
-                                   Ast.Con.equals (n, name)) of
-                    NONE => (Con.bogus, Uses.new ())
-                  | SOME {con, uses, ...} => (con, uses)
-           in
-              {con = con, name = name, scheme = scheme, uses = uses}
-           end))
+      fun fixCons (cs, cs') =
+         Cons.map
+         (cs', fn {name, scheme, ...} =>
+          let
+             val (con, uses) =
+                case Vector.peek (Cons.dest cs, fn {name = n, ...} =>
+                                  Ast.Con.equals (n, name)) of
+                   NONE => (Con.bogus, Uses.new ())
+                 | SOME {con, uses, ...} => (con, uses)
+          in
+             {con = con, scheme = scheme, uses = uses}
+          end)
       val (S', instantiate) = dummyStructure (I, {prefix = prefix})
       val _ = instantiate (S, fn (c, s) =>
                            TypeEnv.setOpaqueTyconExpansion
@@ -2487,15 +2536,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
          equalSchemes
       fun layout (strids, x) =
          layoutLong (List.fold (strids, [x], fn (s, ac) => Strid.layout s :: ac))
-      fun checkCons (_ (* strTycon *): Ast.Tycon.t, Cons.T v,
-                     sigTycon: Ast.Tycon.t, Cons.T v',
+      fun checkCons (_ (* strTycon *): Ast.Tycon.t, strCons,
+                     sigTycon: Ast.Tycon.t, sigCons,
                      strids: Strid.t list): unit =
          let
             fun lay (c: Ast.Con.t) = layout (strids, Ast.Con.layout c)
             val extraStr =
                Vector.keepAllMap
-               (v, fn {name = n, scheme = s, ...} =>
-                case Vector.peek (v', fn {name = n', ...} =>
+               (Cons.dest strCons, fn {name = n, scheme = s, ...} =>
+                case Vector.peek (Cons.dest sigCons, fn {name = n', ...} =>
                                   Ast.Con.equals (n, n')) of
                    NONE => SOME n
                  | SOME {name = n', scheme = s', ...} =>
@@ -2530,8 +2579,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
             val _ = extras (extraStr, "structure")
             val extraSig =
                Vector.keepAllMap
-               (v', fn {name = n', ...} =>
-                if Vector.exists (v, fn {name = n, ...} =>
+               (Cons.dest sigCons, fn {name = n', ...} =>
+                if Vector.exists (Cons.dest strCons, fn {name = n, ...} =>
                                   Ast.Con.equals (n, n'))
                    then NONE
                 else SOME n')
@@ -3244,14 +3293,12 @@ fun functorClosure
                                   ty = replaceType ty,
                                   tyvars = tyvars}
                   end
-               fun replaceCons (Cons.T v): Cons.t =
-                  Cons.T
-                  (Vector.map
-                   (v, fn {con, name, scheme, uses} =>
-                    {con = con,
-                     name = name,
-                     scheme = replaceScheme scheme,
-                     uses = uses}))
+               fun replaceCons cons: Cons.t =
+                  Cons.map
+                  (cons, fn {con, scheme, uses, ...} =>
+                   {con = con,
+                    scheme = replaceScheme scheme,
+                    uses = uses})
                fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
                   let
                      val k = TypeStr.kind s
