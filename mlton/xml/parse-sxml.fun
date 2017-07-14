@@ -336,8 +336,8 @@ struct
             (false <$ (token "noinline") <|> T.pure true,
              typedvar,
              token "=>" *> T.delay exp' <* spaces))
-         and casesExp () = T.string "case" *> T.cut
-            (T.optional parseInt <* T.many1 space >>= (fn size =>
+         and casesExp () = T.string "case" *>
+            T.optional parseInt <* T.many1 space >>= (fn size => T.cut(
                varExp <* token "of" <* spaces >>= (fn var =>
                   case size of
                       NONE => makeConCases var <$$>
