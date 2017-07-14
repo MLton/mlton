@@ -164,6 +164,8 @@ signature INTERFACE =
                                   types: (Ast.Tycon.t * 'a) array}
 
             val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+            val peekStrid: 'a t * Ast.Strid.t -> 'a t option
+            val peekTycon: 'a t * Ast.Tycon.t ->'a option
          end
 
       type t

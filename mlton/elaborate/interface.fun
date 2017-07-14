@@ -835,6 +835,19 @@ structure UniqueId = IntUniqueId ()
 
       fun isEmpty (T {strs, types}) =
          0 = Array.length strs andalso 0 = Array.length types
+
+      fun peekStrid (T {strs, ...}, strid) =
+         Array.peekMap (strs, fn (strid', z) =>
+                        if Strid.equals (strid, strid')
+                           then SOME z
+                           else NONE)
+
+      fun peekTycon (T {types, ...}, tycon) =
+         Array.peekMap (types, fn (tycon', z) =>
+                        if Ast.Tycon.equals (tycon, tycon')
+                           then SOME z
+                           else NONE)
+
    end
 
 (*---------------------------------------------------*)
