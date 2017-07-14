@@ -57,6 +57,10 @@ signature TYPE_ENV =
                 localTyvarNames: bool} -> {destroy: unit -> unit,
                                            lay: t -> Layout.t * ({isChar: bool}
                                                                  * Tycon.BindingStrength.t)}
+            val makeUnify:
+               {layoutPretty: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t),
+                preError: unit -> unit} ->
+               t * t * {error: Layout.t * Layout.t -> unit} -> unit
             (* minTime (t, time) makes every component of t occur no later than
              * time.  This will display a type error message if time is before
              * the definition time of some component of t.

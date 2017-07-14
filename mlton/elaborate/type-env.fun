@@ -1030,10 +1030,9 @@ structure Type =
          Trace.trace2 
          ("TypeEnv.Type.unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t', {preError: unit -> unit}): UnifyResult.t =
+      fun unify (t, t', {layoutPretty: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t),
+                         preError: unit -> unit}): UnifyResult.t =
          let
-            val {destroy, lay = layoutPretty} = 
-               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
             val dontCare' = fn _ => dontCare
             val layoutRecord = fn z => layoutRecord (z, true)
             fun unify arg =
@@ -1360,7 +1359,6 @@ structure Type =
                            no (doit ac, doit ac')
                         end
                end
-            val _ = destroy ()
          in
             unify (t, t')
          end
@@ -1466,7 +1464,9 @@ structure Type =
                let
                   val t = Overload.defaultType ov
                   val _ = unify (t, t',
-                                 {preError = fn _ => 
+                                 {layoutPretty = fn _ =>
+                                  Error.bug "TypeEnv.Type.simpleHom.overload",
+                                  preError = fn _ =>
                                   Error.bug "TypeEnv.Type.simpleHom.overload"})
                in
                   con (t, Overload.defaultTycon ov, Vector.new0 ())
@@ -1970,12 +1970,26 @@ structure Type =
             res
          end
 
-      val unify =
-         fn (t1: t, t2: t, {error: Layout.t * Layout.t -> unit,
-                            preError: unit -> unit}) =>
-         case unify (t1, t2, {preError = preError}) of
-            NotUnifiable z => error z
+      val makeUnify =
+         fn {layoutPretty, preError} =>
+         fn (t1, t2, {error}) =>
+         case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
+            NotUnifiable (l1, l2) => error (l1, l2)
           | Unified => ()
+
+      val unify =
+         fn (t1, t2, {error, preError}) =>
+         let
+            val {destroy, lay = layoutPretty} =
+               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
+            val () =
+               case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
+                  NotUnifiable (l1, l2) => error (l1, l2)
+                | Unified => ()
+            val () = destroy ()
+         in
+            ()
+         end
    end
 
 end
