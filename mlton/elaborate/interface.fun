@@ -623,7 +623,7 @@ structure FlexibleTycon =
       type typeStr = TypeStr.t
 
       datatype realization =
-         ETypeStr of EnvTypeStr.t option
+          ETypeStr of EnvTypeStr.t option
         | TypeStr of typeStr
 
       fun realization (f: t): realization =
@@ -971,7 +971,7 @@ fun unbound (r: Region.t, className, x: Layout.t): unit =
     Layout.empty)
 
 fun layoutStrids (ss: Strid.t list): Layout.t =
-   Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
+  Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
 
 fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
                      {prefix: Strid.t list}) =
