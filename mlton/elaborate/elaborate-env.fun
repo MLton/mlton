@@ -19,6 +19,16 @@ in
 end
 
 local
+   open Layout
+in
+   (* val empty = empty *)
+   val seq = seq
+   val str = str
+   val bracket = fn l =>
+      seq [str "[", l, str "]"]
+end
+
+local
    open Ast
 in
    structure Basid = Basid
@@ -74,7 +84,7 @@ structure Scheme =
       open Scheme
 
       fun explainDoesNotAdmitEquality (s: t): Layout.t =
-         Type.explainDoesNotAdmitEquality (ty s)
+         Type.explainDoesNotAdmitEquality (#instance (instantiate s))
    end
 
 val insideFunctor = ref false
@@ -317,21 +327,29 @@ structure TypeStr =
          in
             case node s of
                Datatype {cons, ...} =>
-                  align
-                  (Vector.toList
-                   (Vector.keepAllMap
-                    (Cons.dest cons, fn {name, scheme, ...} =>
-                     case (Type.deArrowOpt
-                           (#instance (Scheme.instantiate scheme))) of
-                        NONE => NONE
-                      | SOME (arg, _) =>
-                           if Type.admitsEquality arg
-                              then NONE
-                           else 
-                              SOME (seq [Ast.Con.layout name, str " of ",
-                                         Type.explainDoesNotAdmitEquality arg]))))
+                  let
+                     val extra = ref false
+                     val cons =
+                        Vector.toList
+                        (Vector.keepAllMap
+                         (Cons.dest cons, fn {name, scheme, ...} =>
+                          case (Type.deArrowOpt
+                                (#instance (Scheme.instantiate scheme))) of
+                             NONE => (extra := true; NONE)
+                           | SOME (arg, _) =>
+                                if Type.admitsEquality arg
+                                   then (extra := true; NONE)
+                                   else SOME (seq [Ast.Con.layout name, str " of ",
+                                                   Type.explainDoesNotAdmitEquality arg])))
+                     val cons =
+                        if !extra
+                           then List.snoc (cons, str "...")
+                           else cons
+                  in
+                     alignPrefix (cons, "| ")
+                  end
              | Scheme s => Scheme.explainDoesNotAdmitEquality s
-             | Tycon c => Tycon.layout c
+             | Tycon c => bracket (Tycon.layout c)
          end
 
       fun abs t =
