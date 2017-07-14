@@ -365,7 +365,12 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                              {prefix = []}),
                             fn s =>
                             TypeStr.wheree
-                            (s, Longtycon.region longtycon,
+                            (s,
+                             Region.append
+                             (if Vector.isEmpty tyvars
+                                 then Longtycon.region longtycon
+                                 else Tyvar.region (Vector.sub (tyvars, 0)),
+                              Atype.region ty),
                              fn () => Longtycon.layout longtycon,
                              time,
                              TypeStr.def (elaborateScheme (tyvars, ty, E),
