@@ -1223,38 +1223,49 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                let
                   val _ = r := SOME length
                   val {strs, types, ...} = dest I
+                  fun setTycon (tycon, isDatatype) =
+                     case tycon of
+                        Tycon.Flexible (c as FlexibleTycon.T s) =>
+                           let
+                              val {defn, hasCons, ...} = Set.! s
+                           in
+                              case Defn.dest (!defn) of
+                                 Defn.Undefined =>
+                                    let
+                                       val r = tyconShortest c
+                                    in
+                                       if (hasCons
+                                           andalso not isDatatype)
+                                          orelse
+                                          (isSome (#length (!r))
+                                           andalso length >= valOf (#length (!r)))
+                                          then ref NONE
+                                          else let
+                                                  val _ = #flex (!r) := NONE
+                                                  val flex = ref (SOME c)
+                                                  val _ = r := {flex = flex,
+                                                                length = SOME length}
+                                               in
+                                                  flex
+                                               end
+                                    end
+                               | _ => ref NONE
+                           end
+                    | _ => ref NONE
                   val types =
                      Array.map
                      (types, fn (tycon, typeStr) =>
                       (tycon,
-                       case TypeStr.toTyconOpt typeStr of
-                          SOME (Tycon.Flexible (c as FlexibleTycon.T s)) =>
-                             let
-                                val {defn, ...} = Set.! s
-                             in
-                                case Defn.dest (!defn) of
-                                   Defn.Undefined =>
-                                      let
-                                         val r = tyconShortest c
-                                      in
-                                         if isSome (#length (!r))
-                                            andalso length >= valOf (#length (!r))
-                                            then ref NONE
-                                         else 
-                                            let
-                                               val _ = #flex (!r) := NONE
-                                               val flex = ref (SOME c)
-                                               val _ = r := {flex = flex,
-                                                             length = SOME length}
-                                            in
-                                               flex
-                                            end
-                                      end
-                                 | _ => ref NONE
-                             end
+                       case TypeStr.node typeStr of
+                          TypeStr.Datatype {tycon, ...} =>
+                             setTycon (tycon, true)
+                        | TypeStr.Tycon tycon =>
+                             setTycon (tycon, false)
                         | _ => ref NONE))
                   val strs =
-                     Array.map (strs, fn (s, I) => (s, loop (I, 1 + length)))
+                     Array.map
+                     (strs, fn (s, I) =>
+                      (s, loop (I, 1 + length)))
                in
                   TyconMap.T {strs = strs, types = types}
                end
