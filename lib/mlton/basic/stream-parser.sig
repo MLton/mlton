@@ -64,7 +64,7 @@ signature STREAM_PARSER =
       val char: char -> char t
       (* composes two parsers in turn, the characters used for the second come
        * from the first *)
-      val compose : char t * 'a t -> 'a t
+      val compose : char list t * 'a t -> 'a t
       (* if the parser fails, it will fail as a cut *)
       val cut: 'a t -> 'a t
       (* delays a stream lazily, for recursive combinations *)
