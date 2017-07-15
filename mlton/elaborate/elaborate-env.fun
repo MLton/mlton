@@ -807,7 +807,7 @@ structure Structure =
                      (strs, strs', Ast.Strid.equals,
                       fn (name, tm, S) =>
                       case S of
-                         NONE => allNone (tm, nest)
+                         NONE => allNone (tm, name :: nest)
                        | SOME (_, S) => loop (tm, S, name :: nest))
                   val () =
                      foreach2Sorted
