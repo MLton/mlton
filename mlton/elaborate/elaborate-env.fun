@@ -2971,10 +2971,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                 case (strScheme, Interface.Scheme.toEnv rlzScheme) of
                    (SOME strScheme, SOME rlzScheme) =>
                       let
-                         val (rlzTyvars, rlzType) = Scheme.dest rlzScheme
-                         val generalize = TypeEnv.generalize rlzTyvars
-                         val {args = strTyvars, instance = strType} =
-                            Scheme.instantiate strScheme
                          val unifyError = ref NONE
                          val genError = ref NONE
                          val statusError = ref NONE
@@ -3010,6 +3006,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                     Region.layout (Ast.Vid.region sigName)]])
                                     end
                                else ()
+                         val (rlzTyvars, rlzType) = Scheme.dest rlzScheme
+                         val generalize = TypeEnv.generalize rlzTyvars
+                         val {args = strTyvars, instance = strType} =
+                            Scheme.instantiate strScheme
                          val _ =
                             Type.unify
                             (strType, rlzType,
