@@ -2498,6 +2498,7 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
 fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     region: Region.t): Structure.t * Decs.t =
    let
+      val sigI = I
       (* This tick is so that the type schemes for any values that need to be
        * instantiated and then re-generalized will be at a new time, so we can
        * check if something should not be generalized.
@@ -2851,19 +2852,19 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       fun cut (S, I, strids): Structure.t =
          reallyCut (S, I, strids)
 *)
-      fun cut (S, I, strids): Structure.t =
+      fun cut (S, sigI, flexTycons, rlzI, strids): Structure.t =
          let
             val seen = get S
          in
-            case List.peek (!seen, fn (I', _) => Interface.equals (I, I')) of
+            case List.peek (!seen, fn (rlzI', _) => Interface.equals (rlzI, rlzI')) of
                NONE =>
                   let
-                     fun really () = reallyCut (S, I, strids)
+                     fun really () = reallyCut (S, sigI, flexTycons, rlzI, strids)
                      val S = 
                         case Structure.interface S of
                            NONE => really ()
-                         | SOME I' =>
-                              if Interface.equals (I, I')
+                         | SOME rlzI' =>
+                              if Interface.equals (rlzI, rlzI')
                                  then S
                               else really ()
 (*
@@ -2879,7 +2880,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                  else really ()
                               end
 *)
-                     val _ = List.push (seen, (I, S))
+                     val _ = List.push (seen, (rlzI, S))
                   in
                      S
                   end
@@ -2888,40 +2889,66 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       and reallyCut (Structure.T {strs = strStrs,
                                   types = strTypes,
                                   vals = strVals, ...},
-                     I, strids) =
+                     sigI, flexTycons, rlzI, strids) =
          let
-            val {strs = sigStrs, types = sigTypes, vals = sigVals} =
-               Interface.dest I
+            val {strs = sigStrs, types = sigTypes, ...} =
+               Interface.dest sigI
+            val {strs = rlzStrs, types = rlzTypes, vals = rlzVals} =
+               Interface.dest rlzI
             val strs =
-               map {strInfo = strStrs, ifcArray = sigStrs, strids = strids,
-                    nameEquals = Strid.equals, nameLayout = Strid.layout, nameRegion = Strid.region,
-                    notFound = fn (_, I) =>
+               map {strInfo = strStrs,
+                    ifcArray = Array.map2 (sigStrs, rlzStrs,
+                                           fn ((name, sigI), (_, rlzI)) =>
+                                           (name, (sigI, rlzI))),
+                    strids = strids,
+                    nameEquals = Strid.equals,
+                    nameLayout = Strid.layout,
+                    nameRegion = Strid.region,
+                    notFound = fn (_, (_, rlzI)) =>
                     let
-                       val (S', _) = dummyStructure (I, {prefix = ""})
+                       val (S, _) = dummyStructure (rlzI, {prefix = ""})
                     in
-                       {range = S',
+                       {range = S,
                         spec = NONE,
                         thing = "structure"}
                     end,
-                    doit = fn (_, S, name, I) => cut (S, I, name :: strids)}
-            val types =
-               map {strInfo = strTypes, ifcArray = sigTypes, strids = strids,
-                    nameEquals = Ast.Tycon.equals, nameLayout = Ast.Tycon.layout, nameRegion = Ast.Tycon.region,
-                    notFound = fn (_, sigStr) =>
+                    doit = fn (_, S, name, (sigI, rlzI)) =>
                     let
-                       val sigStr = Interface.TypeStr.toEnvNoNone sigStr
+                       val flexTycons =
+                          Option.fold
+                          (flexTycons, NONE, fn (flexTycons, _) =>
+                           TyconMap.peekStrid (flexTycons, name))
                     in
-                       {range = sigStr,
+                       cut (S, sigI, flexTycons, rlzI, name :: strids)
+                    end}
+            val types =
+               map {strInfo = strTypes,
+                    ifcArray = Array.map2 (sigTypes, rlzTypes,
+                                           fn ((name, sigStr), (_, rlzStr)) =>
+                                           (name, (sigStr, rlzStr))),
+                    strids = strids,
+                    nameEquals = Ast.Tycon.equals,
+                    nameLayout = Ast.Tycon.layout,
+                    nameRegion = Ast.Tycon.region,
+                    notFound = fn (_, (_, rlzStr)) =>
+                    let
+                       val rlzStr = Interface.TypeStr.toEnvNoNone rlzStr
+                    in
+                       {range = rlzStr,
                         spec = NONE,
                         thing = "type"}
                     end,
-                    doit = fn (strName, strStr, sigName, sigStr) =>
-                    handleType (strName, strStr, sigName, sigStr, strids)}
+                    doit = fn (strName, strStr, sigName, (_, rlzStr)) =>
+                    handleType (strName, strStr, sigName, rlzStr, strids)}
             val vals =
                map
-               {strInfo = strVals, ifcArray = sigVals, strids = strids,
-                nameEquals = Ast.Vid.equals, nameLayout = Ast.Vid.layout, nameRegion = Ast.Vid.region,
-                notFound = fn (name, (status, sigScheme)) =>
+               {strInfo = strVals,
+                ifcArray = rlzVals,
+                strids = strids,
+                nameEquals = Ast.Vid.equals,
+                nameLayout = Ast.Vid.layout,
+                nameRegion = Ast.Vid.region,
+                notFound = fn (name, (status, rlzScheme)) =>
                 let
                    val con = Con.fromString o Ast.Vid.toString
                    val var = Var.fromString o Ast.Vid.toString
@@ -2930,23 +2957,23 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                          Status.Con => Vid.Con (con name)
                        | Status.Exn => Vid.Exn (con name)
                        | Status.Var => Vid.Var (var name)
-                   val sigScheme = Interface.Scheme.toEnv sigScheme
+                   val rlzScheme = Interface.Scheme.toEnv rlzScheme
                    val spec =
                       (#valSpec (Structure.layouts ({showUsed = false}, fn _ => NONE)))
-                      (name, (vid, sigScheme))
+                      (name, (vid, rlzScheme))
                    val thing = Status.pretty status
                 in
-                   {range = (vid, sigScheme),
+                   {range = (vid, rlzScheme),
                     spec = spec,
                     thing = thing}
                 end,
-                doit = fn (strName, (vid, strScheme), sigName, (status, sigScheme)) =>
-                case (strScheme, Interface.Scheme.toEnv sigScheme) of
-                   (SOME strScheme, SOME sigScheme) =>
+                doit = fn (strName, (vid, strScheme), sigName, (status, rlzScheme)) =>
+                case (strScheme, Interface.Scheme.toEnv rlzScheme) of
+                   (SOME strScheme, SOME rlzScheme) =>
                       let
-                         val (sigArgs, sigType) = Scheme.dest sigScheme
-                         val generalize = TypeEnv.generalize sigArgs
-                         val {args = strArgs, instance = strType} =
+                         val (rlzTyvars, rlzType) = Scheme.dest rlzScheme
+                         val generalize = TypeEnv.generalize rlzTyvars
+                         val {args = strTyvars, instance = strType} =
                             Scheme.instantiate strScheme
                          val unifyError = ref NONE
                          val genError = ref NONE
@@ -2985,7 +3012,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                else ()
                          val _ =
                             Type.unify
-                            (strType, sigType,
+                            (strType, rlzType,
                              {error = fn (l, l') => unifyError := SOME (l, l'),
                               preError = preError})
                          (* Now that we've unified, find any type variables that
@@ -3005,9 +3032,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                          (Vector.toListMap (unable, Tyvar.layout),
                                                           str ", "),
                                                          str " cannot be generalized"],
-                                                    Scheme.layoutPretty sigScheme)
+                                                    Scheme.layoutPretty rlzScheme)
                                end
-                         val strArgs = strArgs ()
+                         val strTyvars = strTyvars ()
                          fun addDec (name: string, n: Exp.node): Vid.t =
                             let
                                val x = Var.newString name
@@ -3019,7 +3046,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                           nonexhaustive = Control.Elaborate.DiagEIW.Ignore,
                                                           redundant = Control.Elaborate.DiagEIW.Ignore},
                                             rvbs = Vector.new0 (),
-                                            tyvars = fn () => sigArgs,
+                                            tyvars = fn () => rlzTyvars,
                                             vbs = (Vector.new1
                                                    {ctxt = fn _ => Layout.empty,
                                                     exp = e,
@@ -3031,16 +3058,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                Vid.Var x
                             end
                          fun con (c: Con.t): Vid.t =
-                            addDec (Con.originalName c, Exp.Con (c, strArgs))
+                            addDec (Con.originalName c, Exp.Con (c, strTyvars))
                          val vid =
                             case (vid, status) of
                                (Vid.Con c, Status.Var) => con c
                              | (Vid.Exn c, Status.Var) => con c
                              | (Vid.Var x, Status.Var) =>
-                                  if 0 < Vector.length sigArgs
-                                     orelse 0 < Vector.length strArgs
+                                  if 0 < Vector.length rlzTyvars
+                                     orelse 0 < Vector.length strTyvars
                                      then addDec (Var.originalName x, 
-                                                  Exp.Var (fn () => x, fn () => strArgs))
+                                                  Exp.Var (fn () => x, fn () => strTyvars))
                                   else vid
                              | (Vid.Con _, Status.Con) => vid
                              | (Vid.Exn _, Status.Exn) => vid
@@ -3055,9 +3082,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                   end
                          val () = reportError ()
                       in
-                         (vid, SOME sigScheme)
+                         (vid, SOME rlzScheme)
                       end
-                 | _ => 
+                 | _ =>
                       (* We don't want to cause spurious errors by guessing.
                        * Putting strScheme here would be
                        * wrong, because it isn't what the signature says --
@@ -3072,11 +3099,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                          types = types,
                          vals = vals}
          end
-      val I = Interface.copy I
+      val rlzI = Interface.copy sigI
+      val flexTycons = Interface.flexibleTycons rlzI
       val () =
          Structure.realize
-         (S, Interface.flexibleTycons I,
-          fn (name, flex, typeStr, {nest}) =>
+         (S, flexTycons,
+          fn (name, flex, typeStr, {nest = strids}) =>
           let
              val {admitsEquality = a, hasCons, kind = k, ...} =
                 FlexibleTycon.dest flex
@@ -3088,7 +3116,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        * typeStr.
                        *)
                       if isPlausible
-                         (typeStr, nest, name, a, k,
+                         (typeStr, strids, name, a, k,
                           hasCons
                           andalso Option.isNone (TypeStr.toTyconOpt typeStr))
                          then SOME typeStr
@@ -3097,7 +3125,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
           in
              ()
           end)
-      val S = cut (S, I, [])
+      val S = cut (S, sigI, SOME flexTycons, rlzI, [])
       val () = destroy ()
    in
       (S, Decs.fromList (!decs))
