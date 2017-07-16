@@ -2965,7 +2965,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                          val genError = ref NONE
                          val statusError = ref NONE
                          fun reportError () =
-                            if Option.isSome (!unifyError) orelse Option.isSome (!genError) orelse Option.isSome (!statusError)
+                            if Option.isSome (!unifyError)
+                               orelse Option.isSome (!genError)
+                               orelse Option.isSome (!statusError)
                                then let
                                        fun get (space, sel) r =
                                           case !r of
