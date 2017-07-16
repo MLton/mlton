@@ -2510,12 +2510,24 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
          if isFunctor
             then "argument signature"
          else "signature"
+      val {get = interfaceSigid: Interface.t -> Sigid.t option,
+           set = setInterfaceSigid, ...} =
+         Property.getSet (Interface.plist, Property.initConst NONE)
       val preError =
          Promise.lazy
          (fn () =>
-          scope (E, fn () =>
-                 (openStructure (E, S)
-                  ; setTyconNames E)))
+          (let
+              val {sigs, ...} =
+                 collect (E, fn _ => true,
+                          fn ({time = t, ...}, {time = t', ...}) =>
+                          Time.>= (t, t'))
+           in
+              Array.foreach (sigs, fn {domain = s, range = I, ...} =>
+                             setInterfaceSigid (I, SOME s))
+           end
+           ; scope (E, fn () =>
+                    (openStructure (E, S)
+                     ; setTyconNames E))))
       val decs = ref []
       (* pre: arities are equal. *)
       fun equalSchemes (strScheme: Scheme.t,
@@ -2904,12 +2916,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     nameEquals = Strid.equals,
                     nameLayout = Strid.layout,
                     nameRegion = Strid.region,
-                    notFound = fn (_, (_, rlzI)) =>
+                    notFound = fn (name, (_, rlzI)) =>
                     let
                        val (S, _) = dummyStructure (rlzI, {prefix = ""})
+                       val () = preError ()
+                       val spec =
+                          (#strSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
+                          (name, S)
                     in
                        {range = S,
-                        spec = NONE,
+                        spec = SOME spec,
                         thing = "structure"}
                     end,
                     doit = fn (_, S, name, (sigI, rlzI)) =>
@@ -2930,12 +2946,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     nameEquals = Ast.Tycon.equals,
                     nameLayout = Ast.Tycon.layout,
                     nameRegion = Ast.Tycon.region,
-                    notFound = fn (_, (_, rlzStr)) =>
+                    notFound = fn (name, (_, rlzStr)) =>
                     let
                        val rlzStr = Interface.TypeStr.toEnvNoNone rlzStr
+                       val () = preError ()
+                       val spec =
+                          (#typeSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
+                          (name, rlzStr)
                     in
                        {range = rlzStr,
-                        spec = NONE,
+                        spec = SOME spec,
                         thing = "type"}
                     end,
                     doit = fn (strName, strStr, sigName, (_, rlzStr)) =>
@@ -2958,8 +2978,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        | Status.Exn => Vid.Exn (con name)
                        | Status.Var => Vid.Var (var name)
                    val rlzScheme = Interface.Scheme.toEnv rlzScheme
+                   val () = preError ()
                    val spec =
-                      (#valSpec (Structure.layouts ({showUsed = false}, fn _ => NONE)))
+                      (#valSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
                       (name, (vid, rlzScheme))
                    val thing = Status.pretty status
                 in
