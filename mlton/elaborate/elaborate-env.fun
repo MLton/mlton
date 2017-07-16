@@ -34,7 +34,6 @@ in
    structure Basid = Basid
    structure Fctid = Fctid
    structure Strid = Strid
-   structure Longvid = Longvid
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Priority = Priority
@@ -1831,6 +1830,15 @@ fun layoutLong (ids: Layout.t list) =
 fun layoutStrids (ss: Strid.t list): Layout.t =
    layoutLong (List.map (ss, Strid.layout))
 
+fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
+   let
+      open Layout
+   in
+      (seq o List.fold)
+      (ss, [id], fn (s, ls) =>
+       Strid.layout s :: str "." :: ls)
+   end
+
 structure PeekResult =
    struct
       datatype 'a t =
@@ -2552,13 +2560,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                      Scheme.layout s'],
           Unit.layout)
          equalSchemes
-      fun layout (strids, x) =
-         layoutLong (List.fold (strids, [x], fn (s, ac) => Strid.layout s :: ac))
       fun checkCons (_ (* strTycon *): Ast.Tycon.t, strCons,
                      sigTycon: Ast.Tycon.t, sigCons,
                      strids: Strid.t list): unit =
          let
-            fun lay (c: Ast.Con.t) = layout (strids, Ast.Con.layout c)
+            fun lay (c: Ast.Con.t) = layoutLongRev (strids, Ast.Con.layout c)
             val extraStr =
                Vector.keepAllMap
                (Cons.dest strCons, fn {name = n, scheme = s, ...} =>
@@ -2587,7 +2593,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                      Control.error
                      (region,
                       seq [str "type ",
-                           layout (strids, Ast.Tycon.layout sigTycon),
+                           layoutLongRev (strids, Ast.Tycon.layout sigTycon),
                            str (concat [" has constructors in ", name,
                                         " only: "]),
                            seq (List.separate (Vector.toListMap (v, lay),
@@ -2622,7 +2628,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                   val () =
                      Control.error
                      (region,
-                      seq [str "type ", layout (strids, Ast.Tycon.layout name),
+                      seq [str "type ", layoutLongRev (strids, Ast.Tycon.layout name),
                            str " admits equality in ", str sign,
                            str " but not in structure"],
                       seq [str "not equality: ",
@@ -2642,7 +2648,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                            Control.error
                            (region,
                             seq [str "type ",
-                                 layout (strids, Ast.Tycon.layout name),
+                                 layoutLongRev (strids, Ast.Tycon.layout name),
                                  str " has arity ", Kind.layout structKind,
                                  str " in structure but arity ",
                                  Kind.layout sigKind, str " in ", str sign],
@@ -2659,7 +2665,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                               Control.error
                               (region,
                                seq [str "type ",
-                                    layout (strids, Ast.Tycon.layout name),
+                                    layoutLongRev (strids, Ast.Tycon.layout name),
                                     str " is a datatype in ", str sign,
                                     str " but not in structure"],
                                Layout.empty)
@@ -2705,7 +2711,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                         (strScheme,
                          sigScheme,
                          "type",
-                         fn () => layout (strids, Ast.Tycon.layout sigName),
+                         fn () => layoutLongRev (strids, Ast.Tycon.layout sigName),
                          Ast.Tycon.region strName,
                          Ast.Tycon.region sigName,
                          region)
@@ -2768,7 +2774,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                         str " in ",
                                         str sign,
                                         str " but not in structure: ",
-                                        layout (strids, nameLayout ifcName)],
+                                        layoutLongRev (strids, nameLayout ifcName)],
                                    align [case spec of
                                              NONE => empty
                                            | SOME spec => seq [str "signature: ", spec],
@@ -2964,7 +2970,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                              str " in structure disagrees with ",
                                              str sign,
                                              str ": ",
-                                             Longvid.layout (Longvid.long (rev strids, sigName))],
+                                             layoutLongRev (strids, Ast.Vid.layout sigName)],
                                         align [getStr statusError,
                                                getStr unifyError,
                                                getStr genError,
