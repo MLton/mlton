@@ -2738,28 +2738,28 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                      sigStr
                end
       fun map {strInfo: ('name, 'strRange) Info.t,
-               sigArray: ('name * 'sigRange) array,
+               ifcArray: ('name * 'ifcRange) array,
                strids: Strid.t list,
                nameEquals: 'name * 'name -> bool,
                nameLayout: 'name -> Layout.t,
                nameRegion: 'name -> Region.t,
-               notFound: 'name * 'sigRange -> {range: 'range,
+               notFound: 'name * 'ifcRange -> {range: 'range,
                                                spec: Layout.t option,
                                                thing: string},
-               doit: 'name * 'strRange * 'name * 'sigRange -> 'range}: ('name, 'range) Info.t =
+               doit: 'name * 'strRange * 'name * 'ifcRange -> 'range}: ('name, 'range) Info.t =
          let
             val Info.T strArray = strInfo
             val n = Array.length strArray
             val r = ref 0
             val array =
                Array.map
-               (sigArray, fn (sigName, sigRange) =>
+               (ifcArray, fn (ifcName, ifcRange) =>
                 let
                    fun find i =
                       if i = n
                          then
                             let
-                               val {range, spec, thing} = notFound (sigName, sigRange)
+                               val {range, spec, thing} = notFound (ifcName, ifcRange)
                                open Layout
                                val _ =
                                   Control.error
@@ -2768,14 +2768,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                         str " in ",
                                         str sign,
                                         str " but not in structure: ",
-                                        layout (strids, nameLayout sigName)],
+                                        layout (strids, nameLayout ifcName)],
                                    align [case spec of
                                              NONE => empty
                                            | SOME spec => seq [str "signature: ", spec],
                                           seq [str "spec at:   ",
-                                               Region.layout (nameRegion sigName)]])
+                                               Region.layout (nameRegion ifcName)]])
                             in
-                               {domain = sigName,
+                               {domain = ifcName,
                                 range = range,
                                 time = Time.next (),
                                 uses = Uses.new ()}
@@ -2785,10 +2785,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                             val {domain = strName, range = strRange, time, uses} =
                                Array.sub (strArray, i)
                          in
-                            if nameEquals (strName, sigName)
+                            if nameEquals (strName, ifcName)
                                then (r := i + 1
                                      ; {domain = strName,
-                                        range = doit (strName, strRange, sigName, sigRange),
+                                        range = doit (strName, strRange, ifcName, ifcRange),
                                         time = time,
                                         uses = uses})
                             else find (i + 1)
@@ -2887,7 +2887,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
             val {strs = sigStrs, types = sigTypes, vals = sigVals} =
                Interface.dest I
             val strs =
-               map {strInfo = strStrs, sigArray = sigStrs, strids = strids,
+               map {strInfo = strStrs, ifcArray = sigStrs, strids = strids,
                     nameEquals = Strid.equals, nameLayout = Strid.layout, nameRegion = Strid.region,
                     notFound = fn (_, I) =>
                     let
@@ -2899,7 +2899,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     end,
                     doit = fn (_, S, name, I) => cut (S, I, name :: strids)}
             val types =
-               map {strInfo = strTypes, sigArray = sigTypes, strids = strids,
+               map {strInfo = strTypes, ifcArray = sigTypes, strids = strids,
                     nameEquals = Ast.Tycon.equals, nameLayout = Ast.Tycon.layout, nameRegion = Ast.Tycon.region,
                     notFound = fn (_, sigStr) =>
                     let
@@ -2913,7 +2913,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     handleType (strName, strStr, sigName, sigStr, strids)}
             val vals =
                map
-               {strInfo = strVals, sigArray = sigVals, strids = strids,
+               {strInfo = strVals, ifcArray = sigVals, strids = strids,
                 nameEquals = Ast.Vid.equals, nameLayout = Ast.Vid.layout, nameRegion = Ast.Vid.region,
                 notFound = fn (name, (status, sigScheme)) =>
                 let
