@@ -2927,8 +2927,372 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                         spec = SOME spec,
                         thing = "type"}
                     end,
-                    doit = fn (strName, strStr, sigName, (_, rlzStr)) =>
-                    handleType (strName, strStr, sigName, rlzStr, strids)}
+                    doit = fn (strName, strStr, sigName, (sigStr, rlzStr')) =>
+                    case Interface.TypeStr.toEnv rlzStr' of
+                       NONE => strStr
+                     | SOME rlzStr =>
+                          let
+                             val {destroy, lay = layoutPretty} =
+                                Type.makeLayoutPretty {expandOpaque = false,
+                                                       localTyvarNames = true}
+                             val lay = #1 o layoutPretty
+                             val error: (Layout.t list * Layout.t * Layout.t) option ref = ref NONE
+                             fun reportError () =
+                                case !error of
+                                   NONE => ()
+                                 | SOME (msgs, strError, sigError) =>
+                                      Control.error
+                                      (region,
+                                       seq [str "type in structure disagrees with signature",
+                                            if List.isEmpty msgs
+                                               then Layout.empty
+                                               else seq [str " (",
+                                                         (seq o List.separate) (List.rev msgs, str ", "),
+                                                         str ")"],
+                                            str ": ",
+                                            layoutLongRev (strids, Ast.Tycon.layout sigName)],
+                                       align [seq [str "structure: ", strError],
+                                              seq [str "defn at:   ",
+                                                   Region.layout (Ast.Tycon.region strName)],
+                                              seq [str "signature: ", sigError],
+                                              seq [str "spec at:   ",
+                                                   Region.layout (Ast.Tycon.region sigName)]])
+                             val error = fn (msg, strError, sigError) =>
+                                let
+                                   val msgs =
+                                      case (msg, !error) of
+                                         (NONE, NONE) => []
+                                       | (NONE, SOME (msgs, _, _)) => msgs
+                                       | (SOME msg, NONE) => [str msg]
+                                       | (SOME msg, SOME (msgs, _, _)) => (str msg)::msgs
+                                in
+                                   error := SOME (msgs, strError, sigError)
+                                end
+
+                             fun tyconScheme (tycon: Tycon.t, arity): Scheme.t =
+                                let
+                                   val tyvars =
+                                      Vector.tabulate
+                                      (arity, fn _ =>
+                                       Tyvar.newNoname {equality = false})
+                                in
+                                   Scheme.make
+                                   {canGeneralize = true,
+                                    ty = Type.con (tycon, Vector.map (tyvars, Type.var)),
+                                    tyvars = tyvars}
+                                end
+
+                             val strArity =
+                                case TypeStr.kind strStr of
+                                   Kind.Arity strArity => strArity
+                                 | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: strArity"
+                             val sigArity =
+                                case Interface.TypeStr.kind sigStr of
+                                   Kind.Arity sigArity => sigArity
+                                 | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: sigArity"
+                             local
+                                val tyvars =
+                                   Vector.tabulate
+                                   (Int.max (strArity, sigArity), fn _ =>
+                                    Type.var (Tyvar.newNoname {equality = false}))
+                             in
+                                val strTyvars = Vector.prefix (tyvars, strArity)
+                                val sigTyvars = Vector.prefix (tyvars, sigArity)
+                             end
+                             local
+                                open Layout
+                                fun mk tyvars =
+                                   let
+                                      val tyvars =
+                                         case Vector.length tyvars of
+                                            0 => empty
+                                          | 1 => lay (Vector.sub (tyvars, 0))
+                                          | _ => tuple (List.map (Vector.toList tyvars, lay))
+                                      val tyvars =
+                                         if strArity = sigArity
+                                            then tyvars
+                                            else bracket tyvars
+                                   in
+                                      if isEmpty tyvars
+                                         then str " "
+                                         else seq [str " ", tyvars, str " "]
+                                   end
+                             in
+                                val strTyvarsLay = mk strTyvars
+                                val sigTyvarsLay = mk sigTyvars
+                             end
+
+                             val flexTycon =
+                                Option.fold
+                                (flexTycons, NONE, fn (flexTycons, _) =>
+                                 TyconMap.peekTycon (flexTycons, sigName))
+                             datatype z =
+                                Datatype of {cons: Cons.t, tycon: Tycon.t}
+                              | DatatypeRepl of {tycon: Tycon.t}
+                              | Scheme of Scheme.t
+                              | Type
+                             val spec =
+                                case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
+                                   (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, ...}) =>
+                                      DatatypeRepl {tycon = rlzTycon}
+                                 | (SOME _, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                                      Datatype {tycon = rlzTycon, cons = rlzCons}
+                                 | (NONE, _, rlzStr) =>
+                                      (case rlzStr of
+                                          TypeStr.Datatype {tycon, ...} =>
+                                            Scheme (tyconScheme (tycon, sigArity))
+                                        | TypeStr.Scheme s =>
+                                            Scheme s
+                                        | TypeStr.Tycon tycon =>
+                                            Scheme (tyconScheme (tycon, sigArity)))
+                                 | (SOME _, _, _) =>
+                                      Type
+
+                             fun sigMsg (b, rest) =
+                                let
+                                   val empty = Layout.empty
+                                   val rest =
+                                      seq [str " = ",
+                                           case rest of
+                                              NONE => str "..."
+                                            | SOME rest => rest]
+                                   val (kw, rest) =
+                                      case spec of
+                                         Datatype _ => ("datatype", rest)
+                                       | DatatypeRepl _ => ("datatype", rest)
+                                       | Scheme _ => ("type", rest)
+                                       | Type =>
+                                            case Interface.TypeStr.admitsEquality sigStr of
+                                               AdmitsEquality.Always => ("eqtype", empty)
+                                             | AdmitsEquality.Never => ("type", empty)
+                                             | AdmitsEquality.Sometimes => ("eqtype", empty)
+                                in
+                                   seq [if b then bracket (str kw) else str kw,
+                                        sigTyvarsLay,
+                                        layoutLongRev (strids, Ast.Tycon.layout sigName),
+                                        rest]
+                                end
+                             fun strMsg (b, rest) =
+                                let
+                                   val rest =
+                                      seq [str " = ",
+                                           case rest of
+                                              NONE => str "..."
+                                            | SOME rest => rest]
+                                   val kw =
+                                      case TypeStr.node strStr of
+                                         TypeStr.Datatype _ => "datatype"
+                                       | TypeStr.Scheme _ => "type"
+                                       | TypeStr.Tycon _ => "type"
+                                in
+                                   seq [if b then bracket (str kw) else str kw,
+                                        strTyvarsLay,
+                                        layoutLongRev (strids, Ast.Tycon.layout strName),
+                                        rest]
+                                end
+                             val () =
+                                if strArity = sigArity
+                                   then ()
+                                   else error (SOME "arity", strMsg (false, NONE), sigMsg (false, NONE))
+                             val resStr = ref rlzStr
+                             val () =
+                                case spec of
+                                   Type =>
+                                      let
+                                         val sigEq = Interface.TypeStr.admitsEquality sigStr
+                                         val strEq = TypeStr.admitsEquality strStr
+                                      in
+                                         if AdmitsEquality.<= (sigEq, strEq)
+                                            then ()
+                                            else (preError ()
+                                                  ; error (SOME "admits equality",
+                                                           strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
+                                                           sigMsg (true, NONE)))
+                                      end
+                                 | Scheme sigScheme =>
+                                      let
+                                         fun chkScheme strScheme =
+                                            Type.unify
+                                            (Scheme.apply (strScheme, strTyvars),
+                                             Scheme.apply (sigScheme, sigTyvars),
+                                             {error = fn (l, l') => error (SOME "type definition", strMsg (false, SOME l), sigMsg (false, SOME l')),
+                                              preError = preError})
+                                      in
+                                         case TypeStr.node strStr of
+                                            TypeStr.Datatype {tycon = strTycon, ...} =>
+                                               let
+                                                  val strScheme =
+                                                     tyconScheme (strTycon, strArity)
+                                               in
+                                                  Type.unify
+                                                  (Scheme.apply (strScheme, strTyvars),
+                                                   Scheme.apply (sigScheme, sigTyvars),
+                                                   {error = fn _ =>
+                                                    error (SOME "type structure",
+                                                           strMsg (true, NONE),
+                                                           sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))),
+                                                    preError = preError})
+                                               end
+                                          | TypeStr.Scheme s =>
+                                               chkScheme s
+                                          | TypeStr.Tycon tycon =>
+                                               chkScheme (tyconScheme (tycon, strArity))
+                                      end
+                                 | DatatypeRepl {tycon = sigTycon} =>
+                                      let
+                                         val sigScheme =
+                                            tyconScheme (sigTycon, sigArity)
+                                         fun nonDatatype strScheme =
+                                            error (SOME "type structure",
+                                                   strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                                   sigMsg (true, SOME (seq [str "datatype ",
+                                                                            lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                      in
+                                         case TypeStr.node strStr of
+                                            TypeStr.Datatype {tycon = strTycon, ...} =>
+                                               let
+                                                  val strScheme =
+                                                     tyconScheme (strTycon, strArity)
+                                                  val err = ref false
+                                                  val _ =
+                                                     Type.unify
+                                                     (Scheme.apply (strScheme, strTyvars),
+                                                      Scheme.apply (sigScheme, sigTyvars),
+                                                      {error = fn _ =>
+                                                       (error (SOME "type structure",
+                                                               strMsg (false, NONE),
+                                                               sigMsg (false, SOME (seq [str "datatype ",
+                                                                                         lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                                        ; err := true),
+                                                       preError = preError})
+                                               in
+                                                  if !err
+                                                     then ()
+                                                     else resStr := strStr
+                                               end
+                                          | TypeStr.Scheme strScheme =>
+                                               nonDatatype strScheme
+                                          | TypeStr.Tycon strTycon =>
+                                               nonDatatype (tyconScheme (strTycon, strArity))
+                                      end
+                                 | Datatype {cons = sigCons, ...} =>
+                                      let
+                                         fun nonDatatype strScheme =
+                                            error (SOME "type structure",
+                                                   strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                                   sigMsg (true, NONE))
+                                      in
+                                         case TypeStr.node strStr of
+                                            TypeStr.Datatype {cons = strCons, ...} =>
+                                               let
+                                                  val unify =
+                                                     Type.makeUnify
+                                                     {layoutPretty = layoutPretty,
+                                                      preError = preError}
+                                                  val extra: bool ref = ref false
+                                                  fun conScheme (scheme, tyvars) =
+                                                     case Type.deArrowOpt (Scheme.apply (scheme, tyvars)) of
+                                                        NONE => NONE
+                                                      | SOME (ty, _) => SOME ty
+                                                  fun layCon (name, scheme, tyvars) =
+                                                     (bracket o seq)
+                                                     [Ast.Con.layout name,
+                                                      case conScheme (scheme, tyvars) of
+                                                         NONE => Layout.empty
+                                                       | SOME _ => str " of _"]
+                                                  fun loop (sigCons, strCons, sigConsAcc, strConsAcc) =
+                                                     case (sigCons, strCons) of
+                                                        ([], []) => (List.rev sigConsAcc, List.rev strConsAcc)
+                                                      | ({name, scheme = sigScheme}::sigCons, []) =>
+                                                           loop (sigCons,
+                                                                 [],
+                                                                 (layCon (name, sigScheme, sigTyvars))::sigConsAcc,
+                                                                 strConsAcc)
+                                                      | ([], {name, scheme = strScheme}::strCons) =>
+                                                           loop ([],
+                                                                 strCons,
+                                                                 sigConsAcc,
+                                                                 (layCon (name, strScheme, strTyvars))::strConsAcc)
+                                                      | (sigCons as {name = sigName, scheme = sigScheme}::sigCons',
+                                                         strCons as {name = strName, scheme = strScheme}::strCons') =>
+                                                           (case Ast.Con.compare (sigName, strName) of
+                                                               LESS =>
+                                                                  loop (sigCons',
+                                                                        strCons,
+                                                                        (layCon (sigName, sigScheme, sigTyvars))::sigConsAcc,
+                                                                        strConsAcc)
+                                                             | EQUAL =>
+                                                                  (case (conScheme (sigScheme, sigTyvars), conScheme (strScheme, strTyvars)) of
+                                                                      (NONE, NONE) => (extra := true
+                                                                                       ; loop (sigCons', strCons',
+                                                                                               sigConsAcc, strConsAcc))
+                                                                    | (NONE, SOME _) =>
+                                                                         loop (sigCons', strCons',
+                                                                               (Ast.Con.layout sigName)::sigConsAcc,
+                                                                               (seq [Ast.Con.layout strName, str " [of _]"])::strConsAcc)
+                                                                    | (SOME _, NONE) =>
+                                                                         loop (sigCons', strCons',
+                                                                               (seq [Ast.Con.layout sigName, str " [of _]"])::sigConsAcc,
+                                                                               (Ast.Con.layout strName)::strConsAcc)
+                                                                    | (SOME sigTy, SOME strTy) =>
+                                                                         Exn.withEscape
+                                                                         (fn escape =>
+                                                                          (unify
+                                                                           (sigTy, strTy,
+                                                                            {error = fn (sigLay, strLay) =>
+                                                                                     (escape o loop)
+                                                                                     (sigCons', strCons',
+                                                                                      (seq [Ast.Con.layout sigName, str " of ", sigLay])::sigConsAcc,
+                                                                                      (seq [Ast.Con.layout strName, str " of ", strLay])::strConsAcc)})
+                                                                           ; extra := true
+                                                                           ; loop (sigCons', strCons',
+                                                                                   sigConsAcc, strConsAcc))))
+                                                             | GREATER =>
+                                                                  loop (sigCons,
+                                                                        strCons',
+                                                                        sigConsAcc,
+                                                                        (layCon (strName, strScheme, strTyvars))::strConsAcc))
+                                                  val (sigCons, strCons) =
+                                                     loop (Vector.toListMap
+                                                           (Cons.dest sigCons, fn {name, scheme, ...} =>
+                                                            {name = name, scheme = scheme}),
+                                                           Vector.toListMap
+                                                           (Cons.dest strCons, fn {name, scheme, ...} =>
+                                                            {name = name, scheme = scheme}),
+                                                           [],
+                                                           [])
+                                                  val () =
+                                                     if List.isEmpty sigCons
+                                                        andalso List.isEmpty strCons
+                                                        then resStr := strStr
+                                                        else let
+                                                                fun layCons cons =
+                                                                   let
+                                                                      val cons =
+                                                                         if !extra
+                                                                            then List.snoc (cons, str "...")
+                                                                            else cons
+                                                                   in
+                                                                      SOME (Layout.alignPrefix (cons, "| "))
+                                                                   end
+                                                             in
+                                                                error (SOME "constructors",
+                                                                       strMsg (false, layCons strCons),
+                                                                       sigMsg (false, layCons sigCons))
+                                                             end
+                                               in
+                                                  ()
+                                               end
+                                          | TypeStr.Scheme strScheme =>
+                                               nonDatatype strScheme
+                                          | TypeStr.Tycon strTycon =>
+                                               nonDatatype (tyconScheme (strTycon, strArity))
+                                      end
+                             val () = reportError ()
+                             val () = destroy ()
+                          in
+                             !resStr
+                          end}
             val vals =
                map
                {strInfo = strVals,
@@ -3094,19 +3458,37 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
           let
              val {admitsEquality = a, hasCons, kind = k, ...} =
                 FlexibleTycon.dest flex
+             fun unknown () =
+                let
+                   val unknownName =
+                      toStringLongRev
+                      (strids, Ast.Tycon.layout name)
+                   val unknownTycon =
+                      TypeStr.tycon
+                      (newTycon (unknownName, k, a,
+                                 Ast.Tycon.region name),
+                       k)
+                in
+                   SOME unknownTycon
+                end
              val typeStr =
                 case typeStr of
-                   NONE => NONE
+                   NONE => unknown ()
                  | SOME typeStr =>
-                      (* Makes sure we only realize a plausible candidate for
-                       * typeStr.
-                       *)
+                      (* Only realize a plausible candidate for typeStr. *)
+                      if Kind.equals (k, TypeStr.kind typeStr)
+                         andalso AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
+                         andalso (not hasCons orelse Option.isSome (TypeStr.toTyconOpt typeStr))
+                         then SOME typeStr
+                         else unknown ()
+(*
                       if isPlausible
                          (typeStr, strids, name, a, k,
                           hasCons
                           andalso Option.isNone (TypeStr.toTyconOpt typeStr))
                          then SOME typeStr
-                      else NONE
+                      else unknown ()
+*)
              val () = FlexibleTycon.realize (flex, typeStr)
           in
              ()
