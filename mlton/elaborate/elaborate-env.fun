@@ -2476,6 +2476,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val {get = interfaceSigid: Interface.t -> Sigid.t option,
            set = setInterfaceSigid, ...} =
          Property.getSet (Interface.plist, Property.initConst NONE)
+      val dummyTycons = ref []
       val preError =
          Promise.lazy
          (fn () =>
@@ -2490,7 +2491,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
            end
            ; scope (E, fn () =>
                     (openStructure (E, S)
-                     ; setTyconNames E))))
+                     ; setTyconNames E))
+           ; List.foreach (!dummyTycons, fn c =>
+                           Tycon.setPrintName (c, Tycon.originalName c))))
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
                ifcArray: ('name * 'ifcRange) array,
@@ -3166,15 +3169,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                 let
                    val dummyName =
                       toStringLongRev
-                      (strids, Ast.Tycon.layout name)
+                      (strids, seq [str "_", Ast.Tycon.layout name])
                    val dummyTycon =
-                      TypeStr.tycon
-                      (newTycon (dummyName, k, a,
-                                 Ast.Tycon.region name),
-                       k)
-
+                      newTycon (dummyName, k, a, Ast.Tycon.region name)
                 in
-                   dummyTycon
+                   List.push (dummyTycons, dummyTycon)
+                   ; TypeStr.tycon (dummyTycon, k)
                 end
              val typeStr =
                 case typeStr of
