@@ -54,9 +54,9 @@ signature INTERFACE =
                             hasCons: bool,
                             kind: Kind.t}
             val layout: t -> Layout.t
-            val realize: t * EnvTypeStr.t option -> unit
+            val realize: t * EnvTypeStr.t -> unit
             datatype realization =
-               ETypeStr of EnvTypeStr.t option
+               ETypeStr of EnvTypeStr.t
              | TypeStr of typeStr
             val realization: t -> realization
          end
