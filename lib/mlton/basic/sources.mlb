@@ -112,8 +112,6 @@ in
       instream.sml
       file.sig
       file.sml
-      parse.sig
-      parse.sml
       signal.sml
       process.sig
       dir.sig
@@ -170,6 +168,8 @@ in
       mono-vector.fun
       result.sig
       result.sml
+      parse.sig
+      parse.sml
       regexp.sig
       regexp.sml
       popt.sig

@@ -828,17 +828,15 @@ fun genFromSXML (input: File.t): Machine.Program.t =
           stats = Sxml.Program.layoutStats,
           style = Control.ML,
           suffix = "sxml",
-          thunk = (fn () =>
-                   File.withIn
-                   (input, fn i =>
-                    let
-                       fun toStream () =
-                          case In.inputChar i of
-                             SOME c => Stream.cons (c, Stream.delay toStream)
-                           | NONE => Stream.empty ()
-                    in
-                       ParseSxml.parse (toStream ())
-                    end)),
+          thunk = (fn () => case
+                     Parse.parseFile(ParseSxml.program, input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error 
+                           (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
           typeCheck = Sxml.typeCheck}
       val sxml = simplifySxml sxml
       val ssa = makeSsa sxml

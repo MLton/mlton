@@ -13,5 +13,5 @@ signature PARSE_SXML =
    sig
       include PARSE_SXML_STRUCTS
 
-      val parse: char Stream.t -> XmlTree.Program.t
+      val program: XmlTree.Program.t Parse.t 
    end

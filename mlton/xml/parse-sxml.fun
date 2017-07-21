@@ -272,8 +272,8 @@ struct
              varExp))
          val profileExp = (ProfileExp.Enter <$ token "Enter" <|>
                            ProfileExp.Leave <$ token "Leave") <*>
-                           ((SourceInfo.fromC o String.implode) <$>
-                              P.manyCharsFailing(P.char #"\n") <* P.char #">" <* spaces)
+                           P.cut ((SourceInfo.fromC o String.implode) <$>
+                              P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* spaces)
          fun makeConCases var (cons, def) =
             {test=var,
              cases=Cases.Con cons,
@@ -366,10 +366,11 @@ struct
 
    val program : Program.t Parse.t =
       let
-         fun strip_unique s  = P.parse
+         fun strip_unique s  = case P.parseString
             (String.implode <$> P.manyCharsFailing(
                P.char #"_" *> P.many1 (P.sat(P.next, Char.isDigit)) *> P.failing P.next),
-             Stream.fromList (String.explode s))
+             s) of Result.Yes s' => s'
+                 | Result.No _ => s
          val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
          fun resolveCon ident =
             case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
@@ -395,5 +396,4 @@ struct
             (* failing next to check for end of file *)
       end
 
-   fun parse s = P.parse(program, s)
 end

@@ -46,23 +46,29 @@ fun indexStream({line, column}, s) =
             )
          )
 
-fun doFail([]) = raise Fail("Parse error")
-  | doFail([msg]) = raise Fail ("Parse error: Expected " ^ msg)
-  | doFail(msgs) = raise Fail ("Parse error: Expected one of \n" ^
-       (String.concat(List.map(msgs, fn x => x ^ "\n\n"))))
+fun doFail([]) = Result.No ("Parse error")
+  | doFail([msg]) = Result.No ("Parse error: Expected " ^ msg)
+  | doFail(msgs) = Result.No ("Parse error: Expected one of \n" ^
+       (String.concat(List.map(msgs, fn x => x ^ "\n"))))
 
-fun doParse(p : 'a t, info, s) =
-   case p (info, indexStream({line=1, column=1}, s))
-   of Success (b, _) => b
+fun parseStream(p : 'a t, stream) : 'a Result.t =
+   case p (indexStream({line=1, column=1}, stream))
+   of Success (b, _) => Result.Yes b
     | Failure ms => doFail ms
     | FailCut ms => doFail ms
-
-fun 'a parse(p : 'a t, s) : 'a =
-   doParse(p, "<input>", s)
-
-fun 'a parseWithFile(p : 'a t, f, s) : 'a =
-   doParse(p, f, s)
-
+fun parseString(p : 'a t, string) : 'a Result.t =
+   parseStream(p, Stream.fromList (String.explode string))
+fun parseFile(p : 'a t, file) : 'a Result.t =
+   File.withIn
+   (file, fn i =>
+    let
+       fun toStream () =
+          case In.inputChar i of
+             SOME c => Stream.cons (c, Stream.delay toStream)
+           | NONE => Stream.empty ()
+    in
+       parseStream(p, toStream ())
+    end)
 
 
 
