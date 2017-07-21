@@ -25,13 +25,13 @@ ann "forceUsed" in
       signature ORDER
       signature ORDERED_RING
       signature POLY_CACHE
+      signature PARSE
       signature PROMISE
       signature REAL
       signature RING
       signature RING_WITH_IDENTITY
       signature SET
       signature STREAM
-      signature STREAM_PARSER
       signature STRING
       signature T
       signature UNIQUE_ID
@@ -84,6 +84,7 @@ ann "forceUsed" in
       structure Option
       structure OS
       structure Out
+      structure Parse
       structure Pervasive
       structure Pid
       structure PolyCache
@@ -109,7 +110,6 @@ ann "forceUsed" in
       structure Signal
       structure SMLofNJ
       structure Stream
-      structure StreamParser
       structure String
       structure StringCvt
       structure Substring

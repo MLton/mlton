@@ -4,7 +4,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure StreamParser:> STREAM_PARSER =
+structure Parse :> PARSE =
 struct
 
 infix 1 <|> >>=
