@@ -3190,29 +3190,30 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
           let
              val {admitsEquality = a, hasCons, kind = k, ...} =
                 FlexibleTycon.dest flex
-             fun unknown () =
+             fun dummy () =
                 let
-                   val unknownName =
+                   val dummyName =
                       toStringLongRev
                       (strids, Ast.Tycon.layout name)
-                   val unknownTycon =
+                   val dummyTycon =
                       TypeStr.tycon
-                      (newTycon (unknownName, k, a,
+                      (newTycon (dummyName, k, a,
                                  Ast.Tycon.region name),
                        k)
+
                 in
-                   SOME unknownTycon
+                   SOME dummyTycon
                 end
              val typeStr =
                 case typeStr of
-                   NONE => unknown ()
+                   NONE => dummy ()
                  | SOME typeStr =>
                       (* Only realize a plausible candidate for typeStr. *)
                       if Kind.equals (k, TypeStr.kind typeStr)
                          andalso AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
                          andalso (not hasCons orelse Option.isSome (TypeStr.toTyconOpt typeStr))
                          then SOME typeStr
-                         else unknown ()
+                         else dummy ()
              val () = FlexibleTycon.realize (flex, typeStr)
           in
              ()
