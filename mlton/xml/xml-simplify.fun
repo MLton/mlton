@@ -15,11 +15,12 @@ structure SimplifyTypes = SimplifyTypes (structure Input = S
                                          structure Output = S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+             execute: bool}
 
 val xmlPassesDefault =
-   {name = "xmlShrink", doit = S.shrink} ::
-   {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes} ::
+   {name = "xmlShrink", doit = S.shrink, execute = true} ::
+   {name = "xmlSimplifyTypes", doit = SimplifyTypes.simplifyTypes, execute = true} ::
    nil
 
 val xmlPassesMinimal =
@@ -35,7 +36,8 @@ local
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+                               execute = true}
                     else NONE
       end
 
@@ -95,18 +97,19 @@ fun pass ({name, doit}, p) =
    in
       p
    end
-fun maybePass ({name, doit}, p) =
-   if List.exists (!Control.dropPasses, fn re =>
-                   Regexp.Compiled.matchesAll (re, name))
-      then p
-   else pass ({name = name, doit = doit}, p)
-
+fun maybePass ({name, doit, execute}, p) =
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+      then pass ({name = name, doit = doit}, p)
+      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 fun simplify p =
    let
       fun simplify' p =
          List.fold
-         (!xmlPasses, p, fn ({name, doit}, p) =>
-          maybePass ({name = name, doit = doit}, p))
+         (!xmlPasses, p, fn ({name, doit, execute}, p) =>
+          maybePass ({name = name, doit = doit, execute = execute}, p))
       val p = simplify' p
    in
       p

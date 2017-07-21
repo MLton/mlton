@@ -35,13 +35,14 @@ structure RemoveUnused2 = RemoveUnused2 (S)
 structure Zone = Zone (S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+             execute: bool}
 
 val ssa2PassesDefault = 
-   {name = "deepFlatten", doit = DeepFlatten.transform2} ::
-   {name = "refFlatten", doit = RefFlatten.transform2} ::
-   {name = "removeUnused5", doit = RemoveUnused2.transform2} ::
-   {name = "zone", doit = Zone.transform2} ::
+   {name = "deepFlatten", doit = DeepFlatten.transform2, execute = true} ::
+   {name = "refFlatten", doit = RefFlatten.transform2, execute = true} ::
+   {name = "removeUnused5", doit = RemoveUnused2.transform2, execute = true} ::
+   {name = "zone", doit = Zone.transform2, execute = true} ::
    nil
 
 val ssa2PassesMinimal =
@@ -57,7 +58,8 @@ local
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+                               execute = true}
                     else NONE
       end
 
@@ -67,7 +69,7 @@ local
                 ("deepFlatten", DeepFlatten.transform2),
                 ("dropProfile", Profile2.dropProfile),
                 ("refFlatten", RefFlatten.transform2),
-                ("removeUnused", RemoveUnused2.transform2), 
+                ("removeUnused", RemoveUnused2.transform2),
                 ("zone", Zone.transform2),
                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
                 ("orderFunctions",S.orderFunctions),
@@ -126,11 +128,13 @@ fun pass ({name, doit, midfix}, p) =
    in
       p
    end 
-fun maybePass ({name, doit, midfix}, p) =
-   if List.exists (!Control.dropPasses, fn re =>
-                   Regexp.Compiled.matchesAll (re, name))
-      then p
-   else pass ({name = name, doit = doit, midfix = midfix}, p)
+fun maybePass ({name, doit, execute, midfix}, p) =
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+      then pass ({name = name, doit = doit, midfix = midfix}, p)
+      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 
 fun simplify p =
    let
@@ -145,8 +149,8 @@ fun simplify p =
             else simplify' 
                  (n + 1)
                  (List.fold
-                  (!ssa2Passes, p, fn ({name, doit}, p) =>
-                   maybePass ({name = name, doit = doit, midfix = midfix}, p)))
+                  (!ssa2Passes, p, fn ({name, doit, execute}, p) =>
+                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
    in
@@ -169,6 +173,7 @@ val simplify = fn p => let
                             else p
                          val p = maybePass ({name = "orderFunctions2",
                                              doit = S.orderFunctions,
+                                             execute = true,
                                              midfix = ""}, p)
                          val _ = typeCheck p
                        in
