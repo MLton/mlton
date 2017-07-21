@@ -2501,9 +2501,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                nameEquals: 'name * 'name -> bool,
                nameLayout: 'name -> Layout.t,
                nameRegion: 'name -> Region.t,
-               notFound: 'name * 'ifcRange -> {range: 'range,
-                                               spec: Layout.t option,
-                                               thing: string},
+               notFound: 'name * 'ifcRange -> {diag: {spec: Layout.t option,
+                                                      thing: string} option,
+                                               range: 'range},
                doit: 'name * 'strRange * 'name * 'ifcRange -> 'range}: ('name, 'range) Info.t =
          let
             val Info.T strArray = strInfo
@@ -2517,20 +2517,22 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                       if i = n
                          then
                             let
-                               val {range, spec, thing} = notFound (ifcName, ifcRange)
+                               val {diag, range} = notFound (ifcName, ifcRange)
                                val _ =
-                                  Control.error
-                                  (region,
-                                   seq [str thing,
-                                        str " in ",
-                                        str sign,
-                                        str " but not in structure: ",
-                                        layoutLongRev (strids, nameLayout ifcName)],
-                                   align [case spec of
-                                             NONE => Layout.empty
-                                           | SOME spec => seq [str "signature: ", spec],
-                                          seq [str "spec at:   ",
-                                               Region.layout (nameRegion ifcName)]])
+                                  Option.app
+                                  (diag, fn {thing, spec} =>
+                                   Control.error
+                                   (region,
+                                    seq [str thing,
+                                         str " in ",
+                                         str sign,
+                                         str " but not in structure: ",
+                                         layoutLongRev (strids, nameLayout ifcName)],
+                                    align [case spec of
+                                              NONE => Layout.empty
+                                            | SOME spec => seq [str "signature: ", spec],
+                                           seq [str "spec at:   ",
+                                                Region.layout (nameRegion ifcName)]]))
                             in
                                {domain = ifcName,
                                 range = range,
@@ -2610,9 +2612,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                           (#strSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
                           (name, S)
                     in
-                       {range = S,
-                        spec = SOME spec,
-                        thing = "structure"}
+                       {diag = SOME {spec = SOME spec,
+                                     thing = "structure"},
+                        range = S}
                     end,
                     doit = fn (_, S, name, (sigI, rlzI)) =>
                     let
@@ -2640,9 +2642,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                           (#typeSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
                           (name, rlzStr)
                     in
-                       {range = rlzStr,
-                        spec = SOME spec,
-                        thing = "type"}
+                       {diag = SOME {spec = SOME spec,
+                                     thing = "type"},
+                        range = rlzStr}
                     end,
                     doit = fn (strName, strStr, sigName, (sigStr, rlzStr)) =>
                     let
@@ -3020,11 +3022,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                 let
                    val con = Con.fromString o Ast.Vid.toString
                    val var = Var.fromString o Ast.Vid.toString
-                   val vid =
+                   val (vid, mkDiag) =
                       case status of
-                         Status.Con => Vid.Con (con name)
-                       | Status.Exn => Vid.Exn (con name)
-                       | Status.Var => Vid.Var (var name)
+                         Status.Con => (Vid.Con (con name), fn _ => NONE)
+                       | Status.Exn => (Vid.Exn (con name), SOME)
+                       | Status.Var => (Vid.Var (var name), SOME)
                    val rlzScheme = Interface.Scheme.toEnv rlzScheme
                    val () = preError ()
                    val spec =
@@ -3032,9 +3034,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                       (name, (vid, SOME rlzScheme))
                    val thing = Status.pretty status
                 in
-                   {range = (vid, SOME rlzScheme),
-                    spec = spec,
-                    thing = thing}
+                   {diag = mkDiag {spec = spec,
+                                   thing = thing},
+                    range = (vid, SOME rlzScheme)}
                 end,
                 doit = fn (strName, (vid, strScheme), sigName, (status, rlzScheme)) =>
                 case (strScheme, Interface.Scheme.toEnv rlzScheme) of
