@@ -2810,7 +2810,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        val () =
                           if strArity = sigArity
                              then ()
-                             else error (SOME "arity", strMsg (false, NONE), sigMsg (false, NONE))
+                             else error (SOME "arity",
+                                         strMsg (false, NONE),
+                                         sigMsg (false, NONE))
                        val resStr = ref rlzStr
                        val () =
                           case spec of
@@ -2832,7 +2834,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                       Type.unify
                                       (Scheme.apply (strScheme, strTyvars),
                                        Scheme.apply (sigScheme, sigTyvars),
-                                       {error = fn (l, l') => error (SOME "type definition", strMsg (false, SOME l), sigMsg (false, SOME l')),
+                                       {error = fn (l, l') => error (SOME "type definition",
+                                                                     strMsg (false, SOME l),
+                                                                     sigMsg (false, SOME l')),
                                         preError = preError})
                                 in
                                    case TypeStr.node strStr of
