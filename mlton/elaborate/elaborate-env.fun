@@ -2813,20 +2813,21 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                              else error (SOME "arity",
                                          strMsg (false, NONE),
                                          sigMsg (false, NONE))
-                       val resStr = ref rlzStr
-                       val () =
+                       val resStr =
                           case spec of
                              Type =>
                                 let
                                    val sigEq = Interface.TypeStr.admitsEquality sigStr
                                    val strEq = TypeStr.admitsEquality strStr
+                                   val _ =
+                                      if AdmitsEquality.<= (sigEq, strEq)
+                                         then ()
+                                         else (preError ()
+                                               ; error (SOME "admits equality",
+                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
+                                                        sigMsg (true, NONE)))
                                 in
-                                   if AdmitsEquality.<= (sigEq, strEq)
-                                      then ()
-                                      else (preError ()
-                                            ; error (SOME "admits equality",
-                                                     strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
-                                                     sigMsg (true, NONE)))
+                                   rlzStr
                                 end
                            | Scheme sigScheme =>
                                 let
@@ -2838,58 +2839,59 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                                      strMsg (false, SOME l),
                                                                      sigMsg (false, SOME l')),
                                         preError = preError})
+                                   val _ =
+                                      case TypeStr.node strStr of
+                                         TypeStr.Datatype {tycon = strTycon, ...} =>
+                                            let
+                                               val strScheme =
+                                                  tyconScheme (strTycon, strArity)
+                                            in
+                                               Type.unify
+                                               (Scheme.apply (strScheme, strTyvars),
+                                                Scheme.apply (sigScheme, sigTyvars),
+                                                {error = fn _ =>
+                                                 error (SOME "type structure",
+                                                        strMsg (true, NONE),
+                                                        sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))),
+                                                 preError = preError})
+                                            end
+                                       | TypeStr.Scheme s =>
+                                            chkScheme s
+                                       | TypeStr.Tycon tycon =>
+                                            chkScheme (tyconScheme (tycon, strArity))
                                 in
-                                   case TypeStr.node strStr of
-                                      TypeStr.Datatype {tycon = strTycon, ...} =>
-                                         let
-                                            val strScheme =
-                                               tyconScheme (strTycon, strArity)
-                                         in
-                                            Type.unify
-                                            (Scheme.apply (strScheme, strTyvars),
-                                             Scheme.apply (sigScheme, sigTyvars),
-                                             {error = fn _ =>
-                                              error (SOME "type structure",
-                                                     strMsg (true, NONE),
-                                                     sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))),
-                                              preError = preError})
-                                         end
-                                    | TypeStr.Scheme s =>
-                                         chkScheme s
-                                    | TypeStr.Tycon tycon =>
-                                         chkScheme (tyconScheme (tycon, strArity))
+                                   rlzStr
                                 end
                            | DatatypeRepl {tycon = sigTycon} =>
                                 let
                                    val sigScheme =
                                       tyconScheme (sigTycon, sigArity)
                                    fun nonDatatype strScheme =
-                                      error (SOME "type structure",
-                                             strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
-                                             sigMsg (true, SOME (seq [str "datatype ",
-                                                                      lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                      (error (SOME "type structure",
+                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                              sigMsg (true, SOME (seq [str "datatype ",
+                                                                       lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                       ; rlzStr)
                                 in
                                    case TypeStr.node strStr of
                                       TypeStr.Datatype {tycon = strTycon, ...} =>
                                          let
                                             val strScheme =
                                                tyconScheme (strTycon, strArity)
-                                            val err = ref false
-                                            val _ =
-                                               Type.unify
-                                               (Scheme.apply (strScheme, strTyvars),
-                                                Scheme.apply (sigScheme, sigTyvars),
-                                                {error = fn _ =>
-                                                 (error (SOME "type structure",
-                                                         strMsg (false, NONE),
-                                                         sigMsg (false, SOME (seq [str "datatype ",
-                                                                                   lay (Scheme.apply (sigScheme, sigTyvars))])))
-                                                  ; err := true),
-                                                 preError = preError})
                                          in
-                                            if !err
-                                               then ()
-                                               else resStr := strStr
+                                            Exn.withEscape
+                                            (fn escape =>
+                                             (Type.unify
+                                              (Scheme.apply (strScheme, strTyvars),
+                                               Scheme.apply (sigScheme, sigTyvars),
+                                               {error = fn _ =>
+                                                (error (SOME "type structure",
+                                                        strMsg (false, NONE),
+                                                        sigMsg (false, SOME (seq [str "datatype ",
+                                                                                  lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                                 ; escape rlzStr),
+                                                preError = preError})
+                                              ; strStr))
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
@@ -2899,9 +2901,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                            | Datatype {cons = sigCons, ...} =>
                                 let
                                    fun nonDatatype strScheme =
-                                      error (SOME "type structure",
-                                             strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
-                                             sigMsg (true, NONE))
+                                      (error (SOME "type structure",
+                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                              sigMsg (true, NONE))
+                                       ; rlzStr)
                                 in
                                    case TypeStr.node strStr of
                                       TypeStr.Datatype {cons = strCons, ...} =>
@@ -2982,10 +2985,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                       {name = name, scheme = scheme}),
                                                      [],
                                                      [])
-                                            val () =
+                                            val resStr =
                                                if List.isEmpty sigCons
                                                   andalso List.isEmpty strCons
-                                                  then resStr := strStr
+                                                  then strStr
                                                   else let
                                                           fun layCons cons =
                                                              let
@@ -3000,9 +3003,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                           error (SOME "constructors",
                                                                  strMsg (false, layCons strCons),
                                                                  sigMsg (false, layCons sigCons))
+                                                          ; rlzStr
                                                        end
                                          in
-                                            ()
+                                            resStr
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
@@ -3012,7 +3016,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        val () = reportError ()
                        val () = destroy ()
                     in
-                       !resStr
+                       resStr
                     end}
             val vals =
                map
