@@ -270,9 +270,10 @@ struct
          val selectExp = symbol "#" *> P.cut(makeSelect <$$>
             (parseInt <* spaces,
              varExp))
-         val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> P.info) <|>
-                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> P.info ))
-            <* P.char #"<" <* P.manyCharsFailing(P.char #">") <* P.char #">" <* spaces
+         val profileExp = (ProfileExp.Enter <$ token "Enter" <|>
+                           ProfileExp.Leave <$ token "Leave") <*>
+                           ((SourceInfo.fromC o String.implode) <$>
+                              P.manyCharsFailing(P.char #"\n") <* P.char #">" <* spaces)
          fun makeConCases var (cons, def) =
             {test=var,
              cases=Cases.Con cons,

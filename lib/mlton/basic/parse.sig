@@ -15,10 +15,6 @@ signature PARSE =
          sig
             type t = {line: int, column: int}
          end
-      structure Info:
-         sig
-            type t = string
-         end
 
       val parse: 'a t * char Stream.t -> 'a
       val parseWithFile: 'a t * File.t * char Stream.t -> 'a
@@ -79,8 +75,6 @@ signature PARSE =
       val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
       val fromReader: (State.t -> ('a * State.t) option)-> 'a t
-      (* returns the info for the parse, usually a filename *)
-      val info: Info.t t
       (* returns the current source location of the parser *)
       val location: Location.t t
       (* succeeds for each time the parser succeeds in succession *)

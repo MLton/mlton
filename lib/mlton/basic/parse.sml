@@ -16,19 +16,15 @@ structure Location =
    struct
       type t = {line: int, column: int}
    end
-structure Info =
-   struct
-      type t = string
-   end
 structure State =
    struct
-      type t = Info.t * (char * Location.t) Stream.t
+      (* this is our state representation for readers *)
+      type t = (char * Location.t) Stream.t
    end
 
 
-(* this is our state representation for readers, info is unchanging *)
 datatype 'a result = Success of 'a * (char * Location.t) Stream.t
-                   | Failure of string list (* expected values *)
+                   | Failure of string list (* expected options *)
                    | FailCut of string list (* as failure, but the
                    closest upstream choice point won't try other options, and
                    their errors will be silenced *)
@@ -73,7 +69,7 @@ fun 'a parseWithFile(p : 'a t, f, s) : 'a =
 fun tf <*> tx = fn (s : State.t) =>
    case tf s
       of Success (f, s') =>
-          (case tx (#1 s, s')
+          (case tx s'
              of Success (b, s'') =>
                    Success (f b, s'')
               (* constructors have to be explict to typecheck *)
@@ -85,7 +81,7 @@ fun tf <*> tx = fn (s : State.t) =>
 fun ta >>= f = fn (s : State.t) =>
    case ta s
       of Success (a, s') =>
-         f a (#1 s, s')
+         f a s'
        | Failure err => Failure err
        | FailCut err => FailCut err
 
@@ -97,7 +93,7 @@ fun curry f a b = f (a, b)
 fun curry3 f a b c = f (a, b, c)
 
 fun pure a (s : State.t)  =
-  Success (a, #2 s)
+  Success (a, s)
 
 fun f <$> p = (pure f) <*> p
 fun f <$$> (p1, p2) = curry <$> (pure f) <*> p1 <*> p2
@@ -141,13 +137,13 @@ fun failString (m, p : Location.t, s : (char * Location.t) Stream.t) =
       (Int.toString (#line p)) ^ ":" ^ (Int.toString (#column p)) ^
       "\n     Near: " ^ (String.implode (List.map(Stream.firstNSafe(s, 20), #1))))
 
-fun fail m (s : State.t) = case Stream.force (#2 s)
+fun fail m (s : State.t) = case Stream.force (s)
    of NONE => Failure []
-    | SOME((_, p : Location.t), _) => Failure [failString (m, p, #2 s)]
+    | SOME((_, p : Location.t), _) => Failure [failString (m, p, s)]
 
-fun failCut m (s : State.t) = case Stream.force (#2 s)
+fun failCut m (s : State.t) = case Stream.force (s)
    of NONE => FailCut []
-    | SOME((_, p : Location.t), _) => FailCut [failString (m, p, #2 s)]
+    | SOME((_, p : Location.t), _) => FailCut [failString (m, p, s)]
 
 fun cut p s = case p s
    of Success x => Success x
@@ -161,7 +157,7 @@ fun uncut p s = case p s of
 
 fun delay p = fn s => p () s
 
-fun next (s : State.t)  = case Stream.force (#2 s)
+fun next (s : State.t)  = case Stream.force (s)
    of NONE => Failure ["Any character at end of file"]
     | SOME((h, _), r) => Success (h, r)
 
@@ -176,13 +172,13 @@ fun sat(t, p) s = satExpects(t, p, "Satisfying") s
 
 
 fun peek p (s : State.t) =
-   case p s of Success (h', _) => Success (h', #2 s)
+   case p s of Success (h', _) => Success (h', s)
              | err => err
 
 fun failing p s =
    case p s
       of Success _ => fail "failure" s
-       | _ => Success ((), #2 s)
+       | _ => Success ((), s)
 
 fun notFollowedBy(p, c) =
    p <* failing c
@@ -213,7 +209,7 @@ fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
 
 fun optional t = SOME <$> t <|> pure NONE
 
-fun char c s = case Stream.force (#2 s)
+fun char c s = case Stream.force (s)
    of NONE => Failure [String.fromChar c ^ " at end of file"]
     | SOME((h, _), r) =>
          if h = c
@@ -229,24 +225,23 @@ fun matchList s1 l2 = case (Stream.force s1, l2)
    of (_, []) => Success ((), s1)
     | (NONE, (_::_)) => Failure []
     | (SOME ((h, _), r), (x :: xs)) => if h = x then matchList r xs else Failure []
-fun string str s = case matchList (#2 s) (String.explode str)
+fun string str s = case matchList (s) (String.explode str)
    of Success ((), r) => Success (str, r)
     | _ => fail str s
 
-fun info (s : State.t) = Success (#1 s, #2 s)
-fun location (s : State.t) = case Stream.force (#2 s) of
+fun location (s : State.t) = case Stream.force s of
        NONE => Failure ["any character end of file location"]
-     | SOME((h, n), r) => Success (n, #2 s)
+     | SOME((h, n), r) => Success (n, s)
 
 fun toReader (p : 'a t) (s : State.t) : ('a * State.t) option =
    case p s of
-      Success (a, s') => SOME (a, (#1 s, s'))
+      Success (a, s') => SOME (a, s')
     | _ => NONE
 
 fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) =
    case r s of
       SOME (b, s') =>
-         Success (b, #2 s')
+         Success (b, s')
     | NONE => fail "fromReader" s
 
 fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
@@ -256,7 +251,7 @@ fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
       fun makeStr s' () = case Stream.force s' of
          NONE => Stream.empty ()
        | SOME ((_, pos), r) =>
-            (case p1 (#1 s, s') of
+            (case p1 s' of
                 Success (b, r) => (case b of
                     (* equivalent, but avoids the jumping from append of fromList *)
                     c::[] => Stream.cons((c, pos), Stream.delay (makeStr r))
@@ -266,6 +261,6 @@ fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
               | Failure m => raise ComposeFail m
               | FailCut m => raise ComposeFail m)
    in
-      p2 (#1 s, makeStr (#2 s) () ) handle ComposeFail m => Failure m end
+      p2 (makeStr (s) () ) handle ComposeFail m => Failure m end
 
 end
