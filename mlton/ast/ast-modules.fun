@@ -95,7 +95,7 @@ fun layoutSigexp (e: sigexp): Layout.t =
          let
             val e = layoutSigexp e
          in
-            if 0 = Vector.length ws
+            if Vector.isEmpty ws
                then e
             else
                seq [e, 
@@ -243,7 +243,7 @@ structure Sigexp =
       val checkSyntax = checkSyntaxSigexp
 
       fun wheree (sigexp: t, wherespecs, region): t =
-         if 0 = Vector.length wherespecs
+         if Vector.isEmpty wherespecs
             then sigexp
          else makeRegion (Where (sigexp, wherespecs), region)
 

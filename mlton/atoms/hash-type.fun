@@ -81,12 +81,17 @@ structure Type =
 
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
 
-      fun layout (ty: t): Layout.t =
-         #1 (hom {con = Tycon.layoutApp,
+      fun layoutPretty (ty: t): Layout.t =
+         #1 (hom {con = Tycon.layoutAppPretty,
                   ty = ty,
                   var = fn a => (Tyvar.layout a,
                                  ({isChar = false},
                                   Tycon.BindingStrength.unit))})
+
+      fun layout (ty: t): Layout.t =
+         hom {con = Tycon.layoutApp,
+              ty = ty,
+              var = Tyvar.layout}
 
       local
          val same: tree * tree -> bool =
@@ -150,7 +155,7 @@ fun ofConst c =
 
 fun isUnit t =
    case dest t of
-      Con (c, ts) => 0 = Vector.length ts andalso Tycon.equals (c, Tycon.tuple)
+      Con (c, ts) => Vector.isEmpty ts andalso Tycon.equals (c, Tycon.tuple)
     | _ => false
 
 fun substitute (ty, v) =

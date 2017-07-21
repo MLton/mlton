@@ -279,7 +279,7 @@ fun casee {ctxt: unit -> Layout.t,
             then Error.bug "Defunctorize.casee: case with no patterns"
          else
             let
-               val {exp = e, pat = p, numPats, numUses, ...} = Vector.sub (cases, 0)
+               val {exp = e, pat = p, numPats, numUses, ...} = Vector.first cases
                fun use () = (numPats := 1; numUses := 1)
                fun exhaustive exp = (exp, NONE)
                fun loop p =
@@ -324,7 +324,7 @@ fun casee {ctxt: unit -> Layout.t,
                         in
                            if Vector.forall (ps, NestedPat.isVarOrWild)
                               then if Vector.length ps = 1
-                                      then loop (Vector.sub (ps, 0))
+                                      then loop (Vector.first ps)
                                       else doitRecord ()
                            else matchCompile ()
                         end
@@ -413,7 +413,7 @@ structure Xexp =
          : Xexp.t =
          let
             val targs = #2 (valOf (Xtype.deConOpt ty))
-            val eltTy = Vector.sub (targs, 0)
+            val eltTy = Vector.first targs
             val nill: Xexp.t =
                Xexp.conApp {arg = NONE,
                             con = Con.nill,
@@ -932,7 +932,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                   end
                       end)
                in
-                  if 0 = Vector.length rvbs
+                  if Vector.isEmpty rvbs
                      then e
                   else
                      Xexp.lett {decs = [Xdec.Fun {decs = processLambdas rvbs,
@@ -1071,7 +1071,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                   WordSize.equals (s1, s2)
                              | Word8Vector_toString => true
                              | _ => false)
-                           then Vector.sub (args, 0)
+                           then Vector.first args
                         else
                            Xexp.primApp {args = args,
                                          prim = Prim.map (prim, loopTy),

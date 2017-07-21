@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Jason Carr
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -56,6 +57,12 @@ fun toList (s) =
       NONE => []
     | SOME (x, s) => x :: toList s
 
+fun fromList l =
+   case l of
+      [] => empty ()
+    | x::xs =>
+         cons (x, delay (fn () => fromList xs))
+
 fun last (s) =
    let
       fun loop (z, s) =
@@ -92,6 +99,17 @@ fun firstN (s, n: int) =
             then rev ac
          else (case force s of
                   NONE => Error.bug "Stream.firstN"
+                | SOME (x, s) => loop (n - 1, s, x :: ac))
+   in loop (n, s, [])
+   end
+
+fun firstNSafe (s, n: int) =
+   let
+      fun loop (n, s, ac) =
+         if n <= 0
+            then rev ac
+         else (case force s of
+                  NONE => rev ac
                 | SOME (x, s) => loop (n - 1, s, x :: ac))
    in loop (n, s, [])
    end

@@ -114,12 +114,13 @@ val diagPasses =
                        (Layout.toString o 
                         Regexp.Compiled.layout)}
 
-val dropPasses =
-   control {name = "drop passes",
+val executePasses =
+   control {name = "execute passes",
             default = [],
             toString = List.toString
                        (Layout.toString o
-                        Regexp.Compiled.layout)}
+                        (Layout.tuple2
+                         (Regexp.Compiled.layout, Bool.layout)))}
 
 structure Elaborate =
    struct
@@ -911,6 +912,13 @@ val libname = ref ""
 val loopPasses = control {name = "loop passes",
                           default = 1,
                           toString = Int.toString}
+
+val loopUnrollLimit = control {name = "loop unrolling limit",
+                                default = 150,
+                                toString = Int.toString}
+val loopUnswitchLimit = control {name = "loop unswitching limit",
+                                  default = 300,
+                                  toString = Int.toString}
 
 val markCards = control {name = "mark cards",
                          default = true,

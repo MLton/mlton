@@ -29,7 +29,7 @@ local
    fun make s = (s, fromString s)
 in
    val array = make "array"
-   val arrow = make "->"
+   val arrow = make "arrow"
    val bool = make "bool" 
    val cpointer = make "cpointer"
    val exn = make "exn"
@@ -37,7 +37,7 @@ in
    val list = make "list"
    val reff = make "ref"
    val thread = make "thread"
-   val tuple = make "*"
+   val tuple = make "tuple"
    val vector = make "vector"
    val weak = make "weak"
 end
@@ -173,9 +173,9 @@ val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
-fun layoutApp (c: t,
-               args: (Layout.t * ({isChar: bool}
-                                  * BindingStrength.t)) vector) =
+fun layoutAppPretty (c: t,
+                     args: (Layout.t * ({isChar: bool}
+                                        * BindingStrength.t)) vector) =
    let
       local
          open Layout
@@ -206,7 +206,7 @@ fun layoutApp (c: t,
                case Vector.length args of
                   0 => ({isChar = equals (c, defaultChar ())}, layout c)
                 | 1 => ({isChar = false},
-                        seq [maybe Tyseq1 (Vector.sub (args, 0)),
+                        seq [maybe Tyseq1 (Vector.first args),
                              str " ", layout c])
                 | _ => ({isChar = false},
                         seq [Layout.tuple
@@ -217,21 +217,45 @@ fun layoutApp (c: t,
          end
    in
       if equals (c, arrow)
-         then (mayAlign [maybe ArrowLhs (Vector.sub (args, 0)),
+         then (mayAlign [maybe ArrowLhs (Vector.first args),
                          seq [str "-> ",
                               maybe ArrowRhs (Vector.sub (args, 1))]],
                ({isChar = false}, Arrow))
       else if equals (c, tuple)
-         then if 0 = Vector.length args
+         then if Vector.isEmpty args
                  then (str "unit", ({isChar = false}, Unit))
               else (mayAlign (Layout.separateLeft
                               (Vector.toListMap (args, maybe TupleElem), "* ")),
                     ({isChar = false}, Tuple))
       else if equals (c, vector)
-         then if #isChar (#1 (#2 (Vector.sub (args, 0))))
+         then if #isChar (#1 (#2 (Vector.first args)))
                  then (str "string", ({isChar = false}, Unit))
               else normal ()
       else normal ()
+   end
+
+fun layoutApp (c: t, args: Layout.t vector) =
+   let
+      local
+         open Layout
+      in
+         val empty = empty
+         val seq = seq
+         val str = str
+      end
+      val con =
+         if equals (c, tuple) andalso Vector.isEmpty args
+            then str "unit"
+            else (case List.peekMap (prims, fn {name, tycon, ...} =>
+                                     if equals (c, tycon) then SOME name else NONE) of
+                     SOME name => str name
+                   | _ => layout c)
+      val args =
+         if Vector.isEmpty args
+            then empty
+            else seq [Layout.tuple (Vector.toList args), str " "]
+   in
+      seq [args, con]
    end
 
 end

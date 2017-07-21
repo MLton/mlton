@@ -121,22 +121,22 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                    val doit = fn SOME l => makeNullaryGoto l
                                | NONE => transfer
                    val transfer = 
-                      if Vector.length statements = 0
+                      if Vector.isEmpty statements
                          then case transfer of 
                                  Goto {dst, args = xs} => 
                                     if Vector.length xs = 1
                                        then doit (commonGotoers 
-                                                  (dst, Vector.sub(xs, 0)))
+                                                  (dst, Vector.first xs))
                                        else transfer
                                | Return xs => 
                                     if Vector.length xs = 1
                                        then doit (commonReturner 
-                                                  (Vector.sub(xs, 0)))
+                                                  (Vector.first xs))
                                        else transfer
                                | Raise xs => 
                                     if Vector.length xs = 1
                                        then doit (commonRaiser
-                                                  (Vector.sub (xs, 0)))
+                                                  (Vector.first xs))
                                        else transfer
                                | _ => transfer
                          else transfer

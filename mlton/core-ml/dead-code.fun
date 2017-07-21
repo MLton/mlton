@@ -31,7 +31,7 @@ fun deadCode {prog} =
                0 = Vector.length rvbs
                andalso 1 = Vector.length vbs
                andalso let
-                          val pat = #pat (Vector.sub (vbs, 0))
+                          val pat = #pat (Vector.first vbs)
                        in
                           Pat.isWild pat orelse Pat.isUnit pat
                        end

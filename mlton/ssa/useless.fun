@@ -544,8 +544,8 @@ fun transform (program: Program.t): Program.t =
                         end
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
-                   | Word8Array_subWord _ => sub ()
-                   | Word8Array_updateWord _ => update ()
+                   | WordArray_subWord _ => sub ()
+                   | WordArray_updateWord _ => update ()
                    | _ =>
                         let (* allOrNothing so the type doesn't change *)
                            val res = allOrNothing result
@@ -802,7 +802,7 @@ fun transform (program: Program.t): Program.t =
                       else NONE)
                in
                   if 1 = Vector.length xs
-                     then Var (Vector.sub (xs, 0))
+                     then Var (Vector.first xs)
                   else Tuple xs
                end
           | Var _ => e
@@ -842,7 +842,7 @@ fun transform (program: Program.t): Program.t =
                                  | Ref_assign =>
                                       Value.isUseful 
                                       (Value.deref (value (arg 0)))
-                                 | Word8Array_updateWord _ => array ()
+                                 | WordArray_updateWord _ => array ()
                                  | _ => true
                                 end
                         then yes ty
@@ -875,7 +875,7 @@ fun transform (program: Program.t): Program.t =
                   val res = Vector.new1 v
                   val sargs = label success
                in
-                  if agree (v, Vector.sub (sargs, 0))
+                  if agree (v, Vector.first sargs)
                      then ([], t)
                   else let
                           val (l, b) = dropUseless

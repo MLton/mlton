@@ -168,7 +168,7 @@ fun 'a parse {apply: {func: 'a, arg: 'a} -> 'a,
             Error.bug "PrecedenceParse.parse"
       else
          let
-            val item = Vector.sub (items, 0)
+            val item = Vector.first items
          in
             finish (Vector.foldFrom
                     (items, 1, start (getfix item), fn (item, state) =>

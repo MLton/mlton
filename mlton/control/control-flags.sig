@@ -63,8 +63,8 @@ signature CONTROL_FLAGS =
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
 
-      (* List of optimization passes to skip. *)
-      val dropPasses: Regexp.Compiled.t list ref
+      (* List of optimization passes to disable/enable. *)
+      val executePasses: (Regexp.Compiled.t * bool) list ref
 
       structure Elaborate:
          sig
@@ -249,6 +249,10 @@ signature CONTROL_FLAGS =
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
+
+      (* Limit the code growth loop unrolling/unswitching will allow. *)
+      val loopUnrollLimit: int ref
+      val loopUnswitchLimit: int ref
 
       (* Should the mutator mark cards? *)
       val markCards: bool ref

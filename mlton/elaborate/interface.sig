@@ -25,7 +25,7 @@ signature INTERFACE_STRUCTS =
                   val equals: t * t -> bool
                   val exn: t
                   val layout: t -> Layout.t
-                  val layoutApp:
+                  val layoutAppPretty:
                      t * (Layout.t
                           * ({isChar: bool} * BindingStrength.t)) vector
                      -> Layout.t * ({isChar: bool} * BindingStrength.t)

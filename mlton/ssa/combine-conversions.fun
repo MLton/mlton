@@ -86,7 +86,7 @@ fun markStatement stmt =
                     ty = _,
                     var = SOME v } =>
         (case Prim.name prim of
-            Prim.Name.Word_extdToWord a => rules v (a, Vector.sub (args, 0))
+            Prim.Name.Word_extdToWord a => rules v (a, Vector.first args)
           | _ => ())
     | _ => ()
 

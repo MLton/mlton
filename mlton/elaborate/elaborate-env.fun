@@ -3088,7 +3088,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                           *)
                          val {unable} = generalize ()
                          val () =
-                            if 0 = Vector.length unable
+                            if Vector.isEmpty unable
                                then ()
                             else
                                let

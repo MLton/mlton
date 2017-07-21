@@ -188,7 +188,7 @@ structure Tycon =
       fun layoutApp (t: t, v) =
          case t of
             Flexible f => FlexibleTycon.layoutApp (f, v)
-          | Rigid (c, _) => Etycon.layoutApp (c, v)
+          | Rigid (c, _) => Etycon.layoutAppPretty (c, v)
 
       val tuple = Rigid (Etycon.tuple, Kind.Nary)
    end

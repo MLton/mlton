@@ -16,24 +16,25 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = Files | Generated | MLB | O | OUT | SML | TypeCheck
-
+      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | TypeCheck
       val toInt: t -> int =
          fn MLB => 1
           | SML => 1
           | Files => 2
           | TypeCheck => 4
-          | Generated => 5
-          | O => 6
-          | OUT => 7
+          | SXML => 7
+          | Generated => 10
+          | O => 11
+          | OUT => 12
 
       val toString =
          fn Files => "files"
-          | SML => "sml"
-          | MLB => "mlb"
           | Generated => "g"
+          | MLB => "mlb"
           | O => "o"
           | OUT => "out"
+          | SML => "sml"
+          | SXML => "sxml"
           | TypeCheck => "tc"
 
       fun compare (p, p') = Int.compare (toInt p, toInt p')
@@ -383,13 +384,13 @@ fun makeOptions {usage} =
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, false))))
        end,
-       (Expert, "drop-pass", " <pass>", "omit optimization pass",
+       (Expert, "disable-pass", " <pass>", "disable optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
                      SOME (re,_) => let val re = Regexp.compileDFA re
-                                    in List.push (dropPasses, re)
+                                    in List.push (executePasses, (re, false))
                                     end
-                   | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
+                   | NONE => usage (concat ["invalid -disable-pass flag: ", s])))),
        let
           val flag = "enable-ann"
        in
@@ -399,6 +400,13 @@ fun makeOptions {usage} =
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, true))))
        end,
+       (Expert, "enable-pass", " <pass>", "enable optimization pass",
+        SpaceString
+        (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (executePasses, (re, true))
+                                    end
+                   | NONE => usage (concat ["invalid -enable-pass flag: ", s])))),
        (Expert, "error-threshhold", " <n>", "error threshhold (20)",
         intRef errorThreshhold),
        (Expert, "emit-main", " {true|false}", "emit main() startup function",
@@ -563,6 +571,18 @@ fun makeOptions {usage} =
          if i >= 1
             then loopPasses := i
             else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
+       (Expert, "loop-unroll-limit", " <n>", "limit code growth by loop unrolling",
+        Int
+        (fn i =>
+         if i >= 0
+            then loopUnrollLimit := i
+            else usage (concat ["invalid -loop-unroll-limit: ", Int.toString i]))),
+       (Expert, "loop-unswitch-limit", " <n>", "limit code growth by loop unswitching",
+        Int
+        (fn i =>
+          if i >= 0
+            then loopUnswitchLimit := i
+            else usage (concat ["invalid -loop-unswitch-limit: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
         boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
@@ -1203,6 +1223,7 @@ fun commandLine (args: string list): unit =
                in
                   loop [(".mlb", MLB, false),
                         (".sml", SML, false),
+                        (".sxml", SXML, false),
                         (".c", Generated, true),
                         (".o", O, true)]
                end
@@ -1553,12 +1574,17 @@ fun commandLine (args: string list): unit =
                      mkCompileSrc {listFiles = Compile.sourceFilesMLB,
                                    elaborate = Compile.elaborateMLB,
                                    compile = Compile.compileMLB}
+                  val compileSXML =
+                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
+                                   elaborate = fn _ => raise Fail "Unimplemented",
+                                   compile = Compile.compileSXML}
                   fun compile () =
                      case start of
                         Place.SML => compileSML [input]
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
+                      | Place.SXML => compileSXML input
                       | _ => Error.bug "invalid start"
                   val doit
                     = trace (Top, "MLton")

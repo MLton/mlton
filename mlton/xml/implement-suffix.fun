@@ -73,7 +73,7 @@ fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
                         (PrimApp {prim = Prim.assign,
                                   targs = Vector.new1 ty,
                                   args = Vector.new2 (VarExp.mono var,
-                                                      Vector.sub (args, 0))})
+                                                      Vector.first args)})
                   in
                      case Prim.name prim of
                         TopLevel_getSuffix =>

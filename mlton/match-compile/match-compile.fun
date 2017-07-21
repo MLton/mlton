@@ -564,7 +564,7 @@ fun unhandledConsts {consts = cs: Const.t vector, isChar, isInt}: Example.t opti
          end
       datatype z = datatype Const.t
    in
-      case Vector.sub (cs, 0) of
+      case Vector.first cs of
          IntInf _ =>
             let
                fun extract c =
@@ -734,13 +734,13 @@ fun matchCompile {caseType: Type.t,
       fun match arg : Exp.t =
          traceMatch
          (fn (vars: Vars.t, rules: Rules.t, facts: Facts.t, es) =>
-         if 0 = Vector.length rules
+         if Vector.isEmpty rules
             then Error.bug "MatchCompile.match: no rules"
-         else if Rule.allWild (Vector.sub (rules, 0))
+         else if Rule.allWild (Vector.first rules)
             then (* The first rule matches. *)
                let
                   val Rule.T {rest = {examples, finish, nestedPat, ...}, ...} =
-                     Vector.sub (rules, 0)
+                     Vector.first rules
                   val env = Facts.bind (facts, test, nestedPat)
                   val Examples.T {isOnlyExns, ...} = es
                   val () =
@@ -1004,7 +1004,7 @@ fun matchCompile {caseType: Type.t,
                then normal ()
             else
                let
-                  val {arg, con, rhs, ...} = Vector.sub (cases, 0)
+                  val {arg, con, rhs, ...} = Vector.first cases
                in
                   if not (Con.equals (con, Con.reff))
                      then normal ()

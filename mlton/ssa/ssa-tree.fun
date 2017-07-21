@@ -137,7 +137,7 @@ structure Type =
       in
          fun tuple ts =
             if 1 = Vector.length ts
-               then Vector.sub (ts, 0)
+               then Vector.first ts
             else lookup (Vector.fold (ts, w, fn (t, w) =>
                                       Word.xorb (w * generator, hash t)),
                          Tuple ts)
@@ -247,7 +247,7 @@ structure Cases =
          let
             fun doit v =
                if Vector.length v >= 1
-                  then let val (_, a) = Vector.sub (v, 0)
+                  then let val (_, a) = Vector.first v
                        in a
                        end
                else Error.bug "SsaTree.Cases.hd"
@@ -259,7 +259,7 @@ structure Cases =
 
       fun isEmpty (c: t): bool =
          let
-            fun doit v = 0 = Vector.length v
+            fun doit v = Vector.isEmpty v
          in
             case c of
                Con cs => doit cs
@@ -298,6 +298,13 @@ structure Cases =
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
    end
 
+structure Size =
+   struct
+      val check: int * int option -> int *bool =
+         fn (size, NONE) => (size,false)
+          | (size, SOME max) => (size,size > max)
+   end
+
 structure Exp =
    struct
       datatype t =
@@ -314,6 +321,16 @@ structure Exp =
        | Var of Var.t
 
       val unit = Tuple (Vector.new0 ())
+
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      val size : t -> int =
+         fn ConApp {args, ...} => 1 + Vector.length args
+          | Const _ => 0
+          | PrimApp {args, ...} => 1 + Vector.length args
+          | Profile _ => 0
+          | Select _ => 1 + 1
+          | Tuple xs => 1 + Vector.length xs
+          | Var _ => 0
 
       fun foreachVar (e, v) =
          let
@@ -360,7 +377,7 @@ structure Exp =
              | PrimApp {prim, targs, args} =>
                   seq [Prim.layout prim,
                        if !Control.showTypes
-                          then if 0 = Vector.length targs
+                          then if Vector.isEmpty targs
                                   then empty
                                else Vector.layout Type.layout targs
                           else empty,
@@ -438,6 +455,9 @@ structure Statement =
          val var = make #var
          val exp = make #exp
       end
+
+      fun sizeAux (T {exp, ...}, acc, max, sizeExp) =
+         Size.check (sizeExp exp + acc, max)
 
       fun layout' (T {var, ty, exp}, layoutVar) =
          let
@@ -671,6 +691,17 @@ structure Transfer =
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
                      return: Label.t} (* Must be nullary. *)
+
+      (* Vals to determine the size for inline.fun and loop optimization*)
+      val size =
+         fn Arith {args, ...} => 1 + Vector.length args
+          | Bug => 1
+          | Call {args, ...} => 1 + Vector.length args
+          | Case {cases, ...} => 1 + Cases.length cases
+          | Goto {args, ...} => 1 + Vector.length args
+          | Raise xs => 1 + Vector.length xs
+          | Return xs => 1 + Vector.length xs
+          | Runtime {args, ...} => 1 + Vector.length args
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
@@ -910,6 +941,29 @@ structure Block =
          val transfer = make #transfer
       end
 
+      fun sizeAux (T {statements, transfer, ...},
+                   acc, max, sizeExp, sizeTransfer) =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (statements, Size.check (acc + sizeTransfer transfer, max),
+           fn (stmt, (acc, chk)) =>
+           if chk
+              then escape (acc, chk)
+              else Statement.sizeAux (stmt, acc, max, sizeExp)))
+
+      fun sizeAuxV (bs, acc, max, sizeExp, sizeTransfer) =
+         Exn.withEscape
+         (fn escape =>
+          Vector.fold
+          (bs, (acc, false), fn (b, (acc, chk)) =>
+           if chk
+              then escape (acc, chk)
+              else sizeAux (b, acc, max, sizeExp, sizeTransfer)))
+
+      fun sizeV (bs, {sizeExp, sizeTransfer}) =
+         #1 (sizeAuxV (bs, 0, NONE, sizeExp, sizeTransfer))
+
       fun layout' (T {label, args, statements, transfer}, layoutVar) =
          let
             open Layout
@@ -999,6 +1053,21 @@ structure Function =
          val mayInline = make #mayInline
          val name = make #name
       end
+
+      fun sizeAux (f, acc, max, sizeExp, sizeTransfer) =
+         Block.sizeAuxV (blocks f, acc, max, sizeExp, sizeTransfer)
+
+      fun size (f, {sizeExp, sizeTransfer}) =
+         #1 (sizeAux (f, 0, NONE, sizeExp, sizeTransfer))
+
+      fun sizeMax (f, {max, sizeExp, sizeTransfer}) =
+         let
+            val (s, chk) = sizeAux (f, 0, max, sizeExp, sizeTransfer)
+         in
+            if chk
+               then NONE
+               else SOME s
+         end
 
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =
          let

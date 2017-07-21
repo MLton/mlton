@@ -65,7 +65,8 @@ signature PRIM_TYCONS =
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
-      val layoutApp:
+      val layoutApp: tycon * Layout.t vector -> Layout.t
+      val layoutAppPretty:
          tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
          -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon

@@ -860,9 +860,9 @@ structure ObjptrRep =
                         (components, fn {component = c, ...} =>
                          Rep.isObjptr (Component.rep c))
                      val padOffset =
-                        if 0 = Vector.length objptrs
+                        if Vector.isEmpty objptrs
                            then width
-                        else #offset (Vector.sub (objptrs, 0))
+                        else #offset (Vector.first objptrs)
                      val pad =
                         (#1 o Vector.unfoldi)
                         ((Bytes.toInt padBytes) div (Bytes.toInt Bytes.inWord32),
@@ -1344,7 +1344,7 @@ structure TupleRep =
                                               tycon = objptrTycon})
             else if numComponents = 0
                     then unit
-                 else Direct {component = #component (Vector.sub (components, 0)),
+                 else Direct {component = #component (Vector.first components),
                               selects = getSelects}
          end
       val make =
@@ -1864,7 +1864,7 @@ structure TyconRep =
                end
          else if (2 = Vector.length variants
                   andalso let
-                             val c = #con (Vector.sub (variants, 0))
+                             val c = #con (Vector.first variants)
                           in
                              Con.equals (c, Con.falsee)
                              orelse Con.equals (c, Con.truee)
@@ -2101,7 +2101,7 @@ structure TyconRep =
                      if 1 = Vector.length objptrs
                         then
                            let
-                              val objptr = Vector.sub (objptrs, 0)
+                              val objptr = Vector.first objptrs
                               val small = valOf small
                               val rep =
                                  sumWithSmall (ObjptrRep.rep (#objptr objptr))
@@ -2200,7 +2200,7 @@ structure TyconRep =
                              *)
                             let
                                val {con = c, dst, dstHasArg} =
-                                  Vector.sub (cases, 0)
+                                  Vector.first cases
                             in
                                if not (Con.equals (c, con))
                                   then Error.bug "PackedRepresentation.genCase: One"

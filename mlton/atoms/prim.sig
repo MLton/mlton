@@ -177,9 +177,9 @@ signature PRIM =
              | Word_toIntInf (* ssa to rssa *)
              | Word_xorb of WordSize.t (* codegen *)
              | WordVector_toIntInf (* ssa to rssa *)
-             | Word8Array_subWord of WordSize.t (* ssa to rssa *)
-             | Word8Array_updateWord of WordSize.t (* ssa to rssa *)
-             | Word8Vector_subWord of WordSize.t (* ssa to rssa *)
+             | WordArray_subWord of {seqSize:WordSize.t, eleSize: WordSize.t} (* ssa to rssa *)
+             | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t} (* ssa to rssa *)
+             | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t} (* ssa to rssa *)
              | Word8Vector_toString (* defunctorize *)
              | World_save (* ssa to rssa *)
 
@@ -275,6 +275,7 @@ signature PRIM =
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
+      val layoutFull: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
       val mayOverflow: 'a t -> bool

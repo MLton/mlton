@@ -67,6 +67,8 @@ local
    local-flatten.fun
    local-ref.fun
    loop-invariant.fun
+   loop-unroll.fun
+   loop-unswitch.fun
    poly-equal.fun
    poly-hash.fun
    profile.sig

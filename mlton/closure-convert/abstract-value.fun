@@ -248,7 +248,7 @@ local
                 {isFirstOrder = false,
                  make = let
                            fun mutable mt =
-                              let val make = #make (Vector.sub (vs, 0))
+                              let val make = #make (Vector.first vs)
                               in fn () => new (Unify (mt, make ()))
                               end
                         in if Tycon.equals (tycon, Tycon.reff)

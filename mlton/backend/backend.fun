@@ -60,9 +60,6 @@ structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
 
-nonfix ^
-fun ^ r = valOf (!r)
-
 structure VarOperand =
    struct
       datatype t =
@@ -82,7 +79,7 @@ structure VarOperand =
          end
 
       val operand: t -> M.Operand.t =
-         fn Allocate {operand, ...} => ^operand
+         fn Allocate {operand, ...} => valOf (!operand)
           | Const oper => oper
    end
 
@@ -182,13 +179,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                end 
             fun pass ({name, doit}, p) =
                pass' ({name = name, doit = doit}, fn p => p, p)
-            fun maybePass ({name, doit}, p) =
-               if List.exists (!Control.dropPasses, fn re =>
-                               Regexp.Compiled.matchesAll (re, name))
-                  then p
-               else pass ({name = name, doit = doit}, p)
-            val p = maybePass ({name = "rssaShrink1", 
-                                doit = Program.shrink}, p)
+            fun maybePass ({name, doit, execute}, p) =
+               if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+               then pass ({name = name, doit = doit}, p)
+               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
+            val p = maybePass ({name = "rssaShrink1",
+                                doit = Program.shrink,
+                                execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
@@ -196,14 +196,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink}, p)
+                                doit = Program.shrink,
+                                execute = true}, p)
             val () = Program.checkHandlers p
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},
                       fn (p,_) => p, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions}, p)
+                                doit = Program.orderFunctions,
+                                execute = true}, p)
          in
             (p, makeProfileInfo)
          end
@@ -1030,9 +1032,9 @@ let
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
                         then
-                           case (if 0 = Vector.length statements
+                           case (if Vector.isEmpty statements
                                     then NONE
-                                 else (case Vector.sub (statements, 0) of
+                                 else (case Vector.first statements of
                                           s as M.Statement.ProfileLabel _ =>
                                              SOME s
                                         | _ => NONE)) of

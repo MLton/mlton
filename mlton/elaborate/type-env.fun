@@ -405,7 +405,7 @@ in
                                  then ", ...}"
                               else "}")])
    fun layoutTuple (ls: Lay.t vector): Lay.t =
-      Tycon.layoutApp (Tycon.tuple, ls)
+      Tycon.layoutAppPretty (Tycon.tuple, ls)
 end
 
 structure Type =
@@ -614,8 +614,8 @@ structure Type =
           lay: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)} =
          let
             val str = Layout.str
-            fun con (_, c, ts) = Tycon.layoutApp (c, ts)
-            fun con0 c = Tycon.layoutApp (c, Vector.new0 ())
+            fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
+            fun con0 c = Tycon.layoutAppPretty (c, Vector.new0 ())
             fun flexRecord (_, {fields, spine}) =
                layoutRecord
                (List.fold
@@ -767,7 +767,7 @@ structure Type =
 
       fun tuple ts =
          if 1 = Vector.length ts
-            then Vector.sub (ts, 0)
+            then Vector.first ts
          else newTy (Record (Srecord.tuple ts),
                      Equality.andd (Vector.map (ts, equality)))
 
@@ -827,7 +827,7 @@ structure Type =
             Record r =>
                (case Srecord.detupleOpt r of
                    NONE => false
-                 | SOME v => 0 = Vector.length v)
+                 | SOME v => Vector.isEmpty v)
           | _ => false
 
       local
@@ -866,10 +866,10 @@ structure Type =
                      case ! (tyconAdmitsEquality c) of
                         Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
                       | Never =>
-                           (SOME o Lay.simple o bracket o #1 o Tycon.layoutApp)
+                           (SOME o Lay.simple o bracket o #1 o Tycon.layoutAppPretty)
                            (c, Vector.map (los, fn _ => wild))
                       | Sometimes =>
-                           (SOME o Tycon.layoutApp)
+                           (SOME o Tycon.layoutAppPretty)
                            (c, Vector.map (los, deopt))
                   end
                fun doRecord (fls, extra) =
@@ -960,7 +960,7 @@ structure Type =
                Tycon.equals (c, c')
                andalso Vector.forall2 (ts, ts', canUnify)
           | Overload ov =>
-               0 = Vector.length ts andalso Overload.matchesTycon (ov, c)
+               Vector.isEmpty ts andalso Overload.matchesTycon (ov, c)
           | _ => false
 
       (* minTime (t, bound) ensures that all components of t have times no larger
@@ -1143,7 +1143,7 @@ structure Type =
                                             fn (ls, ls') =>
                                             let 
                                                fun lay ls =
-                                                  Tycon.layoutApp (c, ls)
+                                                  Tycon.layoutAppPretty (c, ls)
                                             in
                                                notUnifiable
                                                (maybe (lay ls, lay ls'))
@@ -1496,7 +1496,7 @@ structure Scheme =
 
       fun layout s =
          case s of
-            Type t => Type.layout t
+            Type t => Type.layoutPretty t
           | General {canGeneralize, tyvars, ty, ...} =>
                Layout.record [("canGeneralize", Bool.layout canGeneralize),
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
@@ -1530,7 +1530,7 @@ structure Scheme =
       fun dest s = (bound s, ty s)
 
       fun make {canGeneralize, tyvars, ty} =
-         if 0 = Vector.length tyvars
+         if Vector.isEmpty tyvars
             then Type ty
          else General {bound = fn () => tyvars,
                        canGeneralize = canGeneralize,
@@ -1899,7 +1899,7 @@ structure Type =
          let
             fun tuple (t, ts) =
                if 1 = Vector.length ts
-                  then Vector.sub (ts, 0)
+                  then Vector.first ts
                else con (t, Tycon.tuple, ts)
          in
             simpleHom {con = con,
