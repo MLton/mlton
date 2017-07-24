@@ -24,7 +24,7 @@ signature PARSE =
        * infix 1 <|> >>=
        * infix 2 <&>
        * infix  3 <*> <* *>
-       * infixr 4 <$> <$$> <$$$> <$
+       * infixr 4 <$> <$$> <$$$> <$ <$?> 
        *)
       val >>= : 'a t * ('a -> 'b t) -> 'b t
       val <*> : ('a -> 'b) t * 'a t -> 'b t
@@ -34,6 +34,7 @@ signature PARSE =
       (* map over pairs of parsers, joining their results together *)
       val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
       val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
+      val <$?> : ('a -> 'b option) * 'a t -> 'b t
       (* match both parsers, and discard the right or left result respectively *)
       val <* : 'a t * 'b t -> 'a t
       val *> : 'a t * 'b t -> 'b t
@@ -48,6 +49,7 @@ signature PARSE =
          val <$ : 'b * 'a t -> 'b t
          val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
          val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
+         val <$?> : ('a -> 'b option) * 'a t -> 'b t
          val <* : 'a t * 'b t -> 'a t
          val *> : 'a t * 'b t -> 'b t
          val <|> : 'a t * 'a t -> 'a t
@@ -84,15 +86,20 @@ signature PARSE =
       val many1: 'a t -> 'a list t
       (* as many, but with failures of the second parser before each parse from the first *)
       val manyFailing: ('a t * 'b t) -> 'a list t
-      (* manyFailing, specialized to the case that p is next *)
+      (* manyFailing, specialized to the case that p is "next" *)
       val manyCharsFailing: 'a t -> char list t
       (* gets the next char of input *)
       val next: char t
+      (* as sat, specialized to "next" *)
+      val nextSat: (char -> bool) -> char t
       (* succeeds if the first parser succeeds and the second fails
        * the second parser will never consume any input *)
       val notFollowedBy: 'a t * 'b t -> 'a t
       (* succeeds with SOME if the parser succeeded and NONE otherwise *)
       val optional: 'a t -> 'a option t
+      (* parse an integer, as Integer.scan StringCVT.DEC *)
+      val int: int t
+      val intInf: IntInf.t t
       (* run a parser but consume no input *)
       val peek: 'a t -> 'a t
       (* succeeds if the parser succeeded with an input that passed the predicate *)
@@ -101,9 +108,14 @@ signature PARSE =
       val sepBy: 'a t * 'b t -> 'a list t
       (* as many1, but an instance of the second parser separates each instance *)
       val sepBy1: 'a t * 'b t -> 'a list t
-      (* matches the given string *)
-      val string: string -> string t
+      val space: char t
+      val spaces: char list t
+      val str: string -> string t
       (* returns a reader representation of the parser *)
       val toReader: 'a t -> State.t -> ('a * State.t) option
-
+      val tuple: 'a t -> 'a vector t
+      (* parse a decimal word *)
+      val uint: int t
+      val uintInf: IntInf.t t
+      val vector: 'a t -> 'a vector t
    end

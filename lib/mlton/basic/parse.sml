@@ -10,7 +10,7 @@ struct
 infix 1 <|> >>=
 infix 2 <&>
 infix  3 <*> <* *>
-infixr 4 <$> <$$> <$$$> <$
+infixr 4 <$> <$$> <$$$> <$ <$?> 
 
 structure Location =
    struct
@@ -104,6 +104,8 @@ fun pure a (s : State.t)  =
 fun f <$> p = (pure f) <*> p
 fun f <$$> (p1, p2) = curry <$> (pure f) <*> p1 <*> p2
 fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
+fun f <$?> p = p >>= (fn a => case f a of SOME b => pure b
+                                        | NONE => fn _ => Failure [])
 fun a <* b = fst <$> a <*> b
 fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
@@ -127,6 +129,7 @@ structure Ops = struct
    val (op >>=) = (op >>=)
    val (op <*>) = (op <*>)
    val (op <$>) = (op <$>)
+   val (op <$?>) = (op <$?>)
    val (op <$$>) = (op <$$>)
    val (op <$$$>) = (op <$$$>)
    val (op <*) = (op <*)
@@ -175,7 +178,11 @@ fun satExpects(t, p, m) s =
      | FailCut err => FailCut err
 
 fun sat(t, p) s = satExpects(t, p, "Satisfying") s
-
+fun nextSat p s = case Stream.force s
+   of NONE => Failure ["Any character at end of file"]
+    | SOME((h, _), r) => (case p h of
+         false => Failure ["Satisfying character"]
+       | true => Success (h, r))
 
 fun peek p (s : State.t) =
    case p s of Success (h', _) => Success (h', s)
@@ -231,7 +238,7 @@ fun matchList s1 l2 = case (Stream.force s1, l2)
    of (_, []) => Success ((), s1)
     | (NONE, (_::_)) => Failure []
     | (SOME ((h, _), r), (x :: xs)) => if h = x then matchList r xs else Failure []
-fun string str s = case matchList (s) (String.explode str)
+fun str str s = case matchList (s) (String.explode str)
    of Success ((), r) => Success (str, r)
     | _ => fail str s
 
@@ -268,5 +275,25 @@ fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
               | FailCut m => raise ComposeFail m)
    in
       p2 (makeStr (s) () ) handle ComposeFail m => Failure m end
+
+
+val digits = many (nextSat (fn c => Char.isDigit c orelse c = #"~"))
+
+val int = (fromReader (Int.scan (StringCvt.DEC, (toReader next)))) <|> failCut "integer"
+val intInf = (fromReader (IntInf.scan (StringCvt.DEC, (toReader next)))) <|> failCut "integer"
+
+val uint = (fromReader (Int.scan (StringCvt.DEC, (toReader (nextSat Char.isDigit))))) <|> failCut "unsigned integer"
+val uintInf = (fromReader (IntInf.scan (StringCvt.DEC, (toReader (nextSat Char.isDigit))))) <|> failCut "unsigned integer"
+
+val space = nextSat Char.isSpace
+
+val spaces = many space
+
+fun tuple p = Vector.fromList <$>
+   (char #"(" *> sepBy(spaces *> p, char #",") <* char #")")
+
+fun vector p = Vector.fromList <$>
+   (char #"[" *> sepBy(spaces *> p, char #",") <* char #"]")
+
 
 end

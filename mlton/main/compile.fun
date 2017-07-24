@@ -47,8 +47,7 @@ structure CoreML = CoreML (open Atoms
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
-structure ParseSxml = ParseSxml(structure XmlTree = Xml
-                                structure Parse = Parse)
+structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
