@@ -830,6 +830,11 @@ structure Type =
                  | SOME v => Vector.isEmpty v)
           | _ => false
 
+      fun isUnknown t =
+         case toType t of
+            Unknown _ => true
+          | _ => false
+
       local
          fun make (ov, eq) () = newTy (Overload ov, eq)
          datatype z = datatype Overload.t

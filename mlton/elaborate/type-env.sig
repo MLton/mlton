@@ -45,6 +45,7 @@ signature TYPE_ENV =
             val isCPointer: t -> bool
             val isInt: t -> bool
             val isUnit: t -> bool
+            val isUnknown: t -> bool
             val layout: t -> Layout.t
             val layoutPrettyAux: t * {expandOpaque: bool, localTyvarNames: bool} -> Layout.t
             val layoutPretty: t -> Layout.t
