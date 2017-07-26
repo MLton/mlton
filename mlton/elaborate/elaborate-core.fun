@@ -2205,7 +2205,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   {bind = false,
                                                    isRvb = false},
                                                   preError)
-                                              val () =
+                                              val _ =
                                                  unify
                                                  (Vector.sub (argTys, i), Cpat.ty pat, fn (l1, l2) =>
                                                   (regionPat,
@@ -2223,7 +2223,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                            let
                                               val regionResultType = Atype.region resultType
                                               val resultType = elabType resultType
-                                              val () =
+                                              val _ =
                                                  unify
                                                  (resTy, resultType,
                                                   fn (l1, l2) =>
@@ -2233,7 +2233,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                           seq [str "previous:   ", l1],
                                                           ctxtFb ()]))
                                            in
-                                              resultType
+                                              (resultType, regionResultType)
                                            end)
                                     in
                                        {binds = binds,
@@ -2267,10 +2267,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                    checkConRedefine
                                    (funcVid, "fun", ctxtFb)
                                 val var = Var.fromAst func
-                                val _ = Env.extendVar (E, func, var,
-                                                       Scheme.fromType funTy,
-                                                       {isRebind = false})
-                                val _ = markFunc var
+                                val _ =
+                                   Env.extendVar
+                                   (E, func, var,
+                                    Scheme.fromType funTy,
+                                    {isRebind = false})
+                                val _ =
+                                   markFunc var
                              in
                                 {argTys = argTys,
                                  clauses = clauses,
@@ -2309,14 +2312,17 @@ fun elaborateDec (d, {env = E, nest}) =
                                            SourceInfo.function
                                            {name = ("<case " ^ Layout.toString (layPatsPrefix ()) ^ ">") :: nest,
                                             region = regionBody})
-                                       val () =
+                                       val _ =
                                           case resultType of
-                                             SOME resultType =>
+                                             SOME (resultType, regionResultType) =>
                                                 unify
                                                 (resultType, Cexp.ty body,
                                                  fn (l1, l2) =>
-                                                 (regionBody,
-                                                  str "function clause expression and result constraint disagree:",
+                                                 (Region.append (regionResultType, regionBody),
+                                                  seq [if Vector.length clauses = 1
+                                                          then str "function "
+                                                          else str "function clause ",
+                                                       str "expression and result constraint disagree"],
                                                   align [seq [str "expression: ", l2],
                                                          seq [str "constraint: ", l1],
                                                          ctxtFb ()]))
@@ -2325,7 +2331,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                    then unify
                                                         (resTy, Cexp.ty body, fn (l1, l2) =>
                                                          (regionBody,
-                                                          str "function clause expression and result constraint disagree:",
+                                                          str "function clause expression and result constraint disagree",
                                                           align [seq [str "expression: ", l2],
                                                                  seq [str "constraint: ", l1],
                                                                  ctxtFb ()]))
@@ -2389,10 +2395,10 @@ fun elaborateDec (d, {env = E, nest}) =
                              unify
                              (Vector.foldr (argTys, resTy, Type.arrow), funTy, fn (l1, l2) =>
                               (Avar.region func,
-                               seq [str "recursive use of function disagrees with its type: ",
+                               seq [str "recursive use of function disagrees with function declaration type: ",
                                     Avar.layout func],
-                               align [seq [str "function type: ", l1],
-                                      seq [str "recursive use: ", l2],
+                               align [seq [str "recursive use: ", l2],
+                                      seq [str "function type: ", l1],
                                       ctxt ()])))
                          val {bound, schemes, unable} =
                             close
@@ -2400,7 +2406,7 @@ fun elaborateDec (d, {env = E, nest}) =
                              (fbs, fn {funTy, ...} =>
                               {isExpansive = false,
                                ty = funTy}))
-                         val () = reportUnable unable
+                         val _ = reportUnable unable
                          val _ =
                             checkSchemes
                             (Vector.zip
