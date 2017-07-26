@@ -2284,9 +2284,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                  resTy = resTy,
                                  var = var}
                              end)
-                         val decs =
+                         val fbs =
                             Vector.map
-                            (fbs, fn {argTys, clauses, ctxtFb, func, regionFb, resTy, var, ...} =>
+                            (fbs, fn {argTys, clauses, ctxtFb, func, funTy, regionFb, resTy, var, ...} =>
                              let
                                 val nest = Avar.toString func :: nest
                                 val resultTypeConstraint = Vector.exists (clauses, Option.isSome o #resultType)
@@ -2352,6 +2352,15 @@ fun elaborateDec (d, {env = E, nest}) =
                                    Vector.map
                                    (argTys, fn argTy =>
                                     (Var.newNoname (), argTy))
+                                fun check () =
+                                   unify
+                                   (Vector.foldr (argTys, resTy, Type.arrow), funTy, fn (l1, l2) =>
+                                    (Avar.region func,
+                                     seq [str "recursive use of function disagrees with function declaration type: ",
+                                          Avar.layout func],
+                                     align [seq [str "recursive use: ", l2],
+                                            seq [str "function type: ", l1],
+                                            ctxt ()]))
                                 val body =
                                    Cexp.casee
                                    {ctxt = ctxtFb,
@@ -2386,20 +2395,16 @@ fun elaborateDec (d, {env = E, nest}) =
                                       Cexp.Lambda lambda => lambda
                                     | _ => Lambda.bogus
                              in
-                                {lambda = lambda,
+                                {check = check,
+                                 func = func,
+                                 funTy = funTy,
+                                 lambda = lambda,
                                  var = var}
                              end)
                          val _ =
                             Vector.foreach
-                            (fbs, fn {argTys, func, funTy, resTy, ...} =>
-                             unify
-                             (Vector.foldr (argTys, resTy, Type.arrow), funTy, fn (l1, l2) =>
-                              (Avar.region func,
-                               seq [str "recursive use of function disagrees with function declaration type: ",
-                                    Avar.layout func],
-                               align [seq [str "recursive use: ", l2],
-                                      seq [str "function type: ", l1],
-                                      ctxt ()])))
+                            (fbs, fn {check, ...} =>
+                             check ())
                          val {bound, schemes, unable} =
                             close
                             (Vector.map
@@ -2421,6 +2426,11 @@ fun elaborateDec (d, {env = E, nest}) =
                               (E, func, var, scheme,
                                {isRebind = true})
                               ; unmarkFunc var))
+                         val decs =
+                            Vector.map
+                            (fbs, fn {lambda, var, ...} =>
+                             {lambda = lambda,
+                              var = var})
                       in
                          Decs.single
                          (Cdec.Fun {decs = decs,
