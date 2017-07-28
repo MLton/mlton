@@ -345,7 +345,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | sdec of Dec.t
        | sdecs of Dec.t
        | sdecsPlus of Dec.t
-       | sharespec of Equation.node
+       | sharespec of SharingEquation.node
        | shortAlphanumId of Symbol.t * Region.t
        | shortSymId of Symbol.t * Region.t
        | sigbinds of sigbind list
@@ -649,12 +649,13 @@ specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
                                                    sharespecleft,
                                                    sharespecright),
                           equations = (Vector.new1
-                                       (Equation.makeRegion' (sharespec,
-                                                              sharespecleft,
-                                                              sharespecright)))})
+                                       (SharingEquation.makeRegion'
+                                        (sharespec,
+                                         sharespecleft,
+                                         sharespecright)))})
 
-sharespec : SHARING TYPE longtyconeqns (Equation.Type longtyconeqns)
-          | SHARING longstrideqns      (Equation.Structure longstrideqns)
+sharespec : SHARING TYPE longtyconeqns (SharingEquation.Type longtyconeqns)
+          | SHARING longstrideqns      (SharingEquation.Structure longstrideqns)
 
 longstrideqns : longstrid EQUALOP longstrid ([longstrid1,longstrid2])
               | longstrid EQUALOP longstrideqns (longstrid :: longstrideqns)

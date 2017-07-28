@@ -18,7 +18,7 @@ in
    structure Atype = Type
    structure DatBind = DatBind
    structure DatatypeRhs = DatatypeRhs
-   structure Equation = Equation
+   structure SharingEquation = SharingEquation
    structure Longtycon = Longtycon
    structure Record = Record
    structure Sigexp = Sigexp
@@ -447,8 +447,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                    val () =
                       Vector.foreach
                       (equations, fn eqn =>
-                       case Equation.node eqn of
-                          Equation.Structure ss =>
+                       case SharingEquation.node eqn of
+                          SharingEquation.Structure ss =>
                              let
                                 (* The following implements the "all pairs"
                                  * sharing as specified in G.3.3.
@@ -461,7 +461,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                          (Is, fn (s', I') =>
                                           Interface.share
                                           (I, s, I', s',
-                                           Equation.region eqn, time))
+                                           SharingEquation.region eqn,
+                                           time))
                              in
                                 loop (List.fold
                                       (ss, [], fn (s, ac) =>
@@ -469,7 +470,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                           NONE => ac
                                         | SOME I => (s, I) :: ac))
                              end
-                        | Equation.Type cs =>
+                        | SharingEquation.Type cs =>
                              ignore
                              (List.fold
                               (cs, NONE, fn (c', so) =>
@@ -486,7 +487,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                            TypeStr.share
                                            (doit (c, s),
                                             doit (c', s'),
-                                            Equation.region eqn, time)
+                                            SharingEquation.region eqn,
+                                            time)
                                      in
                                         SOME (c', s')
                                      end)))

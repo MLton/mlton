@@ -23,7 +23,7 @@ val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node
 
-structure Equation =
+structure SharingEquation =
    struct
       open Wrap
       datatype node =
@@ -64,7 +64,7 @@ and specNode =
   | IncludeSigexp of sigexp
   | IncludeSigids of Sigid.t vector
   | Seq of spec * spec
-  | Sharing of {equations: Equation.t vector,
+  | Sharing of {equations: SharingEquation.t vector,
                 spec: spec}
   | Structure of (Strid.t * sigexp) vector
   | Type of typedescs
@@ -135,7 +135,7 @@ and layoutSpec (s: spec): t =
     | Seq (s, s') => align [layoutSpec s, layoutSpec s']
     | Sharing {spec, equations} =>
          align [layoutSpec spec,
-                align (Vector.toListMap (equations, Equation.layout))]
+                align (Vector.toListMap (equations, SharingEquation.layout))]
     | Structure l =>
          layoutAndsBind ("structure", ":", l, fn (strid, sigexp) =>
                          (case node sigexp of

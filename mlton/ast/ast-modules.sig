@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -46,7 +47,7 @@ signature AST_MODULES =
              | Transparent of Sigexp.t
          end
 
-      structure Equation:
+      structure SharingEquation:
          sig
             type t
             datatype node =
@@ -68,7 +69,7 @@ signature AST_MODULES =
              | IncludeSigexp of Sigexp.t
              | IncludeSigids of Sigid.t vector
              | Seq of t * t
-             | Sharing of {equations: Equation.t vector,
+             | Sharing of {equations: SharingEquation.t vector,
                            spec: t}
              | Structure of (Strid.t * Sigexp.t) vector
              | Type of {tycon: Tycon.t,
