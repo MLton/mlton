@@ -153,8 +153,9 @@ signature INTERFACE =
             val share:
                (t * Region.t * (unit -> Layout.t))
                * (t * Region.t * (unit -> Layout.t))
-               * Time.t
+               * Region.t * Time.t
                -> unit
+            val specs: t -> Region.t list
             val wheree: t * Region.t * (unit -> Layout.t) * Time.t * t -> unit
          end
       sharing type FlexibleTycon.typeStr = TypeStr.t
@@ -194,5 +195,5 @@ signature INTERFACE =
       val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
       val plist: t -> PropertyList.t
       val renameTycons: (unit -> unit) ref
-      val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t -> unit
+      val share: t * Ast.Longstrid.t * t * Ast.Longstrid.t * Region.t * Time.t -> unit
    end

@@ -108,7 +108,8 @@ structure FlexibleTycon =
                          hasCons: bool,
                          id: TyconId.t,
                          kind: Kind.t,
-                         plist: PropertyList.t} Set.t
+                         plist: PropertyList.t,
+                         specs: Region.t list ref} Set.t
       withtype copy = t option ref
 
       fun fields (T s) = Set.! s
@@ -121,9 +122,9 @@ structure FlexibleTycon =
          val plist = make #plist
       end
 
-      fun dest (T s) =
+      fun dest fc =
          let
-            val {admitsEquality, hasCons, kind, ...} = Set.! s
+            val {admitsEquality, hasCons, kind, ...} = fields fc
          in
             {admitsEquality = !admitsEquality,
              hasCons = hasCons,
@@ -132,15 +133,16 @@ structure FlexibleTycon =
 
       val equals = fn (T s, T s') => Set.equals (s, s')
 
-      fun layout (T s) =
+      fun layout fc =
          let
             open Layout
-            val {admitsEquality, creationTime, hasCons, id, ...} = Set.! s
+            val {admitsEquality, creationTime, hasCons, id, kind, ...} = fields fc
          in
             record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
                     ("creationTime", Time.layout creationTime),
                     ("hasCons", Bool.layout hasCons),
-                    ("id", TyconId.layout id)]
+                    ("id", TyconId.layout id),
+                    ("kind", Kind.layout kind)]
          end
 
       fun layoutApp (t, _) =
@@ -148,15 +150,22 @@ structure FlexibleTycon =
 
       val copies: copy list ref = ref []
 
-      fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
-         T (Set.singleton {admitsEquality = ref AdmitsEquality.Sometimes,
+      fun make {admitsEquality: AdmitsEquality.t, defn: Defn.t,
+                hasCons: bool, kind: Kind.t, specs: Region.t list}: t =
+         T (Set.singleton {admitsEquality = ref admitsEquality,
                            copy = ref NONE,
                            creationTime = Time.current (),
                            defn = ref defn,
                            hasCons = hasCons,
                            id = TyconId.new (),
                            kind = kind,
-                           plist = PropertyList.new ()})
+                           plist = PropertyList.new (),
+                           specs = ref specs})
+
+      fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
+         make {admitsEquality = AdmitsEquality.Sometimes,
+               defn = defn, hasCons = hasCons, kind = kind,
+               specs = []}
    end
 
 structure Tycon =
@@ -485,24 +494,26 @@ and copyDefn (d: Defn.t): Defn.t =
        | TypeStr s => Defn.typeStr (copyTypeStr s)
        | Undefined => Defn.undefined
    end
-and copyFlexibleTycon (FlexibleTycon.T s): FlexibleTycon.t =
+and copyFlexibleTycon (fc: FlexibleTycon.t): FlexibleTycon.t =
    let
       open FlexibleTycon
-      val {admitsEquality = a, copy, defn, hasCons, kind, ...} = Set.! s
+      val {admitsEquality, copy, defn, specs, hasCons, kind, ...} =
+         fields fc
    in
       case !copy of
          NONE => 
             let
-               val c = new {defn = copyDefn (!defn),
-                            hasCons = hasCons,
-                            kind = kind}
-               val _ = admitsEquality c := !a
+               val fc' = make {admitsEquality = !admitsEquality,
+                               defn = copyDefn (!defn),
+                               hasCons = hasCons,
+                               kind = kind,
+                               specs = !specs}
                val _ = List.push (copies, copy)
-               val _ = copy := SOME c
+               val _ = copy := SOME fc'
             in
-               c
+               fc'
             end
-       | SOME c => c
+       | SOME fc' => fc'
    end
 and copyTycon (t: Tycon.t): Tycon.t =
    let
@@ -540,9 +551,9 @@ structure AdmitsEquality =
       fun fromBool b = if b then Sometimes else Never
    end
 
-fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
+fun flexibleTyconAdmitsEquality (fc: FlexibleTycon.t): AdmitsEquality.t =
    let
-      val {admitsEquality, defn, ...} = Set.! s
+      val {admitsEquality, defn, ...} = FlexibleTycon.fields fc
       datatype z = datatype Defn.dest
    in
       case Defn.dest (!defn) of
@@ -589,29 +600,36 @@ structure FlexibleTycon =
    struct
       open FlexibleTycon
 
-      fun realize (T s, typeStr) =
+      fun realize (fc, typeStr) =
          let
-            val {defn, ...} = Set.! s
+            val {defn, ...} = fields fc
          in
             case Defn.dest (!defn) of
                Defn.Undefined => defn := Defn.realized typeStr
              | _ => Error.bug "Interface.FlexibleTycon.realize"
          end
 
-      fun share (T s, T s') =
+      fun share (fc as T s, fc' as T s', sharingSpec) =
          let
-            val {admitsEquality = a, creationTime = t, hasCons = h, id, kind,
-                 plist, ...} =
-               Set.! s
-            val {admitsEquality = a', creationTime = t', hasCons = h', ...} =
-               Set.! s'
+            val {admitsEquality = a, creationTime = t,
+                 hasCons = h, specs = ss,
+                 id, kind, plist, ...} =
+               fields fc
+            val {admitsEquality = a', creationTime = t',
+                 hasCons = h', specs = ss', ...} =
+               fields fc'
             val _ = Set.union (s, s')
+            val specs =
+               (List.rev o List.removeDuplicates)
+               (sharingSpec :: (!ss @ !ss'),
+                Region.equals)
             val _ = 
                Set.:=
                (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
                     copy = ref NONE,
                     creationTime = Time.min (t, t'),
                     defn = ref Defn.undefined,
+                    specs = ref specs,
                     hasCons = h orelse h',
                     id = id,
                     kind = kind,
@@ -707,7 +725,8 @@ structure TypeStr =
             loop s
          end
 
-      fun share ((s: t, reg, lay), (s': t, reg', lay'), time: Time.t): unit =
+      fun share ((s: t, reg, lay), (s': t, reg', lay'),
+                 sharingSpec: Region.t, time: Time.t): unit =
          let
             val oper = "shared"
             val k = kind s
@@ -730,14 +749,14 @@ structure TypeStr =
             else
                case (getFlex (s, time, oper, reg, lay),
                      getFlex (s', time, oper, reg', lay')) of
-                  (SOME f, SOME f') => FlexibleTycon.share (f, f')
+                  (SOME f, SOME f') => FlexibleTycon.share (f, f', sharingSpec)
                 | _ => ()
          end
 
       val share =
          Trace.trace
          ("Interface.TypeStr.share",
-          fn ((s, _, _), (s', _, _), t) =>
+          fn ((s, _, _), (s', _, _), _, t) =>
           Layout.tuple [layout s, layout s', Time.layout t],
           Unit.layout)
          share
@@ -777,7 +796,7 @@ structure TypeStr =
                              end
                        else
                           let
-                             val {defn, hasCons, ...} = FlexibleTycon.fields flex
+                             val {defn, hasCons, specs, ...} = FlexibleTycon.fields flex
                           in
                              if hasCons
                                 andalso
@@ -797,7 +816,8 @@ structure TypeStr =
                                        empty)
                                    end
                              else
-                                defn := Defn.typeStr s
+                                (List.push (specs, r)
+                                 ; defn := Defn.typeStr s)
                           end
                end
 
@@ -808,6 +828,24 @@ structure TypeStr =
                                                            layout s'],
                       Unit.layout)
          wheree
+
+      fun specs s =
+         let
+            fun specs c =
+               case c of
+                  Tycon.Flexible fc =>
+                     let
+                        val {specs, ...} = FlexibleTycon.fields fc
+                     in
+                        List.rev (!specs)
+                     end
+                | _ => []
+         in
+            case node s of
+               Datatype {tycon, ...} => specs tycon
+             | Scheme _ => []
+             | Tycon tycon => specs tycon
+         end
    end
 
 structure UniqueId = IntUniqueId ()
@@ -991,7 +1029,7 @@ fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
              ; NONE)
    end
 
-fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
+fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): unit =
    let
       fun lay (s, ls, strids, name) =
          (s, Longstrid.region ls,
@@ -1073,6 +1111,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
                            (types, types', fn ((name, s), (_, s')) =>
                             TypeStr.share (lay (s, ls, strids, name),
                                            lay (s', ls', strids, name),
+                                           sharingSpec,
                                            time))
                         val _ =
                            Array.foreach2
@@ -1132,6 +1171,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
                          fn (s, s', name) =>
                          TypeStr.share (lay (s, ls, strids, name),
                                         lay (s', ls', strids, name),
+                                        sharingSpec,
                                         time))
             in
                ()
@@ -1143,7 +1183,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
 val share =
    Trace.trace
    ("Interface.share",
-    fn (I, _, I', _, t) =>
+    fn (I, _, I', _, _, t) =>
     Layout.tuple [layout I, layout I', Time.layout t],
     Unit.layout)
    share
@@ -1225,14 +1265,14 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                   val {strs, types, ...} = dest I
                   fun setTycon (tycon, isDatatype) =
                      case tycon of
-                        Tycon.Flexible (c as FlexibleTycon.T s) =>
+                        Tycon.Flexible fc =>
                            let
-                              val {defn, hasCons, ...} = Set.! s
+                              val {defn, hasCons, ...} = FlexibleTycon.fields fc
                            in
                               case Defn.dest (!defn) of
                                  Defn.Undefined =>
                                     let
-                                       val r = tyconShortest c
+                                       val r = tyconShortest fc
                                     in
                                        if (hasCons
                                            andalso not isDatatype)
@@ -1242,7 +1282,7 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                                           then ref NONE
                                           else let
                                                   val _ = #flex (!r) := NONE
-                                                  val flex = ref (SOME c)
+                                                  val flex = ref (SOME fc)
                                                   val _ = r := {flex = flex,
                                                                 length = SOME length}
                                                in

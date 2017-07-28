@@ -459,7 +459,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                     | (s, I) :: Is =>
                                          List.foreach 
                                          (Is, fn (s', I') =>
-                                          Interface.share (I, s, I', s', time))
+                                          Interface.share
+                                          (I, s, I', s',
+                                           Equation.region eqn, time))
                              in
                                 loop (List.fold
                                       (ss, [], fn (s, ac) =>
@@ -481,9 +483,10 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                            (s, Longtycon.region c,
                                             fn () => Longtycon.layout c)
                                         val _ =
-                                           TypeStr.share (doit (c, s),
-                                                          doit (c', s'),
-                                                          time)
+                                           TypeStr.share
+                                           (doit (c, s),
+                                            doit (c', s'),
+                                            Equation.region eqn, time)
                                      in
                                         SOME (c', s')
                                      end)))

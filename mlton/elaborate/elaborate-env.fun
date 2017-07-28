@@ -2668,12 +2668,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                                    str ")"],
                                       str ": ",
                                       layoutLongRev (strids, Ast.Tycon.layout sigName)],
-                                 align [seq [str "structure: ", strError],
-                                        seq [str "defn at:   ",
-                                             Region.layout (Ast.Tycon.region strName)],
-                                        seq [str "signature: ", sigError],
-                                        seq [str "spec at:   ",
-                                             Region.layout (Ast.Tycon.region sigName)]])
+                                 align ((seq [str "structure: ", strError]) ::
+                                        (seq [str "defn at:   ",
+                                              Region.layout (Ast.Tycon.region strName)]) ::
+                                        (seq [str "signature: ", sigError]) ::
+                                        (List.map
+                                         ((Ast.Tycon.region sigName)::
+                                          (Interface.TypeStr.specs sigStr),
+                                          fn r => seq [str "spec at:   ", Region.layout r]))))
                        val error = fn (msg, strError, sigError) =>
                           let
                              val msgs =
