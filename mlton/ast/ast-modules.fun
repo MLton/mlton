@@ -23,6 +23,26 @@ val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node
 
+structure WhereEquation =
+   struct
+      open Wrap
+      datatype node =
+         Type of {tyvars: Tyvar.t vector,
+                  longtycon: Longtycon.t,
+                  ty: Type.t}
+      type t = node Wrap.t
+      type node' = node
+      type obj = t
+
+      fun layout eq =
+         case node eq of
+            Type {tyvars, longtycon, ty} =>
+               seq [str "where type ",
+                    Type.layoutApp (Longtycon.layout longtycon, tyvars, Tyvar.layout),
+                    str " = ",
+                    Type.layout ty]
+   end
+
 structure SharingEquation =
    struct
       open Wrap
@@ -47,17 +67,16 @@ type typedescs = {tyvars: Tyvar.t vector,
                   tycon: Tycon.t} vector
 
 datatype sigexpNode =
-   Var of Sigid.t
- | Where of sigexp * {tyvars: Tyvar.t vector,
-                      longtycon: Longtycon.t,
-                      ty: Type.t} vector
- | Spec of spec
+    Var of Sigid.t
+  | Where of {equations: WhereEquation.t vector,
+              sigexp: sigexp}
+  | Spec of spec
 and sigConst =
-   None
+    None
   | Transparent of sigexp
   | Opaque of sigexp
 and specNode =
-   Datatype of DatatypeRhs.t
+    Datatype of DatatypeRhs.t
   | Empty
   | Eqtype of typedescs
   | Exception of (Con.t * Type.t option) vector
@@ -91,22 +110,15 @@ fun layoutTypedefs (prefix, typBind) =
 fun layoutSigexp (e: sigexp): Layout.t =
    case node e of
       Var s => Sigid.layout s
-    | Where (e, ws) =>
+    | Where {sigexp, equations} =>
          let
-            val e = layoutSigexp e
+            val sigexp = layoutSigexp sigexp
          in
-            if Vector.isEmpty ws
-               then e
-            else
-               seq [e, 
-                    layoutAndsBind
-                    (" where", "=", ws, fn {tyvars, longtycon, ty} =>
-                     (OneLine,
-                      seq [str "type ",
-                           Type.layoutApp
-                           (Longtycon.layout longtycon, tyvars,
-                            Tyvar.layout)],
-                      Type.layout ty))]
+            if Vector.isEmpty equations
+               then sigexp
+               else mayAlign
+                    [sigexp,
+                     align (Vector.toListMap (equations, WhereEquation.layout))]
          end
     | Spec s => align [str "sig",
                        indent (layoutSpec s, 3),
@@ -153,9 +165,13 @@ fun checkSyntaxSigexp (e: sigexp): unit =
    case node e of
       Spec s => checkSyntaxSpec s
     | Var _ => ()
-    | Where (e, v) =>
-         (checkSyntaxSigexp e
-          ; Vector.foreach (v, fn {ty, ...} => Type.checkSyntax ty))
+    | Where {sigexp, equations} =>
+         (checkSyntaxSigexp sigexp
+          ; Vector.foreach
+            (equations, fn eqn =>
+             case WhereEquation.node eqn of
+                WhereEquation.Type {ty, ...} =>
+                   Type.checkSyntax ty))
 
 and checkSyntaxSigConst (s: sigConst): unit =
    case s of
@@ -242,10 +258,12 @@ structure Sigexp =
 
       val checkSyntax = checkSyntaxSigexp
 
-      fun wheree (sigexp: t, wherespecs, region): t =
-         if Vector.isEmpty wherespecs
+      fun wheree (sigexp: t, equations, region): t =
+         if Vector.isEmpty equations
             then sigexp
-         else makeRegion (Where (sigexp, wherespecs), region)
+         else makeRegion (Where {sigexp = sigexp,
+                                 equations = equations},
+                          region)
 
       fun make n = makeRegion (n, Region.bogus)
 

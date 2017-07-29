@@ -27,6 +27,7 @@ in
    structure Spec = Spec
    structure TypBind = TypBind
    structure Tyvar = Tyvar
+   structure WhereEquation = WhereEquation
 end
 
 local
@@ -348,7 +349,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
            | Sigexp.Var x =>
                 (* rule 63 *)
                 Option.map (Env.lookupSigid (E, x), Interface.copy)
-           | Sigexp.Where (sigexp, wheres) =>
+           | Sigexp.Where {sigexp, equations} =>
                 (* rule 64 *)
                 let
                    val time = Interface.Time.tick ()
@@ -358,23 +359,21 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                     let
                        val _ = 
                           Vector.foreach
-                          (wheres, fn {longtycon, ty, tyvars} =>
-                           Option.app
-                           (Interface.lookupLongtycon
-                            (I, longtycon, Longtycon.region longtycon,
-                             {prefix = []}),
-                            fn s =>
-                            TypeStr.wheree
-                            (s,
-                             Region.append
-                             (if Vector.isEmpty tyvars
-                                 then Longtycon.region longtycon
-                                 else Tyvar.region (Vector.sub (tyvars, 0)),
-                              Atype.region ty),
-                             fn () => Longtycon.layout longtycon,
-                             time,
-                             TypeStr.def (elaborateScheme (tyvars, ty, E),
-                                          Kind.Arity (Vector.length tyvars)))))
+                          (equations, fn eqn =>
+                           case WhereEquation.node eqn of
+                              WhereEquation.Type {longtycon, ty, tyvars} =>
+                                 Option.app
+                                 (Interface.lookupLongtycon
+                                  (I, longtycon, Longtycon.region longtycon,
+                                   {prefix = []}),
+                                  fn s =>
+                                  TypeStr.wheree
+                                  (s,
+                                   WhereEquation.region eqn,
+                                   fn () => Longtycon.layout longtycon,
+                                   time,
+                                   TypeStr.def (elaborateScheme (tyvars, ty, E),
+                                                Kind.Arity (Vector.length tyvars)))))
                     in
                        I
                     end)

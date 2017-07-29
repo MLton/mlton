@@ -16,6 +16,17 @@ signature AST_MODULES =
    sig
       include AST_CORE
 
+      structure WhereEquation:
+         sig
+            type t
+            datatype node =
+               Type of {longtycon: Longtycon.t,
+                        tyvars: Tyvar.t vector,
+                        ty: Type.t}
+            include WRAPPED sharing type node' = node
+                            sharing type obj = t
+         end
+
       structure Sigexp:
          sig
             type spec
@@ -24,16 +35,13 @@ signature AST_MODULES =
             datatype node =
                Spec of spec
              | Var of Sigid.t
-             | Where of t * {longtycon: Longtycon.t,
-                             ty: Type.t,
-                             tyvars: Tyvar.t vector} vector
+             | Where of {equations: WhereEquation.t vector,
+                         sigexp: t}
 
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val wheree: t * {tyvars: Tyvar.t vector,
-                             longtycon: Longtycon.t,
-                             ty: Type.t} vector * Region.t -> t
+            val wheree: t * WhereEquation.t vector * Region.t -> t
             val spec: spec -> t
 
             val layout: t -> Layout.t

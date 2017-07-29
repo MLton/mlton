@@ -160,10 +160,6 @@ type db = {tyvars: Tyvar.t vector,
 
 type strdesc = Strid.t * Sigexp.t
 
-type wherespec = {tyvars: Tyvar.t vector,
-                  longtycon: Longtycon.t,
-                  ty: Type.t}
-
 type typdesc =  {tyvars: Tyvar.t vector,
                  tycon: Tycon.t}
 
@@ -202,26 +198,26 @@ fun longIdFromShortId (sym, reg) = ([sym], reg)
 
 fun cons1 (x, (l, r, y)) = (x :: l, r, y)
 
-fun augment (id, sigexp, (wherespecs, right, binds)) =
-   (id, Sigexp.wheree (sigexp, Vector.fromList wherespecs,
+fun augment (id, sigexp, (whereeqns, right, binds)) =
+   (id, Sigexp.wheree (sigexp, Vector.fromList whereeqns,
                        Region.extendRight (Sigexp.region sigexp, right)))
    :: binds
 
 fun 'a augment1 ((strexp: Strexp.t,
                   makesigconst: Sigexp.t -> SigConst.t,
                   sigexp: Sigexp.t),
-                 (wherespecs: wherespec list,
+                 (whereeqns: WhereEquation.t list,
                   right: SourcePos.t,
                   z: 'a)): Strexp.t * 'a =
    (Strexp.makeRegion
     (Strexp.Constrained
      (strexp, makesigconst (Sigexp.wheree
-                            (sigexp, Vector.fromList wherespecs,
+                            (sigexp, Vector.fromList whereeqns,
                              Region.extendRight (Sigexp.region sigexp, right)))),
      Region.extendRight (Strexp.region strexp, right)),
     z)
 
-type 'a whereAnd = wherespec list * SourcePos.t * 'a list
+type 'a whereAndEqns = WhereEquation.t list * SourcePos.t * 'a list
 
   %%
   %term
@@ -254,7 +250,6 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
 
 %nonterm
          aexp of Exp.node
-       | andspecs of wherespec list
        | apat of Pat.t
        | apatnode of Pat.node
        | apats of Pat.t list
@@ -307,8 +302,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | fixity of Fixity.t
        | funbinds of funbind list
        | funbinds' of Strexp.t * funbind list
-       | funbinds'1 of funbind whereAnd
-       | funbinds'1' of funbind whereAnd
+       | funbinds'1 of funbind whereAndEqns
+       | funbinds'1' of funbind whereAndEqns
        | funbinds'2 of funbind list
        | funs of clauses list
        | idField of Symbol.t * Region.t
@@ -349,8 +344,8 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | shortAlphanumId of Symbol.t * Region.t
        | shortSymId of Symbol.t * Region.t
        | sigbinds of sigbind list
-       | sigbinds' of sigbind whereAnd
-       | sigbinds'' of sigbind whereAnd
+       | sigbinds' of sigbind whereAndEqns
+       | sigbinds'' of sigbind whereAndEqns
        | sigconst of SigConst.t
        | sigexp of Sigexp.t
        | sigexp' of Sigexp.t
@@ -363,16 +358,16 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | specs of Spec.t
        | strbinds of strbind list
        | strbinds' of Strexp.t * strbind list
-       | strbinds'1 of strbind whereAnd
-       | strbinds'1' of strbind whereAnd
+       | strbinds'1 of strbind whereAndEqns
+       | strbinds'1' of strbind whereAndEqns
        | strbinds'2 of strbind list
        | strdec of Strdec.t
        | strdecnode of Strdec.node
        | strdecs of Strdec.t
        | strdecsnode of Strdec.node
        | strdescs of strdesc list
-       | strdescs' of strdesc whereAnd
-       | strdescs'' of strdesc whereAnd
+       | strdescs' of strdesc whereAndEqns
+       | strdescs'' of strdesc whereAndEqns
        | strexp of Strexp.t
        | strexp1 of Strexp.t * (Sigexp.t -> SigConst.t) * Sigexp.t
        | strexp2 of Strexp.t
@@ -415,9 +410,10 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | vidEqual of Vid.t
        | vidNoEqual of Vid.t
        | vids of Vid.t list
-       | wherespec of wherespec
-       | wherespecs of wherespec vector
-       | wherespecs' of wherespec list
+       | whereandeqns of WhereEquation.t list
+       | whereeqn of (SourcePos.t -> WhereEquation.t)
+       | whereeqns of WhereEquation.t vector
+       | whereeqns' of WhereEquation.t list
        | withtypes of TypBind.t
        | word of IntInf.t
 
@@ -530,17 +526,17 @@ strbinds : strid sigconst EQUALOP strbinds'
 strbinds' : strexp1 strbinds'1    (augment1 (strexp1, strbinds'1))
           | strexp2 strbinds'2    ((strexp2,strbinds'2))
 
-strbinds'1 : strbinds'2                   (([], strbinds'2left, strbinds'2))
-           | WHERE wherespec strbinds'1'  (cons1 (wherespec,strbinds'1'))
+strbinds'1 : strbinds'2                  (([], strbinds'2left, strbinds'2))
+           | WHERE whereeqn strbinds'1'  (cons1 (whereeqn WHEREleft, strbinds'1'))
 
-strbinds'1' : strbinds'1                 (strbinds'1)
-            | AND wherespec strbinds'1'  (cons1 (wherespec,strbinds'1'))
+strbinds'1' : strbinds'1                (strbinds'1)
+            | AND whereeqn strbinds'1'  (cons1 (whereeqn ANDleft, strbinds'1'))
 
 strbinds'2 :               ([])
            | AND strbinds  (strbinds)
 
 strexp : strexpnode (Strexp.makeRegion' (strexpnode,
-                                        strexpnodeleft, strexpnoderight))
+                                         strexpnodeleft, strexpnoderight))
 
 strexpnode
   : strexp1
@@ -549,16 +545,16 @@ strexpnode
      in
         Strexp.Constrained (strexp, sigconst sigexp)
      end)
-  | strexp1 wherespecs
+  | strexp1 whereeqns
     (let
         val (strexp,sigconst,sigexp) = strexp1
      in
         Strexp.Constrained
         (strexp,
          sigconst (Sigexp.wheree
-                   (sigexp, wherespecs,
+                   (sigexp, whereeqns,
                     Region.extendRight (Sigexp.region sigexp,
-                                        wherespecsright))))
+                                        whereeqnsright))))
      end)
   | strexp2node
     (strexp2node)
@@ -589,40 +585,44 @@ arg_fct : LPAREN strexp RPAREN   (Strexp.makeRegion'
 sigexp
   : sigexp'
     (sigexp')
-  | sigexp' wherespecs
-    (Sigexp.wheree (sigexp', wherespecs, reg (sigexp'left, wherespecsright)))
+  | sigexp' whereeqns
+    (Sigexp.wheree (sigexp', whereeqns, reg (sigexp'left, whereeqnsright)))
 
-wherespecs : wherespecs' (Vector.fromList wherespecs')
+whereeqns : whereeqns' (Vector.fromList whereeqns')
 
-wherespecs'
-  : WHERE wherespec              ([wherespec])
-  | WHERE wherespec wherespecs'  (wherespec :: wherespecs')
-  | WHERE wherespec andspecs     (wherespec :: andspecs)
+whereeqns'
+  : WHERE whereeqn               ([whereeqn WHEREleft])
+  | WHERE whereeqn whereeqns'    (whereeqn WHEREleft :: whereeqns')
+  | WHERE whereeqn whereandeqns  (whereeqn WHEREleft :: whereandeqns)
 
-andspecs
-  : AND wherespec              ([wherespec])
-  | AND wherespec andspecs     (wherespec :: andspecs)
-  | AND wherespec wherespecs'  (wherespec :: wherespecs')
+whereandeqns
+  : AND whereeqn               ([whereeqn ANDleft])
+  | AND whereeqn whereandeqns  (whereeqn ANDleft :: whereandeqns)
+  | AND whereeqn whereeqns'    (whereeqn ANDleft :: whereeqns')
 
 sigbinds: sigid EQUALOP sigexp' sigbinds'  (augment (sigid, sigexp', sigbinds'))
 
 sigexp' : sigexp'node (Sigexp.makeRegion' (sigexp'node,
-                                          sigexp'nodeleft,
-                                          sigexp'noderight))
+                                           sigexp'nodeleft,
+                                           sigexp'noderight))
 
 sigexp'node : sigid                      (Sigexp.Var sigid)
             | SIG specs END              (Sigexp.Spec specs)
 
-sigbinds':                             (([], defaultPos, []))
-         | AND sigbinds                (([], defaultPos, sigbinds))
-         | WHERE wherespec sigbinds''  (cons1 (wherespec,sigbinds''))
+sigbinds':                            (([], defaultPos, []))
+         | AND sigbinds               (([], defaultPos, sigbinds))
+         | WHERE whereeqn sigbinds''  (cons1 (whereeqn WHEREleft, sigbinds''))
 
-sigbinds'' : sigbinds'                 (sigbinds')
-           | AND wherespec sigbinds''  (cons1 (wherespec,sigbinds''))
+sigbinds'' : sigbinds'                (sigbinds')
+           | AND whereeqn sigbinds''  (cons1 (whereeqn ANDleft, sigbinds''))
 
-wherespec  : TYPE tyvars longtycon EQUALOP ty  ({tyvars = tyvars,
-                                                 longtycon = longtycon,
-                                                 ty = ty})
+whereeqn  : TYPE tyvars longtycon EQUALOP ty  (fn eqnleft =>
+                                               WhereEquation.makeRegion'
+                                               (WhereEquation.Type {tyvars = tyvars,
+                                                                    longtycon = longtycon,
+                                                                    ty = ty},
+                                                eqnleft,
+                                                tyright))
 
 sigconst :                 (SigConst.None)
          | COLON sigexp    (SigConst.Transparent sigexp)
@@ -665,12 +665,12 @@ longtyconeqns : longtycon EQUALOP longtycon ([longtycon1,longtycon2])
 
 strdescs : strid COLON sigexp' strdescs'  (augment (strid, sigexp', strdescs'))
 
-strdescs' :                             (([], defaultPos, []))
-          | AND strdescs                (([], defaultPos, strdescs))
-          | WHERE wherespec strdescs''  (cons1 (wherespec, strdescs''))
+strdescs' :                            (([], defaultPos, []))
+          | AND strdescs               (([], defaultPos, strdescs))
+          | WHERE whereeqn strdescs''  (cons1 (whereeqn WHEREleft, strdescs''))
 
-strdescs'' : strdescs'                 (strdescs')
-           | AND wherespec strdescs''  (cons1 (wherespec, strdescs''))
+strdescs'' : strdescs'                (strdescs')
+           | AND whereeqn strdescs''  (cons1 (whereeqn ANDleft, strdescs''))
 
 typdescs : typdesc               ([typdesc])
          | typdesc AND typdescs  (typdesc :: typdescs)
@@ -707,14 +707,14 @@ funbinds : fctid LPAREN fctarg RPAREN sigconst EQUALOP funbinds'
 funbinds' : strexp1 funbinds'1  (augment1 (strexp1, funbinds'1))
           | strexp2 funbinds'2  ((strexp2, funbinds'2))
 
-funbinds'1 : funbinds'2                   ([], funbinds'2left, funbinds'2)
-           | WHERE wherespec funbinds'1'  (cons1 (wherespec,funbinds'1'))
+funbinds'1 : funbinds'2                  ([], funbinds'2left, funbinds'2)
+           | WHERE whereeqn funbinds'1'  (cons1 (whereeqn WHEREleft, funbinds'1'))
 
 funbinds'2 :               ([])
            | AND funbinds  (funbinds)
 
-funbinds'1' : funbinds'1                 (funbinds'1)
-            | AND wherespec funbinds'1'  (cons1 (wherespec,funbinds'1'))
+funbinds'1' : funbinds'1                (funbinds'1)
+            | AND whereeqn funbinds'1'  (cons1 (whereeqn ANDleft, funbinds'1'))
 
 fctarg : strid COLON sigexp  (FctArg.Structure (strid, sigexp))
        | specs               (FctArg.Spec specs)
