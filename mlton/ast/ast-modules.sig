@@ -41,7 +41,7 @@ signature AST_MODULES =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val wheree: t * WhereEquation.t vector * Region.t -> t
+            val wheree: t * WhereEquation.t vector -> t
             val spec: spec -> t
 
             val layout: t -> Layout.t

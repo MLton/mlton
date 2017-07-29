@@ -196,28 +196,27 @@ fun shortIdFromTok (s, left, right) =
 
 fun longIdFromShortId (sym, reg) = ([sym], reg)
 
-fun cons1 (x, (l, r, y)) = (x :: l, r, y)
+fun cons1 (x, (l, y)) = (x :: l, y)
 
-fun augment (id, sigexp, (whereeqns, right, binds)) =
-   (id, Sigexp.wheree (sigexp, Vector.fromList whereeqns,
-                       Region.extendRight (Sigexp.region sigexp, right)))
+fun augment (id, sigexp, (whereeqns, binds)) =
+   (id, Sigexp.wheree (sigexp, Vector.fromList whereeqns))
    :: binds
 
 fun 'a augment1 ((strexp: Strexp.t,
-                  makesigconst: Sigexp.t -> SigConst.t,
+                  sigconst: Sigexp.t -> SigConst.t,
                   sigexp: Sigexp.t),
                  (whereeqns: WhereEquation.t list,
-                  right: SourcePos.t,
                   z: 'a)): Strexp.t * 'a =
-   (Strexp.makeRegion
-    (Strexp.Constrained
-     (strexp, makesigconst (Sigexp.wheree
-                            (sigexp, Vector.fromList whereeqns,
-                             Region.extendRight (Sigexp.region sigexp, right)))),
-     Region.extendRight (Strexp.region strexp, right)),
-    z)
+   let
+      val sigexp = Sigexp.wheree (sigexp, Vector.fromList whereeqns)
+   in
+      (Strexp.makeRegion
+       (Strexp.Constrained (strexp, sigconst sigexp),
+        Region.append (Strexp.region strexp, Sigexp.region sigexp)),
+       z)
+   end
 
-type 'a whereAndEqns = WhereEquation.t list * SourcePos.t * 'a list
+type 'a whereAndEqns = WhereEquation.t list * 'a list
 
   %%
   %term
@@ -526,7 +525,7 @@ strbinds : strid sigconst EQUALOP strbinds'
 strbinds' : strexp1 strbinds'1    (augment1 (strexp1, strbinds'1))
           | strexp2 strbinds'2    ((strexp2,strbinds'2))
 
-strbinds'1 : strbinds'2                  (([], strbinds'2left, strbinds'2))
+strbinds'1 : strbinds'2                  (([], strbinds'2))
            | WHERE whereeqn strbinds'1'  (cons1 (whereeqn WHEREleft, strbinds'1'))
 
 strbinds'1' : strbinds'1                (strbinds'1)
@@ -548,13 +547,10 @@ strexpnode
   | strexp1 whereeqns
     (let
         val (strexp,sigconst,sigexp) = strexp1
+        val sigexp = Sigexp.wheree (sigexp, whereeqns)
      in
         Strexp.Constrained
-        (strexp,
-         sigconst (Sigexp.wheree
-                   (sigexp, whereeqns,
-                    Region.extendRight (Sigexp.region sigexp,
-                                        whereeqnsright))))
+        (strexp, sigconst sigexp)
      end)
   | strexp2node
     (strexp2node)
@@ -583,10 +579,8 @@ arg_fct : LPAREN strexp RPAREN   (Strexp.makeRegion'
 (*---------------------------------------------------*)
 
 sigexp
-  : sigexp'
-    (sigexp')
-  | sigexp' whereeqns
-    (Sigexp.wheree (sigexp', whereeqns, reg (sigexp'left, whereeqnsright)))
+  : sigexp'            (sigexp')
+  | sigexp' whereeqns  (Sigexp.wheree (sigexp', whereeqns))
 
 whereeqns : whereeqns' (Vector.fromList whereeqns')
 
@@ -609,8 +603,8 @@ sigexp' : sigexp'node (Sigexp.makeRegion' (sigexp'node,
 sigexp'node : sigid                      (Sigexp.Var sigid)
             | SIG specs END              (Sigexp.Spec specs)
 
-sigbinds':                            (([], defaultPos, []))
-         | AND sigbinds               (([], defaultPos, sigbinds))
+sigbinds':                            (([], []))
+         | AND sigbinds               (([], sigbinds))
          | WHERE whereeqn sigbinds''  (cons1 (whereeqn WHEREleft, sigbinds''))
 
 sigbinds'' : sigbinds'                (sigbinds')
@@ -665,8 +659,8 @@ longtyconeqns : longtycon EQUALOP longtycon ([longtycon1,longtycon2])
 
 strdescs : strid COLON sigexp' strdescs'  (augment (strid, sigexp', strdescs'))
 
-strdescs' :                            (([], defaultPos, []))
-          | AND strdescs               (([], defaultPos, strdescs))
+strdescs' :                            (([], []))
+          | AND strdescs               (([], strdescs))
           | WHERE whereeqn strdescs''  (cons1 (whereeqn WHEREleft, strdescs''))
 
 strdescs'' : strdescs'                (strdescs')
@@ -707,7 +701,7 @@ funbinds : fctid LPAREN fctarg RPAREN sigconst EQUALOP funbinds'
 funbinds' : strexp1 funbinds'1  (augment1 (strexp1, funbinds'1))
           | strexp2 funbinds'2  ((strexp2, funbinds'2))
 
-funbinds'1 : funbinds'2                  ([], funbinds'2left, funbinds'2)
+funbinds'1 : funbinds'2                  ([], funbinds'2)
            | WHERE whereeqn funbinds'1'  (cons1 (whereeqn WHEREleft, funbinds'1'))
 
 funbinds'2 :               ([])

@@ -258,12 +258,15 @@ structure Sigexp =
 
       val checkSyntax = checkSyntaxSigexp
 
-      fun wheree (sigexp: t, equations, region): t =
+      fun wheree (sigexp: t, equations): t =
          if Vector.isEmpty equations
             then sigexp
          else makeRegion (Where {sigexp = sigexp,
                                  equations = equations},
-                          region)
+                          Region.append
+                          (region sigexp,
+                           WhereEquation.region
+                           (Vector.last equations)))
 
       fun make n = makeRegion (n, Region.bogus)
 
