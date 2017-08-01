@@ -208,12 +208,11 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
             val sequence = S.Slice.sequence
             val append = S.Slice.append
             
-            (* use COPY *)
-            fun concat (sls: 'a slice list): 'a sequence =
+	    fun concat (sls: 'a slice list): 'a sequence =
                case sls of
                   [] => seq0 ()
                 | [sl] => sequence sl
-                | sls' as sl::sls =>
+                | sls =>
                      let
                         val add = 
                            if Primitive.Controls.safe 
@@ -221,17 +220,17 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                        (s +! S.Slice.length sl)
                                        handle Overflow => raise Size)
                               else (fn (sl, s) => s +? S.Slice.length sl)
-                        val n = List.foldl add 0 sls'
-                        fun loop (i, sl, sls) =
-                           if SeqIndex.< (i, S.Slice.length sl)
-                              then (S.Slice.unsafeSub (sl, i),
-                                    (i +? 1, sl, sls))
-                              else case sls of
-                                 [] => raise Fail "Sequence.Slice.concat"
-                               | sl :: sls => loop (0, sl, sls)
-                     in
-                        #1 (S.unfold (n, (0, sl, sls), loop))
-                     end
+                        val n = List.foldl add 0 sls	
+                        val a = Primitive.Array.uninit n
+			fun loop (di, sls) = 
+			   case sls of
+				[] => S.unsafeFromArray a
+				| sl::sls =>
+					(S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+					; loop (di +? S.Slice.length sl, sls))
+		     in
+			loop (0, sls)
+		     end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                case sls of
                   [] => seq0 ()

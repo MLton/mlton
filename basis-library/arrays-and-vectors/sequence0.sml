@@ -76,7 +76,7 @@ functor PrimSequence (S: sig
             else Array.uninitUnsafe n
       fun unsafeUninit n = S.fromArray (unsafeArrayUninit n)
       fun uninit n = S.fromArray (arrayUninit n)
-
+      val unsafeFromArray = S.fromArray
       exception CreateAlreadyGotVector
       exception CreateVectorNotFull
       fun create n =
@@ -167,7 +167,17 @@ functor PrimSequence (S: sig
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
                else (unsafeUpdateMk updateUnsafe) (sl, i, x)
-            fun full (seq: 'a sequence) : 'a slice = 
+            
+	    fun unsafeCopy {dst: 'a elt array, di: SeqIndex.int, src = T {seq = src, start = si, len}} =
+		S.copyUnsafe (dst, di , src, si, len)
+
+            fun copy {dst: 'a elt array, di: SeqIndex.int, src = sl as T {seq = src, start = si, len}} =
+		if Primitive.Controls.safe andalso (gtu (di, Array.length dst) orelse gtu (di +? len, Array.length dst))
+		   then raise Subscript
+		else unsafeCopy {dst = dst, di = di, src = sl}
+
+
+	    fun full (seq: 'a sequence) : 'a slice = 
                T {seq = seq, start = 0, len = S.length seq}
             fun unsafeSubslice (T {seq, start, len}, start', len') = 
                T {seq = seq, 
@@ -375,7 +385,9 @@ functor PrimSequence (S: sig
          fun make f seq = f (Slice.full seq)
          fun make2 f (seq1, seq2) = f (Slice.full seq1, Slice.full seq2)
       in
-         fun sub (seq, i) = Slice.sub (Slice.full seq, i)
+         fun copy {dst, di, src} = Slice.copy {dst = dst, di = di, src = Slice.full src}
+	 fun unsafeCopy {dst, di, src} = Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
+	 fun sub (seq, i) = Slice.sub (Slice.full seq, i)
          fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i)
          fun updateMk updateUnsafe (seq, i, x) =
             Slice.updateMk updateUnsafe (Slice.full seq, i, x)
@@ -447,43 +459,22 @@ structure Array =
                fun update arg = updateMk Array.updateUnsafe arg
                fun unsafeUpdate arg = unsafeUpdateMk Array.updateUnsafe arg
                fun vector sl = 
-                  Vector.tabulate (length sl, fn i => unsafeSub (sl, i))
+		 let
+			val a = unsafeUninit (length sl)
+			val () = copy {dst = a, di = 0, src = sl}
+		 in
+			Vector.fromArrayUnsafe a 
+		 end
                fun modifyi f sl =
                   appi (fn (i, x) => unsafeUpdate (sl, i, f (i, x))) sl
                fun modify f sl = modifyi (fn (_, x) => f x) sl
-               local 
-                  fun make (foldFn, lengthFn, unsafeSubFn) {src, dst, di} = 
-                     let 
-                        val sl = slice (dst, di, SOME (lengthFn src))
-                        fun transfer (i, _, _) = 
-                           unsafeUpdate (sl, i, unsafeSubFn (src, i))
-                     in
-                        foldFn transfer () sl
-                     end
-               in 
-                  fun copy (arg as {src, dst, di}) = 
-                     let 
-                        val (src', si', len') = base src
-                     in 
-                        if src' = dst 
-                           andalso SeqIndex.< (si', di) 
-                           andalso SeqIndex.<= (di, SeqIndex.+? (si', len'))
-                           then make (foldri, length, unsafeSub) arg
-                        else make (foldli, length, unsafeSub) arg
-                     end
-                  fun copyVec arg = 
-                     make (foldli, Vector.Slice.length, Vector.Slice.unsafeSub) 
-                          arg
-               end
+	       val copyVec = Vector.Slice.copy
             end
          fun update arg = updateMk Array.updateUnsafe arg
          val unsafeUpdate = Array.updateUnsafe
-         fun vector s = Vector.tabulate (length s, fn i => unsafeSub (s, i))
-         fun copy {src, dst, di} = 
-            Slice.copy {src = Slice.full src, dst = dst, di = di} 
-         fun copyVec {src, dst, di} = 
-            Slice.copyVec {src = Vector.Slice.full src, dst = dst, di = di}
-         fun modifyi f s = Slice.modifyi f (Slice.full s)
+         fun vector s = Slice.vector (Slice.full s)
+         val copyVec = Vector.copy
+	 fun modifyi f s = Slice.modifyi f (Slice.full s)
          fun modify f s = Slice.modify f (Slice.full s) 
       end
    end

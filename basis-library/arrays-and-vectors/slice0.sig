@@ -23,6 +23,8 @@ signature PRIM_SLICE =
                      ('a slice * SeqIndex.int * 'a elt) -> unit
       val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                            ('a slice * SeqIndex.int * 'a elt) -> unit
+      val copy: {dst: 'a elt array, di: SeqIndex.int, src: 'a slice} -> unit
+      val unsafeCopy: {dst: 'a elt array, di: SeqIndex.int, src: 'a slice} -> unit
       val full: 'a sequence -> 'a slice
       val slice: 'a sequence * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSlice: 'a sequence * SeqIndex.int * SeqIndex.int option -> 'a slice

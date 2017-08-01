@@ -129,7 +129,8 @@ structure CFunction =
             target = Direct "GC_arrayAllocate"}
 
       fun gcArrayCopy (dt, st) =
-         T {args = Vector.new5 (dt,
+         T {args = Vector.new6 (Type.gcState (),
+	                        dt,
                                 Type.seqIndex (),
                                 st,
                                 Type.seqIndex (),
@@ -142,7 +143,8 @@ structure CFunction =
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
-            prototype = (Vector.new5 (CType.Objptr,
+            prototype = (Vector.new6 (CType.gcState,
+	                              CType.Objptr,
                                       CType.seqIndex (),
                                       CType.Objptr,
                                       CType.seqIndex (),
