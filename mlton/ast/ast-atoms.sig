@@ -191,4 +191,6 @@ signature AST_ATOMS =
                       region: 'a -> Region.t} -> unit
       val reportDuplicateFields:
          (Record.Field.t * (Region.t * 'a)) vector * {ctxt: unit -> Layout.t} -> unit
+      val reportDuplicateTyvars:
+         Tyvar.t vector * {ctxt: unit -> Layout.t} -> unit
    end

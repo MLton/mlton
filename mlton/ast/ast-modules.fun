@@ -41,6 +41,18 @@ structure WhereEquation =
                     Type.layoutApp (Longtycon.layout longtycon, tyvars, Tyvar.layout),
                     str " = ",
                     Type.layout ty]
+
+      fun checkSyntax eq =
+         case node eq of
+            Type {tyvars, longtycon, ty} =>
+               (reportDuplicateTyvars
+                (tyvars, {ctxt = fn () =>
+                          seq [str "in: ",
+                               Type.layoutApp
+                               (Longtycon.layout longtycon,
+                                tyvars, Tyvar.layout)]})
+                ; Type.checkSyntax ty)
+
    end
 
 structure SharingEquation =
@@ -168,10 +180,7 @@ fun checkSyntaxSigexp (e: sigexp): unit =
     | Where {sigexp, equations} =>
          (checkSyntaxSigexp sigexp
           ; Vector.foreach
-            (equations, fn eqn =>
-             case WhereEquation.node eqn of
-                WhereEquation.Type {ty, ...} =>
-                   Type.checkSyntax ty))
+            (equations, WhereEquation.checkSyntax))
 
 and checkSyntaxSigConst (s: sigConst): unit =
    case s of
@@ -179,20 +188,30 @@ and checkSyntaxSigConst (s: sigConst): unit =
     | Opaque e => checkSyntaxSigexp e
     | Transparent e => checkSyntaxSigexp e
 
+and checkSyntaxTypedescs (typedescs, {ctxt}) =
+   (Vector.foreach
+    (typedescs, fn {tyvars, tycon, ...} =>
+     reportDuplicateTyvars
+     (tyvars, {ctxt = fn () =>
+               seq [str "in: ",
+                    Type.layoutApp
+                    (Tycon.layout tycon,
+                     tyvars, Tyvar.layout)]}))
+    ; reportDuplicates
+      (typedescs, {ctxt = ctxt,
+                   equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+                             Tycon.equals (c, c')),
+                   layout = Tycon.layout o #tycon,
+                   name = "type specification",
+                   region = Tycon.region o #tycon}))
+
 and checkSyntaxSpec (s: spec): unit =
    let
       val ctxt = mkCtxt (s, layoutSpec)
    in
       case node s of
          Datatype d => DatatypeRhs.checkSyntaxSpec d
-       | Eqtype v =>
-            reportDuplicates
-            (v, {ctxt = ctxt,
-                 equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
-                           Tycon.equals (c, c')),
-                 layout = Tycon.layout o #tycon,
-                 name = "type specification",
-                 region = Tycon.region o #tycon})
+       | Eqtype typedescs => checkSyntaxTypedescs (typedescs, {ctxt = ctxt})
        | Empty => ()
        | Exception v =>
             (Vector.foreach
@@ -221,14 +240,7 @@ and checkSyntaxSpec (s: spec): unit =
                      layout = Strid.layout o #1,
                      name = "structure specification",
                      region = Strid.region o #1})))
-       | Type v =>
-            reportDuplicates
-            (v, {ctxt = ctxt,
-                 equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
-                           Tycon.equals (c, c')),
-                 layout = Tycon.layout o #tycon,
-                 name = "type specification",
-                 region = Tycon.region o #tycon})
+       | Type typedescs => checkSyntaxTypedescs (typedescs, {ctxt = ctxt})
        | TypeDefs b => TypBind.checkSyntaxSpec b
        | Val v =>
             (Vector.foreach

@@ -813,22 +813,7 @@ tyvars  : tyvarseq (tyvarseq)
         |          (Vector.new0 ())
 
 tyvarseq: tyvar                   (Vector.new1 tyvar)
-        | LPAREN tyvar_pc RPAREN
-          (let
-              val v = Vector.fromList tyvar_pc
-              val () =
-                 reportDuplicates
-                 (v, {ctxt = fn () =>
-                             Layout.seq [Layout.str "in: ",
-                                         Layout.tuple (Vector.toListMap
-                                                       (v, Tyvar.layout))],
-                      equals = Tyvar.sameName,
-                      layout = Tyvar.layout,
-                      name = "type variable",
-                      region = Tyvar.region})
-           in
-              v
-           end)
+        | LPAREN tyvar_pc RPAREN  (Vector.fromList tyvar_pc)
 
 tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)

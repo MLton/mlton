@@ -193,6 +193,15 @@ fun reportDuplicateFields (v: (Field.t * (Region.t * 'a)) vector,
                       name = "label",
                       region = #1 o #2})
 
+fun reportDuplicateTyvars (v: Tyvar.t vector,
+                           {ctxt: unit -> Layout.t}): unit =
+   reportDuplicates (v,
+                     {ctxt = ctxt,
+                      equals = Tyvar.sameName,
+                      layout = Tyvar.layout,
+                      name = "type variable",
+                      region = Tyvar.region})
+
 structure Type =
    struct
       open Wrap
@@ -329,7 +338,16 @@ structure TypBind =
       fun checkSyntax (b: t, kind: string): unit =
          let
             val T v = node b
-            val () = Vector.foreach (v, fn {def, ...} => Type.checkSyntax def)
+            val () =
+               Vector.foreach
+               (v, fn {tyvars, tycon, def} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
+                 ; Type.checkSyntax def))
          in
             reportDuplicates
             (v, {ctxt = mkCtxt (b, layout),
@@ -386,18 +404,24 @@ structure DatBind =
                                                  keyword: string} -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
+            val TypBind.T withtypes = TypBind.node withtypes
             val ctxt = mkCtxt ((), fn () => layout ("datatype", b))
             val () =
                Vector.foreach
-               (datatypes, fn {cons, ...} =>
-                Vector.foreach
-                (cons, fn (c, to) =>
-                 (vidCheckSpecial
-                  (Vid.fromCon c,
-                   {allowIt = false,
-                    ctxt = ctxt,
-                    keyword = "datatype"})
-                  ; Option.app (to, Type.checkSyntax))))
+               (datatypes, fn {tyvars, tycon, cons} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           Type.layoutApp
+                           (Tycon.layout tycon,
+                            tyvars, Tyvar.layout)})
+                 ; Vector.foreach
+                   (cons, fn (c, to) =>
+                    (vidCheckSpecial
+                     (Vid.fromCon c,
+                      {allowIt = false,
+                       ctxt = ctxt,
+                       keyword = "datatype"})
+                     ; Option.app (to, Type.checkSyntax)))))
             val () =
                reportDuplicates
                (Vector.concatV (Vector.map (datatypes, #cons)),
@@ -407,13 +431,19 @@ structure DatBind =
                  name = "constructor " ^ kind,
                  region = Con.region o #1})
             val () =
+               Vector.foreach
+               (withtypes, fn {tyvars, tycon, def} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
+                 ; Type.checkSyntax def))
+            val () =
                reportDuplicates
                (Vector.concat [Vector.map (datatypes, #tycon),
-                               let
-                                  val TypBind.T v = TypBind.node withtypes
-                               in
-                                  Vector.map (v, #tycon)
-                               end],
+                               Vector.map (withtypes, #tycon)],
                 {ctxt = ctxt,
                  equals = Tycon.equals,
                  layout = Tycon.layout,

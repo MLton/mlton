@@ -625,22 +625,26 @@ and checkSyntaxDec (d: dec): unit =
                   name = "exception definition",
                   region = Con.region o #1})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
-    | Fun {fbs, ...} =>
-         Vector.foreach (fbs, fn clauses =>
-                         Vector.foreach
-                         (clauses, fn {body, pats, resultType} =>
-                          (checkSyntaxExp body
-                           ; Vector.foreach (pats, Pat.checkSyntax)
-                           ; Option.app (resultType, Type.checkSyntax))))
+    | Fun {tyvars, fbs, ...} =>
+         (reportDuplicateTyvars (tyvars,
+                                 {ctxt = mkCtxt (d, layoutDec)})
+          ; Vector.foreach (fbs, fn clauses =>
+                            Vector.foreach
+                            (clauses, fn {body, pats, resultType} =>
+                             (checkSyntaxExp body
+                              ; Vector.foreach (pats, Pat.checkSyntax)
+                              ; Option.app (resultType, Type.checkSyntax)))))
     | Local (d, d') => (checkSyntaxDec d; checkSyntaxDec d')
     | Open _ => ()
     | Overload (_, _, _, ty, _) => Type.checkSyntax ty
     | SeqDec v => Vector.foreach (v, checkSyntaxDec)
     | Type b => TypBind.checkSyntaxDef b
-    | Val {rvbs, vbs, ...} =>
-         (Vector.foreach (rvbs, fn {match, pat} =>
-                          (checkSyntaxMatch match
-                           ; Pat.checkSyntax pat))
+    | Val {tyvars, rvbs, vbs, ...} =>
+         (reportDuplicateTyvars (tyvars,
+                                 {ctxt = mkCtxt (d, layoutDec)})
+          ; Vector.foreach (rvbs, fn {match, pat} =>
+                            (checkSyntaxMatch match
+                             ; Pat.checkSyntax pat))
           ; Vector.foreach (vbs, fn {exp, pat} =>
                             (checkSyntaxExp exp
                              ; Pat.checkSyntax pat)))
