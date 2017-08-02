@@ -311,22 +311,15 @@ val typeTycon =
 
 fun 'a elabConst (c: Aconst.t,
                   make: (unit -> Const.t) * Type.t -> 'a,
-                  {false = f: 'a, true = t: 'a}): 'a =
+                  {false = f: 'a, true = t: 'a},
+                  preError: unit -> unit): 'a =
    let
-      fun error (ty: Type.t): unit =
-         Control.error
-         (Aconst.region c,
-          seq [Type.layoutPretty ty, str " too big: ", Aconst.layout c],
-          empty)
-      fun ensureChar (cs: CharSize.t, ch: IntInf.t): unit =
-         if CharSize.isInRange (cs, ch)
-            then ()
-         else
-            Control.error (Aconst.region c,
-                           str (concat
-                                ["character too big: ",
-                                 "#\"", Aconst.ordToString ch, "\""]),
-                           empty)
+      fun error (kind: string, ty: Type.t): unit =
+         (preError ()
+          ; Control.error
+            (Aconst.region c,
+             seq [str kind, str " too large for type: ", Aconst.layout c],
+             seq [str "type: ", Type.layoutPretty ty]))
       fun choose (tycon, all, sizeTycon, make) =
          case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
             NONE => Const.string "<bogus>"
@@ -347,15 +340,21 @@ fun 'a elabConst (c: Aconst.t,
    in
       case Aconst.node c of
          Aconst.Bool b => if b then t else f
-       | Aconst.Char c =>
+       | Aconst.Char ch =>
             delay
             (Type.unresolvedChar, fn ty =>
              choose (typeTycon ty,
-                     List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
-                     Tycon.word,
-                     fn s =>
-                     (ensureChar (CharSize.fromBits (WordSize.bits s), c)
-                      ; Const.Word (WordX.fromIntInf (c, s)))))
+                     CharSize.all,
+                     Tycon.word o WordSize.fromBits o CharSize.bits,
+                     fn cs =>
+                     let
+                        val ws = WordSize.fromBits (CharSize.bits cs)
+                     in
+                        Const.Word
+                        (if CharSize.isInRange (cs, ch)
+                            then WordX.fromIntInf (ch, ws)
+                            else (error ("char constant", ty); WordX.zero ws))
+                     end))
        | Aconst.Int i =>
             delay
             (Type.unresolvedInt, fn ty =>
@@ -369,34 +368,56 @@ fun 'a elabConst (c: Aconst.t,
                            Const.Word
                            (if WordSize.isInRange (s, i, {signed = true})
                                then WordX.fromIntInf (i, s)
-                            else (error ty; WordX.zero s)))
+                            else (error ("int constant", ty); WordX.zero s)))
              end)
        | Aconst.Real r =>
             delay
             (Type.unresolvedReal, fn ty =>
              choose (typeTycon ty, RealSize.all, Tycon.real, fn s =>
                      Const.Real (case RealX.make (r, s) of
-                                    NONE => (error ty; RealX.zero s)
+                                    NONE => (error ("real constant", ty); RealX.zero s)
                                   | SOME r => r)))
        | Aconst.String v =>
             delay
             (Type.unresolvedString, fn ty =>
              choose (typeTycon (Type.deVector ty),
-                     List.map ([8, 16, 32], WordSize.fromBits o Bits.fromInt),
-                     Tycon.word,
-                     fn s =>
+                     CharSize.all,
+                     Tycon.word o WordSize.fromBits o CharSize.bits,
+                     fn cs =>
                      let
-                        val cs = CharSize.fromBits (WordSize.bits s)
+                        val ws = WordSize.fromBits (CharSize.bits cs)
+                        val bigs = ref []
+                        val wv =
+                           Const.WordVector
+                           (WordXVector.tabulate
+                            ({elementSize = ws}, Vector.length v, fn i =>
+                             let
+                                val ch = Vector.sub (v, i)
+                             in
+                                if CharSize.isInRange (cs, ch)
+                                   then WordX.fromIntInf (ch, ws)
+                                   else (List.push (bigs, ch)
+                                         ; WordX.zero ws)
+                             end))
+                        val () =
+                           if List.isEmpty (!bigs)
+                              then ()
+                              else (preError ()
+                                    ; Control.error
+                                      (Aconst.region c,
+                                       seq [str "string constant with ",
+                                            str (case !bigs of
+                                                    [_] => "character "
+                                                  | _ => "characters "),
+                                            str "too large for type: ",
+                                            seq (Layout.separate
+                                                 (List.revMap
+                                                  (!bigs, fn ch =>
+                                                   Aconst.layout (Aconst.makeRegion (Aconst.Char ch, Region.bogus))),
+                                                  ", "))],
+                                       seq [str "type: ", Type.layoutPretty ty]))
                      in
-                        Const.WordVector
-                        (WordXVector.tabulate
-                         ({elementSize = s}, Vector.length v, fn i =>
-                          let
-                             val ch = Vector.sub (v, i)
-                             val () = ensureChar (cs, ch)
-                          in
-                             WordX.fromIntInf (ch, s)
-                          end))
+                        wv
                      end))
        | Aconst.Word w =>
             delay
@@ -405,7 +426,7 @@ fun 'a elabConst (c: Aconst.t,
                      Const.Word
                      (if WordSize.isInRange (s, w, {signed = false})
                          then WordX.fromIntInf (w, s)
-                      else (error ty; WordX.zero s))))
+                      else (error ("word constant", ty); WordX.zero s))))
    end
 
 val unify =
@@ -571,7 +592,8 @@ val elaboratePat:
                       (c,
                        fn (resolve, ty) => Cpat.make (Cpat.Const resolve, ty),
                        {false = Cpat.falsee,
-                        true = Cpat.truee})
+                        true = Cpat.truee},
+                       preError)
                  | Apat.Constraint (p, t) =>
                       let
                          val p' = loop p
@@ -2862,7 +2884,8 @@ fun elaborateDec (d, {env = E, nest}) =
                    (c,
                     fn (resolve, ty) => Cexp.make (Cexp.Const resolve, ty),
                     {false = Cexp.falsee,
-                     true = Cexp.truee})
+                     true = Cexp.truee},
+                    preError)
               | Aexp.Constraint (e, t') =>
                    let
                       val e = elab e
@@ -3180,7 +3203,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                       Const.Word w =>
                                          IntInf.toString (WordX.toIntInf w)
                                     | c => Const.toString c,
-                                   {false = "false", true = "true"})
+                                   {false = "false", true = "true"},
+                                   preError)
                             in
                                lookConst {default = SOME value,
                                           elabedTy = elabedTy,
