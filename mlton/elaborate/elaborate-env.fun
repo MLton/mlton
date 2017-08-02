@@ -2869,10 +2869,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                    val sigScheme =
                                       tyconScheme (sigTycon, sigArity)
                                    fun nonDatatype strScheme =
-                                      (error (SOME "type structure",
-                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
-                                              sigMsg (true, SOME (seq [str "datatype ",
-                                                                       lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                      (preError ()
+                                       ; error (SOME "type structure",
+                                                strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                                sigMsg (true, SOME (seq [str "datatype ",
+                                                                         lay (Scheme.apply (sigScheme, sigTyvars))])))
                                        ; rlzStr)
                                 in
                                    case TypeStr.node strStr of
@@ -2903,9 +2904,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                            | Datatype {cons = sigCons, ...} =>
                                 let
                                    fun nonDatatype strScheme =
-                                      (error (SOME "type structure",
-                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
-                                              sigMsg (true, NONE))
+                                      (preError ()
+                                       ; error (SOME "type structure",
+                                                strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
+                                                sigMsg (true, NONE))
                                        ; rlzStr)
                                 in
                                    case TypeStr.node strStr of
