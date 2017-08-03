@@ -529,17 +529,17 @@ val elaboratePat:
             (fn (p: Apat.t) =>
              let
                 val region = Apat.region p
+                fun ctxt () =
+                   seq [str "in: ", approximate (Apat.layout p)]
                 val unify = fn (t, t', f) => unify (t, t', preError, f)
-                fun unifyPatternConstraint (p, lay, c) =
+                fun unifyPatternConstraint (p, c) =
                    unify
                    (p, c, fn (l1, l2) =>
                     (region,
                      str "pattern and constraint disagree",
                      align [seq [str "pattern:    ", l1],
                             seq [str "constraint: ", l2],
-                            seq [str "in: ", approximate (lay ())]]))
-                fun ctxt () =
-                   seq [str "in: ", approximate (Apat.layout p)]
+                            ctxt ()]))
                 fun dontCare () =
                    Cpat.wild (Type.new ())
              in
@@ -599,7 +599,7 @@ val elaboratePat:
                          val p' = loop p
                          val _ =
                             unifyPatternConstraint
-                            (Cpat.ty p', fn () => Apat.layout p,
+                            (Cpat.ty p',
                              elaborateType (t, Lookup.fromEnv E))
                       in
                          p'
@@ -630,9 +630,7 @@ val elaboratePat:
                                   end
                          val pat' = loop pat
                          val _ =
-                            unifyPatternConstraint (Cpat.ty pat',
-                                                    fn () => Apat.layout pat,
-                                                    t)
+                            unifyPatternConstraint (Cpat.ty pat', t)
                       in
                          Cpat.make (Cpat.Layered (x, pat'), t)
                       end
