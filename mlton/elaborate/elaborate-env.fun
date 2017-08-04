@@ -202,6 +202,10 @@ structure Vid =
           | Exn c => SOME c
           | _ => NONE
 
+      val deExn =
+         fn Exn c => SOME c
+          | _ => NONE
+
       val class =
          fn Con _ => Class.Con
           | Exn _ => Class.Exn
@@ -708,6 +712,7 @@ structure Structure =
              | SOME (vid, s) => Option.map (de vid, fn z => (z, s))
       in
          val peekCon = make (Ast.Vid.fromCon, Vid.deCon)
+         val peekExn = make (Ast.Vid.fromCon, Vid.deExn)
          val peekVar = make (Ast.Vid.fromVar, Vid.deVar)
       end
 
@@ -1774,6 +1779,12 @@ fun peekCon (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
       NONE => NONE
     | SOME (vid, s) => Option.map (Vid.deCon vid, fn c => (c, s))
 
+fun peekExn (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
+   case NameSpace.peek (vals, Ast.Vid.fromCon c,
+                        {markUse = fn (vid, _) => isSome (Vid.deExn vid)}) of
+      NONE => NONE
+    | SOME (vid, s) => Option.map (Vid.deExn vid, fn c => (c, s))
+
 fun layoutLong (ids: Layout.t list) =
    let
       open Layout
@@ -1835,6 +1846,7 @@ in
    val peekLongvar = make (Ast.Longvar.split, peekVar, Structure.peekVar)
    val peekLongvid = make (Ast.Longvid.split, peekVid, Structure.peekVid)
    val peekLongcon = make (Ast.Longcon.split, peekCon, Structure.peekCon)
+   val peekLongexn = make (Ast.Longcon.split, peekExn, Structure.peekExn)
 end
 
 (* ------------------------------------------------- *)
@@ -1891,6 +1903,11 @@ in
    val lookupLongcon =
       make (peekLongcon,
             "constructor",
+            Ast.Longcon.region,
+            Ast.Longcon.layout)
+   val lookupLongexn =
+      make (peekLongexn,
+            "exception",
             Ast.Longcon.region,
             Ast.Longcon.layout)
    val lookupLongstrid =

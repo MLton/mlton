@@ -2052,7 +2052,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 val decs =
                                    case EbRhs.node rhs of
                                       EbRhs.Def c =>
-                                         (case Env.lookupLongcon (E, c) of
+                                         (case Env.lookupLongexn (E, c) of
                                              NONE => decs
                                            | SOME (exn', scheme) =>
                                                 let
