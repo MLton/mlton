@@ -545,48 +545,44 @@ val elaboratePat:
              in
                 case Apat.node p of
                    Apat.App (c, p) =>
-                      let
-                         val (con, s) = Env.lookupLongcon (E, c)
-                      in
-                         case s of
-                            NONE => dontCare ()
-                          | SOME s =>
-                               let
-                                  val {args, instance} = Scheme.instantiate s
-                                  val args = args ()
-                                  val p = loop p
-                                  val (argType, resultType) =
-                                     case Type.deArrowOpt instance of
-                                        SOME types => types
-                                      | NONE =>
-                                           let
-                                              val types =
-                                                 (Type.new (), Type.new ())
-                                              val _ =
-                                                 unify
-                                                 (instance, Type.arrow types,
-                                                  fn _ =>
-                                                  (region,
-                                                   str "constant constructor applied to argument in pattern",
-                                                   ctxt ()))
-                                           in
-                                              types
-                                           end
-                                  val _ =
-                                     unify
-                                     (Cpat.ty p, argType, fn (l, l') =>
-                                      (region,
-                                       str "constructor applied to incorrect argument in pattern",
-                                       align [seq [str "expects: ", l'],
-                                              seq [str "but got: ", l],
-                                              ctxt ()]))
-                               in
-                                  Cpat.make (Cpat.Con {arg = SOME p,
-                                                       con = con,
-                                                       targs = args},
-                                             resultType)
-                               end
-                      end
+                      (case Env.lookupLongcon (E, c) of
+                          NONE => dontCare ()
+                        | SOME (con, s) =>
+                             let
+                                val {args, instance} = Scheme.instantiate s
+                                val args = args ()
+                                val p = loop p
+                                val (argType, resultType) =
+                                   case Type.deArrowOpt instance of
+                                      SOME types => types
+                                    | NONE =>
+                                         let
+                                            val types =
+                                               (Type.new (), Type.new ())
+                                            val _ =
+                                               unify
+                                               (instance, Type.arrow types,
+                                                fn _ =>
+                                                (region,
+                                                 str "constant constructor applied to argument in pattern",
+                                                 ctxt ()))
+                                         in
+                                            types
+                                         end
+                                val _ =
+                                   unify
+                                   (Cpat.ty p, argType, fn (l, l') =>
+                                    (region,
+                                     str "constructor applied to incorrect argument in pattern",
+                                     align [seq [str "expects: ", l'],
+                                            seq [str "but got: ", l],
+                                            ctxt ()]))
+                             in
+                                Cpat.make (Cpat.Con {arg = SOME p,
+                                                     con = con,
+                                                     targs = args},
+                                           resultType)
+                             end)
                  | Apat.Const c =>
                       elabConst
                       (c,
@@ -818,29 +814,25 @@ val elaboratePat:
                           | SOME (c, s) =>
                                if List.isEmpty strids andalso isRvb
                                   then var ()
-                               else
-                                  case s of
-                                     NONE => dontCare ()
-                                   | SOME s =>
-                                        let
-                                           val {args, instance} =
-                                              Scheme.instantiate s
-                                        in
-                                           if Type.isArrow instance
-                                              then
-                                                 (Control.error
-                                                  (region,
-                                                   seq [str "constructor used without argument in pattern: ",
-                                                        Ast.Longvid.layout name],
-                                                   empty)
-                                                  ; dontCare ())
-                                           else
-                                              Cpat.make
-                                              (Cpat.Con {arg = NONE,
-                                                         con = c,
-                                                         targs = args ()},
-                                               instance)
-                                        end
+                               else let
+                                       val {args, instance} =
+                                          Scheme.instantiate s
+                                    in
+                                       if Type.isArrow instance
+                                          then
+                                             (Control.error
+                                              (region,
+                                               seq [str "constructor used without argument in pattern: ",
+                                                    Ast.Longvid.layout name],
+                                               empty)
+                                              ; dontCare ())
+                                       else
+                                          Cpat.make
+                                          (Cpat.Con {arg = NONE,
+                                                     con = c,
+                                                     targs = args ()},
+                                           instance)
+                                    end
                       end
                  | Apat.Vector ps =>
                       let
@@ -2057,14 +2049,17 @@ fun elaborateDec (d, {env = E, nest}) =
                             Vector.fold
                             (ebs, Decs.empty, fn ((exn, rhs), decs) =>
                              let
-                                val (decs, exn', scheme) =
+                                val decs =
                                    case EbRhs.node rhs of
                                       EbRhs.Def c =>
-                                         let
-                                            val (c, s) = Env.lookupLongcon (E, c)
-                                         in
-                                            (decs, c, s)
-                                         end
+                                         (case Env.lookupLongcon (E, c) of
+                                             NONE => decs
+                                           | SOME (exn', scheme) =>
+                                                let
+                                                   val _ = Env.extendExn (E, exn, exn', scheme)
+                                                in
+                                                   decs
+                                                end)
                                     | EbRhs.Gen arg =>
                                          let
                                             val exn' = Con.fromAst exn
@@ -2079,14 +2074,12 @@ fun elaborateDec (d, {env = E, nest}) =
                                                          Type.arrow (t, Type.exn))
                                                      end
                                             val scheme = Scheme.fromType ty
+                                            val _ = Env.extendExn (E, exn, exn', scheme)
                                          in
-                                            (Decs.add (decs,
-                                                       Cdec.Exception {arg = arg,
-                                                                       con = exn'}),
-                                             exn',
-                                             SOME scheme)
+                                            Decs.add (decs,
+                                                      Cdec.Exception {arg = arg,
+                                                                      con = exn'})
                                          end
-                                val _ = Env.extendExn (E, exn, exn', scheme)
                              in
                                 decs
                              end)
@@ -2486,16 +2479,18 @@ fun elaborateDec (d, {env = E, nest}) =
                                Vector.concatV
                                (Vector.map
                                 (xs, fn x =>
-                                 case Env.lookupLongvid (E, x)
-                                  of (Vid.Var v, t) => Vector.new1 (Longvid.region x, (v, t))
-                                   | (Vid.Overload (_, vs), _) =>
-                                     Vector.map (vs, fn vt => (Longvid.region x, vt))
-                                   | _ =>
-                                     (Control.error
-                                      (Longvid.region x,
-                                       str "cannot overload",
-                                       seq [str "constructor: ", Longvid.layout x])
-                                      ; Vector.new0 ())))
+                                 case Env.lookupLongvid (E, x) of
+                                    NONE => Vector.new0 ()
+                                  | SOME (Vid.Var v, t) =>
+                                       Vector.new1 (Longvid.region x, (v, t))
+                                  | SOME (Vid.Overload (_, vs), _) =>
+                                       Vector.map (vs, fn vt => (Longvid.region x, vt))
+                                  | _ =>
+                                       (Control.error
+                                        (Longvid.region x,
+                                         str "cannot overload",
+                                         seq [str "constructor: ", Longvid.layout x])
+                                        ; Vector.new0 ())))
                             val s =
                                Scheme.make {canGeneralize = false,
                                             tyvars = tyvars,
@@ -2503,8 +2498,7 @@ fun elaborateDec (d, {env = E, nest}) =
                             val _ =
                                Vector.foreach
                                (ovlds,
-                                fn (_, (_, NONE)) => ()
-                                 | (r, (_, SOME s')) => let
+                                fn (r, (_, s')) => let
                                       val is = Scheme.instantiate s
                                       val is' = Scheme.instantiate s'
                                    in
@@ -3457,13 +3451,12 @@ fun elaborateDec (d, {env = E, nest}) =
                    end
               | Aexp.Var {name = id, ...} =>
                    let
-                      val (vid, scheme) = Env.lookupLongvid (E, id)
                       fun dontCare () =
                          Cexp.var (Var.newNoname (), Type.new ())
                    in
-                      case scheme of
+                      case Env.lookupLongvid (E, id) of
                          NONE => dontCare ()
-                       | SOME scheme =>
+                       | SOME (vid, scheme) =>
                             let
                                val {args, instance} = Scheme.instantiate scheme
                                fun con c = Cexp.Con (c, args ())
@@ -3479,16 +3472,14 @@ fun elaborateDec (d, {env = E, nest}) =
                                                case Vector.peekMap
                                                     (yts,
                                                      fn (x, s) =>
-                                                     case s of
-                                                        NONE => NONE
-                                                      | SOME s => let
-                                                           val is = Scheme.instantiate s
-                                                        in
-                                                           if Type.canUnify
-                                                              (instance, #instance is)
-                                                              then SOME (x, SOME is)
+                                                     let
+                                                        val is = Scheme.instantiate s
+                                                     in
+                                                        if Type.canUnify
+                                                           (instance, #instance is)
+                                                           then SOME (x, SOME is)
                                                            else NONE
-                                                        end) of
+                                                     end) of
                                                   NONE =>
                                                      let
                                                         val _ =

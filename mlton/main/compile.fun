@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -270,7 +270,7 @@ local
                                {forceUsed = false, isRebind = false})
                val scheme = Scheme.fromType Type.exn
                val _ = List.foreach (primitiveExcons, fn c =>
-                                     extendExn (E, Con.toAst c, c, SOME scheme))
+                                     extendExn (E, Con.toAst c, c, scheme))
             in
                ()
             end
