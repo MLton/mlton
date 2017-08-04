@@ -396,9 +396,10 @@ in
                             fn (f, b, (l, _)) =>
                             let
                                val f = Field.layout f
-                               val f = if b then bracket f else f
+                               val row = seq [f, str ": ", l]
+                               val row = if b then bracket row else row
                             in
-                               seq [f, str ": ", l]
+                               row
                             end),
                            ",")),
                          str (if flexible
@@ -1039,7 +1040,6 @@ structure Type =
                          preError: unit -> unit}): UnifyResult.t =
          let
             val dontCare' = fn _ => dontCare
-            val layoutRecord = fn z => layoutRecord (z, true)
             fun unify arg =
                traceUnify
                (fn (outer as T s, outer' as T s') =>
@@ -1359,7 +1359,8 @@ structure Type =
                            fun doit ac =
                               layoutRecord (List.fold
                                             (both, ac, fn ((f, t), ac) =>
-                                             (f, false, layoutPretty t) :: ac))
+                                             (f, false, layoutPretty t) :: ac),
+                                            true)
                         in
                            no (doit ac, doit ac')
                         end
