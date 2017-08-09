@@ -1065,11 +1065,13 @@ structure Type =
                                             Field.equals (f, f'))
                                then ac
                             else f :: ac)),
-                          fn f => Spine.ensureField (spine, f))
+                          fn f => Spine.ensureField (spine, f),
+                          Spine.canAddFields spine)
                       fun rigidToRecord r =
                          (Srecord.toVector r,
                           Vector.new0 (),
-                          fn f => isSome (Srecord.peek (r, f)))
+                          fn f => isSome (Srecord.peek (r, f)),
+                          false)
                       fun oneFlex ({fields, spine}, time, r, outer, swap) =
                          unifyRecords
                          (flexToRecord (fields, spine),
@@ -1311,59 +1313,54 @@ structure Type =
                    end) arg
             and unifyRecords ((fields: (Field.t * t) vector,
                                extra: Field.t vector,
-                               ensureField: Field.t -> bool),
+                               ensureField: Field.t -> bool,
+                               dots: bool),
                               (fields': (Field.t * t) vector,
                                extra': Field.t vector,
-                               ensureField': Field.t -> bool),
+                               ensureField': Field.t -> bool,
+                               dots': bool),
                               yes, no) =
                let
-                  fun extras (extra, ensureField') =
+                  fun extras (extra, ensureField', dots, dots') =
                      Vector.fold
-                     (extra, [], fn (f, ac) =>
+                     (extra, ([], dots, dots'), fn (f, (ac, dots, dots')) =>
                       if ensureField' f
-                         then ac
-                      else (preError (); (f, true, dontCare) :: ac))
-                  val ac = extras (extra, ensureField')
-                  val ac' = extras (extra', ensureField)
-                  fun subset (fields, fields', ensureField', ac, ac',
-                              both, skipBoth) =
+                         then (ac, true, true)
+                      else (preError (); ((f, true, dontCare) :: ac, dots, dots')))
+                  val (ac, dots, dots') = extras (extra, ensureField', dots, dots')
+                  val (ac', dots', dots) = extras (extra', ensureField, dots', dots)
+                  fun subset (fields, fields', ensureField',
+                              ac, dots, ac', dots',
+                              skipBoth) =
                      Vector.fold
-                     (fields, (ac, ac', both), fn ((f, t), (ac, ac', both)) =>
+                     (fields, (ac, dots, ac', dots'),
+                      fn ((f, t), (ac, dots, ac', dots')) =>
                       case Vector.peek (fields', fn (f', _) =>
                                         Field.equals (f, f')) of
                          NONE =>
                             if ensureField' f
-                               then (ac, ac', both)
+                               then (ac, true, ac', true)
                             else (preError ()
-                                  ; ((f, true, dontCare' t) :: ac, ac', both))
+                                  ; ((f, true, dontCare' t) :: ac, dots, ac', dots'))
                        | SOME (_, t') =>
                             if skipBoth
-                               then (ac, ac', both)
+                               then (ac, dots, ac', dots')
                             else
                                case unify (t, t') of
                                   NotUnifiable (l, l') =>
-                                     ((f, false, l) :: ac,
-                                      (f, false, l') :: ac',
-                                      both)
-                                | Unified => (ac, ac', []))
-                  val (ac, ac', both) =
-                     subset (fields, fields', ensureField', ac, ac', [], false)
-                  val (ac', ac, both) =
-                     subset (fields', fields, ensureField, ac', ac, both, true)
+                                     ((f, false, l) :: ac, dots,
+                                      (f, false, l') :: ac', dots')
+                                | Unified => (ac, true, ac', true))
+                  val (ac, dots, ac', dots') =
+                     subset (fields, fields', ensureField',
+                             ac, dots, ac', dots', false)
+                  val (ac', dots', ac, dots) =
+                     subset (fields', fields, ensureField,
+                             ac', dots', ac, dots, true)
                in
                   case (ac, ac') of
                      ([], []) => yes ()
-                   | _ =>
-                        let
-                           val _ = preError ()
-                           fun doit ac =
-                              layoutRecord (List.fold
-                                            (both, ac, fn ((f, t), ac) =>
-                                             (f, false, layoutPretty t) :: ac),
-                                            true)
-                        in
-                           no (doit ac, doit ac')
-                        end
+                   | _ => no (layoutRecord (ac, dots), layoutRecord (ac', dots'))
                end
          in
             unify (t, t')
