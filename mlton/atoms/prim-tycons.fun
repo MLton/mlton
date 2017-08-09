@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -204,14 +205,14 @@ fun layoutAppPretty (c: t,
          let
             val ({isChar}, lay) =
                case Vector.length args of
-                  0 => ({isChar = equals (c, defaultChar ())}, layout c)
+                  0 => ({isChar = equals (c, defaultChar ())}, layoutPretty c)
                 | 1 => ({isChar = false},
                         seq [maybe Tyseq1 (Vector.first args),
-                             str " ", layout c])
+                             str " ", layoutPretty c])
                 | _ => ({isChar = false},
                         seq [Layout.tuple
                              (Vector.toListMap (args, maybe TyseqN)),
-                             str " ", layout c])
+                             str " ", layoutPretty c])
          in
             (lay, ({isChar = isChar}, Unit))
          end
