@@ -3494,10 +3494,10 @@ structure InterfaceEnv =
       type t = t
 
       fun extend (T {currentScope, interface, ...},
-                  domain, range, kind: string, ns, region): unit =
+                  domain, range, kind: string, ns, errorRegion): unit =
          let
             val scope = !currentScope
-            val NameSpace.T {current, lookup, toSymbol, ...} = ns interface
+            val NameSpace.T {current, lookup, region, toSymbol, ...} = ns interface
             fun value () = {domain = domain,
                             range = range,
                             scope = scope,
@@ -3509,19 +3509,27 @@ structure InterfaceEnv =
          in
             case !r of
                [] => new ()
-             | {scope = scope', ...} :: l =>
+             | {domain = domain', scope = scope', ...} :: l =>
                   if Scope.equals (scope, scope')
                      then if !allowDuplicates
                              then r := value () :: l
                           else
-                             Control.error
-                             (region,
-                              Layout.str
-                              (concat ["duplicate ",
-                                       kind,
-                                       " specification: ",
-                                       Symbol.toString (toSymbol domain)]),
-                              Layout.empty)
+                             let
+                                open Layout
+                             in
+                                Control.error
+                                (errorRegion,
+                                 seq [str "duplicate ",
+                                      str kind,
+                                      str " specification: ",
+                                      Symbol.layout (toSymbol domain)],
+                                 (align o List.map)
+                                 (if Region.equals (errorRegion, region domain)
+                                     then [domain']
+                                     else [domain', domain],
+                                  fn d => seq [str "spec at: ",
+                                               Region.layout (region d)]))
+                             end
                   else new ()
          end
 
