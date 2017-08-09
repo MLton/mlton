@@ -15,6 +15,11 @@ open S
 structure Id = Id (val noname = "t")
 open Id
 
+val {get = layoutPretty: t -> Layout.t,
+     set = setLayoutPretty: t * Layout.t -> unit, ...} =
+   Property.getSet
+   (plist, Property.initFun layout)
+
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
                           structure CharSize = CharSize
                           structure IntSize = IntSize
@@ -22,12 +27,8 @@ structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
                           structure RealSize = RealSize
                           structure WordSize = WordSize
                           open Id
-                          val layoutPretty = layout)
+                          val layoutPretty = layoutPretty)
 open P
-
-val setPrintName =
-   Trace.trace2 ("Tycon.setPrintName", layout, String.layout, Unit.layout)
-   setPrintName
 
 fun stats () =
    let

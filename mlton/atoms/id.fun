@@ -49,7 +49,6 @@ in
    val hash = make #hash
    val originalName = make #originalName
    val plist = make #plist
-   val printName = make #printName
 end
 
 fun isAlphaNum (s: string): bool =
@@ -59,8 +58,6 @@ fun clearPrintName (T {originalName, printName, ...}): unit =
    if isAlphaNum originalName
       then ()
    else printName := NONE
-
-fun setPrintName (x, s) = printName x := SOME s
 
 val printNameAlphaNumeric: bool ref = ref false
 

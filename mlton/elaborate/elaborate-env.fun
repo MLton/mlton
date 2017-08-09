@@ -1372,7 +1372,7 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
                            Pretty.longid (List.map (strids, Strid.layout),
                                           Ast.Tycon.layout name)
                      in
-                        Tycon.setPrintName (c, Layout.toString name)
+                        Tycon.setLayoutPretty (c, name)
                      end
                end
       val {get = strShortest: Structure.t -> int option ref, ...} =
@@ -1414,7 +1414,7 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
              if isSome (! (shortest c))
                 then ()
              else
-                Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
+                Tycon.setLayoutPretty (c, Layout.str (concat ["?.", Tycon.originalName c])))
    in
       ()
    end
@@ -2485,7 +2485,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     (openStructure (E, S)
                      ; setTyconNames E))
            ; List.foreach (!dummyTycons, fn c =>
-                           Tycon.setPrintName (c, Tycon.originalName c))))
+                           Tycon.setLayoutPretty (c, Layout.str (Tycon.originalName c)))))
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
                ifcArray: ('name * 'ifcRange) array,
