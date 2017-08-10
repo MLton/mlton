@@ -96,14 +96,6 @@ structure Tycon =
       val admitsEquality = TypeEnv.tyconAdmitsEquality
    end
 
-structure Scheme =
-   struct
-      open Scheme
-
-      fun explainDoesNotAdmitEquality (s: t): Layout.t =
-         Type.explainDoesNotAdmitEquality (#instance (instantiate s))
-   end
-
 val insideFunctor = ref false
 
 fun amInsideFunctor () = !insideFunctor
@@ -335,7 +327,7 @@ structure TypeStr =
                         else AdmitsEquality.Never
           | Tycon c =>  ! (Tycon.admitsEquality c)
 
-      fun explainDoesNotAdmitEquality (s: t): Layout.t =
+      fun explainDoesNotAdmitEquality (s: t, tyconScheme): Layout.t =
          case node s of
             Datatype {cons, ...} =>
                let
@@ -359,8 +351,10 @@ structure TypeStr =
                in
                   Layout.alignPrefix (cons, "| ")
                end
-          | Scheme s => Scheme.explainDoesNotAdmitEquality s
-          | Tycon c => bracket (Tycon.layout c)
+          | Scheme s =>
+               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s))
+          | Tycon c =>
+               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate (tyconScheme c)))
 
       fun abs t =
          case node t of
@@ -2831,7 +2825,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                          then ()
                                          else (preError ()
                                                ; error (SOME "admits equality",
-                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
+                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
+                                                                             (strStr, fn strTycon =>
+                                                                              tyconScheme (strTycon, strArity)))),
                                                         sigMsg (true, NONE)))
                                 in
                                    rlzStr
