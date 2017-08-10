@@ -3171,8 +3171,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
              fun dummy () =
                 let
                    val dummyName =
-                      toStringLongRev
-                      (strids, seq [str "_", Ast.Tycon.layout name])
+                      "_sig." ^
+                      (toStringLongRev
+                       (strids, Ast.Tycon.layout name))
                    val dummyTycon =
                       newTycon (dummyName, k, a, Ast.Tycon.region name)
                 in
