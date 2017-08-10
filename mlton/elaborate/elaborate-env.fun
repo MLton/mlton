@@ -43,6 +43,23 @@ in
    structure Symbol = Symbol
 end
 
+fun layoutLong (ids: Layout.t list) =
+   let
+      open Layout
+   in
+      seq (separate (ids, "."))
+   end
+
+fun layoutStrids (ss: Strid.t list): Layout.t =
+   layoutLong (List.map (ss, Strid.layout))
+
+fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
+   (seq o List.fold)
+   (ss, [id], fn (s, ls) =>
+    Strid.layout s :: str "." :: ls)
+fun toStringLongRev (ss: Strid.t list, id: Layout.t) =
+   Layout.toString (layoutLongRev (ss, id))
+
 local
    open CoreML
 in
@@ -1784,23 +1801,6 @@ fun peekExn (T {vals, ...}, c: Ast.Con.t): (Con.t * Scheme.t) option =
                         {markUse = fn (vid, _) => isSome (Vid.deExn vid)}) of
       NONE => NONE
     | SOME (vid, s) => Option.map (Vid.deExn vid, fn c => (c, s))
-
-fun layoutLong (ids: Layout.t list) =
-   let
-      open Layout
-   in
-      seq (separate (ids, "."))
-   end
-
-fun layoutStrids (ss: Strid.t list): Layout.t =
-   layoutLong (List.map (ss, Strid.layout))
-
-fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
-   (seq o List.fold)
-   (ss, [id], fn (s, ls) =>
-    Strid.layout s :: str "." :: ls)
-fun toStringLongRev (ss: Strid.t list, id: Layout.t) =
-   Layout.toString (layoutLongRev (ss, id))
 
 structure PeekResult =
    struct
