@@ -1368,6 +1368,7 @@ fun collect (E,
 
 fun setTyconNames (E as T {currentScope, ...}): unit =
    let
+      val () = Tycon.resetLayoutPretty ()
       val {get = shortest: Tycon.t -> int option ref, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => ref NONE))
       fun doType (typeStr: TypeStr.t,
