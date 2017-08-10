@@ -1320,9 +1320,7 @@ in
 end
 
 fun collect (E,
-             keep: {hasUse: bool, scope: Scope.t} -> bool,
-             le: {domain: Symbol.t, time: Time.t}
-                 * {domain: Symbol.t, time: Time.t} -> bool) =
+             keep: {hasUse: bool, scope: Scope.t} -> bool) =
    let
       val bass = ref []
       val fcts = ref []
@@ -1345,17 +1343,19 @@ fun collect (E,
                                    strs = doit strs,
                                    types = doit types,
                                    vals = doit vals})
-      fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) () =
+      fun ('a, 'b) finish (r: ('a, 'b) Values.value list ref, toSymbol: 'a -> Symbol.t) () =
          let
-            val a = Array.fromList (!r)
+            val a =
+               Array.fromListMap
+               (!r, fn {domain, range, time, uses, ...} =>
+                {domain = domain, range = range,
+                 time = time, uses = uses})
             val () =
                QuickSort.sortArray
-               (a, fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
-                       {domain = d', time = t',...}: ('a, 'b) Values.value) =>
-                le ({domain = toSymbol d, time = t},
-                    {domain = toSymbol d', time = t'}))
+               (a, fn ({domain = d, ...}, {domain = d', ...}) =>
+                Symbol.<= (toSymbol d, toSymbol d'))
          in
-            a
+            Info.T a
          end
    in
       {bass = finish (bass, Basid.toSymbol),
@@ -1414,13 +1414,13 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
        * later declarations will be processed first, and hence will take
        * precedence.
        *)
-      val {strs, types, ...} =
-         collect (E, fn _ => true,
-                  fn ({time = t, ...}, {time = t', ...}) => Time.>= (t, t'))
-      val _ = Array.foreach (types (), fn {domain = name, range = typeStr, ...} =>
-                             doType (typeStr, name, 0, []))
-      val _ = Array.foreach (strs (), fn {domain = strid, range = str, ...} =>
-                             loopStr (str, 1, [strid]))
+      val {strs, types, ...} = collect (E, fn _ => true)
+      val _ = loopStr (Structure.T {interface = NONE,
+                                    plist = PropertyList.new (),
+                                    strs = strs (),
+                                    types = types (),
+                                    vals = Info.T (Array.new0 ())},
+                       0, [])
       val _ =
          if Scope.isTop (!currentScope)
             then ()
@@ -1528,16 +1528,13 @@ val dummyStructure =
 fun layout' (E: t, keep, showUsed): Layout.t =
    let
       val _ = setTyconNames E
-      val {bass, fcts, sigs, strs, types, vals} =
-         collect (E, keep,
-                  fn ({domain = d, ...}, {domain = d', ...}) =>
-                  Symbol.<= (d, d'))
-      val bass = bass ()
-      val fcts = fcts ()
-      val sigs = sigs ()
-      val strs = strs ()
-      val types = types ()
-      val vals = vals ()
+      val {bass, fcts, sigs, strs, types, vals} = collect (E, keep)
+      val Info.T bass = bass ()
+      val Info.T fcts = fcts ()
+      val Info.T sigs = sigs ()
+      val Info.T strs = strs ()
+      val Info.T types = types ()
+      val Info.T vals = vals ()
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
       val {get = interfaceSigid: Interface.t -> Sigid.t option,
@@ -2478,13 +2475,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
          Promise.lazy
          (fn () =>
           (let
-              val {sigs, ...} =
-                 collect (E, fn _ => true,
-                          fn ({time = t, ...}, {time = t', ...}) =>
-                          Time.>= (t, t'))
+              val {sigs, ...} = collect (E, fn _ => true)
+              val Info.T sigs = sigs ()
            in
-              Array.foreach (sigs (), fn {domain = s, range = I, ...} =>
-                             setInterfaceSigid (I, SOME s))
+              Array.foreach
+              (sigs, fn {domain = s, range = I, ...} =>
+               setInterfaceSigid (I, SOME s))
            end
            ; scope (E, fn () =>
                     (openStructure (E, S)
