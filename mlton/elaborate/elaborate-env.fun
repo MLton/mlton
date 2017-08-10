@@ -1385,9 +1385,7 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
                   else
                      let
                         val _ = r := SOME length
-                        val name =
-                           Pretty.longid (List.map (strids, Strid.layout),
-                                          Ast.Tycon.layout name)
+                        val name = layoutLongRev (strids, Ast.Tycon.layout name)
                      in
                         Tycon.setLayoutPretty (c, name)
                      end
@@ -1409,7 +1407,7 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
                 ; Info.foreach (types, fn (name, typeStr) =>
                                 doType (typeStr, name, length, strids))
                 ; Info.foreach (strs, fn (strid, str) =>
-                                loopStr (str, 1 + length, strids @ [strid])))
+                                loopStr (str, 1 + length, strid::strids)))
          end
       (* Sort the declarations in decreasing order of definition time so that
        * later declarations will be processed first, and hence will take
