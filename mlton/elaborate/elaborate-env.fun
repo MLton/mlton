@@ -613,13 +613,24 @@ structure Info =
       fun foreach (T a, f) =
          Array.foreach (a, fn {domain, range, ...} => f (domain, range))
 
+      fun foreachByTime (T a, f) =
+         let
+            val a = Array.copy a
+            val _ =
+               QuickSort.sortArray
+               (a, fn ({time = t, ...}, {time = t', ...}) =>
+                Time.>= (t, t'))
+         in
+            foreach (T a, f)
+         end
+
       fun peek (T a, domain: 'a, toSymbol: 'a -> Symbol.t) =
          Option.map
          (BinarySearch.search (a, fn {domain = d, ...} =>
                                Symbol.compare (toSymbol domain, toSymbol d)),
           fn i =>
           let
-             val v as {uses, ...} =  Array.sub (a, i)
+             val v as {uses, ...} = Array.sub (a, i)
              val _ = Uses.add (uses, domain)
           in
              v
@@ -1404,16 +1415,18 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
             if isSome (!r) andalso length >= valOf (!r)
                then ()
             else
+               (* Process the declarations in decreasing order of
+                * definition time so that later declarations will be
+                * processed first, and hence will take precedence.
+                *)
                (r := SOME length
-                ; Info.foreach (types, fn (name, typeStr) =>
-                                doType (typeStr, name, length, strids))
-                ; Info.foreach (strs, fn (strid, str) =>
-                                loopStr (str, 1 + length, strid::strids)))
+                ; Info.foreachByTime
+                  (types, fn (name, typeStr) =>
+                   doType (typeStr, name, length, strids))
+                ; Info.foreachByTime
+                  (strs, fn (strid, str) =>
+                   loopStr (str, 1 + length, strid::strids)))
          end
-      (* Sort the declarations in decreasing order of definition time so that
-       * later declarations will be processed first, and hence will take
-       * precedence.
-       *)
       val {strs, types, ...} = collect (E, fn _ => true)
       val _ = loopStr (Structure.T {interface = NONE,
                                     plist = PropertyList.new (),
@@ -2476,10 +2489,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
          (fn () =>
           (let
               val {sigs, ...} = collect (E, fn _ => true)
-              val Info.T sigs = sigs ()
            in
-              Array.foreach
-              (sigs, fn {domain = s, range = I, ...} =>
+              Info.foreachByTime
+              (sigs (), fn (s, I) =>
                setInterfaceSigid (I, SOME s))
            end
            ; scope (E, fn () =>
