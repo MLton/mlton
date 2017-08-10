@@ -1345,7 +1345,7 @@ fun collect (E,
                                    strs = doit strs,
                                    types = doit types,
                                    vals = doit vals})
-      fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) =
+      fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) () =
          let
             val a = Array.fromList (!r)
             val () =
@@ -1417,9 +1417,9 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
       val {strs, types, ...} =
          collect (E, fn _ => true,
                   fn ({time = t, ...}, {time = t', ...}) => Time.>= (t, t'))
-      val _ = Array.foreach (types, fn {domain = name, range = typeStr, ...} =>
+      val _ = Array.foreach (types (), fn {domain = name, range = typeStr, ...} =>
                              doType (typeStr, name, 0, []))
-      val _ = Array.foreach (strs, fn {domain = strid, range = str, ...} =>
+      val _ = Array.foreach (strs (), fn {domain = strid, range = str, ...} =>
                              loopStr (str, 1, [strid]))
       val _ =
          if Scope.isTop (!currentScope)
@@ -1532,6 +1532,12 @@ fun layout' (E: t, keep, showUsed): Layout.t =
          collect (E, keep,
                   fn ({domain = d, ...}, {domain = d', ...}) =>
                   Symbol.<= (d, d'))
+      val bass = bass ()
+      val fcts = fcts ()
+      val sigs = sigs ()
+      val strs = strs ()
+      val types = types ()
+      val vals = vals ()
       open Layout
       fun doit (a, layout) = align (Array.toListMap (a, layout))
       val {get = interfaceSigid: Interface.t -> Sigid.t option,
@@ -2477,7 +2483,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                           fn ({time = t, ...}, {time = t', ...}) =>
                           Time.>= (t, t'))
            in
-              Array.foreach (sigs, fn {domain = s, range = I, ...} =>
+              Array.foreach (sigs (), fn {domain = s, range = I, ...} =>
                              setInterfaceSigid (I, SOME s))
            end
            ; scope (E, fn () =>
