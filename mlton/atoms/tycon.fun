@@ -15,10 +15,11 @@ open S
 structure Id = Id (val noname = "t")
 open Id
 
-val {get = layoutPretty: t -> Layout.t,
-     set = setLayoutPretty: t * Layout.t -> unit, ...} =
-   Property.getSet
-   (plist, Property.initFun layout)
+val {destroy = resetLayoutPretty: unit -> unit,
+     get = layoutPretty: t -> Layout.t,
+     set = setLayoutPretty: t * Layout.t -> unit} =
+   Property.destGetSet
+   (plist, Property.initFun (fn c => Layout.seq [Layout.str "???.", layout c]))
 
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
                           structure CharSize = CharSize
