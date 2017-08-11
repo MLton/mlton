@@ -50,10 +50,10 @@ information.
 
 == Error messages ==
 
-MLton's error messages are not in the format that the Emacs
-`next-error` parser natively understands.  There are a couple of ways
-to fix this.  The easiest way is to add the following to your `.emacs`
-to teach Emacs to recognize MLton's error messages.
+MLton's error messages are not among those that the Emacs `next-error`
+parser natively understands.  The easiest way to fix this is to add
+the following to your `.emacs` to teach Emacs to recognize MLton's
+error messages.
 
 [source,cl]
 ----
@@ -61,13 +61,6 @@ to teach Emacs to recognize MLton's error messages.
 (add-to-list 'compilation-error-regexp-alist 'mlton)
 (add-to-list 'compilation-error-regexp-alist-alist
              '(mlton
-               "^\\(?:\\(Error\\)\\|\\(Warning\\)\\): \\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\(?:-\\([0-9]+\\)\\.\\([0-9]+\\)\\)?\\.$"
-               3 (4 . 6) (5 . 7) (2 . nil)))
-----
-
-Alternatively, you could use a `sed` script to rewrite MLton's errors.
-Here is one such script:
-
-----
-sed -e 's/^\(Error\|Warning\): \(.*\) \([0-9][0-9]*\)\.\([0-9][0-9]*\).*\.$/\2:\3:\4:\1/'
+               "^[[:space:]]*\\(\\(?:\\(Error: \\)\\|\\(Warning: \\)\\|\\(\\(?:defn\\|spec\\) at:[[:space:]]+\\)\\)\\(.+\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\(?:-\\([0-9]+\\)\\.\\([0-9]+\\)\\)?\\.?\\)$"
+               5 (6 . 8) (7 . 9) (3 . 4) 1))
 ----
