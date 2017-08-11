@@ -845,7 +845,7 @@ structure Structure =
                      val args =
                         case Vector.length tyvars of
                            0 => empty
-                         | 1 => lay (Vector.sub (tyvars, 0))
+                         | 1 => lay (Vector.first tyvars)
                          | _ => tuple (Vector.toListMap (tyvars, lay))
                      val args =
                         if isEmpty args
@@ -2719,7 +2719,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                    val tyvars =
                                       case Vector.length tyvars of
                                          0 => empty
-                                       | 1 => lay (Vector.sub (tyvars, 0))
+                                       | 1 => lay (Vector.first tyvars)
                                        | _ => tuple (Vector.toListMap (tyvars, lay))
                                    val kw =
                                       case Interface.TypeStr.admitsEquality sigStr of
@@ -2820,8 +2820,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 val tyvars =
                                    case Vector.length tyvars of
                                       0 => empty
-                                    | 1 => lay (Vector.sub (tyvars, 0))
-                                    | _ => tuple (List.map (Vector.toList tyvars, lay))
+                                    | 1 => lay (Vector.first tyvars)
+                                    | _ => tuple (Vector.toListMap (tyvars, lay))
                                 val tyvars =
                                    if strArity = sigArity
                                       then tyvars
