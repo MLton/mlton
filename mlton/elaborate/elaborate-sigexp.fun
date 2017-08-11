@@ -336,7 +336,7 @@ val info' = Trace.info "ElaborateSigexp.elaborateSpec"
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
    let
-      val _ = Interface.renameTycons := (fn () => StructureEnv.setTyconLayoutPretty (E, {prefixUnset = true}))
+      val preError = Promise.lazy (fn () => StructureEnv.setTyconLayoutPretty (E, {prefixUnset = true}))
       val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
          traceElaborateSigexp
@@ -369,11 +369,12 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                   fn s =>
                                   TypeStr.wheree
                                   (s,
-                                   WhereEquation.region eqn,
-                                   fn () => Longtycon.layout longtycon,
-                                   time,
                                    TypeStr.def (elaborateScheme (tyvars, ty, E),
-                                                Kind.Arity (Vector.length tyvars)))))
+                                                Kind.Arity (Vector.length tyvars)),
+                                   time,
+                                   preError,
+                                   WhereEquation.region eqn,
+                                   fn () => Longtycon.layout longtycon)))
                     in
                        I
                     end)
@@ -460,8 +461,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                          (Is, fn (s', I') =>
                                           Interface.share
                                           (I, s, I', s',
-                                           SharingEquation.region eqn,
-                                           time))
+                                           time,
+                                           preError,
+                                           SharingEquation.region eqn))
                              in
                                 loop (List.fold
                                       (ss, [], fn (s, ac) =>
@@ -486,8 +488,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                            TypeStr.share
                                            (doit (c, s),
                                             doit (c', s'),
-                                            SharingEquation.region eqn,
-                                            time)
+                                            time,
+                                            preError,
+                                            SharingEquation.region eqn)
                                      in
                                         SOME (c', s')
                                      end)))

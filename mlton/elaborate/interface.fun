@@ -670,8 +670,6 @@ structure Scheme =
       val copy = copyScheme
    end
 
-val renameTycons = ref (fn () => ())
-
 structure TypeStr =
    struct
       open TypeStr
@@ -680,7 +678,7 @@ structure TypeStr =
 
       val copy = copyTypeStr
 
-      fun getFlex (s: t, time, oper, reg, lay): FlexibleTycon.t option =
+      fun getFlex (s: t, time, preError: unit -> unit, reg, oper, lay): FlexibleTycon.t option =
          let
             fun error what =
                let
@@ -718,51 +716,53 @@ structure TypeStr =
                               else SOME c
                      end
                 | Tycon.Rigid (c, _) =>
-                     (! renameTycons ()
+                     (preError ()
                       ; error (concat ["already defined as ",
                                        Layout.toString (Etycon.layout c)]))
          in
             loop s
          end
 
-      fun share ((s: t, reg, lay), (s': t, reg', lay'),
-                 sharingSpec: Region.t, time: Time.t): unit =
+      fun share ((s1: t, reg1, lay1), (s2: t, reg2, lay2),
+                 time: Time.t,
+                 preError: unit -> unit,
+                 sharingSpec: Region.t): unit =
          let
             val oper = "shared"
-            val k = kind s
-            val k' = kind s'
+            val k1 = kind s1
+            val k2 = kind s2
          in
-            if not (Kind.equals (k, k'))
+            if not (Kind.equals (k1, k2))
                then
                   let
                      open Layout
                   in
                      Control.error
-                     (reg,
-                      seq [str "type ", lay (),
-                           str " has arity ", Kind.layout k,
-                           str " and type ", lay' (),
-                           str " has arity ", Kind.layout k',
+                     (sharingSpec,
+                      seq [str "type ", lay1 (),
+                           str " has arity ", Kind.layout k1,
+                           str " and type ", lay2 (),
+                           str " has arity ", Kind.layout k2,
                            str " and cannot be shared"],
                       empty)
                   end
             else
-               case (getFlex (s, time, oper, reg, lay),
-                     getFlex (s', time, oper, reg', lay')) of
-                  (SOME f, SOME f') => FlexibleTycon.share (f, f', sharingSpec)
+               case (getFlex (s1, time, preError, reg1, oper, lay1),
+                     getFlex (s2, time, preError, reg2, oper, lay2)) of
+                  (SOME f1, SOME f2) => FlexibleTycon.share (f1, f2, sharingSpec)
                 | _ => ()
          end
 
       val share =
          Trace.trace
          ("Interface.TypeStr.share",
-          fn ((s, _, _), (s', _, _), _, t) =>
+          fn ((s, _, _), (s', _, _), t, _, _) =>
           Layout.tuple [layout s, layout s', Time.layout t],
           Unit.layout)
          share
 
-      fun wheree (s': t, r: Region.t, lay, time: Time.t, s: t): unit =
-         case getFlex (s', time, "redefined", r, lay) of
+      fun wheree (s': t, s: t, time: Time.t, preError, reg, lay): unit =
+         case getFlex (s', time, preError, reg, "redefined", lay) of
             NONE => ()
           | SOME flex =>
                let
@@ -775,7 +775,7 @@ structure TypeStr =
                            open Layout
                         in
                            Control.error
-                           (r,
+                           (reg,
                             seq [str "type ", lay (),
                                  str " has arity ", Kind.layout k',
                                  str " and cannot be defined to have arity ",
@@ -789,7 +789,7 @@ structure TypeStr =
                                 open Layout
                              in
                                 Control.error
-                                (r,
+                                (reg,
                                  seq [str "eqtype ", lay (),
                                       str " cannot be defined as a non-equality type"],
                                  empty)
@@ -810,22 +810,21 @@ structure TypeStr =
                                       open Layout
                                    in
                                       Control.error
-                                      (r,
+                                      (reg,
                                        seq [str "type ", lay (),
                                             str " is a datatype and cannot be redefined as a complex type"],
                                        empty)
                                    end
                              else
-                                (List.push (specs, r)
+                                (List.push (specs, reg)
                                  ; defn := Defn.typeStr s)
                           end
                end
 
       val wheree =
          Trace.trace ("Interface.TypeStr.wheree",
-                      fn (s, _, _, t, s') => Layout.tuple [layout s,
-                                                           Time.layout t,
-                                                           layout s'],
+                      fn (s, s', t, _, _, _) =>
+                      Layout.tuple [layout s, Time.layout t, layout s'],
                       Unit.layout)
          wheree
 
@@ -1029,7 +1028,7 @@ fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
              ; NONE)
    end
 
-fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): unit =
+fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, preError, sharingSpec): unit =
    let
       fun lay (s, ls, strids, name) =
          (s, Longstrid.region ls,
@@ -1066,7 +1065,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): u
                             let
                                val (_, r, lay) = lay (s, ls, strids, name)
                                val _ =
-                                  TypeStr.getFlex (s, time, "shared", r, lay)
+                                  TypeStr.getFlex (s, time, preError, r, "shared", lay)
                             in
                                ()
                             end)
@@ -1111,8 +1110,9 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): u
                            (types, types', fn ((name, s), (_, s')) =>
                             TypeStr.share (lay (s, ls, strids, name),
                                            lay (s', ls', strids, name),
-                                           sharingSpec,
-                                           time))
+                                           time,
+                                           preError,
+                                           sharingSpec))
                         val _ =
                            Array.foreach2
                            (strs, strs', fn ((name, I), (_, I')) =>
@@ -1171,8 +1171,9 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): u
                          fn (s, s', name) =>
                          TypeStr.share (lay (s, ls, strids, name),
                                         lay (s', ls', strids, name),
-                                        sharingSpec,
-                                        time))
+                                        time,
+                                        preError,
+                                        sharingSpec))
             in
                ()
             end
@@ -1183,7 +1184,7 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, sharingSpec, time): u
 val share =
    Trace.trace
    ("Interface.share",
-    fn (I, _, I', _, _, t) =>
+    fn (I, _, I', _, t, _, _) =>
     Layout.tuple [layout I, layout I', Time.layout t],
     Unit.layout)
    share
