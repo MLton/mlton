@@ -3368,6 +3368,8 @@ fun functorClosure
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
    let
+      val _ = insideFunctor := true
+      val numErrorsPre = !Control.numErrors
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
@@ -3376,7 +3378,6 @@ fun functorClosure
          TypeEnv.tick {useBeforeDef = fn _ => 
                        Error.bug "ElaborateEnv.functorClosure: tick"}
       val (formal, instantiate) = dummyStructure (argInt, {prefix = prefix})
-      val _ = insideFunctor := true
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need
        * to be recreated for each functor application.
@@ -3386,6 +3387,7 @@ fun functorClosure
       val _ = Option.app (result, Structure.forceUsed)
       val generative = !newTycons
       val _ = newTycons := []
+      val numErrorsPost = !Control.numErrors
       val _ = insideFunctor := false
       val restore =
          if !Control.elaborateOnly
@@ -3397,7 +3399,9 @@ fun functorClosure
                  fn f => snapshot (fn () => withSaved f)
               end
       fun apply (actual, nest) =
-         if not (!insideFunctor) andalso not (!Control.elaborateOnly)
+         if numErrorsPost > numErrorsPre
+            then (Decs.empty, NONE)
+         else if not (!insideFunctor) andalso not (!Control.elaborateOnly)
             then restore (fn () => makeBody (actual, nest))
          else
             let
