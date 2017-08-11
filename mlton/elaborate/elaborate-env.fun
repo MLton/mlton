@@ -648,7 +648,6 @@ structure Info =
               uses = uses}))
    end
 
-val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #tycon))
 val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
 
 val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
@@ -657,7 +656,6 @@ val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
       val c = Tycon.fromString s
       val _ = TypeEnv.initAdmitsEquality (c, a)
       val _ = TypeEnv.tyconRegion c := SOME r
-      val _ = List.push (allTycons, c)
       val _ = List.push (newTycons, (c, k, r))
    in
       c
@@ -3317,15 +3315,6 @@ fun functorClosure
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
    let
-      (* Keep track of the first tycon currently at the front of allTycons.
-       * Once we are done elaborating the body, we can remove all the dummy
-       * tycons created while elaborating the body by removing everything from
-       * allTycons up to firstTycon.
-       *)
-      val firstTycon =
-         case !allTycons of
-            [] => Error.bug "ElaborateEnv.functorClosure: firstTycons"
-          | c :: _ => c
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
@@ -3338,27 +3327,11 @@ fun functorClosure
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need
        * to be recreated for each functor application.
-       * This has two beneficial effects.
-       * 1. It keeps allTycons smaller.
-       * 2. It keeps the names of these tycons from being set by setTyconNames,
-       *    which they always would be because they are now out of scope.
        *)
       val _ = newTycons := []
       val (_, result) = makeBody (formal, nest)
       val _ = Option.app (result, Structure.forceUsed)
       val generative = !newTycons
-      val _ = allTycons := let
-                              fun loop cs =
-                                 case cs of
-                                    [] => Error.bug "ElaborateEnv.functorClosure: missing firstTycon"
-                                  | c :: cs' =>
-                                       if Tycon.equals (c, firstTycon) then
-                                          cs
-                                       else
-                                          loop cs'
-                           in
-                              loop (!allTycons)
-                           end
       val _ = newTycons := []
       val _ = insideFunctor := false
       val restore =
