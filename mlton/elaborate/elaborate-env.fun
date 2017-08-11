@@ -3415,7 +3415,6 @@ fun functorClosure
     makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
    let
       val _ = insideFunctor := true
-      val numErrorsPre = !Control.numErrors
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
@@ -3433,7 +3432,6 @@ fun functorClosure
       val _ = Option.app (result, Structure.forceUsed)
       val generative = !newTycons
       val _ = newTycons := []
-      val numErrorsPost = !Control.numErrors
       val _ = insideFunctor := false
       val restore =
          if !Control.elaborateOnly
@@ -3445,9 +3443,9 @@ fun functorClosure
                  fn f => snapshot (fn () => withSaved f)
               end
       fun apply (actual, nest) =
-         if numErrorsPost > numErrorsPre
-            then (Decs.empty, NONE)
-         else if not (!insideFunctor) andalso not (!Control.elaborateOnly)
+         if not (!insideFunctor)
+            andalso not (!Control.elaborateOnly)
+            andalso !Control.numErrors = 0
             then restore (fn () => makeBody (actual, nest))
          else
             let
