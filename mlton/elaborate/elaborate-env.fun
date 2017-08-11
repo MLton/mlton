@@ -1430,16 +1430,6 @@ fun setTyconNames (E as T {currentScope, ...}): unit =
                                     types = types (),
                                     vals = Info.T (Array.new0 ())},
                        0, [])
-      val _ =
-         if Scope.isTop (!currentScope)
-            then ()
-         else
-            List.foreach
-            (!allTycons, fn c =>
-             if isSome (! (shortest c))
-                then ()
-             else
-                Tycon.setLayoutPretty (c, Layout.str (concat ["?.", Tycon.originalName c])))
    in
       ()
    end
