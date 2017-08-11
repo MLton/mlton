@@ -23,7 +23,7 @@ signature TYCON =
       include PRIM_TYCONS        
       sharing type t = tycon
 
-      val resetLayoutPretty: unit -> unit
+      val resetLayoutPretty: {prefix: string} -> unit
       val setLayoutPretty: t * Layout.t -> unit
       val stats: unit -> Layout.t
    end
