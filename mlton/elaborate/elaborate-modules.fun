@@ -213,23 +213,24 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
       fun elabFunctor {arg, body, name, result}: FunctorClosure.t option =
          let
             val body = Strexp.constrained (body, result)
-            val (arg, argSig, body, prefix) =
+            val (arg, argSig, body) =
                case FctArg.node arg of
                   FctArg.Structure (arg, argSig) =>
-                     (arg, argSig, body, concat [Strid.toString arg, "."])
+                     (arg, argSig, body)
                 | FctArg.Spec spec =>
                      let
                         val strid =
-                           Strid.fromSymbol (Symbol.fromString "ZZZNewStridZZZ",
-                                             Region.bogus)
+                           Strid.fromSymbol
+                           (Symbol.fromString "_arg",
+                            Region.bogus)
                      in
                         (strid,
                          Sigexp.spec spec,
                          Strexp.lett (Strdec.openn (Vector.new1
                                                     (Longstrid.short strid)),
-                                      body),
-                         "")
+                                      body))
                      end
+            val prefix = concat [Strid.toString arg, "."]
          in
             Option.map (elabSigexp argSig, fn argInt =>
                         Env.functorClosure
