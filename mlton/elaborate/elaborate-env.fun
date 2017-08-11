@@ -3259,11 +3259,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
    : Structure.t * Decs.t =
    let
       val (S, decs) = transparentCut (E, S, I, {isFunctor = isFunctor, prefix = prefix}, region)
-      (* Avoid doing the opaque match if numErrors > 0 because it can lead
-       * to internal errors that might be confusing to the user.
-       *)
-      val S = 
-         if opaque andalso 0 = !Control.numErrors
+      val S =
+         if opaque
             then makeOpaque (S, I, {prefix = prefix})
          else S
    in
