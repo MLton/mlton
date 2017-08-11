@@ -828,9 +828,9 @@ structure Structure =
          fun layouts ({showUsed: bool},
                       interfaceSigid: Interface.t -> Sigid.t option) =
             let
-               fun layoutTypeSpec (n, s) =
-                  layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false})
-               and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool}) =
+               fun layoutTypeSpec (n, s, {showEqtype: bool}) =
+                  layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false, showEqtype = showEqtype})
+               and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool, showEqtype: bool}) =
                   let
                      val {destroy, lay} = 
                         Type.makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
@@ -845,20 +845,22 @@ structure Structure =
                      val args =
                         case Vector.length tyvars of
                            0 => empty
-                         | 1 => seq [lay (Vector.sub (tyvars, 0)), str " "]
-                         | _ =>
-                              seq
-                              [paren (seq (separateRight
-                                           (Vector.toList (Vector.map (tyvars, lay)),
-                                            ", "))),
-                               str " "]
-                     val t =
+                         | 1 => lay (Vector.sub (tyvars, 0))
+                         | _ => tuple (Vector.toListMap (tyvars, lay))
+                     val args =
+                        if isEmpty args
+                           then str " "
+                           else seq [str " ", args, str " "]
+                     val kw =
                         if isWhere then
                            "type"
                         else
                            (case TypeStr.node s of
                                TypeStr.Datatype _ => "datatype"
                              | _ =>
+                                  if not showEqtype
+                                     then "type"
+                                  else
                                   let
                                      datatype z = datatype AdmitsEquality.t
                                   in
@@ -867,7 +869,7 @@ structure Structure =
                                       | Never => "type"
                                       | Sometimes => "eqtype"   
                                   end)
-                     val def = seq [str t, str " ", args, name, str " = "]
+                     val def = seq [str kw, args, name, str " = "]
                      val res = 
                         case TypeStr.node s of
                            TypeStr.Datatype {cons, tycon} =>
@@ -914,16 +916,16 @@ structure Structure =
                       | Overload  _ => SOME (simple "val")
                       | Var _ => SOME (simple "val")
                   end
-               fun layoutStrSpec (d: Strid.t, r) =
+               fun layoutStrSpec (d: Strid.t, r, showEqtype) =
                   let
-                     val (l, {messy}) = layoutAbbrev r
+                     val (l, {messy}) = layoutAbbrev (r, showEqtype)
                      val bind = seq [str "structure ", Strid.layout d, str ":"]
                   in
                      if messy
                         then align [bind, indent (l, 3)]
                      else seq [bind, str " ", l]
                   end
-               and layoutStr (T {strs, vals, types, ...}) =
+               and layoutStr (T {strs, vals, types, ...}, showEqtype) =
                   let
                      fun doit (Info.T a, layout) =
                         align (Array.foldr
@@ -934,6 +936,10 @@ structure Structure =
                                    case layout (domain, range) of
                                       NONE => ac
                                     | SOME l => l :: ac))
+                     val layoutTypeSpec = fn (n, r) =>
+                        layoutTypeSpec (n, r, showEqtype)
+                     val layoutStrSpec = fn (n, r) =>
+                        layoutStrSpec (n, r, showEqtype)
                   in
                      align
                      [str "sig",
@@ -943,7 +949,7 @@ structure Structure =
                               3),
                       str "end"]
                   end
-               and layoutAbbrev (S as T {interface, ...}) =
+               and layoutAbbrev (S as T {interface, ...}, showEqtype) =
                   case if showUsed
                           then NONE
                        else (case interface of
@@ -955,7 +961,7 @@ structure Structure =
                                       Option.map (interfaceSigid I, fn s =>
                                                   (s, I))
                                    end) of
-                          NONE => (layoutStr S, {messy = true})
+                          NONE => (layoutStr (S, showEqtype), {messy = true})
                         | SOME (s, I) =>
                              let
                                 val wheres = ref []
@@ -974,7 +980,8 @@ structure Structure =
                                                  (Ast.Longtycon.long (rev nest,
                                                                       name)),
                                                  typeStr,
-                                                 {isWhere = true})]))
+                                                 {isWhere = true,
+                                                  showEqtype = false})]))
                              in
                                 (align (Sigid.layout s :: (rev (!wheres))),
                                  {messy = false})
@@ -989,7 +996,7 @@ structure Structure =
       end
 
       fun layoutPretty S =
-         #layoutStr (layouts ({showUsed = false}, fn _ => NONE)) S
+         #layoutStr (layouts ({showUsed = false}, fn _ => NONE)) (S, {showEqtype = false})
 
       datatype 'a peekResult =
          Found of 'a
@@ -1601,7 +1608,7 @@ fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
                   val (S, _) = dummyStructure (I, {prefix = "?."})
                in
                   align [seq [str "signature ", Sigid.layout sigid, str " = "],
-                         indent (layoutStr S, 3)]
+                         indent (layoutStr (S, {showEqtype = true}), 3)]
                end)
       val fcts =
          doit (fcts,
@@ -1609,18 +1616,18 @@ fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
                    range = FunctorClosure.T {arg, formal, result, ...}, ...} =>
                align [seq [str "functor ", Fctid.layout domain, str " ",
                            paren (seq [Strid.layout arg, str ": ",
-                                       #1 (layoutAbbrev formal)])],
+                                       #1 (layoutAbbrev (formal, {showEqtype = true}))])],
                       case result of
                            NONE => empty
                          | SOME S =>
-                              indent (seq [str ": ", #1 (layoutAbbrev S)], 3)])
+                              indent (seq [str ": ", #1 (layoutAbbrev (S, {showEqtype = true}))], 3)])
       val vals = align (Array.foldr (vals, [], fn ({domain, range, ...}, ac) =>
                                      case valSpec (domain, range) of
                                         NONE => ac
                                       | SOME l => l :: ac))
       val types = doit (types, fn {domain, range, ...} =>
-                        typeSpec (domain, range))
-      val strs = doit (strs, fn {domain, range, ...} => strSpec (domain, range))
+                        typeSpec (domain, range, {showEqtype = false}))
+      val strs = doit (strs, fn {domain, range, ...} => strSpec (domain, range, {showEqtype = false}))
    in
       align [types, vals, strs, fcts, sigs, bass]
    end
@@ -2656,7 +2663,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val () = preError ()
                        val spec =
                           (#strSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
-                          (name, S)
+                          (name, S, {showEqtype = false})
                     in
                        {diag = SOME {spec = SOME spec,
                                      thing = "structure"},
@@ -2680,13 +2687,55 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     nameEquals = Ast.Tycon.equals,
                     nameLayout = Ast.Tycon.layout,
                     nameRegion = Ast.Tycon.region,
-                    notFound = fn (name, (_, rlzStr)) =>
+                    notFound = fn (name, (sigStr, rlzStr)) =>
                     let
                        val rlzStr = Interface.TypeStr.toEnv rlzStr
                        val () = preError ()
-                       val spec =
+                       fun spec () =
                           (#typeSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
-                          (name, rlzStr)
+                          (name, rlzStr, {showEqtype = false})
+                       val flexTycon =
+                          Option.fold
+                          (flexTycons, NONE, fn (flexTycons, _) =>
+                           TyconMap.peekTycon (flexTycons, name))
+                       val spec =
+                          case (flexTycon, Interface.TypeStr.node sigStr) of
+                             (_, Interface.TypeStr.Datatype _) => spec ()
+                           | (NONE, _) => spec ()
+                           | (SOME _, _) =>
+                                let
+                                   open Layout
+                                   val {destroy, lay = layoutPretty} =
+                                      Type.makeLayoutPretty {expandOpaque = false,
+                                                             localTyvarNames = true}
+                                   val lay = #1 o layoutPretty
+                                   val tyvars =
+                                      case TypeStr.kind rlzStr of
+                                         Kind.Arity n =>
+                                            Vector.tabulate
+                                            (n, fn _ =>
+                                             Type.var (Tyvar.newNoname {equality = false}))
+                                       | Kind.Nary => Vector.new0 ()
+                                   val tyvars =
+                                      case Vector.length tyvars of
+                                         0 => empty
+                                       | 1 => lay (Vector.sub (tyvars, 0))
+                                       | _ => tuple (Vector.toListMap (tyvars, lay))
+                                   val kw =
+                                      case Interface.TypeStr.admitsEquality sigStr of
+                                         AdmitsEquality.Always => "eqtype"
+                                       | AdmitsEquality.Never => "type"
+                                       | AdmitsEquality.Sometimes => "eqtype"
+                                   val spec =
+                                      seq [str kw,
+                                           if isEmpty tyvars
+                                              then str " "
+                                              else seq [str " ", tyvars, str " "],
+                                           Ast.Tycon.layout name]
+                                   val _ = destroy ()
+                                in
+                                   spec
+                                end
                     in
                        {diag = SOME {spec = SOME spec,
                                      thing = "type"},
