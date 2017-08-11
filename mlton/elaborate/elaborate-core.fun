@@ -1929,8 +1929,8 @@ fun elaborateDec (d, {env = E, nest}) =
                 in
                    Control.error
                    (region,
-                    seq [str "type escapes the scope of its definition: ", Tycon.layout c],
-                    align [seq [str "definition at: ", str (Region.toString regionTycon)],
+                    seq [str "type escapes the scope of its definition: ", Tycon.layoutPretty c],
+                    align [seq [str "defn at: ", Region.layout regionTycon],
                            ctxt ()])
                 end
              val () = TypeEnv.tick {useBeforeDef = useBeforeDef}
