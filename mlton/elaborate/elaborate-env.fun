@@ -2498,7 +2498,8 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
       S''
    end
 
-fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
+fun transparentCut (E: t, S: Structure.t, I: Interface.t,
+                    {isFunctor: bool, prefix: string},
                     region: Region.t): Structure.t * Decs.t =
    let
       val sigI = I
@@ -3226,7 +3227,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
              fun dummy () =
                 let
                    val dummyName =
-                      toStringLongRev (strids, Ast.Tycon.layout name)
+                      prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
                    val dummyTycon =
                       newTycon (dummyName, k, a, Ast.Tycon.region name)
                 in
@@ -3257,7 +3258,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
          {isFunctor: bool, opaque: bool, prefix: string}, region)
    : Structure.t * Decs.t =
    let
-      val (S, decs) = transparentCut (E, S, I, {isFunctor = isFunctor}, region)
+      val (S, decs) = transparentCut (E, S, I, {isFunctor = isFunctor, prefix = prefix}, region)
       (* Avoid doing the opaque match if numErrors > 0 because it can lead
        * to internal errors that might be confusing to the user.
        *)
