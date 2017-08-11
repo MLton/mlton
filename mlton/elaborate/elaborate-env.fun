@@ -42,6 +42,16 @@ in
    structure Strid = Strid
    structure Symbol = Symbol
 end
+structure Strid =
+   struct
+      open Strid
+      local
+         fun make s = fromSymbol (Symbol.fromString s, Region.bogus)
+      in
+         val uStr = make "_str"
+         val uSig = make "_sig"
+      end
+   end
 
 fun layoutLong (ids: Layout.t list) =
    let
@@ -1369,58 +1379,96 @@ fun collect (E,
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
 
-fun setTyconNames (E as T {currentScope, ...}): unit =
+fun genSetTyconLayoutPretty {prefix} =
    let
-      val () =
-         Tycon.resetLayoutPretty
-         {prefix = if Scope.isTop (!currentScope) then "" else "???."}
-      val {get = shortest: Tycon.t -> int option ref, ...} =
+      val () = Tycon.resetLayoutPretty {prefix = prefix}
+      val {get = tyconShortest: Tycon.t -> (int * int) option ref, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => ref NONE))
       fun doType (typeStr: TypeStr.t,
                   name: Ast.Tycon.t,
+                  priority: int,
                   length: int,
                   strids: Strid.t list): unit =
          case TypeStr.toTyconOpt typeStr of
             NONE => ()
           | SOME c => 
                let
-                  val r = shortest c
-               in
-                  if isSome (!r) andalso length >= valOf (!r)
-                     then ()
-                  else
+                  val r = tyconShortest c
+                  fun doit () =
                      let
-                        val _ = r := SOME length
+                        val _ = r := SOME (priority, length)
                         val name = layoutLongRev (strids, Ast.Tycon.layout name)
                      in
                         Tycon.setLayoutPretty (c, name)
                      end
+               in
+                  case !r of
+                     NONE => doit ()
+                   | SOME (priority', length') =>
+                        if priority >= priority'
+                           orelse length >= length'
+                           then ()
+                           else doit ()
                end
-      val {get = strShortest: Structure.t -> int option ref, ...} =
-         Property.get (Structure.plist,
-                       Property.initFun (fn _ => ref NONE))
+      val {get = strShortest: Structure.t -> (int * int) option ref, ...} =
+         Property.get (Structure.plist, Property.initFun (fn _ => ref NONE))
       fun loopStr (s as Structure.T {strs, types, ...},
+                   priority: int,
                    length: int,
-                   strids: Strid.t list)
-         : unit =
+                   strids: Strid.t list): unit =
          let
             val r = strShortest s
+            fun doit () =
+               let
+                  val _ = r := SOME (priority, length)
+                  (* Process the declarations in decreasing order of
+                   * definition time so that later declarations will be
+                   * processed first, and hence will take precedence.
+                   *)
+                  val _ =
+                     Info.foreachByTime
+                     (types, fn (name, typeStr) =>
+                      doType (typeStr, name, priority, length, strids))
+                  val _ =
+                     Info.foreachByTime
+                     (strs, fn (strid, str) =>
+                      loopStr (str, priority, 1 + length, strid::strids))
+               in
+                  ()
+               end
          in
-            if isSome (!r) andalso length >= valOf (!r)
-               then ()
-            else
-               (* Process the declarations in decreasing order of
-                * definition time so that later declarations will be
-                * processed first, and hence will take precedence.
-                *)
-               (r := SOME length
-                ; Info.foreachByTime
-                  (types, fn (name, typeStr) =>
-                   doType (typeStr, name, length, strids))
-                ; Info.foreachByTime
-                  (strs, fn (strid, str) =>
-                   loopStr (str, 1 + length, strid::strids)))
+            case !r of
+               NONE => doit ()
+             | SOME (priority', length') =>
+                  if priority >= priority'
+                     orelse length >= length'
+                     then ()
+                     else doit ()
          end
+      fun loopIfc (I: Interface.t, priority, length: int, strids: Strid.t list): unit =
+         let
+            val {strs, types, ...} = Interface.dest I
+            val _ =
+               Array.foreach
+               (types, fn (name, typeStr) =>
+                doType (Interface.TypeStr.toEnv typeStr, name, priority, length, strids))
+            val _ =
+               Array.foreach
+               (strs, fn (strid, I) =>
+                loopIfc (I, priority, 1 + length, strid::strids))
+         in
+            ()
+         end
+   in
+      {loopIfc = fn (I, priority, strids) => loopIfc (I, priority, length strids, strids),
+       loopStr = fn (S, priority, strids) => loopStr (S, priority, length strids, strids)}
+   end
+
+fun setTyconNames (E as T {currentScope, ...}): unit =
+   let
+      val {loopStr, ...} =
+         genSetTyconLayoutPretty
+         {prefix = if Scope.isTop (!currentScope) then "" else "???."}
       val {strs, types, ...} = collect (E, fn _ => true)
       val _ = loopStr (Structure.T {interface = NONE,
                                     plist = PropertyList.new (),
@@ -2453,6 +2501,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                     region: Region.t): Structure.t * Decs.t =
    let
       val sigI = I
+      val rlzI = Interface.copy sigI
       (* This tick is so that the type schemes for any values that need to be
        * instantiated and then re-generalized will be at a new time, so we can
        * check if something should not be generalized.
@@ -2467,22 +2516,28 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val {get = interfaceSigid: Interface.t -> Sigid.t option,
            set = setInterfaceSigid, ...} =
          Property.getSet (Interface.plist, Property.initConst NONE)
-      val dummyTycons = ref []
       val preError =
          Promise.lazy
          (fn () =>
-          (let
-              val {sigs, ...} = collect (E, fn _ => true)
-           in
-              Info.foreachByTime
-              (sigs (), fn (s, I) =>
-               setInterfaceSigid (I, SOME s))
-           end
-           ; scope (E, fn () =>
-                    (openStructure (E, S)
-                     ; setTyconNames E))
-           ; List.foreach (!dummyTycons, fn c =>
-                           Tycon.setLayoutPretty (c, Layout.str (Tycon.originalName c)))))
+          let
+              val {loopIfc, loopStr, ...} = genSetTyconLayoutPretty {prefix = "?."}
+              val {sigs, strs, types, ...} = collect (E, fn _ => true)
+              val _ =
+                 Info.foreachByTime
+                 (sigs (), fn (s, I) =>
+                  setInterfaceSigid (I, SOME s))
+              val _ = loopIfc (rlzI, 2, [Strid.uSig])
+              val _ = loopStr (S, 1, [Strid.uStr])
+              val _ =
+                 loopStr (Structure.T {interface = NONE,
+                                       plist = PropertyList.new (),
+                                       strs = strs (),
+                                       types = types (),
+                                       vals = Info.T (Array.new0 ())},
+                          0, [])
+          in
+             ()
+          end)
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
                ifcArray: ('name * 'ifcRange) array,
@@ -3159,7 +3214,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                          types = types,
                          vals = vals}
          end
-      val rlzI = Interface.copy sigI
       val flexTycons = Interface.flexibleTycons rlzI
       val () =
          Structure.realize
@@ -3171,14 +3225,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
              fun dummy () =
                 let
                    val dummyName =
-                      "_sig." ^
-                      (toStringLongRev
-                       (strids, Ast.Tycon.layout name))
+                      toStringLongRev (strids, Ast.Tycon.layout name)
                    val dummyTycon =
                       newTycon (dummyName, k, a, Ast.Tycon.region name)
                 in
-                   List.push (dummyTycons, dummyTycon)
-                   ; TypeStr.tycon (dummyTycon, k)
+                   TypeStr.tycon (dummyTycon, k)
                 end
              val typeStr =
                 case typeStr of
