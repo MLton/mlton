@@ -1904,7 +1904,7 @@ fun elaborateDec (d, {env = E, nest}) =
           let
              val region = Adec.region d
              fun ctxt () = seq [str "in: ", approximate (Adec.layout d)]
-             val preError = Promise.lazy (fn () => Env.setTyconNames E)
+             val preError = Promise.lazy (fn () => Env.setTyconLayoutPretty (E, {prefixUnset = true}))
              fun reportUnable (unable: Tyvar.t vector) =
                if Vector.isEmpty unable
                   then ()
@@ -2777,7 +2777,7 @@ fun elaborateDec (d, {env = E, nest}) =
           Trace.assertTrue)
          (fn (e: Aexp.t, nest, maybeName) =>
           let
-             val preError = Promise.lazy (fn () => Env.setTyconNames E)
+             val preError = Promise.lazy (fn () => Env.setTyconLayoutPretty (E, {prefixUnset = true}))
              val unify = fn (t, t', f) => unify (t, t', preError, f)
              fun ctxt () = seq [str "in: ", approximate (Aexp.layout e)]
              val unify =

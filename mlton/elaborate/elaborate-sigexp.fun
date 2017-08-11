@@ -336,7 +336,7 @@ val info' = Trace.info "ElaborateSigexp.elaborateSpec"
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
    let
-      val _ = Interface.renameTycons := (fn () => StructureEnv.setTyconNames E)
+      val _ = Interface.renameTycons := (fn () => StructureEnv.setTyconLayoutPretty (E, {prefixUnset = true}))
       val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
          traceElaborateSigexp

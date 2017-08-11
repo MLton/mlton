@@ -1379,9 +1379,12 @@ fun collect (E,
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
 
-fun genSetTyconLayoutPretty {prefix} =
+fun genSetTyconLayoutPretty {prefixUnset} =
    let
-      val () = Tycon.resetLayoutPretty {prefix = prefix}
+      val unset = if prefixUnset
+                     then fn l => seq [str "?.", l]
+                     else fn l => l
+      val () = Tycon.resetLayoutPretty {unset = unset}
       val {get = tyconShortest: Tycon.t -> (int * int) option ref, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => ref NONE))
       fun doType (typeStr: TypeStr.t,
@@ -1464,11 +1467,9 @@ fun genSetTyconLayoutPretty {prefix} =
        loopStr = fn (S, priority, strids) => loopStr (S, priority, length strids, strids)}
    end
 
-fun setTyconNames (E as T {currentScope, ...}): unit =
+fun setTyconLayoutPretty (E, {prefixUnset: bool}): unit =
    let
-      val {loopStr, ...} =
-         genSetTyconLayoutPretty
-         {prefix = if Scope.isTop (!currentScope) then "" else "???."}
+      val {loopStr, ...} = genSetTyconLayoutPretty {prefixUnset = prefixUnset}
       val {strs, types, ...} = collect (E, fn _ => true)
       val _ = loopStr (Structure.T {interface = NONE,
                                     plist = PropertyList.new (),
@@ -1570,9 +1571,9 @@ val dummyStructure =
                 Structure.layoutPretty o #1)
    dummyStructure
 
-fun layout' (E: t, keep, showUsed): Layout.t =
+fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
    let
-      val _ = setTyconNames E
+      val _ = setTyconLayoutPretty (E, {prefixUnset = prefixUnset})
       val {bass, fcts, sigs, strs, types, vals} = collect (E, keep)
       val Info.T bass = bass ()
       val Info.T fcts = fcts ()
@@ -1624,17 +1625,17 @@ fun layout' (E: t, keep, showUsed): Layout.t =
       align [types, vals, strs, fcts, sigs, bass]
    end
 
-fun layout E = layout' (E, fn _ => true, {showUsed = false})
+fun layout E = layout' (E, true, fn _ => true, {showUsed = false})
 
 fun layoutCurrentScope (E as T {currentScope, ...}) =
    let
       val s = !currentScope
    in
-      layout' (E, fn {scope, ...} => Scope.equals (s, scope),
+      layout' (E, false, fn {scope, ...} => Scope.equals (s, scope),
                {showUsed = false})
    end
 
-fun layoutUsed (E: t): Layout.t = layout' (E, #hasUse, {showUsed = true})
+fun layoutUsed (E: t): Layout.t = layout' (E, true, #hasUse, {showUsed = true})
 
 (* Force everything that is currently in scope to be marked as used. *)
 fun forceUsed E =
@@ -1661,7 +1662,7 @@ fun forceUsed E =
 
 fun processDefUse (E as T f) =
    let
-      val _ = setTyconNames E
+      val _ = setTyconLayoutPretty (E, {prefixUnset = false})
       val _ = forceUsed E
       val all: {class: Class.t,
                 def: Layout.t,
@@ -2520,7 +2521,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
          Promise.lazy
          (fn () =>
           let
-              val {loopIfc, loopStr, ...} = genSetTyconLayoutPretty {prefix = "?."}
+              val {loopIfc, loopStr, ...} = genSetTyconLayoutPretty {prefixUnset = true}
               val {sigs, strs, types, ...} = collect (E, fn _ => true)
               val _ =
                  Info.foreachByTime

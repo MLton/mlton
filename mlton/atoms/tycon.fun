@@ -16,15 +16,15 @@ structure Id = Id (val noname = "t")
 open Id
 
 local
-val prefixRef = ref "_?."
+val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn _ => Error.bug "Tycon.unsetFnRef")
 in
 val {destroy = resetLayoutPretty: unit -> unit,
      get = layoutPretty: t -> Layout.t,
      set = setLayoutPretty: t * Layout.t -> unit} =
    Property.destGetSet
-   (plist, Property.initFun (fn c => Layout.seq [Layout.str (!prefixRef), layout c]))
-val resetLayoutPretty = fn {prefix} =>
-   (prefixRef := prefix ; resetLayoutPretty ())
+   (plist, Property.initFun (fn c => !unsetFnRef (layout c)))
+val resetLayoutPretty = fn {unset} =>
+   (unsetFnRef := unset ; resetLayoutPretty ())
 end
 
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
