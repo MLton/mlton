@@ -22,7 +22,7 @@ val {destroy = resetLayoutPretty: unit -> unit,
      get = layoutPretty: t -> Layout.t,
      set = setLayoutPretty: t * Layout.t -> unit} =
    Property.destGetSet
-   (plist, Property.initFun (fn c => !unsetFnRef (layout c)))
+   (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (originalName c))))
 val resetLayoutPretty = fn {unset} =>
    (unsetFnRef := unset ; resetLayoutPretty ())
 end
