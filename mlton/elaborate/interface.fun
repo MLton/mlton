@@ -718,7 +718,7 @@ structure TypeStr =
                 | Tycon.Rigid (c, _) =>
                      (preError ()
                       ; error (concat ["already defined as ",
-                                       Layout.toString (Etycon.layout c)]))
+                                       Layout.toString (Etycon.layoutPretty c)]))
          in
             loop s
          end

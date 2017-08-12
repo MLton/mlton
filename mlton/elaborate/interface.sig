@@ -29,6 +29,7 @@ signature INTERFACE_STRUCTS =
                      t * (Layout.t
                           * ({isChar: bool} * BindingStrength.t)) vector
                      -> Layout.t * ({isChar: bool} * BindingStrength.t)
+                  val layoutPretty: t -> Layout.t
                   val tuple: t
                end
 
