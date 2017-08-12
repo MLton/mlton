@@ -3129,8 +3129,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 nameRegion = Ast.Vid.region,
                 notFound = fn (name, (status, rlzScheme)) =>
                 let
-                   val con = Con.fromString o Ast.Vid.toString
-                   val var = Var.fromString o Ast.Vid.toString
+                   val con = Con.newString o Ast.Vid.toString
+                   val var = Var.newString o Ast.Vid.toString
                    val (vid, mkDiag) =
                       case status of
                          Status.Con => (Vid.Con (con name), fn _ => NONE)

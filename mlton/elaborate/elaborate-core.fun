@@ -470,7 +470,7 @@ structure Var =
    struct
       open Var
 
-      val fromAst = fromString o Avar.toString
+      val fromAst = newString o Avar.toString
    end
 
 val elaboratePat:
@@ -1702,7 +1702,7 @@ structure Con =
    struct
       open Con
 
-      val fromAst = fromString o Ast.Con.toString
+      val fromAst = newString o Ast.Con.toString
    end
 
 structure Cexp =
