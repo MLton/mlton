@@ -1935,7 +1935,7 @@ fun elaborateDec (d, {env = E, nest}) =
                 end
              val () = TypeEnv.tick {useBeforeDef = useBeforeDef}
              val unify = fn (t, t', f) => unify (t, t', preError, f)
-             fun checkSchemes (v: (Var.t * Scheme.t) vector): unit =
+             fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop
                    then
                       List.push
@@ -1950,9 +1950,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                  val _ = preError ()
                               in
                                  Control.warning
-                                 (region,
+                                 (Avar.region x,
                                   seq [str "unable to locally determine type of variable: ",
-                                       Var.layout x],
+                                       Avar.layout x],
                                   align [seq [str "type: ", Scheme.layoutPretty s],
                                          ctxt ()])
                               end
@@ -2428,7 +2428,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val _ =
                             checkSchemes
                             (Vector.zip
-                             (Vector.map (fbs, #var),
+                             (Vector.map (fbs, #func),
                               schemes))
                          val _ = setBound bound
                          val _ =
@@ -2699,14 +2699,14 @@ fun elaborateDec (d, {env = E, nest}) =
                             [Vector.concatV
                              (Vector.map
                               (rvbs, fn {bound, ...} =>
-                               (Vector.map
+                               ((Vector.rev o Vector.map)
                                 (bound, fn z =>
                                  (z, {isExpansive = false,
                                       isRebind = true}))))),
                              Vector.concatV
                              (Vector.map
                               (vbs, fn {bound, exp, ...} =>
-                               (Vector.map
+                               ((Vector.rev o Vector.map)
                                 (bound, fn z =>
                                  (z, {isExpansive = Cexp.isExpansive exp,
                                       isRebind = false})))))]
@@ -2720,7 +2720,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val _ =
                             checkSchemes
                             (Vector.zip
-                             (Vector.map (boundVars, #2 o #1),
+                             (Vector.map (boundVars, #1 o #1),
                               schemes))
                          val _ = setBound bound
                          val _ =
