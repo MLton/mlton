@@ -2809,8 +2809,9 @@ fun elaborateDec (d, {env = E, nest}) =
                          end
                       val cel = doit (el, "left")
                       val cer = doit (er, "right")
+                      val e = Cexp.andAlso (cel, cer)
                    in
-                      Cexp.andAlso (cel, cer)
+                      Cexp.make (Cexp.node e, Type.bool)
                    end
               | Aexp.App (ef, ea) =>
                    let
@@ -2881,15 +2882,16 @@ fun elaborateDec (d, {env = E, nest}) =
               | Aexp.Constraint (e, t') =>
                    let
                       val e = elab e
+                      val t' = elabType t'
                       val _ =
                          unify
-                         (Cexp.ty e, elabType t', fn (l1, l2) =>
+                         (Cexp.ty e, t', fn (l1, l2) =>
                           (region,
                            str "expression and constraint disagree",
                            align [seq [str "expression: ", l1],
                                   seq [str "constraint: ", l2]]))
                    in
-                      e
+                      Cexp.make (Cexp.node e, t')
                    end
               | Aexp.FlatApp items => elab (Parse.parseExp (items, E, ctxt))
               | Aexp.Fn m =>
@@ -3014,8 +3016,9 @@ fun elaborateDec (d, {env = E, nest}) =
                          end
                       val cel = doit (el, "left")
                       val cer = doit (er, "right")
+                      val e = Cexp.orElse (cel, cer)
                    in
-                      Cexp.orElse (cel, cer)
+                      Cexp.make (Cexp.node e, Type.bool)
                    end
               | Aexp.Paren e => elab e
               | Aexp.Prim kind =>
