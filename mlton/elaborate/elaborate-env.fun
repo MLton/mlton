@@ -1415,10 +1415,12 @@ fun genSetTyconLayoutPretty {prefixUnset} =
                   case !r of
                      NONE => doit ()
                    | SOME (priority', length') =>
-                        if priority >= priority'
-                           orelse length >= length'
-                           then ()
-                           else doit ()
+                        (case Int.compare (priority, priority') of
+                            LESS => doit ()
+                          | EQUAL => if length >= length'
+                                        then ()
+                                        else doit ()
+                          | GREATER => ())
                end
       val {get = strShortest: Structure.t -> (int * int) option ref, ...} =
          Property.get (Structure.plist, Property.initFun (fn _ => ref NONE))
@@ -1450,10 +1452,12 @@ fun genSetTyconLayoutPretty {prefixUnset} =
             case !r of
                NONE => doit ()
              | SOME (priority', length') =>
-                  if priority >= priority'
-                     orelse length >= length'
-                     then ()
-                     else doit ()
+                  (case Int.compare (priority, priority') of
+                      LESS => doit ()
+                    | EQUAL => if length >= length'
+                                  then ()
+                                  else doit ()
+                    | GREATER => ())
          end
       fun loopIfc (I: Interface.t, priority, length: int, strids: Strid.t list): unit =
          let
