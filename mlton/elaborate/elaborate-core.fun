@@ -2581,23 +2581,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                    elaboratePat (pat, E, {bind = false,
                                                           isRvb = true},
                                                  preError)
-                                val bound =
-                                   Vector.map
-                                   (bound, fn (x, x', ty) =>
-                                    let
-                                       val xVid = Avid.fromVar x
-                                       val _ =
-                                          checkConRedefine
-                                          (xVid, "val rec", ctxtRvb)
-                                       val _ =
-                                          Env.extendVar
-                                          (E, x, x', Scheme.fromType ty,
-                                           {isRebind = false})
-                                       val _ =
-                                          markFunc x'
-                                    in
-                                       (x, x', ty)
-                                    end)
                                 val (nest, var) =
                                    if Vector.length bound = 1
                                       andalso (Type.isUnknown (Cpat.ty pat)
@@ -2608,6 +2591,22 @@ fun elaborateDec (d, {env = E, nest}) =
                                               (Avar.toString x :: nest, x')
                                            end
                                       else ("_" :: nest, Var.newNoname ())
+                                val _ = markFunc var
+                                val bound =
+                                   Vector.map
+                                   (bound, fn (x, _, ty) =>
+                                    let
+                                       val xVid = Avid.fromVar x
+                                       val _ =
+                                          checkConRedefine
+                                          (xVid, "val rec", ctxtRvb)
+                                       val _ =
+                                          Env.extendVar
+                                          (E, x, var, Scheme.fromType ty,
+                                           {isRebind = false})
+                                    in
+                                       (x, var, ty)
+                                    end)
                              in
                                 {bound = bound,
                                  ctxtRvb = ctxtRvb,
