@@ -2727,12 +2727,13 @@ fun elaborateDec (d, {env = E, nest}) =
                             Vector.foreach2
                             (boundVars, schemes,
                              fn (((x, x', _), {isRebind, ...}), scheme) =>
-                             (Env.extendVar
-                              (E, x, x', scheme,
-                               {isRebind = isRebind})
-                              ; if isRebind
-                                   then unmarkFunc x'
-                                   else ()))
+                             Env.extendVar
+                             (E, x, x', scheme,
+                              {isRebind = isRebind}))
+                         val _ =
+                            Vector.foreach
+                            (rvbs, fn {var, ...} =>
+                             unmarkFunc var)
                          val vbs =
                             Vector.map
                             (vbs, fn {ctxtVb, exp, layPat, pat, regionPat, ...} =>
