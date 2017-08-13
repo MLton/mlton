@@ -24,10 +24,17 @@ struct
    fun isIdentFirst b = Char.isAlpha b orelse b = #"'"
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
-   val skipComments = T.optional(
-      T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)") *> T.string "*)"
-         <|> T.failCut "Closing comment")
-      ) *> T.next
+  val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
+                     (fn x      => [x]   ) <$> T.next
+   fun skipComments () = T.any
+      [T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)" <|> T.string "(*") *>
+            ((T.string "*)" <|> "" <$ T.delay skipComments) *> T.each [T.next]
+          <|> T.failCut "Closing comment")),
+       List.concat <$> T.each
+         [T.each [T.char #"\""],
+          List.concat <$> T.manyFailing(stringToken, T.char #"\""),
+          T.each [T.char #"\""]],
+       T.each [T.next]]
 
    val space = T.sat(T.next, Char.isSpace)
    val spaces = T.many(space)
@@ -129,8 +136,6 @@ struct
           (NONE <$ T.string "None" <* spaces))
 
 
-   val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
-                           (fn x      => [x]   ) <$> T.next
    val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
          (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
@@ -331,8 +336,8 @@ struct
             (false <$ (token "noinline") <|> T.pure true,
              typedvar,
              token "=>" *> T.delay exp' <* spaces))
-         and casesExp () = T.string "case" *> T.cut
-            (T.optional parseInt <* T.many1 space >>= (fn size =>
+         and casesExp () = T.string "case" *>
+            T.optional parseInt <* T.many1 space >>= (fn size => T.cut(
                varExp <* token "of" <* spaces >>= (fn var =>
                   case size of
                       NONE => makeConCases var <$$>
@@ -380,7 +385,7 @@ struct
                        else resolveTycon0 ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
-         T.compose(skipComments,
+         T.compose(skipComments (),
          clOptions *>
          (makeProgram <$$$>
             (datatypes resolveCon resolveTycon,
