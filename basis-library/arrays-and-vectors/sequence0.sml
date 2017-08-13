@@ -381,14 +381,14 @@ functor PrimSequence (S: sig
          fun make f seq = f (Slice.full seq)
          fun make2 f (seq1, seq2) = f (Slice.full seq1, Slice.full seq2)
       in
-         fun copy {dst, di, src} = Slice.copy {dst = dst, di = di, src = Slice.full src}
-         fun unsafeCopy {dst, di, src} = Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
          fun sub (seq, i) = Slice.sub (Slice.full seq, i)
          fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i)
          fun updateMk updateUnsafe (seq, i, x) =
             Slice.updateMk updateUnsafe (Slice.full seq, i, x)
          fun unsafeUpdateMk updateUnsafe (seq, i, x) =
             Slice.unsafeUpdateMk updateUnsafe (Slice.full seq, i, x)
+         fun copy {dst, di, src} = Slice.copy {dst = dst, di = di, src = Slice.full src}
+         fun unsafeCopy {dst, di, src} = Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
          fun appi f = make (Slice.appi f)
          fun app f = make (Slice.app f)
          fun mapi f = make (Slice.mapi f)
@@ -461,10 +461,10 @@ structure Array =
                   in
                      Vector.fromArrayUnsafe a
                   end
+               val copyVec = Vector.Slice.copy
                fun modifyi f sl =
                   appi (fn (i, x) => unsafeUpdate (sl, i, f (i, x))) sl
                fun modify f sl = modifyi (fn (_, x) => f x) sl
-               val copyVec = Vector.Slice.copy
             end
          fun update arg = updateMk Array.updateUnsafe arg
          val unsafeUpdate = Array.updateUnsafe
