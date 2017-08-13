@@ -867,7 +867,7 @@ fun transform (program: Program.t): Program.t =
                                     | Array_copyVector => array ()
                                     | Array_update => array ()
                                     | Ref_assign =>
-                                         Value.isUseful 
+                                         Value.isUseful
                                          (Value.deref (value (arg 0)))
                                     | WordArray_updateWord _ => array ()
                                     | _ => true

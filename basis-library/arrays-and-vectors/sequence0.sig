@@ -62,5 +62,5 @@ signature PRIM_SEQUENCE =
       val unfold: SeqIndex.int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
       val uninit: SeqIndex.int -> 'a sequence
       val unsafeUninit: SeqIndex.int -> 'a sequence
-      val unsafeFromArray: 'a elt array -> 'a sequence 
+      val unsafeFromArray: 'a elt array -> 'a sequence
   end

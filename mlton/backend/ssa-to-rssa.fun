@@ -130,7 +130,7 @@ structure CFunction =
 
       fun gcArrayCopy (dt, st) =
          T {args = Vector.new6 (Type.gcState (),
-	                        dt,
+                                dt,
                                 Type.seqIndex (),
                                 st,
                                 Type.seqIndex (),
@@ -144,7 +144,7 @@ structure CFunction =
                                  readsStackTop = true,
                                  writesStackTop = true},
             prototype = (Vector.new6 (CType.gcState,
-	                              CType.Objptr,
+                                      CType.Objptr,
                                       CType.seqIndex (),
                                       CType.Objptr,
                                       CType.seqIndex (),
