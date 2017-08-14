@@ -427,11 +427,16 @@ structure Vector =
       in
          open P
          open Vector
-         fun update (v, i, x) = 
+         fun update (v, i, x) =
             if Primitive.Controls.safe andalso SeqIndex.geu (i, length v)
                then raise Subscript
-            else tabulate (length v, 
-                           fn j => if i = j then x else unsafeSub (v, j))
+            else let
+                    val a = Array.uninitUnsafe (length v)
+                    val () = copy {dst = a, di = 0, src = v}
+                    val () = Array.updateUnsafe (a, i, x)
+                 in
+                    Vector.fromArrayUnsafe a
+                 end
       end
    end
 
