@@ -12,13 +12,13 @@
 functor PrimSequence (S: sig
                             type 'a sequence
                             type 'a elt
-                            val aliasArray: 'a elt array * 'a sequence -> bool
                             val copyUnsafe: 'a elt array * SeqIndex.int * 'a sequence * SeqIndex.int * SeqIndex.int -> unit
                             (* fromArray should be constant time. *)
                             val fromArray: 'a elt array -> 'a sequence
-                            val new0: (unit -> 'a sequence) option
                             val isMutable: bool
                             val length: 'a sequence -> SeqIndex.int
+                            val new0: (unit -> 'a sequence) option
+                            val sameArray: 'a elt array * 'a sequence -> bool
                             val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
                          end) :> PRIM_SEQUENCE where type 'a sequence = 'a S.sequence
                                                where type 'a elt = 'a S.elt =
@@ -221,7 +221,7 @@ functor PrimSequence (S: sig
                      then raise Subscript
                      else let
                              fun overlap () =
-                                S.aliasArray (dst, src)
+                                S.sameArray (dst, src)
                                 andalso si < di
                                 andalso di <= si +? len
                           in
@@ -476,12 +476,12 @@ structure Vector =
       local
          structure P = PrimSequence (type 'a sequence = 'a vector
                                      type 'a elt = 'a
-                                     val aliasArray = fn _ => false
                                      val copyUnsafe = Array.copyVectorUnsafe
                                      val fromArray = Vector.fromArrayUnsafe
-                                     val new0 = SOME Vector.vector0
                                      val isMutable = false
                                      val length = Vector.length
+                                     val new0 = SOME Vector.vector0
+                                     val sameArray = fn _ => false
                                      val subUnsafe = Vector.subUnsafe)
       in
          open P
@@ -504,7 +504,7 @@ structure Array =
       local 
          structure P = PrimSequence (type 'a sequence = 'a array
                                      type 'a elt = 'a
-                                     val aliasArray = op =
+                                     val sameArray = op =
                                      val copyUnsafe = Array.copyArrayUnsafe
                                      val fromArray = fn a => a
                                      val new0 = NONE
