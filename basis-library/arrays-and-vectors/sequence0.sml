@@ -12,6 +12,7 @@
 functor PrimSequence (S: sig
                             type 'a sequence
                             type 'a elt
+                            val aliasArray: 'a elt array * 'a sequence -> bool
                             val copyUnsafe: 'a elt array * SeqIndex.int * 'a sequence * SeqIndex.int * SeqIndex.int -> unit
                             (* fromArray should be constant time. *)
                             val fromArray: 'a elt array -> 'a sequence
@@ -168,7 +169,37 @@ functor PrimSequence (S: sig
                   then raise Subscript
                else (unsafeUpdateMk updateUnsafe) (sl, i, x)
             fun unsafeCopy {dst: 'a elt array, di: SeqIndex.int, src = T {seq = src, start = si, len}} =
-               S.copyUnsafe (dst, di , src, si, len)
+               if len < 5
+                  then let
+                          fun move i = Array.updateUnsafe (dst, di +? i, S.subUnsafe (src, si +? i))
+                          fun up () =
+                             let
+                                val len = len -? 1
+                                fun loop i =
+                                   if i > len
+                                      then ()
+                                      else (move i; loop (i +? 1))
+                             in
+                                loop 0
+                             end
+                          fun dn () =
+                             let
+                                val len = len -? 1
+                                fun loop i =
+                                   if i < 0
+                                      then ()
+                                      else (move i; loop (i -? 1))
+                             in
+                                loop len
+                             end
+                       in
+                          if S.aliasArray (dst, src)
+                             andalso si < di
+                             andalso di <= si +? len
+                             then dn ()
+                             else up ()
+                       end
+                  else S.copyUnsafe (dst, di , src, si, len)
             fun copy {dst: 'a elt array, di: SeqIndex.int, src = sl as T {seq = src, start = si, len}} =
                if Primitive.Controls.safe andalso (gtu (di, Array.length dst) orelse gtu (di +? len, Array.length dst))
                   then raise Subscript
@@ -418,6 +449,7 @@ structure Vector =
       local
          structure P = PrimSequence (type 'a sequence = 'a vector
                                      type 'a elt = 'a
+                                     val aliasArray = fn _ => false
                                      val copyUnsafe = Array.copyVectorUnsafe
                                      val fromArray = Vector.fromArrayUnsafe
                                      val new0 = SOME Vector.vector0
@@ -445,6 +477,7 @@ structure Array =
       local 
          structure P = PrimSequence (type 'a sequence = 'a array
                                      type 'a elt = 'a
+                                     val aliasArray = op =
                                      val copyUnsafe = Array.copyArrayUnsafe
                                      val fromArray = fn a => a
                                      val new0 = NONE
