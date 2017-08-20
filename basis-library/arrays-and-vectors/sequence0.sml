@@ -168,23 +168,17 @@ functor PrimSequence (S: sig
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
                else (unsafeUpdateMk updateUnsafe) (sl, i, x)
-            fun unsafeCopy {dst: 'a elt array, di: SeqIndex.int, src = T {seq = src, start = si, len}} =
-               if len < 5
-                  then let
-                          fun move i = Array.updateUnsafe (dst, di +? i, S.subUnsafe (src, si +? i))
-                          fun up () =
-                             let
-                                val len = len -? 1
-                                fun loop i =
-                                   if i > len
-                                      then ()
-                                      else (move i; loop (i +? 1))
-                             in
-                                loop 0
-                             end
-                          fun dn () =
-                             let
-                                val len = len -? 1
+            local
+               fun smallCopy {dst: 'a elt array, di: SeqIndex.int,
+                              src: 'a sequence, si: SeqIndex.int,
+                              len: SeqIndex.int,
+                              overlap: unit -> bool} =
+                  let
+                     fun move i = Array.updateUnsafe (dst, di +? i, S.subUnsafe (src, si +? i))
+                     val len = len -? 1
+                  in
+                     if overlap ()
+                        then let
                                 fun loop i =
                                    if i < 0
                                       then ()
@@ -192,18 +186,51 @@ functor PrimSequence (S: sig
                              in
                                 loop len
                              end
-                       in
-                          if S.aliasArray (dst, src)
-                             andalso si < di
-                             andalso di <= si +? len
-                             then dn ()
-                             else up ()
-                       end
-                  else S.copyUnsafe (dst, di , src, si, len)
-            fun copy {dst: 'a elt array, di: SeqIndex.int, src = sl as T {seq = src, start = si, len}} =
-               if Primitive.Controls.safe andalso (gtu (di, Array.length dst) orelse gtu (di +? len, Array.length dst))
-                  then raise Subscript
-               else unsafeCopy {dst = dst, di = di, src = sl}
+                        else let
+                                fun loop i =
+                                   if i > len
+                                      then ()
+                                      else (move i; loop (i +? 1))
+                             in
+                                loop 0
+                             end
+                  end
+               val smallCopyLimit = 5
+               fun maybeSmallCopy {dst: 'a elt array, di: SeqIndex.int,
+                                   src: 'a sequence, si: SeqIndex.int,
+                                   len: SeqIndex.int,
+                                   overlap: unit -> bool} =
+                  if len < smallCopyLimit
+                     then smallCopy {dst = dst, di = di,
+                                     src = src, si = si,
+                                     len = len,
+                                     overlap = overlap}
+                     else S.copyUnsafe (dst, di, src, si, len)
+            in
+               fun unsafeCopy {dst: 'a elt array, di: SeqIndex.int,
+                               src = T {seq = src, start = si, len}} =
+                  maybeSmallCopy {dst = dst, di = di,
+                                  src = src, si = si,
+                                  len = len,
+                                  overlap = fn () => false}
+               fun copy {dst: 'a elt array, di: SeqIndex.int,
+                         src =  T {seq = src, start = si, len}} =
+                  if Primitive.Controls.safe
+                     andalso (gtu (di, Array.length dst)
+                              orelse gtu (di +? len, Array.length dst))
+                     then raise Subscript
+                     else let
+                             fun overlap () =
+                                S.aliasArray (dst, src)
+                                andalso si < di
+                                andalso di <= si +? len
+                          in
+                             maybeSmallCopy {dst = dst, di = di,
+                                             src = src, si = si,
+                                             len = len,
+                                             overlap = overlap}
+                          end
+            end
             fun full (seq: 'a sequence) : 'a slice =
                T {seq = seq, start = 0, len = S.length seq}
             fun unsafeSubslice (T {seq, start, len}, start', len') = 
@@ -495,7 +522,7 @@ structure Array =
                fun vector sl = 
                   let
                      val a = unsafeUninit (length sl)
-                     val () = copy {dst = a, di = 0, src = sl}
+                     val () = unsafeCopy {dst = a, di = 0, src = sl}
                   in
                      Vector.fromArrayUnsafe a
                   end
