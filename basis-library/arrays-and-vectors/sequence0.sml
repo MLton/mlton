@@ -526,7 +526,6 @@ structure Array =
                   in
                      Vector.fromArrayUnsafe a
                   end
-               val copyVec = Vector.Slice.copy
                fun modifyi f sl =
                   appi (fn (i, x) => unsafeUpdate (sl, i, f (i, x))) sl
                fun modify f sl = modifyi (fn (_, x) => f x) sl
@@ -534,10 +533,18 @@ structure Array =
          fun update arg = updateMk Array.updateUnsafe arg
          val unsafeUpdate = Array.updateUnsafe
          fun vector s = Slice.vector (Slice.full s)
-         val copyVec = Vector.copy
          fun modifyi f s = Slice.modifyi f (Slice.full s)
          fun modify f s = Slice.modify f (Slice.full s) 
       end
    end
 
 end
+
+structure Array =
+   struct
+      type 'a array = 'a array
+   end
+structure Vector =
+   struct
+      type 'a vector = 'a vector
+   end

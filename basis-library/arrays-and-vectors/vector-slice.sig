@@ -1,8 +1,3 @@
-structure Vector =
-   struct
-      type 'a vector = 'a vector
-   end
-
 signature VECTOR_SLICE_GLOBAL =
    sig
    end
@@ -42,7 +37,10 @@ signature VECTOR_SLICE_EXTRA =
    sig
       include VECTOR_SLICE
 
+      val copy: {dst: 'a Array.array, di: int, src: 'a slice} -> unit
+
       val unsafeSub: 'a slice * int -> 'a
+      val unsafeCopy: {dst: 'a Array.array, di: int, src: 'a slice} -> unit
       val unsafeSlice: 'a Vector.vector * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
 

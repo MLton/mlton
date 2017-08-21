@@ -17,9 +17,6 @@ structure Array: ARRAY_EXTRA =
       val op <= = Int.<=
 
       fun wrap2 f = fn (i, x) => f (SeqIndex.toIntUnsafe i, x)
-      fun wrapCopy f = fn {src, dst, di} =>
-         (f {src = src, dst = dst, di = SeqIndex.fromInt di}) 
-         handle Overflow => raise Subscript
 
       type 'a array = 'a array
       type 'a vector = 'a Vector.vector
@@ -29,8 +26,9 @@ structure Array: ARRAY_EXTRA =
             open Slice
             val vector = Primitive.Array.Slice.vector
             fun update x = updateMk Primitive.Array.updateUnsafe x
-            fun copy arg = wrapCopy (Primitive.Array.Slice.copy) arg
-            fun copyVec arg = wrapCopy (Primitive.Array.Slice.copyVec) arg
+            fun unsafeUpdate x = unsafeUpdateMk Primitive.Array.updateUnsafe x
+            val copyVec = Vector.VectorSlice.copy
+            val unsafeCopyVec = Vector.VectorSlice.unsafeCopy
             fun modifyi f sl = Primitive.Array.Slice.modifyi (wrap2 f) sl
             val modify = Primitive.Array.Slice.modify
          end
@@ -39,8 +37,8 @@ structure Array: ARRAY_EXTRA =
       val vector = Primitive.Array.vector
       fun update x = updateMk Primitive.Array.updateUnsafe x
       fun unsafeUpdate x = unsafeUpdateMk Primitive.Array.updateUnsafe x
-      fun copy arg = wrapCopy (Primitive.Array.copy) arg
-      fun copyVec arg = wrapCopy (Primitive.Array.copyVec) arg
+      val copyVec = Vector.copy
+      val unsafeCopyVec = Vector.unsafeCopy
       fun modifyi f sl = Primitive.Array.modifyi (wrap2 f) sl
       val modify = Primitive.Array.modify
    end
