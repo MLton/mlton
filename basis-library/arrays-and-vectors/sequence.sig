@@ -29,6 +29,8 @@ signature SEQUENCE =
                      ('a sequence * int * 'a elt) -> unit
       val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                            ('a sequence * int * 'a elt) -> unit
+      val copy: {dst: 'a elt Array.array, di: int, src: 'a sequence} -> unit
+      val unsafeCopy: {dst: 'a elt Array.array, di: int, src: 'a sequence} -> unit
       val appi: (int * 'a elt -> unit) -> 'a sequence -> unit 
       val app: ('a elt -> unit) -> 'a sequence -> unit 
       val mapi : (int * 'a elt -> 'b elt) -> 'a sequence -> 'b sequence 

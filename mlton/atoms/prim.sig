@@ -26,7 +26,9 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_length (* ssa to rssa *)
+               Array_copyArray (* backend *)
+             | Array_copyVector (* backend *)
+             | Array_length (* ssa to rssa *)
              | Array_sub (* ssa to ssa2 *)
              | Array_toVector (* backend *)
              | Array_uninit (* backend *)

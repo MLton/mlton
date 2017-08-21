@@ -68,3 +68,23 @@ pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
     + (objptrIndex * OBJPTR_SIZE);
 }
 #endif
+
+
+/* GC_arrayCopy (ad, as, as, ss, l)
+ *
+ * Copy l elements of as starting at ss to ad starting at as.
+ */
+void GC_arrayCopy (GC_state s, pointer ad, GC_arrayLength ds, pointer as, GC_arrayLength ss, GC_arrayLength l) {
+  GC_header header;
+  uint16_t bytesNonObjptrs;
+  uint16_t numObjptrs;
+  GC_objectTypeTag tag;
+  size_t eltSize;
+
+  header = getHeader (ad);
+  splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+  assert (tag == ARRAY_TAG);
+
+  eltSize = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
+  GC_memmove (as + eltSize * ss, ad + eltSize * ds, eltSize * l);
+}

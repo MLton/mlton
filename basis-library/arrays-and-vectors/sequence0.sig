@@ -29,6 +29,8 @@ signature PRIM_SEQUENCE =
                      ('a sequence * SeqIndex.int * 'a elt) -> unit
       val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                            ('a sequence * SeqIndex.int * 'a elt) -> unit
+      val copy: {dst: 'a elt array, di: SeqIndex.int, src: 'a sequence} -> unit
+      val unsafeCopy: {dst: 'a elt array, di: SeqIndex.int, src: 'a sequence} -> unit
       val appi: (SeqIndex.int * 'a elt -> unit) -> 'a sequence -> unit 
       val app: ('a elt -> unit) -> 'a sequence -> unit 
       val mapi: (SeqIndex.int * 'a elt -> 'b elt) -> 'a sequence -> 'b sequence 
@@ -60,4 +62,5 @@ signature PRIM_SEQUENCE =
       val unfold: SeqIndex.int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
       val uninit: SeqIndex.int -> 'a sequence
       val unsafeUninit: SeqIndex.int -> 'a sequence
-   end
+      val unsafeFromArray: 'a elt array -> 'a sequence
+  end
