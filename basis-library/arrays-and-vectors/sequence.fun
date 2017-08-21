@@ -260,16 +260,27 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                               else (fn (sl, s) => 
                                        (s +? sepn +? S.Slice.length sl))
                         val n = List.foldl add (S.Slice.length sl) sls
-                        fun loop (b, i, sl, sls) =
-                            if SeqIndex.< (i, S.Slice.length sl)
-                            then (S.Slice.unsafeSub (sl, i),
-                               (b, SeqIndex.+? (i, 1), sl, sls))
-                            else case (b, sls) of
-                               (true, _) => loop (false, 0, sep, sls)
-                             | (_, []) => raise Fail "Sequence.Slice.concatWith"
-                             | (_, sl :: sls) => loop (true, 0, sl, sls)
+                        val a = Primitive.Array.uninit n
+                        fun loop (di, sls) =
+                           case sls of
+                              [] => raise Fail "Sequence.Slice.concatWith"
+                            | [sl] =>
+                                 let
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                 in
+                                    S.unsafeFromArray a
+                                 end
+                            | sl::sls =>
+                                 let
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                    val di = di +? S.Slice.length sl
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sep}
+                                    val di = di +? sepn
+                                 in
+                                    loop (di, sls)
+                                 end
                      in
-                        #1 (S.unfold (n, (true, 0, sl, sls), loop))
+                        loop (0, sl::sls)
                      end
             fun triml k sl =
                if Primitive.Controls.safe andalso Int.< (k, 0)
