@@ -1028,6 +1028,24 @@ fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
              ; NONE)
    end
 
+fun lookupLongstrid (I: t, long: Longstrid.t, r: Region.t,
+                     {prefix: Strid.t list}) =
+   let
+      val (ss, s) = Longstrid.split long
+   in
+      case peekStrids (I, ss) of
+         Found I =>
+            (case peekStrid (I, s) of
+                NONE =>
+                   (unbound (r, "structure",
+                             Longstrid.layout (Longstrid.long (prefix @ ss, s)))
+                    ; NONE)
+              | SOME I => SOME I)
+       | UndefinedStructure ss =>
+            (unbound (r, "structure", layoutStrids (prefix @ ss))
+             ; NONE)
+   end
+
 fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, preError, sharingSpec): unit =
    let
       fun lay (s, ls, strids, name) =

@@ -183,6 +183,9 @@ signature INTERFACE =
       val empty: t
       val flexibleTycons: t -> FlexibleTycon.t TyconMap.t
       val layout: t -> Layout.t
+      val lookupLongstrid:
+         t * Ast.Longstrid.t * Region.t * {prefix: Ast.Strid.t list}
+         -> t option
       val lookupLongtycon:
          t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
          -> TypeStr.t option
