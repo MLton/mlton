@@ -35,7 +35,6 @@ in
    structure Basid = Basid
    structure Fctid = Fctid
    structure Strid = Strid
-   structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Priority = Priority
    structure Sigid = Sigid
@@ -3628,32 +3627,6 @@ structure InterfaceEnv =
          val peekStrid = make #strs
          val peekTycon = make #types
       end
-
-      fun lookupLongstrid (E: t, s: Longstrid.t): Interface.t option =
-         let
-            fun error l =
-               (unbound (Longstrid.region s, "structure", l)
-                ; NONE)
-            val (strids, strid) = Longstrid.split s
-         in
-            case strids of
-               [] =>
-                  (case peekStrid (E, strid) of
-                      NONE => error (Strid.layout strid)
-                    | SOME I => SOME I)
-             | s :: ss =>
-                  case peekStrid (E, s) of
-                     NONE => error (Strid.layout s)
-                   | SOME I =>
-                        let
-                           datatype z = datatype Interface.peekResult
-                        in
-                           case Interface.peekStrids (I, ss @ [strid]) of
-                              Found I => SOME I
-                            | UndefinedStructure ss =>
-                                 error (layoutStrids (s :: ss))
-                        end
-         end
 
       fun lookupLongtycon (E: t, long: Longtycon.t): TypeStr.t option =
          let

@@ -134,7 +134,6 @@ signature ELABORATE_ENV =
             val extendStrid: t * Ast.Strid.t * Interface.t -> unit
             val extendTycon: t * Ast.Tycon.t * TypeStr.t -> unit
             val extendVid: t * Ast.Vid.t * Status.t * Scheme.t -> unit
-            val lookupLongstrid: t * Ast.Longstrid.t -> Interface.t option
             val lookupLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
             val lookupSigid: t * Ast.Sigid.t -> Interface.t option
             val makeInterface:
