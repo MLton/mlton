@@ -19,6 +19,7 @@ in
    structure DatBind = DatBind
    structure DatatypeRhs = DatatypeRhs
    structure SharingEquation = SharingEquation
+   structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Record = Record
    structure Sigexp = Sigexp
@@ -443,7 +444,11 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 (* rule 78 and section G.3.3 *)
                 let
                    val time = Interface.Time.tick ()
-                   val () = elaborateSpec spec
+                   val (I, _) =
+                      Env.makeInterface
+                      (E, {isTop = false},
+                       fn () => elaborateSpec spec)
+                   val () = Env.openInterface (E, I, Spec.region spec)
                    val () =
                       Vector.foreach
                       (equations, fn eqn =>
@@ -467,7 +472,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                              in
                                 loop (List.fold
                                       (ss, [], fn (s, ac) =>
-                                       case Env.lookupLongstrid (E, s) of
+                                       case Interface.lookupLongstrid (I, s, Longstrid.region s, {prefix = []}) of
                                           NONE => ac
                                         | SOME I => (s, I) :: ac))
                              end
@@ -475,7 +480,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                              ignore
                              (List.fold
                               (cs, NONE, fn (c', so) =>
-                               case (so, Env.lookupLongtycon (E, c')) of
+                               case (so, Interface.lookupLongtycon (I, c', Longtycon.region c', {prefix = []})) of
                                   (NONE, NONE) => NONE
                                 | (SOME _, NONE) => so
                                 | (NONE, SOME s') => SOME (c', s')
