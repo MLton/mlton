@@ -92,6 +92,7 @@ signature TYPE_ENV =
             val apply: t * Type.t vector -> Type.t
             val bound: t -> Tyvar.t vector
             val dest: t -> Tyvar.t vector * Type.t
+            val fromTycon: Tycon.t * {arity: int} -> t
             val fromType: Type.t -> t
             val haveFrees: t vector -> bool vector
             val instantiate: t -> {args: unit -> Type.t vector,

@@ -1523,6 +1523,19 @@ structure Scheme =
 
       val fromType = Type
 
+      fun fromTycon (tycon: Tycon.t, {arity}): t =
+         let
+            val tyvars =
+               Vector.tabulate
+               (arity, fn _ =>
+                Tyvar.newNoname {equality = false})
+         in
+            make
+            {canGeneralize = true,
+             ty = Type.con (tycon, Vector.map (tyvars, Type.var)),
+             tyvars = tyvars}
+         end
+
       fun instantiate' (t: t, subst) =
          case t of
             Type ty => {args = fn () => Vector.new0 (),
