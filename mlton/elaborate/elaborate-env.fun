@@ -303,7 +303,6 @@ structure TypeStr =
          Datatype of {cons: Cons.t,
                       tycon: Tycon.t}
        | Scheme of Scheme.t
-       | Tycon of Tycon.t
 
       datatype t = T of {kind: Kind.t,
                          node: node}
@@ -325,7 +324,6 @@ structure TypeStr =
                        record [("tycon", Tycon.layout tycon),
                                ("cons", Cons.layout cons)]]
              | Scheme s => Scheme.layout s
-             | Tycon t => seq [str "Tycon ", Tycon.layout t]
          end
 
       fun admitsEquality (s: t): AdmitsEquality.t =
@@ -334,9 +332,8 @@ structure TypeStr =
           | Scheme s => if Scheme.admitsEquality s
                            then AdmitsEquality.Sometimes
                         else AdmitsEquality.Never
-          | Tycon c =>  ! (Tycon.admitsEquality c)
 
-      fun explainDoesNotAdmitEquality (s: t, tyconScheme): Layout.t =
+      fun explainDoesNotAdmitEquality (s: t): Layout.t =
          case node s of
             Datatype {cons, ...} =>
                let
@@ -362,28 +359,11 @@ structure TypeStr =
                end
           | Scheme s =>
                Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s))
-          | Tycon c =>
-               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate (tyconScheme c)))
-
-      fun abs t =
-         case node t of
-            Datatype {tycon, ...} => T {kind = kind t,
-                                        node = Tycon tycon}
-          | _ => t
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
-          | Tycon t => Type.con (t, tys)
-
-      fun data (tycon, kind, cons) =
-         T {kind = kind,
-            node = Datatype {tycon = tycon, cons = cons}}
-
-      fun def (s: Scheme.t, k: Kind.t) =
-         T {kind = k,
-            node = Scheme s}
 
       fun toTyconOpt s =
          case node s of
@@ -396,10 +376,25 @@ structure TypeStr =
                    NONE => NONE
                  | SOME c => SOME c
                end
-          | Tycon c => SOME c
 
-      fun tycon (c, kind) = T {kind = kind,
-                               node = Tycon c}
+      fun data (tycon, kind, cons) =
+         T {kind = kind,
+            node = Datatype {tycon = tycon, cons = cons}}
+
+      fun def (s: Scheme.t, k: Kind.t) =
+         T {kind = k,
+            node = Scheme s}
+
+      fun tycon (c, kind) =
+         case kind of
+            Kind.Arity n =>
+               def (Scheme.fromTycon (c, {arity = n}), kind)
+          | _ => Error.bug "ElaborateEnv.TypeStr.tycon: Kind.Nary"
+
+      fun abs t =
+         case node t of
+            Datatype {tycon = c, ...} => tycon (c, kind t)
+          | _ => t
    end
 
 local
@@ -559,8 +554,6 @@ structure Interface =
                               kind,
                               Cons.fromEnv cons)
                    | EtypeStr.Scheme s => def (Scheme.fromEnv s, kind)
-                   | EtypeStr.Tycon c =>
-                        tycon (Tycon.fromEnv (c, kind), kind)
                end
          end
    end
@@ -888,8 +881,6 @@ structure Structure =
                                  end
                          | TypeStr.Scheme s =>
                               seq [def, lay (Scheme.apply (s, tyvars))]
-                         | TypeStr.Tycon c =>
-                              seq [def, lay (Type.con (c, tyvars))]
                      val _ = destroy ()
                   in
                      res
@@ -2488,7 +2479,6 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
                                  fixCons (cs, cs'))
                            | _ => s')
                     | Scheme _ => s'
-                    | Tycon _ => s'
                 end)
             val vals =
                Info.map2 
@@ -2841,9 +2831,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                     TypeStr.Datatype {tycon, ...} =>
                                       Scheme (Scheme.fromTycon (tycon, {arity = sigArity}))
                                   | TypeStr.Scheme s =>
-                                      Scheme s
-                                  | TypeStr.Tycon tycon =>
-                                      Scheme (Scheme.fromTycon (tycon, {arity = sigArity})))
+                                      Scheme s)
                            | (SOME _, _, _) =>
                                 Type
 
@@ -2882,7 +2870,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 case TypeStr.node strStr of
                                    TypeStr.Datatype _ => "datatype"
                                  | TypeStr.Scheme _ => "type"
-                                 | TypeStr.Tycon _ => "type"
                           in
                              seq [if b then bracket (str kw) else str kw,
                                   strTyvarsLay,
@@ -2906,10 +2893,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          then ()
                                          else (preError ()
                                                ; error ("admits equality",
-                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
-                                                                             (strStr, fn strTycon =>
-                                                                              Scheme.fromTycon
-                                                                              (strTycon, {arity = strArity})))),
+                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
                                                         sigMsg (true, NONE)))
                                 in
                                    rlzStr
@@ -2942,8 +2926,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                             end
                                        | TypeStr.Scheme s =>
                                             chkScheme s
-                                       | TypeStr.Tycon tycon =>
-                                            chkScheme (Scheme.fromTycon (tycon, {arity = strArity}))
                                 in
                                    rlzStr
                                 end
@@ -2981,8 +2963,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
-                                    | TypeStr.Tycon strTycon =>
-                                         nonDatatype (Scheme.fromTycon (strTycon, {arity = strArity}))
                                 end
                            | Datatype {cons = sigCons, ...} =>
                                 let
@@ -3097,8 +3077,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
-                                    | TypeStr.Tycon strTycon =>
-                                         nonDatatype (Scheme.fromTycon (strTycon, {arity = strArity}))
                                 end
                        val () = reportError ()
                        val () = destroy ()
@@ -3494,19 +3472,14 @@ fun functorClosure
                                  case tyconTypeStr tycon of
                                     NONE => tycon
                                   | SOME s =>
-                                       (case TypeStr.node s of
-                                           Datatype {tycon, ...} => tycon
-                                         | Scheme _ =>
-                                              Error.bug "ElaborateEnv.functorClosure.apply: bad datatype"
-                                         | Tycon c => c)
+                                       (case TypeStr.toTyconOpt s of
+                                           SOME c => c
+                                         | _ =>
+                                              Error.bug "ElaborateEnv.functorClosure.apply: bad datatype")
                            in
                               TypeStr.data (tycon, k, replaceCons cons)
                            end
                       | Scheme s => TypeStr.def (replaceScheme s, k)
-                      | Tycon c =>
-                           (case tyconTypeStr c of
-                               NONE => s
-                             | SOME s' => s')
                   end
                val {destroy = destroy2,
                     get = replacement: Structure.t -> Structure.t, ...} =
