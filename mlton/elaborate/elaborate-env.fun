@@ -2812,6 +2812,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                              Vector.tabulate
                              (Int.max (strArity, sigArity), fn _ =>
                               Type.var (Tyvar.newNoname {equality = false}))
+                          (* Ensure tyvars get correct pretty names. *)
+                          val _ = Vector.foreach (tyvars, ignore o layoutPretty)
                        in
                           val strTyvars = Vector.prefix (tyvars, strArity)
                           val sigTyvars = Vector.prefix (tyvars, sigArity)
