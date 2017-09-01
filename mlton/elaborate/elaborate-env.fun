@@ -382,19 +382,20 @@ structure TypeStr =
             node = Datatype {tycon = tycon, cons = cons}}
 
       fun def (s: Scheme.t, k: Kind.t) =
-         let
-            val (tyvars, ty) = Scheme.dest s
-         in
-            T {kind = k,
-               node = (case Type.deEta (ty, tyvars) of
-                          NONE => Scheme s
-                        | SOME c => Tycon c)}
-         end
+         T {kind = k,
+            node = Scheme s}
 
       fun toTyconOpt s =
          case node s of
             Datatype {tycon, ...} => SOME tycon
-          | Scheme _ => NONE
+          | Scheme s =>
+               let
+                  val (tyvars, ty) = Scheme.dest s
+               in
+                  case Type.deEta (ty, tyvars) of
+                   NONE => NONE
+                 | SOME c => SOME c
+               end
           | Tycon c => SOME c
 
       fun tycon (c, kind) = T {kind = kind,
@@ -473,17 +474,15 @@ structure Interface =
                            let
                               val typeStr = flexibleTyconToEnv c
                            in
-                              case EtypeStr.node typeStr of
-                                 EtypeStr.Datatype {tycon, ...} => data tycon
-                               | EtypeStr.Tycon c => data c
-                               | _ =>
-                                    Error.bug
-                                    (Layout.toString
-                                     (seq [str "ElaborateEnv.Interface.typeStrToEnv",
-                                           str "datatype ",
-                                           TypeStr.layout s,
-                                           str " realized with scheme ",
-                                           EtypeStr.layout typeStr]))
+                              case EtypeStr.toTyconOpt typeStr of
+                                 SOME c => data c
+                               | _ => Error.bug
+                                      (Layout.toString
+                                       (seq [str "ElaborateEnv.Interface.typeStrToEnv ",
+                                             str "datatype ",
+                                             TypeStr.layout s,
+                                             str " realized with type structure ",
+                                             EtypeStr.layout typeStr]))
                            end
                       | Tycon.Rigid (c, _) => data c
                   end
