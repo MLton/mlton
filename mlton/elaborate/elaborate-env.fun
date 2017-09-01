@@ -2758,13 +2758,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            | SOME (msgs, strError, sigError) =>
                                 Control.error
                                 (region,
-                                 seq [str "type in structure disagrees with signature",
-                                      if List.isEmpty msgs
-                                         then Layout.empty
-                                         else seq [str " (",
-                                                   (seq o List.separate) (List.rev msgs, str ", "),
-                                                   str ")"],
-                                      str ": ",
+                                 seq [str "type in structure disagrees with signature (",
+                                      (seq o List.separate) (List.rev msgs, str ", "),
+                                      str "): ",
                                       layoutLongRev (strids, Ast.Tycon.layout sigName)],
                                  align ((seq [str "structure: ", strError]) ::
                                         (seq [str "defn at:   ",
@@ -2777,11 +2773,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val error = fn (msg, strError, sigError) =>
                           let
                              val msgs =
-                                case (msg, !error) of
-                                   (NONE, NONE) => []
-                                 | (NONE, SOME (msgs, _, _)) => msgs
-                                 | (SOME msg, NONE) => [str msg]
-                                 | (SOME msg, SOME (msgs, _, _)) => (str msg)::msgs
+                                case !error of
+                                   NONE => [str msg]
+                                 | SOME (msgs, _, _) => (str msg)::msgs
                           in
                              error := SOME (msgs, strError, sigError)
                           end
@@ -2912,7 +2906,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val () =
                           if strArity = sigArity
                              then ()
-                             else error (SOME "arity",
+                             else error ("arity",
                                          strMsg (false, NONE),
                                          sigMsg (false, NONE))
                        val resStr =
@@ -2925,7 +2919,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       if AdmitsEquality.<= (sigEq, strEq)
                                          then ()
                                          else (preError ()
-                                               ; error (SOME "admits equality",
+                                               ; error ("admits equality",
                                                         strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
                                                                              (strStr, fn strTycon =>
                                                                               tyconScheme (strTycon, strArity)))),
@@ -2939,7 +2933,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       Type.unify
                                       (Scheme.apply (strScheme, strTyvars),
                                        Scheme.apply (sigScheme, sigTyvars),
-                                       {error = fn (l, l') => error (SOME "type definition",
+                                       {error = fn (l, l') => error ("type definition",
                                                                      strMsg (false, SOME l),
                                                                      sigMsg (false, SOME l')),
                                         preError = preError})
@@ -2954,7 +2948,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                (Scheme.apply (strScheme, strTyvars),
                                                 Scheme.apply (sigScheme, sigTyvars),
                                                 {error = fn _ =>
-                                                 error (SOME "type structure",
+                                                 error ("type structure",
                                                         strMsg (true, NONE),
                                                         sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))),
                                                  preError = preError})
@@ -2972,7 +2966,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       tyconScheme (sigTycon, sigArity)
                                    fun nonDatatype strScheme =
                                       (preError ()
-                                       ; error (SOME "type structure",
+                                       ; error ("type structure",
                                                 strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
                                                 sigMsg (true, SOME (seq [str "datatype ",
                                                                          lay (Scheme.apply (sigScheme, sigTyvars))])))
@@ -2990,7 +2984,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                               (Scheme.apply (strScheme, strTyvars),
                                                Scheme.apply (sigScheme, sigTyvars),
                                                {error = fn _ =>
-                                                (error (SOME "type structure",
+                                                (error ("type structure",
                                                         strMsg (false, NONE),
                                                         sigMsg (false, SOME (seq [str "datatype ",
                                                                                   lay (Scheme.apply (sigScheme, sigTyvars))])))
@@ -3007,7 +3001,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 let
                                    fun nonDatatype strScheme =
                                       (preError ()
-                                       ; error (SOME "type structure",
+                                       ; error ("type structure",
                                                 strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyvars)))),
                                                 sigMsg (true, NONE))
                                        ; rlzStr)
@@ -3106,7 +3100,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                                 SOME (Layout.alignPrefix (cons, "| "))
                                                              end
                                                        in
-                                                          error (SOME "constructors",
+                                                          error ("constructors",
                                                                  strMsg (false, layCons strCons),
                                                                  sigMsg (false, layCons sigCons))
                                                           ; rlzStr
