@@ -232,24 +232,38 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                            let
                               val kind = TypeStr.kind s
                               val numArgs = Vector.length ts
+                              val ts =
+                                 case kind of
+                                    Kind.Arity n =>
+                                       let
+                                          fun error () =
+                                             let
+                                                open Layout
+                                             in
+                                                Control.error
+                                                (Atype.region ty,
+                                                 seq [str "type constructor applied to incorrect number of type arguments: ",
+                                                      Ast.Longtycon.layout c],
+                                                 align [seq [str "expects: ", Int.layout n],
+                                                        seq [str "but got: ", Int.layout numArgs],
+                                                        seq [str "in: ", Atype.layout ty]])
+                                             end
+                                       in
+                                          case Int.compare (n, numArgs) of
+                                             LESS =>
+                                                (error (); Vector.prefix (ts, n))
+                                           | EQUAL => ts
+                                           | GREATER =>
+                                                (error ()
+                                                 ; Vector.concat
+                                                   [ts,
+                                                    Vector.tabulate
+                                                    (n - numArgs, fn _ =>
+                                                     Type.new ())])
+                                       end
+                                  | Kind.Nary => ts
                            in
-                              if (case kind of
-                                     Kind.Arity n => n = numArgs
-                                   | Kind.Nary => true)
-                                 then TypeStr.apply (s, ts)
-                              else
-                                 let
-                                    val _ =
-                                       Control.error
-                                       (Atype.region ty,
-                                        seq [str "type constructor applied to incorrect number of type arguments: ",
-                                             Ast.Longtycon.layout c],
-                                        align [seq [str "expects: ", Kind.layout kind],
-                                               seq [str "but got: ", Int.layout numArgs],
-                                               seq [str "in: ", approximate (Atype.layout ty)]])
-                                 in
-                                    Type.new ()
-                                 end
+                              TypeStr.apply (s, ts)
                            end
                in
                   case (Ast.Longtycon.split c, Vector.length ts) of
