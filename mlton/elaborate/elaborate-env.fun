@@ -2779,19 +2779,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                              error := SOME (msgs, strError, sigError)
                           end
 
-                       fun tyconScheme (tycon: Tycon.t, arity): Scheme.t =
-                          let
-                             val tyvars =
-                                Vector.tabulate
-                                (arity, fn _ =>
-                                 Tyvar.newNoname {equality = false})
-                          in
-                             Scheme.make
-                             {canGeneralize = true,
-                              ty = Type.con (tycon, Vector.map (tyvars, Type.var)),
-                              tyvars = tyvars}
-                          end
-
                        val strArity =
                           case TypeStr.kind strStr of
                              Kind.Arity strArity => strArity
@@ -2852,11 +2839,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            | (NONE, _, rlzStr) =>
                                 (case rlzStr of
                                     TypeStr.Datatype {tycon, ...} =>
-                                      Scheme (tyconScheme (tycon, sigArity))
+                                      Scheme (Scheme.fromTycon (tycon, {arity = sigArity}))
                                   | TypeStr.Scheme s =>
                                       Scheme s
                                   | TypeStr.Tycon tycon =>
-                                      Scheme (tyconScheme (tycon, sigArity)))
+                                      Scheme (Scheme.fromTycon (tycon, {arity = sigArity})))
                            | (SOME _, _, _) =>
                                 Type
 
@@ -2921,7 +2908,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                ; error ("admits equality",
                                                         strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
                                                                              (strStr, fn strTycon =>
-                                                                              tyconScheme (strTycon, strArity)))),
+                                                                              Scheme.fromTycon
+                                                                              (strTycon, {arity = strArity})))),
                                                         sigMsg (true, NONE)))
                                 in
                                    rlzStr
@@ -2941,7 +2929,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          TypeStr.Datatype {tycon = strTycon, ...} =>
                                             let
                                                val strScheme =
-                                                  tyconScheme (strTycon, strArity)
+                                                  Scheme.fromTycon (strTycon, {arity = strArity})
                                             in
                                                Type.unify
                                                (Scheme.apply (strScheme, strTyvars),
@@ -2955,14 +2943,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                        | TypeStr.Scheme s =>
                                             chkScheme s
                                        | TypeStr.Tycon tycon =>
-                                            chkScheme (tyconScheme (tycon, strArity))
+                                            chkScheme (Scheme.fromTycon (tycon, {arity = strArity}))
                                 in
                                    rlzStr
                                 end
                            | DatatypeRepl {tycon = sigTycon} =>
                                 let
                                    val sigScheme =
-                                      tyconScheme (sigTycon, sigArity)
+                                      Scheme.fromTycon (sigTycon, {arity = sigArity})
                                    fun nonDatatype strScheme =
                                       (preError ()
                                        ; error ("type structure",
@@ -2975,7 +2963,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       TypeStr.Datatype {tycon = strTycon, ...} =>
                                          let
                                             val strScheme =
-                                               tyconScheme (strTycon, strArity)
+                                               Scheme.fromTycon (strTycon, {arity = strArity})
                                          in
                                             Exn.withEscape
                                             (fn escape =>
@@ -2994,7 +2982,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
                                     | TypeStr.Tycon strTycon =>
-                                         nonDatatype (tyconScheme (strTycon, strArity))
+                                         nonDatatype (Scheme.fromTycon (strTycon, {arity = strArity}))
                                 end
                            | Datatype {cons = sigCons, ...} =>
                                 let
@@ -3110,7 +3098,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
                                     | TypeStr.Tycon strTycon =>
-                                         nonDatatype (tyconScheme (strTycon, strArity))
+                                         nonDatatype (Scheme.fromTycon (strTycon, {arity = strArity}))
                                 end
                        val () = reportError ()
                        val () = destroy ()
