@@ -82,7 +82,6 @@ signature INTERFACE =
             type t
 
             val arrow: t * t -> t
-            val bogus: t
             val con: Tycon.t * t vector -> t
             val deArrow: t -> t * t
             val deEta: t * Tyvar.t vector -> Tycon.t option

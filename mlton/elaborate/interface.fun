@@ -227,8 +227,6 @@ structure Type =
 
       fun arrow (t1, t2) = Con (Tycon.arrow, Vector.new2 (t1, t2))
 
-      val bogus = Con (Tycon.exn, Vector.new0 ())        
-
       val con = Con
 
       fun deArrowOpt (t: t): (t * t) option =
