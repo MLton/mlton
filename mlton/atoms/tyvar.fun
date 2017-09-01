@@ -1,4 +1,4 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -82,5 +82,32 @@ in
        | 1 => layout (Vector.sub (ts, 0))
        | _ => Vector.layout layout ts
 end
+
+fun makeLayoutPretty () =
+   let
+      val {destroy, get = lay, ...} =
+         Property.destGet
+         (plist,
+          Property.initFun
+          (let
+              val r = ref (Char.toInt #"a")
+           in
+              fn v =>
+              let
+                 val n = !r
+                 val l =
+                    Layout.str (concat
+                                [if isEquality v then "''" else "'",
+                                 if n > Char.toInt #"z"
+                                    then concat ["a", Int.toString (n - Char.toInt #"z")]
+                                    else Char.toString (Char.fromInt n )])
+                 val _ = r := 1 + n
+              in
+                 l
+              end
+           end))
+   in
+      {destroy = destroy, lay = lay}
+   end
 
 end

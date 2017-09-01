@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -20,6 +21,7 @@ signature TYVAR =
       val hash: t -> Word.t
       val isEquality: t -> bool
       val layouts: t vector -> Layout.t
+      val makeLayoutPretty: unit -> {destroy: unit -> unit, lay: t -> Layout.t}
       val name: t -> string
       val newLike: t -> t
       (* newNoname creates a new type variable named a_n, where n is a
