@@ -90,6 +90,7 @@ signature ELABORATE_ENV =
       sharing TypeStr.Kind = Tycon.Kind
       sharing TypeStr.Tycon = CoreML.Tycon
       structure Interface: INTERFACE
+      sharing Interface.AdmitsEquality = AdmitsEquality
       sharing Interface.Ast = Ast
       sharing Interface.EnvTypeStr = TypeStr
       structure Structure:
