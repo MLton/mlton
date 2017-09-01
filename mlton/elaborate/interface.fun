@@ -323,8 +323,6 @@ structure Scheme =
    struct
       open Scheme
 
-      fun dest (T {ty, tyvars}) = (tyvars, ty)
-
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
    end
 
@@ -435,20 +433,8 @@ structure TypeStr =
             node = Datatype {tycon = tycon, cons = cons}}
 
       fun def (s: Scheme.t, k: Kind.t) =
-         let
-            val (tyvars, ty) = Scheme.dest s
-         in
-            T {kind = k,
-               node = (case Type.deEta (ty, tyvars) of
-                          NONE => Scheme s
-                        | SOME c => Tycon c)}
-         end
-
-      fun toTyconOpt s =
-         case node s of
-            Datatype {tycon, ...} => SOME tycon
-          | Scheme _ => NONE
-          | Tycon c => SOME c
+         T {kind = k,
+            node = Scheme s}
 
       fun tycon (c, kind) = T {kind = kind,
                                node = Tycon c}
@@ -492,6 +478,20 @@ local
 in
    val expandTy = expandTy
 end
+
+structure TypeStr =
+   struct
+      open TypeStr
+
+      fun toTyconOpt s =
+         case node s of
+            Datatype {tycon, ...} => SOME tycon
+          | Scheme (Scheme.T {tyvars, ty}) =>
+               (case Type.deEta (expandTy ty, tyvars) of
+                   NONE => NONE
+                 | SOME c => SOME c)
+          | Tycon c => SOME c
+   end
 
 fun copyCons cons: Cons.t =
    Cons.map (cons, fn {scheme, ...} =>
@@ -788,13 +788,9 @@ structure TypeStr =
                   NONE
                end
             fun loop (s: t): FlexibleTycon.t option =
-               case node s of
-                  Datatype {tycon, ...} => loopTycon tycon
-                | Scheme (Scheme.T {ty, tyvars}) =>
-                     (case Type.deEta (expandTy ty, tyvars) of
-                         NONE => error ("defined", true)
-                       | SOME c => loopTycon c)
-                | Tycon c => loopTycon c
+               (case toTyconOpt s of
+                   SOME c => loopTycon c
+                 | NONE => error ("defined", true))
             and loopTycon (c: Tycon.t): FlexibleTycon.t option =
                case c of
                   Tycon.Flexible c =>
