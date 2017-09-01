@@ -151,15 +151,28 @@ signature INTERFACE =
             val node: t -> node
             val toTyconOpt: t -> Tycon.t option (* NONE on Scheme *)
             val tycon: Tycon.t * Kind.t -> t
-            val share:
-               (t * Region.t * (unit -> Layout.t))
-               * (t * Region.t * (unit -> Layout.t))
-               * Time.t * (unit -> unit) * Region.t
-               -> unit
             val specs: t -> Region.t list
+
+            val share:
+               {region: Region.t,
+                time: Time.t,
+                ty1: {lay: unit -> Layout.t,
+                      region: Region.t,
+                      spec: Region.t,
+                      tyStr: t},
+                ty2: {lay: unit -> Layout.t,
+                      region: Region.t,
+                      spec: Region.t,
+                      tyStr: t}}
+               -> unit
             val wheree:
-               t * t * Time.t
-               * (unit -> unit) * Region.t * (unit -> Layout.t)
+               {realization: t,
+                region: Region.t,
+                time: Time.t,
+                ty: {lay: unit -> Layout.t,
+                     region: Region.t,
+                     spec: Region.t,
+                     tyStr: t}}
                -> unit
          end
       sharing type FlexibleTycon.typeStr = TypeStr.t
@@ -188,7 +201,7 @@ signature INTERFACE =
          -> t option
       val lookupLongtycon:
          t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
-         -> TypeStr.t option
+         -> (Ast.Tycon.t * TypeStr.t) option
       val new: {isClosed: bool,
                 strs: (Ast.Strid.t * t) array,
                 types: (Ast.Tycon.t * TypeStr.t) array,
@@ -199,10 +212,10 @@ signature INTERFACE =
          Found of 'a
        | UndefinedStructure of Ast.Strid.t list
       val peekStrids: t * Ast.Strid.t list -> t peekResult
-      val peekTycon: t * Ast.Tycon.t -> TypeStr.t option
+      val peekTycon: t * Ast.Tycon.t -> (Ast.Tycon.t * TypeStr.t) option
       val plist: t -> PropertyList.t
       val share:
          t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t
-         * (unit -> unit) * Region.t
+         * Region.t
          -> unit
    end

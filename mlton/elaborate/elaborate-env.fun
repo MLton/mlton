@@ -3639,7 +3639,7 @@ structure InterfaceEnv =
                   case peekStrid (E, s) of
                      NONE => doit ()
                    | SOME I =>
-                        Interface.lookupLongtycon
+                        ((fn opt => Option.map (opt, #2)) o Interface.lookupLongtycon)
                         (I, Longtycon.long (ss, c), Longtycon.region long,
                          {prefix = [s]})
          end

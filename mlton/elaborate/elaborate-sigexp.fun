@@ -337,7 +337,6 @@ val info' = Trace.info "ElaborateSigexp.elaborateSpec"
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
    let
-      val preError = Promise.lazy (fn () => StructureEnv.setTyconLayoutPretty (E, {prefixUnset = true}))
       val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
          traceElaborateSigexp
@@ -367,15 +366,21 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                  (Interface.lookupLongtycon
                                   (I, longtycon, Longtycon.region longtycon,
                                    {prefix = []}),
-                                  fn s =>
-                                  TypeStr.wheree
-                                  (s,
-                                   TypeStr.def (elaborateScheme (tyvars, ty, E),
-                                                Kind.Arity (Vector.length tyvars)),
-                                   time,
-                                   preError,
-                                   WhereEquation.region eqn,
-                                   fn () => Longtycon.layout longtycon)))
+                                  fn (name, s) =>
+                                  let
+                                     val realization =
+                                        TypeStr.def (elaborateScheme (tyvars, ty, E),
+                                                     Kind.Arity (Vector.length tyvars))
+                                  in
+                                     TypeStr.wheree
+                                     {realization = realization,
+                                      region = WhereEquation.region eqn,
+                                      time = time,
+                                      ty = {lay = fn () => Longtycon.layout longtycon,
+                                            region = Longtycon.region longtycon,
+                                            spec = Ast.Tycon.region name,
+                                            tyStr = s}}
+                                  end))
                     in
                        I
                     end)
@@ -467,7 +472,6 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                           Interface.share
                                           (I, s, I', s',
                                            time,
-                                           preError,
                                            SharingEquation.region eqn))
                              in
                                 loop (List.fold
@@ -483,21 +487,22 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                case (so, Interface.lookupLongtycon (I, c', Longtycon.region c', {prefix = []})) of
                                   (NONE, NONE) => NONE
                                 | (SOME _, NONE) => so
-                                | (NONE, SOME s') => SOME (c', s')
-                                | (SOME (c, s), SOME s') =>
+                                | (NONE, SOME (n', s')) => SOME (c', n', s')
+                                | (SOME (c, n, s), SOME (n', s')) =>
                                      let
-                                        fun doit (c, s) =
-                                           (s, Longtycon.region c,
-                                            fn () => Longtycon.layout c)
+                                        fun mkTy (c, n, s) =
+                                           {lay = fn () => Longtycon.layout c,
+                                            region = Longtycon.region c,
+                                            spec = Ast.Tycon.region n,
+                                            tyStr = s}
                                         val _ =
                                            TypeStr.share
-                                           (doit (c, s),
-                                            doit (c', s'),
-                                            time,
-                                            preError,
-                                            SharingEquation.region eqn)
+                                           {region = SharingEquation.region eqn,
+                                            time = time,
+                                            ty1 = mkTy (c, n, s),
+                                            ty2 = mkTy (c', n', s')}
                                      in
-                                        SOME (c', s')
+                                        SOME (c', n', s')
                                      end)))
                 in
                    ()
