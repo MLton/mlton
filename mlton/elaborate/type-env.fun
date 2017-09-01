@@ -647,33 +647,13 @@ structure Type =
             val (destroy, prettyTyvar) =
                if localTyvarNames
                   then let
-                          val {destroy, get = prettyTyvar, ...} =
-                             Property.destGet
-                             (Tyvar.plist,
-                              Property.initFun
-                              (let
-                                  val r = ref (Char.toInt #"a")
-                               in
-                                  fn v =>
-                                  let
-                                     val n = !r
-                                     val l =
-                                        simple
-                                        (str (concat
-                                              [if Tyvar.isEquality v then "''" else "'",
-                                               if n > Char.toInt #"z" 
-                                                  then concat ["a", Int.toString (n - Char.toInt #"z")]
-                                               else Char.toString (Char.fromInt n )]))
-                                     val _ = r := 1 + n
-                                  in
-                                     l
-                                  end
-                               end))
+                          val {destroy, lay} =
+                             Tyvar.makeLayoutPretty ()
                        in
-                          (destroy, prettyTyvar)
+                          (destroy, lay)
                        end
-               else (fn () => (), simple o Tyvar.layout)
-            fun var (_, a) = prettyTyvar a
+               else (fn () => (), Tyvar.layout)
+            fun var (_, a) = simple (prettyTyvar a)
             fun lay t =
                hom (t, {con = con,
                         expandOpaque = expandOpaque,
