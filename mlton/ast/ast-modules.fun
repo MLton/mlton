@@ -339,8 +339,8 @@ fun layoutStrdec d =
                          (case node def of
                              Var _ => OneLine
                            | _ => Split 3,
-                                seq [Strid.layout name, SigConst.layout constraint],
-                                layoutStrexp def))
+                          seq [Strid.layout name, SigConst.layout constraint],
+                          layoutStrexp def))
 
 and layoutStrdecs ds = layouts (ds, layoutStrdec)
 
