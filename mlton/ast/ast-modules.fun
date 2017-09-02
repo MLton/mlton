@@ -515,7 +515,7 @@ structure Topdec =
             Functor fctbs =>
                layoutAndsBind ("functor", "=", fctbs,
                                fn {name, arg, result, body} =>
-                               (Split 0,
+                               (Split 3,
                                 seq [Fctid.layout name, str " ",
                                      paren (FctArg.layout arg),
                                      layoutSigConst result],
