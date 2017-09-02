@@ -221,7 +221,8 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                      let
                         val strid =
                            Strid.fromSymbol
-                           (Symbol.fromString "_arg",
+                           (Symbol.fromString
+                            (Fctid.toString name ^ "._arg"),
                             Region.bogus)
                      in
                         (strid,
