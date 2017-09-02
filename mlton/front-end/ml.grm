@@ -1149,7 +1149,7 @@ apatnode
                    in
                       Control.error
                       (Const.region const,
-                       seq [str "real constants are not allowed in patterns: ",
+                       seq [str "real constants not allowed in patterns: ",
                             Const.layout const],
                        empty)
                    end
