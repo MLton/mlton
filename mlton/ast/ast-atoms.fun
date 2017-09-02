@@ -412,9 +412,10 @@ structure DatBind =
                (datatypes, fn {tyvars, tycon, cons} =>
                 (reportDuplicateTyvars
                  (tyvars, {ctxt = fn () =>
-                           Type.layoutApp
-                           (Tycon.layout tycon,
-                            tyvars, Tyvar.layout)})
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
                  ; Vector.foreach
                    (cons, fn (c, to) =>
                     (vidCheckSpecial
