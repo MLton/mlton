@@ -148,6 +148,7 @@ signature INTERFACE =
             val kind: t -> Kind.t
             val layout: t -> Layout.t
             val node: t -> node
+            val pushSpec: t * Region.t -> unit
             val toTyconOpt: t * {expand: bool} -> Tycon.t option (* NONE on Scheme *)
             val tycon: Tycon.t * Kind.t -> t
             val specs: t -> Region.t list

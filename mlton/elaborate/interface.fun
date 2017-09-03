@@ -726,6 +726,13 @@ structure TypeStr =
             (loop s, Region.equals)
          end
 
+      fun pushSpec (s, region) =
+         case TypeStr.toTyconOpt (s, {expand = false}) of
+            NONE => ()
+          | SOME (Tycon.Flexible flex) =>
+               List.push (FlexibleTycon.specsRef flex, region)
+          | SOME (Tycon.Rigid _) => ()
+
       fun mkErrorExtra ({lay, region = _, spec, tyStr},
                         keywordErr, arityErr, defnErr) =
          let
