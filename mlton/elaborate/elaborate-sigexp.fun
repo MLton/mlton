@@ -247,8 +247,15 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
    let
       fun mkDef {def, tycon = _, tyvars} =
-         TypeStr.def (elaborateScheme (tyvars, def, E),
-                      Kind.Arity (Vector.length tyvars))
+         let
+            val realization =
+               TypeStr.def (elaborateScheme (tyvars, def, E),
+                            Kind.Arity (Vector.length tyvars))
+            val _ =
+               TypeStr.pushSpec (realization, Ast.Type.region def)
+         in
+            realization
+         end
       val TypBind.T bs = TypBind.node typBind
    in
       if sequential
