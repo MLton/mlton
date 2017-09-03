@@ -481,11 +481,11 @@ structure TypeStr =
    struct
       open TypeStr
 
-      fun toTyconOpt s =
+      fun toTyconOpt (s, {expandTy = b}) =
          case node s of
             Datatype {tycon, ...} => SOME tycon
           | Scheme (Scheme.T {tyvars, ty}) =>
-               (case Type.deEta (expandTy ty, tyvars) of
+               (case Type.deEta (if b then expandTy ty else ty, tyvars) of
                    NONE => NONE
                  | SOME c => SOME c)
           | Tycon c => SOME c
@@ -700,7 +700,7 @@ structure TypeStr =
                       Region.equals)
                 | _ => []
          in
-            case toTyconOpt s of
+            case toTyconOpt (s, {expandTy = false}) of
                NONE => []
              | SOME c => specs c
          end
@@ -786,7 +786,7 @@ structure TypeStr =
                   NONE
                end
             fun loop (s: t): FlexibleTycon.t option =
-               (case toTyconOpt s of
+               (case toTyconOpt (s, {expandTy = false}) of
                    SOME c => loopTycon c
                  | NONE => error ("defined", true))
             and loopTycon (c: Tycon.t): FlexibleTycon.t option =
@@ -860,7 +860,8 @@ structure TypeStr =
                   val typeStructureError =
                      if FlexibleTycon.hasCons flex
                         andalso
-                        Option.isNone (TypeStr.toTyconOpt realization)
+                        Option.isNone (TypeStr.toTyconOpt
+                                       (realization, {expandTy = true}))
                         then SOME (str "type structure", str "<complex type>")
                         else NONE
                   val errors =
