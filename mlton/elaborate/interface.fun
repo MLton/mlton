@@ -900,11 +900,7 @@ structure TypeStr =
                   if List.isEmpty errors
                      then (FlexibleTycon.defnRef flex := Defn.typeStr realization
                            ; List.push (FlexibleTycon.specsRef flex, region)
-                           ; case TypeStr.toTyconOpt (realization, {expand = false}) of
-                                NONE => ()
-                              | SOME (Tycon.Flexible flex) =>
-                                   List.push (FlexibleTycon.specsRef flex, region)
-                              | SOME (Tycon.Rigid _) => ())
+                           ; pushSpec (realization, region))
                      else let
                              val (msgs, defnMsgs) = List.unzip errors
                              val arityErr = Option.isSome arityError
