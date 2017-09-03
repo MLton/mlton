@@ -634,9 +634,7 @@ structure FlexibleTycon =
                fields fc'
             val _ = Set.union (s, s')
             val specs =
-               (List.rev o List.removeDuplicates)
-               (sharingSpec :: (!ss @ !ss'),
-                Region.equals)
+               sharingSpec :: (!ss' @ !ss)
             val _ = 
                Set.:=
                (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
@@ -692,13 +690,14 @@ structure TypeStr =
 
       val copy = copyTypeStr
 
-
       fun specs s =
          let
             fun specs c =
                case c of
                   Tycon.Flexible fc =>
-                     List.rev (FlexibleTycon.specs fc)
+                     List.removeDuplicates
+                     (FlexibleTycon.specs fc,
+                      Region.equals)
                 | _ => []
          in
             case node s of
