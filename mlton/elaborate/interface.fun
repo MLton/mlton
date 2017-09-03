@@ -700,10 +700,9 @@ structure TypeStr =
                       Region.equals)
                 | _ => []
          in
-            case node s of
-               Datatype {tycon, ...} => specs tycon
-             | Scheme _ => []
-             | Tycon tycon => specs tycon
+            case toTyconOpt s of
+               NONE => []
+             | SOME c => specs c
          end
 
       fun mkErrorExtra ({lay, region = _, spec, tyStr},
