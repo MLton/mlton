@@ -707,17 +707,23 @@ structure TypeStr =
 
       fun specs s =
          let
-            fun specs c =
+            fun loop s =
+               case toTyconOpt (s, {expand = false}) of
+                  NONE => []
+                | SOME c => loopTycon c
+            and loopTycon c =
                case c of
                   Tycon.Flexible fc =>
-                     List.removeDuplicates
-                     (FlexibleTycon.specs fc,
-                      Region.equals)
-                | _ => []
+                     (case Defn.dest (FlexibleTycon.defn fc) of
+                         Defn.Realized _ =>
+                            Error.bug "Interface.TypeStr.specs: Defn.Realized"
+                       | Defn.TypeStr s => loop s
+                       | Defn.Undefined => [])
+                     @ (FlexibleTycon.specs fc)
+                | Tycon.Rigid _ => []
          in
-            case toTyconOpt (s, {expand = false}) of
-               NONE => []
-             | SOME c => specs c
+            List.removeDuplicates
+            (loop s, Region.equals)
          end
 
       fun mkErrorExtra ({lay, region = _, spec, tyStr},
