@@ -336,6 +336,13 @@ structure TypBind =
 
       val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
 
+      fun isEmpty (b: t) =
+         let
+            val T ds = node b
+         in
+            Vector.isEmpty ds
+         end
+
       fun checkSyntax (b: t, kind: string): unit =
          let
             val T v = node b

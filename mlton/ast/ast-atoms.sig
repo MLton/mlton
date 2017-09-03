@@ -128,6 +128,7 @@ signature AST_ATOMS =
             val checkSyntaxDef: t -> unit
             val checkSyntaxSpec: t -> unit
             val empty: t
+            val isEmpty: t -> bool
             val layout: t -> Layout.t
          end
       structure DatBind:
