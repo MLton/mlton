@@ -247,9 +247,6 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 fun elabTypBind (typBind: TypBind.t, E) = 
    let
       val TypBind.T types = TypBind.node typBind
-      val () = if Vector.length types > 0
-                  then check (Control.Elaborate.allowSigWithtype, "withtype in signatures", TypBind.region typBind)
-                  else ()
       val strs =
          Vector.map
          (types, fn {def, tyvars, ...} =>
@@ -282,6 +279,11 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
               tycon = tycon,
               tyvars = tyvars}
           end)
+      val _ = if TypBind.isEmpty withtypes
+                 then ()
+                 else check (Control.Elaborate.allowSigWithtype,
+                             "withtype in signatures",
+                             TypBind.region withtypes)
       val _ = elabTypBind (withtypes, E)
       val datatypes =
          Vector.map
