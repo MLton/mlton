@@ -244,18 +244,20 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
     end)
 
-fun elabTypBind (typBind: TypBind.t, E) = 
+fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
    let
-      val TypBind.T types = TypBind.node typBind
-      val strs =
-         Vector.map
-         (types, fn {def, tyvars, ...} =>
-          TypeStr.def (elaborateScheme (tyvars, def, E),
-                       Kind.Arity (Vector.length tyvars)))
+      fun mkDef {def, tycon = _, tyvars} =
+         TypeStr.def (elaborateScheme (tyvars, def, E),
+                      Kind.Arity (Vector.length tyvars))
+      val TypBind.T bs = TypBind.node typBind
    in
-      Vector.foreach2
-      (types, strs, fn ({tycon, ...}, str) =>
-       Env.extendTycon (E, tycon, str))
+      if sequential
+         then Vector.foreach
+              (bs, fn b as {tycon, ...} =>
+               Env.extendTycon (E, tycon, mkDef b))
+         else Vector.foreach2
+              (bs, Vector.map (bs, mkDef), fn ({tycon, ...}, str) =>
+               Env.extendTycon (E, tycon, str))
    end
 
 fun elaborateDatBind (datBind: DatBind.t, E): unit =
@@ -284,7 +286,10 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                  else check (Control.Elaborate.allowSigWithtype,
                              "withtype in signatures",
                              TypBind.region withtypes)
-      val _ = elabTypBind (withtypes, E)
+      (* To match semantics of withtype in Core,
+       * type binds are elaborated simultaneously.
+       *)
+      val _ = elabTypBind (withtypes, E, {sequential = false})
       val datatypes =
          Vector.map
          (datatypes, fn {cons, kind, name, tycon, tyvars, ...} =>
@@ -570,16 +575,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 elaborateTypedescs (typedescs, {equality = false}, E)
            | Spec.TypeDefs typBind =>
                 (* Abbreviation on page 59 combined with rules 77 and 80. *)
-                let
-                   val TypBind.T ds = TypBind.node typBind
-                in
-                   Vector.foreach
-                   (ds, fn {def, tycon, tyvars} =>
-                    Env.extendTycon
-                    (E, tycon,
-                     TypeStr.def (elaborateScheme (tyvars, def, E),
-                                  Kind.Arity (Vector.length tyvars))))
-                end
+                elabTypBind (typBind, E, {sequential = true})
            | Spec.Val xts =>
                 (* rules 68, 79 *)
                 Vector.foreach
