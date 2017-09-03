@@ -481,14 +481,29 @@ structure TypeStr =
    struct
       open TypeStr
 
-      fun toTyconOpt (s, {expandTy = b}) =
-         case node s of
-            Datatype {tycon, ...} => SOME tycon
-          | Scheme (Scheme.T {tyvars, ty}) =>
-               (case Type.deEta (if b then expandTy ty else ty, tyvars) of
-                   NONE => NONE
-                 | SOME c => SOME c)
-          | Tycon c => SOME c
+      fun toTyconOpt (s, {expand}) =
+         let
+            fun loop s =
+               case node s of
+                  Datatype {tycon, ...} => loopTycon tycon
+                | Scheme (Scheme.T {tyvars, ty}) =>
+                     (case Type.deEta (ty, tyvars) of
+                         NONE => NONE
+                       | SOME c => loopTycon c)
+                | Tycon c => loopTycon c
+            and loopTycon c =
+               if expand
+                  then (case c of
+                           Tycon.Flexible f =>
+                              (case Defn.dest (FlexibleTycon.defn f) of
+                                  Defn.Realized _ => Error.bug "Interface.TypeStr.toTyconOpt: Realized"
+                                | Defn.TypeStr s => loop s
+                                | Defn.Undefined => SOME c)
+                         | Tycon.Rigid _ => SOME c)
+                  else SOME c
+         in
+            loop s
+         end
    end
 
 fun copyCons cons: Cons.t =
@@ -700,7 +715,7 @@ structure TypeStr =
                       Region.equals)
                 | _ => []
          in
-            case toTyconOpt (s, {expandTy = false}) of
+            case toTyconOpt (s, {expand = false}) of
                NONE => []
              | SOME c => specs c
          end
@@ -786,7 +801,7 @@ structure TypeStr =
                   NONE
                end
             fun loop (s: t): FlexibleTycon.t option =
-               (case toTyconOpt (s, {expandTy = false}) of
+               (case toTyconOpt (s, {expand = false}) of
                    SOME c => loopTycon c
                  | NONE => error ("defined", true))
             and loopTycon (c: Tycon.t): FlexibleTycon.t option =
@@ -861,7 +876,7 @@ structure TypeStr =
                      if FlexibleTycon.hasCons flex
                         andalso
                         Option.isNone (TypeStr.toTyconOpt
-                                       (realization, {expandTy = true}))
+                                       (realization, {expand = true}))
                         then SOME (str "type structure", str "<complex type>")
                         else NONE
                   val errors =
