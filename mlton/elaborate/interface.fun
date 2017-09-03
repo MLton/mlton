@@ -891,8 +891,13 @@ structure TypeStr =
                       fn opt => opt)
                in
                   if List.isEmpty errors
-                     then (List.push (FlexibleTycon.specsRef flex, region)
-                           ; FlexibleTycon.defnRef flex := Defn.typeStr realization)
+                     then (FlexibleTycon.defnRef flex := Defn.typeStr realization
+                           ; List.push (FlexibleTycon.specsRef flex, region)
+                           ; case TypeStr.toTyconOpt (realization, {expand = false}) of
+                                NONE => ()
+                              | SOME (Tycon.Flexible flex) =>
+                                   List.push (FlexibleTycon.specsRef flex, region)
+                              | SOME (Tycon.Rigid _) => ())
                      else let
                              val (msgs, defnMsgs) = List.unzip errors
                              val arityErr = Option.isSome arityError
