@@ -503,14 +503,28 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 (* rule 78 and section G.3.3 *)
                 let
                    val time = Interface.Time.tick ()
+                   (* Reifying the interface of spec is expensive,
+                    * so collect all `sharing` equations that
+                    * constrain the same spec.
+                    *)
+                   val (spec, equations) =
+                      let
+                         fun loop (spec, equations) =
+                            case Spec.node spec of
+                               Spec.Sharing {equation, spec} =>
+                                  loop (spec, equation::equations)
+                             | _ => (spec, List.rev equations)
+                      in
+                         loop (spec, [equation])
+                      end
                    val (I, _) =
                       Env.makeInterface
                       (E, {isTop = false},
                        fn () => elaborateSpec spec)
                    val () = Env.openInterface (E, I, Spec.region spec)
                    val () =
-                      Vector.foreach
-                      (Vector.new1 equation, fn eqn =>
+                      List.foreach
+                      (equations, fn eqn =>
                        case SharingEquation.node eqn of
                           SharingEquation.Structure ss =>
                              let
