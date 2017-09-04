@@ -1480,11 +1480,11 @@ structure Scheme =
                      flexes: Type.genFlexRecord list,
                      tyvars: Tyvar.t vector,
                      ty: Type.t}
-       | Type of Type.t
+       | Mono of Type.t
 
       fun layout s =
          case s of
-            Type t => Type.layoutPretty t
+            Mono t => Type.layoutPretty t
           | General {canGeneralize, tyvars, ty, ...} =>
                Layout.record [("canGeneralize", Bool.layout canGeneralize),
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
@@ -1492,7 +1492,7 @@ structure Scheme =
 
       fun layoutPrettyAux (s, {expandOpaque, localTyvarNames}) =
          case s of
-            Type ty => 
+            Mono ty =>
                Type.layoutPrettyAux 
                (ty, {expandOpaque = expandOpaque, 
                      localTyvarNames = localTyvarNames})
@@ -1505,7 +1505,7 @@ structure Scheme =
 
       val bound =
          fn General {bound, ...} => bound ()
-          | Type _ => Vector.new0 ()
+          | Mono _ => Vector.new0 ()
 
       val bound =
          Trace.trace ("TypeEnv.Scheme.bound", layout, Vector.layout Tyvar.layout)
@@ -1513,20 +1513,20 @@ structure Scheme =
 
       val ty =
          fn General {ty, ...} => ty
-          | Type ty => ty
+          | Mono ty => ty
 
       fun dest s = (bound s, ty s)
 
       fun make {canGeneralize, tyvars, ty} =
          if Vector.isEmpty tyvars
-            then Type ty
+            then Mono ty
          else General {bound = fn () => tyvars,
                        canGeneralize = canGeneralize,
                        flexes = [],
                        tyvars = tyvars,
                        ty = ty}
 
-      val fromType = Type
+      val fromType = Mono
 
       fun fromTycon (tycon: Tycon.t, kind): t =
          let
@@ -1547,7 +1547,7 @@ structure Scheme =
 
       fun instantiate' (t: t, subst) =
          case t of
-            Type ty => {args = fn () => Vector.new0 (),
+            Mono ty => {args = fn () => Vector.new0 (),
                         instance = ty}
           | General {canGeneralize, flexes, tyvars, ty, ...} =>
                let
@@ -1714,7 +1714,7 @@ structure Scheme =
                Vector.map (v, fn s =>
                            case s of
                               General {ty, ...} => hom ty
-                            | Type ty => hom ty)
+                            | Mono ty => hom ty)
             val _ = destroy ()
          in
             res
@@ -1882,7 +1882,7 @@ fun close (ensure: Tyvar.t vector, ubd) =
             Vector.map
             (varTypes, fn {isExpansive, ty} =>
              if isExpansive
-                then Scheme.Type ty
+                then Scheme.Mono ty
              else Scheme.General {bound = bound,
                                   canGeneralize = true,
                                   flexes = flexes,
