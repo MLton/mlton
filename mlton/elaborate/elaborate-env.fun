@@ -386,10 +386,7 @@ structure TypeStr =
             node = Scheme s}
 
       fun tycon (c, kind) =
-         case kind of
-            Kind.Arity n =>
-               def (Scheme.fromTycon (c, {arity = n}), kind)
-          | _ => Error.bug "ElaborateEnv.TypeStr.tycon: Kind.Nary"
+         def (Scheme.fromTycon (c, kind), kind)
 
       fun abs t =
          case node t of
@@ -2769,12 +2766,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                              error := SOME (msgs, strError, sigError)
                           end
 
+                       val strKind = TypeStr.kind strStr
                        val strArity =
-                          case TypeStr.kind strStr of
+                          case strKind of
                              Kind.Arity strArity => strArity
                            | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: strArity"
+                       val sigKind = Interface.TypeStr.kind sigStr
                        val sigArity =
-                          case Interface.TypeStr.kind sigStr of
+                          case sigKind of
                              Kind.Arity sigArity => sigArity
                            | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: sigArity"
                        local
@@ -2829,7 +2828,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            | (NONE, _, rlzStr) =>
                                 (case rlzStr of
                                     TypeStr.Datatype {tycon, ...} =>
-                                      Scheme (Scheme.fromTycon (tycon, {arity = sigArity}))
+                                      Scheme (Scheme.fromTycon (tycon, sigKind))
                                   | TypeStr.Scheme s =>
                                       Scheme s)
                            | (SOME _, _, _) =>
@@ -2913,7 +2912,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          TypeStr.Datatype {tycon = strTycon, ...} =>
                                             let
                                                val strScheme =
-                                                  Scheme.fromTycon (strTycon, {arity = strArity})
+                                                  Scheme.fromTycon (strTycon, strKind)
                                             in
                                                Type.unify
                                                (Scheme.apply (strScheme, strTyvars),
@@ -2932,7 +2931,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            | DatatypeRepl {tycon = sigTycon} =>
                                 let
                                    val sigScheme =
-                                      Scheme.fromTycon (sigTycon, {arity = sigArity})
+                                      Scheme.fromTycon (sigTycon, sigKind)
                                    fun nonDatatype strScheme =
                                       (preError ()
                                        ; error ("type structure",
@@ -2945,7 +2944,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       TypeStr.Datatype {tycon = strTycon, ...} =>
                                          let
                                             val strScheme =
-                                               Scheme.fromTycon (strTycon, {arity = strArity})
+                                               Scheme.fromTycon (strTycon, strKind)
                                          in
                                             Exn.withEscape
                                             (fn escape =>

@@ -12,7 +12,12 @@ struct
 
 open S
 
-structure AdmitsEquality = Tycon.AdmitsEquality
+local
+   open Tycon
+in
+   structure AdmitsEquality = AdmitsEquality
+   structure Kind = Kind
+end
 structure Field = Record.Field
 structure Srecord = SortedRecord
 structure Set = DisjointSet
@@ -1523,8 +1528,12 @@ structure Scheme =
 
       val fromType = Type
 
-      fun fromTycon (tycon: Tycon.t, {arity}): t =
+      fun fromTycon (tycon: Tycon.t, kind): t =
          let
+            val arity =
+               case kind of
+                  Kind.Arity arity => arity
+                | Kind.Nary => Error.bug "TypeEnv.Scheme.fromTycon: Kind.Nary"
             val tyvars =
                Vector.tabulate
                (arity, fn _ =>
