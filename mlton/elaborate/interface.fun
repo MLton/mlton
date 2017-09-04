@@ -182,6 +182,9 @@ structure FlexibleTycon =
          make {admitsEquality = AdmitsEquality.Sometimes,
                defn = defn, hasCons = hasCons, kind = kind,
                specs = []}
+
+      fun pushSpec (fc, region) =
+         List.push (specsRef fc, region)
    end
 
 structure Tycon =
@@ -732,7 +735,7 @@ structure TypeStr =
          case TypeStr.toTyconOpt (s, {expand = false}) of
             NONE => ()
           | SOME (Tycon.Flexible flex) =>
-               List.push (FlexibleTycon.specsRef flex, region)
+               FlexibleTycon.pushSpec (flex, region)
           | SOME (Tycon.Rigid _) => ()
 
       fun mkErrorExtra ({lay, region = _, spec, tyStr},
@@ -901,7 +904,7 @@ structure TypeStr =
                in
                   if List.isEmpty errors
                      then (FlexibleTycon.defnRef flex := Defn.typeStr realization
-                           ; List.push (FlexibleTycon.specsRef flex, region)
+                           ; FlexibleTycon.pushSpec (flex, region)
                            ; pushSpec (realization, region))
                      else let
                              val (msgs, defnMsgs) = List.unzip errors
