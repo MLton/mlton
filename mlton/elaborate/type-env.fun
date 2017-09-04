@@ -1482,6 +1482,14 @@ structure Scheme =
                      ty: Type.t}
        | Mono of Type.t
 
+      val ty =
+         fn General {ty, ...} => ty
+          | Mono ty => ty
+
+      val dest =
+         fn General {bound, ty, ...} => (bound (), ty)
+          | Mono ty => (Vector.new0 (), ty)
+
       fun layout s =
          case s of
             Mono t => Type.layoutPretty t
@@ -1491,31 +1499,11 @@ structure Scheme =
                               ("ty", Type.layout ty)]
 
       fun layoutPrettyAux (s, {expandOpaque, localTyvarNames}) =
-         case s of
-            Mono ty =>
-               Type.layoutPrettyAux 
-               (ty, {expandOpaque = expandOpaque, 
-                     localTyvarNames = localTyvarNames})
-          | General {ty, ...} => 
-               Type.layoutPrettyAux 
-               (ty, {expandOpaque = expandOpaque, 
-                     localTyvarNames = localTyvarNames})
+         Type.layoutPrettyAux
+         (ty s, {expandOpaque = expandOpaque,
+                 localTyvarNames = localTyvarNames})
       fun layoutPretty s =
          layoutPrettyAux (s, {expandOpaque = false, localTyvarNames = true})
-
-      val bound =
-         fn General {bound, ...} => bound ()
-          | Mono _ => Vector.new0 ()
-
-      val bound =
-         Trace.trace ("TypeEnv.Scheme.bound", layout, Vector.layout Tyvar.layout)
-         bound
-
-      val ty =
-         fn General {ty, ...} => ty
-          | Mono ty => ty
-
-      fun dest s = (bound s, ty s)
 
       fun make {canGeneralize, tyvars, ty} =
          if Vector.isEmpty tyvars
@@ -1710,11 +1698,7 @@ structure Scheme =
                 recursive = no,
                 unknown = fn _ => true,
                 var = no}
-            val res =
-               Vector.map (v, fn s =>
-                           case s of
-                              General {ty, ...} => hom ty
-                            | Mono ty => hom ty)
+            val res = Vector.map (v, fn s => hom (ty s))
             val _ = destroy ()
          in
             res
