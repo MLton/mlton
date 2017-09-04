@@ -649,7 +649,9 @@ structure FlexibleTycon =
                fields fc'
             val _ = Set.union (s, s')
             val specs =
-               sharingSpec :: (!ss' @ !ss)
+               (List.rev o List.removeDuplicates)
+               ((!ss @ !ss') @ [sharingSpec],
+                Region.equals)
             val _ = 
                Set.:=
                (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
