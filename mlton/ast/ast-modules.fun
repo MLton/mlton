@@ -95,7 +95,7 @@ and specNode =
   | IncludeSigexp of sigexp
   | IncludeSigids of Sigid.t vector
   | Seq of spec * spec
-  | Sharing of {equations: SharingEquation.t vector,
+  | Sharing of {equation: SharingEquation.t,
                 spec: spec}
   | Structure of (Strid.t * sigexp) vector
   | Type of typedescs
@@ -157,9 +157,9 @@ and layoutSpec (s: spec): t =
          seq (str "include "
               :: separate (Vector.toListMap (sigids, Sigid.layout), " "))
     | Seq (s, s') => align [layoutSpec s, layoutSpec s']
-    | Sharing {spec, equations} =>
+    | Sharing {spec, equation} =>
          align [layoutSpec spec,
-                align (Vector.toListMap (equations, SharingEquation.layout))]
+                SharingEquation.layout equation]
     | Structure l =>
          layoutAndsBind ("structure", ":", l, fn (strid, sigexp) =>
                          (case node sigexp of

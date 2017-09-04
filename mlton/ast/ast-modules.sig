@@ -77,7 +77,7 @@ signature AST_MODULES =
              | IncludeSigexp of Sigexp.t
              | IncludeSigids of Sigid.t vector
              | Seq of t * t
-             | Sharing of {equations: SharingEquation.t vector,
+             | Sharing of {equation: SharingEquation.t,
                            spec: t}
              | Structure of (Strid.t * Sigexp.t) vector
              | Type of {tycon: Tycon.t,

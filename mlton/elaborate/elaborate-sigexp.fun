@@ -499,7 +499,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
            | Spec.Seq (s, s') =>
                 (* rule 77 *)
                 (elaborateSpec s; elaborateSpec s')
-           | Spec.Sharing {equations, spec} =>
+           | Spec.Sharing {equation, spec} =>
                 (* rule 78 and section G.3.3 *)
                 let
                    val time = Interface.Time.tick ()
@@ -510,7 +510,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                    val () = Env.openInterface (E, I, Spec.region spec)
                    val () =
                       Vector.foreach
-                      (equations, fn eqn =>
+                      (Vector.new1 equation, fn eqn =>
                        case SharingEquation.node eqn of
                           SharingEquation.Structure ss =>
                              let

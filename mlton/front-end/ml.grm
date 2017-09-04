@@ -137,8 +137,8 @@ structure Spec =
                (Empty, _) => s'
              | (_, Empty) => s
              | (_, Seq (s1, s2)) => reg (Seq (seq (s, s1), s2))
-             | (_, Sharing {spec, equations}) =>
-                  reg (Sharing {spec = seq (s, spec), equations = equations})
+             | (_, Sharing {spec, equation}) =>
+                  reg (Sharing {spec = seq (s, spec), equation = equation})
              | _ => reg (Seq (s, s'))
          end
    end
@@ -642,11 +642,10 @@ specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
            (Spec.Sharing {spec = Spec.makeRegion' (Spec.Empty,
                                                    sharespecleft,
                                                    sharespecright),
-                          equations = (Vector.new1
-                                       (SharingEquation.makeRegion'
-                                        (sharespec,
-                                         sharespecleft,
-                                         sharespecright)))})
+                          equation = (SharingEquation.makeRegion'
+                                      (sharespec,
+                                       sharespecleft,
+                                       sharespecright))})
 
 sharespec : SHARING TYPE longtyconeqns (SharingEquation.Type longtyconeqns)
           | SHARING longstrideqns      (SharingEquation.Structure longstrideqns)
