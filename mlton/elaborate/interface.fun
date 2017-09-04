@@ -120,7 +120,7 @@ structure FlexibleTycon =
                          id: TyconId.t,
                          kind: Kind.t,
                          plist: PropertyList.t,
-                         specs: Region.t list ref} Set.t
+                         specs: Region.t AppendList.t ref} Set.t
       withtype copy = t option ref
 
       fun fields (T s) = Set.! s
@@ -167,7 +167,7 @@ structure FlexibleTycon =
       val copies: copy list ref = ref []
 
       fun make {admitsEquality: AdmitsEquality.t, defn: Defn.t,
-                hasCons: bool, kind: Kind.t, specs: Region.t list}: t =
+                hasCons: bool, kind: Kind.t, specs: Region.t AppendList.t}: t =
          T (Set.singleton {admitsEquality = ref admitsEquality,
                            copy = ref NONE,
                            creationTime = Time.current (),
@@ -181,10 +181,14 @@ structure FlexibleTycon =
       fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
          make {admitsEquality = AdmitsEquality.Sometimes,
                defn = defn, hasCons = hasCons, kind = kind,
-               specs = []}
+               specs = AppendList.empty}
 
       fun pushSpec (fc, region) =
-         List.push (specsRef fc, region)
+         let
+            val specsRef = specsRef fc
+         in
+            specsRef := AppendList.snoc (!specsRef, region)
+         end
    end
 
 structure Tycon =
@@ -652,9 +656,11 @@ structure FlexibleTycon =
                fields fc'
             val _ = Set.union (s, s')
             val specs =
-               (List.rev o List.removeDuplicates)
-               ((!ss @ !ss') @ [sharingSpec],
-                Region.equals)
+               AppendList.snoc
+               (if Ref.equals (ss, ss')
+                   then !ss
+                   else AppendList.append (!ss, !ss'),
+                sharingSpec)
             val _ = 
                Set.:=
                (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
@@ -714,21 +720,25 @@ structure TypeStr =
          let
             fun loop s =
                case toTyconOpt (s, {expand = false}) of
-                  NONE => []
+                  NONE => AppendList.empty
                 | SOME c => loopTycon c
             and loopTycon c =
                case c of
                   Tycon.Flexible fc =>
-                     (case Defn.dest (FlexibleTycon.defn fc) of
+                     AppendList.append
+                     (FlexibleTycon.specs fc,
+                      case Defn.dest (FlexibleTycon.defn fc) of
                          Defn.Realized _ =>
                             Error.bug "Interface.TypeStr.specs: Defn.Realized"
                        | Defn.TypeStr s => loop s
-                       | Defn.Undefined => [])
-                     @ (FlexibleTycon.specs fc)
-                | Tycon.Rigid _ => []
+                       | Defn.Undefined => AppendList.empty)
+                | Tycon.Rigid _ => AppendList.empty
          in
-            List.removeDuplicates
-            (loop s, Region.equals)
+            (List.rev o AppendList.fold)
+            (loop s, [], fn (r, rs) =>
+             if List.contains (rs, r, Region.equals)
+                then rs
+                else r :: rs)
          end
 
       fun pushSpec (s, region) =
