@@ -1538,6 +1538,20 @@ structure Scheme =
             Mono ty => {args = fn () => Vector.new0 (),
                         instance = ty}
           | General {canGeneralize, flexes, tyvars, ty, ...} =>
+               (case Type.deEta (ty, tyvars) of
+                   SOME tycon =>
+                      let
+                         val types =
+                            Vector.mapi
+                            (tyvars, fn (i, a) =>
+                             subst {canGeneralize = canGeneralize,
+                                    equality = Tyvar.isEquality a,
+                                    index = i})
+                      in
+                         {args = fn () => types,
+                          instance = Type.con (tycon, types)}
+                      end
+                 | NONE =>
                let
                   open Type
                   val {destroy = destroyTyvarInst,
@@ -1653,7 +1667,7 @@ structure Scheme =
                in
                   {args = args,
                    instance = ty}
-               end
+               end)
 
       fun apply (s, ts) =
          #instance (instantiate' (s, fn {index, ...} => Vector.sub (ts, index)))
