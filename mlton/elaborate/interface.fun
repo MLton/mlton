@@ -728,8 +728,7 @@ structure TypeStr =
                      AppendList.append
                      (FlexibleTycon.specs fc,
                       case Defn.dest (FlexibleTycon.defn fc) of
-                         Defn.Realized _ =>
-                            Error.bug "Interface.TypeStr.specs: Defn.Realized"
+                         Defn.Realized _ => AppendList.empty
                        | Defn.TypeStr s => loop s
                        | Defn.Undefined => AppendList.empty)
                 | Tycon.Rigid _ => AppendList.empty

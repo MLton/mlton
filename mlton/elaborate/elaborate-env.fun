@@ -2522,9 +2522,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     {isFunctor: bool, prefix: string},
                     region: Region.t): Structure.t * Decs.t =
    let
-      val sigI = I
-      val rlzI = Interface.copy sigI
-      val flexTyconMap = Interface.flexibleTycons rlzI
+      val I = Interface.copy I
+      val flexTyconMap = Interface.flexibleTycons I
       val () =
          Structure.realize
          (S, flexTyconMap,
@@ -2664,48 +2663,41 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
       fun cut (S, I, strids): Structure.t =
          reallyCut (S, I, strids)
 *)
-      fun cut (S, sigI, flexTyconMap, rlzI, strids): Structure.t =
+      fun cut (S, I, flexTyconMap, strids): Structure.t =
          let
             val seen = get S
          in
-            case List.peek (!seen, fn (rlzI', _) => Interface.equals (rlzI, rlzI')) of
+            case List.peek (!seen, fn (I', _) => Interface.equals (I, I')) of
                NONE =>
                   let
-                     fun really () = reallyCut (S, sigI, flexTyconMap, rlzI, strids)
+                     fun really () = reallyCut (S, I, flexTyconMap, strids)
                      val S = 
                         case Structure.interface S of
                            NONE => really ()
-                         | SOME rlzI' =>
-                              if Interface.equals (rlzI, rlzI')
+                         | SOME I' =>
+                              if Interface.equals (I, I')
                                  then S
                               else really ()
-                     val _ = List.push (seen, (rlzI, S))
+                     val _ = List.push (seen, (I, S))
                   in
                      S
                   end
              | SOME (_, S) => S
          end
-      and reallyCut (Structure.T {strs = strStrs,
-                                  types = strTypes,
-                                  vals = strVals, ...},
-                     sigI, flexTyconMap, rlzI, strids) =
+      and reallyCut (S, I, flexTyconMap, strids) =
          let
-            val {strs = sigStrs, types = sigTypes, ...} =
-               Interface.dest sigI
-            val {strs = rlzStrs, types = rlzTypes, vals = rlzVals} =
-               Interface.dest rlzI
+            val Structure.T {strs = strStrs, types = strTypes, vals = strVals, ...} = S
+            val {strs = sigStrs, types = sigTypes, vals = sigVals} = Interface.dest I
             val strs =
                map {strInfo = strStrs,
-                    ifcArray = Array.map2 (sigStrs, rlzStrs,
-                                           fn ((name, sigI), (_, rlzI)) =>
-                                           (name, (sigI, rlzI))),
+                    ifcArray = sigStrs,
                     strids = strids,
                     nameEquals = Strid.equals,
                     nameLayout = Strid.layout,
                     specs = fn (name, _) => [Strid.region name],
-                    notFound = fn (name, (_, rlzI)) =>
+                    notFound = fn (name, I) =>
                     let
-                       val (S, _) = dummyStructure (rlzI, {prefix = ""})
+                       val (S, _) = dummyStructure (I, {prefix = ""})
                        val () = preError ()
                        val spec =
                           (#strSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
@@ -2715,28 +2707,26 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                      thing = "structure"},
                         range = S}
                     end,
-                    doit = fn (_, S, name, (sigI, rlzI)) =>
+                    doit = fn (_, S, name, I) =>
                     let
                        val flexTyconMap =
                           Option.fold
                           (flexTyconMap, NONE, fn (flexTyconMap, _) =>
                            TyconMap.peekStrid (flexTyconMap, name))
                     in
-                       cut (S, sigI, flexTyconMap, rlzI, name :: strids)
+                       cut (S, I, flexTyconMap, name :: strids)
                     end}
             val types =
                map {strInfo = strTypes,
-                    ifcArray = Array.map2 (sigTypes, rlzTypes,
-                                           fn ((name, sigStr), (_, rlzStr)) =>
-                                           (name, (sigStr, rlzStr))),
+                    ifcArray = sigTypes,
                     strids = strids,
                     nameEquals = Ast.Tycon.equals,
                     nameLayout = Ast.Tycon.layout,
-                    specs = fn (name, (sigStr, _)) =>
+                    specs = fn (name, sigStr) =>
                             (Ast.Tycon.region name)::(Interface.TypeStr.specs sigStr),
-                    notFound = fn (name, (sigStr, rlzStr)) =>
+                    notFound = fn (name, sigStr) =>
                     let
-                       val rlzStr = Interface.TypeStr.toEnv rlzStr
+                       val rlzStr = Interface.TypeStr.toEnv sigStr
                        val () = preError ()
                        fun spec () =
                           (#typeSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
@@ -2788,9 +2778,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                      thing = "type"},
                         range = rlzStr}
                     end,
-                    doit = fn (strName, strStr, sigName, (sigStr, rlzStr)) =>
+                    doit = fn (strName, strStr, sigName, sigStr) =>
                     let
-                       val rlzStr = Interface.TypeStr.toEnv rlzStr
+                       val rlzStr = Interface.TypeStr.toEnv sigStr
                        val {destroy, lay = layoutPretty} =
                           Type.makeLayoutPretty {expandOpaque = false,
                                                  localTyvarNames = true}
@@ -3143,34 +3133,34 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
             val vals =
                map
                {strInfo = strVals,
-                ifcArray = rlzVals,
+                ifcArray = sigVals,
                 strids = strids,
                 nameEquals = Ast.Vid.equals,
                 nameLayout = Ast.Vid.layout,
                 specs = fn (name, _) => [Ast.Vid.region name],
-                notFound = fn (name, (status, rlzScheme)) =>
+                notFound = fn (name, (sigStatus, sigScheme)) =>
                 let
                    val con = Con.newString o Ast.Vid.toString
                    val var = Var.newString o Ast.Vid.toString
                    val (vid, mkDiag) =
-                      case status of
+                      case sigStatus of
                          Status.Con => (Vid.Con (con name), fn _ => NONE)
                        | Status.Exn => (Vid.Exn (con name), SOME)
                        | Status.Var => (Vid.Var (var name), SOME)
-                   val rlzScheme = Interface.Scheme.toEnv rlzScheme
+                   val rlzScheme = Interface.Scheme.toEnv sigScheme
                    val () = preError ()
                    val spec =
                       (#valSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
                       (name, (vid, rlzScheme))
-                   val thing = Status.pretty status
+                   val thing = Status.pretty sigStatus
                 in
                    {diag = mkDiag {spec = spec,
                                    thing = thing},
                     range = (vid, rlzScheme)}
                 end,
-                doit = fn (strName, (vid, strScheme), sigName, (status, rlzScheme)) =>
+                doit = fn (strName, (vid, strScheme), sigName, (status, sigScheme)) =>
                 let
-                   val rlzScheme = Interface.Scheme.toEnv rlzScheme
+                   val rlzScheme = Interface.Scheme.toEnv sigScheme
                    val unifyError = ref NONE
                    val genError = ref NONE
                    val statusError = ref NONE
@@ -3286,7 +3276,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                          types = types,
                          vals = vals}
          end
-      val S = cut (S, sigI, SOME flexTyconMap, rlzI, [])
+      val S = cut (S, I, SOME flexTyconMap, [])
       val () = destroy ()
    in
       (S, Decs.fromList (!decs))
