@@ -2723,7 +2723,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 | Scheme of Scheme.t
                 | Type
 
-               fun preprocess (strName, strStr, sigName, sigStr, rlzStr, flexTyconMap) =
+               fun preprocess (strName, strStr, sigName, sigStr, rlzStr) =
                   let
                      val {destroy, lay = layoutPretty} =
                         Type.makeLayoutPretty {expandOpaque = false,
@@ -2855,52 +2855,43 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     notFound = fn (name, sigStr) =>
                     let
                        val rlzStr = Interface.TypeStr.toEnv sigStr
+
+                       val {layoutPretty, destroy, sigKind, sigTyvars, sigMsg, spec, ...} =
+                          preprocess (name, rlzStr, name, sigStr, rlzStr)
+                       val lay = #1 o layoutPretty
                        val () = preError ()
-                       fun spec () =
-                          (#typeSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
-                          (name, rlzStr, {showEqtype = false})
-                       val flexTycon =
-                          Option.fold
-                          (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                           TyconMap.peekTycon (flexTyconMap, name))
-                       val spec =
-                          case (flexTycon, Interface.TypeStr.node sigStr) of
-                             (_, Interface.TypeStr.Datatype _) => spec ()
-                           | (NONE, _) => spec ()
-                           | (SOME _, _) =>
+                       val rest =
+                          case spec of
+                             Type => NONE
+                           | Scheme scheme =>
+                                SOME (lay (Scheme.apply
+                                           (scheme,
+                                            sigTyvars)))
+                           | DatatypeRepl {tycon} =>
+                                SOME (seq [str "datatype ",
+                                           lay (Scheme.apply
+                                                (Scheme.fromTycon
+                                                 (tycon, sigKind),
+                                                 sigTyvars))])
+                           | Datatype {cons, ...} =>
                                 let
                                    open Layout
-                                   val {destroy, lay = layoutPretty} =
-                                      Type.makeLayoutPretty {expandOpaque = false,
-                                                             localTyvarNames = true}
-                                   val lay = #1 o layoutPretty
-                                   val tyvars =
-                                      case TypeStr.kind rlzStr of
-                                         Kind.Arity n =>
-                                            Vector.tabulate
-                                            (n, fn _ =>
-                                             Type.var (Tyvar.newNoname {equality = false}))
-                                       | Kind.Nary => Vector.new0 ()
-                                   val tyvars =
-                                      case Vector.length tyvars of
-                                         0 => empty
-                                       | 1 => lay (Vector.first tyvars)
-                                       | _ => tuple (Vector.toListMap (tyvars, lay))
-                                   val kw =
-                                      case Interface.TypeStr.admitsEquality sigStr of
-                                         AdmitsEquality.Always => "eqtype"
-                                       | AdmitsEquality.Never => "type"
-                                       | AdmitsEquality.Sometimes => "eqtype"
-                                   val spec =
-                                      seq [str kw,
-                                           if isEmpty tyvars
-                                              then str " "
-                                              else seq [str " ", tyvars, str " "],
-                                           Ast.Tycon.layout name]
-                                   val _ = destroy ()
+                                   val cons =
+                                      Vector.toListMap
+                                      (Cons.dest cons, fn {name, scheme, ...} =>
+                                       let
+                                          val ty = Scheme.apply (scheme, sigTyvars)
+                                       in
+                                          seq [Ast.Con.layout name,
+                                               case Type.deArrowOpt ty of
+                                                  NONE => empty
+                                                | SOME (ty, _) => seq [str " of ", lay ty]]
+                                       end)
                                 in
-                                   spec
+                                   SOME (alignPrefix (cons, "| "))
                                 end
+                       val spec = sigMsg (false, rest)
+                       val _ = destroy ()
                     in
                        {diag = SOME {spec = SOME spec,
                                      thing = "type"},
@@ -2938,11 +2929,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                              error := SOME (msgs, strError, sigError)
                           end
 
-                       val {destroy, layoutPretty,
+                       val {layoutPretty, destroy,
                             strKind, strTyvars, strMsg,
                             sigKind, sigTyvars, sigMsg,
                             spec} =
-                          preprocess (strName, strStr, sigName, sigStr, rlzStr, flexTyconMap)
+                          preprocess (strName, strStr, sigName, sigStr, rlzStr)
                        val lay = #1 o layoutPretty
 
                        val () =
