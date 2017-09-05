@@ -2719,8 +2719,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     end}
             local
                datatype spec =
-                  Datatype of {cons: Cons.t, tycon: Tycon.t}
-                | DatatypeRepl of {tycon: Tycon.t}
+                  Datatype of {tycon: Tycon.t, cons: Cons.t, repl: bool}
                 | Scheme of Scheme.t
                 | Type
 
@@ -2779,17 +2778,25 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                          TyconMap.peekTycon (flexTyconMap, sigName))
                      val spec =
                         case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
-                           (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, ...}) =>
-                              DatatypeRepl {tycon = rlzTycon}
-                         | (SOME _, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                              Datatype {tycon = rlzTycon, cons = rlzCons}
+                           (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                              Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
+                         | (NONE, Interface.TypeStr.Datatype _, TypeStr.Scheme _) =>
+                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = NONE, sigStr = Datatype _, rlzStr = Scheme _}"
                          | (NONE, _, rlzStr) =>
                               (case rlzStr of
                                   TypeStr.Datatype {tycon, ...} =>
                                      Scheme (Scheme.fromTycon (tycon, sigKind))
                                 | TypeStr.Scheme s =>
                                      Scheme s)
-                         | (SOME _, _, _) =>
+                         | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                              Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
+                         | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Scheme _) =>
+                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
+                         | (SOME _, Interface.TypeStr.Datatype {repl = true, ...}, _) =>
+                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Datatype {repl = true, ...}}"
+                         | (SOME _, Interface.TypeStr.Scheme _, _) =>
+                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Scheme _}"
+                         | (SOME _, Interface.TypeStr.Tycon _, _) =>
                               Type
 
                      fun sigMsg (b, rest) =
@@ -2803,7 +2810,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            val (kw, rest) =
                               case spec of
                                  Datatype _ => ("datatype", rest)
-                               | DatatypeRepl _ => ("datatype", rest)
                                | Scheme _ => ("type", rest)
                                | Type =>
                                     case Interface.TypeStr.admitsEquality sigStr of
@@ -2868,13 +2874,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 SOME (lay (Scheme.apply
                                            (scheme,
                                             sigTyvars)))
-                           | DatatypeRepl {tycon} =>
+                           | Datatype {repl = true, tycon, ...} =>
                                 SOME (seq [str "datatype ",
                                            lay (Scheme.apply
                                                 (Scheme.fromTycon
                                                  (tycon, sigKind),
                                                  sigTyvars))])
-                           | Datatype {cons, ...} =>
+                           | Datatype {repl = false, cons, ...} =>
                                 let
                                    open Layout
                                    val cons =
@@ -2990,7 +2996,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 in
                                    rlzStr
                                 end
-                           | DatatypeRepl {tycon = sigTycon} =>
+                           | Datatype {repl = true, tycon = sigTycon, ...} =>
                                 let
                                    val sigScheme =
                                       Scheme.fromTycon (sigTycon, sigKind)
@@ -3025,7 +3031,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
                                 end
-                           | Datatype {cons = sigCons, ...} =>
+                           | Datatype {repl = false, cons = sigCons, ...} =>
                                 let
                                    fun nonDatatype strScheme =
                                       (preError ()
