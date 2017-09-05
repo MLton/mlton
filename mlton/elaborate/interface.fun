@@ -329,6 +329,20 @@ structure Scheme =
       open Scheme
 
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
+
+      fun fromTycon (tycon, kind) =
+         let
+            val arity =
+               case kind of
+                  Kind.Arity arity => arity
+                | Kind.Nary => Error.bug "Interface.Scheme.fromTycon: Kind.Nary"
+            val tyvars =
+               Vector.tabulate
+               (arity, fn _ =>
+                Tyvar.newNoname {equality = false})
+         in
+            make (tyvars, Type.con (tycon, Vector.map (tyvars, Type.var)))
+         end
    end
 
 structure Cons :
@@ -390,8 +404,9 @@ structure Cons :
 structure TypeStr =
    struct
       datatype node =
-         Datatype of {cons: Cons.t,
-                      tycon: Tycon.t}
+         Datatype of {tycon: Tycon.t,
+                      cons: Cons.t,
+                      repl: bool}
        | Scheme of Scheme.t
        | Tycon of Tycon.t
 
@@ -410,10 +425,11 @@ structure TypeStr =
             open Layout
          in
             case node t of
-               Datatype {tycon, cons} =>
+               Datatype {tycon, cons, repl} =>
                   seq [str "Datatype ",
                        record [("tycon", Tycon.layout tycon),
-                               ("cons", Cons.layout cons)]]
+                               ("cons", Cons.layout cons),
+                               ("repl", Bool.layout repl)]]
              | Scheme s => Scheme.layout s
              | Tycon t => seq [str "Tycon ", Tycon.layout t]
          end
@@ -433,9 +449,9 @@ structure TypeStr =
             Datatype {cons, ...} => cons
           | _ => Cons.empty
 
-      fun data (tycon, kind, cons) =
+      fun data (tycon, kind, cons, repl) =
          T {kind = kind,
-            node = Datatype {tycon = tycon, cons = cons}}
+            node = Datatype {tycon = tycon, cons = cons, repl = repl}}
 
       fun def (s: Scheme.t, k: Kind.t) =
          T {kind = k,
@@ -443,6 +459,12 @@ structure TypeStr =
 
       fun tycon (c, kind) = T {kind = kind,
                                node = Tycon c}
+
+      fun repl (t: t) =
+         case node t of
+            Datatype {tycon, cons, ...} => data (tycon, kind t, cons, true)
+          | Scheme _ => t
+          | Tycon c => def (Scheme.fromTycon (c, kind t), kind t)
    end
 
 structure Defn =
@@ -575,7 +597,7 @@ and copyTypeStr (s: TypeStr.t): TypeStr.t =
       val kind = kind s
    in
       case node s of
-         Datatype {cons, tycon} => data (copyTycon tycon, kind, copyCons cons)
+         Datatype {cons, tycon, repl} => data (copyTycon tycon, kind, copyCons cons, repl)
        | Scheme s => def (copyScheme s, kind)
        | Tycon c => tycon (copyTycon c, kind)
    end
@@ -1414,8 +1436,8 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                      (types, fn (tycon, typeStr) =>
                       (tycon,
                        case TypeStr.node typeStr of
-                          TypeStr.Datatype {tycon, ...} =>
-                             setTycon (tycon, true)
+                          TypeStr.Datatype {tycon, repl, ...} =>
+                             setTycon (tycon, not repl)
                         | TypeStr.Tycon tycon =>
                              setTycon (tycon, false)
                         | _ => ref NONE))

@@ -456,7 +456,7 @@ structure Interface =
             datatype z = datatype TypeStr.node
          in
             case TypeStr.node s of
-               Datatype {cons, tycon} =>
+               Datatype {cons, tycon, ...} =>
                   let
                      fun data c =
                         EtypeStr.data (c, k, consToEnv cons)
@@ -556,7 +556,8 @@ structure Interface =
                      EtypeStr.Datatype {cons, tycon} =>
                         data (Tycon.fromEnv (tycon, kind),
                               kind,
-                              Cons.fromEnv cons)
+                              Cons.fromEnv cons,
+                              true)
                    | EtypeStr.Scheme s => def (Scheme.fromEnv s, kind)
                end
          end
