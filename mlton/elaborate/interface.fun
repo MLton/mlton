@@ -593,7 +593,7 @@ fun flexibleTyconAdmitsEquality (fc: FlexibleTycon.t): AdmitsEquality.t =
       datatype z = datatype Defn.dest
    in
       case Defn.dest (!defn) of
-         Realized _ => Error.bug "Interface.flexibleTyconAdmitsEquality: Realized"
+         Realized _ => !admitsEquality
        | TypeStr s => typeStrAdmitsEquality s
        | Undefined => !admitsEquality
    end

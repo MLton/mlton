@@ -2542,7 +2542,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                strids: Strid.t list,
                nameEquals: 'name * 'name -> bool,
                nameLayout: 'name -> Layout.t,
-               nameRegion: 'name -> Region.t,
+               specs: 'name * 'ifcRange -> Region.t list,
                notFound: 'name * 'ifcRange -> {diag: {spec: Layout.t option,
                                                       thing: string} option,
                                                range: 'range},
@@ -2570,11 +2570,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          str sign,
                                          str " but not in structure: ",
                                          layoutLongRev (strids, nameLayout ifcName)],
-                                    align [case spec of
-                                              NONE => Layout.empty
-                                            | SOME spec => seq [str "signature: ", spec],
-                                           seq [str "spec at:   ",
-                                                Region.layout (nameRegion ifcName)]]))
+                                    align ((case spec of
+                                               NONE => Layout.empty
+                                             | SOME spec => seq [str "signature: ", spec])::
+                                           (List.map
+                                            (specs (ifcName, ifcRange), fn r =>
+                                             seq [str "spec at:   ", Region.layout r])))))
                             in
                                {domain = ifcName,
                                 range = range,
@@ -2645,7 +2646,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     strids = strids,
                     nameEquals = Strid.equals,
                     nameLayout = Strid.layout,
-                    nameRegion = Strid.region,
+                    specs = fn (name, _) => [Strid.region name],
                     notFound = fn (name, (_, rlzI)) =>
                     let
                        val (S, _) = dummyStructure (rlzI, {prefix = ""})
@@ -2675,7 +2676,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     strids = strids,
                     nameEquals = Ast.Tycon.equals,
                     nameLayout = Ast.Tycon.layout,
-                    nameRegion = Ast.Tycon.region,
+                    specs = fn (name, (sigStr, _)) =>
+                            (Ast.Tycon.region name)::(Interface.TypeStr.specs sigStr),
                     notFound = fn (name, (sigStr, rlzStr)) =>
                     let
                        val rlzStr = Interface.TypeStr.toEnv rlzStr
@@ -3089,7 +3091,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 strids = strids,
                 nameEquals = Ast.Vid.equals,
                 nameLayout = Ast.Vid.layout,
-                nameRegion = Ast.Vid.region,
+                specs = fn (name, _) => [Ast.Vid.region name],
                 notFound = fn (name, (status, rlzScheme)) =>
                 let
                    val con = Con.newString o Ast.Vid.toString
