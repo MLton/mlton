@@ -297,7 +297,8 @@ check:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
 # puts them.
-DESTDIR := $(CURDIR)/install
+include mlton-env-config
+DESTDIR := $(MLTON_LOCAL)
 PREFIX := /usr
 ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
 PREFIX := /usr/local
@@ -412,8 +413,14 @@ move-docs:	install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
 
+.PHONY: configure
+configure:
+	autoreconf --force --verbose --install || exit 1
+
+# TODO: update release target to include `./configure` script & Makefile-auto.in
+# 			and exclude the rest (instead of clean prereq)
 .PHONY: release
-release: version
+release: version configure
 	tar cvzf ../mlton-$(VERSION).src.tgz \
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(VERSION)/@S" \

@@ -1,0 +1,4 @@
+# MLTON_LOCAL and GMP_LOCAL can be customized by using
+# ./configure --prefix=PATH --with-gmp=PATH
+export MLTON_LOCAL="@prefix@"
+export GMP_LOCAL="@WITH_GMP@"
