@@ -2716,6 +2716,134 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     in
                        cut (S, I, flexTyconMap, name :: strids)
                     end}
+            local
+               datatype spec =
+                  Datatype of {cons: Cons.t, tycon: Tycon.t}
+                | DatatypeRepl of {tycon: Tycon.t}
+                | Scheme of Scheme.t
+                | Type
+
+               fun preprocess (strName, strStr, sigName, sigStr, rlzStr, flexTyconMap) =
+                  let
+                     val {destroy, lay = layoutPretty} =
+                        Type.makeLayoutPretty {expandOpaque = false,
+                                               localTyvarNames = true}
+                     val strKind = TypeStr.kind strStr
+                     val strArity =
+                        case strKind of
+                           Kind.Arity strArity => strArity
+                         | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: strArity"
+                     val sigKind = Interface.TypeStr.kind sigStr
+                     val sigArity =
+                        case sigKind of
+                           Kind.Arity sigArity => sigArity
+                         | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: sigArity"
+                     local
+                        val tyvars =
+                           Vector.tabulate
+                           (Int.max (strArity, sigArity), fn _ =>
+                            Type.var (Tyvar.newNoname {equality = false}))
+                        (* Ensure tyvars get correct pretty names. *)
+                        val _ = Vector.foreach (tyvars, ignore o layoutPretty)
+                     in
+                        val strTyvars = Vector.prefix (tyvars, strArity)
+                        val sigTyvars = Vector.prefix (tyvars, sigArity)
+                     end
+                     local
+                        open Layout
+                        fun mk tyvars =
+                           let
+                              val tyvars =
+                                 case Vector.length tyvars of
+                                    0 => empty
+                                  | 1 => (#1 o layoutPretty) (Vector.first tyvars)
+                                  | _ => tuple (Vector.toListMap (tyvars, #1 o layoutPretty))
+                              val tyvars =
+                                 if strArity = sigArity
+                                    then tyvars
+                                    else bracket tyvars
+                           in
+                              if isEmpty tyvars
+                                 then str " "
+                                 else seq [str " ", tyvars, str " "]
+                           end
+                     in
+                        val strTyvarsLay = mk strTyvars
+                        val sigTyvarsLay = mk sigTyvars
+                     end
+
+                     val flexTycon =
+                        Option.fold
+                        (flexTyconMap, NONE, fn (flexTyconMap, _) =>
+                         TyconMap.peekTycon (flexTyconMap, sigName))
+                     val spec =
+                        case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
+                           (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, ...}) =>
+                              DatatypeRepl {tycon = rlzTycon}
+                         | (SOME _, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                              Datatype {tycon = rlzTycon, cons = rlzCons}
+                         | (NONE, _, rlzStr) =>
+                              (case rlzStr of
+                                  TypeStr.Datatype {tycon, ...} =>
+                                     Scheme (Scheme.fromTycon (tycon, sigKind))
+                                | TypeStr.Scheme s =>
+                                     Scheme s)
+                         | (SOME _, _, _) =>
+                              Type
+
+                     fun sigMsg (b, rest) =
+                        let
+                           val empty = Layout.empty
+                           val rest =
+                              seq [str " = ",
+                                   case rest of
+                                      NONE => str "..."
+                                    | SOME rest => rest]
+                           val (kw, rest) =
+                              case spec of
+                                 Datatype _ => ("datatype", rest)
+                               | DatatypeRepl _ => ("datatype", rest)
+                               | Scheme _ => ("type", rest)
+                               | Type =>
+                                    case Interface.TypeStr.admitsEquality sigStr of
+                                       AdmitsEquality.Always => ("eqtype", empty)
+                                     | AdmitsEquality.Never => ("type", empty)
+                                     | AdmitsEquality.Sometimes => ("eqtype", empty)
+                        in
+                           seq [if b then bracket (str kw) else str kw,
+                                sigTyvarsLay,
+                                layoutLongRev (strids, Ast.Tycon.layout sigName),
+                                rest]
+                        end
+                     fun strMsg (b, rest) =
+                        let
+                           val rest =
+                              seq [str " = ",
+                                   case rest of
+                                      NONE => str "..."
+                                    | SOME rest => rest]
+                           val kw =
+                              case TypeStr.node strStr of
+                                 TypeStr.Datatype _ => "datatype"
+                               | TypeStr.Scheme _ => "type"
+                        in
+                           seq [if b then bracket (str kw) else str kw,
+                                strTyvarsLay,
+                                layoutLongRev (strids, Ast.Tycon.layout strName),
+                                rest]
+                        end
+                  in
+                     {destroy = destroy,
+                      layoutPretty = layoutPretty,
+                      strKind = strKind,
+                      strTyvars = strTyvars,
+                      strMsg = strMsg,
+                      sigKind = sigKind,
+                      sigTyvars = sigTyvars,
+                      sigMsg = sigMsg,
+                      spec = spec}
+                  end
+            in
             val types =
                map {strInfo = strTypes,
                     ifcArray = sigTypes,
@@ -2781,10 +2909,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     doit = fn (strName, strStr, sigName, sigStr) =>
                     let
                        val rlzStr = Interface.TypeStr.toEnv sigStr
-                       val {destroy, lay = layoutPretty} =
-                          Type.makeLayoutPretty {expandOpaque = false,
-                                                 localTyvarNames = true}
-                       val lay = #1 o layoutPretty
                        val error: (Layout.t list * Layout.t * Layout.t) option ref = ref NONE
                        fun reportError () =
                           case !error of
@@ -2814,117 +2938,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                              error := SOME (msgs, strError, sigError)
                           end
 
-                       val strKind = TypeStr.kind strStr
-                       val strArity =
-                          case strKind of
-                             Kind.Arity strArity => strArity
-                           | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: strArity"
-                       val sigKind = Interface.TypeStr.kind sigStr
-                       val sigArity =
-                          case sigKind of
-                             Kind.Arity sigArity => sigArity
-                           | _ => Error.bug "ElaborateEnv.transparentCut.reallyCut.<anon>: sigArity"
-                       local
-                          val tyvars =
-                             Vector.tabulate
-                             (Int.max (strArity, sigArity), fn _ =>
-                              Type.var (Tyvar.newNoname {equality = false}))
-                          (* Ensure tyvars get correct pretty names. *)
-                          val _ = Vector.foreach (tyvars, ignore o layoutPretty)
-                       in
-                          val strTyvars = Vector.prefix (tyvars, strArity)
-                          val sigTyvars = Vector.prefix (tyvars, sigArity)
-                       end
-                       local
-                          open Layout
-                          fun mk tyvars =
-                             let
-                                val tyvars =
-                                   case Vector.length tyvars of
-                                      0 => empty
-                                    | 1 => lay (Vector.first tyvars)
-                                    | _ => tuple (Vector.toListMap (tyvars, lay))
-                                val tyvars =
-                                   if strArity = sigArity
-                                      then tyvars
-                                      else bracket tyvars
-                             in
-                                if isEmpty tyvars
-                                   then str " "
-                                   else seq [str " ", tyvars, str " "]
-                             end
-                       in
-                          val strTyvarsLay = mk strTyvars
-                          val sigTyvarsLay = mk sigTyvars
-                       end
+                       val {destroy, layoutPretty,
+                            strKind, strTyvars, strMsg,
+                            sigKind, sigTyvars, sigMsg,
+                            spec} =
+                          preprocess (strName, strStr, sigName, sigStr, rlzStr, flexTyconMap)
+                       val lay = #1 o layoutPretty
 
-                       val flexTycon =
-                          Option.fold
-                          (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                           TyconMap.peekTycon (flexTyconMap, sigName))
-                       datatype z =
-                          Datatype of {cons: Cons.t, tycon: Tycon.t}
-                        | DatatypeRepl of {tycon: Tycon.t}
-                        | Scheme of Scheme.t
-                        | Type
-                       val spec =
-                          case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
-                             (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, ...}) =>
-                                DatatypeRepl {tycon = rlzTycon}
-                           | (SOME _, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                                Datatype {tycon = rlzTycon, cons = rlzCons}
-                           | (NONE, _, rlzStr) =>
-                                (case rlzStr of
-                                    TypeStr.Datatype {tycon, ...} =>
-                                      Scheme (Scheme.fromTycon (tycon, sigKind))
-                                  | TypeStr.Scheme s =>
-                                      Scheme s)
-                           | (SOME _, _, _) =>
-                                Type
-
-                       fun sigMsg (b, rest) =
-                          let
-                             val empty = Layout.empty
-                             val rest =
-                                seq [str " = ",
-                                     case rest of
-                                        NONE => str "..."
-                                      | SOME rest => rest]
-                             val (kw, rest) =
-                                case spec of
-                                   Datatype _ => ("datatype", rest)
-                                 | DatatypeRepl _ => ("datatype", rest)
-                                 | Scheme _ => ("type", rest)
-                                 | Type =>
-                                      case Interface.TypeStr.admitsEquality sigStr of
-                                         AdmitsEquality.Always => ("eqtype", empty)
-                                       | AdmitsEquality.Never => ("type", empty)
-                                       | AdmitsEquality.Sometimes => ("eqtype", empty)
-                          in
-                             seq [if b then bracket (str kw) else str kw,
-                                  sigTyvarsLay,
-                                  layoutLongRev (strids, Ast.Tycon.layout sigName),
-                                  rest]
-                          end
-                       fun strMsg (b, rest) =
-                          let
-                             val rest =
-                                seq [str " = ",
-                                     case rest of
-                                        NONE => str "..."
-                                      | SOME rest => rest]
-                             val kw =
-                                case TypeStr.node strStr of
-                                   TypeStr.Datatype _ => "datatype"
-                                 | TypeStr.Scheme _ => "type"
-                          in
-                             seq [if b then bracket (str kw) else str kw,
-                                  strTyvarsLay,
-                                  layoutLongRev (strids, Ast.Tycon.layout strName),
-                                  rest]
-                          end
                        val () =
-                          if strArity = sigArity
+                          if Kind.equals (strKind, sigKind)
                              then ()
                              else error ("arity",
                                          strMsg (false, NONE),
@@ -3130,6 +3152,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     in
                        resStr
                     end}
+            end
             val vals =
                map
                {strInfo = strVals,
