@@ -451,6 +451,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                        Option.app
                        (Env.lookupLongtycon (E, rhs), fn s =>
                         let
+                           val _ = TypeStr.pushSpec (s, Longtycon.region rhs)
                            val _ = Env.extendTycon (E, lhs, s)
                            val _ =
                               Vector.foreach
