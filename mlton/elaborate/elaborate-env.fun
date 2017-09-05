@@ -484,6 +484,13 @@ structure Interface =
                   EtypeStr.abs (tyconToEnv c)
          end
 
+      structure FlexibleTycon =
+         struct
+            open FlexibleTycon
+
+            val toEnv = flexibleTyconToEnv
+         end
+
       structure Tycon =
          struct
             open Tycon
@@ -1459,9 +1466,26 @@ fun genSetTyconLayoutPretty {prefixUnset} =
          in
             ()
          end
+      fun loopFlexTyconMap (tm: FlexibleTycon.t TyconMap.t, priority, length: int, strids: Strid.t list): unit =
+         let
+            val TyconMap.T {strs, types} = tm
+            val _ =
+               Array.foreach
+               (types, fn (name, flex) =>
+                doType (Interface.FlexibleTycon.toEnv flex, name, priority, length, strids))
+            val _ =
+               Array.foreach
+               (strs, fn (strid, tm) =>
+                loopFlexTyconMap (tm, priority, 1 + length, strid::strids))
+         in
+            ()
+         end
+      fun mk loop (z, priority, strids) =
+         loop (z, priority, length strids, strids)
    in
-      {loopIfc = fn (I, priority, strids) => loopIfc (I, priority, length strids, strids),
-       loopStr = fn (S, priority, strids) => loopStr (S, priority, length strids, strids)}
+      {loopIfc = mk loopIfc,
+       loopStr = mk loopStr,
+       loopFlexTyconMap = mk loopFlexTyconMap}
    end
 
 fun setTyconLayoutPretty (E, {prefixUnset: bool}): unit =
@@ -2500,6 +2524,37 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
    let
       val sigI = I
       val rlzI = Interface.copy sigI
+      val flexTycons = Interface.flexibleTycons rlzI
+      val () =
+         Structure.realize
+         (S, flexTycons,
+          fn (name, flex, typeStr, {nest = strids}) =>
+          let
+             val {admitsEquality = a, hasCons, kind = k, ...} =
+                FlexibleTycon.dest flex
+             fun dummy () =
+                let
+                   val dummyName =
+                      prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
+                   val dummyTycon =
+                      newTycon (dummyName, k, a, Ast.Tycon.region name)
+                in
+                   TypeStr.tycon (dummyTycon, k)
+                end
+             val typeStr =
+                case typeStr of
+                   NONE => dummy ()
+                 | SOME typeStr =>
+                      (* Only realize a plausible candidate for typeStr. *)
+                      if Kind.equals (k, TypeStr.kind typeStr)
+                         andalso AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
+                         andalso (not hasCons orelse Option.isSome (TypeStr.toTyconOpt typeStr))
+                         then typeStr
+                         else dummy ()
+             val () = FlexibleTycon.realize (flex, typeStr)
+          in
+             ()
+          end)
       (* This tick is so that the type schemes for any values that need to be
        * instantiated and then re-generalized will be at a new time, so we can
        * check if something should not be generalized.
@@ -2518,13 +2573,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
          Promise.lazy
          (fn () =>
           let
-              val {loopIfc, loopStr, ...} = genSetTyconLayoutPretty {prefixUnset = true}
+              val {loopStr, loopFlexTyconMap, ...} =
+                 genSetTyconLayoutPretty {prefixUnset = true}
               val {sigs, strs, types, ...} = collect (E, fn _ => true)
               val _ =
                  Info.foreachByTime
                  (sigs (), fn (s, I) =>
                   setInterfaceSigid (I, SOME s))
-              val _ = loopIfc (rlzI, 2, [Strid.uSig])
+              val _ = loopFlexTyconMap (flexTycons, 2, [Strid.uSig])
               val _ = loopStr (S, 1, [Strid.uStr])
               val _ =
                  loopStr (Structure.T {interface = NONE,
@@ -3230,37 +3286,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                          types = types,
                          vals = vals}
          end
-      val flexTycons = Interface.flexibleTycons rlzI
-      val () =
-         Structure.realize
-         (S, flexTycons,
-          fn (name, flex, typeStr, {nest = strids}) =>
-          let
-             val {admitsEquality = a, hasCons, kind = k, ...} =
-                FlexibleTycon.dest flex
-             fun dummy () =
-                let
-                   val dummyName =
-                      prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
-                   val dummyTycon =
-                      newTycon (dummyName, k, a, Ast.Tycon.region name)
-                in
-                   TypeStr.tycon (dummyTycon, k)
-                end
-             val typeStr =
-                case typeStr of
-                   NONE => dummy ()
-                 | SOME typeStr =>
-                      (* Only realize a plausible candidate for typeStr. *)
-                      if Kind.equals (k, TypeStr.kind typeStr)
-                         andalso AdmitsEquality.<= (a, TypeStr.admitsEquality typeStr)
-                         andalso (not hasCons orelse Option.isSome (TypeStr.toTyconOpt typeStr))
-                         then typeStr
-                         else dummy ()
-             val () = FlexibleTycon.realize (flex, typeStr)
-          in
-             ()
-          end)
       val S = cut (S, sigI, SOME flexTycons, rlzI, [])
       val () = destroy ()
    in
