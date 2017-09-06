@@ -2592,6 +2592,43 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
           in
              ()
           end)
+
+      datatype sort =
+         Datatype of {tycon: Tycon.t, cons: Cons.t, repl: bool}
+       | Scheme of Scheme.t
+       | Type of {admitsEquality: bool}
+      fun sort (name, sigStr, rlzStr, flexTyconMap) =
+         let
+            val flexTycon =
+               Option.fold
+               (flexTyconMap, NONE, fn (flexTyconMap, _) =>
+                TyconMap.peekTycon (flexTyconMap, name))
+         in
+            case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
+               (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                  Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
+             | (NONE, Interface.TypeStr.Datatype _, TypeStr.Scheme _) =>
+                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = NONE, sigStr = Datatype _, rlzStr = Scheme _}"
+             | (NONE, _, rlzStr) =>
+                  (case rlzStr of
+                      TypeStr.Datatype {tycon, ...} =>
+                         Scheme (Scheme.fromTycon (tycon, Interface.TypeStr.kind sigStr))
+                    | TypeStr.Scheme s =>
+                         Scheme s)
+             | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                  Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
+             | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Scheme _) =>
+                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
+             | (SOME _, Interface.TypeStr.Datatype {repl = true, ...}, _) =>
+                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Datatype {repl = true, ...}}"
+             | (SOME _, Interface.TypeStr.Scheme _, _) =>
+                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Scheme _}"
+             | (SOME _, Interface.TypeStr.Tycon _, _) =>
+                  (case Interface.TypeStr.admitsEquality sigStr of
+                      AdmitsEquality.Always => Type {admitsEquality = true}
+                    | AdmitsEquality.Never => Type {admitsEquality = false}
+                    | AdmitsEquality.Sometimes => Type {admitsEquality = true})
+         end
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
                ifcArray: ('name * 'ifcRange) array,
@@ -2718,10 +2755,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        cut (S, I, flexTyconMap, name :: strids)
                     end}
             local
-               datatype spec =
-                  Datatype of {tycon: Tycon.t, cons: Cons.t, repl: bool}
-                | Scheme of Scheme.t
-                | Type
 
                fun preprocess (strName, strStr, sigName, sigStr, rlzStr) =
                   let
@@ -2772,32 +2805,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                         val sigTyvarsLay = mk sigTyvars
                      end
 
-                     val flexTycon =
-                        Option.fold
-                        (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                         TyconMap.peekTycon (flexTyconMap, sigName))
-                     val spec =
-                        case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
-                           (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                              Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
-                         | (NONE, Interface.TypeStr.Datatype _, TypeStr.Scheme _) =>
-                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = NONE, sigStr = Datatype _, rlzStr = Scheme _}"
-                         | (NONE, _, rlzStr) =>
-                              (case rlzStr of
-                                  TypeStr.Datatype {tycon, ...} =>
-                                     Scheme (Scheme.fromTycon (tycon, sigKind))
-                                | TypeStr.Scheme s =>
-                                     Scheme s)
-                         | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                              Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
-                         | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Scheme _) =>
-                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
-                         | (SOME _, Interface.TypeStr.Datatype {repl = true, ...}, _) =>
-                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Datatype {repl = true, ...}}"
-                         | (SOME _, Interface.TypeStr.Scheme _, _) =>
-                              Error.bug "ElaborateEnv.transparentCut: {flexTycon = SOME _, sigStr = Scheme _}"
-                         | (SOME _, Interface.TypeStr.Tycon _, _) =>
-                              Type
+                     val sort = sort (sigName, sigStr, rlzStr, flexTyconMap)
 
                      fun sigMsg (b, rest) =
                         let
@@ -2808,14 +2816,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       NONE => str "..."
                                     | SOME rest => rest]
                            val (kw, rest) =
-                              case spec of
+                              case sort of
                                  Datatype _ => ("datatype", rest)
                                | Scheme _ => ("type", rest)
-                               | Type =>
-                                    case Interface.TypeStr.admitsEquality sigStr of
-                                       AdmitsEquality.Always => ("eqtype", empty)
-                                     | AdmitsEquality.Never => ("type", empty)
-                                     | AdmitsEquality.Sometimes => ("eqtype", empty)
+                               | Type {admitsEquality} =>
+                                    (if admitsEquality then "eqtype" else "type",
+                                     empty)
                         in
                            seq [if b then bracket (str kw) else str kw,
                                 sigTyvarsLay,
@@ -2848,7 +2854,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                       sigKind = sigKind,
                       sigTyvars = sigTyvars,
                       sigMsg = sigMsg,
-                      spec = spec}
+                      sort = sort}
                   end
             in
             val types =
@@ -2863,13 +2869,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     let
                        val rlzStr = Interface.TypeStr.toEnv sigStr
 
-                       val {layoutPretty, destroy, sigKind, sigTyvars, sigMsg, spec, ...} =
+                       val {layoutPretty, destroy, sigKind, sigTyvars, sigMsg, sort, ...} =
                           preprocess (name, rlzStr, name, sigStr, rlzStr)
                        val lay = #1 o layoutPretty
                        val () = preError ()
                        val rest =
-                          case spec of
-                             Type => NONE
+                          case sort of
+                             Type _ => NONE
                            | Scheme scheme =>
                                 SOME (lay (Scheme.apply
                                            (scheme,
@@ -2939,7 +2945,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val {layoutPretty, destroy,
                             strKind, strTyvars, strMsg,
                             sigKind, sigTyvars, sigMsg,
-                            spec} =
+                            sort} =
                           preprocess (strName, strStr, sigName, sigStr, rlzStr)
                        val lay = #1 o layoutPretty
 
@@ -2950,8 +2956,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          strMsg (false, NONE),
                                          sigMsg (false, NONE))
                        val resStr =
-                          case spec of
-                             Type =>
+                          case sort of
+                             Type _ =>
                                 let
                                    val sigEq = Interface.TypeStr.admitsEquality sigStr
                                    val strEq = TypeStr.admitsEquality strStr
