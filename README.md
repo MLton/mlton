@@ -5,53 +5,61 @@
 
 ## Features
 
-  + Portability.  
-   Runs on the following platforms.
-   - ARM: Linux (Debian).
-   - Alpha: Linux (Debian).
-   - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, ...),
-      Solaris (10 and above).
-   - HPPA: HPUX (11.11 and above), Linux (Debian).
-   - IA64: HPUX (11.11 and above), Linux (Debian).
-   - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian,
-      Fedora).
-   - PowerPC64: AIX (5.2 and above).
-   - S390: Linux (Debian).
-   - Sparc: Linux (Debian), Solaris (8 and above).
-   - X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian,
-      Fedora, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and
-      above).
+  + Portability. Runs on the following platforms.
+
+    - ARM: Linux (Debian).
+    - Alpha: Linux (Debian).
+    - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, ...),
+        Solaris (10 and above).
+    - HPPA: HPUX (11.11 and above), Linux (Debian).
+    - IA64: HPUX (11.11 and above), Linux (Debian).
+    - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian,
+        Fedora).
+    - PowerPC64: AIX (5.2 and above).
+    - S390: Linux (Debian).
+    - Sparc: Linux (Debian), Solaris (8 and above).
+    - X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian,
+        Fedora, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and
+        above).
+
   + Robustness.
-   - Supports the full SML 97 language as given in The Definition 
-      of Standard ML (Revised).
-   - A complete implementation of the Basis Library.
-   - Generates standalone executables.
-   - Compiles large programs.
-   - Support for large amounts of memory (up to 4G on 32-bit systems; 
-      more on 64-bit systems).
-   - Support for large array lengths (up to 2^31 - 1 on 32-bit
-      systems; up to 2^63-1 on 64-bit systems).
-   - Support for large files, using 64-bit file positions.
+
+    - Supports the full SML 97 language as given in The Definition 
+        of Standard ML (Revised).
+    - A complete implementation of the Basis Library.
+    - Generates standalone executables.
+    - Compiles large programs.
+    - Support for large amounts of memory (up to 4G on 32-bit systems; 
+        more on 64-bit systems).
+    - Support for large array lengths (up to 2^31 - 1 on 32-bit
+        systems; up to 2^63-1 on 64-bit systems).
+    - Support for large files, using 64-bit file positions.
+
   + Performance.
-   - Executables have excellent running times.
-   - Generates small executables.
-   - Untagged and unboxed native integers, reals, and words.
-   - Unboxed native arrays.
-   - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on the GnuMP.
+
+    - Executables have excellent running times.
+    - Generates small executables.
+    - Untagged and unboxed native integers, reals, and words.
+    - Unboxed native arrays.
+    - Multiple garbage collection strategies.
+    - Fast arbitrary-precision arithmetic based on the GnuMP.
+
   + Tools.
-   - Source-level profiling for both time and allocation.
-   - MLLex lexer generator.
-   - MLYacc parser generator.
-   - ML-NLFFIGEN foreign-function-interface generator.
+
+    - Source-level profiling for both time and allocation.
+    - MLLex lexer generator.
+    - MLYacc parser generator.
+    - ML-NLFFIGEN foreign-function-interface generator.
+
   + Extensions.
-   - A simple and fast C FFI that supports calling from SML to C and 
-      from C to SML.
-   - The ML Basis system for programming in the very large.
-   - Libraries for continuations, finalization, interval timers,
-      random numbers, resource limits, resource usage, signal
-      handlers, object size, system logging, threads, weak pointers,
-      and world save and restore.
+
+    - A simple and fast C FFI that supports calling from SML to C and 
+        from C to SML.
+    - The ML Basis system for programming in the very large.
+    - Libraries for continuations, finalization, interval timers,
+        random numbers, resource limits, resource usage, signal
+        handlers, object size, system logging, threads, weak pointers,
+        and world save and restore.
 
 ## Instructions to build from source
 
