@@ -36,10 +36,14 @@ CP := /bin/cp -fpR
 GZIP := gzip --force --best
 RANLIB := ranlib
 
-WITH_GMP :=
-ifneq ($(WITH_GMP),)
-WITH_GMP_INC_DIR := $(WITH_GMP)/include
-WITH_GMP_LIB_DIR := $(WITH_GMP)/lib
+
+# Allow for custom paths to GMP include and library files
+include mlton-env-config
+ifneq ($(WITH_GMP_INC_DIR),)
+WITH_GMP_INC_DIR := $(WITH_GMP_INC_DIR)
+endif
+ifneq ($(WITH_GMP_LIB_DIR),)
+WITH_GMP_LIB_DIR := $(WITH_GMP_LIB_DIR)
 endif
 
 # If we're compiling with another version of MLton, then we want to do
@@ -297,7 +301,7 @@ check:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
 # puts them.
-include mlton-env-config
+# include mlton-env-config
 DESTDIR := $(MLTON_LOCAL)
 PREFIX := /usr
 ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
@@ -413,18 +417,19 @@ move-docs:	install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
 
-.PHONY: configure
-configure:
-	autoreconf --force --verbose --install || exit 1
-
-# TODO: update release target to include `./configure` script & Makefile-auto.in
-# 			and exclude the rest (instead of clean prereq)
 .PHONY: release
-release: version configure
+release: version
 	tar cvzf ../mlton-$(VERSION).src.tgz \
 		--exclude .git --exclude package \
+		--exclude autom4te.cache --exclude config.log \
+		--exclude Makefile-auto --exclude mlton-env-config \
+		--exclude ./Makefile --exclude config.status \
 		--transform "s@^@mlton-$(VERSION)/@S" \
 		*
+	$(MAKE) clean
+
+.PHONY: dist
+dist: release
 
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd

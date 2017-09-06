@@ -3,30 +3,29 @@
 
 AC_PREREQ([2.69])
 
-m4_define(MLTON_VERSION, m4_normalize(m4_include(VERSION)))
-# software name, version, where to report bugs
+m4_define([MLTON_VERSION], [`date +%Y%m%d-%H%M%S`])
 AC_INIT([MLton], [MLTON_VERSION], [mlton-devel@mlton.org])
 
 # if this file does not exist, `configure` was invoked in the wrong directory
-AC_CONFIG_SRCDIR([VERSION])
+AC_CONFIG_SRCDIR([bin/mlton-script])
 
 
-dnl TODO: work on custom GMP path
-# gmplibs="-lmpc"
-# gmpinc=
-# have_gmp=no
-AC_ARG_WITH([gmp],
-            [AS_HELP_STRING([--with-gmp=PATH],
-                            [specify prefix directory for the installed GMP package.])],
-            [with_gmp="$withval"],
-            [with_gmp='']
-            )
-AC_SUBST(WITH_GMP, $with_gmp)
-# if test "x$with_gmp" != x; then
-#   gmplibs="-L$with_gmp/lib $gmplibs"
-#   gmpinc="-I$with_gmp/include $gmpinc"
-#   have_gmp=yes
-# fi
+AC_ARG_WITH([gmp-include],
+            [AS_HELP_STRING([--with-gmp-include=PATH],
+                            [specify directory for the installed GMP include file (gmp.h)])],
+            [with_gmp_include="$withval"],
+            [with_gmp_include='']
+           )
+AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
+
+AC_ARG_WITH([gmp-lib],
+            [AS_HELP_STRING([--with-gmp-lib=PATH],
+                            [specify directory for the installed GMP library (libgmp.so or libgmp.a or libgmp.dylib)])],
+            [with_gmp_lib="$withval"],
+            [with_gmp_lib='']
+           )
+AC_SUBST(WITH_GMP_LIB_DIR, $with_gmp_lib)
+
 
 dnl We don't really use automake, but configure needs aclocal and the
 dnl automake library files.
