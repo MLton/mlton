@@ -69,7 +69,7 @@
  - GNU Multiple Precision Library (GMP)
  - MLton (recommended) or SML/NJ bootstrapping compiler. 
      The easiest way is to install a pre-built binary package for MLton 
-     using your package manager. If using `SML/NJ`, see
+     using your package manager. If using SML/NJ, see
      [Compiling with SML/NJ](http://mlton.org/SelfCompiling).
  - GNU Autotools (only if cloning the source repository from Github)
 
@@ -80,7 +80,7 @@ sequence.
 
 You can install MLton into a custom directory by specifying the `--prefix`
 option. If omitted, MLton will be installed under a system default path
-(typically `/usr/local`).
+(typically under `/usr/local`).
 
 Similarly, you can instruct MLton to look for `gmp.h` outside your include
 path or `libgmp` outside your library search path by specifying the 
@@ -105,7 +105,7 @@ autoreconf -vfi
 # can now ./configure && make && make install && make clean
 ```
 
-To uninstall, simply delete the directory containing MLton installation.
+To uninstall, simply delete the directory containing the MLton installation.
 
 
 ## Resources
@@ -120,6 +120,7 @@ There are two mailing lists available.
  * MLton-user@mlton.org   MLton user community 
 
 `doc` (and `share/doc`) directory contents:
+
         README                  this file
         changelog               changelog
         cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
@@ -132,7 +133,7 @@ There are two mailing lists available.
         mlyacc.pdf              user guide for mlyacc parser generator
 
 
-## Need Help? Found a bug?
-https://github.com/MLton/mlton/issues
+## Need help? Found a bug?
+
 [Submit an issue](https://github.com/MLton/mlton/issues)
 if you need any help. We welcome pull requests with bug fixes or changes.
