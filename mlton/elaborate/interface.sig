@@ -141,6 +141,7 @@ signature INTERFACE =
              | Scheme of Scheme.t
              | Tycon of Tycon.t
 
+            val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t
             val apply: t * Type.t vector -> Type.t
             val cons: t -> Cons.t

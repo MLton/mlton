@@ -460,11 +460,22 @@ structure TypeStr =
       fun tycon (c, kind) = T {kind = kind,
                                node = Tycon c}
 
-      fun repl (t: t) =
-         case node t of
-            Datatype {tycon, cons, ...} => data (tycon, kind t, cons, true)
-          | Scheme _ => t
-          | Tycon c => def (Scheme.fromTycon (c, kind t), kind t)
+      local
+         fun tyconAsScheme (c, kind) =
+            def (Scheme.fromTycon (c, kind), kind)
+      in
+         fun repl (t: t) =
+            case node t of
+               Datatype {tycon, cons, ...} => data (tycon, kind t, cons, true)
+             | Scheme _ => t
+             | Tycon tycon => tyconAsScheme (tycon, kind t)
+
+         fun abs (t: t) =
+            case node t of
+               Datatype {tycon, ...} => tyconAsScheme (tycon, kind t)
+             | Scheme _ => t
+             | Tycon tycon => tyconAsScheme (tycon, kind t)
+      end
    end
 
 structure Defn =
