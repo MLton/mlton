@@ -5,7 +5,7 @@
 
 ## Features
 
-  + Portability. Runs on the following platforms.
+  + Portability. Runs on the following platforms:
 
     - ARM: Linux (Debian).
     - Alpha: Linux (Debian).
@@ -66,32 +66,30 @@
 ### Prerequisites
 
  - GCC 4.1.x or later
- - GNU Multiple Precision Library (GMP)
+ - GNU Multiple Precision Library. Check if GMP is already present
+     on your system (`whereis gmp libgmp`), typically on GCC search path
+     (`gcc -v -x c -E -`).
  - MLton (recommended) or SML/NJ bootstrapping compiler. 
      The easiest way is to install a pre-built binary package for MLton 
      using your package manager. If using SML/NJ, see
      [Compiling with SML/NJ](http://mlton.org/SelfCompiling).
- - GNU Autotools (only if cloning the source repository from Github)
 
 ### Build instructions
 
 MLton can be built from source using the usual `./configure && make && make install` 
-sequence.
-
-You can install MLton into a custom directory by specifying the `--prefix`
-option. If omitted, MLton will be installed under a system default path
-(typically under `/usr/local`).
-
-Similarly, you can instruct MLton to look for `gmp.h` outside your include
-path or `libgmp` outside your library search path by specifying the 
-`--with-gmp-lib` and `--with-gmp-include` configure options.
+sequence to install under the system default installation directory
+(typically, `/usr/local`). Optionally, you can specify the `--prefix`
+argument to install MLton into a custom directory. Additionally, you can 
+instruct MLton to look for `gmp.h` outside your include
+path or for `libgmp` outside your library search path via
+`--with-gmp-lib` and `--with-gmp-include` configure options, as in:
 
 ```shell
 gzip -cd mlton-*.tgz | tar xvf -
 
 # execute under the extracted directory
 ./configure \
-  --prefix=/$HOME/opt \
+  --prefix=$HOME/opt \
   --with-gmp-include=/usr/local/include \
   --with-gmp-lib=/usr/local/lib
 make
@@ -99,10 +97,10 @@ make install
 ```
 
 If building from source cloned from Github, first generate the `configure`
-script with:
+script (requires `GNU Autotools`):
 ```shell
 autoreconf -vfi
-# can now ./configure && make && make install && make clean
+# can now ./configure && make && make check && make install && make clean
 ```
 
 To uninstall, simply delete the directory containing the MLton installation.
