@@ -2601,10 +2601,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
        | Type of {admitsEquality: bool}
       fun sort (name, sigStr, rlzStr, flexTyconMap) =
          let
-            val flexTycon =
-               Option.fold
-               (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                TyconMap.peekTycon (flexTyconMap, name))
+            val flexTycon = TyconMap.peekTycon (flexTyconMap, name)
          in
             case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
                (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
@@ -2728,8 +2725,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                   str ":"]
                   val flexTyconMap =
                      Option.fold
-                     (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                      TyconMap.peekStrid (flexTyconMap, name))
+                     (TyconMap.peekStrid (flexTyconMap, name),
+                      TyconMap.empty (),
+                      fn (flexTyconMap, _) => flexTyconMap)
                   val strids = name::strids
                in
                   case interfaceSigid (Interface.original I) of
@@ -2797,8 +2795,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                   valOf (Interface.peekStrid (I, name))
                                val flexTyconMap =
                                   Option.fold
-                                  (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                                   TyconMap.peekStrid (flexTyconMap, name))
+                                  (TyconMap.peekStrid (flexTyconMap, name),
+                                   TyconMap.empty (),
+                                   fn (flexTyconMap, _) => flexTyconMap)
                             in
                                loop (name::strids, flexTyconMap', I, flexTyconMap)
                             end)
@@ -2806,12 +2805,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            Array.foreach
                            (types', fn (name, _) =>
                             let
-                               val (_, sigStr) =
-                                  valOf (Interface.peekTycon (I, name))
-                               val flexTycon =
-                                  Option.fold
-                                  (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                                   TyconMap.peekTycon (flexTyconMap, name))
+                               val (_, sigStr) = valOf (Interface.peekTycon (I, name))
+                               val flexTycon = TyconMap.peekTycon (flexTyconMap, name)
                             in
                                case flexTycon of
                                   NONE =>
@@ -2965,8 +2960,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     let
                        val flexTyconMap =
                           Option.fold
-                          (flexTyconMap, NONE, fn (flexTyconMap, _) =>
-                           TyconMap.peekStrid (flexTyconMap, name))
+                          (TyconMap.peekStrid (flexTyconMap, name),
+                           TyconMap.empty (),
+                           fn (flexTyconMap, _) => flexTyconMap)
                     in
                        cut (S, I, flexTyconMap, name :: strids)
                     end}
@@ -3487,7 +3483,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                          types = types,
                          vals = vals}
          end
-      val S = cut (S, I, SOME flexTyconMap, [])
+      val S = cut (S, I, flexTyconMap, [])
       val () = destroy ()
    in
       (S, Decs.fromList (!decs))
