@@ -22,7 +22,9 @@ local
    open Layout
 in
    val align = align
+   val alignPrefix = alignPrefix
    (* val empty = empty *)
+   val mayAlign = mayAlign
    val seq = seq
    val str = str
    val bracket = fn l =>
@@ -2566,7 +2568,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
          if isFunctor
             then "argument signature"
          else "signature"
-      val {get = interfaceSigid: Interface.t -> Sigid.t option,
+      val {get = interfaceSigid: Interface.t -> (Sigid.t * Interface.t) option,
            set = setInterfaceSigid, ...} =
          Property.getSet (Interface.plist, Property.initConst NONE)
       val preError =
@@ -2579,7 +2581,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
               val _ =
                  Info.foreachByTime
                  (sigs (), fn (s, I) =>
-                  setInterfaceSigid (I, SOME s))
+                  setInterfaceSigid (I, SOME (s, I)))
               val _ = loopFlexTyconMap (flexTyconMap, 2, [Strid.uSig])
               val _ = loopStr (S, 1, [Strid.uStr])
               val _ =
@@ -2628,6 +2630,216 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                       AdmitsEquality.Always => Type {admitsEquality = true}
                     | AdmitsEquality.Never => Type {admitsEquality = false}
                     | AdmitsEquality.Sometimes => Type {admitsEquality = true})
+         end
+
+      fun layouts () =
+         let
+            val _ = preError ()
+            val empty = Layout.empty
+            val indent = fn l => Layout.indent (l, 3)
+            val isEmpty = Layout.isEmpty
+            val tuple = Layout.tuple
+            val layoutLongRev = fn (strids, id, {long}) =>
+               if long then layoutLongRev (strids, id) else id
+            fun layoutValSpec (strids, name, (sigStatus, sigScheme), long) =
+               let
+                  val rlzScheme = Interface.Scheme.toEnv sigScheme
+               in
+                  case sigStatus of
+                     Status.Con => NONE
+                   | Status.Exn =>
+                        SOME (seq [str "exception ",
+                                   layoutLongRev (strids, Ast.Vid.layout name, long),
+                                   case Type.deArrowOpt (Scheme.ty rlzScheme) of
+                                      NONE => empty
+                                    | SOME (ty, _) =>
+                                         seq [str " of ", Type.layoutPretty ty]])
+                   | Status.Var =>
+                        SOME (seq [str "val ",
+                                   layoutLongRev (strids, Ast.Vid.layout name, long),
+                                   str (if Ast.Vid.isSymbolic name then " : " else ": "),
+                                   Scheme.layoutPretty rlzScheme])
+               end
+            fun layoutTypeSpec (strids, name, sigStr, flexTyconMap, long) =
+               let
+                  val {destroy, lay = layoutPretty} =
+                     Type.makeLayoutPretty {expandOpaque = false,
+                                            localTyvarNames = true}
+                  val lay = #1 o layoutPretty
+                  val rlzStr = Interface.TypeStr.toEnv sigStr
+                  val sort = sort (name, sigStr, rlzStr, flexTyconMap)
+                  val arity =
+                     case Interface.TypeStr.kind sigStr of
+                        Kind.Arity sigArity => sigArity
+                      | _ => Error.bug "ElaborateEnv.transparentCut.layouts.layoutTypeSpec: sigArity"
+                  val tyargs =
+                     Vector.tabulate
+                     (arity, fn _ =>
+                      Type.var (Tyvar.newNoname {equality = false}))
+                  val _ = Vector.foreach (tyargs, ignore o lay)
+                  val tyvars =
+                     case Vector.length tyargs of
+                        0 => empty
+                      | 1 => lay (Vector.first tyargs)
+                      | _ => tuple (Vector.toListMap (tyargs, lay))
+                  val (kw, rest) =
+                     case sort of
+                        Datatype {repl = true, ...} =>
+                           ("datatype",
+                            SOME (seq [str "datatype ",
+                                       lay (TypeStr.apply (rlzStr, tyargs))]))
+                      | Datatype {repl = false, cons, ...} =>
+                           let
+                              val cons =
+                                 Vector.toListMap
+                                 (Cons.dest cons, fn {name, scheme, ...} =>
+                                  let
+                                     val ty = Scheme.apply (scheme, tyargs)
+                                  in
+                                     seq [Ast.Con.layout name,
+                                          case Type.deArrowOpt ty of
+                                             NONE => empty
+                                           | SOME (ty, _) => seq [str " of ", lay ty]]
+                                  end)
+                           in
+                              ("datatype",
+                               SOME (alignPrefix (cons, "| ")))
+                           end
+                      | Scheme scheme =>
+                           ("type",
+                            SOME (lay (Scheme.apply (scheme, tyargs))))
+                      | Type {admitsEquality} =>
+                           (if admitsEquality then "eqtype" else "type",
+                            NONE)
+                  val _ = destroy ()
+               in
+                  seq [str kw, str " ",
+                       tyvars,
+                       if isEmpty tyvars then empty else str " ",
+                       layoutLongRev (strids, Ast.Tycon.layout name, long),
+                       case rest of
+                          NONE => empty
+                        | SOME rest => seq [str " = ", rest]]
+               end
+            fun layoutStrSpec (strids, name, I, flexTyconMap, long, elide) =
+               let
+                  val bind = seq [str "structure ",
+                                  layoutLongRev (strids, Ast.Strid.layout name, long),
+                                  str ":"]
+                  val flexTyconMap =
+                     Option.fold
+                     (flexTyconMap, NONE, fn (flexTyconMap, _) =>
+                      TyconMap.peekStrid (flexTyconMap, name))
+                  val strids = name::strids
+               in
+                  case interfaceSigid (Interface.original I) of
+                     NONE => align [bind, indent (layoutSig (strids, I, flexTyconMap, elide))]
+                   | SOME (s, I') => mayAlign [bind, indent (layoutSigNamed (s, I', I, flexTyconMap))]
+               end
+            and layoutSig (strids, I, flexTyconMap,
+                           {elide: {strs: (int * int) option,
+                                    types: (int * int) option,
+                                    vals: (int * int) option}}) =
+               let
+                  val {strs, types, vals} = Interface.dest I
+                  fun doit (a, layout, elide) =
+                     let
+                        val specs =
+                           Array.foldr
+                           (a, [], fn ((name, range), ls) =>
+                            case layout (strids, name, range) of
+                               NONE => ls
+                             | SOME l => l :: ls)
+                     in
+                        case elide of
+                           NONE => align specs
+                         | SOME (n, m) =>
+                              let
+                                 val l = List.length specs
+                              in
+                                 if n + m + 1 < l
+                                 then align [align (List.dropSuffix (specs, l - n)),
+                                             str "...",
+                                             align (List.dropPrefix (specs, l - m))]
+                                 else align specs
+                              end
+                     end
+                  val layoutValSpec =
+                     fn (strids, name, (sigStatus, sigScheme)) =>
+                     layoutValSpec (strids, name, (sigStatus, sigScheme), {long = false})
+                  val layoutTypeSpec =
+                     fn (strids, name, sigStr) =>
+                     layoutTypeSpec (strids, name, sigStr, flexTyconMap, {long = false})
+                  val layoutStrSpec =
+                     fn (strids, name, I) =>
+                     layoutStrSpec (strids, name, I, flexTyconMap, {long = false}, {elide = elide})
+               in
+                  align [str "sig",
+                         indent (align [doit (strs, SOME o layoutStrSpec, #strs elide),
+                                        doit (types, SOME o layoutTypeSpec, #types elide),
+                                        doit (vals, layoutValSpec, #vals elide)]),
+                         str "end"]
+               end
+            and layoutSigNamed (s, I', I, flexTyconMap) =
+               let
+                  val flexTyconMap' =
+                     Interface.flexibleTycons I'
+                  val wheres = ref []
+                  fun loop (strids, flexTyconMap', I, flexTyconMap) =
+                     let
+                        val TyconMap.T {strs = strs', types = types'} =
+                           flexTyconMap'
+                        val _ =
+                           Array.foreach
+                           (strs', fn (name, flexTyconMap') =>
+                            let
+                               val I =
+                                  valOf (Interface.peekStrid (I, name))
+                               val flexTyconMap =
+                                  Option.fold
+                                  (flexTyconMap, NONE, fn (flexTyconMap, _) =>
+                                   TyconMap.peekStrid (flexTyconMap, name))
+                            in
+                               loop (name::strids, flexTyconMap', I, flexTyconMap)
+                            end)
+                        val _ =
+                           Array.foreach
+                           (types', fn (name, _) =>
+                            let
+                               val (_, sigStr) =
+                                  valOf (Interface.peekTycon (I, name))
+                               val flexTycon =
+                                  Option.fold
+                                  (flexTyconMap, NONE, fn (flexTyconMap, _) =>
+                                   TyconMap.peekTycon (flexTyconMap, name))
+                            in
+                               case flexTycon of
+                                  NONE =>
+                                     List.push
+                                     (wheres,
+                                      seq [str "where ",
+                                           layoutTypeSpec (strids,
+                                                           name,
+                                                           Interface.TypeStr.abs sigStr,
+                                                           flexTyconMap,
+                                                           {long = true})])
+                                | SOME _ => ()
+                            end)
+                     in
+                        ()
+                     end
+                  val () = loop ([], flexTyconMap', I, flexTyconMap)
+                  val wheres = rev (!wheres)
+               in
+                  seq [Ast.Sigid.layout s,
+                       if List.isEmpty wheres
+                          then empty
+                          else seq [str " ", align wheres]]
+               end
+         in
+            {layoutTypeSpec = layoutTypeSpec,
+             layoutValSpec = layoutValSpec,
+             layoutStrSpec = layoutStrSpec}
          end
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
@@ -2735,14 +2947,18 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     specs = fn (name, _) => [Strid.region name],
                     notFound = fn (name, I) =>
                     let
-                       val (S, _) = dummyStructure (I, {prefix = ""})
-                       val () = preError ()
                        val spec =
-                          (#strSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
-                          (name, S, {showEqtype = false})
+                          (#layoutStrSpec (layouts ()))
+                          (strids, name, I, flexTyconMap, {long = true},
+                           {elide = {strs = SOME (2, 0),
+                                     types = NONE,
+                                     vals = SOME (3, 2)}})
+                       val thing = "structure"
+
+                       val (S, _) = dummyStructure (I, {prefix = ""})
                     in
                        {diag = SOME {spec = SOME spec,
-                                     thing = "structure"},
+                                     thing = thing},
                         range = S}
                     end,
                     doit = fn (_, S, name, I) =>
@@ -2755,7 +2971,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        cut (S, I, flexTyconMap, name :: strids)
                     end}
             local
-
                fun preprocess (strName, strStr, sigName, sigStr, rlzStr) =
                   let
                      val {destroy, lay = layoutPretty} =
@@ -2867,47 +3082,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                             (Ast.Tycon.region name)::(Interface.TypeStr.specs sigStr),
                     notFound = fn (name, sigStr) =>
                     let
-                       val rlzStr = Interface.TypeStr.toEnv sigStr
+                       val spec =
+                          (#layoutTypeSpec (layouts ()))
+                          (strids, name, sigStr, flexTyconMap, {long = true})
+                       val thing = "type"
 
-                       val {layoutPretty, destroy, sigKind, sigTyvars, sigMsg, sort, ...} =
-                          preprocess (name, rlzStr, name, sigStr, rlzStr)
-                       val lay = #1 o layoutPretty
-                       val () = preError ()
-                       val rest =
-                          case sort of
-                             Type _ => NONE
-                           | Scheme scheme =>
-                                SOME (lay (Scheme.apply
-                                           (scheme,
-                                            sigTyvars)))
-                           | Datatype {repl = true, tycon, ...} =>
-                                SOME (seq [str "datatype ",
-                                           lay (Scheme.apply
-                                                (Scheme.fromTycon
-                                                 (tycon, sigKind),
-                                                 sigTyvars))])
-                           | Datatype {repl = false, cons, ...} =>
-                                let
-                                   open Layout
-                                   val cons =
-                                      Vector.toListMap
-                                      (Cons.dest cons, fn {name, scheme, ...} =>
-                                       let
-                                          val ty = Scheme.apply (scheme, sigTyvars)
-                                       in
-                                          seq [Ast.Con.layout name,
-                                               case Type.deArrowOpt ty of
-                                                  NONE => empty
-                                                | SOME (ty, _) => seq [str " of ", lay ty]]
-                                       end)
-                                in
-                                   SOME (alignPrefix (cons, "| "))
-                                end
-                       val spec = sigMsg (false, rest)
-                       val _ = destroy ()
+                       val rlzStr = Interface.TypeStr.toEnv sigStr
                     in
                        {diag = SOME {spec = SOME spec,
-                                     thing = "type"},
+                                     thing = thing},
                         range = rlzStr}
                     end,
                     doit = fn (strName, strStr, sigName, sigStr) =>
@@ -3167,22 +3350,23 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 specs = fn (name, _) => [Ast.Vid.region name],
                 notFound = fn (name, (sigStatus, sigScheme)) =>
                 let
+                   val spec =
+                      (#layoutValSpec (layouts ()))
+                      (strids, name, (sigStatus, sigScheme), {long = true})
+                   val thing = Status.pretty sigStatus
+
                    val con = Con.newString o Ast.Vid.toString
                    val var = Var.newString o Ast.Vid.toString
-                   val (vid, mkDiag) =
+                   val vid =
                       case sigStatus of
-                         Status.Con => (Vid.Con (con name), fn _ => NONE)
-                       | Status.Exn => (Vid.Exn (con name), SOME)
-                       | Status.Var => (Vid.Var (var name), SOME)
+                         Status.Con => Vid.Con (con name)
+                       | Status.Exn => Vid.Exn (con name)
+                       | Status.Var => Vid.Var (var name)
                    val rlzScheme = Interface.Scheme.toEnv sigScheme
-                   val () = preError ()
-                   val spec =
-                      (#valSpec (Structure.layouts ({showUsed = false}, interfaceSigid)))
-                      (name, (vid, rlzScheme))
-                   val thing = Status.pretty sigStatus
                 in
-                   {diag = mkDiag {spec = spec,
-                                   thing = thing},
+                   {diag = Option.map (spec, fn spec =>
+                                       {spec = SOME spec,
+                                        thing = thing}),
                     range = (vid, rlzScheme)}
                 end,
                 doit = fn (strName, (vid, strScheme), sigName, (status, sigScheme)) =>
