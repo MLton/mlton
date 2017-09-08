@@ -830,9 +830,9 @@ structure Structure =
                   layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false, showEqtype = showEqtype})
                and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool, showEqtype: bool}) =
                   let
-                     val {destroy, lay} = 
+                     val {destroy, layoutPretty} =
                         Type.makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
-                     val lay = #1 o lay
+                     val lay = #1 o layoutPretty
                      val tyvars =
                         case TypeStr.kind s of
                            Kind.Arity n =>
@@ -2659,7 +2659,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                end
             fun layoutTypeSpec (strids, name, sigStr, flexTyconMap, long) =
                let
-                  val {destroy, lay = layoutPretty} =
+                  val {destroy, layoutPretty} =
                      Type.makeLayoutPretty {expandOpaque = false,
                                             localTyvarNames = true}
                   val lay = #1 o layoutPretty
@@ -2969,7 +2969,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
             local
                fun preprocess (strName, strStr, sigName, sigStr, rlzStr) =
                   let
-                     val {destroy, lay = layoutPretty} =
+                     val {destroy, layoutPretty} =
                         Type.makeLayoutPretty {expandOpaque = false,
                                                localTyvarNames = true}
                      val strKind = TypeStr.kind strStr

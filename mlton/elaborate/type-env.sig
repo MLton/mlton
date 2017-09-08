@@ -61,7 +61,7 @@ signature TYPE_ENV =
             val makeLayoutPretty:
                {expandOpaque:bool,
                 localTyvarNames: bool} -> {destroy: unit -> unit,
-                                           lay: t -> LayoutPretty.t}
+                                           layoutPretty: t -> LayoutPretty.t}
             val makeUnify:
                {layoutPretty: t -> LayoutPretty.t,
                 preError: unit -> unit} ->

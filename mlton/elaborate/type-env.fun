@@ -617,7 +617,7 @@ structure Type =
 
       fun makeLayoutPretty {expandOpaque, localTyvarNames} : 
          {destroy: unit -> unit,
-          lay: t -> LayoutPretty.t} =
+          layoutPretty: t -> LayoutPretty.t} =
          let
             val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
@@ -659,7 +659,7 @@ structure Type =
                        end
                else (fn () => (), Tyvar.layout)
             fun var (_, a) = simple (prettyTyvar a)
-            fun lay t =
+            fun layoutPretty t =
                hom (t, {con = con,
                         expandOpaque = expandOpaque,
                         flexRecord = flexRecord,
@@ -671,15 +671,15 @@ structure Type =
                         var = var})
          in
             {destroy = destroy,
-             lay = lay}
+             layoutPretty = layoutPretty}
          end
 
       fun layoutPrettyAux (t, {expandOpaque, localTyvarNames}) =
          let
-            val {destroy, lay} = 
+            val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = expandOpaque,
                                  localTyvarNames = localTyvarNames}
-            val res = #1 (lay t)
+            val res = #1 (layoutPretty t)
             val _ = destroy ()
          in
             res
@@ -1983,7 +1983,7 @@ structure Type =
       val unify =
          fn (t1, t2, {error, preError}) =>
          let
-            val {destroy, lay = layoutPretty} =
+            val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
