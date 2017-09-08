@@ -863,19 +863,21 @@ structure Type =
                            (SOME o Tycon.layoutAppPretty)
                            (c, Vector.map (los, deopt))
                   end
-               fun doRecord (fls, extra) =
-                  SOME (layoutRecord (fls, extra))
+               fun doRecord (fields, extra) =
+                  SOME (layoutRecord
+                        (List.map
+                         (fields, fn (f, l) =>
+                          (f, false, l)),
+                         extra))
                fun flexRecord (_, {fields, spine = _}) =
-                  doRecord (List.keepAllMap (fields, fn (f, lo) =>
-                                             case lo of
-                                                NONE => NONE
-                                              | SOME l => SOME (f, false, l)),
+                  doRecord (List.keepAllMap
+                            (fields, fn (f, lo) =>
+                             Option.map (lo, fn l => (f, l))),
                             true)
                fun genFlexRecord (_, {extra = _, fields, spine = _}) =
-                  doRecord (List.keepAllMap (fields, fn (f, lo) =>
-                                             case lo of
-                                                NONE => NONE
-                                              | SOME l => SOME (f, false, l)),
+                  doRecord (List.keepAllMap
+                            (fields, fn (f, lo) =>
+                             Option.map (lo, fn l => (f, l))),
                             true)
                fun overload (_, ov) =
                   case ov of
@@ -885,16 +887,14 @@ structure Type =
                   case Srecord.detupleOpt r of
                      NONE =>
                         let
-                           val r = Srecord.toVector r
-                           val r' =
+                           val fields = Srecord.toVector r
+                           val fields' =
                               Vector.keepAllMap
-                              (r, fn (f, lo) =>
-                               case lo of
-                                  NONE => NONE
-                                | SOME l => SOME (f, false, l))
+                              (fields, fn (f, lo) =>
+                               Option.map (lo, fn l => (f, l)))
                         in
-                           doRecord (Vector.toList r',
-                                     not (Vector.length r = Vector.length r'))
+                           doRecord (Vector.toList fields',
+                                     not (Vector.length fields = Vector.length fields'))
                         end
                    | SOME los => SOME (layoutTuple (Vector.map (los, deopt)))
                fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
