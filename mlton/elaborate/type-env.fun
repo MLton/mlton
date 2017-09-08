@@ -86,7 +86,7 @@ structure Time:>
 
 val tick = Time.tick
 
-structure Lay =
+structure LayoutPretty =
    struct
       type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
 
@@ -97,7 +97,7 @@ structure Lay =
 structure UnifyResult =
    struct
       datatype t =
-         NotUnifiable of Lay.t * Lay.t
+         NotUnifiable of LayoutPretty.t * LayoutPretty.t
        | Unified
 
       val layout =
@@ -385,10 +385,10 @@ val tyvarTime =
 local
    open Layout
 in
-   val simple = Lay.simple
-   val dontCare: Lay.t = simple (str "_")
+   val simple = LayoutPretty.simple
+   val dontCare: LayoutPretty.t = simple (str "_")
    fun bracket l = seq [str "[", l, str "]"]
-   fun layoutRecord (ds: (Field.t * bool * Lay.t) list, flexible: bool) =
+   fun layoutRecord (ds: (Field.t * bool * LayoutPretty.t) list, flexible: bool) =
       simple (case ds of
                  [] => if flexible then str "{...}" else str "{}"
                | _ => 
@@ -410,7 +410,7 @@ in
                          str (if flexible
                                  then ", ...}"
                               else "}")])
-   fun layoutTuple (ls: Lay.t vector): Lay.t =
+   fun layoutTuple (ls: LayoutPretty.t vector): LayoutPretty.t =
       Tycon.layoutAppPretty (Tycon.tuple, ls)
 end
 
@@ -617,7 +617,7 @@ structure Type =
 
       fun makeLayoutPretty {expandOpaque, localTyvarNames} : 
          {destroy: unit -> unit,
-          lay: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)} =
+          lay: t -> LayoutPretty.t} =
          let
             val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
@@ -842,14 +842,14 @@ structure Type =
                val {ty, ...} = Set.! s
             in
                case ty of
-                  Var tyvar => Lay.simple (bracket (Tyvar.layout tyvar))
-                | _ => Lay.simple (bracket (str "<equality>"))
+                  Var tyvar => LayoutPretty.simple (bracket (Tyvar.layout tyvar))
+                | _ => LayoutPretty.simple (bracket (str "<equality>"))
             end
          fun explainDoesNotAdmitEquality t =
             let
-               val wild = Lay.simple (str "_")
+               val wild = LayoutPretty.simple (str "_")
                fun deopt lo = Option.fold (lo, wild, fn (l, _) => l)
-               val noneq = Lay.simple (bracket (str "<non-equality>"))
+               val noneq = LayoutPretty.simple (bracket (str "<non-equality>"))
                fun con (_, c, los) =
                   let
                      datatype z = datatype AdmitsEquality.t
@@ -857,7 +857,7 @@ structure Type =
                      case ! (tyconAdmitsEquality c) of
                         Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
                       | Never =>
-                           (SOME o Lay.simple o bracket o #1 o Tycon.layoutAppPretty)
+                           (SOME o LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
                            (c, Vector.map (los, fn _ => wild))
                       | Sometimes =>
                            (SOME o Tycon.layoutAppPretty)
@@ -879,7 +879,7 @@ structure Type =
                             true)
                fun overload (_, ov) =
                   case ov of
-                     Overload.Real => SOME (Lay.simple (bracket (str "<real?>")))
+                     Overload.Real => SOME (LayoutPretty.simple (bracket (str "<real?>")))
                    | _ => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.overload"
                fun record (_, r) =
                   case Srecord.detupleOpt r of
@@ -899,7 +899,7 @@ structure Type =
                    | SOME los => SOME (layoutTuple (Vector.map (los, deopt)))
                fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
                fun unknown (_, _) = SOME noneq
-               fun var (_, a) = SOME (Lay.simple (bracket (Tyvar.layout a)))
+               fun var (_, a) = SOME (LayoutPretty.simple (bracket (Tyvar.layout a)))
                fun wrap (f, sel) arg =
                   if admitsEquality (sel arg)
                      then NONE
@@ -1021,7 +1021,7 @@ structure Type =
          Trace.trace2 
          ("TypeEnv.Type.unify", layout, layout, UnifyResult.layout)
 
-      fun unify (t, t', {layoutPretty: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t),
+      fun unify (t, t', {layoutPretty: t -> LayoutPretty.t,
                          preError: unit -> unit}): UnifyResult.t =
          let
             val dontCare' = fn _ => dontCare
@@ -1032,7 +1032,7 @@ structure Type =
                    then Unified
                 else
                    let
-                      fun notUnifiable (l: Lay.t, l': Lay.t) =
+                      fun notUnifiable (l: LayoutPretty.t, l': LayoutPretty.t) =
                          (NotUnifiable (l, l'),
                           Unknown (Unknown.new {canGeneralize = true}))
                       val bracket =

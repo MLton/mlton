@@ -22,6 +22,14 @@ structure BindingStrength =
       val unit = Unit
    end
 
+structure LayoutPretty =
+   struct
+      type t = Layout.t * ({isChar: bool} * BindingStrength.t)
+
+      fun simple (l: Layout.t): t =
+         (l, ({isChar = false}, BindingStrength.unit))
+   end
+
 datatype z = datatype RealSize.t
 
 type tycon = t
@@ -174,9 +182,7 @@ val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
-fun layoutAppPretty (c: t,
-                     args: (Layout.t * ({isChar: bool}
-                                        * BindingStrength.t)) vector) =
+fun layoutAppPretty (c: t, args: LayoutPretty.t vector) =
    let
       local
          open Layout
@@ -224,13 +230,13 @@ fun layoutAppPretty (c: t,
                ({isChar = false}, Arrow))
       else if equals (c, tuple)
          then if Vector.isEmpty args
-                 then (str "unit", ({isChar = false}, Unit))
+                 then LayoutPretty.simple (str "unit")
               else (mayAlign (Layout.separateLeft
                               (Vector.toListMap (args, maybe TupleElem), "* ")),
                     ({isChar = false}, Tuple))
       else if equals (c, vector)
          then if #isChar (#1 (#2 (Vector.first args)))
-                 then (str "string", ({isChar = false}, Unit))
+                 then LayoutPretty.simple (str "string")
               else normal ()
       else normal ()
    end

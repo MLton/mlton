@@ -16,6 +16,11 @@ signature TYPE_ENV =
    sig
       include TYPE_ENV_STRUCTS
 
+      structure LayoutPretty:
+         sig
+            type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
+         end
+
       structure Time:
          sig
             type t
@@ -56,10 +61,9 @@ signature TYPE_ENV =
             val makeLayoutPretty:
                {expandOpaque:bool,
                 localTyvarNames: bool} -> {destroy: unit -> unit,
-                                           lay: t -> Layout.t * ({isChar: bool}
-                                                                 * Tycon.BindingStrength.t)}
+                                           lay: t -> LayoutPretty.t}
             val makeUnify:
-               {layoutPretty: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t),
+               {layoutPretty: t -> LayoutPretty.t,
                 preError: unit -> unit} ->
                t * t * {error: Layout.t * Layout.t -> unit} -> unit
             (* minTime (t, time) makes every component of t occur no later than
