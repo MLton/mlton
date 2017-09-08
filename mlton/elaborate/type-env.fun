@@ -834,18 +834,18 @@ structure Type =
       fun unresolvedString () = vector (unresolvedChar ())
 
       local
-         open Layout
          fun bracket l = let open Layout in seq [str "[", l, str "]"] end
+         val str = Layout.str
       in
-         fun explainAdmitsEquality (T s) =
+         fun explainAdmitsEquality (T s, {layoutPretty: t -> LayoutPretty.t}) =
             let
                val {ty, ...} = Set.! s
             in
                case ty of
-                  Var tyvar => LayoutPretty.simple (bracket (Tyvar.layout tyvar))
+                  Var a => LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a))))
                 | _ => LayoutPretty.simple (bracket (str "<equality>"))
             end
-         fun explainDoesNotAdmitEquality t =
+         fun explainDoesNotAdmitEquality (t , {layoutPretty: t -> LayoutPretty.t}) =
             let
                val wild = LayoutPretty.simple (str "_")
                fun deopt lo = Option.fold (lo, wild, fn (l, _) => l)
@@ -899,7 +899,7 @@ structure Type =
                    | SOME los => SOME (layoutTuple (Vector.map (los, deopt)))
                fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
                fun unknown (_, _) = SOME noneq
-               fun var (_, a) = SOME (LayoutPretty.simple (bracket (Tyvar.layout a)))
+               fun var (_, a) = SOME (LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a)))))
                fun wrap (f, sel) arg =
                   if admitsEquality (sel arg)
                      then NONE
@@ -1269,8 +1269,8 @@ structure Type =
                                            val _ = preError ()
                                            fun explain t =
                                               if admitsEquality t
-                                                 then explainAdmitsEquality t
-                                                 else explainDoesNotAdmitEquality t
+                                                 then explainAdmitsEquality (t, {layoutPretty = layoutPretty})
+                                                 else explainDoesNotAdmitEquality (t, {layoutPretty = layoutPretty})
                                         in
                                            NotUnifiable (explain outer,
                                                          explain outer')
@@ -1365,8 +1365,6 @@ structure Type =
          case unify (t, t', z) of
             UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
           | UnifyResult.Unified => Unified
-
-      val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
 
       local
          val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
@@ -1993,6 +1991,8 @@ structure Type =
          in
             ()
          end
+
+      val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
    end
 
 end

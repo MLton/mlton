@@ -37,7 +37,7 @@ signature TYPE_ENV =
             val canUnify: t * t -> bool
             val deEta: t * Tyvar.t vector -> Tycon.t option
             val deRecord: t -> (Record.Field.t * t) vector
-            val explainDoesNotAdmitEquality: t -> Layout.t
+            val explainDoesNotAdmitEquality: t * {layoutPretty: t -> LayoutPretty.t} -> Layout.t
             val flexRecord: t SortedRecord.t -> t * (unit -> bool)
             val hom: t * {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,

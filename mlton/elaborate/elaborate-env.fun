@@ -335,7 +335,7 @@ structure TypeStr =
                            then AdmitsEquality.Sometimes
                         else AdmitsEquality.Never
 
-      fun explainDoesNotAdmitEquality (s: t): Layout.t =
+      fun explainDoesNotAdmitEquality (s: t, layoutPretty): Layout.t =
          case node s of
             Datatype {cons, ...} =>
                let
@@ -351,7 +351,7 @@ structure TypeStr =
                              if Type.admitsEquality arg
                                 then (extra := true; NONE)
                                 else SOME (seq [Ast.Con.layout name, str " of ",
-                                                Type.explainDoesNotAdmitEquality arg])))
+                                                Type.explainDoesNotAdmitEquality (arg, layoutPretty)])))
                   val cons =
                      if !extra
                         then List.snoc (cons, str "...")
@@ -360,7 +360,7 @@ structure TypeStr =
                   Layout.alignPrefix (cons, "| ")
                end
           | Scheme s =>
-               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s))
+               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s), layoutPretty)
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
@@ -3145,7 +3145,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          then ()
                                          else (preError ()
                                                ; error ("admits equality",
-                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality strStr)),
+                                                        strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
+                                                                             (strStr,
+                                                                              {layoutPretty = layoutPretty}))),
                                                         sigMsg (true, NONE)))
                                 in
                                    rlzStr
