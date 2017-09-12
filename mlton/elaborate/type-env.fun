@@ -1036,15 +1036,15 @@ structure Type =
                   else let
                           val ty = Type.newAt bound
                        in
-                          (List.push (tycons, c)
-                           ; preError ()
-                           ; SOME ((LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
-                                   (c, Vector.map (rs, getLay2)),
-                                   Tycon.layoutAppPretty
-                                   (c, Vector.map (rs, getLay2)),
-                                   (LayoutPretty.simple o bracket o #1)
-                                   (layoutPretty ty),
-                                   ty))
+                          List.push (tycons, c)
+                          ; preError ()
+                          ; SOME ((LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
+                                  (c, Vector.map (rs, getLay2)),
+                                  Tycon.layoutAppPretty
+                                  (c, Vector.map (rs, getLay2)),
+                                  (LayoutPretty.simple o bracket o #1)
+                                  (layoutPretty ty),
+                                  ty)
                        end
             fun doRecord (fls: (Field.t * (LayoutPretty.t * LayoutPretty.t * LayoutPretty.t)) list,
                           extra: bool, mk: unit -> t) =
@@ -1106,16 +1106,16 @@ structure Type =
             fun var (_, a) =
                if Time.<= (!(tyvarTime a), bound)
                   then NONE
-                  else (List.push (tyvars, a)
-                        ; let
-                             val a = #1 (layoutPretty (Type.var a))
-                             val ty = newAt bound
-                          in
-                             SOME (LayoutPretty.simple (bracket a),
-                                   LayoutPretty.simple a,
-                                   LayoutPretty.simple (bracket (#1 (layoutPretty ty))),
-                                   ty)
-                          end)
+                  else let
+                          val ty = newAt bound
+                       in
+                          List.push (tyvars, a)
+                          (* ; preError () *)
+                          ; SOME (LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a)))),
+                                  LayoutPretty.simple (#1 (layoutPretty (Type.var a))),
+                                  LayoutPretty.simple (bracket (#1 (layoutPretty ty))),
+                                  ty)
+                       end
             fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
             fun recursive _ = Error.bug "TypeEnv.Type.checkTime.recursive"
             fun wrap (f, sel) arg =
@@ -1221,7 +1221,11 @@ structure Type =
       fun unify (t, t', {layoutPretty: t -> LayoutPretty.t,
                          preError: unit -> unit}): UnifyResult.t =
          let
-            val dontCare' = fn _ => dontCare
+            val checkTime =
+               fn (t, bound) =>
+               checkTime (t, bound,
+                          {layoutPretty = layoutPretty,
+                           preError = preError})
             fun unify arg =
                traceUnify
                (fn (outer as T s, outer' as T s') =>
@@ -1240,35 +1244,53 @@ structure Type =
                          notUnifiable (bracket l, bracket l')
                       fun flexToRecord (fields, spine) =
                          (Vector.fromList fields,
-                          Vector.fromList
-                          (List.fold
-                           (Spine.fields spine, [], fn (f, ac) =>
-                            if List.exists (fields, fn (f', _) =>
-                                            Field.equals (f, f'))
-                               then ac
-                            else f :: ac)),
-                          fn f => Spine.ensureField (spine, f),
                           Spine.canAddFields spine)
                       fun rigidToRecord r =
                          (Srecord.toVector r,
-                          Vector.new0 (),
-                          fn f => isSome (Srecord.peek (r, f)),
                           false)
-                      fun oneFlex ({fields, spine}, time, r, outer, swap) =
+                      fun flexToFlexToRecord (fields, spine, time, outer, spine') =
+                         let
+                            val () =
+                               List.foreach
+                               (Spine.fields spine', fn f' =>
+                                ignore (Spine.ensureField (spine, f')))
+                            val fields =
+                               Spine.foldOverNew
+                               (spine, fields, fields, fn (f, fields) =>
+                                (f, newAt time) :: fields)
+                            val _ = setTy (outer, FlexRecord {fields = fields, spine = spine})
+                         in
+                            flexToRecord (fields, spine)
+                         end
+                      fun flexToRigidToRecord (fields, spine, time, outer, r') =
+                         let
+                            val () =
+                               Vector.foreach
+                               (Srecord.toVector r', fn (f', _) =>
+                                ignore (Spine.ensureField (spine, f')))
+                            val () = Spine.noMoreFields spine
+                            val fields =
+                               Spine.foldOverNew
+                               (spine, fields, fields, fn (f, fields) =>
+                                (f, newAt time) :: fields)
+                            val r = Srecord.fromVector (Vector.fromList fields)
+                            val _ = setTy (outer, Record r)
+                         in
+                            rigidToRecord r
+                         end
+                      fun oneFlex ({fields, spine}, time, outer, r', swap) =
                          unifyRecords
-                         (flexToRecord (fields, spine),
-                          rigidToRecord r,
-                          fn () => (minTime (outer, time)
-                                    ; Spine.noMoreFields spine
-                                    ; (Unified, Record r)),
-                          fn (l, l') => notUnifiable (if swap
-                                                         then (l', l)
-                                                      else (l, l')))
+                         (flexToRigidToRecord (fields, spine, time, outer, r'),
+                          rigidToRecord r',
+                          fn () => (Unified, Record r'),
+                          notUnifiable o (fn (l, l') =>
+                                          if swap
+                                             then (l', l)
+                                             else (l, l')))
                       fun genFlexError () =
                          Error.bug "TypeEnv.Type.unify: GenFlexRecord"
                       val {equality = e, time, ty = t, plist} = Set.! s
-                      val {equality = e', time = time', ty = t', ...} =
-                         Set.! s'
+                      val {equality = e', time = time', ty = t', ...} = Set.! s'
                       fun not () =
                          (preError ()
                           ; notUnifiableBracket (layoutPretty outer,
@@ -1284,16 +1306,10 @@ structure Type =
                                let
                                   val (ls, ls') =
                                      Vector.unzip
-                                     (Vector.mapi
-                                      (us, fn (i, u) =>
+                                     (Vector.map
+                                      (us, fn u =>
                                        case u of
-                                          Unified =>
-                                             let
-                                                val z =
-                                                   dontCare' (Vector.sub (ts, i))
-                                             in
-                                                (z, z)
-                                             end
+                                          Unified => (dontCare, dontCare)
                                         | NotUnifiable (l, l') => (l, l')))
                                in
                                   no (ls, ls')
@@ -1331,8 +1347,8 @@ structure Type =
                                             fn () => (Unified, t),
                                             fn (ls, ls') =>
                                             let 
-                                               fun lay ls =
-                                                  Tycon.layoutAppPretty (c, ls)
+                                               val _ = preError ()
+                                               fun lay ls = Tycon.layoutAppPretty (c, ls)
                                             in
                                                notUnifiable
                                                (maybe (lay ls, lay ls'))
@@ -1345,10 +1361,12 @@ structure Type =
                                   else not ()
                              | _ => not ()
                          end
-                      fun oneUnknown (u: Unknown.t, time,
-                                      t: Type.ty,
-                                      outer: Type.t,
-                                      _: bool) =
+                      fun oneUnknown (u: Unknown.t,
+                                      time: Time.t,
+                                      outer: t,
+                                      t': Type.ty,
+                                      outer': Type.t,
+                                      swap: bool) =
                          let
                             (* This should fail if the unknown occurs in t.
                              *)
@@ -1358,18 +1376,16 @@ structure Type =
                                List.exists (fields, fn (_, b) => b)
                             fun flexRecord (_, {fields, spine = _}) =
                                doFields fields
-                            fun genFlexRecord (_, {extra = _, fields,
-                                                   spine = _}) =
-                               doFields fields
                             fun record (_, r) = Srecord.exists (r, fn b => b)
                             fun unknown (_, u') = Unknown.equals (u, u')
                             fun no _ = false
                             val isCircular =
-                               hom (outer,
+                               hom (outer',
                                     {con = con,
                                      expandOpaque = false,
                                      flexRecord = flexRecord,
-                                     genFlexRecord = genFlexRecord,
+                                     genFlexRecord = fn _ =>
+                                     Error.bug "TypeEnv.Type.unify.oneUnknown: genFlexRecord",
                                      overload = no,
                                      record = record,
                                      recursive = fn _ => 
@@ -1379,57 +1395,57 @@ structure Type =
                          in
                             if isCircular
                                then not ()
-                            else
-                               let
-                                  val () = minTime (outer, time)
-                               in
-                                  (Unified, t)
-                               end
+                               else (case checkTime (outer', time) of
+                                        NONE => (Unified, t')
+                                      | SOME (l, (t'', l''), _) =>
+                                           (setTy (outer, getTy t'')
+                                            ; notUnifiable
+                                              (if swap
+                                                  then (l, l'')
+                                                  else (l'', l))))
                          end
                       val (res, t) =
                          case (t, t') of
                             (Unknown r, Unknown r') =>
                                (Unified, Unknown (Unknown.join (r, r')))
                           | (Unknown u, _) =>
-                               oneUnknown (u, !time, t', outer', false)
+                               oneUnknown (u, !time, outer, t', outer', false)
                           | (_, Unknown u') =>
-                               oneUnknown (u', !time', t, outer, true)
+                               oneUnknown (u', !time', outer', t, outer, true)
                           | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
                           | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
                           | (FlexRecord f, Record r') =>
-                               oneFlex (f, !time, r', outer', false)
+                               oneFlex (f, !time, outer, r', false)
                           | (Record r, FlexRecord f') =>
-                               oneFlex (f', !time', r, outer, true)
-                          | (FlexRecord {fields = fields, spine = s},
-                             FlexRecord {fields = fields', spine = s'}) =>
+                               oneFlex (f', !time', outer', r, true)
+                          | (FlexRecord {fields = fields, spine = spine},
+                             FlexRecord {fields = fields', spine = spine'}) =>
                             let
                                fun yes () =
                                   let
-                                     val () = Spine.unify (s, s')
-                                     val () = minTime (outer, !time')
-                                     val () = minTime (outer', !time)
+                                     val () = Spine.unify (spine, spine')
                                      val fields =
                                         List.fold
                                         (fields, fields', fn ((f, t), ac) =>
                                          if List.exists (fields', fn (f', _) =>
                                                          Field.equals (f, f'))
                                             then ac
-                                         else (f, t) :: ac)
+                                            else (f, t) :: ac)
                                   in
                                      (Unified,
                                       FlexRecord {fields = fields,
-                                                  spine = s})
+                                                  spine = spine})
                                   end
                             in
                                unifyRecords
-                               (flexToRecord (fields, s),
-                                flexToRecord (fields', s'),
+                               (flexToFlexToRecord (fields, spine, !time, outer, spine'),
+                                flexToFlexToRecord (fields', spine', !time', outer', spine),
                                 yes, notUnifiable)
                             end
                           | (GenFlexRecord _, _) => genFlexError ()
                           | (_, GenFlexRecord _) => genFlexError ()
-                          | (Overload o1, Overload o2) =>
-                               if Overload.equals (o1, o2)
+                          | (Overload ov1, Overload ov2) =>
+                               if Overload.equals (ov1, ov2)
                                   then (Unified, t)
                                else not ()
                           | (Record r, Record r') =>
@@ -1494,24 +1510,12 @@ structure Type =
                       res
                    end) arg
             and unifyRecords ((fields: (Field.t * t) vector,
-                               extra: Field.t vector,
-                               ensureField: Field.t -> bool,
                                dots: bool),
                               (fields': (Field.t * t) vector,
-                               extra': Field.t vector,
-                               ensureField': Field.t -> bool,
                                dots': bool),
                               yes, no) =
                let
-                  fun extras (extra, ensureField', dots, dots') =
-                     Vector.fold
-                     (extra, ([], dots, dots'), fn (f, (ac, dots, dots')) =>
-                      if ensureField' f
-                         then (ac, true, true)
-                      else (preError (); ((f, true, dontCare) :: ac, dots, dots')))
-                  val (ac, dots, dots') = extras (extra, ensureField', dots, dots')
-                  val (ac', dots', dots) = extras (extra', ensureField, dots', dots)
-                  fun subset (fields, fields', ensureField',
+                  fun subset (fields, fields',
                               ac, dots, ac', dots',
                               skipBoth) =
                      Vector.fold
@@ -1520,10 +1524,7 @@ structure Type =
                       case Vector.peek (fields', fn (f', _) =>
                                         Field.equals (f, f')) of
                          NONE =>
-                            if ensureField' f
-                               then (ac, true, ac', true)
-                            else (preError ()
-                                  ; ((f, true, dontCare' t) :: ac, dots, ac', dots'))
+                            ((f, true, dontCare) :: ac, dots, ac', dots')
                        | SOME (_, t') =>
                             if skipBoth
                                then (ac, dots, ac', dots')
@@ -1534,15 +1535,14 @@ structure Type =
                                       (f, false, l') :: ac', dots')
                                 | Unified => (ac, true, ac', true))
                   val (ac, dots, ac', dots') =
-                     subset (fields, fields', ensureField',
-                             ac, dots, ac', dots', false)
+                     subset (fields, fields', [], dots, [], dots', false)
                   val (ac', dots', ac, dots) =
-                     subset (fields', fields, ensureField,
-                             ac', dots', ac, dots, true)
+                     subset (fields', fields, ac', dots', ac, dots, true)
                in
                   case (ac, ac') of
                      ([], []) => yes ()
-                   | _ => no (layoutRecord (ac, dots), layoutRecord (ac', dots'))
+                   | _ => (preError ()
+                           ; no (layoutRecord (ac, dots), layoutRecord (ac', dots')))
                end
          in
             unify (t, t')
