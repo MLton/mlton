@@ -81,6 +81,17 @@ if [ -n "$gmpLibDir" ]; then
 gmpLinkOpts="-link-opt -L$gmpLibDir -target-link-opt netbsd -Wl,-R$gmpLibDir"
 fi
 
+# set additional C compiler and linker flags from ../configure script
+XCFLAGS=@XCFLAGS@
+if [ -n "$XCFLAGS" ]; then
+xcflags="cc-opt $XCFLAGS"
+fi
+
+XLDFLAGS=@XLDFLAGS@
+if [ -n "$XLDFLAGS" ]; then
+xldflags="-link-opt $XLDFLAGS"
+fi
+
 # For align-{functions,jumps,loops}, we use -m for now instead of
 # -f because old gcc's will barf on -f, while newer ones only warn
 # about -m.  Someday, when we think we won't run into older gcc's,
@@ -94,6 +105,7 @@ doit "$lib" \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lm -lgmp'                                    \
         $gmpCCOpts $gmpLinkOpts                                  \
+        $xcflags $xldflags                                       \
         -llvm-llc-opt '-O2'                                      \
         -llvm-opt-opt '-mem2reg -O2'                             \
         -mlb-path-map "$lib/mlb-path-map"                        \

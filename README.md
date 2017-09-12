@@ -96,6 +96,18 @@ make
 make install
 ```
 
+Optionally, you can pass additional C compiler and linker flags to set
+MLton's `-cc-opt` and `-link-opt`
+[compile-time options](http://www.mlton.org/CompileTimeOptions)
+by specifying `XCFLAGS` and `XLDFLAGS` environment variables as 
+arguments to `./configure`:
+```shell
+./configure \
+  --prefix=$HOME/opt \
+  XCFLAGS='-I/usr/local/include' \
+  XLDFLAGS='-L/usr/local/lib'
+```
+
 If building from source cloned from Github, first generate the `configure`
 script (requires `GNU Autotools`):
 ```shell

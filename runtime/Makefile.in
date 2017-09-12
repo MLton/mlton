@@ -21,12 +21,11 @@ AR := $(TARGET)-ar rc
 RANLIB := $(TARGET)-ranlib
 endif
 
-include ../mlton-env-config
-ifneq ($(WITH_GMP_INC_DIR),)
-WITH_GMP_INC_DIR := $(WITH_GMP_INC_DIR)
+ifneq (@WITH_GMP_INC_DIR@,)
+WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
 endif
-ifneq ($(WITH_GMP_LIB_DIR),)
-WITH_GMP_LIB_DIR := $(WITH_GMP_LIB_DIR)
+ifneq (@WITH_GMP_LIB_DIR@,)
+WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
 endif
 
 TARGET_ARCH := $(shell ../bin/host-arch)

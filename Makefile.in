@@ -38,12 +38,11 @@ RANLIB := ranlib
 
 
 # Allow for custom paths to GMP include and library files
-include mlton-env-config
-ifneq ($(WITH_GMP_INC_DIR),)
-WITH_GMP_INC_DIR := $(WITH_GMP_INC_DIR)
+ifneq (@WITH_GMP_INC_DIR@,)
+WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
 endif
-ifneq ($(WITH_GMP_LIB_DIR),)
-WITH_GMP_LIB_DIR := $(WITH_GMP_LIB_DIR)
+ifneq (@WITH_GMP_LIB_DIR@,)
+WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
 endif
 
 # If we're compiling with another version of MLton, then we want to do
@@ -301,7 +300,7 @@ check:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR is added onto them to indicate where the Makefile actually
 # puts them.
-DESTDIR := $(MLTON_LOCAL)
+DESTDIR := @prefix@
 PREFIX := /usr
 ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
 PREFIX := /usr/local
