@@ -998,6 +998,159 @@ structure Type =
                Vector.isEmpty ts andalso Overload.matchesTycon (ov, c)
           | _ => false
 
+      (* checkTime (t, bound) checks that all components of t have
+       * times no larger than bound.  If t has components with time
+       * larger than bound, then checkTime (t, bound) returns:
+       *  - a layout object highlighting violations in t
+       *  - an alternate type, replacing violations in t with fresh
+       *    unification variables at time bound and a layout object
+       *    highlighting the fresh unification variables.
+       *  - a list of violating tycons
+       *  - a list of violating tyvars
+       *)
+      fun checkTime (t, bound,
+                     {layoutPretty: t -> LayoutPretty.t,
+                      preError: unit -> unit}) =
+         let
+            val tycons: Tycon.t list ref = ref []
+            val tyvars: Tyvar.t list ref = ref []
+            val str = Layout.str
+            val wild = LayoutPretty.simple (str "_")
+            fun getLay1 (lllo, _) = Option.fold (lllo, wild, fn ((l1, _, _), _) => l1)
+            fun getLay2 (lllo, _) = Option.fold (lllo, wild, fn ((_, l2, _), _) => l2)
+            fun getLay3 (lllo, _) = Option.fold (lllo, wild, fn ((_, _, l3), _) => l3)
+            fun getTy (_, ty) = ty
+            fun con (_, c, rs) =
+               if Time.<= (!(tyconTime c), bound)
+                  then if Vector.forall (rs, Option.isNone o #1)
+                          then NONE
+                          else (preError ()
+                                ; SOME (Tycon.layoutAppPretty
+                                        (c, Vector.map (rs, getLay1)),
+                                        Tycon.layoutAppPretty
+                                        (c, Vector.map (rs, getLay2)),
+                                        Tycon.layoutAppPretty
+                                        (c, Vector.map (rs, getLay3)),
+                                        Type.con
+                                        (c, Vector.map (rs, getTy))))
+                  else let
+                          val ty = Type.newAt bound
+                       in
+                          (List.push (tycons, c)
+                           ; preError ()
+                           ; SOME ((LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
+                                   (c, Vector.map (rs, getLay2)),
+                                   Tycon.layoutAppPretty
+                                   (c, Vector.map (rs, getLay2)),
+                                   (LayoutPretty.simple o bracket o #1)
+                                   (layoutPretty ty),
+                                   ty))
+                       end
+            fun doRecord (fls: (Field.t * (LayoutPretty.t * LayoutPretty.t * LayoutPretty.t)) list,
+                          extra: bool, mk: unit -> t) =
+               if List.isEmpty fls
+                  then NONE
+                  else let
+                          fun doit sel =
+                             layoutRecord
+                             (List.map
+                              (fls, fn (f, lll) =>
+                               (f, false, sel lll)),
+                              extra)
+                       in
+                          SOME (doit #1, doit #2, doit #3, mk ())
+                       end
+            fun flexRecord (_, {fields, spine}) =
+               doRecord (List.keepAllMap
+                         (fields, fn (f, r) =>
+                          Option.map (#1 r, fn lll => (f, lll))),
+                         true,
+                         fn () =>
+                         let
+                            val fields =
+                               List.map (fields, fn (f, r) =>
+                                         (f, getTy r))
+                         in
+                            Type.newFlex {fields = fields,
+                                          spine = spine}
+                         end)
+            fun record (_, r) =
+               case Srecord.detupleOpt r of
+                  NONE =>
+                     let
+                        val fields = Srecord.toVector r
+                        val fields' =
+                           Vector.keepAllMap
+                           (fields, fn (f, r) =>
+                            Option.map (#1 r, fn lll => (f, lll)))
+                     in
+                        doRecord (Vector.toList fields',
+                                  not (Vector.length fields = Vector.length fields'),
+                                  fn () =>
+                                  let
+                                     val fields =
+                                        Vector.map (fields, fn (f, r) =>
+                                                    (f, getTy r))
+                                     val fields = Srecord.fromVector fields
+                                  in
+                                     Type.record fields
+                                  end)
+                     end
+                | SOME rs =>
+                     if Vector.forall (rs, Option.isNone o #1)
+                        then NONE
+                        else SOME (layoutTuple (Vector.map (rs, getLay1)),
+                                   layoutTuple (Vector.map (rs, getLay2)),
+                                   layoutTuple (Vector.map (rs, getLay3)),
+                                   Type.tuple (Vector.map (rs, getTy)))
+            fun var (_, a) =
+               if Time.<= (!(tyvarTime a), bound)
+                  then NONE
+                  else (List.push (tyvars, a)
+                        ; let
+                             val a = #1 (layoutPretty (Type.var a))
+                             val ty = newAt bound
+                          in
+                             SOME (LayoutPretty.simple (bracket a),
+                                   LayoutPretty.simple a,
+                                   LayoutPretty.simple (bracket (#1 (layoutPretty ty))),
+                                   ty)
+                          end)
+            fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
+            fun recursive _ = Error.bug "TypeEnv.Type.checkTime.recursive"
+            fun wrap (f, sel) arg =
+               let
+                  val ty = sel arg
+               in
+                  if Time.<= (!(time ty),  bound)
+                     then (NONE, ty)
+                     else (case f arg of
+                              NONE =>
+                                 (time ty := bound
+                                  ; (NONE, ty))
+                            | SOME (l1, l2, l3, ty) =>
+                                 (time ty := bound
+                                  ; (SOME (l1, l2, l3), ty)))
+               end
+            val res : (LayoutPretty.t * LayoutPretty.t * LayoutPretty.t) option * t =
+               hom (t, {con = wrap (con, #1),
+                        expandOpaque = false,
+                        flexRecord = wrap (flexRecord, #1),
+                        genFlexRecord = genFlexRecord,
+                        overload = wrap (fn _ => NONE, #1),
+                        record = wrap (record, #1),
+                        recursive = recursive,
+                        unknown = wrap (fn _ => NONE, #1),
+                        var = wrap (var, #1)})
+         in
+            case res of
+               (NONE, _) => NONE
+             | (SOME (l1, _, l3), ty) =>
+                  SOME (l1, (ty, l3),
+                        {tycons = List.removeDuplicates (!tycons, Tycon.equals),
+                         tyvars = List.removeDuplicates (!tyvars, Tyvar.equals)})
+         end
+
       (* minTime (t, bound) ensures that all components of t have times no larger
        * than bound.  It calls the appropriate error function when it encounters
        * a tycon that is used before it defined.
@@ -2039,6 +2192,22 @@ structure Type =
          end
 
       val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
+
+      val checkTime =
+         fn (t, bound, {preError}) =>
+         let
+            val {destroy, layoutPretty} =
+               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
+            val res =
+               checkTime (t, bound,
+                          {layoutPretty = layoutPretty,
+                           preError = preError})
+            val () = destroy ()
+         in
+            Option.map
+            (res, fn (l, (ty, _), {tycons, tyvars}) =>
+             (#1 l, ty, {tycons = tycons, tyvars = tyvars}))
+         end
    end
 
 end

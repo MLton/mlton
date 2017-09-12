@@ -2995,12 +2995,24 @@ fun elaborateDec (d, {env = E, nest}) =
                    (E, fn () =>
                     let
                        val time = Time.now ()
-                       val d = Decs.toVector (elabDec (d, nest, false))
-                       val e = elab e
-                       val ty = Cexp.ty e
-                       val () = Type.minTime (ty, time)
+                       val d' = Decs.toVector (elabDec (d, nest, false))
+                       val e' = elab e
+                       val ty = Cexp.ty e'
+                       val ty =
+                          case Type.checkTime (ty, time, {preError = preError}) of
+                             NONE => ty
+                           | SOME (lay, ty, {tycons, ...}) =>
+                                (Control.error
+                                 (region,
+                                  seq [str "type of let has escaping local types: ",
+                                       seq (Layout.separate
+                                            (List.map (tycons, Tycon.layoutPretty),
+                                             ", "))],
+                                  align [seq [str "type: ", lay],
+                                         ctxt ()])
+                                 ; ty)
                     in
-                       Cexp.make (Cexp.Let (d, e), ty)
+                       Cexp.make (Cexp.Let (d', e'), ty)
                     end)
               | Aexp.List es =>
                    let

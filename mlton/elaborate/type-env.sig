@@ -35,6 +35,9 @@ signature TYPE_ENV =
             val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
+            val checkTime:
+               t * Time.t * {preError: unit -> unit} ->
+               (Layout.t * t * {tycons: Tycon.t list, tyvars: Tyvar.t list}) option
             val deEta: t * Tyvar.t vector -> Tycon.t option
             val deRecord: t -> (Record.Field.t * t) vector
             val explainDoesNotAdmitEquality: t * {layoutPretty: t -> LayoutPretty.t} -> Layout.t
