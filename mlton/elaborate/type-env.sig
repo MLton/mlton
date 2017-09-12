@@ -112,7 +112,7 @@ signature TYPE_ENV =
          end
 
       val close:
-         Tyvar.t vector * {useBeforeDef: Tycon.t -> unit}
+         Tyvar.t vector * {region: Region.t, useBeforeDef: Tycon.t -> unit}
          -> {isExpansive: bool, ty: Type.t} vector
          -> {bound: unit -> Tyvar.t vector,
              schemes: Scheme.t vector,
@@ -120,7 +120,7 @@ signature TYPE_ENV =
       val generalize: Tyvar.t vector -> unit -> {unable: Tyvar.t vector}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
-      val tick: {useBeforeDef: Tycon.t -> unit} -> unit
+      val tick: {region: Region.t, useBeforeDef: Tycon.t -> unit} -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
       val tyconRegion: Tycon.t -> Region.t option ref
    end

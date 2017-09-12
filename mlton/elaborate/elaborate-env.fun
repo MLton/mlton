@@ -2562,7 +2562,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
        * check if something should not be generalized.
        *)
       val () = 
-         TypeEnv.tick {useBeforeDef = fn _ => 
+         TypeEnv.tick {region = region,
+                       useBeforeDef = fn _ =>
                        Error.bug "ElaborateEnv.transparentCut: cut tick"}
       val sign =
          if isFunctor
@@ -3609,7 +3610,8 @@ fun functorClosure
        * error if they occur before the functor declaration.
        *)
       val _ = 
-         TypeEnv.tick {useBeforeDef = fn _ => 
+         TypeEnv.tick {region = Region.bogus,
+                       useBeforeDef = fn _ =>
                        Error.bug "ElaborateEnv.functorClosure: tick"}
       val (formal, instantiate) = dummyStructure (argInt, {prefix = prefix})
       (* Keep track of all tycons created during the instantiation of the

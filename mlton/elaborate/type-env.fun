@@ -49,35 +49,41 @@ structure Time:>
       type t
 
       val <= : t * t -> bool
-      val useBeforeDef: t * Tycon.t -> unit
       val layout: t -> Layout.t
       val now: unit -> t
-      val tick: {useBeforeDef: Tycon.t -> unit} -> unit
+      val tick: {region: Region.t, useBeforeDef: Tycon.t -> unit} -> unit
+      val useBeforeDef: t * Tycon.t -> unit
    end =
    struct
       datatype t = T of {clock: int,
+                         region: Region.t,
                          useBeforeDef: Tycon.t -> unit}
 
       local
          fun make f (T r) = f r
       in
          val clock = make #clock
+         val region = make #region
       end
 
       fun useBeforeDef (T {useBeforeDef = f, ...}, c) = f c
 
-      val layout = Int.layout o clock
+      fun layout t =
+         Layout.tuple [Int.layout (clock t),
+                       Region.layout (region t)]
 
       fun t <= t' = Int.<= (clock t, clock t')
 
       local
          val current: t ref =
             ref (T {clock = 0,
+                    region = Region.bogus,
                     useBeforeDef = fn _ => Error.bug "TypeEnv.Time: useBeforeDef clock 0"})
       in
          fun now () = !current
-         fun tick {useBeforeDef} =
+         fun tick {region, useBeforeDef} =
             current := T {clock = 1 + clock (!current),
+                          region = region,
                           useBeforeDef = useBeforeDef}
       end
 
@@ -1727,10 +1733,10 @@ fun generalize (tyvars: Tyvar.t vector) =
                            not (Time.<= (genTime, !(tyvarTime a)))))}
    end
 
-fun close (ensure: Tyvar.t vector, ubd) =
+fun close (ensure: Tyvar.t vector, rgn_ubd) =
    let
       val beforeGen = Time.now ()
-      val () = Time.tick ubd
+      val () = Time.tick rgn_ubd
       val genTime = Time.now ()
       val () = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
       val savedCloses = !Type.newCloses

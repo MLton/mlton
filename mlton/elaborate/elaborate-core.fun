@@ -1947,7 +1947,7 @@ fun elaborateDec (d, {env = E, nest}) =
                     align [seq [str "defn at: ", Region.layout regionTycon],
                            ctxt ()])
                 end
-             val () = TypeEnv.tick {useBeforeDef = useBeforeDef}
+             val () = TypeEnv.tick {region = region, useBeforeDef = useBeforeDef}
              val unify = fn (t, t', f) => unify (t, t', preError, f)
              fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop
@@ -2107,7 +2107,7 @@ fun elaborateDec (d, {env = E, nest}) =
                  | Adec.Fun {tyvars, fbs} =>
                       let
                          val close =
-                            TypeEnv.close (tyvars, {useBeforeDef = useBeforeDef})
+                            TypeEnv.close (tyvars, {region = region, useBeforeDef = useBeforeDef})
                          val {markFunc, setBound, unmarkFunc} = recursiveFun ()
                          val fbs =
                             Vector.map2
@@ -2543,7 +2543,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          val {vbs = layVbs, rvbs = layRvbs} =
                             Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
                          val close =
-                            TypeEnv.close (tyvars, {useBeforeDef = useBeforeDef})
+                            TypeEnv.close (tyvars, {region = region, useBeforeDef = useBeforeDef})
                          (* Must do all the es and rvbs before the ps because of
                           * scoping rules.
                           *)
