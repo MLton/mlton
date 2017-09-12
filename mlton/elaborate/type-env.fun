@@ -492,7 +492,8 @@ structure Type =
       in
          val equality = make #equality
          val plist: t -> PropertyList.t = make #plist
-         val toType: t -> ty = make #ty
+         val time: t -> Time.t ref = make #time
+         val getTy: t -> ty = make #ty
       end
 
       local
@@ -584,7 +585,7 @@ structure Type =
                              fun loopFields fields =
                                 List.revMap (fields, fn (f, t) => (f, get t))
                              val res = 
-                                case toType t of
+                                case getTy t of
                                    Con (c, ts) =>
                                       let
                                          fun no () =
@@ -701,7 +702,7 @@ structure Type =
                               localTyvarNames = true})
 
       fun deConOpt t =
-         case toType t of
+         case getTy t of
             Con x => SOME x
           | _ => NONE
 
@@ -710,7 +711,7 @@ structure Type =
             SOME (c, ts) =>
                if Vector.length ts = Vector.length tyvars
                   andalso Vector.foralli (ts, fn (i, t) =>
-                                          case toType t of
+                                          case getTy t of
                                              Var a =>
                                                 Tyvar.equals
                                                 (a, Vector.sub (tyvars, i))
@@ -720,32 +721,67 @@ structure Type =
            | _ => NONE
 
 
-      fun newTy (ty: ty, eq: Equality.t): t =
-         T (Set.singleton {equality = eq,
+      fun make {equality, time, ty}: t =
+         T (Set.singleton {equality = equality,
                            plist = PropertyList.new (),
-                           time = ref (Time.now ()),
+                           time = ref time,
                            ty = ty})
 
-      fun unknown {canGeneralize, equality} =
+      fun newTy (ty: ty): t =
          let
-            val t = newTy (Unknown (Unknown.new {canGeneralize = canGeneralize}),
-                           equality)
+            val equality =
+               case ty of
+                  Con (c, ts) =>
+                     Equality.applyTycon
+                     (c, Vector.map (ts, equality))
+                | GenFlexRecord _ =>
+                     Error.bug "TypeEnv.Type.newTy: GenFlexRecord"
+                | FlexRecord {fields, ...} =>
+                     Equality.and2
+                     (Equality.andd (Vector.fromListMap (fields, equality o #2)),
+                      Equality.unknown ())
+                | Overload ov => Overload.admitsEquality ov
+                | Record r => Equality.andd (Vector.map (Srecord.range r, equality))
+                | Unknown _ =>
+                     Error.bug "TypeEnv.Type.newTy: Unknown"
+                | Var a => Equality.fromBool (Tyvar.isEquality a)
+         in
+            make {equality = equality,
+                  time = Time.now (),
+                  ty = ty}
+         end
+
+      fun setTy (T s, ty) =
+         let
+            val {equality, plist, time, ...} = Set.! s
+         in
+            Set.:= (s, {equality = equality,
+                        plist = plist,
+                        time = time,
+                        ty = ty})
+         end
+
+      fun unknown {canGeneralize, equality, time} =
+         let
+            val u = Unknown.new {canGeneralize = canGeneralize}
+            val t = make {equality = equality,
+                          time = time,
+                          ty = Unknown u}
             val _ = List.push (newCloses, t)
          in
             t
          end
 
-      fun new () = unknown {canGeneralize = true,
-                            equality = Equality.unknown ()}
+      fun newAt time = unknown {canGeneralize = true,
+                                equality = Equality.unknown (),
+                                time = time}
+
+      fun new () = newAt (Time.now ())
 
       val new = Trace.trace ("TypeEnv.Type.new", Unit.layout, layout) new
 
       fun newFlex {fields, spine} =
-         newTy (FlexRecord {fields = fields,
-                            spine = spine},
-                Equality.and2
-                (Equality.andd (Vector.fromListMap (fields, equality o #2)),
-                 Equality.unknown ()))
+         newTy (FlexRecord {fields = fields, spine = spine})
 
       fun flexRecord record =
          let
@@ -759,23 +795,19 @@ structure Type =
             (t, isResolved)
          end
 
-      fun record r =
-         newTy (Record r,
-                Equality.andd (Vector.map (Srecord.range r, equality)))
+      fun record r = newTy (Record r)
 
       fun tuple ts =
          if 1 = Vector.length ts
             then Vector.first ts
-         else newTy (Record (Srecord.tuple ts),
-                     Equality.andd (Vector.map (ts, equality)))
+         else newTy (Record (Srecord.tuple ts))
 
       fun con (tycon, ts) =
          if Tycon.equals (tycon, Tycon.tuple)
             then tuple ts
-         else newTy (Con (tycon, ts),
-                     Equality.applyTycon (tycon, Vector.map (ts, equality)))
+         else newTy (Con (tycon, ts))
 
-      fun var a = newTy (Var a, Equality.fromBool (Tyvar.isEquality a))
+      fun var a = newTy (Var a)
    end
 
 fun setOpaqueTyconExpansion (c, f) =
@@ -794,34 +826,34 @@ structure Type =
       val unit = tuple (Vector.new0 ())
 
       fun isArrow t =
-         case toType t of
+         case getTy t of
             Con (c, _) => Tycon.equals (c, Tycon.arrow)
           | _ => false
 
       fun isBool t =
-         case toType t of
+         case getTy t of
             Con (c, _) => Tycon.isBool c
           | _ => false
 
       fun isCharX t =
-         case toType t of
+         case getTy t of
             Con (c, _) => Tycon.isCharX c
           | Overload Overload.Char => true
           | _ => false
 
       fun isCPointer t =
-         case toType t of
+         case getTy t of
             Con (c, _) => Tycon.isCPointer c
           | _ => false
 
       fun isInt t =
-         case toType t of
+         case getTy t of
             Con (c, _) => Tycon.isIntX c
           | Overload Overload.Int => true
           | _ => false
 
       fun isUnit t =
-         case toType t of
+         case getTy t of
             Record r =>
                (case Srecord.detupleOpt r of
                    NONE => false
@@ -829,18 +861,18 @@ structure Type =
           | _ => false
 
       fun isUnknown t =
-         case toType t of
+         case getTy t of
             Unknown _ => true
           | _ => false
 
       local
-         fun make (ov, eq) () = newTy (Overload ov, eq)
+         fun make ov () = newTy (Overload ov)
          datatype z = datatype Overload.t
       in
-         val unresolvedChar = make (Char, Equality.truee)
-         val unresolvedInt = make (Int, Equality.truee)
-         val unresolvedReal = make (Real, Equality.falsee)
-         val unresolvedWord = make (Word, Equality.truee)
+         val unresolvedChar = make Char
+         val unresolvedInt = make Int
+         val unresolvedReal = make Real
+         val unresolvedWord = make Word
       end
 
       fun unresolvedString () = vector (unresolvedChar ())
@@ -940,7 +972,7 @@ structure Type =
       fun canUnify arg = 
          traceCanUnify
          (fn (t, t') =>
-          case (toType t, toType t') of
+          case (getTy t, getTy t') of
              (Unknown _,  _) => true
            | (_, Unknown _) => true
            | (Con (c, ts), t') => conAnd (c, ts, t')
@@ -1655,7 +1687,7 @@ structure Scheme =
                                        #2)
                                 in
                                    done
-                                   (case Type.toType flex of
+                                   (case Type.getTy flex of
                                       FlexRecord {fields, ...} =>
                                          (fn f => peekFields (fields, f))
                                     | GenFlexRecord {extra, fields, ...} =>
@@ -1688,7 +1720,8 @@ structure Scheme =
           Type.unknown {canGeneralize = canGeneralize,
                         equality = if equality
                                       then Equality.truee
-                                   else Equality.unknown ()})
+                                      else Equality.unknown (),
+                        time = Time.now ()})
 
       val instantiate =
          Trace.trace ("TypeEnv.Scheme.instantiate", layout, Type.layout o #instance)
@@ -1700,7 +1733,8 @@ structure Scheme =
           (instantiate'
            (s, fn {canGeneralize, ...} =>
             Type.unknown {canGeneralize = canGeneralize,
-                          equality = Equality.truee})))
+                          equality = Equality.truee,
+                          time = Time.now ()})))
 
       val admitsEquality =
          Trace.trace ("TypeEnv.Scheme.admitsEquality", layout, Bool.layout)
