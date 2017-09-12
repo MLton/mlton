@@ -449,6 +449,12 @@ structure Type =
                 | Int => Tycon.defaultInt ()
                 | Real => Tycon.defaultReal ()
                 | Word => Tycon.defaultWord ()
+
+           val admitsEquality: t -> Equality.t =
+               fn Char => Equality.truee
+                | Int => Equality.truee
+                | Real => Equality.falsee
+                | Word => Equality.truee
          end
 
       (* Tuples of length <> 1 are always represented as records.
