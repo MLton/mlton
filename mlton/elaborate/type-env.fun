@@ -815,13 +815,13 @@ structure Ops = TypeOps (structure Tycon = Tycon
 
 structure UnifyResult =
    struct
-      datatype t =
-         NotUnifiable of LayoutPretty.t * LayoutPretty.t
-       | Unified
+      datatype ('a, 'b) t =
+         NotUnifiable of 'a
+       | Unified of 'b
 
       val layout =
          fn NotUnifiable _ => str "NotUnifiable"
-          | Unified => str "Unified"
+          | Unified _ => str "Unified"
    end
 
 structure Type =
@@ -1158,12 +1158,16 @@ structure Type =
 
       datatype z = datatype UnifyResult.t
 
-      val traceUnify = 
+      val traceUnify =
          Trace.trace2 
-         ("TypeEnv.Type.unify", layout, layout, UnifyResult.layout)
+         ("TypeEnv.Type.unify", layout, layout,
+          UnifyResult.layout:
+          (LayoutPretty.t * LayoutPretty.t, unit) UnifyResult.t -> Layout.t)
 
-      fun unify (t, t', {layoutPretty: t -> LayoutPretty.t,
-                         preError: unit -> unit}): UnifyResult.t =
+      fun unify (t, t',
+                 {layoutPretty: t -> LayoutPretty.t,
+                  preError: unit -> unit}):
+                (LayoutPretty.t * LayoutPretty.t, unit) UnifyResult.t =
          let
             val checkTime =
                fn (t, bound) =>
@@ -1174,12 +1178,11 @@ structure Type =
                traceUnify
                (fn (outer as T s, outer' as T s') =>
                 if Set.equals (s, s')
-                   then Unified
+                   then Unified ()
                 else
                    let
                       fun notUnifiable (l: LayoutPretty.t, l': LayoutPretty.t) =
-                         (NotUnifiable (l, l'),
-                          Unknown (Unknown.new {canGeneralize = true}))
+                         NotUnifiable (l, l')
                       fun notUnifiableBracket (l, l') =
                          notUnifiable (bracket l, bracket l')
                       fun flexToRecord (fields, spine) =
@@ -1222,7 +1225,7 @@ structure Type =
                          unifyRecords
                          (flexToRigidToRecord (fields, spine, time, outer, r'),
                           rigidToRecord r',
-                          fn () => (Unified, Record r'),
+                          fn () => Unified (Record r'),
                           notUnifiable o (fn (l, l') =>
                                           if swap
                                              then (l', l)
@@ -1240,7 +1243,7 @@ structure Type =
                             val us = Vector.map2 (ts, ts', unify)
                          in
                             if Vector.forall
-                               (us, fn Unified => true | _ => false)
+                               (us, fn Unified _ => true | _ => false)
                                then yes ()
                             else
                                let
@@ -1249,7 +1252,7 @@ structure Type =
                                      (Vector.map
                                       (us, fn u =>
                                        case u of
-                                          Unified => (dontCare, dontCare)
+                                          Unified _ => (dontCare, dontCare)
                                         | NotUnifiable (l, l') => (l, l')))
                                in
                                   no (ls, ls')
@@ -1284,7 +1287,7 @@ structure Type =
                                         else
                                            unifys
                                            (ts, ts',
-                                            fn () => (Unified, t),
+                                            fn () => Unified t,
                                             fn (ls, ls') =>
                                             let 
                                                val _ = preError ()
@@ -1297,7 +1300,7 @@ structure Type =
                              | Overload ov =>
                                   if Vector.isEmpty ts
                                      andalso Overload.matchesTycon (ov, c)
-                                     then (Unified, t')
+                                     then Unified t'
                                   else not ()
                              | _ => not ()
                          end
@@ -1336,7 +1339,7 @@ structure Type =
                             if isCircular
                                then not ()
                                else (case checkTime (outer', time) of
-                                        NONE => (Unified, t')
+                                        NONE => Unified t'
                                       | SOME (l, (t'', l''), _) =>
                                            (setTy (outer, getTy t'')
                                             ; notUnifiable
@@ -1344,10 +1347,10 @@ structure Type =
                                                   then (l, l'')
                                                   else (l'', l))))
                          end
-                      val (res, t) =
+                      val res =
                          case (t, t') of
                             (Unknown r, Unknown r') =>
-                               (Unified, Unknown (Unknown.join (r, r')))
+                               Unified (Unknown (Unknown.join (r, r')))
                           | (Unknown u, _) =>
                                oneUnknown (u, !time, outer, t', outer', false)
                           | (_, Unknown u') =>
@@ -1372,9 +1375,8 @@ structure Type =
                                                then ac
                                                else (f, t) :: ac)
                                      in
-                                        (Unified,
-                                         FlexRecord {fields = fields,
-                                                     spine = spine})
+                                        Unified (FlexRecord {fields = fields,
+                                                             spine = spine})
                                      end
                                in
                                   unifyRecords
@@ -1386,7 +1388,7 @@ structure Type =
                           | (_, GenFlexRecord _) => genFlexError ()
                           | (Overload ov1, Overload ov2) =>
                                if Overload.equals (ov1, ov2)
-                                  then (Unified, t)
+                                  then Unified t
                                else not ()
                           | (Record r, Record r') =>
                                (case (Srecord.detupleOpt r,
@@ -1394,13 +1396,13 @@ structure Type =
                                    (NONE, NONE) =>
                                       unifyRecords
                                       (rigidToRecord r, rigidToRecord r',
-                                       fn () => (Unified, Record r),
+                                       fn () => Unified (Record r),
                                        notUnifiable)
                                  | (SOME ts, SOME ts') =>
                                       if Vector.length ts = Vector.length ts'
                                          then unifys
                                               (ts, ts',
-                                               fn () => (Unified, Record r),
+                                               fn () => Unified (Record r),
                                                fn (ls, ls') =>
                                                notUnifiable
                                                (LayoutPretty.tuple ls,
@@ -1409,15 +1411,15 @@ structure Type =
                                  | _ => not ())
                           | (Var a, Var a') =>
                                if Tyvar.equals (a, a')
-                                  then (Unified, t)
+                                  then Unified t
                                   else not ()
                           | _ => not ()
                       val res =
                          case res of
                             NotUnifiable _ => res
-                          | Unified =>
+                          | Unified _ =>
                                (if Equality.unify (e, e')
-                                   then Unified
+                                   then res
                                    else let
                                            val _ = preError ()
                                            fun explain t =
@@ -1428,10 +1430,11 @@ structure Type =
                                            NotUnifiable (explain outer,
                                                          explain outer')
                                         end)
-                      val () =
+                      val res =
                          case res of
-                            NotUnifiable _ => ()
-                          | Unified =>
+                            NotUnifiable (l, l') =>
+                               NotUnifiable (l, l')
+                          | Unified t =>
                                let
                                   val () = Set.union (s, s')
                                   val () =
@@ -1444,7 +1447,7 @@ structure Type =
                                                  time = time,
                                                  ty = t})
                                in
-                                  ()
+                                  Unified ()
                                end
                    in
                       res
@@ -1473,7 +1476,7 @@ structure Type =
                                   NotUnifiable (l, l') =>
                                      ((f, false, l) :: ac, dots,
                                       (f, false, l') :: ac', dots')
-                                | Unified => (ac, true, ac', true))
+                                | Unified _ => (ac, true, ac', true))
                   val (ac, dots, ac', dots') =
                      subset (fields, fields', [], dots, [], dots', false)
                   val (ac', dots', ac, dots) =
@@ -1485,24 +1488,18 @@ structure Type =
                            ; no (LayoutPretty.record (ac, dots),
                                  LayoutPretty.record (ac', dots')))
                end
+            val res = unify (t, t')
          in
-            unify (t, t')
+            case res of
+               NotUnifiable (lp1, lp2) => NotUnifiable (lp1, lp2)
+             | Unified _ => Unified ()
          end
-
-      structure UnifyResult' =
-         struct
-            datatype t =
-               NotUnifiable of Layout.t * Layout.t
-             | Unified
-         end
-
-      datatype unifyResult = datatype UnifyResult'.t
 
       val unify =
          fn (t, t', z) =>
          case unify (t, t', z) of
-            UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
-          | UnifyResult.Unified => Unified
+            NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
+          | Unified _ => Unified ()
 
       local
          val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
@@ -2122,7 +2119,7 @@ structure Type =
          fn (t1, t2, {error}) =>
          case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
             NotUnifiable (l1, l2) => error (l1, l2)
-          | Unified => ()
+          | Unified () => ()
 
       val unify =
          fn (t1, t2, {error, preError}) =>
@@ -2132,7 +2129,7 @@ structure Type =
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
                   NotUnifiable (l1, l2) => error (l1, l2)
-                | Unified => ()
+                | Unified () => ()
             val () = destroy ()
          in
             ()
