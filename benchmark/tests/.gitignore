@@ -194,3 +194,5 @@
 /zern.*.batch
 /zern.*.batch.sml
 /zern.*-*
+
+/Makefile

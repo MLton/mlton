@@ -7,7 +7,8 @@ set -e
 dir=`dirname "$0"`
 lib=`cd "$dir/../lib" && pwd`
 eval `"$lib/platform"`
-gcc='gcc'
+# gcc='gcc'
+gcc=@CC@
 case "$HOST_OS" in
 mingw)
 	exe='.exe'
@@ -70,17 +71,6 @@ doit () {
         exit 1
 }
 
-# You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
-gmpIncDir=
-if [ -n "$gmpIncDir" ]; then
-gmpCCOpts="-cc-opt -I$gmpIncDir"
-fi
-# You may need to set 'gmpLibDir' so the C compiler can find libgmp.
-gmpLibDir=
-if [ -n "$gmpLibDir" ]; then
-gmpLinkOpts="-link-opt -L$gmpLibDir -target-link-opt netbsd -Wl,-R$gmpLibDir"
-fi
-
 # set additional C compiler and linker flags from ../configure script
 XCFLAGS=@XCFLAGS@
 if [ -n "$XCFLAGS" ]; then
@@ -92,6 +82,18 @@ if [ -n "$XLDFLAGS" ]; then
 xldflags="-link-opt $XLDFLAGS"
 fi
 
+
+# You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
+gmpIncDir=
+if [ -n "$gmpIncDir" ]; then
+gmpCCOpts="-cc-opt -I$gmpIncDir"
+fi
+# You may need to set 'gmpLibDir' so the C compiler can find libgmp.
+gmpLibDir=
+if [ -n "$gmpLibDir" ]; then
+gmpLinkOpts="-link-opt -L$gmpLibDir -target-link-opt netbsd -Wl,-R$gmpLibDir"
+fi
+
 # For align-{functions,jumps,loops}, we use -m for now instead of
 # -f because old gcc's will barf on -f, while newer ones only warn
 # about -m.  Someday, when we think we won't run into older gcc's,
@@ -100,12 +102,12 @@ fi
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$gcc"                                               \
+        $xcflags $xldflags                                       \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1 -fno-common'                                \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lm -lgmp'                                    \
         $gmpCCOpts $gmpLinkOpts                                  \
-        $xcflags $xldflags                                       \
         -llvm-llc-opt '-O2'                                      \
         -llvm-opt-opt '-mem2reg -O2'                             \
         -mlb-path-map "$lib/mlb-path-map"                        \

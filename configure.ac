@@ -31,14 +31,18 @@ AC_ARG_VAR([XLDFLAGS],[extra linker flags])
 AC_CONFIG_HEADERS([config.h])
 
 
+
 # FIXME: working below
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CC_STDC # enforce C99 standard whenever calling CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
+AC_PROG_SED
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-ldl':
@@ -87,57 +91,59 @@ dnl We don't really use automake, but configure needs aclocal and the
 dnl automake library files.
 AM_INIT_AUTOMAKE([1.9.6 foreign])
 
-AC_CONFIG_FILES([Makefile-auto
-                 Makefile
-                 runtime/Makefile
-                 bin/mlton-script
-                ])
+# AC_CONFIG_FILES([Makefile-auto
+#                  Makefile
+#                  runtime/Makefile
+#                  bin/mlton-script
+#                 ])
 
 ## FIXME: merge AC_CONFIG_FILES
-# AC_CONFIG_FILES([Makefile
-#                  basis-library/Makefile
-#                  basis-library/libs/basis-2002/top-level/Makefile
-#                  benchmark/Makefile
-#                  benchmark/tests/Makefile
-#                  bin/Makefile
-#                  doc/examples/Makefile
-#                  doc/examples/ffi/Makefile
-#                  doc/examples/finalizable/Makefile
-#                  doc/examples/profiling/Makefile
-#                  doc/examples/save-world/Makefile
-#                  doc/guide/Makefile
-#                  doc/hacker-guide/Makefile
-#                  doc/library-guide/Makefile
-#                  doc/mlb-formal/Makefile
-#                  doc/style-guide/Makefile
-#                  include/Makefile
-#                  lib/Makefile
-#                  lib/ckit-lib/Makefile
-#                  lib/mllpt-lib/Makefile
-#                  lib/mlnlffi-lib/Makefile
-#                  lib/mlrisc-lib/Makefile
-#                  lib/mlton/Makefile
-#                  lib/mlton/basic/Makefile
-#                  lib/smlnj-lib/Makefile
-#                  lib/stubs/Makefile
-#                  lib/stubs/basis-stubs-for-smlnj/Makefile
-#                  lib/stubs/mlton-stubs-for-smlnj/Makefile
-#                  lib/stubs/mlton-stubs/Makefile
-#                  man/Makefile
-#                  mllex/Makefile
-#                  mlnlffigen/Makefile
-#                  mlprof/Makefile
-#                  mlton/Makefile
-#                  mlton/front-end/Makefile
-#                  mlyacc/Makefile
-#                  mlyacc/doc/Makefile
-#                  package/freebsd/Makefile
-#                  package/macosx/Makefile
-#                  package/mingw/Makefile
-#                  regression/Makefile
-#                  regression/library/Makefile
-#                  runtime/Makefile
-#                  util/cm2mlb/Makefile])
+AC_CONFIG_FILES([Makefile-auto
+                 Makefile
+                 basis-library/Makefile
+                 basis-library/libs/basis-2002/top-level/Makefile
+                 benchmark/Makefile
+                 benchmark/tests/Makefile
+                 bin/Makefile
+                 bin/mlton-script
+                 doc/examples/Makefile
+                 doc/examples/ffi/Makefile
+                 doc/examples/finalizable/Makefile
+                 doc/examples/profiling/Makefile
+                 doc/examples/save-world/Makefile
+                 doc/guide/Makefile
+                 doc/hacker-guide/Makefile
+                 doc/library-guide/Makefile
+                 doc/mlb-formal/Makefile
+                 doc/style-guide/Makefile
+                 include/Makefile
+                 lib/Makefile
+                 lib/ckit-lib/Makefile
+                 lib/mllpt-lib/Makefile
+                 lib/mlnlffi-lib/Makefile
+                 lib/mlrisc-lib/Makefile
+                 lib/mlton/Makefile
+                 lib/mlton/basic/Makefile
+                 lib/smlnj-lib/Makefile
+                 lib/stubs/Makefile
+                 lib/stubs/basis-stubs-for-smlnj/Makefile
+                 lib/stubs/mlton-stubs-for-smlnj/Makefile
+                 lib/stubs/mlton-stubs/Makefile
+                 man/Makefile
+                 mllex/Makefile
+                 mlnlffigen/Makefile
+                 mlprof/Makefile
+                 mlton/Makefile
+                 mlton/front-end/Makefile
+                 mlyacc/Makefile
+                 mlyacc/doc/Makefile
+                 package/freebsd/Makefile
+                 package/macosx/Makefile
+                 package/mingw/Makefile
+                 regression/Makefile
+                 regression/library/Makefile
+                 runtime/Makefile
+                 util/cm2mlb/Makefile])
 
 
 AC_OUTPUT

@@ -12,13 +12,17 @@ PATH := ../bin:$(shell echo $$PATH)
 TARGET := self
 
 ifeq ($(TARGET), self)
-CC := gcc -std=gnu99
+# CC := gcc -std=gnu99
+CC := @CC@
 AR := ar rc
-RANLIB := ranlib
+# RANLIB := ranlib
+RANLIB := @RANLIB@
 else
-CC := $(TARGET)-gcc -std=gnu99
+# CC := $(TARGET)-gcc -std=gnu99
+CC := $(TARGET)-@CC@
 AR := $(TARGET)-ar rc
-RANLIB := $(TARGET)-ranlib
+# RANLIB := $(TARGET)-ranlib
+RANLIB := $(TARGET)-@RANLIB@
 endif
 
 ifneq (@WITH_GMP_INC_DIR@,)

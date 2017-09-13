@@ -7,6 +7,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
+@SET_MAKE@
 export TARGET := self
 export TARGET_ARCH := $(shell bin/host-arch)
 export TARGET_OS := $(shell bin/host-os)
@@ -34,7 +35,9 @@ NLFFIGEN := mlnlffigen
 PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
-RANLIB := ranlib
+# RANLIB := ranlib
+RANLIB := @RANLIB@
+SED		 := @SED@
 
 
 # Allow for custom paths to GMP include and library files
@@ -125,7 +128,7 @@ constants:
 debugged:
 	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
-	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
+	$(SED) 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
 	chmod a+x "$(MLTON).debug"
 
 .PHONY: dirs
