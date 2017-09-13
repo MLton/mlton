@@ -30,10 +30,6 @@ AC_ARG_VAR([XLDFLAGS],[extra linker flags])
 
 AC_CONFIG_HEADERS([config.h])
 
-
-
-# FIXME: working below
-
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -43,19 +39,6 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 AC_PROG_SED
-
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-ldl':
-AC_CHECK_LIB([dl], [main])
-# FIXME: Replace `main' with a function in `-lmlton':
-AC_CHECK_LIB([mlton], [main])
-# FIXME: Replace `main' with a function in `-local_icons':
-AC_CHECK_LIB([ocal_icons], [main])
-# FIXME: Replace `main' with a function in `-lpolymain':
-AC_CHECK_LIB([polymain], [main])
-# FIXME: Replace `main' with a function in `-lpolyml':
-AC_CHECK_LIB([polyml], [main])
-
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h syslog.h termios.h unistd.h utime.h])
@@ -134,7 +117,6 @@ AC_CONFIG_FILES([Makefile-auto
                  mlnlffigen/Makefile
                  mlprof/Makefile
                  mlton/Makefile
-                 mlton/front-end/Makefile
                  mlyacc/Makefile
                  mlyacc/doc/Makefile
                  package/freebsd/Makefile
