@@ -142,8 +142,6 @@ structure Time:>
       val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
    end
 
-val tick = Time.tick
-
 structure UnifyResult =
    struct
       datatype t =

@@ -1926,7 +1926,7 @@ fun elaborateDec (d, {env = E, nest}) =
                       Avar.layout var],
                  align [seq [str "type: ", lay],
                         ctxt ()])
-             val () = TypeEnv.tick {region = region}
+             val () = Time.tick {region = region}
              val unify = fn (t, t', f) => unify (t, t', preError, f)
              fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop

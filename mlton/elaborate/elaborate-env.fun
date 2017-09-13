@@ -2573,7 +2573,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
        * instantiated and then re-generalized will be at a new time, so we can
        * check if something should not be generalized.
        *)
-      val () = TypeEnv.tick {region = region}
+      val () = TypeEnv.Time.tick {region = region}
       val sign =
          if isFunctor
             then "argument signature"
@@ -3613,7 +3613,7 @@ fun functorClosure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
        *)
-      val _ =  TypeEnv.tick {region = Region.bogus}
+      val _ =  TypeEnv.Time.tick {region = Region.bogus}
       val (formal, instantiate) = dummyStructure (argInt, {prefix = prefix})
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need

@@ -26,6 +26,7 @@ signature TYPE_ENV =
             type t
 
             val now: unit -> t
+            val tick: {region: Region.t} -> unit
          end
 
       structure Type:
@@ -119,7 +120,6 @@ signature TYPE_ENV =
              schemes: Scheme.t vector}
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
-      val tick: {region: Region.t} -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
       val tyconRegion: Tycon.t -> Region.t option ref
    end
