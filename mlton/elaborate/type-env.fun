@@ -1931,32 +1931,49 @@ fun generalize (tyvars: Tyvar.t vector) =
                            not (Time.<= (genTime, !(tyvarTime a)))))}
    end
 
-fun close (ensure: Tyvar.t vector, rgn_ubd) =
+fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
    let
       val beforeGen = Time.now ()
       val () = Time.tick rgn_ubd
       val genTime = Time.now ()
-      val () = Vector.foreach (ensure, fn a => ignore (tyvarTime a))
+      val () = Vector.foreach (ensure, fn a => tyvarTime a := genTime)
       val savedCloses = !Type.newCloses
       val () = Type.newCloses := []
    in
       Trace.trace
       ("TypeEnv.close",
+       fn (varTypes, _) =>
        Vector.layout
-       (fn {isExpansive, ty} =>
+       (fn {isExpansive, ty, var = _} =>
         Layout.record [("isExpansive", Bool.layout isExpansive),
-                       ("ty", Type.layout ty)]),
+                       ("ty", Type.layout ty)])
+       varTypes,
        Layout.ignore)
-      (fn varTypes =>
+      (fn (varTypes, {error: 'a * Layout.t * Tyvar.t list -> unit,
+                      preError: unit -> unit}) =>
       let
-         val () =
-            Vector.foreach
-            (varTypes, fn {isExpansive, ty} =>
-             if isExpansive
-                then Type.minTime (ty, beforeGen)
-             else ())
-         val unable = Vector.keepAll (ensure, fn a =>
-                                      not (Time.<= (genTime, !(tyvarTime a))))
+         local
+            val {destroy, layoutPretty} =
+               Type.makeLayoutPretty {expandOpaque = false, localTyvarNames = false}
+            fun checkTime (t, bound) =
+               Type.checkTime (t, bound,
+                               {layoutPretty = layoutPretty,
+                                preError = preError})
+            val varTypes =
+               Vector.map
+               (varTypes, fn ({isExpansive, ty, var}) =>
+                {isExpansive = isExpansive,
+                 ty = if not isExpansive
+                         then ty
+                         else (case checkTime (ty, beforeGen) of
+                                  NONE => ty
+                                | SOME ((l, _), (ty', _), {tyvars, ...}) =>
+                                     (error (var, l, tyvars)
+                                      ; ty'))})
+            val _ = destroy ()
+         in
+            val varTypes = varTypes
+         end
          val flexes = ref []
          val tyvars = ref (Vector.toList ensure)
          (* Convert all the unknown types bound at this level into tyvars.
@@ -2082,8 +2099,7 @@ fun close (ensure: Tyvar.t vector, rgn_ubd) =
                                   ty = ty})
       in
          {bound = bound,
-          schemes = schemes,
-          unable = unable}
+          schemes = schemes}
       end
    )
    end

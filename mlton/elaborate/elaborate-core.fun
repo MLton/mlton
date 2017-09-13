@@ -1919,20 +1919,13 @@ fun elaborateDec (d, {env = E, nest}) =
              val region = Adec.region d
              fun ctxt () = seq [str "in: ", approximate (Adec.layout d)]
              val preError = Promise.lazy (fn () => Env.setTyconLayoutPretty (E, {prefixUnset = true}))
-             fun reportUnable (unable: Tyvar.t vector) =
-               if Vector.isEmpty unable
-                  then ()
-               else
-                  Control.error
-                  (region,
-                   seq [str (concat
-                             ["type variable",
-                              if Vector.length unable > 1 then "s" else "",
-                                 " cannot be bound at declaration: "]),
-                        seq (List.separate
-                             (Vector.toListMap (unable, Tyvar.layout),
-                              str ", "))],
-                   ctxt ())
+             fun generalizeError (var, lay, _) =
+                Control.error
+                (Avar.region var,
+                 seq [str "type of variable cannot be generalized in expansive declaration: ",
+                      Avar.layout var],
+                 align [seq [str "type: ", lay],
+                        ctxt ()])
              fun useBeforeDef (c: Tycon.t) =
                 let
                    val _ = preError ()
@@ -2432,13 +2425,15 @@ fun elaborateDec (d, {env = E, nest}) =
                             Vector.foreach
                             (fbs, fn {check, ...} =>
                              check ())
-                         val {bound, schemes, unable} =
+                         val {bound, schemes} =
                             close
                             (Vector.map
-                             (fbs, fn {funTy, ...} =>
+                             (fbs, fn {func, funTy, ...} =>
                               {isExpansive = false,
-                               ty = funTy}))
-                         val _ = reportUnable unable
+                               ty = funTy,
+                               var = func}),
+                             {error = generalizeError,
+                              preError = preError})
                          val _ =
                             checkSchemes
                             (Vector.zip
@@ -2724,13 +2719,15 @@ fun elaborateDec (d, {env = E, nest}) =
                                 (bound, fn z =>
                                  (z, {isExpansive = Cexp.isExpansive exp,
                                       isRebind = false})))))]
-                         val {bound, schemes, unable} =
+                         val {bound, schemes} =
                             close
                             (Vector.map
-                             (boundVars, fn ((_, _, ty), {isExpansive, ...}) =>
+                             (boundVars, fn ((var, _, ty), {isExpansive, ...}) =>
                               {isExpansive = isExpansive,
-                               ty = ty}))
-                         val _ = reportUnable unable
+                               ty = ty,
+                               var = var}),
+                             {error = generalizeError,
+                              preError = preError})
                          val _ =
                             checkSchemes
                             (Vector.zip
