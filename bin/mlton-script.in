@@ -74,7 +74,7 @@ doit () {
 # set additional C compiler and linker flags from ../configure script
 XCFLAGS=@XCFLAGS@
 if [ -n "$XCFLAGS" ]; then
-xcflags="cc-opt $XCFLAGS"
+xcflags="-cc-opt $XCFLAGS"
 fi
 
 XLDFLAGS=@XLDFLAGS@
