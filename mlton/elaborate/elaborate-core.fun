@@ -451,7 +451,7 @@ val unify =
 local
 fun unifySeq (seqTy, seqStr,
               trs: (Type.t * Region.t) vector,
-              preError, lay): Type.t =
+              preError, ctxt): Type.t =
    if Vector.isEmpty trs
       then seqTy (Type.new ())
    else
@@ -465,17 +465,17 @@ fun unifySeq (seqTy, seqStr,
                      str (seqStr ^ " with element of different type"),
                      align [seq [str "element:  ", l'],
                             seq [str "previous: ", l],
-                            lay ()])))
+                            ctxt ()])))
       in
          seqTy t
       end
 in
 fun unifyList (trs: (Type.t * Region.t) vector,
-               preError, lay): Type.t =
-   unifySeq (Type.list, "list", trs, preError, lay)
+               preError, ctxt): Type.t =
+   unifySeq (Type.list, "list", trs, preError, ctxt)
 fun unifyVector (trs: (Type.t * Region.t) vector,
-                 preError, lay): Type.t =
-   unifySeq (Type.vector, "vector", trs, preError, lay)
+                 preError, ctxt): Type.t =
+   unifySeq (Type.vector, "vector", trs, preError, ctxt)
 end
 
 val elabPatInfo = Trace.info "ElaborateCore.elabPat"
