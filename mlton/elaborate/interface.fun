@@ -523,26 +523,13 @@ structure TypeStr =
 
       fun toTyconOpt (s, {expand}) =
          let
-            fun loop s =
-               case node s of
-                  Datatype {tycon, ...} => loopTycon tycon
-                | Scheme (Scheme.T {tyvars, ty}) =>
-                     (case Type.deEta (ty, tyvars) of
-                         NONE => NONE
-                       | SOME c => loopTycon c)
-                | Tycon c => loopTycon c
-            and loopTycon c =
-               if expand
-                  then (case c of
-                           Tycon.Flexible f =>
-                              (case Defn.dest (FlexibleTycon.defn f) of
-                                  Defn.Realized _ => Error.bug "Interface.TypeStr.toTyconOpt: Realized"
-                                | Defn.TypeStr s => loop s
-                                | Defn.Undefined => SOME c)
-                         | Tycon.Rigid _ => SOME c)
-                  else SOME c
+            val s = if expand then abs s else s
          in
-            loop s
+            case node s of
+               Datatype {tycon, ...} => SOME tycon
+             | Scheme (Scheme.T {tyvars, ty}) =>
+                  Type.deEta (if expand then expandTy ty else ty, tyvars)
+             | Tycon tycon => SOME tycon
          end
    end
 
