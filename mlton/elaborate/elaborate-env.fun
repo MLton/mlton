@@ -569,6 +569,18 @@ structure Status =
    struct
       open Status
 
+      fun fromVid vid =
+         case vid of
+            Vid.Con _ => Con
+          | Vid.Exn _ => Exn
+          | Vid.Overload _ => Var
+          | Vid.Var _ => Var
+
+      val kw: t -> string =
+         fn Con => "con"
+          | Exn => "exn"
+          | Var => "val"
+
       val pretty: t -> string =
          fn Con => "constructor"
           | Exn => "exception"
@@ -3365,41 +3377,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                         thing = thing}),
                     range = (vid, rlzScheme)}
                 end,
-                doit = fn (strName, (vid, strScheme), sigName, (status, sigScheme)) =>
+                doit = fn (strName, (strVid, strScheme), sigName, (sigStatus, sigScheme)) =>
                 let
                    val rlzScheme = Interface.Scheme.toEnv sigScheme
                    val unifyError = ref NONE
-                   val statusError = ref NONE
-                   fun reportError () =
-                      if Option.isSome (!unifyError)
-                         orelse Option.isSome (!statusError)
-                         then let
-                                 fun get (space, sel) r =
-                                    case !r of
-                                       NONE => Layout.empty
-                                     | SOME msgs => seq [str space, str ": ", sel msgs]
-                                 val getStr = get ("structure", #1)
-                                 val getSig = get ("signature", #2)
-                              in
-                                 Control.error
-                                 (region,
-                                  seq [if Option.isSome (!statusError)
-                                          then str "value identifier"
-                                          else str (Status.pretty status),
-                                       str " in structure disagrees with ",
-                                          str sign,
-                                          str ": ",
-                                          layoutLongRev (strids, Ast.Vid.layout sigName)],
-                                  align [getStr statusError,
-                                         getStr unifyError,
-                                         seq [str "defn at:   ",
-                                              Region.layout (Ast.Vid.region strName)],
-                                         getSig statusError,
-                                         getSig unifyError,
-                                         seq [str "spec at:   ",
-                                              Region.layout (Ast.Vid.region sigName)]])
-                              end
-                         else ()
+                   val statusError = ref false
                    val (rlzTyvars, rlzType) = Scheme.fresh rlzScheme
                    val {args = strTyargs, instance = strType} =
                       Scheme.instantiate strScheme
@@ -3433,8 +3415,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                       end
                    fun con (c: Con.t): Vid.t =
                       addDec (Con.originalName c, Exp.Con (c, strTyargs))
+                   val strStatus = Status.fromVid strVid
                    val vid =
-                      case (vid, status) of
+                      case (strVid, sigStatus) of
                          (Vid.Con c, Status.Var) => con c
                        | (Vid.Exn c, Status.Var) => con c
                        | (Vid.Var x, Status.Var) =>
@@ -3442,14 +3425,61 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                orelse 0 < Vector.length strTyargs
                                then addDec (Var.originalName x,
                                             Exp.Var (fn () => x, fn () => strTyargs))
-                               else vid
-                       | (Vid.Con _, Status.Con) => vid
-                       | (Vid.Exn _, Status.Exn) => vid
-                       | _ =>
-                            (statusError := SOME (seq [str "<", str (Vid.statusPretty vid), str ">"],
-                                                  seq [str "<", str (Status.pretty status), str ">"])
-                             ; vid)
-                   val () = reportError ()
+                               else strVid
+                       | (Vid.Con _, Status.Con) => strVid
+                       | (Vid.Exn _, Status.Exn) => strVid
+                       | _ => (statusError := true; strVid)
+                   val errors = []
+                   val errors = if Option.isSome (!unifyError) then "type" :: errors else errors
+                   val errors = if !statusError then "status" :: errors else errors
+                   val () =
+                      if List.isEmpty errors
+                         then ()
+                         else let
+                                 val msgs = List.map (errors, str)
+                                 val name =
+                                    layoutLongRev (strids, Ast.Vid.layout sigName)
+                                 val (strLay, sigLay) =
+                                    case !unifyError of
+                                       NONE => let
+                                                  val () = preError ()
+                                                  val lay = Scheme.layoutPretty rlzScheme
+                                               in
+                                                  (lay, lay)
+                                               end
+                                     | SOME (strLay, sigLay) => (strLay, sigLay)
+                                 fun doit (status, lay) =
+                                    let
+                                       val kw = str (Status.kw status)
+                                       val kw =
+                                          if !statusError then bracket kw else kw
+                                    in
+                                       seq [kw, str " ",
+                                            name,
+                                            str (if Ast.Vid.isSymbolic sigName
+                                                    then " : "
+                                                    else ": "),
+                                            lay]
+                                    end
+                              in
+                                 Control.error
+                                 (region,
+                                  seq [if !statusError
+                                          then str "value identifier"
+                                          else str (Vid.statusPretty strVid),
+                                       str " in structure disagrees with ",
+                                       str sign,
+                                       str " (",
+                                       (seq o List.separate) (msgs, str ", "),
+                                       str "): ",
+                                       name],
+                                  align [doit (strStatus, strLay),
+                                         seq [str "defn at:   ",
+                                              Region.layout (Ast.Vid.region strName)],
+                                         doit (sigStatus, sigLay),
+                                         seq [str "spec at:   ",
+                                              Region.layout (Ast.Vid.region sigName)]])
+                              end
                 in
                    (vid, rlzScheme)
                 end}
