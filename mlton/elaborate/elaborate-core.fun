@@ -1944,7 +1944,7 @@ fun elaborateDec (d, {env = E, nest}) =
                               in
                                  Control.warning
                                  (Avar.region x,
-                                  seq [str "unable to locally determine type of variable: ",
+                                  seq [str "type of variable was not inferred and could not be generalized: ",
                                        Avar.layout x],
                                   align [seq [str "type: ", Scheme.layoutPretty s],
                                          ctxt ()])
