@@ -143,8 +143,8 @@ structure Time:>
    end
 
 val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
-                                  region: Region.t option ref,
-                                  time: Time.t ref},
+                                  region: Region.t,
+                                  time: Time.t},
      set = setTyconInfo, ...} =
    Property.getSet (Tycon.plist, Property.initRaise ("info", Tycon.layout))
 
@@ -156,13 +156,13 @@ in
    val tyconTime = make #time
 end
 
-fun initAdmitsEquality (c, a) =
+fun initAdmitsEquality (c, a, r) =
    setTyconInfo (c, {admitsEquality = ref a,
-                     region = ref NONE,
-                     time = ref (Time.now ())})
+                     region = r,
+                     time = Time.now ()})
 
 val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
-                      initAdmitsEquality (c, a))
+                      initAdmitsEquality (c, a, Region.bogus))
 
 structure Tyvar =
    struct
@@ -1027,7 +1027,7 @@ structure Type =
             end
             fun getTy (_, ty) = ty
             fun con (_, c, rs) =
-               if Time.<= (!(tyconTime c), bound)
+               if Time.<= (tyconTime c, bound)
                   then if Vector.forall (rs, Option.isNone o #1)
                           then NONE
                           else (preError ()

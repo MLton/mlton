@@ -118,8 +118,8 @@ signature TYPE_ENV =
                 preError: unit -> unit})
          -> {bound: unit -> Tyvar.t vector,
              schemes: Scheme.t vector}
-      val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
+      val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t * Region.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
-      val tyconRegion: Tycon.t -> Region.t option ref
+      val tyconRegion: Tycon.t -> Region.t
    end
