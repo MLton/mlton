@@ -12,6 +12,64 @@ struct
 
 open S
 
+structure Layout =
+   struct
+      open Layout
+      val bracket = fn l =>
+         seq [str "[", l, str "]"]
+   end
+local
+   open Layout
+in
+   val seq = seq
+   val str = str
+end
+
+structure LayoutPretty =
+   struct
+      type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
+
+      fun simple (l: Layout.t): t =
+         (l, ({isChar = false}, Tycon.BindingStrength.unit))
+
+      val dontCare: t = simple (str "_")
+      fun bracket ((l, ({isChar}, _)): t): t =
+         (Layout.bracket l, ({isChar = isChar}, Tycon.BindingStrength.unit))
+
+      fun record (ds: (Field.t * bool * t) list, flexible: bool) =
+         simple (case ds of
+                    [] => if flexible then str "{...}" else str "{}"
+                  | _ =>
+                       seq [str "{",
+                            Layout.mayAlign
+                            (Layout.separateRight
+                             (List.map
+                              (QuickSort.sortList (ds, fn ((f, _, _), (f', _, _)) =>
+                                                   Field.<= (f, f')),
+                               fn (f, b, (l, _)) =>
+                               let
+                                  val f = Field.layout f
+                                  val row = seq [f, str ": ", l]
+                                  val row = if b then Layout.bracket row else row
+                               in
+                                  row
+                               end),
+                              ",")),
+                            str (if flexible
+                                    then ", ...}"
+                                    else "}")])
+      fun tuple (ls: t vector): t =
+         Tycon.layoutAppPretty (Tycon.tuple, ls)
+   end
+local
+   open LayoutPretty
+in
+   val bracket = bracket
+   val dontCare = dontCare
+   val simple = simple
+end
+
+
 local
    open Tycon
 in
@@ -92,14 +150,6 @@ structure Time:>
 
 val tick = Time.tick
 
-structure LayoutPretty =
-   struct
-      type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
-
-      fun simple (l: Layout.t): t =
-         (l, ({isChar = false}, Tycon.BindingStrength.unit))
-   end
-
 structure UnifyResult =
    struct
       datatype t =
@@ -107,12 +157,8 @@ structure UnifyResult =
        | Unified
 
       val layout =
-         let
-            open Layout
-         in
-            fn NotUnifiable _ => str "NotUnifiable"
-             | Unified => str "Unified"
-         end
+         fn NotUnifiable _ => str "NotUnifiable"
+          | Unified => str "Unified"
    end
 
 val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
@@ -282,13 +328,9 @@ structure Unknown =
       end
 
       fun layout (T {canGeneralize, id, ...}) =
-         let
-            open Layout
-         in
-            seq [str "Unknown ",
-                 record [("canGeneralize", Bool.layout canGeneralize),
-                         ("id", Int.layout id)]]
-         end
+         seq [str "Unknown ",
+              Layout.record [("canGeneralize", Bool.layout canGeneralize),
+                             ("id", Int.layout id)]]
 
       fun equals (u, u') = id u = id u'
 
@@ -387,38 +429,6 @@ val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
 
 val tyvarTime =
    Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
-
-local
-   open Layout
-in
-   val simple = LayoutPretty.simple
-   val dontCare: LayoutPretty.t = simple (str "_")
-   fun bracket l = seq [str "[", l, str "]"]
-   fun layoutRecord (ds: (Field.t * bool * LayoutPretty.t) list, flexible: bool) =
-      simple (case ds of
-                 [] => if flexible then str "{...}" else str "{}"
-               | _ => 
-                    seq [str "{",
-                         mayAlign
-                         (separateRight
-                          (List.map
-                           (QuickSort.sortList (ds, fn ((f, _, _), (f', _, _)) =>
-                                                Field.<= (f, f')),
-                            fn (f, b, (l, _)) =>
-                            let
-                               val f = Field.layout f
-                               val row = seq [f, str ": ", l]
-                               val row = if b then bracket row else row
-                            in
-                               row
-                            end),
-                           ",")),
-                         str (if flexible
-                                 then ", ...}"
-                              else "}")])
-   fun layoutTuple (ls: LayoutPretty.t vector): LayoutPretty.t =
-      Tycon.layoutAppPretty (Tycon.tuple, ls)
-end
 
 structure Type =
    struct
@@ -632,11 +642,10 @@ structure Type =
          {destroy: unit -> unit,
           layoutPretty: t -> LayoutPretty.t} =
          let
-            val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
             fun con0 c = Tycon.layoutAppPretty (c, Vector.new0 ())
             fun flexRecord (_, {fields, spine}) =
-               layoutRecord
+               LayoutPretty.record
                (List.fold
                 (fields,
                  Spine.foldOverNew (spine, fields, [], fn (f, ac) =>
@@ -645,7 +654,7 @@ structure Type =
                  fn ((f, t), ac) => (f, false, t) :: ac),
                 Spine.canAddFields spine)
             fun genFlexRecord (_, {extra, fields, spine}) =
-               layoutRecord
+               LayoutPretty.record
                (List.fold
                 (fields,
                  List.revMap (extra (), fn {field, tyvar} =>
@@ -656,10 +665,12 @@ structure Type =
             fun record (_, r) =
                case Srecord.detupleOpt r of
                   NONE =>
-                     layoutRecord (Vector.toListMap (Srecord.toVector r,
-                                                     fn (f, t) => (f, false, t)),
-                                   false)
-                | SOME ts => layoutTuple ts
+                     LayoutPretty.record
+                     (Vector.toListMap
+                      (Srecord.toVector r,
+                       fn (f, t) => (f, false, t)),
+                      false)
+                | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
             fun unknown _ = simple (str "???")
             val (destroy, prettyTyvar) =
@@ -877,93 +888,87 @@ structure Type =
 
       fun unresolvedString () = vector (unresolvedChar ())
 
-      local
-         fun bracket l = let open Layout in seq [str "[", l, str "]"] end
-         val str = Layout.str
-      in
-         fun explainAdmitsEquality (T s, {layoutPretty: t -> LayoutPretty.t}) =
-            let
-               val {ty, ...} = Set.! s
-            in
-               case ty of
-                  Var a => LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a))))
-                | _ => LayoutPretty.simple (bracket (str "<equality>"))
-            end
-         fun explainDoesNotAdmitEquality (t , {layoutPretty: t -> LayoutPretty.t}) =
-            let
-               val wild = LayoutPretty.simple (str "_")
-               fun deopt lo = Option.fold (lo, wild, fn (l, _) => l)
-               val noneq = LayoutPretty.simple (bracket (str "<non-equality>"))
-               fun con (_, c, los) =
-                  let
-                     datatype z = datatype AdmitsEquality.t
-                  in
-                     case ! (tyconAdmitsEquality c) of
-                        Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
-                      | Never =>
-                           (SOME o LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
-                           (c, Vector.map (los, fn _ => wild))
-                      | Sometimes =>
-                           (SOME o Tycon.layoutAppPretty)
-                           (c, Vector.map (los, deopt))
-                  end
-               fun doRecord (fields, extra) =
-                  SOME (layoutRecord
-                        (List.map
-                         (fields, fn (f, l) =>
-                          (f, false, l)),
-                         extra))
-               fun flexRecord (_, {fields, spine = _}) =
-                  doRecord (List.keepAllMap
-                            (fields, fn (f, lo) =>
-                             Option.map (lo, fn l => (f, l))),
-                            true)
-               fun genFlexRecord (_, {extra = _, fields, spine = _}) =
-                  doRecord (List.keepAllMap
-                            (fields, fn (f, lo) =>
-                             Option.map (lo, fn l => (f, l))),
-                            true)
-               fun overload (_, ov) =
-                  case ov of
-                     Overload.Real => SOME (LayoutPretty.simple (bracket (str "<real?>")))
-                   | _ => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.overload"
-               fun record (_, r) =
-                  case Srecord.detupleOpt r of
-                     NONE =>
-                        let
-                           val fields = Srecord.toVector r
-                           val fields' =
-                              Vector.keepAllMap
-                              (fields, fn (f, lo) =>
-                               Option.map (lo, fn l => (f, l)))
-                        in
-                           doRecord (Vector.toList fields',
-                                     not (Vector.length fields = Vector.length fields'))
-                        end
-                   | SOME los => SOME (layoutTuple (Vector.map (los, deopt)))
-               fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
-               fun unknown (_, _) = SOME noneq
-               fun var (_, a) = SOME (LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a)))))
-               fun wrap (f, sel) arg =
-                  if admitsEquality (sel arg)
-                     then NONE
-                     else f arg
-               val res =
-                  hom (t, {con = wrap (con, #1),
-                           expandOpaque = false,
-                           flexRecord = wrap (flexRecord, #1),
-                           genFlexRecord = wrap (genFlexRecord, #1),
-                           overload = wrap (overload, #1),
-                           record = wrap (record, #1),
-                           recursive = wrap (recursive, fn t => t),
-                           unknown = wrap (unknown, #1),
-                           var = wrap (var, #1)})
-            in
-               case res of
-                  NONE => noneq
-                | SOME l => l
-            end
-      end
+      fun explainAdmitsEquality (T s, {layoutPretty: t -> LayoutPretty.t}) =
+         let
+            val {ty, ...} = Set.! s
+         in
+            case ty of
+               Var a => bracket (layoutPretty (Type.var a))
+             | _ => simple (Layout.bracket (str "<equality>"))
+         end
+      fun explainDoesNotAdmitEquality (t , {layoutPretty: t -> LayoutPretty.t}) =
+         let
+            fun deopt lo = Option.fold (lo, dontCare, fn (l, _) => l)
+            val noneq = simple (Layout.bracket (str "<non-equality>"))
+            fun con (_, c, los) =
+               let
+                  datatype z = datatype AdmitsEquality.t
+               in
+                  case ! (tyconAdmitsEquality c) of
+                     Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
+                   | Never =>
+                        (SOME o bracket o Tycon.layoutAppPretty)
+                        (c, Vector.map (los, fn _ => dontCare))
+                   | Sometimes =>
+                        (SOME o Tycon.layoutAppPretty)
+                        (c, Vector.map (los, deopt))
+               end
+            fun doRecord (fields, extra) =
+               SOME (LayoutPretty.record
+                     (List.map
+                      (fields, fn (f, l) =>
+                       (f, false, l)),
+                      extra))
+            fun flexRecord (_, {fields, spine = _}) =
+               doRecord (List.keepAllMap
+                         (fields, fn (f, lo) =>
+                          Option.map (lo, fn l => (f, l))),
+                         true)
+            fun genFlexRecord (_, {extra = _, fields, spine = _}) =
+               doRecord (List.keepAllMap
+                         (fields, fn (f, lo) =>
+                          Option.map (lo, fn l => (f, l))),
+                         true)
+            fun overload (_, ov) =
+               case ov of
+                  Overload.Real => SOME (simple (Layout.bracket (str "<real?>")))
+                | _ => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.overload"
+            fun record (_, r) =
+               case Srecord.detupleOpt r of
+                  NONE =>
+                     let
+                        val fields = Srecord.toVector r
+                        val fields' =
+                           Vector.keepAllMap
+                           (fields, fn (f, lo) =>
+                            Option.map (lo, fn l => (f, l)))
+                     in
+                        doRecord (Vector.toList fields',
+                                  not (Vector.length fields = Vector.length fields'))
+                     end
+                | SOME los => SOME (LayoutPretty.tuple (Vector.map (los, deopt)))
+            fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
+            fun unknown (_, _) = SOME noneq
+            fun var (_, a) = SOME (bracket (layoutPretty (Type.var a)))
+            fun wrap (f, sel) arg =
+               if admitsEquality (sel arg)
+                  then NONE
+                  else f arg
+            val res =
+               hom (t, {con = wrap (con, #1),
+                        expandOpaque = false,
+                        flexRecord = wrap (flexRecord, #1),
+                        genFlexRecord = wrap (genFlexRecord, #1),
+                        overload = wrap (overload, #1),
+                        record = wrap (record, #1),
+                        recursive = wrap (recursive, fn t => t),
+                        unknown = wrap (unknown, #1),
+                        var = wrap (var, #1)})
+         in
+            case res of
+               NONE => noneq
+             | SOME l => l
+         end
 
       val traceCanUnify =
          Trace.trace2 
@@ -1014,11 +1019,15 @@ structure Type =
          let
             val tycons: Tycon.t list ref = ref []
             val tyvars: Tyvar.t list ref = ref []
-            val str = Layout.str
-            val wild = LayoutPretty.simple (str "_")
-            fun getLay1 (lllo, _) = Option.fold (lllo, wild, fn ((l1, _, _), _) => l1)
-            fun getLay2 (lllo, _) = Option.fold (lllo, wild, fn ((_, l2, _), _) => l2)
-            fun getLay3 (lllo, _) = Option.fold (lllo, wild, fn ((_, _, l3), _) => l3)
+            type lll = LayoutPretty.t * LayoutPretty.t * LayoutPretty.t
+            local
+               fun getLay sel (lllo: lll option, _) =
+                  Option.fold (lllo, dontCare, sel o #1)
+            in
+               val getLay1 = getLay #1
+               val getLay2 = getLay #2
+               val getLay3 = getLay #3
+            end
             fun getTy (_, ty) = ty
             fun con (_, c, rs) =
                if Time.<= (!(tyconTime c), bound)
@@ -1038,21 +1047,20 @@ structure Type =
                        in
                           List.push (tycons, c)
                           ; preError ()
-                          ; SOME ((LayoutPretty.simple o bracket o #1 o Tycon.layoutAppPretty)
+                          ; SOME ((bracket o Tycon.layoutAppPretty)
                                   (c, Vector.map (rs, getLay2)),
                                   Tycon.layoutAppPretty
                                   (c, Vector.map (rs, getLay2)),
-                                  (LayoutPretty.simple o bracket o #1)
-                                  (layoutPretty ty),
+                                  bracket (layoutPretty ty),
                                   ty)
                        end
-            fun doRecord (fls: (Field.t * (LayoutPretty.t * LayoutPretty.t * LayoutPretty.t)) list,
+            fun doRecord (fls: (Field.t * lll) list,
                           extra: bool, mk: unit -> t) =
                if List.isEmpty fls
                   then NONE
                   else let
                           fun doit sel =
-                             layoutRecord
+                             LayoutPretty.record
                              (List.map
                               (fls, fn (f, lll) =>
                                (f, false, sel lll)),
@@ -1064,7 +1072,7 @@ structure Type =
                doRecord (List.keepAllMap
                          (fields, fn (f, r) =>
                           Option.map (#1 r, fn lll => (f, lll))),
-                         true,
+                         Spine.canAddFields spine,
                          fn () =>
                          let
                             val fields =
@@ -1099,9 +1107,9 @@ structure Type =
                 | SOME rs =>
                      if Vector.forall (rs, Option.isNone o #1)
                         then NONE
-                        else SOME (layoutTuple (Vector.map (rs, getLay1)),
-                                   layoutTuple (Vector.map (rs, getLay2)),
-                                   layoutTuple (Vector.map (rs, getLay3)),
+                        else SOME (LayoutPretty.tuple (Vector.map (rs, getLay1)),
+                                   LayoutPretty.tuple (Vector.map (rs, getLay2)),
+                                   LayoutPretty.tuple (Vector.map (rs, getLay3)),
                                    Type.tuple (Vector.map (rs, getTy)))
             fun var (_, a) =
                if Time.<= (!(tyvarTime a), bound)
@@ -1111,9 +1119,9 @@ structure Type =
                        in
                           List.push (tyvars, a)
                           (* ; preError () *)
-                          ; SOME (LayoutPretty.simple (bracket (#1 (layoutPretty (Type.var a)))),
-                                  LayoutPretty.simple (#1 (layoutPretty (Type.var a))),
-                                  LayoutPretty.simple (bracket (#1 (layoutPretty ty))),
+                          ; SOME (bracket (layoutPretty (Type.var a)),
+                                  layoutPretty (Type.var a),
+                                  bracket (layoutPretty ty),
                                   ty)
                        end
             fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
@@ -1132,7 +1140,7 @@ structure Type =
                                  (time ty := bound
                                   ; (SOME (l1, l2, l3), ty)))
                end
-            val res : (LayoutPretty.t * LayoutPretty.t * LayoutPretty.t) option * t =
+            val res : lll option * t =
                hom (t, {con = wrap (con, #1),
                         expandOpaque = false,
                         flexRecord = wrap (flexRecord, #1),
@@ -1236,10 +1244,6 @@ structure Type =
                       fun notUnifiable (l: LayoutPretty.t, l': LayoutPretty.t) =
                          (NotUnifiable (l, l'),
                           Unknown (Unknown.new {canGeneralize = true}))
-                      val bracket =
-                         fn (l, ({isChar}, _)) =>
-                         (bracket l,
-                          ({isChar = isChar}, Tycon.BindingStrength.unit))
                       fun notUnifiableBracket (l, l') =
                          notUnifiable (bracket l, bracket l')
                       fun flexToRecord (fields, spine) =
@@ -1458,19 +1462,19 @@ structure Type =
                                        notUnifiable)
                                  | (SOME ts, SOME ts') =>
                                       if Vector.length ts = Vector.length ts'
-                                         then
-                                            unifys
-                                            (ts, ts',
-                                             fn () => (Unified, Record r),
-                                             fn (ls, ls') =>
-                                             notUnifiable (layoutTuple ls,
-                                                           layoutTuple ls'))
-                                      else not ()
+                                         then unifys
+                                              (ts, ts',
+                                               fn () => (Unified, Record r),
+                                               fn (ls, ls') =>
+                                               notUnifiable
+                                               (LayoutPretty.tuple ls,
+                                                LayoutPretty.tuple ls'))
+                                         else not ()
                                  | _ => not ())
                           | (Var a, Var a') =>
                                if Tyvar.equals (a, a')
                                   then (Unified, t)
-                               else not ()
+                                  else not ()
                           | _ => not ()
                       val res =
                          case res of
@@ -1542,7 +1546,8 @@ structure Type =
                   case (ac, ac') of
                      ([], []) => yes ()
                    | _ => (preError ()
-                           ; no (layoutRecord (ac, dots), layoutRecord (ac', dots')))
+                           ; no (LayoutPretty.record (ac, dots),
+                                 LayoutPretty.record (ac', dots')))
                end
          in
             unify (t, t')
@@ -1937,14 +1942,10 @@ fun close (ensure: Tyvar.t vector, rgn_ubd) =
    in
       Trace.trace
       ("TypeEnv.close",
-       let
-          open Layout
-       in
-          Vector.layout
-          (fn {isExpansive, ty} =>
-           Layout.record [("isExpansive", Bool.layout isExpansive),
-                          ("ty", Type.layout ty)])
-       end,
+       Vector.layout
+       (fn {isExpansive, ty} =>
+        Layout.record [("isExpansive", Bool.layout isExpansive),
+                       ("ty", Type.layout ty)]),
        Layout.ignore)
       (fn varTypes =>
       let
@@ -1969,17 +1970,13 @@ fun close (ensure: Tyvar.t vector, rgn_ubd) =
                 val {equality, plist, time, ty, ...} = Set.! s
                 val _ =
                    if true then () else
-                      let
-                         open Layout
-                      in
-                         outputl (seq [str "considering ",
-                                       Type.layout t,
-                                       str " with time ",
-                                       Time.layout (!time),
-                                       str " where getTime is ",
-                                       Time.layout genTime],
-                                  Out.error)
-                      end
+                      Layout.outputl (seq [str "considering ",
+                                           Type.layout t,
+                                           str " with time ",
+                                           Time.layout (!time),
+                                           str " where getTime is ",
+                                           Time.layout genTime],
+                                      Out.error)
              in
                 if not (Time.<= (genTime, !time))
                    then t :: ac
