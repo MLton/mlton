@@ -164,11 +164,16 @@ fun initAdmitsEquality (c, a) =
 val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
                       initAdmitsEquality (c, a))
 
-val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
-   Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
+structure Tyvar =
+   struct
+      open Tyvar
 
-val tyvarTime =
-   Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
+      val {get = time: Tyvar.t -> Time.t ref, ...} =
+         Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
+
+      val time =
+         Trace.trace ("Tyvar.time", Tyvar.layout, Ref.layout Time.layout) time
+   end
 
 structure Equality:>
    sig
@@ -1104,7 +1109,7 @@ structure Type =
                                    LayoutPretty.tuple (Vector.map (rs, getLay3)),
                                    Type.tuple (Vector.map (rs, getTy)))
             fun var (_, a) =
-               if Time.<= (!(tyvarTime a), bound)
+               if Time.<= (!(Tyvar.time a), bound)
                   then NONE
                   else let
                           val ty = newAt bound
@@ -1865,7 +1870,7 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
       val beforeGen = Time.now ()
       val () = Time.tick rgn_ubd
       val genTime = Time.now ()
-      val () = Vector.foreach (ensure, fn a => tyvarTime a := genTime)
+      val () = Vector.foreach (ensure, fn a => Tyvar.time a := genTime)
       val savedCloses = !Type.newCloses
       val () = Type.newCloses := []
    in
