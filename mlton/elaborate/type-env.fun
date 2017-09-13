@@ -1159,67 +1159,6 @@ structure Type =
                          tyvars = List.removeDuplicates (!tyvars, Tyvar.equals)})
          end
 
-      (* minTime (t, bound) ensures that all components of t have times no larger
-       * than bound.  It calls the appropriate error function when it encounters
-       * a tycon that is used before it defined.
-       *)
-      fun minTime (t, bound: Time.t): unit =
-         let
-            fun loop (T s): unit =
-               let
-                  val {time, ty, ...} = Set.! s
-               in
-                  if Time.<= (!time, bound)
-                     then ()
-                  else
-                     let
-                        val _ = time := bound
-                     in
-                        case ty of
-                           Con (c, ts) =>
-                              let
-                                 val r = tyconTime c
-                                 val _ =
-                                    if Time.<= (!r, bound)
-                                       then ()
-                                    else
-                                       let
-                                          val _ = r := bound
-                                          val _ = Time.useBeforeDef (bound, c)
-                                       in
-                                          ()
-                                       end
-                                 val _ = Vector.foreach (ts, loop)
-                              in
-                                 ()
-                              end
-                         | FlexRecord {fields, ...} => loopFields fields
-                         | GenFlexRecord {fields, ...} => loopFields fields
-                         | Overload _ => ()
-                         | Record r => Srecord.foreach (r, loop)
-                         | Unknown _ => ()
-                         | Var a =>
-                              let
-                                 val r = tyvarTime a
-                              in
-                                 if Time.<= (!r, bound)
-                                    then ()
-                                 else r := bound
-                              end
-                     end
-               end
-            and loopFields (fs: (Field.t * t) list) =
-               List.foreach (fs, loop o #2)
-            val _ = loop t
-         in
-            ()
-         end
-
-      val minTime =
-         Trace.trace2 
-         ("TypeEnv.Type.minTime", layout, Time.layout, Unit.layout) 
-         minTime
-
       datatype z = datatype UnifyResult.t
 
       val traceUnify = 

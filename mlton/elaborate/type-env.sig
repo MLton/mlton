@@ -69,11 +69,6 @@ signature TYPE_ENV =
                {layoutPretty: t -> LayoutPretty.t,
                 preError: unit -> unit} ->
                t * t * {error: Layout.t * Layout.t -> unit} -> unit
-            (* minTime (t, time) makes every component of t occur no later than
-             * time.  This will display a type error message if time is before
-             * the definition time of some component of t.
-             *)
-            val minTime: t * Time.t -> unit
             val new: unit -> t
             val record: t SortedRecord.t -> t
             (* make two types identical (recursively).  side-effecting. *)
