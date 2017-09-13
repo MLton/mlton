@@ -1818,6 +1818,14 @@ structure Scheme =
          Trace.trace ("TypeEnv.Scheme.instantiate", layout, Type.layout o #instance)
          instantiate
 
+      fun fresh s =
+         let
+            val (tyvars, _) = dest s
+            val tyvars = Vector.map (tyvars, Tyvar.newLike)
+         in
+            (tyvars, apply (s, (Vector.map (tyvars, Type.var))))
+         end
+
       fun admitsEquality s =
          Type.admitsEquality
          (#instance

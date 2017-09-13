@@ -93,6 +93,7 @@ signature TYPE_ENV =
             val admitsEquality: t -> bool
             val apply: t * Type.t vector -> Type.t
             val dest: t -> Tyvar.t vector * Type.t
+            val fresh: t -> Tyvar.t vector * Type.t
             val fromTycon: Tycon.t * TyconKind.t -> t
             val fromType: Type.t -> t
             val haveFrees: t vector -> bool vector
