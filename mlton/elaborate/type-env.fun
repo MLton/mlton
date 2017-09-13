@@ -1166,9 +1166,10 @@ structure Type =
 
       fun unify (t, t',
                  {layoutPretty: t -> LayoutPretty.t,
-                  preError: unit -> unit}):
-                (LayoutPretty.t * LayoutPretty.t, unit) UnifyResult.t =
+                  preError: unit -> unit}) =
          let
+            val tyconss: Tycon.t list list ref = ref []
+            val tyvarss: Tyvar.t list list ref = ref []
             val checkTime =
                fn (t, bound) =>
                checkTime (t, bound,
@@ -1340,8 +1341,10 @@ structure Type =
                                then not ()
                                else (case checkTime (outer', time) of
                                         NONE => Unified t'
-                                      | SOME (l, (t'', l''), _) =>
+                                      | SOME (l, (t'', l''), {tycons, tyvars}) =>
                                            (setTy (outer, getTy t'')
+                                            ; List.push (tyconss, tycons)
+                                            ; List.push (tyvarss, tyvars)
                                             ; notUnifiable
                                               (if swap
                                                   then (l, l'')
@@ -1491,15 +1494,23 @@ structure Type =
             val res = unify (t, t')
          in
             case res of
-               NotUnifiable (lp1, lp2) => NotUnifiable (lp1, lp2)
-             | Unified _ => Unified ()
+               NotUnifiable ((l, _), (l', _)) =>
+                  let
+                     val tycons =
+                        List.removeDuplicates
+                        (List.concatRev (!tyconss),
+                         Tycon.equals)
+                     val tyvars =
+                        List.removeDuplicates
+                        (List.concatRev (!tyvarss),
+                         Tyvar.equals)
+                  in
+                     NotUnifiable (l, l',
+                                   {tycons = tycons,
+                                    tyvars = tyvars})
+                  end
+             | Unified () => Unified ()
          end
-
-      val unify =
-         fn (t, t', z) =>
-         case unify (t, t', z) of
-            NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
-          | Unified _ => Unified ()
 
       local
          val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
@@ -2118,7 +2129,7 @@ structure Type =
          fn {layoutPretty, preError} =>
          fn (t1, t2, {error}) =>
          case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
-            NotUnifiable (l1, l2) => error (l1, l2)
+            NotUnifiable (l1, l2, tycons_tyvars) => error (l1, l2, tycons_tyvars)
           | Unified () => ()
 
       val unify =
@@ -2128,7 +2139,7 @@ structure Type =
                makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
-                  NotUnifiable (l1, l2) => error (l1, l2)
+                  NotUnifiable (l1, l2, tycons_tyvars) => error (l1, l2, tycons_tyvars)
                 | Unified () => ()
             val () = destroy ()
          in

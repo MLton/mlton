@@ -3137,6 +3137,18 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                           preprocess (strName, strStr, sigName, sigStr, rlzStr)
                        val lay = #1 o layoutPretty
 
+                       val unify =
+                          Type.makeUnify
+                          {layoutPretty = layoutPretty,
+                           preError = preError}
+                       val unify = fn (t, t', error) =>
+                          let
+                             val error = fn (l, l', _) =>
+                                error (l, l')
+                          in
+                             unify (t, t', {error = error})
+                          end
+
                        val () =
                           if Kind.equals (strKind, sigKind)
                              then ()
@@ -3164,13 +3176,12 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                            | Scheme sigScheme =>
                                 let
                                    fun chkScheme strScheme =
-                                      Type.unify
+                                      unify
                                       (Scheme.apply (strScheme, strTyvars),
                                        Scheme.apply (sigScheme, sigTyvars),
-                                       {error = fn (l, l') => error ("type definition",
-                                                                     strMsg (false, SOME l),
-                                                                     sigMsg (false, SOME l')),
-                                        preError = preError})
+                                       fn (l, l') => error ("type definition",
+                                                            strMsg (false, SOME l),
+                                                            sigMsg (false, SOME l')))
                                    val _ =
                                       case TypeStr.node strStr of
                                          TypeStr.Datatype {tycon = strTycon, ...} =>
@@ -3178,14 +3189,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                val strScheme =
                                                   Scheme.fromTycon (strTycon, strKind)
                                             in
-                                               Type.unify
+                                               unify
                                                (Scheme.apply (strScheme, strTyvars),
                                                 Scheme.apply (sigScheme, sigTyvars),
-                                                {error = fn _ =>
-                                                 error ("type structure",
-                                                        strMsg (true, NONE),
-                                                        sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))),
-                                                 preError = preError})
+                                                fn _ =>
+                                                error ("type structure",
+                                                       strMsg (true, NONE),
+                                                       sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyvars))))))
                                             end
                                        | TypeStr.Scheme s =>
                                             chkScheme s
@@ -3212,16 +3222,15 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          in
                                             Exn.withEscape
                                             (fn escape =>
-                                             (Type.unify
+                                             (unify
                                               (Scheme.apply (strScheme, strTyvars),
                                                Scheme.apply (sigScheme, sigTyvars),
-                                               {error = fn _ =>
-                                                (error ("type structure",
-                                                        strMsg (false, NONE),
-                                                        sigMsg (false, SOME (seq [str "datatype ",
-                                                                                  lay (Scheme.apply (sigScheme, sigTyvars))])))
-                                                 ; escape rlzStr),
-                                                preError = preError})
+                                               fn _ =>
+                                               (error ("type structure",
+                                                       strMsg (false, NONE),
+                                                       sigMsg (false, SOME (seq [str "datatype ",
+                                                                                 lay (Scheme.apply (sigScheme, sigTyvars))])))
+                                                ; escape rlzStr))
                                               ; strStr))
                                          end
                                     | TypeStr.Scheme strScheme =>
@@ -3239,10 +3248,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                    case TypeStr.node strStr of
                                       TypeStr.Datatype {cons = strCons, ...} =>
                                          let
-                                            val unify =
-                                               Type.makeUnify
-                                               {layoutPretty = layoutPretty,
-                                                preError = preError}
                                             val extra: bool ref = ref false
                                             fun conScheme (scheme, tyvars) =
                                                case Type.deArrowOpt (Scheme.apply (scheme, tyvars)) of
@@ -3293,11 +3298,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                                    (fn escape =>
                                                                     (unify
                                                                      (sigTy, strTy,
-                                                                      {error = fn (sigLay, strLay) =>
-                                                                               (escape o loop)
-                                                                               (sigCons', strCons',
-                                                                                (seq [Ast.Con.layout sigName, str " of ", sigLay])::sigConsAcc,
-                                                                                (seq [Ast.Con.layout strName, str " of ", strLay])::strConsAcc)})
+                                                                      fn (sigLay, strLay) =>
+                                                                      (escape o loop)
+                                                                      (sigCons', strCons',
+                                                                       (seq [Ast.Con.layout sigName, str " of ", sigLay])::sigConsAcc,
+                                                                       (seq [Ast.Con.layout strName, str " of ", strLay])::strConsAcc))
                                                                      ; extra := true
                                                                      ; loop (sigCons', strCons',
                                                                              sigConsAcc, strConsAcc))))
@@ -3387,7 +3392,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val _ =
                       Type.unify
                       (strType, rlzType,
-                       {error = fn (l, l') => unifyError := SOME (l, l'),
+                       {error = fn (l, l', _) => unifyError := SOME (l, l'),
                         preError = preError})
                    val strTyargs = strTyargs ()
                    fun addDec (name: string, n: Exp.node): Vid.t =

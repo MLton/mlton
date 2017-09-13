@@ -445,8 +445,12 @@ fun 'a elabConst (c: Aconst.t,
 
 val unify =
    fn (t, t', preError, error) =>
-   Type.unify (t, t', {error = Control.error o error,
-                       preError = preError})
+   let
+      val error = fn (l, l', _) =>
+         Control.error (error (l, l'))
+   in
+      Type.unify (t, t', {error = error, preError = preError})
+   end
 
 local
 fun unifySeq (seqTy, seqStr,
