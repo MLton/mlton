@@ -2983,15 +2983,26 @@ fun elaborateDec (d, {env = E, nest}) =
                           case Type.checkTime (ty, time, {preError = preError}) of
                              NONE => ty
                            | SOME (lay, ty, {tycons, ...}) =>
-                                (Control.error
-                                 (region,
-                                  seq [str "type of let has escaping local types: ",
-                                       seq (Layout.separate
-                                            (List.map (tycons, Tycon.layoutPretty),
-                                             ", "))],
-                                  align [seq [str "type: ", lay],
-                                         ctxt ()])
-                                 ; ty)
+                                let
+                                   val tycons =
+                                      List.removeDuplicates (tycons, Tycon.equals)
+                                   val tycons =
+                                      List.map (tycons, Tycon.layoutPretty)
+                                   val tycons =
+                                      List.insertionSort
+                                      (tycons, fn (l1, l2) =>
+                                       String.<= (Layout.toString l1,
+                                                  Layout.toString l2))
+                                   val _ =
+                                      Control.error
+                                      (region,
+                                       seq [str "type of let has escaping local types: ",
+                                            seq (Layout.separate (tycons, ", "))],
+                                       align [seq [str "type: ", lay],
+                                              ctxt ()])
+                                in
+                                   ty
+                                end
                     in
                        Cexp.make (Cexp.Let (d', e'), ty)
                     end)
