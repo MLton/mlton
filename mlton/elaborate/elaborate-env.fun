@@ -3452,18 +3452,21 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                   (lay, lay)
                                                end
                                      | SOME (strLay, sigLay) => (strLay, sigLay)
-                                 fun doit (status, lay) =
+                                 fun doit (space, status, lay, kind, reg) =
                                     let
                                        val kw = str (Status.kw status)
                                        val kw =
                                           if !statusError then bracket kw else kw
                                     in
-                                       seq [kw, str " ",
-                                            name,
-                                            str (if Ast.Vid.isSymbolic sigName
-                                                    then " : "
-                                                    else ": "),
-                                            lay]
+                                       align [seq [str space, str ": ",
+                                                   kw, str " ",
+                                                   name,
+                                                   str (if Ast.Vid.isSymbolic sigName
+                                                           then " : "
+                                                           else ": "),
+                                                   lay],
+                                              seq [str kind, str " at:   ",
+                                                   Region.layout reg]]
                                     end
                               in
                                  Control.error
@@ -3477,12 +3480,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                        (seq o List.separate) (msgs, str ", "),
                                        str "): ",
                                        name],
-                                  align [doit (strStatus, strLay),
-                                         seq [str "defn at:   ",
-                                              Region.layout (Ast.Vid.region strName)],
-                                         doit (sigStatus, sigLay),
-                                         seq [str "spec at:   ",
-                                              Region.layout (Ast.Vid.region sigName)]])
+                                  align [doit ("structure", strStatus, strLay,
+                                               "defn", Ast.Vid.region strName),
+                                         doit ("signature", sigStatus, sigLay,
+                                               "spec", Ast.Vid.region sigName)])
                               end
                 in
                    (vid, rlzScheme)
