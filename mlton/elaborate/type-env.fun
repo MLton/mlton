@@ -1360,28 +1360,28 @@ structure Type =
                                oneFlex (f', !time', outer', r, true)
                           | (FlexRecord {fields = fields, spine = spine},
                              FlexRecord {fields = fields', spine = spine'}) =>
-                            let
-                               fun yes () =
-                                  let
-                                     val () = Spine.unify (spine, spine')
-                                     val fields =
-                                        List.fold
-                                        (fields, fields', fn ((f, t), ac) =>
-                                         if List.exists (fields', fn (f', _) =>
-                                                         Field.equals (f, f'))
-                                            then ac
-                                            else (f, t) :: ac)
-                                  in
-                                     (Unified,
-                                      FlexRecord {fields = fields,
-                                                  spine = spine})
-                                  end
-                            in
-                               unifyRecords
-                               (flexToFlexToRecord (fields, spine, !time, outer, spine'),
-                                flexToFlexToRecord (fields', spine', !time', outer', spine),
-                                yes, notUnifiable)
-                            end
+                               let
+                                  fun yes () =
+                                     let
+                                        val () = Spine.unify (spine, spine')
+                                        val fields =
+                                           List.fold
+                                           (fields, fields', fn ((f, t), ac) =>
+                                            if List.exists (fields', fn (f', _) =>
+                                                            Field.equals (f, f'))
+                                               then ac
+                                               else (f, t) :: ac)
+                                     in
+                                        (Unified,
+                                         FlexRecord {fields = fields,
+                                                     spine = spine})
+                                     end
+                               in
+                                  unifyRecords
+                                  (flexToFlexToRecord (fields, spine, !time, outer, spine'),
+                                   flexToFlexToRecord (fields', spine', !time', outer', spine),
+                                   yes, notUnifiable)
+                               end
                           | (GenFlexRecord _, _) => genFlexError ()
                           | (_, GenFlexRecord _) => genFlexError ()
                           | (Overload ov1, Overload ov2) =>
