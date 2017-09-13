@@ -9,6 +9,9 @@ AC_INIT([MLton], [MLTON_VERSION], [mlton-devel@mlton.org])
 # if this file does not exist, `configure` was invoked in the wrong directory
 AC_CONFIG_SRCDIR([bin/mlton-script.in])
 
+########################################################################
+# Set various environment variables (needed at configure time)
+########################################################################
 AC_ARG_WITH([gmp-include],
             [AS_HELP_STRING([--with-gmp-include=PATH],
                             [specify directory for the installed GMP include file (gmp.h)])],
@@ -30,18 +33,81 @@ AC_ARG_VAR([XLDFLAGS],[extra linker flags])
 
 AC_CONFIG_HEADERS([config.h])
 
-# Checks for programs.
+###############################################################################
+# Check system C compiler and tools
+###############################################################################
+
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_STDC # enforce C99 standard whenever calling CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+
+AC_CHECK_PROG(found_ar, ar, yes, no)
+if test x$found_ar = xno
+then
+    AC_MSG_NOTICE([The 'ar' command must be in the path to build AC_PACKAGE_NAME])
+    AC_MSG_NOTICE(['ar' is also part of the GNU 'binutils' package.])
+    AC_MSG_ERROR([Exiting, as the archiver 'ar' can not be found.])
+fi
+
+AC_CHECK_PROG(found_ranlib, ranlib, yes, no)
+if test x$found_ranlib = xno
+then
+    AC_MSG_NOTICE([The 'ranlib' command must be in the path to build AC_PACKAGE_NAME])
+    AC_MSG_NOTICE(['ranlib' is also part of the GNU 'binutils' package.])
+    AC_MSG_ERROR([Exiting, as 'ranlib' can not be found.])
+fi
 AC_PROG_RANLIB
+
 AC_PROG_SED
 
 # Checks for header files.
+# Included for debugging only...
 AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h syslog.h termios.h unistd.h utime.h])
+
+# GMP is a required dependency
+AC_CHECK_HEADER([gmp.h],[],[
+    AC_MSG_ERROR([Exiting, since you do not have the 'gmp.h' header file.])
+])
+
+AC_CHECK_LIB([gmp],[__gmpz_sqrt],[],[
+    AC_MSG_ERROR([Exiting, since you do not have the 'libgmp' shared library file.])
+])
+
+
+###############################################################################
+# Check for MLton binary tools
+###############################################################################
+AC_CHECK_PROG(found_mlton, mlton, yes, no)
+if test x$found_mlton = xno
+then
+    AC_MSG_WARN([You do not have 'mlton', which is recommended, but not])
+    AC_MSG_WARN([required. However, some binary version of SML is required])
+    AC_MSG_WARN([to compile from source. Refer to])
+    AC_MSG_WARN([http://www.mlton.org/SelfCompiling for instructions.])
+fi
+
+AC_CHECK_PROG(found_mllex, mllex, yes, no)
+AC_CHECK_PROG(found_ml_lex, ml-lex, yes, no)
+if [ test x$found_mllex = xno ] && [ test x$found_ml_lex = xno ]
+then
+    AC_MSG_NOTICE([The SML scanner generator tool 'mllex'])
+    AC_MSG_NOTICE([must be in the path to build AC_PACKAGE_NAME.])
+    AC_MSG_NOTICE(['mllex' may also be named 'ml-lex'.])
+    AC_MSG_ERROR([Exiting, as 'mllex' can not be found.])
+fi
+
+AC_CHECK_PROG(found_mlyacc, mlyacc, yes, no)
+AC_CHECK_PROG(found_ml_yacc, ml-yacc, yes, no)
+if [ test x$found_mlyacc = xno ] && [ test x$found_ml_yacc = xno ]
+then
+    AC_MSG_NOTICE([The SML parser generator tool 'mlyacc'])
+    AC_MSG_NOTICE([must be in the path to build AC_PACKAGE_NAME.])
+    AC_MSG_NOTICE(['mlyacc' may also be named 'ml-yacc'.])
+    AC_MSG_ERROR([Exiting, as 'mlyacc' can not be found.])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -74,13 +140,6 @@ dnl We don't really use automake, but configure needs aclocal and the
 dnl automake library files.
 AM_INIT_AUTOMAKE([1.9.6 foreign])
 
-# AC_CONFIG_FILES([Makefile-auto
-#                  Makefile
-#                  runtime/Makefile
-#                  bin/mlton-script
-#                 ])
-
-## FIXME: merge AC_CONFIG_FILES
 AC_CONFIG_FILES([Makefile-auto
                  Makefile
                  basis-library/Makefile
@@ -127,6 +186,4 @@ AC_CONFIG_FILES([Makefile-auto
                  runtime/Makefile
                  util/cm2mlb/Makefile])
 
-
 AC_OUTPUT
-
