@@ -142,17 +142,6 @@ structure Time:>
       val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
    end
 
-structure UnifyResult =
-   struct
-      datatype t =
-         NotUnifiable of LayoutPretty.t * LayoutPretty.t
-       | Unified
-
-      val layout =
-         fn NotUnifiable _ => str "NotUnifiable"
-          | Unified => str "Unified"
-   end
-
 val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
                                   region: Region.t option ref,
                                   time: Time.t ref},
@@ -174,6 +163,12 @@ fun initAdmitsEquality (c, a) =
 
 val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
                       initAdmitsEquality (c, a))
+
+val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
+   Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
+
+val tyvarTime =
+   Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 structure Equality:>
    sig
@@ -415,12 +410,6 @@ structure Spine:
              then ac
           else g (f, ac))
    end
-
-val {get = tyvarTime: Tyvar.t -> Time.t ref, ...} =
-   Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
-
-val tyvarTime =
-   Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 structure Type =
    struct
@@ -818,6 +807,17 @@ fun setOpaqueTyconExpansion (c, f) =
 
 structure Ops = TypeOps (structure Tycon = Tycon
                          open Type)
+
+structure UnifyResult =
+   struct
+      datatype t =
+         NotUnifiable of LayoutPretty.t * LayoutPretty.t
+       | Unified
+
+      val layout =
+         fn NotUnifiable _ => str "NotUnifiable"
+          | Unified => str "Unified"
+   end
 
 structure Type =
    struct
