@@ -2985,8 +2985,6 @@ fun elaborateDec (d, {env = E, nest}) =
                            | SOME (lay, ty, {tycons, ...}) =>
                                 let
                                    val tycons =
-                                      List.removeDuplicates (tycons, Tycon.equals)
-                                   val tycons =
                                       List.map (tycons, Tycon.layoutPretty)
                                    val tycons =
                                       List.insertionSort

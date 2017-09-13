@@ -2150,7 +2150,9 @@ structure Type =
          in
             Option.map
             (res, fn (l, (ty, _), {tycons, tyvars}) =>
-             (#1 l, ty, {tycons = tycons, tyvars = tyvars}))
+             (#1 l, ty,
+              {tycons = List.removeDuplicates (tycons, Tycon.equals),
+               tyvars = List.removeDuplicates (tyvars, Tyvar.equals)}))
          end
    end
 
