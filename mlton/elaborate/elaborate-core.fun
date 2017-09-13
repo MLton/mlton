@@ -1926,21 +1926,7 @@ fun elaborateDec (d, {env = E, nest}) =
                       Avar.layout var],
                  align [seq [str "type: ", lay],
                         ctxt ()])
-             fun useBeforeDef (c: Tycon.t) =
-                let
-                   val _ = preError ()
-                   val regionTycon =
-                      case ! (TypeEnv.tyconRegion c) of
-                         NONE => Region.bogus
-                       | SOME r => r
-                in
-                   Control.error
-                   (region,
-                    seq [str "type escapes the scope of its definition: ", Tycon.layoutPretty c],
-                    align [seq [str "defn at: ", Region.layout regionTycon],
-                           ctxt ()])
-                end
-             val () = TypeEnv.tick {region = region, useBeforeDef = useBeforeDef}
+             val () = TypeEnv.tick {region = region}
              val unify = fn (t, t', f) => unify (t, t', preError, f)
              fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop
@@ -2099,8 +2085,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        ; Decs.empty)
                  | Adec.Fun {tyvars, fbs} =>
                       let
-                         val close =
-                            TypeEnv.close (tyvars, {region = region, useBeforeDef = useBeforeDef})
+                         val close = TypeEnv.close (tyvars, {region = region})
                          val {markFunc, setBound, unmarkFunc} = recursiveFun ()
                          val fbs =
                             Vector.map2
@@ -2537,8 +2522,7 @@ fun elaborateDec (d, {env = E, nest}) =
                       let
                          val {vbs = layVbs, rvbs = layRvbs} =
                             Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
-                         val close =
-                            TypeEnv.close (tyvars, {region = region, useBeforeDef = useBeforeDef})
+                         val close = TypeEnv.close (tyvars, {region = region})
                          (* Must do all the es and rvbs before the ps because of
                           * scoping rules.
                           *)

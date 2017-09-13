@@ -109,13 +109,11 @@ structure Time:>
       val <= : t * t -> bool
       val layout: t -> Layout.t
       val now: unit -> t
-      val tick: {region: Region.t, useBeforeDef: Tycon.t -> unit} -> unit
-      val useBeforeDef: t * Tycon.t -> unit
+      val tick: {region: Region.t} -> unit
    end =
    struct
       datatype t = T of {clock: int,
-                         region: Region.t,
-                         useBeforeDef: Tycon.t -> unit}
+                         region: Region.t}
 
       local
          fun make f (T r) = f r
@@ -123,8 +121,6 @@ structure Time:>
          val clock = make #clock
          val region = make #region
       end
-
-      fun useBeforeDef (T {useBeforeDef = f, ...}, c) = f c
 
       fun layout t =
          Layout.tuple [Int.layout (clock t),
@@ -135,14 +131,12 @@ structure Time:>
       local
          val current: t ref =
             ref (T {clock = 0,
-                    region = Region.bogus,
-                    useBeforeDef = fn _ => Error.bug "TypeEnv.Time: useBeforeDef clock 0"})
+                    region = Region.bogus})
       in
          fun now () = !current
-         fun tick {region, useBeforeDef} =
+         fun tick {region} =
             current := T {clock = 1 + clock (!current),
-                          region = region,
-                          useBeforeDef = useBeforeDef}
+                          region = region}
       end
 
       val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
