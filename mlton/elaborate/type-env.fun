@@ -1149,8 +1149,8 @@ structure Type =
                (NONE, _) => NONE
              | (SOME (l1, _, l3), ty) =>
                   SOME (l1, (ty, l3),
-                        {tycons = List.removeDuplicates (!tycons, Tycon.equals),
-                         tyvars = List.removeDuplicates (!tyvars, Tyvar.equals)})
+                        {tycons = !tycons,
+                         tyvars = !tyvars})
          end
 
       datatype z = datatype UnifyResult.t
