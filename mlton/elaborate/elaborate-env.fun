@@ -3369,11 +3369,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 let
                    val rlzScheme = Interface.Scheme.toEnv sigScheme
                    val unifyError = ref NONE
-                   val genError = ref NONE
                    val statusError = ref NONE
                    fun reportError () =
                       if Option.isSome (!unifyError)
-                         orelse Option.isSome (!genError)
                          orelse Option.isSome (!statusError)
                          then let
                                  fun get (space, sel) r =
@@ -3394,43 +3392,21 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                           layoutLongRev (strids, Ast.Vid.layout sigName)],
                                   align [getStr statusError,
                                          getStr unifyError,
-                                         getStr genError,
                                          seq [str "defn at:   ",
                                               Region.layout (Ast.Vid.region strName)],
                                          getSig statusError,
                                          getSig unifyError,
-                                         getSig genError,
                                          seq [str "spec at:   ",
                                               Region.layout (Ast.Vid.region sigName)]])
                               end
                          else ()
-                   val (rlzTyvars, rlzType) = Scheme.dest rlzScheme
-                   val generalize = TypeEnv.generalize rlzTyvars
-                   val {args = strTyvars, instance = strType} =
+                   val (rlzTyvars, rlzType) = Scheme.fresh rlzScheme
                       Scheme.instantiate strScheme
                    val _ =
                       Type.unify
                       (strType, rlzType,
                        {error = fn (l, l') => unifyError := SOME (l, l'),
                         preError = preError})
-                   (* Now that we've unified, find any type variables that
-                    * can't be generalized because they occur at an earlier
-                    * point.
-                    *)
-                   val {unable} = generalize ()
-                   val () =
-                      if Vector.isEmpty unable
-                         then ()
-                         else
-                            let
-                               val () = preError ()
-                            in
-                               genError := SOME (seq [(seq o List.separate)
-                                                      (Vector.toListMap (unable, Tyvar.layout),
-                                                       str ", "),
-                                                      str " cannot be generalized"],
-                                                 Scheme.layoutPretty rlzScheme)
-                            end
                    val strTyvars = strTyvars ()
                    fun addDec (name: string, n: Exp.node): Vid.t =
                       let
