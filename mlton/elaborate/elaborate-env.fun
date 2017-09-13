@@ -3401,13 +3401,14 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                               end
                          else ()
                    val (rlzTyvars, rlzType) = Scheme.fresh rlzScheme
+                   val {args = strTyargs, instance = strType} =
                       Scheme.instantiate strScheme
                    val _ =
                       Type.unify
                       (strType, rlzType,
                        {error = fn (l, l') => unifyError := SOME (l, l'),
                         preError = preError})
-                   val strTyvars = strTyvars ()
+                   val strTyargs = strTyargs ()
                    fun addDec (name: string, n: Exp.node): Vid.t =
                       let
                          val x = Var.newString name
@@ -3431,16 +3432,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                          Vid.Var x
                       end
                    fun con (c: Con.t): Vid.t =
-                      addDec (Con.originalName c, Exp.Con (c, strTyvars))
+                      addDec (Con.originalName c, Exp.Con (c, strTyargs))
                    val vid =
                       case (vid, status) of
                          (Vid.Con c, Status.Var) => con c
                        | (Vid.Exn c, Status.Var) => con c
                        | (Vid.Var x, Status.Var) =>
                             if 0 < Vector.length rlzTyvars
-                               orelse 0 < Vector.length strTyvars
+                               orelse 0 < Vector.length strTyargs
                                then addDec (Var.originalName x,
-                                            Exp.Var (fn () => x, fn () => strTyvars))
+                                            Exp.Var (fn () => x, fn () => strTyargs))
                                else vid
                        | (Vid.Con _, Status.Con) => vid
                        | (Vid.Exn _, Status.Exn) => vid
