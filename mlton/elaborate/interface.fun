@@ -822,7 +822,7 @@ structure TypeStr =
             (seq  [str "type spec: ", keyword, tyvars, lay (), rest])::
             (List.map
              (spec::(specs tyStr), fn r =>
-              seq [str "spec at:   ", Region.layout r]))
+              seq [str "spec at: ", Region.layout r]))
          end
 
       fun getFlex {oper: string,

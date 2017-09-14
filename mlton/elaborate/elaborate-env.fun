@@ -2884,7 +2884,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                              | SOME spec => seq [str "signature: ", spec])::
                                            (List.map
                                             (specs (ifcName, ifcRange), fn r =>
-                                             seq [str "spec at:   ", Region.layout r])))))
+                                             seq [str "spec at: ", Region.layout r])))))
                             in
                                {domain = ifcName,
                                 range = range,
@@ -3113,13 +3113,13 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       str "): ",
                                       layoutLongRev (strids, Ast.Tycon.layout sigName)],
                                  align ((seq [str "structure: ", strError]) ::
-                                        (seq [str "defn at:   ",
+                                        (seq [str "defn at: ",
                                               Region.layout (Ast.Tycon.region strName)]) ::
                                         (seq [str "signature: ", sigError]) ::
                                         (List.map
                                          ((Ast.Tycon.region sigName)::
                                           (Interface.TypeStr.specs sigStr),
-                                          fn r => seq [str "spec at:   ", Region.layout r]))))
+                                          fn r => seq [str "spec at: ", Region.layout r]))))
                        val error = fn (msg, strError, sigError) =>
                           let
                              val msgs =
@@ -3477,7 +3477,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                            then " : "
                                                            else ": "),
                                                    ty],
-                                              seq [str kind, str " at:   ",
+                                              seq [str kind, str " at: ",
                                                    Region.layout (Ast.Vid.region vid)]]
                                     end
                               in
