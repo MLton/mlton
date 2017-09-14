@@ -16,7 +16,7 @@ structure Id = Id (val noname = "t")
 open Id
 
 local
-val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn _ => Error.bug "Tycon.unsetFnRef")
+val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn l => l)
 in
 val {destroy = resetLayoutPretty: unit -> unit,
      get = layoutPretty: t -> Layout.t,
