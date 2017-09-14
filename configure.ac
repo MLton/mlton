@@ -67,13 +67,15 @@ AC_PROG_SED
 # Included for debugging only...
 AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h syslog.h termios.h unistd.h utime.h])
 
-# GMP is a required dependency
+# GMP is a required dependency, will fail at compile time if 
+# not on C compiler's search path and --with-gmp-include  and
+# --with-gmp-lib are not specified
 AC_CHECK_HEADER([gmp.h],[],[
-    AC_MSG_ERROR([Exiting, since you do not have the 'gmp.h' header file.])
+    AC_MSG_WARN([The 'gmp.h' header file is not on C compiler's search path.])
 ])
 
 AC_CHECK_LIB([gmp],[__gmpz_sqrt],[],[
-    AC_MSG_ERROR([Exiting, since you do not have the 'libgmp' shared library file.])
+    AC_MSG_WARN([The 'libgmp' shared library is not on C compiler's search path.])
 ])
 
 

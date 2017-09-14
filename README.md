@@ -119,9 +119,7 @@ To uninstall, simply delete the directory containing the MLton installation.
 
 ## Resources
 
-For more information, go to the MLton home page. 
-
-        http://mlton.org/
+For more information, go to the [MLton home page](http://mlton.org/).
 
 There are two mailing lists available.
 
