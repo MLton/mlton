@@ -156,13 +156,13 @@ in
    val tyconTime = make #time
 end
 
-fun initAdmitsEquality (c, a, r) =
+fun tyconInit (c, a, r) =
    setTyconInfo (c, {admitsEquality = ref a,
                      region = r,
                      time = Time.now ()})
 
 val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
-                      initAdmitsEquality (c, a, Region.bogus))
+                      tyconInit (c, a, Region.bogus))
 
 structure Tyvar =
    struct

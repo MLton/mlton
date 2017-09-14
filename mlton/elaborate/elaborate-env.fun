@@ -674,7 +674,7 @@ val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
    fn (s, k, a, r) =>
    let
       val c = Tycon.newString s
-      val _ = TypeEnv.initAdmitsEquality (c, a, r)
+      val _ = TypeEnv.tyconInit (c, a, r)
       val _ = List.push (newTycons, (c, k, r))
    in
       c
