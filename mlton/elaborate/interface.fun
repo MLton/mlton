@@ -847,28 +847,26 @@ structure TypeStr =
                in
                   NONE
                end
-            fun loop (s: t): FlexibleTycon.t option =
-               (case toTyconOpt (s, {expand = false}) of
-                   SOME c => loopTycon c
-                 | NONE => error ("defined", true))
-            and loopTycon (c: Tycon.t): FlexibleTycon.t option =
-               case c of
-                  Tycon.Flexible c =>
-                     let
-                        val {creationTime, defn, ...} = FlexibleTycon.fields c
-                     in
-                        case Defn.dest (!defn) of
-                           Defn.Realized _ => 
-                              Error.bug "Interface.TypeStr.loopTycon: Realized"
-                         | Defn.TypeStr s => loop s
-                         | Defn.Undefined =>
-                              if Time.< (creationTime, time)
-                                 then error ("not local", false)
-                              else SOME c
-                     end
-                | Tycon.Rigid _ => error ("defined", true)
          in
-            loop tyStr
+            case toTyconOpt (tyStr, {expand = true}) of
+               NONE => error ("defined", true)
+             | SOME c =>
+                  (case c of
+                      Tycon.Flexible c =>
+                         let
+                            val {creationTime, defn, ...} = FlexibleTycon.fields c
+                         in
+                            case Defn.dest (!defn) of
+                               Defn.Realized _ =>
+                                  Error.bug "Interface.TypeStr.getFlex: Realized"
+                             | Defn.TypeStr _ =>
+                                  Error.bug "Interface.TypeStr.getFlex: TypeStr"
+                             | Defn.Undefined =>
+                                  if Time.< (creationTime, time)
+                                     then error ("not local", false)
+                                     else SOME c
+                         end
+                    | Tycon.Rigid _ => error ("defined", true))
          end
 
       fun share {region: Region.t, time: Time.t, ty1, ty2} =
