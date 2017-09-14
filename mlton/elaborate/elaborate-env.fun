@@ -3397,8 +3397,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                       {layoutPretty = layoutPretty,
                        preError = preError}
                       (strType, rlzType,
-                       {error = fn (l, l', tycons_tyvars) =>
-                                unifyError := SOME (l, l', tycons_tyvars)})
+                       {error = fn (l, l', {notes, ...}) =>
+                                unifyError := SOME (l, l', notes)})
                    val strTyargs = strTyargs ()
                    fun addDec (name: string, n: Exp.node): Vid.t =
                       let
@@ -3451,49 +3451,19 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                     if !statusError
                                        then str "status" :: errors
                                        else errors
-                                 val (tyconNotes, tyvarNotes) =
-                                    case !unifyError of
-                                       NONE => (Layout.empty, Layout.empty)
-                                     | SOME (_, _, {tycons, tyvars}) =>
-                                          let
-                                             fun doit (xs, lay, msgOne, msgMany) =
-                                                if List.isEmpty xs
-                                                   then Layout.empty
-                                                   else let
-                                                           val xs = List.map (xs, lay)
-                                                           val xs =
-                                                              List.insertionSort
-                                                              (xs, fn (l1, l2) =>
-                                                               String.<= (Layout.toString l1,
-                                                                          Layout.toString l2))
-                                                        in
-                                                           seq [str "note: ",
-                                                                if List.length xs > 1
-                                                                   then str msgMany
-                                                                   else str msgOne,
-                                                                str ": ",
-                                                                (seq o List.separate)
-                                                                (xs, str ", ")]
-                                                        end
-                                          in
-                                             (doit (tycons, Tycon.layoutPretty,
-                                                    "type would escape the scope of its definition",
-                                                    "types would escape the scopes of their definitions"),
-                                              doit (tyvars, #1 o layoutPretty o Type.var,
-                                                    "type variable would not be generalized",
-                                                    "type variables would not be generalized"))
-                                          end
                                  val name =
                                     layoutLongRev (strids, Ast.Vid.layout sigName)
-                                 val (strTy, sigTy) =
+                                 val (strTy, sigTy, notes) =
                                     case !unifyError of
-                                       NONE => let
-                                                  val () = preError ()
-                                                  val lay = Scheme.layoutPretty rlzScheme
-                                               in
-                                                  (lay, lay)
-                                               end
-                                     | SOME (strLay, sigLay, _) => (strLay, sigLay)
+                                       NONE =>
+                                          let
+                                             val () = preError ()
+                                             val lay = Scheme.layoutPretty rlzScheme
+                                          in
+                                             (lay, lay, Layout.empty)
+                                          end
+                                     | SOME (strLay, sigLay, notes) =>
+                                          (strLay, sigLay, notes ())
                                  fun doit (space, status, ty, kind, vid) =
                                     let
                                        val kw = str (Status.kw status)
@@ -3523,11 +3493,11 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                        (errors, str ", "),
                                        str "): ",
                                        name],
-                                  align [tyconNotes, tyvarNotes,
-                                         doit ("structure", strStatus, strTy,
+                                  align [doit ("structure", strStatus, strTy,
                                                "defn", strName),
                                          doit ("signature", sigStatus, sigTy,
-                                               "spec", sigName)])
+                                               "spec", sigName),
+                                         notes])
                               end
                    val () = destroy ()
                 in

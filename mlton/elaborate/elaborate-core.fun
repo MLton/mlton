@@ -446,8 +446,13 @@ fun 'a elabConst (c: Aconst.t,
 val unify =
    fn (t, t', preError, error) =>
    let
-      val error = fn (l, l', _) =>
-         Control.error (error (l, l'))
+      val error = fn (l, l', {notes}) =>
+         let
+            val (r, m, d) = error (l, l')
+         in
+            Control.error
+            (r, m, align [d, notes ()])
+         end
    in
       Type.unify (t, t', {error = error, preError = preError})
    end

@@ -1497,10 +1497,39 @@ structure Type =
                   let
                      val {tycons, tyvars} =
                         finishCheckTime ()
+                     fun notes () =
+                        let
+                           fun doit (xs, lay, msgOne, msgMany) =
+                              if List.isEmpty xs
+                                 then Layout.empty
+                                 else let
+                                         val xs = List.map (xs, lay)
+                                         val xs =
+                                            List.insertionSort
+                                            (xs, fn (l1, l2) =>
+                                             String.<= (Layout.toString l1,
+                                                        Layout.toString l2))
+                                      in
+                                         seq [str "note: ",
+                                              if List.length xs > 1
+                                                 then str msgMany
+                                                 else str msgOne,
+                                              str ": ",
+                                              (seq o List.separate)
+                                              (xs, str ", ")]
+                                      end
+                        in
+                           Layout.align
+                           [doit (tycons, Tycon.layoutPretty,
+                                  "type would escape the scope of its definition",
+                                  "types would escape the scopes of their definitions"),
+                            doit (tyvars, #1 o layoutPretty o Type.var,
+                                  "type variable would not be generalized",
+                                  "type variables would not be generalized")]
+                        end
                   in
                      NotUnifiable (l, l',
-                                   {tycons = tycons,
-                                    tyvars = tyvars})
+                                   {notes = notes})
                   end
              | Unified () => Unified ()
          end
@@ -2127,7 +2156,7 @@ structure Type =
          fn {layoutPretty, preError} =>
          fn (t1, t2, {error}) =>
          case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
-            NotUnifiable (l1, l2, tycons_tyvars) => error (l1, l2, tycons_tyvars)
+            NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
           | Unified () => ()
 
       val unify =
@@ -2137,7 +2166,7 @@ structure Type =
                makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
-                  NotUnifiable (l1, l2, tycons_tyvars) => error (l1, l2, tycons_tyvars)
+                  NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
                 | Unified () => ()
             val () = destroy ()
          in
