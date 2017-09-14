@@ -3389,11 +3389,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val (rlzTyvars, rlzType) = Scheme.fresh rlzScheme
                    val {args = strTyargs, instance = strType} =
                       Scheme.instantiate strScheme
+                   val {destroy, layoutPretty} =
+                      Type.makeLayoutPretty {expandOpaque = false,
+                                             localTyvarNames = true}
                    val _ =
-                      Type.unify
+                      Type.makeUnify
+                      {layoutPretty = layoutPretty,
+                       preError = preError}
                       (strType, rlzType,
-                       {error = fn (l, l', _) => unifyError := SOME (l, l'),
-                        preError = preError})
+                       {error = fn (l, l', tycons_tyvars) =>
+                                unifyError := SOME (l, l', tycons_tyvars)})
                    val strTyargs = strTyargs ()
                    fun addDec (name: string, n: Exp.node): Vid.t =
                       let
@@ -3433,17 +3438,54 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        | (Vid.Con _, Status.Con) => strVid
                        | (Vid.Exn _, Status.Exn) => strVid
                        | _ => (statusError := true; strVid)
-                   val errors = []
-                   val errors = if Option.isSome (!unifyError) then "type" :: errors else errors
-                   val errors = if !statusError then "status" :: errors else errors
                    val () =
-                      if List.isEmpty errors
+                      if Option.isNone (!unifyError) andalso not (!statusError)
                          then ()
                          else let
-                                 val msgs = List.map (errors, str)
+                                 val errors = []
+                                 val errors =
+                                    if Option.isSome (!unifyError)
+                                       then str "type" :: errors
+                                       else errors
+                                 val errors =
+                                    if !statusError
+                                       then str "status" :: errors
+                                       else errors
+                                 val (tyconNotes, tyvarNotes) =
+                                    case !unifyError of
+                                       NONE => (Layout.empty, Layout.empty)
+                                     | SOME (_, _, {tycons, tyvars}) =>
+                                          let
+                                             fun doit (xs, lay, msgOne, msgMany) =
+                                                if List.isEmpty xs
+                                                   then Layout.empty
+                                                   else let
+                                                           val xs = List.map (xs, lay)
+                                                           val xs =
+                                                              List.insertionSort
+                                                              (xs, fn (l1, l2) =>
+                                                               String.<= (Layout.toString l1,
+                                                                          Layout.toString l2))
+                                                        in
+                                                           seq [str "note: ",
+                                                                if List.length xs > 1
+                                                                   then str msgMany
+                                                                   else str msgOne,
+                                                                str ": ",
+                                                                (seq o List.separate)
+                                                                (xs, str ", ")]
+                                                        end
+                                          in
+                                             (doit (tycons, Tycon.layoutPretty,
+                                                    "type would escape the scope of its definition",
+                                                    "types would escape the scopes of their definitions"),
+                                              doit (tyvars, #1 o layoutPretty o Type.var,
+                                                    "type variable would not be generalized",
+                                                    "type variables would not be generalized"))
+                                          end
                                  val name =
                                     layoutLongRev (strids, Ast.Vid.layout sigName)
-                                 val (strLay, sigLay) =
+                                 val (strTy, sigTy) =
                                     case !unifyError of
                                        NONE => let
                                                   val () = preError ()
@@ -3451,8 +3493,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                in
                                                   (lay, lay)
                                                end
-                                     | SOME (strLay, sigLay) => (strLay, sigLay)
-                                 fun doit (space, status, lay, kind, reg) =
+                                     | SOME (strLay, sigLay, _) => (strLay, sigLay)
+                                 fun doit (space, status, ty, kind, vid) =
                                     let
                                        val kw = str (Status.kw status)
                                        val kw =
@@ -3464,9 +3506,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                    str (if Ast.Vid.isSymbolic sigName
                                                            then " : "
                                                            else ": "),
-                                                   lay],
+                                                   ty],
                                               seq [str kind, str " at:   ",
-                                                   Region.layout reg]]
+                                                   Region.layout (Ast.Vid.region vid)]]
                                     end
                               in
                                  Control.error
@@ -3477,14 +3519,17 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                        str " in structure disagrees with ",
                                        str sign,
                                        str " (",
-                                       (seq o List.separate) (msgs, str ", "),
+                                       (seq o List.separate)
+                                       (errors, str ", "),
                                        str "): ",
                                        name],
-                                  align [doit ("structure", strStatus, strLay,
-                                               "defn", Ast.Vid.region strName),
-                                         doit ("signature", sigStatus, sigLay,
-                                               "spec", Ast.Vid.region sigName)])
+                                  align [tyconNotes, tyvarNotes,
+                                         doit ("structure", strStatus, strTy,
+                                               "defn", strName),
+                                         doit ("signature", sigStatus, sigTy,
+                                               "spec", sigName)])
                               end
+                   val () = destroy ()
                 in
                    (vid, rlzScheme)
                 end}
