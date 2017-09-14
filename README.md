@@ -69,8 +69,8 @@
  - GNU Multiple Precision Library. Check if GMP is already present
      on your system (`whereis gmp libgmp`), typically on GCC search path
      (`gcc -v -x c -E -`).
- - MLton (recommended) or SML/NJ bootstrapping compiler. 
-     The easiest way is to install a pre-built binary package for MLton 
+ - MLton (recommended) or some other SML compiler to bootstrap.
+     The easiest way is to install a pre-built binary package for MLton
      using your package manager. If using SML/NJ, see
      [Compiling with SML/NJ](http://mlton.org/SelfCompiling).
 

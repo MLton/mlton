@@ -67,9 +67,7 @@ AC_PROG_SED
 # Included for debugging only...
 AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h syslog.h termios.h unistd.h utime.h])
 
-# GMP is a required dependency, will fail at compile time if 
-# not on C compiler's search path and --with-gmp-include  and
-# --with-gmp-lib are not specified
+# GMP is a required dependency
 AC_CHECK_HEADER([gmp.h],[],[
     AC_MSG_WARN([The 'gmp.h' header file is not on C compiler's search path.])
 ])
@@ -85,10 +83,11 @@ AC_CHECK_LIB([gmp],[__gmpz_sqrt],[],[
 AC_CHECK_PROG(found_mlton, mlton, yes, no)
 if test x$found_mlton = xno
 then
-    AC_MSG_WARN([You do not have 'mlton', which is recommended, but not])
-    AC_MSG_WARN([required. However, some binary version of SML is required])
-    AC_MSG_WARN([to compile from source. Refer to])
-    AC_MSG_WARN([http://www.mlton.org/SelfCompiling for instructions.])
+    AC_MSG_WARN([You don't seem to have 'mlton'.])
+    AC_MSG_WARN([A prior install of MLton is recommended, though not required.])
+    AC_MSG_WARN([However, some binary version of SML is required])
+    AC_MSG_WARN([to compile from source.])
+    AC_MSG_WARN([Refer to http://www.mlton.org/SelfCompiling for instructions.])
 fi
 
 AC_CHECK_PROG(found_mllex, mllex, yes, no)
@@ -127,19 +126,8 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
-# Checks for library functions.
-AC_FUNC_CHOWN
-AC_FUNC_FORK
-AC_FUNC_GETGROUPS
-AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
-AC_FUNC_MALLOC
-AC_FUNC_MKTIME
-AC_FUNC_MMAP
-AC_FUNC_STRTOD
-AC_CHECK_FUNCS([alarm atexit dup2 fchdir fesetround floor ftruncate getcwd gethostbyaddr gethostbyname gethostname gettimeofday memmove memset mkdir mkfifo modf munmap pathconf putenv rint rmdir select setenv socket sqrt strdup strerror sysinfo tzset uname utime])
-
-dnl We don't really use automake, but configure needs aclocal and the
-dnl automake library files.
+# We don't really use automake, but configure needs aclocal and the
+# automake library files.
 AM_INIT_AUTOMAKE([1.9.6 foreign])
 
 AC_CONFIG_FILES([Makefile-auto
