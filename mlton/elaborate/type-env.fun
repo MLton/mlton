@@ -1010,9 +1010,8 @@ structure Type =
        *  - a list of violating tycons
        *  - a list of violating tyvars
        *)
-      fun checkTime (t, bound,
-                     {layoutPretty: t -> LayoutPretty.t,
-                      preError: unit -> unit}) =
+      fun makeCheckTime {layoutPretty: t -> LayoutPretty.t,
+                         preError: unit -> unit} =
          let
             val tycons: Tycon.t list ref = ref []
             val tyvars: Tyvar.t list ref = ref []
@@ -1026,7 +1025,7 @@ structure Type =
                val getLay3 = getLay #3
             end
             fun getTy (_, ty) = ty
-            fun con (_, c, rs) =
+            fun con bound (_, c, rs) =
                if Time.<= (tyconTime c, bound)
                   then if Vector.forall (rs, Option.isNone o #1)
                           then NONE
@@ -1108,14 +1107,13 @@ structure Type =
                                    LayoutPretty.tuple (Vector.map (rs, getLay2)),
                                    LayoutPretty.tuple (Vector.map (rs, getLay3)),
                                    Type.tuple (Vector.map (rs, getTy)))
-            fun var (_, a) =
+            fun var bound (_, a) =
                if Time.<= (!(Tyvar.time a), bound)
                   then NONE
                   else let
                           val ty = newAt bound
                        in
                           List.push (tyvars, a)
-                          (* ; preError () *)
                           ; SOME (bracket (layoutPretty (Type.var a)),
                                   layoutPretty (Type.var a),
                                   bracket (layoutPretty ty),
@@ -1123,37 +1121,44 @@ structure Type =
                        end
             fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
             fun recursive _ = Error.bug "TypeEnv.Type.checkTime.recursive"
-            fun wrap (f, sel) arg =
+            fun checkTime (t, bound) =
                let
-                  val ty = sel arg
+                  fun wrap (f, sel) arg =
+                     let
+                        val ty = sel arg
+                     in
+                        if Time.<= (!(time ty),  bound)
+                           then (NONE, ty)
+                           else (case f arg of
+                                    NONE =>
+                                       (time ty := bound
+                                        ; (NONE, ty))
+                                  | SOME (l1, l2, l3, ty) =>
+                                       (time ty := bound
+                                        ; (SOME (l1, l2, l3), ty)))
+                     end
+                  val res : lll option * t =
+                     hom (t, {con = wrap (con bound, #1),
+                              expandOpaque = false,
+                              flexRecord = wrap (flexRecord, #1),
+                              genFlexRecord = genFlexRecord,
+                              overload = wrap (fn _ => NONE, #1),
+                              record = wrap (record, #1),
+                              recursive = recursive,
+                              unknown = wrap (fn _ => NONE, #1),
+                              var = wrap (var bound, #1)})
                in
-                  if Time.<= (!(time ty),  bound)
-                     then (NONE, ty)
-                     else (case f arg of
-                              NONE =>
-                                 (time ty := bound
-                                  ; (NONE, ty))
-                            | SOME (l1, l2, l3, ty) =>
-                                 (time ty := bound
-                                  ; (SOME (l1, l2, l3), ty)))
+                  case res of
+                     (NONE, _) => NONE
+                   | (SOME (l1, _, l3), ty) =>
+                        SOME (l1, (ty, l3))
                end
-            val res : lll option * t =
-               hom (t, {con = wrap (con, #1),
-                        expandOpaque = false,
-                        flexRecord = wrap (flexRecord, #1),
-                        genFlexRecord = genFlexRecord,
-                        overload = wrap (fn _ => NONE, #1),
-                        record = wrap (record, #1),
-                        recursive = recursive,
-                        unknown = wrap (fn _ => NONE, #1),
-                        var = wrap (var, #1)})
+            fun finishCheckTime () =
+               {tycons = List.removeDuplicates (!tycons, Tycon.equals),
+                tyvars = List.removeDuplicates (!tyvars, Tyvar.equals)}
          in
-            case res of
-               (NONE, _) => NONE
-             | (SOME (l1, _, l3), ty) =>
-                  SOME (l1, (ty, l3),
-                        {tycons = !tycons,
-                         tyvars = !tyvars})
+            {checkTime = checkTime,
+             finishCheckTime = finishCheckTime}
          end
 
       datatype z = datatype UnifyResult.t
@@ -1168,13 +1173,9 @@ structure Type =
                  {layoutPretty: t -> LayoutPretty.t,
                   preError: unit -> unit}) =
          let
-            val tyconss: Tycon.t list list ref = ref []
-            val tyvarss: Tyvar.t list list ref = ref []
-            val checkTime =
-               fn (t, bound) =>
-               checkTime (t, bound,
-                          {layoutPretty = layoutPretty,
-                           preError = preError})
+            val {checkTime, finishCheckTime} =
+               makeCheckTime {layoutPretty = layoutPretty,
+                              preError = preError}
             fun unify arg =
                traceUnify
                (fn (outer as T s, outer' as T s') =>
@@ -1341,10 +1342,8 @@ structure Type =
                                then not ()
                                else (case checkTime (outer', time) of
                                         NONE => Unified t'
-                                      | SOME (l, (t'', l''), {tycons, tyvars}) =>
+                                      | SOME (l, (t'', l'')) =>
                                            (setTy (outer, getTy t'')
-                                            ; List.push (tyconss, tycons)
-                                            ; List.push (tyvarss, tyvars)
                                             ; notUnifiable
                                               (if swap
                                                   then (l, l'')
@@ -1496,14 +1495,8 @@ structure Type =
             case res of
                NotUnifiable ((l, _), (l', _)) =>
                   let
-                     val tycons =
-                        List.removeDuplicates
-                        (List.concatRev (!tyconss),
-                         Tycon.equals)
-                     val tyvars =
-                        List.removeDuplicates
-                        (List.concatRev (!tyvarss),
-                         Tyvar.equals)
+                     val {tycons, tyvars} =
+                        finishCheckTime ()
                   in
                      NotUnifiable (l, l',
                                    {tycons = tycons,
@@ -1898,9 +1891,14 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
             val {destroy, layoutPretty} =
                Type.makeLayoutPretty {expandOpaque = false, localTyvarNames = false}
             fun checkTime (t, bound) =
-               Type.checkTime (t, bound,
-                               {layoutPretty = layoutPretty,
-                                preError = preError})
+               let
+                  val {checkTime, finishCheckTime} =
+                     Type.makeCheckTime {layoutPretty = layoutPretty,
+                                         preError = preError}
+               in
+                  Option.map (checkTime (t, bound), fn z =>
+                              (z, finishCheckTime ()))
+               end
             val varTypes =
                Vector.map
                (varTypes, fn ({isExpansive, ty, var}) =>
@@ -1909,7 +1907,7 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
                          then ty
                          else (case checkTime (ty, beforeGen) of
                                   NONE => ty
-                                | SOME ((l, _), (ty', _), {tyvars, ...}) =>
+                                | SOME (((l, _), (ty', _)), {tyvars, ...}) =>
                                      (error (var, l, tyvars)
                                       ; ty'))})
             val _ = destroy ()
@@ -2153,17 +2151,16 @@ structure Type =
          let
             val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
+            val {checkTime, finishCheckTime} =
+               makeCheckTime {layoutPretty = layoutPretty,
+                              preError = preError}
             val res =
-               checkTime (t, bound,
-                          {layoutPretty = layoutPretty,
-                           preError = preError})
+               Option.map
+               (checkTime (t, bound), fn ((l, _), (ty, _)) =>
+                (l, ty, finishCheckTime ()))
             val () = destroy ()
          in
-            Option.map
-            (res, fn (l, (ty, _), {tycons, tyvars}) =>
-             (#1 l, ty,
-              {tycons = List.removeDuplicates (tycons, Tycon.equals),
-               tyvars = List.removeDuplicates (tyvars, Tyvar.equals)}))
+            res
          end
    end
 
