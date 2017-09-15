@@ -1036,21 +1036,19 @@ structure Type =
             fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
             fun unknown (_, _) = SOME noneq
             fun var (_, a) = SOME (bracket (layoutPretty (Type.var a)))
-            fun wrap (f, sel) arg =
-               if admitsEquality (sel arg)
-                  then NONE
-                  else f arg
             val res =
-               hom (t, {con = wrap (con, #1),
+               hom (t, {con = con,
                         expandOpaque = false,
-                        flexRecord = wrap (flexRecord, #1),
-                        genFlexRecord = wrap (genFlexRecord, #1),
-                        guard = fn _ => NONE,
-                        overload = wrap (overload, #1),
-                        record = wrap (record, #1),
-                        recursive = wrap (recursive, fn t => t),
-                        unknown = wrap (unknown, #1),
-                        var = wrap (var, #1)})
+                        flexRecord = flexRecord,
+                        genFlexRecord = genFlexRecord,
+                        guard = fn t => if admitsEquality t
+                                           then SOME NONE
+                                           else NONE,
+                        overload = overload,
+                        record = record,
+                        recursive = recursive,
+                        unknown = unknown,
+                        var = var})
          in
             case res of
                NONE => noneq
