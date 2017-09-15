@@ -368,6 +368,8 @@ structure Unknown =
               Layout.record [("canGeneralize", Bool.layout canGeneralize),
                              ("id", Int.layout id)]]
 
+      fun layoutPretty _ = simple (str "???")
+
       fun equals (u, u') = id u = id u'
 
       local
@@ -749,7 +751,7 @@ structure Type =
                       false)
                 | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
-            fun unknown _ = simple (str "???")
+            fun unknown (_, u) = Unknown.layoutPretty u
             val (destroy, prettyTyvar) =
                if localTyvarNames
                   then let
