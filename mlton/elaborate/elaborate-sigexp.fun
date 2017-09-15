@@ -113,14 +113,14 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                                    seq [str "[",
                                                         case n of
                                                            0 => empty
-                                                         | 1 => str "_ "
+                                                         | 1 => str "_"
                                                          | _ => seq [str "(",
                                                                      (seq o separate)
                                                                      (List.tabulate (n, fn _ => str "_"),
                                                                       ", "),
-                                                                     str ") "],
-                                                        Ast.Longtycon.layout c,
-                                                        str "]"]
+                                                                     str ")"],
+                                                        str "]",
+                                                        Ast.Longtycon.layout c]
                                              in
                                                 Control.error
                                                 (Atype.region ty,
