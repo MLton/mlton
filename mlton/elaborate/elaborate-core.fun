@@ -156,6 +156,11 @@ in
    structure WordX = WordX
    structure WordXVector = WordXVector
 end
+structure Tycon =
+   struct
+      open Tycon
+      open TypeEnv.TyconExt
+   end
 
 fun matchDiagsFromNoMatch noMatch =
    case noMatch of
@@ -1812,12 +1817,12 @@ fun elaborateDec (d, {env = E, nest}) =
                 let
                    val kind = Kind.Arity (Vector.length tyvars)
                    val tycon =
-                      Env.newTycon
+                      Tycon.make
                       (concat (List.separate
                                (rev (Ast.Tycon.toString name :: nest),
                                 ".")),
-                       kind,
                        AdmitsEquality.Sometimes,
+                       kind,
                        Ast.Tycon.region name)
                    val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
                                             {forceUsed = true,
@@ -1890,7 +1895,7 @@ fun elaborateDec (d, {env = E, nest}) =
                      Vector.foreach
                      (dbs, fn {cons, tycon, tyvars} =>
                       let
-                         val r = TypeEnv.tyconAdmitsEquality tycon
+                         val r = Tycon.admitsEquality tycon
                          datatype z = datatype AdmitsEquality.t
                       in
                          case !r of
@@ -3014,7 +3019,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                               (align o List.map)
                                               (tycons, fn (c, _) =>
                                                seq [str "escape from: ",
-                                                    Region.layout (TypeEnv.tyconRegion c)]),
+                                                    Region.layout (Tycon.region c)]),
                                               ctxt ()])
                                 in
                                    ty

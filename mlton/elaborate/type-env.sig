@@ -113,6 +113,15 @@ signature TYPE_ENV =
             val ty: t -> Type.t
          end
 
+      structure TyconExt:
+         sig
+            val admitsEquality: Tycon.t -> AdmitsEquality.t ref
+            val make: string * AdmitsEquality.t * TyconKind.t * Region.t -> Tycon.t
+            val region: Tycon.t -> Region.t
+            val scopeNew: (unit -> 'a) -> ('a * (Tycon.t * TyconKind.t * Region.t) list)
+            val setOpaqueExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
+         end
+
       val close:
          Tyvar.t vector * {region: Region.t}
          -> ({isExpansive: bool, ty: Type.t, var: 'a} vector
@@ -120,8 +129,4 @@ signature TYPE_ENV =
                 preError: unit -> unit})
          -> {bound: unit -> Tyvar.t vector,
              schemes: Scheme.t vector}
-      val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
-      val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
-      val tyconInit: Tycon.t * Tycon.AdmitsEquality.t * Region.t -> unit
-      val tyconRegion: Tycon.t -> Region.t
    end

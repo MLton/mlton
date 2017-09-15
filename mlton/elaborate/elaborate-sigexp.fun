@@ -31,14 +31,14 @@ in
    structure WhereEquation = WhereEquation
 end
 
-local
-   open Env
-in
-   structure Interface = Interface
-end
-
 structure StructureEnv = Env
-structure Env = Env.InterfaceEnv
+structure StructureTycon =
+   struct
+      open StructureEnv.Tycon
+      open StructureEnv.TypeEnv.TyconExt
+   end
+structure Interface = StructureEnv.Interface
+structure Env = StructureEnv.InterfaceEnv
 
 local
    open Interface
@@ -92,10 +92,10 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                            let
                               val kind = Kind.Arity (Vector.length ts)
                               val c =
-                                 StructureEnv.newTycon
+                                 StructureTycon.make
                                  (concat ["<", Longtycon.toString c ,">"],
-                                  kind,
                                   AdmitsEquality.Sometimes,
+                                  kind,
                                   Longtycon.region c)
                            in
                               Type.con (Tycon.Rigid (c, kind), ts)
@@ -134,8 +134,10 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                                      let
                                                         val kind = Kind.Arity 0
                                                         val c =
-                                                           StructureEnv.newTycon
-                                                           ("<t>", kind, AdmitsEquality.Sometimes,
+                                                           StructureTycon.make
+                                                           ("<t>",
+                                                            AdmitsEquality.Sometimes,
+                                                            kind,
                                                             Region.bogus)
                                                      in
                                                         Type.con (Tycon.Rigid (c, kind), Vector.new0 ())
@@ -200,8 +202,10 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
                      let
                         val kind = Kind.Arity 0
                         val c =
-                           StructureEnv.newTycon
-                           ("<t>", kind, AdmitsEquality.Sometimes,
+                           StructureTycon.make
+                           ("<t>",
+                            AdmitsEquality.Sometimes,
+                            kind,
                             Region.bogus)
                      in
                         Type.con (Tycon.Rigid (c, kind), Vector.new0 ())

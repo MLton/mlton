@@ -103,8 +103,7 @@ structure Decs = Decs (structure CoreML = CoreML)
 structure Tycon =
    struct
       open Tycon
-
-      val admitsEquality = TypeEnv.tyconAdmitsEquality
+      open TypeEnv.TyconExt
    end
 
 val insideFunctor = ref false
@@ -666,18 +665,6 @@ structure Info =
               range = f (r, r'),
               time = time,
               uses = uses}))
-   end
-
-val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
-
-val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
-   fn (s, k, a, r) =>
-   let
-      val c = Tycon.newString s
-      val _ = TypeEnv.tyconInit (c, a, r)
-      val _ = List.push (newTycons, (c, k, r))
-   in
-      c
    end
 
 fun foreach2Sorted (abs: ('a * 'b) array,
@@ -1537,7 +1524,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
                               :: (List.fold (nest, [Ast.Tycon.toString tycon],
                                              fn (s, ss) =>
                                              Strid.toString s :: "." :: ss)))
-                   val c = newTycon (name, k, a, Ast.Tycon.region tycon)
+                   val c = Tycon.make (name, a, k, Ast.Tycon.region tycon)
                    val () =
                       FlexibleTycon.realize (flex, TypeStr.tycon (c, k))
                 in
@@ -2466,7 +2453,7 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
           end)
       val (S', instantiate) = dummyStructure (I, {prefix = prefix})
       val _ = instantiate (S, fn (c, s) =>
-                           TypeEnv.setOpaqueTyconExpansion
+                           Tycon.setOpaqueExpansion
                            (c, fn ts => TypeStr.apply (s, ts)))
       val {destroy, 
            get : Structure.t -> {formal: Structure.t, new: Structure.t} list ref,
@@ -2550,7 +2537,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val dummyName =
                       prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
                    val dummyTycon =
-                      newTycon (dummyName, k, a, Ast.Tycon.region name)
+                      Tycon.make (dummyName, a, k, Ast.Tycon.region name)
                 in
                    TypeStr.tycon (dummyTycon, k)
                 end
@@ -3639,11 +3626,15 @@ fun functorClosure
        * functor.  These will later become the generative tycons that will need
        * to be recreated for each functor application.
        *)
-      val _ = newTycons := []
-      val (_, result) = makeBody (formal, nest)
-      val _ = Option.app (result, Structure.forceUsed)
-      val generative = !newTycons
-      val _ = newTycons := []
+      val (result, generative) =
+         Tycon.scopeNew
+         (fn () =>
+          let
+             val (_, result) = makeBody (formal, nest)
+             val _ = Option.app (result, Structure.forceUsed)
+          in
+             result
+          end)
       val _ = insideFunctor := false
       val restore =
          if !Control.elaborateOnly
@@ -3677,9 +3668,10 @@ fun functorClosure
                   (generative, fn (c, k, r) =>
                    setTyconTypeStr
                    (c, SOME (TypeStr.tycon
-                             (newTycon (Tycon.originalName c, k,
-                                        ! (TypeEnv.tyconAdmitsEquality c),
-                                        r),
+                             (Tycon.make (Tycon.originalName c,
+                                          ! (Tycon.admitsEquality c),
+                                          k,
+                                          r),
                               k))))
                fun replaceType (t: Type.t): Type.t =
                   let

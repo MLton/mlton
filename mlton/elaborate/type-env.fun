@@ -149,27 +149,55 @@ structure Time:>
       val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
    end
 
-val {get = tyconInfo: Tycon.t -> {admitsEquality: AdmitsEquality.t ref,
-                                  region: Region.t,
-                                  time: Time.t},
-     set = setTyconInfo, ...} =
-   Property.getSet (Tycon.plist, Property.initRaise ("info", Tycon.layout))
+structure Tycon =
+   struct
+      open Tycon
 
-local
-   fun make f = f o tyconInfo
-in
-   val tyconAdmitsEquality = make #admitsEquality
-   val tyconRegion = make #region
-   val tyconTime = make #time
-end
-
-fun tyconInit (c, a, r) =
-   setTyconInfo (c, {admitsEquality = ref a,
-                     region = r,
-                     time = Time.now ()})
-
-val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
-                      tyconInit (c, a, Region.bogus))
+      local
+         val {get = info: t -> {admitsEquality: AdmitsEquality.t ref,
+                                region: Region.t,
+                                time: Time.t},
+              set = setInfo, ...} =
+            Property.getSet
+            (Tycon.plist,
+             Property.initRaise ("TypeEnv.Tycon.info", Tycon.layout))
+         fun init (c, a, r) =
+            setInfo (c, {admitsEquality = ref a,
+                         region = r,
+                         time = Time.now ()})
+         val _ =
+            List.foreach
+            (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
+             init (c, a, Region.bogus))
+         val made: (Tycon.t * Kind.t * Region.t) list ref = ref []
+      in
+         local
+            fun make f = f o info
+         in
+            val admitsEquality = make #admitsEquality
+            val region = make #region
+            val time = make #time
+         end
+         fun make (s, a, k, r) =
+            let
+               val c = Tycon.newString s
+               val _ = init (c, a, r)
+               val _ = List.push (made, (c, k, r))
+            in
+               c
+            end
+         fun scopeNew th =
+            let
+               val oldMade = !made
+               val () = made := []
+               val res = th ()
+               val newMade = !made
+               val () = made := oldMade
+            in
+               (res, newMade)
+            end
+      end
+   end
 
 structure Tyvar =
    struct
@@ -295,7 +323,7 @@ structure Equality:>
          let
             datatype z = datatype AdmitsEquality.t
          in
-            case !(tyconAdmitsEquality c) of
+            case !(Tycon.admitsEquality c) of
                Always => truee
              | Sometimes =>
                   let
@@ -306,7 +334,7 @@ structure Equality:>
                       | _ =>
                            Lazy
                            (fn () =>
-                            case !(tyconAdmitsEquality c) of
+                            case !(Tycon.admitsEquality c) of
                                Always => Error.bug "TypeEnv.Equality.applyTycon: Always"
                              | Sometimes => e
                              | Never => falsee)
@@ -539,6 +567,29 @@ structure Type =
                   | Var a => paren (seq [str "Var ", Tyvar.layout a]))]
             end
       end
+   end
+
+structure Tycon =
+   struct
+      open Tycon
+
+      val {get = opaqueExpansion: t -> (Type.t vector -> Type.t) option,
+           set = setOpaqueExpansion, ...} =
+         Property.getSet (Tycon.plist, Property.initConst NONE)
+
+      val opaqueExpansion =
+         Trace.trace
+         ("TypeEnv.Tycon.opaqueExpansion", Tycon.layout, Layout.ignore)
+         opaqueExpansion
+
+      val setOpaqueExpansion = fn (c, f) =>
+         setOpaqueExpansion (c, SOME f)
+   end
+structure TyconExt = Tycon
+
+structure Type =
+   struct
+      open Type
 
       fun admitsEquality t =
          case Equality.toBoolOpt (equality t) of
@@ -555,15 +606,6 @@ structure Type =
          Trace.trace 
          ("TypeEnv.Type.admitsEquality", layout, Bool.layout) 
          admitsEquality
-
-      val {get = opaqueTyconExpansion: Tycon.t -> (t vector -> t) option,
-           set = setOpaqueTyconExpansion, ...} =
-         Property.getSet (Tycon.plist, Property.initConst NONE)
-
-      val opaqueTyconExpansion =
-         Trace.trace 
-         ("TypeEnv.Type.opaqueTyconExpansion", Tycon.layout, Layout.ignore)
-         opaqueTyconExpansion
 
       fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, overload,
                    record, recursive, unknown, var} =
@@ -594,7 +636,7 @@ structure Type =
                                          fun no () =
                                             con (t, c, Vector.map (ts, get))
                                          fun yes () =
-                                            (case opaqueTyconExpansion c of
+                                            (case Tycon.opaqueExpansion c of
                                                 NONE => no ()
                                               | SOME f => get (f ts))
                                       in
@@ -814,9 +856,6 @@ structure Type =
       fun var a = newTy (Var a)
    end
 
-fun setOpaqueTyconExpansion (c, f) =
-   Type.setOpaqueTyconExpansion (c, SOME f)
-
 structure Ops = TypeOps (structure Tycon = Tycon
                          open Type)
 
@@ -908,7 +947,7 @@ structure Type =
                let
                   datatype z = datatype AdmitsEquality.t
                in
-                  case ! (tyconAdmitsEquality c) of
+                  case ! (Tycon.admitsEquality c) of
                      Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
                    | Never =>
                         (SOME o bracket o Tycon.layoutAppPretty)
@@ -1034,7 +1073,7 @@ structure Type =
             end
             fun getTy (_, ty) = ty
             fun con bound (_, c, rs) =
-               if Time.<= (tyconTime c, bound)
+               if Time.<= (Tycon.time c, bound)
                   then if Vector.forall (rs, Option.isNone o #1)
                           then NONE
                           else (preError ()
@@ -1533,7 +1572,7 @@ structure Type =
                                     (Layout.align o List.map)
                                     (tycons, fn (c, _) =>
                                      seq [str "escape from: ",
-                                          Region.layout (tyconRegion c)]),
+                                          Region.layout (Tycon.region c)]),
                                     (Layout.align o List.map)
                                     (times, fn t =>
                                      seq [str "escape to: ",
