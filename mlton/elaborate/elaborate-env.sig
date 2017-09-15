@@ -78,13 +78,13 @@ signature ELABORATE_ENV =
             val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t
             val apply: t * Type.t vector -> Type.t
-            val data: Tycon.t * Kind.t * Cons.t -> t
-            val def: Scheme.t * Kind.t -> t
+            val data: Tycon.t * Cons.t -> t
+            val def: Scheme.t -> t
             val kind: t -> Kind.t
             val layout: t -> Layout.t
             val node: t -> node
             val toTyconOpt: t -> Tycon.t option (* NONE on Scheme *)
-            val tycon: Tycon.t * Kind.t -> t
+            val tycon: Tycon.t -> t
          end
       sharing TypeStr.Kind = Tycon.Kind
       sharing TypeStr.Tycon = CoreML.Tycon

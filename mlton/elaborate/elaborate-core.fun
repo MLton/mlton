@@ -1794,8 +1794,7 @@ fun elaborateDec (d, {env = E, nest}) =
                (types, fn {def, tyvars, ...} =>
                 TypeStr.def (Scheme.make {canGeneralize = true,
                                           ty = elabType def,
-                                          tyvars = tyvars},
-                             Kind.Arity (Vector.length tyvars)))
+                                          tyvars = tyvars}))
          in
             Vector.foreach2
             (types, strs, fn ({tycon, ...}, str) =>
@@ -1824,7 +1823,7 @@ fun elaborateDec (d, {env = E, nest}) =
                        AdmitsEquality.Sometimes,
                        kind,
                        Ast.Tycon.region name)
-                   val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, kind),
+                   val _ = Env.extendTycon (E, name, TypeStr.tycon tycon,
                                             {forceUsed = true,
                                              isRebind = false})
                    val cons =
@@ -1838,7 +1837,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   {con = con, name = name}))
                 in
                    {cons = cons,
-                    kind = kind,
                     makeCons = makeCons,
                     name = name,
                     tycon = tycon,
@@ -1848,7 +1846,7 @@ fun elaborateDec (d, {env = E, nest}) =
             val (dbs, strs) =
                (Vector.unzip o Vector.map)
                (datatypes,
-                fn {cons, kind, makeCons, name, tycon, tyvars} =>
+                fn {cons, makeCons, name, tycon, tyvars} =>
                 let
                    val resultType: Type.t =
                       Type.con (tycon, Vector.map (tyvars, Type.var))
@@ -1874,7 +1872,7 @@ fun elaborateDec (d, {env = E, nest}) =
                            (scheme, {arg = arg, con = con})
                         end))
                    val typeStr =
-                      TypeStr.data (tycon, kind, makeCons schemes)
+                      TypeStr.data (tycon, makeCons schemes)
                 in
                    ({cons = datatypeCons,
                      tycon = tycon,

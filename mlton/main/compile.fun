@@ -227,13 +227,13 @@ local
             let
                val _ =
                   List.foreach
-                  (Tycon.prims, fn {kind, name, tycon, ...} =>
+                  (Tycon.prims, fn {name, tycon, ...} =>
                    if List.contains ([Tycon.arrow, Tycon.tuple], tycon, Tycon.equals)
                       then ()
                       else extendTycon
                            (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
                                                      Region.bogus),
-                            TypeStr.tycon (tycon, kind),
+                            TypeStr.tycon tycon,
                             {forceUsed = false, isRebind = false}))
                val _ =
                   Vector.foreach
@@ -259,16 +259,13 @@ local
                    in
                       extendTycon
                       (E, Tycon.toAst tycon,
-                       TypeStr.data (tycon,
-                                     TypeStr.Kind.Arity (Vector.length tyvars),
-                                     cons),
+                       TypeStr.data (tycon, cons),
                        {forceUsed = false, isRebind = false})
                    end)
                val _ =
                   extendTycon (E,
                                Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
-                               TypeStr.def (Scheme.fromType Type.unit,
-                                            TypeStr.Kind.Arity 0),
+                               TypeStr.def (Scheme.fromType Type.unit),
                                {forceUsed = false, isRebind = false})
                val scheme = Scheme.fromType Type.exn
                val _ = List.foreach (primitiveExcons, fn c =>

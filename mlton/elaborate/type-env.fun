@@ -1713,6 +1713,10 @@ structure Scheme =
          fn General {bound, ty, ...} => (bound (), ty)
           | Mono ty => (Vector.new0 (), ty)
 
+      val kind =
+         fn General {bound, ...} => Kind.Arity (Vector.length (bound ()))
+          | Mono _ => Kind.Arity 0
+
       fun layout s =
          case s of
             Mono t => Type.layoutPretty t
@@ -1739,8 +1743,9 @@ structure Scheme =
 
       val fromType = Mono
 
-      fun fromTycon (tycon: Tycon.t, kind): t =
+      fun fromTycon (tycon: Tycon.t): t =
          let
+            val kind = Tycon.kind tycon
             val arity =
                case kind of
                   Kind.Arity arity => arity

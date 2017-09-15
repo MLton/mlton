@@ -304,16 +304,14 @@ structure TypeStr =
          Datatype of {cons: Cons.t,
                       tycon: Tycon.t}
        | Scheme of Scheme.t
+      type t = node
 
-      datatype t = T of {kind: Kind.t,
-                         node: node}
+      val node = fn s => s
 
-      local
-         fun make f (T r) = f r
-      in
-         val kind = make #kind
-         val node = make #node
-      end
+      fun kind s =
+         case node s of
+            Datatype {tycon, ...} => Tycon.kind tycon
+          | Scheme s => Scheme.kind s
 
       fun layout t =
          let
@@ -378,20 +376,16 @@ structure TypeStr =
                  | SOME c => SOME c
                end
 
-      fun data (tycon, kind, cons) =
-         T {kind = kind,
-            node = Datatype {tycon = tycon, cons = cons}}
+      fun data (tycon, cons) =
+         Datatype {tycon = tycon, cons = cons}
 
-      fun def (s: Scheme.t, k: Kind.t) =
-         T {kind = k,
-            node = Scheme s}
+      val def = Scheme
 
-      fun tycon (c, kind) =
-         def (Scheme.fromTycon (c, kind), kind)
+      fun tycon c = def (Scheme.fromTycon c)
 
       fun abs t =
          case node t of
-            Datatype {tycon = c, ...} => tycon (c, kind t)
+            Datatype {tycon = c, ...} => tycon c
           | _ => t
    end
 
@@ -416,7 +410,6 @@ structure Interface =
    struct
       structure Econs = Cons
       structure Escheme = Scheme
-      structure Etycon = Tycon
       structure Etype = Type
       structure EtypeStr = TypeStr
       open Interface
@@ -435,7 +428,7 @@ structure Interface =
          in
             case t of
                Flexible c => flexibleTyconToEnv c
-             | Rigid c => EtypeStr.tycon (c, Etycon.kind c)
+             | Rigid c => EtypeStr.tycon c
          end
       and typeToEnv (t: Type.t): Etype.t =
          Type.hom (t, {con = fn (c, ts) => EtypeStr.apply (tyconToEnv c, ts),
@@ -454,14 +447,13 @@ structure Interface =
            uses = Uses.new ()})
       and typeStrToEnv (s: TypeStr.t): EtypeStr.t =
          let
-            val k = TypeStr.kind s
             datatype z = datatype TypeStr.node
          in
             case TypeStr.node s of
                Datatype {cons, tycon, ...} =>
                   let
                      fun data c =
-                        EtypeStr.data (c, k, consToEnv cons)
+                        EtypeStr.data (c, consToEnv cons)
                   in
                      case tycon of
                         Tycon.Flexible c =>
@@ -481,7 +473,7 @@ structure Interface =
                       | Tycon.Rigid c => data c
                   end
              | Scheme s =>
-                  EtypeStr.def (schemeToEnv s, k)
+                  EtypeStr.def (schemeToEnv s)
              | Tycon c =>
                   EtypeStr.abs (tyconToEnv c)
          end
@@ -1521,7 +1513,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
                                              Strid.toString s :: "." :: ss)))
                    val c = Tycon.make (name, a, k, Ast.Tycon.region tycon)
                    val () =
-                      FlexibleTycon.realize (flex, TypeStr.tycon (c, k))
+                      FlexibleTycon.realize (flex, TypeStr.tycon c)
                 in
                    (tycon, c)
                 end)
@@ -2492,8 +2484,7 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
                          (case TypeStr.node s of
                              Datatype {cons = cs, ...} =>
                                 TypeStr.data
-                                (tycon, TypeStr.kind s',
-                                 fixCons (cs, cs'))
+                                (tycon, fixCons (cs, cs'))
                            | _ => s')
                     | Scheme _ => s'
                 end)
@@ -2534,7 +2525,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val dummyTycon =
                       Tycon.make (dummyName, a, k, Ast.Tycon.region name)
                 in
-                   TypeStr.tycon (dummyTycon, k)
+                   TypeStr.tycon dummyTycon
                 end
              val typeStr =
                 case typeStr of
@@ -2602,7 +2593,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
              | (NONE, _, rlzStr) =>
                   (case rlzStr of
                       TypeStr.Datatype {tycon, ...} =>
-                         Scheme (Scheme.fromTycon (tycon, Interface.TypeStr.kind sigStr))
+                         Scheme (Scheme.fromTycon tycon)
                     | TypeStr.Scheme s =>
                          Scheme s)
              | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
@@ -3168,8 +3159,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                       case TypeStr.node strStr of
                                          TypeStr.Datatype {tycon = strTycon, ...} =>
                                             let
-                                               val strScheme =
-                                                  Scheme.fromTycon (strTycon, strKind)
+                                               val strScheme = Scheme.fromTycon strTycon
                                             in
                                                unify
                                                (Scheme.apply (strScheme, strTyvars),
@@ -3186,8 +3176,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 end
                            | Datatype {repl = true, tycon = sigTycon, ...} =>
                                 let
-                                   val sigScheme =
-                                      Scheme.fromTycon (sigTycon, sigKind)
+                                   val sigScheme = Scheme.fromTycon sigTycon
                                    fun nonDatatype strScheme =
                                       (preError ()
                                        ; error ("type structure",
@@ -3199,8 +3188,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                    case TypeStr.node strStr of
                                       TypeStr.Datatype {tycon = strTycon, ...} =>
                                          let
-                                            val strScheme =
-                                               Scheme.fromTycon (strTycon, strKind)
+                                            val strScheme = Scheme.fromTycon strTycon
                                          in
                                             Exn.withEscape
                                             (fn escape =>
@@ -3662,7 +3650,7 @@ fun functorClosure
                   List.foreach
                   (generative, fn c =>
                    setTyconTypeStr
-                   (c, SOME (TypeStr.tycon (Tycon.makeLike c, Tycon.kind c))))
+                   (c, SOME (TypeStr.tycon (Tycon.makeLike c))))
                fun replaceType (t: Type.t): Type.t =
                   let
                      fun con (c, ts) =
@@ -3692,7 +3680,6 @@ fun functorClosure
                     uses = uses})
                fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
                   let
-                     val k = TypeStr.kind s
                      datatype z = datatype TypeStr.node
                   in
                      case TypeStr.node s of
@@ -3707,9 +3694,9 @@ fun functorClosure
                                          | _ =>
                                               Error.bug "ElaborateEnv.functorClosure.apply: bad datatype")
                            in
-                              TypeStr.data (tycon, k, replaceCons cons)
+                              TypeStr.data (tycon, replaceCons cons)
                            end
-                      | Scheme s => TypeStr.def (replaceScheme s, k)
+                      | Scheme s => TypeStr.def (replaceScheme s)
                   end
                val {destroy = destroy2,
                     get = replacement: Structure.t -> Structure.t, ...} =
