@@ -1019,6 +1019,7 @@ structure Type =
       fun makeCheckTime {layoutPretty: t -> LayoutPretty.t,
                          preError: unit -> unit} =
          let
+            val times: Time.t list ref = ref []
             val tycons: Tycon.t list ref = ref []
             val tyvars: Tyvar.t list ref = ref []
             type lll = LayoutPretty.t * LayoutPretty.t * LayoutPretty.t
@@ -1047,7 +1048,8 @@ structure Type =
                   else let
                           val ty = Type.newAt bound
                        in
-                          List.push (tycons, c)
+                          List.push (times, bound)
+                          ; List.push (tycons, c)
                           ; preError ()
                           ; SOME ((bracket o Tycon.layoutAppPretty)
                                   (c, Vector.map (rs, getLay2)),
@@ -1119,7 +1121,8 @@ structure Type =
                   else let
                           val ty = newAt bound
                        in
-                          List.push (tyvars, a)
+                          List.push (times, bound)
+                          ; List.push (tyvars, a)
                           ; SOME (bracket (layoutPretty (Type.var a)),
                                   layoutPretty (Type.var a),
                                   bracket (layoutPretty ty),
@@ -1160,7 +1163,8 @@ structure Type =
                         SOME (l1, (ty, l3))
                end
             fun finishCheckTime () =
-               {tycons = List.removeDuplicates (!tycons, Tycon.equals),
+               {times = List.removeDuplicates (!times, Time.equals),
+                tycons = List.removeDuplicates (!tycons, Tycon.equals),
                 tyvars = List.removeDuplicates (!tyvars, Tyvar.equals)}
          in
             {checkTime = checkTime,
@@ -1501,7 +1505,7 @@ structure Type =
             case res of
                NotUnifiable ((l, _), (l', _)) =>
                   let
-                     val {tycons, tyvars} =
+                     val {tycons, tyvars, ...} =
                         finishCheckTime ()
                      fun notes () =
                         let
@@ -2192,7 +2196,9 @@ structure Type =
             val res =
                Option.map
                (checkTime (t, bound), fn ((l, _), (ty, _)) =>
-                (l, ty, finishCheckTime ()))
+                (l, ty, let val {tycons, tyvars, ...} = finishCheckTime ()
+                        in {tycons = tycons, tyvars = tyvars}
+                        end))
             val () = destroy ()
          in
             res
