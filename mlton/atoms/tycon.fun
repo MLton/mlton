@@ -15,26 +15,13 @@ open S
 structure Id = Id (val noname = "t")
 open Id
 
-local
-val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn l => l)
-in
-val {destroy = resetLayoutPretty: unit -> unit,
-     get = layoutPretty: t -> Layout.t,
-     set = setLayoutPretty: t * Layout.t -> unit} =
-   Property.destGetSet
-   (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (originalName c))))
-val resetLayoutPretty = fn {unset} =>
-   (unsetFnRef := unset ; resetLayoutPretty ())
-end
-
 structure P = PrimTycons (structure AdmitsEquality = AdmitsEquality
                           structure CharSize = CharSize
                           structure IntSize = IntSize
                           structure Kind = Kind
                           structure RealSize = RealSize
                           structure WordSize = WordSize
-                          open Id
-                          val layoutPretty = layoutPretty)
+                          open Id)
 open P
 
 fun stats () =

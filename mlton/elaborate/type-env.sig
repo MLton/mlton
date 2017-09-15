@@ -118,10 +118,14 @@ signature TYPE_ENV =
          sig
             val admitsEquality: Tycon.t -> AdmitsEquality.t ref
             val kind: Tycon.t -> TyconKind.t
+            val layoutAppPretty: Tycon.t * LayoutPretty.t vector -> LayoutPretty.t
+            val layoutPretty: Tycon.t -> Layout.t
             val make: string * AdmitsEquality.t * TyconKind.t * Region.t -> Tycon.t
             val makeLike: Tycon.t -> Tycon.t
             val region: Tycon.t -> Region.t
+            val resetLayoutPretty: {unset: Layout.t -> Layout.t} -> unit
             val scopeNew: (unit -> 'a) -> ('a * Tycon.t list)
+            val setLayoutPretty: Tycon.t * Layout.t -> unit
             val setOpaqueExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
          end
 

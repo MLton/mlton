@@ -23,8 +23,5 @@ signature TYCON =
       include PRIM_TYCONS        
       sharing type t = tycon
 
-      val layoutPretty: t -> Layout.t
-      val resetLayoutPretty: {unset: Layout.t -> Layout.t} -> unit
-      val setLayoutPretty: t * Layout.t -> unit
       val stats: unit -> Layout.t
    end

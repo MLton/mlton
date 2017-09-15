@@ -26,7 +26,6 @@ signature PRIM_TYCONS_STRUCTS =
       val fromString: string -> t
       val equals: t * t -> bool
       val layout: t -> Layout.t
-      val layoutPretty: t -> Layout.t
    end
 
 signature BINDING_STRENGTH =
@@ -68,10 +67,11 @@ signature PRIM_TYCONS =
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp: tycon * Layout.t vector -> Layout.t
-      val layoutAppPretty:
-         tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
-         -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon
+      val makeLayoutAppPretty:
+         {layoutPretty: tycon -> Layout.t}
+         -> tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
+         -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val prims: {admitsEquality: AdmitsEquality.t,
                   kind: Kind.t,
                   name: string,

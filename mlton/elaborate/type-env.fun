@@ -35,31 +35,6 @@ structure LayoutPretty =
       val dontCare: t = simple (str "_")
       fun bracket ((l, ({isChar}, _)): t): t =
          (Layout.bracket l, ({isChar = isChar}, Tycon.BindingStrength.unit))
-
-      fun record (ds: (Field.t * bool * t) list, flexible: bool) =
-         simple (case ds of
-                    [] => if flexible then str "{...}" else str "{}"
-                  | _ =>
-                       seq [str "{",
-                            Layout.mayAlign
-                            (Layout.separateRight
-                             (List.map
-                              (QuickSort.sortList (ds, fn ((f, _, _), (f', _, _)) =>
-                                                   Field.<= (f, f')),
-                               fn (f, b, (l, _)) =>
-                               let
-                                  val f = Field.layout f
-                                  val row = seq [f, str ": ", l]
-                                  val row = if b then Layout.bracket row else row
-                               in
-                                  row
-                               end),
-                              ",")),
-                            str (if flexible
-                                    then ", ...}"
-                                    else "}")])
-      fun tuple (ls: t vector): t =
-         Tycon.layoutAppPretty (Tycon.tuple, ls)
    end
 local
    open LayoutPretty
@@ -68,7 +43,6 @@ in
    val dontCare = dontCare
    val simple = simple
 end
-
 
 local
    open Tycon
@@ -203,6 +177,20 @@ structure Tycon =
                (res, newMade)
             end
       end
+
+      local
+         val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn l => l)
+      in
+         val {destroy = resetLayoutPretty: unit -> unit,
+              get = layoutPretty: t -> Layout.t,
+              set = setLayoutPretty: t * Layout.t -> unit} =
+            Property.destGetSet
+            (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (originalName c))))
+         val resetLayoutPretty = fn {unset} =>
+            (unsetFnRef := unset ; resetLayoutPretty ())
+      end
+
+      val layoutAppPretty = makeLayoutAppPretty {layoutPretty = layoutPretty}
    end
 
 structure Tyvar =
@@ -592,6 +580,35 @@ structure Tycon =
          setOpaqueExpansion (c, SOME f)
    end
 structure TyconExt = Tycon
+
+structure LayoutPretty =
+   struct
+      open LayoutPretty
+      fun record (ds: (Field.t * bool * t) list, flexible: bool) =
+         simple (case ds of
+                    [] => if flexible then str "{...}" else str "{}"
+                  | _ =>
+                       seq [str "{",
+                            Layout.mayAlign
+                            (Layout.separateRight
+                             (List.map
+                              (QuickSort.sortList (ds, fn ((f, _, _), (f', _, _)) =>
+                                                   Field.<= (f, f')),
+                               fn (f, b, (l, _)) =>
+                               let
+                                  val f = Field.layout f
+                                  val row = seq [f, str ": ", l]
+                                  val row = if b then Layout.bracket row else row
+                               in
+                                  row
+                               end),
+                              ",")),
+                            str (if flexible
+                                    then ", ...}"
+                                    else "}")])
+      fun tuple (ls: t vector): t =
+         Tycon.layoutAppPretty (Tycon.tuple, ls)
+   end
 
 structure Type =
    struct

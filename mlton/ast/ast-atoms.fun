@@ -30,8 +30,7 @@ structure Tycon =
                      structure WordSize = WordSize
                      open Id
                      fun fromString s =
-                        Id.fromSymbol (Symbol.fromString s, Region.bogus)
-                     val layoutPretty = layout)
+                        Id.fromSymbol (Symbol.fromString s, Region.bogus))
       open P
    end
 
