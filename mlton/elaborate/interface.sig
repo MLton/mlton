@@ -24,6 +24,7 @@ signature INTERFACE_STRUCTS =
                   val arrow: t
                   val equals: t * t -> bool
                   val exn: t
+                  val kind: t -> Kind.t
                   val layout: t -> Layout.t
                   val layoutAppPretty:
                      t * (Layout.t
@@ -65,7 +66,7 @@ signature INTERFACE =
          sig
             datatype t =
                Flexible of FlexibleTycon.t
-             | Rigid of EnvTypeStr.Tycon.t * Kind.t
+             | Rigid of EnvTypeStr.Tycon.t
 
             val admitsEquality: t -> AdmitsEquality.t ref
             val make: {hasCons: bool, kind: Kind.t} -> t
@@ -145,15 +146,15 @@ signature INTERFACE =
             val admitsEquality: t -> AdmitsEquality.t
             val apply: t * Type.t vector -> Type.t
             val cons: t -> Cons.t
-            val data: Tycon.t * Kind.t * Cons.t * bool -> t
-            val def: Scheme.t * Kind.t -> t
+            val data: Tycon.t * Cons.t * bool -> t
+            val def: Scheme.t -> t
             val kind: t -> Kind.t
             val layout: t -> Layout.t
             val node: t -> node
             val pushSpec: t * Region.t -> unit
             val repl: t -> t
             val toTyconOpt: t * {expand: bool} -> Tycon.t option (* NONE on Scheme *)
-            val tycon: Tycon.t * Kind.t -> t
+            val tycon: Tycon.t -> t
             val specs: t -> Region.t list
 
             val share:

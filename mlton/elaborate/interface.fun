@@ -195,34 +195,38 @@ structure Tycon =
    struct
       datatype t =
          Flexible of FlexibleTycon.t
-       | Rigid of Etycon.t * Kind.t
+       | Rigid of Etycon.t
 
-      val fromEnv: Etycon.t * Kind.t -> t = Rigid
+      val fromEnv: Etycon.t -> t = Rigid
 
       fun admitsEquality c =
          case c of
             Flexible f => FlexibleTycon.admitsEquality f
-          | Rigid (e, _) => Etycon.admitsEquality e
+          | Rigid c => Etycon.admitsEquality c
 
-      val arrow = fromEnv (Etycon.arrow, Kind.Arity 2)
+      val arrow = fromEnv Etycon.arrow
 
       val equals =
          fn (Flexible f, Flexible f') => FlexibleTycon.equals (f, f')
-          | (Rigid (c, _), Rigid (c', _)) => Etycon.equals (c, c')
+          | (Rigid c, Rigid c') => Etycon.equals (c, c')
           | _ => false
 
-      val exn = Rigid (Etycon.exn, Kind.Arity 0)
+      val exn = Rigid Etycon.exn
+
+      val kind =
+         fn Flexible f => FlexibleTycon.kind f
+          | Rigid c => Etycon.kind c
 
       val layout =
-         fn Flexible c => FlexibleTycon.layout c
-          | Rigid (c, _) => Etycon.layout c
+         fn Flexible f => FlexibleTycon.layout f
+          | Rigid c => Etycon.layout c
 
       fun layoutApp (t: t, v) =
          case t of
             Flexible f => FlexibleTycon.layoutApp (f, v)
-          | Rigid (c, _) => Etycon.layoutAppPretty (c, v)
+          | Rigid c => Etycon.layoutAppPretty (c, v)
 
-      val tuple = Rigid (Etycon.tuple, Kind.Nary)
+      val tuple = Rigid Etycon.tuple
    end
 
 structure Type =
@@ -328,10 +332,14 @@ structure Scheme =
    struct
       open Scheme
 
+      fun kind (T {tyvars, ...}) =
+         Kind.Arity (Vector.length tyvars)
+
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
 
-      fun fromTycon (tycon, kind) =
+      fun fromTycon tycon =
          let
+            val kind = Tycon.kind tycon
             val arity =
                case kind of
                   Kind.Arity arity => arity
@@ -409,16 +417,15 @@ structure TypeStr =
                       repl: bool}
        | Scheme of Scheme.t
        | Tycon of Tycon.t
+      type t = node
 
-      datatype t = T of {kind: Kind.t,
-                         node: node}
+      val node = fn s => s
 
-      local
-         fun make f (T r) = f r
-      in
-         val kind = make #kind
-         val node = make #node
-      end
+      fun kind s =
+         case node s of
+            Datatype {tycon, ...} => Tycon.kind tycon
+          | Scheme s => Scheme.kind s
+          | Tycon c => Tycon.kind c
 
       fun layout t =
          let
@@ -449,32 +456,28 @@ structure TypeStr =
             Datatype {cons, ...} => cons
           | _ => Cons.empty
 
-      fun data (tycon, kind, cons, repl) =
-         T {kind = kind,
-            node = Datatype {tycon = tycon, cons = cons, repl = repl}}
+      fun data (tycon, cons, repl) =
+         Datatype {tycon = tycon, cons = cons, repl = repl}
 
-      fun def (s: Scheme.t, k: Kind.t) =
-         T {kind = k,
-            node = Scheme s}
+      val def = Scheme
 
-      fun tycon (c, kind) = T {kind = kind,
-                               node = Tycon c}
+      val tycon = Tycon
 
       local
-         fun tyconAsScheme (c, kind) =
-            def (Scheme.fromTycon (c, kind), kind)
+         fun tyconAsScheme c =
+            def (Scheme.fromTycon c)
       in
          fun repl (t: t) =
             case node t of
-               Datatype {tycon, cons, ...} => data (tycon, kind t, cons, true)
+               Datatype {tycon, cons, ...} => data (tycon, cons, true)
              | Scheme _ => t
-             | Tycon tycon => tyconAsScheme (tycon, kind t)
+             | Tycon tycon => tyconAsScheme tycon
 
          fun abs (t: t) =
             case node t of
-               Datatype {tycon, ...} => tyconAsScheme (tycon, kind t)
+               Datatype {tycon, ...} => tyconAsScheme tycon
              | Scheme _ => t
-             | Tycon tycon => tyconAsScheme (tycon, kind t)
+             | Tycon tycon => tyconAsScheme tycon
       end
    end
 
@@ -592,12 +595,11 @@ and copyScheme (Scheme.T {tyvars, ty}): Scheme.t =
 and copyTypeStr (s: TypeStr.t): TypeStr.t =
    let
       open TypeStr
-      val kind = kind s
    in
       case node s of
-         Datatype {cons, tycon, repl} => data (copyTycon tycon, kind, copyCons cons, repl)
-       | Scheme s => def (copyScheme s, kind)
-       | Tycon c => tycon (copyTycon c, kind)
+         Datatype {cons, tycon, repl} => data (copyTycon tycon, copyCons cons, repl)
+       | Scheme s => def (copyScheme s)
+       | Tycon c => tycon (copyTycon c)
    end
 
 structure AdmitsEquality =
@@ -640,7 +642,7 @@ and tyconAdmitsEquality (t: Tycon.t): AdmitsEquality.t =
    in
       case t of
          Flexible c => flexibleTyconAdmitsEquality c
-       | Rigid (e, _) => ! (Etycon.admitsEquality e)
+       | Rigid e => ! (Etycon.admitsEquality e)
    end
 and typeStrAdmitsEquality (s: TypeStr.t): AdmitsEquality.t =
    let

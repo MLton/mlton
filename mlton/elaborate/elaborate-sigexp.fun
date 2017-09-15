@@ -98,7 +98,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                   kind,
                                   Longtycon.region c)
                            in
-                              Type.con (Tycon.Rigid (c, kind), ts)
+                              Type.con (Tycon.Rigid c, ts)
                            end
                       | SOME s =>
                            let
@@ -140,7 +140,8 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                                             kind,
                                                             Region.bogus)
                                                      in
-                                                        Type.con (Tycon.Rigid (c, kind), Vector.new0 ())
+                                                        Type.con (Tycon.Rigid c,
+                                                                  Vector.new0 ())
                                                      end)])
                                        end
                                   | Kind.Nary => ts
@@ -208,7 +209,7 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
                             kind,
                             Region.bogus)
                      in
-                        Type.con (Tycon.Rigid (c, kind), Vector.new0 ())
+                        Type.con (Tycon.Rigid c, Vector.new0 ())
                      end
                   else
                      Type.var a
@@ -245,7 +246,7 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
                  then AdmitsEquality.Sometimes
               else AdmitsEquality.Never)
     in
-       Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
+       Env.extendTycon (E, name, TypeStr.tycon tycon)
     end)
 
 fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
@@ -253,8 +254,7 @@ fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
       fun mkDef {def, tycon = _, tyvars} =
          let
             val realization =
-               TypeStr.def (elaborateScheme (tyvars, def, E),
-                            Kind.Arity (Vector.length tyvars))
+               TypeStr.def (elaborateScheme (tyvars, def, E))
             val _ =
                TypeStr.pushSpec (realization, Ast.Type.region def)
          in
@@ -284,10 +284,9 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
              val kind = Kind.Arity (Vector.length tyvars)
              val tycon = Tycon.make {hasCons = true, kind = kind}
              val _ =
-                Env.extendTycon (E, name, TypeStr.tycon (tycon, kind))
+                Env.extendTycon (E, name, TypeStr.tycon tycon)
           in
              {cons = cons,
-              kind = kind,
               name = name,
               tycon = tycon,
               tyvars = tyvars}
@@ -303,7 +302,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val _ = elabTypBind (withtypes, E, {sequential = false})
       val datatypes =
          Vector.map
-         (datatypes, fn {cons, kind, name, tycon, tyvars, ...} =>
+         (datatypes, fn {cons, name, tycon, tyvars, ...} =>
           let
              val resultType: Atype.t =
                 Atype.con (name, Vector.map (tyvars, Atype.var))
@@ -328,7 +327,6 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
           in
              {consArgs = consArgs,
               consSchemes = consSchemes,
-              kind = kind,
               name = name,
               tycon = tycon,
               tyvars = tyvars}
@@ -336,7 +334,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val _ = Env.allowDuplicates := true
       val _ =
          Vector.foreach
-         (datatypes, fn {consSchemes, kind, name, tycon, ...} =>
+         (datatypes, fn {consSchemes, name, tycon, ...} =>
           let
              val _ =
                 Vector.foreach
@@ -344,7 +342,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                  Env.extendCon (E, name, scheme))
              val _ =
                 Env.extendTycon
-                (E, name, TypeStr.data (tycon, kind, Cons.fromVector consSchemes, false))
+                (E, name, TypeStr.data (tycon, Cons.fromVector consSchemes, false))
           in
              ()
           end)
@@ -427,8 +425,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                   fn (name, s) =>
                                   let
                                      val realization =
-                                        TypeStr.def (elaborateScheme (tyvars, ty, E),
-                                                     Kind.Arity (Vector.length tyvars))
+                                        TypeStr.def (elaborateScheme (tyvars, ty, E))
                                   in
                                      TypeStr.wheree
                                      {realization = realization,

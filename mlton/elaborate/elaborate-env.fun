@@ -416,6 +416,7 @@ structure Interface =
    struct
       structure Econs = Cons
       structure Escheme = Scheme
+      structure Etycon = Tycon
       structure Etype = Type
       structure EtypeStr = TypeStr
       open Interface
@@ -434,7 +435,7 @@ structure Interface =
          in
             case t of
                Flexible c => flexibleTyconToEnv c
-             | Rigid (c, k) => EtypeStr.tycon (c, k)
+             | Rigid c => EtypeStr.tycon (c, Etycon.kind c)
          end
       and typeToEnv (t: Type.t): Etype.t =
          Type.hom (t, {con = fn (c, ts) => EtypeStr.apply (tyconToEnv c, ts),
@@ -477,7 +478,7 @@ structure Interface =
                                              str " realized with type structure ",
                                              EtypeStr.layout typeStr]))
                            end
-                      | Tycon.Rigid (c, _) => data c
+                      | Tycon.Rigid c => data c
                   end
              | Scheme s =>
                   EtypeStr.def (schemeToEnv s, k)
@@ -506,8 +507,7 @@ structure Interface =
             fun fromEnv (t: Etype.t): t =
                let
                   fun con (c, ts) =
-                     Type.con (Tycon.fromEnv (c, Kind.Arity (Vector.length ts)),
-                               ts)
+                     Type.con (Tycon.fromEnv c, ts)
                in
                   Etype.hom (t, {con = con,
                                  expandOpaque = false,
@@ -550,17 +550,12 @@ structure Interface =
             val toEnv = typeStrToEnv
 
             fun fromEnv (s: EtypeStr.t) =
-               let
-                  val kind = EtypeStr.kind s
-               in
-                  case EtypeStr.node s of
-                     EtypeStr.Datatype {cons, tycon} =>
-                        data (Tycon.fromEnv (tycon, kind),
-                              kind,
-                              Cons.fromEnv cons,
-                              true)
-                   | EtypeStr.Scheme s => def (Scheme.fromEnv s, kind)
-               end
+               case EtypeStr.node s of
+                  EtypeStr.Datatype {cons, tycon} =>
+                     data (Tycon.fromEnv tycon,
+                           Cons.fromEnv cons,
+                           true)
+                | EtypeStr.Scheme s => def (Scheme.fromEnv s)
          end
    end
 
