@@ -110,6 +110,7 @@ structure Time:>
       val equals: t * t -> bool
       val layout: t -> Layout.t
       val now: unit -> t
+      val region: t -> Region.t
       val tick: {region: Region.t} -> unit
    end =
    struct
@@ -1505,38 +1506,39 @@ structure Type =
             case res of
                NotUnifiable ((l, _), (l', _)) =>
                   let
-                     val {tycons, tyvars, ...} =
+                     val {times, tycons, tyvars} =
                         finishCheckTime ()
                      fun notes () =
-                        let
-                           fun doit (xs, lay, msgOne, msgMany) =
-                              if List.isEmpty xs
-                                 then Layout.empty
-                                 else let
-                                         val xs = List.map (xs, lay)
-                                         val xs =
-                                            List.insertionSort
-                                            (xs, fn (l1, l2) =>
-                                             String.<= (Layout.toString l1,
-                                                        Layout.toString l2))
-                                      in
-                                         seq [str "note: ",
-                                              if List.length xs > 1
-                                                 then str msgMany
-                                                 else str msgOne,
-                                              str ": ",
-                                              (seq o List.separate)
-                                              (xs, str ", ")]
-                                      end
-                        in
-                           Layout.align
-                           [doit (tycons, Tycon.layoutPretty,
-                                  "type would escape the scope of its definition",
-                                  "types would escape the scopes of their definitions"),
-                            doit (tyvars, #1 o layoutPretty o Type.var,
-                                  "type variable would not be generalized",
-                                  "type variables would not be generalized")]
-                        end
+                        if List.isEmpty tycons andalso List.isEmpty tyvars
+                           then Layout.empty
+                           else let
+                                   fun doit (xs, lay) =
+                                      List.insertionSort
+                                      (List.map (xs, fn x => (x, lay x)),
+                                       fn ((_, l1), (_, l2)) =>
+                                       String.<= (Layout.toString l1,
+                                                  Layout.toString l2))
+                                   val tycons = doit (tycons, Tycon.layoutPretty)
+                                   val tyvars = doit (tyvars, #1 o layoutPretty o Type.var)
+                                   val tys =
+                                      List.map (tycons, #2)
+                                      @ List.map (tyvars, #2)
+                                in
+                                   Layout.align
+                                   [seq [str "note: ",
+                                         if List.length tys > 1
+                                            then str "types would escape their scope: "
+                                            else str "type would escape its scope: ",
+                                         seq (Layout.separate (tys, ", "))],
+                                    (Layout.align o List.map)
+                                    (tycons, fn (c, _) =>
+                                     seq [str "escape from: ",
+                                          Region.layout (tyconRegion c)]),
+                                    (Layout.align o List.map)
+                                    (times, fn t =>
+                                     seq [str "escape to: ",
+                                          Region.layout (Time.region t)])]
+                                end
                   in
                      NotUnifiable (l, l',
                                    {notes = notes})

@@ -2994,18 +2994,27 @@ fun elaborateDec (d, {env = E, nest}) =
                            | SOME (lay, ty, {tycons, ...}) =>
                                 let
                                    val tycons =
-                                      List.map (tycons, Tycon.layoutPretty)
+                                      List.map
+                                      (tycons, fn c =>
+                                       (c, Tycon.layoutPretty c))
                                    val tycons =
                                       List.insertionSort
-                                      (tycons, fn (l1, l2) =>
+                                      (tycons, fn ((_, l1), (_, l2)) =>
                                        String.<= (Layout.toString l1,
                                                   Layout.toString l2))
                                    val _ =
                                       Control.error
                                       (region,
-                                       seq [str "type of let has escaping local types: ",
-                                            seq (Layout.separate (tycons, ", "))],
+                                       seq [str "type of let has ",
+                                            if List.length tycons > 1
+                                               then str "local types that would escape their scope: "
+                                               else str "local type that would escape its scope: ",
+                                            seq (Layout.separate (List.map (tycons, #2), ", "))],
                                        align [seq [str "type: ", lay],
+                                              (align o List.map)
+                                              (tycons, fn (c, _) =>
+                                               seq [str "escape from: ",
+                                                    Region.layout (TypeEnv.tyconRegion c)]),
                                               ctxt ()])
                                 in
                                    ty
