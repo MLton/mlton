@@ -371,9 +371,9 @@ structure Unknown =
       fun equals (u, u') = id u = id u'
 
       local
-         val r: int ref = ref 0
+         val c = Counter.new 0
       in
-         fun newId () = (Int.inc r; !r)
+         val newId = fn () => Counter.next c
       end
 
       fun new {canGeneralize} =
@@ -410,9 +410,9 @@ structure Spine:
                                 more: bool ref} Set.t}
 
       local
-         val r: int ref = ref 0
+         val c = Counter.new 0
       in
-         fun newId () = (Int.inc r; !r)
+         val newId = fn () => Counter.next c
       end
       
       fun new fields = T {id = newId (),
