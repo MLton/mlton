@@ -373,7 +373,11 @@ structure TypeStr =
                in
                   case Type.deEta (ty, tyvars) of
                    NONE => NONE
-                 | SOME c => SOME c
+                 | SOME c =>
+                      if Tycon.equals (c, Tycon.arrow)
+                         orelse Tycon.equals (c, Tycon.tuple)
+                         then NONE
+                         else SOME c
                end
 
       fun data (tycon, cons) =

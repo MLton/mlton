@@ -530,8 +530,19 @@ structure TypeStr =
          in
             case node s of
                Datatype {tycon, ...} => SOME tycon
-             | Scheme (Scheme.T {tyvars, ty}) =>
-                  Type.deEta (if expand then expandTy ty else ty, tyvars)
+             | Scheme s =>
+                  let
+                     val Scheme.T {tyvars, ty} = s
+                     val ty = if expand then expandTy ty else ty
+                  in
+                     case Type.deEta (ty, tyvars) of
+                        NONE => NONE
+                      | SOME c =>
+                           if Tycon.equals (c, Tycon.arrow)
+                              orelse Tycon.equals (c, Tycon.tuple)
+                              then NONE
+                              else SOME c
+                  end
              | Tycon tycon => SOME tycon
          end
    end
