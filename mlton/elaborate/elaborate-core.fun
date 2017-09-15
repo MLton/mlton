@@ -244,13 +244,25 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                                           fun error () =
                                              let
                                                 open Layout
+                                                fun doit n =
+                                                   seq [str "[",
+                                                        case n of
+                                                           0 => empty
+                                                         | 1 => str "_ "
+                                                         | _ => seq [str "(",
+                                                                     (seq o separate)
+                                                                     (List.tabulate (n, fn _ => str "_"),
+                                                                      ", "),
+                                                                     str ") "],
+                                                        Ast.Longtycon.layout c,
+                                                        str "]"]
                                              in
                                                 Control.error
                                                 (Atype.region ty,
                                                  seq [str "type constructor applied to incorrect number of type arguments: ",
                                                       Ast.Longtycon.layout c],
-                                                 align [seq [str "expects: ", Int.layout n],
-                                                        seq [str "but got: ", Int.layout numArgs],
+                                                 align [seq [str "expects: ", doit n],
+                                                        seq [str "but got: ", doit numArgs],
                                                         seq [str "in: ", Atype.layout ty]])
                                              end
                                        in
