@@ -129,6 +129,7 @@ structure Tycon =
 
       local
          val {get = info: t -> {admitsEquality: AdmitsEquality.t ref,
+                                defLayoutPretty: string,
                                 kind: Kind.t,
                                 region: Region.t,
                                 time: Time.t},
@@ -136,36 +137,44 @@ structure Tycon =
             Property.getSet
             (Tycon.plist,
              Property.initRaise ("TypeEnv.Tycon.info", Tycon.layout))
-         fun init (c, a, k, r) =
+         fun init (c, a, dlp, k, r) =
             setInfo (c, {admitsEquality = ref a,
+                         defLayoutPretty = dlp,
                          kind = k,
                          region = r,
                          time = Time.now ()})
          val _ =
             List.foreach
-            (Tycon.prims, fn {tycon = c, admitsEquality = a, kind = k, ...} =>
-             init (c, a, k, Region.bogus))
+            (Tycon.prims, fn {tycon = c, admitsEquality = a, kind = k, name = dlp, ...} =>
+             init (c, a, dlp, k, Region.bogus))
          val made: Tycon.t list ref = ref []
       in
          local
             fun make f = f o info
          in
             val admitsEquality = make #admitsEquality
+            val defLayoutPretty = make #defLayoutPretty
             val kind = make #kind
             val region = make #region
             val time = make #time
          end
-         fun make (s, a, k, r) =
+         fun make {admitsEquality, defLayoutPretty,
+                   kind, name, region} =
             let
-               val c = Tycon.newString s
-               val _ = init (c, a, k, r)
-               val _ = List.push (made, c)
+               val tycon = Tycon.newString name
+               val _ = init (tycon, admitsEquality,
+                             defLayoutPretty,
+                             kind, region)
+               val _ = List.push (made, tycon)
             in
-               c
+               tycon
             end
          fun makeLike c =
-            make (originalName c, ! (admitsEquality c),
-                  kind c, region c)
+            make {admitsEquality = ! (admitsEquality c),
+                  defLayoutPretty = defLayoutPretty c,
+                  kind = kind c,
+                  name = originalName c,
+                  region = region c}
          fun scopeNew th =
             let
                val oldMade = !made
@@ -177,6 +186,12 @@ structure Tycon =
                (res, newMade)
             end
       end
+      fun makeBogus {name, kind, region} =
+         make {admitsEquality = AdmitsEquality.Sometimes,
+               defLayoutPretty = concat ["<", name, ">"],
+               kind = kind,
+               name = name,
+               region = Option.fold (region, Region.bogus, #1)}
 
       local
          val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn l => l)
@@ -185,7 +200,7 @@ structure Tycon =
               get = layoutPretty: t -> Layout.t,
               set = setLayoutPretty: t * Layout.t -> unit} =
             Property.destGetSet
-            (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (originalName c))))
+            (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (defLayoutPretty c))))
          val resetLayoutPretty = fn {unset} =>
             (unsetFnRef := unset ; resetLayoutPretty ())
       end

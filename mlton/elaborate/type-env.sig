@@ -120,7 +120,14 @@ signature TYPE_ENV =
             val kind: Tycon.t -> TyconKind.t
             val layoutAppPretty: Tycon.t * LayoutPretty.t vector -> LayoutPretty.t
             val layoutPretty: Tycon.t -> Layout.t
-            val make: string * AdmitsEquality.t * TyconKind.t * Region.t -> Tycon.t
+            val make: {admitsEquality: AdmitsEquality.t,
+                       defLayoutPretty: string,
+                       kind: TyconKind.t,
+                       name: string,
+                       region: Region.t} -> Tycon.t
+            val makeBogus: {name: string,
+                            kind: TyconKind.t,
+                            region: Region.t option} -> Tycon.t
             val makeLike: Tycon.t -> Tycon.t
             val region: Tycon.t -> Region.t
             val resetLayoutPretty: {unset: Layout.t -> Layout.t} -> unit

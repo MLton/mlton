@@ -1814,15 +1814,15 @@ fun elaborateDec (d, {env = E, nest}) =
                Vector.map
                (datatypes, fn {cons, tycon = name, tyvars} =>
                 let
-                   val kind = Kind.Arity (Vector.length tyvars)
+                   val r = Ast.Tycon.region name
+                   val n = Ast.Tycon.toString name
+                   val dlp = concat (List.separate (rev (n :: nest), "."))
                    val tycon =
-                      Tycon.make
-                      (concat (List.separate
-                               (rev (Ast.Tycon.toString name :: nest),
-                                ".")),
-                       AdmitsEquality.Sometimes,
-                       kind,
-                       Ast.Tycon.region name)
+                      Tycon.make {admitsEquality = AdmitsEquality.Sometimes,
+                                  defLayoutPretty = dlp,
+                                  kind = Kind.Arity (Vector.length tyvars),
+                                  name = n,
+                                  region = r}
                    val _ = Env.extendTycon (E, name, TypeStr.tycon tycon,
                                             {forceUsed = true,
                                              isRebind = false})

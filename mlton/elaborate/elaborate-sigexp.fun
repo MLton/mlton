@@ -90,13 +90,11 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                      case Env.lookupLongtycon (E, c) of
                         NONE =>
                            let
-                              val kind = Kind.Arity (Vector.length ts)
                               val c =
-                                 StructureTycon.make
-                                 (concat ["<", Longtycon.toString c ,">"],
-                                  AdmitsEquality.Sometimes,
-                                  kind,
-                                  Longtycon.region c)
+                                 StructureTycon.makeBogus
+                                 {name = Longtycon.toString c,
+                                  kind = Kind.Arity (Vector.length ts),
+                                  region = SOME (Longtycon.region c)}
                            in
                               Type.con (Tycon.Rigid c, ts)
                            end
@@ -132,13 +130,11 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                                     Vector.tabulate
                                                     (n - numArgs, fn _ =>
                                                      let
-                                                        val kind = Kind.Arity 0
                                                         val c =
-                                                           StructureTycon.make
-                                                           ("<t>",
-                                                            AdmitsEquality.Sometimes,
-                                                            kind,
-                                                            Region.bogus)
+                                                           StructureTycon.makeBogus
+                                                           {name = "t",
+                                                            kind = Kind.Arity 0,
+                                                            region = NONE}
                                                      in
                                                         Type.con (Tycon.Rigid c,
                                                                   Vector.new0 ())
@@ -201,13 +197,11 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
                fun var a =
                   if Vector.exists (unbound, fn a' => Tyvar.equals (a, a')) then
                      let
-                        val kind = Kind.Arity 0
                         val c =
-                           StructureTycon.make
-                           ("<t>",
-                            AdmitsEquality.Sometimes,
-                            kind,
-                            Region.bogus)
+                           StructureTycon.makeBogus
+                           {name = "t",
+                            kind = Kind.Arity 0,
+                            region = NONE}
                      in
                         Type.con (Tycon.Rigid c, Vector.new0 ())
                      end

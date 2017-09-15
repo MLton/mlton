@@ -1506,12 +1506,18 @@ fun dummyStructure (I: Interface.t, {prefix: string})
                 let
                    val {admitsEquality = a, kind = k, ...} =
                       FlexibleTycon.dest flex
-                   val name =
+                   val r = Ast.Tycon.region tycon
+                   val n = Ast.Tycon.toString tycon
+                   val dlp =
                       concat (prefix
-                              :: (List.fold (nest, [Ast.Tycon.toString tycon],
+                              :: (List.fold (nest, [n],
                                              fn (s, ss) =>
                                              Strid.toString s :: "." :: ss)))
-                   val c = Tycon.make (name, a, k, Ast.Tycon.region tycon)
+                   val c = Tycon.make {admitsEquality = a,
+                                       defLayoutPretty = dlp,
+                                       kind = k,
+                                       name = n,
+                                       region = r}
                    val () =
                       FlexibleTycon.realize (flex, TypeStr.tycon c)
                 in
@@ -2520,10 +2526,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 FlexibleTycon.dest flex
              fun dummy () =
                 let
-                   val dummyName =
+                   val r = Ast.Tycon.region name
+                   val n = Ast.Tycon.toString name
+                   val dlp =
                       prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
                    val dummyTycon =
-                      Tycon.make (dummyName, a, k, Ast.Tycon.region name)
+                      Tycon.make {admitsEquality = a,
+                                  defLayoutPretty = dlp,
+                                  kind = k,
+                                  name = n,
+                                  region = r}
                 in
                    TypeStr.tycon dummyTycon
                 end
