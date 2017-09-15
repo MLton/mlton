@@ -107,6 +107,7 @@ structure Time:>
       type t
 
       val <= : t * t -> bool
+      val equals: t * t -> bool
       val layout: t -> Layout.t
       val now: unit -> t
       val tick: {region: Region.t} -> unit
@@ -126,7 +127,12 @@ structure Time:>
          Layout.tuple [Int.layout (clock t),
                        Region.layout (region t)]
 
-      fun t <= t' = Int.<= (clock t, clock t')
+      local
+         fun make f (t, t') = f (clock t, clock t')
+      in
+         val equals = make Int.equals
+         val op <= = make Int.<=
+      end
 
       local
          val current: t ref =
