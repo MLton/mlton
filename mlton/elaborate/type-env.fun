@@ -1213,38 +1213,40 @@ structure Type =
             fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
             fun recursive _ = Error.bug "TypeEnv.Type.checkTime.recursive"
             fun checkTime (t, bound) =
-               let
-                  fun wrap (f, sel) arg =
-                     let
-                        val ty = sel arg
-                     in
-                        if Time.<= (!(time ty),  bound)
-                           then (NONE, ty)
-                           else (case f arg of
-                                    NONE =>
-                                       (time ty := bound
-                                        ; (NONE, ty))
-                                  | SOME (l1, l2, l3, ty) =>
-                                       (time ty := bound
-                                        ; (SOME (l1, l2, l3), ty)))
-                     end
-                  val res : lll option * t =
-                     hom (t, {con = wrap (con bound, #1),
-                              expandOpaque = false,
-                              flexRecord = wrap (flexRecord, #1),
-                              genFlexRecord = genFlexRecord,
-                              guard = fn _ => NONE,
-                              overload = wrap (fn _ => NONE, #1),
-                              record = wrap (record, #1),
-                              recursive = recursive,
-                              unknown = wrap (fn _ => NONE, #1),
-                              var = wrap (var bound, #1)})
-               in
-                  case res of
-                     (NONE, _) => NONE
-                   | (SOME (l1, _, l3), ty) =>
-                        SOME (l1, (ty, l3))
-               end
+               if Time.<= (!(time t), bound)
+                  then NONE
+                  else let
+                          fun wrap (f, sel) arg =
+                             case f arg of
+                                NONE =>
+                                   let
+                                      val t = sel arg
+                                   in
+                                      time t := bound
+                                      ; (NONE, t)
+                                   end
+                              | SOME (l1, l2, l3, t) =>
+                                   (time t := bound
+                                    ; (SOME (l1, l2, l3), t))
+                          val res : lll option * t =
+                             hom (t, {con = wrap (con bound, #1),
+                                      expandOpaque = false,
+                                      flexRecord = wrap (flexRecord, #1),
+                                      genFlexRecord = genFlexRecord,
+                                      guard = fn t => if Time.<= (!(time t), bound)
+                                                         then SOME (NONE, t)
+                                                         else NONE,
+                                      overload = wrap (fn _ => NONE, #1),
+                                      record = wrap (record, #1),
+                                      recursive = recursive,
+                                      unknown = wrap (fn _ => NONE, #1),
+                                      var = wrap (var bound, #1)})
+                       in
+                          case res of
+                             (NONE, _) => NONE
+                           | (SOME (l1, _, l3), t) =>
+                                SOME (l1, (t, l3))
+                       end
             fun finishCheckTime () =
                {times = List.removeDuplicates (!times, Time.equals),
                 tycons = List.removeDuplicates (!tycons, Tycon.equals),
