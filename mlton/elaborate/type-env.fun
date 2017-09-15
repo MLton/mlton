@@ -155,37 +155,43 @@ structure Tycon =
 
       local
          val {get = info: t -> {admitsEquality: AdmitsEquality.t ref,
+                                kind: Kind.t,
                                 region: Region.t,
                                 time: Time.t},
               set = setInfo, ...} =
             Property.getSet
             (Tycon.plist,
              Property.initRaise ("TypeEnv.Tycon.info", Tycon.layout))
-         fun init (c, a, r) =
+         fun init (c, a, k, r) =
             setInfo (c, {admitsEquality = ref a,
+                         kind = k,
                          region = r,
                          time = Time.now ()})
          val _ =
             List.foreach
-            (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
-             init (c, a, Region.bogus))
-         val made: (Tycon.t * Kind.t * Region.t) list ref = ref []
+            (Tycon.prims, fn {tycon = c, admitsEquality = a, kind = k, ...} =>
+             init (c, a, k, Region.bogus))
+         val made: Tycon.t list ref = ref []
       in
          local
             fun make f = f o info
          in
             val admitsEquality = make #admitsEquality
+            val kind = make #kind
             val region = make #region
             val time = make #time
          end
          fun make (s, a, k, r) =
             let
                val c = Tycon.newString s
-               val _ = init (c, a, r)
-               val _ = List.push (made, (c, k, r))
+               val _ = init (c, a, k, r)
+               val _ = List.push (made, c)
             in
                c
             end
+         fun makeLike c =
+            make (originalName c, ! (admitsEquality c),
+                  kind c, region c)
          fun scopeNew th =
             let
                val oldMade = !made

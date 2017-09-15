@@ -3665,14 +3665,9 @@ fun functorClosure
                   instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
                val _ =
                   List.foreach
-                  (generative, fn (c, k, r) =>
+                  (generative, fn c =>
                    setTyconTypeStr
-                   (c, SOME (TypeStr.tycon
-                             (Tycon.make (Tycon.originalName c,
-                                          ! (Tycon.admitsEquality c),
-                                          k,
-                                          r),
-                              k))))
+                   (c, SOME (TypeStr.tycon (Tycon.makeLike c, Tycon.kind c))))
                fun replaceType (t: Type.t): Type.t =
                   let
                      fun con (c, ts) =
