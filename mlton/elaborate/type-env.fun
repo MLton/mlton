@@ -645,8 +645,8 @@ structure Type =
          ("TypeEnv.Type.admitsEquality", layout, Bool.layout) 
          admitsEquality
 
-      fun makeHom {con, expandOpaque, flexRecord, genFlexRecord, overload,
-                   record, recursive, unknown, var} =
+      fun makeHom {con, expandOpaque, flexRecord, genFlexRecord,
+                   guard, overload, record, recursive, unknown, var} =
          let
             datatype status = Processing | Seen | Unseen
             val {destroy = destroyStatus, get = status, ...} =
@@ -663,39 +663,43 @@ structure Type =
                        Seen => Error.bug "TypeEnv.Type.makeHom: impossible"
                      | Processing => recursive t
                      | Unseen =>
-                          let
-                             val _ = r := Processing
-                             fun loopFields fields =
-                                List.revMap (fields, fn (f, t) => (f, get t))
-                             val res = 
-                                case getTy t of
-                                   Con (c, ts) =>
-                                      let
-                                         fun no () =
-                                            con (t, c, Vector.map (ts, get))
-                                         fun yes () =
-                                            (case Tycon.opaqueExpansion c of
-                                                NONE => no ()
-                                              | SOME f => get (f ts))
-                                      in
-                                         if expandOpaque then yes () else no ()
-                                      end
-                                 | FlexRecord {fields, spine} =>
-                                      flexRecord (t, {fields = loopFields fields,
-                                                      spine = spine})
-                                 | GenFlexRecord {extra, fields, spine} =>
-                                      genFlexRecord
-                                      (t, {extra = extra,
-                                           fields = loopFields fields,
-                                           spine = spine})
-                                 | Overload ov => overload (t, ov)
-                                 | Record r => record (t, Srecord.map (r, get))
-                                 | Unknown u => unknown (t, u)
-                                 | Var a => var (t, a)
-                             val _ = r := Seen
-                          in
-                             res
-                          end
+                          (case guard t of
+                              NONE =>
+                                 let
+                                    val _ = r := Processing
+                                    fun loopFields fields =
+                                       List.revMap (fields, fn (f, t) => (f, get t))
+                                    val res =
+                                       case getTy t of
+                                          Con (c, ts) =>
+                                             let
+                                                fun no () =
+                                                   con (t, c, Vector.map (ts, get))
+                                                fun yes () =
+                                                   (case Tycon.opaqueExpansion c of
+                                                       NONE => no ()
+                                                     | SOME f => get (f ts))
+                                             in
+                                                if expandOpaque then yes () else no ()
+                                             end
+                                        | FlexRecord {fields, spine} =>
+                                             flexRecord
+                                             (t, {fields = loopFields fields,
+                                                  spine = spine})
+                                        | GenFlexRecord {extra, fields, spine} =>
+                                             genFlexRecord
+                                             (t, {extra = extra,
+                                                  fields = loopFields fields,
+                                                  spine = spine})
+                                        | Overload ov => overload (t, ov)
+                                        | Record r => record (t, Srecord.map (r, get))
+                                        | Unknown u => unknown (t, u)
+                                        | Var a => var (t, a)
+                                    val _ = r := Seen
+                                 in
+                                    res
+                                 end
+                            | SOME res => (r := Seen; res))
                  end))
             fun destroy () =
                (destroyStatus ()
@@ -761,6 +765,7 @@ structure Type =
                         expandOpaque = expandOpaque,
                         flexRecord = flexRecord,
                         genFlexRecord = genFlexRecord,
+                        guard = fn _ => NONE,
                         overload = overload,
                         record = record,
                         recursive = recursive,
@@ -1040,6 +1045,7 @@ structure Type =
                         expandOpaque = false,
                         flexRecord = wrap (flexRecord, #1),
                         genFlexRecord = wrap (genFlexRecord, #1),
+                        guard = fn _ => NONE,
                         overload = wrap (overload, #1),
                         record = wrap (record, #1),
                         recursive = wrap (recursive, fn t => t),
@@ -1229,6 +1235,7 @@ structure Type =
                               expandOpaque = false,
                               flexRecord = wrap (flexRecord, #1),
                               genFlexRecord = genFlexRecord,
+                              guard = fn _ => NONE,
                               overload = wrap (fn _ => NONE, #1),
                               record = wrap (record, #1),
                               recursive = recursive,
@@ -1419,6 +1426,7 @@ structure Type =
                                      flexRecord = flexRecord,
                                      genFlexRecord = fn _ =>
                                      Error.bug "TypeEnv.Type.unify.oneUnknown: genFlexRecord",
+                                     guard = fn _ => NONE,
                                      overload = no,
                                      record = record,
                                      recursive = fn _ => 
@@ -1719,6 +1727,7 @@ structure Type =
                      expandOpaque = expandOpaque,
                      flexRecord = flexRecord,
                      genFlexRecord = genFlexRecord,
+                     guard = fn _ => NONE,
                      overload = overload,
                      record = fn (t, r) => record (t, Srecord.toVector r),
                      recursive = recursive,
@@ -1872,6 +1881,7 @@ structure Scheme =
                                     expandOpaque = false,
                                     flexRecord = keep o #1,
                                     genFlexRecord = genFlexRecord,
+                                    guard = fn _ => NONE,
                                     overload = keep o #1,
                                     record = record,
                                     recursive = recursive,
@@ -1977,6 +1987,7 @@ structure Scheme =
                 flexRecord = fn (_, {fields, ...}) => List.exists (fields, #2),
                 genFlexRecord = (fn (_, {fields, ...}) =>
                                  List.exists (fields, #2)),
+                guard = fn _ => NONE,
                 overload = no,
                 record = fn (_, r) => Srecord.exists (r, fn b => b),
                 recursive = no,
