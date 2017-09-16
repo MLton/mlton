@@ -183,7 +183,6 @@ signature ELABORATE_ENV =
          -> FunctorClosure.t
       val layout: t -> Layout.t
       val layoutCurrentScope: t -> Layout.t
-      val layoutUsed: t -> Layout.t
       val localAll: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b

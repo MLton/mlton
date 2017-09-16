@@ -1902,8 +1902,6 @@ fun layoutCurrentScope (E as T {currentScope, ...}) =
                {showUsed = false})
    end
 
-fun layoutUsed (E: t): Layout.t = layout' (E, true, #hasUse, {showUsed = true})
-
 (* Force everything that is currently in scope to be marked as used. *)
 fun forceUsed E =
    let
