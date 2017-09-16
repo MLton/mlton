@@ -1062,7 +1062,6 @@ structure Structure =
       in
          fun layouts (interfaceSigid: Interface.t -> Sigid.t option) =
             let
-               val showUsed = false
                fun layoutTypeSpec (n, s, {showEqtype: bool}) =
                   layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false, showEqtype = showEqtype})
                and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool, showEqtype: bool}) =
@@ -1162,13 +1161,10 @@ structure Structure =
                   let
                      fun doit (Info.T a, layout) =
                         align (Array.foldr
-                               (a, [], fn ({domain, range, uses, ...}, ac) =>
-                                if showUsed andalso not (Uses.hasUse uses)
-                                   then ac
-                                else
-                                   case layout (domain, range) of
-                                      NONE => ac
-                                    | SOME l => l :: ac))
+                               (a, [], fn ({domain, range, ...}, ac) =>
+                                case layout (domain, range) of
+                                   NONE => ac
+                                 | SOME l => l :: ac))
                      val layoutTypeSpec = fn (n, r) =>
                         layoutTypeSpec (n, r, showEqtype)
                      val layoutStrSpec = fn (n, r) =>
@@ -1183,17 +1179,15 @@ structure Structure =
                       str "end"]
                   end
                and layoutAbbrev (S as T {interface, ...}, showEqtype) =
-                  case if showUsed
-                          then NONE
-                       else (case interface of
-                                NONE => NONE
-                              | SOME I =>
-                                   let
-                                      val I = Interface.original I
-                                   in
-                                      Option.map (interfaceSigid I, fn s =>
-                                                  (s, I))
-                                   end) of
+                  case (case interface of
+                           NONE => NONE
+                         | SOME I =>
+                              let
+                                 val I = Interface.original I
+                              in
+                                 Option.map (interfaceSigid I, fn s =>
+                                             (s, I))
+                              end) of
                           NONE => (layoutStr (S, showEqtype), {messy = true})
                         | SOME (s, I) =>
                              let
