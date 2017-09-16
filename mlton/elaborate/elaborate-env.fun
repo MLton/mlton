@@ -1849,9 +1849,7 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
          Property.getSet (Interface.plist, Property.initConst NONE)
       val _ = Array.foreach (sigs, fn {domain = s, range = I, ...} =>
                              setInterfaceSigid (I, SOME s))
-      val {strSpec, typeSpec, valSpec, ...} =
-         Structure.layouts interfaceSigid
-      val {layoutAbbrev, layoutStr, ...} =
+      val {layoutAbbrev, layoutStr, strSpec, typeSpec, valSpec, ...} =
          Structure.layouts interfaceSigid
       val bass =
          doit (bass, fn {domain = basid, ...} =>
