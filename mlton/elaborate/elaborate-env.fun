@@ -414,6 +414,7 @@ structure Interface =
    struct
       structure Econs = Cons
       structure Escheme = Scheme
+      structure Etycon = Tycon
       structure Etype = Type
       structure EtypeStr = TypeStr
       open Interface
@@ -552,6 +553,44 @@ structure Interface =
                            Cons.fromEnv cons,
                            true)
                 | EtypeStr.Scheme s => def (Scheme.fromEnv s)
+
+            structure Sort =
+               struct
+                  datatype t =
+                     Datatype of {tycon: Etycon.t, cons: Econs.t, repl: bool}
+                   | Scheme of Escheme.t
+                   | Type of {admitsEquality: bool}
+               end
+
+            fun sort (sigStr, rlzStr, representative) =
+               case (representative, node sigStr, EtypeStr.node rlzStr) of
+                  (false, Datatype _, EtypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                     Sort.Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
+                | (false, Datatype _, EtypeStr.Scheme _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = false, sigStr = Datatype _, rlzStr = Scheme _}"
+                | (false, _, rlzStr) =>
+                     (case rlzStr of
+                         EtypeStr.Datatype {tycon, ...} =>
+                            Sort.Scheme (Escheme.fromTycon tycon)
+                       | EtypeStr.Scheme s =>
+                            Sort.Scheme s)
+                | (true, Datatype {repl = false, ...}, EtypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
+                     Sort.Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
+                | (true, Datatype {repl = false, ...}, EtypeStr.Scheme _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
+                | (true, Datatype {repl = true, ...}, _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Datatype {repl = true, ...}}"
+                | (true, Scheme _, _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Scheme _}"
+                | (true, Tycon _, _) =>
+                     (case admitsEquality sigStr of
+                         AdmitsEquality.Always => Sort.Type {admitsEquality = true}
+                       | AdmitsEquality.Never => Sort.Type {admitsEquality = false}
+                       | AdmitsEquality.Sometimes => Sort.Type {admitsEquality = true})
+
+            val sort = fn (name, sigStr, rlzStr, flexTyconMap) =>
+               sort (sigStr, rlzStr,
+                     Option.isSome (TyconMap.peekTycon (flexTyconMap, name)))
          end
    end
 
@@ -2593,39 +2632,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
              ()
           end)
 
-      datatype sort =
-         Datatype of {tycon: Tycon.t, cons: Cons.t, repl: bool}
-       | Scheme of Scheme.t
-       | Type of {admitsEquality: bool}
-      fun sort (name, sigStr, rlzStr, flexTyconMap) =
-         let
-            val flexTycon = TyconMap.peekTycon (flexTyconMap, name)
-         in
-            case (flexTycon, Interface.TypeStr.node sigStr, TypeStr.node rlzStr) of
-               (NONE, Interface.TypeStr.Datatype _, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                  Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
-             | (NONE, Interface.TypeStr.Datatype _, TypeStr.Scheme _) =>
-                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = NONE, sigStr = Datatype _, rlzStr = Scheme _}"
-             | (NONE, _, rlzStr) =>
-                  (case rlzStr of
-                      TypeStr.Datatype {tycon, ...} =>
-                         Scheme (Scheme.fromTycon tycon)
-                    | TypeStr.Scheme s =>
-                         Scheme s)
-             | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
-                  Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
-             | (SOME _, Interface.TypeStr.Datatype {repl = false, ...}, TypeStr.Scheme _) =>
-                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
-             | (SOME _, Interface.TypeStr.Datatype {repl = true, ...}, _) =>
-                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Datatype {repl = true, ...}}"
-             | (SOME _, Interface.TypeStr.Scheme _, _) =>
-                  Error.bug "ElaborateEnv.transparentCut.sort: {flexTycon = SOME _, sigStr = Scheme _}"
-             | (SOME _, Interface.TypeStr.Tycon _, _) =>
-                  (case Interface.TypeStr.admitsEquality sigStr of
-                      AdmitsEquality.Always => Type {admitsEquality = true}
-                    | AdmitsEquality.Never => Type {admitsEquality = false}
-                    | AdmitsEquality.Sometimes => Type {admitsEquality = true})
-         end
+      datatype sort = datatype Interface.TypeStr.Sort.t
+      val sort = Interface.TypeStr.sort
 
       fun layouts () =
          let
