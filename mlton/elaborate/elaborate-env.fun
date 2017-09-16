@@ -1060,9 +1060,9 @@ structure Structure =
       local
          open Layout
       in
-         fun layouts ({showUsed: bool},
-                      interfaceSigid: Interface.t -> Sigid.t option) =
+         fun layouts (interfaceSigid: Interface.t -> Sigid.t option) =
             let
+               val showUsed = false
                fun layoutTypeSpec (n, s, {showEqtype: bool}) =
                   layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false, showEqtype = showEqtype})
                and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool, showEqtype: bool}) =
@@ -1229,7 +1229,7 @@ structure Structure =
       end
 
       fun layoutPretty S =
-         #layoutStr (layouts ({showUsed = false}, fn _ => NONE)) (S, {showEqtype = false})
+         #layoutStr (layouts (fn _ => NONE)) (S, {showEqtype = false})
 
       datatype 'a peekResult =
          Found of 'a
@@ -1856,9 +1856,9 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
       val _ = Array.foreach (sigs, fn {domain = s, range = I, ...} =>
                              setInterfaceSigid (I, SOME s))
       val {strSpec, typeSpec, valSpec, ...} =
-         Structure.layouts ({showUsed = false}, interfaceSigid)
+         Structure.layouts interfaceSigid
       val {layoutAbbrev, layoutStr, ...} =
-         Structure.layouts ({showUsed = false}, interfaceSigid)
+         Structure.layouts interfaceSigid
       val bass =
          doit (bass, fn {domain = basid, ...} =>
                seq [str "basis ", Basid.layout basid, str " = "])
