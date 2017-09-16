@@ -799,8 +799,16 @@ structure Interface =
          in
             {layoutTypeSpec = layoutTypeSpec,
              layoutValSpec = layoutValSpec,
+             layoutSig = layoutSig,
              layoutStrSpec = layoutStrSpec}
          end
+
+      fun layoutPretty I =
+         (#layoutSig (layouts {interfaceSigid = fn _ => NONE}))
+         ([], I, TyconMap.empty (),
+          {elide = {strs = NONE,
+                    types = NONE,
+                    vals = NONE}})
    end
 
 structure Status =
@@ -1828,7 +1836,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
 
 val dummyStructure =
    Trace.trace ("ElaborateEnv.dummyStructure",
-                Interface.layout o #1,
+                Interface.layoutPretty o #1,
                 Structure.layoutPretty o #1)
    dummyStructure
 
@@ -3521,7 +3529,8 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 val cut =
    Trace.trace ("ElaborateEnv.cut",
                 fn (_, S, I, _, _) =>
-                Layout.tuple [Structure.layoutPretty S, Interface.layout I],
+                Layout.tuple [Structure.layoutPretty S,
+                              Interface.layoutPretty I],
                 Structure.layoutPretty o #1)
    cut
 
