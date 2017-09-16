@@ -83,9 +83,11 @@ structure Time:>
       val <= : t * t -> bool
       val equals: t * t -> bool
       val layout: t -> Layout.t
+      val max: t * t -> t
       val now: unit -> t
       val region: t -> Region.t
       val tick: {region: Region.t} -> unit
+      val zero: t
    end =
    struct
       datatype t = T of {clock: int,
@@ -108,11 +110,12 @@ structure Time:>
          val equals = make Int.equals
          val op <= = make Int.<=
       end
+      fun max (t, t') = if t <= t' then t' else t
+
+      val zero = T {clock = 0, region = Region.bogus}
 
       local
-         val current: t ref =
-            ref (T {clock = 0,
-                    region = Region.bogus})
+         val current: t ref = ref zero
       in
          fun now () = !current
          fun tick {region} =
@@ -820,25 +823,38 @@ structure Type =
 
       fun newTy (ty: ty): t =
          let
-            val equality =
+            val (equality, time) =
                case ty of
                   Con (c, ts) =>
-                     Equality.applyTycon
-                     (c, Vector.map (ts, equality))
+                     (Equality.applyTycon
+                      (c, Vector.map (ts, equality)),
+                      Vector.fold
+                      (ts, Tycon.time c, fn (t, t') =>
+                       Time.max (!(time t), t')))
                 | GenFlexRecord _ =>
                      Error.bug "TypeEnv.Type.newTy: GenFlexRecord"
                 | FlexRecord {fields, ...} =>
-                     Equality.and2
-                     (Equality.andd (Vector.fromListMap (fields, equality o #2)),
-                      Equality.unknown ())
-                | Overload ov => Overload.admitsEquality ov
-                | Record r => Equality.andd (Vector.map (Srecord.range r, equality))
+                     (Equality.and2
+                      (Equality.andd (Vector.fromListMap (fields, equality o #2)),
+                       Equality.unknown ()),
+                      Time.now ())
+                | Overload ov =>
+                     (Overload.admitsEquality ov,
+                      Time.zero)
+                | Record r =>
+                     (Equality.andd
+                      (Vector.map (Srecord.range r, equality)),
+                      Srecord.fold
+                      (r, Time.zero, fn (t, t') =>
+                       Time.max (!(time t), t')))
                 | Unknown _ =>
                      Error.bug "TypeEnv.Type.newTy: Unknown"
-                | Var a => Equality.fromBool (Tyvar.isEquality a)
+                | Var a =>
+                     (Equality.fromBool (Tyvar.isEquality a),
+                      !(Tyvar.time a))
          in
             make {equality = equality,
-                  time = Time.now (),
+                  time = time,
                   ty = ty}
          end
 
