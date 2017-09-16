@@ -1838,7 +1838,7 @@ val dummyStructure =
                 Structure.layoutPretty o #1)
    dummyStructure
 
-fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
+fun layout' (E: t, prefixUnset, keep): Layout.t =
    let
       val _ = setTyconLayoutPretty (E, {prefixUnset = prefixUnset})
       val {bass, fcts, sigs, strs, types, vals} = collect (E, keep)
@@ -1856,7 +1856,7 @@ fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
       val _ = Array.foreach (sigs, fn {domain = s, range = I, ...} =>
                              setInterfaceSigid (I, SOME s))
       val {strSpec, typeSpec, valSpec, ...} =
-         Structure.layouts (showUsed, interfaceSigid)
+         Structure.layouts ({showUsed = false}, interfaceSigid)
       val {layoutAbbrev, layoutStr, ...} =
          Structure.layouts ({showUsed = false}, interfaceSigid)
       val bass =
@@ -1892,14 +1892,13 @@ fun layout' (E: t, prefixUnset, keep, showUsed): Layout.t =
       align [types, vals, strs, fcts, sigs, bass]
    end
 
-fun layout E = layout' (E, true, fn _ => true, {showUsed = false})
+fun layout E = layout' (E, true, fn _ => true)
 
 fun layoutCurrentScope (E as T {currentScope, ...}) =
    let
       val s = !currentScope
    in
-      layout' (E, false, fn {scope, ...} => Scope.equals (s, scope),
-               {showUsed = false})
+      layout' (E, false, fn {scope, ...} => Scope.equals (s, scope))
    end
 
 (* Force everything that is currently in scope to be marked as used. *)
