@@ -755,18 +755,24 @@ structure Interface =
                      end
                   val layoutValSpec =
                      fn (strids, name, (sigStatus, sigScheme)) =>
-                     layoutValSpec (strids, name, (sigStatus, sigScheme), {long = false})
+                     layoutValSpec
+                     (strids, name, (sigStatus, sigScheme),
+                      {long = false})
                   val layoutTypeSpec =
                      fn (strids, name, sigStr) =>
-                     layoutTypeSpec (strids, name, sigStr, flexTyconMap, {long = false})
+                     layoutTypeSpec
+                     (strids, name, sigStr, flexTyconMap,
+                      {long = false})
                   val layoutStrSpec =
                      fn (strids, name, I) =>
-                     layoutStrSpec (strids, name, I, flexTyconMap, {long = false}, {elide = elide})
+                     layoutStrSpec
+                     (strids, name, I, flexTyconMap,
+                      {long = false}, {elide = elide})
                in
                   align [str "sig",
-                         indent (align [doit (strs, SOME o layoutStrSpec, #strs elide),
-                                        doit (types, SOME o layoutTypeSpec, #types elide),
-                                        doit (vals, layoutValSpec, #vals elide)]),
+                         indent (align [doit (types, SOME o layoutTypeSpec, #types elide),
+                                        doit (vals, layoutValSpec, #vals elide),
+                                        doit (strs, SOME o layoutStrSpec, #strs elide)]),
                          str "end"]
                end
             and layoutSigNamed (s, I', I, flexTyconMap) =
