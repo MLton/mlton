@@ -663,11 +663,7 @@ structure Interface =
                   datatype sort = datatype TypeStr.Sort.t
                   val (kw, rest) =
                      case sort of
-                        Datatype {repl = true, ...} =>
-                           ("datatype",
-                            SOME (seq [str "datatype ",
-                                       lay (EtypeStr.apply (rlzStr, tyargs))]))
-                      | Datatype {repl = false, cons, ...} =>
+                        Datatype {repl, cons, ...} =>
                            let
                               val cons =
                                  Vector.toListMap
@@ -680,9 +676,22 @@ structure Interface =
                                              NONE => empty
                                            | SOME (ty, _) => seq [str " of ", lay ty]]
                                   end)
+                              val cons = alignPrefix (cons, "| ")
+                              val rest =
+                                 if repl
+                                    then let
+                                            val repl =
+                                               seq [str "(* = datatype ",
+                                                    lay (EtypeStr.apply (rlzStr, tyargs)),
+                                                    str " *)"]
+                                         in
+                                            mayAlign
+                                            [cons, Layout.indent (repl, ~4)]
+                                         end
+                                    else cons
                            in
                               ("datatype",
-                               SOME (alignPrefix (cons, "| ")))
+                               SOME rest)
                            end
                       | Scheme scheme =>
                            ("type",
