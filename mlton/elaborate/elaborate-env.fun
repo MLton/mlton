@@ -828,11 +828,59 @@ structure Interface =
                           then empty
                           else seq [str " ", align wheres]]
                end
+            fun layoutSigDefn (name, I) =
+               let
+                  fun realize (TyconMap.T {strs, types}, strids) =
+                     let
+                        val () =
+                           Array.foreach
+                           (strs, fn (name, tm) =>
+                            realize (tm, name :: strids))
+                        val () =
+                           Array.foreach
+                           (types, fn (name, fc) =>
+                            let
+                               val c =
+                                  FlexibleTycon.dummyTycon
+                                  (fc, name, strids, {prefix = "_sig."})
+                               val () =
+                                  FlexibleTycon.realize
+                                  (fc, EtypeStr.tycon c)
+                            in
+                               ()
+                            end)
+                     in
+                        ()
+                     end
+                  val rlzI = copy I
+                  val tyconMap = flexibleTycons rlzI
+                  val () = realize (tyconMap, [])
+                  val bind = seq [str "signature ", Ast.Sigid.layout name, str " ="]
+                  val origI = Interface.original I
+               in
+                  case (if Interface.equals (I, origI)
+                           then NONE
+                           else interfaceSigid origI) of
+                     NONE =>
+                        align [bind,
+                               indent (layoutSig
+                                       ([], rlzI, tyconMap,
+                                        {elide = {strs = NONE,
+                                                  types = NONE,
+                                                  vals = NONE}}))]
+                   | SOME (s, _) =>
+                        mayAlign [bind,
+                                  indent (layoutSigNamed
+                                          (s, origI, rlzI, tyconMap))]
+               end
+
          in
-            {layoutTypeSpec = layoutTypeSpec,
-             layoutValSpec = layoutValSpec,
-             layoutSig = layoutSig,
-             layoutStrSpec = layoutStrSpec}
+            {layoutSig = layoutSig,
+             layoutSigDefn = layoutSigDefn,
+             layoutSigNamed = layoutSigNamed,
+             layoutStrSpec = layoutStrSpec,
+             layoutTypeSpec = layoutTypeSpec,
+             layoutValSpec = layoutValSpec}
          end
 
       fun layoutPretty I =
