@@ -489,6 +489,24 @@ structure Interface =
             open FlexibleTycon
 
             val toEnv = flexibleTyconToEnv
+
+            fun dummyTycon (fc, name, strids, {prefix}) =
+               let
+                  val {admitsEquality = a, kind = k, ...} =
+                     FlexibleTycon.dest fc
+                   val r = Ast.Tycon.region name
+                   val n = Ast.Tycon.toString name
+                   val dlp =
+                      prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
+                   val c =
+                      Etycon.make {admitsEquality = a,
+                                   defLayoutPretty = dlp,
+                                   kind = k,
+                                   name = n,
+                                   region = r}
+               in
+                  c
+               end
          end
 
       structure Tycon =
