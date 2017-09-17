@@ -405,7 +405,6 @@ structure Interface = Interface (structure Ast = Ast
 local
    open Interface
 in
-   structure FlexibleTycon = FlexibleTycon
    structure Status = Status
    structure TyconMap = TyconMap
 end
@@ -828,6 +827,12 @@ structure Interface =
                     types = NONE,
                     vals = NONE}})
    end
+
+local
+   open Interface
+in
+   structure FlexibleTycon = FlexibleTycon
+end
 
 structure Status =
    struct
@@ -1767,33 +1772,25 @@ fun dummyStructure (I: Interface.t, {prefix: string})
    let
       val time = Time.next ()
       val I = Interface.copy I
-      fun realize (TyconMap.T {strs, types}, nest) =
+      fun realize (TyconMap.T {strs, types}, strids) =
          let
             val strs =
-               Array.map (strs, fn (name, tm) =>
-                          (name, realize (tm, name :: nest)))
+               Array.map
+               (strs, fn (name, tm) =>
+                (name, realize (tm, name :: strids)))
             val types =
                Array.map
-               (types, fn (tycon, flex) =>
+               (types, fn (name, flex) =>
                 let
-                   val {admitsEquality = a, kind = k, ...} =
-                      FlexibleTycon.dest flex
-                   val r = Ast.Tycon.region tycon
-                   val n = Ast.Tycon.toString tycon
-                   val dlp =
-                      concat (prefix
-                              :: (List.fold (nest, [n],
-                                             fn (s, ss) =>
-                                             Strid.toString s :: "." :: ss)))
-                   val c = Tycon.make {admitsEquality = a,
-                                       defLayoutPretty = dlp,
-                                       kind = k,
-                                       name = n,
-                                       region = r}
+                   val c =
+                      FlexibleTycon.dummyTycon
+                      (flex, name, strids,
+                       {prefix = prefix})
                    val () =
-                      FlexibleTycon.realize (flex, TypeStr.tycon c)
+                      FlexibleTycon.realize
+                      (flex, TypeStr.tycon c)
                 in
-                   (tycon, c)
+                   (name, c)
                 end)
          in
             TyconMap.T {strs = strs, types = types}
@@ -2792,20 +2789,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
              val {admitsEquality = a, hasCons, kind = k, ...} =
                 FlexibleTycon.dest flex
              fun dummy () =
-                let
-                   val r = Ast.Tycon.region name
-                   val n = Ast.Tycon.toString name
-                   val dlp =
-                      prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
-                   val dummyTycon =
-                      Tycon.make {admitsEquality = a,
-                                  defLayoutPretty = dlp,
-                                  kind = k,
-                                  name = n,
-                                  region = r}
-                in
-                   TypeStr.tycon dummyTycon
-                end
+                TypeStr.tycon
+                (FlexibleTycon.dummyTycon
+                 (flex, name, strids, {prefix = prefix}))
              val typeStr =
                 case typeStr of
                    NONE => dummy ()
