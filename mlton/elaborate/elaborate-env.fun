@@ -1737,7 +1737,7 @@ fun genSetTyconLayoutPretty {prefixUnset} =
             val _ =
                Array.foreach
                (types, fn (name, flex) =>
-                doType (Interface.FlexibleTycon.toEnv flex, name, priority, length, strids))
+                doType (FlexibleTycon.toEnv flex, name, priority, length, strids))
             val _ =
                Array.foreach
                (strs, fn (strid, tm) =>
