@@ -2989,43 +2989,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
          let
             val Structure.T {strs = strStrs, types = strTypes, vals = strVals, ...} = S
             val {strs = sigStrs, types = sigTypes, vals = sigVals} = Interface.dest I
-            val strs =
-               map {strInfo = strStrs,
-                    ifcArray = sigStrs,
-                    strids = strids,
-                    nameEquals = Strid.equals,
-                    nameLayout = Strid.layout,
-                    specs = fn (name, _) => [Strid.region name],
-                    notFound = fn (name, I) =>
-                    let
-                       val () = preError ()
-                       val spec =
-                          (#layoutStrSpec (Interface.layouts ()))
-                          (strids, name, I,
-                           {elide = {strs = SOME (2, 0),
-                                     types = NONE,
-                                     vals = SOME (3, 2)},
-                            flexTyconMap = flexTyconMap,
-                            long = true,
-                            interfaceSigid = interfaceSigid})
-                       val thing = "structure"
-
-                       val (S, _) = dummyStructure (I, {prefix = ""})
-                    in
-                       {diag = SOME {spec = SOME spec,
-                                     thing = thing},
-                        range = S}
-                    end,
-                    doit = fn (_, S, name, I) =>
-                    let
-                       val flexTyconMap =
-                          Option.fold
-                          (TyconMap.peekStrid (flexTyconMap, name),
-                           TyconMap.empty (),
-                           fn (flexTyconMap, _) => flexTyconMap)
-                    in
-                       cut (S, I, flexTyconMap, name :: strids)
-                    end}
             local
                fun preprocess (strName, strStr, sigName, sigStr, rlzStr) =
                   let
@@ -3553,6 +3516,43 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 in
                    (vid, rlzScheme)
                 end}
+            val strs =
+               map {strInfo = strStrs,
+                    ifcArray = sigStrs,
+                    strids = strids,
+                    nameEquals = Strid.equals,
+                    nameLayout = Strid.layout,
+                    specs = fn (name, _) => [Strid.region name],
+                    notFound = fn (name, I) =>
+                    let
+                       val () = preError ()
+                       val spec =
+                          (#layoutStrSpec (Interface.layouts ()))
+                          (strids, name, I,
+                           {elide = {strs = SOME (2, 0),
+                                     types = NONE,
+                                     vals = SOME (3, 2)},
+                            flexTyconMap = flexTyconMap,
+                            long = true,
+                            interfaceSigid = interfaceSigid})
+                       val thing = "structure"
+
+                       val (S, _) = dummyStructure (I, {prefix = ""})
+                    in
+                       {diag = SOME {spec = SOME spec,
+                                     thing = thing},
+                        range = S}
+                    end,
+                    doit = fn (_, S, name, I) =>
+                    let
+                       val flexTyconMap =
+                          Option.fold
+                          (TyconMap.peekStrid (flexTyconMap, name),
+                           TyconMap.empty (),
+                           fn (flexTyconMap, _) => flexTyconMap)
+                    in
+                       cut (S, I, flexTyconMap, name :: strids)
+                    end}
          in
             Structure.T {interface = SOME I,
                          plist = PropertyList.new (),
