@@ -6,10 +6,13 @@
 
 functor ParseSsa (S: PARSE_SSA_STRUCTS): PARSE_SSA =
 struct
+   open S
+   open SsaTree
+
    fun parse s = 
       Program.T
          {datatypes = Vector.new0(),
           functions = [],
           globals = Vector.new0(),
-          main = Null} 
+          main = Func.newNoname() } 
 end

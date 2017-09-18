@@ -50,6 +50,7 @@ structure Sxml = Sxml (open Xml)
 structure ParseSxml = ParseSxml(structure XmlTree = Xml
                                 structure StreamParser = StreamParser)
 structure Ssa = Ssa (open Atoms)
+structure ParseSsa = ParseSsa(structure SsaTree = Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
@@ -560,14 +561,14 @@ fun simplifySxml sxml =
       sxml
    end
 
-fun makeSsa sxml =
+fun makeSsa ssa =
    Control.passTypeCheck
    {display = Control.Layouts Ssa.Program.layouts,
     name = "closureConvert",
     stats = Ssa.Program.layoutStats,
     style = Control.No,
     suffix = "ssa",
-    thunk = fn () => ClosureConvert.closureConvert sxml,
+    thunk = fn () => ClosureConvert.closureConvert ssa,
     typeCheck = Ssa.typeCheck}
 
 fun simplifySsa ssa =
@@ -854,5 +855,41 @@ fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
             outputC = outputC,
             outputLL = outputLL,
             outputS = outputS}
+
+fun genFromSsa (input: File.t): Machine.Program.t =
+   let
+      val _ = setupConstants()
+      val ssa =
+         Control.passTypeCheck
+         {display = Control.Layouts Ssa.Program.layouts,
+          name = "ssaParse",
+          stats = Ssa.Program.layoutStats,
+          style = Control.ML,
+          suffix = "ssa",
+          thunk = (fn () =>
+                   File.withIn
+                   (input, fn i =>
+                    let
+                       fun toStream () =
+                          case In.inputChar i of
+                             SOME c => Stream.cons (c, Stream.delay toStream)
+                           | NONE => Stream.empty ()
+                    in
+                       ParseSsa.parse (toStream ())
+                    end)),
+          typeCheck = Ssa.typeCheck}
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
+   in
+      makeMachine ssa2
+   end
+fun compileSsa {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromSsa,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
+
 
 end
