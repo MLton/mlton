@@ -437,8 +437,8 @@ structure Interface =
          end
       and typeToEnv (t: Type.t): Etype.t =
          Type.hom (t, {con = fn (c, ts) => EtypeStr.apply (tyconToEnv c, ts),
-                         record = Etype.record,
-                         var = Etype.var})
+                       record = Etype.record,
+                       var = Etype.var})
       and schemeToEnv (Scheme.T {ty, tyvars}): Escheme.t =
          Escheme.make {canGeneralize = true,
                        ty = typeToEnv ty,
