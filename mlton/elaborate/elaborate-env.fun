@@ -606,20 +606,21 @@ structure Interface =
                        | AdmitsEquality.Never => Sort.Type {admitsEquality = false}
                        | AdmitsEquality.Sometimes => Sort.Type {admitsEquality = true})
 
-            val sort = fn (name, sigStr, rlzStr, flexTyconMap) =>
+            val sort = fn (name, sigStr, rlzStr,
+                           flexTyconMap: FlexibleTycon.t TyconMap.t) =>
                sort (sigStr, rlzStr,
                      Option.isSome (TyconMap.peekTycon (flexTyconMap, name)))
          end
 
-      fun layouts {interfaceSigid} =
+      fun layouts () =
          let
             val empty = Layout.empty
             val indent = fn l => Layout.indent (l, 3)
             val isEmpty = Layout.isEmpty
             val tuple = Layout.tuple
-            val layoutLongRev = fn (strids, id, {long}) =>
+            val layoutLongRev = fn (strids, id, long) =>
                if long then layoutLongRev (strids, id) else id
-            fun layoutValSpec (strids, name, (sigStatus, sigScheme), long) =
+            fun layoutValSpec (strids, name, (sigStatus, sigScheme), {long}) =
                let
                   val rlzScheme = Scheme.toEnv sigScheme
                in
@@ -638,7 +639,8 @@ structure Interface =
                                    str (if Ast.Vid.isSymbolic name then " : " else ": "),
                                    Escheme.layoutPretty rlzScheme])
                end
-            fun layoutTypeSpec (strids, name, sigStr, flexTyconMap, long) =
+            fun layoutTypeSpec (strids, name, sigStr,
+                                {flexTyconMap, long}) =
                let
                   val {destroy, layoutPretty} =
                      Etype.makeLayoutPretty {expandOpaque = false,
@@ -654,7 +656,6 @@ structure Interface =
                      Vector.tabulate
                      (arity, fn _ =>
                       Etype.var (Etyvar.newNoname {equality = false}))
-                  val _ = Vector.foreach (tyargs, ignore o lay)
                   val tyvars =
                      case Vector.length tyargs of
                         0 => empty
@@ -709,7 +710,8 @@ structure Interface =
                           NONE => empty
                         | SOME rest => seq [str " = ", rest]]
                end
-            fun layoutStrSpec (strids, name, I, flexTyconMap, long, elide) =
+            fun layoutStrSpec (strids, name, I,
+                               {elide, flexTyconMap, interfaceSigid, long}) =
                let
                   val bind = seq [str "structure ",
                                   layoutLongRev (strids, Ast.Strid.layout name, long),
@@ -720,15 +722,39 @@ structure Interface =
                       TyconMap.empty (),
                       fn (flexTyconMap, _) => flexTyconMap)
                   val strids = name::strids
+                  val {abbrev, full} =
+                     layoutSig (strids, I,
+                                {elide = elide,
+                                 flexTyconMap = flexTyconMap,
+                                 interfaceSigid = interfaceSigid})
                in
-                  case interfaceSigid (Interface.original I) of
-                     NONE => align [bind, indent (layoutSig (strids, I, flexTyconMap, elide))]
-                   | SOME (s, I') => mayAlign [bind, indent (layoutSigNamed (s, I', I, flexTyconMap))]
+                  case abbrev () of
+                     NONE => align [bind, indent (full ())]
+                   | SOME sigg => mayAlign [bind, indent sigg]
                end
-            and layoutSig (strids, I, flexTyconMap,
-                           {elide: {strs: (int * int) option,
-                                    types: (int * int) option,
-                                    vals: (int * int) option}}) =
+            and layoutSig (strids, I,
+                           {elide, flexTyconMap, interfaceSigid}) =
+               let
+                  fun abbrev () =
+                     case interfaceSigid (Interface.original I) of
+                        NONE => NONE
+                      | SOME (s, I') =>
+                           SOME (layoutSigAbbrev (s, I', I,
+                                                  {flexTyconMap = flexTyconMap}))
+                  fun full () =
+                     layoutSigFull (strids, I,
+                                    {elide = elide,
+                                     flexTyconMap = flexTyconMap,
+                                     interfaceSigid = interfaceSigid})
+               in
+                  {abbrev = abbrev,
+                   full = full}
+               end
+            and layoutSigFull (strids, I,
+                               {elide: {strs: (int * int) option,
+                                        types: (int * int) option,
+                                        vals: (int * int) option},
+                                flexTyconMap, interfaceSigid}) =
                let
                   val {strs, types, vals} = Interface.dest I
                   fun doit (a, layout, elide) =
@@ -753,21 +779,25 @@ structure Interface =
                                  else align specs
                               end
                      end
+                  val layoutTypeSpec =
+                     fn (strids, name, sigStr) =>
+                     layoutTypeSpec
+                     (strids, name, sigStr,
+                      {flexTyconMap = flexTyconMap,
+                       long = false})
                   val layoutValSpec =
                      fn (strids, name, (sigStatus, sigScheme)) =>
                      layoutValSpec
                      (strids, name, (sigStatus, sigScheme),
                       {long = false})
-                  val layoutTypeSpec =
-                     fn (strids, name, sigStr) =>
-                     layoutTypeSpec
-                     (strids, name, sigStr, flexTyconMap,
-                      {long = false})
                   val layoutStrSpec =
                      fn (strids, name, I) =>
                      layoutStrSpec
-                     (strids, name, I, flexTyconMap,
-                      {long = false}, {elide = elide})
+                     (strids, name, I,
+                      {elide = elide,
+                       flexTyconMap = flexTyconMap,
+                       interfaceSigid = interfaceSigid,
+                       long = false})
                in
                   align [str "sig",
                          indent (align [doit (types, SOME o layoutTypeSpec, #types elide),
@@ -775,10 +805,11 @@ structure Interface =
                                         doit (strs, SOME o layoutStrSpec, #strs elide)]),
                          str "end"]
                end
-            and layoutSigNamed (s, I', I, flexTyconMap) =
+            and layoutSigAbbrev (s, I', I, {flexTyconMap}) =
                let
                   val flexTyconMap' =
                      Interface.flexibleTycons I'
+                  val _ = [flexTyconMap, flexTyconMap']
                   val wheres = ref []
                   fun loop (strids, flexTyconMap', I, flexTyconMap) =
                      let
@@ -813,8 +844,8 @@ structure Interface =
                                            layoutTypeSpec (strids,
                                                            name,
                                                            Interface.TypeStr.abs sigStr,
-                                                           flexTyconMap,
-                                                           {long = true})])
+                                                           {flexTyconMap = flexTyconMap,
+                                                            long = true})])
                                 | SOME _ => ()
                             end)
                      in
@@ -828,7 +859,7 @@ structure Interface =
                           then empty
                           else seq [str " ", align wheres]]
                end
-            fun layoutSigDefn (name, I) =
+            fun layoutSigDefn (name, I, {interfaceSigid}) =
                let
                   fun realize (TyconMap.T {strs, types}, strids) =
                      let
@@ -853,42 +884,42 @@ structure Interface =
                         ()
                      end
                   val rlzI = copy I
-                  val tyconMap = flexibleTycons rlzI
-                  val () = realize (tyconMap, [])
+                  val flexTyconMap = flexibleTycons rlzI
+                  val () = realize (flexTyconMap, [])
                   val bind = seq [str "signature ", Ast.Sigid.layout name, str " ="]
+                  val {abbrev, full} = layoutSig ([], rlzI,
+                                                  {elide = {strs = NONE,
+                                                            types = NONE,
+                                                            vals = NONE},
+                                                   flexTyconMap = flexTyconMap,
+                                                   interfaceSigid = interfaceSigid})
+                  val full = fn () => align [bind, indent (full ())]
                   val origI = Interface.original I
                in
-                  case (if Interface.equals (I, origI)
-                           then NONE
-                           else interfaceSigid origI) of
-                     NONE =>
-                        align [bind,
-                               indent (layoutSig
-                                       ([], rlzI, tyconMap,
-                                        {elide = {strs = NONE,
-                                                  types = NONE,
-                                                  vals = NONE}}))]
-                   | SOME (s, _) =>
-                        mayAlign [bind,
-                                  indent (layoutSigNamed
-                                          (s, origI, rlzI, tyconMap))]
+                  if Interface.equals (I, origI)
+                     then full ()
+                     else (case abbrev () of
+                              NONE => full ()
+                            | SOME sigg => mayAlign [bind, indent sigg])
                end
-
          in
             {layoutSig = layoutSig,
              layoutSigDefn = layoutSigDefn,
-             layoutSigNamed = layoutSigNamed,
+             layoutSigFull = layoutSigFull,
              layoutStrSpec = layoutStrSpec,
              layoutTypeSpec = layoutTypeSpec,
              layoutValSpec = layoutValSpec}
          end
+      val layouts = Promise.lazy layouts
 
       fun layoutPretty I =
-         (#layoutSig (layouts {interfaceSigid = fn _ => NONE}))
-         ([], I, TyconMap.empty (),
+         (#layoutSigFull (layouts ()))
+         ([], I,
           {elide = {strs = NONE,
                     types = NONE,
-                    vals = NONE}})
+                    vals = NONE},
+           flexTyconMap = TyconMap.empty (),
+           interfaceSigid = fn _ => NONE})
    end
 
 local
@@ -2907,9 +2938,6 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
 
       datatype sort = datatype Interface.TypeStr.Sort.t
       val sort = Interface.TypeStr.sort
-      fun layouts () =
-         (preError ()
-          ; Interface.layouts {interfaceSigid = interfaceSigid})
 
       val decs = ref []
       fun map {strInfo: ('name, 'strRange) Info.t,
@@ -3017,12 +3045,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     specs = fn (name, _) => [Strid.region name],
                     notFound = fn (name, I) =>
                     let
+                       val () = preError ()
                        val spec =
-                          (#layoutStrSpec (layouts ()))
-                          (strids, name, I, flexTyconMap, {long = true},
+                          (#layoutStrSpec (Interface.layouts ()))
+                          (strids, name, I,
                            {elide = {strs = SOME (2, 0),
                                      types = NONE,
-                                     vals = SOME (3, 2)}})
+                                     vals = SOME (3, 2)},
+                            flexTyconMap = flexTyconMap,
+                            long = true,
+                            interfaceSigid = interfaceSigid})
                        val thing = "structure"
 
                        val (S, _) = dummyStructure (I, {prefix = ""})
@@ -3154,8 +3186,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     notFound = fn (name, sigStr) =>
                     let
                        val spec =
-                          (#layoutTypeSpec (layouts ()))
-                          (strids, name, sigStr, flexTyconMap, {long = true})
+                          (#layoutTypeSpec (Interface.layouts ()))
+                          (strids, name, sigStr,
+                           {flexTyconMap = flexTyconMap,
+                            long = true})
                        val thing = "type"
 
                        val rlzStr = Interface.TypeStr.toEnv sigStr
@@ -3426,7 +3460,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                 notFound = fn (name, (sigStatus, sigScheme)) =>
                 let
                    val spec =
-                      (#layoutValSpec (layouts ()))
+                      (#layoutValSpec (Interface.layouts ()))
                       (strids, name, (sigStatus, sigScheme), {long = true})
                    val thing = Status.pretty sigStatus
 
