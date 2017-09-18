@@ -176,9 +176,10 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                                          Region.append
                                          (Fctid.region fctid,
                                           Strexp.region strexp))
+                                     val resId = Strid.uRes (Fctid.toString fctid)
                                      val (decs'', S) =
                                         FunctorClosure.apply
-                                        (fct, S, [Fctid.toString fctid])
+                                        (fct, S, [Strid.toString resId])
                                   in
                                      (Decs.appends [decs, decs', decs''], S)
                                   end
