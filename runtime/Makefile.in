@@ -13,7 +13,7 @@ TARGET := self
 
 ifeq ($(TARGET), self)
 # CC := gcc -std=gnu99
-CC := `@CC@`
+CC := @CC@
 AR := ar rc
 # RANLIB := ranlib
 RANLIB := @RANLIB@
