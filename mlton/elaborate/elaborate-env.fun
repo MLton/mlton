@@ -656,11 +656,12 @@ structure Interface =
                      Vector.tabulate
                      (arity, fn _ =>
                       Etype.var (Etyvar.newNoname {equality = false}))
+                  val tyvars = Vector.map (tyargs, lay)
                   val tyvars =
                      case Vector.length tyargs of
                         0 => empty
-                      | 1 => lay (Vector.first tyargs)
-                      | _ => tuple (Vector.toListMap (tyargs, lay))
+                      | 1 => Vector.first tyvars
+                      | _ => tuple (Vector.toList tyvars)
                   datatype sort = datatype TypeStr.Sort.t
                   val (kw, rest) =
                      case sort of
