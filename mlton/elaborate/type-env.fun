@@ -755,16 +755,16 @@ structure Type =
                 | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
             fun unknown (_, u) = Unknown.layoutPretty u
-            val (destroy, prettyTyvar) =
+            val (destroy, layTyvar) =
                if localTyvarNames
                   then let
-                          val {destroy, lay} =
+                          val {destroy, layoutPretty} =
                              Tyvar.makeLayoutPretty ()
                        in
-                          (destroy, lay)
+                          (destroy, layoutPretty)
                        end
                else (fn () => (), Tyvar.layout)
-            fun var (_, a) = simple (prettyTyvar a)
+            fun var (_, a) = simple (layTyvar a)
             fun layoutPretty t =
                hom (t, {con = con,
                         expandOpaque = expandOpaque,

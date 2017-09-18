@@ -814,7 +814,7 @@ structure TypeStr =
                case kind tyStr of
                   Kind.Arity arity => arity
                 | _ => Error.bug "Interface.TypeStr.mkErrorExtra: Kind.Nary"
-            val {destroy, lay = layTyvar} = Tyvar.makeLayoutPretty ()
+            val {destroy, layoutPretty = layTyvar} = Tyvar.makeLayoutPretty ()
             val tyvars =
                case arity of
                   0 => empty

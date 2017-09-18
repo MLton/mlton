@@ -85,7 +85,7 @@ end
 
 fun makeLayoutPretty () =
    let
-      val {destroy, get = lay, ...} =
+      val {destroy, get = layoutPretty, ...} =
          Property.destGet
          (plist,
           Property.initFun
@@ -107,7 +107,7 @@ fun makeLayoutPretty () =
               end
            end))
    in
-      {destroy = destroy, lay = lay}
+      {destroy = destroy, layoutPretty = layoutPretty}
    end
 
 end
