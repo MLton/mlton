@@ -731,7 +731,7 @@ structure Interface =
                in
                   case abbrev () of
                      NONE => align [bind, indent (full ())]
-                   | SOME sigg => mayAlign [bind, indent sigg]
+                   | SOME sigg => seq [bind, str " ", sigg]
                end
             and layoutSig (strids, I,
                            {elide, flexTyconMap, interfaceSigid}) =
@@ -855,10 +855,7 @@ structure Interface =
                   val () = loop ([], flexTyconMap', I, flexTyconMap)
                   val wheres = rev (!wheres)
                in
-                  seq [Ast.Sigid.layout s,
-                       if List.isEmpty wheres
-                          then empty
-                          else seq [str " ", align wheres]]
+                  align (Ast.Sigid.layout s :: wheres)
                end
             fun layoutSigDefn (name, I, {interfaceSigid}) =
                let
@@ -901,7 +898,7 @@ structure Interface =
                      then full ()
                      else (case abbrev () of
                               NONE => full ()
-                            | SOME sigg => mayAlign [bind, indent sigg])
+                            | SOME sigg => seq [bind, str " ", sigg])
                end
          in
             {layoutSig = layoutSig,
