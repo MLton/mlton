@@ -1276,7 +1276,8 @@ structure FunctorClosure =
                arg: Strid.t,
                argInt: Interface.t,
                formal: Structure.t,
-               result: Structure.t option}
+               result: Structure.t option,
+               summary: Structure.t -> Structure.t option}
 
       local
          fun make f (T r) = f r
@@ -3675,102 +3676,104 @@ fun functorClosure
               in 
                  fn f => snapshot (fn () => withSaved f)
               end
+      fun summary actual =
+         let
+            val _ = Structure.forceUsed actual
+            val {destroy = destroy1,
+                 get = tyconTypeStr: Tycon.t -> TypeStr.t option,
+                 set = setTyconTypeStr, ...} =
+               Property.destGetSet (Tycon.plist, Property.initConst NONE)
+            (* Match the actual against the formal, to set the tycons.
+             * Then duplicate the result, replacing tycons.  Want to generate
+             * new tycons just like the functor body did.
+             *)
+            val _ =
+               instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
+            val _ =
+               List.foreach
+               (generative, fn c =>
+                setTyconTypeStr
+                (c, SOME (TypeStr.tycon (Tycon.makeLike c))))
+            fun replaceType (t: Type.t): Type.t =
+               let
+                  fun con (c, ts) =
+                     case tyconTypeStr c of
+                        NONE => Type.con (c, ts)
+                      | SOME s => TypeStr.apply (s, ts)
+               in
+                  Type.hom (t, {con = con,
+                                expandOpaque = false,
+                                record = Type.record,
+                                replaceSynonyms = false,
+                                var = Type.var})
+               end
+            fun replaceScheme (s: Scheme.t): Scheme.t =
+               let
+                  val (tyvars, ty) = Scheme.dest s
+               in
+                  Scheme.make {canGeneralize = true,
+                               ty = replaceType ty,
+                               tyvars = tyvars}
+               end
+            fun replaceCons cons: Cons.t =
+               Cons.map
+               (cons, fn {con, scheme, uses, ...} =>
+                {con = con,
+                 scheme = replaceScheme scheme,
+                 uses = uses})
+            fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
+               let
+                  datatype z = datatype TypeStr.node
+               in
+                  case TypeStr.node s of
+                     Datatype {cons, tycon} =>
+                        let
+                           val tycon =
+                              case tyconTypeStr tycon of
+                                 NONE => tycon
+                               | SOME s =>
+                                    (case TypeStr.toTyconOpt s of
+                                        SOME c => c
+                                      | _ =>
+                                           Error.bug "ElaborateEnv.functorClosure.apply: bad datatype")
+                        in
+                           TypeStr.data (tycon, replaceCons cons)
+                        end
+                   | Scheme s => TypeStr.def (replaceScheme s)
+               end
+            val {destroy = destroy2,
+                 get = replacement: Structure.t -> Structure.t, ...} =
+               Property.destGet
+               (Structure.plist,
+                Property.initRec
+                (fn (Structure.T {interface, strs, types, vals, ... },
+                     replacement) =>
+                 Structure.T
+                 {interface = interface,
+                  plist = PropertyList.new (),
+                  strs = Info.map (strs, replacement),
+                  types = Info.map (types, replaceTypeStr),
+                  vals = Info.map (vals, fn (v, s) =>
+                                   (v, replaceScheme s))}))
+            val result = Option.map (result, replacement)
+            val _ = destroy1 ()
+            val _ = destroy2 ()
+         in
+            result
+         end
       fun apply (actual, nest) =
          if not (!insideFunctor)
             andalso not (!Control.elaborateOnly)
             andalso !Control.numErrors = 0
             then restore (fn () => makeBody (actual, nest))
-         else
-            let
-               val _ = Structure.forceUsed actual
-               val {destroy = destroy1,
-                    get = tyconTypeStr: Tycon.t -> TypeStr.t option,
-                    set = setTyconTypeStr, ...} =
-                  Property.destGetSet (Tycon.plist, Property.initConst NONE)
-               (* Match the actual against the formal, to set the tycons.
-                * Then duplicate the result, replacing tycons.  Want to generate
-                * new tycons just like the functor body did.
-                *)
-               val _ =
-                  instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
-               val _ =
-                  List.foreach
-                  (generative, fn c =>
-                   setTyconTypeStr
-                   (c, SOME (TypeStr.tycon (Tycon.makeLike c))))
-               fun replaceType (t: Type.t): Type.t =
-                  let
-                     fun con (c, ts) =
-                        case tyconTypeStr c of
-                           NONE => Type.con (c, ts)
-                         | SOME s => TypeStr.apply (s, ts)
-                  in
-                     Type.hom (t, {con = con,
-                                   expandOpaque = false,
-                                   record = Type.record,
-                                   replaceSynonyms = false,
-                                   var = Type.var})
-                  end
-               fun replaceScheme (s: Scheme.t): Scheme.t =
-                  let
-                     val (tyvars, ty) = Scheme.dest s
-                  in
-                     Scheme.make {canGeneralize = true,
-                                  ty = replaceType ty,
-                                  tyvars = tyvars}
-                  end
-               fun replaceCons cons: Cons.t =
-                  Cons.map
-                  (cons, fn {con, scheme, uses, ...} =>
-                   {con = con,
-                    scheme = replaceScheme scheme,
-                    uses = uses})
-               fun replaceTypeStr (s: TypeStr.t): TypeStr.t =
-                  let
-                     datatype z = datatype TypeStr.node
-                  in
-                     case TypeStr.node s of
-                        Datatype {cons, tycon} =>
-                           let
-                              val tycon =
-                                 case tyconTypeStr tycon of
-                                    NONE => tycon
-                                  | SOME s =>
-                                       (case TypeStr.toTyconOpt s of
-                                           SOME c => c
-                                         | _ =>
-                                              Error.bug "ElaborateEnv.functorClosure.apply: bad datatype")
-                           in
-                              TypeStr.data (tycon, replaceCons cons)
-                           end
-                      | Scheme s => TypeStr.def (replaceScheme s)
-                  end
-               val {destroy = destroy2,
-                    get = replacement: Structure.t -> Structure.t, ...} =
-                  Property.destGet
-                  (Structure.plist,
-                   Property.initRec
-                   (fn (Structure.T {interface, strs, types, vals, ... },
-                        replacement) =>
-                    Structure.T
-                    {interface = interface,
-                     plist = PropertyList.new (),
-                     strs = Info.map (strs, replacement),
-                     types = Info.map (types, replaceTypeStr),
-                     vals = Info.map (vals, fn (v, s) =>
-                                      (v, replaceScheme s))}))
-               val result = Option.map (result, replacement)
-               val _ = destroy1 ()
-               val _ = destroy2 ()
-            in
-               (Decs.empty, result)
-            end
+         else (Decs.empty, summary actual)
    in
       FunctorClosure.T {apply = apply,
                         arg = arg,
                         argInt = argInt,
                         formal = formal,
-                        result = result}
+                        result = result,
+                        summary = summary}
    end
 
 structure Env =
