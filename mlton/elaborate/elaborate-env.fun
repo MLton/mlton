@@ -800,7 +800,6 @@ structure Interface =
                let
                   val flexTyconMap' =
                      Interface.flexibleTycons I'
-                  val _ = [flexTyconMap, flexTyconMap']
                   val wheres = ref []
                   fun loop (strids, flexTyconMap', I, flexTyconMap) =
                      let
