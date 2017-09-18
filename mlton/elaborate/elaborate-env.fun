@@ -1273,17 +1273,14 @@ structure FunctorClosure =
    struct
       datatype t =
          T of {apply: Structure.t * string list -> Decs.t * Structure.t option,
-               arg: Strid.t,
-               argInt: Interface.t,
-               formal: Structure.t,
-               result: Structure.t option,
+               argInterface: Interface.t,
+               resultStructure: Structure.t option,
                summary: Structure.t -> Structure.t option}
 
       local
          fun make f (T r) = f r
       in
-         val argInterface = make #argInt
-         val result = make #result
+         val argInterface = make #argInterface
       end
 
       fun layout _ = Layout.str "<functor closure>"
@@ -1297,6 +1294,9 @@ structure FunctorClosure =
                        List.layout String.layout,
                        (Option.layout Structure.layout) o #2)
          apply
+
+      fun forceUsed (T {resultStructure, ...}) =
+         Option.app (resultStructure, Structure.forceUsed)
    end
 
 (* ------------------------------------------------- *)
@@ -1866,37 +1866,72 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
       val indent = fn l => Layout.indent (l, 3)
       val paren = Layout.paren
 
-      val {layoutSigDefn, ...} =
+      val {layoutSig, layoutSigDefn, ...} =
          Interface.layouts ()
       val {layoutStr, layoutStrDefn, layoutTypeDefn, layoutValDefn, ...} =
          Structure.layouts ()
 
+      val layoutSig = fn (I, {flexTyconMap}) =>
+         layoutSig ([], I, {elide = {strs = NONE,
+                                     types = NONE,
+                                     vals = NONE},
+                            flexTyconMap = flexTyconMap,
+                            interfaceSigid = interfaceSigid})
       val layoutSigDefn = fn (name, I) =>
          layoutSigDefn (name, I, {interfaceSigid = interfaceSigid})
       val layoutStr = fn S =>
          layoutStr (S, {interfaceSigid = interfaceSigid})
       val layoutStrDefn = fn (name, S) =>
          layoutStrDefn (name, S, {interfaceSigid = interfaceSigid})
-      fun layoutFctDefn (name, FunctorClosure.T {arg, formal, result, ...}) =
+      fun layoutFctDefn (name, FunctorClosure.T {argInterface, summary, ...}) =
          let
-            val formal =
+            val argId = Strid.uArg (Fctid.toString name)
+            val arg =
                let
-                  val {abbrev, full} = layoutStr formal
+                  fun realize (TyconMap.T {strs, types}, strids) =
+                     let
+                        val () =
+                           Array.foreach
+                           (strs, fn (name, tm) =>
+                            realize (tm, name :: strids))
+                        val () =
+                           Array.foreach
+                           (types, fn (name, fc) =>
+                            let
+                               val c =
+                                  FlexibleTycon.dummyTycon
+                                  (fc, name, strids, {prefix = "_sig."})
+                               val () =
+                                  FlexibleTycon.realize
+                                  (fc, TypeStr.tycon c)
+                            in
+                               ()
+                            end)
+                     in
+                        ()
+                     end
+                  val I = Interface.copy argInterface
+                  val flexTyconMap = Interface.flexibleTycons I
+                  val () = realize (flexTyconMap, [])
+                  val bind =
+                     seq [Strid.layout argId, str ":"]
+                  val {abbrev, full} =
+                     layoutSig (I, {flexTyconMap = flexTyconMap})
                in
-                  seq [Strid.layout arg, str ": ",
-                       case abbrev () of
-                          NONE => full ()
-                        | SOME sigg => sigg]
+                  case abbrev () of
+                     NONE => align [bind, indent (full ())]
+                   | SOME sigg => seq [bind, str " ", sigg]
                end
             val bind =
                seq [str "functor ", Fctid.layout name, str " ",
-                    paren formal, str ":"]
+                    paren arg, str ":"]
+            val res = summary (#1 (dummyStructure (argInterface, {prefix = Strid.toString argId ^ "."})))
          in
-            case result of
+            case res of
                NONE => bind
-             | SOME result =>
+             | SOME res =>
                   let
-                     val {abbrev, full} = layoutStr result
+                     val {abbrev, full} = layoutStr res
                   in
                      case abbrev () of
                         NONE => align [bind, indent (full ())]
@@ -1942,8 +1977,7 @@ fun forceUsed E =
       val _ =
          foreachDefinedSymbol
          (E, {bass = doit ignore,
-              fcts = doit (fn f => Option.app (FunctorClosure.result f,
-                                               Structure.forceUsed)),
+              fcts = doit FunctorClosure.forceUsed,
               fixs = doit ignore,
               sigs = doit ignore,
               strs = doit Structure.forceUsed,
@@ -2551,8 +2585,7 @@ fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, v
          end
       val s0 = !currentScope
       val bass = doit (ignore, bass, s0)
-      val fcts = doit (fn f => Option.app (FunctorClosure.result f,
-                                           Structure.forceUsed), fcts, s0)
+      val fcts = doit (FunctorClosure.forceUsed, fcts, s0)
       val fixs = doit (ignore, fixs, s0)
       val sigs = doit (ignore, sigs, s0)
       val strs = doit (Structure.forceUsed, strs, s0)
@@ -3640,31 +3673,33 @@ fun snapshot (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, .
 
 fun functorClosure
    (E: t,
-    arg: Strid.t,
-    nest: string list,
-    prefix: string,
-    argInt: Interface.t,
+    name: Fctid.t,
+    argInterface: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
    let
+      val argId = Strid.uArg (Fctid.toString name)
+      val resId = Strid.uRes (Fctid.toString name)
       val _ = insideFunctor := true
       (* Need to tick here so that any tycons created in the dummy structure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
        *)
       val _ =  TypeEnv.Time.tick {region = Region.bogus}
-      val (formal, instantiate) = dummyStructure (argInt, {prefix = prefix})
+      val (formal, instantiate) =
+         dummyStructure (argInterface, {prefix = Strid.toString argId ^ "."})
       (* Keep track of all tycons created during the instantiation of the
        * functor.  These will later become the generative tycons that will need
        * to be recreated for each functor application.
        *)
-      val (result, generative) =
+      val (resultStructure, generativeTycons) =
          Tycon.scopeNew
          (fn () =>
           let
-             val (_, result) = makeBody (formal, nest)
-             val _ = Option.app (result, Structure.forceUsed)
+             val nest = [Strid.toString resId]
+             val (_, resultStructure) = makeBody (formal, nest)
+             val _ = Option.app (resultStructure, Structure.forceUsed)
           in
-             result
+             resultStructure
           end)
       val _ = insideFunctor := false
       val restore =
@@ -3691,7 +3726,7 @@ fun functorClosure
                instantiate (actual, fn (c, s) => setTyconTypeStr (c, SOME s))
             val _ =
                List.foreach
-               (generative, fn c =>
+               (generativeTycons, fn c =>
                 setTyconTypeStr
                 (c, SOME (TypeStr.tycon (Tycon.makeLike c))))
             fun replaceType (t: Type.t): Type.t =
@@ -3755,11 +3790,11 @@ fun functorClosure
                   types = Info.map (types, replaceTypeStr),
                   vals = Info.map (vals, fn (v, s) =>
                                    (v, replaceScheme s))}))
-            val result = Option.map (result, replacement)
+            val resultStructure = Option.map (resultStructure, replacement)
             val _ = destroy1 ()
             val _ = destroy2 ()
          in
-            result
+            resultStructure
          end
       fun apply (actual, nest) =
          if not (!insideFunctor)
@@ -3769,10 +3804,8 @@ fun functorClosure
          else (Decs.empty, summary actual)
    in
       FunctorClosure.T {apply = apply,
-                        arg = arg,
-                        argInt = argInt,
-                        formal = formal,
-                        result = result,
+                        argInterface = argInterface,
+                        resultStructure = resultStructure,
                         summary = summary}
    end
 

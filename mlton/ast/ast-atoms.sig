@@ -49,8 +49,8 @@ signature AST_ATOMS =
       structure Strid:
          sig
             include AST_ID
-            val uArg: t
-            val uRes: t
+            val uArg: string -> t
+            val uRes: string -> t
             val uSig: t
             val uStr: t
          end

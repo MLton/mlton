@@ -29,7 +29,6 @@ in
    structure Strdec = Strdec
    structure Strexp = Strexp
    structure Strid = Strid
-   structure Symbol = Symbol
    structure Topdec = Topdec
 end
 
@@ -213,33 +212,28 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
       fun elabFunctor {arg, body, name, result}: FunctorClosure.t option =
          let
             val body = Strexp.constrained (body, result)
-            val (arg, argSig, body) =
+            val argId = Strid.uArg (Fctid.toString name)
+            val (argSig, argDec) =
                case FctArg.node arg of
                   FctArg.Structure (arg, argSig) =>
-                     (arg, argSig, body)
+                     (argSig,
+                      Strdec.structuree
+                      {name = arg,
+                       def = Strexp.var (Longstrid.short argId),
+                       constraint = SigConst.None})
                 | FctArg.Spec spec =>
-                     let
-                        val strid =
-                           Strid.fromSymbol
-                           (Symbol.fromString
-                            (Fctid.toString name ^ "._arg"),
-                            Region.bogus)
-                     in
-                        (strid,
-                         Sigexp.spec spec,
-                         Strexp.lett (Strdec.openn (Vector.new1
-                                                    (Longstrid.short strid)),
-                                      body))
-                     end
-            val prefix = concat [Strid.toString arg, "."]
+                     (Sigexp.spec spec,
+                      Strdec.openn (Vector.new1 (Longstrid.short argId)))
+            val body = Strexp.lett (argDec, body)
          in
             Option.map (elabSigexp argSig, fn argInt =>
                         Env.functorClosure
-                        (E, arg, [Fctid.toString name], prefix, argInt,
+                        (E, name, argInt,
                          fn (formal, nest) =>
-                         Env.scope (E, fn () =>
-                                    (Env.extendStrid (E, arg, formal)
-                                     ; elabStrexp (body, nest)))))
+                         Env.scope
+                         (E, fn () =>
+                          (Env.extendStrid (E, argId, formal)
+                           ; elabStrexp (body, nest)))))
          end
       fun elabTopdec arg: Decs.t =
          Trace.traceInfo' (elabTopdecInfo, 
