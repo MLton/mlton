@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/myegorov/mlton.svg?branch=TravisCI)](https://travis-ci.org/myegorov/mlton)
+[![Build Status](https://travis-ci.org/myegorov/mlton.svg?branch=build-configure)](https://travis-ci.org/myegorov/mlton)
 
 # MLton
 
