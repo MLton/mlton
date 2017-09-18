@@ -1,11 +1,9 @@
 language: c
 sudo: enabled
-
 env:
-  - PREFIX=$HOME/opt
-
+  - PREFIX=$HOME/opt/mlton
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y build-essential git autoconf mlton
+  - sudo apt-get install -qq build-essential git autoconf mlton
 script:
   - bash -ex ./bin/travis-ci

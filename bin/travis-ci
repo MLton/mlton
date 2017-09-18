@@ -6,8 +6,8 @@ cd "$(dirname "$0")"
 cd ".."
 
 autoreconf -vfi
-./configure --prefix=PREFIX
+./configure --prefix=$PREFIX
 make && make install
 
-# # run tests
+# # run regression tests
 # make check
