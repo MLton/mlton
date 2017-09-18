@@ -43,16 +43,6 @@ in
    structure Strid = Strid
    structure Symbol = Symbol
 end
-structure Strid =
-   struct
-      open Strid
-      local
-         fun make s = fromSymbol (Symbol.fromString s, Region.bogus)
-      in
-         val uStr = make "_str"
-         val uSig = make "_sig"
-      end
-   end
 
 fun layoutLong (ids: Layout.t list) =
    let

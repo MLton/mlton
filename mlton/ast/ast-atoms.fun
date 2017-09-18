@@ -55,6 +55,18 @@ structure Con =
 structure Basid = AstId (structure Symbol = Symbol)
 structure Sigid = AstId (structure Symbol = Symbol)
 structure Strid = AstId (structure Symbol = Symbol)
+structure Strid =
+   struct
+      open Strid
+      local
+         fun make s = fromSymbol (Symbol.fromString s, Region.bogus)
+      in
+         val uArg = make "_arg"
+         val uRes = make "_res"
+         val uStr = make "_str"
+         val uSig = make "_sig"
+      end
+   end
 structure Fctid = AstId (structure Symbol = Symbol)
 
 structure Vid =

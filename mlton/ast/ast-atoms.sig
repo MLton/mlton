@@ -46,7 +46,14 @@ signature AST_ATOMS =
 
       structure Basid: AST_ID
       structure Sigid: AST_ID
-      structure Strid: AST_ID
+      structure Strid:
+         sig
+            include AST_ID
+            val uArg: t
+            val uRes: t
+            val uSig: t
+            val uStr: t
+         end
       structure Fctid: AST_ID
 
       structure Vid:
