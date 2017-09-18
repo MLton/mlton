@@ -8,7 +8,7 @@ dir=`dirname "$0"`
 lib=`cd "$dir/../lib" && pwd`
 eval `"$lib/platform"`
 # gcc='gcc'
-gcc=@CC@
+gcc=`@CC@`
 case "$HOST_OS" in
 mingw)
 	exe='.exe'
