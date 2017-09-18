@@ -10,6 +10,5 @@ install:
   - sudo apt-get install -qq build-essential git autoconf mlton
 script:
   - bash -ex ./bin/travis-ci
-  - cat ./build/bin/mlton
 notifications:
-  email: false
+  email: true
