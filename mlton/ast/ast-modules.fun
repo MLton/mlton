@@ -393,6 +393,7 @@ structure Strexp =
       fun make n = makeRegion (n, Region.bogus)
       val constrained = make o Constrained
       val lett = make o Let
+      val var = make o Var
       val layout = layoutStrexp
    end
 
@@ -410,6 +411,8 @@ structure Strdec =
       val core = make o Core
 
       val openn = core o Dec.openn
+
+      val structuree = make o Structure o Vector.new1
 
       val layout = layoutStrdec
 

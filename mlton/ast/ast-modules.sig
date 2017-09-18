@@ -109,6 +109,7 @@ signature AST_MODULES =
 
             val constrained: t * SigConst.t -> t
             val lett: strdec * t -> t
+            val var: Longstrid.t -> t
 
             val layout: t -> Layout.t
          end
@@ -131,6 +132,9 @@ signature AST_MODULES =
             val core: Dec.t -> t
             val layout: t -> Layout.t
             val openn: Longstrid.t vector -> t
+            val structuree: {constraint: SigConst.t,
+                             def: Strexp.t,
+                             name: Strid.t} -> t
          end
       sharing type Strdec.t = Strexp.strdec
 
