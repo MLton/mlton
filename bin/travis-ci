@@ -3,7 +3,7 @@
 # This script builds MLton and runs regression tests
 echo "Building MLton with MLton..."
 cd "$(dirname "$0")"
-cd "../.."
+cd ".."
 
 autoreconf -vfi
 ./configure --prefix=PREFIX
