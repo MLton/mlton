@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # This script builds MLton and runs regression tests
+set -ev
 cd "$(dirname "$0")"
 cd ".."
 
