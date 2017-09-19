@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/myegorov/mlton.svg?branch=build-configure)](https://travis-ci.org/myegorov/mlton)
+
 # MLton
 
 > MLton is a whole-program optimizing compiler for the Standard ML

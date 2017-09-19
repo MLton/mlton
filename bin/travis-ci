@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# This script builds MLton and runs regression tests
+cd "$(dirname "$0")"
+cd ".."
+
+echo "Building MLton with MLton..."
+autoreconf -vfi
+./configure --prefix=$PREFIX
+make
+
+echo "Running regression tests..."
+make check
