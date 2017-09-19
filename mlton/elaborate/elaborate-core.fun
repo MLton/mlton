@@ -93,6 +93,7 @@ in
    structure DatBind = DatBind
    structure EbRhs = EbRhs
    structure Fixop = Fixop
+   structure Longtycon = Longtycon
    structure Longvid = Longvid
    structure PrimKind = PrimKind
    structure ImportExportAttribute = PrimKind.ImportExportAttribute
@@ -213,8 +214,27 @@ structure Apat =
          getName
    end
 
-fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
+fun elaborateType (ty: Atype.t, E: Env.t,
+                   {bogusAsUnknown: bool}): Type.t =
    let
+      fun makeBogus (mc, ts) =
+         if bogusAsUnknown
+            then Type.new ()
+            else let
+                    val arity = Vector.length ts
+                    val (name, region) =
+                       Option.fold
+                       (mc, ("t", NONE), fn (c, _) =>
+                        (Longtycon.toString c,
+                         SOME (Longtycon.region c)))
+                    val c =
+                       Tycon.makeBogus
+                       {name = name,
+                        kind = Kind.Arity arity,
+                        region = region}
+                 in
+                    Type.con (c, ts)
+                 end
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
             Atype.Var a => (* rule 44 *)
@@ -224,7 +244,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
                   val ts = Vector.map (ts, loop)
                   fun normal () =
                      case Env.lookupLongtycon (E, c) of
-                        NONE => Type.new ()
+                        NONE => makeBogus (SOME c, ts)
                       | SOME s =>
                            let
                               val kind = TypeStr.kind s
@@ -268,7 +288,8 @@ fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
                                                    [ts,
                                                     Vector.tabulate
                                                     (n - numArgs, fn _ =>
-                                                     Type.new ())])
+                                                     makeBogus
+                                                     (NONE, Vector.new0 ()))])
                                        end
                                   | Kind.Nary => ts
                            in
@@ -556,6 +577,8 @@ val elaboratePat:
             in
                (bindToType (x, t), t)
             end
+         fun elabType (t: Atype.t): Type.t =
+            elaborateType (t, E, {bogusAsUnknown = true})
          fun loop (arg: Apat.t) =
             Trace.traceInfo' (elabPatInfo, Apat.layout, Cpat.layout)
             (fn (p: Apat.t) =>
@@ -627,8 +650,7 @@ val elaboratePat:
                          val p' = loop p
                          val _ =
                             unifyPatternConstraint
-                            (Cpat.ty p',
-                             elaborateType (t, E))
+                            (Cpat.ty p', elabType t)
                       in
                          p'
                       end
@@ -640,7 +662,7 @@ val elaboratePat:
                          val t =
                             case constraint of
                                NONE => Type.new ()
-                             | SOME t => elaborateType (t, E)
+                             | SOME t => elabType t
                          val xc = Avid.toCon (Avid.fromVar x)
                          val x =
                             case Env.peekLongcon (E, Ast.Longcon.short xc) of
@@ -1788,8 +1810,8 @@ fun elaborateDec (d, {env = E, nest}) =
              setBound = setBound,
              unmarkFunc = unmarkFunc}
          end
-      fun elabType (t: Atype.t): Type.t =
-         elaborateType (t, E)
+      fun elabType (t: Atype.t, {bogusAsUnknown}): Type.t =
+         elaborateType (t, E, {bogusAsUnknown = bogusAsUnknown})
       fun elabTypBind (typBind: TypBind.t) =
          let
             val TypBind.T types = TypBind.node typBind
@@ -1797,7 +1819,7 @@ fun elaborateDec (d, {env = E, nest}) =
                Vector.map
                (types, fn {def, tyvars, ...} =>
                 TypeStr.def (Scheme.make {canGeneralize = true,
-                                          ty = elabType def,
+                                          ty = elabType (def, {bogusAsUnknown = false}),
                                           tyvars = tyvars}))
          in
             Vector.foreach2
@@ -1864,7 +1886,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                  NONE => (NONE, resultType)
                                | SOME t =>
                                     let
-                                       val t = elabType t
+                                       val t = elabType (t, {bogusAsUnknown = false})
                                     in
                                        (SOME t, Type.arrow (t, resultType))
                                     end
@@ -2077,7 +2099,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   NONE => (NONE, Type.exn)
                                                 | SOME t =>
                                                      let
-                                                        val t = elabType t
+                                                        val t = elabType (t, {bogusAsUnknown = false})
                                                      in
                                                         (SOME t,
                                                          Type.arrow (t, Type.exn))
@@ -2243,7 +2265,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                           (resultType, fn resultType =>
                                            let
                                               val regionResultType = Atype.region resultType
-                                              val resultType = elabType resultType
+                                              val resultType = elabType (resultType, {bogusAsUnknown = true})
                                               val _ =
                                                  unify
                                                  (resTy, resultType,
@@ -2504,7 +2526,7 @@ fun elaborateDec (d, {env = E, nest}) =
                             val s =
                                Scheme.make {canGeneralize = false,
                                             tyvars = tyvars,
-                                            ty = elabType ty}
+                                            ty = elabType (ty, {bogusAsUnknown = false})}
                             val _ =
                                Vector.foreach
                                (ovlds,
@@ -2893,7 +2915,7 @@ fun elaborateDec (d, {env = E, nest}) =
               | Aexp.Constraint (e, t') =>
                    let
                       val e = elab e
-                      val t' = elabType t'
+                      val t' = elabType (t', {bogusAsUnknown = true})
                       val _ =
                          unify
                          (Cexp.ty e, t', fn (l1, l2) =>
@@ -3066,7 +3088,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    let
                       fun elabAndExpandTy ty =
                          let
-                            val elabedTy = elabType ty
+                            val elabedTy = elabType (ty, {bogusAsUnknown = false})
                             val expandedTy =
                                Type.hom
                                (elabedTy, {con = Type.con,
