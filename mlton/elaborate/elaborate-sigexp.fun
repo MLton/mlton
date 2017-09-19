@@ -76,6 +76,22 @@ end
 fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
    let
       val tyvars = ref []
+      fun makeBogus (mc, ts) =
+         let
+            val arity = Vector.length ts
+            val (name, region) =
+               Option.fold
+               (mc, ("t", NONE), fn (c, _) =>
+                (Longtycon.toString c,
+                 SOME (Longtycon.region c)))
+            val c =
+               StructureTycon.makeBogus
+               {name = name,
+                kind = Kind.Arity arity,
+                region = region}
+         in
+            Type.con (Tycon.Rigid c, ts)
+         end
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
             Atype.Var a => (* rule 44 *)
@@ -88,16 +104,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                   val ts = Vector.map (ts, loop)
                   fun normal () =
                      case Env.lookupLongtycon (E, c) of
-                        NONE =>
-                           let
-                              val c =
-                                 StructureTycon.makeBogus
-                                 {name = Longtycon.toString c,
-                                  kind = Kind.Arity (Vector.length ts),
-                                  region = SOME (Longtycon.region c)}
-                           in
-                              Type.con (Tycon.Rigid c, ts)
-                           end
+                        NONE => makeBogus (SOME c, ts)
                       | SOME s =>
                            let
                               val kind = TypeStr.kind s
@@ -141,16 +148,9 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                                                    [ts,
                                                     Vector.tabulate
                                                     (n - numArgs, fn _ =>
-                                                     let
-                                                        val c =
-                                                           StructureTycon.makeBogus
-                                                           {name = "t",
-                                                            kind = Kind.Arity 0,
-                                                            region = NONE}
-                                                     in
-                                                        Type.con (Tycon.Rigid c,
-                                                                  Vector.new0 ())
-                                                     end)])
+                                                     makeBogus
+                                                     (NONE,
+                                                      Vector.new0 ()))])
                                        end
                                   | Kind.Nary => ts
                            in
