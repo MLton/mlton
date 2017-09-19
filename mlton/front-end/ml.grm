@@ -157,6 +157,9 @@ type eb = Con.t * EbRhs.t
 type db = {tyvars: Tyvar.t vector,
            tycon: Tycon.t,
            cons: (Con.t * Type.t option) vector}
+type tb = {def: Type.t,
+           tycon: Tycon.t,
+           tyvars: Tyvar.t vector}
 
 type strdesc = Strid.t * Sigexp.t
 
@@ -375,6 +378,9 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
        | strid of Strid.t
        | string of string
        | symattributes of PrimKind.SymbolAttribute.t list
+       | tb of tb
+       | tbs of tb vector
+       | tbs' of tb list
        | tlabel of (Field.t * (Region.t * Type.t))
        | tlabels  of (Field.t * (Region.t * Type.t)) list
        | topdec of Topdec.t
@@ -389,12 +395,6 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
        | tycon of Tycon.t
        | tynode of Type.node
        | typBind of TypBind.t
-       | typBind' of {def: Type.t,
-                      tycon: Tycon.t,
-                      tyvars: Tyvar.t vector} list
-       | typBind'' of {def: Type.t,
-                       tycon: Tycon.t,
-                       tyvars: Tyvar.t vector} list
        | typdesc of typdesc
        | typdescs of typdesc list
        | tyvar of Tyvar.t
@@ -791,22 +791,18 @@ clause  : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
                                           resultType = constraint,
                                           body = exp})
 
-typBind : typBind'
-          (let
-              val typBind = Vector.fromList typBind'
-              val b =
-                 TypBind.makeRegion'
-                 (TypBind.T typBind, typBind'left, typBind'right)
-           in
-              b
-           end)
+typBind : tbs
+          (TypBind.makeRegion' (TypBind.T tbs, tbsleft, tbsright))
 
-typBind' : tyvars tycon EQUALOP ty typBind''
-           ({def = ty, tycon = tycon, tyvars = tyvars} :: typBind'')
+tbs : tbs'  (Vector.fromList tbs')
 
-typBind'' :               ([])
-          | AND typBind'  (typBind')
+tbs' : tb           ([tb])
+     | tb AND tbs'  (tb :: tbs')
 
+tb : tyvars tycon EQUALOP ty
+     ({def = ty,
+       tycon = tycon,
+       tyvars = tyvars})
 
 tyvars  : tyvarseq (tyvarseq)
         |          (Vector.new0 ())
@@ -922,27 +918,22 @@ repl : tyvars tycon EQUALOP DATATYPE longtycon
         ; DatatypeRhs.Repl {lhs = tycon, rhs = longtycon})
 
 datBind
-   : dbs withtypes
+   : dbs
+     (DatBind.make (dbs, TypBind.empty, dbsleft, dbsright))
+   | dbs withtypes
      (DatBind.make (dbs, withtypes, dbsleft, withtypesright))
 
 dbs : dbs' (Vector.fromList dbs')
 
-dbs'
-   : db
-     ([db])
-   | db AND dbs'
-     (db :: dbs')
+dbs' : db           ([db])
+     | db AND dbs'  (db :: dbs')
 
 db : tyvars tycon EQUALOP optbar constrs
      ({cons = Vector.fromList constrs,
        tycon = tycon,
        tyvars = tyvars})
 
-withtypes
-   :
-     (TypBind.empty)
-   | WITHTYPE typBind
-     (typBind)
+withtypes : WITHTYPE typBind  (typBind)
 
 longvidands : longvid  ([longvid])
             | longvid AND longvidands (longvid :: longvidands)
