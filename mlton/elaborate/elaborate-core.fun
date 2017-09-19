@@ -94,7 +94,6 @@ in
    structure EbRhs = EbRhs
    structure Fixop = Fixop
    structure Longvid = Longvid
-   structure Longtycon = Longtycon
    structure PrimKind = PrimKind
    structure ImportExportAttribute = PrimKind.ImportExportAttribute
    structure SymbolAttribute = PrimKind.SymbolAttribute
@@ -214,14 +213,7 @@ structure Apat =
          getName
    end
 
-structure Lookup =
-   struct
-      type t = Longtycon.t -> TypeStr.t option
-
-      fun fromEnv (E: Env.t) longtycon = Env.lookupLongtycon (E, longtycon)
-   end
-
-fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
+fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
    let
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
@@ -231,7 +223,7 @@ fun elaborateType (ty: Atype.t, lookup: Lookup.t): Type.t =
                let
                   val ts = Vector.map (ts, loop)
                   fun normal () =
-                     case lookup c of
+                     case Env.lookupLongtycon (E, c) of
                         NONE => Type.new ()
                       | SOME s =>
                            let
@@ -636,7 +628,7 @@ val elaboratePat:
                          val _ =
                             unifyPatternConstraint
                             (Cpat.ty p',
-                             elaborateType (t, Lookup.fromEnv E))
+                             elaborateType (t, E))
                       in
                          p'
                       end
@@ -648,7 +640,7 @@ val elaboratePat:
                          val t =
                             case constraint of
                                NONE => Type.new ()
-                             | SOME t => elaborateType (t, Lookup.fromEnv E)
+                             | SOME t => elaborateType (t, E)
                          val xc = Avid.toCon (Avid.fromVar x)
                          val x =
                             case Env.peekLongcon (E, Ast.Longcon.short xc) of
@@ -1797,7 +1789,7 @@ fun elaborateDec (d, {env = E, nest}) =
              unmarkFunc = unmarkFunc}
          end
       fun elabType (t: Atype.t): Type.t =
-         elaborateType (t, Lookup.fromEnv E)
+         elaborateType (t, E)
       fun elabTypBind (typBind: TypBind.t) =
          let
             val TypBind.T types = TypBind.node typBind
