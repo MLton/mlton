@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -77,7 +78,6 @@ local
    type-ops.fun
    hash-type.sig
    hash-type.fun
-   use-name.fun
 in
    signature ADMITS_EQUALITY
    signature ATOMS
@@ -114,5 +114,4 @@ in
    functor GenericScheme
    functor HashType
    functor TypeOps
-   functor UseName
 end
