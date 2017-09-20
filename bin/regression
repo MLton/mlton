@@ -19,6 +19,7 @@ resumeTest='nil'
 runOnly='false'
 short='false'
 testReg='false'
+exitFail=false
 declare -a testRegs
 declare -a flags
 declare -a extraFlags
@@ -112,10 +113,15 @@ if $fail; then
         for f in fail/*.sml; do
                 echo "testing $f"
                 ( "$mlton" "${flags[@]}" -stop tc "$f" >/dev/null 2>&1 &&
-                        echo "compilation of $f should have failed but did not" ) ||
+                        echo "compilation of $f should have failed but did not"; exitFail=true ) ||
                         true
         done
-        exit 0
+
+        if $exitFail ; then
+          exit 1
+        else
+          exit 0
+        fi
 fi
 
 forMinGW='false'
@@ -203,6 +209,7 @@ for f in *.sml; do
                 "$mlton" "${flags[@]}" "${extraFlags[@]}" -output "$f" "$mlb"
                 if [ "$?" -ne '0' ] || ((! $cross) && [ ! -x "$f" ]); then
                         compFail "$f"
+                        exitFail=true
                 fi
                 rm "$mlb"
 	else
@@ -238,6 +245,7 @@ for f in *.sml; do
 	fi
         if [ ! -r "$f".nonterm -a $cross = 'false' -a -x "$f" ]; then
                 nonZeroMsg='Nonzero exit status.'
+                exitFail=true
 		if $forMinGW; then
                        nonZeroMsg="$nonZeroMsg"'\r'
 		fi
@@ -254,12 +262,15 @@ for f in *.sml; do
 			fi
                         if ! diff "$compare" "$tmp"; then
                                 echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
+                                exitFail=true
                         fi
                 fi
         fi
 done
 if $cross || $runOnly || $short || $testReg ; then
+  if ! $exitFail ; then
         exit 0
+  fi
 fi
 mmake clean >/dev/null
 cd "$src/benchmark/tests"
@@ -281,6 +292,7 @@ for f in *.sml; do
                         "$tmpf.sml"
                 if [ $? -ne 0 ]; then
                         compFail "$f"
+                        exitFail=true
                 fi
                 rm -f "$tmpf" "$tmpf.sml"
         ;;
@@ -296,8 +308,13 @@ for f in mllex mlyacc mlprof; do
     "$mlton" "${flags[@]}" -output "$tmpf" "$f.mlb"
     if [ $? -ne 0 ]; then
         compFail "$f"
+        exitFail=true
     fi
     rm -f "$tmpf"
 done
 
 rm -f "$tmp"
+
+if $exitFail ; then
+  exit 1
+fi
