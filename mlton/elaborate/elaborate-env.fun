@@ -3746,7 +3746,7 @@ fun functorClosure
        * for the functor formal have a new time, and will therefore report an
        * error if they occur before the functor declaration.
        *)
-      val _ =  TypeEnv.Time.tick {region = Region.bogus}
+      val _ =  TypeEnv.Time.tick {region = Fctid.region name}
       val (formal, instantiate) =
          dummyStructure (argInterface, {prefix = Strid.toString argId ^ "."})
       (* Keep track of all tycons created during the instantiation of the
