@@ -132,14 +132,14 @@ structure Tyvar =
 
       local
          val {get = info: Tyvar.t -> {isEquality: bool,
-                                      time: Time.t ref},
+                                      time: Time.t},
               set = setInfo, ...} =
             Property.getSet
             (Tyvar.plist,
              Property.initRaise ("TypeEnv.Tyvar.info", Tyvar.layout))
          fun init (a, ie) =
             setInfo (a, {isEquality = ie,
-                         time = ref (Time.now ())})
+                         time = Time.now ()})
       in
          local
             fun make f = f o info
@@ -913,7 +913,7 @@ structure Type =
                      Error.bug "TypeEnv.Type.newTy: Unknown"
                 | Var a =>
                      (Equality.fromBool (Tyvar.isEquality a),
-                      !(Tyvar.time a))
+                      Tyvar.time a)
          in
             make {equality = equality,
                   time = time,
@@ -1278,7 +1278,7 @@ structure Type =
                                    LayoutPretty.tuple (Vector.map (rs, getLay3)),
                                    Type.tuple (Vector.map (rs, getTy)))
             fun var bound (_, a) =
-               if Time.<= (!(Tyvar.time a), bound)
+               if Time.<= (Tyvar.time a, bound)
                   then NONE
                   else let
                           val ty = newAt bound
@@ -2080,26 +2080,18 @@ structure Scheme =
          end
    end
 
-fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
+fun 'a close region =
    let
       val beforeGen = Time.now ()
-      val () = Time.tick rgn_ubd
+      val () = Time.tick region
       val genTime = Time.now ()
-      val () = Vector.foreach (ensure, fn a => Tyvar.time a := genTime)
       val savedCloses = !Type.newCloses
       val () = Type.newCloses := []
    in
-      Trace.trace
-      ("TypeEnv.close",
-       fn (varTypes, _) =>
-       Vector.layout
-       (fn {isExpansive, ty, var = _} =>
-        Layout.record [("isExpansive", Bool.layout isExpansive),
-                       ("ty", Type.layout ty)])
-       varTypes,
-       Layout.ignore)
-      (fn (varTypes, {error: 'a * Layout.t * Tyvar.t list -> unit,
-                      preError: unit -> unit}) =>
+      fn (ensure,
+          varTypes,
+          {error: 'a * Layout.t * Tyvar.t list -> unit,
+           preError: unit -> unit}) =>
       let
          local
             val {destroy, layoutPretty} =
@@ -2255,7 +2247,6 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
          {bound = bound,
           schemes = schemes}
       end
-   )
    end
 
 structure Type =

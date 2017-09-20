@@ -149,10 +149,10 @@ signature TYPE_ENV =
          end
       sharing type TyconExt.t = Tycon.t
 
-
       val close:
-         Tyvar.t vector * {region: Region.t}
-         -> ({isExpansive: bool, ty: Type.t, var: 'a} vector
+         {region: Region.t}
+         -> (Tyvar.t vector
+             * {isExpansive: bool, ty: Type.t, var: 'a} vector
              * {error: 'a * Layout.t * Tyvar.t list -> unit,
                 preError: unit -> unit})
          -> {bound: unit -> Tyvar.t vector,
