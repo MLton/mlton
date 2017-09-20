@@ -35,8 +35,6 @@ signature AST_ATOMS =
             include PRIM_TYCONS sharing type tycon = t
          end
 
-      structure Var: AST_ID
-
       structure Con:
          sig
             include AST_ID
@@ -44,17 +42,7 @@ signature AST_ATOMS =
             sharing type con = t
          end
 
-      structure Basid: AST_ID
-      structure Sigid: AST_ID
-      structure Strid:
-         sig
-            include AST_ID
-            val uArg: string -> t
-            val uRes: string -> t
-            val uSig: t
-            val uStr: t
-         end
-      structure Fctid: AST_ID
+      structure Var: AST_ID
 
       structure Vid:
          sig
@@ -77,28 +65,43 @@ signature AST_ATOMS =
                     keyword: string} -> unit
          end
 
+      structure Strid:
+         sig
+            include AST_ID
+            val uArg: string -> t
+            val uRes: string -> t
+            val uSig: t
+            val uStr: t
+         end
+      structure Sigid: AST_ID
+      structure Fctid: AST_ID
+
+      structure Basid: AST_ID
+
       structure Longtycon:
          sig
             include LONGID
             val arrow: t
          end sharing Longtycon.Id = Tycon
 
-      structure Longvar: LONGID sharing Longvar.Id = Var
       structure Longcon: LONGID sharing Longcon.Id = Con
-      structure Longstrid: LONGID sharing Longstrid.Id = Strid
+      structure Longvar: LONGID sharing Longvar.Id = Var
       structure Longvid:
          sig
             include LONGID
 
             val toLongcon: t -> Longcon.t
          end sharing Longvid.Id = Vid
+      structure Longstrid: LONGID sharing Longstrid.Id = Strid
 
       sharing Strid = Longtycon.Strid = Longvar.Strid = Longcon.Strid
          = Longvid.Strid = Longstrid.Strid
 
-      sharing Symbol = Basid.Symbol = Con.Symbol = Fctid.Symbol = Longcon.Symbol
-         = Longstrid.Symbol = Longtycon.Symbol = Longvar.Symbol = Longvid.Symbol
-         = Sigid.Symbol = Strid.Symbol = Tycon.Symbol = Vid.Symbol = Var.Symbol
+      sharing Symbol = Basid.Symbol = Con.Symbol = Fctid.Symbol
+         = Longcon.Symbol = Longstrid.Symbol = Longtycon.Symbol
+         = Longvar.Symbol = Longvid.Symbol = Sigid.Symbol
+         = Strid.Symbol = Tycon.Symbol = Tyvar.Symbol = Vid.Symbol
+         = Var.Symbol
 
       structure Type:
          sig
