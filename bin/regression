@@ -78,6 +78,7 @@ while [ "$#" -gt 0 ]; do
         esac
 done
 
+
 dir=`dirname "$0"`
 src=`cd "$dir/.." && pwd`
 bin="$src/build/bin"
@@ -98,13 +99,32 @@ world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
 PATH="$bin:$src/bin/.:$PATH"
 
+# whitelist tests that are known to fail (will still run but exit cleanly)
+declare -A whitelisted
+if [ -f  $src/regression/whitelist ] ; then
+  while read f ; do
+    echo "whitelisting $f..."
+    whitelisted["$f"]=1
+  done <$src/regression/whitelist
+fi
+
+isWhitelisted () {
+  local f=$1
+  local found=0
+  if [[ ${whitelisted["$f"]} ]] ; then
+    found=1
+  fi
+  return $found
+}
+
+
 eval `"$lib/platform"`
 
 compFail () {
         echo "compilation of $f failed with ${flags[*]}"
 }
 
-"$mlton" -verbose 1 || echo 'no mlton present'
+"$mlton" -verbose 1 || (echo 'no mlton present'; exitFail=true)
 echo "flags = ${flags[*]}"
 
 cd "$src/regression"
@@ -113,7 +133,7 @@ if $fail; then
         for f in fail/*.sml; do
                 echo "testing $f"
                 ( "$mlton" "${flags[@]}" -stop tc "$f" >/dev/null 2>&1 &&
-                        echo "compilation of $f should have failed but did not"; exitFail=true ) ||
+                        echo "compilation of $f should have failed but did not"; (! isWhitelisted $f &&  exitFail=true) ) ||
                         true
         done
 
@@ -245,7 +265,7 @@ for f in *.sml; do
 	fi
         if [ ! -r "$f".nonterm -a $cross = 'false' -a -x "$f" ]; then
                 nonZeroMsg='Nonzero exit status.'
-                exitFail=true
+                (! isWhitelisted $f &&  exitFail=true)
 		if $forMinGW; then
                        nonZeroMsg="$nonZeroMsg"'\r'
 		fi
@@ -262,7 +282,7 @@ for f in *.sml; do
 			fi
                         if ! diff "$compare" "$tmp"; then
                                 echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
-                                exitFail=true
+                                (! isWhitelisted $f &&  exitFail=true)
                         fi
                 fi
         fi

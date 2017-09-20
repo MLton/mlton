@@ -9,12 +9,12 @@ echo "Building MLton with MLton..."
 autoreconf -vfi
 ./configure --prefix=$PREFIX
 make
-if [ $? != 0 ] ; then
+if [ $? -ne 0 ] ; then
   echo "Build of MLton failed..."
 fi
 
 echo "Running regression tests..."
 make check
-if [ $? != 0 ] ; then
-  echo "Some test(s) failed..."
+if [ $? -ne 0 ] ; then
+  echo "One or more tests failed. Please review logs..."
 fi
