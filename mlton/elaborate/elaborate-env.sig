@@ -14,7 +14,6 @@ signature ELABORATE_ENV_STRUCTS =
       structure TypeEnv: TYPE_ENV
       sharing Ast.Record = CoreML.Record
       sharing Ast.SortedRecord = CoreML.SortedRecord
-      sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML.Atoms = TypeEnv.Atoms
       sharing CoreML.Type = TypeEnv.Type
    end
@@ -28,6 +27,14 @@ signature ELABORATE_ENV =
 
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
+
+      structure Tyvar: TYVAR
+      sharing Tyvar = TypeEnv.Tyvar
+      structure TyvarEnv:
+         sig
+            val lookupTyvar: Ast.Tyvar.t -> Tyvar.t option
+            val scope: Ast.Tyvar.t vector * (Tyvar.t vector -> 'a) -> 'a
+         end
 
       structure Tycon: TYCON
       sharing Tycon = TypeEnv.Tycon
@@ -92,6 +99,7 @@ signature ELABORATE_ENV =
       sharing Interface.AdmitsEquality = AdmitsEquality
       sharing Interface.Ast = Ast
       sharing Interface.EnvTypeStr = TypeStr
+      sharing Interface.Tyvar = Tyvar
       structure Structure:
          sig
             type t

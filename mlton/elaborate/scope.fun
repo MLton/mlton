@@ -13,10 +13,10 @@ struct
 open S
 open Ast
 
-structure Tyvars = UnorderedSet (UseName (Tyvar))
+structure Tyvars = UnorderedSet (Tyvar)
 structure Env =
    struct
-      structure Env = MonoEnv (structure Domain = UseName (Tyvar)
+      structure Env = MonoEnv (structure Domain = Tyvar
                                structure Range = Tyvar)
       open Env
 
@@ -30,7 +30,7 @@ structure Env =
                Vector.mapAndFold
                (tyvars, env, fn (a, env) =>
                 let
-                   val a' = Tyvar.newLike a
+                   val a' = a
                 in
                    (a', extend (env, a, a'))
                 end)
@@ -503,7 +503,7 @@ fun scope (dec: Dec.t): Dec.t =
                      List.keepAll
                      (mayNotBind, fn a =>
                       not (Vector.exists (bound, fn a' =>
-                                          Tyvar.sameName (a, a')))
+                                          Tyvar.equals (a, a')))
                       orelse
                       let
                          open Layout
@@ -571,7 +571,7 @@ fun scope (dec: Dec.t): Dec.t =
                          Vector.keepAll
                          (tyvars, fn a =>
                           not (List.exists
-                               (domain, fn a' => Tyvar.sameName (a, a')))))
+                               (domain, fn a' => Tyvar.equals (a, a')))))
                   in
                      (env, fn () => (tyvars, ()))
                   end

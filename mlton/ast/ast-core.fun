@@ -388,7 +388,12 @@ fun layoutTyvarsAndsSusp (prefix, (tyvars, xs), layoutX) =
    layoutAndsSusp
    (prefix, xs, fn (first, prefix, x) =>
     if first andalso not (Vector.isEmpty tyvars)
-       then seq [prefix, Tyvar.layouts tyvars, str " ", layoutX x]
+       then seq [prefix,
+                 case Vector.length tyvars of
+                    1 => Tyvar.layout (Vector.sub (tyvars, 0))
+                  | _ => Layout.tuple (Vector.toListMap (tyvars, Tyvar.layout)),
+                 str " ",
+                 layoutX x]
        else seq [prefix, layoutX x])
 
 fun expNodeName e =

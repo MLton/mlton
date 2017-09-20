@@ -17,7 +17,6 @@ signature AST_ATOMS_STRUCTS =
       structure SortedRecord: RECORD
       structure Symbol: SYMBOL
       structure TyconKind: TYCON_KIND
-      structure Tyvar: TYVAR
       structure WordSize: WORD_SIZE
       sharing Record.Field = SortedRecord.Field
       sharing Symbol = Record.Field.Symbol
@@ -28,6 +27,12 @@ signature AST_ATOMS =
       include AST_ATOMS_STRUCTS
 
       structure Const: AST_CONST
+
+      structure Tyvar:
+         sig
+            include AST_ID
+            val isEquality: t -> bool
+         end
 
       structure Tycon:
          sig

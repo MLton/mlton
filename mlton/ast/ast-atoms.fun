@@ -13,8 +13,21 @@ struct
 open S
 
 structure Wrap = Region.Wrap
-structure Const = AstConst ()
 structure Field = Record.Field
+
+structure Const = AstConst ()
+
+structure Tyvar =
+   struct
+      structure Id = AstId (structure Symbol = Symbol)
+      open Id
+      fun isEquality t =
+         let
+            val s = toString t
+         in
+            String.length s > 1 andalso String.sub (s, 1) = #"'"
+         end
+   end
 
 structure Tycon =
    struct
@@ -209,7 +222,7 @@ fun reportDuplicateTyvars (v: Tyvar.t vector,
                            {ctxt: unit -> Layout.t}): unit =
    reportDuplicates (v,
                      {ctxt = ctxt,
-                      equals = Tyvar.sameName,
+                      equals = Tyvar.equals,
                       layout = Tyvar.layout,
                       name = "type variable",
                       region = Tyvar.region})

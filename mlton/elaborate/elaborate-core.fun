@@ -110,6 +110,7 @@ local
 in
    structure TypeEnv = TypeEnv
    structure TypeStr = TypeStr
+   structure TyvarEnv = TyvarEnv
    structure Vid = Vid
 end
 
@@ -238,7 +239,9 @@ fun elaborateType (ty: Atype.t, E: Env.t,
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
             Atype.Var a => (* rule 44 *)
-               Type.var a
+               (case TyvarEnv.lookupTyvar a of
+                   NONE => makeBogus (NONE, Vector.new0 ())
+                 | SOME a => Type.var a)
           | Atype.Con (c, ts) => (* rules 46, 47 *)
                let
                   val ts = Vector.map (ts, loop)
@@ -1818,9 +1821,12 @@ fun elaborateDec (d, {env = E, nest}) =
             val strs =
                Vector.map
                (types, fn {def, tyvars, ...} =>
-                TypeStr.def (Scheme.make {canGeneralize = true,
-                                          ty = elabType (def, {bogusAsUnknown = false}),
-                                          tyvars = tyvars}))
+                TyvarEnv.scope
+                (tyvars, fn tyvars =>
+                 TypeStr.def (Scheme.make
+                              {canGeneralize = true,
+                               ty = elabType (def, {bogusAsUnknown = false}),
+                               tyvars = tyvars})))
          in
             Vector.foreach2
             (types, strs, fn ({tycon, ...}, str) =>
@@ -1873,39 +1879,41 @@ fun elaborateDec (d, {env = E, nest}) =
                (Vector.unzip o Vector.map)
                (datatypes,
                 fn {cons, makeCons, name, tycon, tyvars} =>
-                let
-                   val resultType: Type.t =
-                      Type.con (tycon, Vector.map (tyvars, Type.var))
+                TyvarEnv.scope
+                (tyvars, fn tyvars =>
+                 let
+                    val resultType: Type.t =
+                       Type.con (tycon, Vector.map (tyvars, Type.var))
                    val (schemes, datatypeCons) =
-                      Vector.unzip
-                      (Vector.map
-                       (cons, fn {arg, con, ...} =>
-                        let
-                           val (arg, ty) =
-                              case arg of
-                                 NONE => (NONE, resultType)
-                               | SOME t =>
-                                    let
-                                       val t = elabType (t, {bogusAsUnknown = false})
-                                    in
-                                       (SOME t, Type.arrow (t, resultType))
-                                    end
-                           val scheme =
-                              Scheme.make {canGeneralize = true,
-                                           ty = ty,
-                                           tyvars = tyvars}
-                        in
-                           (scheme, {arg = arg, con = con})
-                        end))
-                   val typeStr =
-                      TypeStr.data (tycon, makeCons schemes)
-                in
+                       Vector.unzip
+                       (Vector.map
+                        (cons, fn {arg, con, ...} =>
+                         let
+                            val (arg, ty) =
+                               case arg of
+                                  NONE => (NONE, resultType)
+                                | SOME t =>
+                                     let
+                                        val t = elabType (t, {bogusAsUnknown = false})
+                                     in
+                                        (SOME t, Type.arrow (t, resultType))
+                                     end
+                            val scheme =
+                               Scheme.make {canGeneralize = true,
+                                            ty = ty,
+                                            tyvars = tyvars}
+                         in
+                            (scheme, {arg = arg, con = con})
+                         end))
+                    val typeStr =
+                       TypeStr.data (tycon, makeCons schemes)
+                 in
                    ({cons = datatypeCons,
-                     tycon = tycon,
-                     tyvars = tyvars},
-                    {tycon = name,
-                     typeStr = typeStr})
-                end)
+                      tycon = tycon,
+                      tyvars = tyvars},
+                     {tycon = name,
+                      typeStr = typeStr})
+                 end))
             val _ =
                Vector.map
                (strs, fn {tycon, typeStr} =>
@@ -2121,366 +2129,368 @@ fun elaborateDec (d, {env = E, nest}) =
                       (Vector.foreach (ops, fn op' =>
                                        Env.extendFix (E, op', fixity))
                        ; Decs.empty)
-                 | Adec.Fun {tyvars, fbs} =>
-                      let
-                         val close = TypeEnv.close (tyvars, {region = region})
-                         val {markFunc, setBound, unmarkFunc} = recursiveFun ()
-                         val fbs =
-                            Vector.map2
-                            (fbs, Adec.layoutFun {tyvars = tyvars, fbs = fbs}, fn (clauses, layFb) =>
-                             let
-                                val ctxtFb = fn () =>
-                                   seq [str "in: ", approximate (layFb ())]
-                                val clauses =
-                                   Vector.map
-                                   (clauses, fn {body, pats, resultType} =>
+                 | Adec.Fun {tyvars = tyvars, fbs} =>
+                      TyvarEnv.scope
+                      (tyvars, fn tyvars' =>
+                       let
+                          val close = TypeEnv.close (tyvars', {region = region})
+                          val {markFunc, setBound, unmarkFunc} = recursiveFun ()
+                          val fbs =
+                             Vector.map2
+                             (fbs, Adec.layoutFun {tyvars = tyvars, fbs = fbs}, fn (clauses, layFb) =>
+                              let
+                                 val ctxtFb = fn () =>
+                                    seq [str "in: ", approximate (layFb ())]
+                                 val clauses =
+                                    Vector.map
+                                    (clauses, fn {body, pats, resultType} =>
+                                     let
+                                        fun layPats () =
+                                           approximate (Apat.layoutFlatApp pats)
+                                        fun layPatsPrefix () =
+                                           approximatePrefix (Apat.layoutFlatApp pats)
+                                        val regionPats =
+                                           Region.append
+                                           (Apat.region (Vector.first pats),
+                                            Apat.region (Vector.last pats))
+                                        val regionBody =
+                                           Aexp.region body
+                                        fun layClause () =
+                                           approximate
+                                           (seq [Apat.layoutFlatApp pats,
+                                                 case resultType of
+                                                    NONE => empty
+                                                  | SOME rt => seq [str ": ",
+                                                                    Atype.layout rt],
+                                                 str " = ",
+                                                 Aexp.layout body])
+                                        val regionClause =
+                                           Region.append (regionPats, regionBody)
+                                        val {args = pats, func} =
+                                           Parse.parseClause (pats, E, ctxt)
+                                     in
+                                        {body = body,
+                                         func = func,
+                                         layClause = layClause,
+                                         layPats = layPats,
+                                         layPatsPrefix = layPatsPrefix,
+                                         pats = pats,
+                                         regionClause = regionClause,
+                                         regionPats = regionPats,
+                                         resultType = resultType}
+                                     end)
+                                 val regionFb =
+                                    Region.append
+                                    (#regionClause (Vector.first clauses),
+                                     #regionClause (Vector.last clauses))
+                                 val {pats = pats0, func as func0, layClause = layClause0, ...} =
+                                    Vector.first clauses
+                                 val layFunc0 = fn () => str (Avar.toString func0)
+                                 fun err (reg, msg, desc, layN, lay0) =
+                                    Control.error
+                                    (reg,
+                                     seq [str msg],
+                                     align [seq [str desc, approximate (layN ())],
+                                            seq [str "previous: ", approximate (lay0 ())],
+                                            ctxtFb ()])
+                                 val _ =
+                                    Vector.foreach
+                                    (clauses, fn {func = funcN, pats = patsN, layClause = layClauseN, regionPats = regionPatsN, ...} =>
+                                     let
+                                        val layFuncN = fn () => str (Avar.toString funcN)
+                                        val _ =
+                                           if Avar.equals (func, funcN)
+                                              then ()
+                                              else err (Avar.region funcN,
+                                                        "function clause with different name",
+                                                        "name:     ", layFuncN, layFunc0)
+                                        val _ =
+                                           if Vector.length pats0 = Vector.length patsN
+                                              then ()
+                                              else err (regionPatsN,
+                                                        "function clause with different number of arguments",
+                                                        "clause:   ", layClauseN, layClause0)
+                                     in
+                                        ()
+                                     end)
+                                 val numArgs =
+                                    Vector.fold
+                                    (clauses, ~1, fn (r, numArgs) =>
+                                     Int.max (Vector.length (#pats r), numArgs))
+                              in
+                                 {clauses = clauses,
+                                  ctxtFb = ctxtFb,
+                                  func = func,
+                                  numArgs = numArgs,
+                                  regionFb = regionFb}
+                              end)
+                          val _ =
+                             Vector.fold
+                             (fbs, [], fn ({func = f, ...}, ac) =>
+                              if List.exists (ac, fn f' => Avar.equals (f, f'))
+                                 then
+                                    (Control.error
+                                     (Avar.region f,
+                                      seq [str "duplicate function definition: ",
+                                           Avar.layout f],
+                                      ctxt ())
+                                     ; ac)
+                                 else f :: ac)
+                          val fbs =
+                             Vector.map
+                             (fbs, fn {clauses, ctxtFb, func, numArgs, regionFb} =>
+                              let
+                                 val argTys = Vector.tabulate (numArgs, fn _ => Type.new ())
+                                 val resTy = Type.new ()
+                                 val clauses =
+                                    Vector.map
+                                    (clauses, fn {body, layPats, layPatsPrefix, pats, regionPats, resultType, ...} =>
+                                     let
+                                        val elaboratePat = elaboratePat ()
+                                        val (pats, bindss) =
+                                           (Vector.unzip o Vector.mapi)
+                                           (pats, fn (i, pat) =>
+                                            let
+                                               val regionPat = Apat.region pat
+                                               val (pat, binds) =
+                                                  elaboratePat
+                                                  (pat, E,
+                                                   {bind = false,
+                                                    isRvb = false},
+                                                   preError)
+                                               val _ =
+                                                  unify
+                                                  (Vector.sub (argTys, i), Cpat.ty pat, fn (l1, l2) =>
+                                                   (regionPat,
+                                                    str "function clause with argument of different type",
+                                                    align [seq [str "argument: ", l2],
+                                                           seq [str "previous: ", l1],
+                                                           ctxtFb ()]))
+                                            in
+                                               (pat, binds)
+                                            end)
+                                        val binds = Vector.concatV (Vector.rev bindss)
+                                        val resultType =
+                                           Option.map
+                                           (resultType, fn resultType =>
+                                            let
+                                               val regionResultType = Atype.region resultType
+                                               val resultType = elabType (resultType, {bogusAsUnknown = true})
+                                               val _ =
+                                                  unify
+                                                  (resTy, resultType,
+                                                   fn (l1, l2) =>
+                                                   (regionResultType,
+                                                    str "function clause with result constraint of different type",
+                                                    align [seq [str "constraint: ", l2],
+                                                           seq [str "previous:   ", l1],
+                                                           ctxtFb ()]))
+                                            in
+                                               (resultType, regionResultType)
+                                            end)
+                                     in
+                                        {binds = binds,
+                                         body = body,
+                                         layPats = layPats,
+                                         layPatsPrefix = layPatsPrefix,
+                                         pats = pats,
+                                         regionPats = regionPats,
+                                         resultType = resultType}
+                                     end)
+                                 val funTy =
                                     let
-                                       fun layPats () =
-                                          approximate (Apat.layoutFlatApp pats)
-                                       fun layPatsPrefix () =
-                                          approximatePrefix (Apat.layoutFlatApp pats)
-                                       val regionPats =
-                                          Region.append
-                                          (Apat.region (Vector.first pats),
-                                           Apat.region (Vector.last pats))
-                                       val regionBody =
-                                          Aexp.region body
-                                       fun layClause () =
-                                          approximate
-                                          (seq [Apat.layoutFlatApp pats,
-                                                case resultType of
-                                                   NONE => empty
-                                                 | SOME rt => seq [str ": ",
-                                                                   Atype.layout rt],
-                                                str " = ",
-                                                Aexp.layout body])
-                                       val regionClause =
-                                          Region.append (regionPats, regionBody)
-                                       val {args = pats, func} =
-                                          Parse.parseClause (pats, E, ctxt)
+                                       fun chk ty =
+                                          if Type.isUnknown ty
+                                             then Type.new ()
+                                             else ty
                                     in
-                                       {body = body,
-                                        func = func,
-                                        layClause = layClause,
-                                        layPats = layPats,
-                                        layPatsPrefix = layPatsPrefix,
-                                        pats = pats,
-                                        regionClause = regionClause,
-                                        regionPats = regionPats,
-                                        resultType = resultType}
-                                    end)
-                                val regionFb =
-                                   Region.append
-                                   (#regionClause (Vector.first clauses),
-                                    #regionClause (Vector.last clauses))
-                                val {pats = pats0, func as func0, layClause = layClause0, ...} =
-                                   Vector.first clauses
-                                val layFunc0 = fn () => str (Avar.toString func0)
-                                fun err (reg, msg, desc, layN, lay0) =
-                                   Control.error
-                                   (reg,
-                                    seq [str msg],
-                                    align [seq [str desc, approximate (layN ())],
-                                           seq [str "previous: ", approximate (lay0 ())],
-                                           ctxtFb ()])
-                                val _ =
-                                   Vector.foreach
-                                   (clauses, fn {func = funcN, pats = patsN, layClause = layClauseN, regionPats = regionPatsN, ...} =>
-                                    let
-                                       val layFuncN = fn () => str (Avar.toString funcN)
-                                       val _ =
-                                          if Avar.equals (func, funcN)
-                                             then ()
-                                             else err (Avar.region funcN,
-                                                       "function clause with different name",
-                                                       "name:     ", layFuncN, layFunc0)
-                                       val _ =
-                                          if Vector.length pats0 = Vector.length patsN
-                                             then ()
-                                             else err (regionPatsN,
-                                                       "function clause with different number of arguments",
-                                                       "clause:   ", layClauseN, layClause0)
-                                    in
-                                       ()
-                                    end)
-                                val numArgs =
-                                   Vector.fold
-                                   (clauses, ~1, fn (r, numArgs) =>
-                                    Int.max (Vector.length (#pats r), numArgs))
-                             in
-                                {clauses = clauses,
-                                 ctxtFb = ctxtFb,
-                                 func = func,
-                                 numArgs = numArgs,
-                                 regionFb = regionFb}
-                             end)
-                         val _ =
-                            Vector.fold
-                            (fbs, [], fn ({func = f, ...}, ac) =>
-                             if List.exists (ac, fn f' => Avar.equals (f, f'))
-                                then
-                                   (Control.error
-                                    (Avar.region f,
-                                     seq [str "duplicate function definition: ",
-                                          Avar.layout f],
-                                     ctxt ())
-                                    ; ac)
-                                else f :: ac)
-                         val fbs =
-                            Vector.map
-                            (fbs, fn {clauses, ctxtFb, func, numArgs, regionFb} =>
-                             let
-                                val argTys = Vector.tabulate (numArgs, fn _ => Type.new ())
-                                val resTy = Type.new ()
-                                val clauses =
-                                   Vector.map
-                                   (clauses, fn {body, layPats, layPatsPrefix, pats, regionPats, resultType, ...} =>
-                                    let
-                                       val elaboratePat = elaboratePat ()
-                                       val (pats, bindss) =
-                                          (Vector.unzip o Vector.mapi)
-                                          (pats, fn (i, pat) =>
-                                           let
-                                              val regionPat = Apat.region pat
-                                              val (pat, binds) =
-                                                 elaboratePat
-                                                 (pat, E,
-                                                  {bind = false,
-                                                   isRvb = false},
-                                                  preError)
-                                              val _ =
+                                       if Vector.forall (argTys, Type.isUnknown)
+                                          andalso Type.isUnknown resTy
+                                          then Type.new ()
+                                          else Vector.foldr (Vector.map (argTys, chk), chk resTy, Type.arrow)
+                                    end
+                                 val funcVid = Avid.fromVar func
+                                 val _ =
+                                    Avid.checkRedefineSpecial
+                                    (funcVid,
+                                     {allowIt = true,
+                                      ctxt = ctxtFb,
+                                      keyword = "fun"})
+                                 val _ =
+                                    checkConRedefine
+                                    (funcVid, "fun", ctxtFb)
+                                 val var = Var.fromAst func
+                                 val _ =
+                                    Env.extendVar
+                                    (E, func, var,
+                                     Scheme.fromType funTy,
+                                     {isRebind = false})
+                                 val _ =
+                                    markFunc var
+                              in
+                                 {argTys = argTys,
+                                  clauses = clauses,
+                                  ctxtFb = ctxtFb,
+                                  func = func,
+                                  funTy = funTy,
+                                  regionFb = regionFb,
+                                  resTy = resTy,
+                                  var = var}
+                              end)
+                          val fbs =
+                             Vector.map
+                             (fbs, fn {argTys, clauses, ctxtFb, func, funTy, regionFb, resTy, var, ...} =>
+                              let
+                                 val nest = Avar.toString func :: nest
+                                 val resultTypeConstraint = Vector.exists (clauses, Option.isSome o #resultType)
+                                 val rules =
+                                    Vector.map
+                                    (clauses, fn {binds, body, layPats, layPatsPrefix, pats, regionPats, resultType} =>
+                                     let
+                                        val regionBody = Aexp.region body
+                                        val body =
+                                           Env.scope
+                                           (E, fn () =>
+                                            (Vector.foreach
+                                             (binds, fn (x, x', ty) =>
+                                              Env.extendVar
+                                              (E, x, x', Scheme.fromType ty,
+                                               {isRebind = false}))
+                                             ; elabExp (body, nest, NONE)))
+                                        val body =
+                                           Cexp.enterLeave
+                                           (body,
+                                            profileBody andalso !Control.profileBranch,
+                                            fn () =>
+                                            SourceInfo.function
+                                            {name = ("<case " ^ Layout.toString (layPatsPrefix ()) ^ ">") :: nest,
+                                             region = regionBody})
+                                        val _ =
+                                           case resultType of
+                                              SOME (resultType, regionResultType) =>
                                                  unify
-                                                 (Vector.sub (argTys, i), Cpat.ty pat, fn (l1, l2) =>
-                                                  (regionPat,
-                                                   str "function clause with argument of different type",
-                                                   align [seq [str "argument: ", l2],
-                                                          seq [str "previous: ", l1],
-                                                          ctxtFb ()]))
-                                           in
-                                              (pat, binds)
-                                           end)
-                                       val binds = Vector.concatV (Vector.rev bindss)
-                                       val resultType =
-                                          Option.map
-                                          (resultType, fn resultType =>
-                                           let
-                                              val regionResultType = Atype.region resultType
-                                              val resultType = elabType (resultType, {bogusAsUnknown = true})
-                                              val _ =
-                                                 unify
-                                                 (resTy, resultType,
+                                                 (resultType, Cexp.ty body,
                                                   fn (l1, l2) =>
-                                                  (regionResultType,
-                                                   str "function clause with result constraint of different type",
-                                                   align [seq [str "constraint: ", l2],
-                                                          seq [str "previous:   ", l1],
+                                                  (Region.append (regionResultType, regionBody),
+                                                   seq [if Vector.length clauses = 1
+                                                           then str "function "
+                                                           else str "function clause ",
+                                                        str "expression and result constraint disagree"],
+                                                   align [seq [str "expression: ", l2],
+                                                          seq [str "constraint: ", l1],
                                                           ctxtFb ()]))
-                                           in
-                                              (resultType, regionResultType)
-                                           end)
-                                    in
-                                       {binds = binds,
+                                            | NONE =>
+                                                 if resultTypeConstraint
+                                                    then unify
+                                                         (resTy, Cexp.ty body, fn (l1, l2) =>
+                                                          (regionBody,
+                                                           str "function clause expression and result constraint disagree",
+                                                           align [seq [str "expression: ", l2],
+                                                                  seq [str "constraint: ", l1],
+                                                                  ctxtFb ()]))
+                                                    else unify
+                                                         (resTy, Cexp.ty body, fn (l1, l2) =>
+                                                          (regionBody,
+                                                           str "function clause with expression of different type",
+                                                           align [seq [str "expression: ", l2],
+                                                                  seq [str "previous:   ", l1],
+                                                                  ctxtFb ()]))
+                                     in
+                                        {exp = body,
+                                         layPat = SOME layPats,
+                                         pat = Cpat.tuple pats,
+                                         regionPat = regionPats}
+                                     end)
+                                 val args =
+                                    Vector.map
+                                    (argTys, fn argTy =>
+                                     (Var.newNoname (), argTy))
+                                 fun check () =
+                                    unify
+                                    (Vector.foldr (argTys, resTy, Type.arrow), funTy, fn (l1, l2) =>
+                                     (Avar.region func,
+                                      seq [str "recursive use of function disagrees with function declaration type: ",
+                                           Avar.layout func],
+                                      align [seq [str "recursive use: ", l2],
+                                             seq [str "function type: ", l1],
+                                             ctxt ()]))
+                                 val body =
+                                    Cexp.casee
+                                    {ctxt = ctxtFb,
+                                     kind = ("function", "clause"),
+                                     nest = nest,
+                                     matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
+                                     noMatch = Cexp.RaiseMatch,
+                                     region = regionFb,
+                                     rules = rules,
+                                     test = Cexp.tuple (Vector.map (args, Cexp.var))}
+                                 val body =
+                                    Cexp.enterLeave
+                                    (body,
+                                     profileBody,
+                                     fn () =>
+                                     SourceInfo.function
+                                     {name = nest,
+                                      region = regionFb})
+                                 val lambda =
+                                    Vector.foldr
+                                    (args, body, fn ((arg, argTy), body) =>
+                                     Cexp.make
+                                     (Cexp.Lambda
+                                      (Lambda.make
+                                       {arg = arg,
+                                        argType = argTy,
                                         body = body,
-                                        layPats = layPats,
-                                        layPatsPrefix = layPatsPrefix,
-                                        pats = pats,
-                                        regionPats = regionPats,
-                                        resultType = resultType}
-                                    end)
-                                val funTy =
-                                   let
-                                      fun chk ty =
-                                         if Type.isUnknown ty
-                                            then Type.new ()
-                                            else ty
-                                   in
-                                      if Vector.forall (argTys, Type.isUnknown)
-                                         andalso Type.isUnknown resTy
-                                         then Type.new ()
-                                         else Vector.foldr (Vector.map (argTys, chk), chk resTy, Type.arrow)
-                                   end
-                                val funcVid = Avid.fromVar func
-                                val _ =
-                                   Avid.checkRedefineSpecial
-                                   (funcVid,
-                                    {allowIt = true,
-                                     ctxt = ctxtFb,
-                                     keyword = "fun"})
-                                val _ =
-                                   checkConRedefine
-                                   (funcVid, "fun", ctxtFb)
-                                val var = Var.fromAst func
-                                val _ =
-                                   Env.extendVar
-                                   (E, func, var,
-                                    Scheme.fromType funTy,
-                                    {isRebind = false})
-                                val _ =
-                                   markFunc var
-                             in
-                                {argTys = argTys,
-                                 clauses = clauses,
-                                 ctxtFb = ctxtFb,
-                                 func = func,
-                                 funTy = funTy,
-                                 regionFb = regionFb,
-                                 resTy = resTy,
-                                 var = var}
-                             end)
-                         val fbs =
-                            Vector.map
-                            (fbs, fn {argTys, clauses, ctxtFb, func, funTy, regionFb, resTy, var, ...} =>
-                             let
-                                val nest = Avar.toString func :: nest
-                                val resultTypeConstraint = Vector.exists (clauses, Option.isSome o #resultType)
-                                val rules =
-                                   Vector.map
-                                   (clauses, fn {binds, body, layPats, layPatsPrefix, pats, regionPats, resultType} =>
-                                    let
-                                       val regionBody = Aexp.region body
-                                       val body =
-                                          Env.scope
-                                          (E, fn () =>
-                                           (Vector.foreach
-                                            (binds, fn (x, x', ty) =>
-                                             Env.extendVar
-                                             (E, x, x', Scheme.fromType ty,
-                                              {isRebind = false}))
-                                            ; elabExp (body, nest, NONE)))
-                                       val body =
-                                          Cexp.enterLeave
-                                          (body,
-                                           profileBody andalso !Control.profileBranch,
-                                           fn () =>
-                                           SourceInfo.function
-                                           {name = ("<case " ^ Layout.toString (layPatsPrefix ()) ^ ">") :: nest,
-                                            region = regionBody})
-                                       val _ =
-                                          case resultType of
-                                             SOME (resultType, regionResultType) =>
-                                                unify
-                                                (resultType, Cexp.ty body,
-                                                 fn (l1, l2) =>
-                                                 (Region.append (regionResultType, regionBody),
-                                                  seq [if Vector.length clauses = 1
-                                                          then str "function "
-                                                          else str "function clause ",
-                                                       str "expression and result constraint disagree"],
-                                                  align [seq [str "expression: ", l2],
-                                                         seq [str "constraint: ", l1],
-                                                         ctxtFb ()]))
-                                           | NONE =>
-                                                if resultTypeConstraint
-                                                   then unify
-                                                        (resTy, Cexp.ty body, fn (l1, l2) =>
-                                                         (regionBody,
-                                                          str "function clause expression and result constraint disagree",
-                                                          align [seq [str "expression: ", l2],
-                                                                 seq [str "constraint: ", l1],
-                                                                 ctxtFb ()]))
-                                                   else unify
-                                                        (resTy, Cexp.ty body, fn (l1, l2) =>
-                                                         (regionBody,
-                                                          str "function clause with expression of different type",
-                                                          align [seq [str "expression: ", l2],
-                                                                 seq [str "previous:   ", l1],
-                                                                 ctxtFb ()]))
-                                    in
-                                       {exp = body,
-                                        layPat = SOME layPats,
-                                        pat = Cpat.tuple pats,
-                                        regionPat = regionPats}
-                                    end)
-                                val args =
-                                   Vector.map
-                                   (argTys, fn argTy =>
-                                    (Var.newNoname (), argTy))
-                                fun check () =
-                                   unify
-                                   (Vector.foldr (argTys, resTy, Type.arrow), funTy, fn (l1, l2) =>
-                                    (Avar.region func,
-                                     seq [str "recursive use of function disagrees with function declaration type: ",
-                                          Avar.layout func],
-                                     align [seq [str "recursive use: ", l2],
-                                            seq [str "function type: ", l1],
-                                            ctxt ()]))
-                                val body =
-                                   Cexp.casee
-                                   {ctxt = ctxtFb,
-                                    kind = ("function", "clause"),
-                                    nest = nest,
-                                    matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
-                                    noMatch = Cexp.RaiseMatch,
-                                    region = regionFb,
-                                    rules = rules,
-                                    test = Cexp.tuple (Vector.map (args, Cexp.var))}
-                                val body =
-                                   Cexp.enterLeave
-                                   (body,
-                                    profileBody,
-                                    fn () =>
-                                    SourceInfo.function
-                                    {name = nest,
-                                     region = regionFb})
-                                val lambda =
-                                   Vector.foldr
-                                   (args, body, fn ((arg, argTy), body) =>
-                                    Cexp.make
-                                    (Cexp.Lambda
-                                     (Lambda.make
-                                      {arg = arg,
-                                       argType = argTy,
-                                       body = body,
-                                       mayInline = true}),
-                                     Type.arrow (argTy, Cexp.ty body)))
-                                val lambda =
-                                   case Cexp.node lambda of
-                                      Cexp.Lambda lambda => lambda
-                                    | _ => Lambda.bogus
-                             in
-                                {check = check,
-                                 func = func,
-                                 funTy = funTy,
-                                 lambda = lambda,
-                                 var = var}
-                             end)
-                         val _ =
-                            Vector.foreach
-                            (fbs, fn {check, ...} =>
-                             check ())
-                         val {bound, schemes} =
-                            close
-                            (Vector.map
-                             (fbs, fn {func, funTy, ...} =>
-                              {isExpansive = false,
-                               ty = funTy,
-                               var = func}),
-                             {error = generalizeError,
-                              preError = preError})
-                         val _ =
-                            checkSchemes
-                            (Vector.zip
-                             (Vector.map (fbs, #func),
-                              schemes))
-                         val _ = setBound bound
-                         val _ =
-                            Vector.foreach2
-                            (fbs, schemes,
-                             fn ({func, var, ...}, scheme) =>
-                             (Env.extendVar
-                              (E, func, var, scheme,
-                               {isRebind = true})
-                              ; unmarkFunc var))
-                         val decs =
-                            Vector.map
-                            (fbs, fn {lambda, var, ...} =>
-                             {lambda = lambda,
-                              var = var})
-                      in
-                         Decs.single
-                         (Cdec.Fun {decs = decs,
-                                    tyvars = bound})
-                      end
+                                        mayInline = true}),
+                                      Type.arrow (argTy, Cexp.ty body)))
+                                 val lambda =
+                                    case Cexp.node lambda of
+                                       Cexp.Lambda lambda => lambda
+                                     | _ => Lambda.bogus
+                              in
+                                 {check = check,
+                                  func = func,
+                                  funTy = funTy,
+                                  lambda = lambda,
+                                  var = var}
+                              end)
+                          val _ =
+                             Vector.foreach
+                             (fbs, fn {check, ...} =>
+                              check ())
+                          val {bound, schemes} =
+                             close
+                             (Vector.map
+                              (fbs, fn {func, funTy, ...} =>
+                               {isExpansive = false,
+                                ty = funTy,
+                                var = func}),
+                              {error = generalizeError,
+                               preError = preError})
+                          val _ =
+                             checkSchemes
+                             (Vector.zip
+                              (Vector.map (fbs, #func),
+                               schemes))
+                          val _ = setBound bound
+                          val _ =
+                             Vector.foreach2
+                             (fbs, schemes,
+                              fn ({func, var, ...}, scheme) =>
+                              (Env.extendVar
+                               (E, func, var, scheme,
+                                {isRebind = true})
+                               ; unmarkFunc var))
+                          val decs =
+                             Vector.map
+                             (fbs, fn {lambda, var, ...} =>
+                              {lambda = lambda,
+                               var = var})
+                       in
+                          Decs.single
+                          (Cdec.Fun {decs = decs,
+                                     tyvars = bound})
+                       end)
                  | Adec.Local (d, d') =>
                       Env.localCore
                       (E,
@@ -2502,54 +2512,56 @@ fun elaborateDec (d, {env = E, nest}) =
                          Decs.empty
                       end
                  | Adec.Overload (p, x, tyvars, ty, xs) =>
-                      (check (ElabControl.allowOverload, "_overload", region)
-                       ; let
-                            (* Lookup the overloads before extending the var in case
-                             * x appears in the xs.
-                             *)
-                            val ovlds =
-                               Vector.concatV
-                               (Vector.map
-                                (xs, fn x =>
-                                 case Env.lookupLongvid (E, x) of
-                                    NONE => Vector.new0 ()
-                                  | SOME (Vid.Var v, t) =>
-                                       Vector.new1 (Longvid.region x, (v, t))
-                                  | SOME (Vid.Overload (_, vs), _) =>
-                                       Vector.map (vs, fn vt => (Longvid.region x, vt))
-                                  | _ =>
-                                       (Control.error
-                                        (Longvid.region x,
-                                         str "cannot overload",
-                                         seq [str "constructor: ", Longvid.layout x])
-                                        ; Vector.new0 ())))
-                            val s =
-                               Scheme.make {canGeneralize = false,
-                                            tyvars = tyvars,
-                                            ty = elabType (ty, {bogusAsUnknown = false})}
-                            val _ =
-                               Vector.foreach
-                               (ovlds,
-                                fn (r, (_, s')) => let
-                                      val is = Scheme.instantiate s
-                                      val is' = Scheme.instantiate s'
-                                   in
-                                      unify
-                                      (#instance is,
-                                       #instance is',
-                                       fn (l1, l2) =>
-                                          (r,
-                                           str "variant does not unify with overload",
-                                           align [seq [str "overload: ", l1],
-                                                  seq [str "variant:  ", l2],
-                                                  ctxt ()]))
-                                   end)
-                            val _ =
-                               Env.extendOverload
-                               (E, p, x, Vector.map (ovlds, fn (_, vt) => vt), s)
-                         in
-                            Decs.empty
-                         end)
+                      TyvarEnv.scope
+                      (tyvars, fn tyvars' =>
+                       (check (ElabControl.allowOverload, "_overload", region)
+                        ; let
+                             (* Lookup the overloads before extending the var in case
+                              * x appears in the xs.
+                              *)
+                             val ovlds =
+                                Vector.concatV
+                                (Vector.map
+                                 (xs, fn x =>
+                                  case Env.lookupLongvid (E, x) of
+                                     NONE => Vector.new0 ()
+                                   | SOME (Vid.Var v, t) =>
+                                        Vector.new1 (Longvid.region x, (v, t))
+                                   | SOME (Vid.Overload (_, vs), _) =>
+                                        Vector.map (vs, fn vt => (Longvid.region x, vt))
+                                   | _ =>
+                                        (Control.error
+                                         (Longvid.region x,
+                                          str "cannot overload",
+                                          seq [str "constructor: ", Longvid.layout x])
+                                         ; Vector.new0 ())))
+                             val s =
+                                Scheme.make {canGeneralize = false,
+                                             tyvars = tyvars',
+                                             ty = elabType (ty, {bogusAsUnknown = false})}
+                             val _ =
+                                Vector.foreach
+                                (ovlds,
+                                 fn (r, (_, s')) => let
+                                       val is = Scheme.instantiate s
+                                       val is' = Scheme.instantiate s'
+                                    in
+                                       unify
+                                       (#instance is,
+                                        #instance is',
+                                        fn (l1, l2) =>
+                                           (r,
+                                            str "variant does not unify with overload",
+                                            align [seq [str "overload: ", l1],
+                                                   seq [str "variant:  ", l2],
+                                                   ctxt ()]))
+                                    end)
+                             val _ =
+                                Env.extendOverload
+                                (E, p, x, Vector.map (ovlds, fn (_, vt) => vt), s)
+                          in
+                             Decs.empty
+                          end))
                  | Adec.SeqDec ds =>
                       Vector.fold (ds, Decs.empty, fn (d, decs) =>
                                    Decs.append (decs, elabDec (d, isTop)))
@@ -2557,242 +2569,244 @@ fun elaborateDec (d, {env = E, nest}) =
                       (elabTypBind typBind
                        ; Decs.empty)
                  | Adec.Val {tyvars, rvbs, vbs} =>
-                      let
-                         val {vbs = layVbs, rvbs = layRvbs} =
-                            Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
-                         val close = TypeEnv.close (tyvars, {region = region})
-                         (* Must do all the es and rvbs before the ps because of
-                          * scoping rules.
-                          *)
-                         val vbs =
-                            Vector.map2
-                            (vbs, layVbs, fn ({exp, pat, ...}, layVb) =>
-                             let
-                                fun ctxtVb () =
-                                   seq [str "in: ", approximate (layVb ())]
-                                fun layPat () = Apat.layout pat
-                                val regionPat = Apat.region pat
-                                val regionExp = Aexp.region exp
-                                val exp = elabExp (exp, nest, Apat.getName pat)
-                                val exp =
-                                   Cexp.enterLeave
-                                   (exp,
-                                    profileBody
-                                    andalso !Control.profileVal
-                                    andalso Cexp.isExpansive exp, fn () =>
-                                    let
-                                       val name =
-                                          concat ["<val ",
-                                                  Layout.toString
-                                                  (approximatePrefix
-                                                   (Apat.layout pat)),
-                                                  ">"]
-                                    in
-                                       SourceInfo.function {name = name :: nest,
-                                                            region = regionExp}
-                                    end)
-                             in
-                                {ctxtVb = ctxtVb,
-                                 exp = exp,
-                                 layPat = layPat,
-                                 pat = pat,
-                                 regionExp = regionExp,
-                                 regionPat = regionPat}
-                             end)
-                         val {markFunc, setBound, unmarkFunc} = recursiveFun ()
-                         val elaboratePat = elaboratePat ()
-                         val rvbs =
-                            Vector.map2
-                            (rvbs, layRvbs, fn ({pat, match}, layRvb) =>
-                             let
-                                fun ctxtRvb () =
-                                   seq [str "in: ", approximate (layRvb ())]
-                                val regionPat = Apat.region pat
-                                val (pat, bound) =
-                                   elaboratePat (pat, E, {bind = false,
-                                                          isRvb = true},
-                                                 preError)
-                                val (nest, var) =
-                                   if Vector.length bound = 1
-                                      andalso (Type.isUnknown (Cpat.ty pat)
-                                               orelse Type.isArrow (Cpat.ty pat))
-                                      then let
-                                              val (x, x', _) = Vector.first bound
-                                           in
-                                              (Avar.toString x :: nest, x')
-                                           end
-                                      else ("_" :: nest, Var.newNoname ())
-                                val _ = markFunc var
-                                val bound =
-                                   Vector.map
-                                   (bound, fn (x, _, ty) =>
-                                    let
-                                       val xVid = Avid.fromVar x
-                                       val _ =
-                                          checkConRedefine
-                                          (xVid, "val rec", ctxtRvb)
-                                       val _ =
-                                          Env.extendVar
-                                          (E, x, var, Scheme.fromType ty,
-                                           {isRebind = false})
-                                    in
-                                       (x, var, ty)
-                                    end)
-                             in
-                                {bound = bound,
-                                 ctxtRvb = ctxtRvb,
-                                 match = match,
-                                 nest = nest,
-                                 pat = pat,
-                                 regionPat = regionPat,
-                                 patIsConstrained = not (Type.isUnknown (Cpat.ty pat)),
-                                 var = var}
-                             end)
-                         val vbs =
-                            Vector.map
-                            (vbs,
-                             fn {ctxtVb, exp, layPat, pat, regionExp, regionPat, ...} =>
-                             let
-                                val (pat, bound) =
-                                   elaboratePat (pat, E, {bind = false,
-                                                          isRvb = false},
-                                                 preError)
-                                val _ =
-                                   unify
-                                   (Cpat.ty pat, Cexp.ty exp, fn (p, e) =>
-                                    (Region.append (regionPat, regionExp),
-                                     str "pattern and expression disagree",
-                                     align [seq [str "pattern:    ", p],
-                                            seq [str "expression: ", e],
-                                            ctxtVb ()]))
-                             in
-                                {bound = bound,
-                                 ctxtVb = ctxtVb,
-                                 exp = exp,
-                                 layPat = layPat,
-                                 pat = pat,
-                                 regionPat = regionPat}
-                             end)
-                         val rvbs =
-                            Vector.map
-                            (rvbs, fn {bound, ctxtRvb, match, nest, pat, patIsConstrained, regionPat, var, ...} =>
-                             let
-                                val {argType, region, resultType, rules} =
-                                   elabMatch (match, preError, nest)
-                                fun check () =
-                                   unify
-                                   (Cpat.ty pat,
-                                    Type.arrow (argType, resultType),
-                                    fn (l1, l2) =>
-                                    if patIsConstrained
-                                       then (Region.append (regionPat, Amatch.region match),
-                                             str "recursive function pattern and expression disagree",
-                                             align [seq [str "pattern:    ", l1],
-                                                    seq [str "expression: ", l2],
-                                                    ctxt ()])
-                                       else (Avar.region (#1 (Vector.first bound)),
-                                             seq [str "recursive use of function disagrees with function expression type: ",
-                                                  Avar.layout (#1 (Vector.first bound))],
-                                             align [seq [str "recursive use: ", l1],
-                                                    seq [str "function type: ", l2],
-                                                    ctxt ()]))
-                                val arg = Var.newNoname ()
-                                val body =
-                                   Cexp.enterLeave
-                                   (Cexp.casee {ctxt = ctxtRvb,
-                                                kind = ("recursive function", "rule"),
-                                                nest = nest,
-                                                matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
-                                                noMatch = Cexp.RaiseMatch,
-                                                region = region,
-                                                rules = rules,
-                                                test = Cexp.var (arg, argType)},
-                                    profileBody,
-                                    fn () => SourceInfo.function {name = nest,
-                                                                  region = region})
-                                val lambda =
-                                   Lambda.make {arg = arg,
-                                                argType = argType,
-                                                body = body,
-                                                mayInline = true}
-                             in
-                                {check = check,
-                                 bound = bound,
-                                 lambda = lambda,
-                                 var = var}
-                             end)
-                         val _ =
-                            Vector.foreach
-                            (rvbs, fn {check, ...} =>
-                             check ())
-                         val boundVars =
-                            Vector.concat
-                            [Vector.concatV
+                      TyvarEnv.scope
+                      (tyvars, fn tyvars' =>
+                       let
+                          val {vbs = layVbs, rvbs = layRvbs} =
+                             Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
+                          val close = TypeEnv.close (tyvars', {region = region})
+                          (* Must do all the es and rvbs before the ps because of
+                           * scoping rules.
+                           *)
+                          val vbs =
+                             Vector.map2
+                             (vbs, layVbs, fn ({exp, pat, ...}, layVb) =>
+                              let
+                                 fun ctxtVb () =
+                                    seq [str "in: ", approximate (layVb ())]
+                                 fun layPat () = Apat.layout pat
+                                 val regionPat = Apat.region pat
+                                 val regionExp = Aexp.region exp
+                                 val exp = elabExp (exp, nest, Apat.getName pat)
+                                 val exp =
+                                    Cexp.enterLeave
+                                    (exp,
+                                     profileBody
+                                     andalso !Control.profileVal
+                                     andalso Cexp.isExpansive exp, fn () =>
+                                     let
+                                        val name =
+                                           concat ["<val ",
+                                                   Layout.toString
+                                                   (approximatePrefix
+                                                    (Apat.layout pat)),
+                                                   ">"]
+                                     in
+                                        SourceInfo.function {name = name :: nest,
+                                                             region = regionExp}
+                                     end)
+                              in
+                                 {ctxtVb = ctxtVb,
+                                  exp = exp,
+                                  layPat = layPat,
+                                  pat = pat,
+                                  regionExp = regionExp,
+                                  regionPat = regionPat}
+                              end)
+                          val {markFunc, setBound, unmarkFunc} = recursiveFun ()
+                          val elaboratePat = elaboratePat ()
+                          val rvbs =
+                             Vector.map2
+                             (rvbs, layRvbs, fn ({pat, match}, layRvb) =>
+                              let
+                                 fun ctxtRvb () =
+                                    seq [str "in: ", approximate (layRvb ())]
+                                 val regionPat = Apat.region pat
+                                 val (pat, bound) =
+                                    elaboratePat (pat, E, {bind = false,
+                                                           isRvb = true},
+                                                  preError)
+                                 val (nest, var) =
+                                    if Vector.length bound = 1
+                                       andalso (Type.isUnknown (Cpat.ty pat)
+                                                orelse Type.isArrow (Cpat.ty pat))
+                                       then let
+                                               val (x, x', _) = Vector.first bound
+                                            in
+                                               (Avar.toString x :: nest, x')
+                                            end
+                                       else ("_" :: nest, Var.newNoname ())
+                                 val _ = markFunc var
+                                 val bound =
+                                    Vector.map
+                                    (bound, fn (x, _, ty) =>
+                                     let
+                                        val xVid = Avid.fromVar x
+                                        val _ =
+                                           checkConRedefine
+                                           (xVid, "val rec", ctxtRvb)
+                                        val _ =
+                                           Env.extendVar
+                                           (E, x, var, Scheme.fromType ty,
+                                            {isRebind = false})
+                                     in
+                                        (x, var, ty)
+                                     end)
+                              in
+                                 {bound = bound,
+                                  ctxtRvb = ctxtRvb,
+                                  match = match,
+                                  nest = nest,
+                                  pat = pat,
+                                  regionPat = regionPat,
+                                  patIsConstrained = not (Type.isUnknown (Cpat.ty pat)),
+                                  var = var}
+                              end)
+                          val vbs =
+                             Vector.map
+                             (vbs,
+                              fn {ctxtVb, exp, layPat, pat, regionExp, regionPat, ...} =>
+                              let
+                                 val (pat, bound) =
+                                    elaboratePat (pat, E, {bind = false,
+                                                           isRvb = false},
+                                                  preError)
+                                 val _ =
+                                    unify
+                                    (Cpat.ty pat, Cexp.ty exp, fn (p, e) =>
+                                     (Region.append (regionPat, regionExp),
+                                      str "pattern and expression disagree",
+                                      align [seq [str "pattern:    ", p],
+                                             seq [str "expression: ", e],
+                                             ctxtVb ()]))
+                              in
+                                 {bound = bound,
+                                  ctxtVb = ctxtVb,
+                                  exp = exp,
+                                  layPat = layPat,
+                                  pat = pat,
+                                  regionPat = regionPat}
+                              end)
+                          val rvbs =
+                             Vector.map
+                             (rvbs, fn {bound, ctxtRvb, match, nest, pat, patIsConstrained, regionPat, var, ...} =>
+                              let
+                                 val {argType, region, resultType, rules} =
+                                    elabMatch (match, preError, nest)
+                                 fun check () =
+                                    unify
+                                    (Cpat.ty pat,
+                                     Type.arrow (argType, resultType),
+                                     fn (l1, l2) =>
+                                     if patIsConstrained
+                                        then (Region.append (regionPat, Amatch.region match),
+                                              str "recursive function pattern and expression disagree",
+                                              align [seq [str "pattern:    ", l1],
+                                                     seq [str "expression: ", l2],
+                                                     ctxt ()])
+                                        else (Avar.region (#1 (Vector.first bound)),
+                                              seq [str "recursive use of function disagrees with function expression type: ",
+                                                   Avar.layout (#1 (Vector.first bound))],
+                                              align [seq [str "recursive use: ", l1],
+                                                     seq [str "function type: ", l2],
+                                                     ctxt ()]))
+                                 val arg = Var.newNoname ()
+                                 val body =
+                                    Cexp.enterLeave
+                                    (Cexp.casee {ctxt = ctxtRvb,
+                                                 kind = ("recursive function", "rule"),
+                                                 nest = nest,
+                                                 matchDiags = matchDiagsFromNoMatch Cexp.RaiseMatch,
+                                                 noMatch = Cexp.RaiseMatch,
+                                                 region = region,
+                                                 rules = rules,
+                                                 test = Cexp.var (arg, argType)},
+                                     profileBody,
+                                     fn () => SourceInfo.function {name = nest,
+                                                                   region = region})
+                                 val lambda =
+                                    Lambda.make {arg = arg,
+                                                 argType = argType,
+                                                 body = body,
+                                                 mayInline = true}
+                              in
+                                 {check = check,
+                                  bound = bound,
+                                  lambda = lambda,
+                                  var = var}
+                              end)
+                          val _ =
+                             Vector.foreach
+                             (rvbs, fn {check, ...} =>
+                              check ())
+                          val boundVars =
+                             Vector.concat
+                             [Vector.concatV
+                              (Vector.map
+                               (rvbs, fn {bound, ...} =>
+                                ((Vector.rev o Vector.map)
+                                 (bound, fn z =>
+                                  (z, {isExpansive = false,
+                                       isRebind = true}))))),
+                              Vector.concatV
+                              (Vector.map
+                               (vbs, fn {bound, exp, ...} =>
+                                ((Vector.rev o Vector.map)
+                                 (bound, fn z =>
+                                  (z, {isExpansive = Cexp.isExpansive exp,
+                                       isRebind = false})))))]
+                          val {bound, schemes} =
+                             close
                              (Vector.map
-                              (rvbs, fn {bound, ...} =>
-                               ((Vector.rev o Vector.map)
-                                (bound, fn z =>
-                                 (z, {isExpansive = false,
-                                      isRebind = true}))))),
-                             Vector.concatV
-                             (Vector.map
-                              (vbs, fn {bound, exp, ...} =>
-                               ((Vector.rev o Vector.map)
-                                (bound, fn z =>
-                                 (z, {isExpansive = Cexp.isExpansive exp,
-                                      isRebind = false})))))]
-                         val {bound, schemes} =
-                            close
-                            (Vector.map
-                             (boundVars, fn ((var, _, ty), {isExpansive, ...}) =>
-                              {isExpansive = isExpansive,
-                               ty = ty,
-                               var = var}),
-                             {error = generalizeError,
-                              preError = preError})
-                         val _ =
-                            checkSchemes
-                            (Vector.zip
-                             (Vector.map (boundVars, #1 o #1),
-                              schemes))
-                         val _ = setBound bound
-                         val _ =
-                            Vector.foreach2
-                            (boundVars, schemes,
-                             fn (((x, x', _), {isRebind, ...}), scheme) =>
-                             Env.extendVar
-                             (E, x, x', scheme,
-                              {isRebind = isRebind}))
-                         val _ =
-                            Vector.foreach
-                            (rvbs, fn {var, ...} =>
-                             unmarkFunc var)
-                         val vbs =
-                            Vector.map
-                            (vbs, fn {ctxtVb, exp, layPat, pat, regionPat, ...} =>
-                             {ctxt = ctxtVb,
-                              exp = exp,
-                              layPat = layPat,
-                              nest = nest,
-                              pat = pat,
-                              regionPat = regionPat})
-                         val rvbs =
-                            Vector.map
-                            (rvbs, fn {lambda, var, ...} =>
-                             {lambda = lambda,
-                              var = var})
-                         (* According to page 28 of the Definition, we should
-                          * issue warnings for nonexhaustive valdecs only when it's
-                          * not a top level dec.  It seems harmless enough to go
-                          * ahead and always issue them.
-                          *)
-                      in
-                         Decs.single
-                         (Cdec.Val {matchDiags = matchDiagsFromNoMatch Cexp.RaiseBind,
-                                    rvbs = rvbs,
-                                    tyvars = bound,
-                                    vbs = vbs})
-                      end
+                              (boundVars, fn ((var, _, ty), {isExpansive, ...}) =>
+                               {isExpansive = isExpansive,
+                                ty = ty,
+                                var = var}),
+                              {error = generalizeError,
+                               preError = preError})
+                          val _ =
+                             checkSchemes
+                             (Vector.zip
+                              (Vector.map (boundVars, #1 o #1),
+                               schemes))
+                          val _ = setBound bound
+                          val _ =
+                             Vector.foreach2
+                             (boundVars, schemes,
+                              fn (((x, x', _), {isRebind, ...}), scheme) =>
+                              Env.extendVar
+                              (E, x, x', scheme,
+                               {isRebind = isRebind}))
+                          val _ =
+                             Vector.foreach
+                             (rvbs, fn {var, ...} =>
+                              unmarkFunc var)
+                          val vbs =
+                             Vector.map
+                             (vbs, fn {ctxtVb, exp, layPat, pat, regionPat, ...} =>
+                              {ctxt = ctxtVb,
+                               exp = exp,
+                               layPat = layPat,
+                               nest = nest,
+                               pat = pat,
+                               regionPat = regionPat})
+                          val rvbs =
+                             Vector.map
+                             (rvbs, fn {lambda, var, ...} =>
+                              {lambda = lambda,
+                               var = var})
+                          (* According to page 28 of the Definition, we should
+                           * issue warnings for nonexhaustive valdecs only when it's
+                           * not a top level dec.  It seems harmless enough to go
+                           * ahead and always issue them.
+                           *)
+                       in
+                          Decs.single
+                          (Cdec.Val {matchDiags = matchDiagsFromNoMatch Cexp.RaiseBind,
+                                     rvbs = rvbs,
+                                     tyvars = bound,
+                                     vbs = vbs})
+                       end)
              val () =
                 case resolveScope () of
                    Control.Elaborate.ResolveScope.Dec =>

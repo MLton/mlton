@@ -1298,7 +1298,7 @@ longvid : longvidNoEqual  (longvidNoEqual)
 con : vid  (Vid.toCon vid)
 longcon : longvid  (Longvid.toLongcon longvid)
 
-tyvar : TYVAR  (Tyvar.newString (TYVAR, {left = TYVARleft, right = TYVARright}))
+tyvar : TYVAR  (Tyvar.fromSymbol (Symbol.fromString TYVAR, reg (TYVARleft, TYVARright)))
 
 tycon : shortAlphanumId  (Tycon.fromSymbol shortAlphanumId)
       | shortSymId       (Tycon.fromSymbol shortSymId)

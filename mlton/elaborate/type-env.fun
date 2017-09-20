@@ -126,6 +126,79 @@ structure Time:>
       val tick = Trace.trace ("TypeEnv.Time.tick", Layout.ignore, Unit.layout) tick
    end
 
+structure Tyvar =
+   struct
+      open Tyvar
+
+      local
+         val {get = info: Tyvar.t -> {isEquality: bool,
+                                      time: Time.t ref},
+              set = setInfo, ...} =
+            Property.getSet
+            (Tyvar.plist,
+             Property.initRaise ("TypeEnv.Tyvar.info", Tyvar.layout))
+         fun init (a, ie) =
+            setInfo (a, {isEquality = ie,
+                         time = ref (Time.now ())})
+      in
+         local
+            fun make f = f o info
+         in
+            val time = make #time
+            val isEquality = make #isEquality
+         end
+         fun makeString (s, {equality}) =
+            let
+               val a = newString s
+               val _ = init (a, equality)
+            in
+               a
+            end
+         fun makeNoname {equality} =
+            let
+               val a = newNoname ()
+               val _ = init (a, equality)
+            in
+               a
+            end
+         fun makeLike a =
+            let
+               val a' = new a
+               val _ = init (a', isEquality a)
+            in
+               a'
+            end
+      end
+
+      fun makeLayoutPretty () =
+         let
+            val {destroy, get = layoutPretty, ...} =
+               Property.destGet
+               (plist,
+                Property.initFun
+                (let
+                    val r = ref (Char.toInt #"a")
+                 in
+                    fn a =>
+                    let
+                       val n = !r
+                       val l =
+                          Layout.str (concat
+                                      [if isEquality a then "''" else "'",
+                                       if n > Char.toInt #"z"
+                                          then concat ["a", Int.toString (n - Char.toInt #"z")]
+                                          else Char.toString (Char.fromInt n)])
+                       val _ = r := 1 + n
+                    in
+                       l
+                    end
+                 end))
+         in
+            {destroy = destroy, layoutPretty = layoutPretty}
+         end
+   end
+structure TyvarExt = Tyvar
+
 structure Tycon =
    struct
       open Tycon
@@ -209,17 +282,6 @@ structure Tycon =
       end
 
       val layoutAppPretty = makeLayoutAppPretty {layoutPretty = layoutPretty}
-   end
-
-structure Tyvar =
-   struct
-      open Tyvar
-
-      val {get = time: Tyvar.t -> Time.t ref, ...} =
-         Property.get (Tyvar.plist, Property.initFun (fn _ => ref (Time.now ())))
-
-      val time =
-         Trace.trace ("Tyvar.time", Tyvar.layout, Ref.layout Time.layout) time
    end
 
 structure Equality:>
@@ -1812,7 +1874,7 @@ structure Scheme =
             val tyvars =
                Vector.tabulate
                (arity, fn _ =>
-                Tyvar.newNoname {equality = false})
+                Tyvar.makeNoname {equality = false})
          in
             make
             {canGeneralize = true,
@@ -1976,7 +2038,7 @@ structure Scheme =
       fun fresh s =
          let
             val (tyvars, _) = dest s
-            val tyvars = Vector.map (tyvars, Tyvar.newLike)
+            val tyvars = Vector.map (tyvars, Tyvar.makeLike)
          in
             (tyvars, apply (s, (Vector.map (tyvars, Type.var))))
          end
@@ -2095,7 +2157,7 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
                          let
                             fun newField f =
                                {field = f,
-                                tyvar = Tyvar.newNoname {equality = false}}
+                                tyvar = Tyvar.makeNoname {equality = false}}
                             val extra =
                                let
                                   val all = ref []
@@ -2147,7 +2209,7 @@ fun 'a close (ensure: Tyvar.t vector, rgn_ubd) =
                                            false
                                         end
                                    | SOME b => b
-                               val a = Tyvar.newNoname {equality = b}
+                               val a = Tyvar.makeNoname {equality = b}
                                val _ = List.push (tyvars, a)
                                val _ =
                                   Set.:= (s, {equality = equality,

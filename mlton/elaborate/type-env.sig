@@ -89,6 +89,7 @@ signature TYPE_ENV =
       sharing type Type.realSize = RealSize.t
       sharing type Type.wordSize = WordSize.t
       sharing type Type.tycon = Tycon.t
+
       structure Scheme:
          sig
             type t
@@ -114,8 +115,19 @@ signature TYPE_ENV =
             val ty: t -> Type.t
          end
 
+      structure TyvarExt:
+         sig
+            type t
+            val makeString: string * {equality: bool} -> t
+            val makeNoname: {equality: bool} -> t
+            val makeLayoutPretty: unit -> {destroy: unit -> unit, layoutPretty: t -> Layout.t}
+            val makeLike: t -> t
+         end
+      sharing type TyvarExt.t = Tyvar.t
+
       structure TyconExt:
          sig
+            type t
             val admitsEquality: Tycon.t -> AdmitsEquality.t ref
             val kind: Tycon.t -> TyconKind.t
             val layoutAppPretty: Tycon.t * LayoutPretty.t vector -> LayoutPretty.t
@@ -135,6 +147,8 @@ signature TYPE_ENV =
             val setLayoutPretty: Tycon.t * Layout.t -> unit
             val setOpaqueExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
          end
+      sharing type TyconExt.t = Tycon.t
+
 
       val close:
          Tyvar.t vector * {region: Region.t}

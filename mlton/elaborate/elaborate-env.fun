@@ -96,6 +96,68 @@ structure Tycon =
       open TypeEnv.TyconExt
    end
 
+structure Tyvar =
+   struct
+      open Tyvar
+      open TypeEnv.TyvarExt
+      fun fromAst a =
+         makeString (Ast.Tyvar.toString a,
+                     {equality = Ast.Tyvar.isEquality a})
+   end
+
+structure TyvarEnv =
+   struct
+      datatype t = T of {get: Ast.Tyvar.t -> Tyvar.t list ref}
+      fun new () =
+         let
+            val {get: Ast.Tyvar.t -> Tyvar.t list ref, ...} =
+               Property.get
+               (Symbol.plist o Ast.Tyvar.toSymbol,
+                Property.initFun (fn _ => ref []))
+         in
+            T {get = get}
+         end
+      fun peekTyvar (T {get, ...}, a) =
+         case !(get a) of
+            [] => NONE
+          | a'::_ => SOME a'
+      fun lookupTyvar (env, a) =
+         case peekTyvar (env, a) of
+            NONE =>
+               let
+                  val _ =
+                     Control.error
+                     (Ast.Tyvar.region a,
+                      seq [str "undefined type variable: ",
+                           Ast.Tyvar.layout a],
+                      Layout.empty)
+               in
+                  NONE
+               end
+          | SOME tv => SOME tv
+      fun scope (T {get, ...}, bs, th) =
+         let
+            val bs' = Vector.map (bs, Tyvar.fromAst)
+            val () =
+               Vector.foreach2
+               (bs, bs', fn (b, b') =>
+                List.push (get b, b'))
+            val res = th bs'
+            val () =
+               Vector.foreach
+               (bs, fn b =>
+                ignore (List.pop (get b)))
+         in
+            res
+         end
+
+      val E = new ()
+      val lookupTyvar = fn a =>
+         lookupTyvar (E, a)
+      val scope = fn (bs, th) =>
+         scope (E, bs, th)
+   end
+
 val insideFunctor = ref false
 
 fun amInsideFunctor () = !insideFunctor
@@ -227,6 +289,7 @@ structure TypeStr =
       structure AdmitsEquality = AdmitsEquality
       structure Kind = Kind
       structure Tycon = Tycon
+      structure Tyvar = Tyvar
 
       structure Cons :
          sig
@@ -645,7 +708,7 @@ structure Interface =
                   val tyargs =
                      Vector.tabulate
                      (arity, fn _ =>
-                      Etype.var (Etyvar.newNoname {equality = false}))
+                      Etype.var (Etyvar.makeNoname {equality = false}))
                   val tyvars = Vector.map (tyargs, lay)
                   val tyvars =
                      case Vector.length tyargs of
@@ -3008,7 +3071,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                         val tyvars =
                            Vector.tabulate
                            (Int.max (strArity, sigArity), fn _ =>
-                            Type.var (Tyvar.newNoname {equality = false}))
+                            Type.var (Tyvar.makeNoname {equality = false}))
                         (* Ensure tyvars get correct pretty names. *)
                         val _ = Vector.foreach (tyvars, ignore o layoutPretty)
                      in

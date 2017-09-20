@@ -164,7 +164,11 @@ local
    structure Con = TypeEnv.Con
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
-   structure Tyvar = TypeEnv.Tyvar
+   structure Tyvar =
+      struct
+         open TypeEnv.Tyvar
+         open TypeEnv.TyvarExt
+      end
 
    val primitiveDatatypes =
       Vector.new3
@@ -173,7 +177,7 @@ local
         cons = Vector.new2 ({con = Con.falsee, arg = NONE},
                             {con = Con.truee, arg = NONE})},
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.list,
            tyvars = Vector.new1 a,
@@ -185,7 +189,7 @@ local
                                               Type.list (Type.var a))))})}
        end,
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.reff,
            tyvars = Vector.new1 a,

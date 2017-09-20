@@ -33,6 +33,12 @@ signature INTERFACE_STRUCTS =
                   val layoutPretty: t -> Layout.t
                   val tuple: t
                end
+            structure Tyvar:
+               sig
+                  include ID
+                  val makeNoname: {equality: bool} -> t
+                  val makeLayoutPretty: unit -> {destroy: unit -> unit, layoutPretty: t -> Layout.t}
+               end
 
             type t
          end
@@ -75,7 +81,7 @@ signature INTERFACE =
          sig
             type t
          end
-      sharing Tyvar = Ast.Tyvar
+      sharing Tyvar = EnvTypeStr.Tyvar
       structure Record: RECORD
       sharing Record = Ast.SortedRecord
       structure Type:

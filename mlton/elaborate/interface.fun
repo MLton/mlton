@@ -30,7 +30,6 @@ in
    structure Longtycon = Longtycon
    structure Record = SortedRecord
    structure Strid = Strid
-   structure Tyvar = Tyvar
    structure Vid = Vid
 end
 
@@ -43,6 +42,7 @@ in
    structure AdmitsEquality = AdmitsEquality
    structure Kind = Kind
    structure Etycon = Tycon
+   structure Tyvar = Tyvar
 end
 
 structure Set = DisjointSet
@@ -347,7 +347,7 @@ structure Scheme =
             val tyvars =
                Vector.tabulate
                (arity, fn _ =>
-                Tyvar.newNoname {equality = false})
+                Tyvar.makeNoname {equality = false})
          in
             make (tyvars, Type.con (tycon, Vector.map (tyvars, Type.var)))
          end
@@ -818,10 +818,10 @@ structure TypeStr =
             val tyvars =
                case arity of
                   0 => empty
-                | 1 => layTyvar (Tyvar.newNoname {equality = false})
+                | 1 => layTyvar (Tyvar.makeNoname {equality = false})
                 | _ => (* Ensure tyvars get correct pretty names. *)
                        (Layout.tuple o List.rev o List.tabulate)
-                       (arity, fn _ => layTyvar (Tyvar.newNoname {equality = false}))
+                       (arity, fn _ => layTyvar (Tyvar.makeNoname {equality = false}))
             val _ = destroy ()
             val tyvars =
                if arityErr

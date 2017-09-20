@@ -27,17 +27,22 @@ in
    structure SortedRecord = SortedRecord
    structure Spec = Spec
    structure TypBind = TypBind
-   structure Tyvar = Tyvar
+   structure Atyvar = Tyvar
    structure WhereEquation = WhereEquation
 end
 
+local
+   open Env
+in
+   structure Interface = Interface
+   structure StructureTycon =
+      struct
+         open Tycon
+         open TypeEnv.TyconExt
+      end
+   structure TyvarEnv = TyvarEnv
+end
 structure StructureEnv = Env
-structure StructureTycon =
-   struct
-      open StructureEnv.Tycon
-      open StructureEnv.TypeEnv.TyconExt
-   end
-structure Interface = StructureEnv.Interface
 structure Env = StructureEnv.InterfaceEnv
 
 local
@@ -51,6 +56,7 @@ in
    structure Tycon = Tycon
    structure Type = Type
    structure TypeStr = TypeStr
+   structure Tyvar = Tyvar
 end
 
 local
@@ -73,9 +79,8 @@ in
          end
 end
 
-fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
+fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
    let
-      val tyvars = ref []
       fun makeBogus (mc, ts) =
          let
             val arity = Vector.length ts
@@ -95,10 +100,9 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
       fun loop (ty: Atype.t): Type.t =
          case Atype.node ty of
             Atype.Var a => (* rule 44 *)
-               Type.var
-               (case List.peek (!tyvars, fn a' => Tyvar.sameName (a, a')) of
-                   NONE => (List.push (tyvars, a); a)
-                 | SOME a => a)
+               (case TyvarEnv.lookupTyvar a of
+                   NONE => makeBogus (NONE, Vector.new0 ())
+                 | SOME a => Type.var a)
           | Atype.Con (c, ts) => (* rules 46, 47 *)
                let
                   val ts = Vector.map (ts, loop)
@@ -174,71 +178,22 @@ fun elaborateType (ty: Atype.t, E: Env.t): Tyvar.t vector * Type.t =
                   fn (f, (_, t)) => (f, loop t))))
       val ty = loop ty
    in
-      (Vector.fromList (!tyvars), ty)
+      ty
    end
 
 val elaborateType =
-   Trace.trace ("ElaborateSigexp.elaborateType", Atype.layout o #1, Type.layout o #2)
+   Trace.trace ("ElaborateSigexp.elaborateType", Atype.layout o #1, Type.layout)
    elaborateType
 
 fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
    let
-      val (tyvars', ty) = elaborateType (ty, E)
-      val unbound =
-         Vector.keepAll
-         (tyvars', fn a =>
-          not (Vector.exists (tyvars, fn a' => Tyvar.sameName (a, a'))))
-      val ty =
-         if Vector.isEmpty unbound then
-            ty
-         else
-            let
-               open Layout
-               val () =
-                  Control.error (Tyvar.region (Vector.first tyvars'),
-                                 seq [str (concat ["undefined type variable",
-                                                   if Vector.length unbound > 1
-                                                      then "s"
-                                                   else "",
-                                                      ": "]),
-                                      seq (separate
-                                           (Vector.toListMap (unbound,
-                                                              Tyvar.layout),
-                                            ", "))],
-                                 empty)
-               fun var a =
-                  if Vector.exists (unbound, fn a' => Tyvar.equals (a, a')) then
-                     let
-                        val c =
-                           StructureTycon.makeBogus
-                           {name = "t",
-                            kind = Kind.Arity 0,
-                            region = NONE}
-                     in
-                        Type.con (Tycon.Rigid c, Vector.new0 ())
-                     end
-                  else
-                     Type.var a
-            in
-               Type.hom (ty, {con = Type.con,
-                              record = Type.record,
-                              var = var})
-            end
-      (* Need to get the representatives that were chosen when elaborating the
-       * type.
-       *)
-      val tyvars =
-         Vector.map
-         (tyvars, fn a =>
-          case Vector.peek (tyvars', fn a' => Tyvar.sameName (a, a')) of
-             NONE => a
-           | SOME a' => a')
+      val ty = elaborateType (ty, E)
    in
       Scheme.make (tyvars, ty)
    end
 
 fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
-                                    tyvars: Tyvar.t vector} vector,
+                                    tyvars: Ast.Tyvar.t vector} vector,
                         {equality: bool},
                         E): unit =
    Vector.foreach
@@ -258,14 +213,16 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
 fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
    let
       fun mkDef {def, tycon = _, tyvars} =
-         let
-            val realization =
-               TypeStr.def (elaborateScheme (tyvars, def, E))
-            val _ =
-               TypeStr.pushSpec (realization, Ast.Type.region def)
-         in
-            realization
-         end
+         TyvarEnv.scope
+         (tyvars, fn tyvars =>
+          let
+             val realization =
+                TypeStr.def (elaborateScheme (tyvars, def, E))
+             val _ =
+                TypeStr.pushSpec (realization, Ast.Type.region def)
+          in
+             realization
+          end)
       val TypBind.T bs = TypBind.node typBind
    in
       if sequential
@@ -309,34 +266,39 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val datatypes =
          Vector.map
          (datatypes, fn {cons, name, tycon, tyvars, ...} =>
-          let
-             val resultType: Atype.t =
-                Atype.con (name, Vector.map (tyvars, Atype.var))
-             val (consSchemes, consArgs) =
-                Vector.unzip
-                (Vector.map
-                 (cons, fn (name, arg) =>
-                  let
-                     val (makeArg, ty) =
-                        case arg of
-                           NONE => (fn _ => NONE, resultType)
-                         | SOME t =>
-                           (fn s => SOME (#1 (Type.deArrow (Scheme.ty s))),
-                            Atype.arrow (t, resultType))
-                     val scheme = elaborateScheme (tyvars, ty, E)
-                  in
-                     ({name = name,
-                       scheme = scheme},
-                      {con = name,
-                       arg = makeArg scheme})
-                  end))
-          in
-             {consArgs = consArgs,
-              consSchemes = consSchemes,
-              name = name,
-              tycon = tycon,
-              tyvars = tyvars}
-          end)
+          TyvarEnv.scope
+          (tyvars, fn tyvars =>
+           let
+              val resultType: Type.t =
+                 Type.con (tycon, Vector.map (tyvars, Type.var))
+              val (schemes, args) =
+                 Vector.unzip
+                 (Vector.map
+                  (cons, fn (name, arg) =>
+                   let
+                      val (arg, ty) =
+                         case arg of
+                            NONE => (NONE, resultType)
+                          | SOME t =>
+                               let
+                                  val t = elaborateType (t, E)
+                               in
+                                  (SOME t, Type.arrow (t, resultType))
+                               end
+                      val scheme = Scheme.make (tyvars, ty)
+                   in
+                      ({name = name,
+                        scheme = scheme},
+                       {con = name,
+                        arg = arg})
+                   end))
+           in
+              {consArgs = args,
+               consSchemes = schemes,
+               name = name,
+               tycon = tycon,
+               tyvars = tyvars}
+           end))
       val _ = Env.allowDuplicates := true
       val _ =
          Vector.foreach
@@ -431,7 +393,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                   fn (name, s) =>
                                   let
                                      val realization =
-                                        TypeStr.def (elaborateScheme (tyvars, ty, E))
+                                        TyvarEnv.scope
+                                        (tyvars, fn tyvars =>
+                                         TypeStr.def (elaborateScheme (tyvars, ty, E)))
                                   in
                                      TypeStr.wheree
                                      {realization = realization,
@@ -611,8 +575,29 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 (xts, fn (x, t) =>
                  Env.extendVid
                  (E, Ast.Vid.fromVar x, Status.Var,
-                  Scheme.make (elaborateType (t, E))))
-                ) arg
+                  let
+                     val tyvars =
+                        let
+                           val tyvars = ref []
+                           fun loop t =
+                              case Ast.Type.node t of
+                                 Atype.Var a =>
+                                    if List.contains (!tyvars, a, Atyvar.equals)
+                                       then ()
+                                       else List.push (tyvars, a)
+                               | Atype.Con (_, ts) =>
+                                    Vector.foreach (ts, loop)
+                               | Atype.Paren t => loop t
+                               | Atype.Record r => Record.foreach (r, loop o #2)
+                           val () = loop t
+                        in
+                           Vector.fromListRev (!tyvars)
+                        end
+                  in
+                     TyvarEnv.scope
+                     (tyvars, fn tyvars =>
+                      elaborateScheme (tyvars, t, E))
+                  end))) arg
    in
       elaborateSigexp (sigexp, {isTop = true})
    end
