@@ -50,7 +50,8 @@ structure Sxml = Sxml (open Xml)
 structure ParseSxml = ParseSxml(structure XmlTree = Xml
                                 structure StreamParser = StreamParser)
 structure Ssa = Ssa (open Atoms)
-structure ParseSsa = ParseSsa(structure SsaTree = Atoms)
+structure ParseSsa = ParseSsa(structure SsaTree = Atoms
+                              structure StreamParse = StreamParser)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)

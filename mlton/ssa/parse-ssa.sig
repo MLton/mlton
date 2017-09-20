@@ -7,6 +7,7 @@
 signature PARSE_SSA_STRUCTS =
    sig
       structure SsaTree: SSA_TREE 
+      structure StreamParser: STREAM_PARSER
    end
 
 signature PARSE_SSA =
