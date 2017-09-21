@@ -110,11 +110,11 @@ fi
 
 isWhitelisted () {
   local f=$1
-  local found=0
   if [[ ${whitelisted["$f"]} ]] ; then
-    found=1
+    echo 1
+  else
+    echo 0
   fi
-  return $found
 }
 
 
@@ -124,7 +124,7 @@ compFail () {
         echo "compilation of $f failed with ${flags[*]}"
 }
 
-"$mlton" -verbose 1 || (echo 'no mlton present'; exitFail=true)
+"$mlton" -verbose 1 || (echo 'no mlton present' && exitFail=true)
 echo "flags = ${flags[*]}"
 
 cd "$src/regression"
@@ -133,11 +133,11 @@ if $fail; then
         for f in fail/*.sml; do
                 echo "testing $f"
                 ( "$mlton" "${flags[@]}" -stop tc "$f" >/dev/null 2>&1 &&
-                        echo "compilation of $f should have failed but did not"; (! isWhitelisted $f &&  exitFail=true) ) ||
+                        echo "compilation of $f should have failed but did not" && ignore=$(isWhitelisted $f) && if [ "$ignore" -eq 0 ] ; then exitFail=true ; fi ) ||
                         true
         done
 
-        if $exitFail ; then
+        if [ "$exitFail" = true ] ; then
           exit 1
         else
           exit 0
@@ -265,7 +265,6 @@ for f in *.sml; do
 	fi
         if [ ! -r "$f".nonterm -a $cross = 'false' -a -x "$f" ]; then
                 nonZeroMsg='Nonzero exit status.'
-                (! isWhitelisted $f &&  exitFail=true)
 		if $forMinGW; then
                        nonZeroMsg="$nonZeroMsg"'\r'
 		fi
@@ -282,14 +281,19 @@ for f in *.sml; do
 			fi
                         if ! diff "$compare" "$tmp"; then
                                 echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
-                                (! isWhitelisted $f &&  exitFail=true)
+                                ignore=$(isWhitelisted $f)
+                                if [ "$ignore" -eq 0 ] ; then 
+                                  exitFail=true
+                                fi
                         fi
                 fi
         fi
 done
 if $cross || $runOnly || $short || $testReg ; then
-  if ! $exitFail ; then
-        exit 0
+  if [ "$exitFail" = true ] ; then
+    exit 1
+  else
+    exit 0
   fi
 fi
 mmake clean >/dev/null
@@ -335,6 +339,8 @@ done
 
 rm -f "$tmp"
 
-if $exitFail ; then
+if [ "$exitFail" = true ] ; then
   exit 1
+else
+  exit 0
 fi
