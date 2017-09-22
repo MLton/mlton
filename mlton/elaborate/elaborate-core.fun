@@ -162,6 +162,11 @@ structure Tycon =
       open Tycon
       open TypeEnv.TyconExt
    end
+structure Tyvar =
+   struct
+      open Tyvar
+      open TypeEnv.TyvarExt
+   end
 
 fun matchDiagsFromNoMatch noMatch =
    case noMatch of
@@ -2469,6 +2474,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = funTy,
                                    var = func}),
                                  {error = generalizeError,
+                                  makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty,
                                   preError = preError})
                              val _ =
                                 checkSchemes
@@ -2770,6 +2776,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = ty,
                                    var = var}),
                                  {error = generalizeError,
+                                  makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty,
                                   preError = preError})
                              val _ =
                                 checkSchemes

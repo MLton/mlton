@@ -43,7 +43,7 @@ structure CoreML = CoreML (open Atoms
                                  fun layout t = 
                                     layoutPrettyAux 
                                     (t, {expandOpaque = true,
-                                         localTyvarNames = false})
+                                         makeLayoutPrettyTyvar = NONE})
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)

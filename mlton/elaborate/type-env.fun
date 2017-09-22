@@ -782,7 +782,7 @@ structure Type =
             Exn.finally (fn () => hom ty, destroy)
          end
 
-      fun makeLayoutPretty {expandOpaque, localTyvarNames} : 
+      fun makeLayoutPretty {expandOpaque, makeLayoutPrettyTyvar} :
          {destroy: unit -> unit,
           layoutPretty: t -> LayoutPretty.t} =
          let
@@ -817,16 +817,17 @@ structure Type =
                 | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
             fun unknown (_, u) = Unknown.layoutPretty u
-            val (destroy, layTyvar) =
-               if localTyvarNames
-                  then let
-                          val {destroy, layoutPretty} =
-                             Tyvar.makeLayoutPretty ()
-                       in
-                          (destroy, layoutPretty)
-                       end
-               else (fn () => (), Tyvar.layout)
-            fun var (_, a) = simple (layTyvar a)
+            val (destroyLayoutPrettyTyvar, layoutPrettyTyvar) =
+               case makeLayoutPrettyTyvar of
+                  NONE => (fn () => (), Tyvar.layout)
+                | SOME makeLayoutPrettyTyvar =>
+                     let
+                        val {destroy, layoutPretty} =
+                           makeLayoutPrettyTyvar ()
+                     in
+                        (destroy, layoutPretty)
+                     end
+            fun var (_, a) = simple (layoutPrettyTyvar a)
             fun layoutPretty t =
                hom (t, {con = con,
                         expandOpaque = expandOpaque,
@@ -839,15 +840,15 @@ structure Type =
                         unknown = unknown,
                         var = var})
          in
-            {destroy = destroy,
+            {destroy = destroyLayoutPrettyTyvar,
              layoutPretty = layoutPretty}
          end
 
-      fun layoutPrettyAux (t, {expandOpaque, localTyvarNames}) =
+      fun layoutPrettyAux (t, {expandOpaque, makeLayoutPrettyTyvar}) =
          let
             val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = expandOpaque,
-                                 localTyvarNames = localTyvarNames}
+                                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
             val res = #1 (layoutPretty t)
             val _ = destroy ()
          in
@@ -855,7 +856,7 @@ structure Type =
          end
       fun layoutPretty t = 
          layoutPrettyAux (t, {expandOpaque = false,
-                              localTyvarNames = true})
+                              makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty})
 
       fun deConOpt t =
          case getTy t of
@@ -1846,12 +1847,14 @@ structure Scheme =
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
                               ("ty", Type.layout ty)]
 
-      fun layoutPrettyAux (s, {expandOpaque, localTyvarNames}) =
+      fun layoutPrettyAux (s, {expandOpaque, makeLayoutPrettyTyvar}) =
          Type.layoutPrettyAux
          (ty s, {expandOpaque = expandOpaque,
-                 localTyvarNames = localTyvarNames})
+                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar})
       fun layoutPretty s =
-         layoutPrettyAux (s, {expandOpaque = false, localTyvarNames = true})
+         layoutPrettyAux
+         (s, {expandOpaque = false,
+              makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty})
 
       fun make {canGeneralize, tyvars, ty} =
          if Vector.isEmpty tyvars
@@ -2091,12 +2094,13 @@ fun 'a close region =
       fn (ensure,
           varTypes,
           {error: 'a * Layout.t * Tyvar.t list -> unit,
+           makeLayoutPrettyTyvar,
            preError: unit -> unit}) =>
       let
          local
             val {destroy, layoutPretty} =
                Type.makeLayoutPretty {expandOpaque = false,
-                                      localTyvarNames = true}
+                                      makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
             fun checkTime (t, bound) =
                let
                   val {checkTime, finishCheckTime} =
@@ -2340,7 +2344,8 @@ structure Type =
          fn (t1, t2, {error, preError}) =>
          let
             val {destroy, layoutPretty} =
-               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
+               makeLayoutPretty {expandOpaque = false,
+                                 makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
                   NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
@@ -2356,7 +2361,8 @@ structure Type =
          fn (t, bound, {preError}) =>
          let
             val {destroy, layoutPretty} =
-               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
+               makeLayoutPretty {expandOpaque = false,
+                                 makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
             val {checkTime, finishCheckTime} =
                makeCheckTime {layoutPretty = layoutPretty,
                               preError = preError}

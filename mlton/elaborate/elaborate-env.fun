@@ -697,7 +697,7 @@ structure Interface =
                let
                   val {destroy, layoutPretty} =
                      Etype.makeLayoutPretty {expandOpaque = false,
-                                             localTyvarNames = true}
+                                             makeLayoutPrettyTyvar = SOME Etyvar.makeLayoutPretty}
                   val lay = #1 o layoutPretty
                   val rlzStr = TypeStr.toEnv sigStr
                   val sort = TypeStr.sort (name, sigStr, rlzStr, flexTyconMap)
@@ -3056,7 +3056,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                   let
                      val {destroy, layoutPretty} =
                         Type.makeLayoutPretty {expandOpaque = false,
-                                               localTyvarNames = true}
+                                               makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
                      val strKind = TypeStr.kind strStr
                      val strArity =
                         case strKind of
@@ -3466,7 +3466,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                       Scheme.instantiate strScheme
                    val {destroy, layoutPretty} =
                       Type.makeLayoutPretty {expandOpaque = false,
-                                             localTyvarNames = true}
+                                             makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
                    val _ =
                       Type.makeUnify
                       {layoutPretty = layoutPretty,

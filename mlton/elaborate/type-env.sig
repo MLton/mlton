@@ -56,16 +56,22 @@ signature TYPE_ENV =
             val isUnit: t -> bool
             val isUnknown: t -> bool
             val layout: t -> Layout.t
-            val layoutPrettyAux: t * {expandOpaque: bool, localTyvarNames: bool} -> Layout.t
+            val layoutPrettyAux:
+               t * {expandOpaque: bool,
+                    makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
+                                                     layoutPretty: Tyvar.t -> Layout.t}) option}
+               -> Layout.t
             val layoutPretty: t -> Layout.t
             val makeHom: {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
                           var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
                                                   hom: t -> 'a}
             val makeLayoutPretty:
-               {expandOpaque:bool,
-                localTyvarNames: bool} -> {destroy: unit -> unit,
-                                           layoutPretty: t -> LayoutPretty.t}
+               {expandOpaque: bool,
+                makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
+                                                 layoutPretty: Tyvar.t -> Layout.t}) option}
+               -> {destroy: unit -> unit,
+                   layoutPretty: t -> LayoutPretty.t}
             val makeUnify:
                {layoutPretty: t -> LayoutPretty.t,
                 preError: unit -> unit} ->
@@ -105,9 +111,11 @@ signature TYPE_ENV =
                                    instance: Type.t}
             val kind: t -> TyconKind.t
             val layout: t -> Layout.t
-            val layoutPrettyAux: 
-               t * {expandOpaque: bool, 
-                    localTyvarNames: bool} -> Layout.t
+            val layoutPrettyAux:
+               t * {expandOpaque: bool,
+                    makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
+                                                     layoutPretty: Tyvar.t -> Layout.t}) option}
+               -> Layout.t
             val layoutPretty: t -> Layout.t
             val make: {canGeneralize: bool,
                        ty: Type.t,
@@ -154,6 +162,8 @@ signature TYPE_ENV =
          -> (Tyvar.t vector
              * {isExpansive: bool, ty: Type.t, var: 'a} vector
              * {error: 'a * Layout.t * Tyvar.t list -> unit,
+                makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
+                                                 layoutPretty: Tyvar.t -> Layout.t}) option,
                 preError: unit -> unit})
          -> {bound: unit -> Tyvar.t vector,
              schemes: Scheme.t vector}
