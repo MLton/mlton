@@ -138,24 +138,24 @@ signature TYPE_ENV =
       structure TyconExt:
          sig
             type t
-            val admitsEquality: Tycon.t -> AdmitsEquality.t ref
-            val kind: Tycon.t -> TyconKind.t
-            val layoutAppPretty: Tycon.t * LayoutPretty.t vector -> LayoutPretty.t
-            val layoutPretty: Tycon.t -> Layout.t
+            val admitsEquality: t -> AdmitsEquality.t ref
+            val kind: t -> TyconKind.t
+            val layoutAppPretty: t * LayoutPretty.t vector -> LayoutPretty.t
+            val layoutPretty: t -> Layout.t
             val make: {admitsEquality: AdmitsEquality.t,
                        defLayoutPretty: string,
                        kind: TyconKind.t,
                        name: string,
-                       region: Region.t} -> Tycon.t
+                       region: Region.t} -> t
             val makeBogus: {name: string,
                             kind: TyconKind.t,
-                            region: Region.t option} -> Tycon.t
-            val makeLike: Tycon.t -> Tycon.t
-            val region: Tycon.t -> Region.t
+                            region: Region.t option} -> t
+            val makeLike: t -> t
+            val region: t -> Region.t
             val resetLayoutPretty: {unset: Layout.t -> Layout.t} -> unit
-            val scopeNew: (unit -> 'a) -> ('a * Tycon.t list)
-            val setLayoutPretty: Tycon.t * Layout.t -> unit
-            val setOpaqueExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
+            val scopeNew: (unit -> 'a) -> ('a * t list)
+            val setLayoutPretty: t * Layout.t -> unit
+            val setOpaqueExpansion: t * (Type.t vector -> Type.t) -> unit
          end
       sharing type TyconExt.t = Tycon.t
 
