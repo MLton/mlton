@@ -492,7 +492,9 @@ val unify =
             (r, m, align [d, notes ()])
          end
    in
-      Type.unify (t, t', {error = error, preError = preError})
+      Type.unify (t, t', {error = error,
+                          makeLayoutPrettyTyvar = SOME TyvarEnv.makeLayoutPretty,
+                          preError = preError})
    end
 
 local

@@ -2341,11 +2341,11 @@ structure Type =
           | Unified () => ()
 
       val unify =
-         fn (t1, t2, {error, preError}) =>
+         fn (t1, t2, {error, makeLayoutPrettyTyvar, preError}) =>
          let
             val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = false,
-                                 makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
+                                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
             val () =
                case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
                   NotUnifiable (l1, l2, extra) => error (l1, l2, extra)

@@ -81,9 +81,11 @@ signature TYPE_ENV =
             val record: t SortedRecord.t -> t
             (* make two types identical (recursively).  side-effecting. *)
             val unify:
-               t * t * {error: Layout.t * Layout.t *
-                               {notes: unit -> Layout.t} -> unit,
-                        preError: unit -> unit} -> unit
+               t * t * {error: Layout.t * Layout.t * {notes: unit -> Layout.t} -> unit,
+                        makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
+                                                         layoutPretty: Tyvar.t -> Layout.t}) option,
+                        preError: unit -> unit}
+               -> unit
             val unresolvedChar: unit -> t
             val unresolvedInt: unit -> t
             val unresolvedReal: unit -> t
