@@ -26,11 +26,6 @@ signature INTERFACE_STRUCTS =
                   val exn: t
                   val kind: t -> Kind.t
                   val layout: t -> Layout.t
-                  val layoutAppPretty:
-                     t * (Layout.t
-                          * ({isChar: bool} * BindingStrength.t)) vector
-                     -> Layout.t * ({isChar: bool} * BindingStrength.t)
-                  val layoutPretty: t -> Layout.t
                   val tuple: t
                end
             structure Tyvar:

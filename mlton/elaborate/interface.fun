@@ -33,8 +33,6 @@ in
    structure Vid = Vid
 end
 
-structure Field = Record.Field
-
 structure EtypeStr = EnvTypeStr
 local
    open EtypeStr
@@ -161,9 +159,6 @@ structure FlexibleTycon =
                     ("kind", Kind.layout kind)]
          end
 
-      fun layoutApp (t, _) =
-          (layout t, ({isChar = false}, Etycon.BindingStrength.unit))
-
       val copies: copy list ref = ref []
 
       fun make {admitsEquality: AdmitsEquality.t, defn: Defn.t,
@@ -221,11 +216,6 @@ structure Tycon =
          fn Flexible f => FlexibleTycon.layout f
           | Rigid c => Etycon.layout c
 
-      fun layoutApp (t: t, v) =
-         case t of
-            Flexible f => FlexibleTycon.layoutApp (f, v)
-          | Rigid c => Etycon.layoutAppPretty (c, v)
-
       val tuple = Rigid Etycon.tuple
    end
 
@@ -281,31 +271,19 @@ structure Type =
 
       local
          open Layout
-         fun simple l = (l, ({isChar = false}, Etycon.BindingStrength.unit))
-         fun loop t =
-            case t of
-               Con (c, ts) => Tycon.layoutApp (c, Vector.map (ts, loop))
-             | Record r =>
-                  (case Record.detupleOpt r of
-                      NONE =>
-                         simple
-                         (seq
-                          [str "{",
-                           mayAlign
-                           (separateRight
-                            (Vector.toListMap
-                             (QuickSort.sortVector
-                              (Record.toVector r, fn ((f, _), (f', _)) =>
-                               Field.<= (f, f')),
-                              fn (f, t) =>
-                              seq [Field.layout f, str ": ", #1 (loop t)]),
-                             ",")),
-                           str "}"])
-                    | SOME ts => Tycon.layoutApp (Tycon.tuple,
-                                                  Vector.map (ts, loop)))
-             | Var a => simple (Tyvar.layout a)
       in
-         val layout = #1 o loop
+         fun layout t =
+            case t of
+               Con (c, ts) =>
+                  paren (align [seq [str "Con ", Tycon.layout c],
+                                Vector.layout layout ts])
+             | Record r =>
+                  Record.layout {record =r,
+                                 separator = ": ",
+                                 extra = "",
+                                 layoutTuple = Vector.layout layout,
+                                 layoutElt = layout}
+             | Var a => paren (seq [str "Var ", Tyvar.layout a])
       end
 
       val record = Record
