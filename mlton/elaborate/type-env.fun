@@ -689,7 +689,9 @@ structure LayoutPretty =
                                     then ", ...}"
                                     else "}")])
       fun tuple (ls: t vector): t =
-         Tycon.layoutAppPretty (Tycon.tuple, ls)
+         Tycon.makeLayoutAppPretty
+         {layoutPretty = fn _ => Error.bug "TypeEnv.LayoutPretty.tuple: layoutPretty"}
+         (Tycon.tuple, ls)
    end
 
 structure Type =
