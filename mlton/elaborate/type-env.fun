@@ -2100,7 +2100,7 @@ fun 'a close region =
          local
             val {destroy, layoutPretty} =
                Type.makeLayoutPretty {expandOpaque = false,
-                                      makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
+                                      makeLayoutPrettyTyvar = SOME makeLayoutPrettyTyvar}
             fun checkTime (t, bound) =
                let
                   val {checkTime, finishCheckTime} =

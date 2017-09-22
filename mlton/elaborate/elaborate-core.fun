@@ -2474,7 +2474,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = funTy,
                                    var = func}),
                                  {error = generalizeError,
-                                  makeLayoutPrettyTyvar = SOME TyvarEnv.makeLayoutPretty,
+                                  makeLayoutPrettyTyvar = TyvarEnv.makeLayoutPretty,
                                   preError = preError})
                              val _ =
                                 checkSchemes
@@ -2776,7 +2776,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = ty,
                                    var = var}),
                                  {error = generalizeError,
-                                  makeLayoutPrettyTyvar = SOME TyvarEnv.makeLayoutPretty,
+                                  makeLayoutPrettyTyvar = TyvarEnv.makeLayoutPretty,
                                   preError = preError})
                              val _ =
                                 checkSchemes

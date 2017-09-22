@@ -162,8 +162,8 @@ signature TYPE_ENV =
          -> (Tyvar.t vector
              * {isExpansive: bool, ty: Type.t, var: 'a} vector
              * {error: 'a * Layout.t * Tyvar.t list -> unit,
-                makeLayoutPrettyTyvar: (unit -> {destroy: unit -> unit,
-                                                 layoutPretty: Tyvar.t -> Layout.t}) option,
+                makeLayoutPrettyTyvar: unit -> {destroy: unit -> unit,
+                                                layoutPretty: Tyvar.t -> Layout.t},
                 preError: unit -> unit})
          -> {bound: unit -> Tyvar.t vector,
              schemes: Scheme.t vector}
