@@ -25,16 +25,18 @@ fun ('down, 'up)
    processDec (d: Dec.t,
                {(* bindType is used at datatype and type declarations. *)
                 bindType: ('down * Tyvar.t vector
-                           -> 'down * Tyvar.t vector * ('up -> 'up)),
+                           -> 'down * ('up -> 'up)),
                 (* bindFunVal is used at fun, overload, and val declarations. *)
                 bindFunVal: ('down * Tyvar.t vector
                              -> ('down * ('up -> Tyvar.t vector * 'up))),
                 combineUp: 'up * 'up -> 'up,
                 initDown: 'down,
                 initUp: 'up,
-                tyvar: Tyvar.t * 'down -> Tyvar.t * 'up
+                tyvar: Tyvar.t * 'down -> 'up
                 }): Dec.t * 'up =
    let
+      fun visits (xs: 'a vector, visitX: 'a -> 'up): 'up =
+         Vector.fold (xs, initUp, fn (x, u) => combineUp (u, visitX x))
       fun loops (xs: 'a vector, loopX: 'a -> 'a * 'up): 'a vector * 'up =
          Vector.mapAndFold (xs, initUp, fn (x, u) =>
                             let
@@ -42,213 +44,124 @@ fun ('down, 'up)
                             in
                                (x, combineUp (u, u'))
                             end)
-      fun loopTy (t: Type.t, d: 'down): Type.t * 'up =
+      fun visitTy (t: Type.t, d: 'down): 'up =
          let
-            fun loop (t: Type.t): Type.t * 'up =
-               let
-                  datatype z = datatype Type.node
-                  val (n, u) =
-                     case Type.node t of
-                        Con (c, ts) =>
-                           let
-                              val (ts, u) = loops (ts, loop)
-                           in
-                              (Con (c, ts), u)
-                           end
-                      | Paren t =>
-                           let
-                              val (t, u) = loop t
-                           in
-                              (Paren t, u)
-                           end
-                      | Record r =>
-                           let
-                              val (r, u) =
-                                 Record.change
-                                 (r, fn rts =>
-                                  loops (rts, fn (r, t) =>
-                                         let val (t', u) = loop t
-                                         in ((r, t'), u)
-                                         end))
-                           in
-                              (Record r, u)
-                           end
-                      | Var a =>
-                           let
-                              val (a, u) = tyvar (a, d)
-                           in
-                              (Var a, u)
-                           end
-               in
-                  (Type.makeRegion (n, Type.region t), u)
-               end
+            datatype z = datatype Type.node
+            fun visit (t: Type.t): 'up =
+               case Type.node t of
+                  Con (_, ts) => visits (ts, visit)
+                | Paren t => visit t
+                | Record r =>
+                     Record.fold
+                     (r, initUp, fn ((_, t), u) =>
+                      combineUp (u, visit t))
+                | Var a => tyvar (a, d)
          in
-            loop t
+            visit t
          end
-      fun loopTyOpt (to: Type.t option, d: 'down): Type.t option * 'up =
+      fun visitTyOpt (to: Type.t option, d: 'down): 'up =
          case to of
-            NONE => (NONE, initUp)
-          | SOME t =>
-               let
-                  val (t, u) = loopTy (t, d)
-               in
-                  (SOME t, u)
-               end
-      fun loopTypBind (tb: TypBind.t, d: 'down): TypBind.t * 'up =
+            NONE => initUp
+          | SOME t => visitTy (t, d)
+      fun visitTypBind (tb: TypBind.t, d: 'down): 'up =
          let
             val TypBind.T tbs = TypBind.node tb
-            val (tbs, u) =
-               loops (tbs, fn {def, tycon, tyvars} =>
-                      let
-                         val (d, tyvars, finish) = bindType (d, tyvars)
-                         val (def, u) = loopTy (def, d)
-                      in
-                         ({def = def,
-                           tycon = tycon,
-                           tyvars = tyvars},
-                          finish u)
-                      end)
+            val u =
+               visits
+               (tbs, fn {def, tyvars, ...} =>
+                let
+                   val (d, finish) = bindType (d, tyvars)
+                in
+                   finish (visitTy (def, d))
+                end)
          in
-            (TypBind.makeRegion (TypBind.T tbs, TypBind.region tb),
-             u)
+            u
          end
-      fun loopDatBind (db: DatBind.t, d: 'down): DatBind.t * 'up =
+      fun visitDatBind (db: DatBind.t, d: 'down): 'up =
          let
             val DatBind.T {datatypes, withtypes} = DatBind.node db
-            val (datatypes, u) =
-               loops
-               (datatypes, fn {cons, tycon, tyvars} =>
+            val u =
+               visits
+               (datatypes, fn {cons, tyvars, ...} =>
                 let
-                   val (d, tyvars, up) = bindType (d, tyvars)
-                   val (cons, u) =
-                      loops (cons, fn (con, arg) =>
-                             let
-                                val (arg, u) = loopTyOpt (arg, d)
-                             in
-                                ((con, arg), u)
-                             end)
+                   val (d, finish) = bindType (d, tyvars)
                 in
-                   ({cons = cons, tycon = tycon, tyvars = tyvars}, up u)
+                   finish (visits (cons, fn (_, arg) =>
+                                   visitTyOpt (arg, d)))
                 end)
-            val (withtypes, u') = loopTypBind (withtypes, d)
+            val u' = visitTypBind (withtypes, d)
          in
-            (DatBind.makeRegion (DatBind.T {datatypes = datatypes,
-                                            withtypes = withtypes},
-                                 DatBind.region db),
-             combineUp (u, u'))
+            combineUp (u, u')
          end
-      fun loopPat (p: Pat.t, d: 'down): Pat.t * 'up =
+      fun visitPat (p: Pat.t, d: 'down): 'up =
          let
-            fun loop (p: Pat.t): Pat.t * 'up =
-               let
-                  fun doit n = Pat.makeRegion (n, Pat.region p)
-                  fun do1 ((a, u), f) = (doit (f a), u)
-                  fun do2 ((a1, u1), (a2, u2), f) =
-                     (doit (f (a1, a2)), combineUp (u1, u2))
-                  datatype z = datatype Pat.node
-               in
-                  case Pat.node p of
-                     App (c, p) => do1 (loop p, fn p => App (c, p))
-                   | Const _ => (p, initUp)
-                   | Constraint (p, t) =>
-                        do2 (loop p, loopTy (t, d), Constraint)
-                   | FlatApp ps => do1 (loops (ps, loop), FlatApp)
-                   | Layered {constraint, fixop, pat, var} =>
-                        do2 (loopTyOpt (constraint, d), loop pat,
-                             fn (constraint, pat) =>
-                             Layered {constraint = constraint,
-                                      fixop = fixop,
-                                      pat = pat,
-                                      var = var})
-                   | List ps => do1 (loops (ps, loop), List)
-                   | Or ps => do1 (loops (ps, loop), Or)
-                   | Paren p => do1 (loop p, Paren)
-                   | Record {flexible, items} =>
-                        let
-                           val (items, u) =
-                              Vector.mapAndFold
-                              (items, initUp, fn ((f, r, i), u) =>
-                               let
-                                  datatype z = datatype Pat.Item.t
-                                  val (i, u') =
-                                     case i of
-                                        Field p =>
-                                           let
-                                              val (p, u) = loop p
-                                           in
-                                              (Field p, u)
-                                           end
-                                      | Vid (v, to, po) =>
-                                           let
-                                              val (to, u) = loopTyOpt (to, d)
-                                              val (po, u') = loopOpt po
-                                           in
-                                              (Vid (v, to, po),
-                                               combineUp (u, u'))
-                                           end
-                               in
-                                  ((f, r, i), combineUp (u, u'))
-                               end)
-                        in
-                           (doit (Record {flexible = flexible,
-                                          items = items}),
-                            u)
-                        end
-                   | Tuple ps => do1 (loops (ps, loop), Tuple)
-                   | Var _ => (p, initUp)
-                   | Vector ps => do1 (loops (ps, loop), Vector)
-                   | Wild => (p, initUp)
-
-               end
-            and loopOpt opt =
-               case opt of
-                  NONE =>
-                     (NONE, initUp)
-                | SOME p =>
-                     let
-                        val (p, u) = loop p
-                     in
-                        (SOME p, u)
-                     end
+            datatype z = datatype Pat.node
+            fun visit (p: Pat.t): 'up =
+               (case Pat.node p of
+                   App (_, p) => visit p
+                 | Const _ => initUp
+                 | Constraint (p, t) =>
+                      combineUp (visit p, visitTy (t, d))
+                 | FlatApp ps => visits (ps, visit)
+                 | Layered {constraint, pat, ...} =>
+                      combineUp (visitTyOpt (constraint, d), visit pat)
+                 | List ps => visits (ps, visit)
+                 | Or ps => visits (ps, visit)
+                 | Paren p => visit p
+                 | Record {items, ...} =>
+                      Vector.fold
+                      (items, initUp, fn ((_, _, i), u) =>
+                       let
+                          datatype z = datatype Pat.Item.t
+                          val u' =
+                             case i of
+                                Field p => visit p
+                              | Vid (_, to, po) =>
+                                   let
+                                      val u = visitTyOpt (to, d)
+                                      val u' = visitOpt po
+                                   in
+                                      combineUp (u, u')
+                                   end
+                       in
+                          combineUp (u, u')
+                       end)
+                 | Tuple ps => visits (ps, visit)
+                 | Var _ => initUp
+                 | Vector ps => visits (ps, visit)
+                 | Wild => initUp)
+            and visitOpt opt =
+               (case opt of
+                   NONE => initUp
+                | SOME p => visit p)
          in
-            loop p
+            visit p
          end
-      fun loopPrimKind (kind: PrimKind.t, d: 'down): PrimKind.t * 'up =
+      fun visitPrimKind (kind: PrimKind.t, d: 'down): 'up =
          let
             datatype z = datatype PrimKind.t
-            fun do1 ((a, u), f) = (f a, u)
          in
             case kind of
-               Address {attributes, name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Address {attributes = attributes, name = name, ty = ty})
-             | BuildConst {name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       BuildConst {name = name, ty = ty})
-             | CommandLineConst {name, ty, value} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       CommandLineConst {name = name, ty = ty, value = value})
-             | Const {name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Const {name = name, ty = ty})
-             | Export {attributes, name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Export {attributes = attributes, name = name, ty = ty})
-             | IImport {attributes, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       IImport {attributes = attributes, ty = ty})
-             | Import {attributes, name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Import {attributes = attributes, name = name, ty = ty})
+               Address {ty, ...} =>
+                  visitTy (ty, d)
+             | BuildConst {ty, ...} =>
+                  visitTy (ty, d)
+             | CommandLineConst {ty, ...} =>
+                  visitTy (ty, d)
+             | Const {ty, ...} =>
+                  visitTy (ty, d)
+             | Export {ty, ...} =>
+                  visitTy (ty, d)
+             | IImport {ty, ...} =>
+                  visitTy (ty, d)
+             | Import {ty, ...} =>
+                  visitTy (ty, d)
              | ISymbol {ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       ISymbol {ty = ty})
-             | Prim {name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Prim {name = name, ty = ty})
-             | Symbol {attributes, name, ty} =>
-                  do1 (loopTy (ty, d), fn ty =>
-                       Symbol {attributes = attributes, name = name, ty = ty})
+                  visitTy (ty, d)
+             | Prim {ty, ...} =>
+                  visitTy (ty, d)
+             | Symbol {ty, ...} =>
+                  visitTy (ty, d)
          end
       fun loopDec (d: Dec.t, down: 'down): Dec.t * 'up =
          let
@@ -270,54 +183,45 @@ fun ('down, 'up)
                Abstype {body, datBind} =>
                   let
                      val (body, u) = loopDec (body, down)
-                     val (db, u') = loopDatBind (datBind, down)
+                     val u' = visitDatBind (datBind, down)
                   in
-                     (doit (Abstype {body = body, datBind = db}),
+                     (doit (Abstype {body = body, datBind = datBind}),
                       combineUp (u, u'))
                   end
              | Datatype rhs =>
                   let
                      datatype z = datatype DatatypeRhs.node
-                     val (rhs, u) =
+                     val u =
                         case DatatypeRhs.node rhs of
-                           DatBind db =>
-                              let
-                                 val (db, u) = loopDatBind (db, down)
-                              in
-                                 (DatatypeRhs.makeRegion
-                                  (DatBind db, DatatypeRhs.region rhs),
-                                  u)
-                              end
-                         | Repl _ => (rhs, initUp)
+                           DatBind db => visitDatBind (db, down)
+                         | Repl _ => initUp
                   in
-                     (doit (Datatype rhs), u)
+                     (d, u)
                   end
              | DoDec e =>
                   do1 (loopExp (e, down), DoDec)
              | Exception ebs =>
                   let
-                     val (ebs, u) =
-                        loops (ebs, fn (c, rhs) =>
-                               let
-                                  datatype z = datatype EbRhs.node
-                                  val (rhs, u) =
-                                     case EbRhs.node rhs of
-                                        Def _ => (rhs, initUp)
-                                      | Gen to =>
-                                           let
-                                              val (to, u) = loopTyOpt (to, down)
-                                           in
-                                              (EbRhs.makeRegion
-                                               (Gen to, EbRhs.region rhs),
-                                               u)
-                                           end
-                               in
-                                  ((c, rhs), u)
-                               end)
+                     val u =
+                        visits (ebs, fn (_, rhs) =>
+                                let
+                                   datatype z = datatype EbRhs.node
+                                   val u =
+                                      case EbRhs.node rhs of
+                                         Def _ => initUp
+                                       | Gen to =>
+                                            let
+                                               val u = visitTyOpt (to, down)
+                                            in
+                                               u
+                                            end
+                                in
+                                   u
+                                end)
                   in
-                     (doit (Exception ebs), u)
+                     (d, u)
                   end
-             | Fix _ => (d, initUp)
+             | Fix _ => empty ()
              | Fun {tyvars, fbs} =>
                   let
                      val (down, finish) = bindFunVal (down, tyvars)
@@ -329,11 +233,11 @@ fun ('down, 'up)
                                      (clauses, fn {body, pats, resultType} =>
                                       let
                                          val (body, u) = loopExp (body, down)
-                                         val (pats, u') =
-                                            loops (pats, fn p =>
-                                                   loopPat (p, down))
-                                         val (resultType, u'') =
-                                            loopTyOpt (resultType, down)
+                                         val u' =
+                                            visits (pats, fn p =>
+                                                    visitPat (p, down))
+                                         val u'' =
+                                            visitTyOpt (resultType, down)
                                       in
                                          ({body = body,
                                            pats = pats,
@@ -353,13 +257,18 @@ fun ('down, 'up)
              | Overload (i, x, tyvars, ty, ys) =>
                   let
                      val (down, finish) = bindFunVal (down, tyvars)
-                     val (ty, up) = loopTy (ty, down)
+                     val up = visitTy (ty, down)
                      val (tyvars, up) = finish up
                   in
                      (doit (Overload (i, x, tyvars, ty, ys)), up)
                   end
              | SeqDec ds => doVec (ds, SeqDec)
-             | Type tb => do1 (loopTypBind (tb, down), Type)
+             | Type tb =>
+                  let
+                     val u = visitTypBind (tb, down)
+                  in
+                     (d, u)
+                  end
              | Val {rvbs, tyvars, vbs} =>
                   let
                      val (down, finish) = bindFunVal (down, tyvars)
@@ -367,7 +276,7 @@ fun ('down, 'up)
                         loops (rvbs, fn {match, pat} =>
                                let
                                   val (match, u) = loopMatch (match, down)
-                                  val (pat, u') = loopPat (pat, down)
+                                  val u' = visitPat (pat, down)
                                in
                                   ({match = match,
                                     pat = pat},
@@ -377,7 +286,7 @@ fun ('down, 'up)
                         loops (vbs, fn {exp, pat} =>
                                let
                                   val (exp, u) = loopExp (exp, down)
-                                  val (pat, u') = loopPat (pat, down)
+                                  val u' = visitPat (pat, down)
                                in
                                   ({exp = exp,
                                     pat = pat},
@@ -418,7 +327,14 @@ fun ('down, 'up)
                    | App (e1, e2) => do2 (loop e1, loop e2, App)
                    | Case (e, m) => do2 (loop e, loopMatch m, Case)
                    | Const _ => empty ()
-                   | Constraint (e, t) => do2 (loop e, loopTy (t, d), Constraint)
+                   | Constraint (e, t) =>
+                        let
+                           val (e, u) = loop e
+                           val u' = visitTy (t, d)
+                        in
+                           (doit (Constraint (e, t)),
+                            combineUp (u, u'))
+                        end
                    | FlatApp es => doVec (es, FlatApp)
                    | Fn m => do1 (loopMatch m, Fn)
                    | Handle (e, m) => do2 (loop e, loopMatch m, Handle)
@@ -427,7 +343,7 @@ fun ('down, 'up)
                    | List ts => doVec (ts, List)
                    | Orelse (e1, e2) => do2 (loop e1, loop e2, Orelse)
                    | Paren e => do1 (loop e, Paren)
-                   | Prim kind => do1 (loopPrimKind (kind, d), Prim)
+                   | Prim kind => (e, visitPrimKind (kind, d))
                    | Raise exn => do1 (loop exn, Raise)
                    | Record r =>
                         let
@@ -458,7 +374,7 @@ fun ('down, 'up)
             val (rules, u) =
                loops (rules, fn (p, e) =>
                       let
-                         val (p, u) = loopPat (p, d)
+                         val u = visitPat (p, d)
                          val (e, u') = loopExp (e, d)
                       in
                          ((p, e), combineUp (u, u'))
@@ -510,11 +426,11 @@ fun scope (dec: Dec.t): Dec.t =
                {free = Tyvars.- (free, Tyvars.fromVector tyvars),
                 mayNotBind = []}
          in
-            ((), tyvars, finish)
+            ((), finish)
          end
       fun tyvar (a, ()) =
-         (a, {free = Tyvars.singleton a,
-              mayNotBind = []})
+         {free = Tyvars.singleton a,
+          mayNotBind = []}
       fun combineUp ({free = f, mayNotBind = m}, {free = f', mayNotBind = m'}) =
          {free = Tyvars.+ (f, f'),
           mayNotBind = List.append (m, m')}
@@ -544,9 +460,9 @@ fun scope (dec: Dec.t): Dec.t =
          let
             val bound = Tyvars.+ (bound, Tyvars.fromVector tyvars)
          in
-            (bound, tyvars, fn () => ())
+            (bound, fn () => ())
          end
-      fun tyvar (a, _) = (a, ())
+      fun tyvar (_, _) = ()
       val (dec, ()) =
          processDec (dec, {bindFunVal = bindFunVal,
                            bindType = bindType,
