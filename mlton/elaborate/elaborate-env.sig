@@ -34,6 +34,7 @@ signature ELABORATE_ENV =
          sig
             val lookupTyvar: Ast.Tyvar.t -> Tyvar.t option
             val scope: Ast.Tyvar.t vector * (Tyvar.t vector -> 'a) -> 'a
+            val makeLayoutPretty: unit -> {destroy: unit -> unit, layoutPretty: Tyvar.t -> Layout.t}
          end
 
       structure Tycon: TYCON

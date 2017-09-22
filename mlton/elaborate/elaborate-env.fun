@@ -107,15 +107,17 @@ structure Tyvar =
 
 structure TyvarEnv =
    struct
-      datatype t = T of {get: Ast.Tyvar.t -> Tyvar.t list ref}
+      datatype t = T of {cur: (Ast.Tyvar.t * Tyvar.t) list ref,
+                         get: Ast.Tyvar.t -> Tyvar.t list ref}
       fun new () =
          let
             val {get: Ast.Tyvar.t -> Tyvar.t list ref, ...} =
                Property.get
                (Symbol.plist o Ast.Tyvar.toSymbol,
                 Property.initFun (fn _ => ref []))
+            val cur = ref []
          in
-            T {get = get}
+            T {get = get, cur = cur}
          end
       fun peekTyvar (T {get, ...}, a) =
          case !(get a) of
@@ -135,18 +137,20 @@ structure TyvarEnv =
                   NONE
                end
           | SOME tv => SOME tv
-      fun scope (T {get, ...}, bs, th) =
+      fun scope (T {cur, get, ...}, bs, th) =
          let
             val bs' = Vector.map (bs, Tyvar.fromAst)
             val () =
                Vector.foreach2
                (bs, bs', fn (b, b') =>
-                List.push (get b, b'))
+                (List.push (cur, (b, b'))
+                 ; List.push (get b, b')))
             val res = th bs'
             val () =
                Vector.foreach
                (bs, fn b =>
-                ignore (List.pop (get b)))
+                (ignore (List.pop cur)
+                 ; ignore (List.pop (get b))))
          in
             res
          end
@@ -156,6 +160,20 @@ structure TyvarEnv =
          lookupTyvar (E, a)
       val scope = fn (bs, th) =>
          scope (E, bs, th)
+      val makeLayoutPretty = fn () =>
+         let
+            val {destroy, get = layoutPretty, set = setLayoutPretty, ...} =
+               Property.destGetSet
+               (Tyvar.plist, Property.initFun Tyvar.layout)
+            val T {cur, ...} = E
+            val _ =
+               List.foreach
+               (!cur, fn (a, a') =>
+                setLayoutPretty (a', Ast.Tyvar.layout a))
+         in
+            {destroy = destroy,
+             layoutPretty = layoutPretty}
+         end
    end
 
 val insideFunctor = ref false
