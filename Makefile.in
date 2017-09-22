@@ -35,9 +35,8 @@ NLFFIGEN := mlnlffigen
 PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
-# RANLIB := ranlib
 RANLIB := @RANLIB@
-SED		 := @SED@
+SED := @SED@
 
 
 # Allow for custom paths to GMP include and library files
