@@ -562,14 +562,14 @@ fun simplifySxml sxml =
       sxml
    end
 
-fun makeSsa ssa =
+fun makeSsa sxml =
    Control.passTypeCheck
    {display = Control.Layouts Ssa.Program.layouts,
     name = "closureConvert",
     stats = Ssa.Program.layoutStats,
     style = Control.No,
     suffix = "ssa",
-    thunk = fn () => ClosureConvert.closureConvert ssa,
+    thunk = fn () => ClosureConvert.closureConvert sxml,
     typeCheck = Ssa.typeCheck}
 
 fun simplifySsa ssa =
@@ -885,7 +885,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
    in
       makeMachine ssa2
    end
-fun compileSsa {input: File.t, outputC, outputLL, outputS}: unit =
+fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
    compile {input = input,
             resolve = genFromSsa,
             outputC = outputC,
