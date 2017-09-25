@@ -416,14 +416,14 @@ structure TypeStr =
                                ("cons", Cons.layout cons),
                                ("repl", Bool.layout repl)]]
              | Scheme s => Scheme.layout s
-             | Tycon t => seq [str "Tycon ", Tycon.layout t]
+             | Tycon c => seq [str "Tycon ", Tycon.layout c]
          end
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
-          | Tycon t => Type.con (t, tys)
+          | Tycon c => Type.con (c, tys)
 
       val apply =
          Trace.trace ("Interface.TypeStr.apply", Layout.tuple2 (layout, Vector.layout Type.layout), Type.layout)
