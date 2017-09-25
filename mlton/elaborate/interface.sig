@@ -118,6 +118,7 @@ signature INTERFACE =
                                tyvars: Tyvar.t vector}
 
             val admitsEquality: t -> bool
+            val fromTycon: Tycon.t -> t
             val make: Tyvar.t vector * Type.t -> t
             val ty: t -> Type.t
          end
