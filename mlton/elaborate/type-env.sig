@@ -107,7 +107,7 @@ signature TYPE_ENV =
             val fresh: t -> Tyvar.t vector * Type.t
             val fromTycon: Tycon.t -> t
             val fromType: Type.t -> t
-            val haveFrees: t vector -> bool vector
+            val haveUnknowns: t -> bool
             val instantiate: t -> {args: unit -> Type.t vector,
                                    instance: Type.t}
             val kind: t -> TyconKind.t

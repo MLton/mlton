@@ -2038,7 +2038,7 @@ structure Scheme =
          Trace.trace ("TypeEnv.Scheme.admitsEquality", layout, Bool.layout)
          admitsEquality
 
-      fun haveFrees (v: t vector): bool vector =
+      fun haveUnknowns s: bool =
          let
             fun con (_, _, bs) = Vector.exists (bs, fn b => b)
             fun no _ = false
@@ -2055,7 +2055,7 @@ structure Scheme =
                 recursive = no,
                 unknown = fn _ => true,
                 var = no}
-            val res = Vector.map (v, fn s => hom (ty s))
+            val res = hom (ty s)
             val _ = destroy ()
          in
             res

@@ -2006,41 +2006,39 @@ fun elaborateDec (d, {env = E, nest}) =
              val () = Time.tick {region = region}
              fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop
-                   then
-                      List.push
-                      (undeterminedTypeChecks,
-                       fn () =>
-                       Vector.foreach2
-                       (v, Scheme.haveFrees (Vector.map (v, #2)),
-                        fn ((x, s), b) =>
-                        if b
-                           then
-                              let
-                                 (* Technically, wrong scope for region;
-                                  * but saving environment would probably
-                                  * be expensive.
-                                  *)
-                                 val (bs, t) = Scheme.dest s
-                                 val {layoutPretty = layoutPrettyTycon, ...} =
-                                    Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
-                                 val {layoutPretty = layoutPrettyTyvar,
-                                      localInit = localInitLayoutPrettyTyvar, ...} =
-                                    Tyvar.makeLayoutPretty ()
-                                 val () = localInitLayoutPrettyTyvar bs
-                                 val lay =
-                                    Type.layoutPretty
-                                    (t, {expandOpaque = false,
-                                         layoutPrettyTycon = layoutPrettyTycon,
-                                         layoutPrettyTyvar = layoutPrettyTyvar})
-                              in
-                                 Control.warning
-                                 (Avar.region x,
-                                  seq [str "type of variable was not inferred and could not be generalized: ",
-                                       Avar.layout x],
-                                  align [seq [str "type: ", lay],
-                                         ctxt ()])
-                              end
-                        else ()))
+                   then Vector.foreach
+                        (v, fn (x, s) =>
+                         if not (Scheme.haveUnknowns s)
+                            then ()
+                            else List.push
+                                 (undeterminedTypeChecks, fn () =>
+                                  if not (Scheme.haveUnknowns s)
+                                     then ()
+                                     else let
+                                             (* Technically, wrong scope for region;
+                                              * but saving environment would probably
+                                              * be expensive.
+                                              *)
+                                             val (bs, t) = Scheme.dest s
+                                             val {layoutPretty = layoutPrettyTycon, ...} =
+                                                Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
+                                             val {layoutPretty = layoutPrettyTyvar,
+                                                  localInit = localInitLayoutPrettyTyvar, ...} =
+                                                Tyvar.makeLayoutPretty ()
+                                             val () = localInitLayoutPrettyTyvar bs
+                                             val lay =
+                                                Type.layoutPretty
+                                                (t, {expandOpaque = false,
+                                                     layoutPrettyTycon = layoutPrettyTycon,
+                                                     layoutPrettyTyvar = layoutPrettyTyvar})
+                                          in
+                                             Control.warning
+                                             (Avar.region x,
+                                              seq [str "type of variable was not inferred and could not be generalized: ",
+                                                   Avar.layout x],
+                                              align [seq [str "type: ", lay],
+                                                     ctxt ()])
+                                          end))
                 else ()
              fun checkConRedefine (vid, keyword, ctxt) =
                 case Env.peekLongcon (E, Ast.Longcon.short (Avid.toCon vid)) of
@@ -3585,18 +3583,18 @@ fun elaborateDec (d, {env = E, nest}) =
                              * be expensive.
                              *)
                             fun doit f =
-                               List.push
-                               (sequenceNonUnitChecks, fn () =>
-                                Vector.foreachi2
-                                (es, es', fn (i, e, e') =>
-                                 if i = last
-                                    orelse Type.isUnit (Cexp.ty e')
-                                    then ()
-                                    else f (Aexp.region e,
-                                            str "sequence expression not of type unit",
-                                            align [seq [str "type: ",
-                                                        layoutPrettyTypeBracket (Cexp.ty e')],
-                                                   seq [str "in: ", approximate (Aexp.layout e)]])))
+                               Vector.foreachi2
+                               (es, es', fn (i, e, e') =>
+                                if i = last orelse Type.isUnit (Cexp.ty e')
+                                   then ()
+                                   else List.push
+                                        (sequenceNonUnitChecks, fn () =>
+                                         if Type.isUnit (Cexp.ty e')
+                                            then ()
+                                            else f (Aexp.region e,
+                                                    str "sequence expression not of type unit",
+                                                    align [seq [str "type: ", layoutPrettyTypeBracket (Cexp.ty e')],
+                                                           ctxt ()])))
                          in
                             case sequenceNonUnit () of
                                Control.Elaborate.DiagEIW.Error => doit Control.error
@@ -3701,14 +3699,16 @@ fun elaborateDec (d, {env = E, nest}) =
                              * be expensive.
                              *)
                             fun doit f =
-                               List.push
-                               (sequenceNonUnitChecks, fn () =>
-                                if Type.isUnit (Cexp.ty expr')
-                                   then ()
-                                   else f (Aexp.region expr,
-                                           str "while body not of type unit",
-                                           seq [str "body: ",
-                                                layoutPrettyTypeBracket (Cexp.ty expr')]))
+                               if Type.isUnit (Cexp.ty expr')
+                                  then ()
+                                  else List.push
+                                       (sequenceNonUnitChecks, fn () =>
+                                        if Type.isUnit (Cexp.ty expr')
+                                           then ()
+                                           else f (Aexp.region expr,
+                                                   str "while body not of type unit",
+                                                   align [seq [str "body: ", layoutPrettyTypeBracket (Cexp.ty expr')],
+                                                          ctxt ()]))
                          in
                             case sequenceNonUnit () of
                                Control.Elaborate.DiagEIW.Error => doit Control.error
