@@ -32,7 +32,11 @@ signature INTERFACE_STRUCTS =
                sig
                   include ID
                   val makeNoname: {equality: bool} -> t
-                  val makeLayoutPretty: unit -> {destroy: unit -> unit, layoutPretty: t -> Layout.t}
+                  val makeLayoutPretty:
+                     unit
+                     -> {destroy: unit -> unit,
+                         layoutPretty: t -> Layout.t,
+                         localInit: t vector -> unit}
                end
 
             type t

@@ -172,29 +172,29 @@ structure Tyvar =
 
       fun makeLayoutPretty () =
          let
-            val {destroy, get = layoutPretty, ...} =
-               Property.destGet
-               (plist,
-                Property.initFun
-                (let
-                    val r = ref (Char.toInt #"a")
-                 in
-                    fn a =>
-                    let
-                       val n = !r
-                       val l =
-                          Layout.str (concat
-                                      [if isEquality a then "''" else "'",
+            val {destroy, get = layoutPretty, set = setLayoutPretty, ...} =
+               Property.destGetSet (plist, Property.initFun Tyvar.layout)
+            fun localInit bs =
+               let
+                  val c = Counter.new (Char.toInt #"a")
+               in
+                  Vector.foreach
+                  (bs, fn b =>
+                   let
+                      val n = Counter.next c
+                   in
+                      setLayoutPretty
+                      (b, Layout.str (concat
+                                      [if isEquality b then "''" else "'",
                                        if n > Char.toInt #"z"
                                           then concat ["a", Int.toString (n - Char.toInt #"z")]
-                                          else Char.toString (Char.fromInt n)])
-                       val _ = r := 1 + n
-                    in
-                       l
-                    end
-                 end))
+                                          else Char.toString (Char.fromInt n)]))
+                   end)
+               end
          in
-            {destroy = destroy, layoutPretty = layoutPretty}
+            {destroy = destroy,
+             layoutPretty = layoutPretty,
+             localInit = localInit}
          end
    end
 structure TyvarExt = Tyvar
@@ -205,51 +205,51 @@ structure Tycon =
 
       local
          val {get = info: t -> {admitsEquality: AdmitsEquality.t ref,
-                                defLayoutPretty: string,
                                 kind: Kind.t,
+                                prettyDefault: string,
                                 region: Region.t,
                                 time: Time.t},
               set = setInfo, ...} =
             Property.getSet
             (Tycon.plist,
              Property.initRaise ("TypeEnv.Tycon.info", Tycon.layout))
-         fun init (c, a, dlp, k, r) =
+         fun init (c, a, k, pd, r) =
             setInfo (c, {admitsEquality = ref a,
-                         defLayoutPretty = dlp,
                          kind = k,
+                         prettyDefault = pd,
                          region = r,
                          time = Time.now ()})
          val _ =
             List.foreach
-            (Tycon.prims, fn {tycon = c, admitsEquality = a, kind = k, name = dlp, ...} =>
-             init (c, a, dlp, k, Region.bogus))
+            (Tycon.prims, fn {tycon = c, admitsEquality = a, kind = k, name = lpd, ...} =>
+             init (c, a, k, lpd, Region.bogus))
          val made: Tycon.t list ref = ref []
       in
          local
             fun make f = f o info
          in
             val admitsEquality = make #admitsEquality
-            val defLayoutPretty = make #defLayoutPretty
             val kind = make #kind
+            val prettyDefault = make #prettyDefault
             val region = make #region
             val time = make #time
          end
-         fun make {admitsEquality, defLayoutPretty,
-                   kind, name, region} =
+         val layoutPrettyDefault = Layout.str o prettyDefault
+         fun make {admitsEquality, kind, name,
+                   prettyDefault, region} =
             let
                val tycon = Tycon.newString name
-               val _ = init (tycon, admitsEquality,
-                             defLayoutPretty,
-                             kind, region)
+               val _ = init (tycon, admitsEquality, kind,
+                             prettyDefault, region)
                val _ = List.push (made, tycon)
             in
                tycon
             end
          fun makeLike c =
             make {admitsEquality = ! (admitsEquality c),
-                  defLayoutPretty = defLayoutPretty c,
                   kind = kind c,
                   name = originalName c,
+                  prettyDefault = prettyDefault c,
                   region = region c}
          fun scopeNew th =
             let
@@ -264,24 +264,10 @@ structure Tycon =
       end
       fun makeBogus {name, kind, region} =
          make {admitsEquality = AdmitsEquality.Sometimes,
-               defLayoutPretty = concat ["<", name, ">"],
                kind = kind,
                name = name,
+               prettyDefault = concat ["<", name, ">"],
                region = Option.fold (region, Region.bogus, #1)}
-
-      local
-         val unsetFnRef : (Layout.t -> Layout.t) ref = ref (fn l => l)
-      in
-         val {destroy = resetLayoutPretty: unit -> unit,
-              get = layoutPretty: t -> Layout.t,
-              set = setLayoutPretty: t * Layout.t -> unit} =
-            Property.destGetSet
-            (plist, Property.initFun (fn c => !unsetFnRef (Layout.str (defLayoutPretty c))))
-         val resetLayoutPretty = fn {unset} =>
-            (unsetFnRef := unset ; resetLayoutPretty ())
-      end
-
-      val layoutAppPretty = makeLayoutAppPretty {layoutPretty = layoutPretty}
    end
 
 structure Equality:>
@@ -784,12 +770,16 @@ structure Type =
             Exn.finally (fn () => hom ty, destroy)
          end
 
-      fun makeLayoutPretty {expandOpaque, makeLayoutPrettyTyvar} :
+      fun makeLayoutPretty {expandOpaque,
+                            layoutPrettyTycon,
+                            layoutPrettyTyvar} :
          {destroy: unit -> unit,
           layoutPretty: t -> LayoutPretty.t} =
          let
-            fun con (_, c, ts) = Tycon.layoutAppPretty (c, ts)
-            fun con0 c = Tycon.layoutAppPretty (c, Vector.new0 ())
+            val layoutAppPretty =
+               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            fun con (_, c, ts) = layoutAppPretty (c, ts)
+            fun con0 c = layoutAppPretty (c, Vector.new0 ())
             fun flexRecord (_, {fields, spine}) =
                LayoutPretty.record
                (List.fold
@@ -804,7 +794,7 @@ structure Type =
                (List.fold
                 (fields,
                  List.revMap (extra (), fn {field, tyvar} =>
-                              (field, false, simple (Tyvar.layout tyvar))),
+                              (field, false, simple (layoutPrettyTyvar tyvar))),
                  fn ((f, t), ac) => (f, false, t) :: ac),
                 Spine.canAddFields spine)
             fun overload (_, ov) = con0 (Overload.defaultTycon ov)
@@ -819,19 +809,9 @@ structure Type =
                 | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
             fun unknown (_, u) = Unknown.layoutPretty u
-            val (destroyLayoutPrettyTyvar, layoutPrettyTyvar) =
-               case makeLayoutPrettyTyvar of
-                  NONE => (fn () => (), Tyvar.layout)
-                | SOME makeLayoutPrettyTyvar =>
-                     let
-                        val {destroy, layoutPretty} =
-                           makeLayoutPrettyTyvar ()
-                     in
-                        (destroy, layoutPretty)
-                     end
             fun var (_, a) = simple (layoutPrettyTyvar a)
-            fun layoutPretty t =
-               hom (t, {con = con,
+            val {destroy, hom = layoutPretty} =
+               makeHom {con = con,
                         expandOpaque = expandOpaque,
                         flexRecord = flexRecord,
                         genFlexRecord = genFlexRecord,
@@ -840,25 +820,23 @@ structure Type =
                         record = record,
                         recursive = recursive,
                         unknown = unknown,
-                        var = var})
+                        var = var}
          in
-            {destroy = destroyLayoutPrettyTyvar,
+            {destroy = destroy,
              layoutPretty = layoutPretty}
          end
 
-      fun layoutPrettyAux (t, {expandOpaque, makeLayoutPrettyTyvar}) =
+      fun layoutPretty (t, {expandOpaque, layoutPrettyTycon, layoutPrettyTyvar}) =
          let
             val {destroy, layoutPretty} =
                makeLayoutPretty {expandOpaque = expandOpaque,
-                                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
+                                 layoutPrettyTycon = layoutPrettyTycon,
+                                 layoutPrettyTyvar = layoutPrettyTyvar}
             val res = #1 (layoutPretty t)
-            val _ = destroy ()
+            val () = destroy ()
          in
             res
          end
-      fun layoutPretty t = 
-         layoutPrettyAux (t, {expandOpaque = false,
-                              makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty})
 
       fun deConOpt t =
          case getTy t of
@@ -1057,16 +1035,19 @@ structure Type =
 
       fun unresolvedString () = vector (unresolvedChar ())
 
-      fun explainAdmitsEquality (T s, {layoutPretty: t -> LayoutPretty.t}) =
+      fun explainAdmitsEquality (T s, {layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
          let
             val {ty, ...} = Set.! s
          in
             case ty of
-               Var a => bracket (layoutPretty (Type.var a))
+               Var a => bracket (simple (layoutPrettyTyvar a))
              | _ => simple (Layout.bracket (str "<equality>"))
          end
-      fun explainDoesNotAdmitEquality (t , {layoutPretty: t -> LayoutPretty.t}) =
+      fun explainDoesNotAdmitEquality (t , {layoutPrettyTycon: Tycon.t -> Layout.t,
+                                            layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
          let
+            val layoutAppPretty =
+               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
             fun deopt lo = Option.fold (lo, dontCare, fn (l, _) => l)
             val noneq = simple (Layout.bracket (str "<non-equality>"))
             fun con (_, c, los) =
@@ -1076,10 +1057,10 @@ structure Type =
                   case ! (Tycon.admitsEquality c) of
                      Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
                    | Never =>
-                        (SOME o bracket o Tycon.layoutAppPretty)
+                        (SOME o bracket o layoutAppPretty)
                         (c, Vector.map (los, fn _ => dontCare))
                    | Sometimes =>
-                        (SOME o Tycon.layoutAppPretty)
+                        (SOME o layoutAppPretty)
                         (c, Vector.map (los, deopt))
                end
             fun doRecord (fields, extra) =
@@ -1118,7 +1099,7 @@ structure Type =
                 | SOME los => SOME (LayoutPretty.tuple (Vector.map (los, deopt)))
             fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
             fun unknown (_, _) = SOME noneq
-            fun var (_, a) = SOME (bracket (layoutPretty (Type.var a)))
+            fun var (_, a) = SOME (bracket (simple (layoutPrettyTyvar a)))
             val res =
                hom (t, {con = con,
                         expandOpaque = false,
@@ -1182,8 +1163,11 @@ structure Type =
        *  - a list of violating tyvars
        *)
       fun makeCheckTime {layoutPretty: t -> LayoutPretty.t,
-                         preError: unit -> unit} =
+                         layoutPrettyTycon: Tycon.t -> Layout.t,
+                         layoutPrettyTyvar: Tyvar.t -> Layout.t} =
          let
+            val layoutAppPretty =
+               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
             val times: Time.t list ref = ref []
             val tycons: Tycon.t list ref = ref []
             val tyvars: Tyvar.t list ref = ref []
@@ -1201,24 +1185,22 @@ structure Type =
                if Time.<= (Tycon.time c, bound)
                   then if Vector.forall (rs, Option.isNone o #1)
                           then NONE
-                          else (preError ()
-                                ; SOME (Tycon.layoutAppPretty
-                                        (c, Vector.map (rs, getLay1)),
-                                        Tycon.layoutAppPretty
-                                        (c, Vector.map (rs, getLay2)),
-                                        Tycon.layoutAppPretty
-                                        (c, Vector.map (rs, getLay3)),
-                                        Type.con
-                                        (c, Vector.map (rs, getTy))))
+                          else SOME (layoutAppPretty
+                                     (c, Vector.map (rs, getLay1)),
+                                     layoutAppPretty
+                                     (c, Vector.map (rs, getLay2)),
+                                     layoutAppPretty
+                                     (c, Vector.map (rs, getLay3)),
+                                     Type.con
+                                     (c, Vector.map (rs, getTy)))
                   else let
                           val ty = Type.newAt bound
                        in
                           List.push (times, bound)
                           ; List.push (tycons, c)
-                          ; preError ()
-                          ; SOME ((bracket o Tycon.layoutAppPretty)
+                          ; SOME ((bracket o layoutAppPretty)
                                   (c, Vector.map (rs, getLay2)),
-                                  Tycon.layoutAppPretty
+                                  layoutAppPretty
                                   (c, Vector.map (rs, getLay2)),
                                   bracket (layoutPretty ty),
                                   ty)
@@ -1288,8 +1270,8 @@ structure Type =
                        in
                           List.push (times, bound)
                           ; List.push (tyvars, a)
-                          ; SOME (bracket (layoutPretty (Type.var a)),
-                                  layoutPretty (Type.var a),
+                          ; SOME (bracket (simple (layoutPrettyTyvar a)),
+                                  simple (layoutPrettyTyvar a),
                                   bracket (layoutPretty ty),
                                   ty)
                        end
@@ -1349,11 +1331,15 @@ structure Type =
 
       fun unify (t, t',
                  {layoutPretty: t -> LayoutPretty.t,
-                  preError: unit -> unit}) =
+                  layoutPrettyTycon: Tycon.t -> Layout.t,
+                  layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
          let
+            val layoutAppPretty =
+               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
             val {checkTime, finishCheckTime} =
                makeCheckTime {layoutPretty = layoutPretty,
-                              preError = preError}
+                              layoutPrettyTycon = layoutPrettyTycon,
+                              layoutPrettyTyvar = layoutPrettyTyvar}
             fun unify arg =
                traceUnify
                (fn (outer as T s, outer' as T s') =>
@@ -1415,9 +1401,8 @@ structure Type =
                       val {equality = e, time, ty = t, plist} = Set.! s
                       val {equality = e', time = time', ty = t', ...} = Set.! s'
                       fun not () =
-                         (preError ()
-                          ; notUnifiableBracket (layoutPretty outer,
-                                                 layoutPretty outer'))
+                         notUnifiableBracket (layoutPretty outer,
+                                              layoutPretty outer')
                       fun unifys (ts, ts', yes, no) =
                          let
                             val us = Vector.map2 (ts, ts', unify)
@@ -1459,7 +1444,6 @@ structure Type =
                                                                (Vector.length ts),
                                                                " args> "]),
                                                       Tycon.layout c])
-                                                 val _ = preError ()
                                               in
                                                  notUnifiableBracket
                                                  (maybe (lay ts, lay ts'))
@@ -1469,9 +1453,8 @@ structure Type =
                                            (ts, ts',
                                             fn () => Unified t,
                                             fn (ls, ls') =>
-                                            let 
-                                               val _ = preError ()
-                                               fun lay ls = Tycon.layoutAppPretty (c, ls)
+                                            let
+                                               fun lay ls = layoutAppPretty (c, ls)
                                             in
                                                notUnifiable
                                                (maybe (lay ls, lay ls'))
@@ -1602,11 +1585,13 @@ structure Type =
                                (if Equality.unify (e, e')
                                    then res
                                    else let
-                                           val _ = preError ()
                                            fun explain t =
                                               if admitsEquality t
-                                                 then explainAdmitsEquality (t, {layoutPretty = layoutPretty})
-                                                 else explainDoesNotAdmitEquality (t, {layoutPretty = layoutPretty})
+                                                 then explainAdmitsEquality
+                                                      (t, {layoutPrettyTyvar = layoutPrettyTyvar})
+                                                 else explainDoesNotAdmitEquality
+                                                      (t, {layoutPrettyTycon = layoutPrettyTycon,
+                                                           layoutPrettyTyvar = layoutPrettyTyvar})
                                         in
                                            NotUnifiable (explain outer,
                                                          explain outer')
@@ -1665,9 +1650,8 @@ structure Type =
                in
                   case (ac, ac') of
                      ([], []) => yes ()
-                   | _ => (preError ()
-                           ; no (LayoutPretty.record (ac, dots),
-                                 LayoutPretty.record (ac', dots')))
+                   | _ => no (LayoutPretty.record (ac, dots),
+                              LayoutPretty.record (ac', dots'))
                end
             val res = unify (t, t')
          in
@@ -1686,8 +1670,8 @@ structure Type =
                                        fn ((_, l1), (_, l2)) =>
                                        String.<= (Layout.toString l1,
                                                   Layout.toString l2))
-                                   val tycons = doit (tycons, Tycon.layoutPretty)
-                                   val tyvars = doit (tyvars, #1 o layoutPretty o Type.var)
+                                   val tycons = doit (tycons, layoutPrettyTycon)
+                                   val tyvars = doit (tyvars, layoutPrettyTyvar)
                                    val tys =
                                       List.map (tycons, #2)
                                       @ List.map (tyvars, #2)
@@ -1799,9 +1783,11 @@ structure Type =
                   val t = Overload.defaultType ov
                   val _ = unify (t, t',
                                  {layoutPretty = fn _ =>
-                                  Error.bug "TypeEnv.Type.simpleHom.overload",
-                                  preError = fn _ =>
-                                  Error.bug "TypeEnv.Type.simpleHom.overload"})
+                                  Error.bug "TypeEnv.Type.simpleHom.overload: layoutPretty",
+                                  layoutPrettyTycon = fn _ =>
+                                  Error.bug "TypeEnv.Type.simpleHom.overload: layoutPrettyTycon",
+                                  layoutPrettyTyvar = fn _ =>
+                                  Error.bug "TypeEnv.Type.simpleHom.overload: layoutPrettyTyvar"})
                in
                   con (t, Overload.defaultTycon ov, Vector.new0 ())
                end
@@ -1843,20 +1829,11 @@ structure Scheme =
 
       fun layout s =
          case s of
-            Mono t => Type.layoutPretty t
+            Mono t => Type.layout t
           | General {canGeneralize, tyvars, ty, ...} =>
                Layout.record [("canGeneralize", Bool.layout canGeneralize),
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
                               ("ty", Type.layout ty)]
-
-      fun layoutPrettyAux (s, {expandOpaque, makeLayoutPrettyTyvar}) =
-         Type.layoutPrettyAux
-         (ty s, {expandOpaque = expandOpaque,
-                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar})
-      fun layoutPretty s =
-         layoutPrettyAux
-         (s, {expandOpaque = false,
-              makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty})
 
       fun make {canGeneralize, tyvars, ty} =
          if Vector.isEmpty tyvars
@@ -2096,22 +2073,22 @@ fun 'a close region =
       fn (ensure,
           varTypes,
           {error: 'a * Layout.t * Tyvar.t list -> unit,
-           makeLayoutPrettyTyvar,
-           preError: unit -> unit}) =>
+           layoutPrettyType,
+           layoutPrettyTycon,
+           layoutPrettyTyvar}) =>
       let
          local
-            val {destroy, layoutPretty} =
-               Type.makeLayoutPretty {expandOpaque = false,
-                                      makeLayoutPrettyTyvar = SOME makeLayoutPrettyTyvar}
             fun checkTime (t, bound) =
                let
                   val {checkTime, finishCheckTime} =
-                     Type.makeCheckTime {layoutPretty = layoutPretty,
-                                         preError = preError}
+                     Type.makeCheckTime {layoutPretty = layoutPrettyType,
+                                         layoutPrettyTycon = layoutPrettyTycon,
+                                         layoutPrettyTyvar = layoutPrettyTyvar}
                in
                   Option.map (checkTime (t, bound), fn z =>
                               (z, finishCheckTime ()))
                end
+         in
             val varTypes =
                Vector.map
                (varTypes, fn ({isExpansive, ty, var}) =>
@@ -2123,9 +2100,6 @@ fun 'a close region =
                                 | SOME (((l, _), (ty', _)), {tyvars, ...}) =>
                                      (error (var, l, tyvars)
                                       ; ty'))})
-            val _ = destroy ()
-         in
-            val varTypes = varTypes
          end
          val flexes = ref []
          val tyvars = ref (Vector.toList ensure)
@@ -2335,46 +2309,29 @@ structure Type =
             res
          end
 
-      val makeUnify =
-         fn {layoutPretty, preError} =>
-         fn (t1, t2, {error}) =>
-         case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
+      val unify =
+         fn (t1, t2, {error, layoutPretty, layoutPrettyTycon, layoutPrettyTyvar}) =>
+         case unify (t1, t2, {layoutPretty = layoutPretty,
+                              layoutPrettyTycon = layoutPrettyTycon,
+                              layoutPrettyTyvar = layoutPrettyTyvar}) of
             NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
           | Unified () => ()
-
-      val unify =
-         fn (t1, t2, {error, makeLayoutPrettyTyvar, preError}) =>
-         let
-            val {destroy, layoutPretty} =
-               makeLayoutPretty {expandOpaque = false,
-                                 makeLayoutPrettyTyvar = makeLayoutPrettyTyvar}
-            val () =
-               case unify (t1, t2, {layoutPretty = layoutPretty, preError = preError}) of
-                  NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
-                | Unified () => ()
-            val () = destroy ()
-         in
-            ()
-         end
 
       val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
 
       val checkTime =
-         fn (t, bound, {preError}) =>
+         fn (t, bound, {layoutPretty, layoutPrettyTycon, layoutPrettyTyvar}) =>
          let
-            val {destroy, layoutPretty} =
-               makeLayoutPretty {expandOpaque = false,
-                                 makeLayoutPrettyTyvar = SOME Tyvar.makeLayoutPretty}
             val {checkTime, finishCheckTime} =
                makeCheckTime {layoutPretty = layoutPretty,
-                              preError = preError}
+                              layoutPrettyTycon = layoutPrettyTycon,
+                              layoutPrettyTyvar = layoutPrettyTyvar}
             val res =
                Option.map
                (checkTime (t, bound), fn ((l, _), (ty, _)) =>
                 (l, ty, let val {tycons, tyvars, ...} = finishCheckTime ()
                         in {tycons = tycons, tyvars = tyvars}
                         end))
-            val () = destroy ()
          in
             res
          end

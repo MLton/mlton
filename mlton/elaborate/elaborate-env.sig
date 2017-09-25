@@ -226,7 +226,10 @@ signature ELABORATE_ENV =
       val scope: t * (unit -> 'a) -> 'a
       (* like scope, but works for bases, signatures and functors as well *)
       val scopeAll: t * (unit -> 'a) -> 'a
-      val setTyconLayoutPretty: t * {prefixUnset: bool} -> unit
+      val makeLayoutPrettyTycon:
+         t * {prefixUnset: bool}
+         -> {destroy: unit -> unit,
+             layoutPretty: Tycon.t -> Layout.t}
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end

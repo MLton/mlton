@@ -792,15 +792,21 @@ structure TypeStr =
                case kind tyStr of
                   Kind.Arity arity => arity
                 | _ => Error.bug "Interface.TypeStr.mkErrorExtra: Kind.Nary"
-            val {destroy, layoutPretty = layTyvar} = Tyvar.makeLayoutPretty ()
             val tyvars =
-               case arity of
+               Vector.tabulate
+               (arity, fn _ =>
+                Tyvar.makeNoname {equality = false})
+            val {destroy = destroyLayoutPrettyTyvar,
+                 layoutPretty = layoutPrettyTyvar,
+                 localInit = localInitLayoutPrettyTyvar, ...} =
+               Tyvar.makeLayoutPretty ()
+            val () = localInitLayoutPrettyTyvar tyvars
+            val tyvars =
+               case Vector.length tyvars of
                   0 => empty
-                | 1 => layTyvar (Tyvar.makeNoname {equality = false})
-                | _ => (* Ensure tyvars get correct pretty names. *)
-                       (Layout.tuple o List.rev o List.tabulate)
-                       (arity, fn _ => layTyvar (Tyvar.makeNoname {equality = false}))
-            val _ = destroy ()
+                | 1 => layoutPrettyTyvar (Vector.first tyvars)
+                | _ => Layout.tuple (Vector.toListMap (tyvars, layoutPrettyTyvar))
+            val _ = destroyLayoutPrettyTyvar ()
             val tyvars =
                if arityErr
                   then bracket tyvars

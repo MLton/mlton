@@ -123,6 +123,7 @@ end
 local
    open TypeEnv
 in
+   structure LayoutPretty = LayoutPretty
    structure Scheme = Scheme
    structure Time = Time
    structure Type = Type
@@ -362,16 +363,15 @@ val typeTycon =
    typeTycon
 
 fun 'a elabConst (c: Aconst.t,
+                  {layoutPrettyType: Type.t -> Layout.t},
                   make: (unit -> Const.t) * Type.t -> 'a,
-                  {false = f: 'a, true = t: 'a},
-                  preError: unit -> unit): 'a =
+                  {false = f: 'a, true = t: 'a}): 'a =
    let
       fun error (kind: string, ty: Type.t): unit =
-         (preError ()
-          ; Control.error
-            (Aconst.region c,
-             seq [str kind, str " too large for type: ", Aconst.layout c],
-             seq [str "type: ", Type.layoutPretty ty]))
+         Control.error
+         (Aconst.region c,
+          seq [str kind, str " too large for type: ", Aconst.layout c],
+          seq [str "type: ", layoutPrettyType ty])
       fun choose (tycon, all, sizeTycon, make) =
          case List.peek (all, fn s => Tycon.equals (tycon, sizeTycon s)) of
             NONE => Const.string "<bogus>"
@@ -454,20 +454,19 @@ fun 'a elabConst (c: Aconst.t,
                         val () =
                            if List.isEmpty (!bigs)
                               then ()
-                              else (preError ()
-                                    ; Control.error
-                                      (Aconst.region c,
-                                       seq [str "string constant with ",
-                                            str (case !bigs of
-                                                    [_] => "character "
-                                                  | _ => "characters "),
-                                            str "too large for type: ",
-                                            seq (Layout.separate
-                                                 (List.revMap
-                                                  (!bigs, fn ch =>
-                                                   Aconst.layout (Aconst.makeRegion (Aconst.Char ch, Region.bogus))),
-                                                  ", "))],
-                                       seq [str "type: ", Type.layoutPretty ty]))
+                              else Control.error
+                                   (Aconst.region c,
+                                    seq [str "string constant with ",
+                                         str (case !bigs of
+                                                 [_] => "character "
+                                               | _ => "characters "),
+                                         str "too large for type: ",
+                                         seq (Layout.separate
+                                              (List.revMap
+                                               (!bigs, fn ch =>
+                                                Aconst.layout (Aconst.makeRegion (Aconst.Char ch, Region.bogus))),
+                                               ", "))],
+                                    seq [str "type: ", layoutPrettyType ty])
                      in
                         wv
                      end))
@@ -481,26 +480,10 @@ fun 'a elabConst (c: Aconst.t,
                       else (error ("word constant", ty); WordX.zero s))))
    end
 
-val unify =
-   fn (t, t', preError, error) =>
-   let
-      val error = fn (l, l', {notes}) =>
-         let
-            val (r, m, d) = error (l, l')
-         in
-            Control.error
-            (r, m, align [d, notes ()])
-         end
-   in
-      Type.unify (t, t', {error = error,
-                          makeLayoutPrettyTyvar = SOME TyvarEnv.makeLayoutPretty,
-                          preError = preError})
-   end
-
 local
 fun unifySeq (seqTy, seqStr,
               trs: (Type.t * Region.t) vector,
-              preError, ctxt): Type.t =
+              unify): Type.t =
    if Vector.isEmpty trs
       then seqTy (Type.new ())
    else
@@ -509,22 +492,19 @@ fun unifySeq (seqTy, seqStr,
          val _ =
             Vector.foreach
             (trs, fn (t', r) =>
-             unify (t, t', preError, fn (l, l') =>
+             unify (t, t', fn (l, l') =>
                     (r,
                      str (seqStr ^ " with element of different type"),
                      align [seq [str "element:  ", l'],
-                            seq [str "previous: ", l],
-                            ctxt ()])))
+                            seq [str "previous: ", l]])))
       in
          seqTy t
       end
 in
-fun unifyList (trs: (Type.t * Region.t) vector,
-               preError, ctxt): Type.t =
-   unifySeq (Type.list, "list", trs, preError, ctxt)
-fun unifyVector (trs: (Type.t * Region.t) vector,
-                 preError, ctxt): Type.t =
-   unifySeq (Type.vector, "vector", trs, preError, ctxt)
+fun unifyList (trs: (Type.t * Region.t) vector, unify): Type.t =
+   unifySeq (Type.list, "list", trs, unify)
+fun unifyVector (trs: (Type.t * Region.t) vector, unify): Type.t =
+   unifySeq (Type.vector, "vector", trs, unify)
 end
 
 val elabPatInfo = Trace.info "ElaborateCore.elabPat"
@@ -536,16 +516,58 @@ structure Var =
       val fromAst = newString o Avar.toString
    end
 
+structure DiagUtils =
+   struct
+      type t = {layoutPrettyType: Type.t -> LayoutPretty.t,
+                layoutPrettyTycon: Tycon.t -> Layout.t,
+                layoutPrettyTyvar: Tyvar.t -> Layout.t,
+                unify: Type.t * Type.t * (Layout.t * Layout.t -> Region.t * Layout.t * Layout.t) -> unit}
+      fun make E : t =
+         let
+            val {layoutPretty = layoutPrettyTycon, ...} =
+               Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
+            val {layoutPretty = layoutPrettyTyvar, ...} =
+               TyvarEnv.makeLayoutPretty ()
+            val {layoutPretty = layoutPrettyType, ...} =
+               Type.makeLayoutPretty
+               {expandOpaque = false,
+                layoutPrettyTycon = layoutPrettyTycon,
+                layoutPrettyTyvar = layoutPrettyTyvar}
+            fun unify (t, t', error) =
+               let
+                  val error = fn (l, l', {notes}) =>
+                     let
+                        val (r, m, d) = error (l, l')
+                     in
+                        Control.error
+                        (r, m, align [d, notes ()])
+                     end
+               in
+                  Type.unify
+                  (t, t', {error = error,
+                           layoutPretty = layoutPrettyType,
+                           layoutPrettyTycon = layoutPrettyTycon,
+                           layoutPrettyTyvar = layoutPrettyTyvar})
+               end
+         in
+            {layoutPrettyType = layoutPrettyType,
+             layoutPrettyTycon = layoutPrettyTycon,
+             layoutPrettyTyvar = layoutPrettyTyvar,
+             unify = unify}
+         end
+   end
+
 val elaboratePat:
    unit
-   -> Apat.t * Env.t * {bind: bool, isRvb: bool} * (unit -> unit)
+   -> Apat.t * Env.t * {bind: bool, isRvb: bool}
    -> Cpat.t * (Avar.t * Var.t * Type.t) vector =
    fn () =>
    let
       val others: (Apat.t * (Avar.t * Var.t * Type.t) vector) list ref = ref []
    in
-      fn (p: Apat.t, E: Env.t, {bind = bindInEnv, isRvb}, preError: unit -> unit) =>
+      fn (p: Apat.t, E: Env.t, {bind = bindInEnv, isRvb}) =>
       let
+         val {layoutPrettyType, unify, ...} = DiagUtils.make E
          fun ctxtTop () =
             seq [str "in: ", approximate (Apat.layout p)]
          val rename =
@@ -596,15 +618,20 @@ val elaboratePat:
                 val region = Apat.region p
                 fun ctxt () =
                    seq [str "in: ", approximate (Apat.layout p)]
-                val unify = fn (t, t', f) => unify (t, t', preError, f)
+                val unify = fn (a, b, f) =>
+                   unify (a, b, fn z =>
+                          let
+                             val (r, m, d) = f z
+                          in
+                             (r, m, align [d, ctxt ()])
+                          end)
                 fun unifyPatternConstraint (p, c) =
                    unify
                    (p, c, fn (l1, l2) =>
                     (region,
                      str "pattern and constraint disagree",
                      align [seq [str "pattern:    ", l1],
-                            seq [str "constraint: ", l2],
-                            ctxt ()]))
+                            seq [str "constraint: ", l2]]))
                 fun dontCare () =
                    Cpat.wild (Type.new ())
              in
@@ -630,7 +657,7 @@ val elaboratePat:
                                                 fn _ =>
                                                 (region,
                                                  str "constant constructor applied to argument in pattern",
-                                                 ctxt ()))
+                                                 Layout.empty))
                                          in
                                             types
                                          end
@@ -640,8 +667,7 @@ val elaboratePat:
                                     (region,
                                      str "constructor applied to incorrect argument in pattern",
                                      align [seq [str "expects: ", l'],
-                                            seq [str "but got: ", l],
-                                            ctxt ()]))
+                                            seq [str "but got: ", l]]))
                              in
                                 Cpat.make (Cpat.Con {arg = SOME p,
                                                      con = con,
@@ -651,10 +677,10 @@ val elaboratePat:
                  | Apat.Const c =>
                       elabConst
                       (c,
+                       {layoutPrettyType = #1 o layoutPrettyType},
                        fn (resolve, ty) => Cpat.make (Cpat.Const resolve, ty),
                        {false = Cpat.falsee,
-                        true = Cpat.truee},
-                       preError)
+                        true = Cpat.truee})
                  | Apat.Constraint (p, t) =>
                       let
                          val p' = loop p
@@ -702,8 +728,7 @@ val elaboratePat:
                                     unifyList
                                     (Vector.map2 (ps, ps', fn (p, p') =>
                                                   (Cpat.ty p', Apat.region p)),
-                                     preError,
-                                     ctxt))
+                                     unify))
                       end
                  | Apat.Or ps =>
                       let
@@ -739,9 +764,7 @@ val elaboratePat:
                                                  Avar.layout x],
                                             align [seq [str "variable: ", l],
                                                    seq [str "previous: ", l'],
-                                                   seq [str "in: ", approximate (Apat.layout p)],
-                                                   ctxt ()]))
-
+                                                   seq [str "in: ", approximate (Apat.layout p)]]))
                                     in
                                        xtsPats
                                     end))
@@ -770,8 +793,7 @@ val elaboratePat:
                                str "or-pattern with pattern of different type",
                                align [seq [str "pattern:  ", l'],
                                       seq [str "previous: ", l],
-                                      seq [str "in: ", approximate (Apat.layout p)],
-                                      ctxt ()])))
+                                      seq [str "in: ", approximate (Apat.layout p)]])))
                          val xtsMerge =
                             List.fold
                             (xtsPats, xtsOrig, fn ((x, x', t, l), xtsMerge) =>
@@ -907,8 +929,7 @@ val elaboratePat:
                                     unifyVector
                                     (Vector.map2 (ps, ps', fn (p, p') =>
                                                   (Cpat.ty p', Apat.region p)),
-                                     preError,
-                                     ctxt))
+                                     unify))
                       end
                  | Apat.Wild =>
                       Cpat.make (Cpat.Wild, Type.new ())
@@ -964,9 +985,6 @@ val elabExpInfo = Trace.info "ElaborateCore.elabExp"
 structure Type =
    struct
       open Type
-
-      fun layoutPrettyBracket ty =
-         seq [str "[", layoutPretty ty, str "]"]
 
       val nullary: (string * CType.t * Tycon.t) list =
          let
@@ -1182,7 +1200,8 @@ fun import {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
             expandedTy: Type.t,
             name: string option,
-            region: Region.t}: Type.t Prim.t =
+            region: Region.t,
+            layoutPrettyType: Type.t -> Layout.t}: Type.t Prim.t =
    let
       fun error l = Control.error (region, l, empty)
       fun invalidAttributes () =
@@ -1192,7 +1211,7 @@ fun import {attributes: ImportExportAttribute.t list,
          Control.error
          (region,
           str "invalid type for _import",
-          Type.layoutPretty elabedTy)
+          layoutPrettyType elabedTy)
    in
       case Type.toCFunType expandedTy of
          NONE =>
@@ -1402,7 +1421,8 @@ in
                 elabedTy: Type.t,
                 expandedTy: Type.t,
                 name: string,
-                region: Region.t}: Cexp.t =
+                region: Region.t,
+                layoutPrettyType: Type.t -> Layout.t}: Cexp.t =
       let
          fun error l = Control.error (region, l, empty)
          fun invalidAttributes () =
@@ -1411,7 +1431,7 @@ in
          fun invalidType () =
             Control.error
             (region, str "invalid type for _address",
-             Type.layoutPretty elabedTy)
+             layoutPrettyType elabedTy)
          val () =
             case Type.toCPtrType expandedTy of
                NONE => (invalidType (); ())
@@ -1446,7 +1466,8 @@ in
                      elabedTy: Type.t,
                      expandedTy: Type.t,
                      name: string,
-                     region: Region.t}: Cexp.t =
+                     region: Region.t,
+                     layoutPrettyType: Type.t -> Layout.t}: Cexp.t =
       let
          fun error l = Control.error (region, l, empty)
          fun invalidAttributes () =
@@ -1455,7 +1476,7 @@ in
          fun invalidType () =
             Control.error
             (region, str "invalid type for _symbol",
-             Type.layoutPretty elabedTy)
+             layoutPrettyType elabedTy)
          val expandedCbTy =
             Exn.withEscape
             (fn escape =>
@@ -1544,12 +1565,13 @@ in
 
    fun symbolIndirect {elabedTy: Type.t,
                        expandedTy: Type.t,
-                       region: Region.t}: Cexp.t =
+                       region: Region.t,
+                       layoutPrettyType: Type.t -> Layout.t}: Cexp.t =
       let
          fun invalidType () =
             Control.error
             (region, str "invalid type for _symbol",
-             Type.layoutPretty elabedTy)
+             layoutPrettyType elabedTy)
          val (expandedPtrTy, expandedCbTy) =
             Exn.withEscape
             (fn escape =>
@@ -1621,7 +1643,8 @@ fun export {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
             expandedTy: Type.t,
             name: string,
-            region: Region.t}: Aexp.t =
+            region: Region.t,
+            layoutPrettyType: Type.t -> Layout.t}: Aexp.t =
    let
       fun error l = Control.error (region, l, empty)
       fun invalidAttributes () =
@@ -1631,7 +1654,7 @@ fun export {attributes: ImportExportAttribute.t list,
          Control.error
          (region,
           str "invalid type for _export",
-          Type.layoutPretty elabedTy)
+          layoutPrettyType elabedTy)
       val convention =
          List.keepAll (attributes, isIEAttributeConvention)
       val convention =
@@ -1834,11 +1857,13 @@ fun elaborateDec (d, {env = E, nest}) =
                               {canGeneralize = true,
                                ty = elabType (def, {bogusAsUnknown = false}),
                                tyvars = tyvars})))
+            val () =
+               Vector.foreach2
+               (types, strs, fn ({tycon, ...}, str) =>
+                Env.extendTycon (E, tycon, str, {forceUsed = false,
+                                                 isRebind = false}))
          in
-            Vector.foreach2
-            (types, strs, fn ({tycon, ...}, str) =>
-             Env.extendTycon (E, tycon, str, {forceUsed = false,
-                                              isRebind = false}))
+            ()
          end
       fun elabDatBind (datBind: DatBind.t, nest: string list)
          : Decs.t * {tycon: Ast.Tycon.t,
@@ -1855,12 +1880,12 @@ fun elaborateDec (d, {env = E, nest}) =
                 let
                    val r = Ast.Tycon.region name
                    val n = Ast.Tycon.toString name
-                   val dlp = concat (List.separate (rev (n :: nest), "."))
+                   val pd = concat (List.separate (rev (n :: nest), "."))
                    val tycon =
                       Tycon.make {admitsEquality = AdmitsEquality.Sometimes,
-                                  defLayoutPretty = dlp,
                                   kind = Kind.Arity (Vector.length tyvars),
                                   name = n,
+                                  prettyDefault = pd,
                                   region = r}
                    val _ = Env.extendTycon (E, name, TypeStr.tycon tycon,
                                             {forceUsed = true,
@@ -1958,7 +1983,7 @@ fun elaborateDec (d, {env = E, nest}) =
                      then (change := false; loop ())
                   else ()
                end
-            val _ = loop ()
+            val () = loop ()
          in
             (Decs.single (Cdec.Datatype dbs), strs)
          end
@@ -1969,9 +1994,8 @@ fun elaborateDec (d, {env = E, nest}) =
           Decs.layout, Trace.assertTrue)
          (fn (d, nest, isTop) =>
           let
-             val region = Adec.region d
              fun ctxt () = seq [str "in: ", approximate (Adec.layout d)]
-             val preError = Promise.lazy (fn () => Env.setTyconLayoutPretty (E, {prefixUnset = true}))
+             val region = Adec.region d
              fun generalizeError (var, lay, _) =
                 Control.error
                 (Avar.region var,
@@ -1980,7 +2004,6 @@ fun elaborateDec (d, {env = E, nest}) =
                  align [seq [str "type: ", lay],
                         ctxt ()])
              val () = Time.tick {region = region}
-             val unify = fn (t, t', f) => unify (t, t', preError, f)
              fun checkSchemes (v: (Avar.t * Scheme.t) vector): unit =
                 if isTop
                    then
@@ -1993,13 +2016,28 @@ fun elaborateDec (d, {env = E, nest}) =
                         if b
                            then
                               let
-                                 val _ = preError ()
+                                 (* Technically, wrong scope for region;
+                                  * but saving environment would probably
+                                  * be expensive.
+                                  *)
+                                 val (bs, t) = Scheme.dest s
+                                 val {layoutPretty = layoutPrettyTycon, ...} =
+                                    Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
+                                 val {layoutPretty = layoutPrettyTyvar,
+                                      localInit = localInitLayoutPrettyTyvar, ...} =
+                                    Tyvar.makeLayoutPretty ()
+                                 val () = localInitLayoutPrettyTyvar bs
+                                 val lay =
+                                    Type.layoutPretty
+                                    (t, {expandOpaque = false,
+                                         layoutPrettyTycon = layoutPrettyTycon,
+                                         layoutPrettyTyvar = layoutPrettyTyvar})
                               in
                                  Control.warning
                                  (Avar.region x,
                                   seq [str "type of variable was not inferred and could not be generalized: ",
                                        Avar.layout x],
-                                  align [seq [str "type: ", Scheme.layoutPretty s],
+                                  align [seq [str "type: ", lay],
                                          ctxt ()])
                               end
                         else ()))
@@ -2028,7 +2066,7 @@ fun elaborateDec (d, {env = E, nest}) =
                             (E,
                              fn () => elabDatBind (datBind, nest),
                              fn z => (z, elabDec (body, isTop)))
-                         val _ =
+                         val () =
                             Vector.foreach
                             (strs, fn {tycon, typeStr} =>
                              Env.extendTycon (E, tycon, TypeStr.abs typeStr,
@@ -2051,10 +2089,12 @@ fun elaborateDec (d, {env = E, nest}) =
                                           case TypeStr.node s of
                                              TypeStr.Datatype _ => true
                                            | _ => false
+                                       val () =
+                                          Env.extendTycon (E, lhs, s,
+                                                           {forceUsed = forceUsed,
+                                                            isRebind = false})
                                     in
-                                       Env.extendTycon (E, lhs, s,
-                                                        {forceUsed = forceUsed,
-                                                         isRebind = false})
+                                       ()
                                     end)
                              in
                                 Decs.empty
@@ -2062,13 +2102,8 @@ fun elaborateDec (d, {env = E, nest}) =
                  | Adec.DoDec exp =>
                       let
                          val _ = check (ElabControl.allowDoDecls, "do declarations", Adec.region d)
-                         val elaboratePat = elaboratePat ()
-                         val pat = Apat.wild
-                         val (pat, _) =
-                            elaboratePat (pat, E, {bind = false,
-                                                   isRvb = false}, preError)
+                         val {unify, ...} = DiagUtils.make E
                          val exp' = elabExp (exp, nest, NONE)
-                         val bound = fn () => Vector.new0 ()
                          val _ =
                             unify
                             (Cexp.ty exp', Type.unit, fn (l1, _) =>
@@ -2080,13 +2115,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                    exp = exp',
                                    layPat = fn _ => empty,
                                    nest = nest,
-                                   pat = pat,
+                                   pat = Cpat.wild Type.unit,
                                    regionPat = Region.bogus}
                       in
                          Decs.single
                          (Cdec.Val {matchDiags = matchDiagsFromNoMatch Cexp.Impossible,
                                     rvbs = Vector.new0 (),
-                                    tyvars = bound,
+                                    tyvars = Vector.new0,
                                     vbs = Vector.new1 vb})
                       end
                  | Adec.Exception ebs =>
@@ -2143,6 +2178,8 @@ fun elaborateDec (d, {env = E, nest}) =
                          TyvarEnv.scope
                          (tyvars, fn tyvars' =>
                           let
+                             val {layoutPrettyType, layoutPrettyTycon, layoutPrettyTyvar, unify} =
+                                DiagUtils.make E
                              val {markFunc, setBound, unmarkFunc} = recursiveFun ()
                              val fbs =
                                 Vector.map2
@@ -2265,8 +2302,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                      elaboratePat
                                                      (pat, E,
                                                       {bind = false,
-                                                       isRvb = false},
-                                                      preError)
+                                                       isRvb = false})
                                                   val _ =
                                                      unify
                                                      (Vector.sub (argTys, i), Cpat.ty pat, fn (l1, l2) =>
@@ -2476,8 +2512,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = funTy,
                                    var = func}),
                                  {error = generalizeError,
-                                  makeLayoutPrettyTyvar = TyvarEnv.makeLayoutPretty,
-                                  preError = preError})
+                                  layoutPrettyType = layoutPrettyType,
+                                  layoutPrettyTycon = layoutPrettyTycon,
+                                  layoutPrettyTyvar = layoutPrettyTyvar})
                              val _ =
                                 checkSchemes
                                 (Vector.zip
@@ -2504,10 +2541,15 @@ fun elaborateDec (d, {env = E, nest}) =
                           end)
                       end
                  | Adec.Local (d, d') =>
-                      Env.localCore
-                      (E,
-                       fn () => elabDec (d, false),
-                       fn decs => Decs.append (decs, elabDec (d', isTop)))
+                      let
+                         val res =
+                            Env.localCore
+                            (E,
+                             fn () => elabDec (d, false),
+                             fn decs => Decs.append (decs, elabDec (d', isTop)))
+                      in
+                         res
+                      end
                  | Adec.Open paths =>
                       let
                          (* The following code is careful to first lookup all of the
@@ -2526,54 +2568,56 @@ fun elaborateDec (d, {env = E, nest}) =
                  | Adec.Overload (p, x, tyvars, ty, xs) =>
                       TyvarEnv.scope
                       (tyvars, fn tyvars' =>
-                       (check (ElabControl.allowOverload, "_overload", region)
-                        ; let
-                             (* Lookup the overloads before extending the var in case
-                              * x appears in the xs.
-                              *)
-                             val ovlds =
-                                Vector.concatV
-                                (Vector.map
-                                 (xs, fn x =>
-                                  case Env.lookupLongvid (E, x) of
-                                     NONE => Vector.new0 ()
-                                   | SOME (Vid.Var v, t) =>
-                                        Vector.new1 (Longvid.region x, (v, t))
-                                   | SOME (Vid.Overload (_, vs), _) =>
-                                        Vector.map (vs, fn vt => (Longvid.region x, vt))
-                                   | _ =>
-                                        (Control.error
-                                         (Longvid.region x,
-                                          str "cannot overload",
-                                          seq [str "constructor: ", Longvid.layout x])
-                                         ; Vector.new0 ())))
-                             val s =
-                                Scheme.make {canGeneralize = false,
-                                             tyvars = tyvars',
-                                             ty = elabType (ty, {bogusAsUnknown = false})}
-                             val _ =
-                                Vector.foreach
-                                (ovlds,
-                                 fn (r, (_, s')) => let
-                                       val is = Scheme.instantiate s
-                                       val is' = Scheme.instantiate s'
-                                    in
-                                       unify
-                                       (#instance is,
-                                        #instance is',
-                                        fn (l1, l2) =>
-                                           (r,
-                                            str "variant does not unify with overload",
-                                            align [seq [str "overload: ", l1],
-                                                   seq [str "variant:  ", l2],
-                                                   ctxt ()]))
-                                    end)
-                             val _ =
-                                Env.extendOverload
-                                (E, p, x, Vector.map (ovlds, fn (_, vt) => vt), s)
-                          in
-                             Decs.empty
-                          end))
+                       let
+                          val {unify, ...} = DiagUtils.make E
+                          val () = check (ElabControl.allowOverload, "_overload", region)
+                          (* Lookup the overloads before extending the var in case
+                           * x appears in the xs.
+                           *)
+                          val ovlds =
+                             Vector.concatV
+                             (Vector.map
+                              (xs, fn x =>
+                               case Env.lookupLongvid (E, x) of
+                                  NONE => Vector.new0 ()
+                                | SOME (Vid.Var v, t) =>
+                                     Vector.new1 (Longvid.region x, (v, t))
+                                | SOME (Vid.Overload (_, vs), _) =>
+                                     Vector.map (vs, fn vt => (Longvid.region x, vt))
+                                | _ =>
+                                     (Control.error
+                                      (Longvid.region x,
+                                       str "cannot overload",
+                                       seq [str "constructor: ", Longvid.layout x])
+                                      ; Vector.new0 ())))
+                          val s =
+                             Scheme.make {canGeneralize = false,
+                                          tyvars = tyvars',
+                                          ty = elabType (ty, {bogusAsUnknown = false})}
+                          val _ =
+                             Vector.foreach
+                             (ovlds,
+                              fn (r, (_, s')) =>
+                              let
+                                 val is = Scheme.instantiate s
+                                 val is' = Scheme.instantiate s'
+                              in
+                                 unify
+                                 (#instance is,
+                                  #instance is',
+                                  fn (l1, l2) =>
+                                  (r,
+                                   str "variant does not unify with overload",
+                                   align [seq [str "overload: ", l1],
+                                          seq [str "variant:  ", l2],
+                                          ctxt ()]))
+                              end)
+                          val _ =
+                             Env.extendOverload
+                             (E, p, x, Vector.map (ovlds, fn (_, vt) => vt), s)
+                       in
+                          Decs.empty
+                       end)
                  | Adec.SeqDec ds =>
                       Vector.fold (ds, Decs.empty, fn (d, decs) =>
                                    Decs.append (decs, elabDec (d, isTop)))
@@ -2587,6 +2631,8 @@ fun elaborateDec (d, {env = E, nest}) =
                          TyvarEnv.scope
                          (tyvars, fn tyvars' =>
                           let
+                             val {layoutPrettyType, layoutPrettyTycon, layoutPrettyTyvar, unify} =
+                                DiagUtils.make E
                              val {vbs = layVbs, rvbs = layRvbs} =
                                 Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
                              (* Must do all the es and rvbs before the ps because of
@@ -2637,9 +2683,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                        seq [str "in: ", approximate (layRvb ())]
                                     val regionPat = Apat.region pat
                                     val (pat, bound) =
-                                       elaboratePat (pat, E, {bind = false,
-                                                              isRvb = true},
-                                                     preError)
+                                       elaboratePat (pat, E, {bind = false, isRvb = true})
                                     val (nest, var) =
                                        if Vector.length bound = 1
                                           andalso (Type.isUnknown (Cpat.ty pat)
@@ -2682,9 +2726,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                  fn {ctxtVb, exp, layPat, pat, regionExp, regionPat, ...} =>
                                  let
                                     val (pat, bound) =
-                                       elaboratePat (pat, E, {bind = false,
-                                                              isRvb = false},
-                                                     preError)
+                                       elaboratePat (pat, E, {bind = false, isRvb = false})
                                     val _ =
                                        unify
                                        (Cpat.ty pat, Cexp.ty exp, fn (p, e) =>
@@ -2706,7 +2748,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 (rvbs, fn {bound, ctxtRvb, match, nest, pat, patIsConstrained, regionPat, var, ...} =>
                                  let
                                     val {argType, region, resultType, rules} =
-                                       elabMatch (match, preError, nest)
+                                       elabMatch (match, nest)
                                     fun check () =
                                        unify
                                        (Cpat.ty pat,
@@ -2778,8 +2820,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = ty,
                                    var = var}),
                                  {error = generalizeError,
-                                  makeLayoutPrettyTyvar = TyvarEnv.makeLayoutPretty,
-                                  preError = preError})
+                                  layoutPrettyType = layoutPrettyType,
+                                  layoutPrettyTycon = layoutPrettyTycon,
+                                  layoutPrettyTyvar = layoutPrettyTyvar})
                              val _ =
                                 checkSchemes
                                 (Vector.zip
@@ -2833,26 +2876,31 @@ fun elaborateDec (d, {env = E, nest}) =
           in
              decs
           end) arg
-      and elabExp (arg: Aexp.t * Nest.t * string option): Cexp.t =
+      and elabExp (arg: Aexp.t * Nest.t * string option) : Cexp.t =
          Trace.traceInfo
          (elabExpInfo,
-          Layout.tuple3 (Aexp.layout, Nest.layout, Layout.ignore),
+          Layout.tuple3
+          (Aexp.layout,
+           Nest.layout,
+           Option.layout String.layout),
           Cexp.layoutWithType,
           Trace.assertTrue)
          (fn (e: Aexp.t, nest, maybeName) =>
           let
-             val preError = Promise.lazy (fn () => Env.setTyconLayoutPretty (E, {prefixUnset = true}))
-             val unify = fn (t, t', f) => unify (t, t', preError, f)
-             fun ctxt () = seq [str "in: ", approximate (Aexp.layout e)]
-             val unify =
-                fn (a, b, f) => unify (a, b, fn z =>
-                                       let
-                                          val (r, l, l') = f z
-                                       in
-                                          (r, l, align [l', ctxt ()])
-                                       end)
-             val region = Aexp.region e
              fun elab e = elabExp (e, nest, NONE)
+             val {layoutPrettyType, layoutPrettyTycon, layoutPrettyTyvar, unify} =
+                DiagUtils.make E
+             val layoutPrettyTypeBracket = fn ty =>
+                seq [str "[", #1 (layoutPrettyType ty), str "]"]
+             fun ctxt () = seq [str "in: ", approximate (Aexp.layout e)]
+             val unify = fn (a, b, f) =>
+                unify (a, b, fn z =>
+                       let
+                          val (r, m, d) = f z
+                       in
+                          (r, m, align [d, ctxt ()])
+                       end)
+             val region = Aexp.region e
           in
              case Aexp.node e of
                 Aexp.Andalso (el, er) =>
@@ -2918,7 +2966,7 @@ fun elaborateDec (d, {env = E, nest}) =
               | Aexp.Case (e, m) =>
                    let
                       val e = elab e
-                      val {argType, rules, ...} = elabMatch (m, preError, nest)
+                      val {argType, rules, ...} = elabMatch (m, nest)
                       val _ =
                          unify
                          (Cexp.ty e, argType, fn (l1, l2) =>
@@ -2939,10 +2987,10 @@ fun elaborateDec (d, {env = E, nest}) =
               | Aexp.Const c =>
                    elabConst
                    (c,
+                    {layoutPrettyType = #1 o layoutPrettyType},
                     fn (resolve, ty) => Cexp.make (Cexp.Const resolve, ty),
                     {false = Cexp.falsee,
-                     true = Cexp.truee},
-                    preError)
+                     true = Cexp.truee})
               | Aexp.Constraint (e, t') =>
                    let
                       val e = elab e
@@ -2958,15 +3006,16 @@ fun elaborateDec (d, {env = E, nest}) =
                       Cexp.make (Cexp.node e, t')
                    end
               | Aexp.FlatApp items => elab (Parse.parseExp (items, E, ctxt))
-              | Aexp.Fn m =>
+              | Aexp.Fn match =>
                    let
                       val nest =
                          case maybeName of
                             NONE => "fn" :: nest
                           | SOME s => s :: nest
                       val {arg, argType, body} =
-                         elabMatchFn (m, preError, nest,
-                                      ctxt, ("function", "rule"), Cexp.RaiseMatch)
+                         elabMatchFn
+                         (match, nest, ctxt,
+                          ("function", "rule"), Cexp.RaiseMatch)
                       val body =
                          Cexp.enterLeave
                          (body,
@@ -2984,8 +3033,9 @@ fun elaborateDec (d, {env = E, nest}) =
                    let
                       val try = elab try
                       val {arg, argType, body} =
-                         elabMatchFn (match, preError, nest,
-                                      ctxt, ("handler", "rule"), Cexp.RaiseAgain)
+                         elabMatchFn
+                         (match, nest, ctxt,
+                          ("handler", "rule"), Cexp.RaiseAgain)
                       val _ =
                          unify
                          (Cexp.ty try, Cexp.ty body, fn (l1, l2) =>
@@ -3041,47 +3091,55 @@ fun elaborateDec (d, {env = E, nest}) =
                       Cexp.iff (a', b', c')
                    end
               | Aexp.Let (d, e) =>
-                   Env.scope
-                   (E, fn () =>
-                    let
-                       val time = Time.now ()
-                       val d' = Decs.toVector (elabDec (d, nest, false))
-                       val e' = elab e
-                       val ty = Cexp.ty e'
-                       val ty =
-                          case Type.checkTime (ty, time, {preError = preError}) of
-                             NONE => ty
-                           | SOME (lay, ty, {tycons, ...}) =>
-                                let
-                                   val tycons =
-                                      List.map
-                                      (tycons, fn c =>
-                                       (c, Tycon.layoutPretty c))
-                                   val tycons =
-                                      List.insertionSort
-                                      (tycons, fn ((_, l1), (_, l2)) =>
-                                       String.<= (Layout.toString l1,
-                                                  Layout.toString l2))
-                                   val _ =
-                                      Control.error
-                                      (region,
-                                       seq [str "type of let has ",
-                                            if List.length tycons > 1
-                                               then str "local types that would escape their scope: "
-                                               else str "local type that would escape its scope: ",
-                                            seq (Layout.separate (List.map (tycons, #2), ", "))],
-                                       align [seq [str "type: ", lay],
-                                              (align o List.map)
-                                              (tycons, fn (c, _) =>
-                                               seq [str "escape from: ",
-                                                    Region.layout (Tycon.region c)]),
-                                              ctxt ()])
-                                in
-                                   ty
-                                end
-                    in
-                       Cexp.make (Cexp.Let (d', e'), ty)
-                    end)
+                   let
+                      val res =
+                         Env.scope
+                         (E, fn () =>
+                          let
+                             val time = Time.now ()
+                             val d' = Decs.toVector (elabDec (d, nest, false))
+                             val e' = elab e
+                             val ty = Cexp.ty e'
+                             val ty =
+                                case Type.checkTime (ty, time,
+                                                     {layoutPretty = layoutPrettyType,
+                                                      layoutPrettyTycon = layoutPrettyTycon,
+                                                      layoutPrettyTyvar = layoutPrettyTyvar}) of
+                                   NONE => ty
+                                 | SOME (lay, ty, {tycons, ...}) =>
+                                      let
+                                         val tycons =
+                                            List.map
+                                            (tycons, fn c =>
+                                             (c, layoutPrettyTycon c))
+                                         val tycons =
+                                            List.insertionSort
+                                            (tycons, fn ((_, l1), (_, l2)) =>
+                                             String.<= (Layout.toString l1,
+                                                        Layout.toString l2))
+                                         val _ =
+                                            Control.error
+                                            (region,
+                                             seq [str "type of let has ",
+                                                  if List.length tycons > 1
+                                                     then str "local types that would escape their scope: "
+                                                     else str "local type that would escape its scope: ",
+                                                  seq (Layout.separate (List.map (tycons, #2), ", "))],
+                                             align [seq [str "type: ", lay],
+                                                    (align o List.map)
+                                                    (tycons, fn (c, _) =>
+                                                     seq [str "escape from: ",
+                                                          Region.layout (Tycon.region c)]),
+                                                    ctxt ()])
+                                      in
+                                         ty
+                                      end
+                          in
+                             Cexp.make (Cexp.Let (d', e'), ty)
+                          end)
+                   in
+                      res
+                   end
               | Aexp.List es =>
                    let
                       val es' = Vector.map (es, elab)
@@ -3090,7 +3148,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                  unifyList
                                  (Vector.map2 (es, es', fn (e, e') =>
                                                (Cexp.ty e', Aexp.region e)),
-                                  preError, ctxt))
+                                  unify))
                    end
               | Aexp.Orelse (el, er) =>
                    let
@@ -3262,7 +3320,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                         elabedTy = elabedTy,
                                         expandedTy = expandedTy,
                                         name = name,
-                                        region = region}
+                                        region = region,
+                                        layoutPrettyType = #1 o layoutPrettyType}
                             end
                        | BuildConst {name, ty} =>
                             let
@@ -3287,13 +3346,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                val value =
                                   elabConst
                                   (value,
+                                   {layoutPrettyType = #1 o layoutPrettyType},
                                    fn (resolve, _) =>
                                    case resolve () of
                                       Const.Word w =>
                                          IntInf.toString (WordX.toIntInf w)
                                     | c => Const.toString c,
-                                   {false = "false", true = "true"},
-                                   preError)
+                                   {false = "false", true = "true"})
                             in
                                lookConst {default = SOME value,
                                           elabedTy = elabedTy,
@@ -3323,7 +3382,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                   Control.error
                                   (region,
                                    str "invalid type for _export",
-                                   Type.layoutPretty elabedTy)
+                                   #1 (layoutPrettyType elabedTy))
                                val (expandedCfTy, elabedExportTy) =
                                   Exn.withEscape
                                   (fn escape =>
@@ -3358,7 +3417,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                     elabedTy = elabedTy,
                                                     expandedTy = expandedCfTy,
                                                     name = name,
-                                                    region = region})))
+                                                    region = region,
+                                                    layoutPrettyType = #1 o layoutPrettyType})))
                                val _ =
                                   unify
                                   (Cexp.ty exp,
@@ -3381,7 +3441,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                   Control.error
                                   (region,
                                    str "invalid type for _import",
-                                   Type.layoutPretty elabedTy)
+                                   #1 (layoutPrettyType elabedTy))
                                val (expandedFPtrTy, expandedCfTy) =
                                   Exn.withEscape
                                   (fn escape =>
@@ -3414,7 +3474,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                                 name = NONE,
                                                                 region = region,
                                                                 elabedTy = elabedTy,
-                                                                expandedTy = expandedCfTy}},
+                                                                expandedTy = expandedCfTy,
+                                                                layoutPrettyType = #1 o layoutPrettyType}},
                                  mayInline = true},
                                 elabedTy)
                             end
@@ -3431,7 +3492,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                     name = SOME name,
                                                     region = region,
                                                     elabedTy = elabedTy,
-                                                    expandedTy = expandedTy}})
+                                                    expandedTy = expandedTy,
+                                                    layoutPrettyType = #1 o layoutPrettyType}})
                             end
                        | ISymbol {ty} =>
                             let
@@ -3442,7 +3504,8 @@ fun elaborateDec (d, {env = E, nest}) =
                             in
                                symbolIndirect {elabedTy = elabedTy,
                                                expandedTy = expandedTy,
-                                               region = region}
+                                               region = region,
+                                               layoutPrettyType = #1 o layoutPrettyType}
                             end
                        | Prim {name, ty} =>
                             let
@@ -3477,7 +3540,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                              elabedTy = elabedTy,
                                              expandedTy = expandedTy,
                                              name = name,
-                                             region = region}
+                                             region = region,
+                                             layoutPrettyType = #1 o layoutPrettyType}
                             end
                    end
               | Aexp.Raise exn =>
@@ -3516,27 +3580,23 @@ fun elaborateDec (d, {env = E, nest}) =
                       (* Diagnose expressions before a ; that don't return unit. *)
                       val _ =
                          let
+                            (* Technically, wrong scope for region;
+                             * but saving environment would probably
+                             * be expensive.
+                             *)
                             fun doit f =
                                List.push
                                (sequenceNonUnitChecks, fn () =>
-                                Vector.foreachi
-                                (es', fn (i, e') =>
+                                Vector.foreachi2
+                                (es, es', fn (i, e, e') =>
                                  if i = last
+                                    orelse Type.isUnit (Cexp.ty e')
                                     then ()
-                                    else let
-                                            val ty = Cexp.ty e'
-                                         in
-                                            if Type.isUnit ty
-                                               then ()
-                                               else let
-                                                       val e = Vector.sub (es, i)
-                                                    in
-                                                       f (Aexp.region e,
-                                                          str "sequence expression not of type unit",
-                                                          align [seq [str "type: ", Type.layoutPrettyBracket ty],
-                                                                 seq [str "in: ", approximate (Aexp.layout e)]])
-                                                    end
-                                         end))
+                                    else f (Aexp.region e,
+                                            str "sequence expression not of type unit",
+                                            align [seq [str "type: ",
+                                                        layoutPrettyTypeBracket (Cexp.ty e')],
+                                                   seq [str "in: ", approximate (Aexp.layout e)]])))
                          in
                             case sequenceNonUnit () of
                                Control.Elaborate.DiagEIW.Error => doit Control.error
@@ -3579,12 +3639,16 @@ fun elaborateDec (d, {env = E, nest}) =
                                                      end) of
                                                   NONE =>
                                                      let
+                                                        (* Technically, wrong scope for region;
+                                                         * but saving environment would probably
+                                                         * be expensive.
+                                                         *)
                                                         val _ =
                                                            Control.error
                                                            (region,
                                                             seq [str "variable not overloaded at type: ",
                                                                  str (Longvid.toString id)],
-                                                            seq [str "type: ", Type.layoutPretty instance])
+                                                            seq [str "type: ", #1 (layoutPrettyType instance)])
                                                      in
                                                         {id = Var.newNoname (),
                                                          args = Vector.new0 ()}
@@ -3617,7 +3681,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                  unifyVector
                                  (Vector.map2 (es, es', fn (e, e') =>
                                                (Cexp.ty e', Aexp.region e)),
-                                  preError, ctxt))
+                                  unify))
                    end
               | Aexp.While {expr, test} =>
                    let
@@ -3632,18 +3696,19 @@ fun elaborateDec (d, {env = E, nest}) =
                       (* Diagnose if expr is not of type unit. *)
                       val _ =
                          let
+                            (* Technically, wrong scope for region;
+                             * but saving environment would probably
+                             * be expensive.
+                             *)
                             fun doit f =
                                List.push
                                (sequenceNonUnitChecks, fn () =>
-                                let
-                                   val ty = Cexp.ty expr'
-                                in
-                                   if Type.isUnit ty
-                                      then ()
-                                      else f (Aexp.region expr,
-                                              str "while body not of type unit",
-                                              seq [str "body: ", Type.layoutPrettyBracket ty])
-                                end)
+                                if Type.isUnit (Cexp.ty expr')
+                                   then ()
+                                   else f (Aexp.region expr,
+                                           str "while body not of type unit",
+                                           seq [str "body: ",
+                                                layoutPrettyTypeBracket (Cexp.ty expr')]))
                          in
                             case sequenceNonUnit () of
                                Control.Elaborate.DiagEIW.Error => doit Control.error
@@ -3654,10 +3719,10 @@ fun elaborateDec (d, {env = E, nest}) =
                       Cexp.whilee {expr = expr', test = test'}
                    end
           end) arg
-      and elabMatchFn (m: Amatch.t, preError, nest, ctxt, kind, noMatch) =
+      and elabMatchFn (m: Amatch.t, nest, ctxt, kind, noMatch) =
          let
             val arg = Var.newNoname ()
-            val {argType, region, rules, ...} = elabMatch (m, preError, nest)
+            val {argType, region, rules, ...} = elabMatch (m, nest)
             val body =
                Cexp.casee {ctxt = ctxt,
                            kind = kind,
@@ -3672,10 +3737,18 @@ fun elaborateDec (d, {env = E, nest}) =
             argType = argType,
             body = body}
          end
-      and elabMatch (m: Amatch.t, preError, nest: Nest.t) =
+      and elabMatch (m: Amatch.t, nest: Nest.t) =
          let
+            val {unify, ...} = DiagUtils.make E
             fun ctxt () =
                seq [str "in: ", approximate (Amatch.layout m)]
+            val unify = fn (a, b, f) =>
+               unify (a, b, fn z =>
+                      let
+                         val (r, m, d) = f z
+                      in
+                         (r, m, align [d, ctxt ()])
+                      end)
             val region = Amatch.region m
             val Amatch.T rules = Amatch.node m
             val argType = Type.new ()
@@ -3689,26 +3762,23 @@ fun elaborateDec (d, {env = E, nest}) =
                     fun layPat () = approximate (Apat.layout pat)
                     val patOrig = pat
                     val (pat, _) =
-                       elaboratePat () (pat, E, {bind = true, isRvb = false},
-                                        preError)
+                       elaboratePat () (pat, E, {bind = true, isRvb = false})
                     val _ =
                        unify
-                       (Cpat.ty pat, argType, preError, fn (l1, l2) =>
+                       (Cpat.ty pat, argType, fn (l1, l2) =>
                         (Apat.region patOrig,
                          str "rule with pattern of different type",
                          align [seq [str "pattern:  ", l1],
-                                seq [str "previous: ", l2],
-                                ctxt ()]))
+                                seq [str "previous: ", l2]]))
                     val expOrig = exp
                     val exp = elabExp (exp, nest, NONE)
                     val _ =
                        unify
-                       (Cexp.ty exp, resultType, preError, fn (l1, l2) =>
+                       (Cexp.ty exp, resultType, fn (l1, l2) =>
                         (Aexp.region expOrig,
                          str "rule with result of different type",
                          align [seq [str "result:   ", l1],
-                                seq [str "previous: ", l2],
-                                ctxt ()]))
+                                seq [str "previous: ", l2]]))
                     val exp =
                        Cexp.enterLeave
                        (exp,
