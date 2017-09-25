@@ -74,7 +74,7 @@ pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
  *
  * Copy l elements of as starting at ss to ad starting at as.
  */
-void GC_arrayCopy (GC_state s, pointer ad, GC_arrayLength ds, pointer as, GC_arrayLength ss, GC_arrayLength l) {
+void GC_arrayCopy (GC_state s, pointer ad, size_t ds, pointer as, size_t ss, size_t l) {
   GC_header header;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
