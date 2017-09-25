@@ -27,7 +27,7 @@ fun ('down, 'up)
                 bindType: ('down * Tyvar.t vector
                            -> 'down * ('up -> 'up)),
                 (* bindFunVal is used at fun, overload, and val declarations. *)
-                bindFunVal: ('down * Tyvar.t vector
+                bindFunVal: ('down * Tyvar.t vector * Region.t
                              -> ('down * ('up -> Tyvar.t vector * 'up))),
                 combineUp: 'up * 'up -> 'up,
                 initDown: 'down,
@@ -224,7 +224,7 @@ fun ('down, 'up)
              | Fix _ => empty ()
              | Fun {tyvars, fbs} =>
                   let
-                     val (down, finish) = bindFunVal (down, tyvars)
+                     val (down, finish) = bindFunVal (down, tyvars, Dec.region d)
                      val (fbs, u) =
                         loops (fbs, fn clauses =>
                                let
@@ -256,7 +256,7 @@ fun ('down, 'up)
              | Open _ => empty ()
              | Overload (i, x, tyvars, ty, ys) =>
                   let
-                     val (down, finish) = bindFunVal (down, tyvars)
+                     val (down, finish) = bindFunVal (down, tyvars, Dec.region d)
                      val up = visitTy (ty, down)
                      val (tyvars, up) = finish up
                   in
@@ -271,7 +271,7 @@ fun ('down, 'up)
                   end
              | Val {rvbs, tyvars, vbs} =>
                   let
-                     val (down, finish) = bindFunVal (down, tyvars)
+                     val (down, finish) = bindFunVal (down, tyvars, Dec.region d)
                      val (rvbs, u) =
                         loops (rvbs, fn {match, pat} =>
                                let
@@ -389,12 +389,11 @@ fun ('down, 'up)
 
 fun scope (dec: Dec.t): Dec.t =
    let
-      fun bindFunVal ((), tyvars) =
+      fun bindFunVal ((), tyvars, regionDec) =
          let
             fun finish {free, mayNotBind} =
                let
-                  val bound =
-                     Tyvars.+ (free, Tyvars.fromVector tyvars)
+                  val bound = Tyvars.+ (free, Tyvars.fromVector tyvars)
                   val mayNotBind =
                      List.keepAll
                      (mayNotBind, fn a =>
@@ -407,7 +406,7 @@ fun scope (dec: Dec.t): Dec.t =
                             (Tyvar.region a,
                              seq [str "type variable scoped at an outer declaration: ",
                                   Tyvar.layout a],
-                             empty)
+                             seq [str "scoped at: ", Region.layout regionDec])
                       in
                          false
                       end)
@@ -445,7 +444,7 @@ fun scope (dec: Dec.t): Dec.t =
       (* Walk down and bind a tyvar as soon as you see it, removing
        * all lower binding occurrences of the tyvar.
        *)
-      fun bindFunVal (bound, tyvars: Tyvar.t vector) =
+      fun bindFunVal (bound, tyvars: Tyvar.t vector, _) =
          let
             val tyvars =
                Vector.keepAll
