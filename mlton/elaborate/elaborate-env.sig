@@ -82,6 +82,7 @@ signature ELABORATE_ENV =
                Datatype of {cons: Cons.t,
                             tycon: Tycon.t}
              | Scheme of Scheme.t
+             | Tycon of Tycon.t
 
             val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t

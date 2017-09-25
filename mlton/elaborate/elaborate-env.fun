@@ -398,6 +398,7 @@ structure TypeStr =
          Datatype of {cons: Cons.t,
                       tycon: Tycon.t}
        | Scheme of Scheme.t
+       | Tycon of Tycon.t
       type t = node
 
       val node = fn s => s
@@ -406,6 +407,7 @@ structure TypeStr =
          case node s of
             Datatype {tycon, ...} => Tycon.kind tycon
           | Scheme s => Scheme.kind s
+          | Tycon c => Tycon.kind c
 
       fun layout t =
          let
@@ -417,6 +419,7 @@ structure TypeStr =
                        record [("tycon", Tycon.layout tycon),
                                ("cons", Cons.layout cons)]]
              | Scheme s => Scheme.layout s
+             | Tycon c => seq [str "Tycon ", Tycon.layout c]
          end
 
       fun admitsEquality (s: t): AdmitsEquality.t =
@@ -425,6 +428,7 @@ structure TypeStr =
           | Scheme s => if Scheme.admitsEquality s
                            then AdmitsEquality.Sometimes
                         else AdmitsEquality.Never
+          | Tycon c => ! (Tycon.admitsEquality c)
 
       fun explainDoesNotAdmitEquality (s: t, layoutPretty): Layout.t =
          case node s of
@@ -452,11 +456,14 @@ structure TypeStr =
                end
           | Scheme s =>
                Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s), layoutPretty)
+          | Tycon c =>
+               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate (Scheme.fromTycon c)), layoutPretty)
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
+          | Tycon c => Type.con (c, tys)
 
       fun toTyconOpt s =
          case node s of
@@ -473,13 +480,14 @@ structure TypeStr =
                          then NONE
                          else SOME c
                end
+          | Tycon c => SOME c
 
       fun data (tycon, cons) =
          Datatype {tycon = tycon, cons = cons}
 
       val def = Scheme
 
-      fun tycon c = def (Scheme.fromTycon c)
+      val tycon = Tycon
 
       fun abs t =
          case node t of
@@ -665,6 +673,7 @@ structure Interface =
                            Cons.fromEnv cons,
                            true)
                 | EtypeStr.Scheme s => def (Scheme.fromEnv s)
+                | EtypeStr.Tycon c => def (Scheme.fromTycon (Tycon.fromEnv c))
 
             structure Sort =
                struct
@@ -680,16 +689,21 @@ structure Interface =
                      Sort.Datatype {tycon = rlzTycon, cons = rlzCons, repl = true}
                 | (false, Datatype _, EtypeStr.Scheme _) =>
                      Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = false, sigStr = Datatype _, rlzStr = Scheme _}"
+                | (false, Datatype _, EtypeStr.Tycon _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = false, sigStr = Datatype _, rlzStr = Tycon _}"
                 | (false, _, rlzStr) =>
-                     (case rlzStr of
-                         EtypeStr.Datatype {tycon, ...} =>
-                            Sort.Scheme (Escheme.fromTycon tycon)
-                       | EtypeStr.Scheme s =>
-                            Sort.Scheme s)
+                     Sort.Scheme (case rlzStr of
+                                     EtypeStr.Datatype {tycon, ...} =>
+                                        Escheme.fromTycon tycon
+                                   | EtypeStr.Scheme s => s
+                                   | EtypeStr.Tycon c =>
+                                        Escheme.fromTycon c)
                 | (true, Datatype {repl = false, ...}, EtypeStr.Datatype {tycon = rlzTycon, cons = rlzCons}) =>
                      Sort.Datatype {tycon = rlzTycon, cons = rlzCons, repl = false}
                 | (true, Datatype {repl = false, ...}, EtypeStr.Scheme _) =>
                      Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Datatype {repl = false, ...}, rlzStr = Scheme _}"
+                | (true, Datatype {repl = false, ...}, EtypeStr.Tycon _) =>
+                     Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Datatype {repl = false, ...}, rlzStr = Tycon _}"
                 | (true, Datatype {repl = true, ...}, _) =>
                      Error.bug "ElaborateEnv.Interface.TypeStr.sort: {repr = true, sigStr = Datatype {repl = true, ...}}"
                 | (true, Scheme _, _) =>
@@ -2998,6 +3012,7 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
                                 (tycon, fixCons (cs, cs'))
                            | _ => s')
                     | Scheme _ => s'
+                    | Tycon _ => s'
                 end)
             val vals =
                Info.map2 
@@ -3326,6 +3341,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                               case TypeStr.node strStr of
                                  TypeStr.Datatype _ => "datatype"
                                | TypeStr.Scheme _ => "type"
+                               | TypeStr.Tycon _ => "type"
                         in
                            seq [if b then bracket (str kw) else str kw,
                                 layoutTyvars strTyvars,
@@ -3396,6 +3412,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                             end
                                        | TypeStr.Scheme s =>
                                             chkScheme s
+                                       | TypeStr.Tycon c =>
+                                            chkScheme (Scheme.fromTycon c)
                                 in
                                    rlzStr
                                 end
@@ -3429,6 +3447,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
+                                    | TypeStr.Tycon strTycon =>
+                                         nonDatatype (Scheme.fromTycon strTycon)
                                 end
                            | Datatype {repl = false, cons = sigCons, ...} =>
                                 let
@@ -3538,6 +3558,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          end
                                     | TypeStr.Scheme strScheme =>
                                          nonDatatype strScheme
+                                    | TypeStr.Tycon strTycon =>
+                                         nonDatatype (Scheme.fromTycon strTycon)
                                 end
                        val () = reportError ()
                     in
@@ -3945,13 +3967,15 @@ fun functorClosure
                                  NONE => tycon
                                | SOME s =>
                                     (case TypeStr.toTyconOpt s of
-                                        SOME c => c
-                                      | _ =>
-                                           Error.bug "ElaborateEnv.functorClosure.apply: bad datatype")
+                                        NONE => Error.bug "ElaborateEnv.functorClosure.apply: bad datatype"
+                                      | SOME c => c)
                         in
                            TypeStr.data (tycon, replaceCons cons)
                         end
                    | Scheme s => TypeStr.def (replaceScheme s)
+                   | Tycon c => (case tyconTypeStr c of
+                                    NONE => s
+                                  | SOME s' => s')
                end
             val {destroy = destroy2,
                  get = replacement: Structure.t -> Structure.t, ...} =
