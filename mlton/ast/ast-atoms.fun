@@ -273,7 +273,7 @@ structure Type =
                else layoutApp (Longtycon.layout c, tys, layout)
           | Paren t => layout t
           | Record r => Record.layout {record = r,
-                                       separator = ":", extra = "",
+                                       separator = ": ", extra = "",
                                        layoutElt = layout o #2,
                                        layoutTuple = fn rtys => layoutTupleTy (Vector.map (rtys, #2))}
       and layoutTupleTy tys =
