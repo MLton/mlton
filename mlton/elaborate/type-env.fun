@@ -279,6 +279,7 @@ structure Equality:>
       val applyTycon: Tycon.t * t vector -> t
       val falsee: t
       val fromBool: bool -> t
+      val or2: t * t -> t
       val toBoolOpt: t -> bool option
       val truee: t
       val unify: t * t -> bool
@@ -355,6 +356,46 @@ structure Equality:>
                             when (e, fn b =>
                                   if b then unify (e', e'')
                                   else set (e'', false))
+                         val _ = dep (e, e')
+                         val _ = dep (e', e)
+                      in
+                         e''
+                      end)
+
+      fun or2 (e, e') =
+         case (e, e') of
+            (False, _) => e'
+          | (_, False) => e
+          | (True, _) => True
+          | (_, True) => True
+          | (Lazy th, e') => Lazy (fn () => or2 (th (), e'))
+          | (e, Lazy th') => Lazy (fn () => or2 (e, th' ()))
+          | (Maybe r, Maybe r') =>
+               (case (!r, !r') of
+                   (Known false, _) => e'
+                 | (_, Known false) => e
+                 | (Known true, _) => True
+                 | (_, Known true) => True
+                 | (Unknown _, Unknown _) =>
+                      let
+                         val e'' = unknown ()
+                         val _ =
+                            when
+                            (e'', fn b =>
+                             if not b
+                                then set (e, false) andalso set (e', false)
+                             else
+                                let
+                                   fun dep (e, e') =
+                                      when (e, fn b =>
+                                            b orelse set (e', true))
+                                in
+                                   dep (e, e') andalso dep (e', e)
+                                end)
+                         fun dep (e, e') =
+                            when (e, fn b =>
+                                  if not b then unify (e', e'')
+                                  else set (e'', true))
                          val _ = dep (e, e')
                          val _ = dep (e', e)
                       in
