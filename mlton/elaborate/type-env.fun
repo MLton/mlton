@@ -1439,8 +1439,8 @@ structure Type =
                                              else (l, l')))
                       fun genFlexError () =
                          Error.bug "TypeEnv.Type.unify: GenFlexRecord"
-                      val {equality = e, time, ty = t, plist} = Set.! s
-                      val {equality = e', time = time', ty = t', ...} = Set.! s'
+                      val {equality, time, ty = t, plist} = Set.! s
+                      val {equality = equality', time = time', ty = t', ...} = Set.! s'
                       fun not () =
                          notUnifiableBracket (layoutPretty outer,
                                               layoutPretty outer')
@@ -1623,7 +1623,7 @@ structure Type =
                          case res of
                             NotUnifiable _ => res
                           | Unified _ =>
-                               (if Equality.unify (e, e')
+                               (if Equality.unify (equality, equality')
                                    then res
                                    else let
                                            fun explain t =
@@ -1649,7 +1649,7 @@ structure Type =
                                         then ()
                                         else time := !time'
                                   val () =
-                                     Set.:= (s, {equality = e,
+                                     Set.:= (s, {equality = equality,
                                                  plist = plist,
                                                  time = time,
                                                  ty = t})
