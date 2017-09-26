@@ -1398,7 +1398,7 @@ structure Type =
                       fun rigidToRecord r =
                          (Srecord.toVector r,
                           false)
-                      fun flexToFlexToRecord (fields, spine, time, outer, spine') =
+                      fun flexToFlexToRecord (fields, spine, equality, time, outer, spine') =
                          let
                             val () =
                                List.foreach
@@ -1407,12 +1407,20 @@ structure Type =
                             val fields =
                                Spine.foldOverNew
                                (spine, fields, fields, fn (f, fields) =>
-                                (f, newAt time) :: fields)
+                                let
+                                   val u =
+                                      Type.unknown
+                                      {canGeneralize = true,
+                                       equality = Equality.or2 (equality, Equality.unknown ()),
+                                       time = time}
+                                in
+                                   (f, u) :: fields
+                                end)
                             val _ = setTy (outer, FlexRecord {fields = fields, spine = spine})
                          in
                             flexToRecord (fields, spine)
                          end
-                      fun flexToRigidToRecord (fields, spine, time, outer, r') =
+                      fun flexToRigidToRecord (fields, spine, equality, time, outer, r') =
                          let
                             val () =
                                Vector.foreach
@@ -1422,15 +1430,23 @@ structure Type =
                             val fields =
                                Spine.foldOverNew
                                (spine, fields, fields, fn (f, fields) =>
-                                (f, newAt time) :: fields)
+                                let
+                                   val u =
+                                      Type.unknown
+                                      {canGeneralize = true,
+                                       equality = Equality.or2 (equality, Equality.unknown ()),
+                                       time = time}
+                                in
+                                   (f, u) :: fields
+                                end)
                             val r = Srecord.fromVector (Vector.fromList fields)
                             val _ = setTy (outer, Record r)
                          in
                             rigidToRecord r
                          end
-                      fun oneFlex ({fields, spine}, time, outer, r', swap) =
+                      fun oneFlex ({fields, spine}, equality, time, outer, r', swap) =
                          unifyRecords
-                         (flexToRigidToRecord (fields, spine, time, outer, r'),
+                         (flexToRigidToRecord (fields, spine, equality, time, outer, r'),
                           rigidToRecord r',
                           fn () => Unified (Record r'),
                           notUnifiable o (fn (l, l') =>
@@ -1563,9 +1579,9 @@ structure Type =
                           | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
                           | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
                           | (FlexRecord f, Record r') =>
-                               oneFlex (f, !time, outer, r', false)
+                               oneFlex (f, equality, !time, outer, r', false)
                           | (Record r, FlexRecord f') =>
-                               oneFlex (f', !time', outer', r, true)
+                               oneFlex (f', equality', !time', outer', r, true)
                           | (FlexRecord {fields = fields, spine = spine},
                              FlexRecord {fields = fields', spine = spine'}) =>
                                let
@@ -1585,8 +1601,8 @@ structure Type =
                                      end
                                in
                                   unifyRecords
-                                  (flexToFlexToRecord (fields, spine, !time, outer, spine'),
-                                   flexToFlexToRecord (fields', spine', !time', outer', spine),
+                                  (flexToFlexToRecord (fields, spine, equality, !time, outer, spine'),
+                                   flexToFlexToRecord (fields', spine', equality', !time', outer', spine),
                                    yes, notUnifiable)
                                end
                           | (GenFlexRecord _, _) => genFlexError ()
