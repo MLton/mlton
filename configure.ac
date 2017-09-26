@@ -134,48 +134,13 @@ AM_INIT_AUTOMAKE([1.9.6 foreign])
 
 AC_CONFIG_FILES([Makefile-auto
                  Makefile
-                 basis-library/Makefile
-                 basis-library/libs/basis-2002/top-level/Makefile
                  benchmark/Makefile
-                 benchmark/tests/Makefile
-                 bin/Makefile
                  bin/mlton-script
-                 doc/examples/Makefile
-                 doc/examples/ffi/Makefile
-                 doc/examples/finalizable/Makefile
-                 doc/examples/profiling/Makefile
-                 doc/examples/save-world/Makefile
-                 doc/guide/Makefile
-                 doc/hacker-guide/Makefile
-                 doc/library-guide/Makefile
-                 doc/mlb-formal/Makefile
-                 doc/style-guide/Makefile
-                 include/Makefile
-                 lib/Makefile
-                 lib/ckit-lib/Makefile
-                 lib/mllpt-lib/Makefile
                  lib/mlnlffi-lib/Makefile
-                 lib/mlrisc-lib/Makefile
-                 lib/mlton/Makefile
-                 lib/mlton/basic/Makefile
-                 lib/smlnj-lib/Makefile
-                 lib/stubs/Makefile
-                 lib/stubs/basis-stubs-for-smlnj/Makefile
-                 lib/stubs/mlton-stubs-for-smlnj/Makefile
-                 lib/stubs/mlton-stubs/Makefile
-                 man/Makefile
-                 mllex/Makefile
-                 mlnlffigen/Makefile
-                 mlprof/Makefile
                  mlton/Makefile
                  mlyacc/Makefile
-                 mlyacc/doc/Makefile
                  package/freebsd/Makefile
-                 package/macosx/Makefile
                  package/mingw/Makefile
-                 regression/Makefile
-                 regression/library/Makefile
-                 runtime/Makefile
-                 util/cm2mlb/Makefile])
+                 runtime/Makefile])
 
 AC_OUTPUT
