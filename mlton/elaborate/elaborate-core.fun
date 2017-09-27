@@ -1848,26 +1848,45 @@ fun elaborateDec (d, {env = E, nest}) =
       fun elabTypBind (typBind: TypBind.t) =
          let
             val TypBind.T types = TypBind.node typBind
-            val strs =
+            val types =
                Vector.map
-               (types, fn {def, tyvars, ...} =>
+               (types, fn {def, tycon, tyvars} =>
                 TyvarEnv.scope
                 (tyvars, fn tyvars =>
-                 TypeStr.def (Scheme.make
-                              {canGeneralize = true,
-                               ty = elabType (def, {bogusAsUnknown = false}),
-                               tyvars = tyvars})))
+                 {scheme = Scheme.make {canGeneralize = true,
+                                        ty = elabType (def, {bogusAsUnknown = false}),
+                                        tyvars = tyvars},
+                  tycon = tycon}))
             val () =
-               Vector.foreach2
-               (types, strs, fn ({tycon, ...}, str) =>
-                Env.extendTycon (E, tycon, str, {forceUsed = false,
-                                                 isRebind = false}))
+               Vector.foreach
+               (types, fn {scheme, tycon} =>
+                Env.extendTycon
+                (E, tycon, TypeStr.def scheme,
+                 {forceUsed = false,
+                  isRebind = false}))
+            (* Rebuild type to propagate tycon equality
+             * when 'withtype' components of 'datatype' decl. *)
+            fun rebind () =
+               Vector.foreach
+               (types, fn {scheme, tycon} =>
+                let
+                   val (tyvars, ty) = Scheme.dest scheme
+                   val ty = Type.copy ty
+                   val scheme =
+                      Scheme.make {canGeneralize = true,
+                                   tyvars = tyvars,
+                                   ty = ty}
+                in
+                   Env.extendTycon
+                   (E, tycon, TypeStr.def scheme,
+                    {forceUsed = false,
+                     isRebind = true})
+                end)
          in
-            ()
+            rebind
          end
       fun elabDatBind (datBind: DatBind.t, nest: string list)
-         : Decs.t * {tycon: Ast.Tycon.t,
-                     typeStr: TypeStr.t} vector =
+         : Decs.t * {tycon: Ast.Tycon.t, typeStr: TypeStr.t} vector =
          (* rules 28, 29, 81, 82 *)
          let
             val DatBind.T {datatypes, withtypes} = DatBind.node datBind
@@ -1878,114 +1897,162 @@ fun elaborateDec (d, {env = E, nest}) =
                Vector.map
                (datatypes, fn {cons, tycon = name, tyvars} =>
                 let
-                   val r = Ast.Tycon.region name
+                   val arity = Vector.length tyvars
+                   val k = Kind.Arity arity
                    val n = Ast.Tycon.toString name
                    val pd = concat (List.separate (rev (n :: nest), "."))
+                   val r = Ast.Tycon.region name
                    val tycon =
                       Tycon.make {admitsEquality = AdmitsEquality.Sometimes,
-                                  kind = Kind.Arity (Vector.length tyvars),
+                                  kind = k,
                                   name = n,
                                   prettyDefault = pd,
                                   region = r}
                    val _ = Env.extendTycon (E, name, TypeStr.tycon tycon,
                                             {forceUsed = true,
                                              isRebind = false})
-                   val cons =
-                      Vector.map
-                      (cons, fn (name, arg) =>
-                       {con = Con.fromAst name,
-                        name = name,
-                        arg = arg})
-                   val makeCons =
-                      Env.newCons (E, Vector.map (cons, fn {con, name, ...} =>
-                                                  {con = con, name = name}))
                 in
-                   {cons = cons,
-                    makeCons = makeCons,
+                   {arity = arity,
+                    cons = cons,
                     name = name,
                     tycon = tycon,
                     tyvars = tyvars}
                 end)
-            val _ = elabTypBind withtypes
-            val (dbs, strs) =
-               (Vector.unzip o Vector.map)
-               (datatypes,
-                fn {cons, makeCons, name, tycon, tyvars} =>
-                TyvarEnv.scope
-                (tyvars, fn tyvars =>
-                 let
-                    val resultType: Type.t =
-                       Type.con (tycon, Vector.map (tyvars, Type.var))
-                   val (schemes, datatypeCons) =
-                       Vector.unzip
-                       (Vector.map
-                        (cons, fn {arg, con, ...} =>
-                         let
-                            val (arg, ty) =
-                               case arg of
-                                  NONE => (NONE, resultType)
-                                | SOME t =>
-                                     let
-                                        val t = elabType (t, {bogusAsUnknown = false})
-                                     in
-                                        (SOME t, Type.arrow (t, resultType))
-                                     end
-                            val scheme =
-                               Scheme.make {canGeneralize = true,
-                                            ty = ty,
-                                            tyvars = tyvars}
-                         in
-                            (scheme, {arg = arg, con = con})
-                         end))
-                    val typeStr =
-                       TypeStr.data (tycon, makeCons schemes)
-                 in
-                   ({cons = datatypeCons,
-                      tycon = tycon,
-                      tyvars = tyvars},
-                     {tycon = name,
-                      typeStr = typeStr})
-                 end))
-            val _ =
+            val rebindWithtypes = elabTypBind withtypes
+            val datatypes =
                Vector.map
-               (strs, fn {tycon, typeStr} =>
-                Env.extendTycon (E, tycon, typeStr,
-                                 {forceUsed = false, isRebind = true}))
-            (* Maximize equality. *)
+               (datatypes, fn {arity, cons, name, tycon, tyvars} =>
+                let
+                   val cons =
+                      Vector.map
+                      (cons, fn (name, arg) =>
+                       TyvarEnv.scope
+                       (tyvars, fn tyvars =>
+                        {arg = Option.map (arg, fn t => elabType (t, {bogusAsUnknown = false})),
+                         con = Con.fromAst name,
+                         name = name,
+                         tyvars = tyvars}))
+                in
+                   {arity = arity,
+                    cons = cons,
+                    name = name,
+                    tycon = tycon}
+                end)
+            (* Maximize equality *)
             val change = ref false
-            fun loop () =
+            fun loop datatypes =
                let
-                  val _ =
-                     Vector.foreach
-                     (dbs, fn {cons, tycon, tyvars} =>
+                  val datatypes =
+                     Vector.map
+                     (datatypes, fn {arity, cons, name, tycon} =>
                       let
-                         val r = Tycon.admitsEquality tycon
+                         val isEquality = ref true
+                         val cons =
+                            Vector.map
+                            (cons, fn {arg, con, name, tyvars} =>
+                             let
+                                val arg =
+                                   Option.map
+                                   (arg, fn arg =>
+                                    let
+                                       (* Rebuild type to propagate tycon equality. *)
+                                       val arg = Type.copy arg
+                                       val argScheme =
+                                          Scheme.make {canGeneralize = true,
+                                                       ty = arg,
+                                                       tyvars = tyvars}
+                                       val () =
+                                          if Scheme.admitsEquality argScheme
+                                             then ()
+                                             else isEquality := false
+                                    in
+                                       arg
+                                    end)
+                             in
+                                {arg = arg,
+                                 con = con,
+                                 name = name,
+                                 tyvars = tyvars}
+                             end)
+                         val aeRef = Tycon.admitsEquality tycon
                          datatype z = datatype AdmitsEquality.t
+                         val () =
+                            case !aeRef of
+                               Always =>
+                                  Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
+                             | Never => ()
+                             | Sometimes =>
+                                  if !isEquality
+                                     then ()
+                                     else (aeRef := Never; change := true)
                       in
-                         case !r of
-                            Always => Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
-                          | Never => ()
-                          | Sometimes =>
-                               if Vector.forall
-                                  (cons, fn {arg, ...} =>
-                                   case arg of
-                                      NONE => true
-                                    | SOME ty =>
-                                         Scheme.admitsEquality
-                                         (Scheme.make {canGeneralize = true,
-                                                       ty = ty,
-                                                       tyvars = tyvars}))
-                                  then ()
-                               else (r := Never; change := true)
+                         {arity = arity,
+                          cons = cons,
+                          name = name,
+                          tycon = tycon}
                       end)
                in
                   if !change
-                     then (change := false; loop ())
-                  else ()
+                     then (change := false; loop datatypes)
+                     else datatypes
                end
-            val () = loop ()
+            val datatypes = loop datatypes
+            val (datatypes, strs) =
+               (Vector.unzip o Vector.map)
+               (datatypes, fn {arity, cons, name, tycon} =>
+                let
+                   val tyvars' =
+                      Vector.tabulate (arity, fn _ => Tyvar.makeNoname {equality = false})
+                   val tyargs' =
+                      Vector.map (tyvars', Type.var)
+                   val (cons, cons') =
+                      (Vector.unzip o Vector.map)
+                      (cons, fn {arg, con, name, tyvars} =>
+                       let
+                          val res =
+                             Type.con (tycon, Vector.map (tyvars, Type.var))
+                          val (arg', ty) =
+                             case arg of
+                                NONE => (NONE, res)
+                              | SOME arg =>
+                                   let
+                                      val argScheme =
+                                         Scheme.make {canGeneralize = true,
+                                                      ty = arg,
+                                                      tyvars = tyvars}
+                                      val arg' = Scheme.apply (argScheme, tyargs')
+                                   in
+                                      (SOME arg',
+                                       Type.arrow (arg, res))
+                                   end
+                          val scheme =
+                             Scheme.make {canGeneralize = true,
+                                          ty = ty,
+                                          tyvars = tyvars}
+                       in
+                          ({con = con,
+                            name = name,
+                            scheme = scheme},
+                           {con = con,
+                            arg = arg'})
+                       end)
+                   val cons = Env.newCons (E, cons)
+                   val typeStr = TypeStr.data (tycon, cons)
+                   val () =
+                      Env.extendTycon
+                      (E, name, typeStr,
+                       {forceUsed = false,
+                        isRebind = true})
+                in
+                   ({cons = cons',
+                     tycon = tycon,
+                     tyvars = tyvars'},
+                    {tycon = name,
+                     typeStr = typeStr})
+                end)
+            val () = rebindWithtypes ()
          in
-            (Decs.single (Cdec.Datatype dbs), strs)
+            (Decs.single (Cdec.Datatype datatypes), strs)
          end
       fun elabDec arg : Decs.t =
          Trace.traceInfo
@@ -2620,7 +2687,7 @@ fun elaborateDec (d, {env = E, nest}) =
                       Vector.fold (ds, Decs.empty, fn (d, decs) =>
                                    Decs.append (decs, elabDec (d, isTop)))
                  | Adec.Type typBind =>
-                      (elabTypBind typBind
+                      (ignore (elabTypBind typBind)
                        ; Decs.empty)
                  | Adec.Val {tyvars, rvbs, vbs} =>
                       let

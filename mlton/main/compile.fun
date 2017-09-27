@@ -245,22 +245,26 @@ local
                   (primitiveDatatypes, fn {tyvars, tycon, cons} =>
                    let
                       val cons =
-                         Env.newCons
-                         (E, Vector.map (cons, fn {con, ...} =>
-                                         {con = con, name = Con.toAst con}))
-                         (Vector.map
-                          (cons, fn {arg, ...} =>
-                           let
-                              val resultType =
-                                 Type.con (tycon, Vector.map (tyvars, Type.var))
-                           in
-                              Scheme.make
-                              {canGeneralize = true,
-                               ty = (case arg of
-                                        NONE => resultType
-                                      | SOME t => Type.arrow (t, resultType)),
-                               tyvars = tyvars}
-                           end))
+                         Vector.map
+                         (cons, fn {con, arg} =>
+                          let
+                             val res =
+                                Type.con (tycon, Vector.map (tyvars, Type.var))
+                             val ty =
+                                case arg of
+                                   NONE => res
+                                 | SOME arg => Type.arrow (arg, res)
+                             val scheme =
+                                Scheme.make
+                                {canGeneralize = true,
+                                 ty = ty,
+                                 tyvars = tyvars}
+                          in
+                             {con = con,
+                              name = Con.toAst con,
+                              scheme = scheme}
+                          end)
+                      val cons = Env.newCons (E, cons)
                    in
                       extendTycon
                       (E, Tycon.toAst tycon,

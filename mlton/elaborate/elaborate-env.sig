@@ -209,10 +209,11 @@ signature ELABORATE_ENV =
       val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
-      val newCons: ((t * {con: CoreML.Con.t,
-                          name: Ast.Con.t} vector)
-                    -> Scheme.t vector
-                    -> TypeStr.Cons.t)
+      val newCons:
+         t * {con: CoreML.Con.t,
+              name: Ast.Con.t,
+              scheme: Scheme.t} vector
+         -> TypeStr.Cons.t
       (* openStructure (E, S) opens S in the environment E. *) 
       val openStructure: t * Structure.t -> unit
       (* openBasis (E, B) opens B in the environment E. *) 

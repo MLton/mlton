@@ -244,7 +244,8 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
          Vector.map
          (datatypes, fn {cons, tycon = name, tyvars} =>
           let
-             val kind = Kind.Arity (Vector.length tyvars)
+             val arity = Vector.length tyvars
+             val kind = Kind.Arity arity
              val tycon = Tycon.make {hasCons = true, kind = kind}
              val _ =
                 Env.extendTycon (E, name, TypeStr.tycon tycon)
@@ -265,87 +266,90 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val _ = elabTypBind (withtypes, E, {sequential = false})
       val datatypes =
          Vector.map
-         (datatypes, fn {cons, name, tycon, tyvars, ...} =>
-          TyvarEnv.scope
-          (tyvars, fn tyvars =>
-           let
-              val resultType: Type.t =
-                 Type.con (tycon, Vector.map (tyvars, Type.var))
-              val (schemes, args) =
-                 Vector.unzip
-                 (Vector.map
-                  (cons, fn (name, arg) =>
-                   let
-                      val (arg, ty) =
-                         case arg of
-                            NONE => (NONE, resultType)
-                          | SOME t =>
-                               let
-                                  val t = elaborateType (t, E)
-                               in
-                                  (SOME t, Type.arrow (t, resultType))
-                               end
-                      val scheme = Scheme.make (tyvars, ty)
-                   in
-                      ({name = name,
-                        scheme = scheme},
-                       {con = name,
-                        arg = arg})
-                   end))
-           in
-              {consArgs = args,
-               consSchemes = schemes,
-               name = name,
-               tycon = tycon,
-               tyvars = tyvars}
-           end))
-      val _ = Env.allowDuplicates := true
-      val _ =
-         Vector.foreach
-         (datatypes, fn {consSchemes, name, tycon, ...} =>
+         (datatypes, fn {cons, name, tycon, tyvars} =>
+          let
+             val cons =
+                Vector.map
+                (cons, fn (name, arg) =>
+                 TyvarEnv.scope
+                 (tyvars, fn tyvars =>
+                  {arg = Option.map (arg, fn t => elaborateType (t, E)),
+                   name = name,
+                   tyvars = tyvars}))
+          in
+             {cons = cons,
+              name = name,
+              tycon = tycon}
+          end)
+      (* Maximize equality *)
+      val change = ref false
+      fun loop () =
           let
              val _ =
                 Vector.foreach
-                (consSchemes, fn {name, scheme} =>
-                 Env.extendCon (E, name, scheme))
-             val _ =
+                (datatypes, fn {cons, tycon, ...} =>
+                 let
+                    val isEquality = ref true
+                    val () =
+                       Vector.foreach
+                       (cons, fn {arg, tyvars, ...} =>
+                        Option.foreach
+                        (arg, fn arg =>
+                         let
+                            val argScheme =
+                               Scheme.make (tyvars, arg)
+                         in
+                            if Scheme.admitsEquality argScheme
+                               then ()
+                               else isEquality := false
+                         end))
+                    val aeRef = Tycon.admitsEquality tycon
+                    datatype z = datatype AdmitsEquality.t
+                 in
+                    case !aeRef of
+                       Always => Error.bug "ElaborateSigexp.elaborateDatBind: Always"
+                     | Never => ()
+                     | Sometimes =>
+                          if !isEquality
+                             then ()
+                             else (aeRef := Never; change := true)
+                 end)
+          in
+             if !change
+                then (change := false; loop ())
+                else ()
+          end
+      val () = loop ()
+      val () = Env.allowDuplicates := true
+      val () =
+         Vector.foreach
+         (datatypes, fn {cons, name, tycon} =>
+          let
+             val cons =
+                Vector.map
+                (cons, fn {arg, name, tyvars} =>
+                 let
+                    val res =
+                       Type.con (tycon, Vector.map (tyvars, Type.var))
+                    val ty =
+                       case arg of
+                          NONE => res
+                        | SOME arg => Type.arrow (arg, res)
+                    val scheme =
+                       Scheme.make (tyvars, ty)
+                    val () =
+                       Env.extendCon (E, name, scheme)
+                 in
+                    {name = name,
+                     scheme = scheme}
+                 end)
+             val () =
                 Env.extendTycon
-                (E, name, TypeStr.data (tycon, Cons.fromVector consSchemes, false))
+                (E, name, TypeStr.data (tycon, Cons.fromVector cons, false))
           in
              ()
           end)
       val _ = Env.allowDuplicates := false
-      (* Maximize equality *)
-      val change = ref false
-      fun loop () =
-         let
-            val _ =
-               Vector.foreach
-               (datatypes, fn {consArgs, tycon, tyvars, ...} =>
-                let
-                   val r = Tycon.admitsEquality tycon
-                   datatype z = datatype AdmitsEquality.t
-                in
-                   case !r of
-                      Always => Error.bug "ElaborateSigexp.elaborateDatBind: Always"
-                    | Never => ()
-                    | Sometimes =>
-                         if Vector.forall
-                            (consArgs, fn {arg, ...} =>
-                             case arg of
-                                NONE => true
-                              | SOME ty =>
-                                   Scheme.admitsEquality
-                                   (Scheme.make (tyvars, ty)))
-                            then ()
-                         else (r := Never; change := true)
-                end)
-         in
-            if !change
-               then (change := false; loop ())
-            else ()
-         end
-      val _ = loop ()
    in
       ()
    end

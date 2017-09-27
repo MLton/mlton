@@ -33,7 +33,6 @@ signature TYPE_ENV =
          sig
             include TYPE_OPS
 
-            val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
             val checkTime:
@@ -41,12 +40,9 @@ signature TYPE_ENV =
                              layoutPrettyTycon: Tycon.t -> Layout.t,
                              layoutPrettyTyvar: Tyvar.t -> Layout.t}
                -> (Layout.t * t * {tycons: Tycon.t list, tyvars: Tyvar.t list}) option
+            val copy: t -> t
             val deEta: t * Tyvar.t vector -> Tycon.t option
             val deRecord: t -> (Record.Field.t * t) vector
-            val explainDoesNotAdmitEquality:
-               t * {layoutPrettyTycon: Tycon.t -> Layout.t,
-                    layoutPrettyTyvar: Tyvar.t -> Layout.t}
-               -> Layout.t
             val flexRecord: t SortedRecord.t -> t * (unit -> bool)
             val hom: t * {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
@@ -103,6 +99,7 @@ signature TYPE_ENV =
 
             val admitsEquality: t -> bool
             val apply: t * Type.t vector -> Type.t
+            val checkEquality: t * {layoutPrettyTycon: Tycon.t -> Layout.t} -> Layout.t option
             val dest: t -> Tyvar.t vector * Type.t
             val fresh: t -> Tyvar.t vector * Type.t
             val fromTycon: Tycon.t -> t

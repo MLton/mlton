@@ -430,34 +430,48 @@ structure TypeStr =
                         else AdmitsEquality.Never
           | Tycon c => ! (Tycon.admitsEquality c)
 
-      fun explainDoesNotAdmitEquality (s: t, layoutPretty): Layout.t =
-         case node s of
-            Datatype {cons, ...} =>
-               let
-                  val extra = ref false
-                  val cons =
-                     Vector.toList
-                     (Vector.keepAllMap
-                      (Cons.dest cons, fn {name, scheme, ...} =>
-                       case (Type.deArrowOpt
-                             (#instance (Scheme.instantiate scheme))) of
-                          NONE => (extra := true; NONE)
-                        | SOME (arg, _) =>
-                             if Type.admitsEquality arg
-                                then (extra := true; NONE)
-                                else SOME (seq [Ast.Con.layout name, str " of ",
-                                                Type.explainDoesNotAdmitEquality (arg, layoutPretty)])))
-                  val cons =
-                     if !extra
-                        then List.snoc (cons, str "...")
-                        else cons
-               in
-                  Layout.alignPrefix (cons, "| ")
-               end
-          | Scheme s =>
-               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate s), layoutPretty)
-          | Tycon c =>
-               Type.explainDoesNotAdmitEquality (#instance (Scheme.instantiate (Scheme.fromTycon c)), layoutPretty)
+      fun explainDoesNotAdmitEquality (s: t, {layoutPrettyTycon}): Layout.t =
+         let
+            fun doitScheme s =
+               case Scheme.checkEquality (s, {layoutPrettyTycon = layoutPrettyTycon}) of
+                  SOME l => l
+                | NONE => Error.bug "ElaborateEnv.TypeStr.explainDoesNotAdmitEquality.doitScheme: NONE"
+         in
+            case node s of
+               Datatype {cons, ...} =>
+                  let
+                     val extra = ref false
+                     val cons =
+                        Vector.toList
+                        (Vector.keepAllMap
+                         (Cons.dest cons, fn {name, scheme, ...} =>
+                          let
+                             val (tyvars, ty) = Scheme.dest scheme
+                          in
+                             case Type.deArrowOpt ty of
+                                NONE => (extra := true; NONE)
+                              | SOME (arg, _) =>
+                                   let
+                                      val argScheme =
+                                         Scheme.make {canGeneralize = true,
+                                                      ty = arg,
+                                                      tyvars = tyvars}
+                                   in
+                                      case Scheme.checkEquality (argScheme, {layoutPrettyTycon = layoutPrettyTycon}) of
+                                         NONE => (extra := true; NONE)
+                                       | SOME l => SOME (seq [Ast.Con.layout name, str " of ", l])
+                                   end
+                          end))
+                     val cons =
+                        if !extra
+                           then List.snoc (cons, str "...")
+                           else cons
+                  in
+                     Layout.alignPrefix (cons, "| ")
+                  end
+             | Scheme s => doitScheme s
+             | Tycon c => doitScheme (Scheme.fromTycon c)
+         end
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
@@ -2329,12 +2343,12 @@ fun processDefUse (E as T f) =
       ()
    end
 
-fun newCons (T {vals, ...}, v) = fn v' =>
+fun newCons (T {vals, ...}, v) =
    let
       val forceUsed = 1 = Vector.length v
    in
-      (Cons.fromVector o Vector.map2)
-      (v, v', fn ({con, name}, scheme) =>
+      (Cons.fromVector o Vector.map)
+      (v, fn {con, name, scheme} =>
        let
           val uses = NameSpace.newUses (vals, Class.Con,
                                         Ast.Vid.fromCon name,
@@ -3381,8 +3395,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                          else error ("admits equality",
                                                      strMsg (false, SOME (TypeStr.explainDoesNotAdmitEquality
                                                                           (strStr,
-                                                                           {layoutPrettyTycon = layoutPrettyTycon,
-                                                                            layoutPrettyTyvar = layoutPrettyTyvar}))),
+                                                                           {layoutPrettyTycon = layoutPrettyTycon}))),
                                                      sigMsg (true, NONE))
                                 in
                                    rlzStr

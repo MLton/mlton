@@ -84,6 +84,7 @@ structure Time:>
       val equals: t * t -> bool
       val layout: t -> Layout.t
       val max: t * t -> t
+      val min: t * t -> t
       val now: unit -> t
       val region: t -> Region.t
       val tick: {region: Region.t} -> unit
@@ -111,6 +112,7 @@ structure Time:>
          val op <= = make Int.<=
       end
       fun max (t, t') = if t <= t' then t' else t
+      fun min (t, t') = if t <= t' then t else t'
 
       val zero = T {clock = 0, region = Region.bogus}
 
@@ -272,176 +274,64 @@ structure Tycon =
 
 structure Equality:>
    sig
-      type t
+      datatype t = False | True | Unknown
 
       val and2: t * t -> t
-      val andd: t vector -> t
+      val andL: 'a list * ('a -> t) -> t
+      val andV: 'a vector * ('a -> t) -> t
       val applyTycon: Tycon.t * t vector -> t
-      val falsee: t
       val fromBool: bool -> t
+      val join: t * t -> t
+      val layout: t -> Layout.t
       val or2: t * t -> t
-      val toBoolOpt: t -> bool option
-      val truee: t
-      val unify: t * t -> bool
-      val unknown: unit -> t
    end =
    struct
-      datatype maybe =
-         Known of bool
-       | Unknown of {whenKnown: (bool -> bool) list ref}
-      datatype t =
-         False
-       | Lazy of unit -> t
-       | Maybe of maybe ref
-       | True
+      datatype t = False | True | Unknown
 
-      fun unknown () = Maybe (ref (Unknown {whenKnown = ref []}))
-
-      fun set (e: t, b: bool): bool =
+      fun layout e =
          case e of
-            False => b = false
-          | Lazy th => set (th (), b)
-          | Maybe r =>
-               (case !r of
-                   Known b' => b = b'
-                 | Unknown {whenKnown} =>
-                      (r := Known b; List.forall (!whenKnown, fn f => f b)))
-          | True => b = true
+            False => Layout.str "False"
+          | True => Layout.str "True"
+          | Unknown => Layout.str "Unknown"
 
-      fun when (e: t, f: bool -> bool): bool =
-         case e of
-            False => f false
-          | Lazy th => when (th (), f)
-          | Maybe r =>
-               (case !r of
-                   Known b => f b
-                 | Unknown {whenKnown} => (List.push (whenKnown, f); true))
-          | True => f true
-
-      fun unify (e: t, e': t): bool =
-         when (e, fn b => set (e', b))
-         andalso when (e', fn b => set (e, b))
-
-      fun and2 (e, e') =
-         case (e, e') of
+      fun and2 (e1, e2) =
+         case (e1, e2) of
             (False, _) => False
           | (_, False) => False
-          | (True, _) => e'
-          | (_, True) => e
-          | (Lazy th, e') => Lazy (fn () => and2 (th (), e'))
-          | (e, Lazy th') => Lazy (fn () => and2 (e, th' ()))
-          | (Maybe r, Maybe r') =>
-               (case (!r, !r') of
-                   (Known false, _) => False
-                 | (_, Known false) => False
-                 | (Known true, _) => e'
-                 | (_, Known true) => e
-                 | (Unknown _, Unknown _) =>
-                      let
-                         val e'' = unknown ()
-                         val _ =
-                            when
-                            (e'', fn b =>
-                             if b
-                                then set (e, true) andalso set (e', true)
-                             else
-                                let
-                                   fun dep (e, e') =
-                                      when (e, fn b =>
-                                            not b orelse set (e', false))
-                                in
-                                   dep (e, e') andalso dep (e', e)
-                                end)
-                         fun dep (e, e') =
-                            when (e, fn b =>
-                                  if b then unify (e', e'')
-                                  else set (e'', false))
-                         val _ = dep (e, e')
-                         val _ = dep (e', e)
-                      in
-                         e''
-                      end)
+          | (True, _) => e2
+          | (_, True) => e1
+          | (Unknown, Unknown) => Unknown
 
-      fun or2 (e, e') =
-         case (e, e') of
-            (False, _) => e'
-          | (_, False) => e
+      fun andL (xs, f) = List.fold (xs, True, fn (x, e) => and2 (f x, e))
+      fun andV (xs, f) = Vector.fold (xs, True, fn (x, e) => and2 (f x, e))
+
+      fun or2 (e1, e2) =
+         case (e1, e2) of
+            (False, _) => e2
+          | (_, False) => e1
           | (True, _) => True
           | (_, True) => True
-          | (Lazy th, e') => Lazy (fn () => or2 (th (), e'))
-          | (e, Lazy th') => Lazy (fn () => or2 (e, th' ()))
-          | (Maybe r, Maybe r') =>
-               (case (!r, !r') of
-                   (Known false, _) => e'
-                 | (_, Known false) => e
-                 | (Known true, _) => True
-                 | (_, Known true) => True
-                 | (Unknown _, Unknown _) =>
-                      let
-                         val e'' = unknown ()
-                         val _ =
-                            when
-                            (e'', fn b =>
-                             if not b
-                                then set (e, false) andalso set (e', false)
-                             else
-                                let
-                                   fun dep (e, e') =
-                                      when (e, fn b =>
-                                            b orelse set (e', true))
-                                in
-                                   dep (e, e') andalso dep (e', e)
-                                end)
-                         fun dep (e, e') =
-                            when (e, fn b =>
-                                  if not b then unify (e', e'')
-                                  else set (e'', true))
-                         val _ = dep (e, e')
-                         val _ = dep (e', e)
-                      in
-                         e''
-                      end)
+          | (Unknown, Unknown) => Unknown
 
-      val falsee = False
-      val truee = True
+      fun join (e1, e2) =
+         case (e1, e2) of
+            (Unknown, _) => e2
+          | (_, Unknown) => e1
+          | (False, False) => False
+          | (True, True) => True
+          | _ => Error.bug "TypeEnv.Equality.join"
 
-      val fromBool = fn false => False | true => True
-
-      fun toBoolOpt (e: t): bool option =
-         case e of
-            False => SOME false
-          | Lazy th => toBoolOpt (th ())
-          | Maybe r =>
-               (case !r of
-                   Known b => SOME b
-                 | Unknown _ => NONE)
-          | True => SOME true
-
-      fun andd (es: t vector): t = Vector.fold (es, truee, and2)
-
-      val applyTycon: Tycon.t * t vector -> t =
-         fn (c, es) =>
+      fun applyTycon (c, es) =
          let
             datatype z = datatype AdmitsEquality.t
          in
             case !(Tycon.admitsEquality c) of
-               Always => truee
-             | Sometimes =>
-                  let
-                     val e = andd es
-                  in
-                     case e of
-                        False => falsee
-                      | _ =>
-                           Lazy
-                           (fn () =>
-                            case !(Tycon.admitsEquality c) of
-                               Always => Error.bug "TypeEnv.Equality.applyTycon: Always"
-                             | Sometimes => e
-                             | Never => falsee)
-                  end
-             | Never => falsee
+               Always => True
+             | Sometimes => andV (es, fn e => e)
+             | Never => False
          end
+
+      fun fromBool b = if b then True else False
    end
 
 structure Unknown =
@@ -585,16 +475,16 @@ structure Type =
                 | Word => Tycon.defaultWord ()
 
            val admitsEquality: t -> Equality.t =
-               fn Char => Equality.truee
-                | Int => Equality.truee
-                | Real => Equality.falsee
-                | Word => Equality.truee
+               fn Char => Equality.True
+                | Int => Equality.True
+                | Real => Equality.False
+                | Word => Equality.True
          end
 
       (* Tuples of length <> 1 are always represented as records.
        * There will never be tuples of length one.
        *)
-      datatype t = T of {equality: Equality.t,
+      datatype t = T of {equality: Equality.t ref,
                          plist: PropertyList.t,
                          time: Time.t ref,
                          ty: ty} Set.t
@@ -637,10 +527,11 @@ structure Type =
             List.layout (Layout.tuple2 (Field.layout, layout)) fs
          and layout (T s) =
             let
-               val {time, ty, ...} = Set.! s
+               val {equality, time, ty, ...} = Set.! s
             in
                record
                [("time", Time.layout (!time)),
+                ("equality", Equality.layout (!equality)),
                 ("ty",
                  case ty of
                     Con (c, ts) =>
@@ -724,22 +615,6 @@ structure LayoutPretty =
 structure Type =
    struct
       open Type
-
-      fun admitsEquality t =
-         case Equality.toBoolOpt (equality t) of
-            NONE =>
-               (* Could report an error here, but sometimes in a type-incorrect
-                * program, there will be unknown equalities.  So it is better
-                * to conservatively return equality true, which will cause fewer
-                * spurious errors.
-                *)
-               true
-          | SOME b => b
-
-      val admitsEquality =
-         Trace.trace 
-         ("TypeEnv.Type.admitsEquality", layout, Bool.layout) 
-         admitsEquality
 
       fun makeHom {con, expandOpaque, flexRecord, genFlexRecord,
                    guard, overload, record, recursive, unknown, var} =
@@ -879,6 +754,60 @@ structure Type =
             res
          end
 
+      fun getEquality t =
+         let
+            (* guarded; only invoked if '!(Tycon.admitsEquality c) = Sometimes' *)
+            fun con (_, c, es) = Equality.applyTycon (c, es)
+            fun flexRecord (_, {fields: (Field.t * Equality.t) list, spine}) =
+               if Spine.canAddFields spine
+                  then Equality.Unknown
+                  else Equality.andL (fields, #2)
+            (* impossible; *)
+            fun genFlexRecord _ = Error.bug "TypeEnv.Type.getEquality.genFlexRecord"
+            (* guarded; an overload has known equality *)
+            fun overload _ = Error.bug "TypeEnv.Type.getEquality.overload"
+            fun record (_, r: Equality.t Srecord.t) =
+               Equality.andV (Srecord.toVector r, #2)
+            (* impossible *)
+            fun recursive _ = Error.bug "TypeEnv.Type.getEquality.recursive"
+            (* guarded; only invoked if '!(Type.equality t) = Unknown' *)
+            fun unknown (_, _) = Equality.Unknown
+            (* guarded; a tyvar has known equality *)
+            fun var _ = Error.bug "TypeEnv.Type.getEquality.var"
+            fun wrap (f, sel) arg =
+               let
+                  val res = f arg
+                  val _ = equality (sel arg) := res
+               in
+                  res
+               end
+            fun guard t =
+               let
+                  val e = !(equality t)
+               in
+                  case e of
+                     Equality.Unknown => NONE
+                   | _ => SOME e
+               end
+         in
+            hom (t, {con = wrap (con, #1),
+                     expandOpaque = false,
+                     flexRecord = wrap (flexRecord, #1),
+                     genFlexRecord = genFlexRecord,
+                     guard = guard,
+                     overload = overload,
+                     record = wrap (record, #1),
+                     recursive = recursive,
+                     unknown = unknown,
+                     var = var})
+         end
+
+      val getEquality =
+         Trace.trace
+         ("TypeEnv.Type.getEquality", layout, Equality.layout)
+         getEquality
+      val _ = getEquality
+
       fun deConOpt t =
          case getTy t of
             Con x => SOME x
@@ -898,9 +827,8 @@ structure Type =
                else NONE
            | _ => NONE
 
-
       fun make {equality, time, ty}: t =
-         T (Set.singleton {equality = equality,
+         T (Set.singleton {equality = ref equality,
                            plist = PropertyList.new (),
                            time = ref time,
                            ty = ty})
@@ -911,23 +839,22 @@ structure Type =
                case ty of
                   Con (c, ts) =>
                      (Equality.applyTycon
-                      (c, Vector.map (ts, equality)),
+                      (c, Vector.map (ts, ! o equality)),
                       Vector.fold
                       (ts, Tycon.time c, fn (t, t') =>
                        Time.max (!(time t), t')))
                 | GenFlexRecord _ =>
                      Error.bug "TypeEnv.Type.newTy: GenFlexRecord"
-                | FlexRecord {fields, ...} =>
-                     (Equality.and2
-                      (Equality.andd (Vector.fromListMap (fields, equality o #2)),
-                       Equality.unknown ()),
+                | FlexRecord _ =>
+                     (Equality.Unknown,
                       Time.now ())
                 | Overload ov =>
                      (Overload.admitsEquality ov,
                       Time.zero)
                 | Record r =>
-                     (Equality.andd
-                      (Vector.map (Srecord.range r, equality)),
+                     (Srecord.fold
+                      (r, Equality.True, fn (t, e') =>
+                       Equality.and2 (!(equality t), e')),
                       Srecord.fold
                       (r, Time.zero, fn (t, t') =>
                        Time.max (!(time t), t')))
@@ -964,7 +891,7 @@ structure Type =
          end
 
       fun newAt time = unknown {canGeneralize = true,
-                                equality = Equality.unknown (),
+                                equality = Equality.Unknown,
                                 time = time}
 
       fun new () = newAt (Time.now ())
@@ -1076,90 +1003,6 @@ structure Type =
 
       fun unresolvedString () = vector (unresolvedChar ())
 
-      fun explainAdmitsEquality (T s, {layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
-         let
-            val {ty, ...} = Set.! s
-         in
-            case ty of
-               Var a => bracket (simple (layoutPrettyTyvar a))
-             | _ => simple (Layout.bracket (str "<equality>"))
-         end
-      fun explainDoesNotAdmitEquality (t , {layoutPrettyTycon: Tycon.t -> Layout.t,
-                                            layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
-         let
-            val layoutAppPretty =
-               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
-            fun deopt lo = Option.fold (lo, dontCare, fn (l, _) => l)
-            val noneq = simple (Layout.bracket (str "<non-equality>"))
-            fun con (_, c, los) =
-               let
-                  datatype z = datatype AdmitsEquality.t
-               in
-                  case ! (Tycon.admitsEquality c) of
-                     Always => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.con"
-                   | Never =>
-                        (SOME o bracket o layoutAppPretty)
-                        (c, Vector.map (los, fn _ => dontCare))
-                   | Sometimes =>
-                        (SOME o layoutAppPretty)
-                        (c, Vector.map (los, deopt))
-               end
-            fun doRecord (fields, extra) =
-               SOME (LayoutPretty.record
-                     (List.map
-                      (fields, fn (f, l) =>
-                       (f, false, l)),
-                      extra))
-            fun flexRecord (_, {fields, spine = _}) =
-               doRecord (List.keepAllMap
-                         (fields, fn (f, lo) =>
-                          Option.map (lo, fn l => (f, l))),
-                         true)
-            fun genFlexRecord (_, {extra = _, fields, spine = _}) =
-               doRecord (List.keepAllMap
-                         (fields, fn (f, lo) =>
-                          Option.map (lo, fn l => (f, l))),
-                         true)
-            fun overload (_, ov) =
-               case ov of
-                  Overload.Real => SOME (simple (Layout.bracket (str "<real?>")))
-                | _ => Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.overload"
-            fun record (_, r) =
-               case Srecord.detupleOpt r of
-                  NONE =>
-                     let
-                        val fields = Srecord.toVector r
-                        val fields' =
-                           Vector.keepAllMap
-                           (fields, fn (f, lo) =>
-                            Option.map (lo, fn l => (f, l)))
-                     in
-                        doRecord (Vector.toList fields',
-                                  not (Vector.length fields = Vector.length fields'))
-                     end
-                | SOME los => SOME (LayoutPretty.tuple (Vector.map (los, deopt)))
-            fun recursive _ = Error.bug "TypeEnv.Type.explainDoesNotAdmitEquality.recursive"
-            fun unknown (_, _) = SOME noneq
-            fun var (_, a) = SOME (bracket (simple (layoutPrettyTyvar a)))
-            val res =
-               hom (t, {con = con,
-                        expandOpaque = false,
-                        flexRecord = flexRecord,
-                        genFlexRecord = genFlexRecord,
-                        guard = fn t => if admitsEquality t
-                                           then SOME NONE
-                                           else NONE,
-                        overload = overload,
-                        record = record,
-                        recursive = recursive,
-                        unknown = unknown,
-                        var = var})
-         in
-            case res of
-               NONE => noneq
-             | SOME l => l
-         end
-
       val traceCanUnify =
          Trace.trace2 
          ("TypeEnv.Type.canUnify", layout, layout, Bool.layout)
@@ -1192,6 +1035,197 @@ structure Type =
           | Overload ov =>
                Vector.isEmpty ts andalso Overload.matchesTycon (ov, c)
           | _ => false
+
+      (* checkEquality t checks that t is an equality type.  If t is
+       * not an equality type, then checkEquality t returns:
+       *  - a layout object highlighting violations in t
+       *  - an alternate type, replacing violations in t with fresh
+       *    equality unification variables and a layout object
+       *    highlighting the fresh unification variables.
+       *)
+      fun makeCheckEquality {layoutPrettyTycon: Tycon.t -> Layout.t,
+                             layoutPrettyTyvar: Tyvar.t -> Layout.t} =
+         let
+            val layoutAppPretty =
+               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            type ll = LayoutPretty.t * LayoutPretty.t
+            local
+               fun getLay sel (llo: ll option, _) =
+                  Option.fold (llo, dontCare, sel o #1)
+            in
+               val getLay1 = getLay #1
+               val getLay2 = getLay #2
+            end
+            fun getTy (_, ty) = ty
+            (* guarded; only invoked if 'Tycon.admitsEquality c = Sometimes' *)
+            fun con (_, c, rs) =
+               if Vector.forall (rs, Option.isNone o #1)
+                  then NONE
+                  else SOME (layoutAppPretty
+                             (c, Vector.map (rs, getLay1)),
+                             layoutAppPretty
+                             (c, Vector.map (rs, getLay2)),
+                             Type.con
+                             (c, Vector.map (rs, getTy)))
+            fun doRecord (fls: (Field.t * ll) list,
+                          extra: bool, mk: unit -> t) =
+               if List.isEmpty fls
+                  then NONE
+                  else let
+                          fun doit sel =
+                             LayoutPretty.record
+                             (List.map
+                              (fls, fn (f, lll) =>
+                               (f, false, sel lll)),
+                              extra)
+                       in
+                          SOME (doit #1, doit #2, mk ())
+                       end
+            fun flexRecord (_, {fields, spine}) =
+               doRecord (List.keepAllMap
+                         (fields, fn (f, r) =>
+                          Option.map (#1 r, fn ll => (f, ll))),
+                         Spine.canAddFields spine,
+                         fn () =>
+                         let
+                            val fields =
+                               List.map (fields, fn (f, r) =>
+                                         (f, getTy r))
+                         in
+                            Type.newFlex {fields = fields,
+                                          spine = spine}
+                         end)
+            (* impossible *)
+            fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkEquality.genFlexRecord"
+            (* guarded; an overload has known equality
+             * only invoked if '!(Type.equality t) = False' *)
+            fun overload (_, ov) =
+               case ov of
+                  Overload.Real =>
+                     let
+                        val ty = Type.unknown {canGeneralize = true,
+                                               equality = Equality.True,
+                                               time = Time.now ()}
+                     in
+                        SOME (simple (Layout.bracket (str "real")),
+                              simple (Layout.bracket (str "<equality>")),
+                              ty)
+                     end
+                | _ => Error.bug "TypeEnv.Type.checkEquality.overload"
+            fun record (_, r) =
+               case Srecord.detupleOpt r of
+                  NONE =>
+                     let
+                        val fields = Srecord.toVector r
+                        val fields' =
+                           Vector.keepAllMap
+                           (fields, fn (f, r) =>
+                            Option.map (#1 r, fn ll => (f, ll)))
+                     in
+                        doRecord (Vector.toList fields',
+                                  not (Vector.length fields = Vector.length fields'),
+                                  fn () =>
+                                  let
+                                     val fields =
+                                        Vector.map (fields, fn (f, r) =>
+                                                    (f, getTy r))
+                                     val fields = Srecord.fromVector fields
+                                  in
+                                     Type.record fields
+                                  end)
+                     end
+                | SOME rs =>
+                     if Vector.forall (rs, Option.isNone o #1)
+                        then NONE
+                        else SOME (LayoutPretty.tuple (Vector.map (rs, getLay1)),
+                                   LayoutPretty.tuple (Vector.map (rs, getLay2)),
+                                   Type.tuple (Vector.map (rs, getTy)))
+            (* impossible *)
+            fun recursive _ = Error.bug "TypeEnv.Type.checkEquality.recursive"
+            fun unknown (t, _) =
+               case !(equality t) of
+                  Equality.False =>
+                     let
+                        val ty = Type.unknown {canGeneralize = true,
+                                               equality = Equality.True,
+                                               time = Time.now ()}
+                     in
+                        SOME (simple (Layout.bracket (str "<non-equality>")),
+                              simple (Layout.bracket (str "<equality>")),
+                              ty)
+                     end
+                | Equality.True => NONE
+                | Equality.Unknown => NONE
+            (* guarded; a tyvar has known equality
+             * only invoked if '!(Type.equality t) = False' *)
+            fun var (_, a) =
+               if Tyvar.isEquality a
+                  then Error.bug "TypeEnv.Type.checkEquality.var"
+                  else let
+                          val ty = Type.unknown {canGeneralize = true,
+                                                 equality = Equality.True,
+                                                 time = Time.now ()}
+                       in
+                          SOME (simple (layoutPrettyTyvar a),
+                                simple (Layout.bracket (str "<equality>")),
+                                ty)
+                       end
+            fun wrap (f, sel) arg =
+               case f arg of
+                  NONE =>
+                     let
+                        val t = sel arg
+                     in
+                        equality t := Equality.True
+                        ; (NONE, t)
+                     end
+                | SOME (l1, l2, t) =>
+                     (SOME (l1, l2), t)
+            (* Need extra guarding of Con, because proceeding with
+             * hom/con would recursively force all type args to
+             * Equality.True, even if tycon is AdmitsEquality.Never. *)
+            fun guard t =
+               case !(equality t) of
+                  Equality.True => SOME (NONE, t)
+                | _ => (case Type.getTy t of
+                           Con (c, ts) =>
+                              (case !(Tycon.admitsEquality c) of
+                                  AdmitsEquality.Always => SOME (NONE, t)
+                                | AdmitsEquality.Sometimes => NONE
+                                | AdmitsEquality.Never =>
+                                     let
+                                        val ty = Type.unknown {canGeneralize = true,
+                                                               equality = Equality.True,
+                                                               time = Time.now ()}
+                                     in
+                                        SOME (SOME ((bracket o layoutAppPretty)
+                                                    (c, Vector.map (ts, fn _ => dontCare)),
+                                                    simple (Layout.bracket (str "<equality>"))),
+                                              ty)
+                                     end)
+                         | _ => NONE)
+            fun checkEquality t =
+               let
+                  val res : ll option * t =
+                     hom (t, {con = wrap (con, #1),
+                              expandOpaque = false,
+                              flexRecord = wrap (flexRecord, #1),
+                              genFlexRecord = genFlexRecord,
+                              guard = guard,
+                              overload = wrap (overload, #1),
+                              record = wrap (record, #1),
+                              recursive = recursive,
+                              unknown = wrap (unknown, #1),
+                              var = wrap (var, #1)})
+               in
+                  case res of
+                     (NONE, _) => NONE
+                   | (SOME (l1, l2), t) =>
+                        SOME (l1, (t, l2))
+               end
+         in
+            checkEquality
+         end
 
       (* checkTime (t, bound) checks that all components of t have
        * times no larger than bound.  If t has components with time
@@ -1334,14 +1368,16 @@ structure Type =
                               | SOME (l1, l2, l3, t) =>
                                    (time t := bound
                                     ; (SOME (l1, l2, l3), t))
+                          fun guard t =
+                             if Time.<= (!(time t), bound)
+                                then SOME (NONE, t)
+                                else NONE
                           val res : lll option * t =
                              hom (t, {con = wrap (con bound, #1),
                                       expandOpaque = false,
                                       flexRecord = wrap (flexRecord, #1),
                                       genFlexRecord = genFlexRecord,
-                                      guard = fn t => if Time.<= (!(time t), bound)
-                                                         then SOME (NONE, t)
-                                                         else NONE,
+                                      guard = guard,
                                       overload = wrap (fn _ => NONE, #1),
                                       record = wrap (record, #1),
                                       recursive = recursive,
@@ -1377,6 +1413,9 @@ structure Type =
          let
             val layoutAppPretty =
                Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            val checkEquality =
+               makeCheckEquality {layoutPrettyTycon = layoutPrettyTycon,
+                                  layoutPrettyTyvar = layoutPrettyTyvar}
             val {checkTime, finishCheckTime} =
                makeCheckTime {layoutPretty = layoutPretty,
                               layoutPrettyTycon = layoutPrettyTycon,
@@ -1411,7 +1450,7 @@ structure Type =
                                    val u =
                                       Type.unknown
                                       {canGeneralize = true,
-                                       equality = Equality.or2 (equality, Equality.unknown ()),
+                                       equality = Equality.or2 (equality, Equality.Unknown),
                                        time = time}
                                 in
                                    (f, u) :: fields
@@ -1434,7 +1473,7 @@ structure Type =
                                    val u =
                                       Type.unknown
                                       {canGeneralize = true,
-                                       equality = Equality.or2 (equality, Equality.unknown ()),
+                                       equality = Equality.or2 (equality, Equality.Unknown),
                                        time = time}
                                 in
                                    (f, u) :: fields
@@ -1525,14 +1564,14 @@ structure Type =
                              | _ => not ()
                          end
                       fun oneUnknown (u: Unknown.t,
+                                      equality: Equality.t,
                                       time: Time.t,
                                       outer: t,
                                       t': Type.ty,
                                       outer': Type.t,
                                       swap: bool) =
                          let
-                            (* This should fail if the unknown occurs in t.
-                             *)
+                            (* This should fail if the unknown occurs in t. *)
                             fun con (_, _, ts) =
                                Vector.exists (ts, fn b => b)
                             fun doFields fields =
@@ -1559,29 +1598,50 @@ structure Type =
                          in
                             if isCircular
                                then not ()
-                               else (case checkTime (outer', time) of
-                                        NONE => Unified t'
-                                      | SOME (l, (t'', l'')) =>
-                                           (setTy (outer, getTy t'')
-                                            ; notUnifiable
-                                              (if swap
-                                                  then (l, l'')
-                                                  else (l'', l))))
+                               else let
+                                       fun err (l, (t'', l'')) =
+                                          (setTy (outer, getTy t'')
+                                           ; notUnifiable
+                                             (if swap
+                                                 then (l, l'')
+                                                 else (l'', l)))
+                                    in
+                                       case equality of
+                                          Equality.True =>
+                                             (case checkEquality outer' of
+                                                 NONE => Unified t'
+                                               | SOME (l, (t'', l'')) =>
+                                                    err (l, (t'', l'')))
+                                        | _ =>
+                                             (case checkTime (outer', time) of
+                                                 NONE => Unified t'
+                                               | SOME (l, (t'', l'')) =>
+                                                    err (l, (t'', l'')))
+                                    end
                          end
                       val res =
                          case (t, t') of
                             (Unknown r, Unknown r') =>
-                               Unified (Unknown (Unknown.join (r, r')))
+                               (case (!equality, !equality') of
+                                   (Equality.True, Equality.False) =>
+                                      notUnifiableBracket
+                                      (simple (str "<equality>"),
+                                       simple (str "<non-equality>"))
+                                 | (Equality.False, Equality.True) =>
+                                      notUnifiableBracket
+                                      (simple (str "<non-equality>"),
+                                       simple (str "<equality>"))
+                                 | _ => Unified (Unknown (Unknown.join (r, r'))))
                           | (Unknown u, _) =>
-                               oneUnknown (u, !time, outer, t', outer', false)
+                               oneUnknown (u, !equality, !time, outer, t', outer', false)
                           | (_, Unknown u') =>
-                               oneUnknown (u', !time', outer', t, outer, true)
+                               oneUnknown (u', !equality', !time', outer', t, outer, true)
                           | (Con (c, ts), _) => conAnd (c, ts, t', t, false)
                           | (_, Con (c, ts)) => conAnd (c, ts, t, t', true)
                           | (FlexRecord f, Record r') =>
-                               oneFlex (f, equality, !time, outer, r', false)
+                               oneFlex (f, !equality, !time, outer, r', false)
                           | (Record r, FlexRecord f') =>
-                               oneFlex (f', equality', !time', outer', r, true)
+                               oneFlex (f', !equality', !time', outer', r, true)
                           | (FlexRecord {fields = fields, spine = spine},
                              FlexRecord {fields = fields', spine = spine'}) =>
                                let
@@ -1601,8 +1661,8 @@ structure Type =
                                      end
                                in
                                   unifyRecords
-                                  (flexToFlexToRecord (fields, spine, equality, !time, outer, spine'),
-                                   flexToFlexToRecord (fields', spine', equality', !time', outer', spine),
+                                  (flexToFlexToRecord (fields, spine, !equality, !time, outer, spine'),
+                                   flexToFlexToRecord (fields', spine', !equality', !time', outer', spine),
                                    yes, notUnifiable)
                                end
                           | (GenFlexRecord _, _) => genFlexError ()
@@ -1637,38 +1697,18 @@ structure Type =
                           | _ => not ()
                       val res =
                          case res of
-                            NotUnifiable _ => res
-                          | Unified _ =>
-                               (if Equality.unify (equality, equality')
-                                   then res
-                                   else let
-                                           fun explain t =
-                                              if admitsEquality t
-                                                 then explainAdmitsEquality
-                                                      (t, {layoutPrettyTyvar = layoutPrettyTyvar})
-                                                 else explainDoesNotAdmitEquality
-                                                      (t, {layoutPrettyTycon = layoutPrettyTycon,
-                                                           layoutPrettyTyvar = layoutPrettyTyvar})
-                                        in
-                                           NotUnifiable (explain outer,
-                                                         explain outer')
-                                        end)
-                      val res =
-                         case res of
                             NotUnifiable (l, l') =>
                                NotUnifiable (l, l')
-                          | Unified t =>
+                          | Unified ty =>
                                let
                                   val () = Set.union (s, s')
-                                  val () =
-                                     if Time.<= (!time, !time')
-                                        then ()
-                                        else time := !time'
+                                  val () = time := Time.min (!time, !time')
+                                  val () = equality := Equality.join (!equality, !equality')
                                   val () =
                                      Set.:= (s, {equality = equality,
                                                  plist = plist,
                                                  time = time,
-                                                 ty = t})
+                                                 ty = ty})
                                in
                                   Unified ()
                                end
@@ -1921,7 +1961,7 @@ structure Scheme =
              tyvars = tyvars}
          end
 
-      fun instantiate' (t: t, subst) =
+      fun instantiateAux (t: t, subst) =
          case t of
             Mono ty => {args = fn () => Vector.new0 (),
                         instance = ty}
@@ -2059,15 +2099,15 @@ structure Scheme =
                end)
 
       fun apply (s, ts) =
-         #instance (instantiate' (s, fn {index, ...} => Vector.sub (ts, index)))
+         #instance (instantiateAux (s, fn {index, ...} => Vector.sub (ts, index)))
 
       fun instantiate s =
-         instantiate'
+         instantiateAux
          (s, fn {canGeneralize, equality, ...} =>
           Type.unknown {canGeneralize = canGeneralize,
                         equality = if equality
-                                      then Equality.truee
-                                      else Equality.unknown (),
+                                      then Equality.True
+                                      else Equality.Unknown,
                         time = Time.now ()})
 
       val instantiate =
@@ -2082,18 +2122,40 @@ structure Scheme =
             (tyvars, apply (s, (Vector.map (tyvars, Type.var))))
          end
 
+      fun freshEq s =
+         let
+            val (tyvars, _) = dest s
+            val tyvars = Vector.map (tyvars, fn _ => Tyvar.makeNoname {equality = true})
+         in
+            (tyvars, apply (s, (Vector.map (tyvars, Type.var))))
+         end
+
       fun admitsEquality s =
-         Type.admitsEquality
-         (#instance
-          (instantiate'
-           (s, fn {canGeneralize, ...} =>
-            Type.unknown {canGeneralize = canGeneralize,
-                          equality = Equality.truee,
-                          time = Time.now ()})))
+         let
+            val (_, ty) = freshEq s
+         in
+            case !(Type.equality ty) of
+               Equality.False => false
+             | Equality.True => true
+             | Equality.Unknown => Error.bug "TypeEnv.Scheme.admitsEquality: Unknown"
+         end
 
       val admitsEquality =
          Trace.trace ("TypeEnv.Scheme.admitsEquality", layout, Bool.layout)
          admitsEquality
+
+      fun checkEquality (s, {layoutPrettyTycon}) =
+         let
+            fun layoutPrettyTyvar _ =
+               Error.bug "TypeEnv.Scheme.checkEquality.layoutPrettyTyvar"
+            val checkEquality =
+               Type.makeCheckEquality {layoutPrettyTycon = layoutPrettyTycon,
+                                       layoutPrettyTyvar = layoutPrettyTyvar}
+            val (_, ty) = freshEq s
+         in
+            Option.map
+            (checkEquality ty, fn ((l, _), _) => l)
+         end
 
       fun haveUnknowns s: bool =
          let
@@ -2228,22 +2290,19 @@ fun 'a close region =
                             then t :: ac
                          else
                             let
-                               val b =
-                                  case Equality.toBoolOpt equality of
-                                     NONE =>
-                                        let
-                                           val _ =
-                                              Equality.unify
-                                              (equality, Equality.falsee)
-                                        in
-                                           false
-                                        end
-                                   | SOME b => b
-                               val a = Tyvar.makeNoname {equality = b}
+                               val a =
+                                  Tyvar.makeNoname
+                                  {equality =
+                                   case !equality of
+                                      Equality.False => false
+                                    | Equality.True => true
+                                    | Equality.Unknown =>
+                                         (equality := Equality.False
+                                          ; false)}
                                val _ = List.push (tyvars, a)
                                val _ =
                                   Set.:= (s, {equality = equality,
-                                              plist = PropertyList.new (),
+                                              plist = plist,
                                               time = time,
                                               ty = Type.Var a})
                             in
@@ -2366,6 +2425,13 @@ structure Type =
             res
          end
 
+      fun copy t =
+         hom (t, {con = Type.con,
+                  expandOpaque = false,
+                  record = Type.record,
+                  replaceSynonyms = false,
+                  var = Type.var})
+
       val unify =
          fn (t1, t2, {error, layoutPretty, layoutPrettyTycon, layoutPrettyTyvar}) =>
          case unify (t1, t2, {layoutPretty = layoutPretty,
@@ -2374,8 +2440,6 @@ structure Type =
             NotUnifiable (l1, l2, extra) => error (l1, l2, extra)
           | Unified () => ()
 
-      val explainDoesNotAdmitEquality = #1 o explainDoesNotAdmitEquality
-
       val checkTime =
          fn (t, bound, {layoutPretty, layoutPrettyTycon, layoutPrettyTyvar}) =>
          let
@@ -2383,14 +2447,12 @@ structure Type =
                makeCheckTime {layoutPretty = layoutPretty,
                               layoutPrettyTycon = layoutPrettyTycon,
                               layoutPrettyTyvar = layoutPrettyTyvar}
-            val res =
-               Option.map
-               (checkTime (t, bound), fn ((l, _), (ty, _)) =>
-                (l, ty, let val {tycons, tyvars, ...} = finishCheckTime ()
-                        in {tycons = tycons, tyvars = tyvars}
-                        end))
          in
-            res
+            Option.map
+            (checkTime (t, bound), fn ((l, _), (ty, _)) =>
+             (l, ty, let val {tycons, tyvars, ...} = finishCheckTime ()
+                     in {tycons = tycons, tyvars = tyvars}
+                     end))
          end
    end
 
