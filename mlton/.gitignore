@@ -9,3 +9,6 @@
 /mlton-smlnj.*-*
 /mlton-stubs.mlb
 /mlton.def-use
+
+# GNU Autoconf generated
+/Makefile

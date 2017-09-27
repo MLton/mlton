@@ -12,19 +12,24 @@ PATH := ../bin:$(shell echo $$PATH)
 TARGET := self
 
 ifeq ($(TARGET), self)
-CC := gcc -std=gnu99
+# CC := gcc -std=gnu99
+CC := @CC@
 AR := ar rc
-RANLIB := ranlib
+# RANLIB := ranlib
+RANLIB := @RANLIB@
 else
-CC := $(TARGET)-gcc -std=gnu99
+# CC := $(TARGET)-gcc -std=gnu99
+CC := $(TARGET)-@CC@
 AR := $(TARGET)-ar rc
-RANLIB := $(TARGET)-ranlib
+# RANLIB := $(TARGET)-ranlib
+RANLIB := $(TARGET)-@RANLIB@
 endif
 
-WITH_GMP :=
-ifneq ($(WITH_GMP),)
-WITH_GMP_INC_DIR := "$(WITH_GMP)/include"
-WITH_GMP_LIB_DIR := "$(WITH_GMP)/lib"
+ifneq (@WITH_GMP_INC_DIR@,)
+WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
+endif
+ifneq (@WITH_GMP_LIB_DIR@,)
+WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
 endif
 
 TARGET_ARCH := $(shell ../bin/host-arch)
@@ -160,6 +165,10 @@ endif
 
 ifneq ($(WITH_GMP_INC_DIR),)
 XCFLAGS += -I$(WITH_GMP_INC_DIR)
+endif
+
+ifneq ($(WITH_GMP_LIB_DIR),)
+XCFLAGS += -L$(WITH_GMP_LIB_DIR)
 endif
 
 XCFLAGS += -I. -Iplatform
