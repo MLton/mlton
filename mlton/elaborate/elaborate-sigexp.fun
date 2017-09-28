@@ -405,7 +405,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                      {realization = realization,
                                       region = WhereEquation.region eqn,
                                       time = time,
-                                      ty = {lay = fn () => Longtycon.layout longtycon,
+                                      ty = {name = fn () => Longtycon.layout longtycon,
                                             region = Longtycon.region longtycon,
                                             spec = Ast.Tycon.region name,
                                             tyStr = s}}
@@ -535,7 +535,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                 | (SOME (c, n, s), SOME (n', s')) =>
                                      let
                                         fun mkTy (c, n, s) =
-                                           {lay = fn () => Longtycon.layout c,
+                                           {name = fn () => Longtycon.layout c,
                                             region = Longtycon.region c,
                                             spec = Ast.Tycon.region n,
                                             tyStr = s}

@@ -790,7 +790,7 @@ structure TypeStr =
                FlexibleTycon.pushSpec (flex, region)
           | SOME (Tycon.Rigid _) => ()
 
-      fun mkErrorExtra ({lay, region = _, spec, tyStr},
+      fun mkErrorExtra ({name, region = _, spec, tyStr},
                         keywordErr, arityErr, defnErr) =
          let
             val defn =
@@ -848,7 +848,7 @@ structure TypeStr =
                   then str " "
                   else seq [str " ", tyvars, str " "]
          in
-            (seq  [str "type spec: ", keyword, tyvars, lay (), rest])::
+            (seq  [str "type spec: ", keyword, tyvars, name (), rest])::
             (List.map
              (spec::(specs tyStr), fn r =>
               seq [str "spec at: ", Region.layout r]))
@@ -856,7 +856,7 @@ structure TypeStr =
 
       fun getFlex {oper: string,
                    time: Time.t,
-                   ty as {lay: unit -> Layout.t,
+                   ty as {name: unit -> Layout.t,
                           region: Region.t,
                           spec = _: Region.t,
                           tyStr: t}}: FlexibleTycon.t option =
@@ -871,7 +871,7 @@ structure TypeStr =
                            str " (",
                            str what,
                            str "): ",
-                           lay ()],
+                           name ()],
                       align (mkErrorExtra (ty, false, false, defnErr)))
                in
                   NONE
@@ -909,7 +909,7 @@ structure TypeStr =
                   else Control.error
                        (region,
                         seq [str "types cannot be shared (arity): ",
-                             (#lay ty1) (), str ", ", (#lay ty2) ()],
+                             (#name ty1) (), str ", ", (#name ty2) ()],
                         align ((mkErrorExtra (ty1, false, true, false)) @
                                (mkErrorExtra (ty2, false, true, false))))
 
@@ -926,7 +926,7 @@ structure TypeStr =
       fun wheree {region: Region.t,
                   realization: t,
                   time: Time.t,
-                  ty: {lay: unit -> Layout.t,
+                  ty: {name: unit -> Layout.t,
                        region: Region.t,
                        spec: Region.t,
                        tyStr: t}}: unit =
@@ -975,7 +975,7 @@ structure TypeStr =
                               seq [str "type cannot be realized (",
                                    (seq o List.separate) (msgs, str ", "),
                                    str "): ",
-                                   (#lay ty) ()],
+                                   (#name ty) ()],
                               align ((mkErrorExtra (ty, keywordErr, arityErr, false)) @
                                      [seq [str "type defn: ",
                                            (seq o List.separate) (defnMsgs, str ", ")]]))
@@ -1193,20 +1193,20 @@ fun lookupLongstrid (I: t, long: Longstrid.t, r: Region.t,
 
 fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, sharingSpec): unit =
    let
-      fun mkTy (s, ls, strids, name) =
+      fun mkTy (s, ls, strids, con) =
          let
-            fun lay () =
+            fun name () =
                let
                   val (ss, s) = Longstrid.split ls
                in
                   Ast.Longtycon.layout
                   (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
-                                       name))
+                                       con))
                end
          in
-            {lay = lay,
+            {name = name,
              region = Longstrid.region ls,
-             spec = Ast.Tycon.region name,
+             spec = Ast.Tycon.region con,
              tyStr = s}
          end
       fun ensureFlexible (I: t, strids): unit =

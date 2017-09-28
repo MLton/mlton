@@ -168,11 +168,11 @@ signature INTERFACE =
             val share:
                {region: Region.t,
                 time: Time.t,
-                ty1: {lay: unit -> Layout.t,
+                ty1: {name: unit -> Layout.t,
                       region: Region.t,
                       spec: Region.t,
                       tyStr: t},
-                ty2: {lay: unit -> Layout.t,
+                ty2: {name: unit -> Layout.t,
                       region: Region.t,
                       spec: Region.t,
                       tyStr: t}}
@@ -181,7 +181,7 @@ signature INTERFACE =
                {realization: t,
                 region: Region.t,
                 time: Time.t,
-                ty: {lay: unit -> Layout.t,
+                ty: {name: unit -> Layout.t,
                      region: Region.t,
                      spec: Region.t,
                      tyStr: t}}
