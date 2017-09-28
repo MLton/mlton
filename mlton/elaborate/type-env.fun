@@ -509,6 +509,7 @@ structure Type =
           fields: (Field.t * t) list,
           spine: Spine.t}
 
+      val depthCloses: int ref = ref 0
       val newCloses: t list ref = ref []
 
       local
@@ -887,7 +888,10 @@ structure Type =
             val t = make {equality = equality,
                           time = time,
                           ty = Unknown u}
-            val _ = List.push (newCloses, t)
+            val _ =
+               if !depthCloses > 0
+                  then List.push (newCloses, t)
+                  else ()
          in
             (u, t)
          end
@@ -911,7 +915,10 @@ structure Type =
             fun isResolved (): bool = not (Spine.canAddFields spine)
             val t = newFlex {fields = Vector.toList v,
                              spine = spine}
-            val _ = List.push (newCloses, t)
+            val _ =
+               if !depthCloses > 0
+                  then List.push (newCloses, t)
+                  else ()
          in
             (t, isResolved)
          end
@@ -2196,6 +2203,7 @@ fun 'a close region =
       val beforeGen = Time.now ()
       val () = Time.tick region
       val genTime = Time.now ()
+      val () = Int.inc Type.depthCloses
       val savedCloses = !Type.newCloses
       val () = Type.newCloses := []
    in
@@ -2318,7 +2326,10 @@ fun 'a close region =
                             end
                     | _ => ac
              end)
-         val _ = Type.newCloses := newCloses
+         val _ = Int.dec Type.depthCloses
+         val _ = if !Type.depthCloses > 0
+                    then Type.newCloses := newCloses
+                    else Type.newCloses := []
          val flexes = !flexes
          val tyvars = !tyvars
          (* For all fields that were added to the generalized flex records,
