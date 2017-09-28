@@ -130,7 +130,7 @@ fun elaborateType (ty: Atype.t, E: Env.t): Type.t =
                                                                      (List.tabulate (n, fn _ => str "_"),
                                                                       ", "),
                                                                      str ")"],
-                                                        str "]",
+                                                        str "] ",
                                                         Ast.Longtycon.layout c]
                                              in
                                                 Control.error
