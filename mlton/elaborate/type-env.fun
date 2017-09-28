@@ -1182,8 +1182,9 @@ structure Type =
                 | SOME (l1, l2, t) =>
                      (SOME (l1, l2), t)
             (* Need extra guarding of Con, because proceeding with
-             * hom/con would recursively force all type args to
-             * Equality.True, even if tycon is AdmitsEquality.Never. *)
+             * hom/con would recursively force all Unknowns in type
+             * args to Equality.True, even if tycon is
+             * AdmitsEquality.Never. *)
             fun guard t =
                case !(equality t) of
                   Equality.True => SOME (NONE, t)
