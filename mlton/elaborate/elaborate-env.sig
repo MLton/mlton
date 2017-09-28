@@ -22,9 +22,6 @@ signature ELABORATE_ENV =
    sig
       include ELABORATE_ENV_STRUCTS
 
-      structure AdmitsEquality: ADMITS_EQUALITY
-      sharing AdmitsEquality = TypeEnv.Tycon.AdmitsEquality
-
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
@@ -37,8 +34,13 @@ signature ELABORATE_ENV =
             val makeLayoutPretty: unit -> {destroy: unit -> unit, layoutPretty: Tyvar.t -> Layout.t}
          end
 
+      structure AdmitsEquality: ADMITS_EQUALITY
+      sharing AdmitsEquality = TypeEnv.Tycon.AdmitsEquality
+      structure Kind: TYCON_KIND
+      sharing Kind = TypeEnv.Tycon.Kind
       structure Tycon: TYCON
       sharing Tycon = TypeEnv.Tycon
+
       structure Type:
          sig
             type t
@@ -49,6 +51,7 @@ signature ELABORATE_ENV =
             type t
          end
       sharing Scheme = TypeEnv.Scheme
+
       (* The value of a vid.  This is used to distinguish between vids whose
        * status cannot be determined at parse time.
        *)
@@ -62,6 +65,7 @@ signature ELABORATE_ENV =
 
             val layout: t -> Layout.t
          end
+
       structure TypeStr:
          sig
             structure Cons:
@@ -69,11 +73,6 @@ signature ELABORATE_ENV =
                   type t
 
                   val layout: t -> Layout.t
-               end
-            structure Kind: TYCON_KIND
-            structure Tycon:
-               sig
-                  type t
                end
 
             type t
@@ -95,13 +94,15 @@ signature ELABORATE_ENV =
             val toTyconOpt: t -> Tycon.t option (* NONE on Scheme *)
             val tycon: Tycon.t -> t
          end
-      sharing TypeStr.Kind = Tycon.Kind
-      sharing TypeStr.Tycon = CoreML.Tycon
+
       structure Interface: INTERFACE
-      sharing Interface.AdmitsEquality = AdmitsEquality
       sharing Interface.Ast = Ast
+      sharing Interface.AdmitsEquality = AdmitsEquality
+      sharing Interface.Kind = Kind
+      sharing Interface.EnvTycon = Tycon
       sharing Interface.EnvTypeStr = TypeStr
       sharing Interface.Tyvar = Tyvar
+
       structure Structure:
          sig
             type t
@@ -121,6 +122,7 @@ signature ELABORATE_ENV =
                         -> Decs.t * Structure.t option)
             val argInterface: t -> Interface.t
          end
+
       structure InterfaceEnv:
          sig
             structure Scheme:

@@ -327,11 +327,6 @@ structure Vid =
 
 structure TypeStr =
    struct
-      structure AdmitsEquality = AdmitsEquality
-      structure Kind = Kind
-      structure Tycon = Tycon
-      structure Tyvar = Tyvar
-
       structure Cons :
          sig
             type t
@@ -516,7 +511,11 @@ in
 end
 
 structure Interface = Interface (structure Ast = Ast
-                                 structure EnvTypeStr = TypeStr)
+                                 structure AdmitsEquality = AdmitsEquality
+                                 structure Kind = Kind
+                                 structure EnvTycon = Tycon
+                                 structure EnvTypeStr = TypeStr
+                                 structure Tyvar = Tyvar)
 
 local
    open Interface

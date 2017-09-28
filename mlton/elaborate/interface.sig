@@ -10,45 +10,39 @@
 signature INTERFACE_STRUCTS = 
    sig
       structure Ast: AST
+      structure AdmitsEquality: ADMITS_EQUALITY
+      structure Kind: TYCON_KIND
+      structure EnvTycon:
+         sig
+            type t
+
+            val admitsEquality: t -> AdmitsEquality.t ref
+            val arrow: t
+            val equals: t * t -> bool
+            val exn: t
+            val kind: t -> Kind.t
+            val layout: t -> Layout.t
+            val tuple: t
+         end
       structure EnvTypeStr:
          sig
-            structure AdmitsEquality: ADMITS_EQUALITY
-            structure Kind: TYCON_KIND
-            structure Tycon:
-               sig
-                  type t
-
-                  val admitsEquality: t -> AdmitsEquality.t ref
-                  val arrow: t
-                  val equals: t * t -> bool
-                  val exn: t
-                  val kind: t -> Kind.t
-                  val layout: t -> Layout.t
-                  val tuple: t
-               end
-            structure Tyvar:
-               sig
-                  include ID
-                  val makeNoname: {equality: bool} -> t
-                  val makeLayoutPretty:
-                     unit
-                     -> {destroy: unit -> unit,
-                         layoutPretty: t -> Layout.t,
-                         localInit: t vector -> unit}
-               end
-
             type t
+         end
+      structure Tyvar:
+         sig
+            include ID
+            val makeNoname: {equality: bool} -> t
+            val makeLayoutPretty:
+               unit
+               -> {destroy: unit -> unit,
+                   layoutPretty: t -> Layout.t,
+                   localInit: t vector -> unit}
          end
    end
 
 signature INTERFACE = 
    sig
       include INTERFACE_STRUCTS
-
-      structure AdmitsEquality: ADMITS_EQUALITY
-      sharing AdmitsEquality = EnvTypeStr.AdmitsEquality
-      structure Kind: TYCON_KIND
-      sharing Kind = EnvTypeStr.Kind
 
       structure FlexibleTycon:
          sig
@@ -69,16 +63,11 @@ signature INTERFACE =
          sig
             datatype t =
                Flexible of FlexibleTycon.t
-             | Rigid of EnvTypeStr.Tycon.t
+             | Rigid of EnvTycon.t
 
             val admitsEquality: t -> AdmitsEquality.t ref
             val make: {hasCons: bool, kind: Kind.t} -> t
          end
-      structure Tyvar:
-         sig
-            type t
-         end
-      sharing Tyvar = EnvTypeStr.Tyvar
       structure Record: RECORD
       sharing Record = Ast.SortedRecord
       structure Type:

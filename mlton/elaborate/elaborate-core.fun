@@ -108,6 +108,7 @@ end
 local
    open Env
 in
+   structure Kind = Kind
    structure TypeEnv = TypeEnv
    structure TypeStr = TypeStr
    structure TyvarEnv = TyvarEnv
@@ -115,15 +116,8 @@ in
 end
 
 local
-   open TypeStr
-in
-   structure Kind = Kind
-end
-
-local
    open TypeEnv
 in
-   structure LayoutPretty = LayoutPretty
    structure Scheme = Scheme
    structure Time = Time
    structure Type = Type

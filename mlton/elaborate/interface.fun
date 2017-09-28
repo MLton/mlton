@@ -33,15 +33,8 @@ in
    structure Vid = Vid
 end
 
+structure Etycon = EnvTycon
 structure EtypeStr = EnvTypeStr
-local
-   open EtypeStr
-in
-   structure AdmitsEquality = AdmitsEquality
-   structure Kind = Kind
-   structure Etycon = Tycon
-   structure Tyvar = Tyvar
-end
 
 structure Set = DisjointSet
 
