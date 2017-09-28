@@ -509,9 +509,6 @@ structure Type =
           fields: (Field.t * t) list,
           spine: Spine.t}
 
-      val depthCloses: int ref = ref 0
-      val newCloses: t list ref = ref []
-
       local
          fun make f (T s) = f (Set.! s)
       in
@@ -888,10 +885,6 @@ structure Type =
             val t = make {equality = equality,
                           time = time,
                           ty = Unknown u}
-            val _ =
-               if !depthCloses > 0
-                  then List.push (newCloses, t)
-                  else ()
          in
             (u, t)
          end
@@ -915,10 +908,6 @@ structure Type =
             fun isResolved (): bool = not (Spine.canAddFields spine)
             val t = newFlex {fields = Vector.toList v,
                              spine = spine}
-            val _ =
-               if !depthCloses > 0
-                  then List.push (newCloses, t)
-                  else ()
          in
             (t, isResolved)
          end
@@ -2202,10 +2191,6 @@ fun 'a close region =
    let
       val beforeGen = Time.now ()
       val () = Time.tick region
-      val genTime = Time.now ()
-      val () = Int.inc Type.depthCloses
-      val savedCloses = !Type.newCloses
-      val () = Type.newCloses := []
    in
       fn (ensure,
           varTypes,
@@ -2236,102 +2221,99 @@ fun 'a close region =
                                      (error (var, l, tyvars)
                                       ; ty'))})
          end
-         val flexes = ref []
-         val tyvars = ref (Vector.toList ensure)
+         val tyvars = Vector.toList ensure
          (* Convert all the unknown types bound at this level into tyvars.
           * Convert all the FlexRecords bound at this level into
           * GenFlexRecords.
           *)
-         val newCloses =
-            List.fold
-            (!Type.newCloses, savedCloses, fn (t as Type.T s, ac) =>
-             let
-                val {equality, plist, time, ty, ...} = Set.! s
-                val _ =
-                   if true then () else
-                      Layout.outputl (seq [str "considering ",
-                                           Type.layout t,
-                                           str " with time ",
-                                           Time.layout (!time),
-                                           str " where getTime is ",
-                                           Time.layout genTime],
-                                      Out.error)
-             in
-                if not (Time.<= (genTime, !time))
-                   then t :: ac
-                else
-                   case ty of
-                      Type.FlexRecord {fields, spine, ...} =>
-                         let
-                            fun newField f =
-                               {field = f,
-                                tyvar = Tyvar.makeNoname {equality = false}}
-                            val extra =
-                               let
-                                  val all = ref []
-                                  val fields = 
-                                     List.map (fields, fn (f, _) => (f, ()))
-                               in
-                                  fn () =>
-                                  let
-                                     val old = !all
-                                     val fields =
-                                        List.fold 
-                                        (old, fields, fn ({field, ...}, ac) => 
-                                         (field, ()) :: ac)
-                                     val new =
-                                        Spine.foldOverNew
-                                        (spine, fields, old, fn (f, ac) =>
-                                         (newField f) :: ac)
-                                     val () = all := new
+         val (flexes, tyvars) =
+            if Vector.forall
+               (varTypes, fn {ty, ...} =>
+                Time.<= (!(Type.time ty), beforeGen))
+               then ([], tyvars)
+               else let
+                       val flexes = ref []
+                       val tyvars = ref tyvars
+                       fun flexRecord (t, _) =
+                          let
+                             val (fields, spine) =
+                                case Type.getTy t of
+                                   Type.FlexRecord {fields, spine} =>
+                                      (fields, spine)
+                                 | _ => Error.bug "TypeEnv.close.flexRecord: not FlexRecord"
+                             fun newField f =
+                                {field = f,
+                                 tyvar = Tyvar.makeNoname {equality = false}}
+                             val extra =
+                                let
+                                   val all = ref []
+                                   val fields =
+                                      List.map (fields, fn (f, _) => (f, ()))
+                                in
+                                   fn () =>
+                                   let
+                                      val old = !all
+                                      val fields =
+                                         List.fold
+                                         (old, fields, fn ({field, ...}, ac) =>
+                                          (field, ()) :: ac)
+                                      val new =
+                                         Spine.foldOverNew
+                                         (spine, fields, old, fn (f, ac) =>
+                                          (newField f) :: ac)
+                                      val () = all := new
+                                   in
+                                      new
+                                   end
+                                end
+                             val gfr = {extra = extra,
+                                        fields = fields,
+                                        spine = spine}
+                             val _ = List.push (flexes, gfr)
+                          in
+                             Type.setTy
+                             (t, Type.GenFlexRecord gfr)
+                          end
+                       fun unknown (t, Unknown.T {canGeneralize, ...}) =
+                          if not canGeneralize
+                             then ()
+                             else let
+                                     val equality = Type.equality t
+                                     val a =
+                                        Tyvar.makeNoname
+                                        {equality =
+                                         case !equality of
+                                            Equality.False => false
+                                          | Equality.True => true
+                                          | Equality.Unknown =>
+                                               (equality := Equality.False
+                                                ; false)}
+                                     val _ = List.push (tyvars, a)
                                   in
-                                     new
+                                     Type.setTy
+                                     (t, Type.Var a)
                                   end
-                               end
-                            val gfr = {extra = extra,
-                                       fields = fields,
-                                       spine = spine}
-                            val _ = List.push (flexes, gfr)
-                            val _ = 
-                               Set.:=
-                               (s, {equality = equality,
-                                    plist = plist,
-                                    time = time,
-                                    ty = Type.GenFlexRecord gfr})
-                         in
-                            ac
-                         end
-                    | Type.Unknown (Unknown.T {canGeneralize, ...}) =>
-                         if not canGeneralize
-                            then t :: ac
-                         else
-                            let
-                               val a =
-                                  Tyvar.makeNoname
-                                  {equality =
-                                   case !equality of
-                                      Equality.False => false
-                                    | Equality.True => true
-                                    | Equality.Unknown =>
-                                         (equality := Equality.False
-                                          ; false)}
-                               val _ = List.push (tyvars, a)
-                               val _ =
-                                  Set.:= (s, {equality = equality,
-                                              plist = plist,
-                                              time = time,
-                                              ty = Type.Var a})
-                            in
-                               ac
-                            end
-                    | _ => ac
-             end)
-         val _ = Int.dec Type.depthCloses
-         val _ = if !Type.depthCloses > 0
-                    then Type.newCloses := newCloses
-                    else Type.newCloses := []
-         val flexes = !flexes
-         val tyvars = !tyvars
+                       fun guard t =
+                          if Time.<= (!(Type.time t), beforeGen)
+                             then SOME ()
+                             else NONE
+                       val {destroy, hom} =
+                          Type.makeHom
+                          {con = fn _ => (),
+                           expandOpaque = false,
+                           flexRecord = flexRecord,
+                           genFlexRecord = fn _ => (),
+                           guard = guard,
+                           overload = fn _ => (),
+                           record = fn _ => (),
+                           recursive = fn _ => (),
+                           unknown = unknown,
+                           var = fn _ => ()}
+                       val _ = Vector.foreach (varTypes, hom o #ty)
+                       val _ = destroy ()
+                    in
+                       (!flexes, !tyvars)
+                    end
          (* For all fields that were added to the generalized flex records,
           * add a type variable.
           *)
