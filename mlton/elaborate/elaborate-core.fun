@@ -528,11 +528,11 @@ structure DiagUtils =
                Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
             val {layoutPretty = layoutPrettyTyvar, ...} =
                TyvarEnv.makeLayoutPretty ()
-            val {layoutPretty = layoutPrettyType, ...} =
-               Type.makeLayoutPretty
-               {expandOpaque = false,
-                layoutPrettyTycon = layoutPrettyTycon,
-                layoutPrettyTyvar = layoutPrettyTyvar}
+            val layoutPrettyType = fn t =>
+               Type.layoutPretty
+               (t, {expandOpaque = false,
+                    layoutPrettyTycon = layoutPrettyTycon,
+                    layoutPrettyTyvar = layoutPrettyTyvar})
             fun unify (t, t', error) =
                let
                   val error = fn (l, l', {notes}) =>
