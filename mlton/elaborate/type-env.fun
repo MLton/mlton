@@ -25,17 +25,6 @@ in
    val str = str
 end
 
-structure LayoutPretty =
-   struct
-      type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
-
-      fun simple (l: Layout.t): t =
-         (l, ({isChar = false}, Tycon.BindingStrength.unit))
-
-      val dontCare: t = simple (str "_")
-      fun bracket ((l, ({isChar}, _)): t): t =
-         (Layout.bracket l, ({isChar = isChar}, Tycon.BindingStrength.unit))
-   end
 local
    open LayoutPretty
 in

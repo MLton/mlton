@@ -16,11 +16,6 @@ signature TYPE_ENV =
    sig
       include TYPE_ENV_STRUCTS
 
-      structure LayoutPretty:
-         sig
-            type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
-         end
-
       structure Time:
          sig
             type t

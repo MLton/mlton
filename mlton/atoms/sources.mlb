@@ -11,6 +11,8 @@ local
    ../../lib/mlton/sources.mlb
    ../control/sources.mlb
 
+   layout-pretty.sml
+
    char-size.sig
    char-size.fun
    int-size.sig
@@ -81,7 +83,6 @@ local
 in
    signature ADMITS_EQUALITY
    signature ATOMS
-   signature BINDING_STRENGTH
    signature CHAR_SIZE
    signature CONST
    signature CONST_TYPE
@@ -107,6 +108,8 @@ in
    signature WORD_X
    signature WORD_X_VECTOR
  
+   structure LayoutPretty
+
    functor PrimCons
    functor PrimTycons
    functor Atoms

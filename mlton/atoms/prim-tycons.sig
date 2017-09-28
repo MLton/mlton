@@ -28,18 +28,9 @@ signature PRIM_TYCONS_STRUCTS =
       val layout: t -> Layout.t
    end
 
-signature BINDING_STRENGTH =
-   sig
-      type t
-
-      val unit: t
-   end
-
 signature PRIM_TYCONS =
    sig
       include PRIM_TYCONS_SUBSTRUCTS
-
-      structure BindingStrength: BINDING_STRENGTH
 
       type tycon
 
@@ -70,9 +61,9 @@ signature PRIM_TYCONS =
       val list: tycon
       val layoutAppPretty:
          tycon
-         * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
+         * LayoutPretty.t vector
          * {layoutPretty: tycon -> Layout.t}
-         -> Layout.t * ({isChar: bool} * BindingStrength.t)
+         -> LayoutPretty.t
       val prims: {admitsEquality: AdmitsEquality.t,
                   kind: Kind.t,
                   name: string,

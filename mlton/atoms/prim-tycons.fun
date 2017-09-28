@@ -12,24 +12,6 @@ struct
 
 open S
 
-structure BindingStrength =
-   struct
-      datatype t =
-         Arrow
-       | Tuple
-       | Unit
-
-      val unit = Unit
-   end
-
-structure LayoutPretty =
-   struct
-      type t = Layout.t * ({isChar: bool} * BindingStrength.t)
-
-      fun simple (l: Layout.t): t =
-         (l, ({isChar = false}, BindingStrength.unit))
-   end
-
 datatype z = datatype RealSize.t
 
 type tycon = t

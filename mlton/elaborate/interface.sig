@@ -16,8 +16,6 @@ signature INTERFACE_STRUCTS =
             structure Kind: TYCON_KIND
             structure Tycon:
                sig
-                  structure BindingStrength: BINDING_STRENGTH
-
                   type t
 
                   val admitsEquality: t -> AdmitsEquality.t ref
