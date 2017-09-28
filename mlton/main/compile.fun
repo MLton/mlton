@@ -41,10 +41,10 @@ structure CoreML = CoreML (open Atoms
                                              var = var}
 
                                  fun layout t = 
-                                    layoutPretty
-                                    (t, {expandOpaque = true,
-                                         layoutPrettyTycon = Tycon.layout,
-                                         layoutPrettyTyvar = Tyvar.layout})
+                                    #1 (layoutPretty
+                                        (t, {expandOpaque = true,
+                                             layoutPrettyTycon = Tycon.layout,
+                                             layoutPrettyTyvar = Tyvar.layout}))
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)

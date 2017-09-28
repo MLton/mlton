@@ -750,7 +750,7 @@ structure Type =
                makeLayoutPretty {expandOpaque = expandOpaque,
                                  layoutPrettyTycon = layoutPrettyTycon,
                                  layoutPrettyTyvar = layoutPrettyTyvar}
-            val res = #1 (layoutPretty t)
+            val res = layoutPretty t
             val () = destroy ()
          in
             res

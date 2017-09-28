@@ -60,7 +60,7 @@ signature TYPE_ENV =
                t * {expandOpaque: bool,
                     layoutPrettyTycon: Tycon.t -> Layout.t,
                     layoutPrettyTyvar: Tyvar.t -> Layout.t}
-               -> Layout.t
+               -> LayoutPretty.t
             val makeHom: {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
                           var: Tyvar.t -> 'a} -> {destroy: unit -> unit,

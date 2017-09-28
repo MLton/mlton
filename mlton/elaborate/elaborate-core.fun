@@ -2093,7 +2093,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   localInit = localInitLayoutPrettyTyvar, ...} =
                                                 Tyvar.makeLayoutPretty ()
                                              val () = localInitLayoutPrettyTyvar bs
-                                             val lay =
+                                             val (lay, _) =
                                                 Type.layoutPretty
                                                 (t, {expandOpaque = false,
                                                      layoutPrettyTycon = layoutPrettyTycon,
