@@ -17,14 +17,13 @@ functor PrimSequence (S: sig
                             val fromArray: 'a elt array -> 'a sequence
                             val isMutable: bool
                             val length: 'a sequence -> SeqIndex.int
-                            val new0: (unit -> 'a sequence) option
                             val sameArray: 'a elt array * 'a sequence -> bool
                             val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
                          end) :> PRIM_SEQUENCE where type 'a sequence = 'a S.sequence
                                                where type 'a elt = 'a S.elt =
    struct
       structure Array = Primitive.Array
-      
+
       val op +? = SeqIndex.+?
       val op + = SeqIndex.+
       val op -? = SeqIndex.-?
@@ -134,11 +133,6 @@ functor PrimSequence (S: sig
          in
             (S.fromArray a, b)
          end
-      val unfoldi = fn (n, b, f) =>
-         case S.new0 of
-            NONE => unfoldi (n, b, f)
-          | SOME new0 =>
-               if n = 0 then (new0 (), b) else unfoldi (n, b, f)
 
       fun unfold (n, b, f) = unfoldi (n, b, f o #2)
 
@@ -480,7 +474,6 @@ structure Vector =
                                      val fromArray = Vector.fromArrayUnsafe
                                      val isMutable = false
                                      val length = Vector.length
-                                     val new0 = SOME Vector.vector0
                                      val sameArray = fn _ => false
                                      val subUnsafe = Vector.subUnsafe)
       in
@@ -507,7 +500,6 @@ structure Array =
                                      val sameArray = op =
                                      val copyUnsafe = Array.copyArrayUnsafe
                                      val fromArray = fn a => a
-                                     val new0 = NONE
                                      val isMutable = true
                                      val length = Array.length
                                      val subUnsafe = Array.subUnsafe)
