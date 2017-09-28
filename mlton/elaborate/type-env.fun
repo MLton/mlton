@@ -350,7 +350,7 @@ structure Unknown =
               Layout.record [("canGeneralize", Bool.layout canGeneralize),
                              ("id", Int.layout id)]]
 
-      fun layoutPretty _ = simple (str "???")
+      fun layoutPretty _ = str "???"
 
       fun equals (u, u') = id u = id u'
 
@@ -726,7 +726,7 @@ structure Type =
                       false)
                 | SOME ts => LayoutPretty.tuple ts
             fun recursive _ = simple (str "<recur>")
-            fun unknown (_, u) = Unknown.layoutPretty u
+            fun unknown (_, u) = simple (Unknown.layoutPretty u)
             fun var (_, a) = simple (layoutPrettyTyvar a)
             val {destroy, hom = layoutPretty} =
                makeHom {con = con,
@@ -881,7 +881,7 @@ structure Type =
                         ty = ty})
          end
 
-      fun unknown {canGeneralize, equality, time} =
+      fun unknownAux {canGeneralize, equality, time} =
          let
             val u = Unknown.new {canGeneralize = canGeneralize}
             val t = make {equality = equality,
@@ -889,14 +889,15 @@ structure Type =
                           ty = Unknown u}
             val _ = List.push (newCloses, t)
          in
-            t
+            (u, t)
          end
+      val unknown = #2 o unknownAux
 
-      fun newAt time = unknown {canGeneralize = true,
-                                equality = Equality.Unknown,
-                                time = time}
-
-      fun new () = newAt (Time.now ())
+      fun new () =
+         unknown
+         {canGeneralize = true,
+          equality = Equality.Unknown,
+          time = Time.now ()}
 
       val new = Trace.trace ("TypeEnv.Type.new", Unit.layout, layout) new
 
@@ -1106,12 +1107,13 @@ structure Type =
                case ov of
                   Overload.Real =>
                      let
-                        val ty = Type.unknown {canGeneralize = true,
-                                               equality = Equality.True,
-                                               time = Time.now ()}
+                        val ty =
+                           Type.unknown {canGeneralize = true,
+                                         equality = Equality.True,
+                                         time = Time.now ()}
                      in
-                        SOME (simple (Layout.bracket (str "real")),
-                              simple (Layout.bracket (str "<equality>")),
+                        SOME (bracket (simple (str "real")),
+                              bracket (simple (str "<equality>")),
                               ty)
                      end
                 | _ => Error.bug "TypeEnv.Type.checkEquality.overload"
@@ -1149,12 +1151,13 @@ structure Type =
                case !(equality t) of
                   Equality.False =>
                      let
-                        val ty = Type.unknown {canGeneralize = true,
-                                               equality = Equality.True,
-                                               time = Time.now ()}
+                        val ty =
+                           Type.unknown {canGeneralize = true,
+                                         equality = Equality.True,
+                                         time = Time.now ()}
                      in
-                        SOME (simple (Layout.bracket (str "<non-equality>")),
-                              simple (Layout.bracket (str "<equality>")),
+                        SOME (bracket (simple (str "<non-equality>")),
+                              bracket (simple (str "<equality>")),
                               ty)
                      end
                 | Equality.True => NONE
@@ -1165,12 +1168,13 @@ structure Type =
                if Tyvar.isEquality a
                   then Error.bug "TypeEnv.Type.checkEquality.var"
                   else let
-                          val ty = Type.unknown {canGeneralize = true,
-                                                 equality = Equality.True,
-                                                 time = Time.now ()}
+                          val ty =
+                             Type.unknown {canGeneralize = true,
+                                           equality = Equality.True,
+                                           time = Time.now ()}
                        in
-                          SOME (simple (Layout.bracket (layoutPrettyTyvar a)),
-                                simple (Layout.bracket (str "<equality>")),
+                          SOME (bracket (simple (layoutPrettyTyvar a)),
+                                bracket (simple (str "<equality>")),
                                 ty)
                        end
             fun wrap (f, sel) arg =
@@ -1198,13 +1202,14 @@ structure Type =
                                 | AdmitsEquality.Sometimes => NONE
                                 | AdmitsEquality.Never =>
                                      let
-                                        val ty = Type.unknown {canGeneralize = true,
-                                                               equality = Equality.True,
-                                                               time = Time.now ()}
+                                        val ty =
+                                           Type.unknown {canGeneralize = true,
+                                                         equality = Equality.True,
+                                                         time = Time.now ()}
                                      in
                                         SOME (SOME ((bracket o layoutAppPretty)
                                                     (c, Vector.map (ts, fn _ => dontCare)),
-                                                    simple (Layout.bracket (str "<equality>"))),
+                                                    bracket (simple (str "<equality>"))),
                                               ty)
                                      end)
                          | _ => NONE)
@@ -1236,8 +1241,7 @@ structure Type =
        *  - a list of violating tycons
        *  - a list of violating tyvars
        *)
-      fun makeCheckTime {layoutPretty: t -> LayoutPretty.t,
-                         layoutPrettyTycon: Tycon.t -> Layout.t,
+      fun makeCheckTime {layoutPrettyTycon: Tycon.t -> Layout.t,
                          layoutPrettyTyvar: Tyvar.t -> Layout.t} =
          let
             val layoutAppPretty = fn (c, ts) =>
@@ -1269,7 +1273,10 @@ structure Type =
                                      Type.con
                                      (c, Vector.map (rs, getTy)))
                   else let
-                          val ty = Type.newAt bound
+                          val (u, ty) =
+                             Type.unknownAux {canGeneralize = true,
+                                              equality = Equality.Unknown,
+                                              time = bound}
                        in
                           List.push (times, bound)
                           ; List.push (tycons, c)
@@ -1277,7 +1284,7 @@ structure Type =
                                   (c, Vector.map (rs, getLay2)),
                                   layoutAppPretty
                                   (c, Vector.map (rs, getLay2)),
-                                  bracket (layoutPretty ty),
+                                  bracket (simple (Unknown.layoutPretty u)),
                                   ty)
                        end
             fun doRecord (fls: (Field.t * lll) list,
@@ -1341,13 +1348,16 @@ structure Type =
                if Time.<= (Tyvar.time a, bound)
                   then NONE
                   else let
-                          val ty = newAt bound
+                          val (u, ty) =
+                             Type.unknownAux {canGeneralize = true,
+                                              equality = Equality.Unknown,
+                                              time = bound}
                        in
                           List.push (times, bound)
                           ; List.push (tyvars, a)
                           ; SOME (bracket (simple (layoutPrettyTyvar a)),
                                   simple (layoutPrettyTyvar a),
-                                  bracket (layoutPretty ty),
+                                  bracket (simple (Unknown.layoutPretty u)),
                                   ty)
                        end
             fun genFlexRecord _ = Error.bug "TypeEnv.Type.checkTime.genFlexRecord"
@@ -1418,8 +1428,7 @@ structure Type =
                checkEquality (t, {layoutPrettyTycon = layoutPrettyTycon,
                                   layoutPrettyTyvar = layoutPrettyTyvar})
             val {checkTime, finishCheckTime} =
-               makeCheckTime {layoutPretty = layoutPretty,
-                              layoutPrettyTycon = layoutPrettyTycon,
+               makeCheckTime {layoutPrettyTycon = layoutPrettyTycon,
                               layoutPrettyTyvar = layoutPrettyTyvar}
             fun unify arg =
                traceUnify
@@ -2193,7 +2202,6 @@ fun 'a close region =
       fn (ensure,
           varTypes,
           {error: 'a * Layout.t * Tyvar.t list -> unit,
-           layoutPrettyType,
            layoutPrettyTycon,
            layoutPrettyTyvar}) =>
       let
@@ -2201,8 +2209,7 @@ fun 'a close region =
             fun checkTime (t, bound) =
                let
                   val {checkTime, finishCheckTime} =
-                     Type.makeCheckTime {layoutPretty = layoutPrettyType,
-                                         layoutPrettyTycon = layoutPrettyTycon,
+                     Type.makeCheckTime {layoutPrettyTycon = layoutPrettyTycon,
                                          layoutPrettyTyvar = layoutPrettyTyvar}
                in
                   Option.map (checkTime (t, bound), fn z =>
@@ -2442,11 +2449,10 @@ structure Type =
           | Unified () => ()
 
       val checkTime =
-         fn (t, bound, {layoutPretty, layoutPrettyTycon, layoutPrettyTyvar}) =>
+         fn (t, bound, {layoutPrettyTycon, layoutPrettyTyvar}) =>
          let
             val {checkTime, finishCheckTime} =
-               makeCheckTime {layoutPretty = layoutPretty,
-                              layoutPrettyTycon = layoutPrettyTycon,
+               makeCheckTime {layoutPrettyTycon = layoutPrettyTycon,
                               layoutPrettyTyvar = layoutPrettyTyvar}
          in
             Option.map

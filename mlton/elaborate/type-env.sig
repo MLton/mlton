@@ -36,8 +36,7 @@ signature TYPE_ENV =
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
             val checkTime:
-               t * Time.t * {layoutPretty: t -> LayoutPretty.t,
-                             layoutPrettyTycon: Tycon.t -> Layout.t,
+               t * Time.t * {layoutPrettyTycon: Tycon.t -> Layout.t,
                              layoutPrettyTyvar: Tyvar.t -> Layout.t}
                -> (Layout.t * t * {tycons: Tycon.t list, tyvars: Tyvar.t list}) option
             val copy: t -> t
@@ -155,7 +154,6 @@ signature TYPE_ENV =
          -> (Tyvar.t vector
              * {isExpansive: bool, ty: Type.t, var: 'a} vector
              * {error: 'a * Layout.t * Tyvar.t list -> unit,
-                layoutPrettyType: Type.t -> LayoutPretty.t,
                 layoutPrettyTycon: Tycon.t -> Layout.t,
                 layoutPrettyTyvar: Tyvar.t -> Layout.t})
          -> {bound: unit -> Tyvar.t vector,

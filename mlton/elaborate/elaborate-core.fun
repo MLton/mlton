@@ -2243,7 +2243,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          TyvarEnv.scope
                          (tyvars, fn tyvars' =>
                           let
-                             val {layoutPrettyType, layoutPrettyTycon, layoutPrettyTyvar, unify} =
+                             val {layoutPrettyTycon, layoutPrettyTyvar, unify, ...} =
                                 DiagUtils.make E
                              val {markFunc, setBound, unmarkFunc} = recursiveFun ()
                              val fbs =
@@ -2577,7 +2577,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = funTy,
                                    var = func}),
                                  {error = generalizeError,
-                                  layoutPrettyType = layoutPrettyType,
                                   layoutPrettyTycon = layoutPrettyTycon,
                                   layoutPrettyTyvar = layoutPrettyTyvar})
                              val _ =
@@ -2696,7 +2695,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          TyvarEnv.scope
                          (tyvars, fn tyvars' =>
                           let
-                             val {layoutPrettyType, layoutPrettyTycon, layoutPrettyTyvar, unify} =
+                             val {layoutPrettyTycon, layoutPrettyTyvar, unify, ...} =
                                 DiagUtils.make E
                              val {vbs = layVbs, rvbs = layRvbs} =
                                 Adec.layoutVal {tyvars = tyvars, vbs = vbs, rvbs = rvbs}
@@ -2885,7 +2884,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                    ty = ty,
                                    var = var}),
                                  {error = generalizeError,
-                                  layoutPrettyType = layoutPrettyType,
                                   layoutPrettyTycon = layoutPrettyTycon,
                                   layoutPrettyTyvar = layoutPrettyTyvar})
                              val _ =
@@ -3167,8 +3165,7 @@ fun elaborateDec (d, {env = E, nest}) =
                              val ty = Cexp.ty e'
                              val ty =
                                 case Type.checkTime (ty, time,
-                                                     {layoutPretty = layoutPrettyType,
-                                                      layoutPrettyTycon = layoutPrettyTycon,
+                                                     {layoutPrettyTycon = layoutPrettyTycon,
                                                       layoutPrettyTyvar = layoutPrettyTyvar}) of
                                    NONE => ty
                                  | SOME (lay, ty, {tycons, ...}) =>
