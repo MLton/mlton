@@ -1045,8 +1045,8 @@ structure Type =
        *    equality unification variables and a layout object
        *    highlighting the fresh unification variables.
        *)
-      fun makeCheckEquality {layoutPrettyTycon: Tycon.t -> Layout.t,
-                             layoutPrettyTyvar: Tyvar.t -> Layout.t} =
+      fun checkEquality (t, {layoutPrettyTycon: Tycon.t -> Layout.t,
+                             layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
          let
             val layoutAppPretty = fn (c, ts) =>
                Tycon.layoutAppPretty
@@ -1208,27 +1208,22 @@ structure Type =
                                               ty)
                                      end)
                          | _ => NONE)
-            fun checkEquality t =
-               let
-                  val res : ll option * t =
-                     hom (t, {con = wrap (con, #1),
-                              expandOpaque = false,
-                              flexRecord = wrap (flexRecord, #1),
-                              genFlexRecord = genFlexRecord,
-                              guard = guard,
-                              overload = wrap (overload, #1),
-                              record = wrap (record, #1),
-                              recursive = recursive,
-                              unknown = wrap (unknown, #1),
-                              var = wrap (var, #1)})
-               in
-                  case res of
-                     (NONE, _) => NONE
-                   | (SOME (l1, l2), t) =>
-                        SOME (l1, (t, l2))
-               end
+            val res : ll option * t =
+               hom (t, {con = wrap (con, #1),
+                        expandOpaque = false,
+                        flexRecord = wrap (flexRecord, #1),
+                        genFlexRecord = genFlexRecord,
+                        guard = guard,
+                        overload = wrap (overload, #1),
+                        record = wrap (record, #1),
+                        recursive = recursive,
+                        unknown = wrap (unknown, #1),
+                        var = wrap (var, #1)})
          in
-            checkEquality
+            case res of
+               (NONE, _) => NONE
+             | (SOME (l1, l2), t) =>
+                  SOME (l1, (t, l2))
          end
 
       (* checkTime (t, bound) checks that all components of t have
@@ -1419,9 +1414,9 @@ structure Type =
             val layoutAppPretty = fn (c, ts) =>
                Tycon.layoutAppPretty
                (c, ts, {layoutPretty = layoutPrettyTycon})
-            val checkEquality =
-               makeCheckEquality {layoutPrettyTycon = layoutPrettyTycon,
-                                  layoutPrettyTyvar = layoutPrettyTyvar}
+            val checkEquality = fn t =>
+               checkEquality (t, {layoutPrettyTycon = layoutPrettyTycon,
+                                  layoutPrettyTyvar = layoutPrettyTyvar})
             val {checkTime, finishCheckTime} =
                makeCheckTime {layoutPretty = layoutPretty,
                               layoutPrettyTycon = layoutPrettyTycon,
@@ -2154,13 +2149,13 @@ structure Scheme =
          let
             fun layoutPrettyTyvar _ =
                Error.bug "TypeEnv.Scheme.checkEquality.layoutPrettyTyvar"
-            val checkEquality =
-               Type.makeCheckEquality {layoutPrettyTycon = layoutPrettyTycon,
-                                       layoutPrettyTyvar = layoutPrettyTyvar}
             val (_, ty) = freshEq s
          in
             Option.map
-            (checkEquality ty, fn ((l, _), _) => l)
+            (Type.checkEquality
+             (ty, {layoutPrettyTycon = layoutPrettyTycon,
+                   layoutPrettyTyvar = layoutPrettyTyvar}),
+             fn ((l, _), _) => l)
          end
 
       fun haveUnknowns s: bool =
