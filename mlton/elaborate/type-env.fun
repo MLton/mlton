@@ -1166,7 +1166,7 @@ structure Type =
                                                  equality = Equality.True,
                                                  time = Time.now ()}
                        in
-                          SOME (simple (layoutPrettyTyvar a),
+                          SOME (simple (Layout.bracket (layoutPrettyTyvar a)),
                                 simple (Layout.bracket (str "<equality>")),
                                 ty)
                        end
