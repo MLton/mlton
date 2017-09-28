@@ -491,6 +491,45 @@ in
    val expandTy = expandTy
 end
 
+structure Type =
+   struct
+      open Type
+
+      fun layoutPretty (ty, {expand, layoutPrettyEnvTycon, layoutPrettyFlexTycon, layoutPrettyTyvar}) =
+         let
+            fun con (c, ts) =
+               case c of
+                  Tycon.Flexible f =>
+                     EnvTycon.layoutAppPrettyNormal
+                     (layoutPrettyFlexTycon f, ts)
+                | Tycon.Rigid c =>
+                     EnvTycon.layoutAppPretty
+                     (c, ts, {layoutPretty = layoutPrettyEnvTycon})
+            fun record r =
+               case Record.detupleOpt r of
+                  NONE =>
+                     (LayoutPretty.simple o seq)
+                     [str "{",
+                      Layout.mayAlign
+                      (Layout.separateRight
+                       (Vector.toListMap
+                        (Record.toVector r, fn (f, (t, _)) =>
+                         seq [Record.Field.layout f, str ": ", t]),
+                        ",")),
+                      str "}"]
+                | SOME ts =>
+                     EnvTycon.layoutAppPretty
+                     (EnvTycon.tuple, ts,
+                      {layoutPretty = layoutPrettyEnvTycon})
+            fun var a = LayoutPretty.simple (layoutPrettyTyvar a)
+            val ty = if expand then expandTy ty else ty
+         in
+            Type.hom (ty, {con = con,
+                           record = record,
+                           var = var})
+         end
+   end
+
 structure TypeStr =
    struct
       open TypeStr

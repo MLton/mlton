@@ -22,6 +22,15 @@ signature INTERFACE_STRUCTS =
             val exn: t
             val kind: t -> Kind.t
             val layout: t -> Layout.t
+            val layoutAppPretty:
+               t
+               * LayoutPretty.t vector
+               * {layoutPretty: t -> Layout.t}
+               -> LayoutPretty.t
+            val layoutAppPrettyNormal:
+               Layout.t
+               * LayoutPretty.t vector
+               -> LayoutPretty.t
             val tuple: t
          end
       structure EnvTypeStr:
@@ -83,6 +92,12 @@ signature INTERFACE =
                           record: 'a Record.t -> 'a,
                           var: Tyvar.t -> 'a} -> 'a
             val layout: t -> Layout.t
+            val layoutPretty:
+               t * {expand: bool,
+                    layoutPrettyEnvTycon: EnvTycon.t -> Layout.t,
+                    layoutPrettyFlexTycon: FlexibleTycon.t -> Layout.t,
+                    layoutPrettyTyvar: Tyvar.t -> Layout.t}
+               -> LayoutPretty.t
             val record: t Record.t -> t
             val var: Tyvar.t -> t
          end
