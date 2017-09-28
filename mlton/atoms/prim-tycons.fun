@@ -182,7 +182,7 @@ val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
-fun makeLayoutAppPretty {layoutPretty} (c: t, args: LayoutPretty.t vector) =
+fun layoutAppPretty (c: t, args: LayoutPretty.t vector, {layoutPretty}) =
    let
       local
          open Layout

@@ -607,9 +607,10 @@ structure LayoutPretty =
                                     then ", ...}"
                                     else "}")])
       fun tuple (ls: t vector): t =
-         Tycon.makeLayoutAppPretty
-         {layoutPretty = fn _ => Error.bug "TypeEnv.LayoutPretty.tuple: layoutPretty"}
-         (Tycon.tuple, ls)
+         Tycon.layoutAppPretty
+         (Tycon.tuple, ls,
+          {layoutPretty = fn _ =>
+           Error.bug "TypeEnv.LayoutPretty.tuple: layoutPretty"})
    end
 
 structure Type =
@@ -692,8 +693,9 @@ structure Type =
          {destroy: unit -> unit,
           layoutPretty: t -> LayoutPretty.t} =
          let
-            val layoutAppPretty =
-               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            val layoutAppPretty = fn (c, ts) =>
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyTycon})
             fun con (_, c, ts) = layoutAppPretty (c, ts)
             fun con0 c = layoutAppPretty (c, Vector.new0 ())
             fun flexRecord (_, {fields, spine}) =
@@ -1046,8 +1048,9 @@ structure Type =
       fun makeCheckEquality {layoutPrettyTycon: Tycon.t -> Layout.t,
                              layoutPrettyTyvar: Tyvar.t -> Layout.t} =
          let
-            val layoutAppPretty =
-               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            val layoutAppPretty = fn (c, ts) =>
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyTycon})
             type ll = LayoutPretty.t * LayoutPretty.t
             local
                fun getLay sel (llo: ll option, _) =
@@ -1242,8 +1245,9 @@ structure Type =
                          layoutPrettyTycon: Tycon.t -> Layout.t,
                          layoutPrettyTyvar: Tyvar.t -> Layout.t} =
          let
-            val layoutAppPretty =
-               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            val layoutAppPretty = fn (c, ts) =>
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyTycon})
             val times: Time.t list ref = ref []
             val tycons: Tycon.t list ref = ref []
             val tyvars: Tyvar.t list ref = ref []
@@ -1412,8 +1416,9 @@ structure Type =
                   layoutPrettyTycon: Tycon.t -> Layout.t,
                   layoutPrettyTyvar: Tyvar.t -> Layout.t}) =
          let
-            val layoutAppPretty =
-               Tycon.makeLayoutAppPretty {layoutPretty = layoutPrettyTycon}
+            val layoutAppPretty = fn (c, ts) =>
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyTycon})
             val checkEquality =
                makeCheckEquality {layoutPrettyTycon = layoutPrettyTycon,
                                   layoutPrettyTyvar = layoutPrettyTyvar}

@@ -12,12 +12,6 @@ struct
 
 open S
 
-structure Tycon =
-   struct
-      open Tycon
-      val layoutAppPretty = makeLayoutAppPretty {layoutPretty = layout}
-   end
-
 structure Type =
    struct
       datatype t =
@@ -89,7 +83,8 @@ structure Type =
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
 
       fun layoutPretty (ty: t): Layout.t =
-         #1 (hom {con = Tycon.layoutAppPretty,
+         #1 (hom {con = fn (c, ts) => (Tycon.layoutAppPretty
+                                       (c, ts, {layoutPretty = Tycon.layout})),
                   ty = ty,
                   var = fn a => (Tyvar.layout a,
                                  ({isChar = false},
