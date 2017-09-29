@@ -4044,6 +4044,7 @@ fun functorClosure
 structure Env =
    struct
       val lookupLongtycon = lookupLongtycon
+      val collect = collect
    end
 
 structure InterfaceEnv =
@@ -4051,6 +4052,7 @@ structure InterfaceEnv =
       local
          open Interface
       in
+         structure FlexibleTycon = FlexibleTycon
          structure Scheme = Scheme
          structure Status = Status
          structure TypeStr = TypeStr
@@ -4182,6 +4184,74 @@ structure InterfaceEnv =
 
       fun extendExn (E, c, s) =
          extendVid (E, Ast.Vid.fromCon c, Status.Exn, s)
+
+      fun collect (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
+         let
+            val {interface = {strs, types, vals}, ...} =
+               Env.collect (E, keep)
+         in
+            {strs = strs,
+             types = types,
+             vals = vals}
+         end
+
+      fun makeLayoutPrettyFlexTycon (E, {prefixUnset}) =
+         let
+            val {destroy = destroyLayoutPretty: unit -> unit,
+                 get = layoutPretty: FlexibleTycon.t -> Layout.t,
+                 set = setLayoutPretty: FlexibleTycon.t * Layout.t -> unit} =
+               Property.destGetSet
+               (FlexibleTycon.plist,
+                Property.initFun
+                (fn f =>
+                 let val l = FlexibleTycon.layout f
+                 in if prefixUnset then seq [str "?.", l] else l
+                 end))
+
+            fun pre () =
+               let
+                  val {strs, types, ...} = collect (E, fn _ => true)
+                  val Info.T strs = strs ()
+                  val strs = Array.map (strs, fn {domain, range, ...} => (domain, range))
+                  val Info.T types = types ()
+                  val types = Array.map (types, fn {domain, range, ...} => (domain, range))
+                  val I = Interface.new {isClosed = true,
+                                         strs = strs, types = types,
+                                         vals = Array.new0 ()}
+                  val flexTyconMap = Interface.flexibleTycons I
+                  fun doType (name, f, strids: Strid.t list) =
+                     let
+                        val name = layoutLongRev (strids, Ast.Tycon.layout name)
+                     in
+                        setLayoutPretty (f, name)
+                     end
+                  fun doStr (name, tyconMap, strids: Strid.t list) =
+                     doTyconMap (tyconMap, name::strids)
+                  and doTyconMap (TyconMap.T {strs, types}, strids) =
+                     let
+                        val () =
+                           Array.foreach
+                           (types, fn (name, f) =>
+                            doType (name, f, strids))
+                        val () =
+                           Array.foreach
+                           (strs, fn (name, tyconMap) =>
+                            doStr (name, tyconMap, strids))
+                     in
+                        ()
+                     end
+                  val () = doTyconMap (flexTyconMap, [Ast.Strid.uSig])
+               in
+                  ()
+               end
+            val pre = ClearablePromise.delay pre
+         in
+            {destroy = fn () => (ClearablePromise.clear pre
+                                 ; destroyLayoutPretty ()),
+             layoutPretty = fn c => (ClearablePromise.force pre
+                                     ; layoutPretty c)}
+         end
+
 end
 
 val makeInterfaceEnv = fn E => E

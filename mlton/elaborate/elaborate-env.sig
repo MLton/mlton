@@ -125,6 +125,10 @@ signature ELABORATE_ENV =
 
       structure InterfaceEnv:
          sig
+            structure FlexibleTycon:
+               sig
+                  type t
+               end
             structure Scheme:
                sig
                   type t
@@ -150,8 +154,13 @@ signature ELABORATE_ENV =
             val lookupSigid: t * Ast.Sigid.t -> Interface.t option
             val makeInterface:
                t * {isTop: bool} * (unit -> 'a) -> Interface.t * 'a
+            val makeLayoutPrettyFlexTycon:
+               t * {prefixUnset: bool}
+               -> {destroy: unit -> unit,
+                   layoutPretty: FlexibleTycon.t -> Layout.t}
             val openInterface: t * Interface.t * Region.t -> unit
          end
+      sharing Interface.FlexibleTycon = InterfaceEnv.FlexibleTycon
       sharing Interface.Scheme = InterfaceEnv.Scheme
       sharing Interface.Status = InterfaceEnv.Status
       sharing Interface.TypeStr = InterfaceEnv.TypeStr
