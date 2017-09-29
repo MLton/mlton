@@ -155,7 +155,7 @@ signature ELABORATE_ENV =
             val makeInterface:
                t * {isTop: bool} * (unit -> 'a) -> Interface.t * 'a
             val makeLayoutPrettyFlexTycon:
-               t * {prefixUnset: bool}
+               t * (Interface.t * {nest: Ast.Strid.t list}) * {prefixUnset: bool}
                -> {destroy: unit -> unit,
                    layoutPretty: FlexibleTycon.t -> Layout.t}
             val openInterface: t * Interface.t * Region.t -> unit

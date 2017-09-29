@@ -4195,7 +4195,7 @@ structure InterfaceEnv =
              vals = vals}
          end
 
-      fun makeLayoutPrettyFlexTycon (E, {prefixUnset}) =
+      fun makeLayoutPrettyFlexTycon (E, (I, {nest}), {prefixUnset}) =
          let
             val {destroy = destroyLayoutPretty: unit -> unit,
                  get = layoutPretty: FlexibleTycon.t -> Layout.t,
@@ -4207,18 +4207,8 @@ structure InterfaceEnv =
                  let val l = FlexibleTycon.layout f
                  in if prefixUnset then seq [str "?.", l] else l
                  end))
-
             fun pre () =
                let
-                  val {strs, types, ...} = collect (E, fn _ => true)
-                  val Info.T strs = strs ()
-                  val strs = Array.map (strs, fn {domain, range, ...} => (domain, range))
-                  val Info.T types = types ()
-                  val types = Array.map (types, fn {domain, range, ...} => (domain, range))
-                  val I = Interface.new {isClosed = true,
-                                         strs = strs, types = types,
-                                         vals = Array.new0 ()}
-                  val flexTyconMap = Interface.flexibleTycons I
                   fun doType (name, f, strids: Strid.t list) =
                      let
                         val name = layoutLongRev (strids, Ast.Tycon.layout name)
@@ -4240,7 +4230,21 @@ structure InterfaceEnv =
                      in
                         ()
                      end
-                  val () = doTyconMap (flexTyconMap, [Ast.Strid.uSig])
+                  local
+                     val {strs, types, ...} = collect (E, fn _ => true)
+                     fun doit f =
+                        let val Info.T a = f ()
+                        in Array.map (a, fn {domain, range, ...} => (domain, range))
+                        end
+                     val I = Interface.new {isClosed = true,
+                                            strs = doit strs,
+                                            types = doit types,
+                                            vals = Array.new0 ()}
+                  in
+                     val () = doTyconMap (Interface.flexibleTycons I, [Ast.Strid.uSig])
+                  end
+                  val () = doTyconMap (Interface.flexibleTycons I,
+                                       nest @ [Ast.Strid.uSig])
                in
                   ()
                end
