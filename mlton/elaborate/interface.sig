@@ -62,6 +62,7 @@ signature INTERFACE =
                             hasCons: bool,
                             kind: Kind.t}
             val layout: t -> Layout.t
+            val plist: t -> PropertyList.t
             val realize: t * EnvTypeStr.t -> unit
             datatype realization =
                ETypeStr of EnvTypeStr.t
