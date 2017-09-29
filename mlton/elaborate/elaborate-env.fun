@@ -517,22 +517,6 @@ structure Interface = Interface (structure Ast = Ast
                                  structure EnvTypeStr = TypeStr
                                  structure Tyvar = Tyvar)
 
-local
-   open Interface
-in
-   structure Status = Status
-   structure TyconMap = TyconMap
-end
-structure Status =
-   struct
-      open Status
-
-      val class =
-         fn Con => Class.Con
-          | Exn => Class.Exn
-          | Var => Class.Var
-   end
-
 structure Interface =
    struct
       structure Econs = Cons
@@ -1081,11 +1065,17 @@ local
    open Interface
 in
    structure FlexibleTycon = FlexibleTycon
+   structure Status = Status
+   structure TyconMap = TyconMap
 end
-
 structure Status =
    struct
       open Status
+
+      val class =
+         fn Con => Class.Con
+          | Exn => Class.Exn
+          | Var => Class.Var
 
       fun fromVid vid =
          case vid of
