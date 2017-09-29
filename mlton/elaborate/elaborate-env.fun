@@ -1605,6 +1605,23 @@ structure NameSpace =
                Info.T a
             end
          end
+
+      fun scope (T {current, ...}: ('a, 'b) t)
+         : unit -> unit =
+         let
+            val old = !current
+            val _ = current := []
+         in
+            fn () =>
+            let
+               val _ =
+                  List.foreach (!current, fn values =>
+                                ignore (Values.pop values))
+               val _ = current := old
+            in
+               ()
+            end
+         end
    end
 
 (*---------------------------------------------------*)
@@ -2887,19 +2904,12 @@ fun makeBasis (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
 
 fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
    let
-      fun doit (NameSpace.T {current, ...}) =
-         let
-            val old = !current
-            val _ = current := []
-         in fn () => (List.foreach (!current, fn v => ignore (Values.pop v))
-                      ; current := old)
-         end
+      val f = NameSpace.scope fixs
+      val s = NameSpace.scope strs
+      val t = NameSpace.scope types
+      val v = NameSpace.scope vals
       val s0 = !currentScope
       val _ = currentScope := Scope.new {isTop = false}
-      val f = doit fixs 
-      val s = doit strs
-      val t = doit types
-      val v = doit vals
       val res = th ()
       val _ = (f (); s (); t (); v ())
       val _ = currentScope := s0
@@ -2909,22 +2919,15 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
 
 fun scopeAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...}, th) =
    let
-      fun doit (NameSpace.T {current, ...}) =
-         let
-            val old = !current
-            val _ = current := []
-         in fn () => (List.foreach (!current, fn v => ignore (Values.pop v))
-                      ; current := old)
-         end
+      val b = NameSpace.scope bass
+      val fc = NameSpace.scope fcts
+      val f = NameSpace.scope fixs
+      val si = NameSpace.scope sigs
+      val s = NameSpace.scope strs
+      val t = NameSpace.scope types
+      val v = NameSpace.scope vals
       val s0 = !currentScope
       val _ = currentScope := Scope.new {isTop = true}
-      val b = doit bass
-      val fc = doit fcts
-      val f = doit fixs
-      val si = doit sigs
-      val s = doit strs
-      val t = doit types
-      val v = doit vals
       val res = th ()
       val _ = (b (); fc (); f (); si (); s (); t (); v ())
       val _ = currentScope := s0
