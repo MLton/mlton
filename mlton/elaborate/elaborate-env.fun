@@ -523,6 +523,15 @@ in
    structure Status = Status
    structure TyconMap = TyconMap
 end
+structure Status =
+   struct
+      open Status
+
+      val class =
+         fn Con => Class.Con
+          | Exn => Class.Exn
+          | Var => Class.Var
+   end
 
 structure Interface =
    struct
@@ -1608,6 +1617,9 @@ structure All =
          Bas of (Basid.t, Basis.t) Values.t
        | Fct of (Fctid.t, FunctorClosure.t) Values.t
        | Fix of (Ast.Vid.t, Ast.Fixity.t) Values.t
+       | IfcStr of (Strid.t, Interface.t) Values.t
+       | IfcTyc of (Ast.Tycon.t, Interface.TypeStr.t) Values.t
+       | IfcVal of (Ast.Vid.t, Interface.Status.t * Interface.Scheme.t) Values.t
        | Sig of (Sigid.t, Interface.t) Values.t
        | Str of (Strid.t, Structure.t) Values.t
        | Tyc of (Ast.Tycon.t, TypeStr.t) Values.t
@@ -1616,6 +1628,9 @@ structure All =
       val basOpt = fn Bas z => SOME z | _ => NONE
       val fctOpt = fn Fct z => SOME z | _ => NONE
       val fixOpt = fn Fix z => SOME z | _ => NONE
+      val ifcStrOpt = fn IfcStr z => SOME z | _ => NONE
+      val ifcTycOpt = fn IfcTyc z => SOME z | _ => NONE
+      val ifcValOpt = fn IfcVal z => SOME z | _ => NONE
       val sigOpt = fn Sig z => SOME z | _ => NONE
       val strOpt = fn Str z => SOME z | _ => NONE
       val tycOpt = fn Tyc z => SOME z | _ => NONE
@@ -1700,29 +1715,16 @@ fun empty () =
                         All.tycOpt, All.Tyc)
       val vals = make (Vid.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
                        All.valOpt, All.Val)
+
       local
-         val {get =
-              lookupAll: (Symbol.t
-                          -> {strs: (Strid.t, Interface.t) Values.t,
-                              types: (Ast.Tycon.t, Interface.TypeStr.t) Values.t,
-                              vals: (Ast.Vid.t, Status.t * Interface.Scheme.t) Values.t}),
-              ...} =
-            Property.get (Symbol.plist,
-                          Property.initFun
-                          (fn _ => {strs = Values.new (),
-                                    types = Values.new (),
-                                    vals = Values.new ()}))
-         fun make (sel, class, region, toSymbol: 'a -> Symbol.t)
-            : ('a, 'b) NameSpace.t =
-            NameSpace.new {class = fn _ => class,
-                           lookup = sel o lookupAll o toSymbol,
-                           region = region,
-                           toSymbol = toSymbol}
+         val strs = make (fn _ => Class.Str, Strid.region, Strid.toSymbol,
+                          All.ifcStrOpt, All.IfcStr)
+         val types = make (fn _ => Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol,
+                           All.ifcTycOpt, All.IfcTyc)
+         val vals = make (Status.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
+                          All.ifcValOpt, All.IfcVal)
       in
-         val interface =
-            {strs = make (#strs, Class.Str, Strid.region, Strid.toSymbol),
-             types = make (#types, Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol),
-             vals = make (#vals, Class.Var, Ast.Vid.region, Ast.Vid.toSymbol)}
+         val interface = {strs = strs, types = types, vals = vals}
       end
    in
       T {currentScope = ref (Scope.new {isTop = true}),
@@ -1740,7 +1742,10 @@ fun empty () =
    end
 
 local
-   fun foreach (T {lookup, ...}, s, {bass, fcts, fixs, sigs, strs, types, vals}) =
+   fun foreach (T {lookup, ...}, s,
+                {bass, fcts, fixs,
+                 interface = {strs = ifcStrs, types = ifcTypes, vals = ifcVals},
+                 sigs, strs, types, vals}) =
       List.foreach
       (! (lookup s), fn a =>
        let
@@ -1750,6 +1755,9 @@ local
              Bas vs => bass vs
            | Fct vs => fcts vs
            | Fix vs => fixs vs
+           | IfcStr vs => ifcStrs vs
+           | IfcTyc vs => ifcTypes vs
+           | IfcVal vs => ifcVals vs
            | Sig vs => sigs vs
            | Str vs => strs vs
            | Tyc vs => types vs
@@ -1768,6 +1776,9 @@ fun collect (E,
    let
       val bass = ref []
       val fcts = ref []
+      val ifcStrs = ref []
+      val ifcTypes = ref []
+      val ifcVals = ref []
       val sigs = ref []
       val strs = ref []
       val types = ref []
@@ -1783,6 +1794,9 @@ fun collect (E,
          foreachDefinedSymbol (E, {bass = doit bass,
                                    fcts = doit fcts,
                                    fixs = fn _ => (),
+                                   interface = {strs = doit ifcStrs,
+                                                types = doit ifcTypes,
+                                                vals = doit ifcVals},
                                    sigs = doit sigs,
                                    strs = doit strs,
                                    types = doit types,
@@ -1804,6 +1818,9 @@ fun collect (E,
    in
       {bass = finish (bass, Basid.toSymbol),
        fcts = finish (fcts, Fctid.toSymbol),
+       interface = {strs = finish (ifcStrs, Strid.toSymbol),
+                    types = finish (ifcTypes, Ast.Tycon.toSymbol),
+                    vals = finish (ifcVals, Ast.Vid.toSymbol)},
        sigs = finish (sigs, Sigid.toSymbol),
        strs = finish (strs, Strid.toSymbol),
        types = finish (types, Ast.Tycon.toSymbol),
@@ -2044,7 +2061,7 @@ val dummyStructure =
 
 fun layout' (E: t, prefixUnset, keep): Layout.t =
    let
-      val {bass, fcts, sigs, strs, types, vals} = collect (E, keep)
+      val {bass, fcts, sigs, strs, types, vals, ...} = collect (E, keep)
       val bass = bass ()
       val fcts = fcts ()
       val sigs = sigs ()
@@ -2176,6 +2193,9 @@ fun forceUsed E =
          (E, {bass = doit ignore,
               fcts = doit FunctorClosure.forceUsed,
               fixs = doit ignore,
+              interface = {strs = doit ignore,
+                           types = doit ignore,
+                           vals = doit ignore},
               sigs = doit ignore,
               strs = doit Structure.forceUsed,
               types = doit ignore,
@@ -3824,6 +3844,9 @@ fun snapshot (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, .
          foreachTopLevelSymbol (E, {bass = doit bass,
                                     fcts = doit fcts,
                                     fixs = doit fixs,
+                                    interface = {strs = ignore,
+                                                 types = ignore,
+                                                 vals = ignore},
                                     sigs = doit sigs,
                                     strs = doit strs,
                                     types = doit types,
@@ -3868,6 +3891,9 @@ fun snapshot (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, .
             foreachDefinedSymbol (E, {bass = doit,
                                       fcts = doit,
                                       fixs = doit,
+                                      interface = {strs = ignore,
+                                                   types = ignore,
+                                                   vals = ignore},
                                       sigs = doit,
                                       strs = doit,
                                       types = doit,
