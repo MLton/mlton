@@ -504,19 +504,22 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                        case SharingEquation.node eqn of
                           SharingEquation.Structure ss =>
                              let
-                                (* The following implements the "all pairs"
-                                 * sharing as specified in G.3.3.
+                                (* The following implements the "all
+                                 * pairs" sharing as specified in
+                                 * Appendix A (and described in
+                                 * Appendix G.3.3).
                                  *)
                                 fun loop Is =
                                    case Is of
                                       [] => ()
                                     | (s, I) :: Is =>
-                                         List.foreach 
-                                         (Is, fn (s', I') =>
-                                          Interface.share
-                                          (I, s, I', s',
-                                           time,
-                                           SharingEquation.region eqn))
+                                         (List.foreach
+                                          (Is, fn (s', I') =>
+                                           Interface.share
+                                           (I, s, I', s',
+                                            time,
+                                            SharingEquation.region eqn))
+                                          ; loop Is)
                              in
                                 loop (List.fold
                                       (ss, [], fn (s, ac) =>
