@@ -216,6 +216,10 @@ signature INTERFACE =
       val lookupLongtycon:
          t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
          -> (Ast.Tycon.t * TypeStr.t) option
+      val makeLayoutPrettyFlexTycon:
+         t * {prefixUnset: bool}
+         -> {destroy: unit -> unit,
+             layoutPretty: FlexibleTycon.t -> Layout.t}
       val new: {isClosed: bool,
                 strs: (Ast.Strid.t * t) array,
                 types: (Ast.Tycon.t * TypeStr.t) array,
