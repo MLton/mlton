@@ -520,12 +520,15 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                             time,
                                             SharingEquation.region eqn))
                                           ; loop Is)
+                                val Is =
+                                   List.keepAllMap
+                                   (ss, fn s =>
+                                    Option.map
+                                    (Interface.lookupLongstrid
+                                     (I, s, Longstrid.region s, {prefix = []}),
+                                     fn I => (s, I)))
                              in
-                                loop (List.fold
-                                      (ss, [], fn (s, ac) =>
-                                       case Interface.lookupLongstrid (I, s, Longstrid.region s, {prefix = []}) of
-                                          NONE => ac
-                                        | SOME I => (s, I) :: ac))
+                                loop Is
                              end
                         | SharingEquation.Type cs =>
                              ignore
