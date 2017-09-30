@@ -489,7 +489,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                             case Spec.node spec of
                                Spec.Sharing {equation, spec} =>
                                   loop (spec, equation::equations)
-                             | _ => (spec, List.rev equations)
+                             | _ => (spec, equations)
                       in
                          loop (spec, [equation])
                       end
