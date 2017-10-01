@@ -167,7 +167,9 @@ signature INTERFACE =
             val specs: t -> Region.t list
 
             val share:
-               {region: Region.t,
+               {layoutPrettyEnvTycon: EnvTycon.t -> Layout.t,
+                layoutPrettyFlexTycon: FlexibleTycon.t -> Layout.t,
+                region: Region.t,
                 time: Time.t,
                 ty1: {name: unit -> Layout.t,
                       region: Region.t,
@@ -179,7 +181,9 @@ signature INTERFACE =
                       tyStr: t}}
                -> unit
             val wheree:
-               {realization: t,
+               {layoutPrettyEnvTycon: EnvTycon.t -> Layout.t,
+                layoutPrettyFlexTycon: FlexibleTycon.t -> Layout.t,
+                realization: t,
                 region: Region.t,
                 time: Time.t,
                 ty: {name: unit -> Layout.t,
@@ -233,7 +237,11 @@ signature INTERFACE =
       val peekTycon: t * Ast.Tycon.t -> (Ast.Tycon.t * TypeStr.t) option
       val plist: t -> PropertyList.t
       val share:
-         t * Ast.Longstrid.t * t * Ast.Longstrid.t * Time.t
-         * Region.t
+         {layoutPrettyEnvTycon: EnvTycon.t -> Layout.t,
+          layoutPrettyFlexTycon: FlexibleTycon.t -> Layout.t,
+          I1: t, long1: Ast.Longstrid.t,
+          I2: t, long2: Ast.Longstrid.t,
+          time: Time.t,
+          region: Region.t}
          -> unit
    end

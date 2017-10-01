@@ -859,31 +859,66 @@ structure TypeStr =
               seq [str "spec at: ", Region.layout r]))
          end
 
-      fun getFlex {oper: string,
+      fun getFlex {layoutPrettyEnvTycon,
+                   layoutPrettyFlexTycon,
+                   oper: string,
                    time: Time.t,
-                   ty as {name: unit -> Layout.t,
-                          region: Region.t,
-                          spec = _: Region.t,
-                          tyStr: t}}: FlexibleTycon.t option =
+                   ty = {name: unit -> Layout.t,
+                         region: Region.t,
+                         spec: Region.t,
+                         tyStr: t}}: FlexibleTycon.t option =
          let
-            fun error (what, defnErr) =
+            fun error what =
                let
-                  val _ = 
+                  val isEmpty = Layout.isEmpty
+                  val tuple = Layout.tuple
+                  val {layoutPretty = layoutPrettyTyvar,
+                       localInit = localInitLayoutPrettyTyvar, ...} =
+                     Tyvar.makeLayoutPretty ()
+
+                  val arity =
+                     case kind tyStr of
+                        Kind.Arity arity => arity
+                      | _ => Error.bug "Interface.TypeStr.getFlex: Kind.Nary"
+                  val tyvars =
+                     Vector.tabulate
+                     (arity, fn _ =>
+                      Tyvar.makeNoname {equality = false})
+                  val () = localInitLayoutPrettyTyvar tyvars
+                  val tyargs = Vector.map (tyvars, Type.var)
+                  val tyvars = Vector.map (tyvars, layoutPrettyTyvar)
+                  val tyvars =
+                     case Vector.length tyvars of
+                        0 => empty
+                      | 1 => Vector.first tyvars
+                      | _ => tuple (Vector.toList tyvars)
+                  val defn = TypeStr.apply (tyStr, tyargs)
+                  val () =
                      Control.error
                      (region,
-                      seq [str "type cannot be ",
-                           str oper,
-                           str " (",
-                           str what,
-                           str "): ",
+                      seq [str "type cannot be ", str oper,
+                           str " (", str what, str "): ",
                            name ()],
-                      align (mkErrorExtra (ty, false, false, defnErr)))
+                      align
+                      ((seq [str "type spec: ",
+                             str "type", str " ",
+                             tyvars,
+                             if isEmpty tyvars then empty else str " ",
+                                name (), str " = ",
+                                (#1 o Type.layoutPretty)
+                                (defn, {expand = true,
+                                        layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                        layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                                        layoutPrettyTyvar = layoutPrettyTyvar})])::
+                       (List.map
+                        (spec::(specs tyStr), fn r =>
+                         seq [str "spec at: ", Region.layout r]))))
                in
                   NONE
                end
          in
             case toTyconOpt (tyStr, {expand = true}) of
-               NONE => error ("defined", true)
+               NONE => error "defined"
              | SOME c =>
                   (case c of
                       Tycon.Flexible c =>
@@ -897,15 +932,20 @@ structure TypeStr =
                                   Error.bug "Interface.TypeStr.getFlex: TypeStr"
                              | Defn.Undefined =>
                                   if Time.< (creationTime, time)
-                                     then error ("not local", false)
+                                     then error "not local"
                                      else SOME c
                          end
-                    | Tycon.Rigid _ => error ("defined", true))
+                    | Tycon.Rigid _ => error "defined")
          end
 
-      fun share {region: Region.t, time: Time.t, ty1, ty2} =
-         case (getFlex {oper = "shared", time = time, ty = ty1},
-               getFlex {oper = "shared", time = time, ty = ty2}) of
+      fun share {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+                 region: Region.t, time: Time.t, ty1, ty2} =
+         case (getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                        oper = "shared", time = time, ty = ty1},
+               getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                        oper = "shared", time = time, ty = ty2}) of
             (NONE, _) => ()
           | (_, NONE) => ()
           | (SOME flex1, SOME flex2) =>
@@ -928,14 +968,15 @@ structure TypeStr =
           Unit.layout)
          share
 
-      fun wheree {region: Region.t,
-                  realization: t,
-                  time: Time.t,
+      fun wheree {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+                  region: Region.t, realization: t, time: Time.t,
                   ty: {name: unit -> Layout.t,
                        region: Region.t,
                        spec: Region.t,
                        tyStr: t}}: unit =
-         case getFlex {oper = "realized", time = time, ty = ty} of
+         case getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                       layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                       oper = "realized", time = time, ty = ty} of
             NONE => ()
           | SOME flex =>
                let
@@ -1196,22 +1237,26 @@ fun lookupLongstrid (I: t, long: Longstrid.t, r: Region.t,
              ; NONE)
    end
 
-fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, sharingSpec): unit =
+fun share {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+           I1: t, long1: Longstrid.t, I2: t, long2: Longstrid.t,
+           time, region}: unit =
    let
-      fun mkTy (s, ls, strids, con) =
+      fun mkTy (s, long, strids, name) =
          let
-            fun name () =
+            val spec = Ast.Tycon.region name
+            val region = Longstrid.region long
+            val name = fn () =>
                let
-                  val (ss, s) = Longstrid.split ls
+                  val (ss, s) = Longstrid.split long
                in
                   Ast.Longtycon.layout
                   (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
-                                       con))
+                                       name))
                end
          in
             {name = name,
-             region = Longstrid.region ls,
-             spec = Ast.Tycon.region con,
+             region = region,
+             spec = spec,
              tyStr = s}
          end
       fun ensureFlexible (I: t, strids): unit =
@@ -1236,9 +1281,12 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, sharingSpec): u
                         val _ =
                            Array.foreach
                            (types, fn (name, s) =>
-                            ignore (TypeStr.getFlex {oper = "shared",
-                                                     time = time,
-                                                     ty = mkTy (s, ls, strids, name)}))
+                            (ignore o TypeStr.getFlex)
+                            {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                             oper = "shared",
+                             time = time,
+                             ty = mkTy (s, long1, strids, name)})
                      in
                         ()
                      end
@@ -1248,18 +1296,32 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, sharingSpec): u
          in
             ()
          end
-      fun share (I, I', strids): unit = 
-         if equals (I, I')
-            then ensureFlexible (I, strids)
-         else if sameShape (I, I')
+      fun share (I1, I2, strids): unit =
+         if equals (I1, I2)
+            then ensureFlexible (I1, strids)
+         else if sameShape (I1, I2)
             then
                let
-                  fun loop (T s, T s', strids): unit =
+                  fun loop (T s1, T s2, strids): unit =
                      let
-                        val {isClosed, strs, types, ...} = Set.! s
-                        val {strs = strs', types = types', ...} = Set.! s'
+                        val {isClosed, strs = strs1, types = types1, ...} = Set.! s1
+                        val {strs = strs2, types = types2, ...} = Set.! s2
                         val _ =
-                           (* Can't always union here.  I and I' may have
+                           Array.foreach2
+                           (types1, types2, fn ((name, s1), (_, s2)) =>
+                            TypeStr.share
+                            {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                             region = region,
+                             time = time,
+                             ty1 = mkTy (s1, long1, strids, name),
+                             ty2 = mkTy (s2, long2, strids, name)})
+                        val _ =
+                           Array.foreach2
+                           (strs1, strs2, fn ((name, I1), (_, I2)) =>
+                            loop (I1, I2, name :: strids))
+                        val _ =
+                           (* Can't always union here.  I1 and I2 may have
                             * exactly the same shape, but may have free
                             * flxible tycons defined in other signatures that
                             * are different.
@@ -1273,87 +1335,79 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time, sharingSpec): u
                             * guarantee that all rigid tycons are identical.
                             *)
                            if isClosed
-                              then Set.union (s, s')
-                           else ()
-                        val _ =
-                           Array.foreach2
-                           (types, types', fn ((name, s), (_, s')) =>
-                            TypeStr.share {region = sharingSpec,
-                                           time = time,
-                                           ty1 = mkTy (s, ls, strids, name),
-                                           ty2 = mkTy (s', ls', strids, name)})
-                        val _ =
-                           Array.foreach2
-                           (strs, strs', fn ((name, I), (_, I')) =>
-                            loop (I, I', name :: strids))
+                              then Set.union (s1, s2)
+                              else ()
                      in
                         ()
                      end
                in
-                  loop (I, I', strids)
+                  loop (I1, I2, strids)
                end
          else (* different shapes -- need to share pointwise *)
             let
-               val T s = I
-               val T s' = I'
-               val {strs, types, ...} = Set.! s
-               val {strs = strs', types = types', ...} = Set.! s'
-               fun walk2 (a, a', compareNames, f: 'a * 'a * 'b -> unit) =
+               val T s1 = I1
+               val T s2 = I2
+               val {strs = strs1, types = types1, ...} = Set.! s1
+               val {strs = strs2, types = types2, ...} = Set.! s2
+               fun walk2 (a1, a2, compareNames, f: 'a * 'a * 'b -> unit) =
                   let
-                     val n = Array.length a
-                     val n' = Array.length a'
-                     fun both (i, i') =
-                        if i < n andalso i' < n'
-                           then compare (i, Array.sub (a, i),
-                                         i', Array.sub (a', i'))
+                     val n1 = Array.length a1
+                     val n2 = Array.length a2
+                     fun both (i1, i2) =
+                        if i1 < n1 andalso i2 < n2
+                           then compare (i1, Array.sub (a1, i1),
+                                         i2, Array.sub (a2, i2))
                         else ()
-                     and compare (i, (name, z), i', (name', z')) =
-                        case compareNames (name, name') of
+                     and compare (i1, (name1, z1), i2, (name2, z2)) =
+                        case compareNames (name1, name2) of
                            GREATER =>
                               let
-                                 val i' = i' + 1
+                                 val i2 = i2 + 1
                               in
-                                 if i' < n'
-                                    then compare (i, (name, z),
-                                                  i', Array.sub (a', i'))
+                                 if i2 < n2
+                                    then compare (i1, (name1, z1),
+                                                  i2, Array.sub (a2, i2))
                                  else ()
                               end
-                         | EQUAL => (f (z, z', name)
-                                     ; both (i + 1, i' + 1))
+                         | EQUAL => (f (z1, z2, name1)
+                                     ; both (i1 + 1, i2 + 1))
                          | LESS =>
                               let
-                                 val i = i + 1
+                                 val i1 = i1 + 1
                               in
-                                 if i < n
-                                    then compare (i, Array.sub (a, i),
-                                                  i', (name', z'))
+                                 if i1 < n1
+                                    then compare (i1, Array.sub (a1, i1),
+                                                  i2, (name2, z2))
                                  else ()
                               end
                   in
                      both (0, 0)
                   end
                val _ =
-                  walk2 (strs, strs', Strid.compare,
-                         fn (I, I', name) => share (I, I', name :: strids))
+                  walk2 (strs1, strs2, Strid.compare,
+                         fn (I1, I2, name) => share (I1, I2, name :: strids))
                val _ =
-                  walk2 (types, types', Ast.Tycon.compare,
-                         fn (s, s', name) =>
-                         TypeStr.share {region = sharingSpec,
-                                        time = time,
-                                        ty1 = mkTy (s, ls, strids, name),
-                                        ty2 = mkTy (s', ls', strids, name)})
+                  walk2 (types1, types2, Ast.Tycon.compare,
+                         fn (s1, s2, name) =>
+                         TypeStr.share
+                         {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                          layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                          region = region,
+                          time = time,
+                          ty1 = mkTy (s1, long1, strids, name),
+                          ty2 = mkTy (s2, long2, strids, name)})
             in
                ()
             end
    in
-      share (I, I', [])
+      share (I1, I2, [])
    end
 
 val share =
    Trace.trace
    ("Interface.share",
-    fn (I, _, I', _, t, _) =>
-    Layout.tuple [layout I, layout I', Time.layout t],
+    fn {I1, I2, time, ...} =>
+    Layout.tuple [layout I1, layout I2, Time.layout time],
     Unit.layout)
    share
 

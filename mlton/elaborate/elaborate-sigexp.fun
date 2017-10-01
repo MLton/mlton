@@ -24,6 +24,7 @@ in
    structure Record = Record
    structure Sigexp = Sigexp
    structure Sigid = Sigid
+   structure Strid = Strid
    structure SortedRecord = SortedRecord
    structure Spec = Spec
    structure TypBind = TypBind
@@ -357,23 +358,28 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
 val traceElaborateSigexp =
    Trace.trace2 ("ElaborateSigexp.elaborateSigexp",
                  Sigexp.layout,
-                 fn {isTop} => Layout.record [("isTop", Bool.layout isTop)],
+                 fn {isTop, nest} => Layout.record [("isTop", Bool.layout isTop),
+                                                    ("nest", List.layout Strid.layout nest)],
                  Option.layout Interface.layout)
-
-val info' = Trace.info "ElaborateSigexp.elaborateSpec"
+val traceElaborateSpec =
+   Trace.trace2 ("ElaborateSigexp.elaborateSpec",
+                 Spec.layout,
+                 fn {nest} => Layout.record [("nest", List.layout Strid.layout nest)],
+                 Unit.layout)
 
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
    let
+      val strE = E
       val E = StructureEnv.makeInterfaceEnv E
       fun elaborateSigexp arg : Interface.t option =
          traceElaborateSigexp
-         (fn (sigexp: Sigexp.t, {isTop}) =>
+         (fn (sigexp: Sigexp.t, {isTop, nest}) =>
           case Sigexp.node sigexp of
              Sigexp.Spec spec =>
                 (* rule 62 *)
                 SOME (#1 (Env.makeInterface (E, {isTop = isTop},
-                                             fn () => elaborateSpec spec)))
+                                             fn () => elaborateSpec (spec, {nest = nest}))))
            | Sigexp.Var x =>
                 (* rule 63 *)
                 Option.map (Env.lookupSigid (E, x), Interface.copy)
@@ -383,8 +389,14 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                    val time = Interface.Time.tick ()
                 in
                    Option.map
-                   (elaborateSigexp (sigexp, {isTop = false}), fn I =>
+                   (elaborateSigexp (sigexp, {isTop = false, nest = nest}), fn I =>
                     let
+                       val {layoutPretty = layoutPrettyEnvTycon, ...} =
+                          StructureEnv.makeLayoutPrettyTycon
+                          (strE, {prefixUnset = true})
+                       val {layoutPretty = layoutPrettyFlexTycon, ...} =
+                          Env.makeLayoutPrettyFlexTycon
+                          (E, (I, {nest = nest}), {prefixUnset = true})
                        val _ = 
                           Vector.foreach
                           (equations, fn eqn =>
@@ -402,7 +414,9 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                          TypeStr.def (elaborateScheme (tyvars, ty, E)))
                                   in
                                      TypeStr.wheree
-                                     {realization = realization,
+                                     {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                      layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                                      realization = realization,
                                       region = WhereEquation.region eqn,
                                       time = time,
                                       ty = {name = fn () => Longtycon.layout longtycon,
@@ -415,8 +429,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                     end)
                 end) arg
       and elaborateSpec arg : unit =
-         Trace.traceInfo' (info', Spec.layout, Layout.ignore)
-         (fn spec: Spec.t =>
+         traceElaborateSpec
+         (fn (spec: Spec.t, {nest}) =>
           case Spec.node spec of
              Spec.Datatype rhs =>
                 (* rules 71, 72 *)
@@ -451,8 +465,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                           NONE => Type.exn
                         | SOME t =>
                              let
-                                val t = Scheme.ty (elaborateScheme
-                                                   (Vector.new0 (), t, E))
+                                val t = elaborateType (t, E)
                              in
                                 Type.arrow (t, Type.exn)
                              end
@@ -463,7 +476,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                  end)
            | Spec.IncludeSigexp sigexp =>
                 (* rule 75 *)
-                Option.app (elaborateSigexp (sigexp, {isTop = false}), fn I =>
+                Option.app (elaborateSigexp (sigexp, {isTop = false, nest = nest}), fn I =>
                             Env.openInterface (E, I, Sigexp.region sigexp))
            | Spec.IncludeSigids sigids =>
                 (* Appendix A, p.59 *)
@@ -474,7 +487,8 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                  (E, Interface.copy I, Sigid.region x)))
            | Spec.Seq (s, s') =>
                 (* rule 77 *)
-                (elaborateSpec s; elaborateSpec s')
+                (elaborateSpec (s, {nest = nest})
+                 ; elaborateSpec (s', {nest = nest}))
            | Spec.Sharing {equation, spec} =>
                 (* rule 78 and section G.3.3 *)
                 let
@@ -496,8 +510,13 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                    val (I, _) =
                       Env.makeInterface
                       (E, {isTop = false},
-                       fn () => elaborateSpec spec)
-                   val () = Env.openInterface (E, I, Spec.region spec)
+                       fn () => elaborateSpec (spec, {nest = nest}))
+                   val {layoutPretty = layoutPrettyEnvTycon, ...} =
+                      StructureEnv.makeLayoutPrettyTycon
+                      (strE, {prefixUnset = true})
+                   val {layoutPretty = layoutPrettyFlexTycon, ...} =
+                      Env.makeLayoutPrettyFlexTycon
+                      (E, (I, {nest = nest}), {prefixUnset = true})
                    val () =
                       List.foreach
                       (equations, fn eqn =>
@@ -512,13 +531,16 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                 fun loop Is =
                                    case Is of
                                       [] => ()
-                                    | (s, I) :: Is =>
+                                    | (long1, I1) :: Is =>
                                          (List.foreach
-                                          (Is, fn (s', I') =>
+                                          (Is, fn (long2, I2) =>
                                            Interface.share
-                                           (I, s, I', s',
-                                            time,
-                                            SharingEquation.region eqn))
+                                           {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                            layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                                            I1 = I1, long1 = long1,
+                                            I2 = I2, long2 = long2,
+                                            region = SharingEquation.region eqn,
+                                            time = time})
                                           ; loop Is)
                                 val Is =
                                    List.keepAllMap
@@ -547,13 +569,16 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                             tyStr = s}
                                         val _ =
                                            TypeStr.share
-                                           {region = SharingEquation.region eqn,
+                                           {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                            layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                                            region = SharingEquation.region eqn,
                                             time = time,
                                             ty1 = mkTy (c, n, s),
                                             ty2 = mkTy (c', n', s')}
                                      in
                                         SOME (c', n', s')
                                      end)))
+                   val () = Env.openInterface (E, I, Spec.region spec)
                 in
                    ()
                 end
@@ -564,7 +589,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                       Vector.map
                       (ss, fn (strid, sigexp) =>
                        (strid,
-                        case elaborateSigexp (sigexp, {isTop = false}) of
+                        case elaborateSigexp (sigexp, {isTop = false, nest = strid::nest}) of
                            NONE => Interface.empty
                          | SOME I => I))
                 in
@@ -609,7 +634,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                       elaborateScheme (tyvars, t, E))
                   end))) arg
    in
-      elaborateSigexp (sigexp, {isTop = true})
+      elaborateSigexp (sigexp, {isTop = true, nest = []})
    end
 
 val elaborateSigexp =
