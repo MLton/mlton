@@ -1899,10 +1899,10 @@ in
 end
 
 (* ------------------------------------------------- *)
-(*                      collect                      *)
+(*                      current                      *)
 (* ------------------------------------------------- *)
 
-fun collect (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
+fun current (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
    let
       val bass = ref []
       val fcts = ref []
@@ -2679,7 +2679,7 @@ structure InterfaceEnv =
    struct
       structure Env =
          struct
-            val collect = collect
+            val current = current
             val lookupLongtycon = lookupLongtycon
             val peekIfcStrid = peekIfcStrid
             val peekIfcTycon = peekIfcTycon
@@ -2698,13 +2698,13 @@ structure InterfaceEnv =
       type t = t
 
       (* ------------------------------------------------- *)
-      (*                      collect                      *)
+      (*                      current                      *)
       (* ------------------------------------------------- *)
 
-      fun collect (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
+      fun current (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
          let
             val {interface = {strs, types, vals}, ...} =
-               Env.collect (E, keep)
+               Env.current (E, keep)
          in
             {strs = strs,
              types = types,
@@ -2895,7 +2895,7 @@ structure InterfaceEnv =
                         ()
                      end
                   local
-                     val {strs, types, ...} = collect (E, fn _ => true)
+                     val {strs, types, ...} = current (E, fn _ => true)
                      fun doit f =
                         let val Info.T a = f ()
                         in Array.map (a, fn {domain, range, ...} => (domain, range))
@@ -3055,7 +3055,7 @@ fun makeLayoutPrettyTycon (E, {prefixUnset}) =
          genLayoutPrettyTycon {prefixUnset = prefixUnset}
       fun pre () =
          let
-            val {strs, types, ...} = collect (E, fn _ => true)
+            val {strs, types, ...} = current (E, fn _ => true)
          in
             loopStr (Structure.T {interface = NONE,
                                   plist = PropertyList.new (),
@@ -3074,7 +3074,7 @@ fun makeLayoutPrettyTycon (E, {prefixUnset}) =
 
 fun layout' (E: t, prefixUnset, keep): Layout.t =
    let
-      val {bass, fcts, sigs, strs, types, vals, ...} = collect (E, keep)
+      val {bass, fcts, sigs, strs, types, vals, ...} = current (E, keep)
       val bass = bass ()
       val fcts = fcts ()
       val sigs = sigs ()
@@ -3523,7 +3523,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
          Promise.delay
          (fn () =>
           let
-             val {sigs, strs, types, ...} = collect (E, fn _ => true)
+             val {sigs, strs, types, ...} = current (E, fn _ => true)
              val _ =
                 Info.foreachByTime
                 (sigs (), fn (s, I) =>
