@@ -321,7 +321,6 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                 else ()
           end
       val () = loop ()
-      val () = Env.allowDuplicates := true
       val () =
          Vector.foreach
          (datatypes, fn {cons, name, tycon} =>
@@ -345,12 +344,11 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                      scheme = scheme}
                  end)
              val () =
-                Env.extendTycon
+                Env.rebindTycon
                 (E, name, TypeStr.data (tycon, Cons.fromVector cons, false))
           in
              ()
           end)
-      val _ = Env.allowDuplicates := false
    in
       ()
    end

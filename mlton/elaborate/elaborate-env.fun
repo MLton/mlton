@@ -224,6 +224,17 @@ structure Uses:
    sig
       type 'a t
 
+      structure Extend:
+         sig
+            type 'a uses = 'a t
+            datatype 'a t =
+               New
+             | Old of 'a uses
+             | Rebind
+
+            val fromIsRebind: {isRebind: bool} -> 'a t
+         end
+
       val add: 'a t * 'a -> unit
       val all: 'a t -> 'a list
       val clear: 'a t -> unit
@@ -252,6 +263,17 @@ structure Uses:
 
       fun isUsed (u as T {forceUsed, ...}): bool =
          !forceUsed orelse hasUse u
+
+      structure Extend =
+         struct
+            type 'a uses = 'a t
+            datatype 'a t =
+               New
+             | Old of 'a uses
+             | Rebind
+
+            fun fromIsRebind {isRebind} = if isRebind then Rebind else New
+         end
    end
 
 structure Class =
@@ -1636,8 +1658,8 @@ structure NameSpace =
                current: ('a, 'b) Values.t list ref,
                defUses: {class: Class.t,
                          def: 'a,
-                         range: 'b list,
-                         uses: 'a Uses.t} list ref,
+                         range: 'b option,
+                         uses: 'a Uses.t} list ref option,
                lookup: 'a -> ('a, 'b) Values.t,
                region: 'a -> Region.t,
                toSymbol: 'a -> Symbol.t}
@@ -1648,25 +1670,47 @@ structure NameSpace =
       (*                       empty                       *)
       (* ------------------------------------------------- *)
 
-      fun empty {class, lookup, region, toSymbol} =
+      fun empty {class, defUses, lookup, region, toSymbol} =
          T {class = class,
             current = ref [],
-            defUses = ref [],
+            defUses = if defUses then SOME (ref []) else NONE,
             lookup = lookup,
             region = region,
             toSymbol = toSymbol}
 
-      fun newUses (T {defUses, ...}, class, def, range) =
+      (* ------------------------------------------------- *)
+      (*                      newUses                      *)
+      (* ------------------------------------------------- *)
+
+      fun newUses (T {class, defUses, ...}, {def, forceUsed, range}) =
          let
             val u = Uses.new ()
             val _ =
-               if !Control.keepDefUse then
-                  List.push (defUses, {class = class,
-                                       def = def,
-                                       range = range,
-                                       uses = u})
-               else
-                  ()
+               if not (warnUnused ()) orelse forceUsed
+                  then Uses.forceUsed u
+                  else ()
+            val _ =
+               case defUses of
+                  NONE => ()
+                | SOME defUses =>
+                     let
+                        val class = class range
+                        val range =
+                           if isSome (!Control.showDefUse)
+                              andalso
+                              (class = Class.Var
+                               orelse
+                               class = Class.Exn
+                               orelse
+                               class = Class.Con)
+                              then SOME range
+                              else NONE
+                     in
+                        List.push (defUses, {class = class,
+                                             def = def,
+                                             range = range,
+                                             uses = u})
+                     end
          in
             u
          end
@@ -1682,6 +1726,56 @@ structure NameSpace =
           | {range, uses, ...} :: _ => 
                (if markUse range then Uses.add (uses, a) else ()
                 ; SOME range)
+
+      (* ------------------------------------------------- *)
+      (*                      extend                       *)
+      (* ------------------------------------------------- *)
+
+      fun extend (ns as T {current, lookup, ...},
+                  {domain, forceUsed, range, scope, time, uses}) =
+         let
+            val newUses = fn () =>
+               newUses
+               (ns,
+                {def = domain,
+                 range = range,
+                 forceUsed = forceUsed})
+            val values as Values.T r = lookup domain
+            fun make uses =
+               {domain = domain,
+                range = range,
+                scope = scope,
+                time = time,
+                uses = uses}
+            fun new () =
+               let
+                  val _ = List.push (current, values)
+                  val uses =
+                     case uses {rebind = NONE} of
+                        Uses.Extend.New => newUses ()
+                      | Uses.Extend.Old u => u
+                      | Uses.Extend.Rebind =>
+                           Error.bug "ElaborateEnv.NameSpace.extend.new: Rebind"
+               in
+                  make uses
+               end
+         in
+            case !r of
+               [] => r := [new ()]
+             | all as ({domain = domain', scope = scope', uses = uses', ...} :: rest) =>
+                  if Scope.equals (scope, scope')
+                     then let
+                             val rebind = SOME {domain = domain', uses = uses'}
+                             val uses =
+                                case uses {rebind = rebind} of
+                                   Uses.Extend.New => newUses ()
+                                 | Uses.Extend.Old u => u
+                                 | Uses.Extend.Rebind => uses'
+                          in
+                             r := (make uses) :: rest
+                          end
+                     else r := new () :: all
+         end
 
       (* ------------------------------------------------- *)
       (*                       scope                       *)
@@ -1838,6 +1932,7 @@ fun empty () =
       fun ('a, 'b) make (class: 'b -> Class.t,
                          region: 'a -> Region.t,
                          toSymbol: 'a -> Symbol.t,
+                         defUses: bool,
                          extract: All.t -> ('a, 'b) Values.t option,
                          make: ('a, 'b) Values.t -> All.t)
          : ('a, 'b) NameSpace.t  =
@@ -1858,32 +1953,33 @@ fun empty () =
                end
          in
             NameSpace.empty {class = class,
+                             defUses = defUses,
                              lookup = lookup,
                              region = region,
                              toSymbol = toSymbol}
          end
       val bass = make (fn _ => Class.Bas, Basid.region, Basid.toSymbol,
-                       All.basOpt, All.Bas)
+                       false, All.basOpt, All.Bas)
       val fcts = make (fn _ => Class.Fct, Fctid.region, Fctid.toSymbol,
-                       All.fctOpt, All.Fct)
+                       !Control.keepDefUse, All.fctOpt, All.Fct)
       val fixs = make (fn _ => Class.Fix, Ast.Vid.region, Ast.Vid.toSymbol,
-                       All.fixOpt, All.Fix)
+                       false, All.fixOpt, All.Fix)
       val sigs = make (fn _ => Class.Sig, Sigid.region, Sigid.toSymbol,
-                       All.sigOpt, All.Sig)
+                       !Control.keepDefUse, All.sigOpt, All.Sig)
       val strs = make (fn _ => Class.Str, Strid.region, Strid.toSymbol,
-                       All.strOpt, All.Str)
+                       !Control.keepDefUse, All.strOpt, All.Str)
       val types = make (fn _ => Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol,
-                        All.tycOpt, All.Tyc)
+                        !Control.keepDefUse, All.tycOpt, All.Tyc)
       val vals = make (Vid.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
-                       All.valOpt, All.Val)
+                       !Control.keepDefUse, All.valOpt, All.Val)
 
       local
          val strs = make (fn _ => Class.Str, Strid.region, Strid.toSymbol,
-                          All.ifcStrOpt, All.IfcStr)
+                          false, All.ifcStrOpt, All.IfcStr)
          val types = make (fn _ => Class.Typ, Ast.Tycon.region, Ast.Tycon.toSymbol,
-                           All.ifcTycOpt, All.IfcTyc)
+                           false, All.ifcTycOpt, All.IfcTyc)
          val vals = make (Status.class o #1, Ast.Vid.region, Ast.Vid.toSymbol,
-                          All.ifcValOpt, All.IfcVal)
+                          false, All.ifcValOpt, All.IfcVal)
       in
          val interface = {strs = strs, types = types, vals = vals}
       end
@@ -2248,107 +2344,23 @@ val peekLongcon = PeekResult.toOption o peekLongcon
 (*                      extend                       *)
 (* ------------------------------------------------- *)
 
-structure ExtendUses =
-   struct
-      datatype 'a t =
-         New
-       | Old of 'a Uses.t
-       | Rebind
-
-      fun fromIsRebind {isRebind} = if isRebind then Rebind else New
-   end
-
-val extend:
-   t * ('a, 'b) NameSpace.t * {domain: 'a,
-                               forceUsed: bool,
-                               range: 'b,
-                               scope: Scope.t,
-                               time: Time.t,
-                               uses: 'a ExtendUses.t} -> unit =
-   fn (T {...},
-       ns as NameSpace.T {class, current, lookup, ...},
-       {domain, forceUsed, range, scope, time, uses}) =>
-   let
-      fun newUses () =
-         let
-            val u = NameSpace.newUses (ns, class range, domain,
-                                       if isSome (!Control.showDefUse)
-                                          andalso (class range = Class.Var
-                                                   orelse
-                                                   class range = Class.Exn
-                                                   orelse
-                                                   class range = Class.Con)
-                                       then [range]
-                                       else [])
-            val () =
-               if not (warnUnused ()) orelse forceUsed
-                  then Uses.forceUsed u
-                  else ()
-         in
-            u
-         end
-      val values as Values.T r = lookup domain
-      datatype z = datatype ExtendUses.t
-      fun new () =
-         let
-            val _ = List.push (current, values)
-            val uses =
-               case uses of
-                  New => newUses ()
-                | Old u => u
-                | Rebind => Error.bug "ElaborateEnv.extend.rebind.new: Rebind"
-         in
-            {domain = domain,
-             range = range,
-             scope = scope,
-             time = time,
-             uses = uses}
-         end
-   in
-      case !r of
-         [] => r := [new ()]
-       | all as ({scope = scope', uses = uses', ...} :: rest) =>
-            if Scope.equals (scope, scope')
-               then
-                  let
-                     val uses =
-                        case uses of
-                           New => newUses ()
-                         | Old u => u
-                         | Rebind => uses'
-                  in
-                     r := {domain = domain,
-                           range = range,
-                           scope = scope,
-                           time = time,
-                           uses = uses} :: rest
-                  end
-            else r := new () :: all
-   end
-
 local
-   val extend =
-      fn (E as T (fields as {currentScope, ...}), get,
-          domain: 'a,
-          range: 'b,
-          forceUsed: bool,
-          uses: 'a ExtendUses.t) =>
-      let
-         val ns = get fields
-      in
-         extend (E, ns, {domain = domain,
-                         forceUsed = forceUsed,
-                         range = range,
-                         scope = !currentScope,
-                         time = Time.next (),
-                         uses = uses})
-      end
+   fun extend (T (r as {currentScope, ...}), sel,
+               domain: 'a, range: 'b, forceUsed: bool, uses: 'a Uses.Extend.t) =
+      NameSpace.extend
+      (sel r,
+       {domain = domain,
+        forceUsed = forceUsed,
+        range = range,
+        scope = !currentScope,
+        time = Time.next (),
+        uses = fn _ => uses})
 in
-   fun extendBasid (E, d, r) = extend (E, #bass, d, r, false, ExtendUses.New)
-   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, ExtendUses.New)
-   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, ExtendUses.New)
-   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, ExtendUses.New)
-   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, ExtendUses.New)
+   fun extendBasid (E, d, r) = extend (E, #bass, d, r, false, Uses.Extend.New)
+   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, Uses.Extend.New)
+   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, Uses.Extend.New)
+   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, Uses.Extend.New)
+   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, Uses.Extend.New)
    fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
    fun extendTycon (E, d, s, {forceUsed, isRebind}) =
       let
@@ -2362,23 +2374,23 @@ in
                      (Cons.dest cons, fn {con, name, scheme, uses} =>
                       extendVals (E, Ast.Vid.fromCon name,
                                   (Vid.Con con, scheme),
-                                  ExtendUses.Old uses))
+                                  Uses.Extend.Old uses))
                 | _ => ()
             end
          val _ =
             extend (E, #types, d, s, forceUsed,
-                    ExtendUses.fromIsRebind {isRebind = isRebind})
+                    Uses.Extend.fromIsRebind {isRebind = isRebind})
       in
          ()
       end
 end
 
 fun extendExn (E, c, c', s) =
-   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
+   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), Uses.Extend.New)
 
 fun extendVar (E, x, x', s, ir) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s),
-               ExtendUses.fromIsRebind ir)
+               Uses.Extend.fromIsRebind ir)
 
 val extendVar =
    Trace.trace
@@ -2390,7 +2402,7 @@ val extendVar =
 
 fun extendOverload (E, p, x, yts, s) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s),
-               ExtendUses.New)
+               Uses.Extend.New)
 
 (* ------------------------------------------------- *)
 (*                       scope                       *)
@@ -2434,7 +2446,7 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
 (* ------------------------------------------------- *)
 
 local
-   fun locall (E: t, ns, s0) =
+   fun locall (ns, s0) =
       let
          val f = NameSpace.locall ns
       in
@@ -2447,29 +2459,30 @@ local
                val elts = f ()
                val _ =
                   List.foreach (elts, fn {domain, range, time, uses} =>
-                                extend (E, ns, {domain = domain,
-                                                forceUsed = false,
-                                                range = range,
-                                                scope = s0,
-                                                time = time,
-                                                uses = ExtendUses.Old uses}))
+                                NameSpace.extend
+                                (ns, {domain = domain,
+                                      forceUsed = false,
+                                      range = range,
+                                      scope = s0,
+                                      time = time,
+                                      uses = fn _ => Uses.Extend.Old uses}))
             in
                ()
             end
          end
       end
 in
-   fun localAll (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
+   fun localAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
                  f1, f2) =
       let
          val s0 = !currentScope
-         val bass = locall (E, bass, s0)
-         val fcts = locall (E, fcts, s0)
-         val fixs = locall (E, fixs, s0)
-         val sigs = locall (E, sigs, s0)
-         val strs = locall (E, strs, s0)
-         val types = locall (E, types, s0)
-         val vals = locall (E, vals, s0)
+         val bass = locall (bass, s0)
+         val fcts = locall (fcts, s0)
+         val fixs = locall (fixs, s0)
+         val sigs = locall (sigs, s0)
+         val strs = locall (strs, s0)
+         val types = locall (types, s0)
+         val vals = locall (vals, s0)
          val _ = currentScope := Scope.new ()
          val a1 = f1 ()
          val bass = bass ()
@@ -2487,14 +2500,14 @@ in
          a2
       end
 
-   fun localModule (E as T {currentScope, fixs, strs, types, vals, ...},
+   fun localModule (T {currentScope, fixs, strs, types, vals, ...},
                     f1, f2) =
       let
          val s0 = !currentScope
-         val fixs = locall (E, fixs, s0)
-         val strs = locall (E, strs, s0)
-         val types = locall (E, types, s0)
-         val vals = locall (E, vals, s0)
+         val fixs = locall (fixs, s0)
+         val strs = locall (strs, s0)
+         val types = locall (types, s0)
+         val vals = locall (vals, s0)
          val _ = currentScope := Scope.new ()
          val a1 = f1 ()
          val fixs = fixs ()
@@ -2569,16 +2582,16 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
 (* ------------------------------------------------- *)
 
 local
-   fun openn (E, ns, Info.T a, s) =
+   fun openn (ns, Info.T a, s) =
       Array.foreach (a, fn {domain, range, time, uses} =>
-                     extend (E, ns, {domain = domain,
-                                     forceUsed = false,
-                                     range = range,
-                                     scope = s,
-                                     time = time,
-                                     uses = ExtendUses.Old uses}))
+                     NameSpace.extend (ns, {domain = domain,
+                                            forceUsed = false,
+                                            range = range,
+                                            scope = s,
+                                            time = time,
+                                            uses = fn _ => Uses.Extend.Old uses}))
 in
-   fun openBasis (E as T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, ...},
+   fun openBasis (T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, ...},
                   Basis.T {bass = bass',
                            fcts = fcts',
                            fixs = fixs',
@@ -2588,26 +2601,26 @@ in
                            types = types', ...}): unit =
       let
          val s0 = !currentScope
-         val _ = openn (E, bass, bass', s0)
-         val _ = openn (E, fcts, fcts', s0)
-         val _ = openn (E, fixs, fixs', s0)
-         val _ = openn (E, sigs, sigs', s0)
-         val _ = openn (E, strs, strs', s0)
-         val _ = openn (E, vals, vals', s0)
-         val _ = openn (E, types, types', s0)
+         val _ = openn (bass, bass', s0)
+         val _ = openn (fcts, fcts', s0)
+         val _ = openn (fixs, fixs', s0)
+         val _ = openn (sigs, sigs', s0)
+         val _ = openn (strs, strs', s0)
+         val _ = openn (vals, vals', s0)
+         val _ = openn (types, types', s0)
       in
          ()
       end
 
-   fun openStructure (E as T {currentScope, strs, vals, types, ...},
+   fun openStructure (T {currentScope, strs, vals, types, ...},
                       Structure.T {strs = strs',
                                    vals = vals',
                                    types = types', ...}): unit =
       let
          val s0 = !currentScope
-         val _ = openn (E, strs, strs', s0)
-         val _ = openn (E, vals, vals', s0)
-         val _ = openn (E, types, types', s0)
+         val _ = openn (strs, strs', s0)
+         val _ = openn (vals, vals', s0)
+         val _ = openn (types, types', s0)
       in
          ()
       end
@@ -2642,7 +2655,7 @@ fun forceUsed E =
       ()
    end
 
-fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
+fun forceUsedLocal (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
                     th) =
    let
       fun doit (forceRange: 'b -> unit, ns as NameSpace.T {current, ...}, s0) =
@@ -2660,12 +2673,12 @@ fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, v
                   (lift, fn {domain, range, time, uses, ...} =>
                    (Uses.forceUsed uses
                     ; forceRange range
-                    ; extend (E, ns, {domain = domain,
-                                      forceUsed = false,
-                                      range = range,
-                                      scope = s0,
-                                      time = time,
-                                      uses = ExtendUses.Old uses})))
+                    ; NameSpace.extend (ns, {domain = domain,
+                                             forceUsed = false,
+                                             range = range,
+                                             scope = s0,
+                                             time = time,
+                                             uses = fn _ => Uses.Extend.Old uses})))
             in
                ()
             end
@@ -2763,53 +2776,65 @@ structure InterfaceEnv =
       (*                      extend                       *)
       (* ------------------------------------------------- *)
 
-      val allowDuplicates = ref false
+      datatype z = MustExtend of Region.t | MustRebind
 
-      fun extend (T {currentScope, interface, ...},
-                  domain, range, kind: string, ns, errorRegion): unit =
-         let
-            val scope = !currentScope
-            val NameSpace.T {current, lookup, region, toSymbol, ...} = ns interface
-            fun value () = {domain = domain,
-                            range = range,
-                            scope = scope,
-                            time = Time.next (),
-                            uses = Uses.new ()}
-            val values as Values.T r = lookup domain
-            fun new () = (List.push (current, values)
-                          ; List.push (r, value ()))
-         in
-            case !r of
-               [] => new ()
-             | {domain = domain', scope = scope', ...} :: l =>
-                  if Scope.equals (scope, scope')
-                     then if !allowDuplicates
-                             then r := value () :: l
-                          else
-                             let
-                                open Layout
-                             in
-                                Control.error
-                                (errorRegion,
-                                 seq [str "duplicate ",
-                                      str kind,
-                                      str " specification: ",
-                                      Symbol.layout (toSymbol domain)],
-                                 (align o List.map)
-                                 (if Region.equals (errorRegion, region domain)
-                                     then [domain']
-                                     else [domain', domain],
-                                  fn d => seq [str "spec at: ",
-                                               Region.layout (region d)]))
-                             end
-                  else new ()
-         end
+      fun extend (T {currentScope, interface, ...}, sel,
+                  domain, range, kind, must) =
+         NameSpace.extend
+         (sel interface,
+          {domain = domain,
+           forceUsed = true,
+           range = range,
+           scope = !currentScope,
+           time = Time.next (),
+           uses = (case must of
+                      MustExtend extendRegion =>
+                         (fn {rebind} =>
+                          let
+                             val NameSpace.T {region, toSymbol, ...} = sel interface
+                             val () =
+                                case rebind of
+                                   SOME {domain = domain', ...} =>
+                                      let
+                                         open Layout
+                                      in
+                                         Control.error
+                                         (extendRegion,
+                                          seq [str "duplicate ",
+                                               str kind,
+                                               str " specification: ",
+                                               Symbol.layout (toSymbol domain)],
+                                          (align o List.map)
+                                          (if Region.equals (extendRegion,
+                                                             region domain)
+                                              then [domain']
+                                              else [domain', domain],
+                                           fn d => seq [str "spec at: ",
+                                                        Region.layout (region d)]))
+                                      end
+                                 | _ => ()
+                          in
+                             Uses.Extend.New
+                          end)
+                    | MustRebind =>
+                         (fn {rebind} =>
+                          case rebind of
+                             NONE =>
+                                Error.bug "ElaborateEnv.InterfaceEnv.extend: MustRebind"
+                           | SOME {uses, ...} =>
+                                Uses.Extend.Old uses))})
 
-      fun extendStrid (E, s, I, r) = extend (E, s, I, "structure", #strs, r)
+      fun extendStrid (E, s, I, r) =
+         extend (E, #strs, s, I, "structure", MustExtend r)
 
-      fun extendTycon (E, c, s, r) = extend (E, c, s, "type", #types, r)
+      fun extendTycon (E, c, s, r) =
+         extend (E, #types, c, s, "type", MustExtend r)
 
-      fun extendVid (E, v, st, s, r) = extend (E, v, (st, s), "value", #vals, r)
+      fun extendVid (E, v, st, s, r) =
+         extend (E, #vals, v, (st, s), "value", MustExtend r)
+
+      fun rebindTycon (E, c, s) =
+         extend (E, #types, c, s, "type", MustRebind)
 
       (* ------------------------------------------------- *)
       (*                   makeInterface                   *)
@@ -2861,8 +2886,7 @@ structure InterfaceEnv =
 
       val extendTycon = fn (E, c, s) => extendTycon (E, c, s, Ast.Tycon.region c)
 
-      val extendVid =
-         fn (E, v, st, s) => extendVid (E, v, st, s, Ast.Vid.region v)
+      val extendVid = fn (E, v, st, s) => extendVid (E, v, st, s, Ast.Vid.region v)
 
       fun extendCon (E, c, s) =
          extendVid (E, Ast.Vid.fromCon c, Status.Con, s)
@@ -3250,7 +3274,8 @@ fun processDefUse (E as T f) =
             val NameSpace.T {defUses, region, toSymbol, ...} = sel f
          in
             List.foreach
-            (!defUses, fn {class, def, uses, range, ...} =>
+            (Option.fold (defUses, [], ! o #1),
+             fn {class, def, uses, range, ...} =>
              List.push
              (all, {class = class,
                     def = Symbol.layout (toSymbol def),
@@ -3265,11 +3290,12 @@ fun processDefUse (E as T f) =
       val _ = doit (#strs, fn _ => [])
       val _ = doit (#types, fn _ => [])
       local
-         fun mkExtraFromSchemes l =
-            List.map
-            (l, fn (_, s) => layoutPrettyScheme s)
+         fun mkExtraFromScheme so =
+            case so of
+               NONE => []
+             | SOME (_, s) => [layoutPrettyScheme s]
       in
-         val _ = doit (#vals, mkExtraFromSchemes)
+         val _ = doit (#vals, mkExtraFromScheme)
       end
       val a = Array.fromList (!all)
       val _ =
@@ -3380,15 +3406,12 @@ fun newCons (T {vals, ...}, v) =
       (Cons.fromVector o Vector.map)
       (v, fn {con, name, scheme} =>
        let
-          val uses = NameSpace.newUses (vals, Class.Con,
-                                        Ast.Vid.fromCon name,
-                                        if isSome (!Control.showDefUse)
-                                           then [(Vid.Con con, scheme)]
-                                           else [])
-          val () =
-             if not (warnUnused ()) orelse forceUsed
-                then Uses.forceUsed uses
-                else ()
+          val uses =
+             NameSpace.newUses
+             (vals,
+              {def = Ast.Vid.fromCon name,
+               range = (Vid.Con con, scheme),
+               forceUsed = forceUsed})
        in
           {con = con,
            name = name,

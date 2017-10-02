@@ -144,7 +144,6 @@ signature ELABORATE_ENV =
 
             type t
 
-            val allowDuplicates: bool ref
             val extendCon: t * Ast.Con.t * Scheme.t -> unit
             val extendExn: t * Ast.Con.t * Scheme.t -> unit
             val extendStrid: t * Ast.Strid.t * Interface.t -> unit
@@ -159,6 +158,7 @@ signature ELABORATE_ENV =
                -> {destroy: unit -> unit,
                    layoutPretty: FlexibleTycon.t -> Layout.t}
             val openInterface: t * Interface.t * Region.t -> unit
+            val rebindTycon: t * Ast.Tycon.t * TypeStr.t -> unit
          end
       sharing Interface.FlexibleTycon = InterfaceEnv.FlexibleTycon
       sharing Interface.Scheme = InterfaceEnv.Scheme
