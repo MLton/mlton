@@ -206,19 +206,16 @@ fun amInsideFunctor () = !insideFunctor
 structure Scope =
    struct
       structure Unique = UniqueId ()
-      datatype t = T of {isTop: bool,
-                         unique: Unique.t}
+      datatype t = T of {unique: Unique.t}
 
       local
          fun make f (T r) = f r
       in
-         val isTop = make #isTop
          val unique = make #unique
       end
 
-      fun new {isTop: bool}: t =
-         T {isTop = isTop,
-            unique = Unique.new ()}
+      fun new (): t =
+         T {unique = Unique.new ()}
 
       fun equals (s, s') = Unique.equals (unique s, unique s')
    end
@@ -1815,13 +1812,8 @@ datatype t =
                      types: (Ast.Tycon.t, Interface.TypeStr.t) NameSpace.t,
                      vals: (Ast.Vid.t, Interface.Status.t * Interface.Scheme.t) NameSpace.t},
          lookup: Symbol.t -> All.t list ref,
-         maybeAddTop: Symbol.t -> unit,
          sigs: (Ast.Sigid.t, Interface.t) NameSpace.t,
          strs: (Ast.Strid.t, Structure.t) NameSpace.t,
-         (* topSymbols is a list of all symbols that are defined at
-          * the top level (in any namespace).
-          *)
-         topSymbols: Symbol.t list ref,
          types: (Ast.Tycon.t, TypeStr.t) NameSpace.t,
          vals: (Ast.Vid.t, Vid.t * Scheme.t) NameSpace.t}
 
@@ -1843,10 +1835,6 @@ fun empty () =
    let
       val {get = lookupAll: Symbol.t -> All.t list ref, ...} = 
          Property.get (Symbol.plist, Property.initFun (fn _ => ref []))
-      val topSymbols = ref []
-      val {get = maybeAddTop: Symbol.t -> unit, ...} =
-         Property.get (Symbol.plist,
-                       Property.initFun (fn s => List.push (topSymbols, s)))
       fun ('a, 'b) make (class: 'b -> Class.t,
                          region: 'a -> Region.t,
                          toSymbol: 'a -> Symbol.t,
@@ -1900,16 +1888,14 @@ fun empty () =
          val interface = {strs = strs, types = types, vals = vals}
       end
    in
-      T {currentScope = ref (Scope.new {isTop = true}),
+      T {currentScope = ref (Scope.new ()),
          bass = bass,
          fcts = fcts,
          fixs = fixs,
          interface = interface,
          lookup = lookupAll,
-         maybeAddTop = maybeAddTop,
          sigs = sigs,
          strs = strs,
-         topSymbols = topSymbols,
          types = types,
          vals = vals}
    end
@@ -1943,9 +1929,6 @@ local
 in
    fun foreachDefinedSymbol (E, z) =
       Symbol.foreach (fn s => foreach (E, s, z))
-
-   fun foreachTopLevelSymbol (E as T {topSymbols, ...}, z) =
-      List.foreach (!topSymbols, fn s => foreach (E, s, z))
 end
 
 (* ------------------------------------------------- *)
@@ -2029,20 +2012,20 @@ fun snapshot (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, .
                                  uses = uses})
                  ; List.push (current, v)))
       val _ =
-         foreachTopLevelSymbol (E, {bass = doit bass,
-                                    fcts = doit fcts,
-                                    fixs = doit fixs,
-                                    interface = {strs = ignore,
-                                                 types = ignore,
-                                                 vals = ignore},
-                                    sigs = doit sigs,
-                                    strs = doit strs,
-                                    types = doit types,
-                                    vals = doit vals})
+         foreachDefinedSymbol (E, {bass = doit bass,
+                                   fcts = doit fcts,
+                                   fixs = doit fixs,
+                                   interface = {strs = ignore,
+                                                types = ignore,
+                                                vals = ignore},
+                                   sigs = doit sigs,
+                                   strs = doit strs,
+                                   types = doit types,
+                                   vals = doit vals})
    in
       fn th =>
       let
-         val s0 = Scope.new {isTop = false}
+         val s0 = Scope.new ()
          val restore: (unit -> unit) list ref = ref []
          fun doit (NameSpace.T {current, ...}) =
             let
@@ -2282,8 +2265,8 @@ val extend:
                                scope: Scope.t,
                                time: Time.t,
                                uses: 'a ExtendUses.t} -> unit =
-   fn (T {maybeAddTop, ...},
-       ns as NameSpace.T {class, current, lookup, toSymbol, ...},
+   fn (T {...},
+       ns as NameSpace.T {class, current, lookup, ...},
        {domain, forceUsed, range, scope, time, uses}) =>
    let
       fun newUses () =
@@ -2323,15 +2306,7 @@ val extend:
          end
    in
       case !r of
-         [] =>
-            let
-               val _ =
-                  if Scope.isTop scope
-                     then maybeAddTop (toSymbol domain)
-                  else ()
-            in
-               r := [new ()]
-            end
+         [] => r := [new ()]
        | all as ({scope = scope', uses = uses', ...} :: rest) =>
             if Scope.equals (scope, scope')
                then
@@ -2431,7 +2406,7 @@ fun scopeAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...}, 
       val t = NameSpace.scope types
       val v = NameSpace.scope vals
       val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = true}
+      val _ = currentScope := Scope.new ()
       val res = th ()
       val _ = (b (); fc (); f (); si (); s (); t (); v ())
       val _ = currentScope := s0
@@ -2446,7 +2421,7 @@ fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
       val t = NameSpace.scope types
       val v = NameSpace.scope vals
       val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = false}
+      val _ = currentScope := Scope.new ()
       val res = th ()
       val _ = (f (); s (); t (); v ())
       val _ = currentScope := s0
@@ -2495,7 +2470,7 @@ in
          val strs = locall (E, strs, s0)
          val types = locall (E, types, s0)
          val vals = locall (E, vals, s0)
-         val _ = currentScope := Scope.new {isTop = true}
+         val _ = currentScope := Scope.new ()
          val a1 = f1 ()
          val bass = bass ()
          val fcts = fcts ()
@@ -2504,7 +2479,7 @@ in
          val strs = strs ()
          val types = types ()
          val vals = vals ()
-         val _ = currentScope := Scope.new {isTop = true}
+         val _ = currentScope := Scope.new ()
          val a2 = f2 a1
          val _ = (bass (); fcts (); fixs (); sigs (); strs (); types (); vals ())
          val _ = currentScope := s0
@@ -2520,13 +2495,13 @@ in
          val strs = locall (E, strs, s0)
          val types = locall (E, types, s0)
          val vals = locall (E, vals, s0)
-         val _ = currentScope := Scope.new {isTop = false}
+         val _ = currentScope := Scope.new ()
          val a1 = f1 ()
          val fixs = fixs ()
          val strs = strs ()
          val types = types ()
          val vals = vals ()
-         val _ = currentScope := Scope.new {isTop = false}
+         val _ = currentScope := Scope.new ()
          val a2 = f2 a1
          val _ = (fixs (); strs (); types (); vals ())
          val _ = currentScope := s0
@@ -2554,7 +2529,7 @@ fun makeBasis (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...},
       val types = NameSpace.collect types
       val vals = NameSpace.collect vals
       val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = true}
+      val _ = currentScope := Scope.new ()
       val res = make ()
       val B = Basis.T {plist = PropertyList.new (),
                        bass = bass (),
@@ -2576,7 +2551,7 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
       val t = NameSpace.collect types
       val v = NameSpace.collect vals
       val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = false}
+      val _ = currentScope := Scope.new ()
       val res = make ()
       val _ = f ()
       val S = Structure.T {interface = NONE,
@@ -2703,7 +2678,7 @@ fun forceUsedLocal (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, v
       val strs = doit (Structure.forceUsed, strs, s0)
       val types = doit (ignore, types, s0)
       val vals = doit (ignore, vals, s0)
-      val _ = currentScope := Scope.new {isTop = true}
+      val _ = currentScope := Scope.new ()
       val res = th ()
       val _ = (bass(); fcts (); fixs (); sigs (); strs (); types (); vals ())
       val _ = currentScope := s0
@@ -2847,7 +2822,7 @@ structure InterfaceEnv =
             val t = NameSpace.collect types
             val v = NameSpace.collect vals
             val s0 = !currentScope
-            val _ = currentScope := Scope.new {isTop = false}
+            val _ = currentScope := Scope.new ()
             val res = make ()
             val Info.T s = s ()
             val s = Array.map (s, fn {domain, range, ...} => (domain, range))
