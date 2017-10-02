@@ -1647,7 +1647,11 @@ structure NameSpace =
 
       fun values (T {lookup, ...}, a) = lookup a
 
-      fun new {class, lookup, region, toSymbol} =
+      (* ------------------------------------------------- *)
+      (*                       empty                       *)
+      (* ------------------------------------------------- *)
+
+      fun empty {class, lookup, region, toSymbol} =
          T {class = class,
             current = ref [],
             defUses = ref [],
@@ -1670,6 +1674,10 @@ structure NameSpace =
             u
          end
 
+      (* ------------------------------------------------- *)
+      (*                       peek                        *)
+      (* ------------------------------------------------- *)
+
       fun ('a, 'b) peek (ns, a: 'a, {markUse: 'b -> bool})
          : 'b option =
          case Values.! (values (ns, a)) of
@@ -1677,6 +1685,65 @@ structure NameSpace =
           | {range, uses, ...} :: _ => 
                (if markUse range then Uses.add (uses, a) else ()
                 ; SOME range)
+
+      (* ------------------------------------------------- *)
+      (*                       scope                       *)
+      (* ------------------------------------------------- *)
+
+      fun scope (T {current, ...}: ('a, 'b) t)
+         : unit -> unit =
+         let
+            val old = !current
+            val _ = current := []
+         in
+            fn () =>
+            let
+               val c = !current
+               val _ = List.foreach (c, ignore o Values.pop)
+               val _ = current := old
+            in
+               ()
+            end
+         end
+
+      (* ------------------------------------------------- *)
+      (*                       local                       *)
+      (* ------------------------------------------------- *)
+
+      fun locall (T {current, ...}: ('a, 'b) t) =
+         let
+            val old = !current
+            val _ = current := []
+         in
+            fn () =>
+            let
+               val c1 = !current
+               val _ = current := []
+            in
+               fn () =>
+               let
+                  val c2 = !current
+                  val elts = List.revMap (c2, fn values =>
+                                          let
+                                             val {domain, range, time, uses, ...} =
+                                                Values.pop values
+                                          in
+                                             {domain = domain,
+                                              range = range,
+                                              time = time,
+                                              uses = uses}
+                                          end)
+                  val _ = List.foreach (c1, ignore o Values.pop)
+                  val _ = current := old
+               in
+                  elts
+               end
+            end
+         end
+
+      (* ------------------------------------------------- *)
+      (*                      collect                      *)
+      (* ------------------------------------------------- *)
 
       fun collect (T {current, toSymbol, ...}: ('a, 'b) t)
          : unit -> ('a, 'b) Info.t =
@@ -1705,23 +1772,6 @@ structure NameSpace =
                    Symbol.<= (toSymbol d, toSymbol d'))
             in
                Info.T a
-            end
-         end
-
-      fun scope (T {current, ...}: ('a, 'b) t)
-         : unit -> unit =
-         let
-            val old = !current
-            val _ = current := []
-         in
-            fn () =>
-            let
-               val _ =
-                  List.foreach (!current, fn values =>
-                                ignore (Values.pop values))
-               val _ = current := old
-            in
-               ()
             end
          end
    end
@@ -1819,10 +1869,10 @@ fun empty () =
                    | SOME v => v
                end
          in
-            NameSpace.new {class = class,
-                           lookup = lookup,
-                           region = region,
-                           toSymbol = toSymbol}
+            NameSpace.empty {class = class,
+                             lookup = lookup,
+                             region = region,
+                             toSymbol = toSymbol}
          end
       val bass = make (fn _ => Class.Bas, Basid.region, Basid.toSymbol,
                        All.basOpt, All.Bas)
@@ -2368,28 +2418,60 @@ fun extendOverload (E, p, x, yts, s) =
                ExtendUses.New)
 
 (* ------------------------------------------------- *)
+(*                       scope                       *)
+(* ------------------------------------------------- *)
+
+fun scopeAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...}, th) =
+   let
+      val b = NameSpace.scope bass
+      val fc = NameSpace.scope fcts
+      val f = NameSpace.scope fixs
+      val si = NameSpace.scope sigs
+      val s = NameSpace.scope strs
+      val t = NameSpace.scope types
+      val v = NameSpace.scope vals
+      val s0 = !currentScope
+      val _ = currentScope := Scope.new {isTop = true}
+      val res = th ()
+      val _ = (b (); fc (); f (); si (); s (); t (); v ())
+      val _ = currentScope := s0
+   in
+      res
+   end
+
+fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
+   let
+      val f = NameSpace.scope fixs
+      val s = NameSpace.scope strs
+      val t = NameSpace.scope types
+      val v = NameSpace.scope vals
+      val s0 = !currentScope
+      val _ = currentScope := Scope.new {isTop = false}
+      val res = th ()
+      val _ = (f (); s (); t (); v ())
+      val _ = currentScope := s0
+   in
+      res
+   end
+
+(* ------------------------------------------------- *)
 (*                       local                       *)
 (* ------------------------------------------------- *)
 
 local
-   fun doit (E: t, ns as NameSpace.T {current, ...}, s0) =
+   fun locall (E: t, ns, s0) =
       let
-         val old = !current
-         val _ = current := []
+         val f = NameSpace.locall ns
       in
          fn () =>
          let
-            val c1 = !current
-            val _ = current := []
+            val f = f ()
          in
             fn () =>
             let
-               val c2 = !current
-               val lift = List.revMap (c2, Values.pop)
-               val _ = List.foreach (c1, fn v => ignore (Values.pop v))
-               val _ = current := old
+               val elts = f ()
                val _ =
-                  List.foreach (lift, fn {domain, range, time, uses, ...} =>
+                  List.foreach (elts, fn {domain, range, time, uses} =>
                                 extend (E, ns, {domain = domain,
                                                 forceUsed = false,
                                                 range = range,
@@ -2406,13 +2488,13 @@ in
                  f1, f2) =
       let
          val s0 = !currentScope
-         val bass = doit (E, bass, s0)
-         val fcts = doit (E, fcts, s0)
-         val fixs = doit (E, fixs, s0)
-         val sigs = doit (E, sigs, s0)
-         val strs = doit (E, strs, s0)
-         val types = doit (E, types, s0)
-         val vals = doit (E, vals, s0)
+         val bass = locall (E, bass, s0)
+         val fcts = locall (E, fcts, s0)
+         val fixs = locall (E, fixs, s0)
+         val sigs = locall (E, sigs, s0)
+         val strs = locall (E, strs, s0)
+         val types = locall (E, types, s0)
+         val vals = locall (E, vals, s0)
          val _ = currentScope := Scope.new {isTop = true}
          val a1 = f1 ()
          val bass = bass ()
@@ -2424,7 +2506,7 @@ in
          val vals = vals ()
          val _ = currentScope := Scope.new {isTop = true}
          val a2 = f2 a1
-         val _ = (bass(); fcts (); fixs (); sigs (); strs (); types (); vals ())
+         val _ = (bass (); fcts (); fixs (); sigs (); strs (); types (); vals ())
          val _ = currentScope := s0
       in
          a2
@@ -2434,10 +2516,10 @@ in
                     f1, f2) =
       let
          val s0 = !currentScope
-         val fixs = doit (E, fixs, s0)
-         val strs = doit (E, strs, s0)
-         val types = doit (E, types, s0)
-         val vals = doit (E, vals, s0)
+         val fixs = locall (E, fixs, s0)
+         val strs = locall (E, strs, s0)
+         val types = locall (E, types, s0)
+         val vals = locall (E, vals, s0)
          val _ = currentScope := Scope.new {isTop = false}
          val a1 = f1 ()
          val fixs = fixs ()
@@ -2457,43 +2539,6 @@ in
     *)
    val localCore = localModule
 end
-
-(* ------------------------------------------------- *)
-(*                       scope                       *)
-(* ------------------------------------------------- *)
-
-fun scope (T {currentScope, fixs, strs, types, vals, ...}, th) =
-   let
-      val f = NameSpace.scope fixs
-      val s = NameSpace.scope strs
-      val t = NameSpace.scope types
-      val v = NameSpace.scope vals
-      val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = false}
-      val res = th ()
-      val _ = (f (); s (); t (); v ())
-      val _ = currentScope := s0
-   in
-      res
-   end
-
-fun scopeAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...}, th) =
-   let
-      val b = NameSpace.scope bass
-      val fc = NameSpace.scope fcts
-      val f = NameSpace.scope fixs
-      val si = NameSpace.scope sigs
-      val s = NameSpace.scope strs
-      val t = NameSpace.scope types
-      val v = NameSpace.scope vals
-      val s0 = !currentScope
-      val _ = currentScope := Scope.new {isTop = true}
-      val res = th ()
-      val _ = (b (); fc (); f (); si (); s (); t (); v ())
-      val _ = currentScope := s0
-   in
-      res
-   end
 
 (* ------------------------------------------------- *)
 (*             makeBasis / makeStructure             *)
@@ -2548,55 +2593,50 @@ fun makeStructure (T {currentScope, fixs, strs, types, vals, ...}, make) =
 (*                       open                        *)
 (* ------------------------------------------------- *)
 
-fun openBasis (E as T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, ...},
-               Basis.T {bass = bass',
-                        fcts = fcts',
-                        fixs = fixs',
-                        sigs = sigs',
-                        strs = strs',
-                        vals = vals',
-                        types = types', ...}): unit =
-   let
-      val scope = !currentScope
-      fun doit (ns, Info.T a) =
-         Array.foreach (a, fn {domain, range, time, uses} =>
-                        extend (E, ns, {domain = domain,
-                                        forceUsed = false,
-                                        range = range,
-                                        scope = scope,
-                                        time = time,
-                                        uses = ExtendUses.Old uses}))
-      val _ = doit (bass, bass')
-      val _ = doit (fcts, fcts')
-      val _ = doit (fixs, fixs')
-      val _ = doit (sigs, sigs')
-      val _ = doit (strs, strs')
-      val _ = doit (vals, vals')
-      val _ = doit (types, types')
-   in
-      ()
-   end
+local
+   fun openn (E, ns, Info.T a, s) =
+      Array.foreach (a, fn {domain, range, time, uses} =>
+                     extend (E, ns, {domain = domain,
+                                     forceUsed = false,
+                                     range = range,
+                                     scope = s,
+                                     time = time,
+                                     uses = ExtendUses.Old uses}))
+in
+   fun openBasis (E as T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, ...},
+                  Basis.T {bass = bass',
+                           fcts = fcts',
+                           fixs = fixs',
+                           sigs = sigs',
+                           strs = strs',
+                           vals = vals',
+                           types = types', ...}): unit =
+      let
+         val s0 = !currentScope
+         val _ = openn (E, bass, bass', s0)
+         val _ = openn (E, fcts, fcts', s0)
+         val _ = openn (E, fixs, fixs', s0)
+         val _ = openn (E, sigs, sigs', s0)
+         val _ = openn (E, strs, strs', s0)
+         val _ = openn (E, vals, vals', s0)
+         val _ = openn (E, types, types', s0)
+      in
+         ()
+      end
 
-fun openStructure (E as T {currentScope, strs, vals, types, ...},
-                   Structure.T {strs = strs',
-                                vals = vals',
-                                types = types', ...}): unit =
-   let
-      val scope = !currentScope
-      fun doit (ns, Info.T a) =
-         Array.foreach (a, fn {domain, range, time, uses} =>
-                        extend (E, ns, {domain = domain,
-                                        forceUsed = false,
-                                        range = range,
-                                        scope = scope,
-                                        time = time,
-                                        uses = ExtendUses.Old uses}))
-      val _ = doit (strs, strs')
-      val _ = doit (vals, vals')
-      val _ = doit (types, types')
-   in
-      ()
-   end
+   fun openStructure (E as T {currentScope, strs, vals, types, ...},
+                      Structure.T {strs = strs',
+                                   vals = vals',
+                                   types = types', ...}): unit =
+      let
+         val s0 = !currentScope
+         val _ = openn (E, strs, strs', s0)
+         val _ = openn (E, vals, vals', s0)
+         val _ = openn (E, types, types', s0)
+      in
+         ()
+      end
+end
 
 (* ------------------------------------------------- *)
 (*                     forceUsed                     *)
