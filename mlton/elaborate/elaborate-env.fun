@@ -1422,7 +1422,7 @@ structure Structure =
 
       datatype 'a peekResult =
          Found of 'a
-        | UndefinedStructure of Strid.t list
+       | UndefinedStructure of Strid.t list
 
       fun peekStrids (S, strids) =
          let
@@ -1778,8 +1778,7 @@ in
       List.foreach (!topSymbols, fn s => foreach (E, s, z))
 end
 
-fun collect (E,
-             keep: {hasUse: bool, scope: Scope.t} -> bool) =
+fun collect (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
    let
       val bass = ref []
       val fcts = ref []
