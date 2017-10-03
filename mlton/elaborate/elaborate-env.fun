@@ -226,13 +226,9 @@ structure Uses:
 
       structure Extend:
          sig
-            type 'a uses = 'a t
-            datatype 'a t =
-               New
-             | Old of 'a uses
-             | Rebind
-
-            val fromIsRebind: {isRebind: bool} -> 'a t
+            val new: {rebind: {domain: 'a, uses: 'a t} option} -> 'a t option
+            val old: 'a t -> {rebind: {domain: 'a, uses: 'a t} option} -> 'a t option
+            val fromIsRebind: {isRebind: bool} -> {rebind: {domain: 'a, uses: 'a t} option} -> 'a t option
          end
 
       val add: 'a t * 'a -> unit
@@ -266,13 +262,17 @@ structure Uses:
 
       structure Extend =
          struct
-            type 'a uses = 'a t
-            datatype 'a t =
-               New
-             | Old of 'a uses
-             | Rebind
-
-            fun fromIsRebind {isRebind} = if isRebind then Rebind else New
+            fun new _ = NONE
+            fun old uses _ = SOME uses
+            fun fromIsRebind {isRebind} =
+               if isRebind
+                  then (fn {rebind} =>
+                        case rebind of
+                           NONE =>
+                              Error.bug "ElaborateEnv.Uses.Extend.fromIsRebind"
+                         | SOME {domain = _, uses} =>
+                              SOME uses)
+                  else new
          end
    end
 
@@ -1752,10 +1752,8 @@ structure NameSpace =
                   val _ = List.push (current, values)
                   val uses =
                      case uses {rebind = NONE} of
-                        Uses.Extend.New => newUses ()
-                      | Uses.Extend.Old u => u
-                      | Uses.Extend.Rebind =>
-                           Error.bug "ElaborateEnv.NameSpace.extend.new: Rebind"
+                        NONE => newUses ()
+                      | SOME u => u
                in
                   make uses
                end
@@ -1768,9 +1766,8 @@ structure NameSpace =
                              val rebind = SOME {domain = domain', uses = uses'}
                              val uses =
                                 case uses {rebind = rebind} of
-                                   Uses.Extend.New => newUses ()
-                                 | Uses.Extend.Old u => u
-                                 | Uses.Extend.Rebind => uses'
+                                   NONE => newUses ()
+                                 | SOME u => u
                           in
                              r := (make uses) :: rest
                           end
@@ -2346,7 +2343,7 @@ val peekLongcon = PeekResult.toOption o peekLongcon
 
 local
    fun extend (T (r as {currentScope, ...}), sel,
-               domain: 'a, range: 'b, forceUsed: bool, uses: 'a Uses.Extend.t) =
+               domain: 'a, range: 'b, forceUsed: bool, uses) =
       NameSpace.extend
       (sel r,
        {domain = domain,
@@ -2354,13 +2351,13 @@ local
         range = range,
         scope = !currentScope,
         time = Time.next (),
-        uses = fn _ => uses})
+        uses = uses})
 in
-   fun extendBasid (E, d, r) = extend (E, #bass, d, r, false, Uses.Extend.New)
-   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, Uses.Extend.New)
-   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, Uses.Extend.New)
-   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, Uses.Extend.New)
-   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, Uses.Extend.New)
+   fun extendBasid (E, d, r) = extend (E, #bass, d, r, false, Uses.Extend.new)
+   fun extendFctid (E, d, r) = extend (E, #fcts, d, r, false, Uses.Extend.new)
+   fun extendFix (E, d, r) = extend (E, #fixs, d, r, false, Uses.Extend.new)
+   fun extendSigid (E, d, r) = extend (E, #sigs, d, r, false, Uses.Extend.new)
+   fun extendStrid (E, d, r) = extend (E, #strs, d, r, false, Uses.Extend.new)
    fun extendVals (E, d, r, eu) = extend (E, #vals, d, r, false, eu)
    fun extendTycon (E, d, s, {forceUsed, isRebind}) =
       let
@@ -2374,7 +2371,7 @@ in
                      (Cons.dest cons, fn {con, name, scheme, uses} =>
                       extendVals (E, Ast.Vid.fromCon name,
                                   (Vid.Con con, scheme),
-                                  Uses.Extend.Old uses))
+                                  Uses.Extend.old uses))
                 | _ => ()
             end
          val _ =
@@ -2386,7 +2383,7 @@ in
 end
 
 fun extendExn (E, c, c', s) =
-   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), Uses.Extend.New)
+   extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), Uses.Extend.new)
 
 fun extendVar (E, x, x', s, ir) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', s),
@@ -2402,7 +2399,7 @@ val extendVar =
 
 fun extendOverload (E, p, x, yts, s) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Overload (p, yts), s),
-               Uses.Extend.New)
+               Uses.Extend.new)
 
 (* ------------------------------------------------- *)
 (*                       scope                       *)
@@ -2465,7 +2462,7 @@ local
                                       range = range,
                                       scope = s0,
                                       time = time,
-                                      uses = fn _ => Uses.Extend.Old uses}))
+                                      uses = Uses.Extend.old uses}))
             in
                ()
             end
@@ -2589,7 +2586,7 @@ local
                                             range = range,
                                             scope = s,
                                             time = time,
-                                            uses = fn _ => Uses.Extend.Old uses}))
+                                            uses = Uses.Extend.old uses}))
 in
    fun openBasis (T {currentScope, bass, fcts, fixs, sigs, strs, vals, types, ...},
                   Basis.T {bass = bass',
@@ -2678,7 +2675,7 @@ fun forceUsedLocal (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, 
                                              range = range,
                                              scope = s0,
                                              time = time,
-                                             uses = fn _ => Uses.Extend.Old uses})))
+                                             uses = Uses.Extend.old uses})))
             in
                ()
             end
@@ -2814,7 +2811,7 @@ structure InterfaceEnv =
                                       end
                                  | _ => ()
                           in
-                             Uses.Extend.New
+                             NONE
                           end)
                     | MustRebind =>
                          (fn {rebind} =>
@@ -2822,7 +2819,7 @@ structure InterfaceEnv =
                              NONE =>
                                 Error.bug "ElaborateEnv.InterfaceEnv.extend: MustRebind"
                            | SOME {uses, ...} =>
-                                Uses.Extend.Old uses))})
+                                SOME uses))})
 
       fun extendStrid (E, s, I, r) =
          extend (E, #strs, s, I, "structure", MustExtend r)
