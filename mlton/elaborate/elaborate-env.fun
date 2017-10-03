@@ -1151,6 +1151,8 @@ structure Info =
                        Layout.tuple [layoutDomain domain, layoutRange range])
          a
 
+      fun isEmpty (T a) = Array.isEmpty a
+
       fun foreach (T a, f) =
          Array.foreach (a, fn {domain, range, ...} => f (domain, range))
 
@@ -1169,13 +1171,9 @@ structure Info =
          Option.map
          (BinarySearch.search (a, fn {domain = d, ...} =>
                                Symbol.compare (toSymbol domain, toSymbol d)),
-          fn i =>
-          let
-             val v as {uses, ...} = Array.sub (a, i)
-             val _ = Uses.add (uses, domain)
-          in
-             v
-          end)
+          fn i => Array.sub (a, i))
+
+      fun keepAll (T a, f) = T (Array.keepAll (a, f))
 
       val map: ('a, 'b) t * ('b -> 'b) -> ('a, 'b) t =
          fn (T a, f) =>
@@ -1262,7 +1260,10 @@ structure Structure =
 
       local
          fun make (field, toSymbol) (T fields, domain) =
-            Info.peek (field fields, domain, toSymbol)
+            Option.map
+            (Info.peek (field fields, domain, toSymbol),
+             fn v as {uses, ...} =>
+             (Uses.add (uses, domain); v))
       in
          val peekStrid' = make (#strs, Ast.Strid.toSymbol)
          val peekVid' = make (#vals, Ast.Vid.toSymbol)
@@ -2704,7 +2705,6 @@ structure InterfaceEnv =
    struct
       structure Env =
          struct
-            val current = current
             val lookupLongtycon = lookupLongtycon
             val peekIfcStrid = peekIfcStrid
             val peekIfcTycon = peekIfcTycon
@@ -2721,20 +2721,6 @@ structure InterfaceEnv =
       end
 
       type t = t
-
-      (* ------------------------------------------------- *)
-      (*                      current                      *)
-      (* ------------------------------------------------- *)
-
-      fun current (E, keep: {hasUse: bool, scope: Scope.t} -> bool) =
-         let
-            val {interface = {strs, types, vals}, ...} =
-               Env.current (E, keep)
-         in
-            {strs = strs,
-             types = types,
-             vals = vals}
-         end
 
       (* ------------------------------------------------- *)
       (*                       peek                        *)
@@ -2895,11 +2881,11 @@ structure InterfaceEnv =
       (*             makeLayoutPrettyFlexTycon             *)
       (* ------------------------------------------------- *)
 
-      fun makeLayoutPrettyFlexTycon (E, (I, {nest}), {prefixUnset}) =
+      fun genLayoutPrettyFlexTycon {prefixUnset} =
          let
-            val {destroy = destroyLayoutPretty: unit -> unit,
-                 get = layoutPretty: FlexibleTycon.t -> Layout.t,
-                 set = setLayoutPretty: FlexibleTycon.t * Layout.t -> unit} =
+            val {destroy = destroyLayoutPrettyFlexTycon: unit -> unit,
+                 get = layoutPrettyFlexTycon: FlexibleTycon.t -> Layout.t,
+                 set = setLayoutPrettyFlexTycon: FlexibleTycon.t * Layout.t -> unit} =
                Property.destGetSet
                (FlexibleTycon.plist,
                 Property.initFun
@@ -2907,53 +2893,29 @@ structure InterfaceEnv =
                  let val l = FlexibleTycon.layout f
                  in if prefixUnset then seq [str "?.", l] else l
                  end))
-            fun pre () =
+            fun doFlexTycon (flex, name, strids: Strid.t list) =
                let
-                  fun doType (name, f, strids: Strid.t list) =
-                     let
-                        val name = layoutLongRev (strids, Ast.Tycon.layout name)
-                     in
-                        setLayoutPretty (f, name)
-                     end
-                  fun doStr (name, tyconMap, strids: Strid.t list) =
-                     doTyconMap (tyconMap, name::strids)
-                  and doTyconMap (TyconMap.T {strs, types}, strids) =
-                     let
-                        val () =
-                           Array.foreach
-                           (types, fn (name, f) =>
-                            doType (name, f, strids))
-                        val () =
-                           Array.foreach
-                           (strs, fn (name, tyconMap) =>
-                            doStr (name, tyconMap, strids))
-                     in
-                        ()
-                     end
-                  local
-                     val {strs, types, ...} = current (E, fn _ => true)
-                     fun doit f =
-                        let val Info.T a = f ()
-                        in Array.map (a, fn {domain, range, ...} => (domain, range))
-                        end
-                     val I = Interface.new {isClosed = true,
-                                            strs = doit strs,
-                                            types = doit types,
-                                            vals = Array.new0 ()}
-                  in
-                     val () = doTyconMap (Interface.flexibleTycons I, [Ast.Strid.uSig])
-                  end
-                  val () = doTyconMap (Interface.flexibleTycons I,
-                                       nest @ [Ast.Strid.uSig])
+                  val name = layoutLongRev (strids, Ast.Tycon.layout name)
+               in
+                  setLayoutPrettyFlexTycon (flex, name)
+               end
+            fun loopFlexTyconMap (TyconMap.T {strs, types}, strids) =
+               let
+                  val () =
+                     Array.foreach
+                     (types, fn (name, flex) =>
+                      doFlexTycon (flex, name, strids))
+                  val () =
+                     Array.foreach
+                     (strs, fn (name, flexTyconMap) =>
+                      loopFlexTyconMap (flexTyconMap, name::strids))
                in
                   ()
                end
-            val pre = ClearablePromise.delay pre
          in
-            {destroy = fn () => (ClearablePromise.clear pre
-                                 ; destroyLayoutPretty ()),
-             layoutPretty = fn c => (ClearablePromise.force pre
-                                     ; layoutPretty c)}
+            {destroy = destroyLayoutPrettyFlexTycon,
+             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+             loopFlexTyconMap = loopFlexTyconMap}
          end
 
 end
@@ -2966,9 +2928,9 @@ val makeInterfaceEnv = fn E => E
 
 fun genLayoutPrettyTycon {prefixUnset} =
    let
-      val {destroy = destroyLayoutPretty: unit -> unit,
-           get = layoutPretty: Tycon.t -> Layout.t,
-           set = setLayoutPretty: Tycon.t * Layout.t -> unit} =
+      val {destroy = destroyLayoutPrettyTycon: unit -> unit,
+           get = layoutPrettyTycon: Tycon.t -> Layout.t,
+           set = setLayoutPrettyTycon: Tycon.t * Layout.t -> unit} =
          Property.destGetSet
          (Tycon.plist,
           Property.initFun
@@ -2994,7 +2956,7 @@ fun genLayoutPrettyTycon {prefixUnset} =
                         val _ = r := SOME (priority, length)
                         val name = layoutLongRev (strids, Ast.Tycon.layout name)
                      in
-                        setLayoutPretty (c, name)
+                        setLayoutPrettyTycon (c, name)
                      end
                in
                   case !r of
@@ -3064,15 +3026,16 @@ fun genLayoutPrettyTycon {prefixUnset} =
    in
       {destroy = fn () => (destroyStrShortest ()
                            ; destroyTyconShortest ()
-                           ; destroyLayoutPretty ()),
-       layoutPretty = layoutPretty,
+                           ; destroyLayoutPrettyTycon ()),
+       layoutPrettyTycon = layoutPrettyTycon,
        loopStr = mk loopStr,
        loopFlexTyconMap = mk loopFlexTyconMap}
    end
 
 fun makeLayoutPrettyTycon (E, {prefixUnset}) =
    let
-      val {destroy, layoutPretty, loopStr, ...} =
+      val {destroy = destroyLayoutPrettyTycon,
+           layoutPrettyTycon, loopStr, ...} =
          genLayoutPrettyTycon {prefixUnset = prefixUnset}
       fun pre () =
          let
@@ -3088,9 +3051,72 @@ fun makeLayoutPrettyTycon (E, {prefixUnset}) =
       val pre = ClearablePromise.delay pre
    in
       {destroy = fn () => (ClearablePromise.clear pre
-                           ; destroy ()),
-       layoutPretty = fn c => (ClearablePromise.force pre
-                               ; layoutPretty c)}
+                           ; destroyLayoutPrettyTycon ()),
+       layoutPrettyTycon = fn c => (ClearablePromise.force pre
+                                    ; layoutPrettyTycon c)}
+   end
+
+fun makeLayoutPrettyTyconAndFlexTycon (E, _, Io, {prefixUnset}) =
+   let
+      val {destroy = destroyLayoutPrettyFlexTycon,
+           layoutPrettyFlexTycon, loopFlexTyconMap, ...} =
+         InterfaceEnv.genLayoutPrettyFlexTycon {prefixUnset = prefixUnset}
+      val {destroy = destroyLayoutPrettyTycon,
+           layoutPrettyTycon, loopStr, ...} =
+         genLayoutPrettyTycon {prefixUnset = prefixUnset}
+      fun pre () =
+         let
+            val {strs, types, interface = {strs = ifcStrs, types = ifcTypes, ...}, ...} =
+                 current (E, fn _ => true)
+            val strs = strs ()
+            val types = types ()
+            val ifcStrs = ifcStrs ()
+            val ifcTypes = ifcTypes ()
+            local
+               fun doit (env, ifc, toSymbol) =
+                  if Info.isEmpty ifc
+                     then env
+                     else Info.keepAll
+                          (env, fn {domain, ...} =>
+                           case Info.peek (ifc, domain, toSymbol) of
+                              NONE => true
+                            | SOME _ => false)
+            in
+               val () = loopStr (Structure.T {interface = NONE,
+                                              plist = PropertyList.new (),
+                                              strs = doit (strs, ifcStrs, Ast.Strid.toSymbol),
+                                              types = doit (types, ifcTypes, Ast.Tycon.toSymbol),
+                                              vals = Info.T (Array.new0 ())},
+                                 0, [])
+            end
+            local
+               fun doit ifc =
+                  let val Info.T a = ifc
+                  in Array.map (a, fn {domain, range, ...} => (domain, range))
+                  end
+               val I = Interface.new {isClosed = true,
+                                      strs = doit ifcStrs,
+                                      types = doit ifcTypes,
+                                      vals = Array.new0 ()}
+            in
+               val () = loopFlexTyconMap (Interface.flexibleTycons I, [])
+            end
+            val () = Option.foreach
+                     (Io, fn I =>
+                      loopFlexTyconMap (Interface.flexibleTycons I,
+                                        [Ast.Strid.uSig]))
+         in
+            ()
+         end
+      val pre = ClearablePromise.delay pre
+   in
+      {destroy = fn () => (ClearablePromise.clear pre
+                           ; destroyLayoutPrettyFlexTycon ()
+                           ; destroyLayoutPrettyTycon ()),
+       layoutPrettyTycon = fn c => (ClearablePromise.force pre
+                                    ; layoutPrettyTycon c),
+       layoutPrettyFlexTycon = fn f => (ClearablePromise.force pre
+                                        ; layoutPrettyFlexTycon f)}
    end
 
 fun layout' (E: t, prefixUnset, keep): Layout.t =
@@ -3110,7 +3136,7 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
                              fn {domain = s, range = I, ...} =>
                              setInterfaceSigid (I, SOME (s, I)))
       val {destroy = destroyLayoutPrettyTycon,
-           layoutPretty = layoutPrettyTycon} =
+           layoutPrettyTycon} =
          makeLayoutPrettyTycon (E, {prefixUnset = prefixUnset})
 
       val indent = fn l => Layout.indent (l, 3)
@@ -3220,7 +3246,7 @@ fun layoutCurrentScope (E as T {currentScope, ...}) =
 fun processDefUse (E as T f) =
    let
       val {destroy = destroyLayoutPrettyTycon,
-           layoutPretty = layoutPrettyTycon} =
+           layoutPrettyTycon} =
          makeLayoutPrettyTycon (E, {prefixUnset = false})
       val {destroy = destroyLayoutPrettyTyvar,
            layoutPretty = layoutPrettyTyvar,
@@ -3536,7 +3562,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
            set = setInterfaceSigid, ...} =
          Property.destGetSet (Interface.plist, Property.initConst NONE)
       val {destroy = destroyLayoutPrettyTycon,
-           layoutPretty = layoutPrettyTycon,
+           layoutPrettyTycon,
            loopStr, loopFlexTyconMap, ...} =
          genLayoutPrettyTycon {prefixUnset = true}
       val pre =

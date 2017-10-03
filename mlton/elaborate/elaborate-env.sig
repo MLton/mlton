@@ -153,10 +153,6 @@ signature ELABORATE_ENV =
             val lookupSigid: t * Ast.Sigid.t -> Interface.t option
             val makeInterface:
                t * {isTop: bool} * (unit -> 'a) -> Interface.t * 'a
-            val makeLayoutPrettyFlexTycon:
-               t * (Interface.t * {nest: Ast.Strid.t list}) * {prefixUnset: bool}
-               -> {destroy: unit -> unit,
-                   layoutPretty: FlexibleTycon.t -> Layout.t}
             val openInterface: t * Interface.t * Region.t -> unit
             val rebindTycon: t * Ast.Tycon.t * TypeStr.t -> unit
          end
@@ -242,7 +238,12 @@ signature ELABORATE_ENV =
       val makeLayoutPrettyTycon:
          t * {prefixUnset: bool}
          -> {destroy: unit -> unit,
-             layoutPretty: Tycon.t -> Layout.t}
+             layoutPrettyTycon: Tycon.t -> Layout.t}
+      val makeLayoutPrettyTyconAndFlexTycon:
+         t * InterfaceEnv.t * Interface.t option * {prefixUnset: bool}
+         -> {destroy: unit -> unit,
+             layoutPrettyTycon: Tycon.t -> Layout.t,
+             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t}
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end

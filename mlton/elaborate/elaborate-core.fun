@@ -518,7 +518,7 @@ structure DiagUtils =
                 unify: Type.t * Type.t * (Layout.t * Layout.t -> Region.t * Layout.t * Layout.t) -> unit}
       fun make E : t =
          let
-            val {layoutPretty = layoutPrettyTycon, ...} =
+            val {layoutPrettyTycon, ...} =
                Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
             val {layoutPretty = layoutPrettyTyvar, ...} =
                TyvarEnv.makeLayoutPretty ()
@@ -2081,7 +2081,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                               * be expensive.
                                               *)
                                              val (bs, t) = Scheme.dest s
-                                             val {layoutPretty = layoutPrettyTycon, ...} =
+                                             val {layoutPrettyTycon, ...} =
                                                 Env.makeLayoutPrettyTycon (E, {prefixUnset = true})
                                              val {layoutPretty = layoutPrettyTyvar,
                                                   localInit = localInitLayoutPrettyTyvar, ...} =

@@ -389,12 +389,10 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                    Option.map
                    (elaborateSigexp (sigexp, {isTop = false, nest = nest}), fn I =>
                     let
-                       val {layoutPretty = layoutPrettyEnvTycon, ...} =
-                          StructureEnv.makeLayoutPrettyTycon
-                          (strE, {prefixUnset = true})
-                       val {layoutPretty = layoutPrettyFlexTycon, ...} =
-                          Env.makeLayoutPrettyFlexTycon
-                          (E, (I, {nest = nest}), {prefixUnset = true})
+                       val {layoutPrettyTycon = layoutPrettyEnvTycon,
+                            layoutPrettyFlexTycon, ...} =
+                          StructureEnv.makeLayoutPrettyTyconAndFlexTycon
+                          (strE, E, SOME I, {prefixUnset = true})
                        val _ = 
                           Vector.foreach
                           (equations, fn eqn =>
@@ -509,12 +507,11 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                       Env.makeInterface
                       (E, {isTop = false},
                        fn () => elaborateSpec (spec, {nest = nest}))
-                   val {layoutPretty = layoutPrettyEnvTycon, ...} =
-                      StructureEnv.makeLayoutPrettyTycon
-                      (strE, {prefixUnset = true})
-                   val {layoutPretty = layoutPrettyFlexTycon, ...} =
-                      Env.makeLayoutPrettyFlexTycon
-                      (E, (I, {nest = nest}), {prefixUnset = true})
+                   val () = Env.openInterface (E, I, Spec.region spec)
+                   val {layoutPrettyTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon, ...} =
+                      StructureEnv.makeLayoutPrettyTyconAndFlexTycon
+                      (strE, E, NONE, {prefixUnset = true})
                    val () =
                       List.foreach
                       (equations, fn eqn =>
@@ -576,7 +573,6 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                                      in
                                         SOME (c', n', s')
                                      end)))
-                   val () = Env.openInterface (E, I, Spec.region spec)
                 in
                    ()
                 end
