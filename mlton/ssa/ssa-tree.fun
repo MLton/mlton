@@ -184,8 +184,8 @@ structure Type =
                        then str "unit"
                     else seq [str "(",
                               (mayAlign o separateRight)
-                              (Vector.toListMap (ts, layout), " *"),
-                              str ")"]
+                              (Vector.toListMap (ts, layout), ", "),
+                              str ") tuple"]
                | Vector t => seq [layout t, str " vector"]
                | Weak t => seq [layout t, str " weak"]
                | Word s => str (concat ["word", WordSize.toString s])))

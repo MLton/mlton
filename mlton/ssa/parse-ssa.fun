@@ -15,13 +15,138 @@ struct
    infix  3 <*> <* *>
    infixr 4 <$> <$$> <$$$> <$
    
-   fun makeProgram() =
+   fun isInfixChar b = case List.index
+      (String.explode "!%&$#+-/:<=>?@\\~'^|*",
+       fn c => b = c) of
+          SOME _ => true
+        | NONE   => false
+
+   fun isIdentFirst b = Char.isAlpha b orelse b = #"'"
+   fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
+
+   val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
+                     (fn x      => [x]   ) <$> T.next
+   fun skipComments () = T.any
+      [T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)" <|> T.string "(*") *>
+            ((T.string "*)" <|> "" <$ T.delay skipComments) *> T.each [T.next]
+          <|> T.failCut "Closing comment")),
+       List.concat <$> T.each
+         [T.each [T.char #"\""],
+          List.concat <$> T.manyFailing(stringToken, T.char #"\""),
+          T.each [T.char #"\""]],
+       T.each [T.next]]
+
+   val space = T.sat(T.next, Char.isSpace)
+   val spaces = T.many(space)
+   fun token s = T.notFollowedBy
+      (T.string s,
+       (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) <* spaces
+   fun symbol s = T.notFollowedBy
+      (T.string s,
+       (T.sat(T.next,fn b => isInfixChar b orelse b = #"_"))) <* spaces
+
+   val clOptions = T.manyCharsFailing(T.string "Datatypes:")
+
+   fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
+      let
+         val hash = String.hash
+         val map = HashSet.new{hash= hash o #1}
+         fun eq x (a: string * 'a) = String.equals(x, #1 a)
+      in
+         fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
+      end
+
+
+   val ident = (
+      String.implode <$> (T.any
+         [(op ::) <$$>
+             (T.sat(T.next, isIdentFirst),
+              T.many (T.sat(T.next, isIdentRest))),
+          List.append <$$>
+             (T.many1 (T.sat(T.next, isInfixChar)),
+              (op ::) <$$> (T.char #"_", T.many (T.sat(T.next, Char.isDigit))) <|> T.pure []
+              (* just for collecting _0 *)
+              )])) <|> T.failCut "identifier"
+
+
+
+   (* parse a tuple of parsers which must begin with a paren but may be unary *)
+   fun tupleOf p = Vector.fromList <$>
+      (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
+
+   fun vectorOf p = Vector.fromList <$>
+      (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
+
+   (* too many arguments for the maps, curried to use <*> instead *)
+   fun makeTyp resolveTycon (args, ident) = resolveTycon ident
+
+   local
+      fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
+         (((tupleOf (T.delay (typ' resolveTycon))) <|> T.pure (Vector.new0 ())),
+         (spaces *> ident <* spaces))
+   in
+      fun typ resolveTycon = typ' resolveTycon ()
+   end
+
+   val ctype = (T.any o List.map)
+               (CType.all, fn ct =>
+                ct <$ token (CType.toString ct))
+
+   fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
+
+   (* parse in a constructor (to Con.t) *)
+   fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
+      (ident <* spaces,
+      T.optional (token "of" *> (typ resolveTycon) <* spaces) )
+
+   fun makeDt resolveTycon (tycon, cons) =
+      Datatype.T
+      {tycon = tycon,
+       cons = cons} 
+
+   fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
+      ((spaces *> ident <* spaces <* symbol "="),
+       (Vector.fromList <$> T.sepBy1
+          ((constructor resolveCon resolveTycon) <* spaces,
+           T.char #"|" *> spaces)))
+
+   fun datatypes resolveCon resolveTycon =
+      token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
+
+   fun makeProgram(datatypes) =
       Program.T
-         {datatypes = Vector.new0(),
+         {datatypes = datatypes,
           functions = [],
           globals = Vector.new0(),
           main = Func.newNoname() } 
    
-   fun parse s = makeProgram()
+   val program : Program.t StreamParser.t=
+      let
+         fun strip_unique s  = T.parse
+            (String.implode <$> T.manyCharsFailing(
+               T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
+             Stream.fromList (String.explode s))
+         val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
+         fun resolveCon ident =
+            case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
+                            ident = Con.toString con) of
+               SOME con => con
+             | NONE => resolveCon0 ident
+         val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
+         fun resolveTycon ident =
+            case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
+                               if ident = name then SOME tycon else NONE) of
+               SOME con => con
+             | NONE => if ident = "unit"
+                          then Tycon.tuple
+                       else resolveTycon0 ident
+         val resolveVar = makeNameResolver(Var.newString o strip_unique)
+      in
+         T.compose(skipComments (),
+            clOptions *>
+            (makeProgram <$> (datatypes resolveCon resolveTycon)))
+      end
+   
+   fun parse s = T.parse(program, s)
       
 end
