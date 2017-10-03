@@ -3045,20 +3045,6 @@ fun genLayoutPrettyTycon {prefixUnset} =
                                   else doit ()
                     | GREATER => ())
          end
-      fun loopIfc (I: Interface.t, priority, length: int, strids: Strid.t list): unit =
-         let
-            val {strs, types, ...} = Interface.dest I
-            val _ =
-               Array.foreach
-               (types, fn (name, typeStr) =>
-                doType (Interface.TypeStr.toEnv typeStr, name, priority, length, strids))
-            val _ =
-               Array.foreach
-               (strs, fn (strid, I) =>
-                loopIfc (I, priority, 1 + length, strid::strids))
-         in
-            ()
-         end
       fun loopFlexTyconMap (tm: FlexibleTycon.t TyconMap.t, priority, length: int, strids: Strid.t list): unit =
          let
             val TyconMap.T {strs, types} = tm
@@ -3080,7 +3066,6 @@ fun genLayoutPrettyTycon {prefixUnset} =
                            ; destroyTyconShortest ()
                            ; destroyLayoutPretty ()),
        layoutPretty = layoutPretty,
-       loopIfc = mk loopIfc,
        loopStr = mk loopStr,
        loopFlexTyconMap = mk loopFlexTyconMap}
    end
