@@ -25,6 +25,7 @@ in
    structure Fctid = Fctid
    structure Longstrid = Longstrid
    structure SigConst = SigConst
+   structure Sigid = Sigid
    structure Sigexp = Sigexp
    structure Strdec = Strdec
    structure Strexp = Strexp
@@ -54,7 +55,9 @@ val elabTopdecInfo = Trace.info "ElaborateModules.elabTopdec"
 
 fun elaborateTopdec (topdec, {env = E: Env.t}) =
    let
-      fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, {env = E})
+      fun elabSigexp (s, no) =
+         ElaborateSigexp.elaborateSigexp
+         (s, {env = E, nest = case no of NONE => [] | SOME n => [n]})
       fun elabSigexpConstraint (cons: SigConst.t,
                                 S: Structure.t option,
                                 nest: string list)
@@ -73,7 +76,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                    | SOME S => 
                         let
                            val (S, decs) =
-                              case elabSigexp sigexp of
+                              case elabSigexp (sigexp, NONE) of
                                  NONE => (S, Decs.empty)
                                | SOME I => 
                                     Env.cut (E, S, I,
@@ -227,7 +230,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       Strdec.openn (Vector.new1 (Longstrid.short argId)))
             val body = Strexp.lett (argDec, body)
          in
-            Option.map (elabSigexp argSig, fn argInt =>
+            Option.map (elabSigexp (argSig, NONE), fn argInt =>
                         Env.functorClosure
                         (E, name, argInt,
                          fn (formal, nest) =>
@@ -249,7 +252,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                          val sigbinds =
                             Vector.map
                             (sigbinds, fn (sigid, sigexp) =>
-                             (sigid, elabSigexp sigexp))
+                             (sigid, elabSigexp (sigexp, SOME (Sigid.toString sigid))))
                          val () =
                             Vector.foreach
                             (sigbinds, fn (sigid, I) =>

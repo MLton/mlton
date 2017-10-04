@@ -24,7 +24,6 @@ in
    structure Record = Record
    structure Sigexp = Sigexp
    structure Sigid = Sigid
-   structure Strid = Strid
    structure SortedRecord = SortedRecord
    structure Spec = Spec
    structure TypBind = TypBind
@@ -197,7 +196,8 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
 fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
                                     tyvars: Ast.Tyvar.t vector} vector,
                         {equality: bool},
-                        E): unit =
+                        E,
+                        nest): unit =
    Vector.foreach
    (typedescs, fn {tycon = name, tyvars} =>
     let
@@ -206,10 +206,12 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
              then AdmitsEquality.Sometimes
              else AdmitsEquality.Never
        val kind = Kind.Arity (Vector.length tyvars)
+       val prettyDefault =
+          concat (List.separate (rev (Ast.Tycon.toString name :: nest), "."))
        val flex = FlexibleTycon.new {admitsEquality = admitsEquality,
                                      hasCons = false,
                                      kind = kind,
-                                     prettyDefault = Ast.Tycon.toString name}
+                                     prettyDefault = prettyDefault}
        val tycon = Tycon.Flexible flex
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
@@ -239,7 +241,7 @@ fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
                Env.extendTycon (E, tycon, str))
    end
 
-fun elaborateDatBind (datBind: DatBind.t, E): unit =
+fun elaborateDatBind (datBind: DatBind.t, E, nest): unit =
    let
       val DatBind.T {datatypes, withtypes} = DatBind.node datBind
       (* Build enough of an interface so that that the constructor argument
@@ -251,10 +253,12 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
           let
              val arity = Vector.length tyvars
              val kind = Kind.Arity arity
+             val prettyDefault =
+                concat (List.separate (rev (Ast.Tycon.toString name :: nest), "."))
              val flex = FlexibleTycon.new {admitsEquality = AdmitsEquality.Sometimes,
                                            hasCons = false,
                                            kind = kind,
-                                           prettyDefault = Ast.Tycon.toString name}
+                                           prettyDefault = prettyDefault}
              val tycon = Tycon.Flexible flex
              val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
@@ -366,16 +370,16 @@ val traceElaborateSigexp =
    Trace.trace2 ("ElaborateSigexp.elaborateSigexp",
                  Sigexp.layout,
                  fn {isTop, nest} => Layout.record [("isTop", Bool.layout isTop),
-                                                    ("nest", List.layout Strid.layout nest)],
+                                                    ("nest", List.layout Layout.str nest)],
                  Option.layout Interface.layout)
 val traceElaborateSpec =
    Trace.trace2 ("ElaborateSigexp.elaborateSpec",
                  Spec.layout,
-                 fn {nest} => Layout.record [("nest", List.layout Strid.layout nest)],
+                 fn {nest} => Layout.record [("nest", List.layout Layout.str nest)],
                  Unit.layout)
 
 (* rule 65 *)
-fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
+fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t, nest: string list}): Interface.t option =
    let
       val strE = E
       val E = StructureEnv.makeInterfaceEnv E
@@ -440,7 +444,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
              Spec.Datatype rhs =>
                 (* rules 71, 72 *)
                 (case DatatypeRhs.node rhs of
-                    DatatypeRhs.DatBind b => elaborateDatBind (b, E)
+                    DatatypeRhs.DatBind b => elaborateDatBind (b, E, nest)
                   | DatatypeRhs.Repl {lhs, rhs} =>
                        Option.app
                        (Env.lookupLongtycon (E, rhs), fn s =>
@@ -459,7 +463,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 ()
            | Spec.Eqtype typedescs =>
                 (* rule 70 *)
-                elaborateTypedescs (typedescs, {equality = true}, E)
+                elaborateTypedescs (typedescs, {equality = true}, E, nest)
            | Spec.Exception cons =>
                 (* rule 73 *)
                 Vector.foreach
@@ -592,7 +596,10 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                       Vector.map
                       (ss, fn (strid, sigexp) =>
                        (strid,
-                        case elaborateSigexp (sigexp, {isTop = false, nest = strid::nest}) of
+                        case elaborateSigexp
+                             (sigexp,
+                              {isTop = false,
+                               nest = (Ast.Strid.toString strid)::nest}) of
                            NONE => Interface.empty
                          | SOME I => I))
                 in
@@ -603,7 +610,7 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                 end
            | Spec.Type typedescs =>
                 (* rule 69 *)
-                elaborateTypedescs (typedescs, {equality = false}, E)
+                elaborateTypedescs (typedescs, {equality = false}, E, nest)
            | Spec.TypeDefs typBind =>
                 (* Abbreviation on page 59 combined with rules 77 and 80. *)
                 elabTypBind (typBind, E, {sequential = true})
@@ -637,14 +644,14 @@ fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t o
                       elaborateScheme (tyvars, t, E))
                   end))) arg
    in
-      elaborateSigexp (sigexp, {isTop = true, nest = []})
+      elaborateSigexp (sigexp, {isTop = true, nest = nest})
    end
 
 val elaborateSigexp =
-   fn (sigexp, {env = E}) =>
+   fn (sigexp, {env = E, nest}) =>
    case Sigexp.node sigexp of
       Sigexp.Var x => StructureEnv.lookupSigid (E, x)
-    | _ => elaborateSigexp (sigexp, {env = E})
+    | _ => elaborateSigexp (sigexp, {env = E, nest = nest})
 
 val elaborateSigexp = 
    Trace.trace2 ("ElaborateSigexp.elaborateSigexp",
