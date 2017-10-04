@@ -76,7 +76,7 @@ signature INTERFACE =
              | Rigid of EnvTycon.t
 
             val admitsEquality: t -> AdmitsEquality.t
-            val make: {hasCons: bool, kind: Kind.t} -> t
+            val make: {admitsEquality: AdmitsEquality.t, hasCons: bool, kind: Kind.t} -> t
             val setAdmitsEquality: t * AdmitsEquality.t -> unit
          end
       structure Record: RECORD

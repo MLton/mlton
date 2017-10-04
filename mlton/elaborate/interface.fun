@@ -171,8 +171,9 @@ structure FlexibleTycon =
                            plist = PropertyList.new (),
                            specs = ref specs})
 
-      fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
-         make {admitsEquality = AdmitsEquality.Sometimes,
+      fun new {admitsEquality: AdmitsEquality.t, defn: Defn.t,
+               hasCons: bool, kind: Kind.t}: t =
+         make {admitsEquality = admitsEquality,
                defn = defn, hasCons = hasCons, kind = kind,
                specs = AppendList.empty}
 
@@ -751,8 +752,9 @@ structure Tycon =
    struct
       open Tycon
 
-      fun make {hasCons, kind} =
-         Flexible (FlexibleTycon.new {defn = Defn.undefined,
+      fun make {admitsEquality, hasCons, kind} =
+         Flexible (FlexibleTycon.new {admitsEquality = admitsEquality,
+                                      defn = Defn.undefined,
                                       hasCons = hasCons,
                                       kind = kind})
    end

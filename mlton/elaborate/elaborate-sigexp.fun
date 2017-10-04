@@ -200,14 +200,15 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
    Vector.foreach
    (typedescs, fn {tycon = name, tyvars} =>
     let
+       val admitsEquality =
+          if equality
+             then AdmitsEquality.Sometimes
+             else AdmitsEquality.Never
        val kind = Kind.Arity (Vector.length tyvars)
-       val tycon = Tycon.make {hasCons = false, kind = kind}
-       val _ =
-          Tycon.setAdmitsEquality
-          (tycon,
-           if equality
-              then AdmitsEquality.Sometimes
-              else AdmitsEquality.Never)
+       val tycon =
+          Tycon.make {admitsEquality = admitsEquality,
+                      hasCons = false,
+                      kind = kind}
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
     end)
@@ -248,7 +249,9 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
           let
              val arity = Vector.length tyvars
              val kind = Kind.Arity arity
-             val tycon = Tycon.make {hasCons = true, kind = kind}
+             val tycon = Tycon.make {admitsEquality = AdmitsEquality.Sometimes,
+                                     hasCons = true,
+                                     kind = kind}
              val _ =
                 Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
