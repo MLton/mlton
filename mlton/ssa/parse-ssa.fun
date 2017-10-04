@@ -56,7 +56,6 @@ struct
          fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
       end
 
-
    val ident = (
       String.implode <$> (T.any
          [(op ::) <$$>
@@ -68,8 +67,6 @@ struct
               (* just for collecting _0 *)
               )])) <|> T.failCut "identifier"
 
-
-
    (* parse a tuple of parsers which must begin with a paren but may be unary *)
    fun tupleOf p = Vector.fromList <$>
       (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
@@ -78,7 +75,7 @@ struct
       (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
 
    (* too many arguments for the maps, curried to use <*> instead *)
-   fun makeTyp resolveTycon (args, ident) = resolveTycon ident
+   fun makeTyp resolveTycon (args, ident) = Type.datatypee (resolveTycon ident)
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
@@ -92,16 +89,16 @@ struct
                (CType.all, fn ct =>
                 ct <$ token (CType.toString ct))
 
-   fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
+   fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
    (* parse in a constructor (to Con.t) *)
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
       (ident <* spaces,
-      T.optional (token "of" *> (typ resolveTycon) <* spaces) )
+      Vector.fromList <$> T.many (token "of" *> (typ resolveTycon) <* spaces) )
 
    fun makeDt resolveTycon (tycon, cons) =
       Datatype.T
-      {tycon = tycon,
+      {tycon = resolveTycon tycon,
        cons = cons} 
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
