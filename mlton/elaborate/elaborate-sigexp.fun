@@ -52,6 +52,7 @@ in
    structure AdmitsEquality = AdmitsEquality
    structure Cons = Cons
    structure Kind = Kind
+   structure FlexibleTycon = FlexibleTycon
    structure Scheme = Scheme
    structure Status = Status
    structure Tycon = Tycon
@@ -205,10 +206,10 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
              then AdmitsEquality.Sometimes
              else AdmitsEquality.Never
        val kind = Kind.Arity (Vector.length tyvars)
-       val tycon =
-          Tycon.make {admitsEquality = admitsEquality,
-                      hasCons = false,
-                      kind = kind}
+       val flex = FlexibleTycon.new {admitsEquality = admitsEquality,
+                                     hasCons = false,
+                                     kind = kind}
+       val tycon = Tycon.Flexible flex
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
     end)
@@ -249,13 +250,14 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
           let
              val arity = Vector.length tyvars
              val kind = Kind.Arity arity
-             val tycon = Tycon.make {admitsEquality = AdmitsEquality.Sometimes,
-                                     hasCons = true,
-                                     kind = kind}
-             val _ =
-                Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
+             val flex = FlexibleTycon.new {admitsEquality = AdmitsEquality.Sometimes,
+                                           hasCons = false,
+                                           kind = kind}
+             val tycon = Tycon.Flexible flex
+             val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
              {cons = cons,
+              flex = flex,
               name = name,
               tycon = tycon,
               tyvars = tyvars}
@@ -271,7 +273,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val _ = elabTypBind (withtypes, E, {sequential = false})
       val datatypes =
          Vector.map
-         (datatypes, fn {cons, name, tycon, tyvars} =>
+         (datatypes, fn {cons, flex, name, tycon, tyvars} =>
           let
              val cons =
                 Vector.map
@@ -283,6 +285,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                    tyvars = tyvars}))
           in
              {cons = cons,
+              flex = flex,
               name = name,
               tycon = tycon}
           end)
@@ -292,7 +295,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
           let
              val _ =
                 Vector.foreach
-                (datatypes, fn {cons, tycon, ...} =>
+                (datatypes, fn {cons, flex, ...} =>
                  let
                     val isEquality = ref true
                     val () =
@@ -310,13 +313,13 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                          end))
                     datatype z = datatype AdmitsEquality.t
                  in
-                    case Tycon.admitsEquality tycon of
+                    case FlexibleTycon.admitsEquality flex of
                        Always => Error.bug "ElaborateSigexp.elaborateDatBind: Always"
                      | Never => ()
                      | Sometimes =>
                           if !isEquality
                              then ()
-                             else (Tycon.setAdmitsEquality (tycon, Never)
+                             else (FlexibleTycon.setAdmitsEquality (flex, Never)
                                    ; change := true)
                  end)
           in
@@ -327,7 +330,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
       val () = loop ()
       val () =
          Vector.foreach
-         (datatypes, fn {cons, name, tycon} =>
+         (datatypes, fn {cons, name, tycon, ...} =>
           let
              val cons =
                 Vector.map

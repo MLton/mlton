@@ -58,26 +58,28 @@ signature INTERFACE =
             type typeStr
             type t
 
+            val admitsEquality: t -> AdmitsEquality.t
             val dest: t -> {admitsEquality: AdmitsEquality.t,
                             hasCons: bool,
                             kind: Kind.t}
             val layout: t -> Layout.t
             val plist: t -> PropertyList.t
+            val new: {admitsEquality: AdmitsEquality.t,
+                      hasCons: bool,
+                      kind: Kind.t} -> t
             val realize: t * EnvTypeStr.t -> unit
             datatype realization =
                ETypeStr of EnvTypeStr.t
              | TypeStr of typeStr
             val realization: t -> realization
+            val setAdmitsEquality: t * AdmitsEquality.t -> unit
          end
       structure Tycon:
          sig
             datatype t =
                Flexible of FlexibleTycon.t
              | Rigid of EnvTycon.t
-
             val admitsEquality: t -> AdmitsEquality.t
-            val make: {admitsEquality: AdmitsEquality.t, hasCons: bool, kind: Kind.t} -> t
-            val setAdmitsEquality: t * AdmitsEquality.t -> unit
          end
       structure Record: RECORD
       sharing Record = Ast.SortedRecord

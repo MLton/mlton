@@ -124,12 +124,14 @@ structure FlexibleTycon =
       local
          fun make f = f o fields
       in
-         val admitsEquality = make #admitsEquality
+         val admitsEquality = ! o make #admitsEquality
          val defnRef = make #defn
          val defn = ! o defnRef
          val hasCons = make #hasCons
          val kind = make #kind
          val plist = make #plist
+         fun setAdmitsEquality (f, ae) =
+            (make #admitsEquality f) := ae
          val specsRef = make #specs
          val specs = ! o specsRef
       end
@@ -171,12 +173,6 @@ structure FlexibleTycon =
                            plist = PropertyList.new (),
                            specs = ref specs})
 
-      fun new {admitsEquality: AdmitsEquality.t, defn: Defn.t,
-               hasCons: bool, kind: Kind.t}: t =
-         make {admitsEquality = admitsEquality,
-               defn = defn, hasCons = hasCons, kind = kind,
-               specs = AppendList.empty}
-
       fun pushSpec (fc, region) =
          let
             val specsRef = specsRef fc
@@ -195,13 +191,8 @@ structure Tycon =
 
       fun admitsEquality c =
          case c of
-            Flexible f => ! (FlexibleTycon.admitsEquality f)
+            Flexible f => FlexibleTycon.admitsEquality f
           | Rigid c => Etycon.admitsEquality c
-
-      fun setAdmitsEquality (c, ae) =
-         case c of
-            Flexible f => FlexibleTycon.admitsEquality f := ae
-          | Rigid _ => Error.bug "Interface.Tycon.setAdmitsEquality: Rigid"
 
       val arrow = fromEnv Etycon.arrow
 
@@ -695,6 +686,14 @@ structure FlexibleTycon =
    struct
       open FlexibleTycon
 
+      fun new {admitsEquality: AdmitsEquality.t,
+               hasCons: bool, kind: Kind.t}: t =
+         make {admitsEquality = admitsEquality,
+               defn = Defn.undefined,
+               hasCons = hasCons,
+               kind = kind,
+               specs = AppendList.empty}
+
       fun realize (fc, typeStr) =
          let
             val defn = defnRef fc
@@ -746,17 +745,6 @@ structure FlexibleTycon =
             Defn.Realized s => ETypeStr s
           | Defn.TypeStr s => TypeStr s
           | _ => Error.bug "Interface.FlexibleTycon.realization"
-   end
-
-structure Tycon =
-   struct
-      open Tycon
-
-      fun make {admitsEquality, hasCons, kind} =
-         Flexible (FlexibleTycon.new {admitsEquality = admitsEquality,
-                                      defn = Defn.undefined,
-                                      hasCons = hasCons,
-                                      kind = kind})
    end
 
 structure Scheme =
