@@ -220,6 +220,15 @@ structure Tycon =
           | Rigid c => Etycon.layout c
 
       val tuple = Rigid Etycon.tuple
+
+      fun layoutAppPretty (c, ts, {layoutPrettyEnvTycon, layoutPrettyFlexTycon}) =
+         case c of
+            Flexible f =>
+               EnvTycon.layoutAppPrettyNormal
+               (layoutPrettyFlexTycon f, ts)
+          | Rigid c =>
+               EnvTycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyEnvTycon})
    end
 
 structure Type =
@@ -513,13 +522,9 @@ structure Type =
       fun layoutPretty (ty, {expand, layoutPrettyEnvTycon, layoutPrettyFlexTycon, layoutPrettyTyvar}) =
          let
             fun con (c, ts) =
-               case c of
-                  Tycon.Flexible f =>
-                     EnvTycon.layoutAppPrettyNormal
-                     (layoutPrettyFlexTycon f, ts)
-                | Tycon.Rigid c =>
-                     EnvTycon.layoutAppPretty
-                     (c, ts, {layoutPretty = layoutPrettyEnvTycon})
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon})
             fun record r =
                case Record.detupleOpt r of
                   NONE =>
@@ -532,10 +537,7 @@ structure Type =
                          seq [Record.Field.layout f, str ": ", t]),
                         ",")),
                       str "}"]
-                | SOME ts =>
-                     EnvTycon.layoutAppPretty
-                     (EnvTycon.tuple, ts,
-                      {layoutPretty = layoutPrettyEnvTycon})
+                | SOME ts => con (Tycon.tuple, ts)
             fun var a = LayoutPretty.simple (layoutPrettyTyvar a)
             val ty = if expand then expandTy ty else ty
          in
@@ -543,6 +545,66 @@ structure Type =
                            record = record,
                            var = var})
          end
+
+      fun explainDoesNotAdmitEquality (ty, {layoutPrettyEnvTycon, layoutPrettyFlexTycon}) =
+         let
+            val layoutAppPretty = fn (c, ls) =>
+               Tycon.layoutAppPretty
+               (c, ls,
+                {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                 layoutPrettyFlexTycon = layoutPrettyFlexTycon})
+            val bracket = LayoutPretty.bracket
+            val dontCare = LayoutPretty.dontCare
+            fun getLay lo = Option.fold (lo, dontCare, #1)
+            fun con (c, los) =
+               case Tycon.admitsEquality c of
+                  AdmitsEquality.Always => NONE
+                | AdmitsEquality.Sometimes =>
+                     if Vector.forall (los, Option.isNone)
+                        then NONE
+                        else (SOME o layoutAppPretty)
+                             (c, Vector.map (los, getLay))
+                | AdmitsEquality.Never =>
+                     (SOME o bracket o layoutAppPretty)
+                     (c, Vector.map (los, fn _ => dontCare))
+            fun record r =
+               case Record.detupleOpt r of
+                  NONE =>
+                     let
+                        val v = Record.toVector r
+                        val (fls, extra) =
+                           Vector.fold
+                           (v, ([], false), fn ((f, lo), (fls, extra)) =>
+                            case lo of
+                               NONE => (fls, true)
+                             | SOME l => ((f,l)::fls, extra))
+                     in
+                        if List.isEmpty fls
+                           then NONE
+                           else (SOME o LayoutPretty.simple o seq)
+                                [str "{",
+                                 Layout.mayAlign
+                                 (Layout.separateRight
+                                  (List.revMap
+                                   (fls, fn (f, (l, _)) =>
+                                    seq [Record.Field.layout f,
+                                         str ": ", l]),
+                                   ",")),
+                                 if extra
+                                    then str ", ...}"
+                                    else str "}"]
+                     end
+                | SOME los => con (Tycon.tuple, los)
+            fun var _ = NONE
+            val res = Type.hom (ty, {con = con,
+                                     record = record,
+                                     var = var})
+         in
+            Option.map (res, #1)
+         end
+
+
+
    end
 
 structure TypeStr =
@@ -1126,8 +1188,10 @@ structure TypeStr =
                                                        then (true, NONE)
                                                        else (false, tyDefn ())
                                            val rlDefn =
-                                              (SOME o bracket o #1 o layoutPrettyType)
-                                              (TypeStr.apply (realization, rlTyargs))
+                                              Type.explainDoesNotAdmitEquality
+                                              (TypeStr.apply (realization, rlTyargs),
+                                               {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                                layoutPrettyFlexTycon = layoutPrettyFlexTycon})
                                         in
                                            addError ("admits equality",
                                                      tyMsg (tyKwErr, tyDefn),
