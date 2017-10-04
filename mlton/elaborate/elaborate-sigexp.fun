@@ -256,7 +256,7 @@ fun elaborateDatBind (datBind: DatBind.t, E, nest): unit =
              val prettyDefault =
                 concat (List.separate (rev (Ast.Tycon.toString name :: nest), "."))
              val flex = FlexibleTycon.new {admitsEquality = AdmitsEquality.Sometimes,
-                                           hasCons = false,
+                                           hasCons = true,
                                            kind = kind,
                                            prettyDefault = prettyDefault}
              val tycon = Tycon.Flexible flex
