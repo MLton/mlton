@@ -273,7 +273,7 @@ structure Type =
                   paren (align [seq [str "Con ", Tycon.layout c],
                                 Vector.layout layout ts])
              | Record r =>
-                  Record.layout {record =r,
+                  Record.layout {record = r,
                                  separator = ": ",
                                  extra = "",
                                  layoutTuple = Vector.layout layout,
