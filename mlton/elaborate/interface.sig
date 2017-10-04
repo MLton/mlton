@@ -63,10 +63,12 @@ signature INTERFACE =
                             hasCons: bool,
                             kind: Kind.t}
             val layout: t -> Layout.t
+            val layoutPrettyDefault: t -> Layout.t
             val plist: t -> PropertyList.t
             val new: {admitsEquality: AdmitsEquality.t,
                       hasCons: bool,
-                      kind: Kind.t} -> t
+                      kind: Kind.t,
+                      prettyDefault: string} -> t
             val realize: t * EnvTypeStr.t -> unit
             datatype realization =
                ETypeStr of EnvTypeStr.t

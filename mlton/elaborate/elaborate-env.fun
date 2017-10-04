@@ -2890,8 +2890,8 @@ structure InterfaceEnv =
                (FlexibleTycon.plist,
                 Property.initFun
                 (fn f =>
-                 let val l = FlexibleTycon.layout f
-                 in if prefixUnset then seq [str "?.", l] else l
+                 let val l = FlexibleTycon.layoutPrettyDefault f
+                 in if prefixUnset then seq [str "??.", l] else l
                  end))
             fun doFlexTycon (flex, name, strids: Strid.t list) =
                let

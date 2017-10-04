@@ -116,6 +116,7 @@ structure FlexibleTycon =
                          id: TyconId.t,
                          kind: Kind.t,
                          plist: PropertyList.t,
+                         prettyDefault: string,
                          specs: Region.t AppendList.t ref} Set.t
       withtype copy = t option ref
 
@@ -130,11 +131,13 @@ structure FlexibleTycon =
          val hasCons = make #hasCons
          val kind = make #kind
          val plist = make #plist
+         val prettyDefault = make #prettyDefault
          fun setAdmitsEquality (f, ae) =
             (make #admitsEquality f) := ae
          val specsRef = make #specs
          val specs = ! o specsRef
       end
+      val layoutPrettyDefault = Layout.str o prettyDefault
 
       fun dest fc =
          let
@@ -150,19 +153,21 @@ structure FlexibleTycon =
       fun layout fc =
          let
             open Layout
-            val {admitsEquality, creationTime, hasCons, id, kind, ...} = fields fc
+            val {admitsEquality, creationTime, hasCons, id, kind, prettyDefault, ...} = fields fc
          in
             record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
                     ("creationTime", Time.layout creationTime),
                     ("hasCons", Bool.layout hasCons),
                     ("id", TyconId.layout id),
-                    ("kind", Kind.layout kind)]
+                    ("kind", Kind.layout kind),
+                    ("prettyDefault", String.layout prettyDefault)]
          end
 
       val copies: copy list ref = ref []
 
       fun make {admitsEquality: AdmitsEquality.t, defn: Defn.t,
-                hasCons: bool, kind: Kind.t, specs: Region.t AppendList.t}: t =
+                hasCons: bool, kind: Kind.t, prettyDefault: string,
+                specs: Region.t AppendList.t}: t =
          T (Set.singleton {admitsEquality = ref admitsEquality,
                            copy = ref NONE,
                            creationTime = Time.current (),
@@ -171,6 +176,7 @@ structure FlexibleTycon =
                            id = TyconId.new (),
                            kind = kind,
                            plist = PropertyList.new (),
+                           prettyDefault = prettyDefault,
                            specs = ref specs})
 
       fun pushSpec (fc, region) =
@@ -584,7 +590,8 @@ and copyDefn (d: Defn.t): Defn.t =
 and copyFlexibleTycon (fc: FlexibleTycon.t): FlexibleTycon.t =
    let
       open FlexibleTycon
-      val {admitsEquality, copy, defn, hasCons, kind, specs, ...} =
+      val {admitsEquality, copy, defn, hasCons,
+           kind, prettyDefault, specs, ...} =
          fields fc
    in
       case !copy of
@@ -594,6 +601,7 @@ and copyFlexibleTycon (fc: FlexibleTycon.t): FlexibleTycon.t =
                                defn = copyDefn (!defn),
                                hasCons = hasCons,
                                kind = kind,
+                               prettyDefault = prettyDefault,
                                specs = !specs}
                val _ = List.push (copies, copy)
                val _ = copy := SOME fc'
@@ -687,11 +695,13 @@ structure FlexibleTycon =
       open FlexibleTycon
 
       fun new {admitsEquality: AdmitsEquality.t,
-               hasCons: bool, kind: Kind.t}: t =
+               hasCons: bool, kind: Kind.t,
+               prettyDefault: string}: t =
          make {admitsEquality = admitsEquality,
                defn = Defn.undefined,
                hasCons = hasCons,
                kind = kind,
+               prettyDefault = prettyDefault,
                specs = AppendList.empty}
 
       fun realize (fc, typeStr) =
@@ -707,7 +717,7 @@ structure FlexibleTycon =
          let
             val {admitsEquality = ae1, creationTime = t1,
                  hasCons = hc1, specs = ss1,
-                 id, kind, plist, ...} =
+                 id, kind, plist, prettyDefault, ...} =
                fields fc1
             val {admitsEquality = ae2, creationTime = t2,
                  hasCons = hc2, specs = ss2, ...} =
@@ -729,7 +739,8 @@ structure FlexibleTycon =
                      hasCons = hc1 orelse hc2,
                      id = id,
                      kind = kind,
-                     plist = plist})
+                     plist = plist,
+                     prettyDefault = prettyDefault})
          in
             ()
          end

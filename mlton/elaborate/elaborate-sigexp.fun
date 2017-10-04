@@ -208,7 +208,8 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        val kind = Kind.Arity (Vector.length tyvars)
        val flex = FlexibleTycon.new {admitsEquality = admitsEquality,
                                      hasCons = false,
-                                     kind = kind}
+                                     kind = kind,
+                                     prettyDefault = Ast.Tycon.toString name}
        val tycon = Tycon.Flexible flex
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
@@ -252,7 +253,8 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
              val kind = Kind.Arity arity
              val flex = FlexibleTycon.new {admitsEquality = AdmitsEquality.Sometimes,
                                            hasCons = false,
-                                           kind = kind}
+                                           kind = kind,
+                                           prettyDefault = Ast.Tycon.toString name}
              val tycon = Tycon.Flexible flex
              val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
