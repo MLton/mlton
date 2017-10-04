@@ -3892,7 +3892,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                 fn _ =>
                                                 error ("type structure",
                                                        strMsg (true, NONE),
-                                                       sigMsg (true, SOME (lay (Scheme.apply (sigScheme, sigTyargs))))))
+                                                       sigMsg (false, SOME (bracket (lay (Scheme.apply (sigScheme, sigTyargs)))))))
                                             end
                                        | TypeStr.Scheme s =>
                                             chkScheme s
@@ -3906,9 +3906,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                    val sigScheme = Scheme.fromTycon sigTycon
                                    fun nonDatatype strScheme =
                                       (error ("type structure",
-                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyargs)))),
-                                              sigMsg (true, SOME (seq [str "datatype ",
-                                                                       lay (Scheme.apply (sigScheme, sigTyargs))])))
+                                              strMsg (false, SOME (bracket (lay (Scheme.apply (strScheme, strTyargs))))),
+                                              sigMsg (false, SOME (bracket (seq [str "datatype ",
+                                                                                 lay (Scheme.apply (sigScheme, sigTyargs))]))))
                                        ; rlzStr)
                                 in
                                    case TypeStr.node strStr of
@@ -3923,9 +3923,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                Scheme.apply (sigScheme, sigTyargs),
                                                fn _ =>
                                                (error ("type structure",
-                                                       strMsg (false, NONE),
-                                                       sigMsg (false, SOME (seq [str "datatype ",
-                                                                                 lay (Scheme.apply (sigScheme, sigTyargs))])))
+                                                       strMsg (true, NONE),
+                                                       sigMsg (false, SOME (bracket (seq [str "datatype ",
+                                                                                          lay (Scheme.apply (sigScheme, sigTyargs))]))))
                                                 ; escape rlzStr))
                                               ; strStr))
                                          end
@@ -3938,7 +3938,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                 let
                                    fun nonDatatype strScheme =
                                       (error ("type structure",
-                                              strMsg (true, SOME (lay (Scheme.apply (strScheme, strTyargs)))),
+                                              strMsg (false, SOME (bracket (lay (Scheme.apply (strScheme, strTyargs))))),
                                               sigMsg (true, NONE))
                                        ; rlzStr)
                                 in
