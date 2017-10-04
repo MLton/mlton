@@ -3723,7 +3723,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                     nameEquals = Ast.Tycon.equals,
                     nameLayout = Ast.Tycon.layout,
                     specs = fn (name, sigStr) =>
-                            (Ast.Tycon.region name)::(Interface.TypeStr.specs sigStr),
+                            Interface.TypeStr.specs (sigStr, Ast.Tycon.region name),
                     notFound = fn (name, sigStr) =>
                     let
                        val spec =
@@ -3758,8 +3758,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                               Region.layout (Ast.Tycon.region strName)]) ::
                                         (seq [str "signature: ", sigError]) ::
                                         (List.map
-                                         ((Ast.Tycon.region sigName)::
-                                          (Interface.TypeStr.specs sigStr),
+                                         (Interface.TypeStr.specs
+                                          (sigStr, Ast.Tycon.region sigName),
                                           fn r => seq [str "spec at: ", Region.layout r]))))
                        val error = fn (msg, strError, sigError) =>
                           let

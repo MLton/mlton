@@ -761,13 +761,14 @@ structure FlexibleTycon =
 
       fun new {admitsEquality: AdmitsEquality.t,
                hasCons: bool, kind: Kind.t,
-               prettyDefault: string}: t =
+               prettyDefault: string,
+               region: Region.t}: t =
          make {admitsEquality = admitsEquality,
                defn = Defn.undefined,
                hasCons = hasCons,
                kind = kind,
                prettyDefault = prettyDefault,
-               specs = AppendList.empty}
+               specs = AppendList.single region}
 
       fun realize (fc, typeStr) =
          let
@@ -840,7 +841,7 @@ structure TypeStr =
 
       val copy = copyTypeStr
 
-      fun specs s =
+      fun specs (s, first) =
          let
             fun loop s =
                case toTyconOpt (s, {expand = false}) of
@@ -857,9 +858,10 @@ structure TypeStr =
                        | Defn.Undefined => AppendList.empty)
                 | Tycon.Rigid _ => AppendList.empty
          in
+            first ::
             (List.rev o AppendList.fold)
             (loop s, [], fn (r, rs) =>
-             if List.contains (rs, r, Region.equals)
+             if List.contains (first::rs, r, Region.equals)
                 then rs
                 else r :: rs)
          end
@@ -931,7 +933,7 @@ structure TypeStr =
                                              layoutPrettyFlexTycon = layoutPrettyFlexTycon,
                                              layoutPrettyTyvar = layoutPrettyTyvar}))])::
                        (List.map
-                        (spec::(specs tyStr), fn r =>
+                        (specs (tyStr, spec), fn r =>
                          seq [str "spec at: ", Region.layout r]))))
                in
                   NONE
@@ -1008,7 +1010,7 @@ structure TypeStr =
                                        name (),
                                        rest])::
                                 (List.map
-                                 (spec::(specs tyStr), fn r =>
+                                 (specs (tyStr, spec), fn r =>
                                   seq [str "spec at: ", Region.layout r]))
                              end
                        in
@@ -1214,7 +1216,7 @@ structure TypeStr =
                               name ()],
                          align ((seq [str "type spec: ", tyError]) ::
                                 (List.map
-                                 (spec::(specs tyStr), fn r =>
+                                 (specs (tyStr, spec), fn r =>
                                   seq [str "spec at: ", Region.layout r])) @
                                 [seq [str "type defn: ", rlError]]))
                end

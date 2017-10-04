@@ -69,7 +69,8 @@ signature INTERFACE =
             val new: {admitsEquality: AdmitsEquality.t,
                       hasCons: bool,
                       kind: Kind.t,
-                      prettyDefault: string} -> t
+                      prettyDefault: string,
+                      region: Region.t} -> t
             val realize: t * EnvTypeStr.t -> unit
             datatype realization =
                ETypeStr of EnvTypeStr.t
@@ -171,7 +172,7 @@ signature INTERFACE =
             val repl: t -> t
             val toTyconOpt: t * {expand: bool} -> Tycon.t option (* NONE on Scheme *)
             val tycon: Tycon.t * bool -> t
-            val specs: t -> Region.t list
+            val specs: t * Region.t -> Region.t list
 
             val share:
                {layoutPrettyEnvTycon: EnvTycon.t -> Layout.t,

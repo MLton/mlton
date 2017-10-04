@@ -211,7 +211,8 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        val flex = FlexibleTycon.new {admitsEquality = admitsEquality,
                                      hasCons = false,
                                      kind = kind,
-                                     prettyDefault = prettyDefault}
+                                     prettyDefault = prettyDefault,
+                                     region = Ast.Tycon.region name}
        val tycon = Tycon.Flexible flex
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
@@ -258,7 +259,8 @@ fun elaborateDatBind (datBind: DatBind.t, E, nest): unit =
              val flex = FlexibleTycon.new {admitsEquality = AdmitsEquality.Sometimes,
                                            hasCons = true,
                                            kind = kind,
-                                           prettyDefault = prettyDefault}
+                                           prettyDefault = prettyDefault,
+                                           region = Ast.Tycon.region name}
              val tycon = Tycon.Flexible flex
              val _ = Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
