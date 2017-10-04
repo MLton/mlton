@@ -149,7 +149,8 @@ signature INTERFACE =
                             cons: Cons.t,
                             repl: bool}
              | Scheme of Scheme.t
-             | Tycon of Tycon.t
+             | Tycon of {eq: bool,
+                         tycon: Tycon.t}
 
             val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t
@@ -163,7 +164,7 @@ signature INTERFACE =
             val pushSpec: t * Region.t -> unit
             val repl: t -> t
             val toTyconOpt: t * {expand: bool} -> Tycon.t option (* NONE on Scheme *)
-            val tycon: Tycon.t -> t
+            val tycon: Tycon.t * bool -> t
             val specs: t -> Region.t list
 
             val share:

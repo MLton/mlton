@@ -606,8 +606,8 @@ structure Interface =
                   end
              | Scheme s =>
                   EtypeStr.def (schemeToEnv s)
-             | Tycon c =>
-                  EtypeStr.abs (tyconToEnv c)
+             | Tycon {tycon, ...} =>
+                  EtypeStr.abs (tyconToEnv tycon)
          end
 
       structure FlexibleTycon =

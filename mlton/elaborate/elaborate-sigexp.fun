@@ -208,7 +208,7 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
                  then AdmitsEquality.Sometimes
               else AdmitsEquality.Never)
     in
-       Env.extendTycon (E, name, TypeStr.tycon tycon)
+       Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
     end)
 
 fun elabTypBind (typBind: TypBind.t, E, {sequential}) =
@@ -249,7 +249,7 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
              val kind = Kind.Arity arity
              val tycon = Tycon.make {hasCons = true, kind = kind}
              val _ =
-                Env.extendTycon (E, name, TypeStr.tycon tycon)
+                Env.extendTycon (E, name, TypeStr.tycon (tycon, false))
           in
              {cons = cons,
               name = name,
