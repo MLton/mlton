@@ -596,6 +596,7 @@ structure Type =
                      end
                 | SOME los => con (Tycon.tuple, los)
             fun var _ = NONE
+            val ty = expandTy ty
             val res = Type.hom (ty, {con = con,
                                      record = record,
                                      var = var})
