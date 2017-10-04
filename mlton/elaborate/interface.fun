@@ -194,8 +194,13 @@ structure Tycon =
 
       fun admitsEquality c =
          case c of
-            Flexible f => FlexibleTycon.admitsEquality f
+            Flexible f => ! (FlexibleTycon.admitsEquality f)
           | Rigid c => Etycon.admitsEquality c
+
+      fun setAdmitsEquality (c, ae) =
+         case c of
+            Flexible f => FlexibleTycon.admitsEquality f := ae
+          | Rigid _ => Error.bug "Interface.Tycon.setAdmitsEquality: Rigid"
 
       val arrow = fromEnv Etycon.arrow
 
@@ -656,7 +661,7 @@ and schemeAdmitsEquality (s: Scheme.t): bool =
          let
             datatype z = datatype AdmitsEquality.t
          in
-            case ! (Tycon.admitsEquality c) of
+            case Tycon.admitsEquality c of
                Always => true
              | Never => false
              | Sometimes => Vector.forall (bs, fn b => b)
@@ -673,7 +678,7 @@ and tyconAdmitsEquality (t: Tycon.t): AdmitsEquality.t =
    in
       case t of
          Flexible c => flexibleTyconAdmitsEquality c
-       | Rigid e => ! (Etycon.admitsEquality e)
+       | Rigid e => Etycon.admitsEquality e
    end
 and typeStrAdmitsEquality (s: TypeStr.t): AdmitsEquality.t =
    let

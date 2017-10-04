@@ -438,11 +438,11 @@ structure TypeStr =
 
       fun admitsEquality (s: t): AdmitsEquality.t =
          case node s of
-            Datatype {tycon = c, ...} => ! (Tycon.admitsEquality c)
+            Datatype {tycon = c, ...} => Tycon.admitsEquality c
           | Scheme s => if Scheme.admitsEquality s
                            then AdmitsEquality.Sometimes
                         else AdmitsEquality.Never
-          | Tycon c => ! (Tycon.admitsEquality c)
+          | Tycon c => Tycon.admitsEquality c
 
       fun explainDoesNotAdmitEquality (s: t, {layoutPrettyTycon}): Layout.t =
          let

@@ -203,9 +203,10 @@ fun elaborateTypedescs (typedescs: {tycon: Ast.Tycon.t,
        val kind = Kind.Arity (Vector.length tyvars)
        val tycon = Tycon.make {hasCons = false, kind = kind}
        val _ =
-          Tycon.admitsEquality tycon
-          := (if equality
-                 then AdmitsEquality.Sometimes
+          Tycon.setAdmitsEquality
+          (tycon,
+           if equality
+              then AdmitsEquality.Sometimes
               else AdmitsEquality.Never)
     in
        Env.extendTycon (E, name, TypeStr.tycon (tycon, equality))
@@ -304,16 +305,16 @@ fun elaborateDatBind (datBind: DatBind.t, E): unit =
                                then ()
                                else isEquality := false
                          end))
-                    val aeRef = Tycon.admitsEquality tycon
                     datatype z = datatype AdmitsEquality.t
                  in
-                    case !aeRef of
+                    case Tycon.admitsEquality tycon of
                        Always => Error.bug "ElaborateSigexp.elaborateDatBind: Always"
                      | Never => ()
                      | Sometimes =>
                           if !isEquality
                              then ()
-                             else (aeRef := Never; change := true)
+                             else (Tycon.setAdmitsEquality (tycon, Never)
+                                   ; change := true)
                  end)
           in
              if !change

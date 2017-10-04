@@ -243,11 +243,13 @@ structure Tycon =
          local
             fun make f = f o info
          in
-            val admitsEquality = make #admitsEquality
+            val admitsEquality = ! o make #admitsEquality
             val kind = make #kind
             val prettyDefault = make #prettyDefault
             val region = make #region
             val time = make #time
+            fun setAdmitsEquality (t, ae) =
+               (make #admitsEquality t) := ae
          end
          val layoutPrettyDefault = Layout.str o prettyDefault
          fun make {admitsEquality, kind, name,
@@ -261,7 +263,7 @@ structure Tycon =
                tycon
             end
          fun makeLike c =
-            make {admitsEquality = ! (admitsEquality c),
+            make {admitsEquality = admitsEquality c,
                   kind = kind c,
                   name = originalName c,
                   prettyDefault = prettyDefault c,
@@ -338,7 +340,7 @@ structure Equality:>
          let
             datatype z = datatype AdmitsEquality.t
          in
-            case !(Tycon.admitsEquality c) of
+            case Tycon.admitsEquality c of
                Always => True
              | Sometimes => andV (es, fn e => e)
              | Never => False
@@ -1206,7 +1208,7 @@ structure Type =
                   Equality.True => SOME (NONE, t)
                 | _ => (case Type.getTy t of
                            Con (c, ts) =>
-                              (case !(Tycon.admitsEquality c) of
+                              (case Tycon.admitsEquality c of
                                   AdmitsEquality.Always => SOME (NONE, t)
                                 | AdmitsEquality.Sometimes => NONE
                                 | AdmitsEquality.Never =>

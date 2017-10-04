@@ -1968,17 +1968,17 @@ fun elaborateDec (d, {env = E, nest}) =
                                  name = name,
                                  tyvars = tyvars}
                              end)
-                         val aeRef = Tycon.admitsEquality tycon
                          datatype z = datatype AdmitsEquality.t
                          val () =
-                            case !aeRef of
+                            case Tycon.admitsEquality tycon of
                                Always =>
                                   Error.bug "ElaborateCore.elaborateDec.elabDatBind: Always"
                              | Never => ()
                              | Sometimes =>
                                   if !isEquality
                                      then ()
-                                     else (aeRef := Never; change := true)
+                                     else (Tycon.setAdmitsEquality (tycon, Never)
+                                           ; change := true)
                       in
                          {arity = arity,
                           cons = cons,

@@ -131,7 +131,7 @@ signature TYPE_ENV =
       structure TyconExt:
          sig
             type t
-            val admitsEquality: t -> AdmitsEquality.t ref
+            val admitsEquality: t -> AdmitsEquality.t
             val kind: t -> TyconKind.t
             val layoutPrettyDefault: t -> Layout.t
             val make: {admitsEquality: AdmitsEquality.t,
@@ -145,6 +145,7 @@ signature TYPE_ENV =
             val makeLike: t -> t
             val region: t -> Region.t
             val scopeNew: (unit -> 'a) -> ('a * t list)
+            val setAdmitsEquality: t * AdmitsEquality.t -> unit
             val setOpaqueExpansion: t * (Type.t vector -> Type.t) -> unit
          end
       sharing type TyconExt.t = Tycon.t

@@ -16,7 +16,7 @@ signature INTERFACE_STRUCTS =
          sig
             type t
 
-            val admitsEquality: t -> AdmitsEquality.t ref
+            val admitsEquality: t -> AdmitsEquality.t
             val arrow: t
             val equals: t * t -> bool
             val exn: t
@@ -75,8 +75,9 @@ signature INTERFACE =
                Flexible of FlexibleTycon.t
              | Rigid of EnvTycon.t
 
-            val admitsEquality: t -> AdmitsEquality.t ref
+            val admitsEquality: t -> AdmitsEquality.t
             val make: {hasCons: bool, kind: Kind.t} -> t
+            val setAdmitsEquality: t * AdmitsEquality.t -> unit
          end
       structure Record: RECORD
       sharing Record = Ast.SortedRecord
