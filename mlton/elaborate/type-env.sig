@@ -119,6 +119,11 @@ signature TYPE_ENV =
                {destroy: unit -> unit,
                 layoutPretty: t -> Layout.t,
                 localInit: t vector -> unit}
+            val makeLayoutPrettyLocal:
+               unit ->
+               {destroy: unit -> unit,
+                layoutPretty: t -> Layout.t,
+                reset: unit -> unit}
             val makeLike: t -> t
          end
       sharing type TyvarExt.t = Tyvar.t

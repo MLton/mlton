@@ -161,32 +161,56 @@ structure Tyvar =
             end
       end
 
-      fun makeLayoutPretty () =
-         let
-            val {destroy, get = layoutPretty, set = setLayoutPretty, ...} =
-               Property.destGetSet (plist, Property.initFun Tyvar.layout)
-            fun localInit bs =
-               let
-                  val c = Counter.new (Char.toInt #"a")
-               in
-                  Vector.foreach
-                  (bs, fn b =>
-                   let
-                      val n = Counter.next c
-                   in
-                      setLayoutPretty
-                      (b, Layout.str (concat
-                                      [if isEquality b then "''" else "'",
-                                       if n > Char.toInt #"z"
-                                          then concat ["a", Int.toString (n - Char.toInt #"z")]
-                                          else Char.toString (Char.fromInt n)]))
-                   end)
-               end
+      local
+         fun makeLocalNames () =
+            let
+               val a = Char.toInt #"a"
+               val z = Char.toInt #"z"
+               val cnt = Counter.new a
+               fun reset () = Counter.reset (cnt, a)
+               fun next b =
+                  let
+                     val n = Counter.next cnt
+                  in
+                     Layout.str
+                     (concat [if isEquality b then "''" else "'",
+                              if n > z
+                                 then concat ["a", Int.toString (n - z)]
+                                 else Char.toString (Char.fromInt n)])
+                  end
+            in
+               {next = next,
+                reset = reset}
+            end
+      in
+         fun makeLayoutPretty () =
+            let
+               val {destroy, get = layoutPretty, set = setLayoutPretty, ...} =
+                  Property.destGetSet (plist, Property.initFun Tyvar.layout)
+               fun localInit bs =
+                  let
+                     val {next, ...} = makeLocalNames ()
+                  in
+                     Vector.foreach
+                     (bs, fn b => setLayoutPretty (b, next b))
+                  end
          in
             {destroy = destroy,
              layoutPretty = layoutPretty,
              localInit = localInit}
          end
+
+         fun makeLayoutPrettyLocal () =
+            let
+               val {next, reset} = makeLocalNames ()
+               val {destroy, get = layoutPretty, ...} =
+                  Property.destGet (plist, Property.initFun next)
+            in
+               {destroy = destroy,
+                layoutPretty = layoutPretty,
+                reset = fn () => (reset (); destroy ())}
+            end
+      end
    end
 structure TyvarExt = Tyvar
 
