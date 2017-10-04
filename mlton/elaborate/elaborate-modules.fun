@@ -76,7 +76,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                    | SOME S => 
                         let
                            val (S, decs) =
-                              case elabSigexp (sigexp, NONE) of
+                              case elabSigexp (sigexp, SOME (Strid.toString Strid.uSig)) of
                                  NONE => (S, Decs.empty)
                                | SOME I => 
                                     Env.cut (E, S, I,
@@ -230,7 +230,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       Strdec.openn (Vector.new1 (Longstrid.short argId)))
             val body = Strexp.lett (argDec, body)
          in
-            Option.map (elabSigexp (argSig, NONE), fn argInt =>
+            Option.map (elabSigexp (argSig, SOME (Strid.toString argId)), fn argInt =>
                         Env.functorClosure
                         (E, name, argInt,
                          fn (formal, nest) =>
