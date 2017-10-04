@@ -3250,24 +3250,20 @@ fun processDefUse (E as T f) =
          makeLayoutPrettyTycon (E, {prefixUnset = false})
       val {destroy = destroyLayoutPrettyTyvar,
            layoutPretty = layoutPrettyTyvar,
-           localInit = localInitLayoutPrettyTyvar} =
-         Tyvar.makeLayoutPretty ()
-      val {destroy = destroyLayoutPrettyType,
-           layoutPretty = layoutPrettyType} =
-         Type.makeLayoutPretty
-         {expandOpaque = false,
-          layoutPrettyTycon = layoutPrettyTycon,
-          layoutPrettyTyvar = layoutPrettyTyvar}
+           reset = resetLayoutPrettyTyvar} =
+         Tyvar.makeLayoutPrettyLocal ()
       fun layoutPrettyScheme s =
          let
-            val (bs, t) = Scheme.dest s
-            val () = localInitLayoutPrettyTyvar bs
+            val () = resetLayoutPrettyTyvar ()
          in
-            #1 (layoutPrettyType t)
+            (#1 o Type.layoutPretty)
+            (Scheme.ty s,
+             {expandOpaque = false,
+              layoutPrettyTycon = layoutPrettyTycon,
+              layoutPrettyTyvar = layoutPrettyTyvar})
          end
       val destroy = fn () =>
-         (destroyLayoutPrettyType ()
-          ; destroyLayoutPrettyTyvar ()
+         (destroyLayoutPrettyTyvar ()
           ; destroyLayoutPrettyTycon ())
 
       val _ = forceUsed E
