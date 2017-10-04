@@ -703,33 +703,33 @@ structure FlexibleTycon =
              | _ => Error.bug "Interface.FlexibleTycon.realize"
          end
 
-      fun share (fc as T s, fc' as T s', sharingSpec) =
+      fun share (fc1 as T s1, fc2 as T s2, sharingSpec) =
          let
-            val {admitsEquality = a, creationTime = t,
-                 hasCons = h, specs = ss,
+            val {admitsEquality = ae1, creationTime = t1,
+                 hasCons = hc1, specs = ss1,
                  id, kind, plist, ...} =
-               fields fc
-            val {admitsEquality = a', creationTime = t',
-                 hasCons = h', specs = ss', ...} =
-               fields fc'
-            val _ = Set.union (s, s')
+               fields fc1
+            val {admitsEquality = ae2, creationTime = t2,
+                 hasCons = hc2, specs = ss2, ...} =
+               fields fc2
+            val _ = Set.union (s1, s2)
             val specs =
                AppendList.snoc
-               (if Ref.equals (ss, ss')
-                   then !ss
-                   else AppendList.append (!ss, !ss'),
+               (if Ref.equals (ss1, ss2)
+                   then !ss1
+                   else AppendList.append (!ss1, !ss2),
                 sharingSpec)
             val _ = 
                Set.:=
-               (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
-                    copy = ref NONE,
-                    creationTime = Time.min (t, t'),
-                    defn = ref Defn.undefined,
-                    specs = ref specs,
-                    hasCons = h orelse h',
-                    id = id,
-                    kind = kind,
-                    plist = plist})
+               (s1, {admitsEquality = ref (AdmitsEquality.or (!ae1, !ae2)),
+                     copy = ref NONE,
+                     creationTime = Time.min (t1, t2),
+                     defn = ref Defn.undefined,
+                     specs = ref specs,
+                     hasCons = hc1 orelse hc2,
+                     id = id,
+                     kind = kind,
+                     plist = plist})
          in
             ()
          end
