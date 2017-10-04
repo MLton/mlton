@@ -603,9 +603,6 @@ structure Type =
          in
             Option.map (res, #1)
          end
-
-
-
    end
 
 structure TypeStr =
