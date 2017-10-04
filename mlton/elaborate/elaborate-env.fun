@@ -546,13 +546,36 @@ structure Interface =
       structure Etyvar = Tyvar
       open Interface
 
-      fun flexibleTyconToEnv (c: FlexibleTycon.t): EtypeStr.t =
+      fun flexibleTyconToEnv (fc: FlexibleTycon.t): EtypeStr.t =
          let
             datatype z = datatype FlexibleTycon.realization
          in
-            case FlexibleTycon.realization c of
-               ETypeStr s => s
-             | TypeStr s => typeStrToEnv s
+            case FlexibleTycon.realization fc of
+               SOME (ETypeStr s) => s
+             | SOME (TypeStr s) => typeStrToEnv s
+             | NONE =>
+                  let
+                     (* A shadowed flexible tycon was not reported as
+                      * a flexible tycon and was not realized. *)
+                     val () =
+                        Assert.assert
+                        ("ElaborateEnv.Interface.flexibleTyconToEnv",
+                         fn () => !Control.numErrors > 0)
+                     val {admitsEquality = ae, kind = k,
+                          prettyDefault = pd, ...} =
+                        FlexibleTycon.dest fc
+                     val pd = "??." ^ pd
+                     val c =
+                        Etycon.make {admitsEquality = ae,
+                                     kind = k,
+                                     name = "<bogus>",
+                                     prettyDefault = pd,
+                                     region = Region.bogus}
+                     val tyStr = EtypeStr.tycon c
+                     val () = FlexibleTycon.realize (fc, tyStr)
+                  in
+                     tyStr
+                  end
          end
       and tyconToEnv (t: Tycon.t): EtypeStr.t =
          let
@@ -618,14 +641,14 @@ structure Interface =
 
             fun dummyTycon (fc, name, strids, {prefix}) =
                let
-                  val {admitsEquality = a, kind = k, ...} =
+                  val {admitsEquality = ae, kind = k, ...} =
                      FlexibleTycon.dest fc
                    val r = Ast.Tycon.region name
                    val n = Ast.Tycon.toString name
                    val pd =
                       prefix ^ toStringLongRev (strids, Ast.Tycon.layout name)
                    val c =
-                      Etycon.make {admitsEquality = a,
+                      Etycon.make {admitsEquality = ae,
                                    kind = k,
                                    name = n,
                                    prettyDefault = pd,

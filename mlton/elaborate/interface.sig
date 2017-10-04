@@ -61,7 +61,8 @@ signature INTERFACE =
             val admitsEquality: t -> AdmitsEquality.t
             val dest: t -> {admitsEquality: AdmitsEquality.t,
                             hasCons: bool,
-                            kind: Kind.t}
+                            kind: Kind.t,
+                            prettyDefault: string}
             val layout: t -> Layout.t
             val layoutPrettyDefault: t -> Layout.t
             val plist: t -> PropertyList.t
@@ -73,7 +74,7 @@ signature INTERFACE =
             datatype realization =
                ETypeStr of EnvTypeStr.t
              | TypeStr of typeStr
-            val realization: t -> realization
+            val realization: t -> realization option
             val setAdmitsEquality: t * AdmitsEquality.t -> unit
          end
       structure Tycon:

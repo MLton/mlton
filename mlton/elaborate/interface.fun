@@ -141,11 +141,13 @@ structure FlexibleTycon =
 
       fun dest fc =
          let
-            val {admitsEquality, hasCons, kind, ...} = fields fc
+            val {admitsEquality, hasCons, kind, prettyDefault, ...} =
+               fields fc
          in
             {admitsEquality = !admitsEquality,
              hasCons = hasCons,
-             kind = kind}
+             kind = kind,
+             prettyDefault = prettyDefault}
          end
 
       val equals = fn (T s, T s') => Set.equals (s, s')
@@ -751,11 +753,11 @@ structure FlexibleTycon =
           ETypeStr of EnvTypeStr.t
         | TypeStr of typeStr
 
-      fun realization (f: t): realization =
+      fun realization (f: t): realization option =
          case Defn.dest (defn f) of
-            Defn.Realized s => ETypeStr s
-          | Defn.TypeStr s => TypeStr s
-          | _ => Error.bug "Interface.FlexibleTycon.realization"
+            Defn.Realized s => SOME (ETypeStr s)
+          | Defn.TypeStr s => SOME (TypeStr s)
+          | Defn.Undefined => NONE
    end
 
 structure Scheme =
