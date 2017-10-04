@@ -354,10 +354,39 @@ structure Type =
             datatype z = datatype Prim.Name.t
             fun arg i = Vector.sub (args, i)
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
+            fun fiveArgs f = 5 = Vector.length args andalso f (arg 0, arg 1, arg 2, arg 3, arg 4)
             val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
-               Array_length =>
+               Array_copyArray =>
+                  fiveArgs
+                  (fn (a0, a1, a2, a3, a4) =>
+                   case (deVectorOpt a0, deVectorOpt a2) of
+                      (SOME p0, SOME p2) =>
+                         Vector.equals (Prod.dest p0, Prod.dest p2,
+                                        fn ({elt = e0, isMutable = i0},
+                                            {elt = e2, ...}) =>
+                                        i0
+                                        andalso equals (e0, e2))
+                         andalso equals (a1, seqIndex)
+                         andalso equals (a3, seqIndex)
+                         andalso equals (a4, seqIndex)
+                    | _ => false)
+             | Array_copyVector =>
+                  fiveArgs
+                  (fn (a0, a1, a2, a3, a4) =>
+                   case (deVectorOpt a0, deVectorOpt a2) of
+                      (SOME p0, SOME p2) =>
+                         Vector.equals (Prod.dest p0, Prod.dest p2,
+                                        fn ({elt = e0, isMutable = i0},
+                                            {elt = e2, ...}) =>
+                                        i0
+                                        andalso equals (e0, e2))
+                         andalso equals (a1, seqIndex)
+                         andalso equals (a3, seqIndex)
+                         andalso equals (a4, seqIndex)
+                    | _ => false)
+             | Array_length =>
                   oneArg (fn a =>
                           isVector a andalso equals (result, seqIndex))
              | Array_toVector =>

@@ -413,10 +413,30 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
          if n = 3
             then (arg 0, arg 1, arg 2)
          else Error.bug "AbstractValue.primApply.threeArgs"
+      fun fiveArgs () =
+         if n = 5
+            then (arg 0, arg 1, arg 2, arg 3, arg 4)
+         else Error.bug "AbstractValue.primApply.fiveArgs"
       datatype z = datatype Prim.Name.t
    in
       case Prim.name prim of
-         Array_sub =>
+         Array_copyArray =>
+            let val (da, _, sa, _, _) = fiveArgs ()
+            in (case (dest da, dest sa) of
+                   (Array dx, Array sx) => unify (dx, sx)
+                 | (Type _, Type _) => ()
+                 | _ => typeError ()
+                ; result ())
+            end
+       | Array_copyVector =>
+            let val (da, _, sa, _, _) = fiveArgs ()
+            in (case (dest da, dest sa) of
+                   (Array dx, Vector sx) => unify (dx, sx)
+                 | (Type _, Type _) => ()
+                 | _ => typeError ()
+                ; result ())
+            end
+       | Array_sub =>
             (case dest (#1 (twoArgs ())) of
                 Array x => x
               | Type _ => result ()

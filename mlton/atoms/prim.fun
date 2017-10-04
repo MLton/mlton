@@ -34,7 +34,9 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_length (* ssa to rssa *)
+   Array_copyArray (* backend *)
+ | Array_copyVector (* backend *)
+ | Array_length (* ssa to rssa *)
  | Array_sub (* ssa to ssa2 *)
  | Array_toVector (* backend *)
  | Array_uninit (* backend *)
@@ -219,7 +221,9 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_length => "Array_length"
+         Array_copyArray => "Array_copyArray"
+       | Array_copyVector => "Array_copyVector"
+       | Array_length => "Array_length"
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
        | Array_uninit => "Array_uninit"
@@ -543,7 +547,9 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_length => Array_length
+      Array_copyArray => Array_copyArray
+    | Array_copyVector => Array_copyVector
+    | Array_length => Array_length
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
     | Array_uninit => Array_uninit
@@ -793,7 +799,9 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_length => Functional
+         Array_copyArray => SideEffect
+       | Array_copyVector => SideEffect
+       | Array_length => Functional
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
        | Array_uninit => Moveable
@@ -997,7 +1005,9 @@ local
       @ wordSigns (s, false)
 in
    val all: unit t list =
-      [Array_length,
+      [Array_copyArray,
+       Array_copyVector,
+       Array_length,
        Array_sub,
        Array_toVector,
        Array_uninit,
@@ -1186,6 +1196,13 @@ fun 'a checkApp (prim: 'a t,
          andalso equals (arg0', arg 0)
          andalso equals (arg1', arg 1)
          andalso equals (arg2', arg 2)
+      fun fiveArgs (arg0', arg1', arg2', arg3', arg4') () =
+         5 = Vector.length args
+         andalso equals (arg0', arg 0)
+         andalso equals (arg1', arg 1)
+         andalso equals (arg2', arg 2)
+         andalso equals (arg3', arg 3)
+         andalso equals (arg4', arg 4)
       fun nArgs args' () =
          Vector.equals (args', args, equals)
       fun done (args, result') =
@@ -1248,7 +1265,9 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
+         Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
+       | Array_copyVector => oneTarg (fn t => (fiveArgs (array t, seqIndex, vector t, seqIndex, seqIndex), unit))
+       | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
        | Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
@@ -1436,7 +1455,9 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_length => one (deArray (arg 0))
+         Array_copyArray => one (deArray (arg 0))
+       | Array_copyVector => one (deArray (arg 0))
+       | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
        | Array_uninit => one (deArray result)

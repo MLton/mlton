@@ -128,6 +128,32 @@ structure CFunction =
             symbolScope = Private,
             target = Direct "GC_arrayAllocate"}
 
+      fun gcArrayCopy (dt, st) =
+         T {args = Vector.new6 (Type.gcState (),
+                                dt,
+                                Type.seqIndex (),
+                                st,
+                                Type.seqIndex (),
+                                Type.seqIndex ()),
+            convention = Cdecl,
+            kind = Kind.Runtime {bytesNeeded = NONE,
+                                 ensuresBytesFree = true,
+                                 mayGC = true,
+                                 maySwitchThreads = false,
+                                 modifiesFrontier = true,
+                                 readsStackTop = true,
+                                 writesStackTop = true},
+            prototype = (Vector.new6 (CType.gcState,
+                                      CType.Objptr,
+                                      CType.seqIndex (),
+                                      CType.Objptr,
+                                      CType.seqIndex (),
+                                      CType.seqIndex ()),
+                         NONE),
+            return = Type.unit,
+            symbolScope = Private,
+            target = Direct "GC_arrayCopy"}
+
       val returnToC = fn () =>
          T {args = Vector.new0 (),
             convention = Cdecl,
@@ -1178,7 +1204,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
-                                 Array_length => arrayOrVectorLength ()
+                                 Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_length => arrayOrVectorLength ()
                                | Array_toVector =>
                                     let
                                        val array = a 0

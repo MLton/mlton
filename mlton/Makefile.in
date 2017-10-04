@@ -7,6 +7,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
+@SET_MAKE@
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
@@ -16,6 +17,8 @@ LIB := $(BUILD)/lib
 TARGET := self
 AOUT := mlton-compile
 PATH := $(BIN):$(shell echo $$PATH)
+CC := @CC@
+SED := @SED@
 
 FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
@@ -66,7 +69,7 @@ all: $(AOUT)
 
 control/version.sml: control/version_sml.src
 	cat control/version_sml.src |				\
-		sed "s/MLTONVERSION/$$(TZ=UTC git log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$(git status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')/" >	\
+		$(SED) "s/MLTONVERSION/$$(TZ=UTC git log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$(git status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')/" >	\
 		control/version.sml
 
 front-end/%.lex.sml: front-end/%.lex
@@ -154,10 +157,10 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell mlton -stop f mlton.mlb))
 	(									\
 		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
-			sed 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
+			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
 		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
 		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
-			sed 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
+			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
 		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
 			grep -v 'mlb$$' | 					\
 			grep 'mlton-stubs';					\
@@ -168,4 +171,4 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 			grep -v 'mlton-stubs' |					\
 			grep -v 'mlyacc' |					\
 			grep -v 'call-main.sml';				\
-	) | sed 's|\(.*\)|use "\1";|' > mlton-polyml.use
+	) | $(SED) 's|\(.*\)|use "\1";|' > mlton-polyml.use
