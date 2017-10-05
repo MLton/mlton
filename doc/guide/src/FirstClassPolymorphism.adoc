@@ -24,7 +24,7 @@ fun useId id = (id 13; id "foo")
 
 However, this does not type check.  MLton reports the following error.
 ----
-Error: z.sml 1.24.
+Error: z.sml 1.24-1.31.
   Function applied to incorrect argument.
     expects: [int]
     but got: [string]
@@ -41,12 +41,12 @@ fun useId (id: 'a -> 'a) = (id 13; id "foo")
 
 On this, MLton reports the following errors.
 ----
-Error: z.sml 1.29.
+Error: z.sml 1.29-1.33.
   Function applied to incorrect argument.
     expects: ['a]
     but got: [int]
     in: id 13
-Error: z.sml 1.36.
+Error: z.sml 1.36-1.43.
   Function applied to incorrect argument.
     expects: ['a]
     but got: [string]

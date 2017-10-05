@@ -18,9 +18,17 @@ MLton reports the following error, indicating that the type defined on
 line 2 is used on line 1.
 
 ----
-Error: z.sml 1.1.
-  Type escapes the scope of its definition at z.sml 2.10.
-    type: t
+Error: z.sml 3.10-3.20.
+  Function applied to incorrect argument.
+    expects: _ * [???] option
+    but got: _ * [t] option
+    in: := (r, SOME A)
+    note: type would escape its scope: t
+    escape from: z.sml 2.10-2.10
+    escape to: z.sml 1.1-1.16
+Warning: z.sml 1.5-1.5.
+  Type of variable was not inferred and could not be generalized: r.
+    type: ??? option ref
     in: val r = ref NONE
 ----
 
@@ -49,35 +57,24 @@ val () = S1.get () ()
 MLton reports the following error.
 
 ----
-Warning: z.sml 1.1.
-  Unable to locally determine type of variable: r.
+Warning: z.sml 1.5-1.5.
+  Type of variable was not inferred and could not be generalized: r.
     type: ??? option ref
     in: val r = ref NONE
-Error: z.sml 1.1.
-  Type escapes the scope of its definition at z.sml 2.17.
-    type: t
-    in: val r = ref NONE
-----
-
-<:PolyML:PolyML> 4.1.3 to seg faults, but <:PolyML:PolyML> 5.4 reports
-the following error.
-
-----
-Warning- in 'z.sml', line 13.
-The type of (r) contains a free type variable. Setting it to a unique
-   monotype.
-Error- in 'z.sml', line 5.
-Type error in function application.
-   Function: := : _a option ref * _a option -> unit
-   Argument: (r, SOME x) : _a option ref * t option
-   Reason:
-      Can't unify _a (*Constructed from a free type variable.*) with t
-      (Different type constructors)
-Found near r := SOME x
-Error- in 'z.sml', line 12.
-Type error in function application.
-   Function: S1.get () : _a
-   Argument: () : unit
-   Reason: Value being applied does not have a function type
-Found near S1.get () ()
+Error: z.sml 5.16-5.26.
+  Function applied to incorrect argument.
+    expects: _ * [???] option
+    but got: _ * [t] option
+    in: := (r, SOME x)
+    note: type would escape its scope: t
+    escape from: z.sml 2.17-2.17
+    escape to: z.sml 1.1-1.16
+Warning: z.sml 6.11-6.13.
+  Type of variable was not inferred and could not be generalized: get.
+    type: unit -> ???
+    in: fun get () = (valOf (! r))
+Error: z.sml 12.10-12.18.
+  Function not of arrow type.
+    function: [unit]
+    in: (S1.get ()) ()
 ----
