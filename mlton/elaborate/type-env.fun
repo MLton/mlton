@@ -2227,14 +2227,16 @@ fun 'a close region =
             val varTypes =
                Vector.map
                (varTypes, fn ({isExpansive, ty, var}) =>
-                {isExpansive = isExpansive,
-                 ty = if not isExpansive
-                         then ty
-                         else (case checkTime (ty, beforeGen) of
-                                  NONE => ty
-                                | SOME (((l, _), (ty', _)), {tyvars, ...}) =>
-                                     (error (var, l, tyvars)
-                                      ; ty'))})
+                if not isExpansive
+                   then {isExpansive = false,
+                         ty = ty}
+                   else (case checkTime (ty, beforeGen) of
+                            NONE => {isExpansive = true,
+                                     ty = ty}
+                          | SOME (((l, _), _), {tyvars, ...}) =>
+                               (error (var, l, tyvars)
+                                ; {isExpansive = false,
+                                   ty = ty})))
          end
          val tyvars = Vector.toList ensure
          (* Convert all the unknown types bound at this level into tyvars.
