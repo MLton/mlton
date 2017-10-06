@@ -172,12 +172,12 @@ structure Type =
              Property.initRec
              (fn (t, layout) =>
               case dest t of
-                 Array t => seq [layout t, str " array"]
+                 Array t => seq [str "(", layout t, str ") array"]
                | CPointer => str "pointer"
                | Datatype t => Tycon.layout t
                | IntInf => str "intInf"
                | Real s => str (concat ["real", RealSize.toString s])
-               | Ref t => seq [layout t, str " ref"]
+               | Ref t => seq [str"(", layout t, str ") ref"]
                | Thread => str "thread"
                | Tuple ts =>
                     if Vector.isEmpty ts
@@ -186,8 +186,8 @@ structure Type =
                               (mayAlign o separateRight)
                               (Vector.toListMap (ts, layout), ", "),
                               str ") tuple"]
-               | Vector t => seq [layout t, str " vector"]
-               | Weak t => seq [layout t, str " weak"]
+               | Vector t => seq [str "(", layout t, str ") vector"]
+               | Weak t => seq [str "(", layout t, str ") weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
       end
 
