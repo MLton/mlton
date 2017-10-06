@@ -31,10 +31,10 @@ MLton reports the following error, indicating that polymorphic
 equality expects equality types, but didn't get them.
 
 ----
-Error: z.sml 1.32.
+Error: z.sml 1.30-1.34.
   Function applied to incorrect argument.
     expects: [<equality>] * [<equality>]
-    but got: [<non-equality>] * [<non-equality>]
+    but got: ['a] * ['a]
     in: = (x, y)
 ----
 
@@ -88,29 +88,33 @@ functor Ok (S: sig val f: ''a -> unit end):
 This functor concisely verifies that a function of polymorphic type
 `''a -> unit` can be safely used as a function of type `int -> unit`.
 
-As above, we can verify that such an `f` can not be used at non
-equality types.
+As above, we can verify that such an `f` can not be used at
+non-equality types.
 
 [source,sml]
 ----
 functor Bad (S: sig val f: ''a -> unit end):
    sig val f: real -> unit end = S
-----
 
-[source,sml]
-----
 functor Bad (S: sig val f: ''a -> unit end):
    sig val f: ('a -> 'a) -> unit end = S
 ----
 
-For each of these programs, MLton reports the following error.
+MLton reports the following errors.
 
 ----
-Error: z.sml 2.4.
-  Variable type in structure disagrees with signature.
-    variable: f
-    structure: [<equality>] -> _
-    signature: [<non-equality>] -> _
+Error: z.sml 2.4-2.30.
+  Variable in structure disagrees with signature (type): f.
+    structure: val f: [<equality>] -> _
+    defn at: z.sml 1.25-1.25
+    signature: val f: [real] -> _
+    spec at: z.sml 2.12-2.12
+Error: z.sml 5.4-5.36.
+  Variable in structure disagrees with signature (type): f.
+    structure: val f: [<equality>] -> _
+    defn at: z.sml 4.25-4.25
+    signature: val f: [_ -> _] -> _
+    spec at: z.sml 5.12-5.12
 ----
 
 

@@ -43,7 +43,7 @@ fun fromVector v =
            | _ => false)
       val v = if isSorted then sort v else v
    in
-      if isTuple v
+      if isTuple v andalso Vector.length v <> 1
          then Tuple (Vector.map (v, #2))
       else Record v
    end

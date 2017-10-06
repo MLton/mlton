@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -14,7 +15,9 @@ ann
 in
    local
       ../basis-extra/basis-extra.mlb
-      top-level/basis.sig
+      ann "allowSpecifySpecialIds true" in
+         top-level/basis.sig
+      end
       top-level/basis.sml
    in
       structure Basis2002

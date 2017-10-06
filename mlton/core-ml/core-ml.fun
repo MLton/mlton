@@ -176,8 +176,8 @@ datatype dec =
            rvbs: {lambda: lambda,
                   var: Var.t} vector,
            tyvars: unit -> Tyvar.t vector,
-           vbs: {exp: exp,
-                 layDec: unit -> Layout.t,
+           vbs: {ctxt: unit -> Layout.t,
+                 exp: exp,
                  layPat: unit -> Layout.t,
                  nest: string list,
                  pat: Pat.t,
@@ -186,8 +186,8 @@ and exp = Exp of {node: expNode,
                   ty: Type.t}
 and expNode =
    App of exp * exp
-  | Case of {kind: string * string,
-             lay: unit -> Layout.t,
+  | Case of {ctxt: unit -> Layout.t,
+             kind: string * string,
              nest: string list,
              matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
                           nonexhaustive: Control.Elaborate.DiagEIW.t,
@@ -420,8 +420,8 @@ structure Exp =
          else make (Case z, ty (#exp (Vector.first rules)))
 
       fun iff (test, thenCase, elseCase): t =
-         casee {kind = ("if", "branch"),
-                lay = fn () => Layout.empty,
+         casee {ctxt = fn () => Layout.empty,
+                kind = ("if", "branch"),
                 nest = [],
                 matchDiags = {nonexhaustiveExn = Control.Elaborate.DiagDI.Default,
                               nonexhaustive = Control.Elaborate.DiagEIW.Ignore,

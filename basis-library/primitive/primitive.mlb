@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -16,7 +17,7 @@ ann
    "warnUnused false"
 in
    prim-basis.mlb
-   ann "allowRebindEquals true" in
+   ann "allowRedefineSpecialIds true" in
       prim1.sml
    end 
    ../util/integral-comparisons.sml

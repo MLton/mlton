@@ -54,9 +54,10 @@ signature AST_CORE =
                            pat: t,
                            var: Var.t}
              | List of t vector
+             | Paren of t
              | Or of t vector
              | Record of {flexible: bool,
-                          items: (Record.Field.t * Item.t) vector}
+                          items: (Record.Field.t * Region.t * Item.t) vector}
              | Tuple of t vector
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
@@ -148,9 +149,10 @@ signature AST_CORE =
              | Let of dec * t
              | List of t vector
              | Orelse of t * t
+             | Paren of t
              | Prim of PrimKind.t
              | Raise of t
-             | Record of t Record.t
+             | Record of (Region.t * t) Record.t
              | Selector of Record.Field.t
              | Seq of t vector
              | Var of {fixop: Fixop.t,

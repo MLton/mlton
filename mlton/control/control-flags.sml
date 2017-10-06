@@ -452,8 +452,11 @@ structure Elaborate =
          val (allowOverload, ac) =
             makeBool ({name = "allowOverload", 
                        default = false, expert = true}, ac)
-         val (allowRebindEquals, ac) =
-            makeBool ({name = "allowRebindEquals", 
+         val (allowRedefineSpecialIds, ac) =
+            makeBool ({name = "allowRedefineSpecialIds",
+                       default = false, expert = true}, ac)
+         val (allowSpecifySpecialIds, ac) =
+            makeBool ({name = "allowSpecifySpecialIds",
                        default = false, expert = true}, ac)
          val (deadCode, ac) =
             makeBool ({name = "deadCode", 

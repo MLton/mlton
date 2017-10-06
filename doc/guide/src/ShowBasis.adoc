@@ -20,7 +20,7 @@ program, you can call MLton with `-stop tc`.
 == Displaying signatures ==
 
 When displaying signatures, MLton prefixes types defined in the
-signature them with `?.` to distinguish them from types defined in the
+signature them with `_sig.` to distinguish them from types defined in the
 environment.  For example,
 [source,sml]
 ----
@@ -34,12 +34,12 @@ is displayed as
 ----
 signature SIG =
    sig
-      type t = ?.t
-      val x: (?.t * int) -> unit
+      type t
+      val x: _sig.t * int -> unit
    end
 ----
 
-Notice that `int` occurs without the `?.` prefix.
+Notice that `int` occurs without the `_sig.` prefix.
 
 MLton also uses a canonical name for each type in the signature, and
 that name is used everywhere for that type, no matter what the input
@@ -58,10 +58,10 @@ is displayed as
 ----
 signature SIG =
    sig
-      type t = ?.t
-      type u = ?.t
-      val x: ?.t
-      val y: ?.t
+      type t
+      type u = _sig.t
+      val x: _sig.t
+      val y: _sig.t
    end
 ----
 
@@ -86,14 +86,14 @@ is displayed as
 ----
 signature S =
    sig
-      type t = ?.t
-      val w: ?.t
-      val z: ?.U.u
+      type t
+      val w: _sig.t
+      val z: _sig.U.u
       structure U:
          sig
-            type u = ?.U.u
-            val x: ?.t
-            val y: ?.U.u
+            type u
+            val x: _sig.t
+            val y: _sig.U.u
          end
    end
 ----
@@ -119,13 +119,13 @@ structure S2:> SIG = S
 ----
 is displayed as
 ----
+signature SIG =
+   sig
+      type t
+      val x: _sig.t
+   end
 structure S: SIG
              where type t = int
 structure S2: SIG
               where type t = S2.t
-signature SIG =
-   sig
-      type t = ?.t
-      val x: ?.t
-   end
 ----

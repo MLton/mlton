@@ -74,8 +74,8 @@ signature CORE_ML =
             datatype noMatch = Impossible | RaiseAgain | RaiseBind | RaiseMatch
             datatype node =
                App of t * t
-             | Case of {kind: string * string,
-                        lay: unit -> Layout.t,
+             | Case of {ctxt: unit -> Layout.t,
+                        kind: string * string,
                         nest: string list,
                         matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
                                      nonexhaustive: Control.Elaborate.DiagEIW.t,
@@ -106,8 +106,8 @@ signature CORE_ML =
              | Vector of t vector
 
             val andAlso: t * t -> t
-            val casee: {kind: string * string,
-                        lay: unit -> Layout.t,
+            val casee: {ctxt: unit -> Layout.t,
+                        kind: string * string,
                         nest: string list,
                         matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
                                      nonexhaustive: Control.Elaborate.DiagEIW.t,
@@ -173,8 +173,8 @@ signature CORE_ML =
                        rvbs: {lambda: Lambda.t,
                               var: Var.t} vector,
                        tyvars: unit -> Tyvar.t vector,
-                       vbs: {exp: Exp.t,
-                             layDec: unit -> Layout.t,
+                       vbs: {ctxt: unit -> Layout.t,
+                             exp: Exp.t,
                              layPat: unit -> Layout.t,
                              nest: string list,
                              pat: Pat.t,

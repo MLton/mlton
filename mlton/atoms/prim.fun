@@ -1086,7 +1086,10 @@ in
                      List.concatMap (WordSize.prims, words)]
       @ let
            val real = RealSize.all
-           val word = WordSize.all
+           val word = WordSize.prims
+           val wordNonPrim =
+              List.keepAll
+              (WordSize.all, fn s => not (List.contains (word, s, WordSize.equals)))
            fun coerces (name, sizes, sizes', ac) =
               List.fold
               (sizes, ac, fn (s, ac) =>
@@ -1100,13 +1103,20 @@ in
                         sizes, sizes', ac))
            fun casts (name, sizes, ac) =
               List.fold (sizes, ac, fn (s, ac) => name s :: ac)
+           fun castsS (name, sizes, ac) =
+              List.fold
+              ([false, true], ac, fn (signed, ac) =>
+               casts (fn s => name (s, {signed = signed}),
+                      sizes, ac))
         in
            casts (fn rs => Real_castToWord (rs, WordSize.fromBits (RealSize.bits rs)), real, 
            coerces (Real_rndToReal, real, real,
            coercesS (Real_rndToWord, real, word,
            casts (fn rs => Word_castToReal (WordSize.fromBits (RealSize.bits rs), rs), real,
            coercesS (Word_extdToWord, word, word,
-           coercesS (Word_rndToReal, word, real, []))))))
+           castsS (fn (s, signed) => Word_extdToWord (s, WordSize.roundUpToPrim s, signed), wordNonPrim,
+           castsS (fn (s, signed) => Word_extdToWord (WordSize.roundUpToPrim s, s, signed), wordNonPrim,
+           coercesS (Word_rndToReal, word, real, []))))))))
         end
      @ List.concatMap
        (WordSize.prims, fn seqSize =>

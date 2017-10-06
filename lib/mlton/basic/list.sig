@@ -150,6 +150,7 @@ signature LIST =
              replace: 'a t * ('a -> 'a option) -> 'a t,
              map: 'a t * ('a -> 'a) -> 'a t,
              layout: 'a t -> Layout.t}
+      val snoc: 'a t * 'a -> 'a t
 (*      val splitAtMost: 'a t * int -> ('a t * 'a t) option *)
       val splitAt: 'a t * int -> 'a t * 'a t
       val splitLast: 'a t -> 'a t * 'a

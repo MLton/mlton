@@ -83,10 +83,10 @@ structure Example =
            case ex of
               ConApp {arg, con} =>
                  (case arg of
-                     NONE => Con.layout con
+                     NONE => str (Con.originalName con)
                    | SOME arg =>
                         (delimit o seq)
-                        [Con.layout con,
+                        [str (Con.originalName con),
                          str " ",
                          layoutF arg])
             | ConstRange {lo, hi, isChar, isInt} =>
