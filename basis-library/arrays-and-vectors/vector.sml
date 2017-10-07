@@ -28,7 +28,7 @@ structure Vector: VECTOR_EXTRA =
          end
 
       fun update (v, i, x) = 
-         (Primitive.Vector.update (v, SeqIndex.fromInt i, x))
+         (Primitive.Vector.updateVector (v, SeqIndex.fromInt i, x))
          handle Overflow => raise Subscript
 
       val isSubvector = isSubsequence

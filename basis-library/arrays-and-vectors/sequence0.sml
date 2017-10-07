@@ -20,6 +20,7 @@ functor PrimSequence (S: sig
                             val new0: (unit -> 'a sequence) option
                             val sameArray: 'a elt array * 'a sequence -> bool
                             val subUnsafe: 'a sequence * SeqIndex.int -> 'a elt
+                            val updateUnsafe: 'a sequence * SeqIndex.int * 'a elt -> unit
                          end) :> PRIM_SEQUENCE where type 'a sequence = 'a S.sequence
                                                where type 'a elt = 'a S.elt =
    struct
@@ -162,12 +163,12 @@ functor PrimSequence (S: sig
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
                   else unsafeSub (sl, i)
-            fun unsafeUpdateMk updateUnsafe (T {seq, start, ...}, i, x) =
-               updateUnsafe (seq, start +? i, x)
-            fun updateMk updateUnsafe (sl as T {len, ...}, i, x) =
+            fun unsafeUpdate (T {seq, start, ...}, i, x) =
+               S.updateUnsafe (seq, start +? i, x)
+            fun update (sl as T {len, ...}, i, x) =
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
-               else (unsafeUpdateMk updateUnsafe) (sl, i, x)
+               else unsafeUpdate (sl, i, x)
             local
                fun smallCopy {dst: 'a elt array, di: SeqIndex.int,
                               src: 'a sequence, si: SeqIndex.int,
@@ -441,10 +442,8 @@ functor PrimSequence (S: sig
       in
          fun sub (seq, i) = Slice.sub (Slice.full seq, i)
          fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i)
-         fun updateMk updateUnsafe (seq, i, x) =
-            Slice.updateMk updateUnsafe (Slice.full seq, i, x)
-         fun unsafeUpdateMk updateUnsafe (seq, i, x) =
-            Slice.unsafeUpdateMk updateUnsafe (Slice.full seq, i, x)
+         fun update (seq, i, x) = Slice.update (Slice.full seq, i, x)
+         fun unsafeUpdate (seq, i, x) = Slice.unsafeUpdate (Slice.full seq, i, x)
          fun copy {dst, di, src} = Slice.copy {dst = dst, di = di, src = Slice.full src}
          fun unsafeCopy {dst, di, src} = Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
          fun appi f = make (Slice.appi f)
@@ -474,6 +473,7 @@ open Primitive
 structure Vector =
    struct
       local
+         exception Vector_updateUnsafe
          structure P = PrimSequence (type 'a sequence = 'a vector
                                      type 'a elt = 'a
                                      val copyUnsafe = Array.copyVectorUnsafe
@@ -482,11 +482,12 @@ structure Vector =
                                      val length = Vector.length
                                      val new0 = SOME Vector.vector0
                                      val sameArray = fn _ => false
-                                     val subUnsafe = Vector.subUnsafe)
+                                     val subUnsafe = Vector.subUnsafe
+                                     val updateUnsafe = fn _ => raise Vector_updateUnsafe)
       in
          open P
          open Vector
-         fun update (v, i, x) =
+         fun updateVector (v, i, x) =
             if Primitive.Controls.safe andalso SeqIndex.geu (i, length v)
                then raise Subscript
             else let
@@ -510,15 +511,14 @@ structure Array =
                                      val new0 = NONE
                                      val isMutable = true
                                      val length = Array.length
-                                     val subUnsafe = Array.subUnsafe)
+                                     val subUnsafe = Array.subUnsafe
+                                     val updateUnsafe = Array.updateUnsafe)
       in
          open P
          open Array
          structure Slice = 
             struct
                open Slice
-               fun update arg = updateMk Array.updateUnsafe arg
-               fun unsafeUpdate arg = unsafeUpdateMk Array.updateUnsafe arg
                fun vector sl = 
                   let
                      val a = unsafeAlloc (length sl)
@@ -530,8 +530,6 @@ structure Array =
                   appi (fn (i, x) => unsafeUpdate (sl, i, f (i, x))) sl
                fun modify f sl = modifyi (fn (_, x) => f x) sl
             end
-         fun update arg = updateMk Array.updateUnsafe arg
-         val unsafeUpdate = Array.updateUnsafe
          fun vector s = Slice.vector (Slice.full s)
          fun modifyi f s = Slice.modifyi f (Slice.full s)
          fun modify f s = Slice.modify f (Slice.full s) 

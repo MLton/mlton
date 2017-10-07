@@ -25,8 +25,6 @@ structure Array: ARRAY_EXTRA =
          struct
             open Slice
             val vector = Primitive.Array.Slice.vector
-            fun update x = updateMk Primitive.Array.updateUnsafe x
-            fun unsafeUpdate x = unsafeUpdateMk Primitive.Array.updateUnsafe x
             val copyVec = Vector.VectorSlice.copy
             val unsafeCopyVec = Vector.VectorSlice.unsafeCopy
             fun modifyi f sl = Primitive.Array.Slice.modifyi (wrap2 f) sl
@@ -35,8 +33,6 @@ structure Array: ARRAY_EXTRA =
 
       val array = new
       val vector = Primitive.Array.vector
-      fun update x = updateMk Primitive.Array.updateUnsafe x
-      fun unsafeUpdate x = unsafeUpdateMk Primitive.Array.updateUnsafe x
       val copyVec = Vector.copy
       val unsafeCopyVec = Vector.unsafeCopy
       fun modifyi f sl = Primitive.Array.modifyi (wrap2 f) sl

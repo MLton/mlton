@@ -147,19 +147,18 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                        end
                   else unsafeSub (sl, i)
 
-            fun unsafeUpdateMk updateUnsafe (sl, i, x) =
-               (S.Slice.unsafeUpdateMk updateUnsafe) 
-                   (sl, SeqIndex.fromIntUnsafe i, x)
-            fun updateMk updateUnsafe (sl, i, x) = 
+            fun unsafeUpdate (sl, i, x) =
+               S.Slice.unsafeUpdate (sl, SeqIndex.fromIntUnsafe i, x)
+            fun update (sl, i, x) =
                if Primitive.Controls.safe
                   then let
                           val i =
                              (SeqIndex.fromInt i)
                              handle Overflow => raise Subscript
                        in
-                          (S.Slice.updateMk updateUnsafe) (sl, i, x)
+                          S.Slice.update (sl, i, x)
                        end
-               else (unsafeUpdateMk updateUnsafe) (sl, i, x)
+               else unsafeUpdate (sl, i, x)
 
             fun unsafeCopy {dst, di, src} =
                S.Slice.unsafeCopy
@@ -433,10 +432,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
       in
         fun sub (seq, i) = Slice.sub (Slice.full seq, i)
         fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i) 
-        fun updateMk updateUnsafe (seq, i, x) =
-           Slice.updateMk updateUnsafe (Slice.full seq, i, x)
-        fun unsafeUpdateMk updateUnsafe (seq, i, x) =
-           Slice.unsafeUpdateMk updateUnsafe (Slice.full seq, i, x)
+        fun update (seq, i, x) = Slice.update (Slice.full seq, i, x)
+        fun unsafeUpdate (seq, i, x) = Slice.unsafeUpdate (Slice.full seq, i, x)
         fun copy {dst, di, src} =
            Slice.copy {dst = dst, di = di, src = Slice.full src}
         fun unsafeCopy {dst, di, src} =
