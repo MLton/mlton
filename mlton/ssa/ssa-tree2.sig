@@ -71,6 +71,7 @@ signature SSA_TREE2 =
             val datatypee: Tycon.t -> t
             val dest: t -> dest
             val deVector1: t -> t
+            val deVectorOpt: t -> t Prod.t option
             val equals: t * t -> bool
             val intInf: t
             val isVector: t -> bool
