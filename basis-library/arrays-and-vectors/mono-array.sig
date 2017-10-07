@@ -47,6 +47,8 @@ signature MONO_ARRAY_EXTRA =
       val toList: array -> elem list
       val toPoly: array -> elem Array.array
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array * 'a
+
+      val unsafeAlloc: int -> array
       val unsafeSub: array * int -> elem
       val unsafeUpdate: array * int * elem -> unit
    end
