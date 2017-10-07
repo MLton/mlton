@@ -452,9 +452,9 @@ structure IntInf =
                      (* sign limb + magnitude limb(s) *)
                      S.>= (l, 2) andalso
                      (* sign limb is 0w0 (positive) or 0w1 (negative) *)
-                     MPLimb.<= (V.subUnsafe (v, 0), 0w1) andalso
+                     MPLimb.<= (V.unsafeSub (v, 0), 0w1) andalso
                      (* most-significant magnitude limb is non-zero *)
-                     MPLimb.> (V.subUnsafe (v, S.- (l, 1)), 0w0) andalso
+                     MPLimb.> (V.unsafeSub (v, S.- (l, 1)), 0w0) andalso
                      (* value exceeds Small representation;
                       * if positive, then mag in [1, 2^(ObjptrWord.sizeInBits - 2)].
                       * if negative, then mag in [0, 2^(ObjptrWord.sizeInBits - 2) - 1].
@@ -462,10 +462,10 @@ structure IntInf =
                      (S.> (l, S.+ (1, limbsPerObjptr)) orelse
                       if Int32.<= (ObjptrWord.sizeInBits, MPLimb.sizeInBits)
                          then let
-                                 val mag = V.subUnsafe (v, 1)
+                                 val mag = V.unsafeSub (v, 1)
                               in
                                  MPLimb.>=
-                                 (if MPLimb.>= (V.subUnsafe (v, 0), 0w1) then MPLimb.- (mag, 0w1) else mag,
+                                 (if MPLimb.>= (V.unsafeSub (v, 0), 0w1) then MPLimb.- (mag, 0w1) else mag,
                                   MPLimb.<<? (0w1, Word32.- (ObjptrWord.sizeInBitsWord, 0w2)))
                               end
                       else let
@@ -473,12 +473,12 @@ structure IntInf =
                                  if S.< (i, l)
                                     then ObjptrWord.andb
                                          (ObjptrWord.<<? (mag, MPLimb.sizeInBitsWord),
-                                          W.castFromMPLimb (V.subUnsafe (v, i)))
+                                          W.castFromMPLimb (V.unsafeSub (v, i)))
                                  else mag
-                              val mag = loop (2, W.castFromMPLimb (V.subUnsafe (v, 1)))
+                              val mag = loop (2, W.castFromMPLimb (V.unsafeSub (v, 1)))
                            in
                               ObjptrWord.>=
-                              (if MPLimb.>= (V.subUnsafe (v, 0), 0w1) then ObjptrWord.- (mag, 0w1) else mag,
+                              (if MPLimb.>= (V.unsafeSub (v, 0), 0w1) then ObjptrWord.- (mag, 0w1) else mag,
                                ObjptrWord.<<? (0w1, Word32.- (ObjptrWord.sizeInBitsWord, 0w2)))
                            end)
                in
@@ -542,15 +542,15 @@ structure IntInf =
                           if sextd andalso (#isNeg other) w
                              then loop ((#neg other) w, 1, [(0,0w1)])
                              else loop (w, 1, [(0,0w0)])
-                       val a = A.allocUnsafe n
+                       val a = A.unsafeAlloc n
                        fun loop acc =
                           case acc of
                              [] => ()
-                           | (i, v) :: acc => (A.updateUnsafe (a, i, v)
+                           | (i, v) :: acc => (A.unsafeUpdate (a, i, v)
                                                ; loop acc)
                        val () = loop acc
                     in
-                       Prim.fromVector (V.fromArrayUnsafe a)
+                       Prim.fromVector (V.unsafeFromArray a)
                     end
       in
          fun extdFromWord8 (sextd, w) =
@@ -683,12 +683,12 @@ structure IntInf =
                else let
                        val v = Prim.toVector i
                        val n = V.length v
-                       val isneg = V.subUnsafe (v, 0) <> 0w0
+                       val isneg = V.unsafeSub (v, 0) <> 0w0
                     in
                        if Int32.>= (MPLimb.sizeInBits, #sizeInBits other) 
                           then let
                                   val limbsPer : S.t = 1
-                                  val limb = V.subUnsafe (v, 1)
+                                  val limb = V.unsafeSub (v, 1)
                                   val extra =
                                      S.> (n, S.+ (limbsPer, 1))
                                      orelse
@@ -708,7 +708,7 @@ structure IntInf =
                                         fun loop (i, ans) =
                                            if S.> (i, 0)
                                               then let
-                                                      val limb = V.subUnsafe (v, i)
+                                                      val limb = V.unsafeSub (v, i)
                                                       val ans = 
                                                          (#orb other) 
                                                          ((#lshift other) 
@@ -993,7 +993,7 @@ structure IntInf =
       (* Given a bignum bigint, test if it is (strictly) negative.
        *)
       fun bigIsNeg (arg: bigInt): bool =
-         V.subUnsafe (Prim.toVector arg, 0) <> 0w0
+         V.unsafeSub (Prim.toVector arg, 0) <> 0w0
 
       local
          fun make (smallOp, bigOp, limbsFn, extra)
@@ -1316,7 +1316,7 @@ structure IntInf =
                     else let
                             val v = Prim.toVector arg
                             val n = V.length v
-                            val w = MPLimb.log2 (V.subUnsafe (v, S.- (n, 1)))
+                            val w = MPLimb.log2 (V.unsafeSub (v, S.- (n, 1)))
                          in
                             fromLarge {numLimbsMinusOne = S.- (n, 2),
                                        mostSigLimbLog2 = w}
