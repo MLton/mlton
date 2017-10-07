@@ -44,6 +44,7 @@ signature ARRAY_SLICE_EXTRA =
       val unsafeCopyVec: {dst: 'a Array.array, di: int, src: 'a VectorSlice.slice} -> unit
       val unsafeSlice: 'a array * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
+      val unsafeUpdate: 'a slice * int * 'a -> unit
 
       val concat: 'a slice list -> 'a array
       val toList: 'a slice -> 'a list

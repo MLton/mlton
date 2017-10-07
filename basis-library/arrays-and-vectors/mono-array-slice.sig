@@ -43,4 +43,5 @@ signature MONO_ARRAY_SLICE_EXTRA =
       val unsafeSlice: array * int * int option -> slice
       val unsafeSub: slice * int -> elem
       val unsafeSubslice: slice * int * int option -> slice
+      val unsafeUpdate: slice * int * elem -> unit
    end
