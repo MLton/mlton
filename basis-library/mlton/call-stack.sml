@@ -19,7 +19,7 @@ structure MLtonCallStack =
             then T (Array.array (0, 0wx0))
          else
             let
-               val a = Array.uninit (Word32.toInt (numStackFrames gcState))
+               val a = Array.alloc (Word32.toInt (numStackFrames gcState))
                val () = callStack (gcState, a)
             in
                T a

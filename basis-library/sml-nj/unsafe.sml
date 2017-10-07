@@ -13,7 +13,7 @@ functor UnsafeMonoArray (A: MONO_ARRAY_EXTRA): UNSAFE_MONO_ARRAY =
 
       val sub = unsafeSub
       val update = unsafeUpdate
-      val create = fromPoly o Array.uninit
+      val create = fromPoly o Array.alloc
    end
 
 functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =

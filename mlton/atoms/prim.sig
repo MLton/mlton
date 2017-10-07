@@ -26,12 +26,12 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_copyArray (* backend *)
+               Array_alloc (* backend *)
+             | Array_copyArray (* backend *)
              | Array_copyVector (* backend *)
              | Array_length (* ssa to rssa *)
              | Array_sub (* ssa to ssa2 *)
              | Array_toVector (* backend *)
-             | Array_uninit (* backend *)
              | Array_update (* ssa to ssa2 *)
              | CPointer_add (* codegen *)
              | CPointer_diff (* codegen *)
@@ -215,9 +215,9 @@ signature PRIM =
       sharing type t = ApplyResult.prim
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
+      val arrayAlloc: 'a t
       val arrayLength: 'a t
       val arrayToVector: 'a t
-      val arrayUninit: 'a t
       val arrayUpdate: 'a t
       val assign: 'a t
       val bogus: 'a t
@@ -272,7 +272,7 @@ signature PRIM =
        *   same args and has no side effects.
        * isFuntional implies not maySideEffect.
        * examples: Array_length, MLton_equal, Vector_vector, Word_add
-       * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
+       * not examples: Array_alloc, Array_sub, Ref_deref, Ref_ref
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t

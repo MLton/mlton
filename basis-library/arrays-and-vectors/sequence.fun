@@ -93,8 +93,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                  handle Overflow => raise Fail "Sequence.length"
             else SeqIndex.toIntUnsafe (S.length s)
 
-      fun uninit n = S.uninit (fromIntForLength n)
-      fun unsafeUninit n = S.unsafeUninit (SeqIndex.fromIntUnsafe n)
+      fun alloc n = S.alloc (fromIntForLength n)
+      fun unsafeAlloc n = S.unsafeAlloc (SeqIndex.fromIntUnsafe n)
 
       fun create n =
          let
@@ -234,7 +234,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                        handle Overflow => raise Size)
                               else (fn (sl, s) => s +? S.Slice.length sl)
                         val n = List.foldl add 0 sls
-                        val a = Primitive.Array.uninit n
+                        val a = Primitive.Array.alloc n
                         fun loop (di, sls) =
                            case sls of
                               [] => S.unsafeFromArray a
@@ -260,7 +260,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                               else (fn (sl, s) => 
                                        (s +? sepn +? S.Slice.length sl))
                         val n = List.foldl add (S.Slice.length sl) sls
-                        val a = Primitive.Array.uninit n
+                        val a = Primitive.Array.alloc n
                         fun loop (di, sls) =
                            case sls of
                               [] => raise Fail "Sequence.Slice.concatWith"

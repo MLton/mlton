@@ -51,6 +51,7 @@ signature SEQUENCE =
       val concat: 'a sequence list -> 'a sequence 
 
       (* Extra *)
+      val alloc: int -> 'a sequence
       val append: 'a sequence * 'a sequence -> 'a sequence 
       val create:
          int -> {done: unit -> 'a sequence,
@@ -60,8 +61,7 @@ signature SEQUENCE =
       val new: int * 'a elt -> 'a sequence 
       val unfoldi: int * 'b * (int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
-      val uninit: int -> 'a sequence
-      val unsafeUninit: int -> 'a sequence
+      val unsafeAlloc: int -> 'a sequence
 
       (* Used to implement Substring/String functions *)
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool

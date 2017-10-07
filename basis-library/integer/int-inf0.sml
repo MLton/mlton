@@ -542,7 +542,7 @@ structure IntInf =
                           if sextd andalso (#isNeg other) w
                              then loop ((#neg other) w, 1, [(0,0w1)])
                              else loop (w, 1, [(0,0w0)])
-                       val a = A.uninitUnsafe n
+                       val a = A.allocUnsafe n
                        fun loop acc =
                           case acc of
                              [] => ()

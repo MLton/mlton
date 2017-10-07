@@ -69,20 +69,20 @@ functor PrimSequence (S: sig
 
       fun length s = S.length s
 
-      fun unsafeArrayUninit n = Array.uninitUnsafe n
-      fun arrayUninit n =
+      fun unsafeArrayAlloc n = Array.allocUnsafe n
+      fun arrayAlloc n=
          if Primitive.Controls.safe
             andalso gtu (n, maxLen)
             then raise Size
-            else Array.uninitUnsafe n
-      fun unsafeUninit n = S.fromArray (unsafeArrayUninit n)
-      fun uninit n = S.fromArray (arrayUninit n)
+            else Array.allocUnsafe n
+      fun unsafeAlloc n = S.fromArray (unsafeArrayAlloc n)
+      fun alloc n = S.fromArray (arrayAlloc n)
       val unsafeFromArray = S.fromArray
       exception CreateAlreadyGotVector
       exception CreateVectorNotFull
       fun create n =
         let
-           val a = arrayUninit n
+           val a = arrayAlloc n
            val subLim : SeqIndex.t ref = ref 0
            fun sub i =
               if Primitive.Controls.safe andalso geu (i, !subLim) then
@@ -119,7 +119,7 @@ functor PrimSequence (S: sig
 
       fun unfoldi (n, b, f) =
          let
-            val a = arrayUninit n
+            val a = arrayAlloc n
             fun loop (i, b)  =
                if i >= n
                   then b
@@ -349,7 +349,7 @@ functor PrimSequence (S: sig
             fun sequence (sl as T {seq, start, len}): 'a sequence =
                if S.isMutable orelse (start <> 0 orelse len <> S.length seq)
                   then let
-                          val a = arrayUninit len
+                          val a = arrayAlloc len
                        in
                           S.copyUnsafe (a, 0, seq, start, len)
                           ; S.fromArray a
@@ -365,7 +365,7 @@ functor PrimSequence (S: sig
                      val (seq1, start1, len1) = base sl1
                      val (seq2, start2, len2) = base sl2
                      val n = len1 +? len2
-                     val a = arrayUninit n
+                     val a = arrayAlloc n
                   in
                      S.copyUnsafe (a, 0, seq1, start1, len1)
                      ; S.copyUnsafe (a, len1, seq2, start2, len2)
@@ -490,7 +490,7 @@ structure Vector =
             if Primitive.Controls.safe andalso SeqIndex.geu (i, length v)
                then raise Subscript
             else let
-                    val a = Array.uninitUnsafe (length v)
+                    val a = Array.allocUnsafe (length v)
                     val () = copy {dst = a, di = 0, src = v}
                     val () = Array.updateUnsafe (a, i, x)
                  in
@@ -521,7 +521,7 @@ structure Array =
                fun unsafeUpdate arg = unsafeUpdateMk Array.updateUnsafe arg
                fun vector sl = 
                   let
-                     val a = unsafeUninit (length sl)
+                     val a = unsafeAlloc (length sl)
                      val () = unsafeCopy {dst = a, di = 0, src = sl}
                   in
                      Vector.fromArrayUnsafe a

@@ -1204,7 +1204,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
-                                 Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                                 Array_alloc => array (a 0)
+                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_length => arrayOrVectorLength ()
                                | Array_toVector =>
@@ -1230,7 +1231,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         :: ss,
                                         t)
                                     end
-                               | Array_uninit => array (a 0)
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()

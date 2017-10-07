@@ -51,6 +51,7 @@ signature PRIM_SEQUENCE =
 
 
       (* Extra *)
+      val alloc: SeqIndex.int -> 'a sequence
       val append: 'a sequence * 'a sequence -> 'a sequence
       val create:
          SeqIndex.int -> {done: unit -> 'a sequence,
@@ -60,7 +61,6 @@ signature PRIM_SEQUENCE =
       val new: SeqIndex.int * 'a elt -> 'a sequence
       val unfoldi: SeqIndex.int * 'b * (SeqIndex.int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: SeqIndex.int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
-      val uninit: SeqIndex.int -> 'a sequence
-      val unsafeUninit: SeqIndex.int -> 'a sequence
+      val unsafeAlloc: SeqIndex.int -> 'a sequence
       val unsafeFromArray: 'a elt array -> 'a sequence
   end

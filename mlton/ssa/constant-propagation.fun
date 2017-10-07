@@ -426,7 +426,7 @@ structure Value =
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.arrayUninit,
+                                                   prim = Prim.arrayAlloc,
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
@@ -901,14 +901,14 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_copyArray =>
+                  Array_alloc => array (arg 0, bear ())
+                | Array_copyArray =>
                      update (arg 0, dearray (arg 2))
                 | Array_copyVector =>
                      update (arg 0, devector (arg 2))
                 | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
-                | Array_uninit => array (arg 0, bear ())
                 | Array_update => update (arg 0, arg 2)
                 | Ref_assign =>
                      (coerce {from = arg 1, to = deref (arg 0)}; unit ())

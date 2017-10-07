@@ -508,7 +508,9 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_copyArray =>
+                     Array_alloc =>
+                        coerce {from = arg 0, to = arrayLength result}
+                   | Array_copyArray =>
                         let
                            val a = dearray (arg 0)
                         in
@@ -540,8 +542,6 @@ fun transform (program: Program.t): Program.t =
                              Vector {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
-                   | Array_uninit =>
-                        coerce {from = arg 0, to = arrayLength result}
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);

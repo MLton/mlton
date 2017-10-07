@@ -358,7 +358,10 @@ structure Type =
             val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
-               Array_copyArray =>
+               Array_alloc =>
+                  oneArg (fn n =>
+                          equals (n, seqIndex) andalso isVector result)
+             | Array_copyArray =>
                   fiveArgs
                   (fn (a0, a1, a2, a3, a4) =>
                    case (deVectorOpt a0, deVectorOpt a2) of
@@ -400,9 +403,6 @@ structure Type =
                                         (not vi orelse ai)
                                         andalso equals (ae, ve))
                     | _ => false)
-             | Array_uninit =>
-                  oneArg (fn n =>
-                          equals (n, seqIndex) andalso isVector result)
              | _ => default ()
          end
    end
