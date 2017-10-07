@@ -986,6 +986,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   let
                      fun none () = loop (i - 1, ss, t)
                      fun add s = loop (i - 1, s :: ss, t)
+                     fun add2 (s1, s2) = loop (i - 1, s1 :: s2 :: ss, t)
                      fun adds ss' = loop (i - 1, ss' @ ss, t)
                      val s = Vector.sub (statements, i)
                   in
@@ -1217,19 +1218,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_toVector"
                                            | SOME opt => opt
                                     in
-                                       loop
-                                       (i - 1,
-                                        Move
+                                       add2
+                                       (Move
                                         {dst = (Offset
                                                 {base = array,
                                                  offset = Runtime.headerOffset (),
                                                  ty = Type.objptrHeader ()}),
-                                         src = ObjptrTycon opt}
-                                        :: Bind {dst = (valOf var, vecTy),
-                                                 isMutable = false,
-                                                 src = Operand.cast (array, vecTy)}
-                                        :: ss,
-                                        t)
+                                         src = ObjptrTycon opt},
+                                        Bind {dst = (valOf var, vecTy),
+                                              isMutable = false,
+                                              src = Operand.cast (array, vecTy)})
                                     end
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
