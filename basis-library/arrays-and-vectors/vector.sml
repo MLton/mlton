@@ -33,7 +33,7 @@ structure Vector: VECTOR_EXTRA =
 
       val isSubvector = isSubsequence
 
-      val unsafeFromArray = Primitive.Vector.fromArrayUnsafe
+      val unsafeFromArray = Primitive.Vector.unsafeFromArray
 
       val vector = new
    end
