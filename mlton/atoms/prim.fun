@@ -34,12 +34,12 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_alloc (* backend *)
- | Array_copyArray (* backend *)
- | Array_copyVector (* backend *)
- | Array_length (* ssa to rssa *)
+   Array_alloc (* ssa to rssa (as runtime C fn) *)
+ | Array_copyArray (* ssa to rssa (as runtime C fn) *)
+ | Array_copyVector (* ssa to rssa (as runtime C fn) *)
+ | Array_length (* ssa2 to rssa *)
  | Array_sub (* ssa to ssa2 *)
- | Array_toVector (* backend *)
+ | Array_toVector (* ssa2 to rssa *)
  | Array_update (* ssa to ssa2 *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
