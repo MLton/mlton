@@ -75,7 +75,15 @@ struct
       (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
 
    (* too many arguments for the maps, curried to use <*> instead *)
-   fun makeTyp resolveTycon (args, ident) = Type.datatypee (resolveTycon ident)
+   fun makeTyp resolveTycon (args, ident) = 
+      case ident of
+          "bool" => Type.bool
+         | "ref" => Type.datatypee (Tycon.reff)
+         | "word8" => Type.word WordSize.word8
+         | "word16" => Type.word WordSize.word16
+         | "word32" => Type.word WordSize.word32
+         | "word64" => Type.word WordSize.word64
+         | _ => Type.datatypee (resolveTycon ident)
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
