@@ -379,6 +379,8 @@ fun layoutFull (p, layoutX) =
 
 val equals: 'a t * 'a t -> bool =
    fn (Array_alloc, Array_alloc) => true
+    | (Array_copyArray, Array_copyArray) => true
+    | (Array_copyVector, Array_copyVector) => true
     | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
