@@ -46,7 +46,9 @@ structure Unsafe: UNSAFE =
    struct
       structure Array =
          struct
+            val alloc = Array.alloc
             val sub = Array.unsafeSub
+            val uninit = Array.unsafeUninit
             val update = Array.unsafeUpdate
             val create = Array.array
          end

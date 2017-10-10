@@ -1229,6 +1229,33 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               isMutable = false,
                                               src = Operand.cast (array, vecTy)})
                                     end
+                               | Array_uninit =>
+                                    let
+                                       val array = a 0
+                                       val arrayTy = varType (arg 0)
+                                       val index = a 1
+                                       val eltTys =
+                                          case S.Type.deVectorOpt arrayTy of
+                                             NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninit"
+                                           | SOME eltTys => eltTys
+                                       val sss =
+                                          (Vector.toList o Vector.keepAllMapi)
+                                          (S.Prod.dest eltTys, fn (offset, {elt, ...}) =>
+                                           case toRtype elt of
+                                              NONE => NONE
+                                            | SOME elt =>
+                                                 if not (Type.isObjptr elt)
+                                                    then NONE
+                                                    else (SOME o update)
+                                                         {base = Base.VectorSub
+                                                                 {index = index,
+                                                                  vector = array},
+                                                                 baseTy = arrayTy,
+                                                                 offset = offset,
+                                                                 value = bogus elt})
+                                    in
+                                       adds (List.concat sss)
+                                    end
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()

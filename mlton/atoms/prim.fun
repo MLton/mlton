@@ -40,6 +40,7 @@ datatype 'a t =
  | Array_length (* to rssa *)
  | Array_sub (* to ssa2 *)
  | Array_toVector (* to rssa *)
+ | Array_uninit (* to rssa *)
  | Array_update (* to ssa2 *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
@@ -227,6 +228,7 @@ fun toString (n: 'a t): string =
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
+       | Array_uninit => "Array_uninit"
        | Array_update => "Array_update"
        | CPointer_add => "CPointer_add"
        | CPointer_diff => "CPointer_diff"
@@ -380,6 +382,7 @@ val equals: 'a t * 'a t -> bool =
     | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
+    | (Array_uninit, Array_uninit) => true
     | (Array_update, Array_update) => true
     | (CPointer_add, CPointer_add) => true
     | (CPointer_diff, CPointer_diff) => true
@@ -553,6 +556,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Array_length => Array_length
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
+    | Array_uninit => Array_uninit
     | Array_update => Array_update
     | CPointer_add => CPointer_add
     | CPointer_diff => CPointer_diff
@@ -805,6 +809,7 @@ val kind: 'a t -> Kind.t =
        | Array_length => Functional
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
+       | Array_uninit => SideEffect
        | Array_update => SideEffect
        | CPointer_add => Functional
        | CPointer_diff => Functional
@@ -1011,6 +1016,7 @@ in
        Array_length,
        Array_sub,
        Array_toVector,
+       Array_uninit,
        Array_update,
        CPointer_add,
        CPointer_diff,
@@ -1271,6 +1277,8 @@ fun 'a checkApp (prim: 'a t,
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
+       | Array_uninit =>
+            oneTarg (fn t => (twoArgs (array t, seqIndex), unit))
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
        | CPointer_add =>
@@ -1461,6 +1469,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
+       | Array_uninit => one (deArray (arg 0))
        | Array_update => one (deArray (arg 0))
        | CPointer_getObjptr => one result
        | CPointer_setObjptr => one (arg 2)

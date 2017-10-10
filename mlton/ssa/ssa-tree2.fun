@@ -354,6 +354,7 @@ structure Type =
             datatype z = datatype Prim.Name.t
             fun arg i = Vector.sub (args, i)
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
+            fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
             fun fiveArgs f = 5 = Vector.length args andalso f (arg 0, arg 1, arg 2, arg 3, arg 4)
             val seqIndex = word (WordSize.seqIndex ())
          in
@@ -403,6 +404,13 @@ structure Type =
                                         (not vi orelse ai)
                                         andalso equals (ae, ve))
                     | _ => false)
+             | Array_uninit =>
+                  twoArgs (fn (a0, a1) =>
+                           case deVectorOpt a0 of
+                              SOME p0 =>
+                                 Vector.forall (Prod.dest p0, #isMutable)
+                                 andalso equals (a1, seqIndex)
+                            | _ => false)
              | _ => default ()
          end
    end

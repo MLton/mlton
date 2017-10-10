@@ -160,6 +160,19 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                        end
                else unsafeUpdate (sl, i, x)
 
+            fun unsafeUninit (sl, i) =
+               S.Slice.unsafeUninit (sl, SeqIndex.fromIntUnsafe i)
+            fun uninit (sl, i) =
+               if Primitive.Controls.safe
+                  then let
+                          val i =
+                             (SeqIndex.fromInt i)
+                             handle Overflow => raise Subscript
+                       in
+                          S.Slice.uninit (sl, i)
+                       end
+               else unsafeUninit (sl, i)
+
             fun unsafeCopy {dst, di, src} =
                S.Slice.unsafeCopy
                {dst = dst,
@@ -434,6 +447,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
         fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i) 
         fun update (seq, i, x) = Slice.update (Slice.full seq, i, x)
         fun unsafeUpdate (seq, i, x) = Slice.unsafeUpdate (Slice.full seq, i, x)
+        fun uninit (seq, i) = Slice.uninit (Slice.full seq, i)
+        fun unsafeUninit (seq, i) = Slice.unsafeUninit (Slice.full seq, i)
         fun copy {dst, di, src} =
            Slice.copy {dst = dst, di = di, src = Slice.full src}
         fun unsafeCopy {dst, di, src} =

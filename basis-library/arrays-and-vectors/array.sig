@@ -41,8 +41,10 @@ signature ARRAY_EXTRA =
       structure ArraySlice: ARRAY_SLICE_EXTRA 
 
       val alloc: int -> 'a array
+      val uninit: 'a array * int -> unit
       val unsafeAlloc: int -> 'a array
       val unsafeSub: 'a array * int -> 'a
+      val unsafeUninit: 'a array * int -> unit
       val unsafeUpdate: 'a array * int * 'a -> unit
       val unsafeCopy: {dst: 'a array, di: int, src: 'a array} -> unit
       val unsafeCopyVec: {dst: 'a array, di: int, src: 'a vector} -> unit
