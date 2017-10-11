@@ -29,7 +29,10 @@ structure Prod =
 
       fun isEmpty p = Vector.isEmpty (dest p)
 
-      fun isMutable (T v) = Vector.exists (v, #isMutable)
+      fun allAreImmutable (T v) = Vector.forall (v, not o #isMutable)
+      fun allAreMutable (T v) = Vector.forall (v, #isMutable)
+      fun someIsImmutable (T v) = Vector.exists (v, not o #isMutable)
+      fun someIsMutable (T v) = Vector.exists (v, #isMutable)
 
       fun sub (T p, i) = Vector.sub (p, i)
 
@@ -360,57 +363,67 @@ structure Type =
          in
             case Prim.name prim of
                Array_alloc =>
-                  oneArg (fn n =>
-                          equals (n, seqIndex) andalso isVector result)
+                  oneArg
+                  (fn n =>
+                   case deVectorOpt result of
+                      SOME resp =>
+                         Prod.allAreMutable resp
+                         andalso equals (n, seqIndex)
+                    | _ => false)
              | Array_copyArray =>
                   fiveArgs
-                  (fn (a0, a1, a2, a3, a4) =>
-                   case (deVectorOpt a0, deVectorOpt a2) of
-                      (SOME p0, SOME p2) =>
-                         Vector.equals (Prod.dest p0, Prod.dest p2,
-                                        fn ({elt = e0, isMutable = i0},
-                                            {elt = e2, ...}) =>
-                                        i0
-                                        andalso equals (e0, e2))
-                         andalso equals (a1, seqIndex)
-                         andalso equals (a3, seqIndex)
-                         andalso equals (a4, seqIndex)
+                  (fn (dst, di, src, si, len) =>
+                   case (deVectorOpt dst, deVectorOpt src) of
+                      (SOME dstp, SOME srcp) =>
+                         Vector.equals (Prod.dest dstp, Prod.dest srcp,
+                                        fn ({elt = dstElt, isMutable = dstIsMutable},
+                                            {elt = srcElt, isMutable = srcIsMutable}) =>
+                                        dstIsMutable andalso srcIsMutable
+                                        andalso equals (dstElt, srcElt))
+                         andalso equals (di, seqIndex)
+                         andalso equals (si, seqIndex)
+                         andalso equals (len, seqIndex)
+                         andalso isUnit result
                     | _ => false)
              | Array_copyVector =>
                   fiveArgs
-                  (fn (a0, a1, a2, a3, a4) =>
-                   case (deVectorOpt a0, deVectorOpt a2) of
-                      (SOME p0, SOME p2) =>
-                         Vector.equals (Prod.dest p0, Prod.dest p2,
-                                        fn ({elt = e0, isMutable = i0},
-                                            {elt = e2, ...}) =>
-                                        i0
-                                        andalso equals (e0, e2))
-                         andalso equals (a1, seqIndex)
-                         andalso equals (a3, seqIndex)
-                         andalso equals (a4, seqIndex)
+                  (fn (dst, di, src, si, len) =>
+                   case (deVectorOpt dst, deVectorOpt src) of
+                      (SOME dstp, SOME srcp) =>
+                         Vector.equals (Prod.dest dstp, Prod.dest srcp,
+                                        fn ({elt = dstElt, isMutable = dstIsMutable},
+                                            {elt = srcElt, ...}) =>
+                                        dstIsMutable
+                                        andalso equals (dstElt, srcElt))
+                         andalso equals (di, seqIndex)
+                         andalso equals (si, seqIndex)
+                         andalso equals (len, seqIndex)
+                         andalso isUnit result
                     | _ => false)
              | Array_length =>
-                  oneArg (fn a =>
-                          isVector a andalso equals (result, seqIndex))
-             | Array_toVector =>
                   oneArg
                   (fn a =>
-                   case (deVectorOpt a, deVectorOpt result) of
-                      (SOME ap, SOME vp) =>
-                         Vector.equals (Prod.dest ap, Prod.dest vp,
-                                        fn ({elt = ae, isMutable = ai},
-                                            {elt = ve, isMutable = vi}) =>
-                                        (not vi orelse ai)
-                                        andalso equals (ae, ve))
+                   isVector a andalso equals (result, seqIndex))
+             | Array_toVector =>
+                  oneArg
+                  (fn arr =>
+                   case (deVectorOpt arr, deVectorOpt result) of
+                      (SOME arrp, SOME resp) =>
+                         Vector.equals (Prod.dest arrp, Prod.dest resp,
+                                        fn ({elt = arrElt, isMutable = arrIsMutable},
+                                            {elt = resElt, ...}) =>
+                                        arrIsMutable
+                                        andalso equals (arrElt, resElt))
                     | _ => false)
              | Array_uninit =>
-                  twoArgs (fn (a0, a1) =>
-                           case deVectorOpt a0 of
-                              SOME p0 =>
-                                 Vector.forall (Prod.dest p0, #isMutable)
-                                 andalso equals (a1, seqIndex)
-                            | _ => false)
+                  twoArgs
+                  (fn (arr, i) =>
+                   case deVectorOpt arr of
+                      SOME arrp =>
+                         Prod.allAreMutable arrp
+                         andalso equals (i, seqIndex)
+                         andalso isUnit result
+                    | _ => false)
              | _ => default ()
          end
    end

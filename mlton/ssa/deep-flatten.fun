@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -380,7 +380,7 @@ structure Value =
                     let
                        val {args = a, con, ...} = Equatable.value e
                     in
-                       if Prod.isMutable a orelse ObjectCon.isVector con
+                       if Prod.someIsMutable a orelse ObjectCon.isVector con
                           then unify (from, to)
                        else
                           case !f' of
@@ -405,7 +405,7 @@ structure Value =
           * preserved.
           *)
          not (Prod.isEmpty args)
-         andalso not (Prod.isMutable args)
+         andalso Prod.allAreImmutable args
          andalso (case con of
                      ObjectCon.Con _ => false
                    | ObjectCon.Tuple => true

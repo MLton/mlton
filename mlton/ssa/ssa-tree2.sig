@@ -20,18 +20,21 @@ signature SSA_TREE2 =
          sig
             type 'a t
 
+            val allAreImmutable: 'a t -> bool
+            val allAreMutable: 'a t -> bool
             val dest: 'a t -> {elt: 'a, isMutable: bool} vector
             val elt: 'a t * int -> 'a
             val empty: unit -> 'a t
             val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
             val foreach: 'a t * ('a -> unit) -> unit
             val isEmpty: 'a t -> bool
-            val isMutable: 'a t -> bool
             val keepAllMap: 'a t * ('a -> 'b option) -> 'b t
             val layout: 'a t * ('a -> Layout.t) -> Layout.t
             val length: 'a t -> int
             val make: {elt: 'a, isMutable: bool} vector -> 'a t
             val map: 'a t * ('a -> 'b) -> 'b t
+            val someIsImmutable: 'a t -> bool
+            val someIsMutable: 'a t -> bool
             val sub: 'a t * int -> {elt: 'a, isMutable: bool}
          end
 

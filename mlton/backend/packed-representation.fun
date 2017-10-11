@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -2560,7 +2561,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                             init = TupleRep.unit}
                               val () = Vector.foreach (rs, fn r =>
                                                        Value.affect (r, tr))
-                              val hasIdentity = Prod.isMutable args
+                              val hasIdentity = Prod.someIsMutable args
                               val () =
                                  List.push
                                  (delayedObjectTypes, fn () =>
@@ -2582,7 +2583,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                            end
                       | ObjectCon.Vector =>
                            let
-                              val hasIdentity = Prod.isMutable args
+                              val hasIdentity = Prod.someIsMutable args
                               val args = Prod.dest args
                               fun tupleRep opt =
                                  let
@@ -2729,7 +2730,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
            case conRep con of
               ConRep.Tuple (TupleRep.Indirect opr) =>
                  (objptrTycon,
-                  ObjectType.Normal {hasIdentity = Prod.isMutable args,
+                  ObjectType.Normal {hasIdentity = Prod.someIsMutable args,
                                      ty = ObjptrRep.componentsTy opr}) :: ac
             | _ => ac))
       val objectTypes = ref objectTypes
