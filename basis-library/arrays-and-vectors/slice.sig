@@ -1,4 +1,5 @@
-(* Copyright (C) 2014 Rob Simmons.
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,6 +24,8 @@ signature SLICE =
                     ('a slice * int * 'a elt) -> unit
       val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                           ('a slice * int * 'a elt) -> unit
+      val copy: {dst: 'a elt Array.array, di: int, src: 'a slice} -> unit
+      val unsafeCopy: {dst: 'a elt Array.array, di: int, src: 'a slice} -> unit
       val full: 'a sequence -> 'a slice
       val slice: 'a sequence * int * int option -> 'a slice
       val unsafeSlice: 'a sequence * int * int option -> 'a slice

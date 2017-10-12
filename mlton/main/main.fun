@@ -950,6 +950,8 @@ fun commandLine (args: string list): unit =
             (* Windows is never position independent *)
             (MinGW, _, _) => false
           | (Cygwin, _, _) => false
+            (* GCC on AMD64 now produces PIC by default in many Linux distros. *)
+          | (Linux, AMD64, _) => true
             (* Technically, Darwin should always be PIC.
              * However, PIC on i386/darwin is unimplemented so we avoid it.
              * PowerPC PIC is bad too, but the C codegen will use PIC behind

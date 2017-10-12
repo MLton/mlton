@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,18 +28,9 @@ signature PRIM_TYCONS_STRUCTS =
       val layout: t -> Layout.t
    end
 
-signature BINDING_STRENGTH =
-   sig
-      type t
-
-      val unit: t
-   end
-
 signature PRIM_TYCONS =
    sig
       include PRIM_TYCONS_SUBSTRUCTS
-
-      structure BindingStrength: BINDING_STRENGTH
 
       type tycon
 
@@ -66,10 +58,16 @@ signature PRIM_TYCONS =
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp: tycon * Layout.t vector -> Layout.t
-      val layoutAppPretty:
-         tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
-         -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon
+      val layoutAppPretty:
+         tycon
+         * LayoutPretty.t vector
+         * {layoutPretty: tycon -> Layout.t}
+         -> LayoutPretty.t
+      val layoutAppPrettyNormal:
+         Layout.t
+         * LayoutPretty.t vector
+         -> LayoutPretty.t
       val prims: {admitsEquality: AdmitsEquality.t,
                   kind: Kind.t,
                   name: string,

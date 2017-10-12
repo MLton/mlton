@@ -133,6 +133,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                   then (SeqIndex.toInt (S.Slice.length sl))
                        handle Overflow => raise Fail "Sequence.Slice.length"
                   else SeqIndex.toIntUnsafe (S.Slice.length sl)
+
             fun unsafeSub (sl, i) =
                S.Slice.unsafeSub (sl, SeqIndex.fromIntUnsafe i)
             fun sub (sl, i) = 
@@ -159,6 +160,18 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                           (S.Slice.updateMk updateUnsafe) (sl, i, x)
                        end
                else (unsafeUpdateMk updateUnsafe) (sl, i, x)
+
+            fun unsafeCopy {dst, di, src} =
+               S.Slice.unsafeCopy
+               {dst = dst,
+                di = SeqIndex.fromIntUnsafe di,
+                src = src}
+            fun copy {dst, di, src} =
+               (S.Slice.copy
+                {dst = dst,
+                 di = SeqIndex.fromInt di,
+                 src = src})
+               handle Overflow => raise Subscript
 
             val full = S.Slice.full
             fun unsafeSubslice (sl, start, len) =
@@ -212,7 +225,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                case sls of
                   [] => seq0 ()
                 | [sl] => sequence sl
-                | sls' as sl::sls =>
+                | sls =>
                      let
                         val add = 
                            if Primitive.Controls.safe 
@@ -220,16 +233,16 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                        (s +! S.Slice.length sl)
                                        handle Overflow => raise Size)
                               else (fn (sl, s) => s +? S.Slice.length sl)
-                        val n = List.foldl add 0 sls'
-                        fun loop (i, sl, sls) =
-                           if SeqIndex.< (i, S.Slice.length sl)
-                              then (S.Slice.unsafeSub (sl, i),
-                                    (i +? 1, sl, sls))
-                              else case sls of
-                                 [] => raise Fail "Sequence.Slice.concat"
-                               | sl :: sls => loop (0, sl, sls)
+                        val n = List.foldl add 0 sls
+                        val a = Primitive.Array.uninit n
+                        fun loop (di, sls) =
+                           case sls of
+                              [] => S.unsafeFromArray a
+                            | sl::sls =>
+                                 (S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                  ; loop (di +? S.Slice.length sl, sls))
                      in
-                        #1 (S.unfold (n, (0, sl, sls), loop))
+                        loop (0, sls)
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                case sls of
@@ -247,16 +260,27 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                               else (fn (sl, s) => 
                                        (s +? sepn +? S.Slice.length sl))
                         val n = List.foldl add (S.Slice.length sl) sls
-                        fun loop (b, i, sl, sls) =
-                            if SeqIndex.< (i, S.Slice.length sl)
-                            then (S.Slice.unsafeSub (sl, i),
-                               (b, SeqIndex.+? (i, 1), sl, sls))
-                            else case (b, sls) of
-                               (true, _) => loop (false, 0, sep, sls)
-                             | (_, []) => raise Fail "Sequence.Slice.concatWith"
-                             | (_, sl :: sls) => loop (true, 0, sl, sls)
+                        val a = Primitive.Array.uninit n
+                        fun loop (di, sls) =
+                           case sls of
+                              [] => raise Fail "Sequence.Slice.concatWith"
+                            | [sl] =>
+                                 let
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                 in
+                                    S.unsafeFromArray a
+                                 end
+                            | sl::sls =>
+                                 let
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                    val di = di +? S.Slice.length sl
+                                    val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sep}
+                                    val di = di +? sepn
+                                 in
+                                    loop (di, sls)
+                                 end
                      in
-                        #1 (S.unfold (n, (true, 0, sl, sls), loop))
+                        loop (0, sl::sls)
                      end
             fun triml k sl =
                if Primitive.Controls.safe andalso Int.< (k, 0)
@@ -413,6 +437,10 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
            Slice.updateMk updateUnsafe (Slice.full seq, i, x)
         fun unsafeUpdateMk updateUnsafe (seq, i, x) =
            Slice.unsafeUpdateMk updateUnsafe (Slice.full seq, i, x)
+        fun copy {dst, di, src} =
+           Slice.copy {dst = dst, di = di, src = Slice.full src}
+        fun unsafeCopy {dst, di, src} =
+           Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
         fun append seqs = make2 Slice.append seqs 
         fun concat seqs = Slice.concat (List.map Slice.full seqs) 
         fun appi f = make (Slice.appi f)

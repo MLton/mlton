@@ -98,7 +98,7 @@ val _ = f "foo"
 MLton reports the error message
 
 ----
-Error: z.sml 3.9.
+Error: z.sml 3.9-3.15.
   Function applied to incorrect argument.
     expects: [t]
     but got: [string]
@@ -114,8 +114,10 @@ Next, if there are multiple names of the same length, then MLton uses
 the most recently defined name.  It is this tiebreaker that causes
 MLton to prefer `t` to `int` in the above example.
 
-In signature matching, most recently defined is taken to include all
-of the definitions introduced by the structure.  For example
+In signature matching, most recently defined is not taken to include
+all of the definitions introduced by the structure (since the matching
+takes place outside the structure and before it is defined).  For
+example, in the following type-incorrect program
 
 [source,sml]
 ----
@@ -132,43 +134,39 @@ structure S:
 MLton reports the error message
 
 ----
-Error: z.sml 2.4.
-  Variable type in structure disagrees with signature.
-    variable: x
-    structure: [string]
-    signature: [t]
+Error: z.sml 2.4-4.6.
+  Variable in structure disagrees with signature (type): x.
+    structure: val x: [string]
+    defn at: z.sml 7.11-7.11
+    signature: val x: [int]
+    spec at: z.sml 3.11-3.11
 ----
 
-in which the `[t]` refers to the type defined in the structure, since
-that is more recent than the definition of `int`.
-
-In signatures with type equations, this can be somewhat confusing.
-For example.
+If there is a type that only exists inside the structure being
+matched, then the prefix `_str.` is used.  For example, in the
+following type-incorrect program
 
 [source,sml]
 ----
 structure S:
    sig
-      type t
-      type u = t
+      val x: int
    end =
    struct
-      type t = int
-      type u = char
+      datatype t = T
+      val x = T
    end
 ----
 
 MLton reports the error message
 
 ----
-Error: z.sml 2.4.
-  Type definition in structure disagrees with signature.
-    type: u
-    structure: [u]
-    signature: [t]
+Error: z.sml 2.4-4.6.
+  Variable in structure disagrees with signature (type): x.
+    structure: val x: [_str.t]
+    defn at: z.sml 7.11-7.11
+    signature: val x: [int]
+    spec at: z.sml 3.11-3.11
 ----
 
-This error reflects the fact that the signature requires type `u` to
-equal `t`, but that in the structure, `u` is defined to be `char`,
-whose most-recent name is `u`, while the signature requires `u` to be
-`int`, whose most-recent name is `t`.
+in which the `[_str.t]` refers to the type defined in the structure.

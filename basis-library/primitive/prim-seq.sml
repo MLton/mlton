@@ -17,6 +17,8 @@ structure Array =
    struct
       open Array
       val uninitUnsafe = _prim "Array_uninit": SeqIndex.int -> 'a array;
+      val copyArrayUnsafe = _prim "Array_copyArray": 'a array * SeqIndex.int * 'a array * SeqIndex.int * SeqIndex.int -> unit;
+      val copyVectorUnsafe = _prim "Array_copyVector": 'a array * SeqIndex.int * 'a vector * SeqIndex.int * SeqIndex.int -> unit;
       val length = _prim "Array_length": 'a array -> SeqIndex.int;
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)
       (* val maxLen': SeqIndex.int = SeqIndex.maxInt' *)

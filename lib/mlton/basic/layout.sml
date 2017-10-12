@@ -72,11 +72,8 @@ end
 
 fun indent (t, n) = T {length = length t, tree = Indent (t, n)}
 
-val tabSize: int = 8
-
 fun blanks (n: int): string =
-   concat [String.make (n div tabSize, #"\t"),
-           String.make (n mod tabSize, #" ")]
+   String.make (n, #" ")
 
 fun outputTree (t, out) =
    let val print = Out.outputc out

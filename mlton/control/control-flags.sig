@@ -98,7 +98,8 @@ signature CONTROL_FLAGS =
             val allowFFI: (bool,bool) t
             val allowOverload: (bool,bool) t
             val allowPrim: (bool,bool) t
-            val allowRebindEquals: (bool,bool) t
+            val allowRedefineSpecialIds: (bool,bool) t
+            val allowSpecifySpecialIds: (bool,bool) t
             val deadCode: (bool,bool) t
             val forceUsed: (unit,bool) t
             val ffiStr: (string,string option) t
