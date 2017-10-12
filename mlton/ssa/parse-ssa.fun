@@ -76,14 +76,16 @@ struct
 
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
-      case ident of
-          "bool" => Type.bool
-         | "ref" => Type.datatypee (Tycon.reff)
-         | "word8" => Type.word WordSize.word8
-         | "word16" => Type.word WordSize.word16
-         | "word32" => Type.word WordSize.word32
-         | "word64" => Type.word WordSize.word64
-         | _ => Type.datatypee (resolveTycon ident)
+         case ident of
+             "bool" => Type.bool
+            | "tuple" => Type.tuple args
+            | "array" => Type.array (Vector.first args) 
+            | "ref" => Type.reff (Vector.first args)
+            | "word8" => Type.word WordSize.word8
+            | "word16" => Type.word WordSize.word16
+            | "word32" => Type.word WordSize.word32
+            | "word64" => Type.word WordSize.word64
+            | _ => Type.datatypee (resolveTycon ident)
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
@@ -102,7 +104,8 @@ struct
    (* parse in a constructor (to Con.t) *)
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
       (ident <* spaces,
-      Vector.fromList <$> T.many (token "of" *> (typ resolveTycon) <* spaces) )
+      Vector.fromList <$> T.many (token "of" *> T.char #"(" *> (typ
+      resolveTycon) <* T.char #")" <* spaces) )
 
    fun makeDt resolveTycon (tycon, cons) =
       Datatype.T
@@ -137,14 +140,17 @@ struct
                             ident = Con.toString con) of
                SOME con => con
              | NONE => resolveCon0 ident
-         val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
+         (*
+         fun resolveTycon0 ident = makeNameResolver(Tycon.newString)
          fun resolveTycon ident =
-            case List.peekMap (Tycon.prims, fn {name, tycon, ...} =>
-                               if ident = name then SOME tycon else NONE) of
-               SOME con => con
-             | NONE => if ident = "unit"
-                          then Tycon.tuple
-                       else resolveTycon0 ident
+           case List.peekMap (Tycon.prims, fn {name, tycon, ...} => 
+                              if ident = name then SOME tycon else NONE) of
+                SOME con => con
+              | NONE if ident = "unit"
+                        then Tycon.tuple
+                        else resolveTycon0 ident
+          *)
+         fun resolveTycon ident = makeNameResolver(Tycon.newString) ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
          T.compose(skipComments (),
