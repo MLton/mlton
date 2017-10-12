@@ -11,7 +11,6 @@ struct
    structure P = Parse
    open P.Ops
    infix 1 <|> >>=
-   infix 2 <&>
    infix  3 <*> <* *>
    infixr 4 <$> <$$> <$$$> <$ <$?> 
 

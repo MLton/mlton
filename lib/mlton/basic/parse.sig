@@ -22,7 +22,6 @@ signature PARSE =
 
       (*
        * infix 1 <|> >>=
-       * infix 2 <&>
        * infix  3 <*> <* *>
        * infixr 4 <$> <$$> <$$$> <$ <$?> 
        *)
@@ -41,7 +40,6 @@ signature PARSE =
       (* try both parsers, take the result of the first success *)
       val <|> : 'a t * 'a t -> 'a t
       (* try both parsers, fail if either fails, or take the last success *)
-      val <&> : 'a t * 'a t -> 'a t
       structure Ops : sig
          val >>= : 'a t * ('a -> 'b t) -> 'b t
          val <*> : ('a -> 'b) t * 'a t -> 'b t
@@ -53,7 +51,6 @@ signature PARSE =
          val <* : 'a t * 'b t -> 'a t
          val *> : 'a t * 'b t -> 'b t
          val <|> : 'a t * 'a t -> 'a t
-         val <&> : 'a t * 'a t -> 'a t
       end
 
       val pure: 'a -> 'a t

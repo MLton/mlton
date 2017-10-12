@@ -8,7 +8,6 @@ structure Parse :> PARSE =
 struct
 
 infix 1 <|> >>=
-infix 2 <&>
 infix  3 <*> <* *>
 infixr 4 <$> <$$> <$$$> <$ <$?> 
 
@@ -116,14 +115,6 @@ fun a <|> b = fn s => case (a s)
       | Failure err2 => Failure (List.append(err1, err2))
       | FailCut err2 => Failure (err2))
     | FailCut err1 => Failure err1
-fun a <&> b = fn s => case (a s)
-   of Success r => (case (b s) of
-        Success r' => Success r'
-      | Failure err => Failure err
-      | FailCut err => Failure err)
-    | Failure err => Failure err
-    | FailCut err => Failure err
-
 
 structure Ops = struct
    val (op >>=) = (op >>=)
@@ -136,7 +127,6 @@ structure Ops = struct
    val (op *>) = (op *>)
    val (op <$) = (op <$)
    val (op <|>) = (op <|>)
-   val (op <&>) = (op <&>)
 end
 
 
