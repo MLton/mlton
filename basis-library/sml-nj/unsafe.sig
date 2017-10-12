@@ -18,8 +18,10 @@ signature UNSAFE_MONO_ARRAY =
       val update: array * int * elem -> unit
    end
 
-(* sweeks took out update and create because vectors are immutable
- * and mlton optimizations may break if you update them.
+(* SML/NJ provides 'create' and 'update',
+ * but they are not provided with MLton,
+ * because vectors are immutable and optimizations may
+ * break if they are updated.
  *)
 signature UNSAFE_MONO_VECTOR =
    sig
@@ -83,7 +85,7 @@ signature UNSAFE =
       structure Real64Vector: UNSAFE_MONO_VECTOR
       structure Vector:
          sig
-            (* val create: int -> 'a vector *)
+            (* val create: int * 'a list -> 'a vector *)
             val sub: 'a vector * int -> 'a
          end
       structure WordArray: UNSAFE_MONO_ARRAY
