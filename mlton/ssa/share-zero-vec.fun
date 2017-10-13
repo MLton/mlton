@@ -13,10 +13,16 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
     (* split a list of statements at the point where the test var is declared;
      * return (pre, post, match)
      *)
-    fun split ((x as Statement.T {var, ...})::xs, test, pre) =
-          if isSome var andalso Var.equals (valOf var, test)
+    infix isIn;
+    fun x isIn xs =
+      case xs of
+          []    => false
+        | y::ys => if Var.equals (x, y) then true else x isIn ys
+
+    fun split ((x as Statement.T {var, ...})::xs, arrayVars, pre) =
+          if isSome var andalso (valOf var) isIn arrayVars
           then (List.rev pre, xs, SOME x)
-          else split (xs, test, x::pre)
+          else split (xs, arrayVars, x::pre)
       | split ([], _, pre) = (List.rev pre, [], NONE)
 
 
@@ -29,7 +35,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
               val {args, blocks, mayInline, name, raises, returns, start} =
                   Function.dest f
 
-              (* 1st pass: assemble a set of arrays to be frozen to vectors *)
+              (* 1st pass: compile a list of array vars to be frozen to vectors *)
               val funArrays =
                 Vector.foldr
                 (blocks,
@@ -57,15 +63,41 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                   end))
 
               (* TODO: 2nd iteration: new branching/merging *)
+              val blocks =
+                Vector.toListMap
+                (blocks,
+                  fn (block as Block.T {label, args, statements, transfer}) =>
+                  let
+                    val statements' = Vector.toList statements
+                    val (pre, post, match) =
+                      split (statements', funArrays, [])
+                  in
+                    if isSome match
+                    then (* TODO: create new blocks; for now just a stub *)
+                      Block.T {label = label,
+                              args = args,
+                              statements = statements,
+                              transfer = transfer}
+                    else block
+                  end)
+
+              val blocks = Vector.fromList blocks
+
 
             in
-              functions
+              Function.new {args = args,
+                            blocks = blocks,
+                            mayInline = mayInline,
+                            name = name,
+                            raises = raises,
+                            returns = returns,
+                            start = start}
             end)
 
       in
           Program.T {datatypes = datatypes,
                     globals = globals,
-                    functions = functions,
+                    functions = functions',
                     main = main}
       end
 
