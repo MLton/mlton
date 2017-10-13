@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ParseSexp (S: PARSE_STRUCTS): PARSE_SEXP = 
+functor ParseSexp (S: PARSE_SEXP_STRUCTS): PARSE_SEXP =
 struct
 
 open S
