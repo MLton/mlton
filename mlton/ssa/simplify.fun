@@ -34,6 +34,7 @@ structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
 structure SimplifyTypes = SimplifyTypes (S)
+structure ShareZeroVec = ShareZeroVec (S)
 structure Useless = Useless (S)
 
 type pass = {name: string,
@@ -62,6 +63,7 @@ val ssaPassesDefault =
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
+   {name = "shareZeroVec", doit = ShareZeroVec.transform, execute = false} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
     *   - before inlining so that equality functions can be inlined
@@ -225,6 +227,7 @@ local
                  ("redundantTests", RedundantTests.transform),
                  ("removeUnused", RemoveUnused.transform),
                  ("simplifyTypes", SimplifyTypes.transform),
+                 ("shareZeroVec", ShareZeroVec.transform),
                  ("useless", Useless.transform),
                  ("breakCriticalEdges",fn p => 
                   S.breakCriticalEdges (p, {codeMotion = true})),

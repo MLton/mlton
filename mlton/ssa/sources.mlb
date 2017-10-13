@@ -81,6 +81,7 @@ local
    remove-unused.fun
    remove-unused2.fun
    simplify-types.fun
+   share-zero-vec.fun
    useless.fun
    zone.fun
    simplify.sig

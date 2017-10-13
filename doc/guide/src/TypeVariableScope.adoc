@@ -144,18 +144,22 @@ fun f x =
 ----
 +
 This fails to type check because `x` and `y` must have the same type,
-and hence `'a` can not be generalized at `fun g`.  MLton reports the
-following error.
+but the `x` occurs outside the scope of the type variable `'a`.  MLton
+reports the following error.
 +
 ----
-Error: scope.sml 3.7.
-  Unable to generalize 'a.
-    in: fun 'a g ((y): 'a) = (if true then x else y)
+Error: z.sml 3.21-3.41.
+  Then and else branches disagree.
+    then: [???]
+    else: ['a]
+    in: if true then x else y
+    note: type would escape its scope: 'a
+    escape to: z.sml 1.1-6.5
 ----
 +
 This problem could be fixed either by adding an explicit type
 constraint, as in `fun f (x: 'a)`, or by explicitly scoping `'a`, as
-in `fun 'a f x`.
+in `fun 'a f x = ...`.
 
 
 == Restrictions on type variable scope ==
@@ -178,8 +182,9 @@ fun 'a f (x: 'a) =
 MLton reports the following error.
 
 ----
-Error: z.sml 3.11.
-  Type variable 'a scoped at an outer declaration.
+Error: z.sml 3.11-3.12.
+  Type variable scoped at an outer declaration: 'a.
+    scoped at: z.sml 1.1-6.6
 ----
 
 This is an error even if the scoping is implicit.  That is, the

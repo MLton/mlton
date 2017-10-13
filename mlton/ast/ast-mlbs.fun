@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,6 +15,9 @@ open S
 structure AstPrograms = AstPrograms (S)
 
 open AstPrograms Layout
+
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
 
 val layouts = List.map
 structure Wrap = Region.Wrap
@@ -80,12 +84,12 @@ and checkSyntaxBasdec (d: basdec): unit =
       Ann (_, _, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
          reportDuplicates
-         (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
+         (basbnds, {ctxt = mkCtxt (d, layoutBasdec),
+                    equals = (fn ({name = id, ...}, {name = id', ...}) =>
                               Basid.equals (id, id')),
                     layout = Basid.layout o #name,
                     name = "basis definition",
-                    region = Basid.region o #name,
-                    term = fn () => layoutBasdec d})
+                    region = Basid.region o #name})
     | Defs def => ModIdBind.checkSyntax def
     | Local (dec1, dec2) => 
          (checkSyntaxBasdec dec1

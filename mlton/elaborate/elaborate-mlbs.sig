@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -13,7 +14,6 @@ signature ELABORATE_MLBS_STRUCTS =
       structure Decs: DECS
       structure Env: ELABORATE_ENV
       sharing Ast = Env.Ast
-      sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML = Decs.CoreML = Env.CoreML
       sharing Decs = Env.Decs
    end

@@ -194,6 +194,8 @@ end
 
 val cons = op ::
 
+val snoc = fn (l, x) => l @ [x]
+
 fun compare (l, l', comp) =
    let
       val rec compare =

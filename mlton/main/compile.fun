@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -41,9 +41,10 @@ structure CoreML = CoreML (open Atoms
                                              var = var}
 
                                  fun layout t = 
-                                    layoutPrettyAux 
-                                    (t, {expandOpaque = true,
-                                         localTyvarNames = false})
+                                    #1 (layoutPretty
+                                        (t, {expandOpaque = true,
+                                             layoutPrettyTycon = Tycon.layout,
+                                             layoutPrettyTyvar = Tyvar.layout}))
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
@@ -164,7 +165,11 @@ local
    structure Con = TypeEnv.Con
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
-   structure Tyvar = TypeEnv.Tyvar
+   structure Tyvar =
+      struct
+         open TypeEnv.Tyvar
+         open TypeEnv.TyvarExt
+      end
 
    val primitiveDatatypes =
       Vector.new3
@@ -173,7 +178,7 @@ local
         cons = Vector.new2 ({con = Con.falsee, arg = NONE},
                             {con = Con.truee, arg = NONE})},
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.list,
            tyvars = Vector.new1 a,
@@ -185,7 +190,7 @@ local
                                               Type.list (Type.var a))))})}
        end,
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.reff,
            tyvars = Vector.new1 a,
@@ -227,50 +232,53 @@ local
             let
                val _ =
                   List.foreach
-                  (Tycon.prims, fn {kind, name, tycon, ...} =>
-                   extendTycon
-                   (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
-                                             Region.bogus),
-                    TypeStr.tycon (tycon, kind),
-                    {forceUsed = false, isRebind = false}))
+                  (Tycon.prims, fn {name, tycon, ...} =>
+                   if List.contains ([Tycon.arrow, Tycon.tuple], tycon, Tycon.equals)
+                      then ()
+                      else extendTycon
+                           (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
+                                                     Region.bogus),
+                            TypeStr.tycon tycon,
+                            {forceUsed = false, isRebind = false}))
                val _ =
                   Vector.foreach
                   (primitiveDatatypes, fn {tyvars, tycon, cons} =>
                    let
                       val cons =
-                         Env.newCons
-                         (E, Vector.map (cons, fn {con, ...} =>
-                                         {con = con, name = Con.toAst con}))
-                         (Vector.map
-                          (cons, fn {arg, ...} =>
-                           let
-                              val resultType =
-                                 Type.con (tycon, Vector.map (tyvars, Type.var))
-                           in
-                              Scheme.make
-                              {canGeneralize = true,
-                               ty = (case arg of
-                                        NONE => resultType
-                                      | SOME t => Type.arrow (t, resultType)),
-                               tyvars = tyvars}
-                           end))
+                         Vector.map
+                         (cons, fn {con, arg} =>
+                          let
+                             val res =
+                                Type.con (tycon, Vector.map (tyvars, Type.var))
+                             val ty =
+                                case arg of
+                                   NONE => res
+                                 | SOME arg => Type.arrow (arg, res)
+                             val scheme =
+                                Scheme.make
+                                {canGeneralize = true,
+                                 ty = ty,
+                                 tyvars = tyvars}
+                          in
+                             {con = con,
+                              name = Con.toAst con,
+                              scheme = scheme}
+                          end)
+                      val cons = Env.newCons (E, cons)
                    in
                       extendTycon
                       (E, Tycon.toAst tycon,
-                       TypeStr.data (tycon,
-                                     TypeStr.Kind.Arity (Vector.length tyvars),
-                                     cons),
+                       TypeStr.data (tycon, cons),
                        {forceUsed = false, isRebind = false})
                    end)
                val _ =
                   extendTycon (E,
                                Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
-                               TypeStr.def (Scheme.fromType Type.unit,
-                                            TypeStr.Kind.Arity 0),
+                               TypeStr.def (Scheme.fromType Type.unit),
                                {forceUsed = false, isRebind = false})
                val scheme = Scheme.fromType Type.exn
                val _ = List.foreach (primitiveExcons, fn c =>
-                                     extendExn (E, Con.toAst c, c, SOME scheme))
+                                     extendExn (E, Con.toAst c, c, scheme))
             in
                ()
             end
