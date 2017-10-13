@@ -466,7 +466,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
    (if allowLineComments ()
        then ()
        else error (source, yypos, lastPos (yypos, yytext),
-                   "Line comments disallowed, compile with -default-ann 'allowLineConsts true'")
+                   "Line comments disallowed, compile with -default-ann 'allowLineComments true'")
     ; startComment (source, yypos, fn () =>
                     YYBEGIN INITIAL)
     ; YYBEGIN LINE_COMMENT
@@ -488,7 +488,7 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
    (if allowLineComments ()
        then ()
        else error (source, yypos, lastPos (yypos, yytext),
-                   "Line comments disallowed, compile with -default-ann 'allowLineConsts true'")
+                   "Line comments disallowed, compile with -default-ann 'allowLineComments true'")
     ; startComment (source, yypos, fn () =>
                     YYBEGIN BLOCK_COMMENT)
     ; YYBEGIN LINE_COMMENT
