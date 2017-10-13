@@ -20,12 +20,12 @@ signature LIST
 signature OPTION
 signature ORDER
 signature ORDERED_RING
+signature PARSE
 signature PROMISE
 signature REAL
 signature RING
 signature RING_WITH_IDENTITY
 signature STREAM
-signature STREAM_PARSER
 signature STRING
 signature SUM
 signature T
@@ -91,6 +91,7 @@ structure OS
 structure Option
 structure Out
 structure Parse
+structure ParseSexp
 structure Pervasive
 structure Pid
 structure Pointer
@@ -123,7 +124,6 @@ structure Sexp
 structure Signal
 structure Socket
 structure Stream
-structure StreamParser
 structure String
 structure StringCvt
 structure Substring
@@ -269,8 +269,8 @@ string.sml
 instream.sml
 file.sig
 file.sml
-stream-parser.sig
-stream-parser.sml
+parse.sig
+parse.sml
 signal.sml
 process.sig
 dir.sig
@@ -382,8 +382,8 @@ mono-list.fun
 mono-option.fun
 pair.fun
 pair.sig
-parse.fun
-parse.sig
+parse-sexp.fun
+parse-sexp.sig
 pointer.sig
 pointer.sml
 port.sig
