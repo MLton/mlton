@@ -729,8 +729,8 @@ fun setupConstants() : unit =
 
 fun preCodegen (input: MLBString.t): Machine.Program.t =
    let
-      val _  = setupConstants()
       val xml = elaborate {input = input}
+      val _ = setupConstants ()
       val xml = simplifyXml xml
       val sxml = makeSxml xml
       val sxml = simplifySxml sxml
