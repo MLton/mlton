@@ -680,7 +680,22 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 ; result ())
          in
             case Prim.name prim of
-               Array_toVector =>
+               Array_toArray =>
+                  let
+                     val res = result ()
+                     val () =
+                        case (Value.deObject (arg 0), Value.deObject res) of
+                           (NONE, NONE) => ()
+                         | (SOME {args = a, ...}, SOME {args = a', ...}) =>
+                              Vector.foreach2
+                              (Prod.dest a, Prod.dest a',
+                               fn ({elt = v, ...}, {elt = v', ...}) =>
+                               Value.unify (v, v'))
+                         | _ => Error.bug "DeepFlatten.primApp: Array_toArray"
+                  in
+                     res
+                  end
+             | Array_toVector =>
                   let
                      val res = result ()
                      val () =

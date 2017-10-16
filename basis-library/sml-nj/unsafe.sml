@@ -52,6 +52,15 @@ structure Unsafe: UNSAFE =
             val uninit = Array.unsafeUninit
             val update = Array.unsafeUpdate
             val create = Array.unsafeArray
+            structure Raw = Array.Raw
+            structure Raw =
+               struct
+                  type 'a rawarr = 'a Raw.rawarr
+                  val alloc = Raw.unsafeAlloc
+                  val toArray = Raw.unsafeToArray
+                  val uninitIsNop = Raw.uninitIsNop
+                  val uninit = Raw.unsafeUninit
+               end
          end
       structure BoolArray = UnsafeMonoArray (BoolArray)
       structure BoolVector = UnsafeMonoVector (BoolVector)

@@ -26,11 +26,12 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_alloc (* to rssa (as runtime C fn) *)
+               Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
              | Array_copyArray (* to rssa (as runtime C fn) *)
              | Array_copyVector (* to rssa (as runtime C fn) *)
              | Array_length (* to rssa *)
              | Array_sub (* to ssa2 *)
+             | Array_toArray (* to rssa *)
              | Array_toVector (* to rssa *)
              | Array_uninit (* to rssa *)
              | Array_uninitIsNop (* to rssa *)

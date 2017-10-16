@@ -26,6 +26,23 @@ structure Array =
       val uninitIsNop = _prim "Array_uninitIsNop": 'a array -> bool;
       val uninitUnsafe = _prim "Array_uninit": 'a array * SeqIndex.int -> unit;
       val updateUnsafe = _prim "Array_update": 'a array * SeqIndex.int * 'a -> unit;
+
+      structure Raw :> sig
+                          type 'a rawarr
+                          val allocUnsafe: SeqIndex.int -> 'a rawarr
+                          val length: 'a rawarr -> SeqIndex.int
+                          val toArrayUnsafe: 'a rawarr -> 'a array
+                          val uninitIsNop: 'a rawarr -> bool
+                          val uninitUnsafe: 'a rawarr * SeqIndex.int -> unit
+                       end =
+        struct
+           type 'a rawarr = 'a array
+           val allocUnsafe = _prim "Array_allocRaw": SeqIndex.int -> 'a rawarr;
+           val length = length
+           val toArrayUnsafe = _prim "Array_toArray": 'a rawarr -> 'a array;
+           val uninitIsNop = uninitIsNop
+           val uninitUnsafe = uninitUnsafe
+        end
    end
 
 structure Vector =

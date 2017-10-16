@@ -556,6 +556,15 @@ structure Value =
          val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
       end
 
+      fun arrayFromArray (T s: t): t =
+         let
+            val {value, ty, ...} = Set.! s
+         in case value of
+            Array {birth, elt, length, ...} =>
+               new (Array {birth = birth, elt = elt, length = length}, ty)
+          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
+         end
+
       fun vectorFromArray (T s: t): t =
          let
             val {value, ty, ...} = Set.! s
@@ -901,13 +910,14 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_alloc => array (arg 0, bear ())
+                  Array_alloc _ => array (arg 0, bear ())
                 | Array_copyArray =>
                      update (arg 0, dearray (arg 2))
                 | Array_copyVector =>
                      update (arg 0, devector (arg 2))
                 | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
+                | Array_toArray => arrayFromArray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
                 | Array_update => update (arg 0, arg 2)
                 | Ref_assign =>

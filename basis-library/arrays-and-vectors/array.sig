@@ -56,4 +56,16 @@ signature ARRAY_EXTRA =
       val toList: 'a array -> 'a list
       val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array * 'b
       val unfold: int * 'b * ('b -> 'a * 'b) -> 'a array * 'b
+
+      structure Raw:
+         sig
+            type 'a rawarr
+            val alloc: int -> 'a rawarr
+            val length: 'a rawarr -> int
+            val uninit: 'a rawarr * int -> unit
+            val uninitIsNop: 'a rawarr -> bool
+            val unsafeAlloc: int -> 'a rawarr
+            val unsafeToArray: 'a rawarr -> 'a array
+            val unsafeUninit: 'a rawarr * int -> unit
+         end
    end

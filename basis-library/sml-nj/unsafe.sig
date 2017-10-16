@@ -61,6 +61,26 @@ signature UNSAFE =
             val uninit: 'a array * int -> unit
             (* omit Subscript check *)
             val update: 'a array * int * 'a -> unit
+
+            structure Raw:
+               sig
+                  type 'a rawarr
+
+                  (* omit Size check;
+                   * objptr(s) at elements have indeterminate value;
+                   * non-objptr(s) at elements have indeterminate value
+                   *)
+                  val alloc: int -> 'a rawarr
+                  (* prereq: all objptr(s) at elements set to bogus
+                   * non-objptr value (via uninit)
+                   *)
+                  val toArray: 'a rawarr -> 'a array
+                  val uninitIsNop: 'a rawarr -> bool
+                  (* omit Subscript check;
+                   * objptr(s) at element set to bogus non-objptr value
+                   *)
+                  val uninit: 'a rawarr * int -> unit
+               end
          end
       structure BoolArray: UNSAFE_MONO_ARRAY
       structure BoolVector: UNSAFE_MONO_VECTOR

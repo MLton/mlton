@@ -368,7 +368,7 @@ structure Type =
             val seqIndex = word (WordSize.seqIndex ())
          in
             case Prim.name prim of
-               Array_alloc =>
+               Array_alloc _ =>
                   oneArg
                   (fn n =>
                    case deVectorOpt result of
@@ -410,6 +410,17 @@ structure Type =
                   oneArg
                   (fn a =>
                    isVector a andalso equals (result, seqIndex))
+             | Array_toArray =>
+                  oneArg
+                  (fn arr =>
+                   case (deVectorOpt arr, deVectorOpt result) of
+                      (SOME arrp, SOME resp) =>
+                         Vector.equals (Prod.dest arrp, Prod.dest resp,
+                                        fn ({elt = arrElt, isMutable = arrIsMutable},
+                                            {elt = resElt, isMutable = resIsMutable}) =>
+                                        arrIsMutable andalso resIsMutable
+                                        andalso equals (arrElt, resElt))
+                    | _ => false)
              | Array_toVector =>
                   oneArg
                   (fn arr =>

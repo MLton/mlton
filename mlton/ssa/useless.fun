@@ -508,7 +508,7 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_alloc =>
+                     Array_alloc _ =>
                         coerce {from = arg 0, to = arrayLength result}
                    | Array_copyArray =>
                         let
@@ -536,6 +536,12 @@ fun transform (program: Program.t): Program.t =
                          end
                    | Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
+                   | Array_toArray =>
+                        (case (value (arg 0), value result) of
+                            (Array {length = l, elt = e, ...},
+                             Array {length = l', elt = e', ...}) =>
+                               (unify (l, l'); unifySlot (e, e'))
+                           | _ => Error.bug "Useless.primApp: Array_toArray")
                    | Array_toVector =>
                         (case (value (arg 0), value result) of
                             (Array {length = l, elt = e, ...},

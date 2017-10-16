@@ -519,6 +519,29 @@ structure Array =
          fun modifyi f s = Slice.modifyi f (Slice.full s)
          fun modify f s = Slice.modify f (Slice.full s) 
       end
+      structure Raw =
+         struct
+            type 'a rawarr = 'a Primitive.Array.Raw.rawarr
+
+            val length = Primitive.Array.Raw.length
+
+            val unsafeAlloc = Primitive.Array.Raw.allocUnsafe
+            fun alloc n =
+               if Primitive.Controls.safe
+                  andalso SeqIndex.gtu (n, maxLen)
+                  then raise Size
+                  else unsafeAlloc n
+
+            val unsafeToArray = Primitive.Array.Raw.toArrayUnsafe
+
+            val uninitIsNop = Primitive.Array.Raw.uninitIsNop
+            val unsafeUninit = Primitive.Array.Raw.uninitUnsafe
+            fun uninit (a, i) =
+               if Primitive.Controls.safe andalso SeqIndex.geu (i, length a)
+                  then raise Subscript
+                  else unsafeUninit (a, i)
+
+         end
    end
 
 structure Vector =

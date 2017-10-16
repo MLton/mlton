@@ -34,11 +34,12 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_alloc (* to rssa (as runtime C fn) *)
+   Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
  | Array_copyArray (* to rssa (as runtime C fn) *)
  | Array_copyVector (* to rssa (as runtime C fn) *)
  | Array_length (* to rssa *)
  | Array_sub (* to ssa2 *)
+ | Array_toArray (* to rssa *)
  | Array_toVector (* to rssa *)
  | Array_uninit (* to rssa *)
  | Array_uninitIsNop (* to rssa *)
@@ -223,11 +224,12 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_alloc => "Array_alloc"
+         Array_alloc {raw} => if raw then "Array_allocRaw" else "Array_alloc"
        | Array_copyArray => "Array_copyArray"
        | Array_copyVector => "Array_copyVector"
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
+       | Array_toArray => "Array_toArray"
        | Array_toVector => "Array_toVector"
        | Array_uninit => "Array_uninit"
        | Array_uninitIsNop => "Array_uninitIsNop"
@@ -380,11 +382,12 @@ fun layoutFull (p, layoutX) =
     | p => layout p
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_alloc, Array_alloc) => true
+   fn (Array_alloc {raw = r}, Array_alloc {raw = r'}) => Bool.equals (r, r')
     | (Array_copyArray, Array_copyArray) => true
     | (Array_copyVector, Array_copyVector) => true
     | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
+    | (Array_toArray, Array_toArray) => true
     | (Array_toVector, Array_toVector) => true
     | (Array_uninit, Array_uninit) => true
     | (Array_uninitIsNop, Array_uninitIsNop) => true
@@ -555,11 +558,12 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_alloc => Array_alloc
+      Array_alloc {raw} => Array_alloc {raw = raw}
     | Array_copyArray => Array_copyArray
     | Array_copyVector => Array_copyVector
     | Array_length => Array_length
     | Array_sub => Array_sub
+    | Array_toArray => Array_toArray
     | Array_toVector => Array_toVector
     | Array_uninit => Array_uninit
     | Array_uninitIsNop => Array_uninitIsNop
@@ -698,7 +702,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val arrayAlloc = Array_alloc
+val arrayAlloc = Array_alloc {raw = false}
 val arrayLength = Array_length
 val arrayToVector = Array_toVector
 val arrayUpdate = Array_update
@@ -809,11 +813,12 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_alloc => Moveable
+         Array_alloc _ => Moveable
        | Array_copyArray => SideEffect
        | Array_copyVector => SideEffect
        | Array_length => Functional
        | Array_sub => DependsOnState
+       | Array_toArray => DependsOnState
        | Array_toVector => DependsOnState
        | Array_uninit => SideEffect
        | Array_uninitIsNop => Functional
@@ -1017,11 +1022,13 @@ local
       @ wordSigns (s, false)
 in
    val all: unit t list =
-      [Array_alloc,
+      [Array_alloc {raw = false},
+       Array_alloc {raw = true},
        Array_copyArray,
        Array_copyVector,
        Array_length,
        Array_sub,
+       Array_toArray,
        Array_toVector,
        Array_uninit,
        Array_uninitIsNop,
@@ -1279,11 +1286,12 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_alloc => oneTarg (fn targ => (oneArg seqIndex, array targ))
+         Array_alloc _ => oneTarg (fn targ => (oneArg seqIndex, array targ))
        | Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
        | Array_copyVector => oneTarg (fn t => (fiveArgs (array t, seqIndex, vector t, seqIndex, seqIndex), unit))
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
+       | Array_toArray => oneTarg (fn t => (oneArg (array t), array t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
        | Array_uninit =>
             oneTarg (fn t => (twoArgs (array t, seqIndex), unit))
@@ -1473,11 +1481,12 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_alloc => one (deArray result)
+         Array_alloc _ => one (deArray result)
        | Array_copyArray => one (deArray (arg 0))
        | Array_copyVector => one (deArray (arg 0))
        | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
+       | Array_toArray => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
        | Array_uninit => one (deArray (arg 0))
        | Array_uninitIsNop => one (deArray (arg 0))
