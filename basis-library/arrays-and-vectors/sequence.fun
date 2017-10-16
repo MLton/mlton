@@ -59,6 +59,11 @@ structure SeqIndex =
       in
          val toInt = S.f
       end
+
+      fun fromIntForLength n =
+         if Primitive.Controls.safe
+            then (fromInt n) handle Overflow => raise Size
+            else fromIntUnsafe n
    end
 
 functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
@@ -82,31 +87,26 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
       (* S.maxLen must be representable as an Int.int already *)
       val maxLen = SeqIndex.toInt S.maxLen
 
-      fun fromIntForLength n =
-         if Primitive.Controls.safe
-            then (SeqIndex.fromInt n) handle Overflow => raise Size
-            else SeqIndex.fromIntUnsafe n
-
       fun length s = 
          if Primitive.Controls.safe
             then (SeqIndex.toInt (S.length s))
                  handle Overflow => raise Fail "Sequence.length"
             else SeqIndex.toIntUnsafe (S.length s)
 
-      fun alloc n = S.alloc (fromIntForLength n)
+      fun alloc n = S.alloc (SeqIndex.fromIntForLength n)
       fun unsafeAlloc n = S.unsafeAlloc (SeqIndex.fromIntUnsafe n)
 
       fun create n =
          let
-            val {done, sub, update} = S.create (fromIntForLength n)
+            val {done, sub, update} = S.create (SeqIndex.fromIntForLength n)
          in
             {done = done,
              sub = unwrap1 sub,
              update = unwrap2 update}
          end
 
-      fun unfoldi (n, b, f) = S.unfoldi (fromIntForLength n, b, wrap2 f)
-      fun unfold (n, b, f) = S.unfold (fromIntForLength n, b, f)
+      fun unfoldi (n, b, f) = S.unfoldi (SeqIndex.fromIntForLength n, b, wrap2 f)
+      fun unfold (n, b, f) = S.unfold (SeqIndex.fromIntForLength n, b, f)
 
       fun seq0 () = #1 (unfold (0, (), fn _ => raise Fail "Sequence.seq0"))
 
