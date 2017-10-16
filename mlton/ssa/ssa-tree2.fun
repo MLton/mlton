@@ -212,6 +212,12 @@ structure Type =
 
       val bool = datatypee Tycon.bool
 
+      val isBool: t -> bool =
+         fn t =>
+         case dest t of
+            Datatype t => Tycon.equals (t, Tycon.bool)
+          | _ => false
+
       local
          fun make (tycon, tree) = lookup (Tycon.hash tycon, tree)
       in
@@ -423,6 +429,14 @@ structure Type =
                          Prod.allAreMutable arrp
                          andalso equals (i, seqIndex)
                          andalso isUnit result
+                    | _ => false)
+             | Array_uninitIsNop =>
+                  oneArg
+                  (fn arr =>
+                   case deVectorOpt arr of
+                      SOME arrp =>
+                         Prod.allAreMutable arrp
+                         andalso isBool result
                     | _ => false)
              | _ => default ()
          end

@@ -1256,6 +1256,22 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        adds (List.concat sss)
                                     end
+                               | Array_uninitIsNop =>
+                                    let
+                                       val arrayTy = varType (arg 0)
+                                       val eltTys =
+                                          case S.Type.deVectorOpt arrayTy of
+                                             NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninitIsNop"
+                                           | SOME eltTys => eltTys
+                                       val isNop =
+                                          Vector.forall
+                                          (S.Prod.dest eltTys, fn {elt, ...} =>
+                                           case toRtype elt of
+                                              NONE => true
+                                            | SOME elt => not (Type.isObjptr elt))
+                                    in
+                                       move (Operand.bool isNop)
+                                    end
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()

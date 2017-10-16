@@ -160,6 +160,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                        end
                else unsafeUpdate (sl, i, x)
 
+            val uninitIsNop = S.Slice.uninitIsNop
             fun unsafeUninit (sl, i) =
                S.Slice.unsafeUninit (sl, SeqIndex.fromIntUnsafe i)
             fun uninit (sl, i) =
@@ -447,6 +448,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
         fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i) 
         fun update (seq, i, x) = Slice.update (Slice.full seq, i, x)
         fun unsafeUpdate (seq, i, x) = Slice.unsafeUpdate (Slice.full seq, i, x)
+        fun uninitIsNop seq = Slice.uninitIsNop (Slice.full seq)
         fun uninit (seq, i) = Slice.uninit (Slice.full seq, i)
         fun unsafeUninit (seq, i) = Slice.unsafeUninit (Slice.full seq, i)
         fun copy {dst, di, src} =

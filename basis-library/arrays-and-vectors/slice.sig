@@ -18,6 +18,7 @@ signature SLICE =
       val unsafeSub: 'a slice * int -> 'a elt
       val update: 'a slice * int * 'a elt -> unit
       val unsafeUpdate: 'a slice * int * 'a elt -> unit
+      val uninitIsNop: 'a slice -> bool
       val uninit: 'a slice * int -> unit
       val unsafeUninit: 'a slice * int -> unit
       val copy: {dst: 'a elt Array.array, di: int, src: 'a slice} -> unit

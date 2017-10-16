@@ -23,6 +23,7 @@ structure Array =
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)
       (* val maxLen': SeqIndex.int = SeqIndex.maxInt' *)
       val subUnsafe = _prim "Array_sub": 'a array * SeqIndex.int -> 'a;
+      val uninitIsNop = _prim "Array_uninitIsNop": 'a array -> bool;
       val uninitUnsafe = _prim "Array_uninit": 'a array * SeqIndex.int -> unit;
       val updateUnsafe = _prim "Array_update": 'a array * SeqIndex.int * 'a -> unit;
    end

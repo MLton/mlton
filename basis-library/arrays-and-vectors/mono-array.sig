@@ -40,6 +40,7 @@ signature MONO_ARRAY_EXTRA =
           and type vector_slice = vector_slice
 
       val alloc: int -> array
+      val uninitIsNop: array -> bool
       val uninit: array * int -> unit
 
       val concat: array list -> array

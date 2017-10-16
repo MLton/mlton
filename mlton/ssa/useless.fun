@@ -548,6 +548,14 @@ fun transform (program: Program.t): Program.t =
                         in
                            arg 1 dependsOn a
                         end
+                   | Array_uninitIsNop =>
+                        (* Array_uninitIsNop is Functional, but
+                         * performing Useless.<= (allOrNothing result,
+                         * allOrNothing (arg 0)) would effectively
+                         * make the whole array useful, inhibiting the
+                         * Useless optimization.
+                         *)
+                        ()
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
@@ -788,26 +796,41 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
-                  val (args, argTypes) =
-                     Vector.unzip
-                     (Vector.map (args, fn x =>
-                                  let val (t, b) = Value.getNew (value x)
-                                  in if b then (x, t)
-                                     else (unitVar, Type.unit)
-                                  end))
+                  fun doit () =
+                     let
+                        val (args, argTypes) =
+                           Vector.unzip
+                           (Vector.map (args, fn x =>
+                                        let
+                                           val (t, b) = Value.getNew (value x)
+                                        in
+                                           if b
+                                              then (x, t)
+                                              else (unitVar, Type.unit)
+                                        end))
+                     in
+                        PrimApp
+                        {prim = prim,
+                         args = args,
+                         targs = (Prim.extractTargs
+                                  (prim,
+                                   {args = argTypes,
+                                    result = resultType,
+                                    typeOps = {deArray = Type.deArray,
+                                               deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
+                                               deRef = Type.deRef,
+                                               deVector = Type.deVector,
+                                               deWeak = Type.deWeak}}))}
+                     end
+                  datatype z = datatype Prim.Name.t
                in
-                  PrimApp
-                  {prim = prim,
-                   args = args,
-                   targs = (Prim.extractTargs
-                            (prim,
-                             {args = argTypes,
-                              result = resultType,
-                              typeOps = {deArray = Type.deArray,
-                                         deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
-                                         deRef = Type.deRef,
-                                         deVector = Type.deVector,
-                                         deWeak = Type.deWeak}}))}
+                  case Prim.name prim of
+                     Array_uninitIsNop =>
+                        if varExists (Vector.sub (args, 0))
+                           then doit ()
+                           else ConApp {args = Vector.new0 (),
+                                        con = Con.falsee}
+                   | _ => doit ()
                end
           | Select {tuple, offset} =>
                let

@@ -33,6 +33,7 @@ signature PRIM =
              | Array_sub (* to ssa2 *)
              | Array_toVector (* to rssa *)
              | Array_uninit (* to rssa *)
+             | Array_uninitIsNop (* to rssa *)
              | Array_update (* to ssa2 *)
              | CPointer_add (* codegen *)
              | CPointer_diff (* codegen *)

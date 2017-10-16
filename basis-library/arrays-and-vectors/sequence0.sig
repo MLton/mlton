@@ -20,6 +20,7 @@ signature PRIM_SEQUENCE =
       val length: 'a sequence -> SeqIndex.int
       val sub: 'a sequence * SeqIndex.int -> 'a elt
       val unsafeSub: 'a sequence * SeqIndex.int -> 'a elt
+      val uninitIsNop: 'a sequence -> bool
       val uninit: 'a sequence * SeqIndex.int -> unit
       val unsafeUninit: 'a sequence * SeqIndex.int -> unit
       val update: 'a sequence * SeqIndex.int * 'a elt -> unit

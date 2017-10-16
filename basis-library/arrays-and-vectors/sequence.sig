@@ -22,6 +22,7 @@ signature SEQUENCE =
       val unsafeSub: 'a sequence * int -> 'a elt 
       val update: 'a sequence * int * 'a elt -> unit
       val unsafeUpdate: 'a sequence * int * 'a elt -> unit
+      val uninitIsNop: 'a sequence -> bool
       val uninit: 'a sequence * int -> unit
       val unsafeUninit: 'a sequence * int -> unit
       val copy: {dst: 'a elt Array.array, di: int, src: 'a sequence} -> unit

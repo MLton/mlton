@@ -48,6 +48,7 @@ signature UNSAFE =
             val create: int * 'a -> 'a array
             (* omit Subscript check *)
             val sub: 'a array * int -> 'a
+            val uninitIsNop: 'a array -> bool
             (* omit Subscript check;
              * objptr(s) at element set to bogus non-objptr value
              *)
