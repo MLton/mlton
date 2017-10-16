@@ -73,7 +73,7 @@ functor PrimSequence (S: sig
       fun length s = S.length s
 
       fun unsafeArrayAlloc n = Array.allocUnsafe n
-      fun arrayAlloc n=
+      fun arrayAlloc n =
          if Primitive.Controls.safe
             andalso gtu (n, maxLen)
             then raise Size
