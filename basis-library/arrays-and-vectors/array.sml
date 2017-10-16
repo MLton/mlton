@@ -32,6 +32,7 @@ structure Array: ARRAY_EXTRA =
          end
 
       val array = new
+      val unsafeArray = unsafeNew
       val vector = Primitive.Array.vector
       val copyVec = Vector.copy
       val unsafeCopyVec = Vector.unsafeCopy

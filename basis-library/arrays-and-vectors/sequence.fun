@@ -107,6 +107,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
 
       fun unfoldi (n, b, f) = S.unfoldi (SeqIndex.fromIntForLength n, b, wrap2 f)
       fun unfold (n, b, f) = S.unfold (SeqIndex.fromIntForLength n, b, f)
+      fun unsafeUnfold (n, b, f) = S.unfold (SeqIndex.fromIntUnsafe n, b, f)
 
       fun seq0 () = #1 (unfold (0, (), fn _ => raise Fail "Sequence.seq0"))
 
@@ -115,6 +116,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
 
       fun new (n, x) = 
          #1 (unfold (n, (), fn () => (x, ())))
+      fun unsafeNew (n, x) =
+         #1 (unsafeUnfold (n, (), fn () => (x, ())))
 
       fun fromList l =
          #1 (unfold (List.length l, l, fn l =>

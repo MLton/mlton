@@ -59,6 +59,7 @@ signature SEQUENCE =
       val unfoldi: int * 'b * (int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
       val unsafeAlloc: int -> 'a sequence
+      val unsafeNew: int * 'a elt -> 'a sequence
 
       (* Used to implement Substring/String functions *)
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool

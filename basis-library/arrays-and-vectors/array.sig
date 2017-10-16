@@ -44,6 +44,7 @@ signature ARRAY_EXTRA =
       val uninitIsNop: 'a array -> bool
       val uninit: 'a array * int -> unit
       val unsafeAlloc: int -> 'a array
+      val unsafeArray: int * 'a -> 'a array
       val unsafeCopy: {dst: 'a array, di: int, src: 'a array} -> unit
       val unsafeCopyVec: {dst: 'a array, di: int, src: 'a vector} -> unit
       val unsafeSub: 'a array * int -> 'a

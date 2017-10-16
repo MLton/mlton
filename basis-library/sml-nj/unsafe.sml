@@ -13,7 +13,7 @@ functor UnsafeMonoArray (A: MONO_ARRAY_EXTRA): UNSAFE_MONO_ARRAY =
 
       val sub = unsafeSub
       val update = unsafeUpdate
-      val create = fromPoly o Array.alloc
+      val create = fromPoly o Array.unsafeAlloc
    end
 
 functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =
@@ -46,12 +46,12 @@ structure Unsafe: UNSAFE =
    struct
       structure Array =
          struct
-            val alloc = Array.alloc
+            val alloc = Array.unsafeAlloc
             val sub = Array.unsafeSub
             val uninitIsNop = Array.uninitIsNop
             val uninit = Array.unsafeUninit
             val update = Array.unsafeUpdate
-            val create = Array.array
+            val create = Array.unsafeArray
          end
       structure BoolArray = UnsafeMonoArray (BoolArray)
       structure BoolVector = UnsafeMonoVector (BoolVector)

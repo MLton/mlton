@@ -10,7 +10,9 @@ signature UNSAFE_MONO_ARRAY =
       type array
       type elem
 
-      (* elements have indeterminate value *)
+      (* omit Size check;
+       * elements have indeterminate value
+       *)
       val create: int -> array
       (* omit Subscript check *)
       val sub: array * int -> elem
@@ -28,7 +30,8 @@ signature UNSAFE_MONO_VECTOR =
       type elem
       type vector
 
-      (* elements have indeterminate values *)
+      (* omit Size check;
+       * elements have indeterminate values *)
       (* val create: int -> vector *)
       (* omit Subscript check *)
       val sub: vector * int -> elem
@@ -40,11 +43,14 @@ signature UNSAFE =
    sig
       structure Array:
          sig
-            (* objptr(s) at elements set to bogus non-objptr value;
+            (* omit Size check;
+             * objptr(s) at elements set to bogus non-objptr value;
              * non-objptr(s) at elements have indeterminate value
              *)
             val alloc: int -> 'a array
-            (* elements set to initial value *)
+            (* omit Size check;
+             * elements set to initial value
+             *)
             val create: int * 'a -> 'a array
             (* omit Subscript check *)
             val sub: 'a array * int -> 'a
