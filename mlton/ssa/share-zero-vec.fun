@@ -63,23 +63,65 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                   end))
 
               (* TODO: 2nd iteration: new branching/merging *)
+              (* mostly pseudocode for now *)
               val blocks =
-                Vector.toListMap
-                (blocks,
-                  fn (block as Block.T {label, args, statements, transfer}) =>
-                  let
-                    val statements' = Vector.toList statements
-                    val (pre, post, match) =
-                      split (statements', funArrays, [])
-                  in
-                    if isSome match
-                    then (* TODO: create new blocks; for now just a stub *)
-                      Block.T {label = label,
-                              args = args,
-                              statements = statements,
-                              transfer = transfer}
-                    else block
-                  end)
+                let
+                  val blocks' = Vector.toList blocks
+                  fun splitAndMerge
+                      (block as Block.T {label, args, statements, transfer}::bs,
+                       acc) =
+                        let
+                          val (pre, post, match) =
+                            split ((Vector.toList statements), funArrays, [])
+                        in
+                          if isSome match
+                          then
+                            let
+                              val n = (* test var *)
+                                case (valOf match) of
+                                    Statement.T {var, exp, ...}
+                                      case exp of
+                                        PrimApp ({prim, args, ...}) =>
+                                          let
+                                            fun arg () = Vector.first args
+                                          in
+                                              case Prim.name prim of
+                                                Array_uninit => SOME (arg ())
+                                            | _ => NONE
+                                          end
+                                  | _ => NONE
+
+                              (* TODO: prepare cases and default label *)
+
+                              val preBlock =
+                                let
+                                  sts = Vector.fromList pre
+                                  transfer' = Case.T {test = n,
+                                                      cases = ...,
+                                                      default = ...}
+                                in
+                                  Block.T {label = label,
+                                           args = args,
+                                           statements = sts,
+                                           transfer = transfer'}
+                                end
+
+                              val ifZeroBlock = ...
+                              val ifNonzeroBlock = ...
+                              val postBlock = ...
+                            in
+                              splitAndMerge
+                                (postBlock::bs,
+                                  preBlock::ifZeroBlock::ifNonzeroBlock::acc)
+                            end
+                          else splitAndMerge (bs, block::acc)
+                        end
+
+                    | splitAndMerge ([], acc) = acc
+                in
+                  splitAndMerge (blocks', [])
+                end
+
 
               val blocks = Vector.fromList blocks
 
