@@ -134,7 +134,7 @@ struct
             (String.implode <$> T.manyCharsFailing(
                T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
              Stream.fromList (String.explode s))
-         val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
+         val resolveCon0 = makeNameResolver(Con.fromString)
          fun resolveCon ident =
             case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
                             ident = Con.toString con) of
@@ -150,7 +150,7 @@ struct
                         then Tycon.tuple
                         else resolveTycon0 ident
           *)
-         fun resolveTycon ident = makeNameResolver(Tycon.newString) ident
+         fun resolveTycon ident = makeNameResolver(Tycon.fromString) ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
          T.compose(skipComments (),
