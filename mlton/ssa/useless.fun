@@ -542,6 +542,12 @@ fun transform (program: Program.t): Program.t =
                              Vector {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
+                   | Array_uninit =>
+                        let
+                           val a = dearray (arg 0)
+                        in
+                           arg 1 dependsOn a
+                        end
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
@@ -865,6 +871,7 @@ fun transform (program: Program.t): Program.t =
                                    case Prim.name prim of
                                       Array_copyArray => array ()
                                     | Array_copyVector => array ()
+                                    | Array_uninit => array ()
                                     | Array_update => array ()
                                     | Ref_assign =>
                                          Value.isUseful
