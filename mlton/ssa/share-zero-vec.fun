@@ -10,137 +10,223 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
     open S
     open Exp
 
-    (* split a list of statements at the point where the test var is declared;
-     * return (pre, post, match)
+    (* split a vector of statements at the point where the Array_toVector
+     * arg var is declared;
+     * return (match, pre, post);
+     * note that a var may remain unmatched if reassigned between the original
+     * Array_uninit statement and its aliased use in the Array_toVector statement.
      *)
-    infix isIn;
-    fun x isIn xs =
-      case xs of
-          []    => false
-        | y::ys => if Var.equals (x, y) then true else x isIn ys
-
-    fun split ((x as Statement.T {var, ...})::xs, arrayVars, pre) =
-          if isSome var andalso (valOf var) isIn arrayVars
-          then (List.rev pre, xs, SOME x)
-          else split (xs, arrayVars, x::pre)
-      | split ([], _, pre) = (List.rev pre, [], NONE)
-
+    fun split (stmts, arrVars) =
+      case Vector.peekMapi
+           (stmts,
+            fn Statement.T {var, ty, exp} =>
+              case exp of
+                  PrimApp ({prim, args, targs}) =>
+                    (case Prim.name prim of
+                        Prim.Array_uninit =>
+                          if isSome var
+                          then
+                            if List.contains (arrVars, valOf var, Var.equals)
+                            then SOME (valOf var, ty, Vector.first args, targs) (* or Type.deArray ty ??*)
+                            else NONE
+                          else NONE
+                      | _ => NONE)
+                | _ => NONE) of
+          NONE => NONE
+        | SOME (i, (arrVar, arrTy, len, elemTy)) =>
+            SOME ((arrVar, arrTy, len, elemTy), (* val arrVar = Array_uninit ([elemTy], len) *)
+                  Vector.prefix (stmts, i),
+                  Vector.dropPrefix (stmts, i + 1))
 
     fun transform (Program.T {datatypes, globals, functions, main}) =
       let
+
+        (* initialize a HashSet for new zero-length array globals *)
+        val zeroVar = Var.newString "zero"
+        val zeroVarStmt =
+          Statement.T
+          {var = SOME zeroVar,
+           ty = Type.word (WordSize.seqIndex ()),
+           exp = Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))}
+        val newGlobals = ref []
+        local
+          val hs: {eltTy: Type.t, zeroArrVar: Var.t} HashSet.t =
+              HashSet.new {hash = fn {eltTy, ...} => Type.hash eltTy}
+        in
+          fun getZeroArrVar (ty: Type.t): Var.t =
+            let
+              val {zeroArrVar, ...} =
+                HashSet.lookupOrInsert
+                (hs, Type.hash ty,
+                fn {eltTy, ...} => Type.equals (eltTy, ty),
+                fn () =>
+                  let
+                    val zeroArrVar = Var.newString "zeroArr"
+                    val statement =
+                      Statement.T
+                      {var = SOME zeroArrVar,
+                       ty = Type.array ty,
+                       exp = PrimApp
+                             {args = Vector.new1 zeroVar,
+                              prim = Prim.array,
+                              targs = Vector.new1 ty}}
+                    val () = List.push (newGlobals, statement)
+                  in
+                    {eltTy = ty,
+                     zeroArrVar = zeroArrVar}
+                  end)
+            in
+              zeroArrVar
+            end
+        end
+
         val functions' =
-          List.revMap
+          List.map
           (functions, fn f =>
             let
               val {args, blocks, mayInline, name, raises, returns, start} =
                   Function.dest f
 
               (* 1st pass: compile a list of array vars to be frozen to vectors *)
-              val funArrays =
-                Vector.foldr
+              val arrVars =
+                Vector.fold
                 (blocks,
-                [],
-                (fn (block as Block.T {statements, ...}, acc) =>
-                  let
-                    val blockArrays =
-                      Vector.foldr
-                      (statements,
-                      [],
-                      (fn (statement as Statement.T {exp, ...}, acc') =>
-                        case exp of
-                          PrimApp ({prim, args, ...}) =>
-                            let
-                              fun arg () = Vector.first args
-                            in
-                              case Prim.name prim of
-                                  Array_toVector =>
-                                    (arg ()) :: acc'
-                                | _ => acc'
-                            end
-                        | _ => acc'))
-                  in
-                    blockArrays @ acc
-                  end))
-
-              (* TODO: 2nd iteration: new branching/merging *)
-              (* mostly pseudocode for now *)
-              val blocks =
-                let
-                  val blocks' = Vector.toList blocks
-                  fun splitAndMerge
-                      (block as Block.T {label, args, statements, transfer}::bs,
-                       acc) =
-                        let
-                          val (pre, post, match) =
-                            split ((Vector.toList statements), funArrays, [])
-                        in
-                          if isSome match
-                          then
-                            let
-                              val n = (* test var *)
-                                case (valOf match) of
-                                    Statement.T {var, exp, ...}
-                                      case exp of
-                                        PrimApp ({prim, args, ...}) =>
-                                          let
-                                            fun arg () = Vector.first args
-                                          in
-                                              case Prim.name prim of
-                                                Array_uninit => SOME (arg ())
-                                            | _ => NONE
-                                          end
-                                  | _ => NONE
-
-                              (* TODO: prepare cases and default label *)
-
-                              val preBlock =
-                                let
-                                  sts = Vector.fromList pre
-                                  transfer' = Case.T {test = n,
-                                                      cases = ...,
-                                                      default = ...}
-                                in
-                                  Block.T {label = label,
-                                           args = args,
-                                           statements = sts,
-                                           transfer = transfer'}
-                                end
-
-                              val ifZeroBlock = ...
-                              val ifNonzeroBlock = ...
-                              val postBlock = ...
-                            in
-                              splitAndMerge
-                                (postBlock::bs,
-                                  preBlock::ifZeroBlock::ifNonzeroBlock::acc)
-                            end
-                          else splitAndMerge (bs, block::acc)
-                        end
-
-                    | splitAndMerge ([], acc) = acc
-                in
-                  splitAndMerge (blocks', [])
-                end
-
-
-              val blocks = Vector.fromList blocks
-
+                 [],
+                 fn (Block.T {statements, ...}, acc) =>
+                   Vector.fold
+                   (statements,
+                    acc,
+                    fn (Statement.T {exp, ...}, acc) =>
+                      case exp of
+                          PrimApp {prim, args, ...} =>
+                          (case Prim.name prim of
+                              Prim.Array_toVector =>
+                                (Vector.first args)::acc
+                            | _ => acc)
+                        | _ => acc))
 
             in
-              Function.new {args = args,
-                            blocks = blocks,
-                            mayInline = mayInline,
-                            name = name,
-                            raises = raises,
-                            returns = returns,
-                            start = start}
+              if List.isEmpty arrVars
+              then f
+              else (* 2nd iteration: branch and join on Array_uninit *)
+                let
+                  val blocks =
+                    let
+                      val blocks' = Vector.toList blocks
+                      fun splitAndMerge
+                          (block as Block.T {label, args, statements, transfer}::bs,
+                          acc) =
+                            let
+                              (* val (pre, post, match) = *)
+                              val match as ((arrVar, arrTy, numVar, eltTy), pre, post) =
+                                split ((Vector.toList statements), arrVars, [])
+                            in
+                              if isSome match
+                              then
+                                let
+                                  val ifZeroLab = Label.newString "L_zero"
+                                  val ifNonZeroLab = Label.newString "L_nonzero"
+                                  val joinLab = Label.newString "L_join"
+
+                                  val preBlock =
+                                    let
+                                      val isZeroVar = Var.newString "isZero"
+                                      val newStatements =
+                                        Vector.new1
+                                        (Statement.T
+                                          {var = SOME isZeroVar,
+                                           ty = Type.bool,
+                                           exp = PrimApp
+                                                 {args = Vector.new2 (zeroVar, numVar),
+                                                  prim = Prim.wordEqual (WordSize.seqIndex ()),
+                                                  targs = Vector.new0 ()}})
+                                      val transfer =
+                                        Transfer.Case
+                                        {cases = Cases.Con
+                                                  (Vector.new2
+                                                  ((Con.truee, ifZeroLab),
+                                                   (Con.falsee, ifNonZeroLab))),
+                                         default = NONE,
+                                         test = isZeroVar}
+                                    in
+                                      Block.T {label = label,
+                                               args = args,
+                                               statements = Vector.concat [pre, newStatements],
+                                               transfer = transfer}
+                                    end
+
+                                  val ifNonZeroBlock =
+                                    let
+                                      val arrVar' = Var.new arrVar
+                                      val statements =
+                                        Vector.new1
+                                        (Statement.T
+                                          {var = SOME arrVar',
+                                           ty = arrTy,
+                                           exp = PrimApp
+                                                 {args = Vector.new1 numVar,
+                                                  prim = Prim.array,
+                                                  targs = eltTy}})
+                                      val transfer = Transfer.Goto
+                                                     {args = Vector.new1 arrVar',
+                                                      label = joinLab}
+                                    in
+                                      Block.T {label = ifNonZeroLab,
+                                               args = Vector.new0 (),
+                                               statements = statements,
+                                               transfer = transfer}
+                                    end
+
+                                  val ifZeroBlock =
+                                    let
+                                      val transfer =
+                                        Transfer.Goto
+                                        {args = Vector.new1 (getZeroArrVar (Vector.first eltTy)),
+                                         label = joinLab}
+                                    in
+                                        Block.T {label = ifZeroLab,
+                                                 args = Vector.new0 (),
+                                                 statements = Vector.new0 (),
+                                                 transfer = transfer}
+                                    end
+
+                                  val joinBlock =
+                                    Block.T {label = joinLab,
+                                             args = Vector.new1 (arrVar, arrTy),
+                                             statements = post,
+                                             transfer = transfer}
+                                in
+                                  splitAndMerge
+                                  (joinBlock::bs,
+                                   ifNonZeroBlock::ifZeroBlock::preBlock::acc)
+                                end
+                              else splitAndMerge (bs, block::acc)
+                            end
+
+                        | splitAndMerge ([], acc) = acc
+
+                    in
+                      splitAndMerge (blocks', [])
+                    end
+
+                  val blocks = Vector.fromListRev blocks
+                in
+                  Function.new {args = args,
+                                blocks = blocks,
+                                mayInline = mayInline,
+                                name = name,
+                                raises = raises,
+                                returns = returns,
+                                start = start}
+                end
+
             end)
 
       in
           Program.T {datatypes = datatypes,
-                    globals = globals,
-                    functions = functions',
-                    main = main}
+                     globals = Vector.concat [globals, Vector.fromList (zeroVarStmt :: !newGlobals)],
+                     functions = functions',
+                     main = main}
       end
 
   end
