@@ -324,6 +324,14 @@ fun makeOptions {usage} =
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
         boolRef contifyIntoMain),
+       (Expert, "cse-canon", " {ascHash|descHash|ascIndex|descIndex}", "policy for cse exp canonicalization",
+        SpaceString (fn s =>
+                     case s of
+                        "ascHash" => cseCanon := AscHash
+                      | "descHash" => cseCanon := DescHash
+                      | "ascIndex" => cseCanon := AscIndex
+                      | "descIndex" => cseCanon:= DescIndex
+                      | _ => usage (concat ["invalid -cse-canon flag: ", s]))),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
         Bool (fn b => (debug := b
                        ; debugRuntime := b))),
