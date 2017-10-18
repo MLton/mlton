@@ -23,11 +23,11 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
               case exp of
                   PrimApp ({prim, args, targs}) =>
                     (case Prim.name prim of
-                        Prim.Array_uninit =>
+                        Array_uninit =>
                           if isSome var
                           then
                             if List.contains (arrVars, valOf var, Var.equals)
-                            then SOME (valOf var, ty, Vector.first args, targs) (* or Type.deArray ty ??*)
+                            then SOME (valOf var, ty, Vector.first args, targs)
                             else NONE
                           else NONE
                       | _ => NONE)
@@ -68,7 +68,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                        ty = Type.array ty,
                        exp = PrimApp
                              {args = Vector.new1 zeroVar,
-                              prim = Prim.array,
+                              prim = Prim.arrayUninit,
                               targs = Vector.new1 ty}}
                     val () = List.push (newGlobals, statement)
                   in
@@ -100,7 +100,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                       case exp of
                           PrimApp {prim, args, ...} =>
                           (case Prim.name prim of
-                              Prim.Array_toVector =>
+                              Array_toVector =>
                                 (Vector.first args)::acc
                             | _ => acc)
                         | _ => acc))
@@ -114,16 +114,16 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                     let
                       val blocks' = Vector.toList blocks
                       fun splitAndMerge
-                          (block as Block.T {label, args, statements, transfer}::bs,
+                          ((block as Block.T {label, args, statements, transfer})::bs,
                           acc) =
                             let
-                              (* val (pre, post, match) = *)
-                              val match as ((arrVar, arrTy, numVar, eltTy), pre, post) =
-                                split ((Vector.toList statements), arrVars, [])
+                              val match = split (statements, arrVars)
                             in
                               if isSome match
                               then
                                 let
+                                  val ((arrVar, arrTy, numVar, eltTy), pre, post) =
+                                      valOf match
                                   val ifZeroLab = Label.newString "L_zero"
                                   val ifNonZeroLab = Label.newString "L_nonzero"
                                   val joinLab = Label.newString "L_join"
@@ -165,11 +165,11 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                            ty = arrTy,
                                            exp = PrimApp
                                                  {args = Vector.new1 numVar,
-                                                  prim = Prim.array,
+                                                  prim = Prim.arrayUninit,
                                                   targs = eltTy}})
                                       val transfer = Transfer.Goto
                                                      {args = Vector.new1 arrVar',
-                                                      label = joinLab}
+                                                      dst = joinLab}
                                     in
                                       Block.T {label = ifNonZeroLab,
                                                args = Vector.new0 (),
@@ -182,7 +182,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                       val transfer =
                                         Transfer.Goto
                                         {args = Vector.new1 (getZeroArrVar (Vector.first eltTy)),
-                                         label = joinLab}
+                                         dst = joinLab}
                                     in
                                         Block.T {label = ifZeroLab,
                                                  args = Vector.new0 (),
@@ -224,7 +224,9 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
 
       in
           Program.T {datatypes = datatypes,
-                     globals = Vector.concat [globals, Vector.fromList (zeroVarStmt :: !newGlobals)],
+                     globals = Vector.concat
+                               [globals,
+                                Vector.fromList (zeroVarStmt :: !newGlobals)],
                      functions = functions',
                      main = main}
       end
