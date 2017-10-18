@@ -188,6 +188,11 @@ polyml-mlton:
 	$(MAKE) -C "$(COMP)" polyml-mlton
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	cat "$(MLTON)" \
+		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| sed 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
+		> "$(MLTON).polyml"
+	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: profiled
