@@ -21,16 +21,6 @@ hpux)
 esac
 mlton="$lib/mlton-compile$exe"
 
-smlnj='sml'
-if $smlnj -h >/dev/null 2>&1; then
-        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
-        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
-else
-        mlton_smlnj_heap=""
-fi
-
-mlton_polyml="$lib/mlton-polyml$exe"
-
 declare -a rargs
 case "$1" in
 @MLton)
@@ -49,25 +39,33 @@ case "$1" in
 esac
 
 doitMLton () {
-    exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    if [ -x "$mlton" ]; then
+        exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    fi
 }
 doitSMLNJ () {
-    exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+    smlnj='sml'
+    if $smlnj -h >/dev/null 2>&1; then
+        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
+        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
+        if [ -s "$mlton_smlnj_heap" ]; then
+            exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+        fi
+    fi
 }
 doitPolyML () {
-    exec "$mlton_polyml" "$@"
+    mlton_polyml="$lib/mlton-polyml$exe"
+    if [ -x "$mlton_polyml" ]; then
+        exec "$mlton_polyml" "$@"
+    fi
 }
 
 doit () {
-        if [ -x "$mlton" ]; then
-            doitMLton "$@"
-        elif [ -s "$mlton_smlnj_heap" ]; then
-            doitSMLNJ "$@"
-        elif [ -x "$mlton_polyml" ]; then
-            doitPolyML "$@"
-        fi
-        echo 'Unable to run MLton.  Check that lib is set properly.' >&2
-        exit 1
+    doitMLton "$@"
+    doitSMLNJ "$@"
+    doitPolyML "$@"
+    echo 'Unable to run MLton.  Check that lib is set properly.' >&2
+    exit 1
 }
 
 # set additional C compiler and linker flags from ../configure script
