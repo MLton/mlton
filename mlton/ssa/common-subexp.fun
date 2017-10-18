@@ -73,11 +73,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                         val a0 = arg 0
                         val a1 = arg 1
                      in
-                        if (case !Control.cseCanon of
-                               Control.AscHash => Var.hash a0 <= Var.hash a1
-                             | Control.DescHash => Var.hash a0 >= Var.hash a1
-                             | Control.AscIndex => varIndex a0 <= varIndex a1
-                             | Control.DescIndex => varIndex a0 >= varIndex a1)
+                        if varIndex a0 >= varIndex a1
                            then (a0, a1)
                         else (a1, a0)
                      end

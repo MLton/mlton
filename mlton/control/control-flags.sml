@@ -87,24 +87,6 @@ val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,
                                toString = Bool.toString}
 
-structure CSECanon =
-   struct
-      datatype t =
-         AscHash | DescHash | AscIndex | DescIndex
-
-      val toString =
-         fn AscHash => "ascHash"
-          | DescHash => "descHash"
-          | AscIndex => "ascIndex"
-          | DescIndex => "descIndex"
-   end
-
-datatype cseCanon = datatype CSECanon.t
-
-val cseCanon = control {name = "cse canon",
-                        default = CSECanon.AscHash,
-                        toString = CSECanon.toString}
-
 val debug = control {name = "debug",
                      default = false,
                      toString = Bool.toString}

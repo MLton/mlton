@@ -51,9 +51,6 @@ signature CONTROL_FLAGS =
 
       val contifyIntoMain: bool ref
 
-      datatype cseCanon = AscHash | DescHash | AscIndex | DescIndex
-      val cseCanon: cseCanon ref
-
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
