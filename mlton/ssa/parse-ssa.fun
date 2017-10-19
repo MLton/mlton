@@ -72,7 +72,7 @@ struct
       (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
    fun vectorOf p = Vector.fromList <$>
-      (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
+      (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
@@ -104,13 +104,13 @@ struct
    (* parse in a constructor (to Con.t) *)
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
       (ident <* spaces,
-      Vector.fromList <$> T.many (token "of" *> T.char #"(" *> (typ
-      resolveTycon) <* T.char #")" <* spaces) )
+      (token "of" *> vectorOf (typ resolveTycon)) <|> Vector.fromList <$> T.many (token "of" *> (T.char #"(" *> (typ
+      resolveTycon) <* T.char #")")))
 
    fun makeDt resolveTycon (tycon, cons) =
       Datatype.T
       {tycon = resolveTycon tycon,
-       cons = cons} 
+       cons = cons}
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
       ((spaces *> ident <* spaces <* symbol "="),
@@ -140,16 +140,6 @@ struct
                             ident = Con.toString con) of
                SOME con => con
              | NONE => resolveCon0 ident
-         (*
-         fun resolveTycon0 ident = makeNameResolver(Tycon.newString)
-         fun resolveTycon ident =
-           case List.peekMap (Tycon.prims, fn {name, tycon, ...} => 
-                              if ident = name then SOME tycon else NONE) of
-                SOME con => con
-              | NONE if ident = "unit"
-                        then Tycon.tuple
-                        else resolveTycon0 ident
-          *)
          fun resolveTycon ident = makeNameResolver(Tycon.fromString) ident
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
