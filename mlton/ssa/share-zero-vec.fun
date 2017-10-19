@@ -10,34 +10,6 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
     open S
     open Exp
 
-    (* split a vector of statements at the point where the Array_toVector
-     * arg var is declared;
-     * return (match, pre, post);
-     * note that a var may remain unmatched if reassigned between the original
-     * Array_uninit statement and its aliased use in the Array_toVector statement.
-     *)
-    fun split (stmts, arrVars) =
-      case Vector.peekMapi
-           (stmts,
-            fn Statement.T {var, ty, exp} =>
-              case exp of
-                  PrimApp ({prim, args, targs}) =>
-                    (case Prim.name prim of
-                        Array_uninit =>
-                          if isSome var
-                          then
-                            if List.contains (arrVars, valOf var, Var.equals)
-                            then SOME (valOf var, ty, Vector.first args, targs)
-                            else NONE
-                          else NONE
-                      | _ => NONE)
-                | _ => NONE) of
-          NONE => NONE
-        | SOME (i, (arrVar, arrTy, len, elemTy)) =>
-            SOME ((arrVar, arrTy, len, elemTy), (* val arrVar = Array_uninit ([elemTy], len) *)
-                  Vector.prefix (stmts, i),
-                  Vector.dropPrefix (stmts, i + 1))
-
     fun transform (Program.T {datatypes, globals, functions, main}) =
       let
 
@@ -80,6 +52,52 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
             end
         end
 
+        (* split a vector of statements at the point where the Array_toVector
+         * arg var is declared;
+         * return (match, pre, post);
+         * note that a var may remain unmatched if reassigned between the original
+         * Array_uninit statement and its aliased use in the Array_toVector statement.
+         *)
+        fun split (stmts, arrVars) =
+          case Vector.peekMapi
+              (stmts,
+                fn Statement.T {var, ty, exp} =>
+                  case exp of
+                      PrimApp ({prim, args, targs}) =>
+                        let
+                          datatype z = datatype Prim.Name.t
+                        in
+                          case Prim.name prim of
+                              Array_uninit =>
+                                if (isSome var) andalso (List.contains (arrVars, valOf var, Var.equals))
+                                then
+                                  let
+                                    val _ = Control.diagnostics
+                                        (fn display =>
+                                        let open Layout
+                                        in
+                                            display (seq
+                                              [str "Will split block at <prim:var:exp>...\n",
+                                              Prim.layout prim,
+                                              str " : ",
+                                              Var.layout (valOf var),
+                                              str " : ",
+                                              Exp.layout exp,
+                                              str "\n"])
+                                        end)
+                                  in
+                                    SOME (valOf var, ty, Vector.first args, targs)
+                                  end
+                                else NONE
+                            | _ => NONE
+                        end
+                    | _ => NONE) of
+              NONE => NONE
+            | SOME (i, (arrVar, arrTy, len, elemTy)) =>
+                SOME ((arrVar, arrTy, len, elemTy), (* val arrVar = Array_uninit ([elemTy], len) *)
+                      Vector.prefix (stmts, i),
+                      Vector.dropPrefix (stmts, i + 1))
+
         val functions' =
           List.map
           (functions, fn f =>
@@ -98,16 +116,36 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                     acc,
                     fn (Statement.T {exp, ...}, acc) =>
                       case exp of
-                          PrimApp {prim, args, ...} =>
-                          (case Prim.name prim of
-                              Array_toVector =>
-                                (Vector.first args)::acc
-                            | _ => acc)
+                          PrimApp ({prim, args, ...}) =>
+                            let
+                              datatype z = datatype Prim.Name.t
+                            in
+                              (case Prim.name prim of
+                                Array_toVector =>
+                                  let
+                                    val _ = Control.diagnostics
+                                        (fn display =>
+                                        let open Layout
+                                        in
+                                            display (seq
+                                              [str "1st pass: Adding a var to watch out for <func:prim:var>...\n",
+                                              Func.layout name,
+                                              str " : ",
+                                              Prim.layout prim,
+                                              str " : ",
+                                              Var.layout (Vector.first args),
+                                              str "\n"])
+                                        end)
+                                  in
+                                    (Vector.first args)::acc
+                                  end
+                              | _ => acc)
+                            end
                         | _ => acc))
 
             in
               if List.isEmpty arrVars
-              then f
+              then f (* no Array_toVector found in the function *)
               else (* 2nd iteration: branch and join on Array_uninit *)
                 let
                   val blocks =
@@ -120,14 +158,28 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                               val match = split (statements, arrVars)
                             in
                               if isSome match
-                              then
+                              then (* do splitting and merging *)
                                 let
                                   val ((arrVar, arrTy, numVar, eltTy), pre, post) =
                                       valOf match
+
+                                  val _ = Control.diagnostics
+                                      (fn display =>
+                                      let open Layout
+                                      in
+                                          display (seq
+                                            [str "About to split block <func:block>...\n",
+                                             Func.layout name,
+                                             str "\n---\n",
+                                             Block.layout block,
+                                             str "\n---\n"])
+                                      end)
+
                                   val ifZeroLab = Label.newString "L_zero"
                                   val ifNonZeroLab = Label.newString "L_nonzero"
                                   val joinLab = Label.newString "L_join"
 
+                                  (* new block up to Array_uninit match *)
                                   val preBlock =
                                     let
                                       val isZeroVar = Var.newString "isZero"
@@ -155,6 +207,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                                transfer = transfer}
                                     end
 
+                                  (* new block for if non-zero array *)
                                   val ifNonZeroBlock =
                                     let
                                       val arrVar' = Var.new arrVar
@@ -177,6 +230,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                                transfer = transfer}
                                     end
 
+                                  (* new block for if zero array *)
                                   val ifZeroBlock =
                                     let
                                       val transfer =
@@ -190,6 +244,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                                  transfer = transfer}
                                     end
 
+                                  (* new block with statements following match *)
                                   val joinBlock =
                                     Block.T {label = joinLab,
                                              args = Vector.new1 (arrVar, arrTy),
@@ -200,7 +255,8 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                   (joinBlock::bs,
                                    ifNonZeroBlock::ifZeroBlock::preBlock::acc)
                                 end
-                              else splitAndMerge (bs, block::acc)
+                              else (* no Array_uninit match in this block, on to the next block... *)
+                                splitAndMerge (bs, block::acc)
                             end
 
                         | splitAndMerge ([], acc) = acc
