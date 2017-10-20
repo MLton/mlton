@@ -185,7 +185,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                end
 
       val functions =
-         List.map
+         List.revMap
          (functions, fn f =>
           let
              val {args, blocks, mayInline, name, raises, returns, start} =
@@ -209,19 +209,15 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                 then f (* no Array_toVector found in the function *)
                 else (* transformation: branch and join at Array_uninit *)
                    let
-                      fun loop (bs, acc) =
-                         case bs of
-                            [] => acc
-                          | b::bs =>
-                               (case transformBlock (b, arrVars) of
-                                   NONE => loop (bs, b::acc)
-                                 | SOME (preBlock,
-                                         ifZeroBlock, ifNonZeroBlock,
-                                         joinBlock) =>
-                                      loop (joinBlock::bs,
-                                            ifNonZeroBlock::ifZeroBlock
-                                            ::preBlock::acc))
-                      val blocks = loop (Vector.toList blocks, [])
+                      fun doBlock (b, acc) =
+                         case transformBlock (b, arrVars) of
+                            NONE => b::acc
+                          | SOME (preBlock,
+                                  ifZeroBlock, ifNonZeroBlock,
+                                  joinBlock) =>
+                               doBlock (joinBlock,
+                                        ifNonZeroBlock::ifZeroBlock::preBlock::acc)
+                      val blocks = Vector.fold (blocks, [], doBlock)
                       val blocks = Vector.fromListRev blocks
                    in
                       shrink (Function.new {args = args,
