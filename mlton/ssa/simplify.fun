@@ -33,8 +33,8 @@ structure Profile = Profile (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
-structure SimplifyTypes = SimplifyTypes (S)
 structure ShareZeroVec = ShareZeroVec (S)
+structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 
 type pass = {name: string,
@@ -226,8 +226,8 @@ local
                  ("redundant", Redundant.transform),
                  ("redundantTests", RedundantTests.transform),
                  ("removeUnused", RemoveUnused.transform),
-                 ("simplifyTypes", SimplifyTypes.transform),
                  ("shareZeroVec", ShareZeroVec.transform),
+                 ("simplifyTypes", SimplifyTypes.transform),
                  ("useless", Useless.transform),
                  ("breakCriticalEdges",fn p => 
                   S.breakCriticalEdges (p, {codeMotion = true})),
