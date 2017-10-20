@@ -93,8 +93,8 @@ redundant.fun
 ref-flatten.fun
 remove-unused.fun
 remove-unused2.fun
-simplify-types.fun
 share-zero-vec.fun
+simplify-types.fun
 useless.fun
 zone.fun
 simplify.sig
