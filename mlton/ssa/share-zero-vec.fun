@@ -12,13 +12,30 @@ open Exp
 
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
+      val seqIndexSize = WordSize.seqIndex ()
+      val seqIndexTy = Type.word seqIndexSize
+      val (zeroVar, globals) =
+         case Vector.peekMap (globals, fn Statement.T {var, ty, exp} =>
+                              case (var, exp) of
+                                 (SOME var, Exp.Const (Const.Word w)) =>
+                                    if WordX.isZero w
+                                       andalso Type.equals (seqIndexTy, ty)
+                                       then SOME var
+                                       else NONE
+                            | _ => NONE) of
+            SOME zeroVar => (zeroVar, globals)
+          | _ => let
+                    val zeroVar = Var.newString "zero"
+                    val zeroVarStmt =
+                       Statement.T
+                       {var = SOME zeroVar,
+                        ty = seqIndexTy,
+                        exp = Exp.Const (Const.word (WordX.zero seqIndexSize))}
+                 in
+                    (zeroVar, Vector.concat [globals, Vector.new1 zeroVarStmt])
+                 end
+
       (* initialize a HashSet for new zero-length array globals *)
-      val zeroVar = Var.newString "zero"
-      val zeroVarStmt =
-         Statement.T
-         {var = SOME zeroVar,
-          ty = Type.word (WordSize.seqIndex ()),
-          exp = Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))}
       val newGlobals = ref []
       local
          val hs: {eltTy: Type.t, zeroArrVar: Var.t} HashSet.t =
@@ -100,7 +117,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = Type.bool,
                              exp = PrimApp
                                    {args = Vector.new2 (zeroVar, lenVar),
-                                    prim = Prim.wordEqual (WordSize.seqIndex ()),
+                                    prim = Prim.wordEqual seqIndexSize,
                                     targs = Vector.new0 ()}})
                         val transfer =
                            Transfer.Case
@@ -214,8 +231,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                     start = start}
                    end
           end)
-      val newGlobals = zeroVarStmt :: !newGlobals
-      val globals = Vector.concat [globals, Vector.fromList newGlobals]
+      val globals = Vector.concat [globals, Vector.fromList (!newGlobals)]
    in
       Program.T {datatypes = datatypes,
                  globals = globals,
