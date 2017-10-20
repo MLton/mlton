@@ -218,7 +218,7 @@ signature PRIM =
       sharing type t = ApplyResult.prim
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
-      val arrayAlloc: 'a t
+      val arrayAlloc: {raw: bool} -> 'a t
       val arrayLength: 'a t
       val arrayToVector: 'a t
       val arrayUpdate: 'a t

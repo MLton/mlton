@@ -426,7 +426,8 @@ structure Value =
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.arrayAlloc,
+                                                   prim = Prim.arrayAlloc
+                                                          {raw = false},
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
