@@ -35,6 +35,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     (zeroVar, Vector.concat [globals, Vector.new1 zeroVarStmt])
                  end
 
+      val shrink = shrinkFunction {globals = globals}
+
       (* initialize a HashSet for new zero-length array globals *)
       val newGlobals = ref []
       local
@@ -222,13 +224,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       val blocks = loop (Vector.toList blocks, [])
                       val blocks = Vector.fromListRev blocks
                    in
-                      Function.new {args = args,
-                                    blocks = blocks,
-                                    mayInline = mayInline,
-                                    name = name,
-                                    raises = raises,
-                                    returns = returns,
-                                    start = start}
+                      shrink (Function.new {args = args,
+                                            blocks = blocks,
+                                            mayInline = mayInline,
+                                            name = name,
+                                            raises = raises,
+                                            returns = returns,
+                                            start = start})
                    end
           end)
       val globals = Vector.concat [globals, Vector.fromList (!newGlobals)]
