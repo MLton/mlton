@@ -52,46 +52,26 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
             end
         end
 
-        (* split a vector of statements at the point where the Array_toVector
-         * arg var is declared;
+        (* split a vector of statements at Array_uninit (where cast Array_toVector);
          * return (match, pre, post);
          * note that a var may remain unmatched if reassigned between the original
-         * Array_uninit statement and its aliased use in the Array_toVector statement.
+         * Array_uninit statement and its use in the Array_toVector statement.
          *)
         fun split (stmts, arrVars) =
           case Vector.peekMapi
               (stmts,
                 fn Statement.T {var, ty, exp} =>
-                  case exp of
+                  (case exp of
                       PrimApp ({prim, args, targs}) =>
-                        let
-                          datatype z = datatype Prim.Name.t
-                        in
-                          case Prim.name prim of
-                              Array_uninit =>
-                                if (isSome var) andalso (List.contains (arrVars, valOf var, Var.equals))
-                                then
-                                  let
-                                    val _ = Control.diagnostics
-                                        (fn display =>
-                                        let open Layout
-                                        in
-                                            display (seq
-                                              [str "Will split block at <prim:var:exp>...\n",
-                                              Prim.layout prim,
-                                              str " : ",
-                                              Var.layout (valOf var),
-                                              str " : ",
-                                              Exp.layout exp,
-                                              str "\n"])
-                                        end)
-                                  in
-                                    SOME (valOf var, ty, Vector.first args, targs)
-                                  end
-                                else NONE
-                            | _ => NONE
-                        end
-                    | _ => NONE) of
+                        (case Prim.name prim of
+                            Prim.Name.Array_uninit =>
+                              if (isSome var)
+                                andalso
+                                (List.contains (arrVars, valOf var, Var.equals))
+                              then SOME (valOf var, ty, Vector.first args, targs)
+                              else NONE
+                          | _ => NONE)
+                    | _ => NONE)) of
               NONE => NONE
             | SOME (i, (arrVar, arrTy, len, elemTy)) =>
                 SOME ((arrVar, arrTy, len, elemTy), (* val arrVar = Array_uninit ([elemTy], len) *)
@@ -117,30 +97,10 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                     fn (Statement.T {exp, ...}, acc) =>
                       case exp of
                           PrimApp ({prim, args, ...}) =>
-                            let
-                              datatype z = datatype Prim.Name.t
-                            in
-                              (case Prim.name prim of
-                                Array_toVector =>
-                                  let
-                                    val _ = Control.diagnostics
-                                        (fn display =>
-                                        let open Layout
-                                        in
-                                            display (seq
-                                              [str "1st pass: Adding a var to watch out for <func:prim:var>...\n",
-                                              Func.layout name,
-                                              str " : ",
-                                              Prim.layout prim,
-                                              str " : ",
-                                              Var.layout (Vector.first args),
-                                              str "\n"])
-                                        end)
-                                  in
-                                    (Vector.first args)::acc
-                                  end
-                              | _ => acc)
-                            end
+                            (case Prim.name prim of
+                              Prim.Name.Array_toVector =>
+                                (Vector.first args)::acc
+                            | _ => acc)
                         | _ => acc))
 
             in
@@ -168,8 +128,7 @@ functor ShareZeroVec (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
                                       let open Layout
                                       in
                                           display (seq
-                                            [str "About to split block <func:block>...\n",
-                                             Func.layout name,
+                                            [str "Will split block:",
                                              str "\n---\n",
                                              Block.layout block,
                                              str "\n---\n"])
