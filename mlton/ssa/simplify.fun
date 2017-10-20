@@ -63,7 +63,7 @@ val ssaPassesDefault =
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
-   {name = "shareZeroVec", doit = ShareZeroVec.transform, execute = false} ::
+   {name = "shareZeroVec", doit = ShareZeroVec.transform, execute = true} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
     *   - before inlining so that equality functions can be inlined
