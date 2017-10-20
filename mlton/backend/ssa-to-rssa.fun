@@ -646,7 +646,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 
       val newObjectTypes = ref []
       local
-         val h = HashSet.new {hash = fn {bits, opt} =>
+         val h = HashSet.new {hash = fn {bits, ...} =>
                               Bits.toWord bits}
       in
          fun allocRawOpt width =
