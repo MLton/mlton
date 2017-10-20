@@ -26,3 +26,6 @@
 /Makefile-auto
 /Makefile-auto.in
 /mlton-env-config
+
+# created by a failed build
+/tmp*

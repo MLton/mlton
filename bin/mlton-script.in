@@ -5,7 +5,7 @@
 set -e
 
 dir=`dirname "$0"`
-lib=`cd "$dir/../lib" && pwd`
+lib=`cd "$dir/../lib/mlton" && pwd`
 eval `"$lib/platform"`
 gcc='gcc'
 case "$HOST_OS" in
