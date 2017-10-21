@@ -39,11 +39,15 @@ signature ARRAY_SLICE_EXTRA =
    sig
       include ARRAY_SLICE
 
+      val uninitIsNop: 'a slice -> bool
+      val uninit: 'a slice * int -> unit
       val unsafeSub: 'a slice * int -> 'a
       val unsafeCopy: {dst: 'a Array.array, di: int, src: 'a slice} -> unit
       val unsafeCopyVec: {dst: 'a Array.array, di: int, src: 'a VectorSlice.slice} -> unit
       val unsafeSlice: 'a array * int * int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
+      val unsafeUninit: 'a slice * int -> unit
+      val unsafeUpdate: 'a slice * int * 'a -> unit
 
       val concat: 'a slice list -> 'a array
       val toList: 'a slice -> 'a list

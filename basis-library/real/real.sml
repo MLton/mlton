@@ -382,7 +382,7 @@ functor Real (structure W: WORD_EXTRA
                           Int.+ (4 (* "0." + "E" + "\000" *),
                           Int.+ (List.length digits,
                                  String.size exp)))
-                  val a = Array.uninit n
+                  val a = Array.alloc n
                   fun upd (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
                   val i = 0
                   val i = if sign then upd (i, #"-") else i

@@ -1196,10 +1196,9 @@ fun shrinkFunction {globals: Statement.t vector} =
                                                   | SOME ty =>
                                                        (case Type.dest ty of
                                                            Type.Object {args, con = ObjectCon.Tuple} =>
-                                                              if Prod.length args
-                                                                 = Vector.length xs
+                                                              if Prod.length args = Vector.length xs
                                                                  andalso
-                                                                 not (Prod.isMutable args)
+                                                                 Prod.allAreImmutable args
                                                                  then SOME object
                                                               else no ()
                                                          | _ => no ()))
@@ -1230,7 +1229,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                         val args = varInfos args
                         val isMutable =
                            case Type.dest ty of
-                              Type.Object {args, ...} => Prod.isMutable args
+                              Type.Object {args, ...} => Prod.someIsMutable args
                             | _ => Error.bug "strange Object type"
                      in
                         (* It would be nice to improve this code to do

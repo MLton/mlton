@@ -34,81 +34,84 @@ structure Kind =
    end
 
 datatype 'a t =
-   Array_copyArray (* backend *)
- | Array_copyVector (* backend *)
- | Array_length (* ssa to rssa *)
- | Array_sub (* ssa to ssa2 *)
- | Array_toVector (* backend *)
- | Array_uninit (* backend *)
- | Array_update (* ssa to ssa2 *)
+   Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
+ | Array_copyArray (* to rssa (as runtime C fn) *)
+ | Array_copyVector (* to rssa (as runtime C fn) *)
+ | Array_length (* to rssa *)
+ | Array_sub (* to ssa2 *)
+ | Array_toArray (* to rssa *)
+ | Array_toVector (* to rssa *)
+ | Array_uninit (* to rssa *)
+ | Array_uninitIsNop (* to rssa *)
+ | Array_update (* to ssa2 *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
  | CPointer_equal (* codegen *)
  | CPointer_fromWord (* codegen *)
- | CPointer_getCPointer (* ssa to rssa *)
- | CPointer_getObjptr (* ssa to rssa *)
- | CPointer_getReal of RealSize.t (* ssa to rssa *)
- | CPointer_getWord of WordSize.t (* ssa to rssa *)
+ | CPointer_getCPointer (* to rssa *)
+ | CPointer_getObjptr (* to rssa *)
+ | CPointer_getReal of RealSize.t (* to rssa *)
+ | CPointer_getWord of WordSize.t (* to rssa *)
  | CPointer_lt (* codegen *)
- | CPointer_setCPointer (* ssa to rssa *)
- | CPointer_setObjptr (* ssa to rssa *)
- | CPointer_setReal of RealSize.t (* ssa to rssa *)
- | CPointer_setWord of WordSize.t (* ssa to rssa *)
+ | CPointer_setCPointer (* to rssa *)
+ | CPointer_setObjptr (* to rssa *)
+ | CPointer_setReal of RealSize.t (* to rssa *)
+ | CPointer_setWord of WordSize.t (* to rssa *)
  | CPointer_sub (* codegen *)
  | CPointer_toWord (* codegen *)
  | Exn_extra (* implement exceptions *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
- | FFI of 'a CFunction.t (* ssa to rssa *)
+ | FFI of 'a CFunction.t (* to rssa *)
  | FFI_Symbol of {name: string, 
                   cty: CType.t option, 
                   symbolScope: CFunction.SymbolScope.t } (* codegen *)
- | GC_collect (* ssa to rssa *)
- | IntInf_add (* ssa to rssa *)
- | IntInf_andb (* ssa to rssa *)
- | IntInf_arshift (* ssa to rssa *)
- | IntInf_compare (* ssa to rssa *)
- | IntInf_gcd (* ssa to rssa *)
- | IntInf_lshift (* ssa to rssa *)
- | IntInf_mul (* ssa to rssa *)
- | IntInf_neg (* ssa to rssa *)
- | IntInf_notb (* ssa to rssa *)
- | IntInf_orb (* ssa to rssa *)
- | IntInf_quot (* ssa to rssa *)
- | IntInf_rem (* ssa to rssa *)
- | IntInf_sub (* ssa to rssa *)
- | IntInf_toString (* ssa to rssa *)
- | IntInf_toVector (* ssa to rssa *)
- | IntInf_toWord (* ssa to rssa *)
- | IntInf_xorb (* ssa to rssa *)
- | MLton_bogus (* ssa to rssa *)
+ | GC_collect (* to rssa (as runtime C fn) *)
+ | IntInf_add (* to rssa (as runtime C fn) *)
+ | IntInf_andb (* to rssa (as runtime C fn) *)
+ | IntInf_arshift (* to rssa (as runtime C fn) *)
+ | IntInf_compare (* to rssa (as runtime C fn) *)
+ | IntInf_gcd (* to rssa (as runtime C fn) *)
+ | IntInf_lshift (* to rssa (as runtime C fn) *)
+ | IntInf_mul (* to rssa (as runtime C fn) *)
+ | IntInf_neg (* to rssa (as runtime C fn) *)
+ | IntInf_notb (* to rssa (as runtime C fn) *)
+ | IntInf_orb (* to rssa (as runtime C fn) *)
+ | IntInf_quot (* to rssa (as runtime C fn) *)
+ | IntInf_rem (* to rssa (as runtime C fn) *)
+ | IntInf_sub (* to rssa (as runtime C fn) *)
+ | IntInf_toString (* to rssa (as runtime C fn) *)
+ | IntInf_toVector (* to rssa *)
+ | IntInf_toWord (* to rssa *)
+ | IntInf_xorb (* to rssa (as runtime C fn) *)
  (* of type unit -> 'a.
   * Makes a bogus value of any type.
   *)
- | MLton_bug (* ssa to rssa *)
+ | MLton_bogus (* to rssa *)
+ | MLton_bug (* to rssa (as impure C fn) *)
  | MLton_deserialize (* unused *)
- | MLton_eq (* codegen *)
+ | MLton_eq (* to rssa (as Word_equal) *)
  | MLton_equal (* polymorphic equality *)
- | MLton_halt (* ssa to rssa *)
+ | MLton_halt (* to rssa (as runtime C fn) *)
  | MLton_hash (* polymorphic hash *)
  (* MLton_handlesSignals and MLton_installSignalHandler work together
   * to inform the optimizer and basis library whether or not the
   * program uses signal handlers.
   *
   * MLton_installSignalHandler is called by MLton.Signal.setHandler,
-  * and is effectively a noop, but is left in the program until the
-  * end of the backend, so that the optimizer can test whether or
-  * not the program installs signal handlers.
+  * and is effectively a noop, but is left in the program until, so
+  * that the optimizer can test whether or not the program installs
+  * signal handlers.
   *
   * MLton_handlesSignals is translated by closure conversion into
   * a boolean, and is true iff MLton_installsSignalHandler is called.
   *)
  | MLton_handlesSignals (* closure conversion *)
- | MLton_installSignalHandler (* backend *)
+ | MLton_installSignalHandler (* to rssa (as nop) *)
  | MLton_serialize (* unused *)
- | MLton_share
- | MLton_size (* ssa to rssa *)
- | MLton_touch (* backend *)
+ | MLton_share (* to rssa (as nop or runtime C fn) *)
+ | MLton_size (* to rssa (as runtime C fn) *)
+ | MLton_touch (* to rssa (as nop) or backend (as nop) *)
  | Real_Math_acos of RealSize.t (* codegen *)
  | Real_Math_asin of RealSize.t (* codegen *)
  | Real_Math_atan of RealSize.t (* codegen *)
@@ -131,37 +134,37 @@ datatype 'a t =
  | Real_mul of RealSize.t (* codegen *)
  | Real_muladd of RealSize.t (* codegen *)
  | Real_mulsub of RealSize.t (* codegen *)
- | Real_neg of RealSize.t         (* codegen *)
+ | Real_neg of RealSize.t (* codegen *)
  | Real_qequal of RealSize.t (* codegen *)
  | Real_rndToReal of RealSize.t * RealSize.t (* codegen *)
  | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Real_round of RealSize.t (* codegen *)
  | Real_sub of RealSize.t (* codegen *)
- | Ref_assign (* backend *)
- | Ref_deref (* backend *)
- | Ref_ref (* backend *)
+ | Ref_assign (* to ssa2 *)
+ | Ref_deref (* to ssa2 *)
+ | Ref_ref (* to ssa2 *)
  | String_toWord8Vector (* defunctorize *)
- | Thread_atomicBegin (* backend *)
- | Thread_atomicEnd (* backend *)
- | Thread_atomicState (* backend *)
- | Thread_copy (* ssa to rssa *)
- | Thread_copyCurrent (* ssa to rssa *)
+ | Thread_atomicBegin (* to rssa *)
+ | Thread_atomicEnd (* to rssa *)
+ | Thread_atomicState (* to rssa *)
+ | Thread_copy (* to rssa (as runtime C fn) *)
+ | Thread_copyCurrent (* to rssa (as runtime C fn) *)
  | Thread_returnToC (* codegen *)
  (* switchTo has to be a _prim because we have to know that it
   * enters the runtime -- because everything must be saved
   * on the stack.
   *)
- | Thread_switchTo (* ssa to rssa *)
+ | Thread_switchTo (* to rssa (as runtime C fn) *)
  | TopLevel_getHandler (* implement exceptions *)
  | TopLevel_getSuffix (* implement suffix *)
  | TopLevel_setHandler (* implement exceptions *)
  | TopLevel_setSuffix (* implement suffix *)
- | Vector_length (* ssa to ssa2 *)
- | Vector_sub (* ssa to ssa2 *)
- | Vector_vector (* ssa to ssa2 *)
- | Weak_canGet (* ssa to rssa *)
- | Weak_get (* ssa to rssa *)
- | Weak_new (* ssa to rssa *)
+ | Vector_length (* to ssa2 *)
+ | Vector_sub (* to ssa2 *)
+ | Vector_vector (* to ssa2 *)
+ | Weak_canGet (* to rssa (as runtime C fn) *)
+ | Weak_get (* to rssa (as runtime C fn) *)
+ | Weak_new (* to rssa (as runtime C fn) *)
  | Word_add of WordSize.t (* codegen *)
  | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
  | Word_andb of WordSize.t (* codegen *)
@@ -184,14 +187,14 @@ datatype 'a t =
  | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
  | Word_sub of WordSize.t (* codegen *)
  | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
- | Word_toIntInf (* ssa to rssa *)
+ | Word_toIntInf (* to rssa *)
  | Word_xorb of WordSize.t (* codegen *)
- | WordVector_toIntInf (* ssa to rssa *)
- | WordArray_subWord of {seqSize:WordSize.t, eleSize:WordSize.t} (* ssa to rssa *)
- | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* ssa to rssa *)
- | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* ssa to rssa *)
+ | WordVector_toIntInf (* to rssa *)
+ | WordArray_subWord of {seqSize:WordSize.t, eleSize:WordSize.t} (* to rssa *)
+ | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* to rssa *)
+ | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* to rssa *)
  | Word8Vector_toString (* defunctorize *)
- | World_save (* ssa to rssa *)
+ | World_save (* to rssa (as runtime C fn) *)
 
 fun name p = p
 
@@ -221,12 +224,15 @@ fun toString (n: 'a t): string =
       fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
-         Array_copyArray => "Array_copyArray"
+         Array_alloc {raw} => if raw then "Array_allocRaw" else "Array_alloc"
+       | Array_copyArray => "Array_copyArray"
        | Array_copyVector => "Array_copyVector"
        | Array_length => "Array_length"
        | Array_sub => "Array_sub"
+       | Array_toArray => "Array_toArray"
        | Array_toVector => "Array_toVector"
        | Array_uninit => "Array_uninit"
+       | Array_uninitIsNop => "Array_uninitIsNop"
        | Array_update => "Array_update"
        | CPointer_add => "CPointer_add"
        | CPointer_diff => "CPointer_diff"
@@ -376,10 +382,15 @@ fun layoutFull (p, layoutX) =
     | p => layout p
 
 val equals: 'a t * 'a t -> bool =
-   fn (Array_length, Array_length) => true
+   fn (Array_alloc {raw = r}, Array_alloc {raw = r'}) => Bool.equals (r, r')
+    | (Array_copyArray, Array_copyArray) => true
+    | (Array_copyVector, Array_copyVector) => true
+    | (Array_length, Array_length) => true
     | (Array_sub, Array_sub) => true
+    | (Array_toArray, Array_toArray) => true
     | (Array_toVector, Array_toVector) => true
     | (Array_uninit, Array_uninit) => true
+    | (Array_uninitIsNop, Array_uninitIsNop) => true
     | (Array_update, Array_update) => true
     | (CPointer_add, CPointer_add) => true
     | (CPointer_diff, CPointer_diff) => true
@@ -547,12 +558,15 @@ val equals: 'a t * 'a t -> bool =
 val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
-      Array_copyArray => Array_copyArray
+      Array_alloc {raw} => Array_alloc {raw = raw}
+    | Array_copyArray => Array_copyArray
     | Array_copyVector => Array_copyVector
     | Array_length => Array_length
     | Array_sub => Array_sub
+    | Array_toArray => Array_toArray
     | Array_toVector => Array_toVector
     | Array_uninit => Array_uninit
+    | Array_uninitIsNop => Array_uninitIsNop
     | Array_update => Array_update
     | CPointer_add => CPointer_add
     | CPointer_diff => CPointer_diff
@@ -688,9 +702,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
+val arrayAlloc = fn {raw} => Array_alloc {raw = raw}
 val arrayLength = Array_length
 val arrayToVector = Array_toVector
-val arrayUninit = Array_uninit
 val arrayUpdate = Array_update
 val assign = Ref_assign
 val bogus = MLton_bogus
@@ -799,12 +813,15 @@ val kind: 'a t -> Kind.t =
       datatype z = datatype Kind.t
    in
       case p of
-         Array_copyArray => SideEffect
+         Array_alloc _ => Moveable
+       | Array_copyArray => SideEffect
        | Array_copyVector => SideEffect
        | Array_length => Functional
        | Array_sub => DependsOnState
+       | Array_toArray => DependsOnState
        | Array_toVector => DependsOnState
-       | Array_uninit => Moveable
+       | Array_uninit => SideEffect
+       | Array_uninitIsNop => Functional
        | Array_update => SideEffect
        | CPointer_add => Functional
        | CPointer_diff => Functional
@@ -1005,12 +1022,16 @@ local
       @ wordSigns (s, false)
 in
    val all: unit t list =
-      [Array_copyArray,
+      [Array_alloc {raw = false},
+       Array_alloc {raw = true},
+       Array_copyArray,
        Array_copyVector,
        Array_length,
        Array_sub,
+       Array_toArray,
        Array_toVector,
        Array_uninit,
+       Array_uninitIsNop,
        Array_update,
        CPointer_add,
        CPointer_diff,
@@ -1265,12 +1286,17 @@ fun 'a checkApp (prim: 'a t,
       val string = word8Vector
   in
       case prim of
-         Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
+         Array_alloc _ => oneTarg (fn targ => (oneArg seqIndex, array targ))
+       | Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
        | Array_copyVector => oneTarg (fn t => (fiveArgs (array t, seqIndex, vector t, seqIndex, seqIndex), unit))
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
        | Array_sub => oneTarg (fn t => (twoArgs (array t, seqIndex), t))
+       | Array_toArray => oneTarg (fn t => (oneArg (array t), array t))
        | Array_toVector => oneTarg (fn t => (oneArg (array t), vector t))
-       | Array_uninit => oneTarg (fn targ => (oneArg seqIndex, array targ))
+       | Array_uninit =>
+            oneTarg (fn t => (twoArgs (array t, seqIndex), unit))
+       | Array_uninitIsNop =>
+            oneTarg (fn t => (oneArg (array t), bool))
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
        | CPointer_add =>
@@ -1455,12 +1481,15 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       datatype z = datatype t
    in
       case prim of
-         Array_copyArray => one (deArray (arg 0))
+         Array_alloc _ => one (deArray result)
+       | Array_copyArray => one (deArray (arg 0))
        | Array_copyVector => one (deArray (arg 0))
        | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
+       | Array_toArray => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
-       | Array_uninit => one (deArray result)
+       | Array_uninit => one (deArray (arg 0))
+       | Array_uninitIsNop => one (deArray (arg 0))
        | Array_update => one (deArray (arg 0))
        | CPointer_getObjptr => one result
        | CPointer_setObjptr => one (arg 2)

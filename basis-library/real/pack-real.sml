@@ -252,7 +252,7 @@ end
 
 fun toBytes (r: real): Word8Vector.vector =
    let
-      val a = Array.uninit bytesPerElem
+      val a = Array.alloc bytesPerElem
    in
       (updA (a, 0, r)
        ; Word8Vector.fromPoly (Array.vector a))

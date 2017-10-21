@@ -58,7 +58,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                           ty = Type.array ty,
                           exp = PrimApp
                                 {args = Vector.new1 zeroVar,
-                                 prim = Prim.arrayUninit,
+                                 prim = Prim.arrayAlloc {raw = false},
                                  targs = Vector.new1 ty}}
                       val () = List.push (newGlobals, statement)
                    in
@@ -73,7 +73,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       (* splitStmts (stmts, arrVars)
        * returns (preStmts, (arrVar, arrTy, eltTy, lenVar), postStmts)
        * when stmts = ...pre...
-       *              val arrVar: arrTy = Array_uninit(eltTy) (lenVar)
+       *              val arrVar: arrTy = Array_alloc(eltTy) (lenVar)
        *              ...post...
        * and arrVar in arrVars
        *)
@@ -83,7 +83,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                case exp of
                   PrimApp ({prim, args, targs}) =>
                      (case (var, Prim.name prim) of
-                         (SOME var, Prim.Name.Array_uninit) =>
+                         (SOME var, Prim.Name.Array_alloc {raw = false}) =>
                             if List.contains (arrVars, var, Var.equals)
                                then SOME (var, ty,
                                           Vector.first targs,
@@ -94,7 +94,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             NONE => NONE
           | SOME (i, (arrVar, arrTy, eltTy, lenVar)) =>
                SOME (Vector.prefix (stmts, i),
-                     (* val arrVar: arrTy = Array_uninit(eltTy) (lenVar) *)
+                     (* val arrVar: arrTy = Array_alloc(eltTy) (lenVar) *)
                      (arrVar, arrTy, eltTy, lenVar),
                      Vector.dropPrefix (stmts, i + 1))
 
@@ -108,7 +108,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   val ifNonZeroLab = Label.newString "L_nonZeroLen"
                   val joinLab = Label.newString "L_join"
 
-                  (* new block up to Array_uninit match *)
+                  (* new block up to Array_alloc match *)
                   val preBlock =
                      let
                         val isZeroVar = Var.newString "isZero"
@@ -161,7 +161,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = arrTy,
                              exp = PrimApp
                                    {args = Vector.new1 lenVar,
-                                    prim = Prim.arrayUninit,
+                                    prim = Prim.arrayAlloc {raw = false},
                                     targs = Vector.new1 eltTy}})
                         val transfer =
                            Transfer.Goto
@@ -207,7 +207,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           in
              if List.isEmpty arrVars
                 then f (* no Array_toVector found in the function *)
-                else (* transformation: branch and join at Array_uninit *)
+                else (* transformation: branch and join at Array_alloc *)
                    let
                       fun doBlock (b, acc) =
                          case transformBlock (b, arrVars) of

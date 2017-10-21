@@ -12,7 +12,7 @@ structure MinGW =
          let
             fun lp bufSz =
                let
-                  val buf = CharArray.uninit (C_Size.toInt bufSz)
+                  val buf = CharArray.alloc (C_Size.toInt bufSz)
                   val reqSz = PrimitiveFFI.MinGW.getTempPath (bufSz, buf)
                in
                   if 0w0 = reqSz
