@@ -107,7 +107,7 @@ the target machine, then compiling and linking there.
 
 1. Remake the compiler on a working machine.
 
-2. Use `bin/add-cross` to add support for the new target.  In particular, this should create `build/lib/targets/<target>/` with the platform-specific necessary cross-compilation information.
+2. Use `bin/add-cross` to add support for the new target.  In particular, this should create `build/lib/mlton/targets/<target>/` with the platform-specific necessary cross-compilation information.
 
 3. Run the regression tests with the cross-compiler.  To cross-compile all the tests, do
 +
@@ -144,20 +144,20 @@ mlton -stop g -target <target> mlton.mlb
 
 2. Copy to the target machine.
 
-3. On the target machine, move the libraries to the right place. That is, in `build/lib/targets`, do:
+3. On the target machine, move the libraries to the right place. That is, in `build/lib/mlton/targets`, do:
 +
 ----
 rm -rf self
 mv <target> self
 ----
-Also make sure you have all the header files in build/lib/include. You can copy them from a host machine that has run `make runtime`.
+Also make sure you have all the header files in build/lib/mlton/include. You can copy them from a host machine that has run `make runtime`.
 
 4. On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like:
 +
 ----
-gcc -c -Ibuild/lib/include -Ibuild/lib/targets/self/include -O1 -w mlton/mlton.*.[cs]
-gcc -o build/lib/mlton-compile \
-        -Lbuild/lib/targets/self \
+gcc -c -Ibuild/lib/mlton/include -Ibuild/lib/mlton/targets/self/include -O1 -w mlton/mlton.*.[cs]
+gcc -o build/lib/mlton/mlton-compile \
+        -Lbuild/lib/mlton/targets/self \
         -L/usr/local/lib \
         mlton.*.o \
         -lmlton -lgmp -lgdtoa -lm

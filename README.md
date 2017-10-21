@@ -116,7 +116,7 @@ autoreconf -vfi
 # can now ./configure && make && make check && make install && make clean
 ```
 
-To create an archive with a MLton executable:
+To create an archive with an MLton executable:
 ```shell
 autoreconf -vfi
 ./configure && make && make dist && make clean

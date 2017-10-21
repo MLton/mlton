@@ -64,7 +64,7 @@ PATH="$src"/bin:$PATH
 # from the rpms, this will usually be /usr/lib/mlton.  You must have
 # write permission there.
 
-lib="$src/build/lib"
+lib="$src/build/lib/mlton"
 
 # You shouldn't need to change anything below this line.
 
