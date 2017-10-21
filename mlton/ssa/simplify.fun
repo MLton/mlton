@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -33,6 +33,7 @@ structure Profile = Profile (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
+structure ShareZeroVec = ShareZeroVec (S)
 structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 
@@ -95,6 +96,16 @@ val ssaPassesDefault =
    {name = "commonArg", doit = CommonArg.transform, execute = true} ::
    {name = "commonSubexp1", doit = CommonSubexp.transform, execute = true} ::
    {name = "commonBlock", doit = CommonBlock.transform, execute = true} ::
+   (* shareZeroVec should run
+    *  - after useless because sharing of zero-length array inhibits
+    *    changing type of flow-disjoint vector data
+    *  - after simplifyTypes because it may make previously distinct
+    *    types equal and allow more sharing of zero-length arrays
+    *  - after inlining because shareZeroVec (slightly) increases size
+    *  - before redundantTests because shareZeroVec introduces
+    *    comparisons with zero
+    *)
+   {name = "shareZeroVec", doit = ShareZeroVec.transform, execute = true} ::
    {name = "redundantTests", doit = RedundantTests.transform, execute = true} ::
    {name = "redundant", doit = Redundant.transform, execute = true} ::
    {name = "loopUnswitch2", doit = LoopUnswitch.transform, execute = false} ::
@@ -224,6 +235,7 @@ local
                  ("redundant", Redundant.transform),
                  ("redundantTests", RedundantTests.transform),
                  ("removeUnused", RemoveUnused.transform),
+                 ("shareZeroVec", ShareZeroVec.transform),
                  ("simplifyTypes", SimplifyTypes.transform),
                  ("useless", Useless.transform),
                  ("breakCriticalEdges",fn p => 

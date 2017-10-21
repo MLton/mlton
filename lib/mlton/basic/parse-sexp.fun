@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Parse (S: PARSE_STRUCTS): PARSE = 
+functor ParseSexp (S: PARSE_SEXP_STRUCTS): PARSE_SEXP =
 struct
 
 open S
@@ -68,4 +68,4 @@ fun fold (parse: 'a t, base: 'b, f: 'a * 'b -> 'b): 'b t =
 
 end
 
-structure Parse = Parse(structure Sexp = Sexp)
+structure ParseSexp = ParseSexp(structure Sexp = Sexp)

@@ -80,6 +80,7 @@ local
    ref-flatten.fun
    remove-unused.fun
    remove-unused2.fun
+   share-zero-vec.fun
    simplify-types.fun
    useless.fun
    zone.fun

@@ -188,6 +188,11 @@ polyml-mlton:
 	$(MAKE) -C "$(COMP)" polyml-mlton
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	cat "$(MLTON)" \
+		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| sed 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
+		> "$(MLTON).polyml"
+	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: profiled
@@ -239,6 +244,11 @@ smlnj-mlton:
 	$(MAKE) -C "$(COMP)" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	cat "$(MLTON)" \
+		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| sed 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
+		> "$(MLTON).smlnj"
+	chmod u+x "$(MLTON).smlnj"
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: smlnj-mlton-x2
