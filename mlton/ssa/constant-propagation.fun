@@ -288,15 +288,16 @@ structure Value =
       and value =
          Array of {birth: unit Birth.t,
                    elt: t,
-                   length: t}
-        | Const of Const.t
-        | Datatype of data
-        | Ref of {arg: t,
-                  birth: {init: t} Birth.t}
-        | Tuple of t vector
-        | Vector of {elt: t,
-                     length: t}
-        | Weak of t
+                   length: t,
+                   raw: bool option ref}
+       | Const of Const.t
+       | Datatype of data
+       | Ref of {arg: t,
+                 birth: {init: t} Birth.t}
+       | Tuple of t vector
+       | Vector of {elt: t,
+                    length: t}
+       | Weak of t
       and data =
          Data of {coercedTo: data list ref,
                   filters: {args: t vector,
@@ -306,8 +307,8 @@ structure Value =
          ConApp of {args: t vector,
                     con: Con.t,
                     uniq: Unique.t}
-        | Undefined
-        | Unknown
+       | Undefined
+       | Unknown
 
       local
          fun make sel (T s) = sel (Set.! s)
@@ -328,10 +329,11 @@ structure Value =
       in
          fun layout v =
             case value v of
-               Array {birth, elt, length, ...} =>
+               Array {birth, elt, length, raw, ...} =>
                   seq [str "array", tuple [Birth.layout birth,
                                            layout length,
-                                           layout elt]]
+                                           layout elt,
+                                           Option.layout Bool.layout (!raw)]]
              | Const c => Const.layout c
              | Datatype d => layoutData d
              | Ref {arg, birth, ...} =>
@@ -422,12 +424,12 @@ structure Value =
                           | _ => No
                       val g =
                          case value of
-                            Array {birth, length, ...} =>
+                            Array {birth, length, raw, ...} =>
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
                                                    prim = Prim.arrayAlloc
-                                                          {raw = false},
+                                                          {raw = valOf (!raw)},
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
@@ -555,14 +557,15 @@ structure Value =
       in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
          val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
          val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
+         val arrayRaw = make ("ConstantPropagation.Value.arrayRaw", #raw)
       end
 
       fun arrayFromArray (T s: t): t =
          let
             val {value, ty, ...} = Set.! s
          in case value of
-            Array {birth, elt, length, ...} =>
-               new (Array {birth = birth, elt = elt, length = length}, ty)
+            Array {elt, length, ...} =>
+               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = ref (SOME false)}, ty)
           | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
          end
 
@@ -618,7 +621,8 @@ structure Value =
                       Type.Array t => 
                          Array {birth = arrayBirth (),
                                 elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ()))}
+                                length = loop (Type.word (WordSize.seqIndex ())),
+                                raw = ref NONE}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
@@ -777,11 +781,18 @@ fun transform (program: Program.t): Program.t =
                    | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                         (Birth.coerce {from = birth, to = b'}
                          ; unify (arg, a'))
-                   | (Array {birth = b, length = n, elt = x},
-                        Array {birth = b', length = n', elt = x'}) =>
+                   | (Array {birth = b, length = n, elt = x, raw = r},
+                      Array {birth = b', length = n', elt = x', raw = r'}) =>
                         (Birth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
-                         ; unify (x, x'))
+                         ; unify (x, x')
+                         ; (case (!r, !r') of
+                               (NONE, r') => r := r'
+                             | (r, NONE) => r' := r
+                             | (SOME b, SOME b') =>
+                                  (if b = b'
+                                      then ()
+                                      else error ())))
                    | (Vector {length = n, elt = x},
                       Vector {length = n', elt = x'}) =>
                         (coerce {from = n, to = n'}
@@ -806,6 +817,11 @@ fun transform (program: Program.t): Program.t =
                let 
                   val {value, ...} = Set.! s
                   val {value = value', ...} = Set.! s'
+                  fun error () =
+                     Error.bug
+                     (concat ["ConstantPropagation.Value.unify: strange: value: ",
+                              Layout.toString (Value.layout (T s)),
+                              " value': ", Layout.toString (Value.layout (T s'))])
                in Set.union (s, s')
                   ; case (value, value') of
                        (Const c, Const c') => Const.unify (c, c')
@@ -813,18 +829,25 @@ fun transform (program: Program.t): Program.t =
                      | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                           (Birth.unify (birth, b')
                            ; unify (arg, a'))
-                     | (Array {birth = b, length = n, elt = x},
-                        Array {birth = b', length = n', elt = x'}) =>
+                     | (Array {birth = b, length = n, elt = x, raw = r},
+                        Array {birth = b', length = n', elt = x', raw = r'}) =>
                           (Birth.unify (b, b')
                            ; unify (n, n')
-                           ; unify (x, x'))
+                           ; unify (x, x')
+                           ; (case (!r, !r') of
+                                 (NONE, r') => r := r'
+                               | (r, NONE) => r' := r
+                               | (SOME b, SOME b') =>
+                                    (if b = b'
+                                        then ()
+                                        else error ())))
                      | (Vector {length = n, elt = x},
                         Vector {length = n', elt = x'}) =>
                           (unify (n, n')
                            ; unify (x, x'))
                      | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
                      | (Weak v, Weak v') => unify (v, v')
-                     | _ => Error.bug "ConstantPropagation.Value.unify: strange"
+                     | _ => error ()
                end
          and unifyData (d, d') =
             (coerceData {from = d, to = d'}
@@ -886,11 +909,12 @@ fun transform (program: Program.t): Program.t =
                    ; unit ())
                fun arg i = Vector.sub (args, i)
                datatype z = datatype Prim.Name.t
-               fun array (length, birth) =
+               fun array (raw, length, birth) =
                   let
                      val a = fromType resultType
                      val _ = coerce {from = length, to = arrayLength a}
                      val _ = Birth.coerce {from = birth, to = arrayBirth a}
+                     val _ = arrayRaw a := SOME raw
                   in
                      a
                   end
@@ -911,7 +935,7 @@ fun transform (program: Program.t): Program.t =
                   end
             in
                case Prim.name prim of
-                  Array_alloc _ => array (arg 0, bear ())
+                  Array_alloc {raw} => array (raw, arg 0, bear ())
                 | Array_copyArray =>
                      update (arg 0, dearray (arg 2))
                 | Array_copyVector =>
