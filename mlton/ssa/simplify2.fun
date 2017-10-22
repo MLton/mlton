@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,27 +12,10 @@ struct
 
 open S
 
-(* structure CommonArg = CommonArg (S) *)
-(* structure CommonBlock = CommonBlock (S) *)
-(* structure CommonSubexp = CommonSubexp (S) *)
-(* structure ConstantPropagation = ConstantPropagation (S) *)
-(* structure Contify = Contify (S) *)
 structure DeepFlatten = DeepFlatten (S)
-(* structure Flatten = Flatten (S) *)
-(* structure Inline = Inline (S) *)
-(* structure IntroduceLoops = IntroduceLoops (S) *)
-(* structure KnownCase = KnownCase (S) *)
-(* structure LocalFlatten = LocalFlatten (S) *)
-(* structure LocalRef = LocalRef (S) *)
-(* structure LoopInvariant = LoopInvariant (S) *)
-(* structure PolyEqual = PolyEqual (S) *)
 structure Profile2 = Profile2 (S)
-(* structure Redundant = Redundant (S) *)
-(* structure RedundantTests = RedundantTests (S) *)
 structure RefFlatten = RefFlatten (S)
 structure RemoveUnused2 = RemoveUnused2 (S)
-(* structure SimplifyTypes = SimplifyTypes (S) *)
-(* structure Useless = Useless (S) *)
 structure Zone = Zone (S)
 
 type pass = {name: string,
