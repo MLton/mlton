@@ -565,12 +565,18 @@ fun makeOptions {usage} =
        (Expert, "llvm-opt-opt-quote", " <opt>", "pass (quoted) option to llvm optimizer",
         SpaceString
         (fn s => List.push (llvm_optOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
+       (Expert, "loop-ssa-passes", " <n>", "loop ssa optimization passes (1)",
         Int
         (fn i =>
          if i >= 1
-            then loopPasses := i
-            else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
+            then loopSsaPasses := i
+            else usage (concat ["invalid -loop-ssa-passes arg: ", Int.toString i]))),
+       (Expert, "loop-ssa2-passes", " <n>", "loop ssa2 optimization passes (1)",
+        Int
+        (fn i =>
+         if i >= 1
+            then loopSsa2Passes := i
+            else usage (concat ["invalid -loop-ssa2-passes arg: ", Int.toString i]))),
        (Expert, "loop-unroll-limit", " <n>", "limit code growth by loop unrolling",
         Int
         (fn i =>

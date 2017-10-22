@@ -308,11 +308,11 @@ fun simplify p =
    let
       fun simplify' n p =
          let
-            val midfix = if n = 0
+            val midfix = if !Control.loopSsaPasses = 1
                             then ""
-                         else concat [Int.toString n,"."]
+                         else concat [Int.toString n, "."]
          in
-            if n = !Control.loopPasses
+            if n = !Control.loopSsaPasses
                then p
             else simplify' 
                  (n + 1)
