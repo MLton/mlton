@@ -116,10 +116,10 @@ autoreconf -vfi
 # can now ./configure && make && make check && make install && make clean
 ```
 
-To create an archive with an MLton executable:
+To create an archive with a MLton executable:
 ```shell
 autoreconf -vfi
-./configure && make && make dist && make clean
+./configure && make && make binary-release && make clean
 cd .. && ls mlton*.tgz
 ```
 The archive can be extracted anywhere. The MLton binary can be run with
