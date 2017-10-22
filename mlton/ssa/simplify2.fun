@@ -49,16 +49,16 @@ local
 
 
    val passGens = 
-      List.map([("addProfile", Profile2.addProfile),
-                ("deepFlatten", DeepFlatten.transform2),
-                ("dropProfile", Profile2.dropProfile),
+      List.map([("deepFlatten", DeepFlatten.transform2),
                 ("refFlatten", RefFlatten.transform2),
                 ("removeUnused", RemoveUnused2.transform2),
                 ("zone", Zone.transform2),
-                ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                ("orderFunctions",S.orderFunctions),
-                ("reverseFunctions",S.reverseFunctions),
-                ("shrink", S.shrink)],
+                ("ssa2AddProfile", Profile2.addProfile),
+                ("ssa2DropProfile", Profile2.dropProfile),
+                ("ssa2EliminateDeadBlocks", S.eliminateDeadBlocks),
+                ("ssa2OrderFunctions", S.orderFunctions),
+                ("ssa2ReverseFunctions", S.reverseFunctions),
+                ("ssa2Shrink", S.shrink)],
                mkSimplePassGen)
 in
    fun ssa2PassesSetCustom s =
@@ -151,11 +151,11 @@ val simplify = fn p => let
                          val p =
                             if !Control.profile <> Control.ProfileNone
                                andalso !Control.profileIL = Control.ProfileSSA2
-                               then pass ({name = "addProfile2",
+                               then pass ({name = "ssa2AddProfile",
                                            doit = Profile2.addProfile,
                                            midfix = ""}, p)
                             else p
-                         val p = maybePass ({name = "orderFunctions2",
+                         val p = maybePass ({name = "ssa2OrderFunctions",
                                              doit = S.orderFunctions,
                                              execute = true,
                                              midfix = ""}, p)
