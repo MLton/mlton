@@ -57,7 +57,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
          (fn () =>
           let
              val n = Prim.getgroupsN ()
-             val a: C_GId.t array = Array.uninit (C_Int.toInt n)
+             val a: C_GId.t array = Array.alloc (C_Int.toInt n)
           in
              (Prim.getgroups (n, a), fn n => 
               (GId.listFromRep o ArraySlice.toList)

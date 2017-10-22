@@ -116,7 +116,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          val size: int ref = ref 1
-         fun make () = Array.uninit (!size)
+         fun make () = Array.alloc (!size)
          val buffer = ref (make ())
 
          fun extractToChar (a, c) =

@@ -249,7 +249,7 @@ local
             end
          fun readVec (fd, n) =
             let
-               val buf = Array.uninit n
+               val buf = Array.alloc n
                val bytesRead = 
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 

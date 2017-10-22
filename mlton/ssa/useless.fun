@@ -508,7 +508,9 @@ fun transform (program: Program.t): Program.t =
                datatype z = datatype Prim.Name.t
                val _ =
                   case Prim.name prim of
-                     Array_copyArray =>
+                     Array_alloc _ =>
+                        coerce {from = arg 0, to = arrayLength result}
+                   | Array_copyArray =>
                         let
                            val a = dearray (arg 0)
                         in
@@ -534,6 +536,12 @@ fun transform (program: Program.t): Program.t =
                          end
                    | Array_length => return (arrayLength (arg 0))
                    | Array_sub => sub ()
+                   | Array_toArray =>
+                        (case (value (arg 0), value result) of
+                            (Array {length = l, elt = e, ...},
+                             Array {length = l', elt = e', ...}) =>
+                               (unify (l, l'); unifySlot (e, e'))
+                           | _ => Error.bug "Useless.primApp: Array_toArray")
                    | Array_toVector =>
                         (case (value (arg 0), value result) of
                             (Array {length = l, elt = e, ...},
@@ -541,7 +549,19 @@ fun transform (program: Program.t): Program.t =
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
                    | Array_uninit =>
-                        coerce {from = arg 0, to = arrayLength result}
+                        let
+                           val a = dearray (arg 0)
+                        in
+                           arg 1 dependsOn a
+                        end
+                   | Array_uninitIsNop =>
+                        (* Array_uninitIsNop is Functional, but
+                         * performing Useless.<= (allOrNothing result,
+                         * allOrNothing (arg 0)) would effectively
+                         * make the whole array useful, inhibiting the
+                         * Useless optimization.
+                         *)
+                        ()
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
@@ -782,26 +802,41 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
-                  val (args, argTypes) =
-                     Vector.unzip
-                     (Vector.map (args, fn x =>
-                                  let val (t, b) = Value.getNew (value x)
-                                  in if b then (x, t)
-                                     else (unitVar, Type.unit)
-                                  end))
+                  fun doit () =
+                     let
+                        val (args, argTypes) =
+                           Vector.unzip
+                           (Vector.map (args, fn x =>
+                                        let
+                                           val (t, b) = Value.getNew (value x)
+                                        in
+                                           if b
+                                              then (x, t)
+                                              else (unitVar, Type.unit)
+                                        end))
+                     in
+                        PrimApp
+                        {prim = prim,
+                         args = args,
+                         targs = (Prim.extractTargs
+                                  (prim,
+                                   {args = argTypes,
+                                    result = resultType,
+                                    typeOps = {deArray = Type.deArray,
+                                               deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
+                                               deRef = Type.deRef,
+                                               deVector = Type.deVector,
+                                               deWeak = Type.deWeak}}))}
+                     end
+                  datatype z = datatype Prim.Name.t
                in
-                  PrimApp
-                  {prim = prim,
-                   args = args,
-                   targs = (Prim.extractTargs
-                            (prim,
-                             {args = argTypes,
-                              result = resultType,
-                              typeOps = {deArray = Type.deArray,
-                                         deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
-                                         deRef = Type.deRef,
-                                         deVector = Type.deVector,
-                                         deWeak = Type.deWeak}}))}
+                  case Prim.name prim of
+                     Array_uninitIsNop =>
+                        if varExists (Vector.sub (args, 0))
+                           then doit ()
+                           else ConApp {args = Vector.new0 (),
+                                        con = Con.falsee}
+                   | _ => doit ()
                end
           | Select {tuple, offset} =>
                let
@@ -865,6 +900,7 @@ fun transform (program: Program.t): Program.t =
                                    case Prim.name prim of
                                       Array_copyArray => array ()
                                     | Array_copyVector => array ()
+                                    | Array_uninit => array ()
                                     | Array_update => array ()
                                     | Ref_assign =>
                                          Value.isUseful

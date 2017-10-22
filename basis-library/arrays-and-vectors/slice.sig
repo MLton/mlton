@@ -16,14 +16,11 @@ signature SLICE =
       val length: 'a slice -> int
       val sub: 'a slice * int -> 'a elt
       val unsafeSub: 'a slice * int -> 'a elt
-      (* updateMk,unsafeUpdateMk:
-       * ('a sequence * SeqIndex.int * 'a elt -> unit) 
-       * should be primitive unsafe update. 
-       *)
-      val updateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                    ('a slice * int * 'a elt) -> unit
-      val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                          ('a slice * int * 'a elt) -> unit
+      val update: 'a slice * int * 'a elt -> unit
+      val unsafeUpdate: 'a slice * int * 'a elt -> unit
+      val uninitIsNop: 'a slice -> bool
+      val uninit: 'a slice * int -> unit
+      val unsafeUninit: 'a slice * int -> unit
       val copy: {dst: 'a elt Array.array, di: int, src: 'a slice} -> unit
       val unsafeCopy: {dst: 'a elt Array.array, di: int, src: 'a slice} -> unit
       val full: 'a sequence -> 'a slice
