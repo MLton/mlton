@@ -424,6 +424,9 @@ release: version
 		*
 	$(MAKE) clean
 
+.PHONY: dist
+dist: release
+
 .PHONY: binary-release
 binary-release:
 	tar cvzf ../mlton-$(VERSION).tgz \
