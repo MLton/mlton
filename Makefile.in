@@ -429,9 +429,10 @@ dist: release
 
 .PHONY: binary-release
 binary-release:
+	$(CP) "$(BUILD)" mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
 	tar cvzf ../mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS).tgz \
-		--transform "s,^\.,mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)," \
-		--directory="$(BUILD)" .
+		mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
+	rm -rf mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
 
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd
