@@ -20,6 +20,7 @@ in
 end
 
 val word = Trace.trace ("Random.word", Unit.layout, Word.layout) word
+val srand = Trace.trace ("Random.srand", Word.layout, Unit.layout) srand
 
 local
    val ri: int ref = ref 0
