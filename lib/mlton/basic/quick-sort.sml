@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -11,7 +11,7 @@ struct
 
 open Array
 
-val rand = Word.toIntX o MLton.Random.rand
+val rand = Word.toIntX o Random.word
 
 fun randInt (lo, hi) = lo + Int.mod (rand(), hi - lo + 1)
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -83,7 +83,7 @@ in
             val () =
                if w - 0w1 <= !max
                   then ()
-               else (r := MLton.Random.rand ()
+               else (r := word ()
                      ; max := Word.notb 0wx0)
             val w' = !r
             val () = r := Word.div (w', w)
