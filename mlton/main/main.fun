@@ -766,6 +766,8 @@ fun makeOptions {usage} =
         boolRef profileVal),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
+       (Expert, "seed-rand", " <w>", "seed the pseudo-random number generator",
+        Word Random.srand),
        (Expert, "show", " {anns|path-map}", "print specified data and stop",
         SpaceString
         (fn s =>
