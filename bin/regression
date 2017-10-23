@@ -51,7 +51,7 @@ done
 dir=`dirname "$0"`
 src=`cd "$dir/.." && pwd`
 bin="$src/build/bin"
-lib="$src/build/lib"
+lib="$src/build/lib/mlton"
 mlton="$bin/mlton"
 cont='callcc.sml callcc2.sml callcc3.sml once.sml'
 flatArray='finalize.sml flat-array.sml flat-array.2.sml'

@@ -67,7 +67,7 @@
 
 ### Prerequisites
 
- - GCC 4.1.x or later
+ - GCC 4.1.x or later (or Clang)
  - GNU Multiple Precision Library. Check if GMP is already present
      on your system (`whereis gmp libgmp`), typically on GCC search path
      (`gcc -v -x c -E -`).
@@ -116,7 +116,16 @@ autoreconf -vfi
 # can now ./configure && make && make check && make install && make clean
 ```
 
-To uninstall, simply delete the directory containing the MLton installation.
+To create an archive with a MLton executable:
+```shell
+autoreconf -vfi
+./configure && make && make binary-release && make clean
+cd .. && ls mlton*.tgz
+```
+The archive can be extracted anywhere. The MLton binary can be run with
+`<root>/mlton/bin/mlton` (provided the C compiler and the GMP
+dependency can be found). To uninstall, simply delete the directory 
+containing the MLton installation (`<root>/mlton`).
 
 
 ## Resources

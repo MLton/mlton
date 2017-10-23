@@ -8,7 +8,7 @@
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib
+LIB := $(BUILD)/lib/mlton
 MLTON := mlton
 TARGET := self
 FLAGS := -target $(TARGET) -default-ann 'sequenceNonUnit warn'
