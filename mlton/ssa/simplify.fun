@@ -214,14 +214,12 @@ local
 
    val passGens = 
       inlinePassGen ::
-      (List.map([("addProfile", Profile.addProfile),
-                 ("combineConversions",  CombineConversions.transform),
+      (List.map([("combineConversions",  CombineConversions.transform),
                  ("commonArg", CommonArg.transform),
                  ("commonBlock", CommonBlock.transform),
                  ("commonSubexp", CommonSubexp.transform),
                  ("constantPropagation", ConstantPropagation.transform),
                  ("contify", Contify.transform),
-                 ("dropProfile", Profile.dropProfile),
                  ("flatten", Flatten.transform),
                  ("introduceLoops", IntroduceLoops.transform),
                  ("knownCase", KnownCase.transform),
@@ -238,12 +236,13 @@ local
                  ("shareZeroVec", ShareZeroVec.transform),
                  ("simplifyTypes", SimplifyTypes.transform),
                  ("useless", Useless.transform),
-                 ("breakCriticalEdges",fn p => 
-                  S.breakCriticalEdges (p, {codeMotion = true})),
-                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                 ("orderFunctions",S.orderFunctions),
-                 ("reverseFunctions",S.reverseFunctions),
-                 ("shrink", S.shrink)],
+                 ("ssaAddProfile", Profile.addProfile),
+                 ("ssaDropProfile", Profile.dropProfile),
+                 ("ssaBreakCriticalEdges", fn p => S.breakCriticalEdges (p, {codeMotion = true})),
+                 ("ssaEliminateDeadBlocks", S.eliminateDeadBlocks),
+                 ("ssaOrderFunctions", S.orderFunctions),
+                 ("ssaReverseFunctions", S.reverseFunctions),
+                 ("ssaShrink", S.shrink)],
                 mkSimplePassGen))
 in
    fun ssaPassesSetCustom s =
@@ -309,11 +308,11 @@ fun simplify p =
    let
       fun simplify' n p =
          let
-            val midfix = if n = 0
+            val midfix = if !Control.loopSsaPasses = 1
                             then ""
-                         else concat [Int.toString n,"."]
+                         else concat [Int.toString n, "."]
          in
-            if n = !Control.loopPasses
+            if n = !Control.loopSsaPasses
                then p
             else simplify' 
                  (n + 1)
@@ -336,11 +335,11 @@ val simplify = fn p => let
                          val p =
                             if !Control.profile <> Control.ProfileNone
                                andalso !Control.profileIL = Control.ProfileSSA
-                               then pass ({name = "addProfile1",
+                               then pass ({name = "ssaAddProfile",
                                            doit = Profile.addProfile,
                                            midfix = ""}, p)
                             else p
-                         val p = maybePass ({name = "orderFunctions1",
+                         val p = maybePass ({name = "ssaOrderFunctions",
                                              doit = S.orderFunctions,
                                              execute = true,
                                              midfix = ""}, p)
