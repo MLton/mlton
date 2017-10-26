@@ -80,7 +80,7 @@ struct
              "bool" => Type.bool
             | "tuple" => Type.tuple args
             | "array" => Type.array (Vector.first args) 
-            | "vector" => Type.vector (Vector.first args) 
+            | "vector" => Type.vector (Vector.first args)
             | "ref" => Type.reff (Vector.first args)
             | "word8" => Type.word WordSize.word8
             | "word16" => Type.word WordSize.word16
@@ -121,12 +121,31 @@ struct
 
    fun datatypes resolveCon resolveTycon =
       token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
+   
+   fun makeStatement resolveVar (var, ty, exp) = 
+      (print("\n\nGLOBAL:\n");
+       print(var);
+       print("\n");
+       print(ty);
+       print("\n");
+       print(exp);
+      Statement.T
+      {var = NONE,
+       ty = Type.unit,
+       exp = Exp.Var (resolveVar exp)})
 
-   fun makeProgram(datatypes) =
+   fun glbl resolveVar = (makeStatement resolveVar) <$$$>
+      ((spaces *> ident <* T.char #":"),
+        (spaces *> ident <* spaces <* symbol "="),
+        (spaces *> ident <* spaces))
+
+   fun globls resolveVar = token "Globals:" *> Vector.fromList <$> T.many (glbl resolveVar)
+
+   fun makeProgram (datatypes, globals) =
       Program.T
          {datatypes = datatypes,
           functions = [],
-          globals = Vector.new0(),
+          globals = globals,
           main = Func.newNoname() } 
    
    val program : Program.t StreamParser.t=
@@ -142,11 +161,12 @@ struct
                SOME con => con
              | NONE => resolveCon0 ident
          fun resolveTycon ident = makeNameResolver(Tycon.fromString) ident
-         val resolveVar = makeNameResolver(Var.newString o strip_unique)
+         val resolveVar = makeNameResolver(Var.fromString)
       in
          T.compose(skipComments (),
             clOptions *>
-            (makeProgram <$> (datatypes resolveCon resolveTycon)))
+            (makeProgram <$$> (datatypes resolveCon resolveTycon, globls
+            resolveVar)))
       end
    
    fun parse s = T.parse(program, s)
