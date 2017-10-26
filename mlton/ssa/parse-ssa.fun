@@ -80,6 +80,7 @@ struct
              "bool" => Type.bool
             | "tuple" => Type.tuple args
             | "array" => Type.array (Vector.first args) 
+            | "vector" => Type.vector (Vector.first args) 
             | "ref" => Type.reff (Vector.first args)
             | "word8" => Type.word WordSize.word8
             | "word16" => Type.word WordSize.word16
