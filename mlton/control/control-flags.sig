@@ -301,6 +301,10 @@ signature CONTROL_FLAGS =
             val split: int option ref
          end
 
+      val optFuel: int option ref
+
+      val optFuelAvailAndUse: unit -> bool
+
       val optimizationPasses:
          {il: string, set: string -> unit Result.t, get: unit -> string} list ref
       

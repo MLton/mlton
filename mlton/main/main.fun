@@ -625,6 +625,8 @@ fun makeOptions {usage} =
        (Expert, "native-shuffle", " {true|false}",
         "shuffle registers at C-calls",
         Bool (fn b => Native.shuffle := b)),
+       (Expert, "opt-fuel", " <n>", "optimization 'fuel'",
+        Int (fn n => optFuel := SOME n)),
        (Expert, "opt-passes", " {default|minimal}", "level of optimizations",
         SpaceString (fn s =>
                      let
