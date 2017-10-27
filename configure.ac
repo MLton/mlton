@@ -39,7 +39,6 @@ AC_CONFIG_HEADERS([config.h])
 # Check system C compiler and tools
 ###############################################################################
 
-AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CC_STDC # enforce C99 standard whenever calling CC
 AC_PROG_INSTALL
