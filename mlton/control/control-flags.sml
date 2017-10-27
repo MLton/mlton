@@ -987,6 +987,24 @@ structure Native =
                            toString = Option.toString Int.toString}
    end
 
+val optFuel =
+   control {name = "optFuel",
+            default = NONE,
+            toString = Option.toString Int.toString}
+
+fun optFuelAvailAndUse () =
+   case !optFuel of
+      NONE => true
+    | SOME i => if i > 0
+                   then (optFuel := SOME (i - 1); true)
+                   else false
+(* Suppress unused variable warning
+ * This variable is purposefully unused in production,
+ * but is retained to make it easy to use in development of new
+ * optimization passes.
+ *)
+val _ = optFuelAvailAndUse
+
 val optimizationPasses:
    {il: string, set: string -> unit Result.t, get: unit -> string} list ref =
    control {name = "optimizationPasses",
