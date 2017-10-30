@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,14 +12,7 @@ signature SSA_TO_RSSA_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Ssa: SSA2
-      sharing Rssa.CFunction = Ssa.CFunction
-      sharing Rssa.Const = Ssa.Const
-      sharing Rssa.Func = Ssa.Func
-      sharing Rssa.Label = Ssa.Label
-      sharing Rssa.Prim = Ssa.Prim
-      sharing Rssa.ProfileExp = Ssa.ProfileExp
-      sharing Rssa.SourceInfo = Ssa.SourceInfo
-      sharing Rssa.Var = Ssa.Var
+      sharing Rssa.Atoms = Ssa.Atoms
    end
 
 signature SSA_TO_RSSA =
