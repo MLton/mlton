@@ -77,8 +77,7 @@ struct
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
          case ident of
-             "bool" => Type.bool
-            | "tuple" => Type.tuple args
+              "tuple" => Type.tuple args
             | "array" => Type.array (Vector.first args) 
             | "vector" => Type.vector (Vector.first args)
             | "ref" => Type.reff (Vector.first args)
@@ -122,24 +121,21 @@ struct
    fun datatypes resolveCon resolveTycon =
       token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
    
-   fun makeStatement resolveVar (var, ty, exp) = 
+   fun makeStatement resolveTycon resolveVar (var, ty) = 
       (print("\n\nGLOBAL:\n");
        print(var);
        print("\n");
-       print(ty);
-       print("\n");
-       print(exp);
       Statement.T
       {var = NONE,
-       ty = Type.unit,
-       exp = Exp.Var (resolveVar exp)})
+       ty = ty,
+       exp = Exp.Var (resolveVar var)})
 
-   fun glbl resolveVar = (makeStatement resolveVar) <$$$>
-      ((spaces *> ident <* T.char #":"),
-        (spaces *> ident <* spaces <* symbol "="),
-        (spaces *> ident <* spaces))
+   fun glbl resolveTycon resolveVar = (makeStatement resolveTycon resolveVar) <$$>
+      (spaces *> ident <* T.char #":",
+       spaces *> (typ resolveTycon) <* spaces <* symbol "=")
 
-   fun globls resolveVar = token "Globals:" *> Vector.fromList <$> T.many (glbl resolveVar)
+   fun globls resolveTycon resolveVar = spaces *> token "Globals:" *> Vector.fromList <$>
+      T.many (glbl resolveTycon resolveVar)
 
    fun makeProgram (datatypes, globals) =
       Program.T
@@ -154,19 +150,23 @@ struct
             (String.implode <$> T.manyCharsFailing(
                T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
              Stream.fromList (String.explode s))
-         val resolveCon0 = makeNameResolver(Con.fromString)
+         val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
          fun resolveCon ident =
             case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
                             ident = Con.toString con) of
                SOME con => con
              | NONE => resolveCon0 ident
-         fun resolveTycon ident = makeNameResolver(Tycon.fromString) ident
+         fun resolveTycon ident = 
+            case ident of
+                 "bool" => Tycon.bool
+               | _ => makeNameResolver(Tycon.newString o strip_unique) ident
+
          val resolveVar = makeNameResolver(Var.fromString)
       in
          T.compose(skipComments (),
             clOptions *>
             (makeProgram <$$> (datatypes resolveCon resolveTycon, globls
-            resolveVar)))
+            resolveTycon resolveVar)))
       end
    
    fun parse s = T.parse(program, s)
