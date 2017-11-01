@@ -89,9 +89,16 @@ structure Allocation:
                 val () =
                    QuickSort.sortArray
                    (a, fn (r, r') => Bytes.<= (#offset r, #offset r'))
-
+                fun loop (alloc, ac) =
+                   case alloc of
+                      [] => List.rev ac
+                    | [a] => List.rev (a::ac)
+                    | (a1 as {offset = offset1, size = size1})::(a2 as {offset = offset2, size = size2})::alloc =>
+                         if Bytes.equals (Bytes.+ (offset1, size1), offset2)
+                            then loop ({offset = offset1, size = Bytes.+ (size1, size2)}::alloc, ac)
+                            else loop (a2::alloc, a1::ac)
              in
-                T (Array.toList a)
+                T (loop (Array.toList a, []))
              end
 
           fun get (T alloc, ty) =
