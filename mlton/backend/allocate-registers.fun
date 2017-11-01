@@ -147,7 +147,13 @@ structure Allocation:
                          loop (alloc, a, [])
                       end
              end
-
+          val get =
+             Trace.trace2
+             ("AllocateRegisters.Allocation.Stack.get",
+              layout, Type.layout,
+              Layout.tuple2 (layout, fn {offset} =>
+                             Layout.record [("offset", Bytes.layout offset)]))
+             get
        end
        structure Registers =
        struct
