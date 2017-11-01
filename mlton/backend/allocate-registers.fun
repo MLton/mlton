@@ -400,19 +400,26 @@ fun allocate {formalsStackOffsets,
          Trace.trace2
          ("AllocateRegisters.allocateVar", Var.layout, Allocation.layout, Unit.layout)
          allocateVar
-      (* Create the initial stack and set the stack slots for the formals. *)
+      (* Set the stack slots for the formals.
+       * Also, create a stack allocation that includes all formals; if
+       * link and handler stack slots are required, then they will be
+       * allocated against this stack.
+       *)
       val stack =
          Allocation.Stack.new
          (Vector.foldr2
           (args, formalsStackOffsets args, [],
-           fn ((x, _), so, ac) =>
+           fn ((x, _), so, stack) =>
            (valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
-            ; so :: ac)))
-      (* Allocate slots for the link and handler, if necessary. *)
+            ; so :: stack)))
+      (* Allocate stack slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
          if !hasHandler
             then
                let
+                  (* Choose fixed and permanently allocated stack
+                   * slots that do not conflict with formals.
+                   *)
                   val (stack, {offset = handler, ...}) =
                      Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
                   val (_, {offset = link, ...}) = 
