@@ -336,7 +336,7 @@ fun allocate {formalsStackOffsets,
       val _ =
          Vector.foreach
          (blocks,
-          fn R.Block.T {args, kind, label, statements, ...} =>
+          fn R.Block.T {kind, label, statements, ...} =>
           let
              val {beginNoFormals, ...} = labelLive label
              val _ =
@@ -345,10 +345,6 @@ fun allocate {formalsStackOffsets,
                  | Kind.OffsetsAndSize =>
                       Vector.foreach (beginNoFormals, forceStack)
                  | Kind.SizeOnly => ()
-             val _ =
-                case kind of
-                   Kind.Cont _ => Vector.foreach (args, forceStack o #1)
-                 | _ => ()
              val _ =
                 if not (!hasHandler)
                    andalso (Vector.exists
