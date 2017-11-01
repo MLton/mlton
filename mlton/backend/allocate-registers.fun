@@ -314,10 +314,17 @@ fun allocate {formalsStackOffsets,
        * will live in registers.
        * Initially,
        *   - all formals are put in stack slots
-       *   - everything else is put everything in a register.
+       *   - everything else is put in a register.
        * Variables get moved to the stack if they are
-       *   - live at the beginning of a basic block (i.e. Fun dec)
-       *   - live at a primitive that enters the runtime system
+       *   - live at the beginning of a Cont block; such variables are
+       *     live while the frame is suspended during a non-tail call
+       *     and must be stack allocated to be traced during a GC
+       *   - live at the beginning of a CReturn block that mayGC; such
+       *     variables are live while the frame is suspended during a
+       *     C call and must be stack allocated to be traced during
+       *     the potential GC
+       * Both of the above are indiced by Kind.frameStyle kind =
+       * Kind.OffsetsAndSize
        *)
       datatype place = Stack | Register
       val {get = place: Var.t -> place ref, rem = removePlace, ...} =
