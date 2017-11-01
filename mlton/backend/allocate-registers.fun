@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -278,7 +279,7 @@ structure Info =
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {argOperands,
+fun allocate {formalsStackOffsets,
               function = f: Rssa.Function.t,
               varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
                                  ty: Type.t}} =
@@ -396,13 +397,10 @@ fun allocate {argOperands,
       val stack =
          Allocation.Stack.new
          (Vector.foldr2
-          (args, argOperands, [],
-           fn ((x, t), z, ac) =>
-           case z of
-              Operand.StackOffset (StackOffset.T {offset, ...}) =>
-                 (valOf (#operand (varInfo x)) := SOME z
-                  ; StackOffset.T {offset = offset, ty = t} :: ac)
-            | _ => Error.bug "AllocateRegisters.allocate: strange argOperand"))
+          (args, formalsStackOffsets args, [],
+           fn ((x, _), so, ac) =>
+           (valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
+            ; so :: ac)))
       (* Allocate slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
          if !hasHandler

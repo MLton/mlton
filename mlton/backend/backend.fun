@@ -788,12 +788,10 @@ let
             in
                val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
                   let
-                     val argOperands =
-                        Vector.map
-                        (callReturnStackOffsets (args, #2, Bytes.zero),
-                         M.Operand.StackOffset)
+                     fun formalsStackOffsets args =
+                        callReturnStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
                   in
-                     AllocateRegisters.allocate {argOperands = argOperands,
+                     AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
                                                  function = f,
                                                  varInfo = varInfo}
                   end
