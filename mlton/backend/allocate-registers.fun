@@ -104,55 +104,43 @@ structure Allocation:
           fun get (T alloc, ty) =
              let
                 val slotSize = Type.bytes ty
-             in
-                case alloc of
-                   [] => (T [{offset = Bytes.zero, size = slotSize}],
-                          {offset = Bytes.zero})
-                 | a :: alloc =>
-                      let
-                         fun loop (alloc, a as {offset, size}, ac) =
+                fun loop (alloc, a as {offset, size}, ac) =
+                   let
+                      val prevEnd = Bytes.+ (offset, size)
+                      val begin = Type.align (ty, prevEnd)
+                      fun coalesce () =
+                         if Bytes.equals (prevEnd, begin)
+                            then ({offset = offset, size = Bytes.+ (size, slotSize)}, ac)
+                            else ({offset = begin, size = slotSize}, a :: ac)
+                   in
+                      case alloc of
+                         [] =>
                             let
-                               val prevEnd = Bytes.+ (offset, size)
-                               val begin = Type.align (ty, prevEnd)
-                               fun coalesce () =
-                                  if Bytes.equals (prevEnd, begin)
-                                     then ({offset = offset,
-                                            size = Bytes.+ (size, slotSize)},
-                                           ac)
-                                  else ({offset = begin, size = slotSize},
-                                        {offset = offset, size = size} :: ac)
+                               val (a, ac) = coalesce ()
                             in
-                              case alloc of
-                                 [] =>
-                                    let
-                                       val (a, ac) = coalesce ()
-                                    in
-                                       (T (rev (a :: ac)), {offset = begin})
-                                    end
-                                | (a' as {offset, size}) :: alloc =>
-                                    if Bytes.> (Bytes.+ (begin, slotSize),
-                                                offset)
-                                       then loop (alloc, a', a :: ac)
-                                    else
-                                       let
-                                          val (a'' as {offset = o', size = s'}, ac) = 
-                                             coalesce ()
-                                          val alloc =
-                                             List.appendRev
-                                             (ac,
-                                              if Bytes.equals (Bytes.+ (o', s'),
-                                                               offset)
-                                                 then {offset = o',
-                                                       size = Bytes.+ (size, s')}
-                                                      :: alloc
-                                              else a'' :: a' :: alloc)
-                                       in
-                                          (T alloc, {offset = begin})
-                                       end
+                               (T (rev (a :: ac)), {offset = begin})
                             end
-                      in
-                         loop (alloc, a, [])
-                      end
+                       | (a' as {offset, size}) :: alloc =>
+                            if Bytes.> (Bytes.+ (begin, slotSize), offset)
+                               then loop (alloc, a',
+                                          if Bytes.isZero offset andalso Bytes.isZero size
+                                             then ac
+                                             else a :: ac)
+                               else let
+                                       val (a'' as {offset = o', size = s'}, ac) =
+                                          coalesce ()
+                                       val alloc =
+                                          List.appendRev
+                                          (ac,
+                                           if Bytes.equals (Bytes.+ (o', s'), offset)
+                                              then {offset = o', size = Bytes.+ (size, s')} :: alloc
+                                              else a'' :: a' :: alloc)
+                                    in
+                                       (T alloc, {offset = begin})
+                                    end
+                   end
+             in
+                loop (alloc, {offset = Bytes.zero, size = Bytes.zero}, [])
              end
           val get =
              Trace.trace2
