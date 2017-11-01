@@ -645,9 +645,9 @@ let
          Trace.trace2 ("Backend.setLabelInfo",
                        Label.layout, Layout.ignore, Unit.layout)
          setLabelInfo
-      fun callReturnOperands (xs: 'a vector,
-                              ty: 'a -> Type.t,
-                              shift: Bytes.t): StackOffset.t vector =
+      fun callReturnStackOffsets (xs: 'a vector,
+                                  ty: 'a -> Type.t,
+                                  shift: Bytes.t): StackOffset.t vector =
          #1 (Vector.mapAndFold
              (xs, Bytes.zero,
               fn (x, offset) =>
@@ -686,7 +686,7 @@ let
             val raises = Option.map (raises, fn ts => raiseOperands ts)
             val returns =
                Option.map (returns, fn ts =>
-                           callReturnOperands (ts, fn t => t, Bytes.zero))
+                           callReturnStackOffsets (ts, fn t => t, Bytes.zero))
             val chunk = funcChunk name
             fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
                Vector.map (#args (labelInfo l), varOperand o #1)
@@ -790,7 +790,7 @@ let
                   let
                      val argOperands =
                         Vector.map
-                        (callReturnOperands (args, #2, Bytes.zero),
+                        (callReturnStackOffsets (args, #2, Bytes.zero),
                          M.Operand.StackOffset)
                   in
                      AllocateRegisters.allocate {argOperands = argOperands,
@@ -890,7 +890,7 @@ let
                                               size = size})
                                     end
                            val dsts =
-                              callReturnOperands
+                              callReturnStackOffsets
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
@@ -983,7 +983,7 @@ let
                      case kind of
                         R.Kind.Cont _ =>
                            let
-                              val srcs = callReturnOperands (args, #2, size)
+                              val srcs = callReturnStackOffsets (args, #2, size)
                            in
                               (M.Kind.Cont {args = Vector.map (srcs,
                                                                Live.StackOffset),
