@@ -85,6 +85,7 @@ struct
             | "word16" => Type.word WordSize.word16
             | "word32" => Type.word WordSize.word32
             | "word64" => Type.word WordSize.word64
+            | "unit" => Type.unit
             | _ => Type.datatypee (resolveTycon ident)
 
    local
@@ -120,22 +121,77 @@ struct
 
    fun datatypes resolveCon resolveTycon =
       token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
+
    
-   fun makeStatement resolveTycon resolveVar (var, ty) = 
+   
+   
+   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
+                                           | SOME y => T.pure y)
+
+   val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
+         (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
+   val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
+         T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")))
+   fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
+   fun parseReal sz = possibly (makeReal <$$> (String.implode <$>
+         List.concat <$> T.each
+         [T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")),
+          T.char #"." *> T.pure [#"."] <|> T.pure [],
+          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
+         T.pure sz))
+   val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
+   val parseBool = true <$ token "true" <|> false <$ token "false"
+
+   fun makeWord typ int =
+      if Tycon.isWordX typ
+         then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
+         else T.fail "Invalid word"
+   val parseWord8Vector = WordXVector.fromVector <$$>
+        (T.pure {elementSize=WordSize.word8},
+         T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
+
+   fun constExp typ =
+      if Tycon.isWordX typ then
+         Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
+      else if Tycon.isRealX typ then
+         Const.Real <$> parseReal (Tycon.deRealX typ) <|> T.failCut "real"
+      else if Tycon.isIntX typ then
+         Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+      else if Tycon.equals(typ, Tycon.vector) then
+         (* assume it's a word8 vector *)
+         T.any
+         [Const.string <$> parseString,
+          Const.wordVector <$> parseWord8Vector,
+          T.failCut "string constant"]
+
+      else
+         T.fail "constant"
+   
+   fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
       (print("\n\nGLOBAL:\n");
-       print(var);
-       print("\n");
       Statement.T
-      {var = NONE,
-       ty = ty,
-       exp = Exp.Var (resolveVar var)})
+      {var = SOME var,
+       ty = Type.unit,
+       exp = Exp.Const exp })
 
-   fun glbl resolveTycon resolveVar = (makeStatement resolveTycon resolveVar) <$$>
-      (spaces *> ident <* T.char #":",
-       spaces *> (typ resolveTycon) <* spaces <* symbol "=")
 
-   fun globls resolveTycon resolveVar = spaces *> token "Globals:" *> Vector.fromList <$>
-      T.many (glbl resolveTycon resolveVar)
+   fun globls resolveTycon resolveVar = 
+      let
+         val var = resolveVar <$> ident <* spaces
+         val typedvar = (fn (x,y) => (x,y)) <$$>
+            (var,
+             symbol ":" *> (typ resolveTycon) <* spaces)
+         fun glbl resolveTycon resolveVar = (makeStatement resolveTycon resolveVar)
+            <$>
+            (typedvar >>= (fn (var, ty) =>
+             (symbol "=" *> constExp ty <* spaces) >>= (fn constExp => 
+               T.pure (var, ty, constExp))))
+               
+         fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
+            T.many (glbl resolveTycon resolveVar)
+      in
+         globals' ()
+      end
 
    fun makeProgram (datatypes, globals) =
       Program.T
@@ -156,12 +212,13 @@ struct
                             ident = Con.toString con) of
                SOME con => con
              | NONE => resolveCon0 ident
+         val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
          fun resolveTycon ident = 
             case ident of
                  "bool" => Tycon.bool
-               | _ => makeNameResolver(Tycon.newString o strip_unique) ident
+               | _ => resolveTycon0 ident
 
-         val resolveVar = makeNameResolver(Var.fromString)
+         val resolveVar = makeNameResolver(Var.newString o strip_unique)
       in
          T.compose(skipComments (),
             clOptions *>
