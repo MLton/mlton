@@ -74,6 +74,25 @@ struct
    fun vectorOf p = Vector.fromList <$>
       (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
+   fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
+   val doneRecord = doneRecord' ()
+   fun fromRecord name p = T.peek
+      (T.char #"{" *> T.many (() <$ T.delay doneRecord' <|> () <$ T.failing (token name <* symbol "=") <* T.next)
+       *> token name *> symbol "=" *> p)
+
+   fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
+      (left <* spaces <* token "=>" >>= (fn l =>
+         right >>= (fn r => con (l, r))),
+       spaces)
+
+   fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
+
+
+   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
+                                           | SOME y => T.pure y)
+   val parseInt = possibly ((Int.fromString o String.implode) <$>
+         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
+
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
          case ident of
@@ -122,9 +141,6 @@ struct
    fun datatypes resolveCon resolveTycon =
       token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
 
-   
-   
-   
    fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
                                            | SOME y => T.pure y)
 
@@ -150,43 +166,128 @@ struct
         (T.pure {elementSize=WordSize.word8},
          T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
-   fun constExp typ =
-      if Tycon.isWordX typ then
-         Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
-      else if Tycon.isRealX typ then
-         Const.Real <$> parseReal (Tycon.deRealX typ) <|> T.failCut "real"
-      else if Tycon.isIntX typ then
-         Const.IntInf <$> parseIntInf <|> T.failCut "integer"
-      else if Tycon.equals(typ, Tycon.vector) then
-         (* assume it's a word8 vector *)
-         T.any
-         [Const.string <$> parseString,
-          Const.wordVector <$> parseWord8Vector,
-          T.failCut "string constant"]
-
-      else
-         T.fail "constant"
-   
    fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
       (print("\n\nGLOBAL:\n");
       Statement.T
       {var = SOME var,
-       ty = Type.unit,
-       exp = Exp.Const exp })
+       ty = ty,
+       exp = exp })
 
-
-   fun globls resolveTycon resolveVar = 
+   fun globls resolveCon resolveTycon resolveVar = 
       let
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (var,
              symbol ":" *> (typ resolveTycon) <* spaces)
+         fun makeVarExp var = Var.new var
+         val varExp =
+            T.failing (token "in" <|> token "exception" <|> token "val") *>
+            makeVarExp <$> var
+         fun makeApp(func, arg) = {arg=arg, func=func}
+         fun makeConApp(con, args) = { con=con, args=args }
+         fun conApp v = makeConApp <$$>
+            (resolveCon <$> ident <* spaces,
+             T.pure (Vector.new0 ()))
+         val conAppExp = token "new" *> T.cut (conApp varExp)
+         fun constExp typ =
+            if Tycon.isWordX typ then
+               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
+            else if Tycon.isRealX typ then
+               Const.Real <$> parseReal (Tycon.deRealX typ) <|> T.failCut "real"
+            else if Tycon.isIntX typ then
+               Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+            else if Tycon.equals(typ, Tycon.vector) then
+               (* assume it's a word8 vector *)
+               T.any
+               [Const.string <$> parseString,
+                Const.wordVector <$> parseWord8Vector,
+                T.failCut "string constant"]
+
+            else
+               T.fail "constant"
+         val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
+                                    CFunction.Convention.Stdcall <$ token "stdcall"
+         fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
+            CFunction.Kind.Runtime ({bytesNeeded=bytes, ensuresBytesFree=ens,
+            mayGC=mayGC, maySwitchThreads=maySwitch, modifiesFrontier=modifies,
+            readsStackTop=readsSt, writesStackTop=writesSt})
+         val parseRuntimeTarget = makeRuntimeTarget
+            <$> fromRecord "bytesNeeded" (optionOf parseInt)
+            <*> fromRecord "ensuresBytesFree" parseBool
+            <*> fromRecord "mayGC" parseBool
+            <*> fromRecord "maySwitchThreads" parseBool
+            <*> fromRecord "modifiesFrontier" parseBool
+            <*> fromRecord "readsStackTop" parseBool
+            <*> fromRecord "writesStackTop" parseBool
+            <* doneRecord
+         val parseKind = CFunction.Kind.Impure <$ token "Impure" <|>
+                         CFunction.Kind.Pure <$ token "Pure" <|>
+                         token "Runtime" *> T.cut parseRuntimeTarget
+
+         val parsePrototype = (fn x => x) <$$>
+            (fromRecord "args" (tupleOf ctype),
+             fromRecord "res" (optionOf ctype)) <* doneRecord
+         val parseSymbolScope = T.any
+            [CFunction.SymbolScope.External <$ token "external",
+             CFunction.SymbolScope.Private <$ token "private",
+             CFunction.SymbolScope.Public <$ token "public"]
+
+
+         val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
+                           CFunction.Target.Direct <$> ident
+         fun makeFFI args conv kind prototype return symbolScope target =
+            Prim.ffi (CFunction.T
+               {args=args, convention=conv, kind=kind,
+                prototype=prototype, return=return, symbolScope=symbolScope,
+                target = target})
+         val resolveFFI = token "FFI" *> T.cut(
+            makeFFI
+            <$> fromRecord "args" (tupleOf (typ resolveTycon))
+            <*> fromRecord "convention" parseConvention
+            <*> fromRecord "kind" parseKind
+            <*> fromRecord "prototype" parsePrototype
+            <*> fromRecord "return" (typ resolveTycon)
+            <*> fromRecord "symbolScope" parseSymbolScope
+            <*> fromRecord "target" parseTarget
+            <* doneRecord)
+         fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
+         val resolveFFISym = token "FFI_Symbol" *> T.cut(
+            makeFFISym
+            <$> fromRecord "name" ident
+            <*> fromRecord "cty" (optionOf ctype)
+            <*> fromRecord "symbolScope" parseSymbolScope
+            <* doneRecord)
+
+         fun resolvePrim p = case Prim.fromString p
+            of SOME p' => T.pure p'
+             | NONE => T.fail ("valid primitive, got " ^ p)
+         fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
+         val primAppExp = token "prim" *> T.cut (makePrimApp <$$$>
+            (T.any [
+               resolveFFI,
+               resolveFFISym,
+               (ident <* spaces >>= resolvePrim)],
+             (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
+             tupleOf varExp <* spaces))
+         fun makeSelect(offset, var) = {offset=offset, tuple=var}
+         val selectExp = symbol "#" *> T.cut(makeSelect <$$>
+            (parseInt <* spaces,
+             varExp))
+         val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
+                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
+            <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
          fun glbl resolveTycon resolveVar = (makeStatement resolveTycon resolveVar)
             <$>
             (typedvar >>= (fn (var, ty) =>
-             (symbol "=" *> constExp ty <* spaces) >>= (fn constExp => 
-               T.pure (var, ty, constExp))))
-               
+             (symbol "=" *> exp ty <* spaces) >>= (fn exp => 
+               T.pure (var, ty, exp))))
+         and exp typ = T.any
+            [Exp.ConApp <$> conAppExp,
+             Exp.Const <$> constExp (Type.deDatatype typ),
+             Exp.PrimApp <$> primAppExp,
+             Exp.Profile <$> profileExp,
+             Exp.Select <$> selectExp,
+             Exp.Tuple <$> (tupleOf varExp) <* spaces]            
          fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
             T.many (glbl resolveTycon resolveVar)
       in
@@ -223,7 +324,7 @@ struct
          T.compose(skipComments (),
             clOptions *>
             (makeProgram <$$> (datatypes resolveCon resolveTycon, globls
-            resolveTycon resolveVar)))
+            resolveCon resolveTycon resolveVar)))
       end
    
    fun parse s = T.parse(program, s)
