@@ -104,7 +104,6 @@ struct
             | "word16" => Type.word WordSize.word16
             | "word32" => Type.word WordSize.word32
             | "word64" => Type.word WordSize.word64
-            | "unit" => Type.unit
             | _ => Type.datatypee (resolveTycon ident)
 
    local
@@ -190,6 +189,7 @@ struct
              T.pure (Vector.new0 ()))
          val conAppExp = token "new" *> T.cut (conApp varExp)
          fun constExp typ =
+            (print (Layout.toString (Tycon.layout typ));
             if Tycon.isWordX typ then
                Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
             else if Tycon.isRealX typ then
@@ -204,7 +204,7 @@ struct
                 T.failCut "string constant"]
 
             else
-               T.fail "constant"
+               T.fail "constant")
          val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                     CFunction.Convention.Stdcall <$ token "stdcall"
          fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
@@ -281,13 +281,16 @@ struct
             (typedvar >>= (fn (var, ty) =>
              (symbol "=" *> exp ty <* spaces) >>= (fn exp => 
                T.pure (var, ty, exp))))
+         and exp typ = (
+            print (Layout.toString(Type.layout typ));
+            Exp.Const <$> constExp (Type.deDatatype typ))
          and exp typ = T.any
             [Exp.ConApp <$> conAppExp,
              Exp.Const <$> constExp (Type.deDatatype typ),
              Exp.PrimApp <$> primAppExp,
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
-             Exp.Tuple <$> (tupleOf varExp) <* spaces]            
+             Exp.Tuple <$> (tupleOf varExp) <* spaces]
          fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
             T.many (glbl resolveTycon resolveVar)
       in
@@ -317,6 +320,7 @@ struct
          fun resolveTycon ident = 
             case ident of
                  "bool" => Tycon.bool
+               | "unit" => Tycon.tuple
                | _ => resolveTycon0 ident
 
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
