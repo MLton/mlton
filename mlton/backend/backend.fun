@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,9 +60,6 @@ structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
 
-nonfix ^
-fun ^ r = valOf (!r)
-
 structure VarOperand =
    struct
       datatype t =
@@ -82,7 +79,7 @@ structure VarOperand =
          end
 
       val operand: t -> M.Operand.t =
-         fn Allocate {operand, ...} => ^operand
+         fn Allocate {operand, ...} => valOf (!operand)
           | Const oper => oper
    end
 
@@ -182,13 +179,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                end 
             fun pass ({name, doit}, p) =
                pass' ({name = name, doit = doit}, fn p => p, p)
-            fun maybePass ({name, doit}, p) =
-               if List.exists (!Control.dropPasses, fn re =>
-                               Regexp.Compiled.matchesAll (re, name))
-                  then p
-               else pass ({name = name, doit = doit}, p)
-            val p = maybePass ({name = "rssaShrink1", 
-                                doit = Program.shrink}, p)
+            fun maybePass ({name, doit, execute}, p) =
+               if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+               then pass ({name = name, doit = doit}, p)
+               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
+            val p = maybePass ({name = "rssaShrink1",
+                                doit = Program.shrink,
+                                execute = true}, p)
             val p = pass ({name = "insertLimitChecks", 
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
@@ -196,14 +196,16 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink}, p)
+                                doit = Program.shrink,
+                                execute = true}, p)
             val () = Program.checkHandlers p
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},
                       fn (p,_) => p, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions}, p)
+                                doit = Program.orderFunctions,
+                                execute = true}, p)
          in
             (p, makeProfileInfo)
          end
@@ -542,15 +544,10 @@ let
             datatype z = datatype R.Statement.t
          in
             case s of
-               Bind {dst = (var, _), isMutable, src} =>
-                  if isMutable
-                     orelse (case #operand (varInfo var) of
-                                VarOperand.Const _ => false
-                              | _ => true)
-                     then (Vector.new1
-                           (M.Statement.move {dst = varOperand var,
-                                              src = translateOperand src}))
-                  else Vector.new0 ()
+               Bind {dst = (var, _), src, ...} =>
+                  Vector.new1
+                  (M.Statement.move {dst = varOperand var,
+                                     src = translateOperand src})
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,
@@ -648,9 +645,9 @@ let
          Trace.trace2 ("Backend.setLabelInfo",
                        Label.layout, Layout.ignore, Unit.layout)
          setLabelInfo
-      fun callReturnOperands (xs: 'a vector,
-                              ty: 'a -> Type.t,
-                              shift: Bytes.t): StackOffset.t vector =
+      fun callReturnStackOffsets (xs: 'a vector,
+                                  ty: 'a -> Type.t,
+                                  shift: Bytes.t): StackOffset.t vector =
          #1 (Vector.mapAndFold
              (xs, Bytes.zero,
               fn (x, offset) =>
@@ -665,6 +662,22 @@ let
          valOf o M.Live.fromOperand
       val operandsLive: M.Operand.t vector -> M.Live.t vector =
          fn ops => Vector.map (ops, operandLive)
+      val isGlobal =
+         let
+            val {get: Var.t -> bool, set, rem, ...} =
+               Property.getSet
+               (Var.plist,
+                Property.initRaise ("Backend.toMachine.isGlobal", Var.layout))
+            val _ =
+               Function.foreachDef (main, fn (x, _) => set (x, false))
+            val _ =
+               List.foreach
+               (functions, fn f =>
+                (Function.foreachUse (f, fn x => set (x, true))
+                 ; Function.foreachDef (f, fn (x, _) => rem x)))
+         in
+            get
+         end
       fun genFunc (f: Function.t, isMain: bool): unit =
          let
             val f = eliminateDeadCode f
@@ -673,17 +686,32 @@ let
             val raises = Option.map (raises, fn ts => raiseOperands ts)
             val returns =
                Option.map (returns, fn ts =>
-                           callReturnOperands (ts, fn t => t, Bytes.zero))
+                           callReturnStackOffsets (ts, fn t => t, Bytes.zero))
             val chunk = funcChunk name
             fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
                Vector.map (#args (labelInfo l), varOperand o #1)
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
-                     if isMain
-                        then VarOperand.Const (M.Operand.Global
-                                               (M.Global.new {isRoot = true,
-                                                              ty = ty}))
+                     if isMain andalso isGlobal x
+                        then let
+                                val _ =
+                                   Control.diagnostics
+                                   (fn display =>
+                                    let
+                                       open Layout
+                                    in
+                                       display (seq
+                                                [str "Global: ",
+                                                 R.Var.layout x,
+                                                 str ": ",
+                                                 R.Type.layout ty])
+                                    end)
+                             in
+                                VarOperand.Const (M.Operand.Global
+                                                  (M.Global.new {isRoot = true,
+                                                                 ty = ty}))
+                             end
                      else VarOperand.Allocate {operand = ref NONE}
                in
                   setVarInfo (x, {operand = operand,
@@ -760,12 +788,10 @@ let
             in
                val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
                   let
-                     val argOperands =
-                        Vector.map
-                        (callReturnOperands (args, #2, Bytes.zero),
-                         M.Operand.StackOffset)
+                     fun formalsStackOffsets args =
+                        callReturnStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
                   in
-                     AllocateRegisters.allocate {argOperands = argOperands,
+                     AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
                                                  function = f,
                                                  varInfo = varInfo}
                   end
@@ -862,7 +888,7 @@ let
                                               size = size})
                                     end
                            val dsts =
-                              callReturnOperands
+                              callReturnStackOffsets
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
@@ -955,7 +981,7 @@ let
                      case kind of
                         R.Kind.Cont _ =>
                            let
-                              val srcs = callReturnOperands (args, #2, size)
+                              val srcs = callReturnStackOffsets (args, #2, size)
                            in
                               (M.Kind.Cont {args = Vector.map (srcs,
                                                                Live.StackOffset),
@@ -1004,9 +1030,9 @@ let
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
                         then
-                           case (if 0 = Vector.length statements
+                           case (if Vector.isEmpty statements
                                     then NONE
-                                 else (case Vector.sub (statements, 0) of
+                                 else (case Vector.first statements of
                                           s as M.Statement.ProfileLabel _ =>
                                              SOME s
                                         | _ => NONE)) of
@@ -1141,18 +1167,98 @@ let
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
+      val program =
+         Machine.Program.T
+         {chunks = chunks,
+          frameLayouts = frameLayouts,
+          frameOffsets = frameOffsets,
+          handlesSignals = handlesSignals,
+          main = main,
+          maxFrameSize = maxFrameSize,
+          objectTypes = objectTypes,
+          profileInfo = profileInfo,
+          reals = allReals (),
+          vectors = allVectors ()}
+
+      local
+         open Machine
+         fun pass' ({name, doit}, sel, p) =
+            let
+               val _ =
+                  let open Control
+                  in maybeSaveToFile
+                     ({name = name,
+                       suffix = "pre.machine"},
+                      Control.No, p, Control.Layouts Program.layouts)
+                  end
+               val p =
+                  Control.passTypeCheck
+                  {display = Control.Layouts
+                             (fn (r,output) =>
+                              Program.layouts (sel r, output)),
+                   name = name,
+                   stats = fn _ => Layout.empty,
+                   style = Control.No,
+                   suffix = "post.machine",
+                   thunk = fn () => doit p,
+                   typeCheck = Program.typeCheck o sel}
+            in
+               p
+            end
+         fun pass ({name, doit}, p) =
+            pass' ({name = name, doit = doit}, fn p => p, p)
+         fun maybePass ({name, doit, execute}, p) =
+            if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+               if Regexp.Compiled.matchesAll (re, name)
+                  then new
+                  else old)
+               then pass ({name = name, doit = doit}, p)
+               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
+
+         fun shuffle p =
+            let
+               fun shuffle v =
+                  let
+                     val a = Array.fromVector v
+                     val () = Array.shuffle a
+                  in
+                     Array.toVector a
+                  end
+               val Machine.Program.T
+                  {chunks, frameLayouts, frameOffsets,
+                   handlesSignals, main, maxFrameSize,
+                   objectTypes, profileInfo,
+                   reals, vectors} = p
+               val chunks = Vector.fromList chunks
+               val chunks = shuffle chunks
+               val chunks =
+                  Vector.map
+                  (chunks, fn Machine.Chunk.T {blocks, chunkLabel, regMax} =>
+                   Machine.Chunk.T
+                   {blocks = shuffle blocks,
+                    chunkLabel = chunkLabel,
+                    regMax = regMax})
+               val chunks = Vector.toList chunks
+            in
+               Machine.Program.T
+               {chunks = chunks,
+                frameLayouts = frameLayouts,
+                frameOffsets = frameOffsets,
+                handlesSignals = handlesSignals,
+                main = main,
+                maxFrameSize = maxFrameSize,
+                objectTypes = objectTypes,
+                profileInfo = profileInfo,
+                reals = reals,
+                vectors = vectors}
+            end
+      in
+         val program = maybePass ({name = "machineShuffle",
+                                   doit = shuffle,
+                                   execute = false}, program)
+      end
 in
-      Machine.Program.T 
-      {chunks = chunks,
-       frameLayouts = frameLayouts,
-       frameOffsets = frameOffsets,
-       handlesSignals = handlesSignals,
-       main = main,
-       maxFrameSize = maxFrameSize,
-       objectTypes = objectTypes,
-       profileInfo = profileInfo,
-       reals = allReals (),
-       vectors = allVectors ()}
+   program
 end}
    in
       program

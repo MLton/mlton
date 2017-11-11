@@ -40,8 +40,15 @@ signature ARRAY_EXTRA =
 
       structure ArraySlice: ARRAY_SLICE_EXTRA 
 
-      val arrayUninit: int -> 'a array
+      val alloc: int -> 'a array
+      val uninitIsNop: 'a array -> bool
+      val uninit: 'a array * int -> unit
+      val unsafeAlloc: int -> 'a array
+      val unsafeArray: int * 'a -> 'a array
+      val unsafeCopy: {dst: 'a array, di: int, src: 'a array} -> unit
+      val unsafeCopyVec: {dst: 'a array, di: int, src: 'a vector} -> unit
       val unsafeSub: 'a array * int -> 'a
+      val unsafeUninit: 'a array * int -> unit
       val unsafeUpdate: 'a array * int * 'a -> unit
 
       val concat: 'a array list -> 'a array
@@ -49,4 +56,16 @@ signature ARRAY_EXTRA =
       val toList: 'a array -> 'a list
       val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array * 'b
       val unfold: int * 'b * ('b -> 'a * 'b) -> 'a array * 'b
+
+      structure Raw:
+         sig
+            type 'a rawarr
+            val alloc: int -> 'a rawarr
+            val length: 'a rawarr -> int
+            val uninit: 'a rawarr * int -> unit
+            val uninitIsNop: 'a rawarr -> bool
+            val unsafeAlloc: int -> 'a rawarr
+            val unsafeToArray: 'a rawarr -> 'a array
+            val unsafeUninit: 'a rawarr * int -> unit
+         end
    end

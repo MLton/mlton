@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -60,6 +60,8 @@ signature DIRECTED_GRAPH =
       val coerce: 'a t -> unit t * {edge: 'a Edge.t -> unit Edge.t,
                                     node: 'a Node.t -> unit Node.t}
       val dfs: 'a t * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
+      val dfsForest: 'a t * {roots: 'a Node.t vector,
+                             nodeValue: 'a Node.t -> 'b} -> 'b Tree.t vector
       val dfsNodes: 'a t * 'a Node.t list * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
       val dfsTree: 'a t * {root: 'a Node.t,
                            nodeValue: 'a Node.t -> 'b} -> 'b Tree.t
@@ -108,6 +110,11 @@ signature DIRECTED_GRAPH =
             val dest: 'a t -> {loops: {headers: 'a Node.t vector,
                                        child: 'a t} vector,
                                notInLoop: 'a Node.t vector}
+            val layoutDot:
+               'a t * {nodeName: 'a Node.t -> string,
+                       options: Dot.GraphOption.t list,
+                       title: string}
+               -> Layout.t
          end
       val loopForestSteensgaard: 'a t * {root: 'a Node.t} -> 'a LoopForest.t
       val new: unit -> 'a t
@@ -124,6 +131,8 @@ signature DIRECTED_GRAPH =
          'a t * ('a Node.t vector vector)
          -> 'a u t * {destroy: unit -> unit,
                       newNode: 'a Node.t -> 'a u Node.t}
+      (* Removes node and incident edges. *)
+      val removeNode: 'a t * 'a Node.t -> unit
       val removeDuplicateEdges: 'a t -> unit
       (* Strongly-connected components.
        * Each component is given as a list of nodes.

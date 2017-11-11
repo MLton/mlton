@@ -1,4 +1,5 @@
 (* Modified from the ML Kit 4.1.4; basislib/Date.sml
+ * by mfluet@acm.org on 2017-04-07
  * by mfluet@acm.org on 2006-4-25
  * by mfluet@acm.org on 2005-8-10 based on
  *  modifications from the ML Kit Version 3; basislib/Date.sml
@@ -316,7 +317,7 @@ structure Date :> DATE =
           let
              val _ = setTmBuf (dateToTmoz d)
              val bufLen = 50 (* more than enough for a single format char *)
-             val buf = Array.arrayUninit bufLen
+             val buf = Array.alloc bufLen
              fun strftime fmtChar =
                 let
                    val len =

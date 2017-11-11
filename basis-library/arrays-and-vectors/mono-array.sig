@@ -39,7 +39,9 @@ signature MONO_ARRAY_EXTRA =
           and type vector = vector
           and type vector_slice = vector_slice
 
-      val arrayUninit: int -> array
+      val alloc: int -> array
+      val uninitIsNop: array -> bool
+      val uninit: array * int -> unit
 
       val concat: array list -> array
       val duplicate: array -> array
@@ -47,6 +49,9 @@ signature MONO_ARRAY_EXTRA =
       val toList: array -> elem list
       val toPoly: array -> elem Array.array
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> array * 'a
+
+      val unsafeAlloc: int -> array
       val unsafeSub: array * int -> elem
+      val unsafeUninit: array * int -> unit
       val unsafeUpdate: array * int * elem -> unit
    end

@@ -61,3 +61,4 @@ static inline pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 PRIVATE uintmax_t GC_getArrayLength (pointer a);
+PRIVATE void GC_arrayCopy (GC_state s, pointer ad, size_t ds, pointer as, size_t ss, size_t l);

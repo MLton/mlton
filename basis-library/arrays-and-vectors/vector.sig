@@ -34,8 +34,11 @@ signature VECTOR_EXTRA =
       include VECTOR
       structure VectorSlice: VECTOR_SLICE_EXTRA 
 
+      val copy: {dst: 'a Array.array, di: int, src: 'a vector} -> unit
+
       val unsafeFromArray: 'a array -> 'a vector
       val unsafeSub: 'a vector * int -> 'a
+      val unsafeCopy: {dst: 'a Array.array, di: int, src: 'a vector} -> unit
 
       (* Used to implement Substring/String functions *)
       val concatWith: 'a vector -> 'a vector list -> 'a vector

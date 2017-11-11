@@ -44,6 +44,8 @@ signature VECTOR =
        * returns.  If the end of the vector is reached, g is applied to the
        * state.
        *)
+
+      val first: 'a t -> 'a
       val fold':
          'a t * int * 'b * (int * 'a * 'b -> ('b, 'c) continue) * ('b -> 'c)
          -> 'c

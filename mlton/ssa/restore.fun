@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -25,6 +25,12 @@
 
 functor Restore (S: RESTORE_STRUCTS): RESTORE =
 struct
+
+structure Control =
+   struct
+      open Control
+      fun diagnostics _ = ()
+   end
 
 open S
 open Exp Transfer
@@ -529,7 +535,7 @@ fun restoreFunction {globals: Statement.t vector}
                 val li = labelInfo dst
                 val phiArgs = LabelInfo.phiArgs' li
               in
-                if Vector.length phiArgs = 0
+                if Vector.isEmpty phiArgs
                   then dst
                   else let
                          val phiArgs = Vector.map

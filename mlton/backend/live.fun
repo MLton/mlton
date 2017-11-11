@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -254,7 +255,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
       val processVar =
          Trace.trace ("Live.processVar", Var.layout, Unit.layout) processVar
       val _ = List.foreach (!allVars, processVar)
-      val _ = Function.foreachVar (function, fn (x, _) => removeVarInfo x)
+      val _ = Function.foreachDef (function, fn (x, _) => removeVarInfo x)
       (* handler code and link slots are harder; in particular, they don't
        * satisfy the SSA invariant -- there are multiple definitions;
        * furthermore, a def and use in a block does not mean that the def 

@@ -5,8 +5,8 @@ structure Main =
       fun doit n =
          let
             val len = 20000
-            val sum = len * (len - 1)
-            val v = Vector.tabulate (len, fn i => i)
+            val sum = Int32.fromInt (len * (len - 1))
+            val v = Vector.tabulate (len, fn i => Int32.fromInt i)
             fun loop n =
                if n < 0
                   then ()

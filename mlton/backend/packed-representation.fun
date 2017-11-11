@@ -1,4 +1,4 @@
-(* Copyright (C) 2016 Matthew Fluet.
+(* Copyright (C) 2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -858,9 +858,9 @@ structure ObjptrRep =
                         (components, fn {component = c, ...} =>
                          Rep.isObjptr (Component.rep c))
                      val padOffset =
-                        if 0 = Vector.length objptrs
+                        if Vector.isEmpty objptrs
                            then width
-                        else #offset (Vector.sub (objptrs, 0))
+                        else #offset (Vector.first objptrs)
                      val pad =
                         (#1 o Vector.unfoldi)
                         ((Bytes.toInt padBytes) div (Bytes.toInt Bytes.inWord32),
@@ -1339,7 +1339,7 @@ structure TupleRep =
                                               tycon = objptrTycon})
             else if numComponents = 0
                     then unit
-                 else Direct {component = #component (Vector.sub (components, 0)),
+                 else Direct {component = #component (Vector.first components),
                               selects = getSelects}
          end
       val make =
@@ -1859,7 +1859,7 @@ structure TyconRep =
                end
          else if (2 = Vector.length variants
                   andalso let
-                             val c = #con (Vector.sub (variants, 0))
+                             val c = #con (Vector.first variants)
                           in
                              Con.equals (c, Con.falsee)
                              orelse Con.equals (c, Con.truee)
@@ -2096,7 +2096,7 @@ structure TyconRep =
                      if 1 = Vector.length objptrs
                         then
                            let
-                              val objptr = Vector.sub (objptrs, 0)
+                              val objptr = Vector.first objptrs
                               val small = valOf small
                               val rep =
                                  sumWithSmall (ObjptrRep.rep (#objptr objptr))
@@ -2195,7 +2195,7 @@ structure TyconRep =
                              *)
                             let
                                val {con = c, dst, dstHasArg} =
-                                  Vector.sub (cases, 0)
+                                  Vector.first cases
                             in
                                if not (Con.equals (c, con))
                                   then Error.bug "PackedRepresentation.genCase: One"
@@ -2555,7 +2555,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                             init = TupleRep.unit}
                               val () = Vector.foreach (rs, fn r =>
                                                        Value.affect (r, tr))
-                              val hasIdentity = Prod.isMutable args
+                              val hasIdentity = Prod.someIsMutable args
                               val () =
                                  List.push
                                  (delayedObjectTypes, fn () =>
@@ -2577,7 +2577,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                            end
                       | ObjectCon.Vector =>
                            let
-                              val hasIdentity = Prod.isMutable args
+                              val hasIdentity = Prod.someIsMutable args
                               val args = Prod.dest args
                               fun tupleRep opt =
                                  let
@@ -2720,7 +2720,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
            case conRep con of
               ConRep.Tuple (TupleRep.Indirect opr) =>
                  (objptrTycon,
-                  ObjectType.Normal {hasIdentity = Prod.isMutable args,
+                  ObjectType.Normal {hasIdentity = Prod.someIsMutable args,
                                      ty = ObjptrRep.componentsTy opr}) :: ac
             | _ => ac))
       val objectTypes = ref objectTypes

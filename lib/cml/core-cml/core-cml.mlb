@@ -1,7 +1,8 @@
 ann 
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
-   "nonexhaustiveMatch warn" "redundantMatch warn"
-   "warnUnused true"
+   "warnUnused true" "forceUsed"
 in
    local
       $(SML_LIB)/basis/basis.mlb

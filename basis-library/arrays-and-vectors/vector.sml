@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,16 +28,14 @@ structure Vector: VECTOR_EXTRA =
          end
 
       fun update (v, i, x) = 
-         (Primitive.Vector.update (v, SeqIndex.fromInt i, x))
+         (Primitive.Vector.updateVector (v, SeqIndex.fromInt i, x))
          handle Overflow => raise Subscript
 
       val isSubvector = isSubsequence
 
-      val unsafeFromArray = Primitive.Vector.fromArrayUnsafe
+      val unsafeFromArray = Primitive.Vector.unsafeFromArray
 
       val vector = new
-
-      val create = generate
    end
 structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice
 

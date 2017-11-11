@@ -1,15 +1,3 @@
-diff --git a/lib/ml-lpt-lib.mlb b/lib/ml-lpt-lib.mlb
-index 77fd389..33c3666 100644
---- a/lib/ml-lpt-lib.mlb
-+++ b/lib/ml-lpt-lib.mlb
-@@ -31,6 +31,7 @@ in
-   structure AntlrRepair
-   structure AntlrStreamPos
-   structure ULexBuffer
-+  structure UTF8 (* from smlnj-lib.mlb; used in generated scanners *)
- 
-   functor AntlrEBNF
-   functor AntlrErrHandler
 diff --git a/lib/mllpt-lib.mlb b/lib/mllpt-lib.mlb
 new file mode 100644
 index 0000000..0d6bf2a

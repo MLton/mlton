@@ -5,7 +5,7 @@
 set -e
 
 dir=`dirname "$0"`
-lib=`cd "$dir/../lib" && pwd`
+lib=`cd "$dir/../lib/mlton" && pwd`
 eval `"$lib/platform"`
 gcc='gcc'
 case "$HOST_OS" in
@@ -20,16 +20,6 @@ hpux)
 ;;
 esac
 mlton="$lib/mlton-compile$exe"
-
-smlnj='sml'
-if $smlnj -h >/dev/null 2>&1; then
-        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
-        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
-else
-        mlton_smlnj_heap=""
-fi
-
-mlton_polyml="$lib/mlton-polyml$exe"
 
 declare -a rargs
 case "$1" in
@@ -49,36 +39,56 @@ case "$1" in
 esac
 
 doitMLton () {
-    exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    if [ -x "$mlton" ]; then
+        exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    fi
 }
 doitSMLNJ () {
-    exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+    smlnj='sml'
+    if $smlnj -h >/dev/null 2>&1; then
+        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
+        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
+        if [ -s "$mlton_smlnj_heap" ]; then
+            exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+        fi
+    fi
 }
 doitPolyML () {
-    exec "$mlton_polyml" "$@"
+    mlton_polyml="$lib/mlton-polyml$exe"
+    if [ -x "$mlton_polyml" ]; then
+        exec "$mlton_polyml" "$@"
+    fi
 }
 
 doit () {
-        if [ -x "$mlton" ]; then
-            doitMLton "$@"
-        elif [ -s "$mlton_smlnj_heap" ]; then
-            doitSMLNJ "$@"
-        elif [ -x "$mlton_polyml" ]; then
-            doitPolyML "$@"
-        fi
-        echo 'Unable to run MLton.  Check that lib is set properly.' >&2
-        exit 1
+    doitMLton "$@"
+    doitSMLNJ "$@"
+    doitPolyML "$@"
+    echo 'Unable to run MLton.  Check that lib is set properly.' >&2
+    exit 1
 }
+
+# set additional C compiler and linker flags from ../configure script
+XCFLAGS=@XCFLAGS@
+if [ -n "$XCFLAGS" ]; then
+xcflags="-cc-opt '$XCFLAGS'"
+fi
+
+XLDFLAGS=@XLDFLAGS@
+if [ -n "$XLDFLAGS" ]; then
+xldflags="-link-opt '$XLDFLAGS'"
+fi
+
 
 # You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
 gmpIncDir=
 if [ -n "$gmpIncDir" ]; then
-gmpCCOpts="-cc-opt -I$gmpIncDir"
+gmpCCOpts="-cc-opt '-I$gmpIncDir'"
 fi
 # You may need to set 'gmpLibDir' so the C compiler can find libgmp.
 gmpLibDir=
 if [ -n "$gmpLibDir" ]; then
-gmpLinkOpts="-link-opt -L$gmpLibDir -target-link-opt netbsd -Wl,-R$gmpLibDir"
+gmpLinkOpts="-link-opt '-L$gmpLibDir' -target-link-opt netbsd '-Wl,-R$gmpLibDir'"
 fi
 
 # For align-{functions,jumps,loops}, we use -m for now instead of
@@ -89,6 +99,7 @@ fi
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$gcc"                                               \
+        $xcflags $xldflags                                       \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1 -fno-common'                                \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
@@ -116,7 +127,6 @@ doit "$lib" \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
-        -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt aix '-maix64'                           \
         -target-link-opt ia64 "$ia64hpux"                        \
         -target-link-opt linux '-Wl,-znoexecstack'               \

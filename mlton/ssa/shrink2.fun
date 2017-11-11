@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -375,7 +375,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                       ; incLabel success
                       ; normal ())
                 | Bug =>
-                     if 0 = Vector.length statements
+                     if Vector.isEmpty statements
                         andalso (case returns of
                                     NONE => true
                                   | SOME ts =>
@@ -405,7 +405,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                            andalso not (Array.sub (isHeader, i))
                            andalso 1 = Vector.length args
                            andalso 1 = numVarOccurrences test
-                           andalso Var.equals (test, #1 (Vector.sub (args, 0)))
+                           andalso Var.equals (test, #1 (Vector.first args))
                            then
                               doit (LabelMeaning.Case {canMove = canMove (),
                                                        cases = cases,
@@ -423,7 +423,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                            then (incLabelMeaning m
                                  ; normal ())
                         else
-                           if 0 = Vector.length statements
+                           if Vector.isEmpty statements
                               andalso
                               Vector.equals (args, actuals, fn ((x, _), x') =>
                                              Var.equals (x, x')
@@ -523,13 +523,13 @@ fun shrinkFunction {globals: Statement.t vector} =
             Block.args (Vector.sub (blocks, LabelMeaning.blockIndex m))
          fun save (f, s) =
             let
-               val {destroy, graph, ...} =
-                  Function.layoutDot (f, fn _ => NONE)
+               val {destroy, controlFlowGraph, ...} =
+                  Function.layoutDot (f, Var.layout)
             in
                File.withOut
                (concat ["/tmp/", Func.toString (Function.name f),
                         ".", s, ".dot"],
-                fn out => Layout.outputl (graph, out))
+                fn out => Layout.outputl (controlFlowGraph, out))
                ; destroy ()
             end
          val () = if true then () else save (f, "pre")
@@ -991,7 +991,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                      val l = Cases.hd cases
                      fun isOk (l': Label.t): bool = Label.equals (l, l')
                   in
-                     if 0 = Vector.length (labelArgs l)
+                     if Vector.isEmpty (labelArgs l)
                         andalso Cases.forall (cases, isOk)
                         andalso (case default of
                                     NONE => true
@@ -1007,7 +1007,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                  fun doit (l, args) =
                                     let
                                        val args =
-                                          if 0 = Vector.length (labelArgs l)
+                                          if Vector.isEmpty (labelArgs l)
                                              then Vector.new0 ()
                                           else args
                                        val m = labelMeaning l
@@ -1110,7 +1110,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                     cases = cases,
                                     default = default,
                                     gone = fn () => deleteLabelMeaning m,
-                                    test = Vector.sub (args, 0)}
+                                    test = Vector.first args}
                  | Goto {canMove, dst, args} =>
                       if Array.sub (isHeader, i)
                          orelse Array.sub (isBlock, i)
@@ -1196,10 +1196,9 @@ fun shrinkFunction {globals: Statement.t vector} =
                                                   | SOME ty =>
                                                        (case Type.dest ty of
                                                            Type.Object {args, con = ObjectCon.Tuple} =>
-                                                              if Prod.length args
-                                                                 = Vector.length xs
+                                                              if Prod.length args = Vector.length xs
                                                                  andalso
-                                                                 not (Prod.isMutable args)
+                                                                 Prod.allAreImmutable args
                                                                  then SOME object
                                                               else no ()
                                                          | _ => no ()))
@@ -1230,7 +1229,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                         val args = varInfos args
                         val isMutable =
                            case Type.dest ty of
-                              Type.Object {args, ...} => Prod.isMutable args
+                              Type.Object {args, ...} => Prod.someIsMutable args
                             | _ => Error.bug "strange Object type"
                      in
                         (* It would be nice to improve this code to do

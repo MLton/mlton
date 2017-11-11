@@ -1,4 +1,5 @@
-(* Copyright (C) 2014 Rob Simmons.
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,14 +16,13 @@ signature PRIM_SLICE =
       val length: 'a slice -> SeqIndex.int
       val sub: 'a slice * SeqIndex.int -> 'a elt
       val unsafeSub: 'a slice * SeqIndex.int -> 'a elt
-      (* updateMk,unsafeUpdateMk:
-       * ('a sequence * SeqIndex.int * 'a elt -> unit) 
-       * should be primitive unsafe update. 
-       *)
-      val updateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                     ('a slice * SeqIndex.int * 'a elt) -> unit
-      val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                           ('a slice * SeqIndex.int * 'a elt) -> unit
+      val update: 'a slice * SeqIndex.int * 'a elt -> unit
+      val unsafeUpdate: 'a slice * SeqIndex.int * 'a elt -> unit
+      val uninitIsNop: 'a slice -> bool
+      val uninit: 'a slice * SeqIndex.int -> unit
+      val unsafeUninit: 'a slice * SeqIndex.int -> unit
+      val copy: {dst: 'a elt array, di: SeqIndex.int, src: 'a slice} -> unit
+      val unsafeCopy: {dst: 'a elt array, di: SeqIndex.int, src: 'a slice} -> unit
       val full: 'a sequence -> 'a slice
       val slice: 'a sequence * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSlice: 'a sequence * SeqIndex.int * SeqIndex.int option -> 'a slice
@@ -64,4 +64,3 @@ signature PRIM_SLICE =
        *)
       val span: ('a sequence * 'a sequence -> bool) -> 'a slice * 'a slice -> 'a slice
    end
-

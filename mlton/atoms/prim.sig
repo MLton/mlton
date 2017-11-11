@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -26,80 +26,84 @@ signature PRIM =
       structure Name:
          sig
             datatype 'a t =
-               Array_array (* backend *)
-             | Array_array0Const (* constant propagation *)
-             | Array_length (* ssa to rssa *)
-             | Array_sub (* ssa to ssa2 *)
-             | Array_toVector (* backend *)
-             | Array_update (* ssa to ssa2 *)
+               Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
+             | Array_copyArray (* to rssa (as runtime C fn) *)
+             | Array_copyVector (* to rssa (as runtime C fn) *)
+             | Array_length (* to rssa *)
+             | Array_sub (* to ssa2 *)
+             | Array_toArray (* to rssa *)
+             | Array_toVector (* to rssa *)
+             | Array_uninit (* to rssa *)
+             | Array_uninitIsNop (* to rssa *)
+             | Array_update (* to ssa2 *)
              | CPointer_add (* codegen *)
              | CPointer_diff (* codegen *)
              | CPointer_equal (* codegen *)
              | CPointer_fromWord (* codegen *)
-             | CPointer_getCPointer (* ssa to rssa *)
-             | CPointer_getObjptr (* ssa to rssa *)
-             | CPointer_getReal of RealSize.t (* ssa to rssa *)
-             | CPointer_getWord of WordSize.t (* ssa to rssa *)
+             | CPointer_getCPointer (* to rssa *)
+             | CPointer_getObjptr (* to rssa *)
+             | CPointer_getReal of RealSize.t (* to rssa *)
+             | CPointer_getWord of WordSize.t (* to rssa *)
              | CPointer_lt (* codegen *)
-             | CPointer_setCPointer (* ssa to rssa *)
-             | CPointer_setObjptr (* ssa to rssa *)
-             | CPointer_setReal of RealSize.t (* ssa to rssa *)
-             | CPointer_setWord of WordSize.t (* ssa to rssa *)
+             | CPointer_setCPointer (* to rssa *)
+             | CPointer_setObjptr (* to rssa *)
+             | CPointer_setReal of RealSize.t (* to rssa *)
+             | CPointer_setWord of WordSize.t (* to rssa *)
              | CPointer_sub (* codegen *)
              | CPointer_toWord (* codegen *)
              | Exn_extra (* implement exceptions *)
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
-             | FFI of 'a CFunction.t (* ssa to rssa *)
-             | FFI_Symbol of {name: string, (* codegen *)
+             | FFI of 'a CFunction.t (* to rssa *)
+             | FFI_Symbol of {name: string,
                               cty: CType.t option,
-                              symbolScope: CFunction.SymbolScope.t}
-             | GC_collect (* ssa to rssa *)
-             | IntInf_add (* ssa to rssa *)
-             | IntInf_andb (* ssa to rssa *)
-             | IntInf_arshift (* ssa to rssa *)
-             | IntInf_compare (* ssa to rssa *)
-             | IntInf_gcd (* ssa to rssa *)
-             | IntInf_lshift (* ssa to rssa *)
-             | IntInf_mul (* ssa to rssa *)
-             | IntInf_neg (* ssa to rssa *)
-             | IntInf_notb (* ssa to rssa *)
-             | IntInf_orb (* ssa to rssa *)
-             | IntInf_quot (* ssa to rssa *)
-             | IntInf_rem (* ssa to rssa *)
-             | IntInf_sub (* ssa to rssa *)
-             | IntInf_toString (* ssa to rssa *)
-             | IntInf_toVector (* ssa to rssa *)
-             | IntInf_toWord (* ssa to rssa *)
-             | IntInf_xorb (* ssa to rssa *)
-             | MLton_bogus (* ssa to rssa *)
+                              symbolScope: CFunction.SymbolScope.t } (* codegen *)
+             | GC_collect (* to rssa (as runtime C fn) *)
+             | IntInf_add (* to rssa (as runtime C fn) *)
+             | IntInf_andb (* to rssa (as runtime C fn) *)
+             | IntInf_arshift (* to rssa (as runtime C fn) *)
+             | IntInf_compare (* to rssa (as runtime C fn) *)
+             | IntInf_gcd (* to rssa (as runtime C fn) *)
+             | IntInf_lshift (* to rssa (as runtime C fn) *)
+             | IntInf_mul (* to rssa (as runtime C fn) *)
+             | IntInf_neg (* to rssa (as runtime C fn) *)
+             | IntInf_notb (* to rssa (as runtime C fn) *)
+             | IntInf_orb (* to rssa (as runtime C fn) *)
+             | IntInf_quot (* to rssa (as runtime C fn) *)
+             | IntInf_rem (* to rssa (as runtime C fn) *)
+             | IntInf_sub (* to rssa (as runtime C fn) *)
+             | IntInf_toString (* to rssa (as runtime C fn) *)
+             | IntInf_toVector (* to rssa *)
+             | IntInf_toWord (* to rssa *)
+             | IntInf_xorb (* to rssa (as runtime C fn) *)
              (* of type unit -> 'a.
               * Makes a bogus value of any type.
               *)
-             | MLton_bug (* ssa to rssa *)
+             | MLton_bogus (* to rssa *)
+             | MLton_bug (* to rssa (as impure C fn) *)
              | MLton_deserialize (* unused *)
-             | MLton_eq (* ssa to rssa *)
+             | MLton_eq (* to rssa (as Word_equal) *)
              | MLton_equal (* polymorphic equality *)
-             | MLton_halt (* ssa to rssa *)
+             | MLton_halt (* to rssa (as runtime C fn) *)
              | MLton_hash (* polymorphic hash *)
              (* MLton_handlesSignals and MLton_installSignalHandler work together
               * to inform the optimizer and basis library whether or not the
               * program uses signal handlers.
               *
               * MLton_installSignalHandler is called by MLton.Signal.setHandler,
-              * and is effectively a noop, but is left in the program until the
-              * end of the backend, so that the optimizer can test whether or
-              * not the program installs signal handlers.
+              * and is effectively a noop, but is left in the program until, so
+              * that the optimizer can test whether or not the program installs
+              * signal handlers.
               *
               * MLton_handlesSignals is translated by closure conversion into
               * a boolean, and is true iff MLton_installsSignalHandler is called.
               *)
              | MLton_handlesSignals (* closure conversion *)
-             | MLton_installSignalHandler (* backend *)
+             | MLton_installSignalHandler (* to rssa (as nop) *)
              | MLton_serialize (* unused *)
-             | MLton_share
-             | MLton_size (* ssa to rssa *)
-             | MLton_touch (* backend *)
+             | MLton_share (* to rssa (as nop or runtime C fn) *)
+             | MLton_size (* to rssa (as runtime C fn) *)
+             | MLton_touch (* to rssa (as nop) or backend (as nop) *)
              | Real_Math_acos of RealSize.t (* codegen *)
              | Real_Math_asin of RealSize.t (* codegen *)
              | Real_Math_atan of RealSize.t (* codegen *)
@@ -128,30 +132,31 @@ signature PRIM =
              | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Real_round of RealSize.t (* codegen *)
              | Real_sub of RealSize.t (* codegen *)
-             | Ref_assign (* ssa to ssa2 *)
-             | Ref_deref (* ssa to ssa2 *)
-             | Ref_ref (* ssa to ssa2 *)
+             | Ref_assign (* to ssa2 *)
+             | Ref_deref (* to ssa2 *)
+             | Ref_ref (* to ssa2 *)
              | String_toWord8Vector (* defunctorize *)
-             | Thread_atomicBegin (* backend *)
-             | Thread_atomicEnd (* backend *)
-             | Thread_atomicState (* backend *)
-             | Thread_copy (* ssa to rssa *)
-             | Thread_copyCurrent (* ssa to rssa *)
+             | Thread_atomicBegin (* to rssa *)
+             | Thread_atomicEnd (* to rssa *)
+             | Thread_atomicState (* to rssa *)
+             | Thread_copy (* to rssa (as runtime C fn) *)
+             | Thread_copyCurrent (* to rssa (as runtime C fn) *)
              | Thread_returnToC (* codegen *)
              (* switchTo has to be a _prim because we have to know that it
               * enters the runtime -- because everything must be saved
               * on the stack.
               *)
-             | Thread_switchTo (* ssa to rssa *)
+             | Thread_switchTo (* to rssa (as runtime C fn) *)
              | TopLevel_getHandler (* implement exceptions *)
              | TopLevel_getSuffix (* implement suffix *)
              | TopLevel_setHandler (* implement exceptions *)
              | TopLevel_setSuffix (* implement suffix *)
-             | Vector_length (* ssa to ssa2 *)
-             | Vector_sub (* ssa to ssa2 *)
-             | Weak_canGet (* ssa to rssa *)
-             | Weak_get (* ssa to rssa *)
-             | Weak_new (* ssa to rssa *)
+             | Vector_length (* to ssa2 *)
+             | Vector_sub (* to ssa2 *)
+             | Vector_vector (* to ssa2 *)
+             | Weak_canGet (* to rssa (as runtime C fn) *)
+             | Weak_get (* to rssa (as runtime C fn) *)
+             | Weak_new (* to rssa (as runtime C fn) *)
              | Word_add of WordSize.t (* codegen *)
              | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_andb of WordSize.t (* codegen *)
@@ -173,15 +178,15 @@ signature PRIM =
              | Word_ror of WordSize.t (* codegen *)
              | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
              | Word_sub of WordSize.t (* codegen *)
-             | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
-             | Word_toIntInf (* ssa to rssa *)
+             | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
+             | Word_toIntInf (* to rssa *)
              | Word_xorb of WordSize.t (* codegen *)
-             | WordVector_toIntInf (* ssa to rssa *)
-             | Word8Array_subWord of WordSize.t (* ssa to rssa *)
-             | Word8Array_updateWord of WordSize.t (* ssa to rssa *)
-             | Word8Vector_subWord of WordSize.t (* ssa to rssa *)
+             | WordVector_toIntInf (* to rssa *)
+             | WordArray_subWord of {seqSize:WordSize.t, eleSize:WordSize.t} (* to rssa *)
+             | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* to rssa *)
+             | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}  (* to rssa *)
              | Word8Vector_toString (* defunctorize *)
-             | World_save (* ssa to rssa *)
+             | World_save (* to rssa (as runtime C fn) *)
 
             val toString: 'a t -> string
          end
@@ -213,8 +218,10 @@ signature PRIM =
       sharing type t = ApplyResult.prim
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
-      val array: 'a t
+      val arrayAlloc: {raw: bool} -> 'a t
       val arrayLength: 'a t
+      val arrayToVector: 'a t
+      val arrayUpdate: 'a t
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
@@ -267,17 +274,18 @@ signature PRIM =
        * isFunctional p = true iff p always returns same result when given
        *   same args and has no side effects.
        * isFuntional implies not maySideEffect.
-       * examples: Array_length, MLton_equal, Word_add
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * examples: Array_length, MLton_equal, Vector_vector, Word_add
+       * not examples: Array_alloc, Array_sub, Ref_deref, Ref_ref
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
+      val layoutFull: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
       val mayOverflow: 'a t -> bool
       (* examples: Array_update, Ref_assign
-       * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
+       * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
       val name: 'a t -> 'a Name.t
@@ -285,6 +293,7 @@ signature PRIM =
       val reff: 'a t
       val toString: 'a t -> string
       val touch: 'a t
+      val vector: 'a t
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t

@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -37,6 +37,10 @@
 
 #ifndef HAS_SIGALTSTACK
 #error HAS_SIGALTSTACK not defined
+#else
+#ifndef NEEDS_SIGALTSTACK_EXEC
+#error NEEDS_SIGALTSTACK_EXEC not defined
+#endif
 #endif
 
 #ifndef HAS_SPAWN
@@ -127,7 +131,7 @@ PRIVATE void GC_displayMem (void);
 
 PRIVATE void *GC_mmapAnon (void *start, size_t length);
 PRIVATE void *GC_mmapAnon_safe (void *start, size_t length);
-PRIVATE void *GC_mmapAnon_safe_protect (void *start, size_t length,
+PRIVATE void *GC_mmapAnon_safe_protect (void *start, size_t length, int prot,
                                          size_t dead_low, size_t dead_high);
 PRIVATE void *GC_mremap (void *start, size_t oldLength, size_t newLength);
 PRIVATE void GC_release (void *base, size_t length);

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,7 +13,7 @@ functor UnsafeMonoArray (A: MONO_ARRAY_EXTRA): UNSAFE_MONO_ARRAY =
 
       val sub = unsafeSub
       val update = unsafeUpdate
-      val create = fromPoly o Array.arrayUninit
+      val create = fromPoly o Array.unsafeAlloc
    end
 
 functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =
@@ -45,9 +46,21 @@ structure Unsafe: UNSAFE =
    struct
       structure Array =
          struct
+            val alloc = Array.unsafeAlloc
             val sub = Array.unsafeSub
+            val uninitIsNop = Array.uninitIsNop
+            val uninit = Array.unsafeUninit
             val update = Array.unsafeUpdate
-            val create = Array.array
+            val create = Array.unsafeArray
+            structure Raw = Array.Raw
+            structure Raw =
+               struct
+                  type 'a rawarr = 'a Raw.rawarr
+                  val alloc = Raw.unsafeAlloc
+                  val toArray = Raw.unsafeToArray
+                  val uninitIsNop = Raw.uninitIsNop
+                  val uninit = Raw.unsafeUninit
+               end
          end
       structure BoolArray = UnsafeMonoArray (BoolArray)
       structure BoolVector = UnsafeMonoVector (BoolVector)

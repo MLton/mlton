@@ -1,7 +1,7 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi *)
 structure LrTable : LR_TABLE =
     struct
-        open Array List
+        val sub = Array.sub
         infix 9 sub
         datatype ('a,'b) pairlist = EMPTY
                                   | PAIR of 'a * 'b * ('a,'b) pairlist

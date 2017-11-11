@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,6 +7,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
+@SET_MAKE@
 export TARGET := self
 export TARGET_ARCH := $(shell bin/host-arch)
 export TARGET_OS := $(shell bin/host-os)
@@ -14,7 +15,7 @@ ROOT := $(shell pwd)
 BUILD := $(ROOT)/build
 SRC := $(ROOT)
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib
+LIB := $(BUILD)/lib/mlton
 INC := $(LIB)/include
 COMP := $(SRC)/mlton
 RUN := $(SRC)/runtime
@@ -34,12 +35,16 @@ NLFFIGEN := mlnlffigen
 PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
-RANLIB := ranlib
+RANLIB := @RANLIB@
+SED := @SED@
 
-WITH_GMP :=
-ifneq ($(WITH_GMP),)
-WITH_GMP_INC_DIR := $(WITH_GMP)/include
-WITH_GMP_LIB_DIR := $(WITH_GMP)/lib
+
+# Allow for custom paths to GMP include and library files
+ifneq (@WITH_GMP_INC_DIR@,)
+WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
+endif
+ifneq (@WITH_GMP_LIB_DIR@,)
+WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
 endif
 
 # If we're compiling with another version of MLton, then we want to do
@@ -120,9 +125,9 @@ constants:
 
 .PHONY: debugged
 debugged:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
-	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
+	$(SED) 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
 	chmod a+x "$(MLTON).debug"
 
 .PHONY: dirs
@@ -183,6 +188,11 @@ polyml-mlton:
 	$(MAKE) -C "$(COMP)" polyml-mlton
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	cat "$(MLTON)" \
+		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| sed 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
+		> "$(MLTON).polyml"
+	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: profiled
@@ -234,19 +244,32 @@ smlnj-mlton:
 	$(MAKE) -C "$(COMP)" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	cat "$(MLTON)" \
+		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| sed 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
+		> "$(MLTON).smlnj"
+	chmod u+x "$(MLTON).smlnj"
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: smlnj-mlton-dual
-smlnj-mlton-dual:
+.PHONY: smlnj-mlton-x2
+smlnj-mlton-x2:
 	$(MAKE) SMLNJ_CM_SERVERS_NUM=2 smlnj-mlton
 
-.PHONY: smlnj-mlton-quad
-smlnj-mlton-quad:
+.PHONY: smlnj-mlton-x4
+smlnj-mlton-x4:
 	$(MAKE) SMLNJ_CM_SERVERS_NUM=4 smlnj-mlton
+
+.PHONY: smlnj-mlton-x8
+smlnj-mlton-x8:
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=8 smlnj-mlton
+
+.PHONY: smlnj-mlton-x16
+smlnj-mlton-x16:
+	$(MAKE) SMLNJ_CM_SERVERS_NUM=16 smlnj-mlton
 
 .PHONY: traced
 traced:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
 	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
@@ -287,9 +310,9 @@ check:
 	./bin/regression
 
 # The TBIN and TLIB are where the files are going to be after installing.
-# The DESTDIR and is added onto them to indicate where the Makefile actually
+# The DESTDIR is added onto them to indicate where the Makefile actually
 # puts them.
-DESTDIR := $(CURDIR)/install
+DESTDIR := @prefix@
 PREFIX := /usr
 ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
 PREFIX := /usr/local
@@ -310,7 +333,7 @@ endif
 TEXM := $(TDOC)/examples
 
 GZIP_MAN := true
-ifeq ($(TARGET_OS), solaris)
+ifeq ($(findstring $(TARGET_OS), openbsd solaris), $(TARGET_OS))
 GZIP_MAN := false
 endif
 
@@ -331,21 +354,7 @@ MAN_PAGES :=  \
 install-no-docs:
 	mkdir -p "$(TLIB)" "$(TBIN)" "$(TMAN)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
-	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"			\
-		<"$(BIN)/mlton" >"$(TBIN)/mlton"
-	chmod a+x "$(TBIN)/mlton"
-	if [ -x "$(BIN)/mlton.trace" ]; then                            \
-		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"		\
-			<"$(BIN)/mlton.trace" >"$(TBIN)/mlton.trace";   \
-		chmod a+x "$(TBIN)/mlton.trace";                        \
-	fi
-	if [ -x "$(BIN)/mlton.debug" ]; then                            \
-		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';"		\
-			<"$(BIN)/mlton.debug" >"$(TBIN)/mlton.debug";   \
-		chmod a+x "$(TBIN)/mlton.debug";                        \
-	fi
-	cd "$(BIN)" && $(CP) "$(LEX)$(EXE)" "$(NLFFIGEN)$(EXE)"		\
-		 "$(PROF)$(EXE)" "$(YACC)$(EXE)" "$(TBIN)/"
+	$(CP) "$(BIN)/." "$(TBIN)/"
 	( cd "$(SRC)/man" && tar cf - $(MAN_PAGES)) | \
 		( cd "$(TMAN)/" && tar xf - )
 	if $(GZIP_MAN); then						\
@@ -408,8 +417,22 @@ move-docs:	install-docs install-no-docs
 release: version
 	tar cvzf ../mlton-$(VERSION).src.tgz \
 		--exclude .git --exclude package \
+		--exclude autom4te.cache --exclude config.log \
+		--exclude Makefile-auto --exclude mlton-env-config \
+		--exclude ./Makefile --exclude config.status \
 		--transform "s@^@mlton-$(VERSION)/@S" \
 		*
+	$(MAKE) clean
+
+.PHONY: dist
+dist: release
+
+.PHONY: binary-release
+binary-release:
+	$(CP) "$(BUILD)" mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
+	tar cvzf ../mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS).tgz \
+		mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
+	rm -rf mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS)
 
 BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd

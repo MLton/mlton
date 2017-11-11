@@ -9,39 +9,22 @@ new platform.
 
 If you do want to build MLton with SML/NJ, it is best to have a binary
 MLton package installed.  If you don't, here are some issues you may
-encounter when you run `make nj-mlton`.
+encounter when you run `make smlnj-mlton`.
 
-You will get (many copies of) the error message:
+You will get (many copies of) the error messages:
 
 ----
-/bin/sh: mlton: not found
+/bin/sh: mlton: command not found
+----
+
+and
+
+----
+make[2]: mlton: Command not found
 ----
 
 The `Makefile` calls `mlton` to determine dependencies, and can
 proceed in spite of this error.
-
-If you don't have a `mlton` executable, you will get the error
-message:
-
-----
-Error: cannot upgrade basis because the compiler doesn't work
-----
-
-We use `upgrade-basis.sml` to work around basis library differences,
-allowing a version of MLton written for a newer basis library to be
-compiled by an older version of MLton.  The file isn't necessary when
-building with SML/NJ, but is listed in `$(SOURCES)`, so the `Makefile`
-is attempting to build it.  Building `upgrade-basis.sml` requires the
-old version of MLton to be around so that the right stubs can be
-built.
-
-To work around this problem, do one of the following.
-
-* Manually tweak sources to remove `$(UP)` until you're finished
-building MLton with SML/NJ and have a working MLton.
-
-* Build `upgrade-basis.sml` on some other machine with a working MLton
-and copy it over.
 
 If you don't have an `mllex` executable, you will get the error
 message:
