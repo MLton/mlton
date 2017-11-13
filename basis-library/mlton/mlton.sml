@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2013,2016 Matthew Fluet.
+(* Copyright (C) 2010,2013,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -30,7 +30,7 @@ fun shareAll () =
 fun size x =
    let
       val refOverhead =
-         Int32.toInt MetaDataSize.bytes + Int.div (ObjptrWord.wordSize, 8)
+         Int32.toInt NormalMetaDataSize.bytes + Int.div (ObjptrWord.wordSize, 8)
    in
       C_Size.toInt (Primitive.MLton.size (ref x)) - refOverhead
    end

@@ -380,23 +380,25 @@ signature CONTROL_FLAGS =
 
             structure Size:
                sig
+                  val arrayMetaData: unit -> Bits.t
                   val cint: unit -> Bits.t
                   val cpointer: unit -> Bits.t
                   val cptrdiff: unit -> Bits.t
                   val csize: unit -> Bits.t
                   val header: unit -> Bits.t
-                  val metaData: unit -> Bits.t
                   val mplimb: unit -> Bits.t
+                  val normalMetaData: unit -> Bits.t
                   val objptr: unit -> Bits.t
                   val seqIndex: unit -> Bits.t
                end
-            val setSizes: {cint: Bits.t,
+            val setSizes: {arrayMetaData: Bits.t,
+                           cint: Bits.t,
                            cpointer: Bits.t,
                            cptrdiff: Bits.t,
                            csize: Bits.t,
                            header: Bits.t,
-                           metaData: Bits.t,
                            mplimb: Bits.t,
+                           normalMetaData: Bits.t,
                            objptr: Bits.t,
                            seqIndex: Bits.t} -> unit
          end

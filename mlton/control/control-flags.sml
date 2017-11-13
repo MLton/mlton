@@ -1177,25 +1177,27 @@ structure Target =
 
       structure Size =
          struct
+            val (arrayMetaData: unit -> Bits.t, set_arrayMetaData) = make "Size.arrayMetaData"
             val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
             val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
             val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
             val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
             val (header: unit -> Bits.t, set_header) = make "Size.header"
-            val (metaData: unit -> Bits.t, set_metaData) = make "Size.metaData"
             val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
+            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.noramlMetaData"
             val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
             val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
          end
-      fun setSizes {cint, cpointer, cptrdiff, csize, 
-                    header, metaData, mplimb, objptr, seqIndex} =
-         (Size.set_cint cint
+      fun setSizes {arrayMetaData, cint, cpointer, cptrdiff, csize,
+                    header, mplimb, normalMetaData, objptr, seqIndex} =
+         (Size.set_arrayMetaData arrayMetaData
+          ; Size.set_cint cint
           ; Size.set_cpointer cpointer
           ; Size.set_cptrdiff cptrdiff
           ; Size.set_csize csize
           ; Size.set_header header
-          ; Size.set_metaData metaData
           ; Size.set_mplimb mplimb
+          ; Size.set_normalMetaData normalMetaData
           ; Size.set_objptr objptr
           ; Size.set_seqIndex seqIndex)
    end
@@ -1218,8 +1220,13 @@ fun mlbPathMap () =
                         32 => "rep32"
                       | 64 => "rep64"
                       | _ => Error.bug "Control.mlbPathMap")},
-            {var = "METADATA_SIZE",
-             path = (case Bits.toInt (Target.Size.metaData ()) of
+            {var = "ARRAY_METADATA_SIZE",
+             path = (case Bits.toInt (Target.Size.arrayMetaData ()) of
+                        96 => "size96"
+                      | 192 => "size192"
+                      | _ => Error.bug "Control.mlbPathMap")},
+            {var = "NORMAL_METADATA_SIZE",
+             path = (case Bits.toInt (Target.Size.normalMetaData ()) of
                         32 => "size32"
                       | 64 => "size64"
                       | _ => Error.bug "Control.mlbPathMap")},

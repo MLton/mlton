@@ -951,15 +951,8 @@ structure IntInf =
 
       local
          val bytesPerMPLimb = Sz.zextdFromInt32 (Int32.quot (MPLimb.sizeInBits, 8))
-         val bytesPerCounter = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
-         val bytesPerLength = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
-         val bytesPerNormalMetaData = Sz.zextdFromInt32 MetaDataSize.bytes
       in
-         val bytesPerArrayMetaData =
-            Sz.+ (bytesPerCounter, 
-            Sz.+ (bytesPerLength, 
-                  bytesPerNormalMetaData
-            ))
+         val bytesPerArrayMetaData = Sz.zextdFromInt32 ArrayMetaDataSize.bytes
          (* Reserve heap space for a large IntInf.int with room for num + extra
           * `limbs'.  The reason for splitting this up is that extra is intended
           * to be a constant, and so can be combined at compile time.

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -420,7 +420,7 @@ structure ObjectType =
                         Control.Align4 => Bytes.fromInt 4
                       | Control.Align8 => Bytes.fromInt 8
                   val bytesMetaData =
-                     Bits.toBytes (Control.Target.Size.metaData ())
+                     Bits.toBytes (Control.Target.Size.normalMetaData ())
                   val bytesCSize =
                      Bits.toBytes (Control.Target.Size.csize ())
                   val bytesExnStack =

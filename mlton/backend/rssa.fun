@@ -1589,7 +1589,7 @@ structure Program =
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
                                   Bytes.equals
-                                  (size, Bytes.+ (Runtime.metaDataSize (),
+                                  (size, Bytes.+ (Runtime.normalMetaDataSize (),
                                                   Type.bytes ty))
                               | _ => false)
                         end
