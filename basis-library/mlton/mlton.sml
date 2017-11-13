@@ -28,12 +28,7 @@ fun shareAll () =
     ; GC.collect ())
 
 fun size x =
-   let
-      val refOverhead =
-         Int32.toInt NormalMetaDataSize.bytes + Int.div (ObjptrWord.wordSize, 8)
-   in
-      C_Size.toInt (Primitive.MLton.size (ref x)) - refOverhead
-   end
+   C_Size.toInt (Primitive.MLton.size x)
 
 (* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 

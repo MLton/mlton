@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2014 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,7 +22,7 @@ val halt = _prim "MLton_halt": C_Status.t -> unit;
 val hash = _prim "MLton_hash": 'a -> Word32.word;
 (* val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 val share = _prim "MLton_share": 'a -> unit;
-val size = _prim "MLton_size": 'a ref -> C_Size.t;
+val size = _prim "MLton_size": 'a -> C_Size.t;
 
 val installSignalHandler =
    _prim "MLton_installSignalHandler": unit -> unit;

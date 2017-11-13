@@ -1258,7 +1258,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        arrayAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
                                     end
-
                                | Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_length => arrayOrVectorLength ()
@@ -1431,8 +1430,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               simpleCCallWithGCState
                                               (CFunction.share (Operand.ty (a 0))))
                                | MLton_size =>
-                                    simpleCCallWithGCState
-                                    (CFunction.size (Operand.ty (a 0)))
+                                    (case toRtype (varType (arg 0)) of
+                                        NONE => move (Operand.word (WordX.zero (WordSize.csize ())))
+                                      | SOME t =>
+                                           if not (Type.isObjptr t)
+                                              then move (Operand.word (WordX.zero (WordSize.csize ())))
+                                           else
+                                              simpleCCallWithGCState
+                                              (CFunction.size (Operand.ty (a 0))))
                                | MLton_touch =>
                                     let
                                        val a = arg 0
