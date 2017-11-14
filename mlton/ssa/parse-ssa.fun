@@ -189,22 +189,18 @@ struct
              T.pure (Vector.new0 ()))
          val conAppExp = token "new" *> T.cut (conApp varExp)
          fun constExp typ =
-            (print (Layout.toString (Tycon.layout typ));
-            if Tycon.isWordX typ then
-               Const.Word <$> (T.string "0x" *> parseHex >>= makeWord typ) <|> T.failCut "word"
-            else if Tycon.isRealX typ then
-               Const.Real <$> parseReal (Tycon.deRealX typ) <|> T.failCut "real"
-            else if Tycon.isIntX typ then
-               Const.IntInf <$> parseIntInf <|> T.failCut "integer"
-            else if Tycon.equals(typ, Tycon.vector) then
-               (* assume it's a word8 vector *)
-               T.any
-               [Const.string <$> parseString,
-                Const.wordVector <$> parseWord8Vector,
-                T.failCut "string constant"]
-
-            else
-               T.fail "constant")
+            (print (Layout.toString(Type.layout typ));
+            case Type.dest typ of
+                 Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
+                 makeWord (Tycon.word ws)) <|> T.failCut "word"
+               | Type.Real rs => Const.Real <$> parseReal rs <|> T.failCut "real"
+               | Type.IntInf => Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+               | Type.Vector _  => T.any
+                  [Const.string <$> parseString,
+                   Const.wordVector <$> parseWord8Vector,
+                   T.failCut "string constant"]
+               | _ => T.fail "constant"
+            )
          val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                     CFunction.Convention.Stdcall <$ token "stdcall"
          fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
@@ -281,12 +277,9 @@ struct
             (typedvar >>= (fn (var, ty) =>
              (symbol "=" *> exp ty <* spaces) >>= (fn exp => 
                T.pure (var, ty, exp))))
-         and exp typ = (
-            print (Layout.toString(Type.layout typ));
-            Exp.Const <$> constExp (Type.deDatatype typ))
          and exp typ = T.any
             [Exp.ConApp <$> conAppExp,
-             Exp.Const <$> constExp (Type.deDatatype typ),
+             Exp.Const <$> constExp typ,
              Exp.PrimApp <$> primAppExp,
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
