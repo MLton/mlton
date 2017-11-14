@@ -1,4 +1,4 @@
-(* Copyright (C) 2013-2014,2017 Matthew Fluet.
+(* Copyright (C) 2013-2014,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -951,15 +951,8 @@ structure IntInf =
 
       local
          val bytesPerMPLimb = Sz.zextdFromInt32 (Int32.quot (MPLimb.sizeInBits, 8))
-         val bytesPerCounter = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
-         val bytesPerLength = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
-         val bytesPerHeader = Sz.zextdFromInt32 (Int32.quot (HeaderWord.sizeInBits, 8))
       in
-         val bytesPerArrayHeader =
-            Sz.+ (bytesPerCounter, 
-            Sz.+ (bytesPerLength, 
-                  bytesPerHeader
-            ))
+         val bytesPerArrayMetaData = Sz.zextdFromInt32 ArrayMetaDataSize.bytes
          (* Reserve heap space for a large IntInf.int with room for num + extra
           * `limbs'.  The reason for splitting this up is that extra is intended
           * to be a constant, and so can be combined at compile time.
@@ -968,7 +961,7 @@ structure IntInf =
             Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex num),
             Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex extra),
             Sz.+ (bytesPerMPLimb, (* isneg Field *)
-            Sz.+ (bytesPerArrayHeader, (* Array Header *)
+            Sz.+ (bytesPerArrayMetaData, (* Array MetaData *)
                   case MLton.Align.align of (* alignment *)
                      MLton.Align.Align4 => 0w3
                    | MLton.Align.Align8 => 0w7
@@ -1294,7 +1287,7 @@ structure IntInf =
                                 if Int32.mod (bpl, bpd) = 0
                                    then 0 else 1)
                     val bytes =
-                       Sz.+ (Sz.+ (bytesPerArrayHeader (* Array Header *),
+                       Sz.+ (Sz.+ (bytesPerArrayMetaData (* Array MetaData *),
                              Sz.+ (0w1 (* sign *),
                                    case MLton.Align.align of (* alignment *)
                                       MLton.Align.Align4 => 0w3

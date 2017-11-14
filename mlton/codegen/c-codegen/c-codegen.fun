@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2015 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -372,13 +372,13 @@ fun outputDeclarations
                                   case !Control.align of
                                      Control.Align4 => Bytes.fromInt 4
                                    | Control.Align8 => Bytes.fromInt 8
+                               val bytesMetaData =
+                                  Bits.toBytes (Control.Target.Size.normalMetaData ())
                                val bytesCPointer =
                                   Bits.toBytes (Control.Target.Size.cpointer ())
-                               val bytesHeader =
-                                  Bits.toBytes (Control.Target.Size.header ())
 
                                val bytesObject =
-                                  Bytes.+ (bytesHeader,
+                                  Bytes.+ (bytesMetaData,
                                   Bytes.+ (bytesCPointer,
                                            bytesObjptr))
                                val bytesTotal =

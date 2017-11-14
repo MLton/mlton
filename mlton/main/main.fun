@@ -1040,12 +1040,14 @@ fun commandLine (args: string list): unit =
                 | SOME (_, size) => size
          in
             Control.Target.setSizes
-            {cint = lookup "cint",
+            {arrayMetaData = lookup "arrayMetaData",
+             cint = lookup "cint",
              cpointer = lookup "cpointer",
              cptrdiff = lookup "cptrdiff",
              csize = lookup "csize",
              header = lookup "header",
              mplimb = lookup "mplimb",
+             normalMetaData = lookup "normalMetaData",
              objptr = lookup "objptr",
              seqIndex = lookup "seqIndex"}
          end
