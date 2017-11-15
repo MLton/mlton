@@ -104,6 +104,7 @@ struct
             | "word16" => Type.word WordSize.word16
             | "word32" => Type.word WordSize.word32
             | "word64" => Type.word WordSize.word64
+            | "unit" => Type.unit
             | _ => Type.datatypee (resolveTycon ident)
 
    local
@@ -283,7 +284,8 @@ struct
              Exp.PrimApp <$> primAppExp,
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
-             Exp.Tuple <$> (tupleOf varExp) <* spaces]
+             Exp.Tuple <$> (tupleOf varExp) <* spaces,
+             Exp.Var <$> varExp]
          fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
             T.many (glbl resolveTycon resolveVar)
       in
@@ -313,7 +315,7 @@ struct
          fun resolveTycon ident = 
             case ident of
                  "bool" => Tycon.bool
-               | "unit" => Tycon.tuple
+               | "exn" => Tycon.exn
                | _ => resolveTycon0 ident
 
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
