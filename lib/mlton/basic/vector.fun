@@ -29,6 +29,15 @@ datatype ('a, 'b) continue =
    Continue of 'a
   | Done of 'b
 
+fun first v =
+   let
+      val n = length v
+   in
+      if n = 0
+         then Error.bug "Vector.first"
+      else unsafeSub (v, 0)
+   end
+
 fun fold' (v, start, b, f, g) =
    let
       val n = length v

@@ -80,6 +80,8 @@ known-case.fun
 local-flatten.fun
 local-ref.fun
 loop-invariant.fun
+loop-unroll.fun
+loop-unswitch.fun
 poly-equal.fun
 poly-hash.fun
 profile.sig
@@ -91,6 +93,7 @@ redundant.fun
 ref-flatten.fun
 remove-unused.fun
 remove-unused2.fun
+share-zero-vec.fun
 simplify-types.fun
 useless.fun
 zone.fun

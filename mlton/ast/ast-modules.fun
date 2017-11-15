@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -15,11 +16,46 @@ structure AstCore = AstCore (AstAtoms (S))
 
 open AstCore Layout
 
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
+
 val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node
 
-structure Equation =
+structure WhereEquation =
+   struct
+      open Wrap
+      datatype node =
+         Type of {tyvars: Tyvar.t vector,
+                  longtycon: Longtycon.t,
+                  ty: Type.t}
+      type t = node Wrap.t
+      type node' = node
+      type obj = t
+
+      fun layout eq =
+         case node eq of
+            Type {tyvars, longtycon, ty} =>
+               seq [str "where type ",
+                    Type.layoutApp (Longtycon.layout longtycon, tyvars, Tyvar.layout),
+                    str " = ",
+                    Type.layout ty]
+
+      fun checkSyntax eq =
+         case node eq of
+            Type {tyvars, longtycon, ty} =>
+               (reportDuplicateTyvars
+                (tyvars, {ctxt = fn () =>
+                          seq [str "in: ",
+                               Type.layoutApp
+                               (Longtycon.layout longtycon,
+                                tyvars, Tyvar.layout)]})
+                ; Type.checkSyntax ty)
+
+   end
+
+structure SharingEquation =
    struct
       open Wrap
       datatype node =
@@ -43,24 +79,23 @@ type typedescs = {tyvars: Tyvar.t vector,
                   tycon: Tycon.t} vector
 
 datatype sigexpNode =
-   Var of Sigid.t
- | Where of sigexp * {tyvars: Tyvar.t vector,
-                      longtycon: Longtycon.t,
-                      ty: Type.t} vector
- | Spec of spec
+    Var of Sigid.t
+  | Where of {equations: WhereEquation.t vector,
+              sigexp: sigexp}
+  | Spec of spec
 and sigConst =
-   None
+    None
   | Transparent of sigexp
   | Opaque of sigexp
 and specNode =
-   Datatype of DatatypeRhs.t
+    Datatype of DatatypeRhs.t
   | Empty
   | Eqtype of typedescs
   | Exception of (Con.t * Type.t option) vector
   | IncludeSigexp of sigexp
   | IncludeSigids of Sigid.t vector
   | Seq of spec * spec
-  | Sharing of {equations: Equation.t vector,
+  | Sharing of {equation: SharingEquation.t,
                 spec: spec}
   | Structure of (Strid.t * sigexp) vector
   | Type of typedescs
@@ -87,22 +122,15 @@ fun layoutTypedefs (prefix, typBind) =
 fun layoutSigexp (e: sigexp): Layout.t =
    case node e of
       Var s => Sigid.layout s
-    | Where (e, ws) =>
+    | Where {sigexp, equations} =>
          let
-            val e = layoutSigexp e
+            val sigexp = layoutSigexp sigexp
          in
-            if 0 = Vector.length ws
-               then e
-            else
-               seq [e, 
-                    layoutAndsBind
-                    (" where", "=", ws, fn {tyvars, longtycon, ty} =>
-                     (OneLine,
-                      seq [str "type ",
-                           Type.layoutApp
-                           (Longtycon.layout longtycon, tyvars,
-                            Tyvar.layout)],
-                      Type.layout ty))]
+            if Vector.isEmpty equations
+               then sigexp
+               else mayAlign
+                    [sigexp,
+                     align (Vector.toListMap (equations, WhereEquation.layout))]
          end
     | Spec s => align [str "sig",
                        indent (layoutSpec s, 3),
@@ -129,9 +157,9 @@ and layoutSpec (s: spec): t =
          seq (str "include "
               :: separate (Vector.toListMap (sigids, Sigid.layout), " "))
     | Seq (s, s') => align [layoutSpec s, layoutSpec s']
-    | Sharing {spec, equations} =>
+    | Sharing {spec, equation} =>
          align [layoutSpec spec,
-                align (Vector.toListMap (equations, Equation.layout))]
+                SharingEquation.layout equation]
     | Structure l =>
          layoutAndsBind ("structure", ":", l, fn (strid, sigexp) =>
                          (case node sigexp of
@@ -149,9 +177,10 @@ fun checkSyntaxSigexp (e: sigexp): unit =
    case node e of
       Spec s => checkSyntaxSpec s
     | Var _ => ()
-    | Where (e, v) =>
-         (checkSyntaxSigexp e
-          ; Vector.foreach (v, fn {ty, ...} => Type.checkSyntax ty))
+    | Where {sigexp, equations} =>
+         (checkSyntaxSigexp sigexp
+          ; Vector.foreach
+            (equations, WhereEquation.checkSyntax))
 
 and checkSyntaxSigConst (s: sigConst): unit =
    case s of
@@ -159,30 +188,46 @@ and checkSyntaxSigConst (s: sigConst): unit =
     | Opaque e => checkSyntaxSigexp e
     | Transparent e => checkSyntaxSigexp e
 
+and checkSyntaxTypedescs (typedescs, {ctxt}) =
+   (Vector.foreach
+    (typedescs, fn {tyvars, tycon, ...} =>
+     reportDuplicateTyvars
+     (tyvars, {ctxt = fn () =>
+               seq [str "in: ",
+                    Type.layoutApp
+                    (Tycon.layout tycon,
+                     tyvars, Tyvar.layout)]}))
+    ; reportDuplicates
+      (typedescs, {ctxt = ctxt,
+                   equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
+                             Tycon.equals (c, c')),
+                   layout = Tycon.layout o #tycon,
+                   name = "type specification",
+                   region = Tycon.region o #tycon}))
+
 and checkSyntaxSpec (s: spec): unit =
    let
-      fun term () = layoutSpec s
+      val ctxt = mkCtxt (s, layoutSpec)
    in
       case node s of
-         Datatype d => DatatypeRhs.checkSyntax d
-       | Eqtype v =>
-            reportDuplicates
-            (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
-                           Tycon.equals (c, c')),
-                 layout = Tycon.layout o #tycon,
-                 name = "type",
-                 region = Tycon.region o #tycon,
-                 term = term})
+         Datatype d => DatatypeRhs.checkSyntaxSpec d
+       | Eqtype typedescs => checkSyntaxTypedescs (typedescs, {ctxt = ctxt})
        | Empty => ()
        | Exception v =>
-            (Vector.foreach (v, fn (_, to) =>
-                             Option.app (to, Type.checkSyntax))
+            (Vector.foreach
+             (v, fn (con, to) =>
+              (Vid.checkSpecifySpecial
+               (Vid.fromCon con,
+                {allowIt = false,
+                 ctxt = ctxt,
+                 keyword = "exception"})
+               ; Option.app (to, Type.checkSyntax)))
              ; (reportDuplicates
-                (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                      layout = Con.layout o #1,
-                     name = "exception",
-                     region = Con.region o #1,
-                     term = term})))
+                     name = "exception specification",
+                     region = Con.region o #1})))
        | IncludeSigexp e => checkSyntaxSigexp e
        | IncludeSigids _ => ()
        | Seq (s, s') => (checkSyntaxSpec s; checkSyntaxSpec s')
@@ -190,28 +235,28 @@ and checkSyntaxSpec (s: spec): unit =
        | Structure v =>
             (Vector.foreach (v, checkSyntaxSigexp o #2)
              ; (reportDuplicates
-                (v, {equals = fn ((s, _), (s', _)) => Strid.equals (s, s'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((s, _), (s', _)) => Strid.equals (s, s'),
                      layout = Strid.layout o #1,
                      name = "structure specification",
-                     region = Strid.region o #1,
-                     term = term})))
-       | Type v =>
-            reportDuplicates
-            (v, {equals = (fn ({tycon = c, ...}, {tycon = c', ...}) =>
-                           Tycon.equals (c, c')),
-                 layout = Tycon.layout o #tycon,
-                 name = "type specification",
-                 region = Tycon.region o #tycon,
-                 term = term})
-       | TypeDefs b => TypBind.checkSyntax b
+                     region = Strid.region o #1})))
+       | Type typedescs => checkSyntaxTypedescs (typedescs, {ctxt = ctxt})
+       | TypeDefs b => TypBind.checkSyntaxSpec b
        | Val v =>
-            (Vector.foreach (v, fn (_, t) => Type.checkSyntax t)
+            (Vector.foreach
+             (v, fn (v, t) =>
+              (Vid.checkSpecifySpecial
+               (Vid.fromVar v,
+                {allowIt = true,
+                 ctxt = ctxt,
+                 keyword = "val"})
+               ; Type.checkSyntax t))
              ; (reportDuplicates
-                (v, {equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
+                (v, {ctxt = ctxt,
+                     equals = fn ((x, _), (x', _)) => Var.equals (x, x'),
                      layout = Var.layout o #1,
                      name = "value specification",
-                     region = Var.region o #1,
-                     term = term})))
+                     region = Var.region o #1})))
    end
 
 structure Sigexp =
@@ -225,10 +270,15 @@ structure Sigexp =
 
       val checkSyntax = checkSyntaxSigexp
 
-      fun wheree (sigexp: t, wherespecs, region): t =
-         if 0 = Vector.length wherespecs
+      fun wheree (sigexp: t, equations): t =
+         if Vector.isEmpty equations
             then sigexp
-         else makeRegion (Where (sigexp, wherespecs), region)
+         else makeRegion (Where {sigexp = sigexp,
+                                 equations = equations},
+                          Region.append
+                          (region sigexp,
+                           WhereEquation.region
+                           (Vector.last equations)))
 
       fun make n = makeRegion (n, Region.bogus)
 
@@ -289,8 +339,8 @@ fun layoutStrdec d =
                          (case node def of
                              Var _ => OneLine
                            | _ => Split 3,
-                                seq [Strid.layout name, SigConst.layout constraint],
-                                layoutStrexp def))
+                          seq [Strid.layout name, SigConst.layout constraint],
+                          layoutStrexp def))
 
 and layoutStrdecs ds = layouts (ds, layoutStrdec)
 
@@ -314,12 +364,12 @@ fun checkSyntaxStrdec (d: strdec): unit =
                           (SigConst.checkSyntax constraint
                            ; checkSyntaxStrexp def))
           ; (reportDuplicates
-             (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+             (v, {ctxt = mkCtxt (d, layoutStrdec),
+                  equals = (fn ({name = n, ...}, {name = n', ...}) =>
                             Strid.equals (n, n')),
                   layout = Strid.layout o #name,
                   name = "structure definition",
-                  region = Strid.region o #name,
-                  term = fn () => layoutStrdec d})))
+                  region = Strid.region o #name})))
 and checkSyntaxStrexp (e: strexp): unit =
    case node e of
       App (_, e) => checkSyntaxStrexp e
@@ -343,6 +393,7 @@ structure Strexp =
       fun make n = makeRegion (n, Region.bogus)
       val constrained = make o Constrained
       val lett = make o Let
+      val var = make o Var
       val layout = layoutStrexp
    end
 
@@ -360,6 +411,8 @@ structure Strdec =
       val core = make o Core
 
       val openn = core o Dec.openn
+
+      val structuree = make o Structure o Vector.new1
 
       val layout = layoutStrdec
 
@@ -465,7 +518,7 @@ structure Topdec =
             Functor fctbs =>
                layoutAndsBind ("functor", "=", fctbs,
                                fn {name, arg, result, body} =>
-                               (Split 0,
+                               (Split 3,
                                 seq [Fctid.layout name, str " ",
                                      paren (FctArg.layout arg),
                                      layoutSigConst result],
@@ -493,21 +546,21 @@ structure Topdec =
                   ; Strexp.checkSyntax body
                   ; SigConst.checkSyntax result))
                 ; (reportDuplicates
-                   (v, {equals = (fn ({name = n, ...}, {name = n', ...}) =>
+                   (v, {ctxt = mkCtxt (d, layout),
+                        equals = (fn ({name = n, ...}, {name = n', ...}) =>
                                   Fctid.equals (n, n')),
                         layout = Fctid.layout o #name,
                         name = "functor definition",
-                        region = Fctid.region o #name,
-                        term = fn () => layout d})))
+                        region = Fctid.region o #name})))
           | Signature bs =>
                (Vector.foreach (bs, Sigexp.checkSyntax o #2)
                 ; (reportDuplicates
                    (bs,
-                    {equals = fn ((s, _), (s', _)) => Sigid.equals (s, s'),
+                    {ctxt = mkCtxt (d, layout),
+                     equals = fn ((s, _), (s', _)) => Sigid.equals (s, s'),
                      layout = Sigid.layout o #1,
                      name = "signature definition",
-                     region = Sigid.region o #1,
-                     term = fn () => layout d})))
+                     region = Sigid.region o #1})))
           | Strdec d => Strdec.checkSyntax d
    end
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -19,7 +19,7 @@ signature PRECEDENCE_PARSE =
       include PRECEDENCE_PARSE_STRUCTS
 
       val parseClause:
-         Ast.Pat.t vector * Env.t * Region.t * (unit -> Layout.t)
+         Ast.Pat.t vector * Env.t * (unit -> Layout.t)
          -> {args: Ast.Pat.t vector,
              func: Ast.Var.t}
       val parseExp: Ast.Exp.t vector * Env.t * (unit -> Layout.t) -> Ast.Exp.t

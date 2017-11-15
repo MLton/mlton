@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -94,6 +94,21 @@ val null = Null
 val real = Real
 val word = Word
 val wordVector = WordVector
+
+local
+   fun make (s, deOpt : t -> 'a option) =
+      let
+         fun de (t: t): 'a =
+            case deOpt t of
+               SOME z => z
+             | NONE => Error.bug ("Const.de" ^ s)
+         val is: t -> bool = isSome o deOpt
+      in
+         (deOpt, de, is)
+      end
+in
+   val (deWordOpt,deWord,_) = make ("Word", fn Word ws => SOME ws | _ => NONE)
+end
 
 val string = wordVector o WordXVector.fromString
 

@@ -1,8 +1,3 @@
-structure Array =
-   struct
-      type 'a array = 'a array
-   end
-
 signature ARRAY_SLICE_GLOBAL =
    sig
    end
@@ -18,10 +13,8 @@ signature ARRAY_SLICE =
       val appi: (int * 'a -> unit) -> 'a slice -> unit
       val base: 'a slice -> 'a Array.array * int * int
       val collate: ('a * 'a -> order) -> 'a slice * 'a slice -> order
-      val copy: {src: 'a slice, dst: 'a Array.array, di: int} -> unit
-      val copyVec: {di: int,
-                    dst: 'a Array.array,
-                    src: 'a VectorSlice.slice} -> unit
+      val copy: {dst: 'a Array.array, di: int, src: 'a slice} -> unit
+      val copyVec: {dst: 'a Array.array, di: int, src: 'a VectorSlice.slice} -> unit
       val exists: ('a -> bool) -> 'a slice -> bool
       val find: ('a -> bool) -> 'a slice -> 'a option
       val findi: (int * 'a -> bool) -> 'a slice -> (int * 'a) option
@@ -46,9 +39,16 @@ signature ARRAY_SLICE_EXTRA =
    sig
       include ARRAY_SLICE
 
+      val uninitIsNop: 'a slice -> bool
+      val uninit: 'a slice * int -> unit
+      val unsafeSub: 'a slice * int -> 'a
+      val unsafeCopy: {dst: 'a Array.array, di: int, src: 'a slice} -> unit
+      val unsafeCopyVec: {dst: 'a Array.array, di: int, src: 'a VectorSlice.slice} -> unit
+      val unsafeSlice: 'a array * int * int option -> 'a slice
+      val unsafeSubslice: 'a slice * int * int option -> 'a slice
+      val unsafeUninit: 'a slice * int -> unit
+      val unsafeUpdate: 'a slice * int * 'a -> unit
+
       val concat: 'a slice list -> 'a array
       val toList: 'a slice -> 'a list
-      val unsafeSlice: 'a array * int * int option -> 'a slice
-      val unsafeSub: 'a slice * int -> 'a
-      val unsafeSubslice: 'a slice * int * int option -> 'a slice
    end

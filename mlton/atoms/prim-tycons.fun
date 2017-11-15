@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,16 +12,6 @@ struct
 
 open S
 
-structure BindingStrength =
-   struct
-      datatype t =
-         Arrow
-       | Tuple
-       | Unit
-
-      val unit = Unit
-   end
-
 datatype z = datatype RealSize.t
 
 type tycon = t
@@ -29,7 +20,7 @@ local
    fun make s = (s, fromString s)
 in
    val array = make "array"
-   val arrow = make "->"
+   val arrow = make "arrow"
    val bool = make "bool" 
    val cpointer = make "cpointer"
    val exn = make "exn"
@@ -37,7 +28,7 @@ in
    val list = make "list"
    val reff = make "ref"
    val thread = make "thread"
-   val tuple = make "*"
+   val tuple = make "tuple"
    val vector = make "vector"
    val weak = make "weak"
 end
@@ -173,65 +164,87 @@ val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
-fun layoutApp (c: t,
-               args: (Layout.t * ({isChar: bool}
-                                  * BindingStrength.t)) vector) =
-   let
-      local
-         open Layout
-      in
-         val mayAlign = mayAlign
-         val seq = seq
-         val str = str
-      end
-      datatype z = datatype BindingStrength.t
-      datatype binding_context =
-         ArrowLhs
-       | ArrowRhs
-       | TupleElem
-       | Tyseq1
-       | TyseqN
-      fun maybe bindingContext (l, ({isChar = _}, bindingStrength)) =
-         case (bindingStrength, bindingContext) of
-            (Unit, _) => l
-          | (Tuple, ArrowLhs) => l
-          | (Tuple, ArrowRhs) => l
-          | (Tuple, TyseqN) => l
-          | (Arrow, ArrowRhs) => l
-          | (Arrow, TyseqN) =>  l
-          | _ => Layout.paren l
-      fun normal () =
-         let
-            val ({isChar}, lay) =
-               case Vector.length args of
-                  0 => ({isChar = equals (c, defaultChar ())}, layout c)
-                | 1 => ({isChar = false},
-                        seq [maybe Tyseq1 (Vector.sub (args, 0)),
-                             str " ", layout c])
-                | _ => ({isChar = false},
-                        seq [Layout.tuple
-                             (Vector.toListMap (args, maybe TyseqN)),
-                             str " ", layout c])
-         in
-            (lay, ({isChar = isChar}, Unit))
-         end
+local
+   local
+      open Layout
    in
+      val mayAlign = mayAlign
+      val seq = seq
+      val str = str
+   end
+   datatype z = datatype BindingStrength.t
+   datatype binding_context =
+      ArrowLhs
+    | ArrowRhs
+    | TupleElem
+    | Tyseq1
+    | TyseqN
+   fun maybe bindingContext (l, ({isChar = _}, bindingStrength)) =
+      case (bindingStrength, bindingContext) of
+         (Unit, _) => l
+       | (Tuple, ArrowLhs) => l
+       | (Tuple, ArrowRhs) => l
+       | (Tuple, TyseqN) => l
+       | (Arrow, ArrowRhs) => l
+       | (Arrow, TyseqN) =>  l
+       | _ => Layout.paren l
+   fun normal (c: Layout.t, args: LayoutPretty.t vector, {isChar}) =
+      let
+         val lay =
+            case Vector.length args of
+               0 => c
+             | 1 => seq [maybe Tyseq1 (Vector.first args),
+                         str " ", c]
+             | _ => seq [Layout.tuple (Vector.toListMap (args, maybe TyseqN)),
+                         str " ", c]
+      in
+         (lay, ({isChar = isChar}, Unit))
+      end
+
+in
+   fun layoutAppPrettyNormal (c: Layout.t, args: LayoutPretty.t vector) =
+      normal (c, args, {isChar = false})
+   fun layoutAppPretty (c: t, args: LayoutPretty.t vector, {layoutPretty}) =
       if equals (c, arrow)
-         then (mayAlign [maybe ArrowLhs (Vector.sub (args, 0)),
+         then (mayAlign [maybe ArrowLhs (Vector.first args),
                          seq [str "-> ",
                               maybe ArrowRhs (Vector.sub (args, 1))]],
                ({isChar = false}, Arrow))
       else if equals (c, tuple)
-         then if 0 = Vector.length args
-                 then (str "unit", ({isChar = false}, Unit))
+         then if Vector.isEmpty args
+                 then LayoutPretty.simple (str "unit")
               else (mayAlign (Layout.separateLeft
                               (Vector.toListMap (args, maybe TupleElem), "* ")),
                     ({isChar = false}, Tuple))
       else if equals (c, vector)
-         then if #isChar (#1 (#2 (Vector.sub (args, 0))))
-                 then (str "string", ({isChar = false}, Unit))
-              else normal ()
-      else normal ()
+         then if #isChar (#1 (#2 (Vector.first args)))
+                 then LayoutPretty.simple (str "string")
+              else normal (layoutPretty c, args, {isChar = false})
+      else normal (layoutPretty c, args, {isChar = equals (c, defaultChar ())})
+end
+
+fun layoutApp (c: t, args: Layout.t vector) =
+   let
+      local
+         open Layout
+      in
+         val empty = empty
+         val seq = seq
+         val str = str
+      end
+      val con =
+         if equals (c, tuple) andalso Vector.isEmpty args
+            then str "unit"
+            else (case List.peekMap (prims, fn {name, tycon, ...} =>
+                                     if equals (c, tycon) then SOME name else NONE) of
+                     SOME name => str name
+                   | _ => layout c)
+      val args =
+         if Vector.isEmpty args
+            then empty
+            else seq [Layout.tuple (Vector.toList args), str " "]
+   in
+      seq [args, con]
    end
 
 end

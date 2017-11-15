@@ -39,6 +39,11 @@
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK TRUE
+#if (defined (__hppa__))
+#define NEEDS_SIGALTSTACK_EXEC TRUE
+#else
+#define NEEDS_SIGALTSTACK_EXEC FALSE
+#endif
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
 

@@ -149,14 +149,14 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       {test = darg1,
                        ty = Type.bool,
                        default = (if Vector.exists (cons, fn {args, ...} =>
-                                                    0 = Vector.length args)
+                                                    Vector.isEmpty args)
                                      then SOME Dexp.falsee
                                   else NONE),
                        cases =
                        Dexp.Con
                        (Vector.keepAllMap
                         (cons, fn {con, args} =>
-                         if 0 = Vector.length args
+                         if Vector.isEmpty args
                             then NONE
                          else
                             let
@@ -544,7 +544,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                             PrimApp {prim, targs, args, ...} =>
                                (case (Prim.name prim, Vector.length targs) of
                                    (Prim.Name.MLton_eq, 1) =>
-                                      (case Type.dest (Vector.sub (targs, 0)) of
+                                      (case Type.dest (Vector.first targs) of
                                           Type.CPointer => 
                                              let
                                                 val cp0 = Vector.sub (args, 0)

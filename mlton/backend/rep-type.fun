@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -147,7 +147,7 @@ structure Type =
 
       val seq: t vector -> t =
          fn ts =>
-         if 0 = Vector.length ts
+         if Vector.isEmpty ts
             then unit
          else
             let
@@ -183,7 +183,7 @@ structure Type =
 
       val sum: t vector -> t =
          fn ts =>
-         if 0 = Vector.length ts
+         if Vector.isEmpty ts
             then Error.bug "RepType.Type.sum: empty"
          else
             let
@@ -195,8 +195,8 @@ structure Type =
                        Objptr opts => SOME opts
                      | _ => NONE))
             in
-               if 0 = Vector.length opts
-                  then Vector.sub (ts, 0)
+               if Vector.isEmpty opts
+                  then Vector.first ts
                else
                   T {node = (Objptr (QuickSort.sortVector (opts, ObjptrTycon.<=))),
                      width = WordSize.bits (WordSize.objptr ())}
@@ -224,7 +224,7 @@ structure Type =
          case node t of
             Objptr opts =>
                if 1 = Vector.length opts
-                  then SOME (Vector.sub (opts, 0))
+                  then SOME (Vector.first opts)
                else NONE
           | _ => NONE
 
@@ -395,18 +395,16 @@ structure ObjectType =
                let
                   val b = Type.width elt
                in
-                  Bits.> (b, Bits.zero)
-                  andalso Bits.isByteAligned b
+                  Bits.isByteAligned b
                end
           | Normal {ty, ...} =>
                let
                   val b = Bits.+ (Type.width ty,
                                   Type.width (Type.objptrHeader ()))
                in
-                  not (Type.isUnit ty) 
-                  andalso (case !Control.align of
-                              Control.Align4 => Bits.isWord32Aligned b
-                            | Control.Align8 => Bits.isWord64Aligned b)
+                  case !Control.align of
+                     Control.Align4 => Bits.isWord32Aligned b
+                   | Control.Align8 => Bits.isWord64Aligned b
                end
           | Stack => true
           | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
@@ -421,8 +419,8 @@ structure ObjectType =
                      case !Control.align of
                         Control.Align4 => Bytes.fromInt 4
                       | Control.Align8 => Bytes.fromInt 8
-                  val bytesHeader =
-                     Bits.toBytes (Control.Target.Size.header ())
+                  val bytesMetaData =
+                     Bits.toBytes (Control.Target.Size.normalMetaData ())
                   val bytesCSize =
                      Bits.toBytes (Control.Target.Size.csize ())
                   val bytesExnStack =
@@ -431,7 +429,7 @@ structure ObjectType =
                      Bits.toBytes (Type.width (Type.stack ()))
 
                   val bytesObject =
-                     Bytes.+ (bytesHeader,
+                     Bytes.+ (bytesMetaData,
                      Bytes.+ (bytesCSize,
                      Bytes.+ (bytesExnStack,
                               bytesStack)))
@@ -807,7 +805,7 @@ fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} =
     | Objptr opts => 
          (equals (index, seqIndex ()))
          andalso (1 = Vector.length opts)
-         andalso (case tyconTy (Vector.sub (opts, 0)) of
+         andalso (case tyconTy (Vector.first opts) of
                      ObjectType.Array {elt, ...} => 
                         if equals (elt, word8)
                            then (* special case for PackWord operations *)

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -20,7 +20,7 @@ signature ALLOCATE_REGISTERS =
       include ALLOCATE_REGISTERS_STRUCTS
 
       val allocate:
-         {argOperands: Machine.Operand.t vector,
+         {formalsStackOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> Machine.StackOffset.t vector,
           function: Rssa.Function.t,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or

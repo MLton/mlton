@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -247,7 +248,7 @@ local
                 {isFirstOrder = false,
                  make = let
                            fun mutable mt =
-                              let val make = #make (Vector.sub (vs, 0))
+                              let val make = #make (Vector.first vs)
                               in fn () => new (Unify (mt, make ()))
                               end
                         in if Tycon.equals (tycon, Tycon.reff)
@@ -302,6 +303,12 @@ fun deArray v =
       Type t => fromType (Type.deArray t)
     | Unify (_, v) => v
     | _ => Error.bug "AbstractValue.deArray"
+
+fun deVector v =
+   case tree v of
+      Type t => fromType (Type.deVector t)
+    | Unify (_, v) => v
+    | _ => Error.bug "AbstractValue.deVector"
 
 fun lambda (l: Sxml.Lambda.t, t: Type.t): t =
    new (Lambdas (LambdaNode.lambda l), t)       
@@ -406,10 +413,54 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
          if n = 3
             then (arg 0, arg 1, arg 2)
          else Error.bug "AbstractValue.primApply.threeArgs"
+      fun fiveArgs () =
+         if n = 5
+            then (arg 0, arg 1, arg 2, arg 3, arg 4)
+         else Error.bug "AbstractValue.primApply.fiveArgs"
       datatype z = datatype Prim.Name.t
    in
       case Prim.name prim of
-         Array_sub =>
+         Array_copyArray =>
+            let val (da, _, sa, _, _) = fiveArgs ()
+            in (case (dest da, dest sa) of
+                   (Array dx, Array sx) => unify (dx, sx)
+                 | (Type _, Type _) => ()
+                 | _ => typeError ()
+                ; result ())
+            end
+       | Array_copyVector =>
+            let val (da, _, sa, _, _) = fiveArgs ()
+            in (case (dest da, dest sa) of
+                   (Array dx, Vector sx) => unify (dx, sx)
+                 | (Type _, Type _) => ()
+                 | _ => typeError ()
+                ; result ())
+            end
+       | Array_toArray =>
+            let val r = result ()
+            in (case (dest (oneArg ()), dest r) of
+                   (Type _, Type _) => ()
+                 | (Array x, Array y) =>
+                      (* Can't do a coercion here because that would imply
+                       * walking over each element of the array and coercing it.
+                       *)
+                      unify (x, y)
+                 | _ => typeError ())
+               ; r
+            end
+       | Array_toVector =>
+            let val r = result ()
+            in (case (dest (oneArg ()), dest r) of
+                   (Type _, Type _) => ()
+                 | (Array x, Vector y) =>
+                      (* Can't do a coercion here because that would imply
+                       * walking over each element of the array and coercing it.
+                       *)
+                      unify (x, y)
+                 | _ => typeError ())
+               ; r
+            end
+       | Array_sub =>
             (case dest (#1 (twoArgs ())) of
                 Array x => x
               | Type _ => result ()
@@ -451,23 +502,22 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
             in
                r
             end
-       | Array_toVector =>
-            let val r = result ()
-            in (case (dest (oneArg ()), dest r) of
-                   (Type _, Type _) => ()
-                 | (Array x, Vector y) =>
-                      (* Can't do a coercion here because that would imply
-                       * walking over each element of the array and coercing it.
-                       *)
-                      unify (x, y)
-                 | _ => typeError ())
-               ; r
-            end
        | Vector_sub =>
             (case dest (#1 (twoArgs ())) of
                 Vector x => x
               | Type _ => result ()
               | _ => typeError ())
+       | Vector_vector =>
+            let
+                val r = result ()
+                val _ =
+                   case dest r of
+                      Vector x => Vector.foreach (args, fn arg => coerce {from = arg, to = x})
+                    | Type _ => ()
+                    | _ => typeError ()
+            in
+               r
+            end
        | Weak_get =>
             (case dest (oneArg ()) of
                 Weak v => v

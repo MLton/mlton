@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -115,14 +115,16 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
              before messageStr (verb, concat [name, " finished in ", done ()]))
             handle e =>
                (messageStr (verb, concat [name, " raised in ", done ()])
-                ; messageStr (verb, concat [name, " raised: ", Exn.name e])
+                ; messageStr (verb, concat [name, " raised: ", Exn.toString e])
                 ; (case Exn.history e of
                       [] => ()
                     | history =>
                          (messageStr (verb, concat [name, " raised with history: "])
+                          ; indent ()
                           ; (List.foreach
                              (history, fn s =>
-                              messageStr (verb, concat ["\t", s])))))
+                              messageStr (verb, s)))
+                          ; unindent ()))
                 ; raise e)
          end
    else
@@ -170,9 +172,11 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
                       [] => ()
                     | history =>
                          (messageStr (verb, concat [name, " raised with history: "])
+                          ; indent ()
                           ; (List.foreach
                              (history, fn s =>
-                              messageStr (verb, concat ["\t", s])))))
+                              messageStr (verb, s)))
+                          ; unindent ()))
                 ; raise e)
           end
      else f a
@@ -201,10 +205,7 @@ local
    fun msg (kind: string, r: Region.t, msg: Layout.t, extra: Layout.t): unit =
       let
          open Layout
-         val p =
-            case Region.left r of
-               NONE => "<bogus>"
-             | SOME p => SourcePos.toString p
+         val r = Region.toString r
          val msg = Layout.toString msg
          val msg =
             Layout.str
@@ -212,7 +213,7 @@ local
                      String.dropPrefix (msg, 1),
                      "."])
          in
-            outputl (align [seq [str (concat [kind, ": "]), str p, str "."],
+            outputl (align [seq [str (concat [kind, ": "]), str r, str "."],
                             indent (align [msg,
                                            indent (extra, 2)],
                                     2)],

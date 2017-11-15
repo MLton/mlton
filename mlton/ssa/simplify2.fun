@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,37 +12,21 @@ struct
 
 open S
 
-(* structure CommonArg = CommonArg (S) *)
-(* structure CommonBlock = CommonBlock (S) *)
-(* structure CommonSubexp = CommonSubexp (S) *)
-(* structure ConstantPropagation = ConstantPropagation (S) *)
-(* structure Contify = Contify (S) *)
 structure DeepFlatten = DeepFlatten (S)
-(* structure Flatten = Flatten (S) *)
-(* structure Inline = Inline (S) *)
-(* structure IntroduceLoops = IntroduceLoops (S) *)
-(* structure KnownCase = KnownCase (S) *)
-(* structure LocalFlatten = LocalFlatten (S) *)
-(* structure LocalRef = LocalRef (S) *)
-(* structure LoopInvariant = LoopInvariant (S) *)
-(* structure PolyEqual = PolyEqual (S) *)
 structure Profile2 = Profile2 (S)
-(* structure Redundant = Redundant (S) *)
-(* structure RedundantTests = RedundantTests (S) *)
 structure RefFlatten = RefFlatten (S)
 structure RemoveUnused2 = RemoveUnused2 (S)
-(* structure SimplifyTypes = SimplifyTypes (S) *)
-(* structure Useless = Useless (S) *)
 structure Zone = Zone (S)
 
 type pass = {name: string,
-             doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t,
+             execute: bool}
 
 val ssa2PassesDefault = 
-   {name = "deepFlatten", doit = DeepFlatten.transform2} ::
-   {name = "refFlatten", doit = RefFlatten.transform2} ::
-   {name = "removeUnused5", doit = RemoveUnused2.transform2} ::
-   {name = "zone", doit = Zone.transform2} ::
+   {name = "deepFlatten", doit = DeepFlatten.transform2, execute = true} ::
+   {name = "refFlatten", doit = RefFlatten.transform2, execute = true} ::
+   {name = "removeUnused5", doit = RemoveUnused2.transform2, execute = true} ::
+   {name = "zone", doit = Zone.transform2, execute = true} ::
    nil
 
 val ssa2PassesMinimal =
@@ -57,22 +42,23 @@ local
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
                                               Int.toString (Counter.next count)],
-                               doit = doit}
+                               doit = doit,
+                               execute = true}
                     else NONE
       end
 
 
    val passGens = 
-      List.map([("addProfile", Profile2.addProfile),
-                ("deepFlatten", DeepFlatten.transform2),
-                ("dropProfile", Profile2.dropProfile),
+      List.map([("deepFlatten", DeepFlatten.transform2),
                 ("refFlatten", RefFlatten.transform2),
-                ("removeUnused", RemoveUnused2.transform2), 
+                ("removeUnused", RemoveUnused2.transform2),
                 ("zone", Zone.transform2),
-                ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                ("orderFunctions",S.orderFunctions),
-                ("reverseFunctions",S.reverseFunctions),
-                ("shrink", S.shrink)],
+                ("ssa2AddProfile", Profile2.addProfile),
+                ("ssa2DropProfile", Profile2.dropProfile),
+                ("ssa2EliminateDeadBlocks", S.eliminateDeadBlocks),
+                ("ssa2OrderFunctions", S.orderFunctions),
+                ("ssa2ReverseFunctions", S.reverseFunctions),
+                ("ssa2Shrink", S.shrink)],
                mkSimplePassGen)
 in
    fun ssa2PassesSetCustom s =
@@ -126,27 +112,29 @@ fun pass ({name, doit, midfix}, p) =
    in
       p
    end 
-fun maybePass ({name, doit, midfix}, p) =
-   if List.exists (!Control.dropPasses, fn re =>
-                   Regexp.Compiled.matchesAll (re, name))
-      then p
-   else pass ({name = name, doit = doit, midfix = midfix}, p)
+fun maybePass ({name, doit, execute, midfix}, p) =
+   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name)
+                     then new
+                     else old)
+      then pass ({name = name, doit = doit, midfix = midfix}, p)
+      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 
 fun simplify p =
    let
       fun simplify' n p =
          let
-            val midfix = if n = 0
+            val midfix = if !Control.loopSsa2Passes = 1
                             then ""
-                         else concat [Int.toString n,"."]
+                         else concat [Int.toString n, "."]
          in
-            if n = !Control.loopPasses
+            if n = !Control.loopSsa2Passes
                then p
             else simplify' 
                  (n + 1)
                  (List.fold
-                  (!ssa2Passes, p, fn ({name, doit}, p) =>
-                   maybePass ({name = name, doit = doit, midfix = midfix}, p)))
+                  (!ssa2Passes, p, fn ({name, doit, execute}, p) =>
+                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
          end
       val p = simplify' 0 p
    in
@@ -163,12 +151,13 @@ val simplify = fn p => let
                          val p =
                             if !Control.profile <> Control.ProfileNone
                                andalso !Control.profileIL = Control.ProfileSSA2
-                               then pass ({name = "addProfile2",
+                               then pass ({name = "ssa2AddProfile",
                                            doit = Profile2.addProfile,
                                            midfix = ""}, p)
                             else p
-                         val p = maybePass ({name = "orderFunctions2",
+                         val p = maybePass ({name = "ssa2OrderFunctions",
                                              doit = S.orderFunctions,
+                                             execute = true,
                                              midfix = ""}, p)
                          val _ = typeCheck p
                        in

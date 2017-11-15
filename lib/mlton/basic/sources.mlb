@@ -7,8 +7,9 @@
  *)
 
 ann  
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
-   "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in
    local
@@ -167,6 +168,8 @@ in
       mono-vector.fun
       result.sig
       result.sml
+      parse.sig
+      parse.sml
       regexp.sig
       regexp.sml
       popt.sig
@@ -192,10 +195,12 @@ in
       signature OPTION
       signature ORDER
       signature ORDERED_RING
+      signature PARSE
       signature PROMISE
       signature REAL
       signature RING
       signature RING_WITH_IDENTITY
+      signature STREAM
       signature STRING
       signature T
       signature UNIQUE_ID
@@ -248,6 +253,7 @@ in
       structure OS
       structure Option
       structure Out
+      structure Parse
       structure Pervasive
       structure Pid
       structure Popt

@@ -5,13 +5,15 @@ The calculator is defined by the files
   calc.lex       (* defines lexer *)
   calc.grm       (* defines grammar *)
   calc.sml       (* defines driver function, Calc.parse *)
-  sources.cm     (* cm description file *)
+  calc.mlb       (* ML Basis file *)
 
-To compile this example, type
+To compile this example, type the following commands
 
-        - CM.make "sources.cm";
+        mllex calc.lex
+	 mlyacc calc.grm
+	 mlton calc.mlb
 
-in this directory.  CM will invoke ml-lex and ml-yacc to process the
+in this directory. They will invoke ml-lex and ml-yacc to process the
 lexer specification calc.lex and the grammar specification calc.grm
 respectively.  Then it will compile the resulting SML source files
 
@@ -21,8 +23,9 @@ respectively.  Then it will compile the resulting SML source files
 
 and the calc.sml file containing the driver code.
 
-The end result of loading these files is a structure Calc containing a
-top-level driver function named parse.
+The end result of compiling these files is an executable file named
+"calc", that is based on the structure Calc containing a top-level
+driver function named parse.
 
   Calc.parse : unit -> unit
 
@@ -40,7 +43,7 @@ terminates when an end-of-file is encountered. There is no attempt to
 fix input errors: a lexical error will cause exception LexError to be
 raised, while a syntax error will cause ParseError to be raised.
 
-NOTE: The CM description file sources.cm mentions the ml-yacc library
-(ml-yacc-lib.cm). CM's search path should be configured so that this
-library will be found.  This should normally be the case if SML/NJ is
+NOTE: The ML Basis file calc.mlb mentions the ml-yacc library
+(ml-yacc-lib.cm). MLton's search path should be configured so that this
+library will be found.  This should normally be the case if MLton is
 properly installed.

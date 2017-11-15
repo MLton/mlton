@@ -194,7 +194,7 @@ fun zoneFunction f =
                      val {componentsRev, tuple, ...} = info'
                      val components = Vector.fromListRev (!componentsRev)
                   in
-                     if 0 = Vector.length components
+                     if Vector.isEmpty components
                         then statements
                      else
                         let

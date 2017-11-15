@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -26,20 +27,20 @@ local
             ord       = Int.zextdFromWord8 o Prim8.idToWord8,
             minChar   = #"\000",
             maxChar   = #"\255",
-            numChars  = 256
+            numChars  = 256 (* 0x100 *)
          }
          val fChar16 : Prim16.char t = {
             chrUnsafe = Prim16.idFromWord16 o Int.sextdToWord16,
             ord       = Int.zextdFromWord16 o Prim16.idToWord16,
             minChar   = #"\000",
             maxChar   = #"\uFFFF",
-            numChars  = 65536
+            numChars  = 65536 (* 0x10000 *)
             }
          val fChar32 : Prim32.char t = {
             chrUnsafe = Prim32.idFromWord32 o Int.sextdToWord32,
             ord       = Int.zextdFromWord32 o Prim32.idToWord32,
             minChar   = #"\000",
-            maxChar   = #"\U0010FFFF",
+            maxChar   = Prim32.idFromWord32 0wx0010FFFF,
             numChars  = 1114112 (* 0x110000 *)
          }
       end

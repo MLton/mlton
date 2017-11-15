@@ -567,7 +567,7 @@ struct
                             | CReturn {dsts, frameInfo, func, label}
                             => let
                                  fun getReturn () =
-                                    if Vector.length dsts = 0
+                                    if Vector.isEmpty dsts
                                        then AppendList.empty
                                        else let
                                                val srcs =

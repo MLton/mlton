@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -25,6 +25,16 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
            set = setLabelInfo, ...} =
          Property.getSetOnce (Label.plist,
                               Property.initRaise ("info", Label.layout))
+      (* Keep track of a total ordering on variables. *)
+      val {get = varIndex : Var.t -> int, set = setVarIndex, ...} =
+         Property.getSetOnce (Var.plist,
+                              Property.initRaise ("varIndex", Var.layout))
+      val setVarIndex =
+         let
+            val c = Counter.new 0
+         in
+            fn x => setVarIndex (x, Counter.next c)
+         end
       (* Keep track of variables used as overflow variables. *)
       val {get = overflowVar: Var.t -> bool, set = setOverflowVar, ...} =
          Property.getSetOnce (Var.plist, Property.initConst false)
@@ -63,12 +73,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                         val a0 = arg 0
                         val a1 = arg 1
                      in
-                        (* What we really want is a total orderning on
-                         * variables.  Since we don't have one, we just use
-                         * the total ordering on hashes, which means that
-                         * we may miss a few cse's but we won't be wrong.
-                         *)
-                        if Var.hash a0 <= Var.hash a1
+                        if varIndex a0 >= varIndex a1
                            then (a0, a1)
                         else (a1, a0)
                      end
@@ -117,8 +122,10 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
          Vector.foreach
          (globals, fn Statement.T {var, exp, ...} =>
           let
+             val var = valOf var
+             val () = setVarIndex var
              val exp = canon exp
-             val _ = lookup (valOf var, exp, Exp.hash exp)
+             val _ = lookup (var, exp, Exp.hash exp)
           in
              ()
           end)
@@ -163,6 +170,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                            end)
                   val _ = diag "added"
 
+                  val _ =
+                     Vector.foreach
+                     (args, fn (var, _) => setVarIndex var)
                   val statements =
                      Vector.keepAllMap
                      (statements,
@@ -177,6 +187,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                             NONE => keep ()
                           | SOME var =>
                                let
+                                  val _ = setVarIndex var
                                   fun replace var' =
                                      (setReplace (var, SOME var'); NONE)
                                   fun doit () =
@@ -194,7 +205,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                   case exp of
                                      PrimApp ({args, prim, ...}) =>
                                         let
-                                           fun arg () = Vector.sub (args, 0)
+                                           fun arg () = Vector.first args
                                            fun knownLength var' =
                                               let
                                                  val _ = setLength (var, SOME var')
@@ -212,8 +223,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                            datatype z = datatype Prim.Name.t
                                         in
                                            case Prim.name prim of
-                                              Array_array => knownLength (arg ())
+                                              Array_alloc _ => knownLength (arg ())
                                             | Array_length => length ()
+                                            | Array_toArray => conv ()
                                             | Array_toVector => conv ()
                                             | Vector_length => length ()
                                             | _ => if Prim.isFunctional prim
@@ -251,7 +263,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                     else (if !succInDeg = 1
                                              then let
                                                      val (var', _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      setReplace (var', SOME var)
                                                   end
@@ -261,7 +273,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                | NONE => (if !succInDeg = 1
                                              then let
                                                      val (var, _) =
-                                                        Vector.sub (succArgs, 0)
+                                                        Vector.first succArgs
                                                   in
                                                      List.push
                                                      (succAdd, (var, exp))
@@ -342,6 +354,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
           let
              val {args, blocks, mayInline, name, raises, returns, start} =
                 Function.dest f
+             val _ =
+                Vector.foreach
+                (args, fn (var, _) => setVarIndex var)
              val _ =
                 Vector.foreach
                 (blocks, fn Block.T {label, args, ...} =>

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -11,16 +12,7 @@ struct
 open Exn0
 
 fun layout e =
-   let
-      open Layout
-   in
-      case e of
-         OS.SysErr (s, _) => str s
-       | Fail s => str s
-       | IO.Io {cause, function, name, ...} =>
-            seq [str (concat [function, " ", name, ": "]), layout cause]
-       | _ => seq [str "unhandled exception: ", str (exnName e)]
-   end
+   Layout.str (message e)
 
 val toString = Layout.toString o layout
 

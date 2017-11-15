@@ -22,11 +22,13 @@ signature OPTION
 signature ORDER
 signature ORDERED_RING
 signature POLY_CACHE
+signature PARSE
 signature PROMISE
 signature REAL
 signature RING
 signature RING_WITH_IDENTITY
 signature SET
+signature STREAM
 signature STRING
 signature SUM
 signature T
@@ -93,6 +95,7 @@ structure Option
 structure OS
 structure Out
 structure Parse
+structure ParseSexp
 structure Pervasive
 structure Pid
 structure Pointer

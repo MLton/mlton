@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -20,18 +20,21 @@ signature SSA_TREE2 =
          sig
             type 'a t
 
+            val allAreImmutable: 'a t -> bool
+            val allAreMutable: 'a t -> bool
             val dest: 'a t -> {elt: 'a, isMutable: bool} vector
             val elt: 'a t * int -> 'a
             val empty: unit -> 'a t
             val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
             val foreach: 'a t * ('a -> unit) -> unit
             val isEmpty: 'a t -> bool
-            val isMutable: 'a t -> bool
             val keepAllMap: 'a t * ('a -> 'b option) -> 'b t
             val layout: 'a t * ('a -> Layout.t) -> Layout.t
             val length: 'a t -> int
             val make: {elt: 'a, isMutable: bool} vector -> 'a t
             val map: 'a t * ('a -> 'b) -> 'b t
+            val someIsImmutable: 'a t -> bool
+            val someIsMutable: 'a t -> bool
             val sub: 'a t * int -> {elt: 'a, isMutable: bool}
          end
 
@@ -70,6 +73,8 @@ signature SSA_TREE2 =
             val cpointer: t
             val datatypee: Tycon.t -> t
             val dest: t -> dest
+            val deVector1: t -> t
+            val deVectorOpt: t -> t Prod.t option
             val equals: t * t -> bool
             val intInf: t
             val isVector: t -> bool
@@ -140,7 +145,6 @@ signature SSA_TREE2 =
             val foreachDef: t * (Var.t * Type.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
-            val prettifyGlobals: t vector -> (Var.t -> string option)
             val profile: ProfileExp.t -> t
             val replaceUses: t * (Var.t -> Var.t) -> t
          end
@@ -257,9 +261,10 @@ signature SSA_TREE2 =
             val foreachVar: t * (Var.t * Type.t -> unit) -> unit
             val layout: t -> Layout.t
             val layoutDot:
-               t * (Var.t -> string option) -> {destroy: unit -> unit,
-                                                graph: Layout.t,
-                                                tree: unit -> Layout.t}
+               t * (Var.t -> Layout.t) -> {destroy: unit -> unit,
+                                           controlFlowGraph: Layout.t,
+                                           dominatorTree: unit -> Layout.t,
+                                           loopForest: unit -> Layout.t}
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
                       blocks: Block.t vector,

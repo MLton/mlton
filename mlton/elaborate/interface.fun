@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -13,26 +13,33 @@ struct
 open S
 
 local
+   open Layout
+in
+   val align = align
+   val empty = empty
+   val seq = seq
+   val str = str
+   val bracket = fn l =>
+      seq [str "[", l, str "]"]
+end
+
+local
    open Ast
 in
    structure Longstrid = Longstrid
    structure Longtycon = Longtycon
    structure Record = SortedRecord
    structure Strid = Strid
-   structure Tyvar = Tyvar
    structure Vid = Vid
 end
 
-structure Field = Record.Field
+fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
+   (seq o List.fold)
+   (ss, [id], fn (s, ls) =>
+    Strid.layout s :: str "." :: ls)
 
+structure Etycon = EnvTycon
 structure EtypeStr = EnvTypeStr
-local
-   open EtypeStr
-in
-   structure AdmitsEquality = AdmitsEquality
-   structure Kind = Kind
-   structure Etycon = Tycon
-end
 
 structure Set = DisjointSet
 
@@ -108,7 +115,9 @@ structure FlexibleTycon =
                          hasCons: bool,
                          id: TyconId.t,
                          kind: Kind.t,
-                         plist: PropertyList.t} Set.t
+                         plist: PropertyList.t,
+                         prettyDefault: string,
+                         specs: Region.t AppendList.t ref} Set.t
       withtype copy = t option ref
 
       fun fields (T s) = Set.! s
@@ -116,81 +125,110 @@ structure FlexibleTycon =
       local
          fun make f = f o fields
       in
-         val admitsEquality = make #admitsEquality
-         val defn = ! o make #defn
+         val admitsEquality = ! o make #admitsEquality
+         val defnRef = make #defn
+         val defn = ! o defnRef
+         val hasCons = make #hasCons
+         val kind = make #kind
          val plist = make #plist
+         val prettyDefault = make #prettyDefault
+         fun setAdmitsEquality (f, ae) =
+            (make #admitsEquality f) := ae
+         val specsRef = make #specs
+         val specs = ! o specsRef
       end
+      val layoutPrettyDefault = Layout.str o prettyDefault
 
-      fun dest (T s) =
+      fun dest fc =
          let
-            val {admitsEquality, hasCons, kind, ...} = Set.! s
+            val {admitsEquality, hasCons, kind, prettyDefault, ...} =
+               fields fc
          in
             {admitsEquality = !admitsEquality,
              hasCons = hasCons,
-             kind = kind}
+             kind = kind,
+             prettyDefault = prettyDefault}
          end
 
       val equals = fn (T s, T s') => Set.equals (s, s')
 
-      fun layout (T s) =
+      fun layout fc =
          let
             open Layout
-            val {admitsEquality, creationTime, hasCons, id, ...} = Set.! s
+            val {admitsEquality, creationTime, hasCons, id, kind, prettyDefault, ...} = fields fc
          in
             record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
                     ("creationTime", Time.layout creationTime),
                     ("hasCons", Bool.layout hasCons),
-                    ("id", TyconId.layout id)]
+                    ("id", TyconId.layout id),
+                    ("kind", Kind.layout kind),
+                    ("prettyDefault", String.layout prettyDefault)]
          end
-
-      fun layoutApp (t, _) =
-          (layout t, ({isChar = false}, Etycon.BindingStrength.unit))
 
       val copies: copy list ref = ref []
 
-      fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
-         T (Set.singleton {admitsEquality = ref AdmitsEquality.Sometimes,
+      fun make {admitsEquality: AdmitsEquality.t, defn: Defn.t,
+                hasCons: bool, kind: Kind.t, prettyDefault: string,
+                specs: Region.t AppendList.t}: t =
+         T (Set.singleton {admitsEquality = ref admitsEquality,
                            copy = ref NONE,
                            creationTime = Time.current (),
                            defn = ref defn,
                            hasCons = hasCons,
                            id = TyconId.new (),
                            kind = kind,
-                           plist = PropertyList.new ()})
+                           plist = PropertyList.new (),
+                           prettyDefault = prettyDefault,
+                           specs = ref specs})
+
+      fun pushSpec (fc, region) =
+         let
+            val specsRef = specsRef fc
+         in
+            specsRef := AppendList.snoc (!specsRef, region)
+         end
    end
 
 structure Tycon =
    struct
       datatype t =
          Flexible of FlexibleTycon.t
-       | Rigid of Etycon.t * Kind.t
+       | Rigid of Etycon.t
 
-      val fromEnv: Etycon.t * Kind.t -> t = Rigid
+      val fromEnv: Etycon.t -> t = Rigid
 
       fun admitsEquality c =
          case c of
             Flexible f => FlexibleTycon.admitsEquality f
-          | Rigid (e, _) => Etycon.admitsEquality e
+          | Rigid c => Etycon.admitsEquality c
 
-      val arrow = fromEnv (Etycon.arrow, Kind.Arity 2)
+      val arrow = fromEnv Etycon.arrow
 
       val equals =
          fn (Flexible f, Flexible f') => FlexibleTycon.equals (f, f')
-          | (Rigid (c, _), Rigid (c', _)) => Etycon.equals (c, c')
+          | (Rigid c, Rigid c') => Etycon.equals (c, c')
           | _ => false
 
-      val exn = Rigid (Etycon.exn, Kind.Arity 0)
+      val exn = Rigid Etycon.exn
+
+      val kind =
+         fn Flexible f => FlexibleTycon.kind f
+          | Rigid c => Etycon.kind c
 
       val layout =
-         fn Flexible c => FlexibleTycon.layout c
-          | Rigid (c, _) => Etycon.layout c
+         fn Flexible f => FlexibleTycon.layout f
+          | Rigid c => Etycon.layout c
 
-      fun layoutApp (t: t, v) =
-         case t of
-            Flexible f => FlexibleTycon.layoutApp (f, v)
-          | Rigid (c, _) => Etycon.layoutApp (c, v)
+      val tuple = Rigid Etycon.tuple
 
-      val tuple = Rigid (Etycon.tuple, Kind.Nary)
+      fun layoutAppPretty (c, ts, {layoutPrettyEnvTycon, layoutPrettyFlexTycon}) =
+         case c of
+            Flexible f =>
+               EnvTycon.layoutAppPrettyNormal
+               (layoutPrettyFlexTycon f, ts)
+          | Rigid c =>
+               EnvTycon.layoutAppPretty
+               (c, ts, {layoutPretty = layoutPrettyEnvTycon})
    end
 
 structure Type =
@@ -201,8 +239,6 @@ structure Type =
        | Var of Tyvar.t
 
       fun arrow (t1, t2) = Con (Tycon.arrow, Vector.new2 (t1, t2))
-
-      val bogus = Con (Tycon.exn, Vector.new0 ())        
 
       val con = Con
 
@@ -247,31 +283,19 @@ structure Type =
 
       local
          open Layout
-         fun simple l = (l, ({isChar = false}, Etycon.BindingStrength.unit))
-         fun loop t =
-            case t of
-               Con (c, ts) => Tycon.layoutApp (c, Vector.map (ts, loop))
-             | Record r =>
-                  (case Record.detupleOpt r of
-                      NONE =>
-                         simple
-                         (seq
-                          [str "{",
-                           mayAlign
-                           (separateRight
-                            (Vector.toListMap
-                             (QuickSort.sortVector
-                              (Record.toVector r, fn ((f, _), (f', _)) =>
-                               Field.<= (f, f')),
-                              fn (f, t) =>
-                              seq [Field.layout f, str ": ", #1 (loop t)]),
-                             ",")),
-                           str "}"])
-                    | SOME ts => Tycon.layoutApp (Tycon.tuple,
-                                                  Vector.map (ts, loop)))
-             | Var a => simple (Tyvar.layout a)
       in
-         val layout = #1 o loop
+         fun layout t =
+            case t of
+               Con (c, ts) =>
+                  paren (align [seq [str "Con ", Tycon.layout c],
+                                Vector.layout layout ts])
+             | Record r =>
+                  Record.layout {record = r,
+                                 separator = ": ",
+                                 extra = "",
+                                 layoutTuple = Vector.layout layout,
+                                 layoutElt = layout}
+             | Var a => paren (seq [str "Var ", Tyvar.layout a])
       end
 
       val record = Record
@@ -298,17 +322,70 @@ structure Scheme =
    struct
       open Scheme
 
-      fun dest (T {ty, tyvars}) = (tyvars, ty)
+      fun kind (T {tyvars, ...}) =
+         Kind.Arity (Vector.length tyvars)
 
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
+
+      fun fromTycon tycon =
+         let
+            val kind = Tycon.kind tycon
+            val arity =
+               case kind of
+                  Kind.Arity arity => arity
+                | Kind.Nary => Error.bug "Interface.Scheme.fromTycon: Kind.Nary"
+            val tyvars =
+               Vector.tabulate
+               (arity, fn _ =>
+                Tyvar.makeNoname {equality = false})
+         in
+            make (tyvars, Type.con (tycon, Vector.map (tyvars, Type.var)))
+         end
    end
 
-structure Cons =
+structure Cons :
+   sig
+      type t
+      val dest: t -> {name: Ast.Con.t,
+                      scheme: Scheme.t} vector
+      val empty: t
+      val fromSortedVector: {name: Ast.Con.t,
+                             scheme: Scheme.t} vector -> t
+      val fromVector: {name: Ast.Con.t,
+                       scheme: Scheme.t} vector -> t
+      val layout: t -> Layout.t
+      val map: t * ({name: Ast.Con.t,
+                     scheme: Scheme.t}
+                    -> {scheme: Scheme.t}) -> t
+   end =
    struct
       datatype t = T of {name: Ast.Con.t,
                          scheme: Scheme.t} vector
 
+      fun dest (T v) = v
+
+      val fromSortedVector = T
+
+      fun fromVector v =
+         (fromSortedVector o QuickSort.sortVector)
+         (v, fn ({name = name1, ...}, {name = name2, ...}) =>
+          case Ast.Con.compare (name1, name2) of
+             LESS => true
+           | EQUAL => true
+           | GREATER => false)
+
       val empty = T (Vector.new0 ())
+
+      fun map (T v, f) =
+         (T o Vector.map)
+         (v, fn elt as {name, ...} =>
+          let
+             val {scheme} =
+                f elt
+          in
+             {name = name,
+              scheme = scheme}
+          end)
 
       fun layout (T v) =
          Vector.layout (fn {name, scheme} =>
@@ -325,67 +402,78 @@ structure Cons =
 structure TypeStr =
    struct
       datatype node =
-         Datatype of {cons: Cons.t,
-                      tycon: Tycon.t}
+         Datatype of {tycon: Tycon.t,
+                      cons: Cons.t,
+                      repl: bool}
        | Scheme of Scheme.t
-       | Tycon of Tycon.t
+       | Tycon of {eq: bool,
+                   tycon: Tycon.t}
+      type t = node
 
-      datatype t = T of {kind: Kind.t,
-                         node: node}
+      val node = fn s => s
 
-      local
-         fun make f (T r) = f r
-      in
-         val kind = make #kind
-         val node = make #node
-      end
+      fun kind s =
+         case node s of
+            Datatype {tycon, ...} => Tycon.kind tycon
+          | Scheme s => Scheme.kind s
+          | Tycon {tycon, ...} => Tycon.kind tycon
 
       fun layout t =
          let
             open Layout
          in
             case node t of
-               Datatype {tycon, cons} =>
+               Datatype {tycon, cons, repl} =>
                   seq [str "Datatype ",
                        record [("tycon", Tycon.layout tycon),
-                               ("cons", Cons.layout cons)]]
+                               ("cons", Cons.layout cons),
+                               ("repl", Bool.layout repl)]]
              | Scheme s => Scheme.layout s
-             | Tycon t => seq [str "Tycon ", Tycon.layout t]
+             | Tycon {eq, tycon} =>
+                  seq [str "Tycon ",
+                       record [("eq", Bool.layout eq),
+                               ("tycon", Tycon.layout tycon)]]
          end
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
-          | Tycon t => Type.con (t, tys)
+          | Tycon {tycon, ...} => Type.con (tycon, tys)
+
+      val apply =
+         Trace.trace ("Interface.TypeStr.apply", Layout.tuple2 (layout, Vector.layout Type.layout), Type.layout)
+         apply
 
       fun cons t =
          case node t of
             Datatype {cons, ...} => cons
           | _ => Cons.empty
 
-      fun data (tycon, kind, cons) =
-         T {kind = kind,
-            node = Datatype {tycon = tycon, cons = cons}}
+      fun data (tycon, cons, repl) =
+         Datatype {tycon = tycon, cons = cons, repl = repl}
 
-      fun def (s: Scheme.t, k: Kind.t) =
-         let
-            val (tyvars, ty) = Scheme.dest s
-         in
-            T {kind = k,
-               node = (case Type.deEta (ty, tyvars) of
-                          NONE => Scheme s
-                        | SOME c => Tycon c)}
-         end
+      val def = Scheme
 
-      fun toTyconOpt s =
-         case node s of
-            Datatype {tycon, ...} => SOME tycon
-          | Scheme _ => NONE
-          | Tycon c => SOME c
+      fun tycon (tycon, eq) =
+         Tycon {eq = eq, tycon = tycon}
 
-      fun tycon (c, kind) = T {kind = kind,
-                               node = Tycon c}
+      local
+         fun tyconAsScheme c =
+            def (Scheme.fromTycon c)
+      in
+         fun repl (t: t) =
+            case node t of
+               Datatype {tycon, cons, ...} => data (tycon, cons, true)
+             | Scheme _ => t
+             | Tycon {tycon, ...} => tyconAsScheme tycon
+
+         fun abs (t: t) =
+            case node t of
+               Datatype {tycon, ...} => tyconAsScheme tycon
+             | Scheme _ => t
+             | Tycon {tycon, ...} => tyconAsScheme tycon
+      end
    end
 
 structure Defn =
@@ -393,7 +481,7 @@ structure Defn =
       open Defn
 
       datatype dest =
-         Realized of EtypeStr.t option
+         Realized of EtypeStr.t
        | TypeStr of TypeStr.t
        | Undefined
 
@@ -427,10 +515,126 @@ in
    val expandTy = expandTy
 end
 
-fun copyCons (Cons.T v): Cons.t =
-   Cons.T (Vector.map (v, fn {name, scheme} =>
-                       {name = name,
-                        scheme = copyScheme scheme}))
+structure Type =
+   struct
+      open Type
+
+      fun layoutPretty (ty, {expand, layoutPrettyEnvTycon, layoutPrettyFlexTycon, layoutPrettyTyvar}) =
+         let
+            fun con (c, ts) =
+               Tycon.layoutAppPretty
+               (c, ts, {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon})
+            fun record r =
+               case Record.detupleOpt r of
+                  NONE =>
+                     (LayoutPretty.simple o seq)
+                     [str "{",
+                      Layout.mayAlign
+                      (Layout.separateRight
+                       (Vector.toListMap
+                        (Record.toVector r, fn (f, (t, _)) =>
+                         seq [Record.Field.layout f, str ": ", t]),
+                        ",")),
+                      str "}"]
+                | SOME ts => con (Tycon.tuple, ts)
+            fun var a = LayoutPretty.simple (layoutPrettyTyvar a)
+            val ty = if expand then expandTy ty else ty
+         in
+            Type.hom (ty, {con = con,
+                           record = record,
+                           var = var})
+         end
+
+      fun explainDoesNotAdmitEquality (ty, {layoutPrettyEnvTycon, layoutPrettyFlexTycon}) =
+         let
+            val layoutAppPretty = fn (c, ls) =>
+               Tycon.layoutAppPretty
+               (c, ls,
+                {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                 layoutPrettyFlexTycon = layoutPrettyFlexTycon})
+            val bracket = LayoutPretty.bracket
+            val dontCare = LayoutPretty.dontCare
+            fun getLay lo = Option.fold (lo, dontCare, #1)
+            fun con (c, los) =
+               case Tycon.admitsEquality c of
+                  AdmitsEquality.Always => NONE
+                | AdmitsEquality.Sometimes =>
+                     if Vector.forall (los, Option.isNone)
+                        then NONE
+                        else (SOME o layoutAppPretty)
+                             (c, Vector.map (los, getLay))
+                | AdmitsEquality.Never =>
+                     (SOME o bracket o layoutAppPretty)
+                     (c, Vector.map (los, fn _ => dontCare))
+            fun record r =
+               case Record.detupleOpt r of
+                  NONE =>
+                     let
+                        val v = Record.toVector r
+                        val (fls, extra) =
+                           Vector.fold
+                           (v, ([], false), fn ((f, lo), (fls, extra)) =>
+                            case lo of
+                               NONE => (fls, true)
+                             | SOME l => ((f,l)::fls, extra))
+                     in
+                        if List.isEmpty fls
+                           then NONE
+                           else (SOME o LayoutPretty.simple o seq)
+                                [str "{",
+                                 Layout.mayAlign
+                                 (Layout.separateRight
+                                  (List.revMap
+                                   (fls, fn (f, (l, _)) =>
+                                    seq [Record.Field.layout f,
+                                         str ": ", l]),
+                                   ",")),
+                                 if extra
+                                    then str ", ...}"
+                                    else str "}"]
+                     end
+                | SOME los => con (Tycon.tuple, los)
+            fun var _ = NONE
+            val ty = expandTy ty
+            val res = Type.hom (ty, {con = con,
+                                     record = record,
+                                     var = var})
+         in
+            Option.map (res, #1)
+         end
+   end
+
+structure TypeStr =
+   struct
+      open TypeStr
+
+      fun toTyconOpt (s, {expand}) =
+         let
+            val s = if expand then abs s else s
+         in
+            case node s of
+               Datatype {tycon, ...} => SOME tycon
+             | Scheme s =>
+                  let
+                     val Scheme.T {tyvars, ty} = s
+                     val ty = if expand then expandTy ty else ty
+                  in
+                     case Type.deEta (ty, tyvars) of
+                        NONE => NONE
+                      | SOME c =>
+                           if Tycon.equals (c, Tycon.arrow)
+                              orelse Tycon.equals (c, Tycon.tuple)
+                              then NONE
+                              else SOME c
+                  end
+             | Tycon {tycon, ...} => SOME tycon
+         end
+   end
+
+fun copyCons cons: Cons.t =
+   Cons.map (cons, fn {scheme, ...} =>
+             {scheme = copyScheme scheme})
 and copyDefn (d: Defn.t): Defn.t =
    let
       open Defn
@@ -445,24 +649,28 @@ and copyDefn (d: Defn.t): Defn.t =
        | TypeStr s => Defn.typeStr (copyTypeStr s)
        | Undefined => Defn.undefined
    end
-and copyFlexibleTycon (FlexibleTycon.T s): FlexibleTycon.t =
+and copyFlexibleTycon (fc: FlexibleTycon.t): FlexibleTycon.t =
    let
       open FlexibleTycon
-      val {admitsEquality = a, copy, defn, hasCons, kind, ...} = Set.! s
+      val {admitsEquality, copy, defn, hasCons,
+           kind, prettyDefault, specs, ...} =
+         fields fc
    in
       case !copy of
          NONE => 
             let
-               val c = new {defn = copyDefn (!defn),
-                            hasCons = hasCons,
-                            kind = kind}
-               val _ = admitsEquality c := !a
+               val fc' = make {admitsEquality = !admitsEquality,
+                               defn = copyDefn (!defn),
+                               hasCons = hasCons,
+                               kind = kind,
+                               prettyDefault = prettyDefault,
+                               specs = !specs}
                val _ = List.push (copies, copy)
-               val _ = copy := SOME c
+               val _ = copy := SOME fc'
             in
-               c
+               fc'
             end
-       | SOME c => c
+       | SOME fc' => fc'
    end
 and copyTycon (t: Tycon.t): Tycon.t =
    let
@@ -485,12 +693,11 @@ and copyScheme (Scheme.T {tyvars, ty}): Scheme.t =
 and copyTypeStr (s: TypeStr.t): TypeStr.t =
    let
       open TypeStr
-      val kind = kind s
    in
       case node s of
-         Datatype {cons, tycon} => data (copyTycon tycon, kind, copyCons cons)
-       | Scheme s => def (copyScheme s, kind)
-       | Tycon c => tycon (copyTycon c, kind)
+         Datatype {cons, tycon, repl} => data (copyTycon tycon, copyCons cons, repl)
+       | Scheme s => def (copyScheme s)
+       | Tycon {eq, tycon = c} => tycon (copyTycon c, eq)
    end
 
 structure AdmitsEquality =
@@ -500,13 +707,13 @@ structure AdmitsEquality =
       fun fromBool b = if b then Sometimes else Never
    end
 
-fun flexibleTyconAdmitsEquality (FlexibleTycon.T s): AdmitsEquality.t =
+fun flexibleTyconAdmitsEquality (fc: FlexibleTycon.t): AdmitsEquality.t =
    let
-      val {admitsEquality, defn, ...} = Set.! s
+      val {admitsEquality, defn, ...} = FlexibleTycon.fields fc
       datatype z = datatype Defn.dest
    in
       case Defn.dest (!defn) of
-         Realized _ => Error.bug "Interface.flexibleTyconAdmitsEquality: Realized"
+         Realized _ => !admitsEquality
        | TypeStr s => typeStrAdmitsEquality s
        | Undefined => !admitsEquality
    end
@@ -516,7 +723,7 @@ and schemeAdmitsEquality (s: Scheme.t): bool =
          let
             datatype z = datatype AdmitsEquality.t
          in
-            case ! (Tycon.admitsEquality c) of
+            case Tycon.admitsEquality c of
                Always => true
              | Never => false
              | Sometimes => Vector.forall (bs, fn b => b)
@@ -533,7 +740,7 @@ and tyconAdmitsEquality (t: Tycon.t): AdmitsEquality.t =
    in
       case t of
          Flexible c => flexibleTyconAdmitsEquality c
-       | Rigid (e, _) => ! (Etycon.admitsEquality e)
+       | Rigid e => Etycon.admitsEquality e
    end
 and typeStrAdmitsEquality (s: TypeStr.t): AdmitsEquality.t =
    let
@@ -542,40 +749,61 @@ and typeStrAdmitsEquality (s: TypeStr.t): AdmitsEquality.t =
       case TypeStr.node s of
          Datatype {tycon = c, ...} => tyconAdmitsEquality c
        | Scheme s => AdmitsEquality.fromBool (schemeAdmitsEquality s)
-       | Tycon c => tyconAdmitsEquality c
+       | Tycon {tycon = c, ...} => tyconAdmitsEquality c
    end
 
 structure FlexibleTycon =
    struct
       open FlexibleTycon
 
-      fun realize (T s, typeStr) =
+      fun new {admitsEquality: AdmitsEquality.t,
+               hasCons: bool, kind: Kind.t,
+               prettyDefault: string,
+               region: Region.t}: t =
+         make {admitsEquality = admitsEquality,
+               defn = Defn.undefined,
+               hasCons = hasCons,
+               kind = kind,
+               prettyDefault = prettyDefault,
+               specs = AppendList.single region}
+
+      fun realize (fc, typeStr) =
          let
-            val {defn, ...} = Set.! s
+            val defn = defnRef fc
          in
             case Defn.dest (!defn) of
                Defn.Undefined => defn := Defn.realized typeStr
              | _ => Error.bug "Interface.FlexibleTycon.realize"
          end
 
-      fun share (T s, T s') =
+      fun share (fc1 as T s1, fc2 as T s2, sharingSpec) =
          let
-            val {admitsEquality = a, creationTime = t, hasCons = h, id, kind,
-                 plist, ...} =
-               Set.! s
-            val {admitsEquality = a', creationTime = t', hasCons = h', ...} =
-               Set.! s'
-            val _ = Set.union (s, s')
+            val {admitsEquality = ae1, creationTime = t1,
+                 hasCons = hc1, specs = ss1,
+                 id, kind, plist, prettyDefault, ...} =
+               fields fc1
+            val {admitsEquality = ae2, creationTime = t2,
+                 hasCons = hc2, specs = ss2, ...} =
+               fields fc2
+            val _ = Set.union (s1, s2)
+            val specs =
+               AppendList.snoc
+               (if Ref.equals (ss1, ss2)
+                   then !ss1
+                   else AppendList.append (!ss1, !ss2),
+                sharingSpec)
             val _ = 
                Set.:=
-               (s, {admitsEquality = ref (AdmitsEquality.or (!a, !a')),
-                    copy = ref NONE,
-                    creationTime = Time.min (t, t'),
-                    defn = ref Defn.undefined,
-                    hasCons = h orelse h',
-                    id = id,
-                    kind = kind,
-                    plist = plist})
+               (s1, {admitsEquality = ref (AdmitsEquality.or (!ae1, !ae2)),
+                     copy = ref NONE,
+                     creationTime = Time.min (t1, t2),
+                     defn = ref Defn.undefined,
+                     specs = ref specs,
+                     hasCons = hc1 orelse hc2,
+                     id = id,
+                     kind = kind,
+                     plist = plist,
+                     prettyDefault = prettyDefault})
          in
             ()
          end
@@ -583,24 +811,14 @@ structure FlexibleTycon =
       type typeStr = TypeStr.t
 
       datatype realization =
-         ETypeStr of EnvTypeStr.t option
+          ETypeStr of EnvTypeStr.t
         | TypeStr of typeStr
 
-      fun realization (f: t): realization =
+      fun realization (f: t): realization option =
          case Defn.dest (defn f) of
-            Defn.Realized s => ETypeStr s
-          | Defn.TypeStr s => TypeStr s
-          | _ => Error.bug "Interface.FlexibleTycon.realization"
-   end
-
-structure Tycon =
-   struct
-      open Tycon
-
-      fun make {hasCons, kind} =
-         Flexible (FlexibleTycon.new {defn = Defn.undefined,
-                                      hasCons = hasCons,
-                                      kind = kind})
+            Defn.Realized s => SOME (ETypeStr s)
+          | Defn.TypeStr s => SOME (TypeStr s)
+          | Defn.Undefined => NONE
    end
 
 structure Scheme =
@@ -612,8 +830,6 @@ structure Scheme =
       val copy = copyScheme
    end
 
-val renameTycons = ref (fn () => ())
-
 structure TypeStr =
    struct
       open TypeStr
@@ -622,150 +838,392 @@ structure TypeStr =
 
       val copy = copyTypeStr
 
-      fun getFlex (s: t, time, oper, reg, lay): FlexibleTycon.t option =
+      fun specs (s, first) =
+         let
+            fun loop s =
+               case toTyconOpt (s, {expand = false}) of
+                  NONE => AppendList.empty
+                | SOME c => loopTycon c
+            and loopTycon c =
+               case c of
+                  Tycon.Flexible fc =>
+                     AppendList.append
+                     (FlexibleTycon.specs fc,
+                      case Defn.dest (FlexibleTycon.defn fc) of
+                         Defn.Realized _ => AppendList.empty
+                       | Defn.TypeStr s => loop s
+                       | Defn.Undefined => AppendList.empty)
+                | Tycon.Rigid _ => AppendList.empty
+         in
+            first ::
+            (List.rev o AppendList.fold)
+            (loop s, [], fn (r, rs) =>
+             if List.contains (first::rs, r, Region.equals)
+                then rs
+                else r :: rs)
+         end
+
+      fun pushSpec (s, region) =
+         case TypeStr.toTyconOpt (s, {expand = false}) of
+            NONE => ()
+          | SOME (Tycon.Flexible flex) =>
+               FlexibleTycon.pushSpec (flex, region)
+          | SOME (Tycon.Rigid _) => ()
+
+      fun getFlex {layoutPrettyEnvTycon,
+                   layoutPrettyFlexTycon,
+                   oper: string,
+                   time: Time.t,
+                   ty = {name: unit -> Layout.t,
+                         region: Region.t,
+                         spec: Region.t,
+                         tyStr: t}}: FlexibleTycon.t option =
          let
             fun error what =
                let
-                  open Layout
-                  val _ = 
+                  val isEmpty = Layout.isEmpty
+                  val tuple = Layout.tuple
+                  val {layoutPretty = layoutPrettyTyvar,
+                       localInit = localInitLayoutPrettyTyvar, ...} =
+                     Tyvar.makeLayoutPretty ()
+                  val arity =
+                     case kind tyStr of
+                        Kind.Arity arity => arity
+                      | _ => Error.bug "Interface.TypeStr.getFlex: Kind.Nary"
+                  val tyvars =
+                     Vector.tabulate
+                     (arity, fn _ =>
+                      Tyvar.makeNoname {equality = false})
+                  val () = localInitLayoutPrettyTyvar tyvars
+                  val tyargs = Vector.map (tyvars, Type.var)
+                  val tyvars = Vector.map (tyvars, layoutPrettyTyvar)
+                  val tyvars =
+                     case Vector.length tyvars of
+                        0 => empty
+                      | 1 => Vector.first tyvars
+                      | _ => tuple (Vector.toList tyvars)
+                  val (kw, mkRest) =
+                     case TypeStr.node tyStr of
+                        TypeStr.Datatype _ =>
+                           ("datatype", fn l =>
+                            seq [str "... (* = datatype ", l, str " *)"])
+                      | TypeStr.Scheme _ =>
+                           ("type", fn l => l)
+                      | TypeStr.Tycon _ =>
+                           ("type", fn l => l)
+                  val defn = TypeStr.apply (tyStr, tyargs)
+                  val () =
                      Control.error
-                     (reg,
-                      seq [str "type ", lay (),
-                           str (concat [" is ", what, " and cannot be ", oper])],
-                      empty)
+                     (region,
+                      seq [str "type cannot be ", str oper,
+                           str " (", str what, str "): ",
+                           name ()],
+                      align
+                      ((seq [str "type spec: ",
+                             str kw, str " ",
+                             tyvars,
+                             if isEmpty tyvars then empty else str " ",
+                             name (), str " = ",
+                             mkRest ((#1 o Type.layoutPretty)
+                                     (defn, {expand = true,
+                                             layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                                             layoutPrettyTyvar = layoutPrettyTyvar}))])::
+                       (List.map
+                        (specs (tyStr, spec), fn r =>
+                         seq [str "spec at: ", Region.layout r]))))
                in
                   NONE
                end
-            fun loop (s: t): FlexibleTycon.t option =
-               case node s of
-                  Datatype {tycon, ...} => loopTycon tycon
-                | Scheme (Scheme.T {ty, tyvars}) =>
-                     (case Type.deEta (expandTy ty, tyvars) of
-                         NONE => error "a definition"
-                       | SOME c => loopTycon c)
-                | Tycon c => loopTycon c
-            and loopTycon (c: Tycon.t): FlexibleTycon.t option =
-               case c of
-                  Tycon.Flexible c =>
-                     let
-                        val {creationTime, defn, ...} = FlexibleTycon.fields c
-                     in
-                        case Defn.dest (!defn) of
-                           Defn.Realized _ => 
-                              Error.bug "Interface.TypeStr.loopTycon: Realized"
-                         | Defn.TypeStr s => loop s
-                         | Defn.Undefined =>
-                              if Time.< (creationTime, time)
-                                 then error "not local"
-                              else SOME c
-                     end
-                | Tycon.Rigid (c, _) =>
-                     (! renameTycons ()
-                      ; error (concat ["already defined as ",
-                                       Layout.toString (Etycon.layout c)]))
          in
-            loop s
+            case toTyconOpt (tyStr, {expand = true}) of
+               NONE => error "defined"
+             | SOME c =>
+                  (case c of
+                      Tycon.Flexible c =>
+                         let
+                            val {creationTime, defn, ...} = FlexibleTycon.fields c
+                         in
+                            case Defn.dest (!defn) of
+                               Defn.Realized _ =>
+                                  Error.bug "Interface.TypeStr.getFlex: Realized"
+                             | Defn.TypeStr _ =>
+                                  Error.bug "Interface.TypeStr.getFlex: TypeStr"
+                             | Defn.Undefined =>
+                                  if Time.< (creationTime, time)
+                                     then error "not local"
+                                     else SOME c
+                         end
+                    | Tycon.Rigid _ => error "defined")
          end
 
-      fun share ((s: t, reg, lay), (s': t, reg', lay'), time: Time.t): unit =
-         let
-            val oper = "shared"
-            val k = kind s
-            val k' = kind s'
-         in
-            if not (Kind.equals (k, k'))
-               then
-                  let
-                     open Layout
-                  in
-                     Control.error
-                     (reg,
-                      seq [str "type ", lay (),
-                           str " has arity ", Kind.layout k,
-                           str " and type ", lay' (),
-                           str " has arity ", Kind.layout k',
-                           str " and cannot be shared"],
-                      empty)
-                  end
-            else
-               case (getFlex (s, time, oper, reg, lay),
-                     getFlex (s', time, oper, reg', lay')) of
-                  (SOME f, SOME f') => FlexibleTycon.share (f, f')
-                | _ => ()
-         end
+      fun share {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+                 region: Region.t, time: Time.t,
+                 ty1 as {name = name1, ...},
+                 ty2 as {name = name2, ...}} =
+         case (getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                        oper = "shared", time = time, ty = ty1},
+               getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                        layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                        oper = "shared", time = time, ty = ty2}) of
+            (NONE, _) => ()
+          | (_, NONE) => ()
+          | (SOME flex1, SOME flex2) =>
+               if Kind.equals (FlexibleTycon.kind flex1, FlexibleTycon.kind flex2)
+                  then FlexibleTycon.share (flex1, flex2, region)
+                  else let
+                          fun msg {name, region = _, spec, tyStr} =
+                             let
+                                val (keyword, rest) =
+                                   case node tyStr of
+                                      Datatype _ => ("datatype", str " = ...")
+                                    | Scheme _ => ("type", str " = ...")
+                                    | Tycon {eq, ...} =>
+                                         if eq
+                                            then ("eqtype", empty)
+                                            else ("type", empty)
+                                val arity =
+                                   case kind tyStr of
+                                      Kind.Arity arity => arity
+                                    | _ => Error.bug "Interface.TypeStr.share.msg: arity"
+                                val tyvars =
+                                   Vector.tabulate
+                                   (arity, fn _ =>
+                                    Tyvar.makeNoname {equality = false})
+                                val {layoutPretty = layoutPrettyTyvar,
+                                     localInit = localInitLayoutPrettyTyvar, ...} =
+                                   Tyvar.makeLayoutPretty ()
+                                val () = localInitLayoutPrettyTyvar tyvars
+                                val tyvars =
+                                   case Vector.length tyvars of
+                                      0 => empty
+                                    | 1 => layoutPrettyTyvar (Vector.first tyvars)
+                                    | _ => Layout.tuple (Vector.toListMap (tyvars, layoutPrettyTyvar))
+                             in
+                                (seq  [str "type spec: ",
+                                       str keyword,
+                                       str " [", tyvars, str "] ",
+                                       name (),
+                                       rest])::
+                                (List.map
+                                 (specs (tyStr, spec), fn r =>
+                                  seq [str "spec at: ", Region.layout r]))
+                             end
+                       in
+                          Control.error
+                          (region,
+                           seq [str "types cannot be shared (arity): ",
+                                name1 (), str ", ", name2 ()],
+                           align ((msg ty1) @ (msg ty2)))
+                       end
 
       val share =
          Trace.trace
          ("Interface.TypeStr.share",
-          fn ((s, _, _), (s', _, _), t) =>
-          Layout.tuple [layout s, layout s', Time.layout t],
+          fn {time, ty1, ty2, ...} =>
+          Layout.record [("time", Time.layout time),
+                         ("ty1", Layout.record [("tyStr", layout (#tyStr ty1))]),
+                         ("ty2", Layout.record [("tyStr", layout (#tyStr ty2))])],
           Unit.layout)
          share
 
-      fun wheree (s': t, r: Region.t, lay, time: Time.t, s: t): unit =
-         case getFlex (s', time, "redefined", r, lay) of
+      fun wheree {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+                  region: Region.t, realization: t, time: Time.t,
+                  ty as {name: unit -> Layout.t,
+                         region = _: Region.t,
+                         spec: Region.t,
+                         tyStr: t}}: unit =
+         case getFlex {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                       layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                       oper = "realized", time = time, ty = ty} of
             NONE => ()
           | SOME flex =>
                let
-                  val k = kind s
-                  val k' = kind s'
-               in
-                  if not (Kind.equals (k, k'))
-                     then
-                        let
-                           open Layout
-                        in
-                           Control.error
-                           (r,
-                            seq [str "type ", lay (),
-                                 str " has arity ", Kind.layout k',
-                                 str " and cannot be defined to have arity ",
-                                 Kind.layout k],
-                            empty)
-                        end
-                  else if (admitsEquality s' = AdmitsEquality.Sometimes
-                           andalso admitsEquality s = AdmitsEquality.Never)
-                          then
-                             let
-                                open Layout
+                  val error: (Layout.t list * Layout.t * Layout.t) option ref = ref NONE
+                  val addError = fn (msg, tyError, rlError) =>
+                     let
+                        val msgs =
+                           case !error of
+                              NONE => [str msg]
+                            | SOME (msgs, _, _) => (str msg)::msgs
+                     in
+                        error := SOME (msgs, tyError, rlError)
+                     end
+
+                  val {layoutPretty = layoutPrettyTyvar,
+                       localInit = localInitLayoutPrettyTyvar, ...} =
+                     Tyvar.makeLayoutPretty ()
+                  fun layoutPrettyType t =
+                     Type.layoutPretty
+                     (t, {expand = true,
+                          layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                          layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                          layoutPrettyTyvar = layoutPrettyTyvar})
+
+                  val tyKind = TypeStr.kind tyStr
+                  val tyArity =
+                     case tyKind of
+                        Kind.Arity tyArity => tyArity
+                      | _ => Error.bug "Interface.TypeStr.wheree: tyArity"
+                  val rlKind = TypeStr.kind realization
+                  val rlArity =
+                     case rlKind of
+                        Kind.Arity rlArity => rlArity
+                      | _ => Error.bug "Interface.TypeStr.wheree: rlArity"
+                  local
+                     val tyvars =
+                        Vector.tabulate
+                        (Int.max (tyArity, rlArity), fn _ =>
+                         Tyvar.makeNoname {equality = false})
+                     val () = localInitLayoutPrettyTyvar tyvars
+                  in
+                     val tyTyvars = Vector.prefix (tyvars, tyArity)
+                     val tyTyargs = Vector.map (tyTyvars, Type.var)
+                     val rlTyvars = Vector.prefix (tyvars, rlArity)
+                     val rlTyargs = Vector.map (rlTyvars, Type.var)
+                  end
+                  fun layoutTyvars tyvars =
+                     let
+                        open Layout
+                        val tyvars =
+                           case Vector.length tyvars of
+                              0 => empty
+                            | 1 => layoutPrettyTyvar (Vector.first tyvars)
+                            | _ => tuple (Vector.toListMap (tyvars, layoutPrettyTyvar))
+                        val tyvars =
+                           if tyArity = rlArity
+                              then tyvars
+                              else bracket tyvars
+                     in
+                        if isEmpty tyvars
+                           then str " "
+                           else seq [str " ", tyvars, str " "]
+                     end
+
+                  fun tyMsg (b, rest) =
+                     let
+                        val empty = Layout.empty
+                        val defn =
+                           seq [str " = ",
+                                case rest of
+                                   NONE => str "..."
+                                 | SOME rest => rest]
+                        val (kw, defn) =
+                           case TypeStr.node tyStr of
+                              Datatype _ => ("datatype", defn)
+                            | Scheme _ => ("type", defn)
+                            | Tycon {eq, ...} =>
+                                 (case rest of
+                                     NONE =>
+                                        (if eq then "eqtype" else "type",
+                                         empty)
+                                   | SOME _ =>
+                                        ("type", defn))
+                     in
+                        seq [if b then bracket (str kw) else str kw,
+                             layoutTyvars tyTyvars,
+                             name (),
+                             defn]
+                     end
+                  fun rlMsg (b, rest) =
+                     let
+                        val defn =
+                           seq [str " = ",
+                                case rest of
+                                   NONE => str "..."
+                                 | SOME rest => rest]
+                        val kw = "type"
+                     in
+                        seq [if b then bracket (str kw) else str kw,
+                             layoutTyvars rlTyvars,
+                             name (),
+                             defn]
+                     end
+
+                  val () =
+                     if Kind.equals (tyKind, rlKind)
+                        then ()
+                        else addError ("arity",
+                                       tyMsg (false, NONE),
+                                       rlMsg (false, NONE))
+                  val () =
+                     if FlexibleTycon.hasCons flex
+                        andalso
+                        Option.isNone (TypeStr.toTyconOpt
+                                       (realization, {expand = true}))
+                        then let
+                                fun tyDefn () =
+                                   (SOME o bracket o #1 o layoutPrettyType)
+                                   (TypeStr.apply (tyStr, tyTyargs))
+                                val (tyKwErr, tyDefn) =
+                                   case TypeStr.node tyStr of
+                                      Datatype _ => (true, NONE)
+                                    | Scheme _ => (false, tyDefn ())
+                                    | Tycon _ => (false, tyDefn ())
+                                val rlDefn =
+                                   (SOME o bracket o #1 o layoutPrettyType)
+                                   (TypeStr.apply (realization, rlTyargs))
                              in
-                                Control.error
-                                (r,
-                                 seq [str "eqtype ", lay (),
-                                      str " cannot be defined as a non-equality type"],
-                                 empty)
+                                addError ("type structure",
+                                          tyMsg (tyKwErr, tyDefn),
+                                          rlMsg (false, rlDefn))
                              end
-                       else
-                          let
-                             val {defn, hasCons, ...} = FlexibleTycon.fields flex
-                          in
-                             if hasCons
-                                andalso
-                                (case node s of
-                                    Scheme (Scheme.T {ty, tyvars}) =>
-                                       Option.isNone
-                                       (Type.deEta (expandTy ty, tyvars))
-                                  | _ => false)
-                                then
-                                   let
-                                      open Layout
-                                   in
-                                      Control.error
-                                      (r,
-                                       seq [str "type ", lay (),
-                                            str " is a datatype and cannot be redefined as a complex type"],
-                                       empty)
-                                   end
-                             else
-                                defn := Defn.typeStr s
-                          end
+                        else let
+                                val tyAdmitsEquality = admitsEquality (#tyStr ty)
+                                val rlAdmitsEquality = admitsEquality realization
+                             in
+                                if AdmitsEquality.<= (tyAdmitsEquality, rlAdmitsEquality)
+                                   then ()
+                                   else let
+                                           fun tyDefn () =
+                                              (SOME o bracket o #1 o layoutPrettyType)
+                                              (TypeStr.apply (tyStr, tyTyargs))
+                                           val (tyKwErr, tyDefn) =
+                                              case TypeStr.node tyStr of
+                                                 Datatype _ => (false, NONE)
+                                               | Scheme _ => (false, tyDefn ())
+                                               | Tycon {eq, ...} =>
+                                                    if eq
+                                                       then (true, NONE)
+                                                       else (false, tyDefn ())
+                                           val rlDefn =
+                                              Type.explainDoesNotAdmitEquality
+                                              (TypeStr.apply (realization, rlTyargs),
+                                               {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                                                layoutPrettyFlexTycon = layoutPrettyFlexTycon})
+                                        in
+                                           addError ("admits equality",
+                                                     tyMsg (tyKwErr, tyDefn),
+                                                     rlMsg (false, rlDefn))
+                                        end
+                             end
+               in
+                  case !error of
+                     NONE =>
+                        (FlexibleTycon.defnRef flex := Defn.typeStr realization
+                         ; FlexibleTycon.pushSpec (flex, region)
+                         ; pushSpec (realization, region))
+                   | SOME (msgs, tyError, rlError) =>
+                        Control.error
+                        (region,
+                         seq [str "type cannot be realized (",
+                              (seq o List.separate) (List.rev msgs, str ", "),
+                              str "): ",
+                              name ()],
+                         align ((seq [str "type spec: ", tyError]) ::
+                                (List.map
+                                 (specs (tyStr, spec), fn r =>
+                                  seq [str "spec at: ", Region.layout r])) @
+                                [seq [str "type defn: ", rlError]]))
                end
 
       val wheree =
          Trace.trace ("Interface.TypeStr.wheree",
-                      fn (s, _, _, t, s') => Layout.tuple [layout s,
-                                                           Time.layout t,
-                                                           layout s'],
+                      fn {realization, time, ty, ...} =>
+                      Layout.record [("realization", layout realization),
+                                     ("time", Time.layout time),
+                                     ("ty", Layout.record [("tyStr", layout (#tyStr ty))])],
                       Unit.layout)
          wheree
    end
@@ -795,6 +1253,19 @@ structure UniqueId = IntUniqueId ()
 
       fun isEmpty (T {strs, types}) =
          0 = Array.length strs andalso 0 = Array.length types
+
+      fun peekStrid (T {strs, ...}, strid) =
+         Array.peekMap (strs, fn (strid', z) =>
+                        if Strid.equals (strid, strid')
+                           then SOME z
+                           else NONE)
+
+      fun peekTycon (T {types, ...}, tycon) =
+         Array.peekMap (types, fn (tycon', z) =>
+                        if Ast.Tycon.equals (tycon, tycon')
+                           then SOME z
+                           else NONE)
+
    end
 
 (*---------------------------------------------------*)
@@ -899,13 +1370,13 @@ fun peekStrids (I: t, strids: Strid.t list): t peekResult =
       loop (I, strids, [])
    end
 
-fun peekTycon (T s, tycon: Ast.Tycon.t): TypeStr.t option =
+fun peekTycon (T s, tycon: Ast.Tycon.t): (Ast.Tycon.t * TypeStr.t) option =
    let
       val {types, ...} = Set.! s
    in
       Array.peekMap (types, fn (name, typeStr) =>
                      if Ast.Tycon.equals (tycon, name)
-                        then SOME typeStr
+                        then SOME (name, typeStr)
                      else NONE)
    end
 
@@ -918,7 +1389,7 @@ fun unbound (r: Region.t, className, x: Layout.t): unit =
     Layout.empty)
 
 fun layoutStrids (ss: Strid.t list): Layout.t =
-   Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
+  Layout.str (concat (List.separate (List.map (ss, Strid.toString), ".")))
 
 fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
                      {prefix: Strid.t list}) =
@@ -932,24 +1403,52 @@ fun lookupLongtycon (I: t, long: Longtycon.t, r: Region.t,
                    (unbound (r, "type",
                              Longtycon.layout (Longtycon.long (prefix @ ss, c)))
                     ; NONE)
-              | SOME s => SOME s)
+              | SOME (name, s) => SOME (name, s))
        | UndefinedStructure ss =>
             (unbound (r, "structure", layoutStrids (prefix @ ss))
              ; NONE)
    end
 
-fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
+fun lookupLongstrid (I: t, long: Longstrid.t, r: Region.t,
+                     {prefix: Strid.t list}) =
    let
-      fun lay (s, ls, strids, name) =
-         (s, Longstrid.region ls,
-          fn () =>
-          let
-             val (ss, s) = Longstrid.split ls
-          in
-             Ast.Longtycon.layout
-             (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
-                                  name))
-          end)
+      val (ss, s) = Longstrid.split long
+   in
+      case peekStrids (I, ss) of
+         Found I =>
+            (case peekStrid (I, s) of
+                NONE =>
+                   (unbound (r, "structure",
+                             Longstrid.layout (Longstrid.long (prefix @ ss, s)))
+                    ; NONE)
+              | SOME I => SOME I)
+       | UndefinedStructure ss =>
+            (unbound (r, "structure", layoutStrids (prefix @ ss))
+             ; NONE)
+   end
+
+fun share {layoutPrettyEnvTycon, layoutPrettyFlexTycon,
+           I1: t, long1: Longstrid.t, I2: t, long2: Longstrid.t,
+           time, region}: unit =
+   let
+      fun mkTy (s, long, strids, name) =
+         let
+            val spec = Ast.Tycon.region name
+            val region = Longstrid.region long
+            val name = fn () =>
+               let
+                  val (ss, s) = Longstrid.split long
+               in
+                  Ast.Longtycon.layout
+                  (Ast.Longtycon.long (List.concat [ss, [s], rev strids],
+                                       name))
+               end
+         in
+            {name = name,
+             region = region,
+             spec = spec,
+             tyStr = s}
+         end
       fun ensureFlexible (I: t, strids): unit =
          let
             val {get: t -> bool ref, destroy, ...} =
@@ -972,13 +1471,12 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
                         val _ =
                            Array.foreach
                            (types, fn (name, s) =>
-                            let
-                               val (_, r, lay) = lay (s, ls, strids, name)
-                               val _ =
-                                  TypeStr.getFlex (s, time, "shared", r, lay)
-                            in
-                               ()
-                            end)
+                            (ignore o TypeStr.getFlex)
+                            {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                             oper = "shared",
+                             time = time,
+                             ty = mkTy (s, long1, strids, name)})
                      in
                         ()
                      end
@@ -988,18 +1486,32 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
          in
             ()
          end
-      fun share (I, I', strids): unit = 
-         if equals (I, I')
-            then ensureFlexible (I, strids)
-         else if sameShape (I, I')
+      fun share (I1, I2, strids): unit =
+         if equals (I1, I2)
+            then ensureFlexible (I1, strids)
+         else if sameShape (I1, I2)
             then
                let
-                  fun loop (T s, T s', strids): unit =
+                  fun loop (T s1, T s2, strids): unit =
                      let
-                        val {isClosed, strs, types, ...} = Set.! s
-                        val {strs = strs', types = types', ...} = Set.! s'
+                        val {isClosed, strs = strs1, types = types1, ...} = Set.! s1
+                        val {strs = strs2, types = types2, ...} = Set.! s2
                         val _ =
-                           (* Can't always union here.  I and I' may have
+                           Array.foreach2
+                           (types1, types2, fn ((name, s1), (_, s2)) =>
+                            TypeStr.share
+                            {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                             layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                             region = region,
+                             time = time,
+                             ty1 = mkTy (s1, long1, strids, name),
+                             ty2 = mkTy (s2, long2, strids, name)})
+                        val _ =
+                           Array.foreach2
+                           (strs1, strs2, fn ((name, I1), (_, I2)) =>
+                            loop (I1, I2, name :: strids))
+                        val _ =
+                           (* Can't always union here.  I1 and I2 may have
                             * exactly the same shape, but may have free
                             * flxible tycons defined in other signatures that
                             * are different.
@@ -1013,85 +1525,79 @@ fun share (I: t, ls: Longstrid.t, I': t, ls': Longstrid.t, time): unit =
                             * guarantee that all rigid tycons are identical.
                             *)
                            if isClosed
-                              then Set.union (s, s')
-                           else ()
-                        val _ =
-                           Array.foreach2
-                           (types, types', fn ((name, s), (_, s')) =>
-                            TypeStr.share (lay (s, ls, strids, name),
-                                           lay (s', ls', strids, name),
-                                           time))
-                        val _ =
-                           Array.foreach2
-                           (strs, strs', fn ((name, I), (_, I')) =>
-                            loop (I, I', name :: strids))
+                              then Set.union (s1, s2)
+                              else ()
                      in
                         ()
                      end
                in
-                  loop (I, I', strids)
+                  loop (I1, I2, strids)
                end
          else (* different shapes -- need to share pointwise *)
             let
-               val T s = I
-               val T s' = I'
-               val {strs, types, ...} = Set.! s
-               val {strs = strs', types = types', ...} = Set.! s'
-               fun walk2 (a, a', compareNames, f: 'a * 'a * 'b -> unit) =
+               val T s1 = I1
+               val T s2 = I2
+               val {strs = strs1, types = types1, ...} = Set.! s1
+               val {strs = strs2, types = types2, ...} = Set.! s2
+               fun walk2 (a1, a2, compareNames, f: 'a * 'a * 'b -> unit) =
                   let
-                     val n = Array.length a
-                     val n' = Array.length a'
-                     fun both (i, i') =
-                        if i < n andalso i' < n'
-                           then compare (i, Array.sub (a, i),
-                                         i', Array.sub (a', i'))
+                     val n1 = Array.length a1
+                     val n2 = Array.length a2
+                     fun both (i1, i2) =
+                        if i1 < n1 andalso i2 < n2
+                           then compare (i1, Array.sub (a1, i1),
+                                         i2, Array.sub (a2, i2))
                         else ()
-                     and compare (i, (name, z), i', (name', z')) =
-                        case compareNames (name, name') of
+                     and compare (i1, (name1, z1), i2, (name2, z2)) =
+                        case compareNames (name1, name2) of
                            GREATER =>
                               let
-                                 val i' = i' + 1
+                                 val i2 = i2 + 1
                               in
-                                 if i' < n'
-                                    then compare (i, (name, z),
-                                                  i', Array.sub (a', i'))
+                                 if i2 < n2
+                                    then compare (i1, (name1, z1),
+                                                  i2, Array.sub (a2, i2))
                                  else ()
                               end
-                         | EQUAL => (f (z, z', name)
-                                     ; both (i + 1, i' + 1))
+                         | EQUAL => (f (z1, z2, name1)
+                                     ; both (i1 + 1, i2 + 1))
                          | LESS =>
                               let
-                                 val i = i + 1
+                                 val i1 = i1 + 1
                               in
-                                 if i < n
-                                    then compare (i, Array.sub (a, i),
-                                                  i', (name', z'))
+                                 if i1 < n1
+                                    then compare (i1, Array.sub (a1, i1),
+                                                  i2, (name2, z2))
                                  else ()
                               end
                   in
                      both (0, 0)
                   end
                val _ =
-                  walk2 (strs, strs', Strid.compare,
-                         fn (I, I', name) => share (I, I', name :: strids))
+                  walk2 (strs1, strs2, Strid.compare,
+                         fn (I1, I2, name) => share (I1, I2, name :: strids))
                val _ =
-                  walk2 (types, types', Ast.Tycon.compare,
-                         fn (s, s', name) =>
-                         TypeStr.share (lay (s, ls, strids, name),
-                                        lay (s', ls', strids, name),
-                                        time))
+                  walk2 (types1, types2, Ast.Tycon.compare,
+                         fn (s1, s2, name) =>
+                         TypeStr.share
+                         {layoutPrettyEnvTycon = layoutPrettyEnvTycon,
+                          layoutPrettyFlexTycon = layoutPrettyFlexTycon,
+                          region = region,
+                          time = time,
+                          ty1 = mkTy (s1, long1, strids, name),
+                          ty2 = mkTy (s2, long2, strids, name)})
             in
                ()
             end
    in
-      share (I, I', [])
+      share (I1, I2, [])
    end
 
 val share =
    Trace.trace
    ("Interface.share",
-    fn (I, _, I', _, t) =>
-    Layout.tuple [layout I, layout I', Time.layout t],
+    fn {I1, I2, time, ...} =>
+    Layout.tuple [layout I1, layout I2, Time.layout time],
     Unit.layout)
    share
 
@@ -1170,38 +1676,57 @@ fun flexibleTycons (I: t): FlexibleTycon.t TyconMap.t =
                let
                   val _ = r := SOME length
                   val {strs, types, ...} = dest I
+                  fun setTycon (tycon, isDatatype, isEqtype) =
+                     case tycon of
+                        Tycon.Flexible fc =>
+                           let
+                              val {admitsEquality, defn, hasCons, ...} = FlexibleTycon.fields fc
+                              val admitsEquality =
+                                 case !admitsEquality of
+                                    AdmitsEquality.Always => true
+                                  | AdmitsEquality.Never => false
+                                  | AdmitsEquality.Sometimes => true
+                           in
+                              case Defn.dest (!defn) of
+                                 Defn.Undefined =>
+                                    let
+                                       val r = tyconShortest fc
+                                    in
+                                       if (hasCons
+                                           andalso not isDatatype)
+                                          orelse
+                                          (admitsEquality
+                                           andalso not isEqtype)
+                                          orelse
+                                          (isSome (#length (!r))
+                                           andalso length >= valOf (#length (!r)))
+                                          then ref NONE
+                                          else let
+                                                  val _ = #flex (!r) := NONE
+                                                  val flex = ref (SOME fc)
+                                                  val _ = r := {flex = flex,
+                                                                length = SOME length}
+                                               in
+                                                  flex
+                                               end
+                                    end
+                               | _ => ref NONE
+                           end
+                    | _ => ref NONE
                   val types =
                      Array.map
                      (types, fn (tycon, typeStr) =>
                       (tycon,
-                       case TypeStr.toTyconOpt typeStr of
-                          SOME (Tycon.Flexible (c as FlexibleTycon.T s)) =>
-                             let
-                                val {defn, ...} = Set.! s
-                             in
-                                case Defn.dest (!defn) of
-                                   Defn.Undefined =>
-                                      let
-                                         val r = tyconShortest c
-                                      in
-                                         if isSome (#length (!r))
-                                            andalso length >= valOf (#length (!r))
-                                            then ref NONE
-                                         else 
-                                            let
-                                               val _ = #flex (!r) := NONE
-                                               val flex = ref (SOME c)
-                                               val _ = r := {flex = flex,
-                                                             length = SOME length}
-                                            in
-                                               flex
-                                            end
-                                      end
-                                 | _ => ref NONE
-                             end
+                       case TypeStr.node typeStr of
+                          TypeStr.Datatype {tycon, repl, ...} =>
+                             setTycon (tycon, not repl, true)
+                        | TypeStr.Tycon {eq, tycon, ...} =>
+                             setTycon (tycon, false, eq)
                         | _ => ref NONE))
                   val strs =
-                     Array.map (strs, fn (s, I) => (s, loop (I, 1 + length)))
+                     Array.map
+                     (strs, fn (s, I) =>
+                      (s, loop (I, 1 + length)))
                in
                   TyconMap.T {strs = strs, types = types}
                end
@@ -1249,6 +1774,54 @@ val flexibleTycons =
    Trace.trace ("Interface.flexibleTycons", layout,
                 TyconMap.layout FlexibleTycon.layout)
    flexibleTycons
+
+fun makeLayoutPrettyFlexTycon (I, {prefixUnset}) =
+   let
+      val {destroy = destroyLayoutPretty: unit -> unit,
+           get = layoutPretty: FlexibleTycon.t -> Layout.t,
+           set = setLayoutPretty: FlexibleTycon.t * Layout.t -> unit} =
+         Property.destGetSet
+         (FlexibleTycon.plist,
+          Property.initFun
+          (fn f =>
+           let val l = FlexibleTycon.layout f
+           in if prefixUnset then seq [str "?.", l] else l
+           end))
+      fun pre () =
+         let
+            val flexTyconMap = flexibleTycons I
+            fun doType (name, f, strids: Strid.t list) =
+               let
+                  val name = layoutLongRev (strids, Ast.Tycon.layout name)
+               in
+                  setLayoutPretty (f, name)
+               end
+            fun doStr (name, tyconMap, strids: Strid.t list) =
+               doTyconMap (tyconMap, name::strids)
+            and doTyconMap (TyconMap.T {strs, types}, strids) =
+               let
+                  val () =
+                     Array.foreach
+                     (types, fn (name, f) =>
+                      doType (name, f, strids))
+                  val () =
+                     Array.foreach
+                     (strs, fn (name, tyconMap) =>
+                      doStr (name, tyconMap, strids))
+               in
+                  ()
+               end
+            val () = doTyconMap (flexTyconMap, [Ast.Strid.uSig])
+         in
+            ()
+         end
+      val pre = ClearablePromise.delay pre
+   in
+      {destroy = fn () => (ClearablePromise.clear pre
+                           ; destroyLayoutPretty ()),
+       layoutPretty = fn c => (ClearablePromise.force pre
+                               ; layoutPretty c)}
+   end
 
 fun dest (T s) =
    let

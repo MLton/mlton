@@ -40,7 +40,11 @@ signature MONO_ARRAY_SLICE_EXTRA =
       val concat: slice list -> array
       val toList: slice -> elem list
       val toPoly: slice -> elem ArraySlice.slice
+      val uninitIsNop: slice -> bool
+      val uninit: slice * int -> unit
       val unsafeSlice: array * int * int option -> slice
       val unsafeSub: slice * int -> elem
       val unsafeSubslice: slice * int * int option -> slice
+      val unsafeUninit: slice * int -> unit
+      val unsafeUpdate: slice * int * elem -> unit
    end

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,7 +28,7 @@ fun layout (T {tyvars, ty}) =
    let open Layout
       val ty = Type.layout ty
    in
-      if 0 = Vector.length tyvars
+      if Vector.isEmpty tyvars
          then ty
       else
          align [seq [str "Forall ",
@@ -42,5 +43,9 @@ fun apply (T {tyvars, ty}, args) =
                * in monotypes.
                *)
    else Type.substitute (ty, Vector.zip (tyvars, args))
+
+val apply =
+   Trace.trace ("GenericScheme.apply", Layout.tuple2 (layout, Vector.layout Type.layout), Type.layout)
+   apply
 
 end

@@ -435,20 +435,20 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      case Prim.name prim of
                         Prim.Name.MLton_eq =>
                            (* MLton_eq may be used on datatypes used as enums. *)
-                           deconType (tyVar (Vector.sub (args, 0)))
+                           deconType (tyVar (Vector.first args))
                       | Prim.Name.MLton_equal =>
                            (* MLton_equal will be expanded by poly-equal into uses
                             * of constructors as patterns.
                             *)
-                           deconType (tyVar (Vector.sub (args, 0)))
+                           deconType (tyVar (Vector.first args))
                       | Prim.Name.MLton_hash =>
                            (* MLton_hash will be expanded by poly-hash into uses
                             * of constructors as patterns.
                             *)
-                           deconType (tyVar (Vector.sub (args, 0)))
+                           deconType (tyVar (Vector.first args))
 (*
                       | Prim.Name.MLton_size =>
-                           deconType (tyVar (Vector.sub (args, 0)))
+                           deconType (tyVar (Vector.first args))
 *)
                       | _ => ()
                in
@@ -563,7 +563,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         (Vector.foreach (cs, visitLabel o #2)
                          ; Option.app (default, visitLabel))
                    | Cases.Con cases =>
-                        if Vector.length cases = 0
+                        if Vector.isEmpty cases
                            then Option.app (default, visitLabel)
                         else let
                                 val () =
@@ -1132,7 +1132,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                in
                   case default of
                      NONE => none ()
-                   | SOME l => if Vector.length cases = 0
+                   | SOME l => if Vector.isEmpty cases
                                   then if LabelInfo.isUsed (labelInfo l)
                                           then Goto {dst = l, args = Vector.new0 ()}
                                        else Bug

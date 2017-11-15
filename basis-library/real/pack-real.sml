@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -251,7 +252,7 @@ end
 
 fun toBytes (r: real): Word8Vector.vector =
    let
-      val a = Array.arrayUninit bytesPerElem
+      val a = Array.alloc bytesPerElem
    in
       (updA (a, 0, r)
        ; Word8Vector.fromPoly (Array.vector a))

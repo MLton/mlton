@@ -11,15 +11,17 @@ The parser is defined by the files
   absyn.sml     (* a trivial abstract syntax *)
   interface.sml (* interface to lexer and parser properties *)
   parse.sml     (* driver functions *)
-  sources.cm    (* cm description file *)
+  fol.mlb       (* ML Basis file *)
 
-To compile this example, type
+To compile this example, type the following commands
 
-        - CM.make "sources.cm";
+        mllex fol.lex
+        mlyacc fol.grm
+        mlton fol.mlb
 
-in this directory.  CM will invoke ml-lex and ml-yacc to process the
-lexer specification calc.lex and the grammar specification calc.grm
-respectively.  Then it will compile the resulting SML source files
+in this directory.  They will invoke ml-lex and ml-yacc to process the
+lexer specification fol.lex and the grammar specification fol.grm
+respectively.  Then they will compile the resulting SML source files
 
   fol.lex.sml
   fol.grm.sig
@@ -49,7 +51,7 @@ the file_parse function:
   - Parse.file_parse "list.fol";
 
 
-NOTE: The CM description file sources.cm mentions the ml-yacc library
-(ml-yacc-lib.cm). CM's search path should be configured so that this
-library will be found.  This should normally be the case if SML/NJ is
+NOTE: The ML Basis file sources.cm mentions the ml-yacc library
+(ml-yacc-lib.cm). MLton's search path should be configured so that this
+library will be found.  This should normally be the case if MLton is
 properly installed.

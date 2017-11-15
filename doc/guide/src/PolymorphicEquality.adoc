@@ -159,10 +159,10 @@ fun f (x: real t, y: real t) = x = y
 on which MLton reports the following error.
 
 ----
-Error: z.sml 2.34.
+Error: z.sml 2.32-2.36.
   Function applied to incorrect argument.
-    expects: [<equality>] * [<equality>]
-    but got: [<non-equality>] * [<non-equality>]
+    expects: [<equality>] t * [<equality>] t
+    but got: [real] t * [real] t
     in: = (x, y)
 ----
 

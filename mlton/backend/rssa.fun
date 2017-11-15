@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -258,28 +258,28 @@ structure Statement =
             open Layout
          in
             fn Bind {dst = (x, t), src, ...} =>
-                  seq [Var.layout x, constrain t, str " = ", Operand.layout src]
+                  mayAlign
+                  [seq [Var.layout x, constrain t],
+                   indent (seq [str "= ", Operand.layout src], 2)]
              | Move {dst, src} =>
-                  mayAlign [Operand.layout dst,
-                            seq [str "= ", Operand.layout src]]
+                  mayAlign
+                  [Operand.layout dst,
+                   indent (seq [str ":= ", Operand.layout src], 2)]
              | Object {dst = (dst, ty), header, size} =>
                   mayAlign
                   [seq [Var.layout dst, constrain ty],
-                   seq [str "= Object ",
-                        record [("header", seq [str "0x", Word.layout header]),
-                                ("size", Bytes.layout size)]]]
+                   indent (seq [str "= Object ",
+                                record [("header", seq [str "0x", Word.layout header]),
+                                        ("size", Bytes.layout size)]],
+                           2)]
              | PrimApp {dst, prim, args, ...} =>
-                  let
-                     val rest =
-                        seq [Prim.layout prim, str " ",
-                             Vector.layout Operand.layout args]
-                  in
-                     case dst of
-                        NONE => rest
-                      | SOME (x, t) =>
-                           mayAlign [seq [Var.layout x, constrain t],
-                                     seq [str "= ", rest]]
-                  end
+                  mayAlign
+                  [case dst of
+                      NONE => seq [str "_", constrain (Type.unit)]
+                    | SOME (x, t) => seq [Var.layout x, constrain t],
+                   indent (seq [str "= ", Prim.layout prim, str " ",
+                                Vector.layout Operand.layout args],
+                           2)]
              | Profile e => ProfileExp.layout e
              | ProfileLabel p =>
                   seq [str "ProfileLabel ", ProfileLabel.layout p]
@@ -617,6 +617,15 @@ structure Block =
                             Transfer.layout transfer],
                            2)]
          end
+
+      fun foreachDef (T {args, statements, transfer, ...}, f) =
+         (Vector.foreach (args, f)
+          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
+          ; Transfer.foreachDef (transfer, f))
+
+      fun foreachUse (T {statements, transfer, ...}, f) =
+         (Vector.foreach (statements, fn s => Statement.foreachUse (s, f))
+          ; Transfer.foreachUse (transfer, f))
    end
 
 structure Function =
@@ -674,13 +683,12 @@ structure Function =
                    indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
          end
 
-      fun foreachVar (T {args, blocks, ...}, f) =
+      fun foreachDef (T {args, blocks, ...}, f) =
          (Vector.foreach (args, f)
-          ; (Vector.foreach
-             (blocks, fn Block.T {args, statements, transfer, ...} =>
-              (Vector.foreach (args, f)
-               ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
-               ; Transfer.foreachDef (transfer, f)))))
+          ; (Vector.foreach (blocks, fn b => Block.foreachDef (b, f))))
+
+      fun foreachUse (T {blocks, ...}, f) =
+         Vector.foreach (blocks, fn b => Block.foreachUse (b, f))
 
       fun dfs (T {blocks, start, ...}, v) =
          let
@@ -1021,6 +1029,15 @@ structure Program =
                (Var.plist, Property.initRaise ("replacement", Var.layout))
             fun dontReplace (x: Var.t, t: Type.t): unit =
                setReplaceVar (x, Operand.Var {var = x, ty = t})
+            val setReplaceVar = fn (x: Var.t, t: Type.t, z: Operand.t) =>
+               let
+                  val z =
+                     if Type.equals (Operand.ty z, t)
+                        then z
+                        else Operand.Cast (z, t)
+               in
+                  setReplaceVar (x, z)
+               end
             fun loopStatement (s: Statement.t): Statement.t option =
                let
                   val s = Statement.replaceUses (s, replaceVar)
@@ -1045,29 +1062,23 @@ structure Program =
                               case getSrc src of
                                  NONE => keep ()
                                | SOME src =>
-                                    let
-                                       val src = 
-                                          if Type.equals (Operand.ty src, dstTy)
-                                             then src
-                                          else Cast (src, dstTy)
-                                    in
-                                       setReplaceVar (dst, src)
-                                       ; NONE
-                                    end
+                                    (setReplaceVar (dst, dstTy, src)
+                                     ; NONE)
                            end
                    | PrimApp {args, dst, prim} =>
                         let
                            fun replace (z: Operand.t): Statement.t option =
-                              (Option.app (dst, fn (x, _) =>
-                                           setReplaceVar (x, z))
+                              (Option.app (dst, fn (x, t) =>
+                                           setReplaceVar (x, t, z))
                                ; NONE)
-                           val applyArgs =
-                              Vector.keepAllMap
-                              (args, fn z =>
-                               case z of
-                                  Operand.Const c => SOME (ApplyArg.Const c)
-                                | Operand.Var x => SOME (ApplyArg.Var x)
-                                | _ => NONE)
+                           datatype z = datatype Operand.t
+                           fun getArg arg =
+                              case arg of
+                                 Cast (arg, _) => getArg arg
+                               | Const c => SOME (ApplyArg.Const c)
+                               | Var x => SOME (ApplyArg.Var x)
+                               | _ => NONE
+                           val applyArgs = Vector.keepAllMap (args, getArg)
                            datatype z = datatype ApplyResult.t
                         in
                            if Vector.length args <> Vector.length applyArgs
@@ -1578,7 +1589,7 @@ structure Program =
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
                                   Bytes.equals
-                                  (size, Bytes.+ (Runtime.headerSize (),
+                                  (size, Bytes.+ (Runtime.normalMetaDataSize (),
                                                   Type.bytes ty))
                               | _ => false)
                         end
@@ -1788,7 +1799,7 @@ structure Program =
                                         andalso
                                         let
                                            val expects =
-                                              #2 (Vector.sub (args, 0))
+                                              #2 (Vector.first args)
                                         in
                                            Type.isSubtype (return, expects) 
                                            andalso
@@ -1836,7 +1847,7 @@ structure Program =
                 let
                    val {args, ...} = Function.dest f
                 in
-                   0 = Vector.length args
+                   Vector.isEmpty args
                 end,
                 Function.layout)
             val _ = clear p

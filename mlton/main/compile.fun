@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -41,12 +41,14 @@ structure CoreML = CoreML (open Atoms
                                              var = var}
 
                                  fun layout t = 
-                                    layoutPrettyAux 
-                                    (t, {expandOpaque = true,
-                                         localTyvarNames = false})
+                                    #1 (layoutPretty
+                                        (t, {expandOpaque = true,
+                                             layoutPrettyTycon = Tycon.layout,
+                                             layoutPrettyTyvar = Tyvar.layout}))
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
+structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
@@ -162,7 +164,11 @@ local
    structure Con = TypeEnv.Con
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
-   structure Tyvar = TypeEnv.Tyvar
+   structure Tyvar =
+      struct
+         open TypeEnv.Tyvar
+         open TypeEnv.TyvarExt
+      end
 
    val primitiveDatatypes =
       Vector.new3
@@ -171,7 +177,7 @@ local
         cons = Vector.new2 ({con = Con.falsee, arg = NONE},
                             {con = Con.truee, arg = NONE})},
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.list,
            tyvars = Vector.new1 a,
@@ -183,7 +189,7 @@ local
                                               Type.list (Type.var a))))})}
        end,
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.reff,
            tyvars = Vector.new1 a,
@@ -225,50 +231,53 @@ local
             let
                val _ =
                   List.foreach
-                  (Tycon.prims, fn {kind, name, tycon, ...} =>
-                   extendTycon
-                   (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
-                                             Region.bogus),
-                    TypeStr.tycon (tycon, kind),
-                    {forceUsed = false, isRebind = false}))
+                  (Tycon.prims, fn {name, tycon, ...} =>
+                   if List.contains ([Tycon.arrow, Tycon.tuple], tycon, Tycon.equals)
+                      then ()
+                      else extendTycon
+                           (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
+                                                     Region.bogus),
+                            TypeStr.tycon tycon,
+                            {forceUsed = false, isRebind = false}))
                val _ =
                   Vector.foreach
                   (primitiveDatatypes, fn {tyvars, tycon, cons} =>
                    let
                       val cons =
-                         Env.newCons
-                         (E, Vector.map (cons, fn {con, ...} =>
-                                         {con = con, name = Con.toAst con}))
-                         (Vector.map
-                          (cons, fn {arg, ...} =>
-                           let
-                              val resultType =
-                                 Type.con (tycon, Vector.map (tyvars, Type.var))
-                           in
-                              Scheme.make
-                              {canGeneralize = true,
-                               ty = (case arg of
-                                        NONE => resultType
-                                      | SOME t => Type.arrow (t, resultType)),
-                               tyvars = tyvars}
-                           end))
+                         Vector.map
+                         (cons, fn {con, arg} =>
+                          let
+                             val res =
+                                Type.con (tycon, Vector.map (tyvars, Type.var))
+                             val ty =
+                                case arg of
+                                   NONE => res
+                                 | SOME arg => Type.arrow (arg, res)
+                             val scheme =
+                                Scheme.make
+                                {canGeneralize = true,
+                                 ty = ty,
+                                 tyvars = tyvars}
+                          in
+                             {con = con,
+                              name = Con.toAst con,
+                              scheme = scheme}
+                          end)
+                      val cons = Env.newCons (E, cons)
                    in
                       extendTycon
                       (E, Tycon.toAst tycon,
-                       TypeStr.data (tycon,
-                                     TypeStr.Kind.Arity (Vector.length tyvars),
-                                     cons),
+                       TypeStr.data (tycon, cons),
                        {forceUsed = false, isRebind = false})
                    end)
                val _ =
                   extendTycon (E,
                                Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
-                               TypeStr.def (Scheme.fromType Type.unit,
-                                            TypeStr.Kind.Arity 0),
+                               TypeStr.def (Scheme.fromType Type.unit),
                                {forceUsed = false, isRebind = false})
                val scheme = Scheme.fromType Type.exn
                val _ = List.foreach (primitiveExcons, fn c =>
-                                     extendExn (E, Con.toAst c, c, SOME scheme))
+                                     extendExn (E, Con.toAst c, c, scheme))
             in
                ()
             end
@@ -493,14 +502,180 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             else ()
          end
 
-      (* Set GC_state offsets and sizes. *)
+
+      val xml =
+         Control.passTypeCheck
+         {display = Control.Layouts Xml.Program.layouts,
+          name = "defunctorize",
+          stats = Xml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "xml",
+          thunk = fn () => Defunctorize.defunctorize coreML,
+          typeCheck = Xml.typeCheck}
+   in
+      xml
+   end
+
+fun simplifyXml xml =
+   let val xml =
+      Control.passTypeCheck
+      {display = Control.Layouts Xml.Program.layouts,
+       name = "xmlSimplify",
+       stats = Xml.Program.layoutStats,
+       style = Control.ML,
+       suffix = "xml",
+       thunk = fn () => Xml.simplify xml,
+       typeCheck = Xml.typeCheck}
+      open Control
+      val _ =
+         if !keepXML
+            then saveToFile ({suffix = "xml"}, No, xml,
+               Layouts Xml.Program.layouts)
+            else ()
+   in
+      xml
+   end
+
+fun makeSxml xml =
+   Control.passTypeCheck
+   {display = Control.Layouts Sxml.Program.layouts,
+    name = "monomorphise",
+    stats = Sxml.Program.layoutStats,
+    style = Control.ML,
+    suffix = "sxml",
+    thunk = fn () => Monomorphise.monomorphise xml,
+    typeCheck = Sxml.typeCheck}
+
+fun simplifySxml sxml =
+   let
+      val sxml =
+         Control.passTypeCheck
+         {display = Control.Layouts Sxml.Program.layouts,
+          name = "sxmlSimplify",
+          stats = Sxml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "sxml",
+          thunk = fn () => Sxml.simplify sxml,
+          typeCheck = Sxml.typeCheck}
+      open Control
+      val _ =
+         if !keepSXML
+            then saveToFile ({suffix = "sxml"}, No, sxml,
+               Layouts Sxml.Program.layouts)
+            else ()
+   in
+      sxml
+   end
+
+fun makeSsa sxml =
+   Control.passTypeCheck
+   {display = Control.Layouts Ssa.Program.layouts,
+    name = "closureConvert",
+    stats = Ssa.Program.layoutStats,
+    style = Control.No,
+    suffix = "ssa",
+    thunk = fn () => ClosureConvert.closureConvert sxml,
+    typeCheck = Ssa.typeCheck}
+
+fun simplifySsa ssa =
+   let
+      val ssa =
+         Control.passTypeCheck
+         {display = Control.Layouts Ssa.Program.layouts,
+          name = "ssaSimplify",
+          stats = Ssa.Program.layoutStats,
+          style = Control.No,
+          suffix = "ssa",
+          thunk = fn () => Ssa.simplify ssa,
+          typeCheck = Ssa.typeCheck}
+      open Control
+      val _ =
+         if !keepSSA
+            then saveToFile ({suffix = "ssa"}, No, ssa,
+               Layouts Ssa.Program.layouts)
+         else ()
+   in
+      ssa
+   end
+
+fun makeSsa2 ssa =
+   Control.passTypeCheck
+   {display = Control.Layouts Ssa2.Program.layouts,
+    name = "toSsa2",
+    stats = Ssa2.Program.layoutStats,
+    style = Control.No,
+    suffix = "ssa2",
+    thunk = fn () => SsaToSsa2.convert ssa,
+    typeCheck = Ssa2.typeCheck}
+
+fun simplifySsa2 ssa2 =
+   let
+      val ssa2 =
+         Control.passTypeCheck
+         {display = Control.Layouts Ssa2.Program.layouts,
+          name = "ssa2Simplify",
+          stats = Ssa2.Program.layoutStats,
+          style = Control.No,
+          suffix = "ssa2",
+          thunk = fn () => Ssa2.simplify ssa2,
+          typeCheck = Ssa2.typeCheck}
+      open Control
+      val _ =
+         if !keepSSA2
+            then saveToFile ({suffix = "ssa2"}, No, ssa2,
+               Layouts Ssa2.Program.layouts)
+         else ()
+   in
+      ssa2
+   end
+
+fun makeMachine ssa2 =
+   let
+      val codegenImplementsPrim =
+         case !Control.codegen of
+            Control.AMD64Codegen => amd64Codegen.implementsPrim
+          | Control.CCodegen => CCodegen.implementsPrim
+          | Control.LLVMCodegen => LLVMCodegen.implementsPrim
+          | Control.X86Codegen => x86Codegen.implementsPrim
+      val machine =
+         Control.passTypeCheck
+         {display = Control.Layouts Machine.Program.layouts,
+          name = "backend",
+          stats = fn _ => Layout.empty,
+          style = Control.No,
+          suffix = "machine",
+          thunk = fn () =>
+                  (Backend.toMachine
+                   (ssa2,
+                    {codegenImplementsPrim = codegenImplementsPrim})),
+          typeCheck = fn machine =>
+                      (* For now, machine type check is too slow to run. *)
+                      (if !Control.typeCheck
+                          then Machine.Program.typeCheck machine
+                       else ())}
+      val _ =
+         let
+            open Control
+         in
+            if !keepMachine
+               then saveToFile ({suffix = "machine"}, No, machine,
+                                Layouts Machine.Program.layouts)
+            else ()
+         end
+   in
+      machine
+   end
+
+fun setupConstants() : unit = 
+   (* Set GC_state offsets and sizes. *)
+   let
       val _ =
          let
             fun get (name: string): Bytes.t =
                case lookupConstant ({default = NONE, name = name},
                                     ConstType.Word WordSize.word32) of
                   Const.Word w => Bytes.fromInt (WordX.toInt w)
-                | _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
+                | _ => Error.bug "Compile.setupConstants: GC_state offset must be an int"
          in
             Runtime.GCField.setOffsets
             {
@@ -542,165 +717,35 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                 case lookupConstant ({default = NONE, name = name},
                                      ConstType.Bool) of
                    Const.Word w => 1 = WordX.toInt w
-                 | _ => Error.bug "Compile.elaborate: endian unknown"
+                 | _ => Error.bug "Compile.setupConstants: endian unknown"
          in
             Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
          end
-      val xml =
-         Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "defunctorize",
-          stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
-          thunk = fn () => Defunctorize.defunctorize coreML,
-          typeCheck = Xml.typeCheck}
    in
-      xml
+      ()
    end
 
-fun preCodegen {input: MLBString.t}: Machine.Program.t =
+
+fun preCodegen (input: MLBString.t): Machine.Program.t =
    let
       val xml = elaborate {input = input}
-      val xml =
-          Control.passTypeCheck
-          {display = Control.Layouts Xml.Program.layouts,
-           name = "xmlSimplify",
-           stats = Xml.Program.layoutStats,
-           style = Control.ML,
-           suffix = "xml",
-           thunk = fn () => Xml.simplify xml,
-           typeCheck = Xml.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepXML
-               then saveToFile ({suffix = "xml"}, No, xml,
-                                Layouts Xml.Program.layouts)
-            else ()
-         end
-      val sxml =
-         Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "monomorphise",
-          stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
-          thunk = fn () => Monomorphise.monomorphise xml,
-          typeCheck = Sxml.typeCheck}
-      val sxml =
-         Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlSimplify",
-          stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
-          thunk = fn () => Sxml.simplify sxml,
-          typeCheck = Sxml.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepSXML
-               then saveToFile ({suffix = "sxml"}, No, sxml,
-                                Layouts Sxml.Program.layouts)
-            else ()
-         end
-      val ssa =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "closureConvert",
-          stats = Ssa.Program.layoutStats,
-          style = Control.No,
-          suffix = "ssa",
-          thunk = fn () => ClosureConvert.closureConvert sxml,
-          typeCheck = Ssa.typeCheck}
-      val ssa =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaSimplify",
-          stats = Ssa.Program.layoutStats,
-          style = Control.No,
-          suffix = "ssa",
-          thunk = fn () => Ssa.simplify ssa,
-          typeCheck = Ssa.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepSSA
-               then saveToFile ({suffix = "ssa"}, No, ssa,
-                                Layouts Ssa.Program.layouts)
-            else ()
-         end
-      val ssa2 =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa2.Program.layouts,
-          name = "toSsa2",
-          stats = Ssa2.Program.layoutStats,
-          style = Control.No,
-          suffix = "ssa2",
-          thunk = fn () => SsaToSsa2.convert ssa,
-          typeCheck = Ssa2.typeCheck}
-      val ssa2 =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa2.Program.layouts,
-          name = "ssa2Simplify",
-          stats = Ssa2.Program.layoutStats,
-          style = Control.No,
-          suffix = "ssa2",
-          thunk = fn () => Ssa2.simplify ssa2,
-          typeCheck = Ssa2.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepSSA2
-               then saveToFile ({suffix = "ssa2"}, No, ssa2,
-                                Layouts Ssa2.Program.layouts)
-            else ()
-         end
-      val codegenImplementsPrim =
-         case !Control.codegen of
-            Control.AMD64Codegen => amd64Codegen.implementsPrim
-          | Control.CCodegen => CCodegen.implementsPrim
-          | Control.LLVMCodegen => LLVMCodegen.implementsPrim
-          | Control.X86Codegen => x86Codegen.implementsPrim
-      val machine =
-         Control.passTypeCheck
-         {display = Control.Layouts Machine.Program.layouts,
-          name = "backend",
-          stats = fn _ => Layout.empty,
-          style = Control.No,
-          suffix = "machine",
-          thunk = fn () =>
-                  (Backend.toMachine
-                   (ssa2,
-                    {codegenImplementsPrim = codegenImplementsPrim})),
-          typeCheck = fn machine =>
-                      (* For now, machine type check is too slow to run. *)
-                      (if !Control.typeCheck
-                          then Machine.Program.typeCheck machine
-                       else ())}
-      val _ =
-         let
-            open Control
-         in
-            if !keepMachine
-               then saveToFile ({suffix = "machine"}, No, machine,
-                                Layouts Machine.Program.layouts)
-            else ()
-         end
+      val _ = setupConstants ()
+      val xml = simplifyXml xml
+      val sxml = makeSxml xml
+      val sxml = simplifySxml sxml
+      val ssa = makeSsa sxml
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
    in
-      machine
+      makeMachine ssa2
    end
 
-fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
+fun compile {input: 'a, resolve: 'a -> Machine.Program.t, outputC, outputLL, outputS}: unit =
    let
       val machine =
          Control.trace (Control.Top, "pre codegen")
-         preCodegen {input = input}
+         resolve input
       fun clearNames () =
          (Machine.Program.clearLabelNames machine
           ; Machine.Label.printNameAlphaNumeric := true)
@@ -737,6 +782,7 @@ fun compile {input: MLBString.t, outputC, outputLL, outputS}: unit =
 
 fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
    compile {input = MLBString.fromFile input,
+            resolve = preCodegen,
             outputC = outputC,
             outputLL = outputLL,
             outputS = outputS}
@@ -769,6 +815,7 @@ local
 in
    fun compileSML {input: File.t list, outputC, outputLL, outputS}: unit =
       compile {input = genMLB {input = input},
+               resolve = preCodegen,
                outputC = outputC,
                outputLL = outputLL,
                outputS = outputS}
@@ -777,5 +824,40 @@ in
       (ignore (elaborate {input = genMLB {input = input}}))
       handle Done => ()
 end
+
+fun genFromSXML (input: File.t): Machine.Program.t =
+   let
+      val _ = setupConstants()
+      val sxml =
+         Control.passTypeCheck
+         {display = Control.Layouts Sxml.Program.layouts,
+          name = "sxmlParse",
+          stats = Sxml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "sxml",
+          thunk = (fn () => case
+                     Parse.parseFile(ParseSxml.program, input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error 
+                           (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
+          typeCheck = Sxml.typeCheck}
+      val sxml = simplifySxml sxml
+      val ssa = makeSsa sxml
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
+   in
+      makeMachine ssa2
+   end
+fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromSXML,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
 
 end

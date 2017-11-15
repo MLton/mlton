@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+# This script calls MLton.
+
+set -e
+
+dir=`dirname "$0"`
+lib=`cd "$dir/../lib/mlton" && pwd`
+eval `"$lib/platform"`
+gcc='gcc'
+case "$HOST_OS" in
+mingw)
+	exe='.exe'
+;;
+hpux)
+        ia64hpux="-mlp64"
+;;
+*)
+	exe=''
+;;
+esac
+mlton="$lib/mlton-compile$exe"
+
+declare -a rargs
+case "$1" in
+@MLton)
+        shift
+        while [ "$#" -gt 0 -a "$1" != "--" ]; do
+                rargs[${#rargs[@]}]="$1"
+                shift
+        done
+        if [ "$#" -gt 0 -a "$1" == "--" ]; then
+                shift
+        else
+                echo '@MLton missing --'
+                exit 1
+        fi
+        ;;
+esac
+
+doitMLton () {
+    if [ -x "$mlton" ]; then
+        exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    fi
+}
+doitSMLNJ () {
+    smlnj='sml'
+    if $smlnj -h >/dev/null 2>&1; then
+        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
+        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
+        if [ -s "$mlton_smlnj_heap" ]; then
+            exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+        fi
+    fi
+}
+doitPolyML () {
+    mlton_polyml="$lib/mlton-polyml$exe"
+    if [ -x "$mlton_polyml" ]; then
+        exec "$mlton_polyml" "$@"
+    fi
+}
+
+doit () {
+    doitMLton "$@"
+    doitSMLNJ "$@"
+    doitPolyML "$@"
+    echo 'Unable to run MLton.  Check that lib is set properly.' >&2
+    exit 1
+}
+
+# set additional C compiler and linker flags from ../configure script
+XCFLAGS=@XCFLAGS@
+if [ -n "$XCFLAGS" ]; then
+xcflags="-cc-opt '$XCFLAGS'"
+fi
+
+XLDFLAGS=@XLDFLAGS@
+if [ -n "$XLDFLAGS" ]; then
+xldflags="-link-opt '$XLDFLAGS'"
+fi
+
+
+# You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
+gmpIncDir=
+if [ -n "$gmpIncDir" ]; then
+gmpCCOpts="-cc-opt '-I$gmpIncDir'"
+fi
+# You may need to set 'gmpLibDir' so the C compiler can find libgmp.
+gmpLibDir=
+if [ -n "$gmpLibDir" ]; then
+gmpLinkOpts="-link-opt '-L$gmpLibDir' -target-link-opt netbsd '-Wl,-R$gmpLibDir'"
+fi
+
+# For align-{functions,jumps,loops}, we use -m for now instead of
+# -f because old gcc's will barf on -f, while newer ones only warn
+# about -m.  Someday, when we think we won't run into older gcc's,
+# these should be changed to -f.
+
+doit "$lib" \
+        -ar-script "$lib/static-library"                         \
+        -cc "$gcc"                                               \
+        $xcflags $xldflags                                       \
+        -cc-opt-quote "-I$lib/include"                           \
+        -cc-opt '-O1 -fno-common'                                \
+        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
+        -link-opt '-lm -lgmp'                                    \
+        $gmpCCOpts $gmpLinkOpts                                  \
+        -llvm-llc-opt '-O2'                                      \
+        -llvm-opt-opt '-mem2reg -O2'                             \
+        -mlb-path-map "$lib/mlb-path-map"                        \
+        -target-as-opt amd64 '-m64'                              \
+        -target-as-opt x86 '-m32'                                \
+        -target-cc-opt alpha                                     \
+                '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
+        -target-cc-opt amd64 '-m64'                              \
+        -target-cc-opt aix '-maix64'                             \
+        -target-cc-opt ia64 "$ia64hpux -mtune=itanium2"          \
+        -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+        -target-cc-opt x86                                       \
+                '-m32
+                -fno-strength-reduce
+                -fschedule-insns
+                -fschedule-insns2
+                -falign-functions=5
+                -falign-jumps=2
+                -falign-loops=2'                                 \
+        -target-link-opt amd64 '-m64'                            \
+        -target-link-opt alpha                                   \
+                '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
+        -target-link-opt aix '-maix64'                           \
+        -target-link-opt ia64 "$ia64hpux"                        \
+        -target-link-opt linux '-Wl,-znoexecstack'               \
+        -target-link-opt mingw                                   \
+                '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
+        -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
+        -target-link-opt solaris '-lnsl -lsocket -lrt'           \
+        -target-link-opt x86 '-m32'                              \
+        -profile-exclude '\$\(SML_LIB\)'                         \
+        "$@"

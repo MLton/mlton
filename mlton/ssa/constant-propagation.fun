@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -287,15 +288,16 @@ structure Value =
       and value =
          Array of {birth: unit Birth.t,
                    elt: t,
-                   length: t}
-        | Const of Const.t
-        | Datatype of data
-        | Ref of {arg: t,
-                  birth: {init: t} Birth.t}
-        | Tuple of t vector
-        | Vector of {elt: t,
-                     length: t}
-        | Weak of t
+                   length: t,
+                   raw: bool option ref}
+       | Const of Const.t
+       | Datatype of data
+       | Ref of {arg: t,
+                 birth: {init: t} Birth.t}
+       | Tuple of t vector
+       | Vector of {elt: t,
+                    length: t}
+       | Weak of t
       and data =
          Data of {coercedTo: data list ref,
                   filters: {args: t vector,
@@ -305,8 +307,8 @@ structure Value =
          ConApp of {args: t vector,
                     con: Con.t,
                     uniq: Unique.t}
-        | Undefined
-        | Unknown
+       | Undefined
+       | Unknown
 
       local
          fun make sel (T s) = sel (Set.! s)
@@ -314,16 +316,24 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
+      fun deConst v =
+         case value v of
+            Const (Const.T {const, ...}) =>
+               (case !const of
+                   Const.Const c => SOME c
+                 | _ => NONE)
+          | _ => NONE
 
       local
          open Layout
       in
          fun layout v =
             case value v of
-               Array {birth, elt, length, ...} =>
+               Array {birth, elt, length, raw, ...} =>
                   seq [str "array", tuple [Birth.layout birth,
                                            layout length,
-                                           layout elt]]
+                                           layout elt,
+                                           Option.layout Bool.layout (!raw)]]
              | Const c => Const.layout c
              | Datatype d => layoutData d
              | Ref {arg, birth, ...} =>
@@ -414,11 +424,12 @@ structure Value =
                           | _ => No
                       val g =
                          case value of
-                            Array {birth, length, ...} =>
+                            Array {birth, length, raw, ...} =>
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.array,
+                                                   prim = Prim.arrayAlloc
+                                                          {raw = valOf (!raw)},
                                                    targs = targs},
                                       Type.deArray ty)
                           | Const (Const.T {const, ...}) =>
@@ -447,7 +458,38 @@ structure Value =
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
-                          | Vector _ => No
+                          | Vector {elt, length} =>
+                               (case Option.map (deConst length, S.Const.deWord) of
+                                   NONE => No
+                                 | SOME length =>
+                                      let
+                                         val length = WordX.toInt length
+                                         val eltTy = Type.deVector ty
+                                         fun mkVec args =
+                                            yes (Exp.PrimApp
+                                                 {args = args,
+                                                  prim = Prim.vector,
+                                                  targs = Vector.new1 eltTy})
+                                         fun mkConst (ws, elts) =
+                                            yes (Exp.Const
+                                                 (S.Const.wordVector
+                                                  (WordXVector.fromList
+                                                   ({elementSize = ws}, elts))))
+                                      in
+                                         case (Option.map (deConst elt, S.Const.deWordOpt),
+                                               global (elt, newGlobal)) of
+                                            (SOME (SOME w), _) =>
+                                               mkConst (Type.deWord eltTy,
+                                                        List.new (length, w))
+                                          | (_, SOME (x, _)) =>
+                                               mkVec (Vector.new (length, x))
+                                          | _ =>
+                                               if length = 0
+                                                  then case Type.deWordOpt eltTy of
+                                                          SOME ws => mkConst (ws, [])
+                                                        | NONE => mkVec (Vector.new0 ())
+                                                  else No
+                                      end)
                           | Weak _ => No
                       val _ = r := g
                    in
@@ -468,8 +510,6 @@ structure Value =
       fun const c = let val c' = Const.const c
                     in new (Const c', Type.ofConst c)
                     end
-
-      val zero = WordSize.memoize (fn s => const (S.Const.word (WordX.zero s)))
 
       fun constToEltLength (c, err) =
          let
@@ -517,14 +557,24 @@ structure Value =
       in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
          val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
          val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
+         val arrayRaw = make ("ConstantPropagation.Value.arrayRaw", #raw)
       end
+
+      fun arrayFromArray (T s: t): t =
+         let
+            val {value, ty, ...} = Set.! s
+         in case value of
+            Array {elt, length, ...} =>
+               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = ref (SOME false)}, ty)
+          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
+         end
 
       fun vectorFromArray (T s: t): t =
          let
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Vector {elt = elt, length = length}, ty)
+               new (Vector {elt = elt, length = length}, Type.vector (Type.deArray ty))
           | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
          end
 
@@ -571,7 +621,8 @@ structure Value =
                       Type.Array t => 
                          Array {birth = arrayBirth (),
                                 elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ()))}
+                                length = loop (Type.word (WordSize.seqIndex ())),
+                                raw = ref NONE}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
@@ -701,7 +752,7 @@ fun transform (program: Program.t): Program.t =
                      | ConApp {con = con', uniq = uniq', ...} =>
                           if Unique.equals (uniq, uniq')
                              orelse (Con.equals (con, con')
-                                     andalso 0 = Vector.length args)
+                                     andalso Vector.isEmpty args)
                              then ()
                           else makeDataUnknown d) arg
              in loop d
@@ -730,11 +781,18 @@ fun transform (program: Program.t): Program.t =
                    | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                         (Birth.coerce {from = birth, to = b'}
                          ; unify (arg, a'))
-                   | (Array {birth = b, length = n, elt = x},
-                        Array {birth = b', length = n', elt = x'}) =>
+                   | (Array {birth = b, length = n, elt = x, raw = r},
+                      Array {birth = b', length = n', elt = x', raw = r'}) =>
                         (Birth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
-                         ; unify (x, x'))
+                         ; unify (x, x')
+                         ; (case (!r, !r') of
+                               (NONE, r') => r := r'
+                             | (r, NONE) => r' := r
+                             | (SOME b, SOME b') =>
+                                  (if b = b'
+                                      then ()
+                                      else error ())))
                    | (Vector {length = n, elt = x},
                       Vector {length = n', elt = x'}) =>
                         (coerce {from = n, to = n'}
@@ -759,6 +817,11 @@ fun transform (program: Program.t): Program.t =
                let 
                   val {value, ...} = Set.! s
                   val {value = value', ...} = Set.! s'
+                  fun error () =
+                     Error.bug
+                     (concat ["ConstantPropagation.Value.unify: strange: value: ",
+                              Layout.toString (Value.layout (T s)),
+                              " value': ", Layout.toString (Value.layout (T s'))])
                in Set.union (s, s')
                   ; case (value, value') of
                        (Const c, Const c') => Const.unify (c, c')
@@ -766,18 +829,25 @@ fun transform (program: Program.t): Program.t =
                      | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                           (Birth.unify (birth, b')
                            ; unify (arg, a'))
-                     | (Array {birth = b, length = n, elt = x},
-                        Array {birth = b', length = n', elt = x'}) =>
+                     | (Array {birth = b, length = n, elt = x, raw = r},
+                        Array {birth = b', length = n', elt = x', raw = r'}) =>
                           (Birth.unify (b, b')
                            ; unify (n, n')
-                           ; unify (x, x'))
+                           ; unify (x, x')
+                           ; (case (!r, !r') of
+                                 (NONE, r') => r := r'
+                               | (r, NONE) => r' := r
+                               | (SOME b, SOME b') =>
+                                    (if b = b'
+                                        then ()
+                                        else error ())))
                      | (Vector {length = n, elt = x},
                         Vector {length = n', elt = x'}) =>
                           (unify (n, n')
                            ; unify (x, x'))
                      | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
                      | (Weak v, Weak v') => unify (v, v')
-                     | _ => Error.bug "ConstantPropagation.Value.unify: strange"
+                     | _ => error ()
                end
          and unifyData (d, d') =
             (coerceData {from = d, to = d'}
@@ -839,21 +909,40 @@ fun transform (program: Program.t): Program.t =
                    ; unit ())
                fun arg i = Vector.sub (args, i)
                datatype z = datatype Prim.Name.t
-               fun array (length, birth) =
+               fun array (raw, length, birth) =
                   let
                      val a = fromType resultType
                      val _ = coerce {from = length, to = arrayLength a}
                      val _ = Birth.coerce {from = birth, to = arrayBirth a}
+                     val _ = arrayRaw a := SOME raw
                   in
                      a
                   end
+               fun vector () =
+                  let
+                     val v = fromType resultType
+                     val l =
+                        (const o S.Const.word o WordX.fromIntInf)
+                        (IntInf.fromInt (Vector.length args),
+                         WordSize.seqIndex ())
+                     val _ = coerce {from = l, to = vectorLength v}
+                     val _ =
+                        Vector.foreach
+                        (args, fn arg =>
+                         coerce {from = arg, to = devector v})
+                  in
+                     v
+                  end
             in
                case Prim.name prim of
-                  Array_array => array (arg 0, bear ())
-                | Array_array0Const =>
-                     array (zero (WordSize.seqIndex ()), Birth.here ())
+                  Array_alloc {raw} => array (raw, arg 0, bear ())
+                | Array_copyArray =>
+                     update (arg 0, dearray (arg 2))
+                | Array_copyVector =>
+                     update (arg 0, devector (arg 2))
                 | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
+                | Array_toArray => arrayFromArray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)
                 | Array_update => update (arg 0, arg 2)
                 | Ref_assign =>
@@ -871,6 +960,7 @@ fun transform (program: Program.t): Program.t =
                      end
                 | Vector_length => vectorLength (arg 0)
                 | Vector_sub => devector (arg 0)
+                | Vector_vector => vector ()
                 | Weak_get => deweak (arg 0)
                 | Weak_new =>
                      let

@@ -1,4 +1,5 @@
-(* Copyright (C) 2014 Rob Simmons.
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2014 Rob Simmons.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,18 +17,17 @@ signature SEQUENCE =
                                 and type 'a elt = 'a elt
 
       val maxLen: int
-      val tabulate: int * (int -> 'a elt) -> 'a sequence 
       val length: 'a sequence -> int
       val sub: 'a sequence * int -> 'a elt
       val unsafeSub: 'a sequence * int -> 'a elt 
-      (* updateMk,unsafeUpdateMk:
-       * ('a sequence * SeqIndex.int * 'a elt -> unit) 
-       * should be primitive unsafe update
-       *)
-      val updateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                     ('a sequence * int * 'a elt) -> unit
-      val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
-                           ('a sequence * int * 'a elt) -> unit
+      val update: 'a sequence * int * 'a elt -> unit
+      val unsafeUpdate: 'a sequence * int * 'a elt -> unit
+      val uninitIsNop: 'a sequence -> bool
+      val uninit: 'a sequence * int -> unit
+      val unsafeUninit: 'a sequence * int -> unit
+      val copy: {dst: 'a elt Array.array, di: int, src: 'a sequence} -> unit
+      val unsafeCopy: {dst: 'a elt Array.array, di: int, src: 'a sequence} -> unit
+      val tabulate: int * (int -> 'a elt) -> 'a sequence
       val appi: (int * 'a elt -> unit) -> 'a sequence -> unit 
       val app: ('a elt -> unit) -> 'a sequence -> unit 
       val mapi : (int * 'a elt -> 'b elt) -> 'a sequence -> 'b sequence 
@@ -48,16 +48,18 @@ signature SEQUENCE =
       val concat: 'a sequence list -> 'a sequence 
 
       (* Extra *)
+      val alloc: int -> 'a sequence
       val append: 'a sequence * 'a sequence -> 'a sequence 
-      val duplicate: 'a sequence -> 'a sequence
-      val generate:
+      val create:
          int -> {done: unit -> 'a sequence,
                  sub: int -> 'a elt, 
                  update: int * 'a elt -> unit} 
-      val newUninit: int -> 'a sequence
+      val duplicate: 'a sequence -> 'a sequence
       val new: int * 'a elt -> 'a sequence 
       val unfoldi: int * 'b * (int * 'b -> 'a elt * 'b) -> 'a sequence * 'b
       val unfold: int * 'b * ('b -> 'a elt * 'b) -> 'a sequence * 'b
+      val unsafeAlloc: int -> 'a sequence
+      val unsafeNew: int * 'a elt -> 'a sequence
 
       (* Used to implement Substring/String functions *)
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
