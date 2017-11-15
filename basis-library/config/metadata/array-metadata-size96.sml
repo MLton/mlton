@@ -6,6 +6,5 @@
 
 structure ArrayMetaDataSize =
    struct
-      val bits  : Int32.int = 96
       val bytes : Int32.int = 12
    end

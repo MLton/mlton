@@ -6,6 +6,5 @@
 
 structure NormalMetaDataSize =
    struct
-      val bits  : Int32.int = 128
-      val bytes : Int32.int =  16
+      val bytes : Int32.int = 16
    end
