@@ -399,8 +399,8 @@ structure Value =
                                  primApp: {targs: Type.t vector,
                                            args: Var.t vector} -> Exp.t,
                                  targ: Type.t) =
-                         case !place of
-                            Place.One (One.T {global = glob, extra, ...}) =>
+                         case (!place, Type.isSmall targ) of
+                            (Place.One (One.T {global = glob, extra, ...}), true) =>
                                let
                                   val init = makeInit extra
                                in
@@ -418,13 +418,14 @@ structure Value =
                                                in
                                                   glob := SOME g; g
                                                end
-                                              | SOME g => g)
+                                          | SOME g => g)
                                    | _ => No
                                end
                           | _ => No
                       val g =
                          case value of
                             Array {birth, length, raw, ...} =>
+                               if !Control.globalizeArrays then
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
@@ -432,6 +433,7 @@ structure Value =
                                                           {raw = valOf (!raw)},
                                                    targs = targs},
                                       Type.deArray ty)
+                               else No
                           | Const (Const.T {const, ...}) =>
                                (case !const of
                                    Const.Const c => yes (Exp.Const c)
@@ -899,8 +901,6 @@ fun transform (program: Program.t): Program.t =
                fun bear z =
                   case resultVar of
                      SOME resultVar => if once resultVar 
-                                          andalso 
-                                          Type.isSmall resultType
                                           then Birth.here z
                                        else Birth.unknown ()
                    | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
