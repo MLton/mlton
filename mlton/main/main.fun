@@ -439,6 +439,8 @@ fun makeOptions {usage} =
                        | _ => usage (concat ["invalid -gc-check flag: ", s])))),
        (Expert, "globalize-arrays", " {false|true}", "globalize arrays",
         boolRef globalizeArrays),
+       (Expert, "globalize-small-type", " {0|~1}", "globalize small type",
+        intRef globalizeSmallType),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
         boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",

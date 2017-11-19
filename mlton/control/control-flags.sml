@@ -807,6 +807,10 @@ val globalizeArrays = control {name = "globalize arrays",
                                default = false,
                                toString = Bool.toString}
 
+val globalizeSmallType = control {name = "globalize small type",
+                                  default = 1,
+                                  toString = Int.toString}
+
 val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}
