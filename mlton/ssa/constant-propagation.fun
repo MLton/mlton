@@ -1027,7 +1027,8 @@ fun transform (program: Program.t): Program.t =
                0 => {isSmallType = fn _ => false,
                      destroySmallType = fn () => ()}
              | 1 => let
-                       val {get, destroy} =
+                       val {get: Type.t -> bool,
+                            destroy} =
                           Property.destGet
                           (Type.plist,
                            Property.initRec
@@ -1035,6 +1036,39 @@ fun transform (program: Program.t): Program.t =
                             case Type.dest t of
                                Array _ => false
                              | Datatype _ => false
+                             | Ref t => get t
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | _ => true))
+                    in
+                       {isSmallType = get,
+                        destroySmallType = destroy}
+                    end
+             | 2 => let
+                       val {get = getTycon: Tycon.t -> bool,
+                            set = setTycon, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist,
+                           Property.initRaise
+                           ("ConstantPropagation.mkIsSmallType(2).getTycon",
+                            Tycon.layout))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, cons} =>
+                           setTycon
+                           (tycon,
+                            Vector.forall
+                            (cons, fn {args, ...} =>
+                             Vector.isEmpty args)))
+                       val {get: Type.t -> bool,
+                            destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | Datatype tc => getTycon tc
                              | Ref t => get t
                              | Tuple ts => Vector.forall (ts, get)
                              | Vector _ => false
