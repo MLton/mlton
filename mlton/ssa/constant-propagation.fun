@@ -1025,7 +1025,7 @@ fun transform (program: Program.t): Program.t =
          in
             case n of
                0 => {isSmallType = fn _ => false,
-                     destroySmallType = fn () => ()}
+                     destroyIsSmallType = fn () => ()}
              | 1 => let
                        val {get: Type.t -> bool,
                             destroy} =
@@ -1042,7 +1042,7 @@ fun transform (program: Program.t): Program.t =
                              | _ => true))
                     in
                        {isSmallType = get,
-                        destroySmallType = destroy}
+                        destroyIsSmallType = destroy}
                     end
              | 2 => let
                        val {get = getTycon: Tycon.t -> bool,
@@ -1075,15 +1075,15 @@ fun transform (program: Program.t): Program.t =
                              | _ => true))
                     in
                        {isSmallType = get,
-                        destroySmallType = destroy}
+                        destroyIsSmallType = destroy}
                     end
              | 9 => {isSmallType = fn _ => true,
-                     destroySmallType = fn () => ()}
+                     destroyIsSmallType = fn () => ()}
              | _ => Error.bug "ConstantPropagation.mkIsSmallType"
          end
 
       val {isSmallType: Type.t -> bool,
-           destroySmallType: unit -> unit} =
+           destroyIsSmallType: unit -> unit} =
          mkIsSmallType (!Control.globalizeSmallType)
 
       (* Walk through the program
@@ -1156,7 +1156,7 @@ fun transform (program: Program.t): Program.t =
                                globals = globals,
                                functions = List.revMap (functions, shrink),
                                main = main}
-      val _ = destroySmallType ()
+      val _ = destroyIsSmallType ()
       val _ = Program.clearTop program
    in
       program
