@@ -1028,17 +1028,21 @@ fun transform (program: Program.t): Program.t =
                0 => {isSmallType = fn _ => false,
                      destroySmallType = fn () => ()}
              | 1 => let
-                       fun isSmall t =
-                          case Type.dest t of
-                             Array _ => false
-                           | Datatype _ => false
-                           | Ref t => isSmall t
-                           | Tuple ts => Vector.forall (ts, isSmall)
-                           | Vector _ => false
-                           | _ => true
+                       val {get, destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | Datatype _ => false
+                             | Ref t => get t
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | _ => true))
                     in
-                       {isSmallType = isSmall,
-                        destroySmallType = fn () => ()}
+                       {isSmallType = get,
+                        destroySmallType = destroy}
                     end
              | 9 => {isSmallType = fn _ => true,
                      destroySmallType = fn () => ()}
