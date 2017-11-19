@@ -361,16 +361,11 @@ structure Value =
           layout, layout, Bool.layout) 
          equals
 
-      val globalsInfo = Trace.info "ConstantPropagation.Value.globals"
-      val globalInfo = Trace.info "ConstantPropagation.Value.global"
-
       fun globals arg: (Var.t * Type.t) vector option =
-         Trace.traceInfo
-         (globalsInfo,
+         Trace.trace
+         ("ConstantPropagation.Value.globals",
           (Vector.layout layout) o #1,
-          Option.layout (Vector.layout
-                         (Layout.tuple2 (Var.layout, Type.layout))),
-          Trace.assertTrue)
+          Option.layout (Vector.layout (Var.layout o #1)))
          (fn (vs: t vector, newGlobal) =>
           Exn.withEscape
           (fn escape =>
@@ -380,10 +375,10 @@ structure Value =
                      NONE => escape NONE
                    | SOME g => g)))) arg
       and global arg: (Var.t * Type.t) option =
-         Trace.traceInfo (globalInfo,
-                          layout o #1,
-                          Option.layout (Var.layout o #1),
-                          Trace.assertTrue)
+         Trace.trace
+         ("ConstantPropagation.Value.global",
+          layout o #1,
+          Option.layout (Var.layout o #1))
          (fn (v as T s, newGlobal) =>
           let val {global = r, ty, value} = Set.! s
           in case !r of
@@ -391,6 +386,10 @@ structure Value =
               | Yes g => SOME (g, ty)
               | NotComputed =>
                    let
+                      val global = fn v =>
+                         global (v, newGlobal)
+                      val globals = fn vs =>
+                         globals (vs, newGlobal)
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
@@ -404,7 +403,7 @@ structure Value =
                                let
                                   val init = makeInit extra
                                in
-                                  case global (init, newGlobal) of
+                                  case global init of
                                      SOME (x, _) =>
                                         Yes
                                         (case !glob of
@@ -441,7 +440,7 @@ structure Value =
                           | Datatype (Data {value, ...}) =>
                                (case !value of
                                    ConApp {args, con, ...} =>
-                                      (case globals (args, newGlobal) of
+                                      (case globals args of
                                           NONE => No
                                         | SOME args =>
                                              yes (Exp.ConApp
@@ -456,7 +455,7 @@ structure Value =
                                                    targs = targs},
                                       Type.deRef ty)
                           | Tuple vs =>
-                               (case globals (vs, newGlobal) of
+                               (case globals vs of
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
@@ -479,7 +478,7 @@ structure Value =
                                                    ({elementSize = ws}, elts))))
                                       in
                                          case (Option.map (deConst elt, S.Const.deWordOpt),
-                                               global (elt, newGlobal)) of
+                                               global elt) of
                                             (SOME (SOME w), _) =>
                                                mkConst (Type.deWord eltTy,
                                                         List.new (length, w))
@@ -495,7 +494,7 @@ structure Value =
                           | Weak _ => No
                       val _ = r := g
                    in
-                      global (v, newGlobal)
+                      global v
                    end
           end) arg
 
