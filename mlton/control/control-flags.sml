@@ -807,6 +807,10 @@ val globalizeArrays = control {name = "globalize arrays",
                                default = false,
                                toString = Bool.toString}
 
+val globalizeRefs = control {name = "globalize refs",
+                             default = true,
+                             toString = Bool.toString}
+
 val globalizeSmallType = control {name = "globalize small type",
                                   default = 1,
                                   toString = Int.toString}

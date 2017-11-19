@@ -434,12 +434,14 @@ structure Value =
                                                    args = Vector.map (args, #1)}))
                                  | _ => No)
                           | Ref {birth, ...} =>
+                               if !Control.globalizeRefs then
                                unary (birth, fn {init} => init,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
                                                    prim = Prim.reff,
                                                    targs = targs},
                                       Type.deRef ty)
+                               else No
                           | Tuple vs =>
                                (case globals vs of
                                    NONE => No
