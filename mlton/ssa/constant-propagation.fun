@@ -1019,12 +1019,14 @@ fun transform (program: Program.t): Program.t =
                                                      Value.layout (value x)])))
           end)
 
-      val isSmallType =
+      val {isSmallType: Type.t -> bool,
+           destroySmallType: unit -> unit} =
          let
             datatype t = datatype Type.dest
          in
             case !Control.globalizeSmallType of
-               0 => (fn _ => false)
+               0 => {isSmallType = fn _ => false,
+                     destroySmallType = fn () => ()}
              | 1 => let
                        fun isSmall t =
                           case Type.dest t of
@@ -1035,9 +1037,11 @@ fun transform (program: Program.t): Program.t =
                            | Vector _ => false
                            | _ => true
                     in
-                       isSmall
+                       {isSmallType = isSmall,
+                        destroySmallType = fn () => ()}
                     end
-             | 9 => (fn _ => true)
+             | 9 => {isSmallType = fn _ => true,
+                     destroySmallType = fn () => ()}
              | _ => Error.bug "ConstantPropagation.isSmallType"
          end
 
