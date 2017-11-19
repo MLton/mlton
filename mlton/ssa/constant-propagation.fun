@@ -28,20 +28,6 @@ open S
 structure Multi = Multi (S)
 structure Global = Global (S)
 
-structure Type =
-   struct
-      open Type
-
-      fun isSmall t =
-         case dest t of
-            Array _ => false
-          | Datatype _ => false
-          | Ref t => isSmall t
-          | Tuple ts => Vector.forall (ts, isSmall)
-          | Vector _ => false
-          | _ => true
-   end
-
 structure Sconst = Const
 open Exp Transfer
 
@@ -1030,13 +1016,36 @@ fun transform (program: Program.t): Program.t =
                                                      str " ",
                                                      Value.layout (value x)])))
           end)
+
+      val isSmallType =
+         let
+            datatype t = datatype Type.dest
+         in
+            case !Control.globalizeSmallType of
+               0 => (fn _ => false)
+             | 1 => let
+                       fun isSmall t =
+                          case Type.dest t of
+                             Array _ => false
+                           | Datatype _ => false
+                           | Ref t => isSmall t
+                           | Tuple ts => Vector.forall (ts, isSmall)
+                           | Vector _ => false
+                           | _ => true
+                    in
+                       isSmall
+                    end
+             | 9 => (fn _ => true)
+             | _ => Error.bug "ConstantPropagation.isSmallType"
+         end
+
       (* Walk through the program
        *  - removing declarations whose rhs is constant
        *  - replacing variables whose value is constant with globals
        *  - building up the global decs
        *)
       val {new = newGlobal, all = allGlobals} = Global.make ()
-      fun maybeGlobal x = Value.global (value x, Type.isSmall, newGlobal)
+      fun maybeGlobal x = Value.global (value x, isSmallType, newGlobal)
       fun replaceVar x =
          case maybeGlobal x of
             NONE => x
