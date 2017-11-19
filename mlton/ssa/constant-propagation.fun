@@ -1092,12 +1092,26 @@ fun transform (program: Program.t): Program.t =
          end
       val functions = List.revMap (functions, doitFunction)
       val globals = Vector.keepAllMap (globals, doitStatement)
-      val globals = Vector.concat [allGlobals (), globals]
+      val newGlobals = allGlobals ()
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let open Layout
+          in
+             display (seq [str "\n\nNew Globals (",
+                           Int.layout (Vector.length newGlobals),
+                           str "):"])
+             ; (Vector.foreach
+                (newGlobals, display o Statement.layout))
+          end)
+
+      val globals = Vector.concat [newGlobals, globals]
       val shrink = shrinkFunction {globals = globals}
       val program = Program.T {datatypes = datatypes,
                                globals = globals,
                                functions = List.revMap (functions, shrink),
                                main = main}
+      val _ = destroySmallType ()
       val _ = Program.clearTop program
    in
       program
