@@ -1019,12 +1019,11 @@ fun transform (program: Program.t): Program.t =
                                                      Value.layout (value x)])))
           end)
 
-      val {isSmallType: Type.t -> bool,
-           destroySmallType: unit -> unit} =
+      fun mkIsSmallType n =
          let
             datatype t = datatype Type.dest
          in
-            case !Control.globalizeSmallType of
+            case n of
                0 => {isSmallType = fn _ => false,
                      destroySmallType = fn () => ()}
              | 1 => let
@@ -1046,8 +1045,12 @@ fun transform (program: Program.t): Program.t =
                     end
              | 9 => {isSmallType = fn _ => true,
                      destroySmallType = fn () => ()}
-             | _ => Error.bug "ConstantPropagation.isSmallType"
+             | _ => Error.bug "ConstantPropagation.mkIsSmallType"
          end
+
+      val {isSmallType: Type.t -> bool,
+           destroySmallType: unit -> unit} =
+         mkIsSmallType (!Control.globalizeSmallType)
 
       (* Walk through the program
        *  - removing declarations whose rhs is constant
