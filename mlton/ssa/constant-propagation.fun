@@ -1077,6 +1077,43 @@ fun transform (program: Program.t): Program.t =
                        {isSmallType = get,
                         destroyIsSmallType = destroy}
                     end
+             | 3 => let
+                       val {isSmallType, destroyIsSmallType} =
+                          mkIsSmallType 1
+                       val {get = getTycon: Tycon.t -> bool,
+                            set = setTycon, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist,
+                           Property.initRaise
+                           ("ConstantPropagation.mkIsSmallType(3).getTycon",
+                            Tycon.layout))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, cons} =>
+                           setTycon
+                           (tycon,
+                            Vector.forall
+                            (cons, fn {args, ...} =>
+                             Vector.forall
+                             (args, isSmallType))))
+                       val () = destroyIsSmallType ()
+                       val {get: Type.t -> bool,
+                            destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | Datatype tc => getTycon tc
+                             | Ref t => get t
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | _ => true))
+                    in
+                       {isSmallType = get,
+                        destroyIsSmallType = destroy}
+                    end
              | 9 => {isSmallType = fn _ => true,
                      destroyIsSmallType = fn () => ()}
              | _ => Error.bug "ConstantPropagation.mkIsSmallType"
