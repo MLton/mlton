@@ -366,12 +366,12 @@ structure Value =
          ("ConstantPropagation.Value.globals",
           (Vector.layout layout) o #1,
           Option.layout (Vector.layout (Var.layout o #1)))
-         (fn (vs: t vector, newGlobal) =>
+         (fn (vs: t vector, isSmallType, newGlobal) =>
           Exn.withEscape
           (fn escape =>
            SOME (Vector.map
                  (vs, fn v =>
-                  case global (v, newGlobal) of
+                  case global (v, isSmallType, newGlobal) of
                      NONE => escape NONE
                    | SOME g => g)))) arg
       and global arg: (Var.t * Type.t) option =
@@ -379,7 +379,7 @@ structure Value =
          ("ConstantPropagation.Value.global",
           layout o #1,
           Option.layout (Var.layout o #1))
-         (fn (v as T s, newGlobal) =>
+         (fn (v as T s, isSmallType, newGlobal) =>
           let val {global = r, ty, value} = Set.! s
           in case !r of
                 No => NONE
@@ -387,9 +387,9 @@ structure Value =
               | NotComputed =>
                    let
                       val global = fn v =>
-                         global (v, newGlobal)
+                         global (v, isSmallType, newGlobal)
                       val globals = fn vs =>
-                         globals (vs, newGlobal)
+                         globals (vs, isSmallType, newGlobal)
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
@@ -398,7 +398,7 @@ structure Value =
                                  primApp: {targs: Type.t vector,
                                            args: Var.t vector} -> Exp.t,
                                  targ: Type.t) =
-                         case (!place, Type.isSmall targ) of
+                         case (!place, isSmallType targ) of
                             (Place.One (One.T {global = glob, extra, ...}), true) =>
                                let
                                   val init = makeInit extra
@@ -1036,8 +1036,9 @@ fun transform (program: Program.t): Program.t =
        *  - building up the global decs
        *)
       val {new = newGlobal, all = allGlobals} = Global.make ()
+      fun maybeGlobal x = Value.global (value x, Type.isSmall, newGlobal)
       fun replaceVar x =
-         case Value.global (value x, newGlobal) of
+         case maybeGlobal x of
             NONE => x
           | SOME (g, _) => g
       fun doitStatement (Statement.T {var, ty, exp}) =
@@ -1050,7 +1051,7 @@ fun transform (program: Program.t): Program.t =
             case var of
                NONE => keep ()
              | SOME var => 
-                  (case (Value.global (value var, newGlobal), exp) of
+                  (case (maybeGlobal var, exp) of
                       (NONE, _) => keep ()
                     | (SOME _, PrimApp {prim, ...}) =>
                          if Prim.maySideEffect prim
