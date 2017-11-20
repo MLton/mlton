@@ -264,6 +264,109 @@ structure Value =
                  ; coerce {from = c', to = c})) arg
          end
 
+      structure Raw =
+         struct
+            datatype t = T of {coercedTo: t list ref,
+                               raw: raw ref}
+            and raw =
+               Raw of bool
+             | Undefined (* no possible value *)
+             | Unknown (* many possible values *)
+
+            fun layout (T {raw, ...}) = layoutRaw (!raw)
+            and layoutRaw r =
+               let
+                  open Layout
+               in
+                  case r of
+                     Raw b => Bool.layout b
+                   | Undefined => str "undefined raw"
+                   | Unknown => str "unknown raw"
+               end
+
+            fun new r = T {coercedTo = ref [],
+                           raw = ref r}
+
+            fun equals (T {raw = r1, ...}, T {raw = r2, ...}) = r1 = r2
+
+            val equals =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.equals",
+                layout, layout, Bool.layout)
+               equals
+
+            val raw = new o Raw
+
+            fun undefined () = new Undefined
+            fun unknown () = new Unknown
+
+            fun makeUnknown (T {coercedTo, raw}): unit =
+               case !raw of
+                  Unknown => ()
+                | _ => (raw := Unknown
+                        ; List.foreach (!coercedTo, makeUnknown)
+                        ; coercedTo := [])
+
+            val makeUnknown =
+               Trace.trace
+               ("ConstantPropagation.Value.Raw.makeUnknown",
+                layout, Unit.layout)
+               makeUnknown
+
+            fun send (r: t, r': raw): unit =
+               let
+                  fun loop (r as T {coercedTo, raw}) =
+                     case (r', !raw) of
+                        (_, Unknown) => ()
+                      | (_, Undefined) => (raw := r'
+                                           ; List.foreach (!coercedTo, loop))
+                      | (Raw b', Raw b'') =>
+                           if b' = b''
+                              then ()
+                              else makeUnknown r
+                      | _ => makeUnknown r
+               in
+                  loop r
+               end
+
+            val send =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.send",
+                layout, layoutRaw, Unit.layout)
+               send
+
+            fun coerce {from = from as T {coercedTo, raw}, to: t}: unit =
+               if equals (from, to)
+                  then ()
+               else
+                  let
+                     fun push () = List.push (coercedTo, to)
+                  in
+                     case !raw of
+                        r as Raw _ => (push (); send (to, r))
+                      | Undefined => push ()
+                      | Unknown => makeUnknown to
+                  end
+
+            val coerce =
+               Trace.trace
+               ("ConstantPropagation.Value.Raw.coerce",
+                fn {from, to} => Layout.record [("from", layout from),
+                                                ("to", layout to)],
+                Unit.layout)
+               coerce
+
+            fun unify (r, r') =
+               (coerce {from = r, to = r'}
+                ; coerce {from = r', to = r})
+
+            val unify =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.unify",
+                layout, layout, Unit.layout)
+               unify
+         end
+
       structure Set = DisjointSet
       structure Unique = UniqueId ()
 
@@ -275,7 +378,7 @@ structure Value =
          Array of {birth: unit Birth.t,
                    elt: t,
                    length: t,
-                   raw: bool option ref}
+                   raw: Raw.t}
        | Const of Const.t
        | Datatype of data
        | Ref of {arg: t,
@@ -319,7 +422,7 @@ structure Value =
                   seq [str "array ", tuple [Birth.layout birth,
                                             layout length,
                                             layout elt,
-                                            Option.layout Bool.layout (!raw)]]
+                                            Raw.layout raw]]
              | Const c => Const.layout c
              | Datatype d => layoutData d
              | Ref {arg, birth, ...} =>
@@ -409,14 +512,16 @@ structure Value =
                           | _ => No
                       val g =
                          case value of
-                            Array {birth, length, raw, ...} =>
+                            Array {birth, length, raw = Raw.T {raw, ...}, ...} =>
                                if !Control.globalizeArrays then
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
-                                      Exp.PrimApp {args = args,
-                                                   prim = Prim.arrayAlloc
-                                                          {raw = valOf (!raw)},
-                                                   targs = targs},
+                                      case !raw of
+                                         Raw.Raw raw =>
+                                            Exp.PrimApp {args = args,
+                                                         prim = Prim.arrayAlloc {raw = raw},
+                                                         targs = targs}
+                                       | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
                                       Type.deArray ty)
                                else No
                           | Const (Const.T {const, ...}) =>
@@ -554,7 +659,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = ref (SOME false)}, ty)
+               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
           | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
          end
 
@@ -602,7 +707,7 @@ structure Value =
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.
           *)
-         fun make (const, data, refBirth, arrayBirth) =
+         fun make (const, data, refBirth, arrayBirth, raw) =
             let
                fun loop (t: Type.t): t =
                   new
@@ -611,7 +716,7 @@ structure Value =
                          Array {birth = arrayBirth (),
                                 elt = loop t,
                                 length = loop (Type.word (WordSize.seqIndex ())),
-                                raw = ref NONE}
+                                raw = raw ()}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
@@ -629,12 +734,14 @@ structure Value =
             make (Const.undefined,
                   Data.undefined,
                   Birth.undefined,
-                  Birth.undefined)
+                  Birth.undefined,
+                  Raw.undefined)
          val unknown =
             make (Const.unknown,
                   Data.unknown,
                   Birth.unknown,
-                  Birth.unknown)
+                  Birth.unknown,
+                  Raw.unknown)
       end
 
       fun select {tuple, offset, resultType = _} =
@@ -775,13 +882,7 @@ fun transform (program: Program.t): Program.t =
                         (Birth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
                          ; unify (x, x')
-                         ; (case (!r, !r') of
-                               (NONE, r') => r := r'
-                             | (r, NONE) => r' := r
-                             | (SOME b, SOME b') =>
-                                  (if b = b'
-                                      then ()
-                                      else error ())))
+                         ; Raw.coerce {from = r, to = r'})
                    | (Vector {length = n, elt = x},
                       Vector {length = n', elt = x'}) =>
                         (coerce {from = n, to = n'}
@@ -823,13 +924,7 @@ fun transform (program: Program.t): Program.t =
                           (Birth.unify (b, b')
                            ; unify (n, n')
                            ; unify (x, x')
-                           ; (case (!r, !r') of
-                                 (NONE, r') => r := r'
-                               | (r, NONE) => r' := r
-                               | (SOME b, SOME b') =>
-                                    (if b = b'
-                                        then ()
-                                        else error ())))
+                           ; Raw.unify (r, r'))
                      | (Vector {length = n, elt = x},
                         Vector {length = n', elt = x'}) =>
                           (unify (n, n')
@@ -861,9 +956,8 @@ fun transform (program: Program.t): Program.t =
             end
          fun makeUnknown (v: t): unit =
             case value v of
-               Array {length, elt, raw, ...} => (makeUnknown length
-                                                 ; makeUnknown elt
-                                                 ; raw := NONE)
+               Array {length, elt, ...} => (makeUnknown length
+                                            ; makeUnknown elt)
              | Const c => Const.makeUnknown c
              | Datatype d => makeDataUnknown d
              | Ref {arg, ...} => makeUnknown arg
@@ -902,7 +996,7 @@ fun transform (program: Program.t): Program.t =
                      val a = fromType resultType
                      val _ = coerce {from = length, to = arrayLength a}
                      val _ = Birth.coerce {from = birth, to = arrayBirth a}
-                     val _ = arrayRaw a := SOME raw
+                     val _ = Raw.coerce {from = Raw.raw raw, to = arrayRaw a}
                   in
                      a
                   end
@@ -1131,6 +1225,12 @@ fun transform (program: Program.t): Program.t =
        *)
       val {new = newGlobal, all = allGlobals} = Global.make ()
       fun maybeGlobal x = Value.global (value x, isSmallType, newGlobal)
+      val maybeGlobal =
+         Trace.trace
+         ("ConstantPropagation.maybeGlobal",
+          Var.layout,
+          Option.layout (Var.layout o #1))
+         maybeGlobal
       fun replaceVar x =
          case maybeGlobal x of
             NONE => x
