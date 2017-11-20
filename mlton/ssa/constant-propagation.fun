@@ -44,8 +44,8 @@ structure Value =
                                coercedTo: t list ref}
             and const =
                Const of Const.t
-              | Undefined (* no possible value *)
-              | Unknown (* many possible values *)
+             | Undefined (* no possible value *)
+             | Unknown (* many possible values *)
 
             fun layout (T {const, ...}) = layoutConst (!const)
             and layoutConst c =
@@ -316,18 +316,18 @@ structure Value =
          fun layout v =
             case value v of
                Array {birth, elt, length, raw, ...} =>
-                  seq [str "array", tuple [Birth.layout birth,
-                                           layout length,
-                                           layout elt,
-                                           Option.layout Bool.layout (!raw)]]
+                  seq [str "array ", tuple [Birth.layout birth,
+                                            layout length,
+                                            layout elt,
+                                            Option.layout Bool.layout (!raw)]]
              | Const c => Const.layout c
              | Datatype d => layoutData d
              | Ref {arg, birth, ...} =>
                   seq [str "ref ", tuple [layout arg, Birth.layout birth]]
              | Tuple vs => Vector.layout layout vs
-             | Vector {elt, length, ...} => seq [str "vector ",
-                                                 tuple [layout elt,
-                                                        layout length]]
+             | Vector {elt, length, ...} =>
+                  seq [str "vector ", tuple [layout elt,
+                                             layout length]]
              | Weak v => seq [str "weak ", layout v]
          and layoutData (Data {value, ...}) =
             case !value of
@@ -616,9 +616,9 @@ structure Value =
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
                     | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t => Vector 
-                         {elt = loop t,
-                          length = loop (Type.word (WordSize.seqIndex ()))}
+                    | Type.Vector t =>
+                         Vector {elt = loop t,
+                                 length = loop (Type.word (WordSize.seqIndex ()))}
                     | Type.Weak t => Weak (loop t)
                     | _ => Const (const ()), 
                    t)
@@ -748,7 +748,7 @@ fun transform (program: Program.t): Program.t =
              end) arg
          and coerces {froms: Value.t vector, tos: Value.t vector} =
             Vector.foreach2 (froms, tos, fn (from, to) =>
-                            coerce {from = from, to = to})
+                             coerce {from = from, to = to})
          and coerce arg =
             traceCoerce
             (fn {from, to} =>
@@ -861,8 +861,9 @@ fun transform (program: Program.t): Program.t =
             end
          fun makeUnknown (v: t): unit =
             case value v of
-               Array {length, elt, ...} => (makeUnknown length
-                                            ; makeUnknown elt)
+               Array {length, elt, raw, ...} => (makeUnknown length
+                                                 ; makeUnknown elt
+                                                 ; raw := NONE)
              | Const c => Const.makeUnknown c
              | Datatype d => makeDataUnknown d
              | Ref {arg, ...} => makeUnknown arg
@@ -959,7 +960,7 @@ fun transform (program: Program.t): Program.t =
                 | _ => (if Prim.maySideEffect prim
                            then Vector.foreach (args, sideEffect)
                         else ()
-                           ; unknown resultType)
+                        ; unknown resultType)
             end
          fun filter (variant, con, args) =
             case value variant of
