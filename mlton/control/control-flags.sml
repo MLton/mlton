@@ -811,6 +811,10 @@ val globalizeRefs = control {name = "globalize refs",
                              default = true,
                              toString = Bool.toString}
 
+val globalizeSmallIntInf = control {name = "globalize int-inf as small type)",
+                                    default = true,
+                                    toString = Bool.toString}
+
 val globalizeSmallType = control {name = "globalize small type",
                                   default = 1,
                                   toString = Int.toString}

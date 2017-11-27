@@ -198,6 +198,8 @@ signature CONTROL_FLAGS =
 
       val globalizeRefs: bool ref
 
+      val globalizeSmallIntInf: bool ref
+
       val globalizeSmallType: int ref
 
       (* Indentation used in laying out ILs. *)
