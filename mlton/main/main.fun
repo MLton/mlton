@@ -443,7 +443,7 @@ fun makeOptions {usage} =
         boolRef globalizeRefs),
        (Expert, "globalize-small-int-inf", " {false|true}", "globalize int-inf as small type",
         boolRef globalizeSmallIntInf),
-       (Expert, "globalize-small-type", " {0|1|2|3|9}", "globalize small type",
+       (Expert, "globalize-small-type", " {0|1|2|3|4|9}", "globalize small type",
         intRef globalizeSmallType),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
         boolRef Native.IEEEFP),

@@ -28,6 +28,11 @@ open S
 structure Multi = Multi (S)
 structure Global = Global (S)
 
+structure Graph = DirectedGraph
+structure Node = Graph.Node
+structure Size = TwoPointLattice (val bottom = "small"
+                                  val top = "large")
+
 structure Sconst = Const
 open Exp Transfer
 
@@ -1223,6 +1228,116 @@ fun transform (program: Program.t): Program.t =
                     in
                        {isSmallType = get,
                         destroyIsSmallType = destroy}
+                    end
+             | 4 => let
+                       val {get = tyconSize: Tycon.t -> Size.t, ...} =
+                          Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
+                       (* Force (mutually) recursive datatypes to top. *)
+                       val {get = nodeTycon: unit Node.t -> Tycon.t,
+                            set = setNodeTycon, ...} =
+                          Property.getSetOnce
+                          (Node.plist, Property.initRaise ("nodeTycon", Node.layout))
+                       val {get = tyconNode: Tycon.t -> unit Node.t,
+                            set = setTyconNode, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist, Property.initRaise ("tyconNode", Tycon.layout))
+                       val graph = Graph.new ()
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, ...} =>
+                           let
+                              val node = Graph.newNode graph
+                              val () = setTyconNode (tycon, node)
+                              val () = setNodeTycon (node, tycon)
+                           in
+                              ()
+                           end)
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {cons, tycon} =>
+                           let
+                              val n = tyconNode tycon
+                              val {get = dependsOn, destroy = destroyDependsOn} =
+                                 Property.destGet
+                                 (Type.plist,
+                                  Property.initRec
+                                  (fn (t, dependsOn) =>
+                                   case Type.dest t of
+                                      Array t => dependsOn t
+                                    | Datatype tc =>
+                                         (ignore o Graph.addEdge)
+                                         (graph, {from = n, to = tyconNode tc})
+                                    | Ref t => dependsOn t
+                                    | Tuple ts => Vector.foreach (ts, dependsOn)
+                                    | Vector t => dependsOn t
+                                    | _ => ()))
+                              val () =
+                                 Vector.foreach
+                                 (cons, fn {args, ...} =>
+                                  Vector.foreach (args, dependsOn))
+                              val () = destroyDependsOn ()
+                           in
+                              ()
+                           end)
+                       val () =
+                          List.foreach
+                          (Graph.stronglyConnectedComponents graph, fn ns =>
+                           let
+                              fun doit () =
+                                 List.foreach
+                                 (ns, fn n =>
+                                  Size.makeTop (tyconSize (nodeTycon n)))
+                           in
+                              case ns of
+                                 [n] => if Node.hasEdge {from = n, to = n}
+                                           then doit ()
+                                           else ()
+                               | _ => doit ()
+                           end)
+                       val {get = typeSize: Type.t -> Size.t,
+                            destroy = destroyTypeSize, ...} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, typeSize) =>
+                            let
+                               val s = Size.new ()
+                               fun dependsOn (t: Type.t): unit =
+                                  Size.<= (typeSize t, s)
+                               val () =
+                                  case Type.dest t of
+                                     Array _ => Size.makeTop s
+                                   | CPointer => ()
+                                   | Datatype tc => Size.<= (tyconSize tc, s)
+                                   | IntInf => if !Control.globalizeSmallIntInf
+                                                  then ()
+                                                  else Size.makeTop s
+                                   | Real _ => ()
+                                   | Ref t => dependsOn t
+                                   | Thread => Size.makeTop s
+                                   | Tuple ts => Vector.foreach (ts, dependsOn)
+                                   | Vector _ => Size.makeTop s
+                                   | Weak _ => ()
+                                   | Word _ => ()
+                            in
+                               s
+                            end))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {cons, tycon} =>
+                           let
+                              val s = tyconSize tycon
+                              fun dependsOn (t: Type.t): unit = Size.<= (typeSize t, s)
+                              val () =
+                                 Vector.foreach
+                                 (cons, fn {args, ...} =>
+                                  Vector.foreach (args, dependsOn))
+                           in
+                              ()
+                           end)
+                    in
+                       {isSmallType = not o Size.isTop o typeSize,
+                        destroyIsSmallType = destroyTypeSize}
                     end
              | 9 => {isSmallType = fn _ => true,
                      destroyIsSmallType = fn () => ()}
