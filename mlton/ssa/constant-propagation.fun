@@ -1130,11 +1130,16 @@ fun transform (program: Program.t): Program.t =
                            (fn (t, get) =>
                             case Type.dest t of
                                Array _ => false
+                             | CPointer => true
                              | Datatype _ => false
+                             | IntInf => false
+                             | Real _ => true
                              | Ref t => get t
+                             | Thread => false
                              | Tuple ts => Vector.forall (ts, get)
                              | Vector _ => false
-                             | _ => true))
+                             | Weak _ => true
+                             | Word _ => true))
                     in
                        {isSmallType = get,
                         destroyIsSmallType = destroy}
@@ -1163,11 +1168,16 @@ fun transform (program: Program.t): Program.t =
                            (fn (t, get) =>
                             case Type.dest t of
                                Array _ => false
+                             | CPointer => true
                              | Datatype tc => getTycon tc
+                             | IntInf => false
+                             | Real _ => true
                              | Ref t => get t
+                             | Thread => false
                              | Tuple ts => Vector.forall (ts, get)
                              | Vector _ => false
-                             | _ => true))
+                             | Weak _ => true
+                             | Word _ => true))
                     in
                        {isSmallType = get,
                         destroyIsSmallType = destroy}
@@ -1200,11 +1210,16 @@ fun transform (program: Program.t): Program.t =
                            (fn (t, get) =>
                             case Type.dest t of
                                Array _ => false
+                             | CPointer => true
                              | Datatype tc => getTycon tc
+                             | IntInf => false
+                             | Real _ => true
                              | Ref t => get t
+                             | Thread => false
                              | Tuple ts => Vector.forall (ts, get)
                              | Vector _ => false
-                             | _ => true))
+                             | Weak _ => true
+                             | Word _ => true))
                     in
                        {isSmallType = get,
                         destroyIsSmallType = destroy}
