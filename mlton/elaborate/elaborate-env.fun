@@ -795,12 +795,19 @@ structure Interface =
 
             val layoutLongRev = fn (strids, id, long) =>
                if long then layoutLongRev (strids, id) else id
-            fun layoutValSpec (strids, name, (sigStatus, sigScheme), {long}) =
+            fun layoutValSpec (strids, name, (sigStatus, sigScheme), {con, long}) =
                let
                   val rlzScheme = Scheme.toEnv sigScheme
                in
                   case sigStatus of
-                     Status.Con => NONE
+                     Status.Con =>
+                        if con
+                           then SOME (seq [str "con ",
+                                           layoutLongRev (strids, Ast.Vid.layout name, long),
+                                           str (if Ast.Vid.isSymbolic name then " : " else ": "),
+                                           layoutPrettyScheme rlzScheme])
+
+                           else NONE
                    | Status.Exn =>
                         SOME (seq [str "exception ",
                                    layoutLongRev (strids, Ast.Vid.layout name, long),
@@ -961,7 +968,7 @@ structure Interface =
                      fn (strids, name, (sigStatus, sigScheme)) =>
                      layoutValSpec
                      (strids, name, (sigStatus, sigScheme),
-                      {long = false})
+                      {con = false, long = false})
                   val layoutStrSpec =
                      fn (strids, name, I) =>
                      layoutStrSpec
@@ -1358,7 +1365,12 @@ structure Structure =
                layoutValSpec
                ([], name,
                 (Status.fromVid strVid, Interface.Scheme.fromEnv strScheme),
-                {long = long})
+                {con = false, long = long})
+            fun layoutValDefnFlat (name, (strVid, strScheme)) =
+               layoutValSpec
+               ([], name,
+                (Status.fromVid strVid, Interface.Scheme.fromEnv strScheme),
+                {con = true, long = long})
             fun layoutStrDefn (name, S) =
                let
                   val bind = seq [str "structure ", Ast.Strid.layout name, str ":"]
@@ -1395,6 +1407,45 @@ structure Structure =
                 | SOME I => layoutSig ([], I,
                                        {elide = elide,
                                         flexTyconMap = flexTyconMap})
+
+            fun layoutStrDefnFlat (name, S) =
+               let
+                  fun layoutStrDefn (strids, name, S as T {strs, types, vals, ...}) =
+                     let
+                        val strName = name
+                        fun layoutTypeDefn (name, strStr) =
+                           layoutTypeSpec
+                           (strName::strids, name,
+                            Interface.TypeStr.fromEnv strStr,
+                            {flexTyconMap = flexTyconMap,
+                             long = true})
+                        fun layoutValDefn (name, (strVid, strScheme)) =
+                           layoutValSpec
+                           (strName::strids, name,
+                            (Status.fromVid strVid, Interface.Scheme.fromEnv strScheme),
+                            {con = true, long = true})
+                        val layoutStrDefn = fn (name, S) =>
+                           layoutStrDefn (strName::strids, name, S)
+
+                        val bind = seq [str "structure ", layoutLongRev (strids, Ast.Strid.layout name), str ":"]
+                        val {abbrev, full} = layoutStr S
+                        fun doit (Info.T a, layout) =
+                           (align o Array.foldr)
+                           (a, [], fn ({domain, range, ...}, ls) =>
+                            case layout (domain, range) of
+                               NONE => ls
+                             | SOME l => l :: ls)
+                     in
+                        align [case abbrev () of
+                                  NONE => align [bind, indent (full ())]
+                                | SOME sigg => seq [bind, str " ", sigg],
+                               doit (types, SOME o layoutTypeDefn),
+                               doit (vals, layoutValDefn),
+                               doit (strs, SOME o layoutStrDefn)]
+                     end
+               in
+                  layoutStrDefn ([], name, S)
+               end
          in
             {destroy = destroy,
              destroyLayoutPrettyType = destroyLayoutPrettyType,
@@ -1407,10 +1458,12 @@ structure Structure =
              layoutSigFull = layoutSigFull,
              layoutStr = layoutStr,
              layoutStrDefn = layoutStrDefn,
+             layoutStrDefnFlat = layoutStrDefnFlat,
              layoutStrSpec = layoutStrSpec,
              layoutTypeDefn = layoutTypeDefn,
              layoutTypeSpec = layoutTypeSpec,
              layoutValDefn = layoutValDefn,
+             layoutValDefnFlat = layoutValDefnFlat,
              layoutValSpec = layoutValSpec}
          end
 
@@ -3165,8 +3218,9 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
       val indent = fn l => Layout.indent (l, 3)
       val paren = Layout.paren
 
-      val {destroy, layoutSig, layoutSigDefn, layoutStr, layoutStrDefn,
-           layoutTypeDefn, layoutValDefn, ...} =
+      val {destroy, layoutSig, layoutSigDefn,
+           layoutStr, layoutStrDefn, layoutStrDefnFlat,
+           layoutTypeDefn, layoutValDefn, layoutValDefnFlat, ...} =
          Structure.layouts {interfaceSigid = interfaceSigid,
                             layoutPrettyTycon = layoutPrettyTycon}
       val destroy = fn () =>
@@ -3243,9 +3297,9 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
            | SOME l => l :: ls)
       val res =
          align [doit (types, SOME o layoutTypeDefn),
-                doit (vals, layoutValDefn),
+                doit (vals, layoutValDefnFlat),
                 doit (sigs, SOME o layoutSigDefn),
-                doit (strs, SOME o layoutStrDefn),
+                doit (strs, SOME o layoutStrDefnFlat),
                 doit (fcts, SOME o layoutFctDefn),
                 doit (bass, SOME o layoutBasDefn)]
       val () = destroy ()
@@ -4081,7 +4135,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val spec =
                       layoutValSpec
                       (strids, name, (sigStatus, sigScheme),
-                       {long = true})
+                       {con = false, long = true})
                    val thing = Status.pretty sigStatus
 
                    val con = Con.newString o Ast.Vid.toString
