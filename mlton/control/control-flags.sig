@@ -356,6 +356,8 @@ signature CONTROL_FLAGS =
       (* Show the basis library. *)
       val showBasis: File.t option ref
 
+      val showBasisFlat: bool ref
+
       (* Show def-use information. *)
       val showDefUse: File.t option ref
 

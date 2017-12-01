@@ -398,7 +398,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
           | SOME f =>
                File.withOut
                (f, fn out =>
-                Layout.outputl (Env.layoutCurrentScope E, out))
+                Layout.outputl (Env.layoutCurrentScope (E, {flat = !Control.showBasisFlat}), out))
       val _ = Env.processDefUse E
       val _ =
          case !Control.exportHeader of

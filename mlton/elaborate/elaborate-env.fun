@@ -3195,7 +3195,7 @@ fun makeLayoutPrettyTyconAndFlexTycon (E, _, Io, {prefixUnset}) =
                                         ; layoutPrettyFlexTycon f)}
    end
 
-fun layout' (E: t, prefixUnset, keep): Layout.t =
+fun layout' (E: t, prefixUnset, keep, flat): Layout.t =
    let
       val {bass, fcts, sigs, strs, types, vals, ...} = current (E, keep)
       val bass = bass ()
@@ -3297,9 +3297,9 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
            | SOME l => l :: ls)
       val res =
          align [doit (types, SOME o layoutTypeDefn),
-                doit (vals, layoutValDefnFlat),
+                doit (vals, (if flat then layoutValDefnFlat else layoutValDefn)),
                 doit (sigs, SOME o layoutSigDefn),
-                doit (strs, SOME o layoutStrDefnFlat),
+                doit (strs, SOME o (if flat then layoutStrDefnFlat else layoutStrDefn)),
                 doit (fcts, SOME o layoutFctDefn),
                 doit (bass, SOME o layoutBasDefn)]
       val () = destroy ()
@@ -3307,13 +3307,13 @@ fun layout' (E: t, prefixUnset, keep): Layout.t =
       res
    end
 
-fun layout E = layout' (E, true, fn _ => true)
+fun layout E = layout' (E, true, fn _ => true, false)
 
-fun layoutCurrentScope (E as T {currentScope, ...}) =
+fun layoutCurrentScope (E as T {currentScope, ...}, {flat}) =
    let
       val s = !currentScope
    in
-      layout' (E, false, fn {scope, ...} => Scope.equals (s, scope))
+      layout' (E, false, fn {scope, ...} => Scope.equals (s, scope), flat)
    end
 
 (* ------------------------------------------------- *)

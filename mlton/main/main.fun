@@ -777,8 +777,10 @@ fun makeOptions {usage} =
                           "anns" => Show.Anns
                         | "path-map" => Show.PathMap
                         | _ => usage (concat ["invalid -show arg: ", s])))),
-       (Normal, "show-basis", " <file>", "write out the final basis environment",
+       (Normal, "show-basis", " <file>", "write final basis environment",
         SpaceString (fn s => showBasis := SOME s)),
+       (Expert, "show-basis-flat", " {false|true}", "show basis environment with long identifier names",
+        boolRef showBasisFlat),
        (Normal, "show-def-use", " <file>", "write def-use information",
         SpaceString (fn s => showDefUse := SOME s)),
        (Expert, "show-types", " {true|false}", "show types in ILs",
