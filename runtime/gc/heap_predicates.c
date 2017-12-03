@@ -9,13 +9,13 @@
 bool isPointerInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.start <= p 
-              and p + sizeofObjectNoMetaData (s, p) <= s->heap.start + s->heap.oldGenSize));
+              and p <= s->heap.start + s->heap.oldGenSize));
 }
 
 bool isPointerInNursery (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.nursery <= p
-              and p + sizeofObjectNoMetaData (s, p) <= s->frontier));
+              and p <= s->frontier));
 }
 
 #if ASSERT
