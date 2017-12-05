@@ -1,11 +1,12 @@
 #!/bin/bash
 
-docker rm $(docker ps -qa)
-docker rmi -f $(docker images -qa -f 'dangling=true')
-
-# build container
 NAME="mlton"
-docker build --no-cache=true -t $NAME .
 
-# run container
-docker run -i -t $NAME
+# Remove any containers which already have $NAME.
+docker image rm $NAME
+
+# build container, and assign it tag $NAME
+docker build -t $NAME .
+
+# run container with the tag $NAME.
+docker run --rm -it $NAME
