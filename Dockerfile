@@ -12,7 +12,6 @@ WORKDIR /root/mlton
 RUN autoreconf -vfi \
  && ./configure \
  && make \
- && make install \
- && rsync -a /usr/local/usr/ /usr/local/
+ && make install PREFIX=
 
 ENTRYPOINT ["make", "check"]
