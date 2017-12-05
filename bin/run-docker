@@ -1,0 +1,11 @@
+#!/bin/bash
+
+docker rm $(docker ps -qa)
+docker rmi -f $(docker images -qa -f 'dangling=true')
+
+# build container
+NAME="mlton"
+docker build --no-cache=true -t $NAME .
+
+# run container
+docker run -i -t $NAME
