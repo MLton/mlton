@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME="mlton"
+NAME="mlton-run-docker"
 
 # Remove any containers which already have $NAME.
 docker image rm $NAME
