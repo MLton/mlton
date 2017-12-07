@@ -75,29 +75,70 @@
      The easiest way is to install a pre-built binary package for MLton
      using your package manager. If using SML/NJ, see
      [Compiling with SML/NJ](http://mlton.org/SelfCompiling).
+ - GNU Autotools
 
 ### Build instructions
 
-MLton can be built from source using the usual `./configure && make && make install` 
-sequence to install under the system default installation directory
-(typically, `/usr/local`). Optionally, you can specify the `--prefix`
-argument to install MLton into a custom directory.
-
-You can instruct MLton to look for `gmp.h` outside your include
-path or for `libgmp` outside your library search path using
-`--with-gmp-lib` and `--with-gmp-include` configure options, as in:
+MLton uses GNU Autotools for its build system, so the first step is to generate the `./configure` script:
 
 ```shell
-gzip -cd mlton-*.tgz | tar xvf -
+autoreconf -vfi
+```
 
-# execute under the extracted directory
-./configure \
-  --prefix=$HOME/opt \
-  --with-gmp-include=/usr/local/include \
-  --with-gmp-lib=/usr/local/lib
+Now execute the `./configure` script and `make`, supplying any desired optional flags to `./configure`. See [Build Options](#build-options) for a complete list of available flags. 
+
+```shell
+./configure
 make
+```
+
+The build artifacts will now be located under `./build/`. To install these artifacts to the system directories, run the following. Note: Be sure to run this command with a user who has write access to the prefix directory you chose during the `./configure` step.
+
+```shell
 make install
 ```
+
+To create an archive with a MLton executable:
+```shell
+make binary-release && make clean
+cd .. && ls mlton*.tgz
+```
+The archive can be extracted anywhere. The MLton binary can be run with
+`<root>/mlton/bin/mlton` (provided the C compiler and the GMP
+dependency can be found). To uninstall, simply delete the directory 
+containing the MLton installation (`<root>/mlton`).
+
+
+### Build Options
+
+**--prefix**
+
+Specifies the system installation location used by `make install`. The default on most systems is `/usr/local`. 
+
+Usage:
+
+> ./configure --prefix=/usr
+
+**--with-gmp-lib**
+
+Specifies the directory containing `gmp.h`. This is useful if GMP is located outside your compiler include path.
+
+Usage:
+
+> ./configure --with-gmp-lib=/usr/local/lib
+
+**--with-gmp-include**
+
+Specifies the directory containing `libgmp`. This is useful if GMP is located outside your library search path.
+
+Usage:
+
+> ./configure --with-gmp-include=/usr/local/include
+
+**XCFLAGS**
+
+**XLDFLAGS**
+
 
 Optionally, you can pass C compiler and linker flags to set
 MLton's `-cc-opt` and `-link-opt`
@@ -108,24 +149,6 @@ via `XCFLAGS` and `XLDFLAGS` environment variables:
   XCFLAGS='-I/usr/local/include' \
   XLDFLAGS='-L/usr/local/lib'
 ```
-
-If building from source cloned from Github, first generate the `configure`
-script (requires `GNU Autotools`):
-```shell
-autoreconf -vfi
-# can now ./configure && make && make check && make install && make clean
-```
-
-To create an archive with a MLton executable:
-```shell
-autoreconf -vfi
-./configure && make && make binary-release && make clean
-cd .. && ls mlton*.tgz
-```
-The archive can be extracted anywhere. The MLton binary can be run with
-`<root>/mlton/bin/mlton` (provided the C compiler and the GMP
-dependency can be found). To uninstall, simply delete the directory 
-containing the MLton installation (`<root>/mlton`).
 
 
 ## Resources
