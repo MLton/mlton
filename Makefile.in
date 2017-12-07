@@ -313,22 +313,14 @@ check:
 # The DESTDIR is added onto them to indicate where the Makefile actually
 # puts them.
 DESTDIR := @prefix@
-PREFIX := /usr
-ifeq ($(findstring $(TARGET_OS), darwin freebsd solaris), $(TARGET_OS))
-PREFIX := /usr/local
-endif
-ifeq ($(TARGET_OS), mingw)
-PREFIX := /mingw
-endif
-prefix := $(PREFIX)
 MAN_PREFIX_EXTRA :=
-TBIN := $(DESTDIR)$(prefix)/bin
+TBIN := $(DESTDIR)/bin
 ULIB := lib/mlton
-TLIB := $(DESTDIR)$(prefix)/$(ULIB)
-TMAN := $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
-TDOC := $(DESTDIR)$(prefix)/share/doc/mlton
+TLIB := $(DESTDIR)/$(ULIB)
+TMAN := $(DESTDIR)$(MAN_PREFIX_EXTRA)/man/man1
+TDOC := $(DESTDIR)/share/doc/mlton
 ifeq ($(findstring $(TARGET_OS), solaris mingw), $(TARGET_OS))
-TDOC := $(DESTDIR)$(prefix)/doc/mlton
+TDOC := $(DESTDIR)/doc/mlton
 endif
 TEXM := $(TDOC)/examples
 
