@@ -1426,7 +1426,7 @@ fun commandLine (args: string list): unit =
                            System.system
                             (gcc,
                              List.concat
-                             [[ "-std=gnu99", "-c" ],
+                             [[ "-c" ],
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
