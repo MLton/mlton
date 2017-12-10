@@ -127,6 +127,9 @@ The archive can be extracted anywhere. The MLton binary can be run with
 dependency can be found). To uninstall, simply delete the directory 
 containing the MLton installation (`<root>/mlton`).
 
+To run regression tests on `MLton` compiled locally in a Docker container, 
+execute `./bin/run-docker`.
+
 
 ## Resources
 

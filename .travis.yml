@@ -4,7 +4,7 @@ compiler:
   - gcc
   - clang
 env:
-  - PREFIX=$HOME/opt/mlton
+  - PREFIX=/usr/local
 install:
   - sudo apt-get -qq update
   - sudo apt-get install -qq build-essential git autoconf mlton
