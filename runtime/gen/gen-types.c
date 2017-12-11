@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -23,9 +23,6 @@ static const char* mlTypesHPrefix[] = {
   "/* We need these because in header files for exported SML functions, ",
   " * types.h is included without cenv.h.",
   " */",
-  "#ifndef _ISOC99_SOURCE",
-  "#define _ISOC99_SOURCE",
-  "#endif",
   "#if (defined (_AIX) || defined (__hpux__) || defined (__OpenBSD__))",
   "#include <inttypes.h>",
   "#elif (defined (__sun__))",

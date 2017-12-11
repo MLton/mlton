@@ -40,7 +40,7 @@ AC_CONFIG_HEADERS([config.h])
 ###############################################################################
 
 AC_PROG_CC
-AC_PROG_CC_STDC # enforce C99 standard whenever calling CC
+AC_PROG_CC_STDC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET

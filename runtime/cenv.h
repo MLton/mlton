@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -10,16 +10,6 @@
 #ifndef _MLTON_CENV_H_
 #define _MLTON_CENV_H_
 
-/* GNU C Library Feature Macros */
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-// #define _XOPEN_SOURCE 600
-/* Only enable _POSIX_C_SOURCE on platforms that don't have broken
- * system headers.
- */
-#if (defined (__linux__) || defined(__GNU__))
-#define _POSIX_C_SOURCE 200112L
-#endif
 #define _FILE_OFFSET_BITS 64
 
 #ifndef ASSERT
