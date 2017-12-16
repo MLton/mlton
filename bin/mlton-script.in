@@ -83,12 +83,12 @@ fi
 # You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
 gmpIncDir=
 if [ -n "$gmpIncDir" ]; then
-gmpCCOpts="-cc-opt '-I$gmpIncDir'"
+gmpCCOpts="-cc-opt -I$gmpIncDir"
 fi
 # You may need to set 'gmpLibDir' so the C compiler can find libgmp.
 gmpLibDir=
 if [ -n "$gmpLibDir" ]; then
-gmpLinkOpts="-link-opt '-L$gmpLibDir' -target-link-opt netbsd '-Wl,-R$gmpLibDir'"
+gmpLinkOpts="-link-opt -L$gmpLibDir -target-link-opt netbsd -Wl,-R$gmpLibDir"
 fi
 
 # For align-{functions,jumps,loops}, we use -m for now instead of
