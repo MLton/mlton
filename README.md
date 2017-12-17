@@ -106,7 +106,7 @@ via `XCFLAGS` and `XLDFLAGS` environment variables:
 ```shell
 ./configure \
   XCFLAGS='-I/usr/local/include' \
-  XLDFLAGS='-L/usr/local/lib'
+  XLDFLAGS='-L/usr/local/lib -Wl,-rpath=/usr/local/lib'
 ```
 
 If building from source cloned from Github, first generate the `configure`

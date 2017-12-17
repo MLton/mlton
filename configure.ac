@@ -17,16 +17,20 @@ AC_CONFIG_SRCDIR([bin/mlton-script.in])
 AC_ARG_WITH([gmp-include],
             [AS_HELP_STRING([--with-gmp-include=PATH],
                             [specify directory for the installed GMP include file (gmp.h)])],
+            [with_gmp_include="$withval"]
             [CPPFLAGS="$CPPFLAGS -I$withval"],
             [with_gmp_include='']
            )
+AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
 
 AC_ARG_WITH([gmp-lib],
             [AS_HELP_STRING([--with-gmp-lib=PATH],
                             [specify directory for the installed GMP library (libgmp.so or libgmp.a or libgmp.dylib)])],
+            [with_gmp_lib="$withval"]
             [LDFLAGS="$LDFLAGS -L$withval"],
             [with_gmp_lib='']
            )
+AC_SUBST(WITH_GMP_LIB_DIR, $with_gmp_lib)
 
 AC_ARG_VAR([XCFLAGS],[extra C compiler flags])
 AC_ARG_VAR([XLDFLAGS],[extra linker flags])
