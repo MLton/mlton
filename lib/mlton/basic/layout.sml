@@ -21,11 +21,12 @@ structure String = String0
 datatype t = T of {length: int,
                    tree: tree}
 and tree =
-   Empty
+    Empty
   | String of string
   | Sequence of t list
   | Align of {force: bool, rows: t list}
   | Indent of t * int
+  | Compact of t
 
 fun length (T {length, ...}) = length
 
@@ -72,6 +73,8 @@ end
 
 fun indent (t, n) = T {length = length t, tree = Indent (t, n)}
 
+fun compact t = T {length = length t, tree = Compact t}
+
 fun blanks (n: int): string =
    String.make (n, #" ")
 
@@ -90,7 +93,10 @@ fun outputTree (t, out) =
                                   ; print (Int.toString n)
                                   ; print " "
                                   ; loop t
-                                  ; print ")")))
+                                  ; print ")")
+              | Compact t => (print "(Compact "
+                              ; loop t
+                              ; print ")")))
       and loops (s, ts) = (print "("
                            ; print s
                            ; app (fn t => (print " " ; loop t)) ts
@@ -112,6 +118,7 @@ fun toString t =
                       fold (ts, loop (t, accum), fn (t, ac) =>
                             loop (t, " " :: ac)))
           | Indent (t, _) => loop (t, accum)
+          | Compact t => loop (t, accum)
    in
       String.concat (rev (loop (t, [])))
    end
@@ -130,12 +137,13 @@ fun print {tree: t,
                   Empty => ()
                 | String s => print s
                 | Sequence ts => app loop ts
-                | Indent (t, _) => loop t
                 | Align {rows, ...} =>
-                     case rows of
-                        [] => ()
-                      | t :: ts => (loop t
-                                    ; app (fn t => (print " "; loop t)) ts)
+                     (case rows of
+                         [] => ()
+                       | t :: ts => (loop t
+                                     ; app (fn t => (print " "; loop t)) ts))
+                | Indent (t, _) => loop t
+                | Compact t => loop t
             val at = at + length t
          in loop t
             ; {at = at, printAt = at}
@@ -154,14 +162,13 @@ fun print {tree: t,
             (*outputTree (t, Out.error)*)
             case tree of
                Empty => state
-             | Indent (t, n) => loop (t, {at = at, printAt = printAt + n})
-             | Sequence ts => fold (ts, state, loop)
              | String s =>
                   (prePrint ()
                    ; print s
                    ; let val at = printAt + length
                      in {at = at, printAt = at}
                      end)
+             | Sequence ts => fold (ts, state, loop)
              | Align {force, rows} =>
                   if not force andalso printAt + length <= lineWidth
                      then (prePrint ()
@@ -173,6 +180,10 @@ fun print {tree: t,
                               (ts, loop (t, state), fn (t, _) =>
                                (newline ()
                                 ; loop (t, {at = 0, printAt = printAt}))))
+             | Indent (t, n) => loop (t, {at = at, printAt = printAt + n})
+             | Compact t => (prePrint ()
+                             ; outputCompact (t, state))
+
          end
    in ignore (loop (tree, {at = 0, printAt = 0}))
    end
