@@ -22,6 +22,7 @@ local
    open Layout
 in
    val align = align
+   val alignPrefix = alignPrefix
    (* val empty = empty *)
    val mayAlign = mayAlign
    val seq = seq
@@ -479,12 +480,7 @@ structure TypeStr =
                         if !extra
                            then List.snoc (cons, str "...")
                            else cons
-                     val cons =
-                        (mayAlign o List.mapi)
-                        (cons, fn (i, l) =>
-                         if i = 0
-                            then Layout.indent (l, 2)
-                            else seq [str "| ", l])
+                     val cons = alignPrefix (cons, "| ")
                   in
                      cons
                   end
@@ -896,8 +892,8 @@ structure Interface =
                                  List.mapi
                                  (cons, fn (i, l) =>
                                   if i = 0
-                                     then Layout.indent (l, 2)
-                                     else seq [str "| ", l])
+                                     then l
+                                     else Layout.indent (seq [str "| ", l], ~2))
                               val rest =
                                  if repl
                                     then let
@@ -906,7 +902,7 @@ structure Interface =
                                                     lay (EtypeStr.apply (rlzStr, tyargs)),
                                                     str " *)"]
                                          in
-                                            List.snoc (cons, repl)
+                                            List.snoc (cons, Layout.indent (repl, ~2))
                                          end
                                     else cons
                            in
@@ -1109,10 +1105,6 @@ structure Interface =
                   val wheres = rev (!wheres)
                   val lay =
                      align (Ast.Sigid.layout s :: wheres)
-                  val lay =
-                     if compact
-                        then Layout.compact lay
-                        else lay
                in
                   lay
                end
@@ -3342,8 +3334,15 @@ fun layout' (E: t, {compact, def, flat, keep, prefixUnset}): Layout.t =
                   NONE => {abbrev = SOME (str "???"), full = fn () => str "???"}
                 | SOME res => let
                                  val {abbrev, full} = layoutStr (res, {compact = compact})
+                                 val abbrev =
+                                    case abbrev () of
+                                       NONE => NONE
+                                     | SOME sigg =>
+                                          SOME (if compact
+                                                   then Layout.compact sigg
+                                                   else sigg)
                               in
-                                 {abbrev = abbrev (), full = full}
+                                 {abbrev = abbrev, full = full}
                               end
             val def =
                if def
@@ -4281,12 +4280,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                                                                    if !extra
                                                                       then List.snoc (cons, str "...")
                                                                       else cons
-                                                                val cons =
-                                                                   (mayAlign o List.mapi)
-                                                                   (cons, fn (i, l) =>
-                                                                    if i = 0
-                                                                       then Layout.indent (l, 2)
-                                                                       else seq [str "| ", l])
+                                                                val cons = alignPrefix (cons, "| ")
                                                              in
                                                                 SOME cons
                                                              end
