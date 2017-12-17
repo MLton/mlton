@@ -7,7 +7,6 @@ set -e
 dir=`dirname "$0"`
 lib=`cd "$dir/../lib/mlton" && pwd`
 eval `"$lib/platform"`
-gcc='gcc'
 case "$HOST_OS" in
 mingw)
 	exe='.exe'
@@ -90,6 +89,7 @@ gmpLibDir=
 if [ -n "$gmpLibDir" ]; then
 gmpLinkOpts="-link-opt -L$gmpLibDir -link-opt -Wl,-rpath=$gmpLibDir"
 fi
+# alternatively, export LD_LIBRARY_PATH=$gmpLibDir:$LD_LIBRARY_PATH
 
 # For align-{functions,jumps,loops}, we use -m for now instead of
 # -f because old gcc's will barf on -f, while newer ones only warn
@@ -98,7 +98,7 @@ fi
 
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
-        -cc "$gcc"                                               \
+        -cc "$CC"                                               \
         $xcflags $xldflags                                       \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1 -fno-common'                                \
