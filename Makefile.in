@@ -37,6 +37,8 @@ CP := /bin/cp -fpR
 GZIP := gzip --force --best
 RANLIB := @RANLIB@
 SED := @SED@
+CC := @CC@
+
 
 
 # Allow for custom paths to GMP include and library files
@@ -229,7 +231,7 @@ runtime:
 
 .PHONY: script
 script:
-	$(SED) -e "/^gmpIncDir=/s;.*;gmpIncDir='$(WITH_GMP_INC_DIR)';" -e "/^gmpLibDir=/s;.*;gmpLibDir='$(WITH_GMP_LIB_DIR)';"	\
+	$(SED) -e "/^CC=/s;.*;CC='$(CC)';"  -e "/^gmpIncDir=/s;.*;gmpIncDir='$(WITH_GMP_INC_DIR)';" -e "/^gmpLibDir=/s;.*;gmpLibDir='$(WITH_GMP_LIB_DIR)';"	\
 		<bin/mlton-script >"$(MLTON)"
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"

@@ -2,6 +2,9 @@
 
 # This script calls MLton.
 
+# gcc or clang
+CC=
+
 set -e
 
 dir=`dirname "$0"`
