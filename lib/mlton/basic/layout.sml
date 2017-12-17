@@ -235,8 +235,7 @@ fun alignPrefix (ts, prefix) =
    case ts of
       [] => empty
     | t :: ts =>
-         mayAlign [t, indent (mayAlign (map (fn t => seq [str prefix, t]) ts),
-                              ~ (String.size prefix))]
+         mayAlign (t::(map (fn t => indent (seq [str prefix, t], ~ (String.size prefix))) ts))
 
 local
    fun fillAux ts =
