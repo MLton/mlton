@@ -37,7 +37,7 @@ CP := /bin/cp -fpR
 GZIP := gzip --force --best
 RANLIB := @RANLIB@
 SED := @SED@
-CC := @CC@
+CC := $(shell echo "@CC@" | $(SED) 's/ .*//')
 
 
 
