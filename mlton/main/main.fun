@@ -779,6 +779,14 @@ fun makeOptions {usage} =
                         | _ => usage (concat ["invalid -show arg: ", s])))),
        (Normal, "show-basis", " <file>", "write final basis environment",
         SpaceString (fn s => showBasis := SOME s)),
+       (Expert, "show-basis-compact", " {false|true}", "show basis environment in compact form",
+        boolRef showBasisCompact),
+       (Expert, "show-basis-def", " {false|true}", "show basis environment with definition source position",
+        boolRef showBasisDef),
+       (Expert, "show-basis-extra", " {false|true}", "meta-option for -show-basis-compact, -show-basis-def, and -show-basis-flat",
+        Bool (fn b => (showBasisCompact := b
+                       ; showBasisDef := b
+                       ; showBasisFlat := b))),
        (Expert, "show-basis-flat", " {false|true}", "show basis environment with long identifier names",
         boolRef showBasisFlat),
        (Normal, "show-def-use", " <file>", "write def-use information",

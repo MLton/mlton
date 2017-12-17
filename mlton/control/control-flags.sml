@@ -1121,6 +1121,12 @@ val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}
 
+val showBasisCompact = control {name = "show basis compact",
+                                default = false,
+                                toString = Bool.toString}
+val showBasisDef = control {name = "show basis def",
+                            default = false,
+                            toString = Bool.toString}
 val showBasisFlat = control {name = "show basis flat",
                              default = false,
                              toString = Bool.toString}

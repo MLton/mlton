@@ -798,20 +798,29 @@ structure Interface =
                   #1 (layoutPrettyType t)
                end
 
-            fun layoutValSpec (strids, name, (sigStatus, sigScheme), {con, def}) =
+            fun layoutValSpec (strids, name, (sigStatus, sigScheme), {compact, con, def}) =
                let
                   val rlzScheme = Scheme.toEnv sigScheme
                   fun doit kw =
-                     SOME (mayAlign
+                     let
+                        val lay =
+                           mayAlign
                            [seq [str kw, str " ",
                                  layoutLongRev (strids, Ast.Vid.layout name),
-                                 str (if Ast.Vid.isSymbolic name then " :" else ":")],
-                            indent (layoutPrettyScheme rlzScheme),
+                                 str (if Ast.Vid.isSymbolic name then " : " else ": "),
+                                 layoutPrettyScheme rlzScheme],
                             indent (if def
-                                       then seq [str "(* ",
+                                       then seq [str "(* @ ",
                                                  Region.layout (Ast.Vid.region name),
                                                  str " *)"]
-                                       else empty)])
+                                       else empty)]
+                        val lay =
+                           if compact
+                              then Layout.compact lay
+                              else lay
+                     in
+                        SOME lay
+                     end
                in
                   case sigStatus of
                      Status.Con =>
@@ -822,27 +831,31 @@ structure Interface =
                         if con
                            then doit "exn"
                            else let
-                                   val (kwOpt, tyOpt) =
-                                      case Etype.deArrowOpt (Escheme.ty rlzScheme) of
-                                         NONE => (empty, empty)
-                                       | SOME (ty, _) => (str " of", #1 (layoutPrettyType ty))
+                                   val lay =
+                                      mayAlign
+                                      [seq [str "exception ",
+                                            layoutLongRev (strids, Ast.Vid.layout name),
+                                            case Etype.deArrowOpt (Escheme.ty rlzScheme) of
+                                               NONE => empty
+                                             | SOME (ty, _) => seq [str " of ",
+                                                                    #1 (layoutPrettyType ty)]],
+                                       indent (if def
+                                                  then seq [str "(* @ ",
+                                                            Region.layout (Ast.Vid.region name),
+                                                            str " *)"]
+                                                  else empty)]
+                                   val lay =
+                                      if compact
+                                         then Layout.compact lay
+                                         else lay
                                 in
-                                   SOME (mayAlign
-                                         [seq [str "exception ",
-                                               layoutLongRev (strids, Ast.Vid.layout name),
-                                               kwOpt],
-                                          indent tyOpt,
-                                          indent (if def
-                                                     then seq [str "(* ",
-                                                               Region.layout (Ast.Vid.region name),
-                                                               str " *)"]
-                                                     else empty)])
+                                   SOME lay
                                 end
                    | Status.Var =>
                         doit "val"
                end
             fun layoutTypeSpec (strids, name, sigStr,
-                                {def, flexTyconMap}) =
+                                {compact, def, flexTyconMap}) =
                let
                   val lay = #1 o layoutPrettyType
                   val rlzStr = TypeStr.toEnv sigStr
@@ -906,26 +919,29 @@ structure Interface =
                       | Type {admitsEquality} =>
                            (if admitsEquality then "eqtype" else "type",
                             NONE)
-               in
-                  mayAlign
-                  [seq [str kw, str " ",
-                        tyvars,
-                        if isEmpty tyvars then empty else str " ",
-                        layoutLongRev (strids, Ast.Tycon.layout name),
-                        if Option.isSome rest
-                           then str " ="
-                           else empty],
-                   indent (case rest of
+                  val lay =
+                     mayAlign
+                     [seq [str kw, str " ",
+                           tyvars,
+                           if isEmpty tyvars then empty else str " ",
+                           layoutLongRev (strids, Ast.Tycon.layout name),
+                           case rest of
                               NONE => empty
-                            | SOME rest => rest),
-                   indent (if def
-                              then seq [str "(* ",
-                                        Region.layout (Ast.Tycon.region name),
-                                        str " *)"]
-                              else empty)]
+                            | SOME rest => seq [str " = ", rest]],
+                      indent (if def
+                                 then seq [str "(* @ ",
+                                           Region.layout (Ast.Tycon.region name),
+                                           str " *)"]
+                                 else empty)]
+                  val lay =
+                     if compact
+                        then Layout.compact lay
+                        else lay
+               in
+                  lay
                end
             fun layoutStrSpec (strids, name, I,
-                               {def, elide, flexTyconMap}) =
+                               {compact, def, elide, flexTyconMap}) =
                let
                   val bind = seq [str "structure ",
                                   layoutLongRev (strids, Ast.Strid.layout name),
@@ -937,39 +953,56 @@ structure Interface =
                       fn (flexTyconMap, _) => flexTyconMap)
                   val {abbrev, full} =
                      layoutSig (I,
-                                {elide = elide,
+                                {compact = compact,
+                                 elide = elide,
                                  flexTyconMap = flexTyconMap})
+                  val def =
+                     if def
+                        then seq [str "(* @ ",
+                                  Region.layout (Ast.Strid.region name),
+                                  str " *)"]
+                        else empty
+                  val full = fn () =>
+                     align [bind, indent (full ()), indent def]
                in
-                  mayAlign
-                  [bind,
-                   indent (case abbrev () of
-                              NONE => full ()
-                            | SOME sigg => sigg),
-                   indent (if def
-                              then seq [str "(* ",
-                                        Region.layout (Ast.Strid.region name),
-                                        str " *)"]
-                              else empty)]
+                  case abbrev () of
+                     NONE => full ()
+                   | SOME sigg =>
+                        let
+                           val lay =
+                              mayAlign
+                              [seq [bind, str " ", sigg],
+                               indent def]
+                           val lay =
+                              if compact
+                                 then Layout.compact lay
+                                 else lay
+                        in
+                           lay
+                        end
                end
             and layoutSig (I,
-                           {elide, flexTyconMap}) =
+                           {compact, elide, flexTyconMap}) =
                let
                   fun abbrev () =
                      case interfaceSigid (Interface.original I) of
                         NONE => NONE
                       | SOME (s, I') =>
                            SOME (layoutSigAbbrev (s, I', I,
-                                                  {flexTyconMap = flexTyconMap}))
+                                                  {compact = compact,
+                                                   flexTyconMap = flexTyconMap}))
                   fun full () =
                      layoutSigFull (I,
-                                    {elide = elide,
+                                    {compact = compact,
+                                     elide = elide,
                                      flexTyconMap = flexTyconMap})
                in
                   {abbrev = abbrev,
                    full = full}
                end
             and layoutSigFull (I,
-                               {elide: {strs: (int * int) option,
+                               {compact,
+                                elide: {strs: (int * int) option,
                                         types: (int * int) option,
                                         vals: (int * int) option},
                                 flexTyconMap}) =
@@ -1001,19 +1034,22 @@ structure Interface =
                      fn (name, sigStr) =>
                      layoutTypeSpec
                      ([], name, sigStr,
-                      {def = false,
+                      {compact = compact,
+                       def = false,
                        flexTyconMap = flexTyconMap})
                   val layoutValSpec =
                      fn (name, (sigStatus, sigScheme)) =>
                      layoutValSpec
                      ([], name, (sigStatus, sigScheme),
-                      {con = false,
+                      {compact = compact,
+                       con = false,
                        def = false})
                   val layoutStrSpec =
                      fn (name, I) =>
                      layoutStrSpec
                      ([], name, I,
-                      {def = false,
+                      {compact = compact,
+                       def = false,
                        elide = elide,
                        flexTyconMap = flexTyconMap})
                in
@@ -1023,7 +1059,7 @@ structure Interface =
                                         doit (strs, SOME o layoutStrSpec, #strs elide)]),
                          str "end"]
                end
-            and layoutSigAbbrev (s, I', I, {flexTyconMap}) =
+            and layoutSigAbbrev (s, I', I, {compact, flexTyconMap}) =
                let
                   val flexTyconMap' =
                      Interface.flexibleTycons I'
@@ -1061,8 +1097,9 @@ structure Interface =
                                            layoutTypeSpec (strids,
                                                            name,
                                                            Interface.TypeStr.abs sigStr,
-                                                           {flexTyconMap = flexTyconMap,
-                                                            def = false})])
+                                                           {compact = compact,
+                                                            def = false,
+                                                            flexTyconMap = flexTyconMap})])
                                 | SOME _ => ()
                             end)
                      in
@@ -1070,10 +1107,16 @@ structure Interface =
                      end
                   val () = loop ([], flexTyconMap', I, flexTyconMap)
                   val wheres = rev (!wheres)
+                  val lay =
+                     align (Ast.Sigid.layout s :: wheres)
+                  val lay =
+                     if compact
+                        then Layout.compact lay
+                        else lay
                in
-                  align (Ast.Sigid.layout s :: wheres)
+                  lay
                end
-            fun layoutSigDefn (name, I, {def}) =
+            fun layoutSigDefn (name, I, {compact, def}) =
                let
                   fun realize (TyconMap.T {strs, types}, strids) =
                      let
@@ -1102,24 +1145,38 @@ structure Interface =
                   val () = realize (flexTyconMap, [])
                   val bind = seq [str "signature ", Ast.Sigid.layout name, str " ="]
                   val {abbrev, full} = layoutSig (rlzI,
-                                                  {elide = {strs = NONE,
+                                                  {compact = compact,
+                                                   elide = {strs = NONE,
                                                             types = NONE,
                                                             vals = NONE},
                                                    flexTyconMap = flexTyconMap})
                   val origI = Interface.original I
+                  val def =
+                     if def
+                        then seq [str "(* @ ",
+                                  Region.layout (Ast.Sigid.region name),
+                                  str " *)"]
+                        else empty
+                  val full = fn () =>
+                     align [bind, indent (full ()), indent def]
                in
-                  mayAlign
-                  [bind,
-                   indent (if Interface.equals (I, origI)
-                              then full ()
-                              else (case abbrev () of
-                                       NONE => full ()
-                                     | SOME sigg => sigg)),
-                   indent (if def
-                              then seq [str "(* ",
-                                        Region.layout (Ast.Sigid.region name),
-                                        str " *)"]
-                              else empty)]
+                  if Interface.equals (I, origI)
+                     then full ()
+                     else (case abbrev () of
+                              NONE => full ()
+                            | SOME sigg =>
+                                 let
+                                    val lay =
+                                       mayAlign
+                                       [seq [bind, str " ", sigg],
+                                        indent def]
+                                    val lay =
+                                       if compact
+                                          then Layout.compact lay
+                                          else lay
+                                 in
+                                    lay
+                                 end)
                end
          in
             {destroy = fn () => (destroyLayoutPrettyType ()
@@ -1146,7 +1203,8 @@ structure Interface =
             val res =
                layoutSigFull
                (I,
-                {elide = {strs = NONE,
+                {compact = false,
+                 elide = {strs = NONE,
                           types = NONE,
                           vals = NONE},
                  flexTyconMap = TyconMap.empty ()})
@@ -1398,17 +1456,18 @@ structure Structure =
                Interface.layouts {interfaceSigid = interfaceSigid,
                                   layoutPrettyTycon = layoutPrettyTycon}
 
-            fun layoutTypeDefn (strids, name, strStr, {def}) =
+            fun layoutTypeDefn (strids, name, strStr, {compact, def}) =
                layoutTypeSpec
                (strids, name,
                 Interface.TypeStr.fromEnv strStr,
-                {def = def,
+                {compact = compact,
+                 def = def,
                  flexTyconMap = flexTyconMap})
-            fun layoutValDefn (strids, name, (strVid, strScheme), {def}) =
+            fun layoutValDefn (strids, name, (strVid, strScheme), {compact, con, def}) =
                layoutValSpec
                (strids, name,
                 (Status.fromVid strVid, Interface.Scheme.fromEnv strScheme),
-                {con = true, def = def})
+                {compact = compact, con = con, def = def})
             local
                fun toInterface (T {interface, strs, types, vals, ...}) =
                   case interface of
@@ -1437,16 +1496,18 @@ structure Structure =
                         end
                    | SOME I => I
             in
-               fun layoutStrDefn (strids, name, S, {def}) =
+               fun layoutStrDefn (strids, name, S, {compact, def}) =
                   layoutStrSpec
                   (strids, name, toInterface S,
-                   {def = def,
+                   {compact = compact,
+                    def = def,
                     elide = elide,
                     flexTyconMap = flexTyconMap})
-               fun layoutStr S =
+               fun layoutStr (S, {compact}) =
                   layoutSig
                   (toInterface S,
-                   {elide = elide,
+                   {compact = compact,
+                    elide = elide,
                     flexTyconMap = flexTyconMap})
             end
          in
@@ -1473,7 +1534,7 @@ structure Structure =
             val {destroy, layoutStr, ...} =
                layouts {interfaceSigid = fn _ => NONE,
                         layoutPrettyTycon = Tycon.layoutPrettyDefault}
-            val res = #full (layoutStr S) ()
+            val res = #full (layoutStr (S, {compact = false})) ()
             val () = destroy ()
          in
             res
@@ -3196,7 +3257,7 @@ fun makeLayoutPrettyTyconAndFlexTycon (E, _, Io, {prefixUnset}) =
                                         ; layoutPrettyFlexTycon f)}
    end
 
-fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
+fun layout' (E: t, {compact, def, flat, keep, prefixUnset}): Layout.t =
    let
       val {bass, fcts, sigs, strs, types, vals, ...} = current (E, keep)
       val bass = bass ()
@@ -3228,15 +3289,13 @@ fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
       val destroy = fn () =>
          (destroy (); destroyLayoutPrettyTycon ())
 
-      val layoutSig = fn (I, {flexTyconMap}) =>
-         layoutSig (I, {elide = {strs = NONE,
-                                 types = NONE,
-                                 vals = NONE},
-                        flexTyconMap = flexTyconMap})
-      fun layoutFctDefn (name, FunctorClosure.T {argInterface, summary, ...}, {def}) =
+      fun layoutFctDefn (name, FunctorClosure.T {argInterface, summary, ...},
+                         {compact, def}) =
          let
+            val bind =
+               seq [str "functor ", Fctid.layout name]
             val argId = Strid.uArg (Fctid.toString name)
-            val arg =
+            val {abbrev = argAbbrev, full = argFull} =
                let
                   fun realize (TyconMap.T {strs, types}, strids) =
                      let
@@ -3266,65 +3325,97 @@ fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
                   val bind =
                      seq [Strid.layout argId, str ":"]
                   val {abbrev, full} =
-                     layoutSig (I, {flexTyconMap = flexTyconMap})
+                     layoutSig (I, {compact = compact,
+                                    elide = {strs = NONE, types = NONE, vals = NONE},
+                                    flexTyconMap = flexTyconMap})
+                  val abbrev =
+                     case abbrev () of
+                        NONE => NONE
+                      | SOME sigg => SOME (seq [bind, str " ", sigg])
+                  val full = fn () =>
+                     align [bind, indent (full ())]
                in
-                  mayAlign
-                  [bind,
-                   indent (case abbrev () of
-                              NONE => full ()
-                            | SOME sigg => sigg)]
+                  {abbrev = abbrev, full = full}
                end
-            val bind =
-               seq [str "functor ", Fctid.layout name]
-            val res = summary (#1 (Structure.dummy (argInterface, {prefix = Strid.toString argId ^ "."})))
+            val {abbrev = resAbbrev, full = resFull} =
+               case summary (#1 (Structure.dummy (argInterface, {prefix = Strid.toString argId ^ "."}))) of
+                  NONE => {abbrev = SOME (str "???"), full = fn () => str "???"}
+                | SOME res => let
+                                 val {abbrev, full} = layoutStr (res, {compact = compact})
+                              in
+                                 {abbrev = abbrev (), full = full}
+                              end
+            val def =
+               if def
+                  then seq [str "(* @ ",
+                            Region.layout (Fctid.region name),
+                            str " *)"]
+                  else empty
+            val full = fn (arg, res) =>
+               align
+               [bind,
+                indent (seq [paren arg, str ":"]),
+                indent res,
+                indent def]
          in
-            mayAlign
-            [mayAlign [bind,
-                       indent (seq [paren arg, str ":"])],
-             indent (case res of
-                        NONE => empty
-                      | SOME res =>
-                           let
-                              val {abbrev, full} = layoutStr res
-                           in
-                              case abbrev () of
-                                 NONE => full ()
-                               | SOME sigg => sigg
-                           end),
-             indent (if def
-                        then seq [str "(* ",
-                                  Region.layout (Fctid.region name),
-                                  str " *)"]
-                        else empty)]
+            case (argAbbrev, resAbbrev) of
+               (NONE, NONE) => full (argFull (), resFull ())
+             | (NONE, SOME resAbbrev) => full (argFull (), resAbbrev)
+             | (SOME argAbbrev, NONE) => full (argAbbrev, resFull ())
+             | (SOME argAbbrev, SOME resAbbrev) =>
+                  let
+                     val lay =
+                        mayAlign
+                        [seq [bind, str " ",
+                              paren argAbbrev, str ": ",
+                              resAbbrev],
+                         indent def]
+                     val lay =
+                        if compact
+                           then Layout.compact lay
+                           else lay
+                  in
+                     lay
+                  end
          end
-      fun layoutBasDefn (name, _, {def}) =
-         mayAlign [seq [str "basis ", Basid.layout name, str " ="],
-                   indent (if def
-                              then seq [str "(* ",
-                                        Region.layout (Basid.region name),
-                                        str " *)"]
-                              else empty)]
+      fun layoutBasDefn (name, _, {compact, def}) =
+         let
+            val lay =
+               mayAlign
+               [seq [str "basis ", Basid.layout name],
+                indent (if def
+                           then seq [str "(* @ ",
+                                     Region.layout (Basid.region name),
+                                     str " *)"]
+                           else empty)]
+            val lay =
+               if compact
+                  then Layout.compact lay
+                  else lay
+         in
+            lay
+         end
 
       val layoutTypeDefn =
          fn (strids, name, tyStr) =>
          (SOME o layoutTypeDefn)
          (strids, name, tyStr,
-          {def = extra})
+          {compact = compact, def = def})
       val layoutValDefn =
          fn (strids, name, (vid, scheme)) =>
          layoutValDefn
          (strids, name, (vid, scheme),
-          {def = extra})
+          {compact = compact, con = flat, def = def})
       val layoutSigDefn =
          fn (name, I) =>
          (SOME o layoutSigDefn)
          (name, I,
-          {def = extra})
-      fun layoutStrDefnExtra (strids, name, S) =
+          {compact = compact, def = def})
+      fun layoutStrDefnFlat (strids, name, S) =
          (SOME o align)
          [layoutStrDefn
           (strids, name, S,
-           {def = true}),
+           {compact = compact, def = def}),
           let
              val strids = name::strids
              val Structure.T {strs, types, vals, ...} = S
@@ -3338,23 +3429,23 @@ fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
              align
              [doit (types, layoutTypeDefn),
               doit (vals, layoutValDefn),
-              doit (strs, layoutStrDefnExtra)]
+              doit (strs, layoutStrDefnFlat)]
           end]
       val layoutStrDefn =
          fn (strids, name, S) =>
          (SOME o layoutStrDefn)
          (strids, name, S,
-          {def = extra})
+          {compact = compact, def = def})
       val layoutFctDefn =
          fn (name, fctCls) =>
          (SOME o layoutFctDefn)
          (name, fctCls,
-          {def = extra})
+          {compact = compact, def = def})
       val layoutBasDefn =
          fn (name, B) =>
          (SOME o layoutBasDefn)
          (name, B,
-          {def = extra})
+          {compact = compact, def = def})
 
       fun doit (Info.T a, layout) =
          (align o Array.foldr)
@@ -3369,8 +3460,8 @@ fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
                       layoutValDefn ([], name, (vid, scheme))),
                 doit (sigs, layoutSigDefn),
                 doit (strs, fn (name, S) =>
-                      if extra
-                         then layoutStrDefnExtra ([], name, S)
+                      if flat
+                         then layoutStrDefnFlat ([], name, S)
                          else layoutStrDefn ([], name, S)),
                 doit (fcts, layoutFctDefn),
                 doit (bass, layoutBasDefn)]
@@ -3379,13 +3470,20 @@ fun layout' (E: t, {extra, keep, prefixUnset}): Layout.t =
       res
    end
 
-fun layout E = layout' (E, {extra = false, keep = fn _ => true, prefixUnset = true})
+fun layout E = layout' (E, {compact = false,
+                            def = false,
+                            flat = false,
+                            keep = fn _ => true,
+                            prefixUnset = true})
 
-fun layoutCurrentScope (E as T {currentScope, ...}, {extra}) =
+fun layoutCurrentScope (E as T {currentScope, ...},
+                        {compact, def, flat}) =
    let
       val s = !currentScope
    in
-      layout' (E, {extra = extra,
+      layout' (E, {compact = compact,
+                   def = def,
+                   flat = flat,
                    keep = fn {scope, ...} => Scope.equals (s, scope),
                    prefixUnset = false})
    end
@@ -3857,7 +3955,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val spec =
                           layoutTypeSpec
                           (strids, name, sigStr,
-                           {def = false,
+                           {compact = false,
+                            def = false,
                             flexTyconMap = flexTyconMap})
                        val thing = "type"
 
@@ -4222,7 +4321,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                    val spec =
                       layoutValSpec
                       (strids, name, (sigStatus, sigScheme),
-                       {con = false, def = false})
+                       {compact = false, con = false, def = false})
                    val thing = Status.pretty sigStatus
 
                    val con = Con.newString o Ast.Vid.toString
@@ -4372,7 +4471,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t,
                        val spec =
                           layoutStrSpec
                           (strids, name, I,
-                           {def = false,
+                           {compact = false,
+                            def = false,
                             elide = {strs = SOME (2, 0),
                                      types = NONE,
                                      vals = SOME (3, 2)},
