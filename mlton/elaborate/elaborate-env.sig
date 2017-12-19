@@ -198,7 +198,6 @@ signature ELABORATE_ENV =
          t * Ast.Fctid.t * Interface.t
          * (Structure.t * string list -> Decs.t * Structure.t option)
          -> FunctorClosure.t
-      val layout: t * {compact: bool, current: bool, def: bool, flat: bool, prefixUnset: bool} -> Layout.t
       val localAll: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
@@ -224,6 +223,7 @@ signature ELABORATE_ENV =
       val openStructure: t * Structure.t -> unit
       (* openBasis (E, B) opens B in the environment E. *) 
       val openBasis: t * Basis.t -> unit
+      val output: t * Out.t * {compact: bool, def: bool, flat: bool, onlyCurrent: bool, prefixUnset: bool} -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
       val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
       val processDefUse: t -> unit

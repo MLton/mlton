@@ -3249,8 +3249,18 @@ fun makeLayoutPrettyTyconAndFlexTycon (E, _, Io, {prefixUnset}) =
                                         ; layoutPrettyFlexTycon f)}
    end
 
-fun layout' (E: t, {compact, def, flat, keep, prefixUnset}): Layout.t =
+fun output (E: t, out, {compact, def, flat, onlyCurrent, prefixUnset}): unit =
    let
+      val keep =
+         if onlyCurrent
+            then let
+                    val T {currentScope, ...} = E
+                    val currentScope = !currentScope
+                 in
+                    fn {scope, ...} =>
+                    Scope.equals (scope, currentScope)
+                 end
+            else fn _ => true
       val {bass, fcts, sigs, strs, types, vals, ...} = current (E, keep)
       val bass = bass ()
       val fcts = fcts ()
@@ -3395,94 +3405,76 @@ fun layout' (E: t, {compact, def, flat, keep, prefixUnset}): Layout.t =
             lay
          end
 
-      val layoutTypeDefn =
+      val outputl = fn l => Layout.outputl (l, out)
+      val maybeOutputl = fn lo =>
+         case lo of
+            NONE => ()
+          | SOME l => outputl l
+      val outputTypeDefn =
          fn (strids, name, tyStr) =>
-         (SOME o layoutTypeDefn)
+         (outputl o layoutTypeDefn)
          (strids, name, tyStr,
           {compact = compact, def = def})
-      val layoutValDefn =
+      val outputValDefn =
          fn (strids, name, (vid, scheme)) =>
-         layoutValDefn
+         (maybeOutputl o layoutValDefn)
          (strids, name, (vid, scheme),
           {compact = compact, con = flat, def = def})
-      val layoutSigDefn =
+      val outputSigDefn =
          fn (name, I) =>
-         (SOME o layoutSigDefn)
+         (outputl o layoutSigDefn)
          (name, I,
           {compact = compact, def = def})
-      fun layoutStrDefnFlat (strids, name, S) =
-         (SOME o align)
-         [layoutStrDefn
-          (strids, name, S,
-           {compact = compact, def = def}),
-          let
-             val strids = name::strids
-             val Structure.T {strs, types, vals, ...} = S
-             fun doit (Info.T a, layout) =
-                (align o Array.foldr)
-                (a, [], fn ({domain, range, ...}, ls) =>
-                 case layout (strids, domain, range) of
-                    NONE => ls
-                  | SOME l => l :: ls)
-          in
-             align
-             [doit (types, layoutTypeDefn),
-              doit (vals, layoutValDefn),
-              doit (strs, layoutStrDefnFlat)]
-          end]
-      val layoutStrDefn =
+      val outputStrDefn =
          fn (strids, name, S) =>
-         (SOME o layoutStrDefn)
+         (outputl o layoutStrDefn)
          (strids, name, S,
           {compact = compact, def = def})
-      val layoutFctDefn =
+      fun outputStrDefnFlat (strids, name, S) =
+         let
+            val () = outputStrDefn (strids, name, S)
+            val strids = name::strids
+            val Structure.T {strs, types, vals, ...} = S
+            fun doit (Info.T a, output) =
+               Array.foreach
+               (a, fn {domain, range, ...} =>
+                output (strids, domain, range))
+            val () = doit (types, outputTypeDefn)
+            val () = doit (vals, outputValDefn)
+            val () = doit (strs, outputStrDefnFlat)
+         in
+            ()
+         end
+      val outputFctDefn =
          fn (name, fctCls) =>
-         (SOME o layoutFctDefn)
+         (outputl o layoutFctDefn)
          (name, fctCls,
           {compact = compact, def = def})
-      val layoutBasDefn =
+      val outputBasDefn =
          fn (name, B) =>
-         (SOME o layoutBasDefn)
+         (outputl o layoutBasDefn)
          (name, B,
           {compact = compact, def = def})
 
-      fun doit (Info.T a, layout) =
-         (align o Array.foldr)
-         (a, [], fn ({domain, range, ...}, ls) =>
-          case layout (domain, range) of
-             NONE => ls
-           | SOME l => l :: ls)
-      val res =
-         align [doit (types, fn (name, tyStr) =>
-                      layoutTypeDefn ([], name, tyStr)),
-                doit (vals, fn (name, (vid, scheme)) =>
-                      layoutValDefn ([], name, (vid, scheme))),
-                doit (sigs, layoutSigDefn),
-                doit (strs, fn (name, S) =>
+      fun doit (Info.T a, output) =
+         Array.foreach
+         (a, fn {domain, range, ...} =>
+          output (domain, range))
+      val () = doit (types, fn (name, tyStr) =>
+                     outputTypeDefn ([], name, tyStr))
+      val () = doit (vals, fn (name, (vid, scheme)) =>
+                     outputValDefn ([], name, (vid, scheme)))
+      val () = doit (sigs, outputSigDefn)
+      val () =  doit (strs, fn (name, S) =>
                       if flat
-                         then layoutStrDefnFlat ([], name, S)
-                         else layoutStrDefn ([], name, S)),
-                doit (fcts, layoutFctDefn),
-                doit (bass, layoutBasDefn)]
+                         then outputStrDefnFlat ([], name, S)
+                         else outputStrDefn ([], name, S))
+      val () = doit (fcts, outputFctDefn)
+      val () = doit (bass, outputBasDefn)
       val () = destroy ()
    in
-      res
+      ()
    end
-
-fun layout (E as T {currentScope, ...},
-            {compact, current, def, flat, prefixUnset}) =
-   layout' (E, {compact = compact,
-                def = def,
-                flat = flat,
-                keep = if current
-                          then let
-                                  val s = !currentScope
-                               in
-                                  fn {scope, ...} =>
-                                  Scope.equals (s, scope)
-                               end
-                          else fn _ => true,
-                prefixUnset = prefixUnset})
 
 (* ------------------------------------------------- *)
 (*                   processDefUse                   *)
