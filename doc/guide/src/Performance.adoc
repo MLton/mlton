@@ -2,11 +2,7 @@ Performance
 ===========
 
 This page compares the performance of a number of SML compilers on a
-range of benchmarks.  For a
-http://shootout.alioth.debian.org/gp4/benchmark.php?test=all&lang=all[performance comparison]
-of many different languages, including
-http://shootout.alioth.debian.org/gp4/benchmark.php?test=all&lang=mlton&sort=cpu[MLton],
-see the http://shootout.alioth.debian.org/[Computer Language Shootout].
+range of benchmarks.
 
 This page compares the following SML compiler versions.
 
