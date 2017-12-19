@@ -198,8 +198,7 @@ signature ELABORATE_ENV =
          t * Ast.Fctid.t * Interface.t
          * (Structure.t * string list -> Decs.t * Structure.t option)
          -> FunctorClosure.t
-      val layout: t -> Layout.t
-      val layoutCurrentScope: t * {compact: bool, def: bool, flat: bool}-> Layout.t
+      val layout: t * {compact: bool, current: bool, def: bool, flat: bool, prefixUnset: bool} -> Layout.t
       val localAll: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b

@@ -3469,23 +3469,20 @@ fun layout' (E: t, {compact, def, flat, keep, prefixUnset}): Layout.t =
       res
    end
 
-fun layout E = layout' (E, {compact = false,
-                            def = false,
-                            flat = false,
-                            keep = fn _ => true,
-                            prefixUnset = true})
-
-fun layoutCurrentScope (E as T {currentScope, ...},
-                        {compact, def, flat}) =
-   let
-      val s = !currentScope
-   in
-      layout' (E, {compact = compact,
-                   def = def,
-                   flat = flat,
-                   keep = fn {scope, ...} => Scope.equals (s, scope),
-                   prefixUnset = false})
-   end
+fun layout (E as T {currentScope, ...},
+            {compact, current, def, flat, prefixUnset}) =
+   layout' (E, {compact = compact,
+                def = def,
+                flat = flat,
+                keep = if current
+                          then let
+                                  val s = !currentScope
+                               in
+                                  fn {scope, ...} =>
+                                  Scope.equals (s, scope)
+                               end
+                          else fn _ => true,
+                prefixUnset = prefixUnset})
 
 (* ------------------------------------------------- *)
 (*                   processDefUse                   *)

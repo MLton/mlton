@@ -399,11 +399,13 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                File.withOut
                (f, fn out =>
                 Layout.outputl
-                (Env.layoutCurrentScope
+                (Env.layout
                  (E,
                   {compact = !Control.showBasisCompact,
+                   current = false,
                    def = !Control.showBasisDef,
-                   flat = !Control.showBasisFlat}),
+                   flat = !Control.showBasisFlat,
+                   prefixUnset = true}),
                  out))
       val _ = Env.processDefUse E
       val _ =
