@@ -36,6 +36,7 @@ signature INTERFACE_STRUCTS =
       structure EnvTypeStr:
          sig
             type t
+            val layout: t -> Layout.t
          end
       structure Tyvar:
          sig

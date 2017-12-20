@@ -62,6 +62,9 @@ structure TyconId = IntUniqueId ()
 structure Defn =
    struct
       type t = exn
+
+      val layoutRef: (t -> Layout.t) ref = ref (fn _ => Layout.empty)
+      fun layout d = (!layoutRef) d
    end
 
 structure Time:>
@@ -150,10 +153,11 @@ structure FlexibleTycon =
       fun layout fc =
          let
             open Layout
-            val {admitsEquality, creationTime, hasCons, id, kind, prettyDefault, ...} = fields fc
+            val {admitsEquality, creationTime, defn, hasCons, id, kind, prettyDefault, ...} = fields fc
          in
             record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
                     ("creationTime", Time.layout creationTime),
+                    ("defn", Defn.layout (!defn)),
                     ("hasCons", Bool.layout hasCons),
                     ("id", TyconId.layout id),
                     ("kind", Kind.layout kind),
@@ -490,6 +494,18 @@ structure Defn =
          case d of
             U u => u
           | _ => Error.bug "Interface.Defn.dest"
+
+      val () =
+         layoutRef :=
+         (fn d =>
+          let
+             open Layout
+          in
+             case dest d of
+                Realized s => seq [str "Realized ", EtypeStr.layout s]
+              | TypeStr s => seq [str "TypeStr ", TypeStr.layout s]
+              | Undefined => str "Undefined"
+          end)
    end
 
 (* expandTy expands all type definitions in ty *)
