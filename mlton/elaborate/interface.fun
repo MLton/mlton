@@ -33,11 +33,6 @@ in
    structure Vid = Vid
 end
 
-fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
-   (seq o List.fold)
-   (ss, [id], fn (s, ls) =>
-    Strid.layout s :: str "." :: ls)
-
 structure Etycon = EnvTycon
 structure EtypeStr = EnvTypeStr
 
@@ -1774,54 +1769,6 @@ val flexibleTycons =
    Trace.trace ("Interface.flexibleTycons", layout,
                 TyconMap.layout FlexibleTycon.layout)
    flexibleTycons
-
-fun makeLayoutPrettyFlexTycon (I, {prefixUnset}) =
-   let
-      val {destroy = destroyLayoutPretty: unit -> unit,
-           get = layoutPretty: FlexibleTycon.t -> Layout.t,
-           set = setLayoutPretty: FlexibleTycon.t * Layout.t -> unit} =
-         Property.destGetSet
-         (FlexibleTycon.plist,
-          Property.initFun
-          (fn f =>
-           let val l = FlexibleTycon.layout f
-           in if prefixUnset then seq [str "?.", l] else l
-           end))
-      fun pre () =
-         let
-            val flexTyconMap = flexibleTycons I
-            fun doType (name, f, strids: Strid.t list) =
-               let
-                  val name = layoutLongRev (strids, Ast.Tycon.layout name)
-               in
-                  setLayoutPretty (f, name)
-               end
-            fun doStr (name, tyconMap, strids: Strid.t list) =
-               doTyconMap (tyconMap, name::strids)
-            and doTyconMap (TyconMap.T {strs, types}, strids) =
-               let
-                  val () =
-                     Array.foreach
-                     (types, fn (name, f) =>
-                      doType (name, f, strids))
-                  val () =
-                     Array.foreach
-                     (strs, fn (name, tyconMap) =>
-                      doStr (name, tyconMap, strids))
-               in
-                  ()
-               end
-            val () = doTyconMap (flexTyconMap, [Ast.Strid.uSig])
-         in
-            ()
-         end
-      val pre = ClearablePromise.delay pre
-   in
-      {destroy = fn () => (ClearablePromise.clear pre
-                           ; destroyLayoutPretty ()),
-       layoutPretty = fn c => (ClearablePromise.force pre
-                               ; layoutPretty c)}
-   end
 
 fun dest (T s) =
    let
