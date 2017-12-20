@@ -432,7 +432,7 @@ structure TypeStr =
                   seq [str "Datatype ",
                        record [("tycon", Tycon.layout tycon),
                                ("cons", Cons.layout cons)]]
-             | Scheme s => Scheme.layout s
+             | Scheme s => seq [str "Scheme ", Scheme.layout s]
              | Tycon c => seq [str "Tycon ", Tycon.layout c]
          end
 
@@ -1370,9 +1370,10 @@ structure Structure =
          val plist = make #plist
       end
 
-      fun layout (T {strs, vals, types, ...}) =
+      fun layout (T {interface, strs, vals, types, ...}) =
          Layout.record
-         [("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
+         [("interface", Option.layout Interface.layout interface),
+          ("types", Info.layout (Ast.Tycon.layout, TypeStr.layout) types),
           ("vals", (Info.layout (Ast.Vid.layout,
                                  Layout.tuple2 (Vid.layout, Scheme.layout))
                     vals)),
@@ -4513,9 +4514,9 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
 val cut =
    Trace.trace ("ElaborateEnv.cut",
                 fn (_, S, I, _, _) =>
-                Layout.tuple [Structure.layoutPretty S,
-                              Interface.layoutPretty I],
-                Structure.layoutPretty o #1)
+                Layout.tuple [Structure.layout S,
+                              Interface.layout I],
+                Structure.layout o #1)
    cut
 
 end
@@ -4651,6 +4652,16 @@ fun functorClosure
          in
             resultStructure
          end
+      val summary =
+         Trace.trace
+         ("ElaborateEnv.functorClosure.summary",
+          fn actual =>
+          Layout.record [("argInterface", Interface.layout argInterface),
+                         ("formal", Structure.layout formal),
+                         ("resultStructure", Option.layout Structure.layout resultStructure),
+                         ("actual", Structure.layout actual)],
+          Option.layout Structure.layout)
+         summary
       fun apply (actual, nest) =
          if not (!insideFunctor)
             andalso not (!Control.elaborateOnly)
