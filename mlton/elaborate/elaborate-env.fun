@@ -1483,6 +1483,7 @@ structure Structure =
                         in
                            Interface.new
                            {isClosed = true,
+                            original = NONE,
                             strs = strs,
                             types = types,
                             vals = vals}
@@ -2971,6 +2972,7 @@ structure InterfaceEnv =
             val v = Array.map (v, fn {domain, range = (status, scheme), ...} =>
                                (domain, (status, scheme)))
             val I = Interface.new {isClosed = isTop,
+                                   original = NONE,
                                    strs = s, types = t, vals = v}
             val _ = currentScope := s0
          in
@@ -3226,6 +3228,7 @@ fun makeLayoutPrettyTyconAndFlexTycon (E, _, Io, {prefixUnset}) =
                   in Array.map (a, fn {domain, range, ...} => (domain, range))
                   end
                val I = Interface.new {isClosed = true,
+                                      original = NONE,
                                       strs = doit ifcStrs,
                                       types = doit ifcTypes,
                                       vals = Array.new0 ()}
@@ -4630,25 +4633,53 @@ fun functorClosure
                    | Scheme s => TypeStr.def (replaceScheme s)
                    | Tycon c => (case tyconTypeStr c of
                                     NONE => s
-                                  | SOME s' => s')
+                                  | SOME s => s)
                end
             val {destroy = destroy2,
-                 get = replacement: Structure.t -> Structure.t, ...} =
+                 get = replaceInterface: Interface.t -> Interface.t, ...} =
+               Property.destGet
+               (Interface.plist,
+                Property.initRec
+                (fn (I, replaceInterface) =>
+                 let
+                    val {strs, types, vals} = Interface.dest I
+                    val replaceIScheme =
+                       Interface.Scheme.fromEnv
+                       o replaceScheme
+                       o Interface.Scheme.toEnv
+                    val replaceITypeStr =
+                       Interface.TypeStr.fromEnv
+                       o replaceTypeStr
+                       o Interface.TypeStr.toEnv
+                 in
+                    Interface.new
+                    {isClosed = true,
+                     original = SOME (Interface.original I),
+                     strs = Array.map (strs, fn (strid, I) =>
+                                       (strid, replaceInterface I)),
+                     types = Array.map (types, fn (tycon, s) =>
+                                        (tycon, replaceITypeStr s)),
+                     vals = Array.map (vals, fn (vid, (status, scheme)) =>
+                                       (vid, (status, replaceIScheme scheme)))}
+                 end))
+            val {destroy = destroy3,
+                 get = replaceStructure: Structure.t -> Structure.t, ...} =
                Property.destGet
                (Structure.plist,
                 Property.initRec
                 (fn (Structure.T {interface, strs, types, vals, ... },
-                     replacement) =>
+                     replaceStructure) =>
                  Structure.T
-                 {interface = interface,
+                 {interface = Option.map (interface, replaceInterface),
                   plist = PropertyList.new (),
-                  strs = Info.map (strs, replacement),
+                  strs = Info.map (strs, replaceStructure),
                   types = Info.map (types, replaceTypeStr),
-                  vals = Info.map (vals, fn (v, s) =>
-                                   (v, replaceScheme s))}))
-            val resultStructure = Option.map (resultStructure, replacement)
+                  vals = Info.map (vals, fn (status, s) =>
+                                   (status, replaceScheme s))}))
+            val resultStructure = Option.map (resultStructure, replaceStructure)
             val _ = destroy1 ()
             val _ = destroy2 ()
+            val _ = destroy3 ()
          in
             resultStructure
          end

@@ -230,6 +230,7 @@ signature INTERFACE =
          t * Ast.Longtycon.t * Region.t * {prefix: Ast.Strid.t list}
          -> (Ast.Tycon.t * TypeStr.t) option
       val new: {isClosed: bool,
+                original: t option,
                 strs: (Ast.Strid.t * t) array,
                 types: (Ast.Tycon.t * TypeStr.t) array,
                 vals: (Ast.Vid.t * (Status.t * Scheme.t)) array} -> t

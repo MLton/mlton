@@ -1307,11 +1307,11 @@ fun original I =
       NONE => I
     | SOME I => I
 
-fun new {isClosed, strs, types, vals} =
+fun new {isClosed, original, strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
                      flexible = ref NONE,
                      isClosed = isClosed,
-                     original = NONE,
+                     original = original,
                      plist = PropertyList.new (),
                      strs = strs,
                      types = types,
@@ -1319,6 +1319,7 @@ fun new {isClosed, strs, types, vals} =
                      vals = vals})
 
 val empty = new {isClosed = true,
+                 original = NONE,
                  strs = Array.new0 (),
                  types = Array.new0 (),
                  vals = Array.new0 ()}
