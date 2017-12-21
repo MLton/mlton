@@ -74,8 +74,8 @@ structure Strid =
       local
          fun make s = fromSymbol (Symbol.fromString s, Region.bogus)
       in
-         val uArg = fn s => make (s ^ "._arg")
-         val uRes = fn s => make (s ^ "._res")
+         val uArg = fn s => make ("_arg_" ^ s)
+         val uRes = fn s => make ("_res_" ^ s)
          val uStr = make "_str"
          val uSig = make "_sig"
       end
