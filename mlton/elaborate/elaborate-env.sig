@@ -237,12 +237,15 @@ signature ELABORATE_ENV =
       val makeLayoutPrettyTycon:
          t * {prefixUnset: bool}
          -> {destroy: unit -> unit,
-             layoutPrettyTycon: Tycon.t -> Layout.t}
+             layoutPrettyTycon: Tycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit,
+             loopStr: Structure.t * int * Ast.Strid.t list -> unit}
       val makeLayoutPrettyTyconAndFlexTycon:
          t * InterfaceEnv.t * Interface.t option * {prefixUnset: bool}
          -> {destroy: unit -> unit,
              layoutPrettyTycon: Tycon.t -> Layout.t,
-             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t}
+             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit}
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end
