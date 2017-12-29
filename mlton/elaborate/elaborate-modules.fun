@@ -116,6 +116,28 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       List.fold
                       (ds, Decs.empty, fn (d, decs) =>
                        Decs.append (decs, elabStrdec d))
+                 | Strdec.ShowBasis file =>
+                      let
+                         open Layout
+                         val () =
+                            File.withOut
+                            (file, fn out =>
+                             Env.output
+                             (E, out,
+                              {compact = !Control.showBasisCompact,
+                               def = !Control.showBasisDef,
+                               flat = !Control.showBasisFlat,
+                               onlyCurrent = false,
+                               prefixUnset = true}))
+                            handle exn =>
+                            Control.warning
+                            (Strdec.region d,
+                             str "Exception raised processing #showBasis",
+                             align [seq [str "file: ", File.layout file],
+                                    seq [str "exn:  ", Exn.layout exn]])
+                      in
+                         Decs.empty
+                      end
                  | Strdec.Structure strbinds => (* rules 57, 61 *)
                       let
                          val strbinds =

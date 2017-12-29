@@ -198,8 +198,6 @@ signature ELABORATE_ENV =
          t * Ast.Fctid.t * Interface.t
          * (Structure.t * string list -> Decs.t * Structure.t option)
          -> FunctorClosure.t
-      val layout: t -> Layout.t
-      val layoutCurrentScope: t * {compact: bool, def: bool, flat: bool}-> Layout.t
       val localAll: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localCore: t * (unit -> 'a) * ('a -> 'b) -> 'b
       val localModule: t * (unit -> 'a) * ('a -> 'b) -> 'b
@@ -225,6 +223,7 @@ signature ELABORATE_ENV =
       val openStructure: t * Structure.t -> unit
       (* openBasis (E, B) opens B in the environment E. *) 
       val openBasis: t * Basis.t -> unit
+      val output: t * Out.t * {compact: bool, def: bool, flat: bool, onlyCurrent: bool, prefixUnset: bool} -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
       val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
       val processDefUse: t -> unit
@@ -238,12 +237,15 @@ signature ELABORATE_ENV =
       val makeLayoutPrettyTycon:
          t * {prefixUnset: bool}
          -> {destroy: unit -> unit,
-             layoutPrettyTycon: Tycon.t -> Layout.t}
+             layoutPrettyTycon: Tycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit,
+             loopStr: Structure.t * int * Ast.Strid.t list -> unit}
       val makeLayoutPrettyTyconAndFlexTycon:
          t * InterfaceEnv.t * Interface.t option * {prefixUnset: bool}
          -> {destroy: unit -> unit,
              layoutPrettyTycon: Tycon.t -> Layout.t,
-             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t}
+             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit}
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end

@@ -33,11 +33,6 @@ in
    structure Vid = Vid
 end
 
-fun layoutLongRev (ss: Strid.t list, id: Layout.t) =
-   (seq o List.fold)
-   (ss, [id], fn (s, ls) =>
-    Strid.layout s :: str "." :: ls)
-
 structure Etycon = EnvTycon
 structure EtypeStr = EnvTypeStr
 
@@ -67,6 +62,9 @@ structure TyconId = IntUniqueId ()
 structure Defn =
    struct
       type t = exn
+
+      val layoutRef: (t -> Layout.t) ref = ref (fn _ => Layout.empty)
+      fun layout d = (!layoutRef) d
    end
 
 structure Time:>
@@ -155,10 +153,11 @@ structure FlexibleTycon =
       fun layout fc =
          let
             open Layout
-            val {admitsEquality, creationTime, hasCons, id, kind, prettyDefault, ...} = fields fc
+            val {admitsEquality, creationTime, defn, hasCons, id, kind, prettyDefault, ...} = fields fc
          in
             record [("admitsEquality", AdmitsEquality.layout (!admitsEquality)),
                     ("creationTime", Time.layout creationTime),
+                    ("defn", Defn.layout (!defn)),
                     ("hasCons", Bool.layout hasCons),
                     ("id", TyconId.layout id),
                     ("kind", Kind.layout kind),
@@ -495,6 +494,18 @@ structure Defn =
          case d of
             U u => u
           | _ => Error.bug "Interface.Defn.dest"
+
+      val () =
+         layoutRef :=
+         (fn d =>
+          let
+             open Layout
+          in
+             case dest d of
+                Realized s => seq [str "Realized ", EtypeStr.layout s]
+              | TypeStr s => seq [str "TypeStr ", TypeStr.layout s]
+              | Undefined => str "Undefined"
+          end)
    end
 
 (* expandTy expands all type definitions in ty *)
@@ -1296,11 +1307,11 @@ fun original I =
       NONE => I
     | SOME I => I
 
-fun new {isClosed, strs, types, vals} =
+fun new {isClosed, original, strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
                      flexible = ref NONE,
                      isClosed = isClosed,
-                     original = NONE,
+                     original = original,
                      plist = PropertyList.new (),
                      strs = strs,
                      types = types,
@@ -1308,6 +1319,7 @@ fun new {isClosed, strs, types, vals} =
                      vals = vals})
 
 val empty = new {isClosed = true,
+                 original = NONE,
                  strs = Array.new0 (),
                  types = Array.new0 (),
                  vals = Array.new0 ()}
@@ -1774,54 +1786,6 @@ val flexibleTycons =
    Trace.trace ("Interface.flexibleTycons", layout,
                 TyconMap.layout FlexibleTycon.layout)
    flexibleTycons
-
-fun makeLayoutPrettyFlexTycon (I, {prefixUnset}) =
-   let
-      val {destroy = destroyLayoutPretty: unit -> unit,
-           get = layoutPretty: FlexibleTycon.t -> Layout.t,
-           set = setLayoutPretty: FlexibleTycon.t * Layout.t -> unit} =
-         Property.destGetSet
-         (FlexibleTycon.plist,
-          Property.initFun
-          (fn f =>
-           let val l = FlexibleTycon.layout f
-           in if prefixUnset then seq [str "?.", l] else l
-           end))
-      fun pre () =
-         let
-            val flexTyconMap = flexibleTycons I
-            fun doType (name, f, strids: Strid.t list) =
-               let
-                  val name = layoutLongRev (strids, Ast.Tycon.layout name)
-               in
-                  setLayoutPretty (f, name)
-               end
-            fun doStr (name, tyconMap, strids: Strid.t list) =
-               doTyconMap (tyconMap, name::strids)
-            and doTyconMap (TyconMap.T {strs, types}, strids) =
-               let
-                  val () =
-                     Array.foreach
-                     (types, fn (name, f) =>
-                      doType (name, f, strids))
-                  val () =
-                     Array.foreach
-                     (strs, fn (name, tyconMap) =>
-                      doStr (name, tyconMap, strids))
-               in
-                  ()
-               end
-            val () = doTyconMap (flexTyconMap, [Ast.Strid.uSig])
-         in
-            ()
-         end
-      val pre = ClearablePromise.delay pre
-   in
-      {destroy = fn () => (ClearablePromise.clear pre
-                           ; destroyLayoutPretty ()),
-       layoutPretty = fn c => (ClearablePromise.force pre
-                               ; layoutPretty c)}
-   end
 
 fun dest (T s) =
    let

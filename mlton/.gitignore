@@ -1,6 +1,9 @@
 ## Ignore all .cm directories
 .cm/
 
+## Ignore all .basis files
+*.basis
+
 /mlton-compile
 /mlton-compile.exe
 /mlton-polyml

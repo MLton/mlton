@@ -1125,10 +1125,10 @@ val showBasisCompact = control {name = "show basis compact",
                                 default = false,
                                 toString = Bool.toString}
 val showBasisDef = control {name = "show basis def",
-                            default = false,
+                            default = true,
                             toString = Bool.toString}
 val showBasisFlat = control {name = "show basis flat",
-                             default = false,
+                             default = true,
                              toString = Bool.toString}
 
 val showDefUse = control {name = "show def-use",

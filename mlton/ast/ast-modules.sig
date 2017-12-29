@@ -121,6 +121,7 @@ signature AST_MODULES =
                Core of Dec.t
              | Local of t * t
              | Seq of t list
+             | ShowBasis of File.t
              | Structure of {constraint: SigConst.t,
                              def: Strexp.t,
                              name: Strid.t} vector
