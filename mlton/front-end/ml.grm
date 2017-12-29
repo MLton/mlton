@@ -249,6 +249,7 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
     | BUILD_CONST | COMMAND_LINE_CONST | CONST 
     | ADDRESS | EXPORT | IMPORT | SYMBOL 
     | PRIM
+    | SHOW_BASIS of File.t
 
 %nonterm
          aexp of Exp.node
@@ -515,6 +516,8 @@ strdecnode
    | decnolocal
      (Strdec.Core (Dec.makeRegion' (decnolocal,
                                     decnolocalleft, decnolocalright)))
+   | SHOW_BASIS                    (Strdec.ShowBasis SHOW_BASIS)
+
 
 strbinds : strid sigconst EQUALOP strbinds'
            (let val (def,strbinds) = strbinds'

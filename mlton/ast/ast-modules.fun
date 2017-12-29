@@ -313,18 +313,19 @@ structure Spec =
 
 datatype strdecNode =
    Core of Dec.t
-  | Local of strdec * strdec
-  | Seq of strdec list
-  | Structure of {constraint: SigConst.t,
-                  def: strexp,
-                  name: Strid.t} vector
+ | Local of strdec * strdec
+ | Seq of strdec list
+ | ShowBasis of File.t
+ | Structure of {constraint: SigConst.t,
+                 def: strexp,
+                 name: Strid.t} vector
 
 and strexpNode =
    App of Fctid.t * strexp
-  | Constrained of strexp * SigConst.t
-  | Let of strdec * strexp
-  | Struct of strdec
-  | Var of Longstrid.t
+ | Constrained of strexp * SigConst.t
+ | Let of strdec * strexp
+ | Struct of strdec
+ | Var of Longstrid.t
 withtype strexp = strexpNode Wrap.t
 and strdec = strdecNode Wrap.t
 
@@ -333,6 +334,9 @@ fun layoutStrdec d =
       Core d => Dec.layout d
     | Local (d, d') => Pretty.locall (layoutStrdec d, layoutStrdec d')
     | Seq ds => align (layoutStrdecs ds)
+    | ShowBasis file => seq [str "(*#showBasis \"",
+                             File.layout file,
+                             str "\"*)"]
     | Structure strbs =>
          layoutAndsBind ("structure", "=", strbs,
                          fn {name, def, constraint} =>
@@ -359,6 +363,7 @@ fun checkSyntaxStrdec (d: strdec): unit =
       Core d => Dec.checkSyntax d
     | Local (d, d') => (checkSyntaxStrdec d; checkSyntaxStrdec d')
     | Seq ds => List.foreach (ds, checkSyntaxStrdec)
+    | ShowBasis _ => ()
     | Structure v =>
          (Vector.foreach (v, fn {constraint, def, ...} =>
                           (SigConst.checkSyntax constraint
@@ -474,6 +479,7 @@ structure Strdec =
                    | [d] => d
                    | ds => makeRegion (Seq (rev ds), r)
                end
+          | ShowBasis _ => d
           | Structure _ => d) d
    end
 

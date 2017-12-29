@@ -544,6 +544,18 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
     ; continue ());
 
 
+<INITIAL>"(*#showBasis"{ws}+"\""[^"]*"\""{ws}*"*)" =>
+   (let
+       val file = List.nth (String.split (yytext, #"\""), 1)
+       val file =
+         if OS.Path.isAbsolute file
+            then file
+            else OS.Path.mkCanonical (OS.Path.concat (OS.Path.dir (Source.name source), file))
+   in
+       tok' (fn (_, l, r) => Tokens.SHOW_BASIS (file, l, r), yytext, source, yypos)
+   end);
+
+
 <INITIAL>. =>
    (error (source, yypos, yypos, "Illegal token")
     ; continue ());

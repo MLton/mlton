@@ -118,6 +118,7 @@ structure Program =
                      Core d => dec d
                    | Local (d, d') => (strdec d; strdec d')
                    | Seq ds => List.foreach (ds, strdec)
+                   | ShowBasis _ => ()
                    | Structure ds =>
                         Vector.foreach (ds, fn {def, ...} => strexp def)
                end
