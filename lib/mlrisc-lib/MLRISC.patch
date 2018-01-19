@@ -1319,12 +1319,12 @@ index 5ff322a..427c8f2 100644
  	 | I.SOURCE {} => IK_SOURCE
  	 | I.SINK {} => IK_SINK
 diff --git a/amd64/mltree/amd64-gen.sml b/amd64/mltree/amd64-gen.sml
-index f8e6d49..0d5ac05 100644
+index 881f16a..d14a94e 100644
 --- a/amd64/mltree/amd64-gen.sml
 +++ b/amd64/mltree/amd64-gen.sml
-@@ -5,10 +5,53 @@
- 
+@@ -9,10 +9,53 @@
  functor AMD64Gen (
+ 
      structure I : AMD64INSTR
 -    structure MLTreeUtils : MLTREE_UTILS
 -	where T = I.T
@@ -1378,7 +1378,7 @@ index f8e6d49..0d5ac05 100644
 +                                and type T.rexp = I.T.rexp
 +                                and type T.stm = I.T.stm
  
-     (* Take a number of bits and returns a label that points to a literal with the high bit set.
+     (* Take a number of bits and returns an rexp that points to a literal with the high bit set.
       * We need this literal value for floating-point negation and absolute value (at least
 diff --git a/amd64/omit-frameptr/amd64omit-frameptr.sml b/amd64/omit-frameptr/amd64omit-frameptr.sml
 index 5c122da..b079909 100644

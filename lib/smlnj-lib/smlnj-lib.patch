@@ -183,7 +183,7 @@ index 0000000..501b6f8
 +
 +end
 diff --git a/HTML/html-lex.sml b/HTML/html-lex.sml
-index f1de5c0..9cbaaee 100644
+index f1de5c0..9ffd254 100644
 --- a/HTML/html-lex.sml
 +++ b/HTML/html-lex.sml
 @@ -178,7 +178,7 @@ Vector.fromList []
@@ -195,6 +195,14 @@ index f1de5c0..9cbaaee 100644
  		      fun tryfinal() = 
  		            yystuck (yyactsToMatches (strm, finals, oldMatches))
  		      fun find (c, []) = NONE
+@@ -990,7 +990,6 @@ end
+         end
+     in
+     fun makeLexer yyinputN = mk (yyInput.mkStream yyinputN)
+-    fun makeLexer' ins = mk (yyInput.mkStream ins)
+     end
+ 
+   end
 diff --git a/HTML/html-lib.mlb b/HTML/html-lib.mlb
 new file mode 100644
 index 0000000..a5f8ca3
@@ -504,10 +512,80 @@ index 0000000..a5f8ca3
 +
 +end
 diff --git a/HTML4/html4-attr.g.sml b/HTML4/html4-attr.g.sml
-index cfc415b..db63fed 100644
+index cfc415b..e0c2765 100644
 --- a/HTML4/html4-attr.g.sml
 +++ b/HTML4/html4-attr.g.sml
-@@ -60,16 +60,50 @@ fun attr_value_PROD_3_ACT (SR, NUMBER, SR_SPAN : (Lex.pos * Lex.pos), NUMBER_SPA
+@@ -1,43 +1,41 @@
+-structure 
+-HTML4AttrTokens = struct
+-
+-    datatype token = EOF
+-      | NUMBER of string
+-      | DOT
+-      | STRINGLIT of string
++structure HTML4AttrTokens =
++  struct
++    datatype token
++      = NAME of Atom.atom
+       | EQUALS
+-      | NAME of Atom.atom
+-
+-    val allToks = [EOF, DOT, EQUALS]
+-
++      | STRINGLIT of string
++      | DOT
++      | NUMBER of string
++      | EOF
++    val allToks = [
++            EQUALS, DOT, EOF
++           ]
+     fun toString tok =
+ (case (tok)
+- of (EOF) => "EOF"
+-  | (NUMBER(_)) => "NUMBER"
+-  | (DOT) => "."
+-  | (STRINGLIT(_)) => "STRINGLIT"
++ of (NAME(_)) => "NAME"
+   | (EQUALS) => "="
+-  | (NAME(_)) => "NAME"
++  | (STRINGLIT(_)) => "STRINGLIT"
++  | (DOT) => "."
++  | (NUMBER(_)) => "NUMBER"
++  | (EOF) => "EOF"
+ (* end case *))
+     fun isKW tok =
+ (case (tok)
+- of (EOF) => false
+-  | (NUMBER(_)) => false
+-  | (DOT) => false
+-  | (STRINGLIT(_)) => false
++ of (NAME(_)) => false
+   | (EQUALS) => false
+-  | (NAME(_)) => false
++  | (STRINGLIT(_)) => false
++  | (DOT) => false
++  | (NUMBER(_)) => false
++  | (EOF) => false
+ (* end case *))
++    fun isEOF EOF = true
++      | isEOF _ = false
++  end (* HTML4AttrTokens *)
+ 
+-  fun isEOF EOF = true
+-    | isEOF _ = false
+-
+-end
+-
+-functor HTML4AttrParseFn(Lex : ANTLR_LEXER) = struct
++functor HTML4AttrParseFn (Lex : ANTLR_LEXER) = struct
+ 
+   local
+-    structure Tok = 
++    structure Tok =
+ HTML4AttrTokens
+     structure UserCode =
+       struct
+@@ -60,47 +58,81 @@ fun attr_value_PROD_3_ACT (SR, NUMBER, SR_SPAN : (Lex.pos * Lex.pos), NUMBER_SPA
      structure Err = AntlrErrHandler(
        structure Tok = Tok
        structure Lex = Lex)
@@ -521,17 +599,17 @@ index cfc415b..db63fed 100644
 +*)
 +    structure EBNF =
 +      struct
-+	fun optional (pred, parse, strm) = 
++	fun optional (pred, parse, strm) =
 +	      if pred strm
 +		then let
 +		  val (y, span, strm') = parse strm
-+		  in 
++		  in
 +		    (SOME y, span, strm')
 +		  end
 +		else (NONE, Err.getSpan strm, strm)
 +
 +	fun closure (pred, parse, strm) = let
-+	      fun iter (strm, (left, right), ys) = 
++	      fun iter (strm, (left, right), ys) =
 +		    if pred strm
 +		      then let
 +			val (y, (_, right'), strm') = parse strm
@@ -559,6 +637,59 @@ index cfc415b..db63fed 100644
  	fun fail() = Err.failure eh
  	fun tryProds (strm, prods) = let
  	  fun try [] = fail()
+-	    | try (prod :: prods) = 
+-	        (Err.whileDisabled eh (fn() => prod strm)) 
++	    | try (prod :: prods) =
++	        (Err.whileDisabled eh (fn() => prod strm))
+ 		handle Err.ParseError => try (prods)
+           in try prods end
+-fun matchEOF strm = (case (lex(strm))
+- of (Tok.EOF, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchNUMBER strm = (case (lex(strm))
+- of (Tok.NUMBER(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchDOT strm = (case (lex(strm))
+- of (Tok.DOT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTRINGLIT strm = (case (lex(strm))
+- of (Tok.STRINGLIT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchEQUALS strm = (case (lex(strm))
+- of (Tok.EQUALS, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+ fun matchNAME strm = (case (lex(strm))
+  of (Tok.NAME(x), span, strm') => (x, span, strm')
+   | _ => fail()
+ (* end case *))
++fun matchEQUALS strm = (case (lex(strm))
++ of (Tok.EQUALS, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTRINGLIT strm = (case (lex(strm))
++ of (Tok.STRINGLIT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchDOT strm = (case (lex(strm))
++ of (Tok.DOT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchNUMBER strm = (case (lex(strm))
++ of (Tok.NUMBER(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchEOF strm = (case (lex(strm))
++ of (Tok.EOF, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
+ 
+ val (attrs_NT) = 
+ let
 diff --git a/HTML4/html4-lib.cm b/HTML4/html4-lib.cm
 index 8248a55..dba213b 100644
 --- a/HTML4/html4-lib.cm
@@ -859,10 +990,1112 @@ index 0000000..46eaf3d
 +
 +end
 diff --git a/HTML4/html4.g.sml b/HTML4/html4.g.sml
-index 52d716b..d63fde5 100644
+index 52d716b..75e445f 100644
 --- a/HTML4/html4.g.sml
 +++ b/HTML4/html4.g.sml
-@@ -982,16 +982,50 @@ fun cdata_opt_PROD_1_ACT (cdata, cdata_SPAN : (Lex.pos * Lex.pos), FULL_SPAN : (
+@@ -1,559 +1,557 @@
+-structure 
+-HTML4Tokens = struct
+-
+-    datatype token = EOF
+-      | ENDVAR
+-      | STARTVAR of HTML4Utils.tag_payload
+-      | ENDUL
+-      | STARTUL of HTML4Utils.tag_payload
+-      | ENDU
+-      | STARTU of HTML4Utils.tag_payload
+-      | ENDTT
+-      | STARTTT of HTML4Utils.tag_payload
+-      | ENDTR
+-      | STARTTR of HTML4Utils.tag_payload
+-      | ENDTITLE
+-      | STARTTITLE of HTML4Utils.tag_payload
+-      | ENDTHEAD
+-      | STARTTHEAD of HTML4Utils.tag_payload
+-      | ENDTH
+-      | STARTTH of HTML4Utils.tag_payload
+-      | ENDTFOOT
+-      | STARTTFOOT of HTML4Utils.tag_payload
+-      | ENDTEXTAREA
+-      | STARTTEXTAREA of HTML4Utils.tag_payload
+-      | ENDTD
+-      | STARTTD of HTML4Utils.tag_payload
+-      | ENDTBODY
+-      | STARTTBODY of HTML4Utils.tag_payload
+-      | ENDTABLE
+-      | STARTTABLE of HTML4Utils.tag_payload
+-      | ENDSUP
+-      | STARTSUP of HTML4Utils.tag_payload
+-      | ENDSUB
+-      | STARTSUB of HTML4Utils.tag_payload
+-      | ENDSTYLE
+-      | STARTSTYLE of HTML4Utils.tag_payload
+-      | ENDSTRONG
+-      | STARTSTRONG of HTML4Utils.tag_payload
+-      | ENDSTRIKE
+-      | STARTSTRIKE of HTML4Utils.tag_payload
+-      | ENDSPAN
+-      | STARTSPAN of HTML4Utils.tag_payload
+-      | ENDSMALL
+-      | STARTSMALL of HTML4Utils.tag_payload
+-      | ENDSELECT
+-      | STARTSELECT of HTML4Utils.tag_payload
+-      | ENDSCRIPT
+-      | STARTSCRIPT of HTML4Utils.tag_payload
+-      | ENDSAMP
+-      | STARTSAMP of HTML4Utils.tag_payload
+-      | ENDS
+-      | STARTS of HTML4Utils.tag_payload
+-      | ENDQ
+-      | STARTQ of HTML4Utils.tag_payload
+-      | ENDPRE
+-      | STARTPRE of HTML4Utils.tag_payload
+-      | STARTPARAM of HTML4Utils.tag_payload
+-      | ENDP
+-      | STARTP of HTML4Utils.tag_payload
+-      | ENDOPTION
+-      | STARTOPTION of HTML4Utils.tag_payload
+-      | ENDOPTGROUP
+-      | STARTOPTGROUP of HTML4Utils.tag_payload
+-      | ENDOL
+-      | STARTOL of HTML4Utils.tag_payload
+-      | ENDOBJECT
+-      | STARTOBJECT of HTML4Utils.tag_payload
+-      | ENDNOSCRIPT
+-      | STARTNOSCRIPT of HTML4Utils.tag_payload
+-      | ENDNOFRAMES
+-      | STARTNOFRAMES of HTML4Utils.tag_payload
+-      | STARTMETA of HTML4Utils.tag_payload
+-      | ENDMENU
+-      | STARTMENU of HTML4Utils.tag_payload
+-      | ENDMAP
+-      | STARTMAP of HTML4Utils.tag_payload
+-      | STARTLINK of HTML4Utils.tag_payload
+-      | ENDLI
+-      | STARTLI of HTML4Utils.tag_payload
+-      | ENDLEGEND
+-      | STARTLEGEND of HTML4Utils.tag_payload
+-      | ENDLABEL
+-      | STARTLABEL of HTML4Utils.tag_payload
+-      | ENDKBD
+-      | STARTKBD of HTML4Utils.tag_payload
+-      | STARTISINDEX of HTML4Utils.tag_payload
+-      | ENDINS
+-      | STARTINS of HTML4Utils.tag_payload
+-      | STARTINPUT of HTML4Utils.tag_payload
+-      | STARTIMG of HTML4Utils.tag_payload
+-      | ENDIFRAME
+-      | STARTIFRAME of HTML4Utils.tag_payload
+-      | ENDI
+-      | STARTI of HTML4Utils.tag_payload
+-      | ENDHTML
+-      | STARTHTML of HTML4Utils.tag_payload
+-      | STARTHR of HTML4Utils.tag_payload
+-      | ENDHEAD
+-      | STARTHEAD of HTML4Utils.tag_payload
+-      | ENDH6
+-      | STARTH6 of HTML4Utils.tag_payload
+-      | ENDH5
+-      | STARTH5 of HTML4Utils.tag_payload
+-      | ENDH4
+-      | STARTH4 of HTML4Utils.tag_payload
+-      | ENDH3
+-      | STARTH3 of HTML4Utils.tag_payload
+-      | ENDH2
+-      | STARTH2 of HTML4Utils.tag_payload
+-      | ENDH1
+-      | STARTH1 of HTML4Utils.tag_payload
+-      | ENDFRAMESET
+-      | STARTFRAMESET of HTML4Utils.tag_payload
+-      | STARTFRAME of HTML4Utils.tag_payload
+-      | ENDFORM
+-      | STARTFORM of HTML4Utils.tag_payload
+-      | ENDFONT
+-      | STARTFONT of HTML4Utils.tag_payload
+-      | ENDFIELDSET
+-      | STARTFIELDSET of HTML4Utils.tag_payload
+-      | ENDEM
+-      | STARTEM of HTML4Utils.tag_payload
+-      | ENDDT
+-      | STARTDT of HTML4Utils.tag_payload
+-      | ENDDL
+-      | STARTDL of HTML4Utils.tag_payload
+-      | ENDDIV
+-      | STARTDIV of HTML4Utils.tag_payload
+-      | ENDDIR
+-      | STARTDIR of HTML4Utils.tag_payload
+-      | ENDDFN
+-      | STARTDFN of HTML4Utils.tag_payload
+-      | ENDDEL
+-      | STARTDEL of HTML4Utils.tag_payload
+-      | ENDDD
+-      | STARTDD of HTML4Utils.tag_payload
+-      | ENDCOLGROUP
+-      | STARTCOLGROUP of HTML4Utils.tag_payload
+-      | STARTCOL of HTML4Utils.tag_payload
+-      | ENDCODE
+-      | STARTCODE of HTML4Utils.tag_payload
+-      | ENDCITE
+-      | STARTCITE of HTML4Utils.tag_payload
+-      | ENDCENTER
+-      | STARTCENTER of HTML4Utils.tag_payload
+-      | ENDCAPTION
+-      | STARTCAPTION of HTML4Utils.tag_payload
+-      | ENDBUTTON
+-      | STARTBUTTON of HTML4Utils.tag_payload
+-      | STARTBR of HTML4Utils.tag_payload
+-      | ENDBODY
+-      | STARTBODY of HTML4Utils.tag_payload
+-      | ENDBLOCKQUOTE
+-      | STARTBLOCKQUOTE of HTML4Utils.tag_payload
+-      | ENDBIG
+-      | STARTBIG of HTML4Utils.tag_payload
+-      | ENDBDO
+-      | STARTBDO of HTML4Utils.tag_payload
+-      | STARTBASEFONT of HTML4Utils.tag_payload
+-      | STARTBASE of HTML4Utils.tag_payload
+-      | ENDB
+-      | STARTB of HTML4Utils.tag_payload
+-      | STARTAREA of HTML4Utils.tag_payload
+-      | ENDAPPLET
+-      | STARTAPPLET of HTML4Utils.tag_payload
+-      | ENDADDRESS
+-      | STARTADDRESS of HTML4Utils.tag_payload
+-      | ENDACRONYM
+-      | STARTACRONYM of HTML4Utils.tag_payload
+-      | ENDABBR
+-      | STARTABBR of HTML4Utils.tag_payload
+-      | ENDA
+-      | STARTA of HTML4Utils.tag_payload
+-      | XML_PROCESSING of string
+-      | ENTITY_REF of Atom.atom
+-      | CHAR_REF of IntInf.int
+-      | DOCTYPE of string
+-      | PCDATA of string
+-      | COMMENT of string
++structure HTML4Tokens =
++  struct
++    datatype token
++      = OPENTAG of Atom.atom * HTML4Utils.tag_payload
+       | CLOSETAG of Atom.atom
+-      | OPENTAG of Atom.atom * HTML4Utils.tag_payload
+-
+-    val allToks = [EOF, ENDVAR, ENDUL, ENDU, ENDTT, ENDTR, ENDTITLE, ENDTHEAD, ENDTH, ENDTFOOT, ENDTEXTAREA, ENDTD, ENDTBODY, ENDTABLE, ENDSUP, ENDSUB, ENDSTYLE, ENDSTRONG, ENDSTRIKE, ENDSPAN, ENDSMALL, ENDSELECT, ENDSCRIPT, ENDSAMP, ENDS, ENDQ, ENDPRE, ENDP, ENDOPTION, ENDOPTGROUP, ENDOL, ENDOBJECT, ENDNOSCRIPT, ENDNOFRAMES, ENDMENU, ENDMAP, ENDLI, ENDLEGEND, ENDLABEL, ENDKBD, ENDINS, ENDIFRAME, ENDI, ENDHTML, ENDHEAD, ENDH6, ENDH5, ENDH4, ENDH3, ENDH2, ENDH1, ENDFRAMESET, ENDFORM, ENDFONT, ENDFIELDSET, ENDEM, ENDDT, ENDDL, ENDDIV, ENDDIR, ENDDFN, ENDDEL, ENDDD, ENDCOLGROUP, ENDCODE, ENDCITE, ENDCENTER, ENDCAPTION, ENDBUTTON, ENDBODY, ENDBLOCKQUOTE, ENDBIG, ENDBDO, ENDB, ENDAPPLET, ENDADDRESS, ENDACRONYM, ENDABBR, ENDA]
+-
++      | COMMENT of string
++      | PCDATA of string
++      | DOCTYPE of string
++      | CHAR_REF of IntInf.int
++      | ENTITY_REF of Atom.atom
++      | XML_PROCESSING of string
++      | STARTA of HTML4Utils.tag_payload
++      | ENDA
++      | STARTABBR of HTML4Utils.tag_payload
++      | ENDABBR
++      | STARTACRONYM of HTML4Utils.tag_payload
++      | ENDACRONYM
++      | STARTADDRESS of HTML4Utils.tag_payload
++      | ENDADDRESS
++      | STARTAPPLET of HTML4Utils.tag_payload
++      | ENDAPPLET
++      | STARTAREA of HTML4Utils.tag_payload
++      | STARTB of HTML4Utils.tag_payload
++      | ENDB
++      | STARTBASE of HTML4Utils.tag_payload
++      | STARTBASEFONT of HTML4Utils.tag_payload
++      | STARTBDO of HTML4Utils.tag_payload
++      | ENDBDO
++      | STARTBIG of HTML4Utils.tag_payload
++      | ENDBIG
++      | STARTBLOCKQUOTE of HTML4Utils.tag_payload
++      | ENDBLOCKQUOTE
++      | STARTBODY of HTML4Utils.tag_payload
++      | ENDBODY
++      | STARTBR of HTML4Utils.tag_payload
++      | STARTBUTTON of HTML4Utils.tag_payload
++      | ENDBUTTON
++      | STARTCAPTION of HTML4Utils.tag_payload
++      | ENDCAPTION
++      | STARTCENTER of HTML4Utils.tag_payload
++      | ENDCENTER
++      | STARTCITE of HTML4Utils.tag_payload
++      | ENDCITE
++      | STARTCODE of HTML4Utils.tag_payload
++      | ENDCODE
++      | STARTCOL of HTML4Utils.tag_payload
++      | STARTCOLGROUP of HTML4Utils.tag_payload
++      | ENDCOLGROUP
++      | STARTDD of HTML4Utils.tag_payload
++      | ENDDD
++      | STARTDEL of HTML4Utils.tag_payload
++      | ENDDEL
++      | STARTDFN of HTML4Utils.tag_payload
++      | ENDDFN
++      | STARTDIR of HTML4Utils.tag_payload
++      | ENDDIR
++      | STARTDIV of HTML4Utils.tag_payload
++      | ENDDIV
++      | STARTDL of HTML4Utils.tag_payload
++      | ENDDL
++      | STARTDT of HTML4Utils.tag_payload
++      | ENDDT
++      | STARTEM of HTML4Utils.tag_payload
++      | ENDEM
++      | STARTFIELDSET of HTML4Utils.tag_payload
++      | ENDFIELDSET
++      | STARTFONT of HTML4Utils.tag_payload
++      | ENDFONT
++      | STARTFORM of HTML4Utils.tag_payload
++      | ENDFORM
++      | STARTFRAME of HTML4Utils.tag_payload
++      | STARTFRAMESET of HTML4Utils.tag_payload
++      | ENDFRAMESET
++      | STARTH1 of HTML4Utils.tag_payload
++      | ENDH1
++      | STARTH2 of HTML4Utils.tag_payload
++      | ENDH2
++      | STARTH3 of HTML4Utils.tag_payload
++      | ENDH3
++      | STARTH4 of HTML4Utils.tag_payload
++      | ENDH4
++      | STARTH5 of HTML4Utils.tag_payload
++      | ENDH5
++      | STARTH6 of HTML4Utils.tag_payload
++      | ENDH6
++      | STARTHEAD of HTML4Utils.tag_payload
++      | ENDHEAD
++      | STARTHR of HTML4Utils.tag_payload
++      | STARTHTML of HTML4Utils.tag_payload
++      | ENDHTML
++      | STARTI of HTML4Utils.tag_payload
++      | ENDI
++      | STARTIFRAME of HTML4Utils.tag_payload
++      | ENDIFRAME
++      | STARTIMG of HTML4Utils.tag_payload
++      | STARTINPUT of HTML4Utils.tag_payload
++      | STARTINS of HTML4Utils.tag_payload
++      | ENDINS
++      | STARTISINDEX of HTML4Utils.tag_payload
++      | STARTKBD of HTML4Utils.tag_payload
++      | ENDKBD
++      | STARTLABEL of HTML4Utils.tag_payload
++      | ENDLABEL
++      | STARTLEGEND of HTML4Utils.tag_payload
++      | ENDLEGEND
++      | STARTLI of HTML4Utils.tag_payload
++      | ENDLI
++      | STARTLINK of HTML4Utils.tag_payload
++      | STARTMAP of HTML4Utils.tag_payload
++      | ENDMAP
++      | STARTMENU of HTML4Utils.tag_payload
++      | ENDMENU
++      | STARTMETA of HTML4Utils.tag_payload
++      | STARTNOFRAMES of HTML4Utils.tag_payload
++      | ENDNOFRAMES
++      | STARTNOSCRIPT of HTML4Utils.tag_payload
++      | ENDNOSCRIPT
++      | STARTOBJECT of HTML4Utils.tag_payload
++      | ENDOBJECT
++      | STARTOL of HTML4Utils.tag_payload
++      | ENDOL
++      | STARTOPTGROUP of HTML4Utils.tag_payload
++      | ENDOPTGROUP
++      | STARTOPTION of HTML4Utils.tag_payload
++      | ENDOPTION
++      | STARTP of HTML4Utils.tag_payload
++      | ENDP
++      | STARTPARAM of HTML4Utils.tag_payload
++      | STARTPRE of HTML4Utils.tag_payload
++      | ENDPRE
++      | STARTQ of HTML4Utils.tag_payload
++      | ENDQ
++      | STARTS of HTML4Utils.tag_payload
++      | ENDS
++      | STARTSAMP of HTML4Utils.tag_payload
++      | ENDSAMP
++      | STARTSCRIPT of HTML4Utils.tag_payload
++      | ENDSCRIPT
++      | STARTSELECT of HTML4Utils.tag_payload
++      | ENDSELECT
++      | STARTSMALL of HTML4Utils.tag_payload
++      | ENDSMALL
++      | STARTSPAN of HTML4Utils.tag_payload
++      | ENDSPAN
++      | STARTSTRIKE of HTML4Utils.tag_payload
++      | ENDSTRIKE
++      | STARTSTRONG of HTML4Utils.tag_payload
++      | ENDSTRONG
++      | STARTSTYLE of HTML4Utils.tag_payload
++      | ENDSTYLE
++      | STARTSUB of HTML4Utils.tag_payload
++      | ENDSUB
++      | STARTSUP of HTML4Utils.tag_payload
++      | ENDSUP
++      | STARTTABLE of HTML4Utils.tag_payload
++      | ENDTABLE
++      | STARTTBODY of HTML4Utils.tag_payload
++      | ENDTBODY
++      | STARTTD of HTML4Utils.tag_payload
++      | ENDTD
++      | STARTTEXTAREA of HTML4Utils.tag_payload
++      | ENDTEXTAREA
++      | STARTTFOOT of HTML4Utils.tag_payload
++      | ENDTFOOT
++      | STARTTH of HTML4Utils.tag_payload
++      | ENDTH
++      | STARTTHEAD of HTML4Utils.tag_payload
++      | ENDTHEAD
++      | STARTTITLE of HTML4Utils.tag_payload
++      | ENDTITLE
++      | STARTTR of HTML4Utils.tag_payload
++      | ENDTR
++      | STARTTT of HTML4Utils.tag_payload
++      | ENDTT
++      | STARTU of HTML4Utils.tag_payload
++      | ENDU
++      | STARTUL of HTML4Utils.tag_payload
++      | ENDUL
++      | STARTVAR of HTML4Utils.tag_payload
++      | ENDVAR
++      | EOF
++    val allToks = [
++            ENDA, ENDABBR, ENDACRONYM, ENDADDRESS, ENDAPPLET, ENDB, ENDBDO, ENDBIG, ENDBLOCKQUOTE, ENDBODY, ENDBUTTON, ENDCAPTION, ENDCENTER, ENDCITE, ENDCODE, ENDCOLGROUP, ENDDD, ENDDEL, ENDDFN, ENDDIR, ENDDIV, ENDDL, ENDDT, ENDEM, ENDFIELDSET, ENDFONT, ENDFORM, ENDFRAMESET, ENDH1, ENDH2, ENDH3, ENDH4, ENDH5, ENDH6, ENDHEAD, ENDHTML, ENDI, ENDIFRAME, ENDINS, ENDKBD, ENDLABEL, ENDLEGEND, ENDLI, ENDMAP, ENDMENU, ENDNOFRAMES, ENDNOSCRIPT, ENDOBJECT, ENDOL, ENDOPTGROUP, ENDOPTION, ENDP, ENDPRE, ENDQ, ENDS, ENDSAMP, ENDSCRIPT, ENDSELECT, ENDSMALL, ENDSPAN, ENDSTRIKE, ENDSTRONG, ENDSTYLE, ENDSUB, ENDSUP, ENDTABLE, ENDTBODY, ENDTD, ENDTEXTAREA, ENDTFOOT, ENDTH, ENDTHEAD, ENDTITLE, ENDTR, ENDTT, ENDU, ENDUL, ENDVAR, EOF
++           ]
+     fun toString tok =
+ (case (tok)
+- of (EOF) => "EOF"
+-  | (ENDVAR) => "ENDVAR"
+-  | (STARTVAR(_)) => "STARTVAR"
+-  | (ENDUL) => "ENDUL"
+-  | (STARTUL(_)) => "STARTUL"
+-  | (ENDU) => "ENDU"
+-  | (STARTU(_)) => "STARTU"
+-  | (ENDTT) => "ENDTT"
+-  | (STARTTT(_)) => "STARTTT"
+-  | (ENDTR) => "ENDTR"
+-  | (STARTTR(_)) => "STARTTR"
+-  | (ENDTITLE) => "ENDTITLE"
+-  | (STARTTITLE(_)) => "STARTTITLE"
+-  | (ENDTHEAD) => "ENDTHEAD"
+-  | (STARTTHEAD(_)) => "STARTTHEAD"
+-  | (ENDTH) => "ENDTH"
+-  | (STARTTH(_)) => "STARTTH"
+-  | (ENDTFOOT) => "ENDTFOOT"
+-  | (STARTTFOOT(_)) => "STARTTFOOT"
+-  | (ENDTEXTAREA) => "ENDTEXTAREA"
+-  | (STARTTEXTAREA(_)) => "STARTTEXTAREA"
+-  | (ENDTD) => "ENDTD"
+-  | (STARTTD(_)) => "STARTTD"
+-  | (ENDTBODY) => "ENDTBODY"
+-  | (STARTTBODY(_)) => "STARTTBODY"
+-  | (ENDTABLE) => "ENDTABLE"
+-  | (STARTTABLE(_)) => "STARTTABLE"
+-  | (ENDSUP) => "ENDSUP"
+-  | (STARTSUP(_)) => "STARTSUP"
+-  | (ENDSUB) => "ENDSUB"
+-  | (STARTSUB(_)) => "STARTSUB"
+-  | (ENDSTYLE) => "ENDSTYLE"
+-  | (STARTSTYLE(_)) => "STARTSTYLE"
+-  | (ENDSTRONG) => "ENDSTRONG"
+-  | (STARTSTRONG(_)) => "STARTSTRONG"
+-  | (ENDSTRIKE) => "ENDSTRIKE"
+-  | (STARTSTRIKE(_)) => "STARTSTRIKE"
+-  | (ENDSPAN) => "ENDSPAN"
+-  | (STARTSPAN(_)) => "STARTSPAN"
+-  | (ENDSMALL) => "ENDSMALL"
+-  | (STARTSMALL(_)) => "STARTSMALL"
+-  | (ENDSELECT) => "ENDSELECT"
+-  | (STARTSELECT(_)) => "STARTSELECT"
+-  | (ENDSCRIPT) => "ENDSCRIPT"
+-  | (STARTSCRIPT(_)) => "STARTSCRIPT"
+-  | (ENDSAMP) => "ENDSAMP"
+-  | (STARTSAMP(_)) => "STARTSAMP"
+-  | (ENDS) => "ENDS"
+-  | (STARTS(_)) => "STARTS"
+-  | (ENDQ) => "ENDQ"
+-  | (STARTQ(_)) => "STARTQ"
+-  | (ENDPRE) => "ENDPRE"
+-  | (STARTPRE(_)) => "STARTPRE"
+-  | (STARTPARAM(_)) => "STARTPARAM"
+-  | (ENDP) => "ENDP"
+-  | (STARTP(_)) => "STARTP"
+-  | (ENDOPTION) => "ENDOPTION"
+-  | (STARTOPTION(_)) => "STARTOPTION"
+-  | (ENDOPTGROUP) => "ENDOPTGROUP"
+-  | (STARTOPTGROUP(_)) => "STARTOPTGROUP"
+-  | (ENDOL) => "ENDOL"
+-  | (STARTOL(_)) => "STARTOL"
+-  | (ENDOBJECT) => "ENDOBJECT"
+-  | (STARTOBJECT(_)) => "STARTOBJECT"
+-  | (ENDNOSCRIPT) => "ENDNOSCRIPT"
+-  | (STARTNOSCRIPT(_)) => "STARTNOSCRIPT"
+-  | (ENDNOFRAMES) => "ENDNOFRAMES"
+-  | (STARTNOFRAMES(_)) => "STARTNOFRAMES"
+-  | (STARTMETA(_)) => "STARTMETA"
+-  | (ENDMENU) => "ENDMENU"
+-  | (STARTMENU(_)) => "STARTMENU"
+-  | (ENDMAP) => "ENDMAP"
+-  | (STARTMAP(_)) => "STARTMAP"
+-  | (STARTLINK(_)) => "STARTLINK"
+-  | (ENDLI) => "ENDLI"
+-  | (STARTLI(_)) => "STARTLI"
+-  | (ENDLEGEND) => "ENDLEGEND"
+-  | (STARTLEGEND(_)) => "STARTLEGEND"
+-  | (ENDLABEL) => "ENDLABEL"
+-  | (STARTLABEL(_)) => "STARTLABEL"
+-  | (ENDKBD) => "ENDKBD"
+-  | (STARTKBD(_)) => "STARTKBD"
+-  | (STARTISINDEX(_)) => "STARTISINDEX"
+-  | (ENDINS) => "ENDINS"
+-  | (STARTINS(_)) => "STARTINS"
+-  | (STARTINPUT(_)) => "STARTINPUT"
+-  | (STARTIMG(_)) => "STARTIMG"
+-  | (ENDIFRAME) => "ENDIFRAME"
+-  | (STARTIFRAME(_)) => "STARTIFRAME"
+-  | (ENDI) => "ENDI"
+-  | (STARTI(_)) => "STARTI"
+-  | (ENDHTML) => "ENDHTML"
+-  | (STARTHTML(_)) => "STARTHTML"
+-  | (STARTHR(_)) => "STARTHR"
+-  | (ENDHEAD) => "ENDHEAD"
+-  | (STARTHEAD(_)) => "STARTHEAD"
+-  | (ENDH6) => "ENDH6"
+-  | (STARTH6(_)) => "STARTH6"
+-  | (ENDH5) => "ENDH5"
+-  | (STARTH5(_)) => "STARTH5"
+-  | (ENDH4) => "ENDH4"
+-  | (STARTH4(_)) => "STARTH4"
+-  | (ENDH3) => "ENDH3"
+-  | (STARTH3(_)) => "STARTH3"
+-  | (ENDH2) => "ENDH2"
+-  | (STARTH2(_)) => "STARTH2"
+-  | (ENDH1) => "ENDH1"
+-  | (STARTH1(_)) => "STARTH1"
+-  | (ENDFRAMESET) => "ENDFRAMESET"
+-  | (STARTFRAMESET(_)) => "STARTFRAMESET"
+-  | (STARTFRAME(_)) => "STARTFRAME"
+-  | (ENDFORM) => "ENDFORM"
+-  | (STARTFORM(_)) => "STARTFORM"
+-  | (ENDFONT) => "ENDFONT"
+-  | (STARTFONT(_)) => "STARTFONT"
+-  | (ENDFIELDSET) => "ENDFIELDSET"
+-  | (STARTFIELDSET(_)) => "STARTFIELDSET"
+-  | (ENDEM) => "ENDEM"
+-  | (STARTEM(_)) => "STARTEM"
+-  | (ENDDT) => "ENDDT"
+-  | (STARTDT(_)) => "STARTDT"
+-  | (ENDDL) => "ENDDL"
+-  | (STARTDL(_)) => "STARTDL"
+-  | (ENDDIV) => "ENDDIV"
+-  | (STARTDIV(_)) => "STARTDIV"
+-  | (ENDDIR) => "ENDDIR"
+-  | (STARTDIR(_)) => "STARTDIR"
+-  | (ENDDFN) => "ENDDFN"
+-  | (STARTDFN(_)) => "STARTDFN"
+-  | (ENDDEL) => "ENDDEL"
+-  | (STARTDEL(_)) => "STARTDEL"
+-  | (ENDDD) => "ENDDD"
+-  | (STARTDD(_)) => "STARTDD"
+-  | (ENDCOLGROUP) => "ENDCOLGROUP"
+-  | (STARTCOLGROUP(_)) => "STARTCOLGROUP"
+-  | (STARTCOL(_)) => "STARTCOL"
+-  | (ENDCODE) => "ENDCODE"
+-  | (STARTCODE(_)) => "STARTCODE"
+-  | (ENDCITE) => "ENDCITE"
+-  | (STARTCITE(_)) => "STARTCITE"
+-  | (ENDCENTER) => "ENDCENTER"
+-  | (STARTCENTER(_)) => "STARTCENTER"
+-  | (ENDCAPTION) => "ENDCAPTION"
+-  | (STARTCAPTION(_)) => "STARTCAPTION"
+-  | (ENDBUTTON) => "ENDBUTTON"
+-  | (STARTBUTTON(_)) => "STARTBUTTON"
+-  | (STARTBR(_)) => "STARTBR"
+-  | (ENDBODY) => "ENDBODY"
+-  | (STARTBODY(_)) => "STARTBODY"
+-  | (ENDBLOCKQUOTE) => "ENDBLOCKQUOTE"
+-  | (STARTBLOCKQUOTE(_)) => "STARTBLOCKQUOTE"
+-  | (ENDBIG) => "ENDBIG"
+-  | (STARTBIG(_)) => "STARTBIG"
+-  | (ENDBDO) => "ENDBDO"
+-  | (STARTBDO(_)) => "STARTBDO"
+-  | (STARTBASEFONT(_)) => "STARTBASEFONT"
+-  | (STARTBASE(_)) => "STARTBASE"
+-  | (ENDB) => "ENDB"
+-  | (STARTB(_)) => "STARTB"
+-  | (STARTAREA(_)) => "STARTAREA"
+-  | (ENDAPPLET) => "ENDAPPLET"
+-  | (STARTAPPLET(_)) => "STARTAPPLET"
+-  | (ENDADDRESS) => "ENDADDRESS"
+-  | (STARTADDRESS(_)) => "STARTADDRESS"
+-  | (ENDACRONYM) => "ENDACRONYM"
+-  | (STARTACRONYM(_)) => "STARTACRONYM"
+-  | (ENDABBR) => "ENDABBR"
+-  | (STARTABBR(_)) => "STARTABBR"
+-  | (ENDA) => "ENDA"
+-  | (STARTA(_)) => "STARTA"
+-  | (XML_PROCESSING(_)) => "XML_PROCESSING"
+-  | (ENTITY_REF(_)) => "ENTITY_REF"
+-  | (CHAR_REF(_)) => "CHAR_REF"
+-  | (DOCTYPE(_)) => "DOCTYPE"
+-  | (PCDATA(_)) => "PCDATA"
+-  | (COMMENT(_)) => "COMMENT"
++ of (OPENTAG(_)) => "OPENTAG"
+   | (CLOSETAG(_)) => "CLOSETAG"
+-  | (OPENTAG(_)) => "OPENTAG"
++  | (COMMENT(_)) => "COMMENT"
++  | (PCDATA(_)) => "PCDATA"
++  | (DOCTYPE(_)) => "DOCTYPE"
++  | (CHAR_REF(_)) => "CHAR_REF"
++  | (ENTITY_REF(_)) => "ENTITY_REF"
++  | (XML_PROCESSING(_)) => "XML_PROCESSING"
++  | (STARTA(_)) => "STARTA"
++  | (ENDA) => "ENDA"
++  | (STARTABBR(_)) => "STARTABBR"
++  | (ENDABBR) => "ENDABBR"
++  | (STARTACRONYM(_)) => "STARTACRONYM"
++  | (ENDACRONYM) => "ENDACRONYM"
++  | (STARTADDRESS(_)) => "STARTADDRESS"
++  | (ENDADDRESS) => "ENDADDRESS"
++  | (STARTAPPLET(_)) => "STARTAPPLET"
++  | (ENDAPPLET) => "ENDAPPLET"
++  | (STARTAREA(_)) => "STARTAREA"
++  | (STARTB(_)) => "STARTB"
++  | (ENDB) => "ENDB"
++  | (STARTBASE(_)) => "STARTBASE"
++  | (STARTBASEFONT(_)) => "STARTBASEFONT"
++  | (STARTBDO(_)) => "STARTBDO"
++  | (ENDBDO) => "ENDBDO"
++  | (STARTBIG(_)) => "STARTBIG"
++  | (ENDBIG) => "ENDBIG"
++  | (STARTBLOCKQUOTE(_)) => "STARTBLOCKQUOTE"
++  | (ENDBLOCKQUOTE) => "ENDBLOCKQUOTE"
++  | (STARTBODY(_)) => "STARTBODY"
++  | (ENDBODY) => "ENDBODY"
++  | (STARTBR(_)) => "STARTBR"
++  | (STARTBUTTON(_)) => "STARTBUTTON"
++  | (ENDBUTTON) => "ENDBUTTON"
++  | (STARTCAPTION(_)) => "STARTCAPTION"
++  | (ENDCAPTION) => "ENDCAPTION"
++  | (STARTCENTER(_)) => "STARTCENTER"
++  | (ENDCENTER) => "ENDCENTER"
++  | (STARTCITE(_)) => "STARTCITE"
++  | (ENDCITE) => "ENDCITE"
++  | (STARTCODE(_)) => "STARTCODE"
++  | (ENDCODE) => "ENDCODE"
++  | (STARTCOL(_)) => "STARTCOL"
++  | (STARTCOLGROUP(_)) => "STARTCOLGROUP"
++  | (ENDCOLGROUP) => "ENDCOLGROUP"
++  | (STARTDD(_)) => "STARTDD"
++  | (ENDDD) => "ENDDD"
++  | (STARTDEL(_)) => "STARTDEL"
++  | (ENDDEL) => "ENDDEL"
++  | (STARTDFN(_)) => "STARTDFN"
++  | (ENDDFN) => "ENDDFN"
++  | (STARTDIR(_)) => "STARTDIR"
++  | (ENDDIR) => "ENDDIR"
++  | (STARTDIV(_)) => "STARTDIV"
++  | (ENDDIV) => "ENDDIV"
++  | (STARTDL(_)) => "STARTDL"
++  | (ENDDL) => "ENDDL"
++  | (STARTDT(_)) => "STARTDT"
++  | (ENDDT) => "ENDDT"
++  | (STARTEM(_)) => "STARTEM"
++  | (ENDEM) => "ENDEM"
++  | (STARTFIELDSET(_)) => "STARTFIELDSET"
++  | (ENDFIELDSET) => "ENDFIELDSET"
++  | (STARTFONT(_)) => "STARTFONT"
++  | (ENDFONT) => "ENDFONT"
++  | (STARTFORM(_)) => "STARTFORM"
++  | (ENDFORM) => "ENDFORM"
++  | (STARTFRAME(_)) => "STARTFRAME"
++  | (STARTFRAMESET(_)) => "STARTFRAMESET"
++  | (ENDFRAMESET) => "ENDFRAMESET"
++  | (STARTH1(_)) => "STARTH1"
++  | (ENDH1) => "ENDH1"
++  | (STARTH2(_)) => "STARTH2"
++  | (ENDH2) => "ENDH2"
++  | (STARTH3(_)) => "STARTH3"
++  | (ENDH3) => "ENDH3"
++  | (STARTH4(_)) => "STARTH4"
++  | (ENDH4) => "ENDH4"
++  | (STARTH5(_)) => "STARTH5"
++  | (ENDH5) => "ENDH5"
++  | (STARTH6(_)) => "STARTH6"
++  | (ENDH6) => "ENDH6"
++  | (STARTHEAD(_)) => "STARTHEAD"
++  | (ENDHEAD) => "ENDHEAD"
++  | (STARTHR(_)) => "STARTHR"
++  | (STARTHTML(_)) => "STARTHTML"
++  | (ENDHTML) => "ENDHTML"
++  | (STARTI(_)) => "STARTI"
++  | (ENDI) => "ENDI"
++  | (STARTIFRAME(_)) => "STARTIFRAME"
++  | (ENDIFRAME) => "ENDIFRAME"
++  | (STARTIMG(_)) => "STARTIMG"
++  | (STARTINPUT(_)) => "STARTINPUT"
++  | (STARTINS(_)) => "STARTINS"
++  | (ENDINS) => "ENDINS"
++  | (STARTISINDEX(_)) => "STARTISINDEX"
++  | (STARTKBD(_)) => "STARTKBD"
++  | (ENDKBD) => "ENDKBD"
++  | (STARTLABEL(_)) => "STARTLABEL"
++  | (ENDLABEL) => "ENDLABEL"
++  | (STARTLEGEND(_)) => "STARTLEGEND"
++  | (ENDLEGEND) => "ENDLEGEND"
++  | (STARTLI(_)) => "STARTLI"
++  | (ENDLI) => "ENDLI"
++  | (STARTLINK(_)) => "STARTLINK"
++  | (STARTMAP(_)) => "STARTMAP"
++  | (ENDMAP) => "ENDMAP"
++  | (STARTMENU(_)) => "STARTMENU"
++  | (ENDMENU) => "ENDMENU"
++  | (STARTMETA(_)) => "STARTMETA"
++  | (STARTNOFRAMES(_)) => "STARTNOFRAMES"
++  | (ENDNOFRAMES) => "ENDNOFRAMES"
++  | (STARTNOSCRIPT(_)) => "STARTNOSCRIPT"
++  | (ENDNOSCRIPT) => "ENDNOSCRIPT"
++  | (STARTOBJECT(_)) => "STARTOBJECT"
++  | (ENDOBJECT) => "ENDOBJECT"
++  | (STARTOL(_)) => "STARTOL"
++  | (ENDOL) => "ENDOL"
++  | (STARTOPTGROUP(_)) => "STARTOPTGROUP"
++  | (ENDOPTGROUP) => "ENDOPTGROUP"
++  | (STARTOPTION(_)) => "STARTOPTION"
++  | (ENDOPTION) => "ENDOPTION"
++  | (STARTP(_)) => "STARTP"
++  | (ENDP) => "ENDP"
++  | (STARTPARAM(_)) => "STARTPARAM"
++  | (STARTPRE(_)) => "STARTPRE"
++  | (ENDPRE) => "ENDPRE"
++  | (STARTQ(_)) => "STARTQ"
++  | (ENDQ) => "ENDQ"
++  | (STARTS(_)) => "STARTS"
++  | (ENDS) => "ENDS"
++  | (STARTSAMP(_)) => "STARTSAMP"
++  | (ENDSAMP) => "ENDSAMP"
++  | (STARTSCRIPT(_)) => "STARTSCRIPT"
++  | (ENDSCRIPT) => "ENDSCRIPT"
++  | (STARTSELECT(_)) => "STARTSELECT"
++  | (ENDSELECT) => "ENDSELECT"
++  | (STARTSMALL(_)) => "STARTSMALL"
++  | (ENDSMALL) => "ENDSMALL"
++  | (STARTSPAN(_)) => "STARTSPAN"
++  | (ENDSPAN) => "ENDSPAN"
++  | (STARTSTRIKE(_)) => "STARTSTRIKE"
++  | (ENDSTRIKE) => "ENDSTRIKE"
++  | (STARTSTRONG(_)) => "STARTSTRONG"
++  | (ENDSTRONG) => "ENDSTRONG"
++  | (STARTSTYLE(_)) => "STARTSTYLE"
++  | (ENDSTYLE) => "ENDSTYLE"
++  | (STARTSUB(_)) => "STARTSUB"
++  | (ENDSUB) => "ENDSUB"
++  | (STARTSUP(_)) => "STARTSUP"
++  | (ENDSUP) => "ENDSUP"
++  | (STARTTABLE(_)) => "STARTTABLE"
++  | (ENDTABLE) => "ENDTABLE"
++  | (STARTTBODY(_)) => "STARTTBODY"
++  | (ENDTBODY) => "ENDTBODY"
++  | (STARTTD(_)) => "STARTTD"
++  | (ENDTD) => "ENDTD"
++  | (STARTTEXTAREA(_)) => "STARTTEXTAREA"
++  | (ENDTEXTAREA) => "ENDTEXTAREA"
++  | (STARTTFOOT(_)) => "STARTTFOOT"
++  | (ENDTFOOT) => "ENDTFOOT"
++  | (STARTTH(_)) => "STARTTH"
++  | (ENDTH) => "ENDTH"
++  | (STARTTHEAD(_)) => "STARTTHEAD"
++  | (ENDTHEAD) => "ENDTHEAD"
++  | (STARTTITLE(_)) => "STARTTITLE"
++  | (ENDTITLE) => "ENDTITLE"
++  | (STARTTR(_)) => "STARTTR"
++  | (ENDTR) => "ENDTR"
++  | (STARTTT(_)) => "STARTTT"
++  | (ENDTT) => "ENDTT"
++  | (STARTU(_)) => "STARTU"
++  | (ENDU) => "ENDU"
++  | (STARTUL(_)) => "STARTUL"
++  | (ENDUL) => "ENDUL"
++  | (STARTVAR(_)) => "STARTVAR"
++  | (ENDVAR) => "ENDVAR"
++  | (EOF) => "EOF"
+ (* end case *))
+     fun isKW tok =
+ (case (tok)
+- of (EOF) => false
+-  | (ENDVAR) => false
+-  | (STARTVAR(_)) => false
+-  | (ENDUL) => false
+-  | (STARTUL(_)) => false
+-  | (ENDU) => false
+-  | (STARTU(_)) => false
+-  | (ENDTT) => false
+-  | (STARTTT(_)) => false
+-  | (ENDTR) => false
+-  | (STARTTR(_)) => false
+-  | (ENDTITLE) => false
+-  | (STARTTITLE(_)) => false
+-  | (ENDTHEAD) => false
+-  | (STARTTHEAD(_)) => false
+-  | (ENDTH) => false
+-  | (STARTTH(_)) => false
+-  | (ENDTFOOT) => false
+-  | (STARTTFOOT(_)) => false
+-  | (ENDTEXTAREA) => false
+-  | (STARTTEXTAREA(_)) => false
+-  | (ENDTD) => false
+-  | (STARTTD(_)) => false
+-  | (ENDTBODY) => false
+-  | (STARTTBODY(_)) => false
+-  | (ENDTABLE) => false
+-  | (STARTTABLE(_)) => false
+-  | (ENDSUP) => false
+-  | (STARTSUP(_)) => false
+-  | (ENDSUB) => false
+-  | (STARTSUB(_)) => false
+-  | (ENDSTYLE) => false
+-  | (STARTSTYLE(_)) => false
+-  | (ENDSTRONG) => false
+-  | (STARTSTRONG(_)) => false
+-  | (ENDSTRIKE) => false
+-  | (STARTSTRIKE(_)) => false
+-  | (ENDSPAN) => false
+-  | (STARTSPAN(_)) => false
+-  | (ENDSMALL) => false
+-  | (STARTSMALL(_)) => false
+-  | (ENDSELECT) => false
+-  | (STARTSELECT(_)) => false
+-  | (ENDSCRIPT) => false
+-  | (STARTSCRIPT(_)) => false
+-  | (ENDSAMP) => false
+-  | (STARTSAMP(_)) => false
+-  | (ENDS) => false
+-  | (STARTS(_)) => false
+-  | (ENDQ) => false
+-  | (STARTQ(_)) => false
+-  | (ENDPRE) => false
+-  | (STARTPRE(_)) => false
+-  | (STARTPARAM(_)) => false
+-  | (ENDP) => false
+-  | (STARTP(_)) => false
+-  | (ENDOPTION) => false
+-  | (STARTOPTION(_)) => false
+-  | (ENDOPTGROUP) => false
+-  | (STARTOPTGROUP(_)) => false
+-  | (ENDOL) => false
+-  | (STARTOL(_)) => false
+-  | (ENDOBJECT) => false
+-  | (STARTOBJECT(_)) => false
+-  | (ENDNOSCRIPT) => false
+-  | (STARTNOSCRIPT(_)) => false
+-  | (ENDNOFRAMES) => false
+-  | (STARTNOFRAMES(_)) => false
+-  | (STARTMETA(_)) => false
+-  | (ENDMENU) => false
+-  | (STARTMENU(_)) => false
+-  | (ENDMAP) => false
+-  | (STARTMAP(_)) => false
+-  | (STARTLINK(_)) => false
+-  | (ENDLI) => false
+-  | (STARTLI(_)) => false
+-  | (ENDLEGEND) => false
+-  | (STARTLEGEND(_)) => false
+-  | (ENDLABEL) => false
+-  | (STARTLABEL(_)) => false
+-  | (ENDKBD) => false
+-  | (STARTKBD(_)) => false
+-  | (STARTISINDEX(_)) => false
+-  | (ENDINS) => false
+-  | (STARTINS(_)) => false
+-  | (STARTINPUT(_)) => false
+-  | (STARTIMG(_)) => false
+-  | (ENDIFRAME) => false
+-  | (STARTIFRAME(_)) => false
+-  | (ENDI) => false
+-  | (STARTI(_)) => false
+-  | (ENDHTML) => false
+-  | (STARTHTML(_)) => false
+-  | (STARTHR(_)) => false
+-  | (ENDHEAD) => false
+-  | (STARTHEAD(_)) => false
+-  | (ENDH6) => false
+-  | (STARTH6(_)) => false
+-  | (ENDH5) => false
+-  | (STARTH5(_)) => false
+-  | (ENDH4) => false
+-  | (STARTH4(_)) => false
+-  | (ENDH3) => false
+-  | (STARTH3(_)) => false
+-  | (ENDH2) => false
+-  | (STARTH2(_)) => false
+-  | (ENDH1) => false
+-  | (STARTH1(_)) => false
+-  | (ENDFRAMESET) => false
+-  | (STARTFRAMESET(_)) => false
+-  | (STARTFRAME(_)) => false
+-  | (ENDFORM) => false
+-  | (STARTFORM(_)) => false
+-  | (ENDFONT) => false
+-  | (STARTFONT(_)) => false
+-  | (ENDFIELDSET) => false
+-  | (STARTFIELDSET(_)) => false
+-  | (ENDEM) => false
+-  | (STARTEM(_)) => false
+-  | (ENDDT) => false
+-  | (STARTDT(_)) => false
+-  | (ENDDL) => false
+-  | (STARTDL(_)) => false
+-  | (ENDDIV) => false
+-  | (STARTDIV(_)) => false
+-  | (ENDDIR) => false
+-  | (STARTDIR(_)) => false
+-  | (ENDDFN) => false
+-  | (STARTDFN(_)) => false
+-  | (ENDDEL) => false
+-  | (STARTDEL(_)) => false
+-  | (ENDDD) => false
+-  | (STARTDD(_)) => false
+-  | (ENDCOLGROUP) => false
+-  | (STARTCOLGROUP(_)) => false
+-  | (STARTCOL(_)) => false
+-  | (ENDCODE) => false
+-  | (STARTCODE(_)) => false
+-  | (ENDCITE) => false
+-  | (STARTCITE(_)) => false
+-  | (ENDCENTER) => false
+-  | (STARTCENTER(_)) => false
+-  | (ENDCAPTION) => false
+-  | (STARTCAPTION(_)) => false
+-  | (ENDBUTTON) => false
+-  | (STARTBUTTON(_)) => false
+-  | (STARTBR(_)) => false
+-  | (ENDBODY) => false
+-  | (STARTBODY(_)) => false
+-  | (ENDBLOCKQUOTE) => false
+-  | (STARTBLOCKQUOTE(_)) => false
+-  | (ENDBIG) => false
+-  | (STARTBIG(_)) => false
+-  | (ENDBDO) => false
+-  | (STARTBDO(_)) => false
+-  | (STARTBASEFONT(_)) => false
+-  | (STARTBASE(_)) => false
+-  | (ENDB) => false
+-  | (STARTB(_)) => false
+-  | (STARTAREA(_)) => false
+-  | (ENDAPPLET) => false
+-  | (STARTAPPLET(_)) => false
+-  | (ENDADDRESS) => false
+-  | (STARTADDRESS(_)) => false
+-  | (ENDACRONYM) => false
+-  | (STARTACRONYM(_)) => false
+-  | (ENDABBR) => false
+-  | (STARTABBR(_)) => false
+-  | (ENDA) => false
+-  | (STARTA(_)) => false
+-  | (XML_PROCESSING(_)) => false
+-  | (ENTITY_REF(_)) => false
+-  | (CHAR_REF(_)) => false
+-  | (DOCTYPE(_)) => false
+-  | (PCDATA(_)) => false
+-  | (COMMENT(_)) => false
++ of (OPENTAG(_)) => false
+   | (CLOSETAG(_)) => false
+-  | (OPENTAG(_)) => false
++  | (COMMENT(_)) => false
++  | (PCDATA(_)) => false
++  | (DOCTYPE(_)) => false
++  | (CHAR_REF(_)) => false
++  | (ENTITY_REF(_)) => false
++  | (XML_PROCESSING(_)) => false
++  | (STARTA(_)) => false
++  | (ENDA) => false
++  | (STARTABBR(_)) => false
++  | (ENDABBR) => false
++  | (STARTACRONYM(_)) => false
++  | (ENDACRONYM) => false
++  | (STARTADDRESS(_)) => false
++  | (ENDADDRESS) => false
++  | (STARTAPPLET(_)) => false
++  | (ENDAPPLET) => false
++  | (STARTAREA(_)) => false
++  | (STARTB(_)) => false
++  | (ENDB) => false
++  | (STARTBASE(_)) => false
++  | (STARTBASEFONT(_)) => false
++  | (STARTBDO(_)) => false
++  | (ENDBDO) => false
++  | (STARTBIG(_)) => false
++  | (ENDBIG) => false
++  | (STARTBLOCKQUOTE(_)) => false
++  | (ENDBLOCKQUOTE) => false
++  | (STARTBODY(_)) => false
++  | (ENDBODY) => false
++  | (STARTBR(_)) => false
++  | (STARTBUTTON(_)) => false
++  | (ENDBUTTON) => false
++  | (STARTCAPTION(_)) => false
++  | (ENDCAPTION) => false
++  | (STARTCENTER(_)) => false
++  | (ENDCENTER) => false
++  | (STARTCITE(_)) => false
++  | (ENDCITE) => false
++  | (STARTCODE(_)) => false
++  | (ENDCODE) => false
++  | (STARTCOL(_)) => false
++  | (STARTCOLGROUP(_)) => false
++  | (ENDCOLGROUP) => false
++  | (STARTDD(_)) => false
++  | (ENDDD) => false
++  | (STARTDEL(_)) => false
++  | (ENDDEL) => false
++  | (STARTDFN(_)) => false
++  | (ENDDFN) => false
++  | (STARTDIR(_)) => false
++  | (ENDDIR) => false
++  | (STARTDIV(_)) => false
++  | (ENDDIV) => false
++  | (STARTDL(_)) => false
++  | (ENDDL) => false
++  | (STARTDT(_)) => false
++  | (ENDDT) => false
++  | (STARTEM(_)) => false
++  | (ENDEM) => false
++  | (STARTFIELDSET(_)) => false
++  | (ENDFIELDSET) => false
++  | (STARTFONT(_)) => false
++  | (ENDFONT) => false
++  | (STARTFORM(_)) => false
++  | (ENDFORM) => false
++  | (STARTFRAME(_)) => false
++  | (STARTFRAMESET(_)) => false
++  | (ENDFRAMESET) => false
++  | (STARTH1(_)) => false
++  | (ENDH1) => false
++  | (STARTH2(_)) => false
++  | (ENDH2) => false
++  | (STARTH3(_)) => false
++  | (ENDH3) => false
++  | (STARTH4(_)) => false
++  | (ENDH4) => false
++  | (STARTH5(_)) => false
++  | (ENDH5) => false
++  | (STARTH6(_)) => false
++  | (ENDH6) => false
++  | (STARTHEAD(_)) => false
++  | (ENDHEAD) => false
++  | (STARTHR(_)) => false
++  | (STARTHTML(_)) => false
++  | (ENDHTML) => false
++  | (STARTI(_)) => false
++  | (ENDI) => false
++  | (STARTIFRAME(_)) => false
++  | (ENDIFRAME) => false
++  | (STARTIMG(_)) => false
++  | (STARTINPUT(_)) => false
++  | (STARTINS(_)) => false
++  | (ENDINS) => false
++  | (STARTISINDEX(_)) => false
++  | (STARTKBD(_)) => false
++  | (ENDKBD) => false
++  | (STARTLABEL(_)) => false
++  | (ENDLABEL) => false
++  | (STARTLEGEND(_)) => false
++  | (ENDLEGEND) => false
++  | (STARTLI(_)) => false
++  | (ENDLI) => false
++  | (STARTLINK(_)) => false
++  | (STARTMAP(_)) => false
++  | (ENDMAP) => false
++  | (STARTMENU(_)) => false
++  | (ENDMENU) => false
++  | (STARTMETA(_)) => false
++  | (STARTNOFRAMES(_)) => false
++  | (ENDNOFRAMES) => false
++  | (STARTNOSCRIPT(_)) => false
++  | (ENDNOSCRIPT) => false
++  | (STARTOBJECT(_)) => false
++  | (ENDOBJECT) => false
++  | (STARTOL(_)) => false
++  | (ENDOL) => false
++  | (STARTOPTGROUP(_)) => false
++  | (ENDOPTGROUP) => false
++  | (STARTOPTION(_)) => false
++  | (ENDOPTION) => false
++  | (STARTP(_)) => false
++  | (ENDP) => false
++  | (STARTPARAM(_)) => false
++  | (STARTPRE(_)) => false
++  | (ENDPRE) => false
++  | (STARTQ(_)) => false
++  | (ENDQ) => false
++  | (STARTS(_)) => false
++  | (ENDS) => false
++  | (STARTSAMP(_)) => false
++  | (ENDSAMP) => false
++  | (STARTSCRIPT(_)) => false
++  | (ENDSCRIPT) => false
++  | (STARTSELECT(_)) => false
++  | (ENDSELECT) => false
++  | (STARTSMALL(_)) => false
++  | (ENDSMALL) => false
++  | (STARTSPAN(_)) => false
++  | (ENDSPAN) => false
++  | (STARTSTRIKE(_)) => false
++  | (ENDSTRIKE) => false
++  | (STARTSTRONG(_)) => false
++  | (ENDSTRONG) => false
++  | (STARTSTYLE(_)) => false
++  | (ENDSTYLE) => false
++  | (STARTSUB(_)) => false
++  | (ENDSUB) => false
++  | (STARTSUP(_)) => false
++  | (ENDSUP) => false
++  | (STARTTABLE(_)) => false
++  | (ENDTABLE) => false
++  | (STARTTBODY(_)) => false
++  | (ENDTBODY) => false
++  | (STARTTD(_)) => false
++  | (ENDTD) => false
++  | (STARTTEXTAREA(_)) => false
++  | (ENDTEXTAREA) => false
++  | (STARTTFOOT(_)) => false
++  | (ENDTFOOT) => false
++  | (STARTTH(_)) => false
++  | (ENDTH) => false
++  | (STARTTHEAD(_)) => false
++  | (ENDTHEAD) => false
++  | (STARTTITLE(_)) => false
++  | (ENDTITLE) => false
++  | (STARTTR(_)) => false
++  | (ENDTR) => false
++  | (STARTTT(_)) => false
++  | (ENDTT) => false
++  | (STARTU(_)) => false
++  | (ENDU) => false
++  | (STARTUL(_)) => false
++  | (ENDUL) => false
++  | (STARTVAR(_)) => false
++  | (ENDVAR) => false
++  | (EOF) => false
+ (* end case *))
++    fun isEOF EOF = true
++      | isEOF _ = false
++  end (* HTML4Tokens *)
+ 
+-  fun isEOF EOF = true
+-    | isEOF _ = false
+-
+-end
+-
+-functor HTML4ParseFn(Lex : ANTLR_LEXER) = struct
++functor HTML4ParseFn (Lex : ANTLR_LEXER) = struct
+ 
+   local
+-    structure Tok = 
++    structure Tok =
+ HTML4Tokens
+     structure UserCode =
+       struct
+@@ -982,735 +980,769 @@ fun cdata_opt_PROD_1_ACT (cdata, cdata_SPAN : (Lex.pos * Lex.pos), FULL_SPAN : (
      structure Err = AntlrErrHandler(
        structure Tok = Tok
        structure Lex = Lex)
@@ -876,17 +2109,17 @@ index 52d716b..d63fde5 100644
 +*)
 +    structure EBNF =
 +      struct
-+	fun optional (pred, parse, strm) = 
++	fun optional (pred, parse, strm) =
 +	      if pred strm
 +		then let
 +		  val (y, span, strm') = parse strm
-+		  in 
++		  in
 +		    (SOME y, span, strm')
 +		  end
 +		else (NONE, Err.getSpan strm, strm)
 +
 +	fun closure (pred, parse, strm) = let
-+	      fun iter (strm, (left, right), ys) = 
++	      fun iter (strm, (left, right), ys) =
 +		    if pred strm
 +		      then let
 +			val (y, (_, right'), strm') = parse strm
@@ -914,6 +2147,1435 @@ index 52d716b..d63fde5 100644
  	fun fail() = Err.failure eh
  	fun tryProds (strm, prods) = let
  	  fun try [] = fail()
+-	    | try (prod :: prods) = 
+-	        (Err.whileDisabled eh (fn() => prod strm)) 
++	    | try (prod :: prods) =
++	        (Err.whileDisabled eh (fn() => prod strm))
+ 		handle Err.ParseError => try (prods)
+           in try prods end
+-fun matchEOF strm = (case (lex(strm))
+- of (Tok.EOF, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDVAR strm = (case (lex(strm))
+- of (Tok.ENDVAR, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTVAR strm = (case (lex(strm))
+- of (Tok.STARTVAR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDUL strm = (case (lex(strm))
+- of (Tok.ENDUL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTUL strm = (case (lex(strm))
+- of (Tok.STARTUL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDU strm = (case (lex(strm))
+- of (Tok.ENDU, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTU strm = (case (lex(strm))
+- of (Tok.STARTU(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTT strm = (case (lex(strm))
+- of (Tok.ENDTT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTT strm = (case (lex(strm))
+- of (Tok.STARTTT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTR strm = (case (lex(strm))
+- of (Tok.ENDTR, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTR strm = (case (lex(strm))
+- of (Tok.STARTTR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTITLE strm = (case (lex(strm))
+- of (Tok.ENDTITLE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTITLE strm = (case (lex(strm))
+- of (Tok.STARTTITLE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTHEAD strm = (case (lex(strm))
+- of (Tok.ENDTHEAD, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTHEAD strm = (case (lex(strm))
+- of (Tok.STARTTHEAD(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTH strm = (case (lex(strm))
+- of (Tok.ENDTH, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTH strm = (case (lex(strm))
+- of (Tok.STARTTH(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTFOOT strm = (case (lex(strm))
+- of (Tok.ENDTFOOT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTFOOT strm = (case (lex(strm))
+- of (Tok.STARTTFOOT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTEXTAREA strm = (case (lex(strm))
+- of (Tok.ENDTEXTAREA, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTEXTAREA strm = (case (lex(strm))
+- of (Tok.STARTTEXTAREA(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTD strm = (case (lex(strm))
+- of (Tok.ENDTD, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTD strm = (case (lex(strm))
+- of (Tok.STARTTD(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTBODY strm = (case (lex(strm))
+- of (Tok.ENDTBODY, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTBODY strm = (case (lex(strm))
+- of (Tok.STARTTBODY(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDTABLE strm = (case (lex(strm))
+- of (Tok.ENDTABLE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTTABLE strm = (case (lex(strm))
+- of (Tok.STARTTABLE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSUP strm = (case (lex(strm))
+- of (Tok.ENDSUP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSUP strm = (case (lex(strm))
+- of (Tok.STARTSUP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSUB strm = (case (lex(strm))
+- of (Tok.ENDSUB, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSUB strm = (case (lex(strm))
+- of (Tok.STARTSUB(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSTYLE strm = (case (lex(strm))
+- of (Tok.ENDSTYLE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSTYLE strm = (case (lex(strm))
+- of (Tok.STARTSTYLE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSTRONG strm = (case (lex(strm))
+- of (Tok.ENDSTRONG, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSTRONG strm = (case (lex(strm))
+- of (Tok.STARTSTRONG(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSTRIKE strm = (case (lex(strm))
+- of (Tok.ENDSTRIKE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSTRIKE strm = (case (lex(strm))
+- of (Tok.STARTSTRIKE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSPAN strm = (case (lex(strm))
+- of (Tok.ENDSPAN, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSPAN strm = (case (lex(strm))
+- of (Tok.STARTSPAN(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSMALL strm = (case (lex(strm))
+- of (Tok.ENDSMALL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSMALL strm = (case (lex(strm))
+- of (Tok.STARTSMALL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSELECT strm = (case (lex(strm))
+- of (Tok.ENDSELECT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSELECT strm = (case (lex(strm))
+- of (Tok.STARTSELECT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSCRIPT strm = (case (lex(strm))
+- of (Tok.ENDSCRIPT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSCRIPT strm = (case (lex(strm))
+- of (Tok.STARTSCRIPT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDSAMP strm = (case (lex(strm))
+- of (Tok.ENDSAMP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTSAMP strm = (case (lex(strm))
+- of (Tok.STARTSAMP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDS strm = (case (lex(strm))
+- of (Tok.ENDS, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTS strm = (case (lex(strm))
+- of (Tok.STARTS(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDQ strm = (case (lex(strm))
+- of (Tok.ENDQ, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTQ strm = (case (lex(strm))
+- of (Tok.STARTQ(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDPRE strm = (case (lex(strm))
+- of (Tok.ENDPRE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTPRE strm = (case (lex(strm))
+- of (Tok.STARTPRE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTPARAM strm = (case (lex(strm))
+- of (Tok.STARTPARAM(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDP strm = (case (lex(strm))
+- of (Tok.ENDP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTP strm = (case (lex(strm))
+- of (Tok.STARTP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDOPTION strm = (case (lex(strm))
+- of (Tok.ENDOPTION, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTOPTION strm = (case (lex(strm))
+- of (Tok.STARTOPTION(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDOPTGROUP strm = (case (lex(strm))
+- of (Tok.ENDOPTGROUP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTOPTGROUP strm = (case (lex(strm))
+- of (Tok.STARTOPTGROUP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDOL strm = (case (lex(strm))
+- of (Tok.ENDOL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTOL strm = (case (lex(strm))
+- of (Tok.STARTOL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDOBJECT strm = (case (lex(strm))
+- of (Tok.ENDOBJECT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTOBJECT strm = (case (lex(strm))
+- of (Tok.STARTOBJECT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDNOSCRIPT strm = (case (lex(strm))
+- of (Tok.ENDNOSCRIPT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTNOSCRIPT strm = (case (lex(strm))
+- of (Tok.STARTNOSCRIPT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDNOFRAMES strm = (case (lex(strm))
+- of (Tok.ENDNOFRAMES, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTNOFRAMES strm = (case (lex(strm))
+- of (Tok.STARTNOFRAMES(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTMETA strm = (case (lex(strm))
+- of (Tok.STARTMETA(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDMENU strm = (case (lex(strm))
+- of (Tok.ENDMENU, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTMENU strm = (case (lex(strm))
+- of (Tok.STARTMENU(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDMAP strm = (case (lex(strm))
+- of (Tok.ENDMAP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTMAP strm = (case (lex(strm))
+- of (Tok.STARTMAP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTLINK strm = (case (lex(strm))
+- of (Tok.STARTLINK(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDLI strm = (case (lex(strm))
+- of (Tok.ENDLI, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTLI strm = (case (lex(strm))
+- of (Tok.STARTLI(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDLEGEND strm = (case (lex(strm))
+- of (Tok.ENDLEGEND, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTLEGEND strm = (case (lex(strm))
+- of (Tok.STARTLEGEND(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDLABEL strm = (case (lex(strm))
+- of (Tok.ENDLABEL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTLABEL strm = (case (lex(strm))
+- of (Tok.STARTLABEL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDKBD strm = (case (lex(strm))
+- of (Tok.ENDKBD, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTKBD strm = (case (lex(strm))
+- of (Tok.STARTKBD(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTISINDEX strm = (case (lex(strm))
+- of (Tok.STARTISINDEX(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDINS strm = (case (lex(strm))
+- of (Tok.ENDINS, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTINS strm = (case (lex(strm))
+- of (Tok.STARTINS(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTINPUT strm = (case (lex(strm))
+- of (Tok.STARTINPUT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTIMG strm = (case (lex(strm))
+- of (Tok.STARTIMG(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDIFRAME strm = (case (lex(strm))
+- of (Tok.ENDIFRAME, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTIFRAME strm = (case (lex(strm))
+- of (Tok.STARTIFRAME(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDI strm = (case (lex(strm))
+- of (Tok.ENDI, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTI strm = (case (lex(strm))
+- of (Tok.STARTI(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDHTML strm = (case (lex(strm))
+- of (Tok.ENDHTML, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTHTML strm = (case (lex(strm))
+- of (Tok.STARTHTML(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTHR strm = (case (lex(strm))
+- of (Tok.STARTHR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDHEAD strm = (case (lex(strm))
+- of (Tok.ENDHEAD, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTHEAD strm = (case (lex(strm))
+- of (Tok.STARTHEAD(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH6 strm = (case (lex(strm))
+- of (Tok.ENDH6, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH6 strm = (case (lex(strm))
+- of (Tok.STARTH6(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH5 strm = (case (lex(strm))
+- of (Tok.ENDH5, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH5 strm = (case (lex(strm))
+- of (Tok.STARTH5(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH4 strm = (case (lex(strm))
+- of (Tok.ENDH4, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH4 strm = (case (lex(strm))
+- of (Tok.STARTH4(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH3 strm = (case (lex(strm))
+- of (Tok.ENDH3, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH3 strm = (case (lex(strm))
+- of (Tok.STARTH3(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH2 strm = (case (lex(strm))
+- of (Tok.ENDH2, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH2 strm = (case (lex(strm))
+- of (Tok.STARTH2(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDH1 strm = (case (lex(strm))
+- of (Tok.ENDH1, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTH1 strm = (case (lex(strm))
+- of (Tok.STARTH1(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDFRAMESET strm = (case (lex(strm))
+- of (Tok.ENDFRAMESET, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTFRAMESET strm = (case (lex(strm))
+- of (Tok.STARTFRAMESET(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTFRAME strm = (case (lex(strm))
+- of (Tok.STARTFRAME(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDFORM strm = (case (lex(strm))
+- of (Tok.ENDFORM, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTFORM strm = (case (lex(strm))
+- of (Tok.STARTFORM(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDFONT strm = (case (lex(strm))
+- of (Tok.ENDFONT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTFONT strm = (case (lex(strm))
+- of (Tok.STARTFONT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDFIELDSET strm = (case (lex(strm))
+- of (Tok.ENDFIELDSET, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTFIELDSET strm = (case (lex(strm))
+- of (Tok.STARTFIELDSET(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDEM strm = (case (lex(strm))
+- of (Tok.ENDEM, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTEM strm = (case (lex(strm))
+- of (Tok.STARTEM(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDT strm = (case (lex(strm))
+- of (Tok.ENDDT, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDT strm = (case (lex(strm))
+- of (Tok.STARTDT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDL strm = (case (lex(strm))
+- of (Tok.ENDDL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDL strm = (case (lex(strm))
+- of (Tok.STARTDL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDIV strm = (case (lex(strm))
+- of (Tok.ENDDIV, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDIV strm = (case (lex(strm))
+- of (Tok.STARTDIV(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDIR strm = (case (lex(strm))
+- of (Tok.ENDDIR, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDIR strm = (case (lex(strm))
+- of (Tok.STARTDIR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDFN strm = (case (lex(strm))
+- of (Tok.ENDDFN, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDFN strm = (case (lex(strm))
+- of (Tok.STARTDFN(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDEL strm = (case (lex(strm))
+- of (Tok.ENDDEL, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDEL strm = (case (lex(strm))
+- of (Tok.STARTDEL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDDD strm = (case (lex(strm))
+- of (Tok.ENDDD, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTDD strm = (case (lex(strm))
+- of (Tok.STARTDD(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDCOLGROUP strm = (case (lex(strm))
+- of (Tok.ENDCOLGROUP, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCOLGROUP strm = (case (lex(strm))
+- of (Tok.STARTCOLGROUP(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCOL strm = (case (lex(strm))
+- of (Tok.STARTCOL(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDCODE strm = (case (lex(strm))
+- of (Tok.ENDCODE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCODE strm = (case (lex(strm))
+- of (Tok.STARTCODE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDCITE strm = (case (lex(strm))
+- of (Tok.ENDCITE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCITE strm = (case (lex(strm))
+- of (Tok.STARTCITE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDCENTER strm = (case (lex(strm))
+- of (Tok.ENDCENTER, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCENTER strm = (case (lex(strm))
+- of (Tok.STARTCENTER(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDCAPTION strm = (case (lex(strm))
+- of (Tok.ENDCAPTION, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTCAPTION strm = (case (lex(strm))
+- of (Tok.STARTCAPTION(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDBUTTON strm = (case (lex(strm))
+- of (Tok.ENDBUTTON, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBUTTON strm = (case (lex(strm))
+- of (Tok.STARTBUTTON(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBR strm = (case (lex(strm))
+- of (Tok.STARTBR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDBODY strm = (case (lex(strm))
+- of (Tok.ENDBODY, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBODY strm = (case (lex(strm))
+- of (Tok.STARTBODY(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDBLOCKQUOTE strm = (case (lex(strm))
+- of (Tok.ENDBLOCKQUOTE, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBLOCKQUOTE strm = (case (lex(strm))
+- of (Tok.STARTBLOCKQUOTE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDBIG strm = (case (lex(strm))
+- of (Tok.ENDBIG, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBIG strm = (case (lex(strm))
+- of (Tok.STARTBIG(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDBDO strm = (case (lex(strm))
+- of (Tok.ENDBDO, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBDO strm = (case (lex(strm))
+- of (Tok.STARTBDO(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBASEFONT strm = (case (lex(strm))
+- of (Tok.STARTBASEFONT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTBASE strm = (case (lex(strm))
+- of (Tok.STARTBASE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDB strm = (case (lex(strm))
+- of (Tok.ENDB, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTB strm = (case (lex(strm))
+- of (Tok.STARTB(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTAREA strm = (case (lex(strm))
+- of (Tok.STARTAREA(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDAPPLET strm = (case (lex(strm))
+- of (Tok.ENDAPPLET, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTAPPLET strm = (case (lex(strm))
+- of (Tok.STARTAPPLET(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDADDRESS strm = (case (lex(strm))
+- of (Tok.ENDADDRESS, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTADDRESS strm = (case (lex(strm))
+- of (Tok.STARTADDRESS(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDACRONYM strm = (case (lex(strm))
+- of (Tok.ENDACRONYM, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTACRONYM strm = (case (lex(strm))
+- of (Tok.STARTACRONYM(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDABBR strm = (case (lex(strm))
+- of (Tok.ENDABBR, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTABBR strm = (case (lex(strm))
+- of (Tok.STARTABBR(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENDA strm = (case (lex(strm))
+- of (Tok.ENDA, span, strm') => ((), span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchSTARTA strm = (case (lex(strm))
+- of (Tok.STARTA(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchXML_PROCESSING strm = (case (lex(strm))
+- of (Tok.XML_PROCESSING(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchENTITY_REF strm = (case (lex(strm))
+- of (Tok.ENTITY_REF(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchCHAR_REF strm = (case (lex(strm))
+- of (Tok.CHAR_REF(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchDOCTYPE strm = (case (lex(strm))
+- of (Tok.DOCTYPE(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchPCDATA strm = (case (lex(strm))
+- of (Tok.PCDATA(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchCOMMENT strm = (case (lex(strm))
+- of (Tok.COMMENT(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+-fun matchCLOSETAG strm = (case (lex(strm))
+- of (Tok.CLOSETAG(x), span, strm') => (x, span, strm')
+-  | _ => fail()
+-(* end case *))
+ fun matchOPENTAG strm = (case (lex(strm))
+  of (Tok.OPENTAG(x), span, strm') => (x, span, strm')
+   | _ => fail()
+ (* end case *))
++fun matchCLOSETAG strm = (case (lex(strm))
++ of (Tok.CLOSETAG(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchCOMMENT strm = (case (lex(strm))
++ of (Tok.COMMENT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchPCDATA strm = (case (lex(strm))
++ of (Tok.PCDATA(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchDOCTYPE strm = (case (lex(strm))
++ of (Tok.DOCTYPE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchCHAR_REF strm = (case (lex(strm))
++ of (Tok.CHAR_REF(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENTITY_REF strm = (case (lex(strm))
++ of (Tok.ENTITY_REF(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchXML_PROCESSING strm = (case (lex(strm))
++ of (Tok.XML_PROCESSING(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTA strm = (case (lex(strm))
++ of (Tok.STARTA(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDA strm = (case (lex(strm))
++ of (Tok.ENDA, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTABBR strm = (case (lex(strm))
++ of (Tok.STARTABBR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDABBR strm = (case (lex(strm))
++ of (Tok.ENDABBR, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTACRONYM strm = (case (lex(strm))
++ of (Tok.STARTACRONYM(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDACRONYM strm = (case (lex(strm))
++ of (Tok.ENDACRONYM, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTADDRESS strm = (case (lex(strm))
++ of (Tok.STARTADDRESS(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDADDRESS strm = (case (lex(strm))
++ of (Tok.ENDADDRESS, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTAPPLET strm = (case (lex(strm))
++ of (Tok.STARTAPPLET(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDAPPLET strm = (case (lex(strm))
++ of (Tok.ENDAPPLET, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTAREA strm = (case (lex(strm))
++ of (Tok.STARTAREA(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTB strm = (case (lex(strm))
++ of (Tok.STARTB(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDB strm = (case (lex(strm))
++ of (Tok.ENDB, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBASE strm = (case (lex(strm))
++ of (Tok.STARTBASE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBASEFONT strm = (case (lex(strm))
++ of (Tok.STARTBASEFONT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBDO strm = (case (lex(strm))
++ of (Tok.STARTBDO(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDBDO strm = (case (lex(strm))
++ of (Tok.ENDBDO, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBIG strm = (case (lex(strm))
++ of (Tok.STARTBIG(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDBIG strm = (case (lex(strm))
++ of (Tok.ENDBIG, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBLOCKQUOTE strm = (case (lex(strm))
++ of (Tok.STARTBLOCKQUOTE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDBLOCKQUOTE strm = (case (lex(strm))
++ of (Tok.ENDBLOCKQUOTE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBODY strm = (case (lex(strm))
++ of (Tok.STARTBODY(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDBODY strm = (case (lex(strm))
++ of (Tok.ENDBODY, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBR strm = (case (lex(strm))
++ of (Tok.STARTBR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTBUTTON strm = (case (lex(strm))
++ of (Tok.STARTBUTTON(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDBUTTON strm = (case (lex(strm))
++ of (Tok.ENDBUTTON, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCAPTION strm = (case (lex(strm))
++ of (Tok.STARTCAPTION(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDCAPTION strm = (case (lex(strm))
++ of (Tok.ENDCAPTION, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCENTER strm = (case (lex(strm))
++ of (Tok.STARTCENTER(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDCENTER strm = (case (lex(strm))
++ of (Tok.ENDCENTER, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCITE strm = (case (lex(strm))
++ of (Tok.STARTCITE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDCITE strm = (case (lex(strm))
++ of (Tok.ENDCITE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCODE strm = (case (lex(strm))
++ of (Tok.STARTCODE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDCODE strm = (case (lex(strm))
++ of (Tok.ENDCODE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCOL strm = (case (lex(strm))
++ of (Tok.STARTCOL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTCOLGROUP strm = (case (lex(strm))
++ of (Tok.STARTCOLGROUP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDCOLGROUP strm = (case (lex(strm))
++ of (Tok.ENDCOLGROUP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDD strm = (case (lex(strm))
++ of (Tok.STARTDD(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDD strm = (case (lex(strm))
++ of (Tok.ENDDD, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDEL strm = (case (lex(strm))
++ of (Tok.STARTDEL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDEL strm = (case (lex(strm))
++ of (Tok.ENDDEL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDFN strm = (case (lex(strm))
++ of (Tok.STARTDFN(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDFN strm = (case (lex(strm))
++ of (Tok.ENDDFN, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDIR strm = (case (lex(strm))
++ of (Tok.STARTDIR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDIR strm = (case (lex(strm))
++ of (Tok.ENDDIR, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDIV strm = (case (lex(strm))
++ of (Tok.STARTDIV(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDIV strm = (case (lex(strm))
++ of (Tok.ENDDIV, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDL strm = (case (lex(strm))
++ of (Tok.STARTDL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDL strm = (case (lex(strm))
++ of (Tok.ENDDL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTDT strm = (case (lex(strm))
++ of (Tok.STARTDT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDDT strm = (case (lex(strm))
++ of (Tok.ENDDT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTEM strm = (case (lex(strm))
++ of (Tok.STARTEM(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDEM strm = (case (lex(strm))
++ of (Tok.ENDEM, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTFIELDSET strm = (case (lex(strm))
++ of (Tok.STARTFIELDSET(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDFIELDSET strm = (case (lex(strm))
++ of (Tok.ENDFIELDSET, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTFONT strm = (case (lex(strm))
++ of (Tok.STARTFONT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDFONT strm = (case (lex(strm))
++ of (Tok.ENDFONT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTFORM strm = (case (lex(strm))
++ of (Tok.STARTFORM(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDFORM strm = (case (lex(strm))
++ of (Tok.ENDFORM, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTFRAME strm = (case (lex(strm))
++ of (Tok.STARTFRAME(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTFRAMESET strm = (case (lex(strm))
++ of (Tok.STARTFRAMESET(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDFRAMESET strm = (case (lex(strm))
++ of (Tok.ENDFRAMESET, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH1 strm = (case (lex(strm))
++ of (Tok.STARTH1(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH1 strm = (case (lex(strm))
++ of (Tok.ENDH1, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH2 strm = (case (lex(strm))
++ of (Tok.STARTH2(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH2 strm = (case (lex(strm))
++ of (Tok.ENDH2, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH3 strm = (case (lex(strm))
++ of (Tok.STARTH3(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH3 strm = (case (lex(strm))
++ of (Tok.ENDH3, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH4 strm = (case (lex(strm))
++ of (Tok.STARTH4(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH4 strm = (case (lex(strm))
++ of (Tok.ENDH4, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH5 strm = (case (lex(strm))
++ of (Tok.STARTH5(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH5 strm = (case (lex(strm))
++ of (Tok.ENDH5, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTH6 strm = (case (lex(strm))
++ of (Tok.STARTH6(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDH6 strm = (case (lex(strm))
++ of (Tok.ENDH6, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTHEAD strm = (case (lex(strm))
++ of (Tok.STARTHEAD(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDHEAD strm = (case (lex(strm))
++ of (Tok.ENDHEAD, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTHR strm = (case (lex(strm))
++ of (Tok.STARTHR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTHTML strm = (case (lex(strm))
++ of (Tok.STARTHTML(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDHTML strm = (case (lex(strm))
++ of (Tok.ENDHTML, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTI strm = (case (lex(strm))
++ of (Tok.STARTI(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDI strm = (case (lex(strm))
++ of (Tok.ENDI, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTIFRAME strm = (case (lex(strm))
++ of (Tok.STARTIFRAME(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDIFRAME strm = (case (lex(strm))
++ of (Tok.ENDIFRAME, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTIMG strm = (case (lex(strm))
++ of (Tok.STARTIMG(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTINPUT strm = (case (lex(strm))
++ of (Tok.STARTINPUT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTINS strm = (case (lex(strm))
++ of (Tok.STARTINS(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDINS strm = (case (lex(strm))
++ of (Tok.ENDINS, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTISINDEX strm = (case (lex(strm))
++ of (Tok.STARTISINDEX(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTKBD strm = (case (lex(strm))
++ of (Tok.STARTKBD(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDKBD strm = (case (lex(strm))
++ of (Tok.ENDKBD, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTLABEL strm = (case (lex(strm))
++ of (Tok.STARTLABEL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDLABEL strm = (case (lex(strm))
++ of (Tok.ENDLABEL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTLEGEND strm = (case (lex(strm))
++ of (Tok.STARTLEGEND(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDLEGEND strm = (case (lex(strm))
++ of (Tok.ENDLEGEND, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTLI strm = (case (lex(strm))
++ of (Tok.STARTLI(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDLI strm = (case (lex(strm))
++ of (Tok.ENDLI, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTLINK strm = (case (lex(strm))
++ of (Tok.STARTLINK(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTMAP strm = (case (lex(strm))
++ of (Tok.STARTMAP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDMAP strm = (case (lex(strm))
++ of (Tok.ENDMAP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTMENU strm = (case (lex(strm))
++ of (Tok.STARTMENU(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDMENU strm = (case (lex(strm))
++ of (Tok.ENDMENU, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTMETA strm = (case (lex(strm))
++ of (Tok.STARTMETA(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTNOFRAMES strm = (case (lex(strm))
++ of (Tok.STARTNOFRAMES(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDNOFRAMES strm = (case (lex(strm))
++ of (Tok.ENDNOFRAMES, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTNOSCRIPT strm = (case (lex(strm))
++ of (Tok.STARTNOSCRIPT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDNOSCRIPT strm = (case (lex(strm))
++ of (Tok.ENDNOSCRIPT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTOBJECT strm = (case (lex(strm))
++ of (Tok.STARTOBJECT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDOBJECT strm = (case (lex(strm))
++ of (Tok.ENDOBJECT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTOL strm = (case (lex(strm))
++ of (Tok.STARTOL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDOL strm = (case (lex(strm))
++ of (Tok.ENDOL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTOPTGROUP strm = (case (lex(strm))
++ of (Tok.STARTOPTGROUP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDOPTGROUP strm = (case (lex(strm))
++ of (Tok.ENDOPTGROUP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTOPTION strm = (case (lex(strm))
++ of (Tok.STARTOPTION(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDOPTION strm = (case (lex(strm))
++ of (Tok.ENDOPTION, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTP strm = (case (lex(strm))
++ of (Tok.STARTP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDP strm = (case (lex(strm))
++ of (Tok.ENDP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTPARAM strm = (case (lex(strm))
++ of (Tok.STARTPARAM(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTPRE strm = (case (lex(strm))
++ of (Tok.STARTPRE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDPRE strm = (case (lex(strm))
++ of (Tok.ENDPRE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTQ strm = (case (lex(strm))
++ of (Tok.STARTQ(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDQ strm = (case (lex(strm))
++ of (Tok.ENDQ, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTS strm = (case (lex(strm))
++ of (Tok.STARTS(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDS strm = (case (lex(strm))
++ of (Tok.ENDS, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSAMP strm = (case (lex(strm))
++ of (Tok.STARTSAMP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSAMP strm = (case (lex(strm))
++ of (Tok.ENDSAMP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSCRIPT strm = (case (lex(strm))
++ of (Tok.STARTSCRIPT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSCRIPT strm = (case (lex(strm))
++ of (Tok.ENDSCRIPT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSELECT strm = (case (lex(strm))
++ of (Tok.STARTSELECT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSELECT strm = (case (lex(strm))
++ of (Tok.ENDSELECT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSMALL strm = (case (lex(strm))
++ of (Tok.STARTSMALL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSMALL strm = (case (lex(strm))
++ of (Tok.ENDSMALL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSPAN strm = (case (lex(strm))
++ of (Tok.STARTSPAN(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSPAN strm = (case (lex(strm))
++ of (Tok.ENDSPAN, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSTRIKE strm = (case (lex(strm))
++ of (Tok.STARTSTRIKE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSTRIKE strm = (case (lex(strm))
++ of (Tok.ENDSTRIKE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSTRONG strm = (case (lex(strm))
++ of (Tok.STARTSTRONG(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSTRONG strm = (case (lex(strm))
++ of (Tok.ENDSTRONG, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSTYLE strm = (case (lex(strm))
++ of (Tok.STARTSTYLE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSTYLE strm = (case (lex(strm))
++ of (Tok.ENDSTYLE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSUB strm = (case (lex(strm))
++ of (Tok.STARTSUB(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSUB strm = (case (lex(strm))
++ of (Tok.ENDSUB, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTSUP strm = (case (lex(strm))
++ of (Tok.STARTSUP(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDSUP strm = (case (lex(strm))
++ of (Tok.ENDSUP, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTABLE strm = (case (lex(strm))
++ of (Tok.STARTTABLE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTABLE strm = (case (lex(strm))
++ of (Tok.ENDTABLE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTBODY strm = (case (lex(strm))
++ of (Tok.STARTTBODY(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTBODY strm = (case (lex(strm))
++ of (Tok.ENDTBODY, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTD strm = (case (lex(strm))
++ of (Tok.STARTTD(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTD strm = (case (lex(strm))
++ of (Tok.ENDTD, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTEXTAREA strm = (case (lex(strm))
++ of (Tok.STARTTEXTAREA(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTEXTAREA strm = (case (lex(strm))
++ of (Tok.ENDTEXTAREA, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTFOOT strm = (case (lex(strm))
++ of (Tok.STARTTFOOT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTFOOT strm = (case (lex(strm))
++ of (Tok.ENDTFOOT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTH strm = (case (lex(strm))
++ of (Tok.STARTTH(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTH strm = (case (lex(strm))
++ of (Tok.ENDTH, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTHEAD strm = (case (lex(strm))
++ of (Tok.STARTTHEAD(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTHEAD strm = (case (lex(strm))
++ of (Tok.ENDTHEAD, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTITLE strm = (case (lex(strm))
++ of (Tok.STARTTITLE(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTITLE strm = (case (lex(strm))
++ of (Tok.ENDTITLE, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTR strm = (case (lex(strm))
++ of (Tok.STARTTR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTR strm = (case (lex(strm))
++ of (Tok.ENDTR, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTTT strm = (case (lex(strm))
++ of (Tok.STARTTT(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDTT strm = (case (lex(strm))
++ of (Tok.ENDTT, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTU strm = (case (lex(strm))
++ of (Tok.STARTU(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDU strm = (case (lex(strm))
++ of (Tok.ENDU, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTUL strm = (case (lex(strm))
++ of (Tok.STARTUL(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDUL strm = (case (lex(strm))
++ of (Tok.ENDUL, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchSTARTVAR strm = (case (lex(strm))
++ of (Tok.STARTVAR(x), span, strm') => (x, span, strm')
++  | _ => fail()
++(* end case *))
++fun matchENDVAR strm = (case (lex(strm))
++ of (Tok.ENDVAR, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
++fun matchEOF strm = (case (lex(strm))
++ of (Tok.EOF, span, strm') => ((), span, strm')
++  | _ => fail()
++(* end case *))
+ 
+ val (document_NT, body_NT, flow_NT, block_NT, inline_NT, cdata_opt_NT) = 
+ let
 diff --git a/HTML4/pp-init.sml b/HTML4/pp-init.sml
 new file mode 100644
 index 0000000..ca97b62
@@ -1290,10 +3952,10 @@ index 0000000..8e91bef
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index 477d0bf..6b78cd9 100644
+index ff960d3..f9dac4f 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
-@@ -1,47 +1,177 @@
+@@ -1,47 +1,201 @@
 -(* json-lib.mlb
 - *
 - * COPYRIGHT (c) 2008 The Fellowship of SML/NJ (http://www.smlnj.org)
@@ -1309,9 +3971,7 @@ index 477d0bf..6b78cd9 100644
 -
 -  $(SML_LIB)/basis/basis.mlb
 -  $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
--(* I don't know what the path to this library will be
--  ??/ml-lpt-lib/ml-lpt-lib.mlb
--*)
+-  $(SML_LIB)/mllpt-lib/ml-lpt-lib.mlb
 -
 -  ann
 -    "nonexhaustiveMatch warn" "redundantMatch warn"
@@ -1326,6 +3986,7 @@ index 477d0bf..6b78cd9 100644
 -    json-parser.sml
 -    json-stream-printer.sml
 -    json-printer.sml
+-    json-util.sml
 -
 -  end
  
@@ -1340,6 +4001,7 @@ index 477d0bf..6b78cd9 100644
 -  structure JSON
 -  structure JSONParser
 -  structure JSONPrinter
+-  structure JSONUtil
 -
 -(* SAX-style API (event based) *)
 -  structure JSONStreamParser
@@ -1349,7 +4011,7 @@ index 477d0bf..6b78cd9 100644
 +    bas
 +      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb
 +    end
-+  basis l65 =
++  basis l75 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
@@ -1481,34 +4143,58 @@ index 477d0bf..6b78cd9 100644
 +      structure gs_17 = JSONParser
 +   end
 +   local
-+      open l65
++      open l4
 +   in
-+      structure gs_18 = Format
++      structure gs_18 = General
 +   end
 +   local
-+      structure Format = gs_18
++      open l4
++   in
++      structure gs_19 = Int
++   end
++   local
++      structure General = gs_18
++      structure Int = gs_19
++      structure IntInf = gs_0
++      structure JSON = gs_16
++      structure List = gs_6
++      structure Real = gs_5
++      structure String = gs_3
++      structure Vector = gs_11
++      json-util.sml
++   in
++      structure gs_20 = JSONUtil
++   end
++   local
++      open l75
++   in
++      structure gs_21 = Format
++   end
++   local
++      structure Format = gs_21
 +      structure IntInf = gs_0
 +      structure String = gs_3
 +      structure TextIO = gs_2
 +      json-stream-printer.sml
 +   in
-+      structure gs_19 = JSONStreamPrinter
++      structure gs_22 = JSONStreamPrinter
 +   end
 +   local
 +      structure JSON = gs_16
-+      structure JSONStreamPrinter = gs_19
++      structure JSONStreamPrinter = gs_22
 +      structure List = gs_6
 +      structure TextIO = gs_2
 +      json-printer.sml
 +   in
-+      structure gs_20 = JSONPrinter
++      structure gs_23 = JSONPrinter
 +   end
 +in
 +   structure JSON = gs_16
 +   structure JSONParser = gs_17
-+   structure JSONPrinter = gs_20
++   structure JSONPrinter = gs_23
 +   structure JSONStreamParser = gs_15
-+   structure JSONStreamPrinter = gs_19
++   structure JSONStreamPrinter = gs_22
++   structure JSONUtil = gs_20
 +end
 +end
  
