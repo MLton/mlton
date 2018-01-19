@@ -7498,10 +7498,10 @@ index 0000000..3748f93
 +end
 diff --git a/mlb/MLRISC.mlb b/mlb/MLRISC.mlb
 new file mode 100644
-index 0000000..0124642
+index 0000000..4b1a3fa
 --- /dev/null
 +++ b/mlb/MLRISC.mlb
-@@ -0,0 +1,1748 @@
+@@ -0,0 +1,1749 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
@@ -7923,6 +7923,7 @@ index 0000000..0124642
 +      signature gs_59 = DELAY_SLOT_PROPERTIES
 +   end
 +   local
++      structure Int = gs_12
 +      structure List = gs_9
 +      ../c-calls/c-types.sml
 +   in

@@ -3952,10 +3952,10 @@ index 0000000..8e91bef
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index ff960d3..f9dac4f 100644
+index ff960d3..cda206f 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
-@@ -1,47 +1,201 @@
+@@ -1,47 +1,203 @@
 -(* json-lib.mlb
 - *
 - * COPYRIGHT (c) 2008 The Fellowship of SML/NJ (http://www.smlnj.org)
@@ -4173,8 +4173,10 @@ index ff960d3..f9dac4f 100644
 +   local
 +      structure Format = gs_21
 +      structure IntInf = gs_0
++      structure List = gs_6
 +      structure String = gs_3
 +      structure TextIO = gs_2
++      structure UTF8 = gs_4
 +      json-stream-printer.sml
 +   in
 +      structure gs_22 = JSONStreamPrinter
