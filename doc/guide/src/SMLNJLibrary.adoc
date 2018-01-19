@@ -6,8 +6,8 @@ collection of libraries that are distributed with SML/NJ.  Due to
 differences between SML/NJ and MLton, these libraries will not work
 out-of-the box with MLton.
 
-As of 20170414, MLton includes a port of the SML/NJ Library
-synchronized with SML/NJ version 110.78.
+As of 20180119, MLton includes a port of the SML/NJ Library
+synchronized with SML/NJ version 110.82.
 
 == Usage ==
 
