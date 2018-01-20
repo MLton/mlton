@@ -136,28 +136,16 @@ execute `./bin/run-docker`.
 
 == Resources
 
-For more information, go to the http://mlton.org/[MLton home page].
-
-There are two mailing lists available.
-
- * MLton-devel@mlton.org -- MLton developers
- * MLton-user@mlton.org -- MLton user community
-
-`doc` (and `share/doc`) directory contents:
-
-        README                  this file
-        changelog               changelog
-        cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
-        cmcat/                  a utility for producing whole programs in SML/NJ
-        examples/               example SML programs
-        guide/                  HTML MLton guide (copy of the MLton wiki)
-        license/                license information
-        mllex.pdf               user guide for mllex lexer generator
-        mlton-guide.pdf         PDF version of MLton guide
-        mlyacc.pdf              user guide for mlyacc parser generator
-
+ * `http://mlton.org`
+ * mailing lists
+   - `MLton-devel@mlton.org` -- MLton developers
+     (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive],
+     https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe])
+   - `MLton-user@mlton.org` -- MLton user community
+     (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive],
+     https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe])
 
 == Need help? Found a bug?
 
-https://github.com/MLton/mlton/issues[Submit an issue] if you need any help. We
-welcome pull requests with bug fixes or changes.
+https://github.com/MLton/mlton/issues[Submit an issue] if you need any help.
+We welcome pull requests with bug fixes or changes.
