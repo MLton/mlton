@@ -7,7 +7,7 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
                 sharing CoreUtils.Core = Core
                 ) : LRGRAPH =
         struct
-                open Array List
+                val sub = Array.sub
                 infix 9 sub
                 structure Core = Core
                 structure Grammar = IntGrammar.Grammar

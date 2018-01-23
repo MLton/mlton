@@ -4,7 +4,7 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
                       structure ShrinkLrTable : SHRINK_LR_TABLE
                       sharing LrTable = ShrinkLrTable.LrTable):PRINT_STRUCT =
    struct
-      open Array List
+      val sub = Array.sub
       infix 9 sub
       structure LrTable = LrTable
       open ShrinkLrTable LrTable

@@ -2,7 +2,7 @@
 
 functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
     struct
-        open Array List
+                val sub = Array.sub
         infix 9 sub
         structure Grammar = IntGrammar.Grammar
         structure IntGrammar = IntGrammar
@@ -73,8 +73,8 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
                   | SOME ntlist => (lhs, ntlist) :: r
             end
             val items = List.foldr add_rule [] rules
-            val nullable = array(nonterms,false)
-            fun f ((NT i,nil),(l,_)) = (update(nullable,i,true);
+            val nullable = Array.array(nonterms,false)
+            fun f ((NT i,nil),(l,_)) = (Array.update(nullable,i,true);
                                         (l,true))
               | f (a as (lhs,(h::t)),(l,change)) =
                 (case (nullable sub h) of
@@ -105,9 +105,9 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
        List.foldr (fn (RULE {rhs,...},r) =>(scanRhs addObj) (rhs,r)) empty rules
 
       val nontermMemo = fn f =>
-        let val lookup = array(nonterms,nil)
+        let val lookup = Array.array(nonterms,nil)
             fun g i = if i=nonterms then ()
-                      else (update(lookup,i,f (NT i)); g (i+1))
+                      else (Array.update(lookup,i,f (NT i)); g (i+1))
         in (g 0; fn (NT j) => lookup sub j)
         end
 
