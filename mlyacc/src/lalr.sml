@@ -8,7 +8,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                 sharing Graph.IntGrammar = Core.IntGrammar =
                         Look.IntGrammar = IntGrammar) : LALR_GRAPH =
     struct
-        open Array List
+        val sub = Array.sub
         infix 9 sub
         open IntGrammar.Grammar IntGrammar Core Graph Look
         structure Graph = Graph
@@ -97,7 +97,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
    symbol is 0, etc. *)
 
              val look_pos =
-                 let val positions = array(length rules,0)
+                 let val positions = Array.array(length rules,0)
 
 (* rule_pos: calculate place in the rhs of a rule at which we should start
    placing lookahead ref cells *)
@@ -129,7 +129,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                                 print " = ";
                                 printInt pos;
                                 print "\n";
-                                update(positions,num,rule_pos rule))
+                                Array.update(positions,num,rule_pos rule))
                             end
                    in app check_rule rules;
                     fn RULE{num,...} => (positions sub num)
@@ -243,9 +243,9 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                   end
 
                 val nonterms_w_null =
-                   let val data = array(nonterms,NontermSet.empty)
+                   let val data = Array.array(nonterms,NontermSet.empty)
                        fun f n = if n=nonterms then ()
-                                 else (update(data,n,nonterms_w_null (NT n));
+                                 else (Array.update(data,n,nonterms_w_null (NT n));
                                        f (n+1))
                    in (f 0; fn (NT nt) => data sub nt)
                    end
@@ -322,7 +322,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
 
                  val closure_nonterms =
                    let val data =
-                          array(nonterms,nil: (nonterm * term list * bool) list)
+                          Array.array(nonterms,nil: (nonterm * term list * bool) list)
                        val do_nonterm = fn i =>
                         let val nonterms_followed_by_null =
                                 nonterms_w_null i
@@ -349,7 +349,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                          end
                         fun f i =
                           if i=nonterms then ()
-                          else (update(data,i,do_nonterm (NT i)); f (i+1))
+                          else (Array.update(data,i,do_nonterm (NT i)); f (i+1))
                         val _ = f 0
                     in fn (NT i) => data sub i
                     end
