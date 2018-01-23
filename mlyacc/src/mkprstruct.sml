@@ -175,7 +175,7 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
 \       fun f i =\n\
 \            if i=numstates then g i\n\
 \            else (Array.update(memo,i,SHIFT (STATE i)); f (i+1))\n\
-\          in f 0 handle Subscript => ()\n\
+\          in f 0 handle General.Subscript => ()\n\
 \          end\n\
 \in\n\
 \val entry_to_action = fn 0 => ACCEPT | 1 => ERROR | j => Array.sub(memo,(j-2))\n\
@@ -185,7 +185,7 @@ functor mkPrintStruct(structure LrTable : LR_TABLE
 \val actionRowNumbers = string_to_list actionRowNumbers\n\
 \val actionT = let val actionRowLookUp=\n\
 \let val a=Array.fromList(actionRows) in fn i=>Array.sub(a,i) end\n\
-\in Array.fromList(map actionRowLookUp actionRowNumbers)\n\
+\in Array.fromList(List.map actionRowLookUp actionRowNumbers)\n\
 \end\n\
 \in LrTable.mkLrTable {actions=actionT,gotos=gotoT,numRules=numrules,\n\
 \numStates=numstates,initialState=STATE ";
