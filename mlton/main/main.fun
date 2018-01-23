@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2017 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2018 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -387,6 +387,18 @@ fun makeOptions {usage} =
        (Expert, "disable-pass", " <pass>", "disable optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (executePasses, (re, false))
+                                    end
+                   | NONE => usage (concat ["invalid -disable-pass flag: ", s])))),
+       (Expert, "drop-pass", " <pass>", "disable optimization pass",
+        SpaceString
+        (fn s => (if !Control.warnDeprecated
+                     then Out.output
+                          (Out.error,
+                           "Warning: -drop-pass is deprecated.  Use -disable-pass.\n")
+                     else ();
+                  case Regexp.fromString s of
                      SOME (re,_) => let val re = Regexp.compileDFA re
                                     in List.push (executePasses, (re, false))
                                     end
