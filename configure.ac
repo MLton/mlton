@@ -17,7 +17,8 @@ AC_CONFIG_SRCDIR([bin/mlton-script.in])
 AC_ARG_WITH([gmp-include],
             [AS_HELP_STRING([--with-gmp-include=PATH],
                             [specify directory for the installed GMP include file (gmp.h)])],
-            [with_gmp_include="$withval"],
+            [with_gmp_include="$withval"]
+            [CPPFLAGS="$CPPFLAGS -I$withval"],
             [with_gmp_include='']
            )
 AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
@@ -25,7 +26,8 @@ AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
 AC_ARG_WITH([gmp-lib],
             [AS_HELP_STRING([--with-gmp-lib=PATH],
                             [specify directory for the installed GMP library (libgmp.so or libgmp.a or libgmp.dylib)])],
-            [with_gmp_lib="$withval"],
+            [with_gmp_lib="$withval"]
+            [LDFLAGS="$LDFLAGS -L$withval"],
             [with_gmp_lib='']
            )
 AC_SUBST(WITH_GMP_LIB_DIR, $with_gmp_lib)
@@ -70,11 +72,11 @@ AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.
 
 # GMP is a required dependency
 AC_CHECK_HEADER([gmp.h],[],[
-    AC_MSG_WARN([The 'gmp.h' header file is not on C compiler's search path.])
+    AC_MSG_ERROR([The 'gmp.h' header file is not on C compiler's search path.])
 ])
 
 AC_CHECK_LIB([gmp],[__gmpz_sqrt],[],[
-    AC_MSG_WARN([The 'libgmp' shared library is not on C compiler's search path.])
+    AC_MSG_ERROR([The 'libgmp' shared library is not on C compiler's search path.])
 ])
 
 

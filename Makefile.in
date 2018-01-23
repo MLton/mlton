@@ -37,6 +37,8 @@ CP := /bin/cp -fpR
 GZIP := gzip --force --best
 RANLIB := @RANLIB@
 SED := @SED@
+CC := $(shell echo "@CC@" | $(SED) 's/ .*//')
+
 
 
 # Allow for custom paths to GMP include and library files
@@ -189,8 +191,8 @@ polyml-mlton:
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	cat "$(MLTON)" \
-		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
-		| sed 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
+		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| $(SED) 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
 		> "$(MLTON).polyml"
 	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
@@ -201,7 +203,7 @@ profiled:
 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
-		sed "s/mlton-compile/mlton-compile.$$t/" 		\
+		$(SED) "s/mlton-compile/mlton-compile.$$t/" 		\
 			<"$(MLTON)" 					\
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
@@ -229,7 +231,7 @@ runtime:
 
 .PHONY: script
 script:
-	sed -e "/^gmpIncDir=/s;.*;gmpIncDir='$(WITH_GMP_INC_DIR)';" -e "/^gmpLibDir=/s;.*;gmpLibDir='$(WITH_GMP_LIB_DIR)';"	\
+	$(SED) -e "/^CC=/s;.*;CC='$(CC)';"  -e "/^gmpIncDir=/s;.*;gmpIncDir='$(WITH_GMP_INC_DIR)';" -e "/^gmpLibDir=/s;.*;gmpLibDir='$(WITH_GMP_LIB_DIR)';"	\
 		<bin/mlton-script >"$(MLTON)"
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"
@@ -245,8 +247,8 @@ smlnj-mlton:
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	cat "$(MLTON)" \
-		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
-		| sed 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
+		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| $(SED) 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
 		> "$(MLTON).smlnj"
 	chmod u+x "$(MLTON).smlnj"
 	@echo 'Build of MLton succeeded.'
@@ -271,7 +273,7 @@ smlnj-mlton-x16:
 traced:
 	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
-	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
+	$(SED) 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
 
 .PHONY: tools
@@ -296,12 +298,12 @@ version:
 		doc/guide/conf/asciidoc-mlton.flags			\
 	; do								\
 		if grep -q 'MLTONVERSION' "$$f"; then			\
-			sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && 	\
+			$(SED) "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && 	\
 			mv z "$$f";							\
 		fi;							\
 	done
 	if grep -q '^Release:$$' "$(SPEC)"; then			\
-		sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"; 		\
+		$(SED) <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"; 		\
 		mv z "$(SPEC)";								\
 	fi
 
