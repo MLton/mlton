@@ -14,6 +14,9 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-01-23
+  ** Restore, but deprecate, `-drop-pass` compile-time expert option.
+
 * 2018-01-19
   ** Update SML/NJ libraries to SML/NJ 110.82.
 
