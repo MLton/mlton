@@ -6,12 +6,346 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Summary
 
+* Compiler.
+* Runtime.
+* Language.
+* Libraries.
+* Tools.
+
 === Details
 
+* 2018-01-19
+  ** Update SML/NJ libraries to SML/NJ 110.82.
+
+* 2017-12-29
+  ** Add support for `(*#showBasis "_file_"*)` directives.  This feature is
+  meant to facilitate auto-completion via
+  https://github.com/MatthewFluet/company-mlton[`company-mlton`] and similar
+  tools.
+
+* 2017-12-20
+  ** Update performance comparison on website.  Thanks to Curtis Dunham for the
+  pull request.
+
+* 2017-12-17
+  ** Updates to `-show-basis`:
+    *** `-show-basis-flat`: Recursively expand structures in environments,
+    displaying components with long identifiers.
+    *** `-show-basis-def`: Appends `(* @ _region_ *)` annotations to items shown
+    in environment.
+    *** `-show-basis-compact`: Tries to optimize vertical space (at the expense
+    of long lines).
+
+* 2017-12-11
+  ** Drop `_BSD_SOURCE` and `_POSIX_C_SOURCE` feature macros in
+  `./runtime/cenv.h`.
+
+* 2017-12-10
+  ** Add a `Dockerfile` to build/test MLton.  Thanks to Richard Laughlin for the
+  pull request.
+
+* 2017-12-06
+  ** Remove `$PREFIX` and `$prefix` from top-level `Makefile.in`; use
+  `./configure --prefix _path_`.  Thanks to Richard Laughlin for the pull
+  request.
+
+* 2017-12-03
+  ** Fix heap invariant predicates.
+
+* 2017-11-15
+  ** Eliminate the use of (some) global mutable state for signal handling.
+
+* 2017-11-14
+  ** Store forwarding pointer for an object in the object header (rather than in
+  the object data and setting the header to a sentinel value).
+
+* 2017-11-02
+  ** Updates to stack management in backend:
+    *** Improve `Allocation.Stack.get`.
+    *** Do not force `Cont` block arguments to stack.
+
+* 2017-10-30
+  ** In `signature SSA_TO_RSSA_STRUCTS` share by `Rssa.Atoms = Ssa.Atoms`.  This
+  is the idiom used elsewhere in the compiler, rather than sharing individual
+  sub-structures of `Atoms`.
+  ** Minor updates to `DirectedGraph` and `Tree` in MLton library.
+
+* 2017-10-23
+  ** Add `-seed-rand _w_` compile-time option, to seed the pseudo-random number
+  generator.
+  ** Add a new MachineShuffle pass (disabled by default) that shuffles the
+  collection of chunks within the program and shuffles the collection of blocks
+  within a chunk.  With the `-seed-rand _w_` compile-time option, can be used to
+  generate executables with distinct code placements.
+
+* 2017-10-23
+  ** Use a relative path in the `mlton` script, rather than an absolute path.
+  The absolute path needed to be set to the intended installation directory,
+  which made it difficult to install a binary release in a local directory.
+  Undertaken by Maksim Yegorov at RIT supported by NSF CISE Research
+  Infrastructure (CRI) award.
+
+* 2017-10-21
+  ** Add unsafe operations for array uninitialization and raw arrays.
+    *** Rename `Array_uninit: SeqIndex.int -> 'a array` primitive to
+    `Array_alloc: SeqIndex.int -> 'a array`.
+    *** Add `Array_uninit: 'a array * SeqIndex.int -> unit` primitive to set all
+    objptrs in the element at the given index to a bogus non-objptr value
+    (`0wx1`).  One motivation for this primitive is to support space-efficient
+    polymorphic resizeable arrays.  When shrinking a resizeable array, we would
+    like to "`NULL`" out the elements that are no longer part of the logical
+    array, in order to avoid a (logical) space leak.
+    *** Add `Array_uninitIsNop: 'a array -> bool` primitive to answer if the
+    `Array_uninit` primitive applied to the same array would be a nop (i.e., if
+    the array has no objptrs in the elements).  This can be used to skip a
+    bulk-`Array_uninit` loop when it is known that the `Array_uninit` operations
+    would be nops.
+    *** Add `Array_allocRaw: SeqIndex.int -> 'a array` primitive to allocate an
+    array, but with a header that indicates that the array has no objptrs.  Add
+    `Array_toArray: 'a array -> 'a array` primitive to update the header of an
+    `Array_allocRaw` allocated array to reveal the objptrs.  One motiviation for
+    this primitive is that, in a parallel setting, the uninitialization of an
+    array can be a sequential bottleneck.  The `Array_allocRaw` is a constant
+    time operation and the subsequent `Array_uninit` operations can be performed
+    in parallel.
+    *** Extend `structure Unsafe.Array` with additional operations.  See
+    `basis-library/sml-nj/unsafe.sig`.
+
+* 2017-10-20
+  ** Introduce ShareZeroVec SSA optimization to share zero-length vectors after
+  coercion-based optimizations.  Undertaken by Maksim Yegorov at RIT supported
+  by NSF CISE Research Infrastructure (CRI) award.
+
+* 2017-10-18
+  ** New canonicalization strategy for CommonSubexp SSA optimization.
+  Previously, the canonicalization of commutative arithmetic primitives was
+  sensitive to variable hashes (created by an unseeded pseudo-random number
+  generator); now, the canonicalization of commutative arithmetic primitives is
+  sensitive to relative definition order of variables.
+
+* 2017-10-12
+  ** Fix bug in runtime argument option parsing.
+
+* 2017-10-05
+  ** Many updates and improvements to diagnostic messages.  See commit 505a23c0
+  or https://github.com/MLton/mlton/pull/195 for details.
+
+* 2017-09-27
+  ** Add rudimentary support for `./configure`; in particular, support
+  `--with-gmp-lib` and `--with-gmp-include` to set location of GMP and
+  `--prefix` to specify an install prefix.  Undertaken by Maksim Yegorov at RIT
+  supported by NSF CISE Research Infrastructure (CRI) award.
+
+* 2017-08-21
+  ** Introduce `Array_copyArray: 'a array * SeqIndex.int * 'a array *
+  SeqIndex.int * SeqIndex.int -> unit` and `Array_copyVector: 'a array *
+  SeqIndex.int * 'a vector * SeqIndex.int * SeqIndex.int -> unit` primitives
+  which are used to implement a number of array and vector construction
+  functions, particularly `append`, `concat`, and `concatWith`.  The primitives
+  compile to `memmove` operations, which (significantly) outperforms MLton's
+  element-by-element construction for large sequences.  Undertaken by Bryan Camp
+  at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+
+* 2017-07-25
+  ** Force PIC generation on amd64-linux targets.  Thanks to Kuen-Bang Hou
+  (Favonia) for the pull request.
+
+* 2017-07-11
+  ** Generalize the `subWord` primitives to
++
+      | WordArray_subWord of {seqSize:WordSize.t, eleSize: WordSize.t}
+      | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}
+      | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}
++
+Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
+(CRI) award.
+
+* 2017-07-11
+  ** Add a parser combinator library (`structure StreamParser`) to the MLton
+  Library.  Undertaken by Jason Carr at RIT supported by NSF CISE Research
+  Infrastructure (CRI) award.
+  ** Add a parser for the SXML IR (`structure ParseSxml`).  Undertaken by Jason
+  Carr at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+  ** Allow compilation to start with a `.sxml` file.  Undertaken by Jason Carr
+  at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+
+* 2017-06-29
+  ** Replace `-drop-pass _regex_` compile-time option with `-disable-pass
+  _regex_` compile option and add `-enable-pass _regex _` compile option.
+  Various XML, SXML, SSA, SSA2, RSSA, and Machine IR optimization passes are
+  initialized with a default status, which can be overriden by
+  `-{disable,enable}-pass`.  In particular, it is now easy to add a
+  work-in-progress (and potentially buggy) pass to the simplification pipeline
+  with `execute = false` default status, to be selectively executed with
+  `-enable-pass`.  Undertaken by Bryan Camp at RIT supported by NSF CISE
+  Research Infrastructure (CRI) award.
+  ** Add LoopUnswitch and LoopUnroll SSA optimizations (undertaken by Matthew
+  Surawski as an RIT CS MS Capstone Project).  Initial evaluation demonstrates
+  some non-trivial performance gains, no non-trivial performance losses, and
+  only minor code size increases, but currently disabled pending a more thorough
+  evaluation.
+
+* 2017-05-23
+  ** Expand the set of MLB annotations:
+    *** `nonexhaustiveBind`, `nonexhaustiveExnBind`, `redundantBind`: controls
+    diagnostics for `val` declarations (which may raise `Bind` on failure).
+    *** `nonexhaustiveMatch`, `nonexhaustiveExnMatch`, `redundantMatch`:
+    controls diagnostics for `case` expressions, `fn` expressions, and `fun`
+    declarations (which may raise `Match` on failure).
+    *** `nonexhaustiveRaise`, `nonexhaustiveExnRaise`, `redundantRaise`:
+    controls diagnostics for `handle` expressions (which implicitly re-raise on
+    failure).  Note that `nonexhaustiveRaise` and `nonexhaustiveExnRaise`
+    default to `ignore`.  The combination of `nonexhaustiveRaise warn` and
+    `nonexhaustiveExnRaise ignore` can be useful for finding handlers that
+    handle some, but not all, values of an exception variant.
+  ** Make a number of improvements to diagnostic messages:
+    *** Display nonexhaustive exception patterns as `_ : exn`, rather than
+    `e`.
+    *** Normalize nonexhaustive patterns by sorting (e.g., by `ConApp` name).
+    *** Report complete enumeration of unhandled constants, rather than a single
+    example.
+    *** Report nonexhaustive patterns of record type as records, rather than as
+    tuples.
+
+* 2017-04-20
+  ** Updates to SSA, SSA2, and RSSA IR support infrastructure
+    *** Display more context when reporting SSA and SSA2 IR type errors.
+    *** Add `-layout-width _n_` compile expert option to control the target
+    width for the pretty printer.
+    *** Make cosmetic improvments to SSA and SSA2 IR display (uses of global
+    variables bound to small constants and conapps are commented with the
+    corresponding value; include loop forest for functions with `-keep dot`).
+    *** Improve RSSA constant folding and copy propagation.
+    *** Limit Machine IR `Globals` to variables used outside of the `main`
+    function.
+
+* 2017-04-15
+  ** Add `gc-summary-file _file_` runtime option.
+
+* 2017-04-15
+  ** Rename and add `smlnjmlton-x{2,4,8,16}` top-level `Makefile` targets.
+  ** Update SML/NJ librarys to SML/NJ 110.80 (making use of supported
+  SuccessorML features).
+  ** Not support for SML/NJ extensions via SuccessorML MLB annotations on
+  website.
+
+* 2017-04-14
+  ** Add support for vector expressions (`#[e1, e2, ..., en]`) and vector
+  patterns (`#[p1, p2, ..., pn]`) and add `Vector_vector` n-ary primitive.
+  Initial support for vector expressions and the `Vector_vector` primitive were
+  undertaken by Krishna Ravikumar as an RIT CS MS Capstone Project.
+
+* 2017-03-29
+  ** Update DOS eol handling and tweak error messages in lexer.
+
+* 2017-03-27
+  ** Correct off-by-one error in column numbers.  Thanks to Jacob Zimmerman for
+  the error report and pull request.
+
+* 2017-03-15
+  ** Updates to SuccessorML support:
+    *** Add an `allowSuccessorML {false|true}` MLB annotation to enable all
+    Successor ML features with a single annotation.
+    *** Fix parsing of numeric labels to only accept an INT token that does not
+    begin with 0, is not an extended literal, is not negative, and is decimal.
+    *** Drop the alternate word prefixes (`0xw` and `0bw`).
+    *** Unconditionally allow line comments in MLB files.
+    *** Allow UTF-8 byte sequences in text constants.
+    *** Refactor `ml.lex` and `mlb.lex` to be more maintainable.
+    *** Rename `allowRecPunning` annotation to `allowRecordPunExps`.
+
+* 2017-02-27
+  ** Update ML-Yacc examples (`calc`, `fol`, `pascal`) to comply with MLton
+  build process.  Thanks to Hai Nguyen Van for the pull request.
+
+* 2017-01-25
+  ** Update PortingMLton documentation and `./bin/add-cross` script.  Thanks to
+  Daniel Moerner for the pull request.
+
+* 2016-09-29
+  ** Constant fold `CPointer_equal(NULL, NULL)` to `true`.
+
+* 2016-09-29
+  ** Introduce `NEEDS_SIGALTSTACK_EXEC` config in runtime system.
+
+* 2016-09-27
+  ** Construct a devel build version string from last commit time and last
+  commit hash.
+  ** Omit build date and build node from version banner; makes self-compiles
+  deterministic.
+  ** Remove `upgrade-basis.sml` from build.  The generated `upgrade-basis.sml`
+  was introduced to handle incompatibilities in the Basis Library provided by an
+  old version of MLton and the Basis Library assumed by the current sources.
+  However, there are no incompatibilities with MLton 20130715, MLton 20100608,
+  or MLton 20070826.  Nonetheless, the feature testing performed by
+  `./bin/upgrade-basis` to generate `upgrade-basis.sml` is time consuming,
+  especially when trying to simply type check the compiler sources.
+
+* 2016-06-20
+  ** Do not `gzip` man pages on OpenBSD.  Thanks to Alexander Abushkevich for
+  the pull request.
+
+* 2016-06-20
+  ** Generate position independent code for OpenBSD.  Thanks to Alexander
+  Abushkevich for the pull request.
+
+* 2016-06-20
+  ** Fix profiling for amd64-openbsd and x86-openbsd.  Thanks to Alexander
+  Abushkevich for the pull request.
+
+* 2016-04-06
+  ** Update SML/NJ librarys to SML/NJ 110.79.
+
+* 2016-03-22
+  ** Update LLVM codegen to support (and require) >= llvm-3.7.  Thanks to Eugene
+  Akentyev for the pull request.
+
+* 2016-02-26
+  ** Configure GMP location via `Makefile`.
+
+* 2016-01-10
+  ** Fix typo in `mlb-formal.tex`.  Thanks to Jon Sterling for the pull request.
+
+* 2015-11-10
+  ** Update SML/NJ librarys to SML/NJ 110.78.  Use `allowOrPats` and
+  `allowSigWithtype` to minimize diffs.
+
+* 2015-10-20
+  ** Fix elaboration of `withtype` in signature.
+
+* 2015-10-06
+  ** Add support for setting CM anchor bindings in `cm2mlb` tool.
+
+* 2015-10-06
+  ** Fix non-exhaustive match warnings with or-patterns.  Thanks to Rob Simmons
+  for the bug report.
+  ** Distinguish between partial and fully redundant matches.
+  ** Report partial redundancy in `val` declarations.
+  ** Lower precedence of or-patterns in parser.
+  ** Make a variety of cosmetic improvements to non-exhaustive and redundant
+  error/warning messages, primarily to be consistent in formatting between
+  quoted AST and generated messages.
+
+* 2015-07-10
+  ** Extend support for arm64 (aarch64).  Thanks to Edmund Evans for the patch.
+
 * 2015-06-22
-  ** Introduce an MLB annotation to control elaboration of `val rec` and `fun`
-  declarations that redefine identifiers that previously had constructor status:
-  `valrecConstr {warn|error|ignore}`.
+  ** Introduce `valrecConstr {warn|error|ignore}` MLB annotation to report when
+  a `val rec` (or `fun`) declaration redefines an identifier that previously had
+  constructor status.
+
+* 2015-06-19
+  ** Add support for selected SuccessorML features (undertaken by Kevin Bradley
+  as an RIT CS MS Capstone Project).
+    *** `do`-declarations (`allowDoDecls`)
+    *** extended literals (`allowExtendedLiterals`)
+    *** line comments (`allowLineComments`)
+    *** optional leading bar in matches, fun decls, and datatype decls
+    (`allowOptBar`)
+    *** optional trailing semicolon in sequence expressions (`allowOptSemicolon`)
+    *** or patterns (`allowOrPats`)
+    *** record expression punning (`allowRecPunning`)
+    *** withtype in signatures (`allowSigWithtype`)
 
 * 2015-06-10
   ** Hide equality status of poly (and mono) vector and array slices.
@@ -22,24 +356,145 @@ Here are the changes from version 20130715 to version YYYYMMDD.
   (directly or indirectly) calls an `_export`-ed SML function should be
   attributed `reentrant`.
 
+* 2015-06-08
+  ** Make compilation deterministic:
+    *** Eliminate output executable name from compile-time specified `@MLton`
+    arguments.
+    *** Deterministically generate magic constant for executable.
+
+* 2015-06-08
+  ** Add `-keep ast` compile option.  Undertaken by Ross Bayer at RIT supported
+  by NSF CISE Research Infrastructure (CRI) award.
+
+* 2015-06-02
+  ** Updates to Debian packaging.  Thanks to Christopher Cramer for the pull
+  request.
+
+* 2015-03-30
+  ** Use `LANG=en_us` when computing version and build date.  Thanks to Eugene
+  Akentyev for the pull request.
+
+* 2015-02-17
+  ** Update `mlnlffigen` to warn and skip functions with `struct`/`union`
+  arguments.  Thanks to Armando Doval for the pull request.
+
+* 2014-12-22
+  ** Move pervasive constructs from `./mlton/ast` to `./mlton/atoms`, so that
+  `./mlton/ast/sources.mlb` depends on `./mlton/atoms/sources.mlb` (and not the
+  other way around).  Undertaken by Vedant Raiththa at RIT supported by NSF CISE
+  Research Infrastructure (CRI) award.
+
+* 2014-12-17
+  ** Cache a worker thread to service calls of `_export`-ed functions.  Thanks
+  to Bernard Berthomieu for the bug report.
+
+* 2014-12-02
+  ** Post-process generated front-end files for compatibility with SML/NJ's
+  recent `ml-lex` and `ml-yacc` tools that generate log identifiers rather than
+  unqualified (top-level environment) identifiers.
+  ** Corrected documentation for SML/NJ `Makefile` target and fixed
+  `bootstrap-nj` target.  Thanks to Daniel Rosenwasser for the pull request.
+
 * 2014-11-21
+  ** Reorganized runtime support for `IntInf` operations so that programs that
+  do not use `IntInf` compile to executables with no residual dependency on GMP.
   ** Fixed bug in `MLton.IntInf.fromRep` that could yield values that violate
   the `IntInf` representation invariants. Thanks to Rob Simmons for the bug
   report.
 
-* 2014-11-14
-  ** Reorganized runtime support for `IntInf` operations so that programs that
-  do not use `IntInf` compile to executables with no residual dependency on GMP.
-
 * 2014-10-24
-  ** Added `pure` and `impure` attributes to `_import`.  An unattributed
+  ** Added `pure` and `impure attributes to `_import`.  An unattributed
   `_import` is treated as `impure`.  A `pure` `_import` may be subject to more
   aggressive optimizations (common subexpression elimination, dead-code
-  elimiation).
+  elimiation).  Undertaken by Vedant Raiththa at RIT supported by NSF CISE
+  Research Infrastructure (CRI) award.
+
+* 2014-10-22
+  ** Various updates to treatment of `IntInf` constants in the compiler.
+    *** Recognize both `Big` and `Small` representations of `IntInf`-s.
+    *** Translate `IntInf` consts to `Big` and `Small` representations in
+    conversion from SSA to RSSA. This is consistent with the treatment of other
+    `IntInf` operations in the conversion. After the conversion, `IntInf` is no
+    longer treated as a primitive.
+    *** Remove `initIntInfs` from program initialization.
+    *** Constant fold `IntInf_toVector` and `WordVector_toIntInf` primitives.
+
+* 2014-10-20
+  ** Various updates to `structure WordXVector` in compiler proper.
+    *** Update the `WordXVector.layout` function. If the `elementSize` is
+   `WordX.word8` and more than 90% of the characters satisfy `Char.isGraph
+   orelse Char.isSpace`, then display as an SML string constant (with
+   non-printable characters SML-escaped). Otherwise, display as an SML/NJ-style
+   `#[0x0, 0xF]` vector literal.
+    *** Update initialization of `static struct GC_vectorInit vectorInits[]`
+   constants in runtime. If the `WordXVector`'s (primitive) `elementSize` is
+   `WordSize.W8`, then emit a C-escaped string constant. Otherwise, emit a
+   C-array initialization.
+
+* 2014-08-15
+  ** More updates to benchmark infrastructure.
+    *** Make `update-counts.sh` script more robust.
+    *** Update `hamlet.sml` benchmark program to close input file after each
+    loop.
+    *** Update `fft.sml` benchmark program to only invoke `test` function with
+    power-of-2 arguments.
+    *** Update `model-elimination.sml` benchmark program to iterate `main ()`
+    according to `doit` size parameter.
+
+* 2014-08-11
+  ** Include `winsock2.h` before `windows.h` in MinGW port.  Thanks to Shu-Hung
+  You for the pull request.
+
+* 2014-07-31
+  ** Refactor array and vector implementation in Basis Library into a primitive
+  implementation (sing `SeqInt.int` for indexing) and a wrapper implementation
+  (ising the default `Int.int` for indexing).  Thanks to Rob Simmons for the
+  pull request.
+  ** Correct description of `MLton.{Vector,Array}.unfoldi` on website.  Thanks
+  to Rob Simmons for the pull request.
+
+* 2014-07-14
+  ** Updates to benchmark infrastructure.
+    *** Add `even-odd.sml` benchmark that exercises mutual tail recursion.
+    *** Add `update-counts.sh` script to calculate appropriate benchmark
+    iteration counts and update benchmark iteration counts so that all
+    benchmarks run for at least 30 seconds.
+    *** Updates to benchmark driver program.
+
+* 2014-07-07
+  ** Change `./basis-library/integer/int-inf.sml` to reduce dependency on
+  GMP-specific details of `./basis-library/integer/int-inf0.sml`.  Thanks to Rob
+  Simmons for the pull request.
+  ** Correct type and description of `MLton.IntInf.fromRep` on website.  Thanks
+  to Rob Simmons for the pull request.
 
 * 2014-07-01
-  ** Merged Brian Leibig's llvm code generator.
+  ** Add experimental LLVM codegen (undertaken by Brian Leibig as an RIT CS MS
+  Project).
 
+* 2014-06-09
+  ** Update `CallingFromSMLToC` page on website.  Thanks to Bikal Gurung for the
+  pull request.
+
+* 2014-03-18
+  ** Updates for MinGW port.
+
+* 2014-02-07
+  ** Update AsciiDoc sources for website.
+
+* 2013-10-31
+  ** Various updates to website.  Thanks to Mauricio C Antunes for the pull
+  request.
+    *** Add Tofte's tutorial and Rossberg's grammar.
+    *** Fix links to implementations.
+
+* 2013-10-10
+  ** Update links from `References` page on website.  Thanks to Mauricio C
+  Antunes for the pull request.
+
+* 2013-09-02
+  ** Fix example for `Lazy` page on website.  Thanks to Daniel Rosenwasser for
+  the pull request.
 
 == Version 20130715
 
@@ -577,7 +1032,7 @@ Here are the changes from version 20051202 to version 20070826.
   function.
 
 * 2007-02-25
-  ** Change amd64-* target platforms from 32-bit compatability mode (i.e.,
+  ** Change amd64-* target platforms from 32-bit compatibility mode (i.e.,
   `-m32`) to 64-bit mode (i.e., `-m64`).  Currently, only the C codegen is able
   to generate 64-bit executables.
 
@@ -2651,4 +3106,4 @@ Here are the changes from the 1998-08-26 version to the 1999-03-19 version.
 * There are now facilities for heap checkpointing (`MLton.saveWorld`) and object
 size computation (`MLton.size`).
 * MLton uses the GNU multiprecision (GnuMP) library to provide a fast
-implemenation of `IntInf`.
+implementation of `IntInf`.
