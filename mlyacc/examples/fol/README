@@ -15,9 +15,9 @@ The parser is defined by the files
 
 To compile this example, type the following commands
 
-        mllex fol.lex
-        mlyacc fol.grm
-        mlton fol.mlb
+  mllex fol.lex
+  mlyacc fol.grm
+  mlton fol.mlb
 
 in this directory.  They will invoke ml-lex and ml-yacc to process the
 lexer specification fol.lex and the grammar specification fol.grm
