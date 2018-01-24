@@ -63,10 +63,6 @@ AC_PROG_RANLIB
 
 AC_PROG_SED
 
-# Checks for header files.
-# Included for debugging only...
-AC_CHECK_HEADERS([fcntl.h fenv.h float.h inttypes.h limits.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h sys/timeb.h syslog.h termios.h unistd.h utime.h])
-
 # GMP is a required dependency
 AC_CHECK_HEADER([gmp.h],[],[
     AC_MSG_WARN([The 'gmp.h' header file is not on C compiler's search path.])
@@ -109,22 +105,6 @@ then
     AC_MSG_NOTICE(['mlyacc' may also be named 'ml-yacc'.])
     AC_MSG_ERROR([Exiting, as 'mlyacc' can not be found.])
 fi
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
-AC_TYPE_UID_T
-AC_C_INLINE
-AC_TYPE_MODE_T
-AC_TYPE_OFF_T
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
-AC_CHECK_MEMBERS([struct stat.st_rdev])
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
-AC_CHECK_TYPES([ptrdiff_t])
 
 AC_CONFIG_FILES([Makefile
                  benchmark/Makefile
