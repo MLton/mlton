@@ -41,7 +41,6 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC
 AC_PROG_CC_STDC
-AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
@@ -127,12 +126,7 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
-# We don't really use automake, but configure needs aclocal and the
-# automake library files.
-AM_INIT_AUTOMAKE([1.9.6 foreign])
-
-AC_CONFIG_FILES([Makefile-auto
-                 Makefile
+AC_CONFIG_FILES([Makefile
                  benchmark/Makefile
                  bin/mlton-script
                  lib/mlnlffi-lib/Makefile
