@@ -188,8 +188,8 @@ polyml-mlton:
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	cat "$(MLTON)" \
-		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
-		| sed 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
+		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| $(SED) 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
 		> "$(MLTON).polyml"
 	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
@@ -200,7 +200,7 @@ profiled:
 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
-		sed "s/mlton-compile/mlton-compile.$$t/" 		\
+		$(SED) "s/mlton-compile/mlton-compile.$$t/" 		\
 			<"$(MLTON)" 					\
 			>"$(MLTON).$$t";				\
 		chmod a+x "$(MLTON).$$t";				\
@@ -244,8 +244,8 @@ smlnj-mlton:
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
 	cat "$(MLTON)" \
-		| sed 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
-		| sed 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
+		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
+		| $(SED) 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
 		> "$(MLTON).smlnj"
 	chmod u+x "$(MLTON).smlnj"
 	@echo 'Build of MLton succeeded.'
@@ -270,7 +270,7 @@ smlnj-mlton-x16:
 traced:
 	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
-	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
+	$(SED) 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
 
 .PHONY: tools
