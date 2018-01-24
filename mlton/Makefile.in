@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -17,7 +17,6 @@ LIB := $(BUILD)/lib/mlton
 TARGET := self
 AOUT := mlton-compile
 PATH := $(BIN):$(shell echo $$PATH)
-CC := @CC@
 SED := @SED@
 
 FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
