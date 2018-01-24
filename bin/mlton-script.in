@@ -65,18 +65,6 @@ doit () {
     exit 1
 }
 
-# set additional C compiler and linker flags from ../configure script
-XCFLAGS=@XCFLAGS@
-if [ -n "$XCFLAGS" ]; then
-xcflags="-cc-opt '$XCFLAGS'"
-fi
-
-XLDFLAGS=@XLDFLAGS@
-if [ -n "$XLDFLAGS" ]; then
-xldflags="-link-opt '$XLDFLAGS'"
-fi
-
-
 # You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
 gmpIncDir=@WITH_GMP_INC_DIR@
 if [ -n "$gmpIncDir" ]; then
@@ -91,7 +79,6 @@ fi
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$gcc"                                               \
-        $xcflags $xldflags                                       \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1 -fno-common'                                \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \

@@ -84,8 +84,8 @@ MLton can be built from source using the usual
 default installation directory (typically, `/usr/local`). Optionally, you can
 specify the `--prefix` argument to install MLton into a custom directory.
 
-You can instruct MLton to look for `gmp.h` outside your include path or for
-`libgmp` outside your library search path using `--with-gmp-lib` and
+You can instruct MLton to look for `gmp.h` outside your include search path or
+for `libgmp` outside your library search path using `--with-gmp-lib` and
 `--with-gmp-include` configure options, as in:
 
 ```shell
@@ -98,16 +98,6 @@ gzip -cd mlton-*.tgz | tar xvf -
   --with-gmp-lib=/usr/local/lib
 make
 make install
-```
-
-Optionally, you can pass C compiler and linker flags to set MLton's `-cc-opt`
-and `-link-opt` http://www.mlton.org/CompileTimeOptions[compile-time options]
-via `XCFLAGS` and `XLDFLAGS` environment variables:
-
-```shell
-./configure \
-  XCFLAGS='-I/usr/local/include' \
-  XLDFLAGS='-L/usr/local/lib'
 ```
 
 If building from source cloned from Github, first generate the `configure`

@@ -15,9 +15,6 @@ AC_CONFIG_SRCDIR([bin/mlton-script.in])
 # Set various environment variables (needed at configure time)
 ########################################################################
 
-AC_ARG_VAR([XCFLAGS],[extra C compiler flags])
-AC_ARG_VAR([XLDFLAGS],[extra linker flags])
-
 AC_CONFIG_HEADERS([config.h])
 
 ###############################################################################
