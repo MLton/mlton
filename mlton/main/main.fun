@@ -966,9 +966,10 @@ fun commandLine (args: string list): unit =
                               relativeTo = targetsDir }
       val () = libTargetDir := targetDir
       val targetArch = !Target.arch
-      val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
+      val targetArchStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !Target.os
-      val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
+      val targetOSStr = String.toLower (MLton.Platform.OS.toString targetOS)
+      val targetArchOSStr = concat [targetArchStr, "-", targetOSStr]
 
       (* Determine whether code should be PIC (position independent) or not.
        * This decision depends on the platform and output format.
@@ -1099,7 +1100,9 @@ fun commandLine (args: string list): unit =
                     let
                        val s = String.toLower s
                     in
-                       s = archStr orelse s = OSStr
+                       s = targetArchOSStr
+                       orelse s = targetArchStr
+                       orelse s = targetOSStr
                     end
                | OptPred.Yes => true)
              then opt :: ac
@@ -1378,7 +1381,7 @@ fun commandLine (args: string list): unit =
                                then System.system
                                     (arScript,
                                      List.concat
-                                      [[targetStr, OSStr, output],
+                                      [[targetStr, targetOSStr, output],
                                        inputs,
                                        linkArchives])
                                else System.system

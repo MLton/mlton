@@ -15,6 +15,9 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 === Details
 
 * 2018-01-24
+  ** Extend `-target-*-opt` options to support `__arch__-__os__` pairs.
+
+* 2018-01-24
   ** Slightly improve performance of `Vector.concat` and
   `String.{concat,concatWith,tokens,fields}` by avoiding `List.map`-s.
 
