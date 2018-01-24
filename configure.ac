@@ -14,21 +14,6 @@ AC_CONFIG_SRCDIR([bin/mlton-script.in])
 ########################################################################
 # Set various environment variables (needed at configure time)
 ########################################################################
-AC_ARG_WITH([gmp-include],
-            [AS_HELP_STRING([--with-gmp-include=PATH],
-                            [specify directory for the installed GMP include file (gmp.h)])],
-            [with_gmp_include="$withval"],
-            [with_gmp_include='']
-           )
-AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
-
-AC_ARG_WITH([gmp-lib],
-            [AS_HELP_STRING([--with-gmp-lib=PATH],
-                            [specify directory for the installed GMP library (libgmp.so or libgmp.a or libgmp.dylib)])],
-            [with_gmp_lib="$withval"],
-            [with_gmp_lib='']
-           )
-AC_SUBST(WITH_GMP_LIB_DIR, $with_gmp_lib)
 
 AC_ARG_VAR([XCFLAGS],[extra C compiler flags])
 AC_ARG_VAR([XLDFLAGS],[extra linker flags])
@@ -54,15 +39,45 @@ AC_PROG_MAKE_SET
 
 AC_PROG_SED
 
-# GMP is a required dependency
-AC_CHECK_HEADER([gmp.h],[],[
-    AC_MSG_WARN([The 'gmp.h' header file is not on C compiler's search path.])
-])
+###############################################################################
+# Check for GMP
+###############################################################################
 
-AC_CHECK_LIB([gmp],[__gmpz_sqrt],[],[
-    AC_MSG_WARN([The 'libgmp' shared library is not on C compiler's search path.])
-])
+AC_ARG_WITH(
+  [gmp-include],
+  [AS_HELP_STRING(
+    [--with-gmp-include=PATH],
+    [specify directory for the installed GMP header (gmp.h)])],
+  [
+  with_gmp_include="$withval"
+  CPPFLAGS="$CPPFLAGS -I$withval"
+  ],
+  [with_gmp_include='']
+)
+AC_SUBST(WITH_GMP_INC_DIR, $with_gmp_include)
 
+AC_ARG_WITH(
+  [gmp-lib],
+  [AS_HELP_STRING(
+    [--with-gmp-lib=PATH],
+    [specify directory for the installed GMP library (libgmp.so or libgmp.a or libgmp.dylib)])],
+  [
+  with_gmp_lib="$withval"
+  LDFLAGS="$LDFLAGS -L$withval"
+  ],
+  [with_gmp_lib='']
+)
+AC_SUBST(WITH_GMP_LIB_DIR, $with_gmp_lib)
+
+AC_CHECK_HEADER(
+  [gmp.h],[],
+  [AC_MSG_ERROR([The 'gmp.h' header file is not on C compiler's search path.])],
+  [/**/]
+)
+AC_CHECK_LIB(
+  [gmp],[__gmpz_sqrt],[],
+  [AC_MSG_WARN([The 'libgmp' shared library is not on C compiler's search path.])]
+)
 
 ###############################################################################
 # Check for MLton binary tools
