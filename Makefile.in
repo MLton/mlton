@@ -394,7 +394,7 @@ install-docs:
 
 
 .PHONY: move-docs
-move-docs:	install-docs install-no-docs
+move-docs: install-docs install-no-docs
 	cd "$(TLIB)/sml"; for i in *; do test -d "$(TDOC)/$$i" || mkdir -p "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */[Dd]oc; do mv "$$i" "$(TDOC)/$$i"; done
 	cd "$(TLIB)/sml"; for i in */README*; do mv "$$i" "$(TDOC)/$$i"; done
