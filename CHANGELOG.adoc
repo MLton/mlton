@@ -14,6 +14,10 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-01-24
+  ** Slightly improve performance of `Vector.concat` and
+  `String.{concat,concatWith,tokens,fields}` by avoiding `List.map`-s.
+
 * 2018-01-23
   ** Restore, but deprecate, `-drop-pass` compile-time expert option.
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2017 Matthew Fluet.
+(* Copyright (C) 2013,2017-2018 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -236,68 +236,76 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
             val collate = S.Slice.collate
             val sequence = S.Slice.sequence
             val append = S.Slice.append
-            
-            fun concat (sls: 'a slice list): 'a sequence =
-               case sls of
+
+            fun concatGen (xs: 'b list, toSlice: 'b -> 'a slice): 'a sequence =
+               case xs of
                   [] => seq0 ()
-                | [sl] => sequence sl
-                | sls =>
+                | [x] => sequence (toSlice x)
+                | xs =>
                      let
-                        val add = 
+                        val add =
                            if Primitive.Controls.safe 
-                              then (fn (sl, s) => 
-                                       (s +! S.Slice.length sl)
+                              then (fn (x, s) =>
+                                       (s +! S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
-                              else (fn (sl, s) => s +? S.Slice.length sl)
-                        val n = List.foldl add 0 sls
+                              else (fn (x, s) => s +? S.Slice.length (toSlice x))
+                        val n = List.foldl add 0 xs
                         val a = Primitive.Array.alloc n
-                        fun loop (di, sls) =
-                           case sls of
+                        fun loop (di, xs) =
+                           case xs of
                               [] => S.unsafeFromArray a
-                            | sl::sls =>
-                                 (S.Slice.unsafeCopy {dst = a, di = di, src = sl}
-                                  ; loop (di +? S.Slice.length sl, sls))
+                            | x::xs =>
+                                 let val sl = toSlice x
+                                 in
+                                    S.Slice.unsafeCopy {dst = a, di = di, src = sl}
+                                    ; loop (di +? S.Slice.length sl, xs)
+                                 end
                      in
-                        loop (0, sls)
+                        loop (0, xs)
                      end
-            fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
-               case sls of
+            fun concat (sls: 'a slice list): 'a sequence =
+               concatGen (sls, fn sl => sl)
+            fun concatWithGen (sep: 'a sequence) (xs: 'b list, toSlice: 'b -> 'a slice): 'a sequence =
+               case xs of
                   [] => seq0 ()
-                | [sl] => sequence sl
-                | sl::sls =>
+                | [x] => sequence (toSlice x)
+                | x::xs =>
                      let
                         val sep = S.Slice.full sep
                         val sepn = S.Slice.length sep
                         val add = 
                            if Primitive.Controls.safe 
-                              then (fn (sl, s) => 
-                                       (s +! sepn +! S.Slice.length sl)
+                              then (fn (x, s) =>
+                                       (s +! sepn +! S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
-                              else (fn (sl, s) => 
-                                       (s +? sepn +? S.Slice.length sl))
-                        val n = List.foldl add (S.Slice.length sl) sls
+                              else (fn (x, s) =>
+                                       (s +? sepn +? S.Slice.length (toSlice x)))
+                        val n = List.foldl add (S.Slice.length (toSlice x)) xs
                         val a = Primitive.Array.alloc n
-                        fun loop (di, sls) =
-                           case sls of
-                              [] => raise Fail "Sequence.Slice.concatWith"
-                            | [sl] =>
+                        fun loop (di, xs) =
+                           case xs of
+                              [] => raise Fail "Sequence.Slice.concatWithGen"
+                            | [x] =>
                                  let
+                                    val sl = toSlice x
                                     val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
                                  in
                                     S.unsafeFromArray a
                                  end
-                            | sl::sls =>
+                            | x::xs =>
                                  let
+                                    val sl = toSlice x
                                     val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
                                     val di = di +? S.Slice.length sl
                                     val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sep}
                                     val di = di +? sepn
                                  in
-                                    loop (di, sls)
+                                    loop (di, xs)
                                  end
                      in
-                        loop (0, sl::sls)
+                        loop (0, x::xs)
                      end
+            fun concatWith sep sls = concatWithGen sep (sls, fn sl => sl)
             fun triml k sl =
                if Primitive.Controls.safe andalso Int.< (k, 0)
                   then raise Subscript
@@ -426,20 +434,26 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                   in loop (start, start, []) 
                   end
             in
-               fun tokens p sl =
+               fun tokensGen fromSlice p sl =
                   make (fn (seq, start, stop, sls) =>
                         if start = stop
                            then sls
                         else
-                           (S.Slice.unsafeSlice (seq, start, SOME (stop -? start)))
+                           (fromSlice
+                            (S.Slice.unsafeSlice
+                             (seq, start, SOME (stop -? start))))
                            :: sls)
                        p sl
-               fun fields p sl = 
+               fun fieldsGen fromSlice p sl =
                   make (fn (seq, start, stop, sls) =>
-                        (S.Slice.unsafeSlice (seq, start, SOME (stop -? start)))
+                        (fromSlice
+                         (S.Slice.unsafeSlice
+                          (seq, start, SOME (stop -? start))))
                         :: sls)
                        p sl
-            end 
+            end
+            fun tokens p sl = tokensGen (fn sl => sl) p sl
+            fun fields p sl = fieldsGen (fn sl => sl) p sl
             fun toList (sl: 'a slice) = foldr (fn (a,l) => a::l) [] sl 
          end
 
@@ -459,7 +473,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
         fun unsafeCopy {dst, di, src} =
            Slice.unsafeCopy {dst = dst, di = di, src = Slice.full src}
         fun append seqs = make2 Slice.append seqs 
-        fun concat seqs = Slice.concat (List.map Slice.full seqs) 
+        fun concat seqs = Slice.concatGen (seqs, Slice.full)
         fun appi f = make (Slice.appi f)
         fun app f = make (Slice.app f)
         fun mapi f = make (Slice.mapi f)
@@ -475,13 +489,13 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
         fun alli p = make (Slice.alli p)
         fun all p = make (Slice.all p) 
         fun collate cmp = make2 (Slice.collate cmp) 
-        fun concatWith sep seqs = Slice.concatWith sep (List.map Slice.full seqs) 
+        fun concatWith sep seqs = Slice.concatWithGen sep (seqs, Slice.full)
         fun isPrefix eq seq = make (Slice.isPrefix eq seq)
         fun isSubsequence eq seq = make (Slice.isSubsequence eq seq)
         fun isSuffix eq seq = make (Slice.isSuffix eq seq) 
         fun translate f = make (Slice.translate f)
-        fun tokens f seq = List.map Slice.sequence (make (Slice.tokens f) seq)
-        fun fields f seq = List.map Slice.sequence (make (Slice.fields f) seq)
+        fun tokens f seq = make (Slice.tokensGen Slice.sequence f) seq
+        fun fields f seq = make (Slice.fieldsGen Slice.sequence f) seq
         fun duplicate seq = make Slice.sequence seq
         fun toList seq = make Slice.toList seq
       end
