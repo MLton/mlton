@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2018 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -27,7 +27,6 @@ else
 EXE :=
 endif
 MLBPATHMAP := $(LIB)/mlb-path-map
-SPEC := package/rpm/mlton.spec
 LEX := mllex
 PROF := mlprof
 YACC := mlyacc
@@ -290,7 +289,6 @@ tools:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		"$(SPEC)"						\
 		package/freebsd/Makefile				\
 		mlton/control/version_sml.src				\
 		doc/guide/conf/asciidoc-mlton.flags			\
@@ -300,10 +298,6 @@ version:
 			mv z "$$f";							\
 		fi;							\
 	done
-	if grep -q '^Release:$$' "$(SPEC)"; then			\
-		sed <"$(SPEC)" >z "/^Release:/s;.*;Release: $(RELEASE);"; 		\
-		mv z "$(SPEC)";								\
-	fi
 
 .PHONY: check
 check:
@@ -437,20 +431,3 @@ freebsd:
 		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package
-
-
-TOPDIR := 'TOPDIR-unset'
-SOURCEDIR := $(TOPDIR)/SOURCES/mlton-$(VERSION)
-.PHONY: rpms
-rpms:
-	$(MAKE) clean clean-git version
-	mkdir -p "$(TOPDIR)"
-	cd "$(TOPDIR)" && mkdir -p BUILD RPMS/i386 SOURCES SPECS SRPMS
-	rm -rf "$(SOURCEDIR)"
-	mkdir -p "$(SOURCEDIR)"
-	( cd "$(SRC)" && tar -cpf - . ) | ( cd "$(SOURCEDIR)" && tar -xpf - )
-	$(CP) "$(SOURCEDIR)/$(SPEC)" "$(TOPDIR)/SPECS/mlton.spec"
-	( cd "$(TOPDIR)/SOURCES" && tar -cpf - mlton-$(VERSION) )		\
-		| $(GZIP) >"$(SOURCEDIR).tgz"
-	rm -rf "$(SOURCEDIR)"
-	rpm -ba --quiet --clean "$(TOPDIR)/SPECS/mlton.spec"

@@ -16,6 +16,8 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 * 2018-01-24
   ** Extend `-target-*-opt` options to support `__arch__-__os__` pairs.
+  ** Remove `./package/rpm/*` and corresponding targets in `./Makefile`;
+  upstream MLton has not produced RPMs for years.
 
 * 2018-01-24
   ** Slightly improve performance of `Vector.concat` and
