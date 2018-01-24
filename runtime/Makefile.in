@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013 Matthew Fluet.
+## Copyright (C) 2010-2013,2018 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,16 +12,12 @@ PATH := ../bin:$(shell echo $$PATH)
 TARGET := self
 
 ifeq ($(TARGET), self)
-# CC := gcc -std=gnu99
 CC := @CC@
-AR := ar rc
-# RANLIB := ranlib
+AR := @AR@
 RANLIB := @RANLIB@
 else
-# CC := $(TARGET)-gcc -std=gnu99
 CC := $(TARGET)-@CC@
-AR := $(TARGET)-ar rc
-# RANLIB := $(TARGET)-ranlib
+AR := $(TARGET)-@AR@
 RANLIB := $(TARGET)-@RANLIB@
 endif
 
@@ -379,7 +375,7 @@ gen/gen-sizes.stamp: gen/gen-sizes.c libmlton.a $(HFILES)
 
 %.a:
 	rm -f $@
-	$(AR) $@ $^
+	$(AR) rc $@ $^
 	$(RANLIB) $@
 
 

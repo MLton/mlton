@@ -41,25 +41,16 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC
 AC_PROG_CC_STDC
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-
-AC_CHECK_PROG(found_ar, ar, yes, no)
-if test x$found_ar = xno
-then
-    AC_MSG_NOTICE([The 'ar' command must be in the path to build AC_PACKAGE_NAME])
-    AC_MSG_NOTICE(['ar' is also part of the GNU 'binutils' package.])
-    AC_MSG_ERROR([Exiting, as the archiver 'ar' can not be found.])
-fi
-
-AC_CHECK_PROG(found_ranlib, ranlib, yes, no)
-if test x$found_ranlib = xno
-then
-    AC_MSG_NOTICE([The 'ranlib' command must be in the path to build AC_PACKAGE_NAME])
-    AC_MSG_NOTICE(['ranlib' is also part of the GNU 'binutils' package.])
-    AC_MSG_ERROR([Exiting, as 'ranlib' can not be found.])
-fi
+AN_MAKEVAR([AR], [AC_PROG_AR])
+AN_PROGRAM([ar], [AC_PROG_AR])
+AC_DEFUN([AC_PROG_AR],[
+  AC_CHECK_TOOL(AR, ar)
+  test -z "$AR" && AC_MSG_ERROR([no acceptable archiver found in \$PATH])
+])
+AC_PROG_AR
 AC_PROG_RANLIB
+
+AC_PROG_MAKE_SET
 
 AC_PROG_SED
 
