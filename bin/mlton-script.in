@@ -12,9 +12,6 @@ case "$HOST_OS" in
 mingw)
 	exe='.exe'
 ;;
-hpux)
-        ia64hpux="-mlp64"
-;;
 *)
 	exe=''
 ;;
@@ -114,7 +111,8 @@ doit "$lib" \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
         -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt aix '-maix64'                             \
-        -target-cc-opt ia64 "$ia64hpux -mtune=itanium2"          \
+        -target-cc-opt ia64-hpux "-mlp64"                        \
+        -target-cc-opt ia64 "-mtune=itanium2"                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86                                       \
                 '-m32
@@ -128,7 +126,7 @@ doit "$lib" \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
         -target-link-opt aix '-maix64'                           \
-        -target-link-opt ia64 "$ia64hpux"                        \
+        -target-link-opt ia64-hpux "-mlp64"                      \
         -target-link-opt linux '-Wl,-znoexecstack'               \
         -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
