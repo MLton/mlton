@@ -52,7 +52,7 @@ structure Show =
       datatype t = Anns | PathMap
    end
 
-val gcc: string ref = ref "<unset>"
+val cc: string list ref = ref ["cc"]
 val arScript: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -254,8 +254,9 @@ fun makeOptions {usage} =
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
         boolRef buildConstants),
-       (Expert, "cc", " <gcc>", "path to gcc executable",
-        SpaceString (fn s => gcc := s)),
+       (Expert, "cc", " <cc>", "set C compiler",
+        SpaceString
+        (fn s => cc := String.tokens (s, Char.isSpace))),
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
         (SpaceString o tokenizeOpt)
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
@@ -1078,18 +1079,20 @@ fun commandLine (args: string list): unit =
        * Older gcc versions used -b for multiple targets.
        * If this is still needed, a shell script wrapper can hide this.
        *)
-      val gcc =
+      val cc =
          case target of
             Cross s =>
                let
-                  val {dir = gccDir, file = gccFile} =
-                     OS.Path.splitDirFile (!gcc)
+                  val {dir = ccDir, file = ccFile} =
+                     OS.Path.splitDirFile (hd (!cc))
                in
                   OS.Path.joinDirFile
-                  {dir = gccDir,
-                   file = s ^ "-" ^ gccFile}
+                  {dir = ccDir,
+                   file = s ^ "-" ^ ccFile}
+                  ::
+                  tl (!cc)
                end
-          | Self => !gcc
+          | Self => !cc
       val arScript = !arScript
 
       fun addTargetOpts opts =
@@ -1340,7 +1343,7 @@ fun commandLine (args: string list): unit =
                       * assembler. This tells the assembler to generate stabs
                       * debugging information for each assembler line.
                       *)
-                     val (gccDebug, asDebug) =
+                     val (ccDebug, asDebug) =
                         case !debugFormat of
                            NONE => (["-g"], "-Wa,-g")
                          | SOME Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
@@ -1385,11 +1388,12 @@ fun commandLine (args: string list): unit =
                                        inputs,
                                        linkArchives])
                                else System.system
-                                    (gcc,
+                                    (hd cc,
                                      List.concat
-                                      [["-o", output],
+                                      [tl cc,
+                                       ["-o", output],
                                        if !format = Library then libOpts else [],
-                                       if !debug then gccDebug else [],
+                                       if !debug then ccDebug else [],
                                        inputs,
                                        linkOpts]))
                               ()
@@ -1440,14 +1444,15 @@ fun commandLine (args: string list): unit =
                         else temp (xsuf ^ ".bc")
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
-                        val debugSwitches = gccDebug @ ["-DASSERT=1"]
+                        val debugSwitches = ccDebug @ ["-DASSERT=1"]
                         val output = mkOutputO (c, input)
 
                         val _ =
                            System.system
-                            (gcc,
+                            (hd cc,
                              List.concat
-                             [[ "-c" ],
+                             [tl cc,
+                              [ "-c" ],
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
@@ -1464,9 +1469,10 @@ fun commandLine (args: string list): unit =
                         val output = mkOutputO (c, input)
                         val _ =
                            System.system
-                           (gcc,
+                           (hd cc,
                             List.concat
-                            [["-c"],
+                            [tl cc,
+                             ["-c"],
                              if !debug then [asDebug] else [],
                              asOpts,
                              ["-o", output],
@@ -1597,7 +1603,7 @@ fun commandLine (args: string list): unit =
                          | Place.TypeCheck => ()
                          | Place.Generated => ()
                          | _ =>
-                              (* Shrink the heap before calling gcc. *)
+                              (* Shrink the heap before calling C compiler. *)
                               (MLton.GC.pack ()
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end

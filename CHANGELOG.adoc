@@ -14,6 +14,9 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-01-25
+  ** Propagate C compiler from `./configure` to `mlton` script.
+
 * 2018-01-24
   ** Extend `-target-*-opt` options to support `__arch__-__os__` pairs.
   ** Remove `./package/rpm/*` and corresponding targets in `./Makefile`;

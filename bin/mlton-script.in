@@ -7,7 +7,6 @@ set -e
 dir=`dirname "$0"`
 lib=`cd "$dir/../lib/mlton" && pwd`
 eval `"$lib/platform"`
-gcc='gcc'
 case "$HOST_OS" in
 mingw)
 	exe='.exe'
@@ -65,20 +64,22 @@ doit () {
     exit 1
 }
 
+CC="@CC@"
+
 # You may need to set 'gmpIncDir' so the C compiler can find gmp.h.
-gmpIncDir=@WITH_GMP_INC_DIR@
+gmpIncDir="@WITH_GMP_INC_DIR@"
 if [ -n "$gmpIncDir" ]; then
 gmpCCOpts="-cc-opt '-I$gmpIncDir'"
 fi
 # You may need to set 'gmpLibDir' so the C compiler can find libgmp.
-gmpLibDir=@WITH_GMP_LIB_DIR@
+gmpLibDir="@WITH_GMP_LIB_DIR@"
 if [ -n "$gmpLibDir" ]; then
 gmpLinkOpts="-link-opt '-L$gmpLibDir' -target-link-opt netbsd '-Wl,-R$gmpLibDir'"
 fi
 
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
-        -cc "$gcc"                                               \
+        -cc "$CC"                                                \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1 -fno-common'                                \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
