@@ -60,7 +60,10 @@ all:
 
 .PHONY: all-no-docs
 all-no-docs:
-	$(MAKE) dirs runtime compiler basis-no-check script mlbpathmap constants libraries tools
+	$(MAKE) dirs runtime
+	$(MAKE) compiler
+	$(MAKE) script mlbpathmap basis-no-check constants basis-check libraries
+	$(MAKE) tools
 # Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
 # We also want to re-run the just-built tools (mllex and mlyacc)
 # because they may be better than those that were used for the first
@@ -69,7 +72,8 @@ ifeq (true, $(BOOTSTRAP_OTHER))
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
 endif
-	$(MAKE) compiler basis
+	$(MAKE) compiler
+	$(MAKE) basis-check libraries-check
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis-no-check
@@ -186,7 +190,7 @@ polyml-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" polyml-mlton
 	$(CP) "$(COMP)/mlton-polyml$(EXE)" "$(LIB)/"
-	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	$(MAKE) script mlbpathmap basis-no-check constants libraries-no-check
 	cat "$(MLTON)" \
 		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
 		| $(SED) 's/doitSMLNJ \"$$@\"/# doitSMLNJ \"$$@\"/' \
@@ -241,7 +245,7 @@ smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(COMP)" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(COMP)/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
-	$(MAKE) script basis-no-check mlbpathmap constants libraries-no-check
+	$(MAKE) script mlbpathmap basis-no-check constants libraries-no-check
 	cat "$(MLTON)" \
 		| $(SED) 's/doitMLton \"$$@\"/# doitMLton \"$$@\"/' \
 		| $(SED) 's/doitPolyML \"$$@\"/# doitPolyML \"$$@\"/' \
