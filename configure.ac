@@ -90,23 +90,23 @@ then
 fi
 
 AC_CHECK_PROG(found_mllex, mllex, yes, no)
-AC_CHECK_PROG(found_ml_lex, ml-lex, yes, no)
-if [ test x$found_mllex = xno ] && [ test x$found_ml_lex = xno ]
+if [ test x$found_mllex = xno ]
 then
-    AC_MSG_NOTICE([The SML scanner generator tool 'mllex'])
-    AC_MSG_NOTICE([must be in the path to build AC_PACKAGE_NAME.])
-    AC_MSG_NOTICE(['mllex' may also be named 'ml-lex'.])
-    AC_MSG_ERROR([Exiting, as 'mllex' can not be found.])
+AC_CHECK_PROG(found_ml_lex, ml-lex, yes, no)
+if [ test x$found_ml_lex = xno ]
+then
+    AC_MSG_ERROR([No SML scanner generator tool ('mllex' or 'ml-lex') found in \$PATH])
+fi
 fi
 
 AC_CHECK_PROG(found_mlyacc, mlyacc, yes, no)
-AC_CHECK_PROG(found_ml_yacc, ml-yacc, yes, no)
-if [ test x$found_mlyacc = xno ] && [ test x$found_ml_yacc = xno ]
+if [ test x$found_mlyacc = xno ]
 then
-    AC_MSG_NOTICE([The SML parser generator tool 'mlyacc'])
-    AC_MSG_NOTICE([must be in the path to build AC_PACKAGE_NAME.])
-    AC_MSG_NOTICE(['mlyacc' may also be named 'ml-yacc'.])
-    AC_MSG_ERROR([Exiting, as 'mlyacc' can not be found.])
+AC_CHECK_PROG(found_ml_yacc, ml-yacc, yes, no)
+if [ test x$found_ml_yacc = xno ]
+then
+    AC_MSG_ERROR([No SML parser generator tool ('mlyacc' or 'ml-yacc') found in \$PATH])
+fi
 fi
 
 AC_CONFIG_FILES([Makefile
