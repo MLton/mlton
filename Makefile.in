@@ -96,8 +96,8 @@ basis:
 	$(MAKE) basis-no-check
 	$(MAKE) basis-check
 
-.PHONY: bootstrap-nj
-bootstrap-nj:
+.PHONY: bootstrap-smlnj
+bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(MAKE) all
 
