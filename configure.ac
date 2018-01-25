@@ -73,7 +73,7 @@ AC_CHECK_HEADER(
 )
 AC_CHECK_LIB(
   [gmp],[__gmpz_sqrt],[],
-  [AC_MSG_WARN([The 'libgmp' shared library is not on C compiler's search path.])]
+  [AC_MSG_ERROR([The 'libgmp' shared library is not on C compiler's search path.])]
 )
 
 ###############################################################################
