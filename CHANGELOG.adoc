@@ -15,6 +15,8 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 === Details
 
 * 2018-01-25
+  ** Remove (expert, undocumented) `-debug-format` option; the same effect can
+  be achieved with `-as-opt` and `-cc-opt`.
   ** Propagate C compiler from `./configure` to `mlton` script.
 
 * 2018-01-24

@@ -66,8 +66,6 @@ val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
-datatype debugFormat = Dwarf | DwarfPlus | Dwarf2 | Stabs | StabsPlus
-val debugFormat: debugFormat option ref = ref NONE
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunk: Control.chunk option ref = ref NONE
@@ -330,18 +328,6 @@ fun makeOptions {usage} =
                        ; debugRuntime := b))),
        (Expert, "debug-runtime", " {false|true}", "produce executable with debug info",
         boolRef debugRuntime),
-       (Expert, "debug-format", " {default|dwarf|dwarf+|drwaf2|stabs|stabs+}",
-        "choose debug symbol format",
-        SpaceString (fn s =>
-                        debugFormat :=
-                        (case s of
-                            "default" => NONE
-                          | "dwarf" => SOME Dwarf
-                          | "dwarf+" => SOME DwarfPlus
-                          | "dwarf2" => SOME Dwarf2
-                          | "stabs" => SOME Stabs
-                          | "stabs+" => SOME StabsPlus
-                          | _ => usage (concat ["invalid -debug-format flag: ", s])))),
        let
           val flag = "default-ann"
        in
@@ -1339,18 +1325,7 @@ fun commandLine (args: string list): unit =
                         atMLtons :=
                         Vector.fromList
                         (tokenize (rev ("--" :: (!runtimeArgs))))
-                     (* The -Wa,--gstabs says to pass the --gstabs option to the
-                      * assembler. This tells the assembler to generate stabs
-                      * debugging information for each assembler line.
-                      *)
-                     val (ccDebug, asDebug) =
-                        case !debugFormat of
-                           NONE => (["-g"], "-Wa,-g")
-                         | SOME Dwarf => (["-gdwarf", "-g2"], "-Wa,--gdwarf2")
-                         | SOME DwarfPlus => (["-gdwarf+", "-g2"], "-Wa,--gdwarf2")
-                         | SOME Dwarf2 => (["-gdwarf-2", "-g2"], "-Wa,--gdwarf2")
-                         | SOME Stabs => (["-gstabs", "-g2"], "-Wa,--gstabs")
-                         | SOME StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
+                     val (ccDebug, asDebug) = (["-g", "-DASSERT=1"], "-Wa,-g")
                      fun compileO (inputs: File.t list): unit =
                         let
                            val output =
@@ -1391,9 +1366,8 @@ fun commandLine (args: string list): unit =
                                     (hd cc,
                                      List.concat
                                       [tl cc,
-                                       ["-o", output],
                                        if !format = Library then libOpts else [],
-                                       if !debug then ccDebug else [],
+                                       ["-o", output],
                                        inputs,
                                        linkOpts]))
                               ()
@@ -1444,9 +1418,7 @@ fun commandLine (args: string list): unit =
                         else temp (xsuf ^ ".bc")
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
-                        val debugSwitches = ccDebug @ ["-DASSERT=1"]
                         val output = mkOutputO (c, input)
-
                         val _ =
                            System.system
                             (hd cc,
@@ -1457,7 +1429,7 @@ fun commandLine (args: string list): unit =
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
-                              if !debug then debugSwitches else [],
+                              if !debug then ccDebug else [],
                               ccOpts,
                               ["-o", output],
                               [input]])
