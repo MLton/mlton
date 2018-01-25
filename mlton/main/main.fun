@@ -106,20 +106,16 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
    (fn () =>
     let
        val targetsDir =
-          OS.Path.mkAbsolute { path = "targets",
-                               relativeTo = !Control.libDir }
+          OS.Path.mkAbsolute {path = "targets", relativeTo = !Control.libDir}
        val potentialTargets = Dir.lsDirs targetsDir
        fun targetMap target =
           let
              val targetDir =
-                OS.Path.mkAbsolute { path = target,
-                                     relativeTo = targetsDir }
+                OS.Path.mkAbsolute {path = target, relativeTo = targetsDir}
              val osFile =
-                OS.Path.joinDirFile { dir = targetDir,
-                                      file = "os" }
+                OS.Path.joinDirFile {dir = targetDir, file = "os"}
              val archFile =
-                OS.Path.joinDirFile { dir = targetDir,
-                                      file = "arch" }
+                OS.Path.joinDirFile {dir = targetDir, file = "arch"}
              val os   = File.contents osFile
              val arch = File.contents archFile
              val os   = List.first (String.tokens (os,   Char.isSpace))
@@ -133,7 +129,7 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
                    NONE => Error.bug (concat ["strange arch: ", arch])
                  | SOME a => a
           in
-             SOME { arch = arch, os = os, target = target }
+             SOME {arch = arch, os = os, target = target}
           end
           handle _ => NONE
     in
@@ -946,12 +942,13 @@ fun commandLine (args: string list): unit =
             Cross s => s
           | Self => "self"
       val targetsDir =
-         OS.Path.mkAbsolute { path = "targets",
-                              relativeTo = !libDir }
+         OS.Path.mkAbsolute {path = "targets", relativeTo = !libDir}
       val targetDir =
-         OS.Path.mkAbsolute { path = targetStr,
-                              relativeTo = targetsDir }
-      val () = libTargetDir := targetDir
+         OS.Path.mkAbsolute {path = targetStr, relativeTo = targetsDir}
+      val () = Control.libTargetDir := targetDir
+      val targetIncDir =
+         OS.Path.mkAbsolute {path = "include", relativeTo = targetDir}
+      val targetLibDir = targetDir
       val targetArch = !Target.arch
       val targetArchStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !Target.os
@@ -1030,7 +1027,7 @@ fun commandLine (args: string list): unit =
          let
             val sizeMap =
                List.map
-               (File.lines (OS.Path.joinDirFile {dir = !Control.libTargetDir,
+               (File.lines (OS.Path.joinDirFile {dir = targetDir,
                                                  file = "sizes"}),
                 fn line =>
                 case String.tokens (line, Char.isSpace) of
@@ -1097,30 +1094,33 @@ fun commandLine (args: string list): unit =
              then opt :: ac
           else ac)
       val asOpts = addTargetOpts asOpts
+      val asOpts = if !debug
+                      then "-Wa,-g" :: asOpts
+                      else asOpts
       val ccOpts = addTargetOpts ccOpts
-      val ccOpts = concat ["-I",
-                           OS.Path.mkAbsolute { path = "include",
-                                                relativeTo = !libTargetDir }]
-                   :: ccOpts
-      val linkOpts =
-         List.concat [[concat ["-L", !libTargetDir]],
-                      if !debugRuntime then
-                      ["-lmlton-gdb", "-lgdtoa-gdb"]
-                      else if positionIndependent then
-                      ["-lmlton-pic", "-lgdtoa-pic"]
-                      else
-                      ["-lmlton", "-lgdtoa"],
-                      addTargetOpts linkOpts]
+      val ccOpts = ("-I" ^ targetIncDir) :: ccOpts
+      val ccOpts = if !debug
+                      then "-g" :: "-DASSERT=1" :: ccOpts
+                      else ccOpts
+      val linkOpts = addTargetOpts linkOpts
+      val linkOpts = if !debugRuntime then
+                     "-lmlton-gdb" :: "-lgdtoa-gdb" :: linkOpts
+                     else if positionIndependent then
+                     "-lmlton-pic" :: "-lgdtoa-pic" :: linkOpts
+                     else
+                     "-lmlton" :: "-lgdtoa" :: linkOpts
+      val linkOpts = ("-L" ^ targetLibDir) :: linkOpts
+
       val linkArchives =
          if !debugRuntime then
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" },
-          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
+         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-gdb.a"},
+          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-gdb.a"}]
          else if positionIndependent then
-         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-pic.a" },
-          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-pic.a" }]
+         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-pic.a"},
+          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-pic.a"}]
          else
-         [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" },
-          OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
+         [OS.Path.joinDirFile {dir = targetLibDir, file =  "libmlton.a"},
+          OS.Path.joinDirFile {dir = targetLibDir, file =  "libgdtoa.a"}]
 
       val llvm_as = !llvm_as
       val llvm_llc = !llvm_llc
@@ -1303,9 +1303,9 @@ fun commandLine (args: string list): unit =
                          | SOME f => if File.extension f = SOME "exe"
                                         then concat [File.base f, suf]
                                      else concat [f, suf]
-                     val { base = outputBase, ext=_ } =
+                     val {base = outputBase, ...} =
                         OS.Path.splitBaseExt (maybeOut ".ext")
-                     val { file = defLibname, dir=_ } =
+                     val {file = defLibname, ...} =
                         OS.Path.splitDirFile outputBase
                      val defLibname =
                         if String.hasPrefix (defLibname, {prefix = "lib"})
