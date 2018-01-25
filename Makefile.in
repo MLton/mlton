@@ -101,6 +101,11 @@ bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(MAKE) all
 
+.PHONY: bootstrap-polyml
+bootstrap-polyml:
+	$(MAKE) polyml-mlton
+	$(MAKE) all
+
 .PHONY: clean
 clean:
 	bin/clean
