@@ -33,7 +33,6 @@ NLFFIGEN := mlnlffigen
 PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
-RANLIB := @RANLIB@
 SED := @SED@
 
 
@@ -235,7 +234,6 @@ runtime:
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
-	for x in "$(LIB)/targets/$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script
 script:
