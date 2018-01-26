@@ -7,7 +7,6 @@
  # See the file MLton-LICENSE for details.
  ##
 
-@SET_MAKE@
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin

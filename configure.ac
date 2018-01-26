@@ -32,8 +32,6 @@ AC_DEFUN([AC_PROG_AR],[
 AC_PROG_AR
 AC_PROG_RANLIB
 
-AC_PROG_MAKE_SET
-
 AC_PROG_SED
 
 ###############################################################################
@@ -110,11 +108,9 @@ fi
 fi
 
 AC_CONFIG_FILES([Makefile
-                 benchmark/Makefile
                  bin/mlton-script
                  lib/mlnlffi-lib/Makefile
                  mlton/Makefile
-                 mlyacc/Makefile
                  runtime/Makefile])
 
 AC_OUTPUT

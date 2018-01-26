@@ -7,7 +7,6 @@
  # See the file MLton-LICENSE for details.
  ##
 
-@SET_MAKE@
 export TARGET := self
 export TARGET_ARCH := $(shell bin/host-arch)
 export TARGET_OS := $(shell bin/host-os)
