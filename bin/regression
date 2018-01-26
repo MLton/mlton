@@ -224,7 +224,7 @@ for f in *.sml; do
         f=`basename "$f" .sml`
         tmpf="/tmp/$f.$$"
         case "$f" in
-        fxp|hamlet)
+        fxp)
                 echo "skipping $f"
         ;;
         *)
