@@ -42,10 +42,11 @@ SED := @SED@
 # another round of compilation so that we get a MLton built without
 # stubs.
 ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
-	BOOTSTRAP_OTHER:=true
+	BOOTSTRAP:=true
 else
-	BOOTSTRAP_OTHER:=false
+	BOOTSTRAP:=false
 endif
+EXTRA_BOOTSTRAP:=false
 
 ifeq ($(origin VERSION), undefined)
 	VERSION := $(shell date +%Y%m%d)
@@ -61,19 +62,21 @@ all:
 .PHONY: all-no-docs
 all-no-docs:
 	$(MAKE) dirs runtime
-	$(MAKE) compiler
+	$(MAKE) compiler  # mlton1 using tools0 and mlton0
 	$(MAKE) script mlbpathmap basis-no-check constants basis-check libraries
-	$(MAKE) tools
-# Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
-# We also want to re-run the just-built tools (mllex and mlyacc)
-# because they may be better than those that were used for the first
-# round of compilation.  So, we clean out the front end. 
-ifeq (true, $(BOOTSTRAP_OTHER))
+	$(MAKE) tools     # tools1 using tools0 and mlton1
+ifeq (true, $(BOOTSTRAP))
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
+	$(MAKE) compiler  # mlton2 using tools1 and mlton1
+ifeq (true, $(EXTRA_BOOTSTRAP))
+	$(MAKE) tools-clean
+	$(MAKE) tools     # tools2 using tools1 and mlton2; tools2 == tools1
+	rm -f "$(COMP)/$(AOUT)$(EXE)"
+	$(MAKE) -C "$(COMP)/front-end" clean
+	$(MAKE) compiler  # mlton3 using tools2 and mlton2; mlton3 == mlton2
 endif
-	$(MAKE) compiler
-	$(MAKE) basis-check libraries-check
+endif
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis-no-check
