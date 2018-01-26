@@ -2,30 +2,15 @@
 /install/
 
 # created by GNU Autotools
-/autom4te.cache
+/autom4te.cache/
 /autoscan.log
-/autoscan-*.log
-/aclocal.m4
-/app.info
-/compile
 /config.h
-/config.h.in*
-/config.guess
+/config.h.in
 /config.log
-/config.sub
-/configure
 /config.status
+/configure
 /configure.scan
-/depcomp
-/libtool
-/m4
-/install-sh
-/missing
-/stamp-h1
 /Makefile
-/Makefile-auto
-/Makefile-auto.in
-/mlton-env-config
 
 # created by a failed build
 /tmp*
