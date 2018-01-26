@@ -31,6 +31,11 @@ PROF := mlprof
 YACC := mlyacc
 NLFFIGEN := mlnlffigen
 PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
+
+CC := @CC@
+WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
+WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
+
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
 SED := @SED@
@@ -237,7 +242,11 @@ runtime:
 
 .PHONY: script
 script:
-	$(CP) bin/mlton-script "$(MLTON)"
+	$(SED) 	\
+		-e "s;^CC=.*;CC=\"$(CC)\";" \
+		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" 	\
+		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" 	\
+		< bin/mlton-script > "$(MLTON)"
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"

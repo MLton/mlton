@@ -9,7 +9,7 @@ m4_define([MLTON_VERSION], m4_esyscmd([TZ=UTC git log -n1 --date=format-local:"%
 AC_INIT([MLton], [MLTON_VERSION], [mlton-devel@mlton.org], [], [http://mlton.org])
 
 # if this file does not exist, `configure` was invoked in the wrong directory
-AC_CONFIG_SRCDIR([bin/mlton-script.in])
+AC_CONFIG_SRCDIR([bin/mlton-script])
 
 ########################################################################
 # Set various environment variables (needed at configure time)
@@ -108,7 +108,6 @@ fi
 fi
 
 AC_CONFIG_FILES([Makefile
-                 bin/mlton-script
                  lib/mlnlffi-lib/Makefile
                  mlton/Makefile
                  runtime/Makefile])
