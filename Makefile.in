@@ -281,17 +281,20 @@ traced:
 	$(SED) 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
 
+TOOLS := $(LEX) $(NLFFIGEN) $(PROF) $(YACC)
+
 .PHONY: tools
 tools:
-	$(MAKE) -C "$(LEX)"
-	$(MAKE) -C "$(NLFFIGEN)"
-	$(MAKE) -C "$(PROF)"
-	$(MAKE) -C "$(YACC)"
-	$(CP) "$(LEX)/$(LEX)$(EXE)"		\
-		"$(NLFFIGEN)/$(NLFFIGEN)$(EXE)"	\
-		"$(PROF)/$(PROF)$(EXE)"		\
-		"$(YACC)/$(YACC)$(EXE)"		\
-		"$(BIN)/"
+	for t in $(TOOLS); do				\
+		$(MAKE) -C $$t;				\
+		$(CP) "$$t/$$t$(EXE)" "$(BIN)/";	\
+	done
+
+.PHONY: tools-clean
+tools-clean:
+	for t in $(TOOLS); do				\
+		$(MAKE) -C $$t clean;			\
+	done
 
 .PHONY: version
 version:
