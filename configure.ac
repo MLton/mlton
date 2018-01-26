@@ -115,8 +115,6 @@ AC_CONFIG_FILES([Makefile
                  lib/mlnlffi-lib/Makefile
                  mlton/Makefile
                  mlyacc/Makefile
-                 package/freebsd/Makefile
-                 package/mingw/Makefile
                  runtime/Makefile])
 
 AC_OUTPUT

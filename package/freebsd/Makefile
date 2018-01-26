@@ -10,8 +10,6 @@
 # the SML compiler.  So, this Makefile fetches and installs an
 # alread-built version of MLton, BOOT_DIST, to use for bootstrapping.
 
-@SET_MAKE@
-SED=@SED@
 PORTNAME=	mlton
 PORTVERSION=	${VERSION}
 CATEGORIES=	lang
