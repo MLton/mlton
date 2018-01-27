@@ -18,21 +18,16 @@ AOUT := mlton-compile
 PATH := $(BIN):$(shell echo $$PATH)
 SED := @SED@
 
-FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+MLTON_FLAGS := @MLton ram-slop 0.7 gc-summary $(MLTON_RUNTIME_ARGS) --
+MLTON_FLAGS += -verbose 2
 
 ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE := mlton.mlb
-  FLAGS += -default-ann 'sequenceNonUnit warn'
-  FLAGS += -default-ann 'warnUnused true'
-  # FLAGS += -type-check true
+  MLTON_FLAGS += -default-ann 'sequenceNonUnit warn'
+  MLTON_FLAGS += -default-ann 'warnUnused true'
+  # MLTON_FLAGS += -type-check true
 else
-# We're compiling MLton with an older version of itself. 
-# Use "-align 8" for amd64 to avoid GMP/mul_2exp segfault with a
-# mis-aligned limb when compiling with <= 20070826.
-ifeq (amd64,$(findstring $(HOST_ARCH), amd64))
-  FLAGS += -align 8
-endif
 ifneq (,$(findstring $(HOST_OS), cygwin mingw))
   # The stubs don't work on Cygwin or MinGW, since they define spawn
   # in terms of fork, and fork doesn't work on Cygwin or MinGW.  So,
@@ -45,9 +40,9 @@ else
 endif
 endif
 
-FLAGS += -target $(TARGET)
-FLAGS += -verbose 2 -output "$(AOUT)"
-FLAGS += $(COMPILE_ARGS)
+MLTON_FLAGS += -target $(TARGET)
+MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
+MLTON_FLAGS += -output "$(AOUT)"
 
 FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
@@ -96,13 +91,13 @@ $(AOUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton (takes a while)'
-	mlton $(FLAGS) $(FILE)
+	mlton $(MLTON_FLAGS) $(FILE)
 
 .PHONY: def-use
 def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
-	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+	mlton $(MLTON_FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
 
 .PHONY: clean
 clean:

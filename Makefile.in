@@ -36,6 +36,15 @@ CC := @CC@
 WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
 WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
 
+MLTON_RUNTIME_ARGS ?=
+MLTON_COMPILE_ARGS ?=
+ifeq ($(origin BOOTSTRAP_MLTON_RUNTIME_ARGS), undefined)
+BOOTSTRAP_MLTON_RUNTIME_ARGS := $(MLTON_RUNTIME_ARGS)
+endif
+ifeq ($(origin BOOTSTRAP_MLTON_COMPILE_ARGS), undefined)
+BOOTSTRAP_MLTON_COMPILE_ARGS := $(MLTON_COMPILE_ARGS)
+endif
+
 CP := /bin/cp -fpR
 GZIP := gzip --force --best
 SED := @SED@
@@ -122,7 +131,15 @@ clean-git:
 
 .PHONY: compiler
 compiler:
-	$(MAKE) -C "$(COMP)"
+ifeq (true, $(BOOTSTRAP))
+	$(MAKE) -C "$(COMP)" \
+		MLTON_RUNTIME_ARGS="$(BOOTSTRAP_MLTON_RUNTIME_ARGS)" \
+		MLTON_COMPILE_ARGS="$(BOOTSTRAP_MLTON_COMPILE_ARGS)"
+else
+	$(MAKE) -C "$(COMP)" \
+		MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" \
+		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"
+endif
 	$(CP) "$(COMP)/$(AOUT)$(EXE)" "$(LIB)/"
 
 .PHONY: constants
@@ -135,7 +152,7 @@ constants:
 
 .PHONY: debugged
 debugged:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
 	$(SED) 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" > "$(MLTON).debug"
 	chmod a+x "$(MLTON).debug"
@@ -213,7 +230,7 @@ polyml-mlton:
 profiled:
 	for t in alloc count time; do					\
 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
-			COMPILE_ARGS="-profile $$t";			\
+			MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $$t";	\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
 		$(SED) "s/mlton-compile/mlton-compile.$$t/" 		\
 			<"$(MLTON)" 					\
@@ -285,7 +302,7 @@ smlnj-mlton-x16:
 
 .PHONY: traced
 traced:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
 	$(SED) 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" > "$(MLTON).trace"
 	chmod a+x "$(MLTON).trace"
@@ -295,7 +312,9 @@ TOOLS := $(LEX) $(NLFFIGEN) $(PROF) $(YACC)
 .PHONY: tools
 tools:
 	for t in $(TOOLS); do				\
-		$(MAKE) -C $$t;				\
+		$(MAKE) -C $$t 				\
+			MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" \
+			MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"; \
 		$(CP) "$$t/$$t$(EXE)" "$(BIN)/";	\
 	done
 
