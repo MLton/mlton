@@ -176,29 +176,37 @@ libraries-no-check:
 	mkdir -p "$(LIB)/sml"
 	cd "$(LIB)/sml" && rm -rf $(LIBRARIES)
 	$(MAKE) -C "$(SRC)/lib/ckit-lib"
-	$(MAKE) -C "$(SRC)/lib/mllpt-lib"
-	$(MAKE) -C "$(SRC)/lib/mlnlffi-lib"
-	$(MAKE) -C "$(SRC)/lib/mlrisc-lib"
-	$(MAKE) -C "$(SRC)/lib/smlnj-lib"
-	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
 	$(CP) "$(SRC)/lib/ckit-lib/ckit/." "$(LIB)/sml/ckit-lib"
-	$(CP) "$(SRC)/lib/mlnlffi-lib/." "$(LIB)/sml/mlnlffi-lib"
-	$(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
+	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
+	$(MAKE) -C "$(SRC)/lib/mllpt-lib"
 	$(CP) "$(SRC)/lib/mllpt-lib/ml-lpt/lib/." "$(LIB)/sml/mllpt-lib"
+	$(MAKE) -C "$(SRC)/lib/mlnlffi-lib"
+	$(CP) "$(SRC)/lib/mlnlffi-lib/." "$(LIB)/sml/mlnlffi-lib"
+	$(MAKE) -C "$(SRC)/lib/mlrisc-lib"
+	$(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
 	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
+	$(MAKE) -C "$(SRC)/lib/smlnj-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
 	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
 	find "$(LIB)/sml" -name .gitignore | xargs rm -rf
 
+define LIBRARIES_CHECK_TEMPLATE
+	@echo "Type checking $(1) library."
+	"$(MLTON)" -disable-ann deadCode		\
+		-stop tc				\
+		'$$(SML_LIB)/$(1)/$(1).mlb'		\
+		>/dev/null
+endef
+
 .PHONY: libraries-check
 libraries-check:
-	for f in $(LIBRARIES); do				\
-		echo "Type checking $$f library.";		\
-		"$(MLTON)" -disable-ann deadCode		\
-			-stop tc				\
-			'$$(SML_LIB)/'"$$f/$$f.mlb"		\
-			>/dev/null;				\
-	done
+	$(call LIBRARIES_CHECK_TEMPLATE,ckit-lib)
+	$(call LIBRARIES_CHECK_TEMPLATE,cml)
+	$(call LIBRARIES_CHECK_TEMPLATE,mllpt-lib)
+	$(call LIBRARIES_CHECK_TEMPLATE,mlnlffi-lib)
+	$(call LIBRARIES_CHECK_TEMPLATE,mlrisc-lib)
+	$(call LIBRARIES_CHECK_TEMPLATE,mlyacc-lib)
+	$(call LIBRARIES_CHECK_TEMPLATE,smlnj-lib)
 
 .PHONY: libraries
 libraries:
@@ -226,17 +234,32 @@ polyml-mlton:
 	chmod u+x "$(MLTON).polyml"
 	@echo 'Build of MLton succeeded.'
 
+define PROFILED_TEMPLATE
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$(1)"			\
+		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $(1)"
+	$(CP) "$(COMP)/$(AOUT).$(1)" "$(LIB)/"
+	$(SED) "s/mlton-compile/mlton-compile.$(1)/"		\
+		<"$(MLTON)" 					\
+		>"$(MLTON).$(1)"
+	chmod a+x "$(MLTON).$(1)"
+endef
+
+.PHONY: profiled-alloc
+profiled-alloc:
+	$(call PROFILED_TEMPLATE,alloc)
+
+.PHONY: profiled-count
+profiled-count:
+	$(call PROFILED_TEMPLATE,count)
+
+.PHONY: profiled-time
+profiled-time:
+	$(call PROFILED_TEMPLATE,time)
+
 .PHONY: profiled
-profiled:
-	for t in alloc count time; do					\
-		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t"			\
-			MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $$t";	\
-		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
-		$(SED) "s/mlton-compile/mlton-compile.$$t/" 		\
-			<"$(MLTON)" 					\
-			>"$(MLTON).$$t";				\
-		chmod a+x "$(MLTON).$$t";				\
-	done
+	$(MAKE) profiled-alloc
+	$(MAKE) profiled-count
+	$(MAKE) profiled-time
 
 .PHONY: runtime
 runtime:
@@ -309,20 +332,26 @@ traced:
 
 TOOLS := $(LEX) $(NLFFIGEN) $(PROF) $(YACC)
 
+define TOOLS_TEMPLATE
+	$(MAKE) -C $(1) 					\
+		MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" 	\
+		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"
+	$(CP) "$(1)/$(1)$(EXE)" "$(BIN)/"
+endef
+
 .PHONY: tools
 tools:
-	for t in $(TOOLS); do				\
-		$(MAKE) -C $$t 				\
-			MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" \
-			MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"; \
-		$(CP) "$$t/$$t$(EXE)" "$(BIN)/";	\
-	done
+	$(call TOOLS_TEMPLATE,$(LEX))
+	$(call TOOLS_TEMPLATE,$(YACC))
+	$(call TOOLS_TEMPLATE,$(PROF))
+	$(call TOOLS_TEMPLATE,$(NLFFIGEN))
 
 .PHONY: tools-clean
 tools-clean:
-	for t in $(TOOLS); do				\
-		$(MAKE) -C $$t clean;			\
-	done
+	$(MAKE) -C $(LEX) clean
+	$(MAKE) -C $(YACC) clean
+	$(MAKE) -C $(PROF) clean
+	$(MAKE) -C $(NLFFIGEN) clean
 
 .PHONY: version
 version:
