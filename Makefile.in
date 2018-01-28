@@ -58,7 +58,7 @@ ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
 else
 	BOOTSTRAP:=false
 endif
-EXTRA_BOOTSTRAP:=false
+CHECK_FIXPOINT:=false
 
 ifeq ($(origin VERSION), undefined)
 	VERSION := $(shell date +%Y%m%d)
@@ -74,19 +74,19 @@ all:
 .PHONY: all-no-docs
 all-no-docs:
 	$(MAKE) dirs runtime
-	$(MAKE) compiler  # mlton1 using tools0 and mlton0
+	$(MAKE) compiler CHECK_FIXPOINT=false  # tools0 + mlton0 -> mlton1
 	$(MAKE) script mlbpathmap basis-no-check constants basis-check libraries
-	$(MAKE) tools     # tools1 using tools0 and mlton1
+	$(MAKE) tools    CHECK_FIXPOINT=false  # tools0 + mlton1 -> tools1
 ifeq (true, $(BOOTSTRAP))
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
-	$(MAKE) compiler  # mlton2 using tools1 and mlton1
-ifeq (true, $(EXTRA_BOOTSTRAP))
+	$(MAKE) compiler CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
+ifeq (true, $(CHECK_FIXPOINT))
 	$(MAKE) tools-clean
-	$(MAKE) tools     # tools2 using tools1 and mlton2; tools2 == tools1
+	$(MAKE) tools    CHECK_FIXPOINT=true   # tools1 + mlton1 -> tools2; tools2 == tools1
 	rm -f "$(COMP)/$(AOUT)$(EXE)"
 	$(MAKE) -C "$(COMP)/front-end" clean
-	$(MAKE) compiler  # mlton3 using tools2 and mlton2; mlton3 == mlton2
+	$(MAKE) compiler CHECK_FIXPOINT=true   # tools2 + mlton2 -> mlton3; mlton3 == mlton2
 endif
 endif
 	@echo 'Build of MLton succeeded.'
@@ -139,6 +139,9 @@ else
 	$(MAKE) -C "$(COMP)" \
 		MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"
+endif
+ifeq (true, $(CHECK_FIXPOINT))
+	diff -b "$(COMP)/$(AOUT)$(EXE)" "$(LIB)/$(AOUT)$(EXE)"
 endif
 	$(CP) "$(COMP)/$(AOUT)$(EXE)" "$(LIB)/"
 
@@ -332,10 +335,20 @@ traced:
 
 TOOLS := $(LEX) $(NLFFIGEN) $(PROF) $(YACC)
 
-define TOOLS_TEMPLATE
+ifeq (true, $(CHECK_FIXPOINT))
+define TOOLS_TEMPLATE_CHECK_FIXPOINT
+	diff -b "$(1)/$(1)$(EXE)" "$(BIN)/$(1)$(EXE)"
+endef
+else
+define TOOLS_TEMPLATE_CHECK_FIXPOINT
+endef
+endif
+
+define TOOLS_TEMPLATE =
 	$(MAKE) -C $(1) 					\
 		MLTON_RUNTIME_ARGS="$(MLTON_RUNTIME_ARGS)" 	\
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS)"
+	$(call TOOLS_TEMPLATE_CHECK_FIXPOINT,$(1))
 	$(CP) "$(1)/$(1)$(EXE)" "$(BIN)/"
 endef
 
