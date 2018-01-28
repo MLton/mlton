@@ -18,15 +18,13 @@ AOUT := mlton-compile
 PATH := $(BIN):$(shell echo $$PATH)
 SED := @SED@
 
-MLTON_FLAGS := @MLton ram-slop 0.7 gc-summary $(MLTON_RUNTIME_ARGS) --
-MLTON_FLAGS += -verbose 2
-
 ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE := mlton.mlb
-  MLTON_FLAGS += -default-ann 'sequenceNonUnit warn'
-  MLTON_FLAGS += -default-ann 'warnUnused true'
-  # MLTON_FLAGS += -type-check true
+  MLTON_TYPECHECK_FLAGS :=
+  MLTON_TYPECHECK_FLAGS += -default-ann 'sequenceNonUnit warn'
+  MLTON_TYPECHECK_FLAGS += -default-ann 'warnUnused true'
+  # MLTON_TYPECHECK_FLAGS += -type-check true
 else
 ifneq (,$(findstring $(HOST_OS), cygwin mingw))
   # The stubs don't work on Cygwin or MinGW, since they define spawn
@@ -38,11 +36,8 @@ else
   # the MLton structure.
   FILE := mlton-stubs.mlb
 endif
+  MLTON_TYPECHECK_FLAGS :=
 endif
-
-MLTON_FLAGS += -target $(TARGET)
-MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
-MLTON_FLAGS += -output "$(AOUT)"
 
 FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
@@ -91,13 +86,18 @@ $(AOUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton (takes a while)'
-	mlton $(MLTON_FLAGS) $(FILE)
+	mlton @MLton gc-summary ram-slop 0.7 $(MLTON_RUNTIME_ARGS) -- \
+		-verbose 2 $(MLTON_TYPECHECK_FLAGS) $(MLTON_COMPILE_ARGS) \
+		-target $(TARGET) -output $(AOUT) $(FILE)
 
 .PHONY: def-use
 def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
-	mlton $(MLTON_FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+	mlton @MLton ram-slop 0.7 $(MLTON_RUNTIME_ARGS) -- \
+		-verbose 0 $(MLTON_TYPECHECK_FLAGS) $(MLTON_COMPILE_ARGS) \
+		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use \
+		-target $(TARGET) -output $(AOUT) $(FILE)
 
 .PHONY: clean
 clean:
