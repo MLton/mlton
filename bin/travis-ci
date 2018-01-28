@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
 
-echo "Building MLton with MLton..."
+set -e
+
+echo
+mlton
+echo
+make -version
+echo
+$CC --version
+echo
+if [[ "$MLTON_COMPILE_ARGS" == *"llvm"* ]]; then
+llvm-as -version
+opt -version
+llc -version
+echo
+fi
+
+echo "Building MLton..."
 autoreconf -vfi
 ./configure --prefix=$PREFIX
-make all-no-docs
+make MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" BOOTSTRAP_MLTON_COMPILE_ARGS="" all-no-docs
 
+if [ "$REGRESSION" == "true" ]; then
 echo "Running regression tests..."
-make check
+./bin/regression $MLTON_COMPILE_ARGS
+fi

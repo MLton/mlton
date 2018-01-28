@@ -1,10 +1,13 @@
-language: c
+language: generic
 sudo: enabled
-compiler:
-  - gcc
-  - clang
 env:
-  - PREFIX=/usr/local
+  global:
+    - PREFIX=/usr/local
+  matrix:
+    - CC=gcc    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
+    - CC=gcc    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+    - CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+    - CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
 install:
   - sudo apt-get -qq update
   - sudo apt-get install -qq mlton

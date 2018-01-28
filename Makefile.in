@@ -340,7 +340,7 @@ version:
 
 .PHONY: check
 check:
-	./bin/regression
+	./bin/regression $(CHECK_ARGS)
 
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR is added onto them to indicate where the Makefile actually
