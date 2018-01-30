@@ -15,7 +15,6 @@ mingw)
 	exe=''
 ;;
 esac
-mlton="$lib/mlton-compile$exe"
 
 declare -a rargs
 case "$1" in
@@ -35,8 +34,9 @@ case "$1" in
 esac
 
 doitMLton () {
-    if [ -x "$mlton" ]; then
-        exec "$mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+    mlton_mlton="$lib/mlton-compile$exe"
+    if [ -x "$mlton_mlton" ]; then
+        exec "$mlton_mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
     fi
 }
 doitSMLNJ () {
