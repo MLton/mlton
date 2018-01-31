@@ -9,13 +9,16 @@
 
 # Specify C compiler and binutils.
 # Can be used for alternative tools (e.g., `CC=clang` or `CC=gcc-7`).
-CC := @CC@
-AR := @AR@
-RANLIB := @RANLIB@
+CC := gcc
+AR := ar
+RANLIB := ranlib
 
-# Specify GMP include and library paths, if not on default search paths
-WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
-WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
+# Specify GMP include and library paths, if not on default search paths.
+WITH_GMP_DIR :=
+ifneq ($(WITH_GMP_DIR),)
+WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
+WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
+endif
 
 # Specify runtime and compile arguments given to (the to-be-built) `mlton` when
 # compiling distributed executables ((self-compiled) `mlton`, `mllex`, `mlyacc`,
@@ -40,7 +43,7 @@ GIT := git
 GREP := grep
 GZIP := gzip
 PATCH := patch
-SED := @SED@
+SED := sed
 TAR := tar
 
 ######################################################################
@@ -404,7 +407,7 @@ check:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR is added onto them to indicate where the Makefile actually
 # puts them.
-PREFIX := @prefix@
+PREFIX := /usr
 MAN_PREFIX_EXTRA :=
 TBIN := $(PREFIX)/bin
 ULIB := lib/mlton
@@ -425,7 +428,7 @@ endif
 install: install-no-strip install-strip
 
 .PHONY: install-no-strip
-install-no-strip: install-docs install-no-docs move-docs 
+install-no-strip: install-docs install-no-docs move-docs
 
 MAN_PAGES :=  \
 	mllex.1 \

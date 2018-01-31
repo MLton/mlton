@@ -9,9 +9,7 @@ COPY . /root/mlton
 WORKDIR /root/mlton
 
 # Build from source & install
-RUN autoreconf -vfi \
- && ./configure \
- && make \
+RUN make \
  && make install
 
 ENTRYPOINT ["make", "check"]

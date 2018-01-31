@@ -7,19 +7,22 @@
  # See the file MLton-LICENSE for details.
  ##
 
-CC := @CC@
-AR := @AR@
-RANLIB := @RANLIB@
+CC := gcc
+AR := ar
+RANLIB := ranlib
 
-WITH_GMP_INC_DIR := @WITH_GMP_INC_DIR@
-WITH_GMP_LIB_DIR := @WITH_GMP_LIB_DIR@
+WITH_GMP_DIR :=
+ifneq ($(WITH_GMP_DIR),)
+WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
+WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
+endif
 
 FIND := find
 GIT := git
 GREP := grep
 GZIP := gzip
 PATCH := patch
-SED := @SED@
+SED := sed
 TAR := tar
 
 ######################################################################

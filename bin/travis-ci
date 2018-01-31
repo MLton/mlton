@@ -17,9 +17,7 @@ echo
 fi
 
 echo "Building MLton..."
-autoreconf -vfi
-./configure --prefix=$PREFIX
-make MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" all-no-docs
+make CC="$CC" MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" all-no-docs
 
 if [ "$REGRESSION" == "true" ]; then
 echo "Running regression tests..."
