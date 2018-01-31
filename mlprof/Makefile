@@ -7,30 +7,31 @@
  # See the file MLton-LICENSE for details.
  ##
 
+MLTON_RUNTIME_ARGS :=
+MLTON_COMPILE_ARGS :=
+
+######################################################################
+######################################################################
+
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib/mlton
-MLTON := mlton
-TARGET := self
-NAME := mlprof
+
 PATH := $(BIN):$(shell echo $$PATH)
 
-MLTON_FLAGS := @MLton $(MLTON_RUNTIME_ARGS) --
-MLTON_FLAGS += -default-ann 'sequenceNonUnit warn' -default-ann 'warnUnused true'
-MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
-MLTON_FLAGS += -target $(TARGET)
+TARGET := self
+
+######################################################################
+
+MLTON := mlton
+NAME := mlprof
 
 all:	$(NAME)
 
 $(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	$(MLTON) $(MLTON_FLAGS) $(NAME).mlb
+	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS) -- $(MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
 
 .PHONY: clean
 clean:
 	../bin/clean
-
-.PHONY: test
-test: $(NAME)
-	./mlprof z mlmon.out

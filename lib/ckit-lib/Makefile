@@ -7,16 +7,24 @@
  # See the file MLton-LICENSE for details.
  ##
 
+FIND := find
+GZIP := gzip
+PATCH := patch
+TAR := tar
+
+######################################################################
+######################################################################
+
 all: ckit/README.mlton
 
 ckit/README.mlton: ckit.tgz ckit.patch
 	rm -rf ckit
-	tar -x -z -f ckit.tgz
-	find ckit -name '._*' -exec rm -f '{}' ';'
+	$(GZIP) -dc ckit.tgz | $(TAR) xf -
+	$(FIND) ckit -name '._*' -exec rm -f '{}' ';'
 	chmod -R a+r ckit
 	chmod -R g-s ckit
-	echo chmod a-x ckit/src/ast/simplify-assign-ops.sml
-	patch -s -d ckit -p1 < ckit.patch
+	chmod a-x ckit/src/ast/simplify-assign-ops.sml
+	$(PATCH) -s -d ckit -p1 < ckit.patch
 
 .PHONY: clean
 clean:

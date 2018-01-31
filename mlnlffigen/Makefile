@@ -6,29 +6,35 @@
  # See the file MLton-LICENSE for details.
  ##
 
+MLTON_RUNTIME_ARGS :=
+MLTON_COMPILE_ARGS :=
+
+######################################################################
+######################################################################
+
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib/mlton
-MLTON := mlton
-TARGET := self
-NAME := mlnlffigen
+
 PATH := $(BIN):$(shell echo $$PATH)
 
-MLTON_FLAGS := @MLton $(MLTON_RUNTIME_ARGS) --
-MLTON_FLAGS += -default-ann 'sequenceNonUnit warn'
-MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
-MLTON_FLAGS += -target $(TARGET)
+TARGET := self
+
+######################################################################
+
+MLTON := mlton
+NAME := mlnlffigen
 
 all:	$(NAME)
 
-cppcmd.sml : gen-cppcmd
-	./gen-cppcmd > $@
-
 $(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	$(MLTON) $(MLTON_FLAGS) $(NAME).mlb
+	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS) -- $(MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
 
 .PHONY: clean
 clean:
 	../bin/clean
+
+
+cppcmd.sml : gen-cppcmd
+	./gen-cppcmd > $@

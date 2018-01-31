@@ -7,18 +7,37 @@
  # See the file MLton-LICENSE for details.
  ##
 
+MLTON_RUNTIME_ARGS :=
+MLTON_COMPILE_ARGS :=
+
+DIFF := diff
+
+######################################################################
+######################################################################
+
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib/mlton
-MLTON := mlton
-TARGET := self
-NAME := mlyacc
+
 PATH := $(BIN):$(shell echo $$PATH)
 
-MLTON_FLAGS := @MLton $(MLTON_RUNTIME_ARGS) --
-MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
-MLTON_FLAGS += -target $(TARGET)
+TARGET := self
+
+######################################################################
+
+MLTON := mlton
+NAME := mlyacc
+
+all:	$(NAME)
+
+$(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
+	@echo 'Compiling $(NAME)'
+	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS) -- $(MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
+
+.PHONY: clean
+clean:
+	../bin/clean
+
 
 ifeq (mllex, $(shell if mllex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mllex; fi))
 MLLEX := mllex
@@ -30,6 +49,12 @@ MLLEX := no-mllex
 endif
 endif
 
+src/yacc.lex.sml: src/yacc.lex
+	rm -f src/yacc.lex.sml && \
+		$(MLLEX) src/yacc.lex && \
+		chmod -w src/yacc.lex.sml
+
+
 ifeq (mlyacc, $(shell if mlyacc >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mlyacc; fi))
 MLYACC := mlyacc
 else
@@ -40,21 +65,11 @@ MLYACC := no-mlyacc
 endif
 endif
 
-all:	$(NAME)
-
-$(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
-	@echo 'Compiling $(NAME)'
-	"$(MLTON)" $(MLTON_FLAGS) $(NAME).mlb
-
-src/yacc.lex.sml: src/yacc.lex
-	rm -f src/yacc.lex.sml && \
-		$(MLLEX) src/yacc.lex && \
-		chmod -w src/yacc.lex.sml
-
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	rm -f $<.* 
 	$(MLYACC) $<
 	chmod -w $<.*
+
 
 PDFLATEX := pdflatex
 
@@ -72,13 +87,11 @@ endif
 .PHONY: docs
 docs: $(DOCS)
 
-.PHONY: clean
-clean:
-	../bin/clean
 
 .PHONY: test
 test: $(NAME)
-	cp -p ../mlton/front-end/ml.grm . &&			\
+	cp -p ../mlton/front-end/ml.grm .			\
 	$(NAME) ml.grm &&					\
-	diff ml.grm.sig ../mlton/front-end/ml.grm.sig &&	\
-	diff ml.grm.sml ../mlton/front-end/ml.grm.sml
+	$(DIFF) ml.grm.sig ../mlton/front-end/ml.grm.sig &&	\
+	$(DIFF) ml.grm.sml ../mlton/front-end/ml.grm.sml	\
+	rm -f ml.grm ml.grm.sig ml.grm.sml ml.grm.desc

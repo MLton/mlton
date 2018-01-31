@@ -7,24 +7,37 @@
  # See the file MLton-LICENSE for details.
  ##
 
+MLTON_RUNTIME_ARGS :=
+MLTON_COMPILE_ARGS :=
+
+DIFF := diff
+
+######################################################################
+######################################################################
+
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib/mlton
-MLTON := mlton
-TARGET := self
-NAME := mllex
+
 PATH := $(BIN):$(shell echo $$PATH)
 
-MLTON_FLAGS := @MLton $(MLTON_RUNTIME_ARGS) --
-MLTON_FLAGS += $(MLTON_COMPILE_ARGS)
-MLTON_FLAGS += -target $(TARGET)
+TARGET := self
+
+######################################################################
+
+MLTON := mlton
+NAME := mllex
 
 all:	$(NAME)
 
 $(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	"$(MLTON)" $(MLTON_FLAGS) $(NAME).mlb
+	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS) -- $(MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
+
+.PHONY: clean
+clean:
+	../bin/clean
+
 
 html/index.html: $(TEX_FILES)
 	mkdir -p html
@@ -48,12 +61,10 @@ endif
 .PHONY: docs
 docs: $(DOCS)
 
-.PHONY: clean
-clean:
-	../bin/clean
 
 .PHONY: test
 test: $(NAME)
-	cp -p ../mlton/front-end/ml.lex . &&			\
+	cp -p ../mlton/front-end/ml.lex .			\
 	$(NAME) ml.lex &&					\
-	diff ml.lex.sml ../mlton/front-end/ml.lex.sml
+	$(DIFF) ml.lex.sml ../mlton/front-end/ml.lex.sml	\
+	rm -f ml.lex ml.lex.sml

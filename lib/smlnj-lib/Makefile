@@ -7,17 +7,24 @@
  # See the file MLton-LICENSE for details.
  ##
 
+FIND := find
+GZIP := gzip
+PATCH := patch
+TAR := tar
+
+######################################################################
+######################################################################
+
 all: smlnj-lib/README.mlton
 
 smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	rm -rf smlnj-lib
-	tar -x -z -f smlnj-lib.tgz
-	find smlnj-lib -name '._*' -exec rm -f '{}' ';'
+	$(GZIP) -dc smlnj-lib.tgz | $(TAR) xf -
+	$(FIND) smlnj-lib -name '._*' -exec rm -f '{}' ';'
 	chmod -R a+r smlnj-lib
 	chmod -R g-s smlnj-lib
-	patch -s -d smlnj-lib -p1 < smlnj-lib.patch
-	mv smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
-	touch $@
+	$(PATCH) -s -d smlnj-lib -p1 < smlnj-lib.patch
+	cp smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
 
 .PHONY: clean
 clean:

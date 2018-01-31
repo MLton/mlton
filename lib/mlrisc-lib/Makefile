@@ -7,16 +7,23 @@
  # See the file MLton-LICENSE for details.
  ##
 
+FIND := find
+GZIP := gzip
+PATCH := patch
+TAR := tar
+
+######################################################################
+######################################################################
+
 all: MLRISC/README.mlton
 
 MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	rm -rf MLRISC
-	tar -x -z -f MLRISC.tgz
-	find MLRISC -name '._*' -exec rm -f '{}' ';'
+	$(GZIP) -dc MLRISC.tgz | $(TAR) xf -
+	$(FIND) MLRISC -name '._*' -exec rm -f '{}' ';'
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC
-	patch -s -d MLRISC -p1 < MLRISC.patch
-	touch $@
+	$(PATCH) -s -d MLRISC -p1 < MLRISC.patch
 
 .PHONY: clean
 clean:
