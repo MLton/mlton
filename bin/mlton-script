@@ -80,9 +80,10 @@ fi
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$CC"                                                \
+        -cc-opt '-std=gnu11 -fno-common'                         \
+        -cc-opt '-O1 -fomit-frame-pointer -fno-strict-aliasing'  \
+        -cc-opt '-w'                                             \
         -cc-opt-quote "-I$lib/include"                           \
-        -cc-opt '-O1 -fno-common'                                \
-        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lm -lgmp'                                    \
         $gmpCCOpts $gmpLinkOpts                                  \
         -llvm-llc-opt '-O2'                                      \

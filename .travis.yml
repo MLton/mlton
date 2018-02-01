@@ -6,8 +6,6 @@ env:
   matrix:
     - CC=gcc                MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
     - CC=gcc                MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
-    - CC="gcc -std=gnu99"   MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
-    - CC="gcc -std=gnu99"   MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
     - CC=clang              MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
     - CC=clang              MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
 install:
