@@ -135,12 +135,14 @@ basis:
 .PHONY: bootstrap-smlnj
 bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
-	$(MAKE) all
+	$(RM) "$(BIN)/mlton"
+	$(MAKE) BOOTSTRAP_MLTON=mlton.smlnj all
 
 .PHONY: bootstrap-polyml
 bootstrap-polyml:
 	$(MAKE) polyml-mlton
-	$(MAKE) all
+	$(RM) "$(BIN)/mlton"
+	$(MAKE) BOOTSTRAP_MLTON=mlton.polyml all
 
 .PHONY: clean
 clean:
