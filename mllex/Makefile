@@ -39,11 +39,6 @@ clean:
 	../bin/clean
 
 
-html/index.html: $(TEX_FILES)
-	mkdir -p html
-	hevea -fix -o html/mllex.html -exec xxdate.exe macros.hva lexgen.tex
-	cd html && hacha mllex.html && rm -f mllex.html
-
 PDFLATEX := pdflatex
 
 lexgen.pdf: lexgen.tex
