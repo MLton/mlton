@@ -134,12 +134,16 @@ bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/mlton"
 	$(MAKE) BOOTSTRAP_MLTON=mlton.smlnj all
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/mlton/mlton-smlnj.$$smlnj_heap_suffix"
+	$(RM) "$(BIN)/mlton.smlnj"
 
 .PHONY: bootstrap-polyml
 bootstrap-polyml:
 	$(MAKE) polyml-mlton
 	$(RM) "$(BIN)/mlton"
 	$(MAKE) BOOTSTRAP_MLTON=mlton.polyml all
+	$(RM) "$(LIB)/mlton-polyml$(EXE)"
+	$(RM) "$(BIN)/mlton.polyml"
 
 .PHONY: clean
 clean:
