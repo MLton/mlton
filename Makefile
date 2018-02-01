@@ -12,6 +12,7 @@
 CC := gcc
 AR := ar
 RANLIB := ranlib
+STRIP := strip
 
 # Specify GMP include and library paths, if not on default search paths.
 WITH_GMP_DIR :=
@@ -425,9 +426,6 @@ endif
 .PHONY: install
 install: install-no-strip install-strip
 
-.PHONY: install-no-strip
-install-no-strip: install-docs install-no-docs move-docs
-
 MAN_PAGES :=  \
 	mllex.1 \
 	mlnlffigen.1 \
@@ -435,8 +433,8 @@ MAN_PAGES :=  \
 	mlton.1 \
 	mlyacc.1
 
-.PHONY: install-no-docs
-install-no-docs:
+.PHONY: install-no-strip
+install-no-strip:
 	$(MKDIR) "$(TLIB)" "$(TBIN)" "$(TMAN)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
 	$(CP) "$(BIN)/." "$(TBIN)/"
@@ -448,20 +446,14 @@ install-no-docs:
 	fi
 
 .PHONY: install-strip
-install-strip:
-	case "$(TARGET_OS)" in						\
-	aix|cygwin|darwin|solaris)					\
-	;;								\
-	*)								\
-		for f in "$(TLIB)/mlton-compile$(EXE)" 			\
-			"$(TBIN)/mllex$(EXE)"				\
-			"$(TBIN)/mlyacc$(EXE)"				\
-			"$(TBIN)/mlprof$(EXE)" 				\
-			"$(TBIN)/mlnlffigen$(EXE)"; do			\
-			strip --remove-section=.comment			\
-				--remove-section=.note "$$f";		\
-		done							\
-	esac
+install-strip: install
+	for f in "$(TLIB)/mlton-compile$(EXE)" 			\
+		"$(TBIN)/mllex$(EXE)"				\
+		"$(TBIN)/mlyacc$(EXE)"				\
+		"$(TBIN)/mlprof$(EXE)" 				\
+		"$(TBIN)/mlnlffigen$(EXE)"; do			\
+		$(STRIP) "$$f";					\
+	done
 
 .PHONY: install-docs
 install-docs:
