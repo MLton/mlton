@@ -29,9 +29,9 @@ MLTON_RUNTIME_ARGS :=
 MLTON_COMPILE_ARGS :=
 
 # Specify runtime and compile arguments given to "old" `mlton` when compiling
-# the "bootstrapped" `mlton`.
-# Can be used to work around bugs in "old" `mlton` when compiling "new" `mlton`
-# (e.g., `BOOTSTRAP_MLTON_COMPILE_ARGS="-drop-pass 'deepFlatten'"`).
+# "bootstrapped" `mlton`.
+# Can be used to work around bugs in "old" `mlton` when compiling "bootstrapped"
+# `mlton` (e.g., `BOOTSTRAP_MLTON_COMPILE_ARGS="-drop-pass 'deepFlatten'"`).
 BOOTSTRAP_MLTON_RUNTIME_ARGS :=
 BOOTSTRAP_MLTON_COMPILE_ARGS :=
 
