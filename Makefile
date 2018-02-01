@@ -233,8 +233,7 @@ libraries:
 
 .PHONY: mlbpathmap
 mlbpathmap:
-	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml';	\
-	  echo 'SML_LIB $$(LIB_MLTON_DIR)/sml'; )	\
+	( echo 'SML_LIB $$(LIB_MLTON_DIR)/sml'; )	\
 		> "$(LIB)/mlb-path-map"
 
 .PHONY: polyml-mlton
