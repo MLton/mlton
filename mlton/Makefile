@@ -42,6 +42,9 @@ else
 BOOTSTRAP:=false
 endif
 
+MLTON := mlton
+BOOTSTRAP_MLTON := mlton
+
 MLTON_COMPILE_TYPECHECK_ARGS :=
 ifeq (false, $(BOOTSTRAP))
 # Older versions of `mlton` may not support `sequenceNonUnit` or `warnUnused`.
@@ -51,11 +54,13 @@ MLTON_COMPILE_TYPECHECK_ARGS += -default-ann 'warnUnused true'
 endif
 
 ifeq (false, $(BOOTSTRAP))
-MLTON_RUNTIME_ARGS_FULL := ram-slop 0.7 $(MLTON_RUNTIME_ARGS)
-MLTON_COMPILE_ARGS_FULL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(MLTON_COMPILE_ARGS)
+MLTON_ACTUAL := $(MLTON)
+MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(MLTON_RUNTIME_ARGS)
+MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(MLTON_COMPILE_ARGS)
 else
-MLTON_RUNTIME_ARGS_FULL := ram-slop 0.7 $(BOOTSTRAP_MLTON_RUNTIME_ARGS)
-MLTON_COMPILE_ARGS_FULL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(BOOTSTRAP_MLTON_COMPILE_ARGS)
+MLTON_ACTUAL := $(BOOTSTRAP_MLTON)
+MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(BOOTSTRAP_MLTON_RUNTIME_ARGS)
+MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(BOOTSTRAP_MLTON_COMPILE_ARGS)
 endif
 
 ifeq (false, $(BOOTSTRAP))
@@ -115,22 +120,21 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 			$(GREP) -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
-MLTON := mlton
 MLTON_OUTPUT := mlton
 $(MLTON_OUTPUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
-	"$(MLTON)" @MLton gc-summary $(MLTON_RUNTIME_ARGS_FULL) -- \
-		-verbose 2 $(MLTON_COMPILE_ARGS_FULL) \
+	"$(MLTON_ACTUAL)" @MLton gc-summary $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
+		-verbose 2 $(MLTON_COMPILE_ARGS_ACTUAL) \
 		-target $(TARGET) -output $(MLTON_OUTPUT) $(FILE)
 
 .PHONY: def-use
 def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
-	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS_FULL) -- \
-		-verbose 0 $(MLTON_COMPILE_ARGS_FULL) \
+	"$(MLTON_ACTUAL)" @MLton $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
+		-verbose 0 $(MLTON_COMPILE_ARGS_ACTUAL) \
 		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use \
 		$(FILE)
 
