@@ -20,7 +20,7 @@ all: MLRISC/README.mlton
 MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	rm -rf MLRISC
 	$(GZIP) -dc MLRISC.tgz | $(TAR) xf -
-	$(FIND) MLRISC -name '._*' -exec rm -f '{}' ';'
+	$(FIND) MLRISC -name '._*' -depth -exec rm -f '{}' ';'
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC
 	$(PATCH) -s -d MLRISC -p1 < MLRISC.patch

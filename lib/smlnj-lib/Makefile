@@ -20,7 +20,7 @@ all: smlnj-lib/README.mlton
 smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	rm -rf smlnj-lib
 	$(GZIP) -dc smlnj-lib.tgz | $(TAR) xf -
-	$(FIND) smlnj-lib -name '._*' -exec rm -f '{}' ';'
+	$(FIND) smlnj-lib -name '._*' -prune -exec rm -f '{}' ';'
 	chmod -R a+r smlnj-lib
 	chmod -R g-s smlnj-lib
 	$(PATCH) -s -d smlnj-lib -p1 < smlnj-lib.patch

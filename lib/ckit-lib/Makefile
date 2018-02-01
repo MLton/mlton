@@ -20,7 +20,7 @@ all: ckit/README.mlton
 ckit/README.mlton: ckit.tgz ckit.patch
 	rm -rf ckit
 	$(GZIP) -dc ckit.tgz | $(TAR) xf -
-	$(FIND) ckit -name '._*' -exec rm -f '{}' ';'
+	$(FIND) ckit -name '._*' -prune -exec rm -f '{}' ';'
 	chmod -R a+r ckit
 	chmod -R g-s ckit
 	chmod a-x ckit/src/ast/simplify-assign-ops.sml

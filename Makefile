@@ -148,7 +148,7 @@ clean:
 
 .PHONY: clean-git
 clean-git:
-	$(FIND) . -type d -name .git -exec $(RM) '{}' ';'
+	$(FIND) . -type d -name .git -prune -exec $(RM) '{}' ';'
 
 .PHONY: compiler
 compiler:
@@ -206,7 +206,7 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
 	$(MAKE) -C "$(SRC)/lib/smlnj-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
-	$(FIND) "$(LIB)/sml" -type d -name .cm -exec $(RM) '{}' ';'
+	$(FIND) "$(LIB)/sml" -type d -name .cm -prune -exec $(RM) '{}' ';'
 	$(FIND) "$(LIB)/sml" -name .gitignore -exec $(RM) '{}' ';'
 
 define LIBRARIES_CHECK_TEMPLATE
