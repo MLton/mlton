@@ -90,10 +90,6 @@ CHECK_FIXPOINT:=false
 
 .PHONY: all
 all:
-	$(MAKE) docs all-no-docs
-
-.PHONY: all-no-docs
-all-no-docs:
 	$(MAKE) dirs runtime
 	$(MAKE) compiler CHECK_FIXPOINT=false  # tools0 + mlton0 -> mlton1
 	$(MAKE) script mlbpathmap basis-no-check constants basis-check libraries
@@ -185,7 +181,7 @@ dirs:
 	$(MKDIR) "$(LIB)/targets/$(TARGET)/sml"
 
 .PHONY: docs
-docs: dirs
+docs:
 	$(MAKE) -C "$(SRC)/mllex" docs
 	$(MAKE) -C "$(SRC)/mlyacc" docs
 	$(MAKE) -C "$(SRC)/doc/guide"
