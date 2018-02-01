@@ -12,6 +12,7 @@ PDFLATEX := pdflatex
 mlyacc.pdf: mlyacc.tex
 	$(PDFLATEX) mlyacc.tex
 	$(PDFLATEX) mlyacc.tex
+	$(PDFLATEX) mlyacc.tex
 
 .PHONY: clean
 clean:

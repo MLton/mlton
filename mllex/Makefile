@@ -44,6 +44,7 @@ PDFLATEX := pdflatex
 lexgen.pdf: lexgen.tex
 	$(PDFLATEX) lexgen.tex
 	$(PDFLATEX) lexgen.tex
+	$(PDFLATEX) lexgen.tex
 
 mllex.pdf: lexgen.pdf
 	cp lexgen.pdf mllex.pdf
