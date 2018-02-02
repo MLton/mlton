@@ -13,7 +13,7 @@ matrix:
   - os:   linux
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
-    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
 
