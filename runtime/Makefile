@@ -196,9 +196,9 @@ all: $(ALL)
 
 UTILHFILES :=							\
 	util.h							\
-	$(shell $(FIND) util -type f | $(GREP) '\.h$$')
+	$(shell $(FIND) util -type f -name '*.h')
 UTILCFILES :=							\
-	$(shell $(FIND) util -type f | $(GREP) '\.c$$')
+	$(shell $(FIND) util -type f -name '*.c')
 
 util-pic.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) -c -o $@ $<
@@ -295,18 +295,18 @@ libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
 
 PLATFORMHFILES :=						\
 	platform.h						\
-	$(shell $(FIND) platform -type f | $(GREP) '\.h$$')
+	$(shell $(FIND) platform -type f -name '*.h')
 PLATFORMCFILES :=						\
-	$(shell $(FIND) platform -type f | $(GREP) '\.c$$')
+	$(shell $(FIND) platform -type f -name '*.c')
 
 GCHFILES :=							\
 	gc.h							\
-	$(shell $(FIND) gc -type f | $(GREP) '\.h$$')
+	$(shell $(FIND) gc -type f -name '*.h')
 GCCFILES :=							\
-	$(shell $(FIND) gc -type f | $(GREP) '\.c$$')
+	$(shell $(FIND) gc -type f -name '*.c')
 
 BASISCFILES :=							\
-	$(shell $(FIND) basis -type f | $(GREP) '\.c$$')
+	$(shell $(FIND) basis -type f -name '*.c')
 
 HFILES :=							\
 	cenv.h							\
