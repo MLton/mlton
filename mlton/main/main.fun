@@ -1206,9 +1206,9 @@ fun commandLine (args: string list): unit =
                    open Layout
                 in
                    outputl (align
-                            (List.map (Control.mlbPathMap (),
-                                       fn {var, path, ...} =>
-                                       str (concat [var, " ", path]))),
+                            (List.revMap (Control.mlbPathMap (),
+                                          fn {var, path, ...} =>
+                                          str (concat [var, " ", path]))),
                             Out.standard)
                 end
              ; let open OS.Process in exit success end)
