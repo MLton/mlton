@@ -358,7 +358,7 @@ define TOOLS_TEMPLATE_CHECK_FIXPOINT
 endef
 endif
 
-define TOOLS_TEMPLATE =
+define TOOLS_TEMPLATE
 	$(MAKE) -C "$(SRC)/$(1)"
 	$(call TOOLS_TEMPLATE_CHECK_FIXPOINT,$(1))
 	$(CP) "$(1)/$(1)$(EXE)" "$(BIN)/"
