@@ -46,6 +46,7 @@ GZIP := gzip
 PATCH := patch
 SED := sed
 TAR := tar
+XARGS := xargs
 
 ######################################################################
 ######################################################################
@@ -111,18 +112,19 @@ endif
 
 .PHONY: basis-no-check
 basis-no-check:
-	$(MKDIR) "$(LIB)/sml"
 	$(RM) "$(LIB)/sml/basis"
-	$(CP) "$(SRC)/basis-library/." "$(LIB)/sml/basis"
-	$(FIND) "$(LIB)/sml/basis" -name .gitignore -exec $(RM) '{}' ';'
+	$(MKDIR) "$(LIB)/sml/basis"
+	( \
+	cd "$(SRC)/basis-library" && \
+	$(FIND) . -type f '(' -name '*.mlb' -o -name '*.sml' -o -name '*.sig' -o -name '*.fun' ')' | \
+	$(XARGS) $(TAR) cf - | \
+	( cd "$(LIB)/sml/basis" && $(TAR) xf - ) \
+	)
 
 .PHONY: basis-check
 basis-check:
 	@echo 'Type checking basis.'
-	"$(BIN)/mlton" -disable-ann deadCode \
-		-stop tc \
-		'$$(SML_LIB)/basis/libs/all.mlb' \
-		>/dev/null
+	"$(BIN)/mlton" -disable-ann deadCode -stop tc '$$(SML_LIB)/basis/libs/all.mlb' >/dev/null
 
 .PHONY: basis
 basis:
@@ -191,33 +193,36 @@ docs:
 	$(MAKE) -C "$(SRC)/mlyacc" docs
 	$(MAKE) -C "$(SRC)/doc/guide"
 
-LIBRARIES := ckit-lib cml mllpt-lib mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
+define LIBRARIES_NO_CHECK_TEMPLATE
+	$(RM) "$(LIB)/sml/$(1)"
+	$(MKDIR) "$(LIB)/sml/$(1)"
+	( \
+	cd "$(SRC)/lib/$(1)$(2)" && \
+	$(FIND) . '!' -path '*/.cm/*' $(3) -type f '(' -name '*.mlb' -o -name '*.sml' -o -name '*.sig' -o -name '*.fun' ')' | \
+	$(XARGS) $(TAR) cf - | \
+	( cd "$(LIB)/sml/$(1)" && $(TAR) xf - ) \
+	)
+
+endef
 
 .PHONY: libraries-no-check
 libraries-no-check:
-	$(MKDIR) "$(LIB)/sml"
-	cd "$(LIB)/sml" && $(RM) $(LIBRARIES)
 	$(MAKE) -C "$(SRC)/lib/ckit-lib"
-	$(CP) "$(SRC)/lib/ckit-lib/ckit/." "$(LIB)/sml/ckit-lib"
-	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,ckit-lib,/ckit/src,)
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,cml,,'!' -path '*/tests/*')
 	$(MAKE) -C "$(SRC)/lib/mllpt-lib"
-	$(CP) "$(SRC)/lib/mllpt-lib/ml-lpt/lib/." "$(LIB)/sml/mllpt-lib"
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,mllpt-lib,/ml-lpt/lib,)
 	$(MAKE) -C "$(SRC)/lib/mlnlffi-lib"
-	$(CP) "$(SRC)/lib/mlnlffi-lib/." "$(LIB)/sml/mlnlffi-lib"
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,mlnlffi-lib,,)
 	$(MAKE) -C "$(SRC)/lib/mlrisc-lib"
-	$(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
-	$(CP) "$(SRC)/lib/mlyacc-lib/." "$(LIB)/sml/mlyacc-lib"
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,mlrisc-lib,/MLRISC,'!' -path '*/demo/*' '!' -path '*/Tools/*' '!' -path './autoload.sml' '!' -path './make*.sml')
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,mlyacc-lib,,)
 	$(MAKE) -C "$(SRC)/lib/smlnj-lib"
-	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
-	$(FIND) "$(LIB)/sml" -type d -name .cm -prune -exec $(RM) '{}' ';'
-	$(FIND) "$(LIB)/sml" -name .gitignore -exec $(RM) '{}' ';'
+	$(call LIBRARIES_NO_CHECK_TEMPLATE,smlnj-lib,/smlnj-lib,'!' -path '*/examples/*' '!' -path '*/tests/*' '!' -path '*/Tests/*')
 
 define LIBRARIES_CHECK_TEMPLATE
 	@echo "Type checking $(1) library."
-	"$(BIN)/mlton" -disable-ann deadCode		\
-		-stop tc				\
-		'$$(SML_LIB)/$(1)/$(1).mlb'		\
-		>/dev/null
+	"$(BIN)/mlton" -disable-ann deadCode -stop tc '$$(SML_LIB)/$(1)/$(1).mlb' >/dev/null
 endef
 
 .PHONY: libraries-check
