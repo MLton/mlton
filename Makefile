@@ -21,6 +21,10 @@ WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
 WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
 endif
 
+# Specify installation prefix and staged install destination.
+PREFIX := /usr/local
+DESTDIR :=
+
 # Specify runtime and compile arguments given to (the to-be-built) `mlton` when
 # compiling distributed executables ((self-compiled) `mlton`, `mllex`, `mlyacc`,
 # `mlprof`, and `mlnlffigen`).
@@ -406,19 +410,20 @@ vars:
 check:
 	./bin/regression $(CHECK_ARGS)
 
-# The TBIN and TLIB are where the files are going to be after installing.
-# The DESTDIR is added onto them to indicate where the Makefile actually
-# puts them.
-PREFIX := /usr
-MAN_PREFIX_EXTRA :=
-TBIN := $(PREFIX)/bin
-ULIB := lib/mlton
-TLIB := $(PREFIX)/$(ULIB)
-TMAN := $(PREFIX)$(MAN_PREFIX_EXTRA)/man/man1
-TDOC := $(PREFIX)/share/doc/mlton
-ifeq ($(findstring $(TARGET_OS), solaris mingw), $(TARGET_OS))
-TDOC := $(PREFIX)/doc/mlton
-endif
+
+prefix := $(PREFIX)
+exec_prefix := $(prefix)
+bindir := $(exec_prefix)/bin
+datarootdir := $(prefix)/share
+docdir := $(datarootdir)/doc/mlton
+libdir := $(exec_prefix)/lib
+mandir := $(datarootdir)/man
+man1dir := $(mandir)/man1
+
+TBIN := $(DESTDIR)$(bindir)
+TLIB := $(DESTDIR)$(libdir)/mlton
+TMAN := $(DESTDIR)$(man1dir)
+TDOC := $(DESTDIR)$(docdir)
 TEXM := $(TDOC)/examples
 
 GZIP_MAN := true
@@ -438,18 +443,16 @@ MAN_PAGES :=  \
 
 .PHONY: install-no-strip
 install-no-strip:
-	$(MKDIR) "$(TLIB)" "$(TBIN)" "$(TMAN)"
-	$(CP) "$(LIB)/." "$(TLIB)/"
+	$(MKDIR) "$(TBIN)" "$(TLIB)" "$(TMAN)"
 	$(CP) "$(BIN)/." "$(TBIN)/"
-	for f in $(MAN_PAGES); do					\
-		$(CP) "$(SRC)/man/$$f" "$(TMAN)"			\
-	done
-	if $(GZIP_MAN); then						\
-		cd "$(TMAN)" && $(GZIP) --force --best $(MAN_PAGES);	\
-	fi
+	$(CP) "$(LIB)/." "$(TLIB)/"
+	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)"
+ifeq (true, $(GZIP_MAN))
+	cd "$(TMAN)" && $(GZIP) --force --best $(MAN_PAGES);
+endif
 
 .PHONY: install-strip
-install-strip: install
+install-strip: install-no-strip
 	for f in "$(TLIB)/mlton-compile$(EXE)" 			\
 		"$(TBIN)/mllex$(EXE)"				\
 		"$(TBIN)/mlyacc$(EXE)"				\
@@ -458,12 +461,29 @@ install-strip: install
 		$(STRIP) "$$f";					\
 	done
 
+REGRESSION_EXAMPLES := \
+	callcc.sml command-line.sml hello-world.sml same-fringe.sml	\
+	signals.sml size.sml taut.sml thread1.sml thread2.sml		\
+	thread-switch.sml timeout.sml
+
 .PHONY: install-docs
 install-docs:
 	$(MKDIR) "$(TDOC)"
 	(								\
+		cd "$(SRC)" &&						\
+		$(CP) README.adoc CHANGELOG.adoc "$(TDOC)/"		\
+	)
+	(								\
 		cd "$(SRC)/doc" &&					\
-		$(CP) changelog examples license README "$(TDOC)/"	\
+		$(FIND) examples -type f '!' -name .gitignore		\
+			| $(XARGS) $(TAR) cf -				\
+			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+	)
+	(								\
+		cd "$(SRC)/doc" &&					\
+		$(FIND) license -type f '!' -name .gitignore		\
+			| $(XARGS) $(TAR) cf -				\
+			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
 	)
 	if [ -d "$(SRC)/doc/guide/localhost" ]; then			\
 		$(CP) "$(SRC)/doc/guide/localhost" "$(TDOC)/guide";	\
@@ -471,30 +491,29 @@ install-docs:
 	if [ -r "$(SRC)/doc/guide/mlton-guide.pdf" ]; then		\
 		$(CP) "$(SRC)/doc/guide/mlton-guide.pdf" "$(TDOC)/";	\
 	fi
-	(								\
-		cd "$(SRC)/util" &&					\
-		$(CP) cmcat cm2mlb "$(TDOC)/"				\
-	)
-	for f in callcc command-line hello-world same-fringe signals	\
-			size taut thread1 thread2 thread-switch timeout \
-		; do							\
-		$(CP) "$(SRC)/regression/$$f.sml" "$(TEXM)/";		\
-	done
 	if [ -r "mllex/mllex.pdf" ]; then				\
 		$(CP) "mllex/mllex.pdf" "$(TDOC)/";			\
 	fi
 	if [ -r "mlyacc/mlyacc.pdf" ]; then				\
 		$(CP) "mlyacc/mlyacc.pdf" "$(TDOC)/";			\
 	fi
-	$(FIND) "$(TDOC)/" -name .gitignore -exec $(RM) '{}' ';'
-	$(FIND) "$(TEXM)/" -name .gitignore -exec $(RM) '{}' ';'
+	(								\
+		cd "$(SRC)/util" &&					\
+		$(FIND) cmcat -type f '!' -name .gitignore		\
+			| $(XARGS) $(TAR) cf -				\
+			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+	)
+	(								\
+		cd "$(SRC)/util" &&					\
+		$(FIND) cm2mlb -type f '!' -name .gitignore		\
+			| $(XARGS) $(TAR) cf -				\
+			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+	)
+	(								\
+		cd "$(SRC)/regression" &&				\
+		$(CP) $(REGRESSION_EXAMPLES) "$(TEXM)/"			\
+	)
 
-
-.PHONY: move-docs
-move-docs: install-docs install-no-docs
-	cd "$(TLIB)/sml"; for i in *; do test -d "$(TDOC)/$$i" || $(MKDIR) "$(TDOC)/$$i"; done
-	cd "$(TLIB)/sml"; for i in */[Dd]oc; do $(MV) "$$i" "$(TDOC)/$$i"; done
-	cd "$(TLIB)/sml"; for i in */README*; do $(MV) "$$i" "$(TDOC)/$$i"; done
 
 .PHONY: release
 release: version
