@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017-2018 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -123,7 +123,7 @@ fun sourceFiles (d: basdec): File.t vector =
           | Defs _ => ()
           | Local (dec1, dec2) => (sourceFilesBasdec dec1
                                    ; sourceFilesBasdec dec2)
-          | MLB ({fileAbs, ...}, dec) =>
+          | MLB ({fileAbs, fileUse, ...}, dec) =>
                let
                   val b = psi fileAbs
                in
@@ -132,7 +132,7 @@ fun sourceFiles (d: basdec): File.t vector =
                      else let
                              val () = b := true
                           in
-                             Buffer.add (sourceFiles, fileAbs)
+                             Buffer.add (sourceFiles, fileUse)
                              ; sourceFilesBasdec (Promise.force dec)
                           end
                end
