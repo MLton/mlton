@@ -298,12 +298,12 @@ runtime:
 .PHONY: script
 script:
 	$(SED) \
+		-e "s;^EXE=.*;EXE=\"$(EXE)\";" \
 		-e "s;^CC=.*;CC=\"$(CC)\";" \
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		< "$(SRC)/bin/mlton-script" > "$(BIN)/mlton"
 	chmod a+x "$(BIN)/mlton"
-	$(CP) "$(SRC)/bin/platform" "$(LIB)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
 ifeq (mingw, $(TARGET_OS))
 	$(CP) "$(SRC)/bin/static-library.bat" "$(LIB)"

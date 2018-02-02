@@ -6,15 +6,6 @@ set -e
 
 dir=`dirname "$0"`
 lib=`cd "$dir/../lib/mlton" && pwd`
-eval `"$lib/platform"`
-case "$HOST_OS" in
-mingw)
-	exe='.exe'
-;;
-*)
-	exe=''
-;;
-esac
 
 declare -a rargs
 case "$1" in
@@ -33,8 +24,10 @@ case "$1" in
         ;;
 esac
 
+EXE=
+
 doitMLton () {
-    mlton_mlton="$lib/mlton-compile$exe"
+    mlton_mlton="$lib/mlton-compile$EXE"
     if [ -x "$mlton_mlton" ]; then
         exec "$mlton_mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
     fi
@@ -50,7 +43,7 @@ doitSMLNJ () {
     fi
 }
 doitPolyML () {
-    mlton_polyml="$lib/mlton-polyml$exe"
+    mlton_polyml="$lib/mlton-polyml$EXE"
     if [ -x "$mlton_polyml" ]; then
         exec "$mlton_polyml" "$@"
     fi
