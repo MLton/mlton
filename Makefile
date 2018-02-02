@@ -63,8 +63,8 @@ INC := $(LIB)/include
 
 PATH := $(BIN):$(shell echo $$PATH)
 
-VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
-RELEASE := 1
+MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
+MLTON_RELEASE := 1
 
 HOST_ARCH := $(shell ./bin/host-arch)
 HOST_OS := $(shell ./bin/host-os)
@@ -391,20 +391,20 @@ tools-clean:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		package/freebsd/Makefile				\
-		mlton/control/version_sml.src				\
-		doc/guide/conf/asciidoc-mlton.flags			\
+		"$(SRC)/Makefile"					\
+		"$(SRC)/mlton/Makefile"					\
+		"$(SRC)/doc/guide/Makefile"				\
 	; do								\
-		if grep -q 'MLTONVERSION' "$$f"; then			\
-			$(SED) -e "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <"$$f" >z && 	\
-			mv z "$$f";							\
+		if grep -q '^MLTON_VERSION :=' "$$f"; then		\
+			$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
+			mv z "$$f";					\
 		fi;							\
 	done
 
 .PHONY: vars
 vars:
-	@echo VERSION = "$(VERSION)"
-	@echo RELEASE = "$(RELEASE)"
+	@echo MLTON_VERSION = "$(MLTON_VERSION)"
+	@echo MLTON_RELEASE = "$(MLTON_RELEASE)"
 
 .PHONY: check
 check:
@@ -517,9 +517,9 @@ install-docs:
 
 .PHONY: release
 release: version
-	$(TAR) cvzf ../mlton-$(VERSION).src.tgz \
+	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
 		--exclude .git --exclude package \
-		--transform "s@^@mlton-$(VERSION)/@S" \
+		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
 		*
 	$(MAKE) clean
 
@@ -528,20 +528,20 @@ dist: release
 
 .PHONY: binary-release
 binary-release:
-	$(MKDIR) mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
-	$(MAKE) PREFIX=mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS) install
-	$(TAR) cvzf ../mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).tgz \
-		mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
-	$(RM) mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
+	$(MKDIR) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
+	$(MAKE) PREFIX=mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS) install
+	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS).tgz \
+		mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
+	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
 
-BSDSRC := /tmp/mlton-$(VERSION)
+BSDSRC := /tmp/mlton-$(MLTON_VERSION)
 .PHONY: freebsd
 freebsd:
 	$(MAKE) clean clean-git version
 	$(RM) "$(BSDSRC)"
 	$(MKDIR) "$(BSDSRC)"
 	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
-	cd /tmp && tar -cpf - mlton-$(VERSION) | \
-		 $(GZIP) --force --best >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
+	cd /tmp && tar -cpf - mlton-$(MLTON_VERSION) | \
+		 $(GZIP) --force --best >/usr/ports/distfiles/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).freebsd.src.tgz
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package

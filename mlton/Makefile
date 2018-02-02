@@ -26,7 +26,7 @@ BIN := $(BUILD)/bin
 
 PATH := $(BIN):$(shell echo $$PATH)
 
-VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
+MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
 
 HOST_ARCH := $(shell ../bin/host-arch)
 HOST_OS := $(shell ../bin/host-os)
@@ -94,7 +94,7 @@ SOURCES :=			\
 all: $(MLTON_OUTPUT)
 
 control/version.sml: control/version_sml.src
-	$(SED) "s/MLTONVERSION/$(VERSION)/" \
+	$(SED) "s/MLTON_VERSION/$(MLTON_VERSION)/" \
 		< control/version_sml.src \
 		> control/version.sml
 

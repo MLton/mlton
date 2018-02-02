@@ -18,7 +18,6 @@ WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
 endif
 
 FIND := find
-GIT := git
 GREP := grep
 GZIP := gzip
 PATCH := patch
@@ -33,8 +32,6 @@ BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
 
 PATH := $(BIN):$(shell echo $$PATH)
-
-VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
 
 HOST_ARCH := $(shell ../bin/host-arch)
 HOST_OS := $(shell ../bin/host-os)
