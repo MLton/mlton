@@ -93,7 +93,7 @@ CHECK_FIXPOINT:=false
 all:
 	$(MAKE) dirs runtime
 	$(MAKE) compiler CHECK_FIXPOINT=false  # tools0 + mlton0 -> mlton1
-	$(MAKE) script mlbpathmap basis-no-check constants basis-check libraries
+	$(MAKE) script basis-no-check constants basis-check libraries
 	$(MAKE) tools    CHECK_FIXPOINT=false  # tools0 + mlton1 -> tools1
 ifeq (true, $(findstring true,$(BOOTSTRAP) $(CHECK_FIXPOINT)))
 	$(RM) "$(SRC)/mlton/mlton-compile$(EXE)"
@@ -235,17 +235,12 @@ libraries:
 	$(MAKE) libraries-no-check
 	$(MAKE) libraries-check
 
-.PHONY: mlbpathmap
-mlbpathmap:
-	( echo 'SML_LIB $$(LIB_MLTON_DIR)/sml'; )	\
-		> "$(LIB)/mlb-path-map"
-
 .PHONY: polyml-mlton
 polyml-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(SRC)/mlton" polyml-mlton
 	$(CP) "$(SRC)/mlton/mlton-polyml$(EXE)" "$(LIB)/"
-	$(MAKE) script mlbpathmap basis-no-check constants libraries-no-check
+	$(MAKE) script basis-no-check constants libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
@@ -319,7 +314,7 @@ smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
-	$(MAKE) script mlbpathmap basis-no-check constants libraries-no-check
+	$(MAKE) script basis-no-check constants libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \

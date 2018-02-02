@@ -12,8 +12,7 @@ path variable `VAR` and the second token is the path to which the
 variable is mapped.  The path may include path variables, which are
 recursively expanded.
 
-The mapping from path variables to paths is initialized by reading a
-system-wide configuration file: `/usr/lib/mlton/mlb-path-map`.
+The mapping from path variables to paths is initialized by the compiler.
 Additional path maps can be specified with `-mlb-path-map` and
 individual path variable mappings can be specified with
 `-mlb-path-var` (see <:CompileTimeOptions:>).  Configuration files are

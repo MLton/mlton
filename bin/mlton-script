@@ -88,7 +88,7 @@ doit "$lib" \
         $gmpCCOpts $gmpLinkOpts                                  \
         -llvm-llc-opt '-O2'                                      \
         -llvm-opt-opt '-mem2reg -O2'                             \
-        -mlb-path-map "$lib/mlb-path-map"                        \
+        -mlb-path-var 'SML_LIB $(LIB_MLTON_DIR)/sml'             \
         -target-as-opt amd64 '-m64'                              \
         -target-as-opt x86 '-m32'                                \
         -target-cc-opt alpha                                     \
