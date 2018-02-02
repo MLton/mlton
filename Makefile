@@ -446,7 +446,7 @@ install-no-strip:
 	$(MKDIR) "$(TBIN)" "$(TLIB)" "$(TMAN)"
 	$(CP) "$(BIN)/." "$(TBIN)/"
 	$(CP) "$(LIB)/." "$(TLIB)/"
-	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)"
+	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)/"
 ifeq (true, $(GZIP_MAN))
 	cd "$(TMAN)" && $(GZIP) --force --best $(MAN_PAGES);
 endif
@@ -515,21 +515,24 @@ install-docs:
 	)
 
 
-.PHONY: release
-release: version
+.PHONY: source-release
+source-release:
+	$(MAKE) clean
+	$(MAKE) version
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
 		*
 	$(MAKE) clean
 
-.PHONY: dist
-dist: release
-
 .PHONY: binary-release
 binary-release:
-	$(MKDIR) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
-	$(MAKE) PREFIX=mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS) install
+	$(MAKE) clean
+	$(MAKE) all docs
+	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
+	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
+	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/Makefile"
+	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)" PREFIX="" install
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS).tgz \
 		mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
 	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)

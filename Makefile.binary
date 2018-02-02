@@ -1,0 +1,54 @@
+# Specify GMP include and library paths, if not on default search paths.
+WITH_GMP_DIR :=
+ifneq ($(WITH_GMP_DIR),)
+WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
+WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
+endif
+
+# Specify installation prefix and staged install destination.
+PREFIX := /usr/local
+
+SED := sed
+
+######################################################################
+######################################################################
+
+ROOT := $(shell pwd)
+
+CP := cp -fpR
+MKDIR := mkdir -p
+
+######################################################################
+
+SBIN := $(ROOT)/bin
+SLIB := $(ROOT)/lib/mlton
+SMAN := $(ROOT)/share/man/man1
+SDOC := $(ROOT)/share/doc/mlton
+
+prefix := $(PREFIX)
+exec_prefix := $(prefix)
+bindir := $(exec_prefix)/bin
+datarootdir := $(prefix)/share
+docdir := $(datarootdir)/doc/mlton
+libdir := $(exec_prefix)/lib
+mandir := $(datarootdir)/man
+man1dir := $(mandir)/man1
+
+TBIN := $(bindir)
+TLIB := $(libdir)/mlton
+TMAN := $(man1dir)
+TDOC := $(docdir)
+TEXM := $(TDOC)/examples
+
+.PHONY: install
+install:
+	mkdir -p "$(TBIN)" "$(TLIB)" "$(TMAN)" "$(TDOC)"
+	$(CP) "$(SBIN)/." "$(TBIN)/"
+	$(SED) \
+		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
+		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
+		< "$(SBIN)/mlton" > "$(TBIN)/mlton"
+	chmod a+x "$(TBIN)/mlton"
+	$(CP) "$(SLIB)/." "$(TLIB)/"
+	$(CP) "$(SMAN)/." "$(TMAN)/"
+	if [ -d "$(SDOC)" ]; then $(CP) "$(SDOC)/." "$(TDOC)/"; fi
