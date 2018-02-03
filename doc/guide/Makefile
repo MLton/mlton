@@ -1,3 +1,6 @@
+GIT := git
+MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
+
 export LC_ALL = C
 
 NULL :=
@@ -8,7 +11,7 @@ ASCIIDOC_CONF_DIR := $(shell $(ASCIIDOC) -v /dev/null 2>&1 | head -n 1 | sed 's|
 else
 ASCIIDOC_CONF_DIR :=
 endif
-ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||')
+ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||' | sed "s|MLTON_VERSION|$(MLTON_VERSION)|")
 ASCIIDOC_MLTON_DEPS := bin/InclGitFile.py conf/asciidoc-mlton.flags $(shell cat conf/asciidoc-mlton.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
 ASCIIDOC_HTML5_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
 ASCIIDOC_HTML5_DEPS := $(ASCIIDOC_MLTON_DEPS) conf/asciidoc-html5.flags $(shell cat conf/asciidoc-html5.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')

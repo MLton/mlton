@@ -1,14 +1,30 @@
-language: c
-sudo: enabled
-compiler:
-  - gcc
-  - clang
-env:
-  - PREFIX=/usr/local
+language: generic
+
+sudo: required
+
+matrix:
+  include:
+  - os:   linux
+    env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
+  - os:   linux
+    env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+  - os:   linux
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+  - os:   linux
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
+  - os: osx
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
+  - os: osx
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+
 install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -qq build-essential git autoconf mlton
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update;        fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -qq mlton; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;        fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mlton; fi
+
 script:
-  - bash -ex ./bin/travis-ci
+  - ./bin/travis-ci
+
 notifications:
-  email: true
+  email: false

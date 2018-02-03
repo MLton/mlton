@@ -1,4 +1,3 @@
-@SET_MAKE@
 MLTON=../../build/bin/mlton
 PKG=self32 self64 mingw32 mingw64 gmp32 gmp64 dlfcn32 dlfcn64 msys wget 7zip
 

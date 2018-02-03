@@ -60,7 +60,7 @@ signal='finalize.sml signals.sml signals2.sml signals3.sml signals4.sml suspend.
 thread='thread0.sml thread1.sml thread2.sml mutex.sml prodcons.sml same-fringe.sml timeout.sml'
 world='world1.sml world2.sml world3.sml world4.sml world5.sml world6.sml'
 tmp=/tmp/z.regression.$$
-PATH="$bin:$src/bin/.:$PATH"
+PATH="$bin:$PATH"
 
 # whitelist tests that are known to fail (will still run but exit cleanly)
 declare -A whitelisted
@@ -80,7 +80,7 @@ isWhitelisted () {
   fi
 }
 
-eval `"$lib/platform"`
+eval `"$src/bin/platform"`
 
 compFail () {
         echo "compilation of $f failed with ${flags[*]}"
@@ -107,7 +107,7 @@ if $fail; then
 fi
 
 forMinGW='false'
-if [ `host-os` = mingw ]; then
+if [ $HOST_OS = mingw ]; then
 	forMinGW='true'
 fi
 
@@ -124,7 +124,7 @@ for f in *.sml; do
                         continue
                 fi
         fi
-        case `host-os` in
+        case $HOST_OS in
         cygwin)
                 case "$f" in
                 textio.2)
@@ -218,13 +218,13 @@ if $short || $testReg ; then
   fi
 fi
 
-mmake clean >/dev/null
+"$src/bin/mmake" clean >/dev/null
 cd "$src/benchmark/tests"
 for f in *.sml; do
         f=`basename "$f" .sml`
         tmpf="/tmp/$f.$$"
         case "$f" in
-        fxp|hamlet)
+        fxp)
                 echo "skipping $f"
         ;;
         *)
@@ -244,13 +244,13 @@ for f in *.sml; do
         ;;
         esac
 done
-mmake clean >/dev/null
+"$src/bin/mmake" clean >/dev/null
 cd "$src"
 for f in mllex mlyacc mlprof; do
     tmpf="/tmp/$f.$$"
     cd "$src/$f"
     echo "testing $f"
-    mmake -W "$f" >/dev/null
+    "$src/bin/mmake" -W "$f" >/dev/null
     "$mlton" "${flags[@]}" -output "$tmpf" "$f.mlb"
     if [ $? -ne 0 ]; then
         compFail "$f"
