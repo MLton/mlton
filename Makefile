@@ -432,7 +432,7 @@ GZIP_MAN := false
 endif
 
 .PHONY: install
-install: install-no-strip install-strip
+install: install-no-strip install-strip install-docs
 
 MAN_PAGES :=  \
 	mllex.1 \
@@ -531,8 +531,9 @@ binary-release:
 	$(MAKE) all docs
 	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
 	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
-	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/Makefile"
 	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)" PREFIX="" install
+	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/Makefile"
+	$(CP) "$(SRC)/CHANGELOG.adoc" "$(SRC)/README.adoc" "$(SRC)/LICENSE" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/"
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS).tgz \
 		mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
 	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
