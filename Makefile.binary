@@ -1,3 +1,7 @@
+# Specify C compiler and binutils.
+# Can be used for alternative tools (e.g., `CC=clang` or `CC=gcc-7`).
+CC := gcc
+
 # Specify GMP include and library paths, if not on default search paths.
 WITH_GMP_DIR :=
 ifneq ($(WITH_GMP_DIR),)
@@ -44,11 +48,17 @@ TEXM := $(TDOC)/examples
 install:
 	mkdir -p "$(TBIN)" "$(TLIB)" "$(TMAN)" "$(TDOC)"
 	$(CP) "$(SBIN)/." "$(TBIN)/"
-	$(SED) \
-		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
-		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
-		< "$(SBIN)/mlton" > "$(TBIN)/mlton"
-	chmod a+x "$(TBIN)/mlton"
 	$(CP) "$(SLIB)/." "$(TLIB)/"
 	$(CP) "$(SMAN)/." "$(TMAN)/"
 	if [ -d "$(SDOC)" ]; then $(CP) "$(SDOC)/." "$(TDOC)/"; fi
+
+.PHONY: update
+update:
+        $(CP) "$(SBIN)/mlton" "$(SBIN)/mlton.bak"
+	$(SED) \
+		-e "s;^CC=.*;CC=\"$(CC)\";" \
+		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
+		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
+		< "$(SBIN)/mlton.bak" > "$(SBIN)/mlton"
+	chmod a+x "$(SBIN)/mlton"
+        $(RM) "$(SBIN)/mlton.bak"
