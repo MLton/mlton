@@ -119,9 +119,15 @@ $ make CC=clang WITH_GMP_DIR=/opt/gmp MLTON_COMPILE_ARGS="-codegen c" all
 The build artifacts are located under `./build`.  The just-built `mlton` can be
 executed via `./build/bin/mlton`.
 
+Building documentation can be accomplished via:
+
+```shell
+$ make docs
+```
+
 === Install Instructions
 
-On typical platforms, installing MLton (after performing `make all`) can be accomplished via:
+On typical platforms, installing MLton (after performing `make all` and, optionally, `make docs`) can be accomplished via:
 
 ```shell
 $ make install
