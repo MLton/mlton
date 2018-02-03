@@ -64,7 +64,7 @@ programming language.
      resource limits, resource usage, signal handlers, object size, system
      logging, threads, weak pointers, and world save and restore.
 
-== Build and Install
+== Build and Install (from source)
 
 === Requirements
 
@@ -73,7 +73,9 @@ programming language.
  * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
  * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
  * http://savannah.gnu.org/projects/make[GNU Make]
- * binutils and coreutils (`ar`, `bash`, `diff`, `find`, `git`, `grep`, `gzip`, `patch`, `sed`, `ranlib`, `tar`, ...)
+ * http://www.gnu.org/software/bash/[GNU Bash]
+ * binutils (`ar`, `ranlib`, `strip`, ...)
+ * miscellaneous Unix utilities ( `diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
  * Standard{nbsp}ML compiler and tools to bootstrap:
    - http://mlton.org[MLton] (`mlton`, `mllex`, and `mlyacc`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
    - http://www.smlnj.org[SML/NJ] (`sml`, `ml-lex`, `ml-yacc`) supported, but not recommended.
@@ -127,7 +129,8 @@ $ make docs
 
 === Install Instructions
 
-On typical platforms, installing MLton (after performing `make all` and, optionally, `make docs`) can be accomplished via:
+On typical platforms, installing MLton (after performing `make all` and,
+optionally, `make docs`) to `/usr/local` can be accomplished via:
 
 ```shell
 $ make install
@@ -135,7 +138,7 @@ $ make install
 
 A small set of `Makefile` variables can be used to customize the installation:
 
- * `PREFIX`: Specify the installation prefix (e.g., `PREFIX=/opt/mlton`).
+ * `PREFIX`: Specify the installation prefix.
 
 For example:
 
