@@ -14,6 +14,9 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-02-03
+  ** Upgrade `gdtoa.tgz`.
+
 * 2018-02-02
   ** Remove docs from `all` target of `./Makefile`; this eliminates the
   `all-no-docs` target (which was frequently used in favor of `all`).
