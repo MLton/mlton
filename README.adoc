@@ -64,6 +64,7 @@ programming language.
      resource limits, resource usage, signal handlers, object size, system
      logging, threads, weak pointers, and world save and restore.
 
+
 == Build and Install (from source)
 
 === Requirements
@@ -75,7 +76,7 @@ programming language.
  * http://savannah.gnu.org/projects/make[GNU Make]
  * http://www.gnu.org/software/bash/[GNU Bash]
  * binutils (`ar`, `ranlib`, `strip`, ...)
- * miscellaneous Unix utilities ( `diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
+ * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
  * Standard{nbsp}ML compiler and tools to bootstrap:
    - http://mlton.org[MLton] (`mlton`, `mllex`, and `mlyacc`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
    - http://www.smlnj.org[SML/NJ] (`sml`, `ml-lex`, `ml-yacc`) supported, but not recommended.
@@ -131,6 +132,60 @@ $ make docs
 
 On typical platforms, installing MLton (after performing `make all` and,
 optionally, `make docs`) to `/usr/local` can be accomplished via:
+
+```shell
+$ make install
+```
+
+A small set of `Makefile` variables can be used to customize the installation:
+
+ * `PREFIX`: Specify the installation prefix.
+
+For example:
+
+```shell
+$ make PREFIX=/opt/mlton install
+```
+
+== Install (from binary package)
+
+=== Requirements
+
+==== Software
+
+ * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
+ * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
+ * http://savannah.gnu.org/projects/make[GNU Make]
+ * http://www.gnu.org/software/bash/[GNU Bash]
+ * miscellaneous Unix utilities (`bzip2`, `gzip`, `sed`, `tar`, ...)
+
+=== Binary Package
+
+A `.tgz` or `.tbz` binary package can be extracted at any location, yielding
+`README.adoc` (this file), `CHANGELOG.adoc`, `LICENSE`, `Makefile`, `bin/`,
+`lib/`, and `share/`.  The compiler and tools can be executed in-place (e.g.,
+`./bin/mlton`).
+
+A small set of `Makefile` variables can be used to customize the binary package
+via `make update`:
+
+ * `CC`: Specify C compiler.  Can be used for alternative tools (e.g.,
+   `CC=clang` or `CC=gcc-7`).
+ * `WITH_GMP_DIR`, `WITH_GMP_INC_DIR`, `WITH_GMP_LIB_DIR`: Specify GMP include
+   and library paths, if not on default search paths.  (If `WITH_GMP_DIR` is
+   set, then `WITH_GMP_INC_DIR` defaults to `$(WITH_GMP_DIR)/include` and
+   `WITH_GMP_LIB_DIR` defaults to `$(WITH_GMP_DIR)/lib`.)
+
+For example:
+
+```shell
+$ make CC=clang WITH_GMP_DIR=/opt/gmp all
+```
+
+=== Install Instructions
+
+On typical platforms, installing MLton (after optionally performing
+`make update`) to `/usr/local` can be accomplished via:
 
 ```shell
 $ make install
