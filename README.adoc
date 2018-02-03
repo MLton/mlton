@@ -71,7 +71,7 @@ programming language.
 ==== Software
 
  * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
- * http://gmplib.org[GMP] (GNU Multiple Precision aritmetic library)
+ * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
  * http://savannah.gnu.org/projects/make[GNU Make]
  * binutils and coreutils (`ar`, `bash`, `diff`, `find`, `git`, `grep`, `gzip`, `patch`, `sed`, `ranlib`, `tar`, ...)
  * Standard{nbsp}ML compiler and tools to bootstrap:
