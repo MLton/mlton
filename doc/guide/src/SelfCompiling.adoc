@@ -19,15 +19,16 @@ binary version of MLton and will then rebuild MLton with itself.
 First, the `Makefile` calls `mllex` and `mlyacc` to build the lexer
 and parser, and then calls `mlton` to compile itself.  When making
 MLton using another version the `Makefile` automatically uses
-`mlton-stubs.cm`, which will put in enough stubs to emulate the
-`MLton` structure.  Once MLton is built, the `Makefile` will rebuild
-MLton with itself, this time using `mlton.cm` and the real `MLton`
-structure from the <:BasisLibrary:Basis Library>.  This second round
+`mlton-stubs.mlb`, which will put in enough stubs to emulate the
+`structure MLton`.  Once MLton is built, the `Makefile` will rebuild
+MLton with itself, this time using `mlton.mlb` and the real
+`structure MLton` from the <:BasisLibrary:Basis Library>.  This second round
 of compilation is essential in order to achieve a fast and robust
 MLton.
 
-Compiling MLton requires at least 512M of actual RAM, and 1G is
-preferable.  If your machine has less than 512M, self-compilation will
+Compiling MLton requires at least 1GB of RAM for 32-bit platforms (2GB is
+preferable) and at least 2GB RAM for 64-bit platforms (4GB is preferable).
+If your machine has less RAM, self-compilation will
 likely fail, or at least take a very long time due to paging.  Even if
 you have enough memory, there simply may not be enough available, due
 to memory consumed by other processes.  In this case, you may see an
@@ -36,19 +37,16 @@ slow.  The only fix is to make sure that enough memory is available.
 
 === Possible Errors ===
 
-* If you have errors running `latex`, you can skip building the
-documentation by using `make all-no-docs`.
-
 * The C compiler may not be able to find the <:GnuMP:> header file,
 `gmp.h` leading to an error like the following.
 +
 ----
- platform/darwin.h:26:36: /usr/local/include/gmp.h: No such file or directory
+  cenv.h:49:18: fatal error: gmp.h: No such file or directory
 ----
 +
-The solution is to install (or build) the GnuMP on your machine.  If
-you install it at a different location, put the new path in
-++runtime/platform/__<os>__.h++.
+The solution is to install (or build) GnuMP on your machine.  If you
+install it at a location not on the default seach path, then run
+++make WITH_GMP_INC_DIR=__/path/to/gmp/include__ WITH_GMP_LIB_DIR=__/path/to/gmp/lib__++.
 
 * The following errors indicates that a binary version of MLton could
 not be found in your path.
@@ -63,35 +61,22 @@ make[2]: mlton: Command not found
 +
 You need to have `mlton` in your path to build MLton from source.
 +
-During the build process, there are various times that the `Makefile`s
+During the build process, there are various times that the `Makefile`-s
 look for a `mlton` in your path and in `src/build/bin`.  It is OK if
 the latter doesn't exist when the build starts; it is the target being
 built.  Failure to find a `mlton` in your path will abort the build.
 
-* Mac OS X executables do not seem to like static libraries to have a
-different path location at runtime compared to when the executable was
-built.  For example, the binary package for Mac OS X unpacks to
-`/usr`.  If you try to install it in `/usr/local` you may get the
-following errors:
-+
-----
-/usr/bin/ld: table of contents for archive:
-/usr/local/lib/mlton/self/libmlton.a is out of date;
-rerun ranlib(1) (can't load from it)
-----
-+
-Although running `ranlib` seems like the right thing to do, it doesn't
-actually resolve the problem.  Best bet is to install in `/usr` and
-then either live with this location, or build MLton yourself and
-install in `/usr/local`.
-
 
 == Compiling with SML/NJ ==
 
-To compile with SML/NJ, run `make smlnj-mlton` from within the root
-directory of the sources.  You must use a recent version of SML/NJ.
-First, the `Makefile` calls `mllex` and `mlyacc` to build the lexer
-and parser.  Then, it calls SML/NJ with the appropriate `sources.cm`
-file.  Building with SML/NJ takes some time (roughly 10 minutes on a
-1.6GHz machine).  Unless you are doing compiler development and need
-rapid recompilation, we recommend compiling with MLton.
+To compile with SML/NJ, run `make bootstrap-smlnj` from within the
+root directory of the sources.  You must use a recent version of
+SML/NJ.  First, the `Makefile` calls `ml-lex` and `ml-yacc` to build
+the lexer and parser.  Then, it calls SML/NJ with the appropriate
+`sources.cm` file.  Once MLton is built with SML/NJ, the `Makefile`
+will rebuild MLton with this SML/NJ built MLton and then will rebuild
+MLton with the MLton built MLton.  Building with SML/NJ takes
+significant time (particularly during the "`parseAndElaborate`" phase
+when the SML/NJ built MLton is compiling MLton).  Unless you are doing
+compiler development and need rapid recompilation, we recommend
+compiling with MLton.
