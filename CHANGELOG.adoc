@@ -14,13 +14,16 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-02-02
+  ** Remove docs from `all` target of `./Makefile`; this eliminates the
+  `all-no-docs` target (which was frequently used in favor of `all`).
+
 * 2018-01-31
   ** Use C compiler with `-std=gnu11` (rather than `-std=gnu99`).
   ** Revert rudimentary support for `./configure`; the support was so minimal
   that it seems unhelpful to pretend that there are exhaustive compatibility
   checks being performed.  All of the basic configuration can be accomplished
   with simple `make` variable definitions.
-
 
 * 2018-01-25
   ** Remove (expert, undocumented) `-debug-format` option; the same effect can
