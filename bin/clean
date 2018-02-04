@@ -17,13 +17,13 @@ dir=$(dirname "$0")
 root=$(cd "$dir/.." && pwd)
 bin="$root/bin"
 
-declare -A exclude
+declare -a exclude
 while [ "$#" -gt 0 ]; do
     case "$1" in
         "--exclude")
             shift
             if [ "$#" -gt 0 ]; then
-                exclude[$1]=true;
+                exclude+=("$1");
                 shift
             fi
             ;;
@@ -37,9 +37,11 @@ doit () {
     "$bin/ls-ignore" | xargs rm -rf
     for f in *; do
         if [ -d "$f" ]; then
-            if [ -n "${exclude[$f]}" ]; then
-                continue
-            fi
+            for ((i=0; i < ${#exclude[*]}; i++)); do
+                if [ "$f" == "${exclude[$i]}" ]; then
+                    continue 2
+                fi
+            done
             cd "$f"
             if [ -r Makefile ]; then
                 "$bin/mmake" clean || doit
