@@ -153,7 +153,7 @@ bootstrap-polyml:
 
 .PHONY: clean
 clean:
-	./bin/clean
+	./bin/clean --exclude package
 
 .PHONY: clean-git
 clean-git:
