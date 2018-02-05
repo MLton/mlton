@@ -3,3 +3,26 @@ Bugs20130715
 
 Here are the known bugs in <:Release20130715:MLton 20130715>, listed
 in reverse chronological order of date reported.
+
+* <!Anchor(bug02)>
+Performance bug in creation of worker threads to service calls of `_export`-ed
+functions.
++
+Thanks to Bernard Berthomieu for the bug report.
++
+Fixed by commit <!ViewGitCommit(mlton,97c2bdf1d)>.
+
+
+* <!Anchor(bug01)>
+Bug in `MLton.IntInf.fromRep` that could yield values that violate the `IntInf`
+representation invariants.
++
+Thanks to Rob Simmons for the bug report.
++
+Fixed by commit <!ViewGitCommit(mlton,3add91eda)>.
+
+* <!Anchor(bug00)>
+Bug in equality status of some arrays, vectors, and slices in Basis Library
+implementation.
++
+Fixed by commit <!ViewGitCommit(mlton,a7ed9cbf1)>.
