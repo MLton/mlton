@@ -254,7 +254,7 @@ Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
   ** Add `gc-summary-file _file_` runtime option.
 
 * 2017-04-15
-  ** Rename and add `smlnjmlton-x{2,4,8,16}` top-level `Makefile` targets.
+  ** Rename and add `smlnj-mlton-x{2,4,8,16}` top-level `Makefile` targets.
   ** Update SML/NJ librarys to SML/NJ 110.80 (making use of supported
   SuccessorML features).
   ** Not support for SML/NJ extensions via SuccessorML MLB annotations on
