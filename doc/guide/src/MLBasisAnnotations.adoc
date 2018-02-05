@@ -114,20 +114,20 @@ exception).  An error will abort a compile, while a warning will not.
 * +nonexhaustiveExnBind {default|ignore}+
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
-in `val` declarations that areise solely from unmatched exceptions.
+in `val` declarations that arise solely from unmatched exceptions.
 If `default`, follow the behavior of `nonexhaustiveBind`.
 
 * +nonexhaustiveExnMatch {default|ignore}+
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
 in `fn` expressions, `case` expressions, and `fun` declarations that
-areise solely from unmatched exceptions.  If `default`, follow the
+arise solely from unmatched exceptions.  If `default`, follow the
 behavior of `nonexhaustiveMatch`.
 
 * +nonexhaustiveExnRaise {ignore|default}+
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
-in `handle` expressions that areise solely from unmatched exceptions.
+in `handle` expressions that arise solely from unmatched exceptions.
 If `default`, follow the behavior of `nonexhaustiveRaise`.
 
 * +nonexhaustiveMatch {warn|error|ignore}+
