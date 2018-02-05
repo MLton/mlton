@@ -16,7 +16,8 @@ programming language.
    - ARM: Linux (Debian).
    - Alpha: Linux (Debian).
    - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
-     Solaris (10 and above).
+     OpenBSD, Solaris (10 and above).
+
    - HPPA: HPUX (11.11 and above), Linux (Debian).
    - IA64: HPUX (11.11 and above), Linux (Debian).
    - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
@@ -46,14 +47,14 @@ programming language.
    - Untagged and unboxed native integers, reals, and words.
    - Unboxed native arrays.
    - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on the GnuMP.
+   - Fast arbitrary-precision arithmetic based on the GMP.
 
  * Tools.
 
    - Source-level profiling for both time and allocation.
    - MLLex lexer generator.
    - MLYacc parser generator.
-   - ML-NLFFIGEN foreign-function-interface generator.
+   - MLNLFFIGEN foreign-function-interface generator.
 
  * Extensions.
 
