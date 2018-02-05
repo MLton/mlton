@@ -21,16 +21,18 @@ via `make update`:
 
 For example:
 
-```shell
-$ make CC=clang WITH_GMP_DIR=/opt/gmp all
-```
+[source,sml]
+----
+$ make CC=clang WITH_GMP_DIR=/opt/gmp update
+----
 
 On typical platforms, installing MLton (after optionally performing
 `make update`) to `/usr/local` can be accomplished via:
 
-```shell
+[source,sml]
+----
 $ make install
-```
+----
 
 A small set of `Makefile` variables can be used to customize the installation:
 
@@ -44,9 +46,10 @@ A small set of `Makefile` variables can be used to customize the installation:
 
 For example:
 
-```shell
+[source,sml]
+----
 $ make PREFIX=/opt/mlton install
-```
+----
 
 Installation of MLton creates the following files and directories.
 
