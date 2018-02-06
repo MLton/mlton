@@ -462,10 +462,11 @@ REGRESSION_EXAMPLES := \
 
 .PHONY: install-docs
 install-docs:
-	$(MKDIR) "$(TDOC)"
+	$(MKDIR) "$(TDOC)" "$(TDOC)/license"
 	(								\
 		cd "$(SRC)" &&						\
-		$(CP) README.adoc CHANGELOG.adoc "$(TDOC)/"		\
+		$(CP) CHANGELOG.adoc README.adoc "$(TDOC)/" &&		\
+		$(CP) LICENSE "$(TDOC)/license/MLton-LICENSE"		\
 	)
 	(								\
 		cd "$(SRC)/doc" &&					\
