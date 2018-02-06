@@ -73,6 +73,9 @@ Here are the changes from version 20130715 to version YYYYMMDD.
 
 === Details
 
+* 2018-02-6
+  ** Remove ancient and unused `cmcat` tool.
+
 * 2018-02-03
   ** Upgrade `gdtoa.tgz`.
 

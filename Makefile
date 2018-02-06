@@ -494,12 +494,6 @@ install-docs:
 	fi
 	(								\
 		cd "$(SRC)/util" &&					\
-		$(FIND) cmcat -type f '!' -name .gitignore		\
-			| $(XARGS) $(TAR) cf -				\
-			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
-	)
-	(								\
-		cd "$(SRC)/util" &&					\
 		$(FIND) cm2mlb -type f '!' -name .gitignore		\
 			| $(XARGS) $(TAR) cf -				\
 			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
