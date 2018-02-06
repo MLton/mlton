@@ -1,8 +1,8 @@
 = CHANGELOG
 
-== Version YYYYMMDD
+== Version 20180206
 
-Here are the changes from version 20130715 to version YYYYMMDD.
+Here are the changes from version 20130715 to version 20180206.
 
 === Summary
 

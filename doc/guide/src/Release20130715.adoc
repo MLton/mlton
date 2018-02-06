@@ -1,8 +1,7 @@
 Release20130715
 ===============
 
-Here you can download the latest public release of MLton, version 20130715.
-Elsewhere you can download newer, <:Experimental:> releases.
+This is an archived public release of MLton, version 20130715.
 
 == Changes since the last public release ==
 
