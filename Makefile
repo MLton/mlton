@@ -516,7 +516,6 @@ source-release:
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
 		*
-	$(MAKE) clean
 
 MLTON_BINARY_RELEASE := 1
 MLTON_BINARY_RELEASE_SUFFIX :=
