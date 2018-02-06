@@ -24,6 +24,7 @@ The following optimization passes are not implemented, but might prove useful:
 The optimization passes can be controlled from the command-line by the options
 
 * `-diag-pass <pass>` -- keep diagnostic info for pass
-* `-drop-pass <pass>` -- omit optimization pass
+* `-disable-pass <pass>` -- skip optimization pass (if normally performed)
+* `-enable-pass <pass>` -- perform optimization pass (if normally skipped)
 * `-keep-pass <pass>` -- keep the results of pass
 * `-sxml-passes <passes>` -- sxml optimization passes
