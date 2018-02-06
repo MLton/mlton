@@ -19,5 +19,3 @@ SML/NJ Lib	SMLNJ-LIB-LICENSE (BSD-style) 	SML/NJ Library
 ML Kit          MLKit-LICENSE (MIT)             Path, Time, Date
 
 gdtoa           gdtoa-LICENSE (BSD-style)       Real binary <-> decimal conversions
-
-gmp             gmp-LICENSE (LGPL)              IntInf
