@@ -387,6 +387,11 @@ tools-clean:
 	$(MAKE) -C "$(SRC)/mlprof" clean
 	$(MAKE) -C "$(SRC)/mlnlffigen" clean
 
+.PHONY: check
+check:
+	./bin/regression $(CHECK_ARGS)
+
+
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
@@ -398,15 +403,6 @@ version:
 		$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
 		mv z "$$f";						\
 	done
-
-.PHONY: vars
-vars:
-	@echo MLTON_VERSION = "$(MLTON_VERSION)"
-	@echo MLTON_RELEASE = "$(MLTON_RELEASE)"
-
-.PHONY: check
-check:
-	./bin/regression $(CHECK_ARGS)
 
 
 prefix := $(PREFIX)
