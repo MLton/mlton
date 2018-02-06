@@ -395,10 +395,8 @@ version:
 		"$(SRC)/mlton/Makefile"					\
 		"$(SRC)/doc/guide/Makefile"				\
 	; do								\
-		if grep -q '^MLTON_VERSION :=' "$$f"; then		\
-			$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
-			mv z "$$f";					\
-		fi;							\
+		$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
+		mv z "$$f";						\
 	done
 
 .PHONY: vars
