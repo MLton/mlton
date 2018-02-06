@@ -1,0 +1,17 @@
+LoopUnroll
+==========
+
+<:LoopUnroll:> is an optimization pass for the <:SSA:> <:IntermediateLanguage:>,
+invoked from <:SSASimplify:>.
+
+== Description ==
+
+A simple loop unrolling optimization.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/loop-unroll.fun)>
+
+== Details and Notes ==
+
+{empty}
