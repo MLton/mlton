@@ -21,9 +21,12 @@ The following optimization passes are implemented:
 * <:LocalFlatten:>
 * <:LocalRef:>
 * <:LoopInvariant:>
+* <:LoopUnfoll:>
+* <:LoopUnswitch:>
 * <:Redundant:>
 * <:RedundantTests:>
 * <:RemoveUnused:>
+* <:ShareZeroVec:>
 * <:SimplifyTypes:>
 * <:Useless:>
 
