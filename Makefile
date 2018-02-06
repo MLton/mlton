@@ -518,7 +518,12 @@ install-docs:
 .PHONY: source-release
 source-release:
 	$(MAKE) clean
-	$(MAKE) version
+	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
+	( cd "$(SRC)/mllex" ; latexmk -pdf lexgen ; latexmk -c lexgen )
+	$(MAKE) -C "$(SRC)/mllex" mllex.pdf
+	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyaccc ; latexmk -c mlyacc )
+	$(MAKE) -C "$(SRC)/mlyacc" mlyacc.pdf
+	$(MAKE) -C doc/guide
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
