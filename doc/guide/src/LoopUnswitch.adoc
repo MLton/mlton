@@ -1,0 +1,17 @@
+LoopUnswitch
+============
+
+<:LoopUnswitch:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+A simple loop unswitching optimization.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/loop-unswitch.fun)>
+
+== Details and Notes ==
+
+{empty}

@@ -33,14 +33,32 @@ list.
  cross compile to MinGW, and provided useful discussion about
  cross-compilation.
 
+ * Alexander Abushkevich extended support for OpenBSD.
+
+ * Ross Bayer added the `-keep ast` compile-time option and experimented with
+ porting the build system to CMake.
+
+ * Kevin Bradley added initial support for <:SuccessorML:> features.
+
+ * Bryan Camp added `-disable-pass _regex_` and `enable-pass _regex_` compile
+ options to generalize `-drop-pass _regex_` and added `Array_copyArray` and
+ `Array_copyVector` primitives.
+
+ * Jason Carr added a parser combinator library and a parser for the <:SXML:>
+ IR, extended compilation to start with a `.sxml` file, and experimented with
+ alternate control-flow analyses for <:ClosureConvert: closure conversion>.
+
  * Christopher Cramer contributed support for additional
- `Posix.ProcEnv.sysconf` variables and performance improvements for
- `String.concatWith`.
+ `Posix.ProcEnv.sysconf` variables, performance improvements for
+ `String.concatWith`, and Debian packaging.
 
  * Alain Deutsch and
  http://www.polyspace.com/[PolySpace Technologies] provided many bug
  fixes and runtime system improvements, code to help the Sparc/Solaris
  port, and funded a number of improvements to MLton.
+
+ * Armando Doval updated `mlnlffigen` to warn and skip functions with
+ `struct`/`union` arguments.
 
  * Martin Elsman provided helpful discussions in the development of
  the <:MLBasis:ML Basis system>.
@@ -86,12 +104,25 @@ list.
 
  * Filip Pizlo ported MLton to (PowerPC) Darwin.
 
+ * Vedant Raiththa extended the <:ForeignFunctionInterface:> with support for
+ `pure` and `impure` attributes to `_import`.
+
+ * Krishna Ravikumar added initial support for vector expressions and the
+ `Vector_vector` primitive.
+
  * John Reppy assisted in porting MLton to Intel Mac.
 
  * Sam Rushing ported MLton to FreeBSD.
 
+ * Rob Simmons refactored the array and vector implementation in the
+ <:BasisLibrary: Basis Library:> into a primitive implementation (using
+ `SeqInt.int` for indexing) and a wrapper implementation (using the default
+ `Int.int` for indexing).
+
  * Jeffrey Mark Siskind provided helpful discussions and inspiration
  with his Stalin Scheme compiler.
+
+ * Matthew Surawski added <:LoopUnroll:> and <:LoopUnswitch:> SSA optimizations.
 
  * <:WesleyTerpstra:> added support for `MLton.Process.create`, made
  a number of contributions to the <:ForeignFunctionInterface:>,
@@ -99,6 +130,10 @@ list.
  added support for compiling to a <:LibrarySupport:C library>,
  ported MLton to http://mingw.org[MinGW] and all http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] supported architectures with <:CrossCompiling:cross-compiling> support,
  and maintains the http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] and http://mingw.org[MinGW] packages.
+
+ * Maksim Yegorov added rudimentary support for `./configure` and other
+ improvements to the build system and implemented the <:ShareZeroVec:> SSA
+ optimization.
 
  * Luke Ziarek assisted in porting MLton to (PowerPC) Darwin.
 

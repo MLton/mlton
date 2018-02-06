@@ -16,7 +16,8 @@ programming language.
    - ARM: Linux (Debian).
    - Alpha: Linux (Debian).
    - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
-     Solaris (10 and above).
+     OpenBSD, Solaris (10 and above).
+
    - HPPA: HPUX (11.11 and above), Linux (Debian).
    - IA64: HPUX (11.11 and above), Linux (Debian).
    - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
@@ -46,14 +47,14 @@ programming language.
    - Untagged and unboxed native integers, reals, and words.
    - Unboxed native arrays.
    - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on the GnuMP.
+   - Fast arbitrary-precision arithmetic based on the GMP.
 
  * Tools.
 
    - Source-level profiling for both time and allocation.
    - MLLex lexer generator.
    - MLYacc parser generator.
-   - ML-NLFFIGEN foreign-function-interface generator.
+   - MLNLFFIGEN foreign-function-interface generator.
 
  * Extensions.
 
@@ -91,9 +92,10 @@ programming language.
 On typical platforms, building MLton requires no configuration and can be
 accomplished via:
 
-```shell
+[source,shell]
+----
 $ make all
-```
+----
 
 A small set of `Makefile` variables can be used to customize the build:
 
@@ -115,27 +117,30 @@ A small set of `Makefile` variables can be used to customize the build:
 
 For example:
 
-```shell
+[source,shell]
+----
 $ make CC=clang WITH_GMP_DIR=/opt/gmp MLTON_COMPILE_ARGS="-codegen c" all
-```
+----
 
 The build artifacts are located under `./build`.  The just-built `mlton` can be
 executed via `./build/bin/mlton`.
 
 Building documentation can be accomplished via:
 
-```shell
+[source,shell]
+----
 $ make docs
-```
+----
 
 === Install Instructions
 
 On typical platforms, installing MLton (after performing `make all` and,
 optionally, `make docs`) to `/usr/local` can be accomplished via:
 
-```shell
+[source,shell]
+----
 $ make install
-```
+----
 
 A small set of `Makefile` variables can be used to customize the installation:
 
@@ -143,9 +148,10 @@ A small set of `Makefile` variables can be used to customize the installation:
 
 For example:
 
-```shell
+[source,shell]
+----
 $ make PREFIX=/opt/mlton install
-```
+----
 
 == Install (from binary package)
 
@@ -178,18 +184,20 @@ via `make update`:
 
 For example:
 
-```shell
-$ make CC=clang WITH_GMP_DIR=/opt/gmp all
-```
+[source,shell]
+----
+$ make CC=clang WITH_GMP_DIR=/opt/gmp update
+----
 
 === Install Instructions
 
 On typical platforms, installing MLton (after optionally performing
 `make update`) to `/usr/local` can be accomplished via:
 
-```shell
+[source,shell]
+----
 $ make install
-```
+----
 
 A small set of `Makefile` variables can be used to customize the installation:
 
@@ -197,9 +205,10 @@ A small set of `Makefile` variables can be used to customize the installation:
 
 For example:
 
-```shell
+[source,shell]
+----
 $ make PREFIX=/opt/mlton install
-```
+----
 
 == Resources
 

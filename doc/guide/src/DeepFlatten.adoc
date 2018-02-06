@@ -26,7 +26,7 @@ consumes an excessive amount of memory.
 * http://www.mlton.org/pipermail/mlton/2010-December/030876.html
 
 A number of applications require compilation with
-`-drop-pass deepFlatten` to avoid exceeding available memory.  It is
+`-disable-pass deepFlatten` to avoid exceeding available memory.  It is
 often asked whether the deep flatten pass usually has a significant
 impact on performance.  The standard benchmark suite was run with and
 without the deep flatten pass enabled when the pass was first

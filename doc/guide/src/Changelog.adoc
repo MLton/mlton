@@ -1,8 +1,8 @@
 Changelog
 =========
 
-* <!RawGitFile(mlton,master,doc/changelog)>
+* <!ViewGitFile(mlton,master,CHANGELOG.adoc)>
 
 ----
-sys::[./bin/InclGitFile.py mlton master doc/changelog]
+sys::[./bin/InclGitFile.py mlton master CHANGELOG.adoc]
 ----

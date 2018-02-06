@@ -1,0 +1,138 @@
+ShareZeroVec
+============
+
+<:ShareZeroVec:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+An SSA optimization to share zero-length vectors.
+
+From <!ViewGitCommit(mlton,be8c5f576)>, which replaced the use of the
+`Array_array0Const` primitive in the Basis Library implementation with a
+(nullary) `Vector_vector` primitive:
+
+________
+
+The original motivation for the `Array_array0Const` primitive was to share the
+heap space required for zero-length vectors among all vectors (of a given type).
+It was claimed that this optimization is important, e.g., in a self-compile,
+where vectors are used for lots of syntax tree elements and many of those
+vectors are empty. See:
+http://www.mlton.org/pipermail/mlton-devel/2002-February/021523.html
+
+Curiously, the full effect of this optimization has been missing for quite some
+time (perhaps since the port of <:ConstantPropagation:> to the SSA IL).  While
+<:ConstantPropagation:> has "globalized" the nullary application of the
+`Array_array0Const` primitive, it also simultaneously transformed it to an
+application of the `Array_uninit` (previously, the `Array_array`) primitive to
+the zero constant.  The hash-consing of globals, meant to create exactly one
+global for each distinct constant, treats `Array_uninit` primitives as unequal
+(appropriately, since `Array_uninit` allocates an array with identity (though
+the identity may be supressed by a subsequent `Array_toVector`)), hence each
+distinct `Array_array0Const` primitive in the program remained as distinct
+globals.  The limited amount of inlining prior to <:ConstantPropagation:> meant
+that there were typically fewer than a dozen "copies" of the same empty vector
+in a program for a given type.
+
+As a "functional" primitive, a nullary `Vector_vector` is globalized by
+ClosureConvert, but is further recognized by ConstantPropagation and hash-consed
+into a unique instance for each type.
+________
+
+However, a single, shared, global `Vector_vector ()` inhibits the
+coercion-based optimizations of `Useless`.  For example, consider the
+following program:
+
+[source,sml]
+----
+    val n = valOf (Int.fromString (hd (CommandLine.arguments ())))
+
+    val v1 = Vector.tabulate (n, fn i =>
+                              let val w = Word16.fromInt i
+                              in (w - 0wx1, w, w + 0wx1 + w)
+                              end)
+    val v2 = Vector.map (fn (w1, w2, w3) => (w1, 0wx2 * w2, 0wx3 * w3)) v1
+    val v3 = VectorSlice.vector (VectorSlice.slice (v1, 1, SOME (n - 2)))
+    val ans1 = Vector.foldl (fn ((w1,w2,w3),w) => w + w1 + w2 + w3) 0wx0 v1
+    val ans2 = Vector.foldl (fn ((_,w2,_),w) => w + w2) 0wx0 v2
+    val ans3 = Vector.foldl (fn ((_,w2,_),w) => w + w2) 0wx0 v3
+
+    val _ = print (concat ["ans1 = ", Word16.toString ans1, "  ",
+                           "ans2 = ", Word16.toString ans2, "  ",
+                           "ans3 = ", Word16.toString ans3, "\n"])
+----
+
+We would like `v2` and `v3` to be optimized from
+`(word16 * word16 * word16) vector` to `word16 vector` because only
+the 2nd component of the elements is needed to compute the answer.
+
+With `Array_array0Const`, each distinct occurrence of
+`Array_array0Const((word16 * word16 * word16))` arising from
+polyvariance and inlining remained a distinct
+`Array_uninit((word16 * word16 * word16)) (0x0)` global, which
+resulted in distinct occurrences for the
+`val v1 = Vector.tabulate ...` and for the
+`val v2 = Vector.map ...`. The latter could be optimized to
+`Array_uninit(word16) (0x0)` by `Useless`, because its result only
+flows to places requiring the 2nd component of the elements.
+
+With `Vector_vector ()`, the distinct occurrences of
+`Vector_vector((word16 * word16 * word16)) ()` arising from
+polyvariance are globalized during `ClosureConvert`, those global
+references may be further duplicated by inlining, but the distinct
+occurrences of `Vector_vector((word16 * word16 * word16)) ()` are
+merged to a single occurrence.  Because this result flows to places
+requiring all three components of the elements, it remains
+`Vector_vector((word16 * word16 * word16)) ()` after
+`Useless`. Furthermore, because one cannot (in constant time) coerce a
+`(word16 * word16 * word16) vector` to a `word16 vector`, the `v2`
+value remains of type `(word16 * word16 * word16) vector`.
+
+One option would be to drop the 0-element vector "optimization"
+entirely.  This costs some space (no sharing of empty vectors) and
+some time (allocation and garbage collection of empty vectors).
+
+Another option would be to reinstate the `Array_array0Const` primitive
+and associated `ConstantPropagation` treatment.  But, the semantics
+and purpose of `Array_array0Const` was poorly understood, resulting in
+this break.
+
+The <:ShareZeroVec:> pass pursues a different approach: perform the 0-element
+vector "optimization" as a separate optimization, after
+`ConstantPropagation` and `Useless`.  A trivial static analysis is
+used to match `val v: t vector = Array_toVector(t) (a)` with
+corresponding `val a: array = Array_uninit(t) (l)` and the later are
+expanded to
+`val a: t array = if 0 = l then zeroArr_[t] else Array_uninit(t) (l)`
+with a single global `val zeroArr_[t] = Array_uninit(t) (0)` created
+for each distinct type (after coercion-based optimizations).
+
+One disadvantage of this approach, compared to the `Vector_vector(t) ()`
+approach, is that `Array_toVector` is applied each time a vector
+is created, even if it is being applied to the `zeroArr_[t]`
+zero-length array.  (Although, this was the behavior of the
+`Array_array0Const` approach.)  This updates the object header each
+time, whereas the `Vector_vector(t) ()` approach would have updated
+the object header once, when the global was created, and the
+`zeroVec_[t]` global and the `Array_toVector` result would flow to the
+join point.
+
+It would be possible to properly share zero-length vectors, but doing
+so is a more sophisticated analysis and transformation, because there
+can be arbitrary code between the
+`val a: t array = Array_uninit(t) (l)` and the corresponding
+`val v: v vector = Array_toVector(t) (a)`, although, in practice,
+nothing happens when a zero-length vector is created.  It may be best
+to pursue a more general "array to vector" optimization that
+transforms creations of static-length vectors (e.g., all the
+`Vector.new<N>` functions) into `Vector_vector` primitives (some of
+which could be globalized).
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/share-zero-vec.fun)>
+
+== Details and Notes ==
+
+{empty}

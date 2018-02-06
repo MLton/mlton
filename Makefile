@@ -64,7 +64,6 @@ INC := $(LIB)/include
 PATH := $(BIN):$(shell echo $$PATH)
 
 MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
-MLTON_RELEASE := 1
 
 HOST_ARCH := $(shell ./bin/host-arch)
 HOST_OS := $(shell ./bin/host-os)
@@ -387,6 +386,11 @@ tools-clean:
 	$(MAKE) -C "$(SRC)/mlprof" clean
 	$(MAKE) -C "$(SRC)/mlnlffigen" clean
 
+.PHONY: check
+check:
+	./bin/regression $(CHECK_ARGS)
+
+
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
@@ -395,20 +399,9 @@ version:
 		"$(SRC)/mlton/Makefile"					\
 		"$(SRC)/doc/guide/Makefile"				\
 	; do								\
-		if grep -q '^MLTON_VERSION :=' "$$f"; then		\
-			$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
-			mv z "$$f";					\
-		fi;							\
+		$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
+		mv z "$$f";						\
 	done
-
-.PHONY: vars
-vars:
-	@echo MLTON_VERSION = "$(MLTON_VERSION)"
-	@echo MLTON_RELEASE = "$(MLTON_RELEASE)"
-
-.PHONY: check
-check:
-	./bin/regression $(CHECK_ARGS)
 
 
 prefix := $(PREFIX)
@@ -468,10 +461,11 @@ REGRESSION_EXAMPLES := \
 
 .PHONY: install-docs
 install-docs:
-	$(MKDIR) "$(TDOC)"
+	$(MKDIR) "$(TDOC)" "$(TDOC)/license"
 	(								\
 		cd "$(SRC)" &&						\
-		$(CP) README.adoc CHANGELOG.adoc "$(TDOC)/"		\
+		$(CP) CHANGELOG.adoc README.adoc "$(TDOC)/" &&		\
+		$(CP) LICENSE "$(TDOC)/license/MLton-LICENSE"		\
 	)
 	(								\
 		cd "$(SRC)/doc" &&					\
@@ -499,12 +493,6 @@ install-docs:
 	fi
 	(								\
 		cd "$(SRC)/util" &&					\
-		$(FIND) cmcat -type f '!' -name .gitignore		\
-			| $(XARGS) $(TAR) cf -				\
-			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
-	)
-	(								\
-		cd "$(SRC)/util" &&					\
 		$(FIND) cm2mlb -type f '!' -name .gitignore		\
 			| $(XARGS) $(TAR) cf -				\
 			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
@@ -518,27 +506,33 @@ install-docs:
 .PHONY: source-release
 source-release:
 	$(MAKE) clean
-	$(MAKE) version
+	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
+	( cd "$(SRC)/mllex" ; latexmk -pdf lexgen ; latexmk -c lexgen )
+	$(MAKE) -C "$(SRC)/mllex" mllex.pdf
+	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyaccc ; latexmk -c mlyacc )
+	$(MAKE) -C "$(SRC)/mlyacc" mlyacc.pdf
+	$(MAKE) -C doc/guide
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
 		--exclude .git --exclude package \
 		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
 		*
-	$(MAKE) clean
 
+MLTON_BINARY_RELEASE := 1
+MLTON_BINARY_RELEASE_SUFFIX :=
 .PHONY: binary-release
 binary-release:
-	$(MAKE) clean
 	$(MAKE) all docs
-	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
-	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)"
-	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)" PREFIX="" install
-	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/Makefile"
-	$(CP) "$(SRC)/CHANGELOG.adoc" "$(SRC)/README.adoc" "$(SRC)/LICENSE" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)/"
-	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS).tgz \
-		mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
-	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)
+	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
+	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
+	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)" PREFIX="" install
+	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)/Makefile"
+	$(CP) "$(SRC)/CHANGELOG.adoc" "$(SRC)/LICENSE" "$(SRC)/README.adoc" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)/"
+	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz \
+		mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)
+	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)
 
 BSDSRC := /tmp/mlton-$(MLTON_VERSION)
+MLTON_FREEBSD_RELEASE := 1
 .PHONY: freebsd
 freebsd:
 	$(MAKE) clean clean-git version
@@ -546,6 +540,6 @@ freebsd:
 	$(MKDIR) "$(BSDSRC)"
 	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(MLTON_VERSION) | \
-		 $(GZIP) --force --best >/usr/ports/distfiles/mlton-$(MLTON_VERSION)-$(MLTON_RELEASE).freebsd.src.tgz
+		 $(GZIP) --force --best >/usr/ports/distfiles/mlton-$(MLTON_VERSION)-$(MLTON_FREEBSD_RELEASE).freebsd.src.tgz
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package

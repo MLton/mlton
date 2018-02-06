@@ -4,7 +4,8 @@ Development
 This page is the central point for MLton development.
 
 * Access the <:Sources:>.
-* Check the current <!RawGitFile(mlton,master,doc/changelog)> or recent https://github.com/MLton/mlton/commits/master[commits].
+* Check the current <!ViewGitFile(mlton,master,CHANGELOG.adoc)> or recent https://github.com/MLton/mlton/commits/master[commits].
+* Open https://github.com/MLton/mlton/issues[Issues].
 * Ideas for <:Projects:> to improve MLton.
 * <:Developers:> that are or have been involved in the project.
 // * Help maintain and improve the <:WebSite:>.

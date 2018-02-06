@@ -1,0 +1,16 @@
+ShowBasisDirective
+==================
+
+A comment of the form `(*#showBasis "<file>"*)` is recognized as a directive to
+save the current basis (i.e., environment) to `<file>` (in the same format as
+the `-show-basis <file>` <:CompileTimeOptions: compile-time option>).  The
+`<file>` is interpreted relative to the source file in which it appears.  The
+comment is lexed as a distinct token and is parsed as a structure-level
+declaration.  [Note that treating the directive as a top-level declaration would
+prohibit using it inside a functor body, which would make the feature
+significantly less useful in the context of the MLton compiler sources (with its
+nearly fully functorial style).]
+
+This feature is meant to facilitate auto-completion via
+https://github.com/MatthewFluet/company-mlton[`company-mlton`] and similar
+tools.

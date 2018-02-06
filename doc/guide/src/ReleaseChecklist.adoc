@@ -3,11 +3,11 @@ ReleaseChecklist
 
 == Advance preparation for release ==
 
-* Update `doc/changelog`.
+* Update `./CHANGELOG.adoc`.
 ** Write entries for missing notable commits.
 ** Write summary of changes from previous release.
 ** Update with estimated release date.
-* Update `doc/README`.
+* Update `./README.adoc`.
 ** Check features and description.
 * Update `man/{mlton,mlprof}.1`.
 ** Check compile-time and run-time options in `man/mlton.1`.
@@ -15,10 +15,10 @@ ReleaseChecklist
 ** Update with estimated release date.
 * Update `doc/guide`.
 // ** Check <:OrphanedPages:> and <:WantedPages:>.
-** Synchronize <:Features:> page with `doc/README`.
+** Synchronize <:Features:> page with `./README.adoc`.
 ** Update <:Credits:> page with acknowledgements.
 ** Create *ReleaseYYYYMM??* page (i.e., forthcoming release) based on *ReleaseXXXXLLCC* (i.e., previous release).
-*** Update summary from `doc/changelog`.
+*** Update summary from `./CHANGELOG.adoc`.
 *** Update links to estimated release date.
 ** Create *BugsYYYYMM??* page based on *BugsXXXXLLCC*.
 *** Update links to estimated release date.
@@ -27,7 +27,7 @@ ReleaseChecklist
 
 == Prepare sources for tagging ==
 
-* Update `doc/changelog`.
+* Update `./CHANGELOG.adoc`.
 ** Update with proper release date.
 * Update `man/{mlton,mlprof}.1`.
 ** Update with proper release date.
@@ -42,7 +42,6 @@ ReleaseChecklist
 *** Change `What's new?` text to `Please try out our new release, <:ReleaseYYYYMMDD:MLton YYYYMMDD>`.
 *** Update `Download` link with proper release date.
 ** Update <:Releases:> with new release.
-** Clear <:Experimental:>.
 * Ensure that all updates are pushed to `master` branch of <!ViewGitProj(mlton)>.
 
 == Tag sources ==
@@ -77,11 +76,7 @@ sftp> quit
 git clone http://github.com/MLton/mlton mlton
 cd mlton
 git checkout on-YYYYMMDD-release
-make version VERSION=YYYYMMDD
-( cd mllex ; latexmk -pdf lexgen ; latexmk -c lexgen ; make mllex.pdf )
-( cd mlyacc ; ( cd doc; latexmk -pdf mlyaccc ; latexmk -c mlyacc ); make mlyacc.pdf )
-make -C doc/guide
-make release VERSION=YYYYMMDD
+make MLTON_VERSION=YYYYMMDD source-release
 cd ..
 ----
 +
@@ -91,11 +86,7 @@ or
 wget https://github.com/MLton/mlton/archive/on-YYYYMMDD-release.tar.gz
 tar xzvf on-YYYYMMDD-release.tar.gz
 cd mlton-on-YYYYMMDD-release
-make version VERSION=YYYYMMDD
-( cd mllex ; latexmk -pdf lexgen ; latexmk -c lexgen ; make mllex.pdf )
-( cd mlyacc ; ( cd doc; latexmk -pdf mlyaccc ; latexmk -c mlyacc ); make mlyacc.pdf )
-make -C doc/guide
-make release VERSION=YYYYMMDD
+make MLTON_VERSION=YYYYMMDD source-release
 cd ..
 ----
 
@@ -115,11 +106,8 @@ scp mlton-YYYYMMDD.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlto
 wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.src.tgz
 tar xzvf mlton-YYYYMMDD.src.tgz
 cd mlton-YYYYMMDD
-make all
-make install
-cd install
-tar czvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
-cd ../..
+make binary-release
+cd ..
 ----
 
 * Upload `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
@@ -152,10 +140,6 @@ rsync -avzP --delete -e ssh guide-YYYYMMDD.tgz user@web.sourceforge.net:/home/pr
 ** mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`]
 ** mailto:MLton-user@mlton.org[`MLton-user@mlton.org`]
 
-* Update <:OtherSites:> that have MLton pages.
-
 == Misc. ==
-
-* `dupload` Debian package.
 
 * Generate new <:Performance:> numbers.
