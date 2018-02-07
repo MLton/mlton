@@ -13,8 +13,8 @@ RANLIB := ranlib
 
 WITH_GMP_DIR :=
 ifneq ($(WITH_GMP_DIR),)
-WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
-WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
+WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
+WITH_GMP_LIB_DIR := $(WITH_GMP_DIR)/lib
 endif
 
 FIND := find
