@@ -62,12 +62,12 @@ CC="gcc"
 # You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
 GMP_INC_DIR=
 if [ -n "$GMP_INC_DIR" ]; then
-gmpCCOpts="-cc-opt '-I$GMP_INC_DIR'"
+gmpCCOpts="-cc-opt -I$GMP_INC_DIR"
 fi
 # You may need to set 'GMP_LIB_DIR' so the C compiler can find libgmp.
 GMP_LIB_DIR=
 if [ -n "$GMP_LIB_DIR" ]; then
-gmpLinkOpts="-link-opt '-L$GMP_LIB_DIR' -target-link-opt netbsd '-Wl,-R$GMP_LIB_DIR'"
+gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
 fi
 
 doit "$lib" \
