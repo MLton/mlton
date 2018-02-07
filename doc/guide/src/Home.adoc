@@ -8,7 +8,7 @@ MLton is an open-source, whole-program, optimizing
 
 == What's new? ==
 
-* 20180206: Please try out our latest release, <:Release20180206:MLton 20180206>.
+* 20180207: Please try out our latest release, <:Release20180207:MLton 20180207>.
 
 * 20140730: http://www.cs.rit.edu/%7emtf[Matthew Fluet] and
   http://www.cse.buffalo.edu/%7elziarek[Lukasz Ziarek] have been
@@ -26,7 +26,7 @@ MLton is an open-source, whole-program, optimizing
 * Read about MLton's <:Features:>.
 * Look at <:Documentation:>.
 * See some <:Users:> of MLton.
-* https://sourceforge.net/projects/mlton/files/mlton/20180206[Download] MLton.
+* https://sourceforge.net/projects/mlton/files/mlton/20180207[Download] MLton.
 * Meet the MLton <:Developers:>.
 * Get involved with MLton <:Development:>.
 * User-maintained <:FAQ:>.
