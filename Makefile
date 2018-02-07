@@ -17,8 +17,8 @@ STRIP := strip
 # Specify GMP include and library paths, if not on default search paths.
 WITH_GMP_DIR :=
 ifneq ($(WITH_GMP_DIR),)
-WITH_GMP_INC_DIR := $WITH_GMP_DIR/include
-WITH_GMP_LIB_DIR := $WITH_GMP_DIR/lib
+WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
+WITH_GMP_LIB_DIR := $(WITH_GMP_DIR)/lib
 endif
 
 # Specify installation prefix and staged install destination.
