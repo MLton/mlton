@@ -14,7 +14,6 @@ RANLIB := ranlib
 WITH_GMP_DIR :=
 ifneq ($(WITH_GMP_DIR),)
 WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
-WITH_GMP_LIB_DIR := $(WITH_GMP_DIR)/lib
 endif
 
 FIND := find
@@ -171,10 +170,6 @@ endif
 
 ifneq ($(WITH_GMP_INC_DIR),)
 XCFLAGS += -I$(WITH_GMP_INC_DIR)
-endif
-
-ifneq ($(WITH_GMP_LIB_DIR),)
-XCFLAGS += -L$(WITH_GMP_LIB_DIR)
 endif
 
 XCFLAGS += -I. -Iplatform
