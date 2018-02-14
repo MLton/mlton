@@ -168,6 +168,12 @@ struct
 
    fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
       (print("\n\nGLOBAL:\n");
+      print(Layout.toString (Var.layout var));
+      print("\n");
+      print(Layout.toString (Type.layout ty));
+      print("\n");
+      print(Layout.toString (Exp.layout exp));
+      print("\n");
       Statement.T
       {var = SOME var,
        ty = ty,
@@ -179,16 +185,17 @@ struct
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (var,
              symbol ":" *> (typ resolveTycon) <* spaces)
-         fun makeVarExp var = Var.new var
+         fun makeVarExp var = var
          val varExp =
             T.failing (token "in" <|> token "exception" <|> token "val") *>
             makeVarExp <$> var
          fun makeApp(func, arg) = {arg=arg, func=func}
          fun makeConApp(con, args) = { con=con, args=args }
-         fun conApp v = makeConApp <$$>
-            (resolveCon <$> ident <* spaces,
-             T.pure (Vector.new0 ()))
-         val conAppExp = token "new" *> T.cut (conApp varExp)
+         fun conApp v = 
+            makeConApp <$$>
+                  (resolveCon <$> ident <* spaces,
+                   v)
+         val conAppExp = token "new" *> T.cut (conApp ((tupleOf varExp) <|> T.pure (Vector.new0 ())))
          fun constExp typ =
             (print (Layout.toString(Type.layout typ));
             case Type.dest typ of
@@ -284,7 +291,7 @@ struct
              Exp.PrimApp <$> primAppExp,
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
-             Exp.Tuple <$> (tupleOf varExp) <* spaces,
+             Exp.Tuple <$> (tupleOf varExp),
              Exp.Var <$> varExp]
          fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
             T.many (glbl resolveTycon resolveVar)
