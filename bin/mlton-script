@@ -3,6 +3,8 @@
 # This script calls MLton.
 
 
+LIB_REL_BIN="../lib/mlton"
+
 EXE=
 
 CC="gcc"
@@ -16,7 +18,7 @@ GMP_LIB_DIR=
 set -e
 
 dir=`dirname "$0"`
-lib=`cd "$dir/../lib/mlton" && pwd`
+lib=`cd "$dir/$LIB_REL_BIN" && pwd`
 
 declare -a rargs
 case "$1" in
