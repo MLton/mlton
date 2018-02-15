@@ -21,6 +21,7 @@ ROOT := $(shell pwd)
 
 CP := cp -fpR
 MKDIR := mkdir -p
+RM := rm -rf
 
 ######################################################################
 
@@ -46,7 +47,7 @@ TEXM := $(TDOC)/examples
 
 .PHONY: install
 install:
-	mkdir -p "$(TBIN)" "$(TLIB)" "$(TMAN)" "$(TDOC)"
+	$(MKDIR) "$(TBIN)" "$(TLIB)" "$(TMAN)" "$(TDOC)"
 	$(CP) "$(SBIN)/." "$(TBIN)/"
 	$(CP) "$(SLIB)/." "$(TLIB)/"
 	$(CP) "$(SMAN)/." "$(TMAN)/"
@@ -61,4 +62,4 @@ update:
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		< "$(SBIN)/mlton.bak" > "$(SBIN)/mlton"
 	chmod a+x "$(SBIN)/mlton"
-	$(RM) "$(SBIN)/mlton.bak"
+	rm "$(SBIN)/mlton.bak"
