@@ -55,11 +55,14 @@ XARGS := xargs
 ######################################################################
 ######################################################################
 
+TGT_REL_SRC = ref="$(1)" pos="$(2)" down=; ref="$${ref%%/}" pos="$${pos%%/}"; while :; do test "$$pos" = '/' && break ; case "$$ref" in "$$pos"/*) break;; esac; down="../$$down"; pos="$${pos%/*}"; done; echo "$$down$${ref\#\#$$pos/}"
+
 SRC := $(shell pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
 LIB := $(BUILD)/lib/mlton
 INC := $(LIB)/include
+LIB_REL_BIN := $(shell $(call TGT_REL_SRC,$(LIB),$(BIN)))
 
 PATH := $(BIN):$(shell echo $$PATH)
 
@@ -306,6 +309,7 @@ runtime:
 .PHONY: script
 script:
 	$(SED) \
+		-e "s;^LIB_REL_BIN=.*;LIB_REL_BIN=\"$(LIB_REL_BIN)\";" \
 		-e "s;^EXE=.*;EXE=\"$(EXE)\";" \
 		-e "s;^CC=.*;CC=\"$(CC)\";" \
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
@@ -419,6 +423,8 @@ TMAN := $(DESTDIR)$(man1dir)
 TDOC := $(DESTDIR)$(docdir)
 TEXM := $(TDOC)/examples
 
+TLIB_REL_TBIN := $(shell $(call TGT_REL_SRC,$(TLIB),$(TBIN)))
+
 GZIP_MAN := true
 ifeq ($(findstring $(TARGET_OS), openbsd solaris), $(TARGET_OS))
 GZIP_MAN := false
@@ -438,6 +444,10 @@ MAN_PAGES :=  \
 install-no-strip:
 	$(MKDIR) "$(TBIN)" "$(TLIB)" "$(TMAN)"
 	$(CP) "$(BIN)/." "$(TBIN)/"
+	$(SED) \
+		-e "s;^LIB_REL_BIN=.*;LIB_REL_BIN=\"$(TLIB_REL_TBIN)\";" \
+		< "$(BIN)/mlton" > "$(TBIN)/mlton"
+	chmod a+x "$(TBIN)/mlton"
 	$(CP) "$(LIB)/." "$(TLIB)/"
 	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)/"
 ifeq (true, $(GZIP_MAN))
