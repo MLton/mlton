@@ -2,6 +2,17 @@
 
 # This script calls MLton.
 
+
+EXE=
+
+CC="gcc"
+
+# You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
+GMP_INC_DIR=
+# You may need to set 'GMP_LIB_DIR' so the C compiler can find libgmp.
+GMP_LIB_DIR=
+
+
 set -e
 
 dir=`dirname "$0"`
@@ -23,8 +34,6 @@ case "$1" in
         fi
         ;;
 esac
-
-EXE=
 
 doitMLton () {
     mlton_mlton="$lib/mlton-compile$EXE"
@@ -57,15 +66,9 @@ doit () {
     exit 1
 }
 
-CC="gcc"
-
-# You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
-GMP_INC_DIR=
 if [ -n "$GMP_INC_DIR" ]; then
 gmpCCOpts="-cc-opt -I$GMP_INC_DIR"
 fi
-# You may need to set 'GMP_LIB_DIR' so the C compiler can find libgmp.
-GMP_LIB_DIR=
 if [ -n "$GMP_LIB_DIR" ]; then
 gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
 fi
