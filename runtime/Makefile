@@ -151,7 +151,7 @@ endif
 
 ifeq ($(TARGET_ARCH), x86)
 XCFLAGS += -m32
-OPTXCFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
+OPTXCFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 endif
 
 ifeq ($(TARGET_OS), cygwin)
