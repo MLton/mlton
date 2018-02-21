@@ -105,6 +105,7 @@ struct
             | "word32" => Type.word WordSize.word32
             | "word64" => Type.word WordSize.word64
             | "unit" => Type.unit
+            | "pointer" => Type.cpointer
             | _ => Type.datatypee (resolveTycon ident)
 
    local
@@ -195,14 +196,17 @@ struct
             makeConApp <$$>
                   (resolveCon <$> ident <* spaces,
                    v)
-         val conAppExp = token "new" *> T.cut (conApp ((tupleOf varExp) <|> T.pure (Vector.new0 ())))
+         val conAppExp = token "new" *> T.cut (conApp ((vectorOf varExp) <|> T.pure (Vector.new0 ())))
          fun constExp typ =
-            (print (Layout.toString(Type.layout typ));
+            (
+            print("\nCONST\n");
+            print (Layout.toString(Type.layout typ));
             case Type.dest typ of
                  Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
                  makeWord (Tycon.word ws)) <|> T.failCut "word"
                | Type.Real rs => Const.Real <$> parseReal rs <|> T.failCut "real"
                | Type.IntInf => Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+               | Type.CPointer => Const.null <$ token "NULL" <|> T.failCut "null"
                | Type.Vector _  => T.any
                   [Const.string <$> parseString,
                    Const.wordVector <$> parseWord8Vector,
