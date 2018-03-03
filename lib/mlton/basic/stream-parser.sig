@@ -37,6 +37,7 @@ signature STREAM_PARSER =
       (* map over pairs of parsers, joining their results together *)
       val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
       val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
+      val <$$$$> : ('a * 'b * 'c * 'd -> 'e) * ('a t * 'b t * 'c t * 'd t) -> 'e t
       (* match both parsers, and discard the right or left result respectively *)
       val <* : 'a t * 'b t -> 'a t
       val *> : 'a t * 'b t -> 'b t
@@ -51,6 +52,8 @@ signature STREAM_PARSER =
          val <$ : 'b * 'a t -> 'b t
          val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
          val <$$$> : ('a * 'b * 'c -> 'd) * ('a t * 'b t * 'c t) -> 'd t
+         val <$$$$> : ('a * 'b * 'c  * 'd -> 'e) * ('a t * 'b t * 'c t * 'd t) ->
+         'e t
          val <* : 'a t * 'b t -> 'a t
          val *> : 'a t * 'b t -> 'b t
          val <|> : 'a t * 'a t -> 'a t

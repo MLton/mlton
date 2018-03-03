@@ -13,7 +13,7 @@ struct
    infix 1 <|> >>=
    infix 2 <&>
    infix  3 <*> <* *>
-   infixr 4 <$> <$$> <$$$> <$
+   infixr 4 <$> <$$> <$$$> <$ <$$$$>
    
    fun isInfixChar b = case List.index
       (String.explode "!%&$#+-/:<=>?@\\~'^|*",
@@ -303,12 +303,29 @@ struct
          globals' ()
       end
 
-   fun makeProgram (datatypes, globals) =
+   fun makeFunction () =
+      Function.new 
+      {args = Vector.new0 (),
+       blocks = Vector.new0 (),
+       mayInline = false,
+       name = Func.newNoname(),
+       raises = NONE,
+       returns = NONE,
+       start = Label.newNoname()}
+
+   fun funcs resolveTycon resolveVar = T.pure(makeFunction())
+
+   fun functns resolveTycon resolveVar = spaces *> token "Functions:" *> T.many (funcs resolveTycon
+      resolveVar) 
+
+   fun mainFunc resolveFunc = spaces *> token "Main:" *> resolveFunc <$> ident <* spaces
+
+   fun makeProgram (datatypes, globals, main) =
       Program.T
          {datatypes = datatypes,
           functions = [],
           globals = globals,
-          main = Func.newNoname() } 
+          main = main} 
    
    val program : Program.t StreamParser.t=
       let
@@ -330,11 +347,13 @@ struct
                | _ => resolveTycon0 ident
 
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
+         val resolveFunc = makeNameResolver(Func.newString o strip_unique)
       in
          T.compose(skipComments (),
             clOptions *>
-            (makeProgram <$$> (datatypes resolveCon resolveTycon, globls
-            resolveCon resolveTycon resolveVar)))
+            (makeProgram <$$$> (datatypes resolveCon resolveTycon, globls
+            resolveCon resolveTycon resolveVar,
+            mainFunc resolveFunc)))
       end
    
    fun parse s = T.parse(program, s)
