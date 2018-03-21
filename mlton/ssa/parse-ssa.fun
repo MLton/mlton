@@ -180,16 +180,18 @@ struct
        ty = ty,
        exp = exp })
 
+   
+
    fun globls resolveCon resolveTycon resolveVar = 
       let
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (var,
              symbol ":" *> (typ resolveTycon) <* spaces)
-         fun makeVarExp var = var
+         fun makeVarExp var = var 
          val varExp =
             T.failing (token "in" <|> token "exception" <|> token "val") *>
-            makeVarExp <$> var
+            makeVarExp <$> var 
          fun makeApp(func, arg) = {arg=arg, func=func}
          fun makeConApp(con, args) = { con=con, args=args }
          fun conApp v = 
@@ -303,9 +305,9 @@ struct
          globals' ()
       end
 
-   fun makeFunction name returns raises =
+   fun makeFunction name args returns raises =
       Function.new 
-      {args = Vector.new0 (),
+      {args = args,
        blocks = Vector.new0 (),
        mayInline = false,
        name = name,
@@ -317,9 +319,17 @@ struct
    fun functns resolveTycon resolveVar resolveFunc = 
          let 
             val name =  spaces *> symbol "fun" *> resolveFunc <$> ident <*
-            spaces <* symbol "():"
+            spaces
+
+            val var = resolveVar <$> ident <* spaces
+            val typedvar = (fn (x,y) => (x,y)) <$$>
+               (var,
+                symbol ":" *> (typ resolveTycon) <* spaces)
+            val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
+            <* symbol ":" <* spaces
             fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
                <$> name
+               <*> args
                <*> fromRecord "returns" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <*> fromRecord "raises" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <* doneRecord
