@@ -180,9 +180,7 @@ struct
        ty = ty,
        exp = exp })
 
-   
-
-   fun globls resolveCon resolveTycon resolveVar = 
+   fun statements resolveCon resolveTycon resolveVar =
       let
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
@@ -286,7 +284,7 @@ struct
          val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                            ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
             <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
-         fun glbl resolveTycon resolveVar = (makeStatement resolveTycon resolveVar)
+         fun statement' resolveTycon resolveVar = (makeStatement resolveTycon resolveVar)
             <$>
             (typedvar >>= (fn (var, ty) =>
              (symbol "=" *> exp ty <* spaces) >>= (fn exp => 
@@ -299,16 +297,23 @@ struct
              Exp.Select <$> selectExp,
              Exp.Tuple <$> (tupleOf varExp),
              Exp.Var <$> varExp]
+      in
+         statement' resolveTycon resolveCon
+      end
+   
+
+   fun globls resolveCon resolveTycon resolveVar = 
+      let
          fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
-            T.many (glbl resolveTycon resolveVar)
+            T.many (statements resolveCon resolveTycon resolveVar)
       in
          globals' ()
       end
 
-   fun makeFunction name args returns raises label =
+   fun makeFunction name args returns raises label blocks =
       Function.new 
       {args = args,
-       blocks = Vector.new0 (),
+       blocks = blocks,
        mayInline = false,
        name = name,
        raises = returns,
@@ -316,26 +321,42 @@ struct
        start = label}
 
 
-   fun functns resolveTycon resolveVar resolveFunc resolveLabel = 
+   fun functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel = 
          let 
             val name =  spaces *> symbol "fun" *> resolveFunc <$> ident <*
             spaces
+
+            val label = spaces *> symbol "=" *> resolveLabel <$> ident <* spaces <* token 
+            "()" 
 
             val var = resolveVar <$> ident <* spaces
             val typedvar = (fn (x,y) => (x,y)) <$$>
                (var,
                 symbol ":" *> (typ resolveTycon) <* spaces)
             val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
-            <* symbol ":" <* spaces
-            val label = spaces *> symbol "=" *> resolveLabel <$> ident <* spaces <* token 
-            "()" 
+            val labelWithArgs = spaces *> resolveLabel <$> ident
+
+            fun makeBlock label args statements = 
+               Block.T {
+                  args = args,
+                  label = label,
+                  statements = statements,
+                  transfer = Transfer.Return (Vector.new0())}
+
+            val block = makeBlock
+               <$> labelWithArgs
+               <*> args <* spaces
+               <*> (Vector.fromList <$> T.many(statements resolveCon resolveTycon
+               resolveVar))
+
             fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
                <$> name
-               <*> args
+               <*> args <* symbol ":" <* spaces
                <*> fromRecord "returns" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <*> fromRecord "raises" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <* doneRecord
                <*> label
+               <*> (Vector.fromList <$> T.many(block))
 
             fun functns' () = spaces *> token "Functions:" *> T.many (funcs resolveTycon resolveVar resolveFunc) 
          in
@@ -379,7 +400,7 @@ struct
             (makeProgram <$$$$> (datatypes resolveCon resolveTycon, globls
             resolveCon resolveTycon resolveVar,
             mainFunc resolveFunc,
-            functns resolveTycon resolveVar resolveFunc resolveLabel)))
+            functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel)))
       end
    
    fun parse s = T.parse(program, s)
