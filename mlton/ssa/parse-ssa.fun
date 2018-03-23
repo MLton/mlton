@@ -305,7 +305,7 @@ struct
          globals' ()
       end
 
-   fun makeFunction name args returns raises =
+   fun makeFunction name args returns raises label =
       Function.new 
       {args = args,
        blocks = Vector.new0 (),
@@ -313,10 +313,10 @@ struct
        name = name,
        raises = returns,
        returns = raises,
-       start = Label.newNoname()}
+       start = label}
 
 
-   fun functns resolveTycon resolveVar resolveFunc = 
+   fun functns resolveTycon resolveVar resolveFunc resolveLabel = 
          let 
             val name =  spaces *> symbol "fun" *> resolveFunc <$> ident <*
             spaces
@@ -327,12 +327,15 @@ struct
                 symbol ":" *> (typ resolveTycon) <* spaces)
             val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
             <* symbol ":" <* spaces
+            val label = spaces *> symbol "=" *> resolveLabel <$> ident <* spaces <* token 
+            "()" 
             fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
                <$> name
                <*> args
                <*> fromRecord "returns" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <*> fromRecord "raises" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <* doneRecord
+               <*> label
 
             fun functns' () = spaces *> token "Functions:" *> T.many (funcs resolveTycon resolveVar resolveFunc) 
          in
@@ -369,13 +372,14 @@ struct
 
          val resolveVar = makeNameResolver(Var.newString o strip_unique)
          val resolveFunc = makeNameResolver(Func.newString o strip_unique)
+         val resolveLabel = makeNameResolver(Label.newString o strip_unique)
       in
          T.compose(skipComments (),
             clOptions *>
             (makeProgram <$$$$> (datatypes resolveCon resolveTycon, globls
             resolveCon resolveTycon resolveVar,
             mainFunc resolveFunc,
-            functns resolveTycon resolveVar resolveFunc)))
+            functns resolveTycon resolveVar resolveFunc resolveLabel)))
       end
    
    fun parse s = T.parse(program, s)
