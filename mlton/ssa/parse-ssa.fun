@@ -334,20 +334,47 @@ struct
                (var,
                 symbol ":" *> (typ resolveTycon) <* spaces)
             val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
+            val vars = spaces *> (vectorOf var <|> T.pure (Vector.new0 ()))
             val labelWithArgs = spaces *> resolveLabel <$> ident
 
-            fun makeBlock label args statements = 
+            fun makeConCases var cases =
+               Transfer.Case
+                  {test=var,
+                   cases=Cases.Con (cases),
+                   default= NONE}
+            val con' = resolveCon <$> ident <* spaces <* token "=>" <*
+            spaces
+            val label' = resolveLabel <$> ident <* spaces
+            val test = T.string "case" *> var <* token "of" <* spaces
+
+            val transferCases = makeConCases
+               <$> test
+               <*> Vector.fromList <$> (T.sepBy(con' <*> label', T.char #"|"))
+            
+            fun makeGoto dst args = 
+               Transfer.Goto {dst = dst, args = args}
+
+            val transferGoto = makeGoto
+               <$> labelWithArgs
+               <*> vars 
+            
+            val transfer = T.any
+               [transferGoto,
+                transferCases]
+
+            fun makeBlock label args statements transfer = 
                Block.T {
                   args = args,
                   label = label,
                   statements = statements,
-                  transfer = Transfer.Return (Vector.new0())}
+                  transfer = transfer}
 
             val block = makeBlock
                <$> labelWithArgs
                <*> args <* spaces
                <*> (Vector.fromList <$> T.many(statements resolveCon resolveTycon
                resolveVar))
+               <*> transfer
 
             fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
                <$> name
