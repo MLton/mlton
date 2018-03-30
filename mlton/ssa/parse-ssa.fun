@@ -186,10 +186,8 @@ struct
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (var,
              symbol ":" *> (typ resolveTycon) <* spaces)
-         fun makeVarExp var = var 
          val varExp =
-            T.failing (token "in" <|> token "exception" <|> token "val") *>
-            makeVarExp <$> var 
+            T.failing (token "in" <|> token "exception" <|> token "val") *> var 
          fun makeApp(func, arg) = {arg=arg, func=func}
          fun makeConApp(con, args) = { con=con, args=args }
          fun conApp v = 
@@ -266,7 +264,9 @@ struct
             <*> fromRecord "symbolScope" parseSymbolScope
             <* doneRecord)
 
-         fun resolvePrim p = case Prim.fromString p
+         fun resolvePrim p = 
+            case Prim.fromString p
+
             of SOME p' => T.pure p'
              | NONE => T.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
@@ -276,7 +276,7 @@ struct
                resolveFFISym,
                (ident <* spaces >>= resolvePrim)],
              (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
-             tupleOf varExp <* spaces))
+             spaces *> tupleOf varExp <* spaces))
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
             (parseInt <* spaces,
@@ -338,18 +338,23 @@ struct
             val labelWithArgs = spaces *> resolveLabel <$> ident
 
             fun makeConCases var cases =
+               (print("\nCASE\n");
                Transfer.Case
                   {test=var,
                    cases=Cases.Con (cases),
-                   default= NONE}
+                   default= NONE})
             val con' = resolveCon <$> ident <* spaces <* token "=>" <*
             spaces
             val label' = resolveLabel <$> ident <* spaces
-            val test = T.string "case" *> var <* token "of" <* spaces
+            val conCases = (fn (x,y) => (x,y)) <$$>
+               (con',
+                label')
+            val caseStatement = T.string "case" *> spaces *> var <* token "of" <* spaces
 
             val transferCases = makeConCases
-               <$> test
-               <*> Vector.fromList <$> (T.sepBy(con' <*> label', T.char #"|"))
+               <$> caseStatement
+               <*> Vector.fromList <$> (T.sepBy(conCases, spaces *> T.char #"|"
+               <* spaces))
             
             fun makeGoto dst args = 
                Transfer.Goto {dst = dst, args = args}
@@ -359,8 +364,7 @@ struct
                <*> vars 
             
             val transfer = T.any
-               [transferGoto,
-                transferCases]
+               [transferCases, transferGoto]
 
             fun makeBlock label args statements transfer = 
                Block.T {
