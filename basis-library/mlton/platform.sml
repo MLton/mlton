@@ -27,6 +27,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                 (MIPS, "MIPS"),
                 (PowerPC, "PowerPC"),
                 (PowerPC64, "PowerPC64"),
+                (RISCV, "RISCV"),
                 (S390, "S390"),
                 (Sparc, "Sparc"),
                 (X86, "X86")]
