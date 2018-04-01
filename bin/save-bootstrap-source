@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -e
+
+# This script will tar up some generated C sources to help you bootstrap. It
+# automates some of the steps of http://mlton.org/PortingMLton.
+# Run this after successfully running add-cross.
+#
+# It takes one argument.
+#
+# 1. <crossTarget>, which is the target you would like to generate for.
+
+die () {
+        echo >&2 "$1"
+        exit 1
+}
+
+usage () {
+        die "usage: ${name} <crossTarget>"
+}
+
+case "$#" in
+1)
+        crossTarget="$1"
+        ;;
+*)
+        usage
+        ;;
+esac
+
+name=`basename "$0"`
+original=`pwd`
+dir=`dirname "$0"`
+src=`cd "${dir}/.." && pwd`
+
+PATH="${src}"/build/bin:$PATH
+
+set -x
+
+( cd "${src}/mlton" && rm -f mlton.*.c && mlton -stop g -codegen c -verbose 2 -target "${crossTarget}" mlton.mlb )
+( cd "${src}" && tar czf mlton-bootstrap-"${crossTarget}".tar.gz mlton/mlton.*.c mlyacc/src/yacc.grm.* )
