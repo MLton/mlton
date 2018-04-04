@@ -59,6 +59,9 @@ static void catcher (__attribute__ ((unused)) int signo,
 #elif (defined (__s390__))
         ucontext_t* ucp = (ucontext_t*)context;
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.psw.addr);
+#elif (defined (__riscv))
+        ucontext_t* ucp = (ucontext_t*)context;
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.__gregs[REG_PC]);
 #else
 #error Profiling handler is missing for this architecture
 #endif

@@ -158,8 +158,9 @@ structure MLton: MLTON =
 
             structure Arch =
                struct
-                  datatype t = Alpha | AMD64 | ARM | ARM64 | HPPA | IA64 | m68k |
-                               MIPS | PowerPC | PowerPC64 | S390 | Sparc | X86
+                  datatype t = Alpha | AMD64 | ARM | ARM64 | HPPA | IA64 |
+                               m68k | MIPS | PowerPC | PowerPC64 | RISCV |
+                               S390 | Sparc | X86
 
                   val all = [(Alpha, "Alpha"),
                              (AMD64, "AMD64"),
@@ -171,6 +172,7 @@ structure MLton: MLTON =
                              (MIPS, "MIPS"),
                              (PowerPC, "PowerPC"),
                              (PowerPC64, "PowerPC64"),
+                             (RISCV, "RISCV"),
                              (S390, "S390"),
                              (Sparc, "Sparc"),
                              (X86, "X86")]

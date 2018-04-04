@@ -107,6 +107,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/powerpc64.h"
 #elif (defined (__ppc__)) || (defined (__powerpc__))
 #include "platform/powerpc.h"
+#elif (defined (__riscv))
+#include "platform/riscv.h"
 #elif (defined (__s390__))
 #include "platform/s390.h"
 #elif (defined (__sparc__))

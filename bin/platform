@@ -127,6 +127,9 @@ ppc*)
 Power*)
         HOST_ARCH=powerpc
 ;;
+riscv*)
+        HOST_ARCH=riscv
+;;
 s390*)
         HOST_ARCH=s390
 ;;

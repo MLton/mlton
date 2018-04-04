@@ -156,6 +156,7 @@ structure Platform =
              | MIPS
              | PowerPC
              | PowerPC64
+             | RISCV
              | S390
              | Sparc
              | X86
@@ -172,6 +173,7 @@ structure Platform =
                 | "mips" => MIPS
                 | "powerpc" => PowerPC
                 | "powerpc64" => PowerPC64
+                | "riscv" => RISCV
                 | "s390" => S390
                 | "sparc" => Sparc
                 | "x86" => X86
