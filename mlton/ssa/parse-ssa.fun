@@ -275,7 +275,8 @@ struct
                resolveFFI,
                resolveFFISym,
                (ident <* spaces >>= resolvePrim)],
-             (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())) <* spaces,
+             (vectorOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
+             <* spaces) <|> T.pure (Vector.new0 ())),
              spaces *> tupleOf varExp <* spaces))
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
