@@ -169,14 +169,12 @@ struct
 
    fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
       (print("\n\nGLOBAL:\n");
-      print(Layout.toString (Var.layout var));
-      print("\n");
       print(Layout.toString (Type.layout ty));
       print("\n");
       print(Layout.toString (Exp.layout exp));
       print("\n");
       Statement.T
-      {var = SOME var,
+      {var = var,
        ty = ty,
        exp = exp })
 
@@ -184,7 +182,7 @@ struct
       let
          val var = resolveVar <$> ident <* spaces
          val typedvar = (fn (x,y) => (x,y)) <$$>
-            (var,
+            (SOME <$> var <|> token "_" *> T.pure(NONE),
              symbol ":" *> (typ resolveTycon) <* spaces)
          val varExp =
             T.failing (token "in" <|> token "exception" <|> token "val") *> var 
@@ -267,7 +265,8 @@ struct
          fun resolvePrim p = 
             case Prim.fromString p
 
-            of SOME p' => T.pure p'
+            of SOME p' => (print ("\nPRIM: "); print(Layout.toString
+            (Prim.layout p'));print("\n"); T.pure p')
              | NONE => T.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
          val primAppExp = token "prim" *> T.cut (makePrimApp <$$$>
@@ -281,7 +280,7 @@ struct
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
             (parseInt <* spaces,
-             varExp))
+             T.char #"(" *> varExp <* T.char #")"))
          val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                            ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
             <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
@@ -336,7 +335,12 @@ struct
                 symbol ":" *> (typ resolveTycon) <* spaces)
             val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
             val vars = spaces *> (vectorOf var <|> T.pure (Vector.new0 ()))
-            val labelWithArgs = spaces *> resolveLabel <$> ident
+            fun printLabel (label) =
+            (print("\n\nNew Label: ");
+             print(Layout.toString(Label.layout label));
+             print("\n");
+             label)
+            val labelWithArgs = spaces *> printLabel <$> (resolveLabel <$> ident)
 
             fun makeConCases var cases =
                (print("\nCASE\n");
