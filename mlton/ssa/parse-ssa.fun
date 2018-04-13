@@ -342,24 +342,32 @@ struct
              label)
             val labelWithArgs = spaces *> printLabel <$> (resolveLabel <$> ident)
 
-            fun makeConCases var cases =
+            fun makeCases var cases default =
                (print("\nCASE\n");
                Transfer.Case
                   {test=var,
-                   cases=Cases.Con (cases),
-                   default= NONE})
-            val con' = resolveCon <$> ident <* spaces <* token "=>" <*
+                   cases=cases,
+                   default=default})
+            fun con' caseType = caseType <* spaces <* token "=>" <*
             spaces
             val label' = resolveLabel <$> ident <* spaces
-            val conCases = (fn (x,y) => (x,y)) <$$>
-               (con',
+            fun conCases caseType = (fn (x,y) => (x,y)) <$$>
+               (con' caseType,
                 label')
             val caseStatement = T.string "case" *> spaces *> var <* token "of" <* spaces
 
-            val transferCases = makeConCases
+            fun caseList caseType = (Vector.fromList <$> (T.sepBy(conCases caseType, spaces *> T.char #"|"
+               <* spaces)))
+
+            val conCase = (Cases.Con <$> (caseList (resolveCon <$> ident)))
+            val wordCase = (Cases.Word <$$> (T.pure(WordSize.word8), (caseList (parseHex >>= makeWord (Tycon.word
+               WordSize.word8)))))
+
+            val transferCases = makeCases
                <$> caseStatement
-               <*> Vector.fromList <$> (T.sepBy(conCases, spaces *> T.char #"|"
-               <* spaces))
+               <*> (conCase <|> wordCase)
+               <*> ((symbol "_" *> token "=>" *> (SOME <$> label') <* spaces) <|>
+               T.pure(NONE))
             
             fun makeGoto dst args = 
                Transfer.Goto {dst = dst, args = args}

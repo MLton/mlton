@@ -377,7 +377,7 @@ structure Exp =
              | Const c => Const.layout c
              | PrimApp {prim, targs, args} =>
                   seq [str "prim ",
-                       Prim.layout prim,
+                       Prim.layoutFull (prim, Type.layout),
                        if !Control.showTypes
                           then if Vector.isEmpty targs
                                   then empty
