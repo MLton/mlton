@@ -775,7 +775,7 @@ structure Transfer =
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
       local
-         fun layoutCase ({test, cases, default}, layoutVar) =
+         fun layoutCase (cases, default, layoutVar) =
             let
                open Layout
                fun doit (l, layout) =
@@ -793,8 +793,7 @@ structure Transfer =
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               align [seq [str "case ", layoutVar test, str " of"],
-                      indent (alignPrefix (cases, "| "), 2)]
+               indent (alignPrefix (cases, "| "), 2)
             end
       in
          fun layout' (t, layoutVar) =
@@ -830,7 +829,14 @@ structure Transfer =
                                     | Handler.Handle l => Label.layout l]
                          | Return.Tail => seq [str "return ", paren call]
                      end
-                | Case arg => layoutCase (arg, layoutVar)
+                | Case {test, cases, default} =>
+                     align [seq [str "case",
+                                 case cases of
+                                      Cases.Con _ => empty
+                                    | Cases.Word (size, _) => str (WordSize.toString size),
+                                 str " ",
+                                 layoutVar test, str " of"],
+                                 layoutCase (cases, default, layoutVar)]
                 | Goto {dst, args} =>
                      seq [Label.layout dst, str " ", layoutArgs args]
                 | Raise xs => seq [str "raise ", layoutArgs xs]

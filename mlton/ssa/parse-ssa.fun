@@ -83,7 +83,7 @@ struct
    fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
       (left <* spaces <* token "=>" >>= (fn l =>
          right >>= (fn r => con (l, r))),
-       spaces)
+      spaces *> T.char #"|" *> spaces)
 
    fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
 
@@ -342,32 +342,50 @@ struct
              label)
             val labelWithArgs = spaces *> printLabel <$> (resolveLabel <$> ident)
 
-            fun makeCases var cases default =
-               (print("\nCASE\n");
-               Transfer.Case
-                  {test=var,
-                   cases=cases,
-                   default=default})
-            fun con' caseType = caseType <* spaces <* token "=>" <*
-            spaces
             val label' = resolveLabel <$> ident <* spaces
-            fun conCases caseType = (fn (x,y) => (x,y)) <$$>
-               (con' caseType,
-                label')
-            val caseStatement = T.string "case" *> spaces *> var <* token "of" <* spaces
+            val con' = resolveCon <$> ident <* spaces
 
-            fun caseList caseType = (Vector.fromList <$> (T.sepBy(conCases caseType, spaces *> T.char #"|"
-               <* spaces)))
+            fun makeConCases var (cons, def) =
+               {test=var,
+                cases=Cases.Con cons,
+                default=def}
+            fun makeWordCases var s (wds, def) =
+               {test=var,
+                cases=Cases.Word (case s of
+                    8 => WordSize.word8
+                  | 16 => WordSize.word16
+                  | 32 => WordSize.word32
+                  | 64 => WordSize.word64
+                  | _ => raise Fail "makeWordCases" (* can't happen *)
+                  , wds),
+                default=def}
+            fun makePat(con, exp) = T.pure (con, exp)
+            fun makeCaseWord size (int, exp) = case size of
+                (* this is repetetive, but it's a bit awkward to rework around the fail *)
+               8 => T.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
+             | 16 => T.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
+             | 32 => T.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
+             | 64 => T.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
+             | _ => T.fail "valid word size for cases (8, 16, 32 or 64)"
 
-            val conCase = (Cases.Con <$> (caseList (resolveCon <$> ident)))
-            val wordCase = (Cases.Word <$$> (T.pure(WordSize.word8), (caseList (parseHex >>= makeWord (Tycon.word
-               WordSize.word8)))))
+            val defaultCase =
+               spaces *> T.optional(T.char #"|" *> spaces *> token "_" *> spaces *> token
+                            "=>" *> spaces *> label')
 
-            val transferCases = makeCases
-               <$> caseStatement
-               <*> (conCase <|> wordCase)
-               <*> ((symbol "_" *> token "=>" *> (SOME <$> label') <* spaces) <|>
-               T.pure(NONE))
+            val casesExp = T.string "case" *>
+               T.optional parseInt <* T.many1 space >>= (fn size => T.cut(
+                  var <* token "of" <* spaces >>= (fn test =>
+                     case size of
+                         NONE => makeConCases test <$$>
+                           (casesOf(makePat, con', label'),
+                            defaultCase)
+                       | SOME s => makeWordCases test s <$$>
+                           (casesOf(makeCaseWord s, T.string "0x" *> parseHex,
+                            label'),
+                            defaultCase)
+                         )))
+
+            val makeTransferCase = Transfer.Case <$> casesExp
             
             fun makeGoto dst args = 
                Transfer.Goto {dst = dst, args = args}
@@ -377,7 +395,7 @@ struct
                <*> vars 
             
             val transfer = T.any
-               [transferCases, transferGoto]
+               [makeTransferCase, transferGoto]
 
             fun makeBlock label args statements transfer = 
                Block.T {
