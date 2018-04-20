@@ -64,7 +64,7 @@ not a value.  All other lines are type correct.  By its last line, the
 program has cast the string `"foo"` to an integer.  This breaks type
 safety, because now we can add a string to an integer with an
 expression like `v + 13`.  We could even be more devious, by adding
-the following two lines, which allow us to threat the string `"foo"`
+the following two lines, which allow us to treat the string `"foo"`
 as a function.
 
 [source,sml]
