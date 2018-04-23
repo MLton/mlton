@@ -146,7 +146,7 @@ struct
                                            | SOME y => T.pure y)
 
    val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
-         (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
+      (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
    val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")))
    fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
@@ -167,48 +167,16 @@ struct
         (T.pure {elementSize=WordSize.word8},
          T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
-   fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
-      (print("\n\nGLOBAL:\n");
-      print(Layout.toString (Type.layout ty));
-      print("\n");
-      print(Layout.toString (Exp.layout exp));
-      print("\n");
-      Statement.T
-      {var = var,
-       ty = ty,
-       exp = exp })
 
-   fun statements resolveCon resolveTycon resolveVar =
-      let
+   (* Prim EXP *)
+
+   
+   fun primAppExp resolveTycon resolveVar = 
+      let 
          val var = resolveVar <$> ident <* spaces
-         val typedvar = (fn (x,y) => (x,y)) <$$>
-            (SOME <$> var <|> token "_" *> T.pure(NONE),
-             symbol ":" *> (typ resolveTycon) <* spaces)
+
          val varExp =
-            T.failing (token "in" <|> token "exception" <|> token "val") *> var 
-         fun makeApp(func, arg) = {arg=arg, func=func}
-         fun makeConApp(con, args) = { con=con, args=args }
-         fun conApp v = 
-            makeConApp <$$>
-                  (resolveCon <$> ident <* spaces,
-                   v)
-         val conAppExp = token "new" *> T.cut (conApp ((vectorOf varExp) <|> T.pure (Vector.new0 ())))
-         fun constExp typ =
-            (
-            print("\nCONST\n");
-            print (Layout.toString(Type.layout typ));
-            case Type.dest typ of
-                 Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
-                 makeWord (Tycon.word ws)) <|> T.failCut "word"
-               | Type.Real rs => Const.Real <$> parseReal rs <|> T.failCut "real"
-               | Type.IntInf => Const.IntInf <$> parseIntInf <|> T.failCut "integer"
-               | Type.CPointer => Const.null <$ token "NULL" <|> T.failCut "null"
-               | Type.Vector _  => T.any
-                  [Const.string <$> parseString,
-                   Const.wordVector <$> parseWord8Vector,
-                   T.failCut "string constant"]
-               | _ => T.fail "constant"
-            )
+         T.failing (token "in" <|> token "exception" <|> token "val") *> var
          val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                     CFunction.Convention.Stdcall <$ token "stdcall"
          fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
@@ -235,7 +203,7 @@ struct
             [CFunction.SymbolScope.External <$ token "external",
              CFunction.SymbolScope.Private <$ token "private",
              CFunction.SymbolScope.Public <$ token "public"]
-
+         
 
          val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
                            CFunction.Target.Direct <$> ident
@@ -255,6 +223,7 @@ struct
             <*> fromRecord "target" parseTarget
             <* doneRecord)
          fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
+
          val resolveFFISym = token "FFI_Symbol" *> T.cut(
             makeFFISym
             <$> fromRecord "name" ident
@@ -264,19 +233,67 @@ struct
 
          fun resolvePrim p = 
             case Prim.fromString p
+               of SOME p' =>  T.pure p'
+                | NONE => T.fail ("valid primitive, got " ^ p)
 
-            of SOME p' => (print ("\nPRIM: "); print(Layout.toString
-            (Prim.layout p'));print("\n"); T.pure p')
-             | NONE => T.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
-         val primAppExp = token "prim" *> T.cut (makePrimApp <$$$>
-            (T.any [
-               resolveFFI,
-               resolveFFISym,
-               (ident <* spaces >>= resolvePrim)],
-             (vectorOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
-             <* spaces) <|> T.pure (Vector.new0 ())),
-             spaces *> tupleOf varExp <* spaces))
+      in
+         token "prim" *> T.cut (makePrimApp <$$$>
+         (T.any [
+            resolveFFI,
+            resolveFFISym,
+            (ident <* spaces >>= resolvePrim)],
+          (vectorOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
+          <* spaces) <|> T.pure (Vector.new0 ())),
+          spaces *> tupleOf varExp <* spaces))
+      end
+
+   fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
+      (print("\n\nGLOBAL:\n");
+      print(Layout.toString (Type.layout ty));
+      print("\n");
+      print(Layout.toString (Exp.layout exp));
+      print("\n");
+      Statement.T
+      {var = var,
+       ty = ty,
+       exp = exp })
+
+   fun statements resolveCon resolveTycon resolveVar =
+      let
+
+         val var = resolveVar <$> ident <* spaces
+
+         val varExp =
+         T.failing (token "in" <|> token "exception" <|> token "val") *> var
+
+         val typedvar = (fn (x,y) => (x,y)) <$$>
+            (SOME <$> var <|> token "_" *> T.pure(NONE),
+             symbol ":" *> (typ resolveTycon) <* spaces)
+         fun makeApp(func, arg) = {arg=arg, func=func}
+         fun makeConApp(con, args) = { con=con, args=args }
+         fun conApp v = 
+            makeConApp <$$>
+                  (resolveCon <$> ident <* spaces,
+                   v)
+         val conAppExp = token "new" *> T.cut (conApp ((vectorOf varExp) <|> T.pure (Vector.new0 ())))
+         fun constExp typ =
+            (
+            print("\nCONST\n");
+            print (Layout.toString(Type.layout typ));
+            case Type.dest typ of
+                 Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
+                 makeWord (Tycon.word ws)) <|> T.failCut "word"
+               | Type.Real rs => Const.Real <$> parseReal rs <|> T.failCut "real"
+               | Type.IntInf => Const.IntInf <$> parseIntInf <|> T.failCut "integer"
+               | Type.CPointer => Const.null <$ token "NULL" <|> T.failCut "null"
+               | Type.Vector _  => T.any
+                  [Const.string <$> parseString,
+                   Const.wordVector <$> parseWord8Vector,
+                   T.failCut "string constant"]
+               | _ => T.fail "constant"
+            )
+         
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
             (parseInt <* spaces,
@@ -292,10 +309,10 @@ struct
          and exp typ = T.any
             [Exp.ConApp <$> conAppExp,
              Exp.Const <$> constExp typ,
-             Exp.PrimApp <$> primAppExp,
+             Exp.PrimApp <$> (primAppExp resolveTycon resolveVar),
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
-             Exp.Tuple <$> (tupleOf varExp),
+             Exp.Tuple <$> (tupleOf varExp ),
              Exp.Var <$> varExp]
       in
          statement' resolveTycon resolveCon
@@ -326,24 +343,22 @@ struct
             val name =  spaces *> symbol "fun" *> resolveFunc <$> ident <*
             spaces
 
-            val label = spaces *> symbol "=" *> resolveLabel <$> ident <* spaces <* token 
-            "()" 
 
             val var = resolveVar <$> ident <* spaces
+
+            val label = spaces *> symbol "=" *> resolveLabel <$> ident <*
+            spaces <* token "()"
+
+            val label' = resolveLabel <$> ident <* spaces
+            val con' = spaces *> resolveCon <$> ident <* spaces
+
+             val labelWithArgs = spaces *> resolveLabel <$> ident
+
             val typedvar = (fn (x,y) => (x,y)) <$$>
-               (var,
+               (var ,
                 symbol ":" *> (typ resolveTycon) <* spaces)
             val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
             val vars = spaces *> (vectorOf var <|> T.pure (Vector.new0 ()))
-            fun printLabel (label) =
-            (print("\n\nNew Label: ");
-             print(Layout.toString(Label.layout label));
-             print("\n");
-             label)
-            val labelWithArgs = spaces *> printLabel <$> (resolveLabel <$> ident)
-
-            val label' = resolveLabel <$> ident <* spaces
-            val con' = resolveCon <$> ident <* spaces
 
             fun makeConCases var (cons, def) =
                {test=var,
@@ -385,7 +400,7 @@ struct
                             defaultCase)
                          )))
 
-            val makeTransferCase = Transfer.Case <$> casesExp
+            val transferCase = Transfer.Case <$> casesExp
             
             fun makeGoto dst args = 
                Transfer.Goto {dst = dst, args = args}
@@ -393,9 +408,62 @@ struct
             val transferGoto = makeGoto
                <$> labelWithArgs
                <*> vars 
-            
+
+            fun makeArith (ty, success ,{prim, args, ...}, overflow) = 
+               Transfer.Arith {
+                  prim = prim,
+                  args = args,
+                  overflow = overflow,
+                  success = success,
+                  ty = ty}
+
+            val transferArith = makeArith <$$$$>
+               (T.string "arith" *> spaces *> (typ resolveTycon) <* spaces,
+               label',
+               symbol "(" *> (primAppExp resolveTycon resolveVar) <* symbol
+               ")",
+               spaces *> T.string "handle Overflow => " *> label' <* spaces)
+
+            fun makeReturnNonTail cont (handler) = 
+               Return.NonTail {
+                  cont=cont,
+                  handler=
+                     case handler of
+                          "raise" => Handler.Caller
+                        | "dead" => Handler.Dead
+                        | _ => Handler.Handle (resolveLabel handler)
+               }
+
+            fun returnNonTail cont = makeReturnNonTail cont <$>
+               (T.string "handle _ => " *> ident <* spaces)
+
+            fun getReturn return = 
+               case return of
+                    "dead" => T.pure(Return.Dead)
+                  | "return" => T.pure(Return.Tail)
+                  | _ => returnNonTail (resolveLabel return)
+
+
+            fun makeCall (args, func, return) =
+               Transfer.Call {
+                  args=args,
+                  func=func,
+                  return=return 
+               }
+
+
+            val callFunc = spaces *> symbol "(" *> resolveFunc <$> ident <* spaces
+            val callArgs = vars <* symbol ")" <* spaces
+
+            val transferCall = 
+               spaces *> ident <* spaces >>= (fn return => 
+                  symbol "(" *> resolveFunc <$> ident <* spaces >>= (fn func => 
+                      vars <* symbol ")" <* spaces >>= (fn argus =>
+                        makeCall <$$$> (argus, func, getReturn return)
+                     )))
+
             val transfer = T.any
-               [makeTransferCase, transferGoto]
+               [transferCall, transferArith, transferCase, transferGoto]
 
             fun makeBlock label args statements transfer = 
                Block.T {

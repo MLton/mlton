@@ -808,8 +808,8 @@ structure Transfer =
                    layoutVar)
             in
                case t of
-                  Arith {prim, args, overflow, success, ...} =>
-                     seq [Label.layout success, str " ",
+                  Arith {prim, args, overflow, success, ty}=>
+                     seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
                           tuple [layoutPrim {prim = prim, args = args}],
                           str " handle Overflow => ", Label.layout overflow]
                 | Bug => str "Bug"
