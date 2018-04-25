@@ -818,16 +818,16 @@ structure Transfer =
                         val call = seq [Func.layout func, str " ", layoutArgs args]
                      in
                         case return of
-                           Return.Dead => seq [str "dead ", paren call]
+                           Return.Dead => seq [str "call dead ", paren call]
                          | Return.NonTail {cont, handler} =>
-                              seq [Label.layout cont, str " ",
+                              seq [str "call ", Label.layout cont, str " ",
                                    paren call,
                                    str " handle _ => ",
                                    case handler of
                                       Handler.Caller => str "raise"
                                     | Handler.Dead => str "dead"
                                     | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "return ", paren call]
+                         | Return.Tail => seq [str "call return ", paren call]
                      end
                 | Case {test, cases, default} =>
                      align [seq [str "case",

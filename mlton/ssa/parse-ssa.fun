@@ -74,6 +74,8 @@ struct
    fun vectorOf p = Vector.fromList <$>
       (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
+   fun parenOf p = (T.char #"(" *> spaces *> p <* spaces <* T.char #")")
+
    fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
    val doneRecord = doneRecord' ()
    fun fromRecord name p = T.peek
@@ -98,6 +100,7 @@ struct
          case ident of
               "tuple" => Type.tuple args
             | "array" => Type.array (Vector.first args) 
+            | "intInf" => Type.intInf
             | "vector" => Type.vector (Vector.first args)
             | "ref" => Type.reff (Vector.first args)
             | "word8" => Type.word WordSize.word8
@@ -444,26 +447,46 @@ struct
                   | _ => returnNonTail (resolveLabel return)
 
 
-            fun makeCall (args, func, return) =
+            fun makeCall args func (return) =
                Transfer.Call {
                   args=args,
                   func=func,
                   return=return 
                }
 
-
-            val callFunc = spaces *> symbol "(" *> resolveFunc <$> ident <* spaces
-            val callArgs = vars <* symbol ")" <* spaces
-
             val transferCall = 
-               spaces *> ident <* spaces >>= (fn return => 
-                  symbol "(" *> resolveFunc <$> ident <* spaces >>= (fn func => 
+               spaces *> T.string "call" *> spaces *> ident <* spaces >>= (fn return =>
+                  symbol "(" *> resolveFunc <$> ident <* spaces >>= (fn func =>
                       vars <* symbol ")" <* spaces >>= (fn argus =>
-                        makeCall <$$$> (argus, func, getReturn return)
+                        makeCall argus func <$> (getReturn return)
                      )))
 
+            val transferBug = spaces *> T.string "Bug" *> T.pure(Transfer.Bug) <* spaces
+
+            fun makeRuntime (return , {prim, args, ...}) =
+               Transfer.Runtime {
+                  prim = prim,
+                  args = args,
+                  return = return
+               }
+
+            val transferRuntime = makeRuntime <$$>
+            (label',
+             parenOf (primAppExp resolveTycon resolveVar))
+
+            fun makeTransferReturn vars = Transfer.Return vars
+
+            val transferReturn = makeTransferReturn <$> (T.string "return" *>
+            spaces *> vars <* spaces)
+
+            fun makeTransferRaise vars = Transfer.Raise vars
+
+            val transferRaise = makeTransferRaise <$> (T.string "raise" *>
+            spaces *> vars <* spaces)
+
             val transfer = T.any
-               [transferCall, transferArith, transferCase, transferGoto]
+               [transferArith, transferCase, transferCall, transferBug,
+                transferRuntime, transferRaise, transferReturn, transferGoto]
 
             fun makeBlock label args statements transfer = 
                Block.T {
@@ -486,7 +509,7 @@ struct
                <*> fromRecord "raises" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <* doneRecord
                <*> label
-               <*> (Vector.fromList <$> T.many(block))
+               <*> (Vector.fromList <$> T.manyFailing(block, T.peek(name)))
 
             fun functns' () = spaces *> token "Functions:" *> T.many (funcs resolveTycon resolveVar resolveFunc) 
          in
