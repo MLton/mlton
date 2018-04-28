@@ -1,6 +1,6 @@
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
-;; MLton is released under a BSD-style license.
+;; MLton is released under a HPND-style license.
 ;; See the file MLton-LICENSE for details.
 
 (require 'def-use-util)
