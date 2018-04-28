@@ -1,8 +1,20 @@
-(* Heavily modified from SML/NJ sources by sweeks@sweeks.com *)
+(* Heavily modified from SML/NJ sources. *)
 
 (* ml.grm
  *
  * Copyright 1989,1992 by AT&T Bell Laboratories
+ *
+ * SML/NJ is released under a HPND-style license.
+ * See the file NJ-LICENSE for details.
+ *)
+
+(* Copyright (C) 2008,2009,2014-2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a HPND-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 fun reg (left, right) = Region.make {left = left, right = right}
