@@ -10,22 +10,22 @@ Upstream Authors:
    MLton@mlton.org.
 
 MLton's copyright is held in part by the NEC Research Institute.  It
-is released under a BSD-style license.
+is released under a HPND-style license.
 
    MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
-   
-   Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
+
+   Copyright (C) 1999-2018 Henry Cejtin, Matthew Fluet, Suresh
       Jagannathan, and Stephen Weeks.
-   Copyright (c) 1997-2000 by the NEC Research Institute
-   
+   Copyright (C) 1997-2000 by the NEC Research Institute
+
    Permission to use, copy, modify, and distribute this software and its
    documentation for any purpose and without fee is hereby granted,
    provided that the above copyright notice appear in all copies and that
    both the copyright notice and this permission notice and warranty
    disclaimer appear in supporting documentation, and that the name of
-   NEC, or any NEC entity not be used in advertising or publicity
-   pertaining to distribution of the software without specific, written
-   prior permission.
+   the above copyright holders, or their entities, not be used in
+   advertising or publicity pertaining to distribution of the software
+   without specific, written prior permission.
 
    The above copyright holders disclaim all warranties with regard to
    this software, including all implied warranties of merchantability and
@@ -44,15 +44,17 @@ of New Jersey compiler:
 Parts of MLton's Basis Library are derived from the following portions
 of the Basis Library code of the SMLNJ compiler:
 
-  OS.IO, Posix.IO, Process, and Unix
+  OS.IO, Posix.IO, Process, Unix
 
 The following utilities and libraries are derived from the SMLNJ system:
 
   mllex, mlyacc and MLYacc Library, Concurrent ML Library, SML/NJ
-  Library, CKit Library, mlnlffigen and MLNLFFI Library
+  Library, CKit Library, mlnlffigen and MLNLFFI Library, MLRISC
+  Library, ML-LPT Library
+
 
 SMLNJ's copyright is held by Lucent Technologies.  It was released
-under a BSD-style license.
+under a HPND-style license.
 
    STANDARD ML OF NEW JERSEY COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
 
@@ -78,9 +80,9 @@ under a BSD-style license.
 Parts of MLton's Basis Library are derived from the following portions
 of the Basis Library code of the ML Kit compiler:
 
-   Path, Time, and Date
+   Path, Time, Date
 
-The ML Kit Basis Bibrary is distributed under the MIT License.
+The ML Kit Basis Library is distributed under the MIT License.
 
    Copyright (c) 2004 IT University of Copenhagen
    
@@ -102,5 +104,3 @@ The ML Kit Basis Bibrary is distributed under the MIT License.
    LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-   
