@@ -3,7 +3,7 @@
 
 The ML Kit compiler is distributed under the GNU Public License. See
 the file copyright for details. The runtime system (kit/src/Runtime/)
-and libraries (kit/basislib/) is distributed nder the more liberal
+and libraries (kit/basislib/) is distributed under the more liberal
 MIT License.
 
 ======================================================================

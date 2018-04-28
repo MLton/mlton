@@ -1,6 +1,9 @@
 This is the license for MLton, a whole-program optimizing compiler for
-the Standard ML programming language.  Send comments and questions to
-MLton@mlton.org.
+the Standard ML programming language.  The license is an instance of
+the Historical Permission Notice and Disclaimer (HPND) license, which
+is an open source (https://opensource.org/licenses/HPND) and
+free software (https://www.gnu.org/licenses/license-list.en.html#HPND)
+license.  Send comments and questions to MLton@mlton.org.
 
 MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
 
