@@ -1,5 +1,31 @@
 = CHANGELOG
 
+== Version YYYYMMDD
+
+Here are the changes from versoin 20180206 to version YYYYMMDD.
+
+=== Summary
+
+=== Details
+
+* 2018-04-04
+  ** Added support for RISC-V architecture.  Thanks to Adam Goode for the pull
+     request.
+
+* 2018-03-31
+  ** Add `./bin/save-bootstrap-source` script to aid bootstrapping on a new
+     platform.  Thanks to Adam Goode for the pull request.
+
+* 2018-03-28
+  ** Recognize `ppc64le` in `./bin/platform` as an instance of `powerpc64`
+     architecture.  Thanks to Adam Goode for the pull request.
+
+* 2018-02-15
+  ** Set `LIB_REL_BIN` in `mlton` script when installing.  Some systems (e.g.,
+  x86_64 Fedora) will set `libdir` to `/usr/lib64`, so it is necessary to
+  compute and set the relative path from `TBIN` to `TLIB` when installing
+  `$(TBIN)/mlton`.
+
 == Version 20180206
 
 Here are the changes from version 20130715 to version 20180206.
@@ -320,7 +346,7 @@ Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
   ** Rename and add `smlnj-mlton-x{2,4,8,16}` top-level `Makefile` targets.
   ** Update SML/NJ librarys to SML/NJ 110.80 (making use of supported
   SuccessorML features).
-  ** Not support for SML/NJ extensions via SuccessorML MLB annotations on
+  ** Note support for SML/NJ extensions via SuccessorML MLB annotations on
   website.
 
 * 2017-04-14
