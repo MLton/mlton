@@ -14,11 +14,14 @@ contribution to the public domain.
 
 == Software ==
 
-As of 20050812, MLton software is licensed under the BSD-style license
-below.  By contributing code to the project, you agree to release the
-code under this license.  Contributors can retain copyright to their
-contributions by asserting copyright in their code.  Contributors may
-also add to the list of copyright holders in
+As of 20050812, MLton software is licensed under the HPND-style
+license below.  The Historical Permission Notice and Disclaimer (HPND)
+license is an https://opensource.org/licenses/HPND[open source] and
+https://www.gnu.org/licenses/license-list.en.html#HPND[free software]
+license.  By contributing code to the project, you agree to release
+the code under this license.  Contributors can retain copyright to
+their contributions by asserting copyright in their code.
+Contributors may also add to the list of copyright holders in
 `doc/license/MLton-LICENSE`, which appears below.
 
 [source,text]
