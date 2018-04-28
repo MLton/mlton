@@ -8,6 +8,10 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2018-04-28
+  ** Characterize MLton-LICENSE as an instance of the Historical Permission
+     Notice and Disclaimer (HPND) license, rather than BSD-style.
+
 * 2018-04-04
   ** Added support for RISC-V architecture.  Thanks to Adam Goode for the pull
      request.
