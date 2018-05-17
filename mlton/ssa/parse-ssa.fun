@@ -327,8 +327,8 @@ struct
        blocks = blocks,
        mayInline = false,
        name = name,
-       raises = returns,
-       returns = raises,
+       raises = raises,
+       returns = returns,
        start = label}
 
 
