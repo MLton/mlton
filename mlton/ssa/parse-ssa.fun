@@ -72,7 +72,7 @@ struct
       (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
 
    fun vectorOf p = Vector.fromList <$>
-      (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
+      (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
 
    fun parenOf p = (T.char #"(" *> spaces *> p <* spaces <* T.char #")")
 
@@ -128,7 +128,7 @@ struct
    (* parse in a constructor (to Con.t) *)
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
       (ident <* spaces,
-      (token "of" *> vectorOf (typ resolveTycon)) <|> Vector.fromList <$> T.many (token "of" *> (T.char #"(" *> (typ
+      (token "of" *> tupleOf (typ resolveTycon)) <|> Vector.fromList <$> T.many (token "of" *> (T.char #"(" *> (typ
       resolveTycon) <* T.char #")")))
 
    fun makeDt resolveTycon (tycon, cons) =
@@ -246,7 +246,7 @@ struct
             resolveFFI,
             resolveFFISym,
             (ident <* spaces >>= resolvePrim)],
-          (vectorOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
+          (tupleOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
           <* spaces) <|> T.pure (Vector.new0 ())),
           spaces *> tupleOf varExp <* spaces))
       end
@@ -274,7 +274,7 @@ struct
             makeConApp <$$>
                   (resolveCon <$> ident <* spaces,
                    v)
-         val conAppExp = token "new" *> T.cut (conApp ((vectorOf varExp) <|> T.pure (Vector.new0 ())))
+         val conAppExp = token "new" *> T.cut (conApp ((tupleOf varExp) <|> T.pure (Vector.new0 ())))
          fun constExp typ =
             case Type.dest typ of
                  Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
@@ -351,8 +351,8 @@ struct
             val typedvar = (fn (x,y) => (x,y)) <$$>
                (var ,
                 symbol ":" *> (typ resolveTycon) <* spaces)
-            val args = spaces *> (vectorOf typedvar <|> T.pure (Vector.new0 ()))
-            val vars = spaces *> (vectorOf var <|> T.pure (Vector.new0 ()))
+            val args = spaces *> (tupleOf typedvar <|> T.pure (Vector.new0 ()))
+            val vars = spaces *> (tupleOf var <|> T.pure (Vector.new0 ()))
 
             fun makeConCases var (cons, def) =
                {test=var,
@@ -496,8 +496,8 @@ struct
             fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
                <$> name
                <*> args <* symbol ":" <* spaces
-               <*> fromRecord "returns" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
-               <*> fromRecord "raises" (optionOf (vectorOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
+               <*> fromRecord "returns" (optionOf (tupleOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
+               <*> fromRecord "raises" (optionOf (tupleOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
                <* doneRecord
                <*> label
                <*> (Vector.fromList <$> T.manyFailing(block, T.peek(name)))
