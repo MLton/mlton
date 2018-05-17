@@ -252,15 +252,10 @@ struct
       end
 
    fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
-      (print("\n\nGLOBAL:\n");
-      print(Layout.toString (Type.layout ty));
-      print("\n");
-      print(Layout.toString (Exp.layout exp));
-      print("\n");
       Statement.T
       {var = var,
        ty = ty,
-       exp = exp })
+       exp = exp}
 
    fun statements resolveCon resolveTycon resolveVar =
       let
@@ -281,9 +276,6 @@ struct
                    v)
          val conAppExp = token "new" *> T.cut (conApp ((vectorOf varExp) <|> T.pure (Vector.new0 ())))
          fun constExp typ =
-            (
-            print("\nCONST\n");
-            print (Layout.toString(Type.layout typ));
             case Type.dest typ of
                  Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
                  makeWord (Tycon.word ws)) <|> T.failCut "word"
@@ -295,7 +287,6 @@ struct
                    Const.wordVector <$> parseWord8Vector,
                    T.failCut "string constant"]
                | _ => T.fail "constant"
-            )
          
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> T.cut(makeSelect <$$>
