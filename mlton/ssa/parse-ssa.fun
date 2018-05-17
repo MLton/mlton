@@ -403,7 +403,7 @@ struct
                <$> labelWithArgs
                <*> vars 
 
-            fun makeArith (ty, success ,{prim, args, ...}, overflow) = 
+            fun makeArith (ty, success, {prim, targs = _, args}, overflow) =
                Transfer.Arith {
                   prim = prim,
                   args = args,
@@ -454,7 +454,7 @@ struct
 
             val transferBug = spaces *> T.string "Bug" *> T.pure(Transfer.Bug) <* spaces
 
-            fun makeRuntime (return , {prim, args, ...}) =
+            fun makeRuntime (return , {prim, targs = _, args}) =
                Transfer.Runtime {
                   prim = prim,
                   args = args,
