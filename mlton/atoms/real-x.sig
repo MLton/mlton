@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2018 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -53,6 +53,8 @@ signature REAL_X =
       val muladd: t * t * t -> t option
       val mulsub: t * t * t -> t option
       val neg: t -> t option
+      val negInf: RealSize.t -> t
+      val posInf: RealSize.t -> t
       val qequal: t * t -> bool option
       val sin: t -> t option
       val size: t -> RealSize.t
