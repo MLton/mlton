@@ -147,6 +147,11 @@ struct
           P.char #"." *> P.pure [#"."] <|> P.pure [],
           P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
          P.pure sz))
+   val parseReal = fn sz =>
+      P.any
+      [P.str "inf" *> P.pure (RealX.posInf sz),
+       P.str "~inf" *> P.pure (RealX.negInf sz),
+       parseReal sz]
    val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
 
