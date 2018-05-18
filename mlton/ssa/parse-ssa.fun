@@ -98,17 +98,21 @@ struct
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
          case ident of
-              "tuple" => Type.tuple args
-            | "array" => Type.array (Vector.first args) 
+              "array" => Type.array (Vector.first args)
             | "intInf" => Type.intInf
-            | "vector" => Type.vector (Vector.first args)
+            | "pointer" => Type.cpointer
+            | "real32" => Type.real RealSize.R32
+            | "real64" => Type.real RealSize.R64
             | "ref" => Type.reff (Vector.first args)
+            | "thread" => Type.thread
+            | "tuple" => Type.tuple args
+            | "unit" => Type.unit
+            | "vector" => Type.vector (Vector.first args)
+            | "weak" => Type.weak (Vector.first args)
             | "word8" => Type.word WordSize.word8
             | "word16" => Type.word WordSize.word16
             | "word32" => Type.word WordSize.word32
             | "word64" => Type.word WordSize.word64
-            | "unit" => Type.unit
-            | "pointer" => Type.cpointer
             | _ => Type.datatypee (resolveTycon ident)
 
    local
