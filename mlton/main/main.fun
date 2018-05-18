@@ -16,16 +16,17 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | TypeCheck
+      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | SSA | TypeCheck
       val toInt: t -> int =
          fn MLB => 1
           | SML => 1
           | Files => 2
           | TypeCheck => 4
           | SXML => 7
-          | Generated => 10
-          | O => 11
-          | OUT => 12
+          | SSA => 10
+          | Generated => 13
+          | O => 14
+          | OUT => 15
 
       val toString =
          fn Files => "files"
@@ -35,6 +36,7 @@ structure Place =
           | OUT => "out"
           | SML => "sml"
           | SXML => "sxml"
+          | SSA => "ssa"
           | TypeCheck => "tc"
 
       fun compare (p, p') = Int.compare (toInt p, toInt p')
@@ -1248,6 +1250,7 @@ fun commandLine (args: string list): unit =
                   loop [(".mlb", MLB, false),
                         (".sml", SML, false),
                         (".sxml", SXML, false),
+                        (".ssa", SSA, false),
                         (".c", Generated, true),
                         (".o", O, true)]
                end
@@ -1591,6 +1594,11 @@ fun commandLine (args: string list): unit =
                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                    elaborate = fn _ => raise Fail "Unimplemented",
                                    compile = Compile.compileSXML}
+                  val compileSSA =
+                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
+                                   elaborate = fn _ => raise Fail "Unimplemented",
+                                   compile = Compile.compileSSA}
+
                   fun compile () =
                      case start of
                         Place.SML => compileSML [input]
@@ -1598,6 +1606,7 @@ fun commandLine (args: string list): unit =
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
                       | Place.SXML => compileSXML input
+                      | Place.SSA => compileSSA input
                       | _ => Error.bug "invalid start"
                   val doit
                     = trace (Top, "MLton")

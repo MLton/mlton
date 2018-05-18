@@ -9,7 +9,7 @@ struct
 
 infix 1 <|> >>=
 infix  3 <*> <* *>
-infixr 4 <$> <$$> <$$$> <$ <$?> 
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?> 
 
 structure Location =
    struct
@@ -96,6 +96,7 @@ fun snd _ b = b
 
 fun curry f a b = f (a, b)
 fun curry3 f a b c = f (a, b, c)
+fun curry4 f a b c d = f (a, b, c, d)
 
 fun pure a (s : State.t)  =
   Success (a, s)
@@ -103,6 +104,7 @@ fun pure a (s : State.t)  =
 fun f <$> p = (pure f) <*> p
 fun f <$$> (p1, p2) = curry <$> (pure f) <*> p1 <*> p2
 fun f <$$$> (p1, p2, p3) = curry3 <$> (pure f) <*> p1 <*> p2 <*> p3
+fun f <$$$$> (p1, p2, p3, p4) = curry4 <$> (pure f) <*> p1 <*> p2 <*> p3 <*> p4
 fun f <$?> p = p >>= (fn a => case f a of SOME b => pure b
                                         | NONE => fn _ => Failure [])
 fun a <* b = fst <$> a <*> b
@@ -123,6 +125,7 @@ structure Ops = struct
    val (op <$?>) = (op <$?>)
    val (op <$$>) = (op <$$>)
    val (op <$$$>) = (op <$$$>)
+   val (op <$$$$>) = (op <$$$$>)
    val (op <*) = (op <*)
    val (op *>) = (op *>)
    val (op <$) = (op <$)

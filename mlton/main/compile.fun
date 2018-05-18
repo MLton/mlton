@@ -50,6 +50,7 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
+structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
@@ -865,5 +866,39 @@ fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
             outputC = outputC,
             outputLL = outputLL,
             outputS = outputS}
+
+fun genFromSsa (input: File.t): Machine.Program.t =
+   let
+      val _ = setupConstants()
+      val ssa =
+         Control.passTypeCheck
+         {display = Control.Layouts Ssa.Program.layouts,
+          name = "ssaParse",
+          stats = Ssa.Program.layoutStats,
+          style = Control.ML,
+          suffix = "ssa",
+          thunk = (fn () => case
+                     Parse.parseFile(ParseSsa.program, input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error 
+                           (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
+          typeCheck = Ssa.typeCheck}
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
+   in
+      makeMachine ssa2
+   end
+fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromSsa,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
+
 
 end
