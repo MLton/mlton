@@ -775,7 +775,7 @@ structure Transfer =
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
       local
-         fun layoutCase (cases, default, layoutVar) =
+         fun layoutCase ({test, cases, default}, layoutVar) =
             let
                open Layout
                fun doit (l, layout) =
@@ -783,6 +783,10 @@ structure Transfer =
                   (l, fn (i, l) =>
                    seq [layout i, str " => ", Label.layout l])
                datatype z = datatype Cases.t
+               val suffix =
+                  case cases of
+                     Con _ => empty
+                   | Word (size, _) => str (WordSize.toString size)
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
@@ -793,7 +797,8 @@ structure Transfer =
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               indent (alignPrefix (cases, "| "), 2)
+               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
+                      indent (alignPrefix (cases, "| "), 2)]
             end
       in
          fun layout' (t, layoutVar) =
@@ -829,14 +834,7 @@ structure Transfer =
                                     | Handler.Handle l => Label.layout l]
                          | Return.Tail => seq [str "call return ", paren call]
                      end
-                | Case {test, cases, default} =>
-                     align [seq [str "case",
-                                 case cases of
-                                      Cases.Con _ => empty
-                                    | Cases.Word (size, _) => str (WordSize.toString size),
-                                 str " ",
-                                 layoutVar test, str " of"],
-                                 layoutCase (cases, default, layoutVar)]
+                | Case arg => layoutCase (arg, layoutVar)
                 | Goto {dst, args} =>
                      seq [Label.layout dst, str " ", layoutArgs args]
                 | Raise xs => seq [str "raise ", layoutArgs xs]
