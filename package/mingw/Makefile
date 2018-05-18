@@ -31,12 +31,13 @@ MLton-$(VERSION).msi:	mlton.wixobj dirs.wixobj files.wixobj $(PKG_WIXOBJ)
 
 .PHONY: clean distclean
 clean:
+	../../bin/clean
 	rm -rf staging 7z MLton.conf data.7z *.wixpdb *.wixobj *.wxs
 	rm -f guid.exe files2cmp.exe dirs2wix.exe files2wix.exe
 	rm -f $(PKG_LST)
 distclean:	clean
 	rm -f MLton-*.exe MLton-*.msi dl/*.7z
-	
+
 %.wixobj:	%.wxs
 	candle -ext WixUIExtension $<
 

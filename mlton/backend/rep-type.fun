@@ -1,8 +1,8 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -395,18 +395,16 @@ structure ObjectType =
                let
                   val b = Type.width elt
                in
-                  Bits.> (b, Bits.zero)
-                  andalso Bits.isByteAligned b
+                  Bits.isByteAligned b
                end
           | Normal {ty, ...} =>
                let
                   val b = Bits.+ (Type.width ty,
                                   Type.width (Type.objptrHeader ()))
                in
-                  not (Type.isUnit ty) 
-                  andalso (case !Control.align of
-                              Control.Align4 => Bits.isWord32Aligned b
-                            | Control.Align8 => Bits.isWord64Aligned b)
+                  case !Control.align of
+                     Control.Align4 => Bits.isWord32Aligned b
+                   | Control.Align8 => Bits.isWord64Aligned b
                end
           | Stack => true
           | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
@@ -421,8 +419,8 @@ structure ObjectType =
                      case !Control.align of
                         Control.Align4 => Bytes.fromInt 4
                       | Control.Align8 => Bytes.fromInt 8
-                  val bytesHeader =
-                     Bits.toBytes (Control.Target.Size.header ())
+                  val bytesMetaData =
+                     Bits.toBytes (Control.Target.Size.normalMetaData ())
                   val bytesCSize =
                      Bits.toBytes (Control.Target.Size.csize ())
                   val bytesExnStack =
@@ -431,7 +429,7 @@ structure ObjectType =
                      Bits.toBytes (Type.width (Type.stack ()))
 
                   val bytesObject =
-                     Bytes.+ (bytesHeader,
+                     Bytes.+ (bytesMetaData,
                      Bytes.+ (bytesCSize,
                      Bytes.+ (bytesExnStack,
                               bytesStack)))

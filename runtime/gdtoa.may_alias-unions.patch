@@ -1,122 +1,90 @@
-diff -P -C 2 -r gdtoa/arithchk.c gdtoa-new/arithchk.c
-*** gdtoa/arithchk.c	2005-01-05 13:05:47.000000000 -0500
---- gdtoa-new/arithchk.c	2013-06-20 10:51:38.000000000 -0400
-***************
-*** 47,51 ****
-  		double d;
-  		long L[2];
-! 		} u;
-  	struct {
-  		double d;
---- 47,51 ----
-  		double d;
-  		long L[2];
-! 		} __attribute__((__may_alias__)) u;
-  	struct {
-  		double d;
-***************
-*** 74,78 ****
-  		double d;
-  		int L[2];
-! 		} u;
-  	struct {
-  		double d;
---- 74,78 ----
-  		double d;
-  		int L[2];
-! 		} __attribute__((__may_alias__)) u;
-  	struct {
-  		double d;
-***************
-*** 103,107 ****
-  		double d;
-  		long L;
-! 		} u;
-  	long Cray1;
-  
---- 103,107 ----
-  		double d;
-  		long L;
-! 		} __attribute__((__may_alias__)) u;
-  	long Cray1;
-  
-diff -P -C 2 -r gdtoa/gdtoaimp.h gdtoa-new/gdtoaimp.h
-*** gdtoa/gdtoaimp.h	2012-12-23 20:34:38.000000000 -0500
---- gdtoa-new/gdtoaimp.h	2013-06-20 10:51:00.000000000 -0400
-***************
-*** 275,279 ****
-  #endif
-  
-! typedef union { double d; ULong L[2]; } U;
-  
-  #ifdef IEEE_8087
---- 275,279 ----
-  #endif
-  
-! typedef union { double d; ULong L[2]; } __attribute__((__may_alias__)) U;
-  
-  #ifdef IEEE_8087
-diff -P -C 2 -r gdtoa/qnan.c gdtoa-new/qnan.c
-*** gdtoa/qnan.c	2012-12-21 14:26:58.000000000 -0500
---- gdtoa-new/qnan.c	2013-06-20 10:51:21.000000000 -0400
-***************
-*** 82,86 ****
-  		long double D;
-  #endif
-! 		} U;
-  	U a, b, c;
-  	int i;
---- 82,86 ----
-  		long double D;
-  #endif
-! 		} __attribute__((__may_alias__)) U;
-  	U a, b, c;
-  	int i;
-diff -P -C 2 -r gdtoa/strtodnrp.c gdtoa-new/strtodnrp.c
-*** gdtoa/strtodnrp.c	2005-01-12 01:47:38.000000000 -0500
---- gdtoa-new/strtodnrp.c	2013-06-20 10:51:15.000000000 -0400
-***************
-*** 49,53 ****
-  	Long exp;
-  	int k;
-! 	union { ULong L[2]; double d; } u;
-  
-  	k = strtodg(s, sp, &fpi, &exp, bits);
---- 49,53 ----
-  	Long exp;
-  	int k;
-! 	union { ULong L[2]; double d; } __attribute__((__may_alias__)) u;
-  
-  	k = strtodg(s, sp, &fpi, &exp, bits);
-diff -P -C 2 -r gdtoa/strtof.c gdtoa-new/strtof.c
-*** gdtoa/strtof.c	2009-03-16 00:57:44.000000000 -0400
---- gdtoa-new/strtof.c	2013-06-20 10:51:11.000000000 -0400
-***************
-*** 43,47 ****
-  	Long exp;
-  	int k;
-! 	union { ULong L[1]; float f; } u;
-  #ifdef Honor_FLT_ROUNDS
-  #include "gdtoa_fltrnds.h"
---- 43,47 ----
-  	Long exp;
-  	int k;
-! 	union { ULong L[1]; float f; } __attribute__((__may_alias__)) u;
-  #ifdef Honor_FLT_ROUNDS
-  #include "gdtoa_fltrnds.h"
-diff -P -C 2 -r gdtoa/strtopdd.c gdtoa-new/strtopdd.c
-*** gdtoa/strtopdd.c	2009-03-16 01:32:44.000000000 -0400
---- gdtoa-new/strtopdd.c	2013-06-20 10:51:06.000000000 -0400
-***************
-*** 50,54 ****
-  		double d[2];
-  		ULong L[4];
-! 		} U;
-  	U *u;
-  #ifdef Honor_FLT_ROUNDS
---- 50,54 ----
-  		double d[2];
-  		ULong L[4];
-! 		} __attribute__((__may_alias__)) U;
-  	U *u;
-  #ifdef Honor_FLT_ROUNDS
+diff -Naur gdtoa.0/arithchk.c gdtoa.1/arithchk.c
+--- gdtoa.0/arithchk.c	2016-02-18 20:37:07.000000000 +0000
++++ gdtoa.1/arithchk.c	2018-01-25 20:47:16.000000000 +0000
+@@ -46,7 +46,7 @@
+ 	union {
+ 		double d;
+ 		long L[2];
+-		} u;
++		} __attribute__((__may_alias__)) u;
+ 	struct {
+ 		double d;
+ 		long L;
+@@ -73,7 +73,7 @@
+ 	union {
+ 		double d;
+ 		int L[2];
+-		} u;
++		} __attribute__((__may_alias__)) u;
+ 	struct {
+ 		double d;
+ 		int L;
+@@ -100,7 +100,7 @@
+ 	union {
+ 		double d;
+ 		long L;
+-		} u;
++		} __attribute__((__may_alias__)) u;
+ 	long Cray1;
+ 
+ 	/* Cray1 = 4617762693716115456 -- without overflow on non-Crays */
+diff -Naur gdtoa.0/gdtoaimp.h gdtoa.1/gdtoaimp.h
+--- gdtoa.0/gdtoaimp.h	2016-02-19 18:37:41.000000000 +0000
++++ gdtoa.1/gdtoaimp.h	2018-01-25 20:47:16.000000000 +0000
+@@ -299,7 +299,7 @@
+ Exactly one of IEEE_8087, IEEE_MC68k, VAX, or IBM should be defined.
+ #endif
+ 
+-typedef union { double d; ULong L[2]; } U;
++typedef union { double d; ULong L[2]; } __attribute__((__may_alias__)) U;
+ 
+ #ifdef IEEE_8087
+ #define word0(x) (x)->L[1]
+diff -Naur gdtoa.0/qnan.c gdtoa.1/qnan.c
+--- gdtoa.0/qnan.c	2016-02-19 04:23:34.000000000 +0000
++++ gdtoa.1/qnan.c	2018-01-25 20:47:16.000000000 +0000
+@@ -89,7 +89,7 @@
+ 		unsigned short u[5];
+ 		long double D;
+ #endif
+-		} U;
++		} __attribute__((__may_alias__)) U;
+ 	U a, b, c;
+ #ifdef Gen_ld_QNAN
+ 	int i;
+diff -Naur gdtoa.0/strtodnrp.c gdtoa.1/strtodnrp.c
+--- gdtoa.0/strtodnrp.c	2016-02-19 04:38:18.000000000 +0000
++++ gdtoa.1/strtodnrp.c	2018-01-25 20:47:16.000000000 +0000
+@@ -48,7 +48,7 @@
+ 	ULong bits[2];
+ 	Long exp;
+ 	int k;
+-	union { ULong L[2]; double d; } u;
++	union { ULong L[2]; double d; } __attribute__((__may_alias__)) u;
+ 
+ 	k = strtodg(s, sp, &fpi, &exp, bits);
+ 	switch(k & STRTOG_Retmask) {
+diff -Naur gdtoa.0/strtof.c gdtoa.1/strtof.c
+--- gdtoa.0/strtof.c	2016-02-19 05:05:40.000000000 +0000
++++ gdtoa.1/strtof.c	2018-01-25 20:47:16.000000000 +0000
+@@ -42,7 +42,7 @@
+ 	ULong bits[1];
+ 	Long exp;
+ 	int k;
+-	union { ULong L[1]; float f; } u;
++	union { ULong L[1]; float f; } __attribute__((__may_alias__)) u;
+ #ifdef Honor_FLT_ROUNDS
+ #include "gdtoa_fltrnds.h"
+ #else
+diff -Naur gdtoa.0/strtopdd.c gdtoa.1/strtopdd.c
+--- gdtoa.0/strtopdd.c	2016-02-19 04:40:59.000000000 +0000
++++ gdtoa.1/strtopdd.c	2018-01-25 20:47:16.000000000 +0000
+@@ -49,7 +49,7 @@
+ 	typedef union {
+ 		double d[2];
+ 		ULong L[4];
+-		} U;
++		} __attribute__((__may_alias__)) U;
+ 	U *u;
+ #ifdef Honor_FLT_ROUNDS
+ #include "gdtoa_fltrnds.h"

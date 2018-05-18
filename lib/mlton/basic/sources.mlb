@@ -2,7 +2,7 @@
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -112,8 +112,6 @@ in
       instream.sml
       file.sig
       file.sml
-      stream-parser.sig
-      stream-parser.sml
       signal.sml
       process.sig
       dir.sig
@@ -170,6 +168,8 @@ in
       mono-vector.fun
       result.sig
       result.sml
+      parse.sig
+      parse.sml
       regexp.sig
       regexp.sml
       popt.sig
@@ -195,12 +195,12 @@ in
       signature OPTION
       signature ORDER
       signature ORDERED_RING
+      signature PARSE
       signature PROMISE
       signature REAL
       signature RING
       signature RING_WITH_IDENTITY
       signature STREAM
-      signature STREAM_PARSER
       signature STRING
       signature T
       signature UNIQUE_ID
@@ -253,6 +253,7 @@ in
       structure OS
       structure Option
       structure Out
+      structure Parse
       structure Pervasive
       structure Pid
       structure Popt
@@ -277,7 +278,6 @@ in
       structure Sexp
       structure Signal
       structure Stream
-      structure StreamParser
       structure String
       structure StringCvt
       structure Substring

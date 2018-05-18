@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -30,7 +31,9 @@ fun compare (T {column = c, file = f, line = l},
     | r => r
 
 fun equals (T r, T r') = r = r'
-val _ = equals
+
+fun fileEquals (T {file = f, ...}, T {file = f', ...}) =
+   String.equals (f, f')
 
 fun make {column, file, line} =
    T {column = column,
@@ -59,10 +62,12 @@ val bogus = T {column = ~1,
                file = "<bogus>",
                line = ~1}
 
-fun toString (p as T {column, line, ...}) =
-   concat [file p, " ", Int.toString line, ".", Int.toString column]
+fun isBogus p = equals (p, bogus)
 
 fun posToString (T {line, column, ...}) =
    concat [Int.toString line, ".", Int.toString column]
+
+fun toString p =
+   concat [file p, " ", posToString p]
 
 end

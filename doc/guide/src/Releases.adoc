@@ -3,6 +3,7 @@ Releases
 
 Public releases of MLton:
 
+* <:Release20180207:>
 * <:Release20130715:>
 * <:Release20100608:>
 * <:Release20070826:>

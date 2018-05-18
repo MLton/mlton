@@ -30,7 +30,9 @@ ignore='.gitignore'
 
 declare -a fargs
 fargs+=("(")
-fargs+=("-false")
+fargs+=("-exec")
+fargs+=("false")
+fargs+=(";")
 idir="."
 while true; do
     if [ -r "$idir/$ignore" ]; then

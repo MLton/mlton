@@ -3,14 +3,30 @@
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
- # MLton is released under a BSD-style license.
+ # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
+
+SED := sed
+
+######################################################################
+######################################################################
 
 SRC := $(shell cd ../.. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
+
 PATH := $(BIN):$(shell echo $$PATH)
+
+######################################################################
+
+.PHONY: all
+all: ml.lex.sml ml.grm.sig ml.grm.sml mlb.lex.sml mlb.grm.sig mlb.grm.sml
+
+.PHONY: clean
+clean:
+	../../bin/clean
+
 
 ifeq (mllex, $(shell if mllex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mllex; fi))
 MLLEX := mllex
@@ -22,6 +38,17 @@ MLLEX := no-mllex
 endif
 endif
 
+%.lex.sml: %.lex
+	rm -f $<.*
+	$(MLLEX) $<
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/val s = List.map f (List.rev (tl (List.rev s)))/val s = Pervasive.List.map f (Pervasive.List.rev (tl (Pervasive.List.rev s)))/' $<.sml.in > $<.sml
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
+	rm -f $<.sml.in
+	chmod -w $<.*
+
+
 ifeq (mlyacc, $(shell if mlyacc >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mlyacc; fi))
 MLYACC := mlyacc
 else
@@ -32,29 +59,12 @@ MLYACC := no-mlyacc
 endif
 endif
 
-.PHONY: all
-all: ml.lex.sml ml.grm.sig ml.grm.sml mlb.lex.sml mlb.grm.sig mlb.grm.sml
-
-.PHONY: clean
-clean:
-	../../bin/clean
-
-%.lex.sml: %.lex
-	rm -f $<.*
-	$(MLLEX) $<
-	mv $<.sml $<.sml.in
-	sed -e 's/val s = List.map f (List.rev (tl (List.rev s)))/val s = Pervasive.List.map f (Pervasive.List.rev (tl (Pervasive.List.rev s)))/' $<.sml.in > $<.sml
-	mv $<.sml $<.sml.in
-	sed -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
-	rm -f $<.sml.in
-	chmod -w $<.*
-
 %.grm.sig %.grm.sml: %.grm
 	rm -f $<.*
 	$(MLYACC) $<
 	mv $<.sml $<.sml.in
-	sed -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
+	$(SED) -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
 	mv $<.sml $<.sml.in
-	sed -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
+	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
 	rm -f $<.sml.in
 	chmod -w $<.*

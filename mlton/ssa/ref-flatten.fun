@@ -1,8 +1,8 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -439,7 +439,24 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 ; result ())
          in
             case Prim.name prim of
-               Array_toVector =>
+               Array_toArray =>
+                  let
+                     val res = result ()
+                     datatype z = datatype Value.value
+                     val () =
+                        case (Value.value (arg 0), Value.value res) of
+                           (Ground _, Ground _) => ()
+                         | (Object (Obj {args = a, ...}),
+                            Object (Obj {args = a', ...})) =>
+                              Vector.foreach2
+                              (Prod.dest a, Prod.dest a',
+                               fn ({elt = v, ...}, {elt = v', ...}) =>
+                               Value.unify (v, v'))
+                         | _ => Error.bug "RefFlatten.primApp: Array_toArray"
+                  in
+                     res
+                  end
+             | Array_toVector =>
                   let
                      val res = result ()
                      datatype z = datatype Value.value

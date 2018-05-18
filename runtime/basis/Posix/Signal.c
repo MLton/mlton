@@ -45,7 +45,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(C_Int_t) isIgn) {
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_handlee (C_Int_t signum) {
-  static struct sigaction sa;
+  struct sigaction sa;
 
   sigaddset (GC_getSignalsHandledAddr (&gcState), signum);
   memset (&sa, 0, sizeof(sa));
@@ -77,30 +77,28 @@ void Posix_Signal_resetPending (void) {
   GC_setGCSignalPending (&gcState, FALSE);
 }
 
-static sigset_t Posix_Signal_sigset;
-
-C_Errno_t(C_Int_t) Posix_Signal_sigaddset (C_Signal_t signum) {
-  return sigaddset (&Posix_Signal_sigset, signum);
+C_Errno_t(C_Int_t) Posix_Signal_sigaddset (Array(Word8_t) sigset, C_Signal_t signum) {
+  return sigaddset ((sigset_t*)sigset, signum);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_sigdelset (C_Signal_t signum) {
-  return sigdelset (&Posix_Signal_sigset, signum);
+C_Errno_t(C_Int_t) Posix_Signal_sigdelset (Array(Word8_t) sigset, C_Signal_t signum) {
+  return sigdelset ((sigset_t*)sigset, signum);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_sigemptyset (void) {
-  return sigemptyset (&Posix_Signal_sigset);
+C_Errno_t(C_Int_t) Posix_Signal_sigemptyset (Array(Word8_t) sigset) {
+  return sigemptyset ((sigset_t*)sigset);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_sigfillset (void) {
-  return sigfillset (&Posix_Signal_sigset);
+C_Errno_t(C_Int_t) Posix_Signal_sigfillset (Array(Word8_t) sigset) {
+  return sigfillset ((sigset_t*)sigset);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_sigismember (C_Signal_t signum) {
-  return sigismember (&Posix_Signal_sigset, signum);
+C_Errno_t(C_Int_t) Posix_Signal_sigismember (Vector(Word8_t) sigset, C_Signal_t signum) {
+  return sigismember ((sigset_t*)sigset, signum);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how) {
-  return sigprocmask (how, &Posix_Signal_sigset, &Posix_Signal_sigset);
+C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how, Vector(Word8_t) sigset, Array(Word8_t) oldsigset) {
+  return sigprocmask (how, (sigset_t*)sigset, (sigset_t*)oldsigset);
 }
 
 #if ASSERT
@@ -109,9 +107,9 @@ C_Errno_t(C_Int_t) Posix_Signal_sigprocmask (C_Int_t how) {
 #define LOCAL_USED_FOR_ASSERT  __attribute__ ((unused))
 #endif
 
-void Posix_Signal_sigsuspend (void) {
+void Posix_Signal_sigsuspend (Vector(Word8_t) sigset) {
   LOCAL_USED_FOR_ASSERT int res;
 
-  res = sigsuspend (&Posix_Signal_sigset);
+  res = sigsuspend ((sigset_t*)sigset);
   assert (-1 == res);
 }

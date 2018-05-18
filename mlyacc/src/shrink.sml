@@ -79,7 +79,7 @@ functor MergeSortFun(A : SORT_ARG) : SORT =
 
 functor EquivFun(A : EQUIV_ARG) : EQUIV =
    struct
-       open Array List
+       val sub = Array.sub
        infix 9 sub
 
       (* Our algorithm for finding equivalence class is simple.  The basic
@@ -128,9 +128,9 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
        val inversePermute = fn permutation =>
               fn nil => nil
                | l as h :: _ =>
-                   let val result = array(length l,h)
+                   let val result = Array.array(length l,h)
                        fun loop (elem :: r, dest :: s) =
-                             (update(result,dest,elem); loop(r,s))
+                             (Array.update(result,dest,elem); loop(r,s))
                          | loop _ = ()
                        fun listofarray i =
                           if i < Array.length result then

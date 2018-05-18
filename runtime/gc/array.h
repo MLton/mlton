@@ -1,9 +1,9 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -35,7 +35,7 @@ typedef GC_arrayLength GC_arrayCounter;
 #define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
 #define PRIxARRCTR PRIxARRLEN
 #define FMTARRCTR "%"PRIxARRCTR
-#define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
+#define GC_ARRAY_METADATA_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
 
 COMPILE_TIME_ASSERT(sizeof_header__le__sizeof_arrlen,
                     sizeof(GC_header) <= sizeof(GC_arrayLength));

@@ -1,7 +1,8 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013,2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -37,43 +38,72 @@ fun traverse (t, f) =
 fun foreachPre (t, f: 'a -> unit) = traverse (t, fn a => (f a; fn () => ()))
 fun foreachPost (t, f) = traverse (t, fn a => fn () => f a)
 
-fun 'a layoutDot (t: 'a t, {nodeOptions: 'a -> Dot.NodeOption.t list,
-                            options,
-                            title}) =
-   let
-      val c = Counter.new 0
-      fun next () = concat ["n", Int.toString (Counter.next c)]
-      val nodes = ref []
-      fun loop (T (v, cs)) =
-         let
-            val name = next ()
-            val () =
-               List.push
-               (nodes, {name = name,
-                        options = nodeOptions v,
-                        successors = rev (Seq.fold (cs, [], fn (t, ac) =>
-                                                    {name = loop t,
-                                                     options = []} :: ac))})
-         in
-            name
-         end
-      val _ = loop t
-   in
-      Dot.layout {nodes = !nodes,
-                  options = options,
-                  title = title}
-   end
+local
+   fun mkLayoutDot {nodeOptions: 'a -> Dot.NodeOption.t list,
+                    options,
+                    title} =
+      let
+         fun loopTree (next, nodes, T (x, ts)) =
+            let
+               val name = next ()
+               val () =
+                  List.push
+                  (nodes, {name = name,
+                           options = nodeOptions x,
+                           successors = loopForest (next, nodes, ts)})
+            in
+               name
+            end
+         and loopForest (next, nodes, ts) =
+            rev (Seq.fold (ts, [], fn (t, ac) =>
+                           {name = loopTree (next, nodes, t),
+                            options = []} :: ac))
+         fun wrap (loop, arg) =
+            let
+               val c = Counter.new 0
+               fun next () = concat ["n", Int.toString (Counter.next c)]
+               val nodes = ref []
+               val _ = loop (next, nodes, arg)
+            in
+               Dot.layout {nodes = !nodes,
+                           options = options,
+                           title = title}
+            end
+      in
+         {layoutDotTree = fn t => wrap (loopTree, t),
+          layoutDotForest = fn ts => wrap (loopForest, ts)}
+      end
+in
+   fun layoutDotTree (t, opts) = (#layoutDotTree (mkLayoutDot opts)) t
+   fun layoutDotForest (ts, opts) = (#layoutDotForest (mkLayoutDot opts)) ts
+end
+val layoutDot = layoutDotTree
 
-fun layout (t, lay) =
-   let
-      open Layout
-      fun loop (T (x, ts)) =
-         paren (seq [lay x, str ", ", Seq.layout (ts, loop)])
-   in
-      loop t
-   end
+local
+   fun mkLayout lay =
+      let
+         open Layout
+         fun layoutTree (T (x, ts)) =
+            paren (seq [lay x, str ", ", layoutForest ts])
+         and layoutForest ts =
+            Seq.layout (ts, layoutTree)
+      in
+         {layoutTree = layoutTree, layoutForest = layoutForest}
+      end
+in
+   fun layoutTree (t, lay) = (#layoutTree (mkLayout lay)) t
+   fun layoutForest (ts, lay) = (#layoutForest (mkLayout lay)) ts
+end
+val layout = layoutTree
 
 fun map (T (a, ts), f) = T (f a, Seq.map (ts, fn t => map (t, f)))
+
+structure Forest =
+struct
+   type 'a t = 'a t Seq.t
+   val layoutDot = layoutDotForest
+   val layout = layoutForest
+end
 
 end
 

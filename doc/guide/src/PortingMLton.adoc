@@ -107,7 +107,7 @@ the target machine, then compiling and linking there.
 
 1. Remake the compiler on a working machine.
 
-2. Use `bin/add-cross` to add support for the new target.  In particular, this should create `build/lib/targets/<target>/` with the platform-specific necessary cross-compilation information.
+2. Use `bin/add-cross` to add support for the new target.  In particular, this should create `build/lib/mlton/targets/<target>/` with the platform-specific necessary cross-compilation information.
 
 3. Run the regression tests with the cross-compiler.  To cross-compile all the tests, do
 +
@@ -136,47 +136,47 @@ is to generate the C and assembly on a working machine, copy it to the
 target machine, and then compile and link there.  Here's the sequence
 of steps.
 
-1. On a working machine, with the newly rebuilt compiler, in the `mlton` directory, do:
+1. On a working machine, with the newly rebuilt compiler, do:
 +
 ----
-mlton -stop g -target <target> mlton.mlb
+bin/save-bootstrap-source <target>
 ----
 
-2. Copy to the target machine.
+2. Copy the resulting file `mlton-bootstrap-<target>.tar.gz` to the target machine.
 
-3. On the target machine, move the libraries to the right place. That is, in `build/lib/targets`, do:
+3. On the target machine, build the runtime.
 +
 ----
-rm -rf self
-mv <target> self
+make dirs runtime
 ----
-Also make sure you have all the header files in build/lib/include. You can copy them from a host machine that has run `make runtime`.
 
-4. On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like:
+4. On the target machine, untar the bootstrap file in the source directory.
 +
 ----
-gcc -c -Ibuild/lib/include -Ibuild/lib/targets/self/include -O1 -w mlton/mlton.*.[cs]
-gcc -o build/lib/mlton-compile \
-        -Lbuild/lib/targets/self \
+tar xvf mlton-bootstrap-<target>.tar.gz
+----
+
+5. On the target machine, compile and link MLton.  That is, in the source directory, do:
++
+----
+rm -f mlton/mlton.*.o
+for s in mlton/mlton.*.c; do echo $s; gcc -c -Ibuild/lib/mlton/include -Ibuild/lib/mlton/targets/self/include -O1 -w $s; done
+gcc -o build/lib/mlton/mlton-compile \
+        -Lbuild/lib/mlton/targets/self \
         -L/usr/local/lib \
         mlton.*.o \
         -lmlton -lgmp -lgdtoa -lm
 ----
 
-5. At this point, MLton should be working and you can finish the rest of a usual make on the target machine.
+6. At this point, MLton should be working and you can finish the rest of a usual make on the target machine.
 +
 ----
-make basis-no-check script mlbpathmap constants libraries tools
+make basis-no-check script constants libraries tools
 ----
 
-6. Making the last tool, mlyacc, will fail, because mlyacc cannot bootstrap its own yacc.grm.* files. On the host machine, run `make -C mlyacc src/yacc.grm.sml`. Then copy both files to the target machine, and compile mlyacc, making sure to supply the path to your newly compile mllex: `make -C mlyacc MLLEX=mllex/mllex`. 
-
-There are other details to get right, like making sure that the tools
-directories were clean so that the tools are rebuilt on the new
-platform, but hopefully this structure works.  Once you've got a
-compiler on the target machine, you should test it by running all the
-regressions normally (i.e. without the `-cross` flag) and by running a
-couple rounds of self compiles.
+Once you've got a compiler on the target machine, you should test it
+by running all the regressions normally (i.e. without the `-cross`
+flag) and by running a couple rounds of self compiles.
 
 
 == Also see ==

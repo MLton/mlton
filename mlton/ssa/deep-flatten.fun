@@ -1,8 +1,8 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -380,7 +380,7 @@ structure Value =
                     let
                        val {args = a, con, ...} = Equatable.value e
                     in
-                       if Prod.isMutable a orelse ObjectCon.isVector con
+                       if Prod.someIsMutable a orelse ObjectCon.isVector con
                           then unify (from, to)
                        else
                           case !f' of
@@ -405,7 +405,7 @@ structure Value =
           * preserved.
           *)
          not (Prod.isEmpty args)
-         andalso not (Prod.isMutable args)
+         andalso Prod.allAreImmutable args
          andalso (case con of
                      ObjectCon.Con _ => false
                    | ObjectCon.Tuple => true
@@ -680,7 +680,22 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 ; result ())
          in
             case Prim.name prim of
-               Array_toVector =>
+               Array_toArray =>
+                  let
+                     val res = result ()
+                     val () =
+                        case (Value.deObject (arg 0), Value.deObject res) of
+                           (NONE, NONE) => ()
+                         | (SOME {args = a, ...}, SOME {args = a', ...}) =>
+                              Vector.foreach2
+                              (Prod.dest a, Prod.dest a',
+                               fn ({elt = v, ...}, {elt = v', ...}) =>
+                               Value.unify (v, v'))
+                         | _ => Error.bug "DeepFlatten.primApp: Array_toArray"
+                  in
+                     res
+                  end
+             | Array_toVector =>
                   let
                      val res = result ()
                      val () =

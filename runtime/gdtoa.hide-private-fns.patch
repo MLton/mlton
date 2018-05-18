@@ -1,123 +1,117 @@
-diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
-*** gdtoa/gdtoa.h	2013-06-20 10:17:15.000000000 -0400
---- gdtoa-new/gdtoa.h	2013-06-20 10:18:07.000000000 -0400
-***************
-*** 35,38 ****
---- 35,39 ----
-  #include "arith.h"
-  #include <stddef.h> /* for size_t */
-+ #include "../export.h"
-  
-  #ifndef Long
-diff -P -C 2 -r gdtoa/gdtoaimp.h gdtoa-new/gdtoaimp.h
-*** gdtoa/gdtoaimp.h	2013-06-20 10:17:15.000000000 -0400
---- gdtoa-new/gdtoaimp.h	2013-06-20 10:18:36.000000000 -0400
-***************
-*** 535,587 ****
-  #define ulp ulp_D2A
-  
-!  extern char *add_nanbits ANSI((char*, size_t, ULong*, int));
-!  extern char *dtoa_result;
-!  extern CONST double bigtens[], tens[], tinytens[];
-!  extern unsigned char hexdig[];
-!  extern const char *InfName[6], *NanName[3];
-  
-!  extern Bigint *Balloc ANSI((int));
-!  extern void Bfree ANSI((Bigint*));
-!  extern void ULtof ANSI((ULong*, ULong*, Long, int));
-!  extern void ULtod ANSI((ULong*, ULong*, Long, int));
-!  extern void ULtodd ANSI((ULong*, ULong*, Long, int));
-!  extern void ULtoQ ANSI((ULong*, ULong*, Long, int));
-!  extern void ULtox ANSI((UShort*, ULong*, Long, int));
-!  extern void ULtoxL ANSI((ULong*, ULong*, Long, int));
-!  extern ULong any_on ANSI((Bigint*, int));
-!  extern double b2d ANSI((Bigint*, int*));
-!  extern int cmp ANSI((Bigint*, Bigint*));
-!  extern void copybits ANSI((ULong*, int, Bigint*));
-!  extern Bigint *d2b ANSI((double, int*, int*));
-!  extern void decrement ANSI((Bigint*));
-!  extern Bigint *diff ANSI((Bigint*, Bigint*));
-!  extern char *dtoa ANSI((double d, int mode, int ndigits,
-  			int *decpt, int *sign, char **rve));
-!  extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
-!  extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-!  /* extern void hexdig_init ANSI((Void)); */
-!  extern int hexnan ANSI((CONST char**, FPI*, ULong*));
-!  extern int hi0bits_D2A ANSI((ULong));
-!  extern Bigint *i2b ANSI((int));
-!  extern Bigint *increment ANSI((Bigint*));
-!  extern int lo0bits ANSI((ULong*));
-!  extern Bigint *lshift ANSI((Bigint*, int));
-!  extern int match ANSI((CONST char**, char*));
-!  extern Bigint *mult ANSI((Bigint*, Bigint*));
-!  extern Bigint *multadd ANSI((Bigint*, int, int));
-!  extern char *nrv_alloc ANSI((char*, char **, int));
-!  extern Bigint *pow5mult ANSI((Bigint*, int));
-!  extern int quorem ANSI((Bigint*, Bigint*));
-!  extern double ratio ANSI((Bigint*, Bigint*));
-!  extern void rshift ANSI((Bigint*, int));
-!  extern char *rv_alloc ANSI((int));
-!  extern Bigint *s2b ANSI((CONST char*, int, int, ULong, int));
-!  extern Bigint *set_ones ANSI((Bigint*, int));
-!  extern char *strcp ANSI((char*, const char*));
-!  extern int strtoIg ANSI((CONST char*, char**, FPI*, Long*, Bigint**, int*));
-!  extern double strtod ANSI((const char *s00, char **se));
-!  extern Bigint *sum ANSI((Bigint*, Bigint*));
-!  extern int trailz ANSI((Bigint*));
-!  extern double ulp ANSI((U*));
-  
-  #ifdef __cplusplus
---- 535,587 ----
-  #define ulp ulp_D2A
-  
-!  PRIVATE extern char *add_nanbits ANSI((char*, size_t, ULong*, int));
-!  PRIVATE extern char *dtoa_result;
-!  PRIVATE extern CONST double bigtens[], tens[], tinytens[];
-!  PRIVATE extern unsigned char hexdig[];
-!  PRIVATE extern const char *InfName[6], *NanName[3];
-  
-!  PRIVATE extern Bigint *Balloc ANSI((int));
-!  PRIVATE extern void Bfree ANSI((Bigint*));
-!  PRIVATE extern void ULtof ANSI((ULong*, ULong*, Long, int));
-!  PRIVATE extern void ULtod ANSI((ULong*, ULong*, Long, int));
-!  PRIVATE extern void ULtodd ANSI((ULong*, ULong*, Long, int));
-!  PRIVATE extern void ULtoQ ANSI((ULong*, ULong*, Long, int));
-!  PRIVATE extern void ULtox ANSI((UShort*, ULong*, Long, int));
-!  PRIVATE extern void ULtoxL ANSI((ULong*, ULong*, Long, int));
-!  PRIVATE extern ULong any_on ANSI((Bigint*, int));
-!  PRIVATE extern double b2d ANSI((Bigint*, int*));
-!  PRIVATE extern int cmp ANSI((Bigint*, Bigint*));
-!  PRIVATE extern void copybits ANSI((ULong*, int, Bigint*));
-!  PRIVATE extern Bigint *d2b ANSI((double, int*, int*));
-!  PRIVATE extern void decrement ANSI((Bigint*));
-!  PRIVATE extern Bigint *diff ANSI((Bigint*, Bigint*));
-!  PRIVATE extern char *dtoa ANSI((double d, int mode, int ndigits,
-  			int *decpt, int *sign, char **rve));
-!  PRIVATE extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
-!  PRIVATE extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-!  /* PRIVATE extern void hexdig_init ANSI((Void)); */
-!  PRIVATE extern int hexnan ANSI((CONST char**, FPI*, ULong*));
-!  PRIVATE extern int hi0bits_D2A ANSI((ULong));
-!  PRIVATE extern Bigint *i2b ANSI((int));
-!  PRIVATE extern Bigint *increment ANSI((Bigint*));
-!  PRIVATE extern int lo0bits ANSI((ULong*));
-!  PRIVATE extern Bigint *lshift ANSI((Bigint*, int));
-!  PRIVATE extern int match ANSI((CONST char**, char*));
-!  PRIVATE extern Bigint *mult ANSI((Bigint*, Bigint*));
-!  PRIVATE extern Bigint *multadd ANSI((Bigint*, int, int));
-!  PRIVATE extern char *nrv_alloc ANSI((char*, char **, int));
-!  PRIVATE extern Bigint *pow5mult ANSI((Bigint*, int));
-!  PRIVATE extern int quorem ANSI((Bigint*, Bigint*));
-!  PRIVATE extern double ratio ANSI((Bigint*, Bigint*));
-!  PRIVATE extern void rshift ANSI((Bigint*, int));
-!  PRIVATE extern char *rv_alloc ANSI((int));
-!  PRIVATE extern Bigint *s2b ANSI((CONST char*, int, int, ULong, int));
-!  PRIVATE extern Bigint *set_ones ANSI((Bigint*, int));
-!  PRIVATE extern char *strcp ANSI((char*, const char*));
-!  PRIVATE extern int strtoIg ANSI((CONST char*, char**, FPI*, Long*, Bigint**, int*));
-!  PRIVATE extern double strtod ANSI((const char *s00, char **se));
-!  PRIVATE extern Bigint *sum ANSI((Bigint*, Bigint*));
-!  PRIVATE extern int trailz ANSI((Bigint*));
-!  PRIVATE extern double ulp ANSI((U*));
-  
-  #ifdef __cplusplus
+diff -Naur gdtoa.2/gdtoa.h gdtoa.3/gdtoa.h
+--- gdtoa.2/gdtoa.h	2018-01-25 20:53:55.000000000 +0000
++++ gdtoa.3/gdtoa.h	2018-01-25 21:04:48.000000000 +0000
+@@ -34,6 +34,7 @@
+ 
+ #include "arith.h"
+ #include <stddef.h> /* for size_t */
++#include "../export.h"
+ 
+ #ifndef Long
+ #define Long int
+diff -Naur gdtoa.2/gdtoaimp.h gdtoa.3/gdtoaimp.h
+--- gdtoa.2/gdtoaimp.h	2018-01-25 20:50:09.000000000 +0000
++++ gdtoa.3/gdtoaimp.h	2018-01-25 21:05:34.000000000 +0000
+@@ -577,55 +577,55 @@
+ #define trailz trailz_D2A
+ #define ulp ulp_D2A
+ 
+- extern char *add_nanbits ANSI((char*, size_t, ULong*, int));
+- extern char *dtoa_result;
+- extern CONST double bigtens[], tens[], tinytens[];
+- extern unsigned char hexdig[];
+- extern const char *InfName[6], *NanName[3];
++ PRIVATE extern char *add_nanbits ANSI((char*, size_t, ULong*, int));
++ PRIVATE extern char *dtoa_result;
++ PRIVATE extern CONST double bigtens[], tens[], tinytens[];
++ PRIVATE extern unsigned char hexdig[];
++ PRIVATE extern const char *InfName[6], *NanName[3];
+ 
+- extern Bigint *Balloc ANSI((int MTd));
+- extern void Bfree ANSI((Bigint* MTd));
+- extern void ULtof ANSI((ULong*, ULong*, Long, int));
+- extern void ULtod ANSI((ULong*, ULong*, Long, int));
+- extern void ULtodd ANSI((ULong*, ULong*, Long, int));
+- extern void ULtoQ ANSI((ULong*, ULong*, Long, int));
+- extern void ULtox ANSI((UShort*, ULong*, Long, int));
+- extern void ULtoxL ANSI((ULong*, ULong*, Long, int));
+- extern ULong any_on ANSI((Bigint*, int));
+- extern double b2d ANSI((Bigint*, int*));
+- extern int cmp ANSI((Bigint*, Bigint*));
+- extern void copybits ANSI((ULong*, int, Bigint*));
+- extern Bigint *d2b ANSI((double, int*, int* MTd));
+- extern void decrement ANSI((Bigint*));
+- extern Bigint *diff ANSI((Bigint*, Bigint* MTd));
+- extern char *dtoa ANSI((double d, int mode, int ndigits,
++ PRIVATE extern Bigint *Balloc ANSI((int MTd));
++ PRIVATE extern void Bfree ANSI((Bigint* MTd));
++ PRIVATE extern void ULtof ANSI((ULong*, ULong*, Long, int));
++ PRIVATE extern void ULtod ANSI((ULong*, ULong*, Long, int));
++ PRIVATE extern void ULtodd ANSI((ULong*, ULong*, Long, int));
++ PRIVATE extern void ULtoQ ANSI((ULong*, ULong*, Long, int));
++ PRIVATE extern void ULtox ANSI((UShort*, ULong*, Long, int));
++ PRIVATE extern void ULtoxL ANSI((ULong*, ULong*, Long, int));
++ PRIVATE extern ULong any_on ANSI((Bigint*, int));
++ PRIVATE extern double b2d ANSI((Bigint*, int*));
++ PRIVATE extern int cmp ANSI((Bigint*, Bigint*));
++ PRIVATE extern void copybits ANSI((ULong*, int, Bigint*));
++ PRIVATE extern Bigint *d2b ANSI((double, int*, int* MTd));
++ PRIVATE extern void decrement ANSI((Bigint*));
++ PRIVATE extern Bigint *diff ANSI((Bigint*, Bigint* MTd));
++ PRIVATE extern char *dtoa ANSI((double d, int mode, int ndigits,
+ 			int *decpt, int *sign, char **rve));
+- extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
+- extern int gethex ANSI((CONST char**, CONST FPI*, Long*, Bigint**, int MTd));
+- /* extern void hexdig_init ANSI((Void)); */
+- extern int hexnan ANSI((CONST char**, CONST FPI*, ULong*));
+- extern int hi0bits_D2A ANSI((ULong));
+- extern Bigint *i2b ANSI((int MTd));
+- extern Bigint *increment ANSI((Bigint* MTd));
+- extern int lo0bits ANSI((ULong*));
+- extern Bigint *lshift ANSI((Bigint*, int MTd));
+- extern int match ANSI((CONST char**, char*));
+- extern Bigint *mult ANSI((Bigint*, Bigint* MTd));
+- extern Bigint *multadd ANSI((Bigint*, int, int MTd));
+- extern char *nrv_alloc ANSI((char*, char **, int MTd));
+- extern Bigint *pow5mult ANSI((Bigint*, int MTd));
+- extern int quorem ANSI((Bigint*, Bigint*));
+- extern double ratio ANSI((Bigint*, Bigint*));
+- extern void rshift ANSI((Bigint*, int));
+- extern char *rv_alloc ANSI((int MTd));
+- extern Bigint *s2b ANSI((CONST char*, int, int, ULong, int MTd));
+- extern Bigint *set_ones ANSI((Bigint*, int MTd));
+- extern char *strcp ANSI((char*, const char*));
+- extern int strtoIg ANSI((CONST char*, char**, CONST FPI*, Long*, Bigint**, int*));
+- extern double strtod ANSI((const char *s00, char **se));
+- extern Bigint *sum ANSI((Bigint*, Bigint* MTd));
+- extern int trailz ANSI((Bigint*));
+- extern double ulp ANSI((U*));
++ PRIVATE extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
++ PRIVATE extern int gethex ANSI((CONST char**, CONST FPI*, Long*, Bigint**, int MTd));
++ /* PRIVATE extern void hexdig_init ANSI((Void)); */
++ PRIVATE extern int hexnan ANSI((CONST char**, CONST FPI*, ULong*));
++ PRIVATE extern int hi0bits_D2A ANSI((ULong));
++ PRIVATE extern Bigint *i2b ANSI((int MTd));
++ PRIVATE extern Bigint *increment ANSI((Bigint* MTd));
++ PRIVATE extern int lo0bits ANSI((ULong*));
++ PRIVATE extern Bigint *lshift ANSI((Bigint*, int MTd));
++ PRIVATE extern int match ANSI((CONST char**, char*));
++ PRIVATE extern Bigint *mult ANSI((Bigint*, Bigint* MTd));
++ PRIVATE extern Bigint *multadd ANSI((Bigint*, int, int MTd));
++ PRIVATE extern char *nrv_alloc ANSI((char*, char **, int MTd));
++ PRIVATE extern Bigint *pow5mult ANSI((Bigint*, int MTd));
++ PRIVATE extern int quorem ANSI((Bigint*, Bigint*));
++ PRIVATE extern double ratio ANSI((Bigint*, Bigint*));
++ PRIVATE extern void rshift ANSI((Bigint*, int));
++ PRIVATE extern char *rv_alloc ANSI((int MTd));
++ PRIVATE extern Bigint *s2b ANSI((CONST char*, int, int, ULong, int MTd));
++ PRIVATE extern Bigint *set_ones ANSI((Bigint*, int MTd));
++ PRIVATE extern char *strcp ANSI((char*, const char*));
++ PRIVATE extern int strtoIg ANSI((CONST char*, char**, CONST FPI*, Long*, Bigint**, int*));
++ PRIVATE extern double strtod ANSI((const char *s00, char **se));
++ PRIVATE extern Bigint *sum ANSI((Bigint*, Bigint* MTd));
++ PRIVATE extern int trailz ANSI((Bigint*));
++ PRIVATE extern double ulp ANSI((U*));
+ 
+ #ifdef __cplusplus
+ }

@@ -1,8 +1,8 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -203,6 +203,12 @@ val arrayLengthSize : unit -> Bytes.t =
 val arrayLengthOffset : unit -> Bytes.t =
    Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
                                             arrayLengthSize ())))
+
+(* see gc/object.h and gc/array.h *)
+val arrayMetaDataSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.arrayMetaData)
+val normalMetaDataSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.normalMetaData)
 
 val cpointerSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.cpointer)

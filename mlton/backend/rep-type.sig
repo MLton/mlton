@@ -1,8 +1,8 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2017 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -30,16 +30,6 @@ signature REP_TYPE =
       include REP_TYPE_STRUCTS
 
       structure ObjectType: OBJECT_TYPE
-      (*
-       * - Junk is used for padding.  You can stick any value in, but you
-       *   can't get any value out.
-       * - In Seq, the components are listed in increasing order of
-       *   address.
-       * - In Seq ts, length ts <> 1
-       * - In Sum ts, length ts >= 2
-       * - In Sum ts, all t in ts must have same width.
-       * - In Sum ts, there are no duplicates, and the types are in order.
-       *)
       type t
       sharing type t = ObjectType.ty
 

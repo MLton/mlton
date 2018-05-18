@@ -35,7 +35,7 @@ mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
 
 == Changelog ==
 
-See the <!ViewGitFile(mlton,master,doc/changelog)> for a list of
+See <!ViewGitFile(mlton,master,CHANGELOG.adoc)> for a list of
 changes and bug fixes.
 
 

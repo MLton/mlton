@@ -1,9 +1,9 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -37,7 +37,7 @@ pointer newObject (GC_state s,
   }
   GC_profileAllocInc (s, bytesRequested);
   *((GC_header*)frontier) = header;
-  result = frontier + GC_NORMAL_HEADER_SIZE;
+  result = frontier + GC_HEADER_SIZE;
   assert (isAligned ((size_t)result, s->alignment));
   if (DEBUG)
     fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %"PRIuMAX", %s)\n",
@@ -57,7 +57,7 @@ GC_stack newStack (GC_state s,
   if (reserved > s->cumulativeStatistics.maxStackSize)
     s->cumulativeStatistics.maxStackSize = reserved;
   stack = (GC_stack)(newObject (s, GC_STACK_HEADER,
-                                sizeofStackWithHeader (s, reserved),
+                                sizeofStackWithMetaData (s, reserved),
                                 allocInOldGen));
   stack->reserved = reserved;
   stack->used = 0;
@@ -74,7 +74,7 @@ GC_thread newThread (GC_state s, size_t reserved) {
   pointer res;
 
   assert (isStackReservedAligned (s, reserved));
-  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeader (s, reserved) + sizeofThread (s));
+  ensureHasHeapBytesFree (s, 0, sizeofStackWithMetaData (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
   res = newObject (s, GC_THREAD_HEADER,
                    sizeofThread (s),

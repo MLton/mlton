@@ -1,6 +1,0 @@
-Experimental
-============
-
-This page is for experimental releases of MLton.  These versions are
-not as well tested as our <:Releases:public releases>, and may not be
-available for our all our usual platforms.

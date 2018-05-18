@@ -8,6 +8,8 @@ MLton is an open-source, whole-program, optimizing
 
 == What's new? ==
 
+* 20180207: Please try out our latest release, <:Release20180207:MLton 20180207>.
+
 * 20140730: http://www.cs.rit.edu/%7emtf[Matthew Fluet] and
   http://www.cse.buffalo.edu/%7elziarek[Lukasz Ziarek] have been
   awarded an http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=12810[NSF
@@ -19,37 +21,12 @@ MLton is an open-source, whole-program, optimizing
   http://www.nsf.gov/awardsearch/showAward?AWD_ID=1405614[Award{nbsp}#1405614])
   for more details.
 
-* 20130715: Please try out our latest release, <:Release20130715:MLton 20130715>.
-
-* 20130308: Subversion repository on
-  http://www.sourceforge.net[SourceForge] converted and migrated to a
-  Git repository on http://github.com[GitHub]; see <:Sources:> for
-  current details.
-
-* 20130227: http://www.sourceforge.net[SourceForge] hosted resources
-  have been upgraded to the
-  https://sourceforge.net/create/[new SourceForge platform], resulting
-  in a migration of the Subversion repository; see <:Sources:> for
-  current details.
-
-* 20120422: http://www.mlton.org[www.mlton.org] content converted to
-  be rendered as HTML using
-  http://www.methods.co.nz/asciidoc/index.html[AsciiDoc].
-
-* 20120129: Subversion repository migrated to
-  http://www.sourceforge.net[SourceForge]; see <:Sources:> for current
-  details.
-
-* 20120129: Mailing lists migrated to
-  http://www.sourceforge.net[SourceForge]; see <:Contact:> for current
-  details.
-
 == Next steps ==
 
 * Read about MLton's <:Features:>.
 * Look at <:Documentation:>.
 * See some <:Users:> of MLton.
-* https://sourceforge.net/projects/mlton/files/mlton/20130715[Download] MLton.
+* https://sourceforge.net/projects/mlton/files/mlton/20180207[Download] MLton.
 * Meet the MLton <:Developers:>.
 * Get involved with MLton <:Development:>.
 * User-maintained <:FAQ:>.

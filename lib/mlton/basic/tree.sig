@@ -1,7 +1,8 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2013,2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -24,7 +25,19 @@ signature TREE =
 
       datatype 'a t = T of 'a * 'a t Seq.t
 
-      val children: 'a t -> 'a t Seq.t
+      structure Forest:
+         sig
+            type 'a t = 'a t Seq.t
+
+            val layout: 'a t * ('a -> Layout.t) -> Layout.t
+            val layoutDot:
+               'a t * {nodeOptions: 'a -> Dot.NodeOption.t list,
+                       options: Dot.GraphOption.t list,
+                       title: string}
+               -> Layout.t
+         end
+
+      val children: 'a t -> 'a Forest.t
       val foldPre: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foldPost: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foreachPre: 'a t * ('a -> unit) -> unit (* preorder traversal *)

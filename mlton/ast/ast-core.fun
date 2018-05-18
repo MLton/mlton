@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -41,6 +41,9 @@ structure Fixop =
           | None => empty
    end
 
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
+
 fun layoutConstraint (t, ty) =
    mayAlign [seq [t, str ":"], Type.layout ty]
 
@@ -75,8 +78,9 @@ structure Pat =
                      pat: t}
        | List of t vector
        | Or of t vector
+       | Paren of t
        | Record of {flexible: bool,
-                    items: (Record.Field.t * item) vector}
+                    items: (Record.Field.t * Region.t * item) vector}
        | Tuple of t vector
        | Var of {fixop: Fixop.t, name: Longvid.t}
        | Vector of t vector
@@ -134,6 +138,7 @@ structure Pat =
              | Or ps =>
                   delimit
                   (mayAlign (separateLeft (Vector.toListMap (ps, layoutT), "| ")))
+             | Paren p => layout (p, isDelimited)
              | Record {items, flexible} =>
                   seq [str "{",
                        mayAlign (separateRight
@@ -152,7 +157,7 @@ structure Pat =
       and layoutF p = layout (p, false)
       and layoutT p = layout (p, true)
       and layoutFlatApp ps = seq (separate (Vector.toListMap (ps, layoutF), " "))
-      and layoutItem (f, i) =
+      and layoutItem (f, _, i) =
          seq [Field.layout f,
               case i of
                  Field p => seq [str " = ", layoutT p]
@@ -178,17 +183,17 @@ structure Pat =
              | Layered {constraint, pat, ...} =>
                   (c pat; Option.app (constraint, Type.checkSyntax))
              | List ps => Vector.foreach (ps, c)
+             | Paren p => c p
              | Or ps => Vector.foreach (ps, c)
              | Record {items, ...} =>
-                  (Vector.foreach (items, fn (_, i) =>
-                                   case i of
-                                      Item.Field p => c p
-                                    | Item.Vid (_, to, po) =>
-                                         (Option.app (to, Type.checkSyntax)
-                                          ; Option.app (po, c)))
-                   ; reportDuplicateFields (items,
-                                            {region = region p,
-                                             term = fn () => layout p}))
+                  (reportDuplicateFields (Vector.map (items, fn (f, r, i) => (f, (r, i))),
+                                          {ctxt = mkCtxt (p, layout)})
+                   ; Vector.foreach (items, fn (_, _, i) =>
+                                     case i of
+                                        Item.Field p => c p
+                                      | Item.Vid (_, to, po) =>
+                                           (Option.app (to, Type.checkSyntax)
+                                            ; Option.app (po, c))))
              | Tuple ps => Vector.foreach (ps, c)
              | Var _ => ()
              | Vector ps => Vector.foreach (ps, c)
@@ -329,9 +334,10 @@ datatype expNode =
   | Let of dec * exp
   | List of exp vector
   | Orelse of exp * exp
+  | Paren of exp
   | Prim of PrimKind.t
   | Raise of exp
-  | Record of expNode Wrap.t Record.t (* the Kit barfs on exp Record.t *)
+  | Record of (Region.t * exp) Record.t
   | Selector of Field.t
   | Seq of exp vector
   | Var of {name: Longvid.t, fixop: Fixop.t}
@@ -382,7 +388,12 @@ fun layoutTyvarsAndsSusp (prefix, (tyvars, xs), layoutX) =
    layoutAndsSusp
    (prefix, xs, fn (first, prefix, x) =>
     if first andalso not (Vector.isEmpty tyvars)
-       then seq [prefix, Tyvar.layouts tyvars, str " ", layoutX x]
+       then seq [prefix,
+                 case Vector.length tyvars of
+                    1 => Tyvar.layout (Vector.sub (tyvars, 0))
+                  | _ => Layout.tuple (Vector.toListMap (tyvars, Tyvar.layout)),
+                 str " ",
+                 layoutX x]
        else seq [prefix, layoutX x])
 
 fun expNodeName e =
@@ -399,6 +410,7 @@ fun expNodeName e =
     | Let _ => "Let"
     | List _ => "List"
     | Orelse _ => "Orelse"
+    | Paren _ => "Paren"
     | Prim _ => "Prim"
     | Raise _ => "Raise"
     | Record _ => "Record"
@@ -449,6 +461,7 @@ fun layoutExp arg =
        | Orelse (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "orelse ", layoutExpF e']])
+       | Paren e => layoutExp (e, isDelimited)
        | Prim kind => str (PrimKind.name kind)
        | Raise exn => delimit (seq [str "raise ", layoutExpF exn])
        | Record r =>
@@ -461,8 +474,8 @@ fun layoutExp arg =
                Record.layout {record = r,
                               separator = " = ",
                               extra = "",
-                              layoutTuple = layoutTuple,
-                              layoutElt = layoutExpT}
+                              layoutTuple = fn res => layoutTuple (Vector.map (res, #2)),
+                              layoutElt = layoutExpT o #2}
             end
        | Selector f => seq [str "#", Field.layout f]
        | Seq es => paren (align (separateRight (layoutExpsT es, " ;")))
@@ -494,7 +507,7 @@ and layoutDec d =
                 seq [str "with ", layoutDec body],
                 str "end"]
     | Datatype rhs => DatatypeRhs.layout rhs
-    | DoDec exp => layoutExpT exp
+    | DoDec exp => seq [str "do ", layoutExpT exp]
     | Exception ebs =>
          layoutAnds ("exception", ebs,
                      fn (prefix, eb) => seq [prefix, Eb.layout eb])
@@ -573,13 +586,13 @@ fun checkSyntaxExp (e: exp): unit =
        | Let (d, e) => (checkSyntaxDec d; c e)
        | List es => Vector.foreach (es, c)
        | Orelse (e1, e2) => (c e1; c e2)
+       | Paren e => c e
        | Prim _ => ()
        | Raise e => c e
        | Record r =>
-            (Record.foreach (r, c)
-             ; reportDuplicateFields (Record.toVector r,
-                                      {region = region e,
-                                       term = fn () => layoutExp (e, true)}))
+            (reportDuplicateFields (Record.toVector r,
+                                    {ctxt = mkCtxt (e, layoutExpT)})
+             ; Record.foreach (r, c o #2))
        | Selector _ => ()
        | Seq es => Vector.foreach (es, c)
        | Var _ => ()
@@ -597,35 +610,46 @@ and checkSyntaxMatch (m: match): unit =
 and checkSyntaxDec (d: dec): unit =
    case node d of
       Abstype {datBind, body} =>
-         (DatBind.checkSyntax datBind
+         (DatBind.checkSyntaxDef datBind
           ; checkSyntaxDec body)
-    | Datatype rhs => DatatypeRhs.checkSyntax rhs
+    | Datatype rhs => DatatypeRhs.checkSyntaxDef rhs
     | DoDec exp => checkSyntaxExp exp
     | Exception v =>
-         (Vector.foreach (v, fn (_, ebrhs) => EbRhs.checkSyntax ebrhs)
+         (Vector.foreach
+          (v, fn (con, ebrhs) =>
+           (Vid.checkRedefineSpecial
+            (Vid.fromCon con,
+             {allowIt = false,
+              ctxt = mkCtxt (d, layoutDec),
+              keyword = "exception"})
+            ; EbRhs.checkSyntax ebrhs))
           ; (reportDuplicates
-             (v, {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+             (v, {ctxt = mkCtxt (d, layoutDec),
+                  equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                   layout = Con.layout o #1,
-                  name = "exception declaration",
-                  region = Con.region o #1,
-                  term = fn () => layoutDec d})))
+                  name = "exception definition",
+                  region = Con.region o #1})))
     | Fix _ => () (* The Definition allows, e.g., "infix + +". *)
-    | Fun {fbs, ...} =>
-         Vector.foreach (fbs, fn clauses =>
-                         Vector.foreach
-                         (clauses, fn {body, pats, resultType} =>
-                          (checkSyntaxExp body
-                           ; Vector.foreach (pats, Pat.checkSyntax)
-                           ; Option.app (resultType, Type.checkSyntax))))
+    | Fun {tyvars, fbs, ...} =>
+         (reportDuplicateTyvars (tyvars,
+                                 {ctxt = mkCtxt (d, layoutDec)})
+          ; Vector.foreach (fbs, fn clauses =>
+                            Vector.foreach
+                            (clauses, fn {body, pats, resultType} =>
+                             (checkSyntaxExp body
+                              ; Vector.foreach (pats, Pat.checkSyntax)
+                              ; Option.app (resultType, Type.checkSyntax)))))
     | Local (d, d') => (checkSyntaxDec d; checkSyntaxDec d')
     | Open _ => ()
     | Overload (_, _, _, ty, _) => Type.checkSyntax ty
     | SeqDec v => Vector.foreach (v, checkSyntaxDec)
-    | Type b => TypBind.checkSyntax b
-    | Val {rvbs, vbs, ...} =>
-         (Vector.foreach (rvbs, fn {match, pat} =>
-                          (checkSyntaxMatch match
-                           ; Pat.checkSyntax pat))
+    | Type b => TypBind.checkSyntaxDef b
+    | Val {tyvars, rvbs, vbs, ...} =>
+         (reportDuplicateTyvars (tyvars,
+                                 {ctxt = mkCtxt (d, layoutDec)})
+          ; Vector.foreach (rvbs, fn {match, pat} =>
+                            (checkSyntaxMatch match
+                             ; Pat.checkSyntax pat))
           ; Vector.foreach (vbs, fn {exp, pat} =>
                             (checkSyntaxExp exp
                              ; Pat.checkSyntax pat)))
@@ -678,8 +702,10 @@ structure Exp =
                      then Region.bogus
                   else Region.append (region (Vector.first es),
                                       region (Vector.last es))
+               val res =
+                  Vector.map (es, fn e => (Region.bogus, e))
             in
-               makeRegion (Record (Record.tuple es), r)
+               makeRegion (Record (Record.tuple res), r)
             end
 
       val unit: t = tuple (Vector.new0 ())

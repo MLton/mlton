@@ -1319,12 +1319,12 @@ index 5ff322a..427c8f2 100644
  	 | I.SOURCE {} => IK_SOURCE
  	 | I.SINK {} => IK_SINK
 diff --git a/amd64/mltree/amd64-gen.sml b/amd64/mltree/amd64-gen.sml
-index f8e6d49..0d5ac05 100644
+index 881f16a..d14a94e 100644
 --- a/amd64/mltree/amd64-gen.sml
 +++ b/amd64/mltree/amd64-gen.sml
-@@ -5,10 +5,53 @@
- 
+@@ -9,10 +9,53 @@
  functor AMD64Gen (
+ 
      structure I : AMD64INSTR
 -    structure MLTreeUtils : MLTREE_UTILS
 -	where T = I.T
@@ -1378,7 +1378,7 @@ index f8e6d49..0d5ac05 100644
 +                                and type T.rexp = I.T.rexp
 +                                and type T.stm = I.T.stm
  
-     (* Take a number of bits and returns a label that points to a literal with the high bit set.
+     (* Take a number of bits and returns an rexp that points to a literal with the high bit set.
       * We need this literal value for floating-point negation and absolute value (at least
 diff --git a/amd64/omit-frameptr/amd64omit-frameptr.sml b/amd64/omit-frameptr/amd64omit-frameptr.sml
 index 5c122da..b079909 100644
@@ -7498,10 +7498,10 @@ index 0000000..3748f93
 +end
 diff --git a/mlb/MLRISC.mlb b/mlb/MLRISC.mlb
 new file mode 100644
-index 0000000..0124642
+index 0000000..4b1a3fa
 --- /dev/null
 +++ b/mlb/MLRISC.mlb
-@@ -0,0 +1,1748 @@
+@@ -0,0 +1,1749 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
@@ -7923,6 +7923,7 @@ index 0000000..0124642
 +      signature gs_59 = DELAY_SLOT_PROPERTIES
 +   end
 +   local
++      structure Int = gs_12
 +      structure List = gs_9
 +      ../c-calls/c-types.sml
 +   in

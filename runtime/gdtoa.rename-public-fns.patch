@@ -1,1312 +1,975 @@
-diff -P -C 2 -r gdtoa/dmisc.c gdtoa-new/dmisc.c
-*** gdtoa/dmisc.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/dmisc.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 84,90 ****
-   void
-  #ifdef KR_headers
-! freedtoa(s) char *s;
-  #else
-! freedtoa(char *s)
-  #endif
-  {
---- 84,90 ----
-   void
-  #ifdef KR_headers
-! gdtoa__freedtoa(s) char *s;
-  #else
-! gdtoa__freedtoa(char *s)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/dtoa.c gdtoa-new/dtoa.c
-*** gdtoa/dtoa.c	2010-09-15 10:59:11.000000000 -0400
---- gdtoa-new/dtoa.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 74,78 ****
-  
-   char *
-! dtoa
-  #ifdef KR_headers
-  	(d0, mode, ndigits, decpt, sign, rve)
---- 74,78 ----
-  
-   char *
-! gdtoa__dtoa
-  #ifdef KR_headers
-  	(d0, mode, ndigits, decpt, sign, rve)
-***************
-*** 147,151 ****
-  #ifndef MULTIPLE_THREADS
-  	if (dtoa_result) {
-! 		freedtoa(dtoa_result);
-  		dtoa_result = 0;
-  		}
---- 147,151 ----
-  #ifndef MULTIPLE_THREADS
-  	if (dtoa_result) {
-! 		gdtoa__freedtoa(dtoa_result);
-  		dtoa_result = 0;
-  		}
-diff -P -C 2 -r gdtoa/g_Qfmt.c gdtoa-new/g_Qfmt.c
-*** gdtoa/g_Qfmt.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/g_Qfmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 52,58 ****
-   char*
-  #ifdef KR_headers
-! g_Qfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! g_Qfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
---- 52,58 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_Qfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_Qfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 115,119 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
+diff -Naur gdtoa.1/dmisc.c gdtoa.2/dmisc.c
+--- gdtoa.1/dmisc.c	2016-02-19 17:09:46.000000000 +0000
++++ gdtoa.2/dmisc.c	2018-01-25 20:50:09.000000000 +0000
+@@ -83,9 +83,9 @@
+ 
+  void
+ #ifdef KR_headers
+-freedtoa(s) char *s;
++gdtoa__freedtoa(s) char *s;
+ #else
+-freedtoa(char *s)
++gdtoa__freedtoa(char *s)
+ #endif
+ {
+ #ifdef MULTIPLE_THREADS
+diff -Naur gdtoa.1/dtoa.c gdtoa.2/dtoa.c
+--- gdtoa.1/dtoa.c	2016-04-29 22:46:32.000000000 +0000
++++ gdtoa.2/dtoa.c	2018-01-25 20:50:09.000000000 +0000
+@@ -73,7 +73,7 @@
+ #endif
+ 
+  char *
+-dtoa
++gdtoa__dtoa
+ #ifdef KR_headers
+ 	(d0, mode, ndigits, decpt, sign, rve)
+ 	double d0; int mode, ndigits, *decpt, *sign; char **rve;
+@@ -149,7 +149,7 @@
+ 
+ #ifndef MULTIPLE_THREADS
+ 	if (dtoa_result) {
+-		freedtoa(dtoa_result);
++		gdtoa__freedtoa(dtoa_result);
+ 		dtoa_result = 0;
+ 		}
+ #endif
+diff -Naur gdtoa.1/g_Qfmt.c gdtoa.2/g_Qfmt.c
+--- gdtoa.1/g_Qfmt.c	2016-02-18 23:25:54.000000000 +0000
++++ gdtoa.2/g_Qfmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -51,9 +51,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_Qfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
++gdtoa__g_Qfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
+ #else
+-g_Qfmt(char *buf, void *V, int ndig, size_t bufsize)
++gdtoa__g_Qfmt(char *buf, void *V, int ndig, size_t bufsize)
+ #endif
+ {
+ 	static FPI fpi0 = { 113, 1-16383-113+1, 32766 - 16383 - 113 + 1, 1, 0, Int_max };
+@@ -114,6 +114,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_Qfmt_p.c gdtoa.2/g_Qfmt_p.c
+--- gdtoa.1/g_Qfmt_p.c	2016-02-19 00:17:33.000000000 +0000
++++ gdtoa.2/g_Qfmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -53,9 +53,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_Qfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
++gdtoa__g_Qfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
+ #else
+-g_Qfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
++gdtoa__g_Qfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	static FPI fpi0 = { 113, 1-16383-113+1, 32766 - 16383 - 113 + 1, 1, 0, Int_max };
+@@ -127,6 +127,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g__fmt.c gdtoa.2/g__fmt.c
+--- gdtoa.1/g__fmt.c	2012-12-24 01:41:26.000000000 +0000
++++ gdtoa.2/g__fmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -166,7 +166,7 @@
+ 		*b = 0;
+ 		}
+  ret:
+-	freedtoa(s0);
++	gdtoa__freedtoa(s0);
+ 	return b;
   	}
---- 115,119 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_Qfmt_p.c gdtoa-new/g_Qfmt_p.c
-*** gdtoa/g_Qfmt_p.c	2012-12-23 20:31:33.000000000 -0500
---- gdtoa-new/g_Qfmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 54,60 ****
-   char*
-  #ifdef KR_headers
-! g_Qfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! g_Qfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 54,60 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_Qfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_Qfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 128,132 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 128,132 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g__fmt.c gdtoa-new/g__fmt.c
-*** gdtoa/g__fmt.c	2012-12-23 20:41:26.000000000 -0500
---- gdtoa-new/g__fmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 167,171 ****
-  		}
-   ret:
-! 	freedtoa(s0);
-  	return b;
-   	}
---- 167,171 ----
-  		}
-   ret:
-! 	gdtoa__freedtoa(s0);
-  	return b;
-   	}
-diff -P -C 2 -r gdtoa/g_ddfmt.c gdtoa-new/g_ddfmt.c
-*** gdtoa/g_ddfmt.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/g_ddfmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 34,40 ****
-   char *
-  #ifdef KR_headers
-! g_ddfmt(buf, dd0, ndig, bufsize) char *buf; double *dd0; int ndig; size_t bufsize;
-  #else
-! g_ddfmt(char *buf, double *dd0, int ndig, size_t bufsize)
-  #endif
-  {
---- 34,40 ----
-   char *
-  #ifdef KR_headers
-! gdtoa__g_ddfmt(buf, dd0, ndig, bufsize) char *buf; double *dd0; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_ddfmt(char *buf, double *dd0, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 165,169 ****
-  	fpi.int_max = Int_max;
-  	i = STRTOG_Normal;
-! 	s = gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
-  	Bfree(z);
---- 165,169 ----
-  	fpi.int_max = Int_max;
-  	i = STRTOG_Normal;
-! 	s = gdtoa__gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
-  	Bfree(z);
-diff -P -C 2 -r gdtoa/g_ddfmt_p.c gdtoa-new/g_ddfmt_p.c
-*** gdtoa/g_ddfmt_p.c	2012-12-23 20:45:12.000000000 -0500
---- gdtoa-new/g_ddfmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 36,42 ****
-   char *
-  #ifdef KR_headers
-! g_ddfmt_p(buf, dd0, ndig, bufsize, nik) char *buf; double *dd0; int ndig; size_t bufsize; int nik;
-  #else
-! g_ddfmt_p(char *buf, double *dd0, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 36,42 ----
-   char *
-  #ifdef KR_headers
-! gdtoa__g_ddfmt_p(buf, dd0, ndig, bufsize, nik) char *buf; double *dd0; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_ddfmt_p(char *buf, double *dd0, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 185,189 ****
-  	fpi.int_max = Int_max;
-  	i = STRTOG_Normal;
-! 	s = gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
-  	Bfree(z);
---- 185,189 ----
-  	fpi.int_max = Int_max;
-  	i = STRTOG_Normal;
-! 	s = gdtoa__gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
-  	Bfree(z);
-diff -P -C 2 -r gdtoa/g_dfmt.c gdtoa-new/g_dfmt.c
-*** gdtoa/g_dfmt.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/g_dfmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 34,40 ****
-   char*
-  #ifdef KR_headers
-! g_dfmt(buf, d, ndig, bufsize) char *buf; double *d; int ndig; size_t bufsize;
-  #else
-! g_dfmt(char *buf, double *d, int ndig, size_t bufsize)
-  #endif
-  {
---- 34,40 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_dfmt(buf, d, ndig, bufsize) char *buf; double *d; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_dfmt(char *buf, double *d, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 91,95 ****
-  	if (sign)
-  		i = STRTOG_Normal | STRTOG_Neg;
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 91,95 ----
-  	if (sign)
-  		i = STRTOG_Normal | STRTOG_Neg;
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_dfmt_p.c gdtoa-new/g_dfmt_p.c
-*** gdtoa/g_dfmt_p.c	2012-12-23 20:45:12.000000000 -0500
---- gdtoa-new/g_dfmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 36,42 ****
-   char*
-  #ifdef KR_headers
-! g_dfmt_p(buf, d, ndig, bufsize, nik) char *buf; double *d; int ndig; size_t bufsize; int nik;
-  #else
-! g_dfmt_p(char *buf, double *d, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 36,42 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_dfmt_p(buf, d, ndig, bufsize, nik) char *buf; double *d; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_dfmt_p(char *buf, double *d, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 106,110 ****
-  	if (sign)
-  		i = STRTOG_Normal | STRTOG_Neg;
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 106,110 ----
-  	if (sign)
-  		i = STRTOG_Normal | STRTOG_Neg;
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_ffmt.c gdtoa-new/g_ffmt.c
-*** gdtoa/g_ffmt.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/g_ffmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 34,40 ****
-   char*
-  #ifdef KR_headers
-! g_ffmt(buf, f, ndig, bufsize) char *buf; float *f; int ndig; size_t bufsize;
-  #else
-! g_ffmt(char *buf, float *f, int ndig, size_t bufsize)
-  #endif
-  {
---- 34,40 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_ffmt(buf, f, ndig, bufsize) char *buf; float *f; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_ffmt(char *buf, float *f, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 89,93 ****
-  		}
-  	i = STRTOG_Normal;
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 89,93 ----
-  		}
-  	i = STRTOG_Normal;
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_ffmt_p.c gdtoa-new/g_ffmt_p.c
-*** gdtoa/g_ffmt_p.c	2012-12-23 20:45:12.000000000 -0500
---- gdtoa-new/g_ffmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 36,42 ****
-   char*
-  #ifdef KR_headers
-! g_ffmt_p(buf, f, ndig, bufsize, nik) char *buf; float *f; int ndig; size_t bufsize; int nik;
-  #else
-! g_ffmt_p(char *buf, float *f, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 36,42 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_ffmt_p(buf, f, ndig, bufsize, nik) char *buf; float *f; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_ffmt_p(char *buf, float *f, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 100,104 ****
-  		}
-  	i = STRTOG_Normal;
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 100,104 ----
-  		}
-  	i = STRTOG_Normal;
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_xLfmt.c gdtoa-new/g_xLfmt.c
-*** gdtoa/g_xLfmt.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/g_xLfmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 50,56 ****
-   char*
-  #ifdef KR_headers
-! g_xLfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! g_xLfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
---- 50,56 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_xLfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_xLfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 109,113 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 109,113 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_xLfmt_p.c gdtoa-new/g_xLfmt_p.c
-*** gdtoa/g_xLfmt_p.c	2012-12-23 20:45:12.000000000 -0500
---- gdtoa-new/g_xLfmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 52,58 ****
-   char*
-  #ifdef KR_headers
-! g_xLfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! g_xLfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 52,58 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_xLfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_xLfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 121,125 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 121,125 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_xfmt.c gdtoa-new/g_xfmt.c
-*** gdtoa/g_xfmt.c	2012-12-20 20:02:55.000000000 -0500
---- gdtoa-new/g_xfmt.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 54,60 ****
-   char*
-  #ifdef KR_headers
-! g_xfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! g_xfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
---- 54,60 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_xfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
-  #else
-! gdtoa__g_xfmt(char *buf, void *V, int ndig, size_t bufsize)
-  #endif
-  {
-***************
-*** 115,119 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 115,119 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/g_xfmt_p.c gdtoa-new/g_xfmt_p.c
-*** gdtoa/g_xfmt_p.c	2012-12-23 20:45:12.000000000 -0500
---- gdtoa-new/g_xfmt_p.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 56,62 ****
-   char*
-  #ifdef KR_headers
-! g_xfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! g_xfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
---- 56,62 ----
-   char*
-  #ifdef KR_headers
-! gdtoa__g_xfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
-  #else
-! gdtoa__g_xfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
-  #endif
-  {
-***************
-*** 131,135 ****
-  		mode = 0;
-  		}
-! 	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
---- 131,135 ----
-  		mode = 0;
-  		}
-! 	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
-  	return g__fmt(buf, s, se, decpt, sign, bufsize);
-  	}
-diff -P -C 2 -r gdtoa/gdtoa.c gdtoa-new/gdtoa.c
-*** gdtoa/gdtoa.c	2011-11-02 11:46:29.000000000 -0400
---- gdtoa-new/gdtoa.c	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 110,114 ****
-  
-   char *
-! gdtoa
-  #ifdef KR_headers
-  	(fpi, be, bits, kindp, mode, ndigits, decpt, rve)
---- 110,114 ----
-  
-   char *
-! gdtoa__gdtoa
-  #ifdef KR_headers
-  	(fpi, be, bits, kindp, mode, ndigits, decpt, rve)
-***************
-*** 165,169 ****
-  #ifndef MULTIPLE_THREADS
-  	if (dtoa_result) {
-! 		freedtoa(dtoa_result);
-  		dtoa_result = 0;
-  		}
---- 165,169 ----
-  #ifndef MULTIPLE_THREADS
-  	if (dtoa_result) {
-! 		gdtoa__freedtoa(dtoa_result);
-  		dtoa_result = 0;
-  		}
-diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
-*** gdtoa/gdtoa.h	2012-12-20 12:24:26.000000000 -0500
---- gdtoa-new/gdtoa.h	2013-06-20 10:54:02.000000000 -0400
-***************
-*** 105,157 ****
-  #endif
-  
-! extern char* dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
-  			int *sign, char **rve));
-! extern char* gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
-  			int mode, int ndigits, int *decpt, char **rve));
-! extern void freedtoa ANSI((char*));
-! extern float  strtof ANSI((CONST char *, char **));
-! extern double strtod ANSI((CONST char *, char **));
-! extern int strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
-  
-! extern char*	g_ddfmt   ANSI((char*, double*, int, size_t));
-! extern char*	g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
-! extern char*	g_dfmt    ANSI((char*, double*, int, size_t));
-! extern char*	g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
-! extern char*	g_ffmt    ANSI((char*, float*,  int, size_t));
-! extern char*	g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
-! extern char*	g_Qfmt    ANSI((char*, void*,   int, size_t));
-! extern char*	g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
-! extern char*	g_xfmt    ANSI((char*, void*,   int, size_t));
-! extern char*	g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
-! extern char*	g_xLfmt   ANSI((char*, void*,   int, size_t));
-! extern char*	g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
-  
-! extern int	strtoId  ANSI((CONST char*, char**, double*, double*));
-! extern int	strtoIdd ANSI((CONST char*, char**, double*, double*));
-! extern int	strtoIf  ANSI((CONST char*, char**, float*, float*));
-! extern int	strtoIQ  ANSI((CONST char*, char**, void*, void*));
-! extern int	strtoIx  ANSI((CONST char*, char**, void*, void*));
-! extern int	strtoIxL ANSI((CONST char*, char**, void*, void*));
-! extern int	strtord  ANSI((CONST char*, char**, int, double*));
-! extern int	strtordd ANSI((CONST char*, char**, int, double*));
-! extern int	strtorf  ANSI((CONST char*, char**, int, float*));
-! extern int	strtorQ  ANSI((CONST char*, char**, int, void*));
-! extern int	strtorx  ANSI((CONST char*, char**, int, void*));
-! extern int	strtorxL ANSI((CONST char*, char**, int, void*));
-  #if 1
-! extern int	strtodI  ANSI((CONST char*, char**, double*));
-! extern int	strtopd  ANSI((CONST char*, char**, double*));
-! extern int	strtopdd ANSI((CONST char*, char**, double*));
-! extern int	strtopf  ANSI((CONST char*, char**, float*));
-! extern int	strtopQ  ANSI((CONST char*, char**, void*));
-! extern int	strtopx  ANSI((CONST char*, char**, void*));
-! extern int	strtopxL ANSI((CONST char*, char**, void*));
-  #else
-! #define strtopd(s,se,x) strtord(s,se,1,x)
-! #define strtopdd(s,se,x) strtordd(s,se,1,x)
-! #define strtopf(s,se,x) strtorf(s,se,1,x)
-! #define strtopQ(s,se,x) strtorQ(s,se,1,x)
-! #define strtopx(s,se,x) strtorx(s,se,1,x)
-! #define strtopxL(s,se,x) strtorxL(s,se,1,x)
-  #endif
-  
---- 105,157 ----
-  #endif
-  
-! extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
-  			int *sign, char **rve));
-! extern char* gdtoa__gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
-  			int mode, int ndigits, int *decpt, char **rve));
-! extern void gdtoa__freedtoa ANSI((char*));
-! extern float  gdtoa__strtof ANSI((CONST char *, char **));
-! extern double gdtoa__strtod ANSI((CONST char *, char **));
-! extern int gdtoa__strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
-  
-! extern char*	gdtoa__g_ddfmt   ANSI((char*, double*, int, size_t));
-! extern char*	gdtoa__g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
-! extern char*	gdtoa__g_dfmt    ANSI((char*, double*, int, size_t));
-! extern char*	gdtoa__g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
-! extern char*	gdtoa__g_ffmt    ANSI((char*, float*,  int, size_t));
-! extern char*	gdtoa__g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
-! extern char*	gdtoa__g_Qfmt    ANSI((char*, void*,   int, size_t));
-! extern char*	gdtoa__g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
-! extern char*	gdtoa__g_xfmt    ANSI((char*, void*,   int, size_t));
-! extern char*	gdtoa__g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
-! extern char*	gdtoa__g_xLfmt   ANSI((char*, void*,   int, size_t));
-! extern char*	gdtoa__g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
-  
-! extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
-! extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
-! extern int	gdtoa__strtoIf  ANSI((CONST char*, char**, float*, float*));
-! extern int	gdtoa__strtoIQ  ANSI((CONST char*, char**, void*, void*));
-! extern int	gdtoa__strtoIx  ANSI((CONST char*, char**, void*, void*));
-! extern int	gdtoa__strtoIxL ANSI((CONST char*, char**, void*, void*));
-! extern int	gdtoa__strtord  ANSI((CONST char*, char**, int, double*));
-! extern int	gdtoa__strtordd ANSI((CONST char*, char**, int, double*));
-! extern int	gdtoa__strtorf  ANSI((CONST char*, char**, int, float*));
-! extern int	gdtoa__strtorQ  ANSI((CONST char*, char**, int, void*));
-! extern int	gdtoa__strtorx  ANSI((CONST char*, char**, int, void*));
-! extern int	gdtoa__strtorxL ANSI((CONST char*, char**, int, void*));
-  #if 1
-! extern int	gdtoa__strtodI  ANSI((CONST char*, char**, double*));
-! extern int	gdtoa__strtopd  ANSI((CONST char*, char**, double*));
-! extern int	gdtoa__strtopdd ANSI((CONST char*, char**, double*));
-! extern int	gdtoa__strtopf  ANSI((CONST char*, char**, float*));
-! extern int	gdtoa__strtopQ  ANSI((CONST char*, char**, void*));
-! extern int	gdtoa__strtopx  ANSI((CONST char*, char**, void*));
-! extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
-  #else
-! #define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
-! #define gdtoa__strtopdd(s,se,x) gdtoa__strtordd(s,se,1,x)
-! #define gdtoa__strtopf(s,se,x) gdtoa__strtorf(s,se,1,x)
-! #define gdtoa__strtopQ(s,se,x) gdtoa__strtorQ(s,se,1,x)
-! #define gdtoa__strtopx(s,se,x) gdtoa__strtorx(s,se,1,x)
-! #define gdtoa__strtopxL(s,se,x) gdtoa__strtorxL(s,se,1,x)
-  #endif
-  
-diff -P -C 2 -r gdtoa/gdtoaimp.h gdtoa-new/gdtoaimp.h
-*** gdtoa/gdtoaimp.h	2013-06-20 10:52:22.000000000 -0400
---- gdtoa-new/gdtoaimp.h	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 507,510 ****
---- 507,511 ----
-  #define gethex gethex_D2A
-  #define hexdig hexdig_D2A
-+ #define hexdig_init hexdig_init_D2A
-  #define hexnan hexnan_D2A
-  #define hi0bits(x) hi0bits_D2A((ULong)(x))
-***************
-*** 526,529 ****
---- 527,531 ----
-  #define strcp strcp_D2A
-  #define strtoIg strtoIg_D2A
-+ #define strtod strtod_D2A
-  #define sum sum_D2A
-  #define tens tens_D2A
-***************
-*** 558,562 ****
-   extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
-   extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-!  extern void hexdig_init_D2A(Void);
-   extern int hexnan ANSI((CONST char**, FPI*, ULong*));
-   extern int hi0bits_D2A ANSI((ULong));
---- 560,564 ----
-   extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
-   extern int gethex ANSI((CONST char**, FPI*, Long*, Bigint**, int));
-!  /* extern void hexdig_init ANSI((Void)); */
-   extern int hexnan ANSI((CONST char**, FPI*, ULong*));
-   extern int hi0bits_D2A ANSI((ULong));
-diff -P -C 2 -r gdtoa/gethex.c gdtoa-new/gethex.c
-*** gdtoa/gethex.c	2012-12-20 11:45:01.000000000 -0500
---- gdtoa-new/gethex.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 67,71 ****
-  #endif
-  
-! 	/**** if (!hexdig['0']) hexdig_init_D2A(); ****/
-  	*bp = 0;
-  	havedig = 0;
---- 67,71 ----
-  #endif
-  
-! 	/**** if (!hexdig['0']) hexdig_init(); ****/
-  	*bp = 0;
-  	havedig = 0;
-diff -P -C 2 -r gdtoa/hd_init.c gdtoa-new/hd_init.c
-*** gdtoa/hd_init.c	2012-12-20 16:20:25.000000000 -0500
---- gdtoa-new/hd_init.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 48,52 ****
-  
-   void
-! hexdig_init_D2A(Void)	/* Use of hexdig_init omitted 20121220 to avoid a */
-  			/* race condition when multiple threads are used. */
-  {
---- 48,52 ----
-  
-   void
-! hexdig_init(Void)	/* Use of hexdig_init omitted 20121220 to avoid a */
-  			/* race condition when multiple threads are used. */
-  {
-diff -P -C 2 -r gdtoa/hexnan.c gdtoa-new/hexnan.c
-*** gdtoa/hexnan.c	2012-12-20 22:29:15.000000000 -0500
---- gdtoa-new/hexnan.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 62,66 ****
-  	int havedig, hd0, i, nbits;
-  
-! 	/**** if (!hexdig['0']) hexdig_init_D2A(); ****/
-  	nbits = fpi->nbits;
-  	x = x0 + (nbits >> kshift);
---- 62,66 ----
-  	int havedig, hd0, i, nbits;
-  
-! 	/**** if (!hexdig['0']) hexdig_init(); ****/
-  	nbits = fpi->nbits;
-  	x = x0 + (nbits >> kshift);
-diff -P -C 2 -r gdtoa/strtoIQ.c gdtoa-new/strtoIQ.c
-*** gdtoa/strtoIQ.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoIQ.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoIQ(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! strtoIQ(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoIQ(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! gdtoa__strtoIQ(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtoId.c gdtoa-new/strtoId.c
-*** gdtoa/strtoId.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoId.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoId(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
-  #else
-! strtoId(CONST char *s, char **sp, double *f0, double *f1)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoId(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
-  #else
-! gdtoa__strtoId(CONST char *s, char **sp, double *f0, double *f1)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtoIdd.c gdtoa-new/strtoIdd.c
-*** gdtoa/strtoIdd.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoIdd.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoIdd(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
-  #else
-! strtoIdd(CONST char *s, char **sp, double *f0, double *f1)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoIdd(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
-  #else
-! gdtoa__strtoIdd(CONST char *s, char **sp, double *f0, double *f1)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtoIf.c gdtoa-new/strtoIf.c
-*** gdtoa/strtoIf.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoIf.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoIf(s, sp, f0, f1) CONST char *s; char **sp; float *f0, *f1;
-  #else
-! strtoIf(CONST char *s, char **sp, float *f0, float *f1)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoIf(s, sp, f0, f1) CONST char *s; char **sp; float *f0, *f1;
-  #else
-! gdtoa__strtoIf(CONST char *s, char **sp, float *f0, float *f1)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtoIg.c gdtoa-new/strtoIg.c
-*** gdtoa/strtoIg.c	2009-03-16 00:55:05.000000000 -0400
---- gdtoa-new/strtoIg.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 45,49 ****
-  
-  	b = *B;
-! 	rv = strtodg(s00, se, fpi, exp, b->x);
-  	if (!(rv & STRTOG_Inexact)) {
-  		B[1] = 0;
---- 45,49 ----
-  
-  	b = *B;
-! 	rv = gdtoa__strtodg(s00, se, fpi, exp, b->x);
-  	if (!(rv & STRTOG_Inexact)) {
-  		B[1] = 0;
-diff -P -C 2 -r gdtoa/strtoIx.c gdtoa-new/strtoIx.c
-*** gdtoa/strtoIx.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoIx.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoIx(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! strtoIx(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoIx(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! gdtoa__strtoIx(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtoIxL.c gdtoa-new/strtoIxL.c
-*** gdtoa/strtoIxL.c	2004-04-11 23:39:50.000000000 -0400
---- gdtoa-new/strtoIxL.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtoIxL(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! strtoIxL(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtoIxL(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
-  #else
-! gdtoa__strtoIxL(CONST char *s, char **sp, void *a, void *b)
-  #endif
-  {
-diff -P -C 2 -r gdtoa/strtod.c gdtoa-new/strtod.c
-*** gdtoa/strtod.c	2011-03-04 13:15:00.000000000 -0500
---- gdtoa-new/strtod.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 81,85 ****
-  
-   double
-! strtod
-  #ifdef KR_headers
-  	(s00, se) CONST char *s00; char **se;
---- 81,85 ----
-  
-   double
-! gdtoa__strtod
-  #ifdef KR_headers
-  	(s00, se) CONST char *s00; char **se;
-diff -P -C 2 -r gdtoa/strtodI.c gdtoa-new/strtodI.c
-*** gdtoa/strtodI.c	2009-10-21 19:49:32.000000000 -0400
---- gdtoa-new/strtodI.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 51,57 ****
-   int
-  #ifdef KR_headers
-! strtodI(s, sp, dd) CONST char *s; char **sp; double *dd;
-  #else
-! strtodI(CONST char *s, char **sp, double *dd)
-  #endif
-  {
---- 51,57 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtodI(s, sp, dd) CONST char *s; char **sp; double *dd;
-  #else
-! gdtoa__strtodI(CONST char *s, char **sp, double *dd)
-  #endif
-  {
-***************
-*** 62,66 ****
-  	U *u;
-  
-! 	k = strtodg(s, sp, &fpi, &exp, bits);
-  	u = (U*)dd;
-  	sign = k & STRTOG_Neg ? 0x80000000L : 0;
---- 62,66 ----
-  	U *u;
-  
-! 	k = gdtoa__strtodg(s, sp, &fpi, &exp, bits);
-  	u = (U*)dd;
-  	sign = k & STRTOG_Neg ? 0x80000000L : 0;
-diff -P -C 2 -r gdtoa/strtodg.c gdtoa-new/strtodg.c
-*** gdtoa/strtodg.c	2009-04-11 23:11:05.000000000 -0400
---- gdtoa-new/strtodg.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 314,318 ****
-  
-   int
-! strtodg
-  #ifdef KR_headers
-  	(s00, se, fpi, exp, bits)
---- 314,318 ----
-  
-   int
-! gdtoa__strtodg
-  #ifdef KR_headers
-  	(s00, se, fpi, exp, bits)
-diff -P -C 2 -r gdtoa/strtof.c gdtoa-new/strtof.c
-*** gdtoa/strtof.c	2013-06-20 10:52:22.000000000 -0400
---- gdtoa-new/strtof.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   float
-  #ifdef KR_headers
-! strtof(s, sp) CONST char *s; char **sp;
-  #else
-! strtof(CONST char *s, char **sp)
-  #endif
-  {
---- 34,40 ----
-   float
-  #ifdef KR_headers
-! gdtoa__strtof(s, sp) CONST char *s; char **sp;
-  #else
-! gdtoa__strtof(CONST char *s, char **sp)
-  #endif
-  {
-***************
-*** 50,54 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
---- 50,54 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
-diff -P -C 2 -r gdtoa/strtopQ.c gdtoa-new/strtopQ.c
-*** gdtoa/strtopQ.c	2012-12-21 19:25:30.000000000 -0500
---- gdtoa-new/strtopQ.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 55,61 ****
-   int
-  #ifdef KR_headers
-! strtopQ(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! strtopQ(CONST char *s, char **sp, void *V)
-  #endif
-  {
---- 55,61 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopQ(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! gdtoa__strtopQ(CONST char *s, char **sp, void *V)
-  #endif
-  {
-***************
-*** 71,75 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
---- 71,75 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
-diff -P -C 2 -r gdtoa/strtopd.c gdtoa-new/strtopd.c
-*** gdtoa/strtopd.c	2008-09-09 00:44:56.000000000 -0400
---- gdtoa-new/strtopd.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtopd(s, sp, d) char *s; char **sp; double *d;
-  #else
-! strtopd(CONST char *s, char **sp, double *d)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopd(s, sp, d) char *s; char **sp; double *d;
-  #else
-! gdtoa__strtopd(CONST char *s, char **sp, double *d)
-  #endif
-  {
-***************
-*** 49,53 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtod((ULong*)d, bits, exp, k);
-  	return k;
---- 49,53 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtod((ULong*)d, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtopdd.c gdtoa-new/strtopdd.c
-*** gdtoa/strtopdd.c	2013-06-20 10:52:22.000000000 -0400
---- gdtoa-new/strtopdd.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtopdd(s, sp, dd) CONST char *s; char **sp; double *dd;
-  #else
-! strtopdd(CONST char *s, char **sp, double *dd)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopdd(s, sp, dd) CONST char *s; char **sp; double *dd;
-  #else
-! gdtoa__strtopdd(CONST char *s, char **sp, double *dd)
-  #endif
-  {
-***************
-*** 58,62 ****
-  #endif
-  
-! 	rv = strtodg(s, sp, fpi, &exp, bits);
-  	u = (U*)dd;
-  	switch(rv & STRTOG_Retmask) {
---- 58,62 ----
-  #endif
-  
-! 	rv = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	u = (U*)dd;
-  	switch(rv & STRTOG_Retmask) {
-diff -P -C 2 -r gdtoa/strtopf.c gdtoa-new/strtopf.c
-*** gdtoa/strtopf.c	2009-03-16 01:30:33.000000000 -0400
---- gdtoa-new/strtopf.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 34,40 ****
-   int
-  #ifdef KR_headers
-! strtopf(s, sp, f) CONST char *s; char **sp; float *f;
-  #else
-! strtopf(CONST char *s, char **sp, float *f)
-  #endif
-  {
---- 34,40 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopf(s, sp, f) CONST char *s; char **sp; float *f;
-  #else
-! gdtoa__strtopf(CONST char *s, char **sp, float *f)
-  #endif
-  {
-***************
-*** 49,53 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	L = (ULong*)f;
-  	switch(k & STRTOG_Retmask) {
---- 49,53 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	L = (ULong*)f;
-  	switch(k & STRTOG_Retmask) {
-diff -P -C 2 -r gdtoa/strtopx.c gdtoa-new/strtopx.c
-*** gdtoa/strtopx.c	2012-12-21 19:28:56.000000000 -0500
---- gdtoa-new/strtopx.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 56,62 ****
-   int
-  #ifdef KR_headers
-! strtopx(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! strtopx(CONST char *s, char **sp, void *V)
-  #endif
-  {
---- 56,62 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopx(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! gdtoa__strtopx(CONST char *s, char **sp, void *V)
-  #endif
-  {
-***************
-*** 72,76 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
---- 72,76 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
-diff -P -C 2 -r gdtoa/strtopxL.c gdtoa-new/strtopxL.c
-*** gdtoa/strtopxL.c	2012-12-21 19:32:41.000000000 -0500
---- gdtoa-new/strtopxL.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 52,58 ****
-   int
-  #ifdef KR_headers
-! strtopxL(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! strtopxL(CONST char *s, char **sp, void *V)
-  #endif
-  {
---- 52,58 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtopxL(s, sp, V) CONST char *s; char **sp; void *V;
-  #else
-! gdtoa__strtopxL(CONST char *s, char **sp, void *V)
-  #endif
-  {
-***************
-*** 68,72 ****
-  #endif
-  
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
---- 68,72 ----
-  #endif
-  
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	switch(k & STRTOG_Retmask) {
-  	  case STRTOG_NoNumber:
-diff -P -C 2 -r gdtoa/strtorQ.c gdtoa-new/strtorQ.c
-*** gdtoa/strtorQ.c	2012-12-23 20:40:18.000000000 -0500
---- gdtoa-new/strtorQ.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 97,103 ****
-   int
-  #ifdef KR_headers
-! strtorQ(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! strtorQ(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
---- 97,103 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtorQ(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! gdtoa__strtorQ(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
-***************
-*** 114,118 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtoQ((ULong*)L, bits, exp, k);
-  	return k;
---- 114,118 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtoQ((ULong*)L, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtord.c gdtoa-new/strtord.c
-*** gdtoa/strtord.c	2012-12-23 20:40:18.000000000 -0500
---- gdtoa-new/strtord.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 73,79 ****
-   int
-  #ifdef KR_headers
-! strtord(s, sp, rounding, d) CONST char *s; char **sp; int rounding; double *d;
-  #else
-! strtord(CONST char *s, char **sp, int rounding, double *d)
-  #endif
-  {
---- 73,79 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtord(s, sp, rounding, d) CONST char *s; char **sp; int rounding; double *d;
-  #else
-! gdtoa__strtord(CONST char *s, char **sp, int rounding, double *d)
-  #endif
-  {
-***************
-*** 90,94 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtod((ULong*)d, bits, exp, k);
-  	return k;
---- 90,94 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtod((ULong*)d, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtordd.c gdtoa-new/strtordd.c
-*** gdtoa/strtordd.c	2012-12-21 18:12:22.000000000 -0500
---- gdtoa-new/strtordd.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 176,182 ****
-   int
-  #ifdef KR_headers
-! strtordd(s, sp, rounding, dd) CONST char *s; char **sp; int rounding; double *dd;
-  #else
-! strtordd(CONST char *s, char **sp, int rounding, double *dd)
-  #endif
-  {
---- 176,182 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtordd(s, sp, rounding, dd) CONST char *s; char **sp; int rounding; double *dd;
-  #else
-! gdtoa__strtordd(CONST char *s, char **sp, int rounding, double *dd)
-  #endif
-  {
-***************
-*** 197,201 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtodd((ULong*)dd, bits, exp, k);
-  	return k;
---- 197,201 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtodd((ULong*)dd, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtorf.c gdtoa-new/strtorf.c
-*** gdtoa/strtorf.c	2012-12-23 20:40:18.000000000 -0500
---- gdtoa-new/strtorf.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 69,75 ****
-   int
-  #ifdef KR_headers
-! strtorf(s, sp, rounding, f) CONST char *s; char **sp; int rounding; float *f;
-  #else
-! strtorf(CONST char *s, char **sp, int rounding, float *f)
-  #endif
-  {
---- 69,75 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtorf(s, sp, rounding, f) CONST char *s; char **sp; int rounding; float *f;
-  #else
-! gdtoa__strtorf(CONST char *s, char **sp, int rounding, float *f)
-  #endif
-  {
-***************
-*** 86,90 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtof((ULong*)f, bits, exp, k);
-  	return k;
---- 86,90 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtof((ULong*)f, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtorx.c gdtoa-new/strtorx.c
-*** gdtoa/strtorx.c	2012-12-23 20:41:26.000000000 -0500
---- gdtoa-new/strtorx.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 100,106 ****
-   int
-  #ifdef KR_headers
-! strtorx(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! strtorx(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
---- 100,106 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtorx(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! gdtoa__strtorx(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
-***************
-*** 117,121 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtox((UShort*)L, bits, exp, k);
-  	return k;
---- 117,121 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtox((UShort*)L, bits, exp, k);
-  	return k;
-diff -P -C 2 -r gdtoa/strtorxL.c gdtoa-new/strtorxL.c
-*** gdtoa/strtorxL.c	2012-12-23 20:40:18.000000000 -0500
---- gdtoa-new/strtorxL.c	2013-06-20 10:54:06.000000000 -0400
-***************
-*** 88,94 ****
-   int
-  #ifdef KR_headers
-! strtorxL(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! strtorxL(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
---- 88,94 ----
-   int
-  #ifdef KR_headers
-! gdtoa__strtorxL(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
-  #else
-! gdtoa__strtorxL(CONST char *s, char **sp, int rounding, void *L)
-  #endif
-  {
-***************
-*** 105,109 ****
-  		fpi = &fpi1;
-  		}
-! 	k = strtodg(s, sp, fpi, &exp, bits);
-  	ULtoxL((ULong*)L, bits, exp, k);
-  	return k;
---- 105,109 ----
-  		fpi = &fpi1;
-  		}
-! 	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
-  	ULtoxL((ULong*)L, bits, exp, k);
-  	return k;
+ 
+diff -Naur gdtoa.1/g_ddfmt.c gdtoa.2/g_ddfmt.c
+--- gdtoa.1/g_ddfmt.c	2016-02-19 18:25:24.000000000 +0000
++++ gdtoa.2/g_ddfmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  char *
+ #ifdef KR_headers
+-g_ddfmt(buf, dd0, ndig, bufsize) char *buf; double *dd0; int ndig; size_t bufsize;
++gdtoa__g_ddfmt(buf, dd0, ndig, bufsize) char *buf; double *dd0; int ndig; size_t bufsize;
+ #else
+-g_ddfmt(char *buf, double *dd0, int ndig, size_t bufsize)
++gdtoa__g_ddfmt(char *buf, double *dd0, int ndig, size_t bufsize)
+ #endif
+ {
+ 	FPI fpi;
+@@ -167,7 +167,7 @@
+ 	fpi.sudden_underflow = 0;
+ 	fpi.int_max = Int_max;
+ 	i = STRTOG_Normal;
+-	s = gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
+ 	Bfree(z MTb);
+ 	return b;
+diff -Naur gdtoa.1/g_ddfmt_p.c gdtoa.2/g_ddfmt_p.c
+--- gdtoa.1/g_ddfmt_p.c	2016-02-19 18:25:36.000000000 +0000
++++ gdtoa.2/g_ddfmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -35,9 +35,9 @@
+ 
+  char *
+ #ifdef KR_headers
+-g_ddfmt_p(buf, dd0, ndig, bufsize, nik) char *buf; double *dd0; int ndig; size_t bufsize; int nik;
++gdtoa__g_ddfmt_p(buf, dd0, ndig, bufsize, nik) char *buf; double *dd0; int ndig; size_t bufsize; int nik;
+ #else
+-g_ddfmt_p(char *buf, double *dd0, int ndig, size_t bufsize, int nik)
++gdtoa__g_ddfmt_p(char *buf, double *dd0, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	FPI fpi;
+@@ -187,7 +187,7 @@
+ 	fpi.sudden_underflow = 0;
+ 	fpi.int_max = Int_max;
+ 	i = STRTOG_Normal;
+-	s = gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(&fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	b = g__fmt(buf, s, se, decpt, z->sign, bufsize);
+ 	Bfree(z MTb);
+ 	return b;
+diff -Naur gdtoa.1/g_dfmt.c gdtoa.2/g_dfmt.c
+--- gdtoa.1/g_dfmt.c	2016-02-19 00:24:17.000000000 +0000
++++ gdtoa.2/g_dfmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_dfmt(buf, d, ndig, bufsize) char *buf; double *d; int ndig; size_t bufsize;
++gdtoa__g_dfmt(buf, d, ndig, bufsize) char *buf; double *d; int ndig; size_t bufsize;
+ #else
+-g_dfmt(char *buf, double *d, int ndig, size_t bufsize)
++gdtoa__g_dfmt(char *buf, double *d, int ndig, size_t bufsize)
+ #endif
+ {
+ 	static FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0, Int_max };
+@@ -90,6 +90,6 @@
+ 	i = STRTOG_Normal;
+ 	if (sign)
+ 		i = STRTOG_Normal | STRTOG_Neg;
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_dfmt_p.c gdtoa.2/g_dfmt_p.c
+--- gdtoa.1/g_dfmt_p.c	2016-02-19 00:25:27.000000000 +0000
++++ gdtoa.2/g_dfmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -35,9 +35,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_dfmt_p(buf, d, ndig, bufsize, nik) char *buf; double *d; int ndig; size_t bufsize; int nik;
++gdtoa__g_dfmt_p(buf, d, ndig, bufsize, nik) char *buf; double *d; int ndig; size_t bufsize; int nik;
+ #else
+-g_dfmt_p(char *buf, double *d, int ndig, size_t bufsize, int nik)
++gdtoa__g_dfmt_p(char *buf, double *d, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	static FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0, Int_max };
+@@ -105,6 +105,6 @@
+ 	i = STRTOG_Normal;
+ 	if (sign)
+ 		i = STRTOG_Normal | STRTOG_Neg;
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_ffmt.c gdtoa.2/g_ffmt.c
+--- gdtoa.1/g_ffmt.c	2016-02-19 00:26:51.000000000 +0000
++++ gdtoa.2/g_ffmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_ffmt(buf, f, ndig, bufsize) char *buf; float *f; int ndig; size_t bufsize;
++gdtoa__g_ffmt(buf, f, ndig, bufsize) char *buf; float *f; int ndig; size_t bufsize;
+ #else
+-g_ffmt(char *buf, float *f, int ndig, size_t bufsize)
++gdtoa__g_ffmt(char *buf, float *f, int ndig, size_t bufsize)
+ #endif
+ {
+ 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, 0, 6 };
+@@ -88,6 +88,6 @@
+ 		mode = 0;
+ 		}
+ 	i = STRTOG_Normal;
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_ffmt_p.c gdtoa.2/g_ffmt_p.c
+--- gdtoa.1/g_ffmt_p.c	2016-02-19 00:28:16.000000000 +0000
++++ gdtoa.2/g_ffmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -35,9 +35,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_ffmt_p(buf, f, ndig, bufsize, nik) char *buf; float *f; int ndig; size_t bufsize; int nik;
++gdtoa__g_ffmt_p(buf, f, ndig, bufsize, nik) char *buf; float *f; int ndig; size_t bufsize; int nik;
+ #else
+-g_ffmt_p(char *buf, float *f, int ndig, size_t bufsize, int nik)
++gdtoa__g_ffmt_p(char *buf, float *f, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, 0, 6 };
+@@ -99,6 +99,6 @@
+ 		mode = 0;
+ 		}
+ 	i = STRTOG_Normal;
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_xLfmt.c gdtoa.2/g_xLfmt.c
+--- gdtoa.1/g_xLfmt.c	2016-02-19 00:29:17.000000000 +0000
++++ gdtoa.2/g_xLfmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -49,9 +49,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_xLfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
++gdtoa__g_xLfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
+ #else
+-g_xLfmt(char *buf, void *V, int ndig, size_t bufsize)
++gdtoa__g_xLfmt(char *buf, void *V, int ndig, size_t bufsize)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, 0, Int_max };
+@@ -108,6 +108,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_xLfmt_p.c gdtoa.2/g_xLfmt_p.c
+--- gdtoa.1/g_xLfmt_p.c	2016-02-19 00:30:18.000000000 +0000
++++ gdtoa.2/g_xLfmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -51,9 +51,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_xLfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
++gdtoa__g_xLfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
+ #else
+-g_xLfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
++gdtoa__g_xLfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, 0, Int_max };
+@@ -120,6 +120,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_xfmt.c gdtoa.2/g_xfmt.c
+--- gdtoa.1/g_xfmt.c	2016-02-19 00:31:49.000000000 +0000
++++ gdtoa.2/g_xfmt.c	2018-01-25 20:50:09.000000000 +0000
+@@ -53,9 +53,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_xfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
++gdtoa__g_xfmt(buf, V, ndig, bufsize) char *buf; char *V; int ndig; size_t bufsize;
+ #else
+-g_xfmt(char *buf, void *V, int ndig, size_t bufsize)
++gdtoa__g_xfmt(char *buf, void *V, int ndig, size_t bufsize)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, 0, Int_max };
+@@ -114,6 +114,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/g_xfmt_p.c gdtoa.2/g_xfmt_p.c
+--- gdtoa.1/g_xfmt_p.c	2016-02-19 00:32:49.000000000 +0000
++++ gdtoa.2/g_xfmt_p.c	2018-01-25 20:50:09.000000000 +0000
+@@ -55,9 +55,9 @@
+ 
+  char*
+ #ifdef KR_headers
+-g_xfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
++gdtoa__g_xfmt_p(buf, V, ndig, bufsize, nik) char *buf; char *V; int ndig; size_t bufsize; int nik;
+ #else
+-g_xfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
++gdtoa__g_xfmt_p(char *buf, void *V, int ndig, size_t bufsize, int nik)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, 0, Int_max };
+@@ -130,6 +130,6 @@
+ 			return 0;
+ 		mode = 0;
+ 		}
+-	s = gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
++	s = gdtoa__gdtoa(fpi, ex, bits, &i, mode, ndig, &decpt, &se);
+ 	return g__fmt(buf, s, se, decpt, sign, bufsize);
+ 	}
+diff -Naur gdtoa.1/gdtoa.c gdtoa.2/gdtoa.c
+--- gdtoa.1/gdtoa.c	2016-03-25 14:26:52.000000000 +0000
++++ gdtoa.2/gdtoa.c	2018-01-25 20:50:09.000000000 +0000
+@@ -109,7 +109,7 @@
+  */
+ 
+  char *
+-gdtoa
++gdtoa__gdtoa
+ #ifdef KR_headers
+ 	(fpi, be, bits, kindp, mode, ndigits, decpt, rve)
+ 	CONST FPI *fpi; int be; ULong *bits;
+@@ -167,7 +167,7 @@
+ 
+ #ifndef MULTIPLE_THREADS
+ 	if (dtoa_result) {
+-		freedtoa(dtoa_result);
++		gdtoa__freedtoa(dtoa_result);
+ 		dtoa_result = 0;
+ 		}
+ #endif
+diff -Naur gdtoa.1/gdtoa.h gdtoa.2/gdtoa.h
+--- gdtoa.1/gdtoa.h	2016-02-19 00:37:08.000000000 +0000
++++ gdtoa.2/gdtoa.h	2018-01-25 20:53:55.000000000 +0000
+@@ -104,55 +104,55 @@
+ extern "C" {
+ #endif
+ 
+-extern char* dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
++extern char* gdtoa__dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
+ 			int *sign, char **rve));
+-extern char* gdtoa ANSI((CONST FPI *fpi, int be, ULong *bits, int *kindp,
++extern char* gdtoa__gdtoa ANSI((CONST FPI *fpi, int be, ULong *bits, int *kindp,
+ 			int mode, int ndigits, int *decpt, char **rve));
+-extern void freedtoa ANSI((char*));
+-extern float  strtof ANSI((CONST char *, char **));
+-extern double strtod ANSI((CONST char *, char **));
+-extern int strtodg ANSI((CONST char*, char**, CONST FPI*, Long*, ULong*));
++extern void gdtoa__freedtoa ANSI((char*));
++extern float  gdtoa__strtof ANSI((CONST char *, char **));
++extern double gdtoa__strtod ANSI((CONST char *, char **));
++extern int gdtoa__strtodg ANSI((CONST char*, char**, CONST FPI*, Long*, ULong*));
+ 
+-extern char*	g_ddfmt   ANSI((char*, double*, int, size_t));
+-extern char*	g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
+-extern char*	g_dfmt    ANSI((char*, double*, int, size_t));
+-extern char*	g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
+-extern char*	g_ffmt    ANSI((char*, float*,  int, size_t));
+-extern char*	g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
+-extern char*	g_Qfmt    ANSI((char*, void*,   int, size_t));
+-extern char*	g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
+-extern char*	g_xfmt    ANSI((char*, void*,   int, size_t));
+-extern char*	g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
+-extern char*	g_xLfmt   ANSI((char*, void*,   int, size_t));
+-extern char*	g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
++extern char*	gdtoa__g_ddfmt   ANSI((char*, double*, int, size_t));
++extern char*	gdtoa__g_ddfmt_p ANSI((char*, double*,	int, size_t, int));
++extern char*	gdtoa__g_dfmt    ANSI((char*, double*, int, size_t));
++extern char*	gdtoa__g_dfmt_p  ANSI((char*, double*,	int, size_t, int));
++extern char*	gdtoa__g_ffmt    ANSI((char*, float*,  int, size_t));
++extern char*	gdtoa__g_ffmt_p  ANSI((char*, float*,	int, size_t, int));
++extern char*	gdtoa__g_Qfmt    ANSI((char*, void*,   int, size_t));
++extern char*	gdtoa__g_Qfmt_p  ANSI((char*, void*,	int, size_t, int));
++extern char*	gdtoa__g_xfmt    ANSI((char*, void*,   int, size_t));
++extern char*	gdtoa__g_xfmt_p  ANSI((char*, void*,	int, size_t, int));
++extern char*	gdtoa__g_xLfmt   ANSI((char*, void*,   int, size_t));
++extern char*	gdtoa__g_xLfmt_p ANSI((char*, void*,	int, size_t, int));
+ 
+-extern int	strtoId  ANSI((CONST char*, char**, double*, double*));
+-extern int	strtoIdd ANSI((CONST char*, char**, double*, double*));
+-extern int	strtoIf  ANSI((CONST char*, char**, float*, float*));
+-extern int	strtoIQ  ANSI((CONST char*, char**, void*, void*));
+-extern int	strtoIx  ANSI((CONST char*, char**, void*, void*));
+-extern int	strtoIxL ANSI((CONST char*, char**, void*, void*));
+-extern int	strtord  ANSI((CONST char*, char**, int, double*));
+-extern int	strtordd ANSI((CONST char*, char**, int, double*));
+-extern int	strtorf  ANSI((CONST char*, char**, int, float*));
+-extern int	strtorQ  ANSI((CONST char*, char**, int, void*));
+-extern int	strtorx  ANSI((CONST char*, char**, int, void*));
+-extern int	strtorxL ANSI((CONST char*, char**, int, void*));
++extern int	gdtoa__strtoId  ANSI((CONST char*, char**, double*, double*));
++extern int	gdtoa__strtoIdd ANSI((CONST char*, char**, double*, double*));
++extern int	gdtoa__strtoIf  ANSI((CONST char*, char**, float*, float*));
++extern int	gdtoa__strtoIQ  ANSI((CONST char*, char**, void*, void*));
++extern int	gdtoa__strtoIx  ANSI((CONST char*, char**, void*, void*));
++extern int	gdtoa__strtoIxL ANSI((CONST char*, char**, void*, void*));
++extern int	gdtoa__strtord  ANSI((CONST char*, char**, int, double*));
++extern int	gdtoa__strtordd ANSI((CONST char*, char**, int, double*));
++extern int	gdtoa__strtorf  ANSI((CONST char*, char**, int, float*));
++extern int	gdtoa__strtorQ  ANSI((CONST char*, char**, int, void*));
++extern int	gdtoa__strtorx  ANSI((CONST char*, char**, int, void*));
++extern int	gdtoa__strtorxL ANSI((CONST char*, char**, int, void*));
+ #if 1
+-extern int	strtodI  ANSI((CONST char*, char**, double*));
+-extern int	strtopd  ANSI((CONST char*, char**, double*));
+-extern int	strtopdd ANSI((CONST char*, char**, double*));
+-extern int	strtopf  ANSI((CONST char*, char**, float*));
+-extern int	strtopQ  ANSI((CONST char*, char**, void*));
+-extern int	strtopx  ANSI((CONST char*, char**, void*));
+-extern int	strtopxL ANSI((CONST char*, char**, void*));
++extern int	gdtoa__strtodI  ANSI((CONST char*, char**, double*));
++extern int	gdtoa__strtopd  ANSI((CONST char*, char**, double*));
++extern int	gdtoa__strtopdd ANSI((CONST char*, char**, double*));
++extern int	gdtoa__strtopf  ANSI((CONST char*, char**, float*));
++extern int	gdtoa__strtopQ  ANSI((CONST char*, char**, void*));
++extern int	gdtoa__strtopx  ANSI((CONST char*, char**, void*));
++extern int	gdtoa__strtopxL ANSI((CONST char*, char**, void*));
+ #else
+-#define strtopd(s,se,x) strtord(s,se,1,x)
+-#define strtopdd(s,se,x) strtordd(s,se,1,x)
+-#define strtopf(s,se,x) strtorf(s,se,1,x)
+-#define strtopQ(s,se,x) strtorQ(s,se,1,x)
+-#define strtopx(s,se,x) strtorx(s,se,1,x)
+-#define strtopxL(s,se,x) strtorxL(s,se,1,x)
++#define gdtoa__strtopd(s,se,x) gdtoa__strtord(s,se,1,x)
++#define gdtoa__strtopdd(s,se,x) gdtoa__strtordd(s,se,1,x)
++#define gdtoa__strtopf(s,se,x) gdtoa__strtorf(s,se,1,x)
++#define gdtoa__strtopQ(s,se,x) gdtoa__strtorQ(s,se,1,x)
++#define gdtoa__strtopx(s,se,x) gdtoa__strtorx(s,se,1,x)
++#define gdtoa__strtopxL(s,se,x) gdtoa__strtorxL(s,se,1,x)
+ #endif
+ 
+ #ifdef __cplusplus
+diff -Naur gdtoa.1/gdtoaimp.h gdtoa.2/gdtoaimp.h
+--- gdtoa.1/gdtoaimp.h	2018-01-25 20:47:16.000000000 +0000
++++ gdtoa.2/gdtoaimp.h	2018-01-25 20:50:09.000000000 +0000
+@@ -549,6 +549,7 @@
+ #define g__fmt g__fmt_D2A
+ #define gethex gethex_D2A
+ #define hexdig hexdig_D2A
++#define hexdig_init hexdig_init_D2A
+ #define hexnan hexnan_D2A
+ #define hi0bits(x) hi0bits_D2A((ULong)(x))
+ #define i2b i2b_D2A
+@@ -568,6 +569,7 @@
+ #define set_ones set_ones_D2A
+ #define strcp strcp_D2A
+ #define strtoIg strtoIg_D2A
++#define strtod strtod_D2A
+ #define sum sum_D2A
+ #define tens tens_D2A
+ #define tinytens tinytens_D2A
+@@ -600,7 +602,7 @@
+ 			int *decpt, int *sign, char **rve));
+  extern char *g__fmt ANSI((char*, char*, char*, int, ULong, size_t));
+  extern int gethex ANSI((CONST char**, CONST FPI*, Long*, Bigint**, int MTd));
+- extern void hexdig_init_D2A(Void);
++ /* extern void hexdig_init ANSI((Void)); */
+  extern int hexnan ANSI((CONST char**, CONST FPI*, ULong*));
+  extern int hi0bits_D2A ANSI((ULong));
+  extern Bigint *i2b ANSI((int MTd));
+diff -Naur gdtoa.1/gethex.c gdtoa.2/gethex.c
+--- gdtoa.1/gethex.c	2016-05-06 18:27:52.000000000 +0000
++++ gdtoa.2/gethex.c	2018-01-25 20:50:09.000000000 +0000
+@@ -66,7 +66,7 @@
+ #endif
+ #endif
+ 
+-	/**** if (!hexdig['0']) hexdig_init_D2A(); ****/
++	/**** if (!hexdig['0']) hexdig_init(); ****/
+ 	*bp = 0;
+ 	havedig = 0;
+ 	s0 = *(CONST unsigned char **)sp + 2;
+diff -Naur gdtoa.1/hd_init.c gdtoa.2/hd_init.c
+--- gdtoa.1/hd_init.c	2012-12-20 21:20:25.000000000 +0000
++++ gdtoa.2/hd_init.c	2018-01-25 20:50:09.000000000 +0000
+@@ -47,7 +47,7 @@
+ 	}
+ 
+  void
+-hexdig_init_D2A(Void)	/* Use of hexdig_init omitted 20121220 to avoid a */
++hexdig_init(Void)	/* Use of hexdig_init omitted 20121220 to avoid a */
+ 			/* race condition when multiple threads are used. */
+ {
+ #define USC (unsigned char *)
+diff -Naur gdtoa.1/hexnan.c gdtoa.2/hexnan.c
+--- gdtoa.1/hexnan.c	2016-02-19 00:43:10.000000000 +0000
++++ gdtoa.2/hexnan.c	2018-01-25 20:50:09.000000000 +0000
+@@ -61,7 +61,7 @@
+ 	CONST char *s;
+ 	int havedig, hd0, i, nbits;
+ 
+-	/**** if (!hexdig['0']) hexdig_init_D2A(); ****/
++	/**** if (!hexdig['0']) hexdig_init(); ****/
+ 	nbits = fpi->nbits;
+ 	x = x0 + (nbits >> kshift);
+ 	if (nbits & kmask)
+diff -Naur gdtoa.1/strtoIQ.c gdtoa.2/strtoIQ.c
+--- gdtoa.1/strtoIQ.c	2016-02-19 18:09:22.000000000 +0000
++++ gdtoa.2/strtoIQ.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoIQ(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
++gdtoa__strtoIQ(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
+ #else
+-strtoIQ(CONST char *s, char **sp, void *a, void *b)
++gdtoa__strtoIQ(CONST char *s, char **sp, void *a, void *b)
+ #endif
+ {
+ 	static FPI fpi = { 113, 1-16383-113+1, 32766-16383-113+1, 1, SI, 0 /*unused*/ };
+diff -Naur gdtoa.1/strtoId.c gdtoa.2/strtoId.c
+--- gdtoa.1/strtoId.c	2016-02-19 18:10:01.000000000 +0000
++++ gdtoa.2/strtoId.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoId(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
++gdtoa__strtoId(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
+ #else
+-strtoId(CONST char *s, char **sp, double *f0, double *f1)
++gdtoa__strtoId(CONST char *s, char **sp, double *f0, double *f1)
+ #endif
+ {
+ 	static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI, 0 /*unused*/ };
+diff -Naur gdtoa.1/strtoIdd.c gdtoa.2/strtoIdd.c
+--- gdtoa.1/strtoIdd.c	2016-02-19 18:10:39.000000000 +0000
++++ gdtoa.2/strtoIdd.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoIdd(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
++gdtoa__strtoIdd(s, sp, f0, f1) CONST char *s; char **sp; double *f0, *f1;
+ #else
+-strtoIdd(CONST char *s, char **sp, double *f0, double *f1)
++gdtoa__strtoIdd(CONST char *s, char **sp, double *f0, double *f1)
+ #endif
+ {
+ #ifdef Sudden_Underflow
+diff -Naur gdtoa.1/strtoIf.c gdtoa.2/strtoIf.c
+--- gdtoa.1/strtoIf.c	2016-02-19 18:11:21.000000000 +0000
++++ gdtoa.2/strtoIf.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoIf(s, sp, f0, f1) CONST char *s; char **sp; float *f0, *f1;
++gdtoa__strtoIf(s, sp, f0, f1) CONST char *s; char **sp; float *f0, *f1;
+ #else
+-strtoIf(CONST char *s, char **sp, float *f0, float *f1)
++gdtoa__strtoIf(CONST char *s, char **sp, float *f0, float *f1)
+ #endif
+ {
+ 	static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, SI, 0 /*unused*/ };
+diff -Naur gdtoa.1/strtoIg.c gdtoa.2/strtoIg.c
+--- gdtoa.1/strtoIg.c	2016-05-06 18:41:21.000000000 +0000
++++ gdtoa.2/strtoIg.c	2018-01-25 20:50:09.000000000 +0000
+@@ -47,7 +47,7 @@
+ #endif
+ 
+ 	b = *B;
+-	rv = strtodg(s00, se, fpi, exp, b->x);
++	rv = gdtoa__strtodg(s00, se, fpi, exp, b->x);
+ 	if (!(rv & STRTOG_Inexact)) {
+ 		B[1] = 0;
+ 		return *rvp = rv;
+diff -Naur gdtoa.1/strtoIx.c gdtoa.2/strtoIx.c
+--- gdtoa.1/strtoIx.c	2016-02-19 18:11:58.000000000 +0000
++++ gdtoa.2/strtoIx.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoIx(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
++gdtoa__strtoIx(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
+ #else
+-strtoIx(CONST char *s, char **sp, void *a, void *b)
++gdtoa__strtoIx(CONST char *s, char **sp, void *a, void *b)
+ #endif
+ {
+ 	static FPI fpi = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+diff -Naur gdtoa.1/strtoIxL.c gdtoa.2/strtoIxL.c
+--- gdtoa.1/strtoIxL.c	2016-02-19 18:12:44.000000000 +0000
++++ gdtoa.2/strtoIxL.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtoIxL(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
++gdtoa__strtoIxL(s, sp, a, b) CONST char *s; char **sp; void *a; void *b;
+ #else
+-strtoIxL(CONST char *s, char **sp, void *a, void *b)
++gdtoa__strtoIxL(CONST char *s, char **sp, void *a, void *b)
+ #endif
+ {
+ 	static FPI fpi = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+diff -Naur gdtoa.1/strtod.c gdtoa.2/strtod.c
+--- gdtoa.1/strtod.c	2016-05-06 14:24:41.000000000 +0000
++++ gdtoa.2/strtod.c	2018-01-25 20:50:09.000000000 +0000
+@@ -80,7 +80,7 @@
+ #endif /*}*/
+ 
+  double
+-strtod
++gdtoa__strtod
+ #ifdef KR_headers
+ 	(s00, se) CONST char *s00; char **se;
+ #else
+diff -Naur gdtoa.1/strtodI.c gdtoa.2/strtodI.c
+--- gdtoa.1/strtodI.c	2016-02-19 04:37:08.000000000 +0000
++++ gdtoa.2/strtodI.c	2018-01-25 20:50:09.000000000 +0000
+@@ -50,9 +50,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtodI(s, sp, dd) CONST char *s; char **sp; double *dd;
++gdtoa__strtodI(s, sp, dd) CONST char *s; char **sp; double *dd;
+ #else
+-strtodI(CONST char *s, char **sp, double *dd)
++gdtoa__strtodI(CONST char *s, char **sp, double *dd)
+ #endif
+ {
+ 	static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI, 0 /*unused*/ };
+@@ -61,7 +61,7 @@
+ 	int j, k;
+ 	U *u;
+ 
+-	k = strtodg(s, sp, &fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, &fpi, &exp, bits);
+ 	u = (U*)dd;
+ 	sign = k & STRTOG_Neg ? 0x80000000L : 0;
+ 	switch(k & STRTOG_Retmask) {
+diff -Naur gdtoa.1/strtodg.c gdtoa.2/strtodg.c
+--- gdtoa.1/strtodg.c	2016-05-06 18:30:21.000000000 +0000
++++ gdtoa.2/strtodg.c	2018-01-25 20:50:09.000000000 +0000
+@@ -313,7 +313,7 @@
+ 	}
+ 
+  int
+-strtodg
++gdtoa__strtodg
+ #ifdef KR_headers
+ 	(s00, se, fpi, exp, bits)
+ 	CONST char *s00; char **se; CONST FPI *fpi; Long *exp; ULong *bits;
+diff -Naur gdtoa.1/strtof.c gdtoa.2/strtof.c
+--- gdtoa.1/strtof.c	2018-01-25 20:47:16.000000000 +0000
++++ gdtoa.2/strtof.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  float
+ #ifdef KR_headers
+-strtof(s, sp) CONST char *s; char **sp;
++gdtoa__strtof(s, sp) CONST char *s; char **sp;
+ #else
+-strtof(CONST char *s, char **sp)
++gdtoa__strtof(CONST char *s, char **sp)
+ #endif
+ {
+ 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, SI, 0 /*unused*/ };
+@@ -49,7 +49,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	switch(k & STRTOG_Retmask) {
+ 	  default: /* unused */
+ 	  case STRTOG_NoNumber:
+diff -Naur gdtoa.1/strtopQ.c gdtoa.2/strtopQ.c
+--- gdtoa.1/strtopQ.c	2016-02-19 04:26:30.000000000 +0000
++++ gdtoa.2/strtopQ.c	2018-01-25 20:50:09.000000000 +0000
+@@ -54,9 +54,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopQ(s, sp, V) CONST char *s; char **sp; void *V;
++gdtoa__strtopQ(s, sp, V) CONST char *s; char **sp; void *V;
+ #else
+-strtopQ(CONST char *s, char **sp, void *V)
++gdtoa__strtopQ(CONST char *s, char **sp, void *V)
+ #endif
+ {
+ 	static FPI fpi0 = { 113, 1-16383-113+1, 32766 - 16383 - 113 + 1, 1, SI, 0 /*unused*/ };
+@@ -70,7 +70,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	switch(k & STRTOG_Retmask) {
+ 	  case STRTOG_NoNumber:
+ 	  case STRTOG_Zero:
+diff -Naur gdtoa.1/strtopd.c gdtoa.2/strtopd.c
+--- gdtoa.1/strtopd.c	2016-02-19 04:40:01.000000000 +0000
++++ gdtoa.2/strtopd.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopd(s, sp, d) char *s; char **sp; double *d;
++gdtoa__strtopd(s, sp, d) char *s; char **sp; double *d;
+ #else
+-strtopd(CONST char *s, char **sp, double *d)
++gdtoa__strtopd(CONST char *s, char **sp, double *d)
+ #endif
+ {
+ 	static FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI, 0 /*unused*/ };
+@@ -48,7 +48,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtod((ULong*)d, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtopdd.c gdtoa.2/strtopdd.c
+--- gdtoa.1/strtopdd.c	2018-01-25 20:47:16.000000000 +0000
++++ gdtoa.2/strtopdd.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopdd(s, sp, dd) CONST char *s; char **sp; double *dd;
++gdtoa__strtopdd(s, sp, dd) CONST char *s; char **sp; double *dd;
+ #else
+-strtopdd(CONST char *s, char **sp, double *dd)
++gdtoa__strtopdd(CONST char *s, char **sp, double *dd)
+ #endif
+ {
+ #ifdef Sudden_Underflow
+@@ -57,7 +57,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	rv = strtodg(s, sp, fpi, &exp, bits);
++	rv = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	u = (U*)dd;
+ 	switch(rv & STRTOG_Retmask) {
+ 	  case STRTOG_NoNumber:
+diff -Naur gdtoa.1/strtopf.c gdtoa.2/strtopf.c
+--- gdtoa.1/strtopf.c	2016-02-19 04:41:58.000000000 +0000
++++ gdtoa.2/strtopf.c	2018-01-25 20:50:09.000000000 +0000
+@@ -33,9 +33,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopf(s, sp, f) CONST char *s; char **sp; float *f;
++gdtoa__strtopf(s, sp, f) CONST char *s; char **sp; float *f;
+ #else
+-strtopf(CONST char *s, char **sp, float *f)
++gdtoa__strtopf(CONST char *s, char **sp, float *f)
+ #endif
+ {
+ 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, SI, 0 /*unused*/ };
+@@ -48,7 +48,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	L = (ULong*)f;
+ 	switch(k & STRTOG_Retmask) {
+ 	  case STRTOG_NoNumber:
+diff -Naur gdtoa.1/strtopx.c gdtoa.2/strtopx.c
+--- gdtoa.1/strtopx.c	2016-02-19 04:43:54.000000000 +0000
++++ gdtoa.2/strtopx.c	2018-01-25 20:50:09.000000000 +0000
+@@ -55,9 +55,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopx(s, sp, V) CONST char *s; char **sp; void *V;
++gdtoa__strtopx(s, sp, V) CONST char *s; char **sp; void *V;
+ #else
+-strtopx(CONST char *s, char **sp, void *V)
++gdtoa__strtopx(CONST char *s, char **sp, void *V)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+@@ -71,7 +71,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	switch(k & STRTOG_Retmask) {
+ 	  case STRTOG_NoNumber:
+ 	  case STRTOG_Zero:
+diff -Naur gdtoa.1/strtopxL.c gdtoa.2/strtopxL.c
+--- gdtoa.1/strtopxL.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtopxL.c	2018-01-25 20:50:09.000000000 +0000
+@@ -51,9 +51,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtopxL(s, sp, V) CONST char *s; char **sp; void *V;
++gdtoa__strtopxL(s, sp, V) CONST char *s; char **sp; void *V;
+ #else
+-strtopxL(CONST char *s, char **sp, void *V)
++gdtoa__strtopxL(CONST char *s, char **sp, void *V)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+@@ -67,7 +67,7 @@
+ #define fpi &fpi0
+ #endif
+ 
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	switch(k & STRTOG_Retmask) {
+ 	  case STRTOG_NoNumber:
+ 	  case STRTOG_Zero:
+diff -Naur gdtoa.1/strtorQ.c gdtoa.2/strtorQ.c
+--- gdtoa.1/strtorQ.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtorQ.c	2018-01-25 20:50:09.000000000 +0000
+@@ -96,9 +96,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtorQ(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
++gdtoa__strtorQ(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
+ #else
+-strtorQ(CONST char *s, char **sp, int rounding, void *L)
++gdtoa__strtorQ(CONST char *s, char **sp, int rounding, void *L)
+ #endif
+ {
+ 	static FPI fpi0 = { 113, 1-16383-113+1, 32766-16383-113+1, 1, SI, 0 /*unused*/ };
+@@ -113,7 +113,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtoQ((ULong*)L, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtord.c gdtoa.2/strtord.c
+--- gdtoa.1/strtord.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtord.c	2018-01-25 20:50:09.000000000 +0000
+@@ -72,9 +72,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtord(s, sp, rounding, d) CONST char *s; char **sp; int rounding; double *d;
++gdtoa__strtord(s, sp, rounding, d) CONST char *s; char **sp; int rounding; double *d;
+ #else
+-strtord(CONST char *s, char **sp, int rounding, double *d)
++gdtoa__strtord(CONST char *s, char **sp, int rounding, double *d)
+ #endif
+ {
+ 	static FPI fpi0 = { 53, 1-1023-53+1, 2046-1023-53+1, 1, SI, 0 /*unused*/ };
+@@ -89,7 +89,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtod((ULong*)d, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtordd.c gdtoa.2/strtordd.c
+--- gdtoa.1/strtordd.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtordd.c	2018-01-25 20:50:09.000000000 +0000
+@@ -175,9 +175,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtordd(s, sp, rounding, dd) CONST char *s; char **sp; int rounding; double *dd;
++gdtoa__strtordd(s, sp, rounding, dd) CONST char *s; char **sp; int rounding; double *dd;
+ #else
+-strtordd(CONST char *s, char **sp, int rounding, double *dd)
++gdtoa__strtordd(CONST char *s, char **sp, int rounding, double *dd)
+ #endif
+ {
+ #ifdef Sudden_Underflow
+@@ -196,7 +196,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtodd((ULong*)dd, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtorf.c gdtoa.2/strtorf.c
+--- gdtoa.1/strtorf.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtorf.c	2018-01-25 20:50:09.000000000 +0000
+@@ -68,9 +68,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtorf(s, sp, rounding, f) CONST char *s; char **sp; int rounding; float *f;
++gdtoa__strtorf(s, sp, rounding, f) CONST char *s; char **sp; int rounding; float *f;
+ #else
+-strtorf(CONST char *s, char **sp, int rounding, float *f)
++gdtoa__strtorf(CONST char *s, char **sp, int rounding, float *f)
+ #endif
+ {
+ 	static FPI fpi0 = { 24, 1-127-24+1,  254-127-24+1, 1, SI, 0 /*unused*/ };
+@@ -85,7 +85,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtof((ULong*)f, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtorx.c gdtoa.2/strtorx.c
+--- gdtoa.1/strtorx.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtorx.c	2018-01-25 20:50:09.000000000 +0000
+@@ -99,9 +99,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtorx(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
++gdtoa__strtorx(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
+ #else
+-strtorx(CONST char *s, char **sp, int rounding, void *L)
++gdtoa__strtorx(CONST char *s, char **sp, int rounding, void *L)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+@@ -116,7 +116,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtox((UShort*)L, bits, exp, k);
+ 	return k;
+ 	}
+diff -Naur gdtoa.1/strtorxL.c gdtoa.2/strtorxL.c
+--- gdtoa.1/strtorxL.c	2016-02-19 04:48:39.000000000 +0000
++++ gdtoa.2/strtorxL.c	2018-01-25 20:50:09.000000000 +0000
+@@ -87,9 +87,9 @@
+ 
+  int
+ #ifdef KR_headers
+-strtorxL(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
++gdtoa__strtorxL(s, sp, rounding, L) CONST char *s; char **sp; int rounding; void *L;
+ #else
+-strtorxL(CONST char *s, char **sp, int rounding, void *L)
++gdtoa__strtorxL(CONST char *s, char **sp, int rounding, void *L)
+ #endif
+ {
+ 	static FPI fpi0 = { 64, 1-16383-64+1, 32766 - 16383 - 64 + 1, 1, SI, 0 /*unused*/ };
+@@ -104,7 +104,7 @@
+ 		fpi1.rounding = rounding;
+ 		fpi = &fpi1;
+ 		}
+-	k = strtodg(s, sp, fpi, &exp, bits);
++	k = gdtoa__strtodg(s, sp, fpi, &exp, bits);
+ 	ULtoxL((ULong*)L, bits, exp, k);
+ 	return k;
+ 	}

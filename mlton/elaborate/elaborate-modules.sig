@@ -1,9 +1,9 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -14,7 +14,6 @@ signature ELABORATE_MODULES_STRUCTS =
       structure Decs: DECS
       structure Env: ELABORATE_ENV
       sharing Ast = Env.Ast
-      sharing Ast.Tyvar = CoreML.Tyvar
       sharing CoreML = Decs.CoreML = Env.CoreML
       sharing Decs = Env.Decs
    end

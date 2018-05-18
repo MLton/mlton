@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -124,14 +124,14 @@ fun addMatchDiagnostic (diag, mkArg) =
 fun showMatchDiagnostics () = List.foreach (!matchDiagnostics, fn th => th ())
 end
 
-fun casee {caseType: Xtype.t,
+fun casee {ctxt: unit -> Layout.t,
+           caseType: Xtype.t,
            cases: {exp: Xexp.t,
                    layPat: (unit -> Layout.t) option,
                    pat: NestedPat.t,
                    regionPat: Region.t} vector,
            conTycon,
            kind: (string * string),
-           lay = layCasee: unit -> Layout.t,
            nest: string list,
            matchDiags: {nonexhaustiveExn: Control.Elaborate.DiagDI.t,
                         nonexhaustive: Control.Elaborate.DiagEIW.t,
@@ -351,7 +351,7 @@ fun casee {caseType: Xtype.t,
                                  case layPat of
                                     NONE => Error.bug "Defunctorize.casee: redundant match with no lay"
                                   | SOME layPat => layPat ()],
-                            layCasee ()]))
+                            ctxt ()]))
                 end
           in
              if not isDefault andalso !numUses = 0
@@ -377,7 +377,7 @@ fun casee {caseType: Xtype.t,
               (region,
                str (concat [#1 kind, " is not exhaustive"]),
                align [seq [str "missing pattern: ", es],
-                      layCasee ()]))
+                      ctxt ()]))
           end)
    in
       exp
@@ -772,21 +772,21 @@ fun defunctorize (CoreML.Program.T {decs}) =
                   val bodyType = et
                   val e =
                      Vector.foldr
-                     (vbs, e, fn ({exp, layDec, layPat, nest, pat, regionPat}, e) =>
+                     (vbs, e, fn ({ctxt, exp, layPat, nest, pat, regionPat}, e) =>
                       let
                          fun patDec (p: NestedPat.t,
                                      e: Xexp.t,
                                      body: Xexp.t,
                                      bodyType: Xtype.t,
                                      mayWarn: bool) =
-                            casee {caseType = bodyType,
+                            casee {ctxt = ctxt,
+                                   caseType = bodyType,
                                    cases = Vector.new1 {exp = body,
                                                         layPat = SOME layPat,
                                                         pat = p,
                                                         regionPat = regionPat},
                                    conTycon = conTycon,
                                    kind = ("declaration", "pattern"),
-                                   lay = layDec,
                                    nest = nest,
                                    matchDiags = if mayWarn
                                                    then matchDiags
@@ -977,8 +977,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                         func = #1 (loopExp e1),
                                         ty = ty}
                      end
-                | Case {kind, lay, nest, matchDiags, noMatch, region, rules, test, ...} =>
-                     casee {caseType = ty,
+                | Case {ctxt, kind, nest, matchDiags, noMatch, region, rules, test, ...} =>
+                     casee {ctxt = ctxt,
+                            caseType = ty,
                             cases = Vector.map (rules, fn {exp, layPat, pat, regionPat} =>
                                                 {exp = #1 (loopExp exp),
                                                  layPat = layPat,
@@ -986,7 +987,6 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                                  regionPat = regionPat}),
                             conTycon = conTycon,
                             kind = kind,
-                            lay = lay,
                             nest = nest,
                             matchDiags = matchDiags,
                             noMatch = noMatch,

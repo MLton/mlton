@@ -1,7 +1,7 @@
 (* Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -11,7 +11,7 @@ local
    basis smlnj_lib = bas $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb end
    basis pp_lib = bas $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb end
    basis regexp_lib = bas $(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb end
-   basis ckit_lib = bas $(SML_LIB)/ckit-lib/src/ckit-lib.mlb end
+   basis ckit_lib = bas $(SML_LIB)/ckit-lib/ckit-lib.mlb end
 
    local open basis_lib in
       endian.sml

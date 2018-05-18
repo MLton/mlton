@@ -1,9 +1,9 @@
-(* Copyright (C) 2012 Matthew Fluet.
+(* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -25,11 +25,11 @@ in
    structure Fctid = Fctid
    structure Longstrid = Longstrid
    structure SigConst = SigConst
+   structure Sigid = Sigid
    structure Sigexp = Sigexp
    structure Strdec = Strdec
    structure Strexp = Strexp
    structure Strid = Strid
-   structure Symbol = Symbol
    structure Topdec = Topdec
 end
 
@@ -55,7 +55,9 @@ val elabTopdecInfo = Trace.info "ElaborateModules.elabTopdec"
 
 fun elaborateTopdec (topdec, {env = E: Env.t}) =
    let
-      fun elabSigexp s = ElaborateSigexp.elaborateSigexp (s, {env = E})
+      fun elabSigexp (s, no) =
+         ElaborateSigexp.elaborateSigexp
+         (s, {env = E, nest = case no of NONE => [] | SOME n => [n]})
       fun elabSigexpConstraint (cons: SigConst.t,
                                 S: Structure.t option,
                                 nest: string list)
@@ -74,7 +76,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                    | SOME S => 
                         let
                            val (S, decs) =
-                              case elabSigexp sigexp of
+                              case elabSigexp (sigexp, SOME (Strid.toString Strid.uSig)) of
                                  NONE => (S, Decs.empty)
                                | SOME I => 
                                     Env.cut (E, S, I,
@@ -114,6 +116,28 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       List.fold
                       (ds, Decs.empty, fn (d, decs) =>
                        Decs.append (decs, elabStrdec d))
+                 | Strdec.ShowBasis file =>
+                      let
+                         open Layout
+                         val () =
+                            File.withOut
+                            (file, fn out =>
+                             Env.output
+                             (E, out,
+                              {compact = !Control.showBasisCompact,
+                               def = !Control.showBasisDef,
+                               flat = !Control.showBasisFlat,
+                               onlyCurrent = false,
+                               prefixUnset = true}))
+                            handle exn =>
+                            Control.warning
+                            (Strdec.region d,
+                             str "Exception raised processing #showBasis",
+                             align [seq [str "file: ", File.layout file],
+                                    seq [str "exn:  ", Exn.layout exn]])
+                      in
+                         Decs.empty
+                      end
                  | Strdec.Structure strbinds => (* rules 57, 61 *)
                       let
                          val strbinds =
@@ -174,10 +198,13 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                                          {isFunctor = true,
                                           opaque = false,
                                           prefix = ""},
-                                         Strexp.region strexp)
+                                         Region.append
+                                         (Fctid.region fctid,
+                                          Strexp.region strexp))
+                                     val resId = Strid.uRes (Fctid.toString fctid)
                                      val (decs'', S) =
                                         FunctorClosure.apply
-                                        (fct, S, [Fctid.toString fctid])
+                                        (fct, S, [Strid.toString resId])
                                   in
                                      (Decs.appends [decs, decs', decs''], S)
                                   end
@@ -211,31 +238,28 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
       fun elabFunctor {arg, body, name, result}: FunctorClosure.t option =
          let
             val body = Strexp.constrained (body, result)
-            val (arg, argSig, body, prefix) =
+            val argId = Strid.uArg (Fctid.toString name)
+            val (argSig, argDec) =
                case FctArg.node arg of
                   FctArg.Structure (arg, argSig) =>
-                     (arg, argSig, body, concat [Strid.toString arg, "."])
+                     (argSig,
+                      Strdec.structuree
+                      {name = arg,
+                       def = Strexp.var (Longstrid.short argId),
+                       constraint = SigConst.None})
                 | FctArg.Spec spec =>
-                     let
-                        val strid =
-                           Strid.fromSymbol (Symbol.fromString "ZZZNewStridZZZ",
-                                             Region.bogus)
-                     in
-                        (strid,
-                         Sigexp.spec spec,
-                         Strexp.lett (Strdec.openn (Vector.new1
-                                                    (Longstrid.short strid)),
-                                      body),
-                         "")
-                     end
+                     (Sigexp.spec spec,
+                      Strdec.openn (Vector.new1 (Longstrid.short argId)))
+            val body = Strexp.lett (argDec, body)
          in
-            Option.map (elabSigexp argSig, fn argInt =>
+            Option.map (elabSigexp (argSig, SOME (Strid.toString argId)), fn argInt =>
                         Env.functorClosure
-                        (E, arg, [Fctid.toString name], prefix, argInt,
+                        (E, name, argInt,
                          fn (formal, nest) =>
-                         Env.scope (E, fn () =>
-                                    (Env.extendStrid (E, arg, formal)
-                                     ; elabStrexp (body, nest)))))
+                         Env.scope
+                         (E, fn () =>
+                          (Env.extendStrid (E, argId, formal)
+                           ; elabStrexp (body, nest)))))
          end
       fun elabTopdec arg: Decs.t =
          Trace.traceInfo' (elabTopdecInfo, 
@@ -250,7 +274,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                          val sigbinds =
                             Vector.map
                             (sigbinds, fn (sigid, sigexp) =>
-                             (sigid, elabSigexp sigexp))
+                             (sigid, elabSigexp (sigexp, SOME (Sigid.toString sigid))))
                          val () =
                             Vector.foreach
                             (sigbinds, fn (sigid, I) =>
@@ -275,10 +299,6 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                                             Option.app
                                             (closure, fn closure =>
                                              Env.extendFctid (E, name, closure)))
-                         (* Check for errors here so that we don't report duplicate
-                          * errors when re-elaborating the functor body.
-                          *)
-                         val () = Control.checkForErrors "elaborate"
                       in
                          Decs.empty
                       end

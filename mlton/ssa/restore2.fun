@@ -1,9 +1,9 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -25,6 +25,12 @@
 
 functor Restore2 (S: RESTORE2_STRUCTS): RESTORE2 =
 struct
+
+structure Control =
+   struct
+      open Control
+      fun diagnostics _ = ()
+   end
 
 open S
 open Exp Transfer

@@ -4,8 +4,7 @@ set -e
 
 dir=`dirname "$0"`
 src=`cd "$dir/.." && pwd`
-lib="$src/build/lib"
-eval `"$lib/platform"`
+eval `"$src/bin/platform"`
 
 output () {
         echo "val defaultCppCmd = \"gcc $1 -E -U__GNUC__ %o %s > %t\""

@@ -229,7 +229,7 @@ signature LEXGEN =
 
 structure LexGen: LEXGEN =
    struct
-   open Array List
+   val sub = Array.sub
    infix 9 sub
 
    type pos = {line : int, col : int}
@@ -507,9 +507,9 @@ fun AdvanceTok () : unit = let
                   end
             (* end case *))
 
-      and onechar x = let val c = array(!CharSetSize, false)
+      and onechar x = let val c = Array.array(!CharSetSize, false)
               in
-                update(c, Char.ord(x), true); CHARS(c)
+                Array.update(c, Char.ord(x), true); CHARS(c)
               end
 
       in case !LexState of 0 => let val makeTok = fn () =>
@@ -578,8 +578,8 @@ fun AdvanceTok () : unit = let
                 | #"$" => DOLLAR
                 | #"/" => SLASH
                 | #";" => SEMI
-                | #"." => let val c = array(!CharSetSize,true) in
-                                update(c,10,false); CHARS(c)
+                | #"." => let val c = Array.array(!CharSetSize,true) in
+                                Array.update(c,10,false); CHARS(c)
                         end
                         (* assign and arrow *)
                 | #"=" => let val c = nextch() in
@@ -591,9 +591,9 @@ fun AdvanceTok () : unit = let
                                 end;
                         val first = classch();
                         val flag = (first <> #"^");
-                        val c = array(!CharSetSize,not flag);
+                        val c = Array.array(!CharSetSize,not flag);
                         fun add NONE = ()
-                          | add (SOME x) = update(c, Char.ord(x), flag)
+                          | add (SOME x) = Array.update(c, Char.ord(x), flag)
                         and range (x, y) = if x>y
                               then (prErr "bad char. range")
                               else let
@@ -710,8 +710,8 @@ fun GetExp () : exp =
                 handle LOOKUP => prErr ("bad regular expression name: "^
                                             name)
 
-        and newline = fn () => let val c = array(!CharSetSize,false) in
-                update(c,10,true); c
+        and newline = fn () => let val c = Array.array(!CharSetSize,false) in
+                Array.update(c,10,true); c
                 end
 
         and endline = fn e => trail(e,CLASS(newline(),0))
@@ -1056,7 +1056,7 @@ fun maketable (fins:(int * (int list)) list,
                 | false => (say "(0, 0, \"\")]\n";
                     say "fun f(n, i, x) = (n, Vector.tabulate(i, decode x)) \n")
 
-            val _ = say "val s = map f (rev (tl (rev s))) \n"
+            val _ = say "val s = List.map f (List.rev (tl (List.rev s))) \n"
             val _ = say "exception LexHackingError \n"
             val _ = say "fun look ((j,x)::r, i: int) = if i = j then x else look(r, i) \n"
             val _ = say "  | look ([], i) = raise LexHackingError\n"
@@ -1118,7 +1118,7 @@ fun maketable (fins:(int * (int list)) list,
 
         fun msg x = TextIO.output(TextIO.stdOut, x)
 
-  in (say "in Vector.fromList(map g \n["; makeTable(rs,newfins);
+  in (say "in Vector.fromList(List.map g \n["; makeTable(rs,newfins);
       say "])\nend\n";
     msg ("\nNumber of states = " ^ (Int.toString (length trans)));
     msg ("\nNumber of distinct rows = " ^ (Int.toString (!count)));
@@ -1145,13 +1145,13 @@ fun makeaccept ends =
     end
 
 fun leafdata(e:(int list * exp) list) =
-        let val fp = array(!LeafNum + 1,nil)
-        and leaf = array(!LeafNum + 1,EPS)
+        let val fp = Array.array(!LeafNum + 1,nil)
+        and leaf = Array.array(!LeafNum + 1,EPS)
         and tcpairs = ref nil
         and trailmark = ref ~1;
         val rec add = fn
                   (nil,x) => ()
-                | (hd::tl,x) => (update(fp,hd,union(fp sub hd,x));
+                | (hd::tl,x) => (Array.update(fp,hd,union(fp sub hd,x));
                         add(tl,x))
         and moredata = fn
                   CLOSURE(e1) =>
@@ -1159,10 +1159,10 @@ fun leafdata(e:(int list * exp) list) =
                 | ALT(e1,e2) => (moredata(e1); moredata(e2))
                 | CAT(e1,e2) => (moredata(e1); moredata(e2);
                         add(lastpos(e1),firstpos(e2)))
-                | CLASS(x,i) => update(leaf,i,CLASS(x,i))
-                | TRAIL(i) => (update(leaf,i,TRAIL(i)); if !trailmark = ~1
+                | CLASS(x,i) => Array.update(leaf,i,CLASS(x,i))
+                | TRAIL(i) => (Array.update(leaf,i,TRAIL(i)); if !trailmark = ~1
                         then trailmark := i else ())
-                | END(i) => (update(leaf,i,END(i)); if !trailmark <> ~1
+                | END(i) => (Array.update(leaf,i,END(i)); if !trailmark <> ~1
                         then (tcpairs := (!trailmark,i)::(!tcpairs);
                         trailmark := ~1) else ())
                 | _ => ()
@@ -1248,7 +1248,7 @@ and gettrans (state) =
      end
 
 and startstates() =
-        let val startarray = array(!StateNum + 1, nil);
+        let val startarray = Array.array(!StateNum + 1, nil);
             fun listofarray(a,n) =
                 let fun f i l = if i >= 0 then  f (i-1) ((a sub i)::l) else l
                 in f (n-1) nil end
@@ -1257,7 +1257,7 @@ and startstates() =
                 | (startlist,e)::tl => (fix(startlist,firstpos(e));makess(tl))
         and fix = fn
                   (nil,_) => ()
-                | (s::tl,firsts) => (update(startarray,s,
+                | (s::tl,firsts) => (Array.update(startarray,s,
                         union(firsts,startarray sub s));
                         fix(tl,firsts))
         in makess(rules);listofarray(startarray, !StateNum + 1)
@@ -1311,7 +1311,7 @@ fun lexGen(infile) =
              else sayln "\t| action (i,(node::acts)::l) =";
          sayln "\t\tcase node of";
          sayln "\t\t    Internal.N yyk => ";
-         sayln "\t\t\t(let fun yymktext() = substring(!yyb,i0,i-i0)\n\
+         sayln "\t\t\t(let fun yymktext() = String.substring(!yyb,i0,i-i0)\n\
                \\t\t\t     val yypos = YYPosInt.+(YYPosInt.fromInt i0, !yygone)";
          if !CountNewLines
             then (sayln "\t\t\tval _ = yylineno := CharVectorSlice.foldli";
@@ -1338,7 +1338,7 @@ fun lexGen(infile) =
          if !UsesTrailingContext then say ",nil" else ();
          say ") else";
          sayln "\t    let val newchars= if !yydone then \"\" else yyinput 1024";
-         sayln "\t    in if (size newchars)=0";
+         sayln "\t    in if (String.size newchars)=0";
          sayln "\t\t  then (yydone := true;";
          say "\t\t        if (l=i0) then UserDeclarations.eof ";
          sayln (case !ArgCode of NONE => "()" | SOME _ => "yyarg");
@@ -1346,9 +1346,9 @@ fun lexGen(infile) =
          if !UsesTrailingContext then
             sayln ",nil))" else sayln "))";
          sayln "\t\t  else (if i0=l then yyb := newchars";
-         sayln "\t\t     else yyb := substring(!yyb,i0,l-i0)^newchars;";
+         sayln "\t\t     else yyb := String.substring(!yyb,i0,l-i0)^newchars;";
          sayln "\t\t     yygone := YYPosInt.+(!yygone, YYPosInt.fromInt i0);";
-         sayln "\t\t     yybl := size (!yyb);";
+         sayln "\t\t     yybl := String.size (!yyb);";
          sayln "\t\t     scan (s,AcceptingLeaves,l-i0,0))";
          sayln "\t    end";
          sayln "\t  else let val NewChar = Char.ord(CharVector.sub(!yyb,l))";
@@ -1365,7 +1365,7 @@ fun lexGen(infile) =
          sayln "\tend";
          sayln "\tend";
          if !UsesPrevNewLine then () else sayln "(*";
-         sayln "\tval start= if substring(!yyb,!yybufpos-1,1)=\"\\n\"";
+         sayln "\tval start= if String.substring(!yyb,!yybufpos-1,1)=\"\\n\"";
          sayln "then !yybegin+1 else !yybegin";
          if !UsesPrevNewLine then () else sayln "*)";
          say "\tin scan(";

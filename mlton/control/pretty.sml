@@ -1,7 +1,8 @@
-(* Copyright (C) 2003-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 2003-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -37,8 +38,6 @@ fun conApp {arg, con, targs} =
 fun handlee {catch, handler, try} =
    align [try,
           seq [str "handle ", catch, str " => ", handler]]
-
-fun longid (ls, l) = seq (separate (ls @ [l], "."))
 
 fun nest (prefix, x, y) =
    align [seq [str prefix, x],

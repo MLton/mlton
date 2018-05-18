@@ -17,7 +17,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                     structure Absyn : ABSYN
                     ) : PARSE_GEN =
   struct
-    open Array List
+    val sub = Array.sub
     infix 9 sub
     structure Grammar = MakeTable.Grammar
     structure Header = ParseGenParser.Header
@@ -257,7 +257,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
 
            val ecTerms =
                 List.foldr (fn (t,r) =>
-                  if hasType (TERM t) orelse exists (fn (a,_)=>a=t) value
+                  if hasType (TERM t) orelse List.exists (fn (a,_)=>a=t) value
                     then r
                     else t::r)
                 [] terms
@@ -616,10 +616,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln,fmtPos)
         (* termToString: map terminals back to strings *)
 
         val termToString =
-           let val data = array(numTerms,"")
+           let val data = Array.array(numTerms,"")
                val unmap = fn (symbol,_) =>
                    let val name = symbolName symbol
-                   in update(data,
+                   in Array.update(data,
                              case SymbolHash.find(name,symbolHash) of
                                  SOME i => i
                                | NONE => raise Fail "termToString",
@@ -633,10 +633,10 @@ let val printAbsynRule = Absyn.printRule(say,sayln,fmtPos)
            end
 
         val nontermToString =
-           let val data = array(numNonterms,"")
+           let val data = Array.array(numNonterms,"")
                val unmap = fn (symbol,_) =>
                     let val name = symbolName symbol
-                    in update(data,
+                    in Array.update(data,
                               case SymbolHash.find(name,symbolHash) of
                                   SOME i => i-numTerms
                                 | NONE => raise Fail "nontermToString",
@@ -673,13 +673,13 @@ precedences of the rule and the terminal are equal.
   A rule is given the precedence of its rightmost terminal *)
 
         val termPrec =
-            let val precData = array(numTerms, NONE : int option)
+            let val precData = Array.array(numTerms, NONE : int option)
                 val addPrec = fn termPrec => fn term as (T i) =>
                    case precData sub i
                    of SOME _ =>
                      error {line = 1, col = 0} ("multiple precedences specified for terminal " ^
                             (termToString term))
-                    | NONE => update(precData,i,termPrec)
+                    | NONE => Array.update(precData,i,termPrec)
                 val termPrec = fn ((LEFT,_) ,i) => i
                               | ((RIGHT,_),i) => i+2
                               | ((NONASSOC,l),i) => i+1
@@ -728,9 +728,9 @@ precedences of the rule and the terminal are equal.
                 nontermNum "%start" name
 
         val symbolType =
-           let val data = array(numTerms+numNonterms,NONE : ty option)
+           let val data = Array.array(numTerms+numNonterms,NONE : ty option)
                fun unmap (symbol,ty) =
-                   update(data,
+                   Array.update(data,
                           case SymbolHash.find(symbolName symbol,symbolHash) of
                               SOME i => i
                             | NONE => raise Fail "symbolType",

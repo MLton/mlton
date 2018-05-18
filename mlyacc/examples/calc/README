@@ -9,9 +9,9 @@ The calculator is defined by the files
 
 To compile this example, type the following commands
 
-        mllex calc.lex
-	 mlyacc calc.grm
-	 mlton calc.mlb
+  mllex calc.lex
+  mlyacc calc.grm
+  mlton calc.mlb
 
 in this directory. They will invoke ml-lex and ml-yacc to process the
 lexer specification calc.lex and the grammar specification calc.grm

@@ -1,8 +1,8 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -20,6 +20,7 @@ in
 end
 
 val word = Trace.trace ("Random.word", Unit.layout, Word.layout) word
+val srand = Trace.trace ("Random.srand", Word.layout, Unit.layout) srand
 
 local
    val ri: int ref = ref 0
@@ -83,7 +84,7 @@ in
             val () =
                if w - 0w1 <= !max
                   then ()
-               else (r := MLton.Random.rand ()
+               else (r := word ()
                      ; max := Word.notb 0wx0)
             val w' = !r
             val () = r := Word.div (w', w)

@@ -1,8 +1,9 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -82,12 +83,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     numElements = getArrayLength (p);
     bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
     dataBytes = numElements * bytesPerElement;
-    if (dataBytes < OBJPTR_SIZE) {
-      /* Very small (including empty) arrays have OBJPTR_SIZE bytes
-       * space for the forwarding pointer.
-       */
-      dataBytes = OBJPTR_SIZE;
-    } else if (0 == numObjptrs) {
+    if (0 == numObjptrs) {
       /* No objptrs to process. */
       ;
     } else {
@@ -117,7 +113,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       assert (p == last);
       p -= dataBytes;
     }
-    p += alignWithExtra (s, dataBytes, GC_ARRAY_HEADER_SIZE);
+    p += alignWithExtra (s, dataBytes, GC_ARRAY_METADATA_SIZE);
   } else { /* stack */
     GC_stack stack; 
     pointer top, bottom; 

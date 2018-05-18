@@ -2,7 +2,7 @@
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -60,6 +60,8 @@ signature DIRECTED_GRAPH =
       val coerce: 'a t -> unit t * {edge: 'a Edge.t -> unit Edge.t,
                                     node: 'a Node.t -> unit Node.t}
       val dfs: 'a t * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
+      val dfsForest: 'a t * {roots: 'a Node.t vector,
+                             nodeValue: 'a Node.t -> 'b} -> 'b Tree.t vector
       val dfsNodes: 'a t * 'a Node.t list * ('a, 'b, 'c, 'd, 'e) DfsParam.t -> 'b
       val dfsTree: 'a t * {root: 'a Node.t,
                            nodeValue: 'a Node.t -> 'b} -> 'b Tree.t

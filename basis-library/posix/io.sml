@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -249,7 +249,7 @@ local
             end
          fun readVec (fd, n) =
             let
-               val buf = Array.uninit n
+               val buf = Array.alloc n
                val bytesRead = 
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 

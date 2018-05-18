@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -452,8 +452,11 @@ structure Elaborate =
          val (allowOverload, ac) =
             makeBool ({name = "allowOverload", 
                        default = false, expert = true}, ac)
-         val (allowRebindEquals, ac) =
-            makeBool ({name = "allowRebindEquals", 
+         val (allowRedefineSpecialIds, ac) =
+            makeBool ({name = "allowRedefineSpecialIds",
+                       default = false, expert = true}, ac)
+         val (allowSpecifySpecialIds, ac) =
+            makeBool ({name = "allowSpecifySpecialIds",
                        default = false, expert = true}, ac)
          val (deadCode, ac) =
             makeBool ({name = "deadCode", 
@@ -906,9 +909,13 @@ val libTargetDir = control {name = "lib target dir",
 
 val libname = ref ""
 
-val loopPasses = control {name = "loop passes",
-                          default = 1,
-                          toString = Int.toString}
+val loopSsaPasses = control {name = "loop ssa passes",
+                             default = 1,
+                             toString = Int.toString}
+
+val loopSsa2Passes = control {name = "loop ssa2 passes",
+                              default = 1,
+                              toString = Int.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,
@@ -979,6 +986,24 @@ structure Native =
                            default = SOME 20000,
                            toString = Option.toString Int.toString}
    end
+
+val optFuel =
+   control {name = "optFuel",
+            default = NONE,
+            toString = Option.toString Int.toString}
+
+fun optFuelAvailAndUse () =
+   case !optFuel of
+      NONE => true
+    | SOME i => if i > 0
+                   then (optFuel := SOME (i - 1); true)
+                   else false
+(* Suppress unused variable warning
+ * This variable is purposefully unused in production,
+ * but is retained to make it easy to use in development of new
+ * optimization passes.
+ *)
+val _ = optFuelAvailAndUse
 
 val optimizationPasses:
    {il: string, set: string -> unit Result.t, get: unit -> string} list ref =
@@ -1096,6 +1121,16 @@ val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}
 
+val showBasisCompact = control {name = "show basis compact",
+                                default = false,
+                                toString = Bool.toString}
+val showBasisDef = control {name = "show basis def",
+                            default = true,
+                            toString = Bool.toString}
+val showBasisFlat = control {name = "show basis flat",
+                             default = true,
+                             toString = Bool.toString}
+
 val showDefUse = control {name = "show def-use",
                           default = NONE,
                           toString = Option.toString File.toString}
@@ -1152,23 +1187,27 @@ structure Target =
 
       structure Size =
          struct
+            val (arrayMetaData: unit -> Bits.t, set_arrayMetaData) = make "Size.arrayMetaData"
             val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
             val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
             val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
             val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
             val (header: unit -> Bits.t, set_header) = make "Size.header"
             val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
+            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.noramlMetaData"
             val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
             val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
          end
-      fun setSizes {cint, cpointer, cptrdiff, csize, 
-                    header, mplimb, objptr, seqIndex} =
-         (Size.set_cint cint
+      fun setSizes {arrayMetaData, cint, cpointer, cptrdiff, csize,
+                    header, mplimb, normalMetaData, objptr, seqIndex} =
+         (Size.set_arrayMetaData arrayMetaData
+          ; Size.set_cint cint
           ; Size.set_cpointer cpointer
           ; Size.set_cptrdiff cptrdiff
           ; Size.set_csize csize
           ; Size.set_header header
           ; Size.set_mplimb mplimb
+          ; Size.set_normalMetaData normalMetaData
           ; Size.set_objptr objptr
           ; Size.set_seqIndex seqIndex)
    end
@@ -1191,10 +1230,15 @@ fun mlbPathMap () =
                         32 => "rep32"
                       | 64 => "rep64"
                       | _ => Error.bug "Control.mlbPathMap")},
-            {var = "HEADER_WORD",
-             path = (case Bits.toInt (Target.Size.header ()) of
-                        32 => "word32"
-                      | 64 => "word64"
+            {var = "ARRAY_METADATA_SIZE",
+             path = (case Bits.toInt (Target.Size.arrayMetaData ()) of
+                        96 => "size96"
+                      | 192 => "size192"
+                      | _ => Error.bug "Control.mlbPathMap")},
+            {var = "NORMAL_METADATA_SIZE",
+             path = (case Bits.toInt (Target.Size.normalMetaData ()) of
+                        32 => "size32"
+                      | 64 => "size64"
                       | _ => Error.bug "Control.mlbPathMap")},
             {var = "SEQINDEX_INT",
              path = (case Bits.toInt (Target.Size.seqIndex ()) of

@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -114,8 +114,8 @@ structure Array2 : ARRAY2 =
                   rows = rows,
                   cols = cols}
       in
-         fun uninit' (rows, cols) =
-            make (rows, cols, Primitive.Array.uninit)
+         fun alloc' (rows, cols) =
+            make (rows, cols, Primitive.Array.alloc)
          fun array' (rows, cols, init) =
             make (rows, cols, fn size => Primitive.Array.new (size, init))
       end
@@ -135,14 +135,14 @@ structure Array2 : ARRAY2 =
                else doit (SeqIndex.fromIntUnsafe rows,
                           SeqIndex.fromIntUnsafe cols)
       in
-         fun uninit (rows, cols) =
-            make (rows, cols, fn (rows, cols) => uninit' (rows, cols))
+         fun alloc (rows, cols) =
+            make (rows, cols, fn (rows, cols) => alloc' (rows, cols))
          fun array (rows, cols, init) =
             make (rows, cols, fn (rows, cols) => array' (rows, cols, init))
       end
 
       fun array0 (): 'a array =
-         {array = Primitive.Array.uninit 0,
+         {array = Primitive.Array.alloc 0,
           rows = 0,
           cols = 0}
 
@@ -192,7 +192,7 @@ structure Array2 : ARRAY2 =
                let
                   val cols = length row1
                   val a as {array, cols = cols', ...} = 
-                     uninit (length rows, cols)
+                     alloc (length rows, cols)
                   val _ =
                      List.foldl
                      (fn (row: 'a list, i) =>
@@ -300,7 +300,7 @@ structure Array2 : ARRAY2 =
 
       fun tabulate trv (rows, cols, f) =
          let 
-            val a = uninit (rows, cols)
+            val a = alloc (rows, cols)
             val () = modifyi trv (fn (r, c, _) => f (r, c)) (wholeRegion a)
          in 
             a

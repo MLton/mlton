@@ -2,7 +2,7 @@
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -10,7 +10,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
    sig
       structure Array: sig
                           include MONO_ARRAY
-                          val uninit: int -> array
+                          val alloc: int -> array
                           val unsafeSub: array * int -> elem
                        end
       structure ArraySlice: MONO_ARRAY_SLICE
@@ -219,7 +219,7 @@ datatype instream = In of {augmentedReader: PIO.reader,
 
 local
    val augmentedReader = PIO.nullRd ()
-   val buf = A.uninit 0
+   val buf = A.alloc 0
    val first = ref 0
    val last = ref 0
    val reader = PIO.nullRd ()
@@ -374,7 +374,7 @@ fun inputN (ib as In {buf, first, last, ...}, n) =
                         (ib, "inputN", fn () =>
                          let
                             val readArr = readArr ib
-                            val inp = A.uninit n
+                            val inp = A.alloc n
                             fun fill k =
                                if k >= size
                                   then ()

@@ -1,14 +1,17 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
 local
    ../../lib/mlton/sources.mlb
    ../control/sources.mlb
+
+   layout-pretty.sml
 
    char-size.sig
    char-size.fun
@@ -77,11 +80,9 @@ local
    type-ops.fun
    hash-type.sig
    hash-type.fun
-   use-name.fun
 in
    signature ADMITS_EQUALITY
    signature ATOMS
-   signature BINDING_STRENGTH
    signature CHAR_SIZE
    signature CONST
    signature CONST_TYPE
@@ -107,6 +108,8 @@ in
    signature WORD_X
    signature WORD_X_VECTOR
  
+   structure LayoutPretty
+
    functor PrimCons
    functor PrimTycons
    functor Atoms
@@ -114,5 +117,4 @@ in
    functor GenericScheme
    functor HashType
    functor TypeOps
-   functor UseName
 end

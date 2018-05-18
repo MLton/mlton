@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -15,6 +16,17 @@ signature AST_MODULES =
    sig
       include AST_CORE
 
+      structure WhereEquation:
+         sig
+            type t
+            datatype node =
+               Type of {longtycon: Longtycon.t,
+                        tyvars: Tyvar.t vector,
+                        ty: Type.t}
+            include WRAPPED sharing type node' = node
+                            sharing type obj = t
+         end
+
       structure Sigexp:
          sig
             type spec
@@ -23,16 +35,13 @@ signature AST_MODULES =
             datatype node =
                Spec of spec
              | Var of Sigid.t
-             | Where of t * {longtycon: Longtycon.t,
-                             ty: Type.t,
-                             tyvars: Tyvar.t vector} vector
+             | Where of {equations: WhereEquation.t vector,
+                         sigexp: t}
 
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val wheree: t * {tyvars: Tyvar.t vector,
-                             longtycon: Longtycon.t,
-                             ty: Type.t} vector * Region.t -> t
+            val wheree: t * WhereEquation.t vector -> t
             val spec: spec -> t
 
             val layout: t -> Layout.t
@@ -46,7 +55,7 @@ signature AST_MODULES =
              | Transparent of Sigexp.t
          end
 
-      structure Equation:
+      structure SharingEquation:
          sig
             type t
             datatype node =
@@ -68,7 +77,7 @@ signature AST_MODULES =
              | IncludeSigexp of Sigexp.t
              | IncludeSigids of Sigid.t vector
              | Seq of t * t
-             | Sharing of {equations: Equation.t vector,
+             | Sharing of {equation: SharingEquation.t,
                            spec: t}
              | Structure of (Strid.t * Sigexp.t) vector
              | Type of {tycon: Tycon.t,
@@ -100,6 +109,7 @@ signature AST_MODULES =
 
             val constrained: t * SigConst.t -> t
             val lett: strdec * t -> t
+            val var: Longstrid.t -> t
 
             val layout: t -> Layout.t
          end
@@ -111,6 +121,7 @@ signature AST_MODULES =
                Core of Dec.t
              | Local of t * t
              | Seq of t list
+             | ShowBasis of File.t
              | Structure of {constraint: SigConst.t,
                              def: Strexp.t,
                              name: Strid.t} vector
@@ -122,6 +133,9 @@ signature AST_MODULES =
             val core: Dec.t -> t
             val layout: t -> Layout.t
             val openn: Longstrid.t vector -> t
+            val structuree: {constraint: SigConst.t,
+                             def: Strexp.t,
+                             name: Strid.t} -> t
          end
       sharing type Strdec.t = Strexp.strdec
 

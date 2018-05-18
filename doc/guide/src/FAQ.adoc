@@ -39,7 +39,7 @@ with other SML implementations.
 == How can I decrease compile-time memory usage? ==
 
 * Compile with `-verbose 3` to find out if the problem is due to an
-SSA optimization pass.  If so, compile with ++-drop-pass __pass__++ to
+SSA optimization pass.  If so, compile with ++-disable-pass __pass__++ to
 skip that pass.
 
 * Compile with `@MLton hash-cons 0.5 --`, which will instruct the

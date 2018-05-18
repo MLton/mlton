@@ -1,8 +1,8 @@
 GnuMP
 =====
 
-The http://www.gnu.org/software/gmp/gmp.html[GnuMP] library (GNU
-multiprecision library) is a library for arbitrary precision integer
+The http://gmplib.org[GnuMP] library (GNU Multiple Precision
+arithmetic library) is a library for arbitrary precision integer
 arithmetic.  MLton uses the GnuMP library to implement the
 <:BasisLibrary: Basis Library> `IntInf` module.
 

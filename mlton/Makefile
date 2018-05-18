@@ -1,52 +1,81 @@
-## Copyright (C) 2010,2013,2016 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
- # MLton is released under a BSD-style license.
+ # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
+
+MLTON_RUNTIME_ARGS :=
+MLTON_COMPILE_ARGS :=
+
+BOOTSTRAP_MLTON_RUNTIME_ARGS :=
+BOOTSTRAP_MLTON_COMPILE_ARGS :=
+
+GIT := git
+GREP := grep
+SED := sed
+
+######################################################################
+######################################################################
 
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-HOST_ARCH := $(shell "$(SRC)/bin/host-arch")
-HOST_OS := $(shell "$(SRC)/bin/host-os")
-LIB := $(BUILD)/lib
-TARGET := self
-AOUT := mlton-compile
+
 PATH := $(BIN):$(shell echo $$PATH)
 
-FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
 
-ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
-  # We're compiling MLton with itself, so don't use any stubs.
-  FILE := mlton.mlb
-  FLAGS += -default-ann 'sequenceNonUnit warn'
-  FLAGS += -default-ann 'warnUnused true'
-  # FLAGS += -type-check true
+HOST_ARCH := $(shell ../bin/host-arch)
+HOST_OS := $(shell ../bin/host-os)
+TARGET := self
+TARGET_ARCH := $(HOST_ARCH)
+TARGET_OS := $(HOST_OS)
+
+######################################################################
+
+ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
+BOOTSTRAP:=true
 else
-# We're compiling MLton with an older version of itself. 
-# Use "-align 8" for amd64 to avoid GMP/mul_2exp segfault with a
-# mis-aligned limb when compiling with <= 20070826.
-ifeq (amd64,$(findstring $(HOST_ARCH), amd64))
-  FLAGS += -align 8
-endif
-ifneq (,$(findstring $(HOST_OS), cygwin mingw))
-  # The stubs don't work on Cygwin or MinGW, since they define spawn
-  # in terms of fork, and fork doesn't work on Cygwin or MinGW.  So,
-  # make without the stubs.
-  FILE := mlton.mlb
-else
-  # We're compiling MLton with an older version of itself, so use the stubs for
-  # the MLton structure.
-  FILE := mlton-stubs.mlb
-endif
+BOOTSTRAP:=false
 endif
 
-FLAGS += -target $(TARGET)
-FLAGS += -verbose 2 -output "$(AOUT)"
-FLAGS += $(COMPILE_ARGS)
+MLTON := mlton
+BOOTSTRAP_MLTON := mlton
+
+MLTON_COMPILE_TYPECHECK_ARGS :=
+ifeq (false, $(BOOTSTRAP))
+# Older versions of `mlton` may not support `sequenceNonUnit` or `warnUnused`.
+MLTON_COMPILE_TYPECHECK_ARGS += -default-ann 'sequenceNonUnit warn'
+MLTON_COMPILE_TYPECHECK_ARGS += -default-ann 'warnUnused true'
+# MLTON_COMPILE_TYPECHECK_ARGS += -type-check true
+endif
+
+ifeq (false, $(BOOTSTRAP))
+MLTON_ACTUAL := $(MLTON)
+MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(MLTON_RUNTIME_ARGS)
+MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(MLTON_COMPILE_ARGS)
+else
+MLTON_ACTUAL := $(BOOTSTRAP_MLTON)
+MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(BOOTSTRAP_MLTON_RUNTIME_ARGS)
+MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(BOOTSTRAP_MLTON_COMPILE_ARGS)
+endif
+
+ifeq (false, $(BOOTSTRAP))
+# We're self-compiling, so don't use any stubs.
+FILE := mlton.mlb
+else
+ifneq (, $(findstring $(HOST_OS),cygwin mingw))
+# We're bootstrapping on Cygwin or MinGW; stubs define `spawn` in terms of
+# `fork` and `fork` doesn't work on Cygwin or MinGW, so don't use any stubs.
+FILE := mlton.mlb
+else
+# We're bootstrapping, so use stubs.
+FILE := mlton-stubs.mlb
+endif
+endif
 
 FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
@@ -59,18 +88,18 @@ FRONT_END_SOURCES :=		\
 SOURCES :=			\
 	$(FILE)			\
 	$(FRONT_END_SOURCES)	\
-	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE) | grep -v " "; fi))
+	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then mlton -stop f $(FILE) | $(GREP) -v " "; fi))
 
 .PHONY: all
-all: $(AOUT)
+all: $(MLTON_OUTPUT)
 
 control/version.sml: control/version_sml.src
-	cat control/version_sml.src |				\
-		sed "s/MLTONVERSION/$$(TZ=UTC git log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$(git status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')/" >	\
-		control/version.sml
+	$(SED) "s/MLTON_VERSION/$(MLTON_VERSION)/" \
+		< control/version_sml.src \
+		> control/version.sml
 
 front-end/%.lex.sml: front-end/%.lex
-	$(MAKE) -C front-end $(@F)
+	$(MAKE) -C front-end $(<F).sml
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(MAKE) -C front-end $(<F).sig $(<F).sml
 
@@ -80,36 +109,41 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
 		echo '$$(SML_LIB)/basis/mlton.mlb';				\
 		echo '$$(SML_LIB)/basis/basis.mlb';				\
-		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
+		mlton -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
 		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
-			grep -v 'mlb$$' | 					\
-			grep 'mlton-stubs';					\
+			$(GREP) -v 'mlb$$' | 					\
+			$(GREP) 'mlton-stubs';					\
 		mlton -stop f mlton.mlb |					\
-			grep -v 'mlb$$' |					\
-			grep -v 'sml/basis' | 					\
-			grep -v 'targets' | 					\
-			grep -v 'mlyacc';					\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) -v 'sml/basis' | 				\
+			$(GREP) -v 'targets' | 					\
+			$(GREP) -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
-$(AOUT): $(SOURCES)
+MLTON_OUTPUT := mlton
+$(MLTON_OUTPUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
-	@echo 'Compiling mlton (takes a while)'
-	mlton $(FLAGS) $(FILE)
+	@echo 'Compiling mlton'
+	"$(MLTON_ACTUAL)" @MLton gc-summary $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
+		-verbose 2 $(MLTON_COMPILE_ARGS_ACTUAL) \
+		-target $(TARGET) -output $(MLTON_OUTPUT) $(FILE)
 
 .PHONY: def-use
 def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
-	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+	"$(MLTON_ACTUAL)" @MLton $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
+		-verbose 0 $(MLTON_COMPILE_ARGS_ACTUAL) \
+		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use \
+		$(FILE)
 
 .PHONY: clean
 clean:
 	../bin/clean
 
 #
-# The following rebuilds the heap file for the SML/NJ compiled version
-# of MLton.
+# The following rebuilds the heap file for the SML/NJ compiled version of MLton.
 #
 SMLNJ := sml
 SMLNJ_CM_SERVERS_NUM := 0
@@ -135,8 +169,8 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 	) | "$(SMLNJ)"
 
 #
-# The following rebuilds the executable file for the Poly/ML compiled
-# version of MLton.
+# The following rebuilds the executable file for the Poly/ML compiled version of
+# MLton.
 #
 POLYML	:= poly
 
@@ -154,18 +188,18 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell mlton -stop f mlton.mlb))
 	(									\
 		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
-			sed 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
-		mlton -stop f mlton.mlb | grep -v 'mlb$$' | grep 'mlyacc';	\
+			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
+		mlton -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
 		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
-			sed 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
+			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
 		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
-			grep -v 'mlb$$' | 					\
-			grep 'mlton-stubs';					\
+			$(GREP) -v 'mlb$$' | 					\
+			$(GREP) 'mlton-stubs';					\
 		mlton -stop f mlton.mlb |					\
-			grep -v 'mlb$$' |					\
-			grep -v 'sml/basis' | 					\
-			grep -v 'targets' | 					\
-			grep -v 'mlton-stubs' |					\
-			grep -v 'mlyacc' |					\
-			grep -v 'call-main.sml';				\
-	) | sed 's|\(.*\)|use "\1";|' > mlton-polyml.use
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) -v 'sml/basis' | 				\
+			$(GREP) -v 'targets' | 					\
+			$(GREP) -v 'mlton-stubs' |				\
+			$(GREP) -v 'mlyacc' |					\
+			$(GREP) -v 'call-main.sml';				\
+	) | $(SED) 's|\(.*\)|use "\1";|' > mlton-polyml.use

@@ -36,6 +36,16 @@ functor F (structure A: sig type t end
       val _: A.t -> C.t = fn x => x
    end
 
+functor F (structure A: sig type t end
+           structure B: sig type u end
+           structure C: sig type t end
+           structure D: sig type u end
+           sharing A = B = C = D) =
+   struct
+      val _: A.t -> C.t = fn x => x
+      val _: B.u -> D.u = fn x => x
+   end
+
 (* Check that sharing doesn't mistakenly share structures that only differ in
  * free flexible tycons.
  *)

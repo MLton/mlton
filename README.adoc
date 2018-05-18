@@ -1,0 +1,227 @@
+= http://mlton.org[MLton]
+
+ifdef::env-github[]
+image:https://travis-ci.org/MLton/mlton.svg?branch=master[Build Status, link = https://travis-ci.org/MLton/mlton]
+endif::[]
+
+****
+MLton is a whole-program optimizing compiler for the Standard{nbsp}ML
+programming language.
+****
+
+== Features
+
+ * Portability. Runs on the following platforms:
+
+   - ARM: Linux (Debian).
+   - Alpha: Linux (Debian).
+   - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
+     OpenBSD, Solaris (10 and above).
+
+   - HPPA: HPUX (11.11 and above), Linux (Debian).
+   - IA64: HPUX (11.11 and above), Linux (Debian).
+   - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
+   - PowerPC64: AIX (5.2 and above).
+   - S390: Linux (Debian).
+   - Sparc: Linux (Debian), Solaris (8 and above).
+   - X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora,
+     Ubuntu, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and above).
+
+ * Robustness.
+
+   - Supports the full SML 97 language as given in The Definition of
+     Standard{nbsp}ML (Revised).
+   - A complete implementation of the Basis Library.
+   - Generates standalone executables.
+   - Compiles large programs.
+   - Support for large amounts of memory (up to 4G on 32-bit systems;
+     more on 64-bit systems).
+   - Support for large array lengths (up to 2^31^ - 1 on 32-bit systems;
+     up to 2^63^-1 on 64-bit systems).
+   - Support for large files, using 64-bit file positions.
+
+ * Performance.
+
+   - Executables have excellent running times.
+   - Generates small executables.
+   - Untagged and unboxed native integers, reals, and words.
+   - Unboxed native arrays.
+   - Multiple garbage collection strategies.
+   - Fast arbitrary-precision arithmetic based on the GMP.
+
+ * Tools.
+
+   - Source-level profiling for both time and allocation.
+   - MLLex lexer generator.
+   - MLYacc parser generator.
+   - MLNLFFIGEN foreign-function-interface generator.
+
+ * Extensions.
+
+   - A simple and fast C FFI that supports calling from SML to C and from C
+     to SML.
+   - The ML Basis system for programming in the very large.
+   - Libraries for continuations, finalization, interval timers, random numbers,
+     resource limits, resource usage, signal handlers, object size, system
+     logging, threads, weak pointers, and world save and restore.
+
+
+== Build and Install (from source)
+
+=== Requirements
+
+==== Software
+
+ * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
+ * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
+ * http://savannah.gnu.org/projects/make[GNU Make]
+ * http://www.gnu.org/software/bash/[GNU Bash]
+ * binutils (`ar`, `ranlib`, `strip`, ...)
+ * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
+ * Standard{nbsp}ML compiler and tools to bootstrap:
+   - http://mlton.org[MLton] (`mlton`, `mllex`, and `mlyacc`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
+   - http://www.smlnj.org[SML/NJ] (`sml`, `ml-lex`, `ml-yacc`) supported, but not recommended.
+ * (optional, for documentation only) https://ctan.org/tex/[TeX], http://asciidoc.org/[AsciiDoc], http://pygments.org/[Pygments], http://www.graphicsmagick.org/[GraphicsMagick] or https://www.imagemagick.org/[ImageMagick], ...
+
+==== Hardware
+
+ * &ge; 1GB RAM (for 32-bit platforms) or &ge; 2GB RAM (for 64-bit platforms)
+
+=== Build Instructions
+
+On typical platforms, building MLton requires no configuration and can be
+accomplished via:
+
+[source,shell]
+----
+$ make all
+----
+
+A small set of `Makefile` variables can be used to customize the build:
+
+ * `CC`: Specify C compiler.  Can be used for alternative tools (e.g.,
+   `CC=clang` or `CC=gcc-7`).
+ * `WITH_GMP_DIR`, `WITH_GMP_INC_DIR`, `WITH_GMP_LIB_DIR`: Specify GMP include
+   and library paths, if not on default search paths.  (If `WITH_GMP_DIR` is
+   set, then `WITH_GMP_INC_DIR` defaults to `$(WITH_GMP_DIR)/include` and
+   `WITH_GMP_LIB_DIR` defaults to `$(WITH_GMP_DIR)/lib`.)
+ * `MLTON_RUNTIME_ARGS`, `MLTON_COMPILE_ARGS`: Specify runtime and compile
+   arguments given to (the to-be-built) `mlton` when compiling distributed
+   executables ((self-compiled) `mlton`, `mllex`, `mlyacc`, `mlprof`, and
+   `mlnlffigen`). Can be used for testing (e.g., `MLTON_COMPILE_ARGS="-codegen
+   c"`) or for downstream packaging.
+ * `BOOTSTRAP_MLTON_RUNTIME_ARGS`, `BOOTSTRAP_MLTON_COMPILE_ARGS`: Specify
+   runtime and compile arguments given to "old" `mlton` when compiling
+   "bootstrapped" `mlton`. Can be used to work around bugs in "old" `mlton` when
+   compiling "bootstrapped" `mlton`.
+
+For example:
+
+[source,shell]
+----
+$ make CC=clang WITH_GMP_DIR=/opt/gmp MLTON_COMPILE_ARGS="-codegen c" all
+----
+
+The build artifacts are located under `./build`.  The just-built `mlton` can be
+executed via `./build/bin/mlton`.
+
+Building documentation can be accomplished via:
+
+[source,shell]
+----
+$ make docs
+----
+
+=== Install Instructions
+
+On typical platforms, installing MLton (after performing `make all` and,
+optionally, `make docs`) to `/usr/local` can be accomplished via:
+
+[source,shell]
+----
+$ make install
+----
+
+A small set of `Makefile` variables can be used to customize the installation:
+
+ * `PREFIX`: Specify the installation prefix.
+
+For example:
+
+[source,shell]
+----
+$ make PREFIX=/opt/mlton install
+----
+
+== Install (from binary package)
+
+=== Requirements
+
+==== Software
+
+ * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
+ * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
+ * http://savannah.gnu.org/projects/make[GNU Make]
+ * http://www.gnu.org/software/bash/[GNU Bash]
+ * miscellaneous Unix utilities (`bzip2`, `gzip`, `sed`, `tar`, ...)
+
+=== Binary Package
+
+A `.tgz` or `.tbz` binary package can be extracted at any location, yielding
+`README.adoc` (this file), `CHANGELOG.adoc`, `LICENSE`, `Makefile`, `bin/`,
+`lib/`, and `share/`.  The compiler and tools can be executed in-place (e.g.,
+`./bin/mlton`).
+
+A small set of `Makefile` variables can be used to customize the binary package
+via `make update`:
+
+ * `CC`: Specify C compiler.  Can be used for alternative tools (e.g.,
+   `CC=clang` or `CC=gcc-7`).
+ * `WITH_GMP_DIR`, `WITH_GMP_INC_DIR`, `WITH_GMP_LIB_DIR`: Specify GMP include
+   and library paths, if not on default search paths.  (If `WITH_GMP_DIR` is
+   set, then `WITH_GMP_INC_DIR` defaults to `$(WITH_GMP_DIR)/include` and
+   `WITH_GMP_LIB_DIR` defaults to `$(WITH_GMP_DIR)/lib`.)
+
+For example:
+
+[source,shell]
+----
+$ make CC=clang WITH_GMP_DIR=/opt/gmp update
+----
+
+=== Install Instructions
+
+On typical platforms, installing MLton (after optionally performing
+`make update`) to `/usr/local` can be accomplished via:
+
+[source,shell]
+----
+$ make install
+----
+
+A small set of `Makefile` variables can be used to customize the installation:
+
+ * `PREFIX`: Specify the installation prefix.
+
+For example:
+
+[source,shell]
+----
+$ make PREFIX=/opt/mlton install
+----
+
+== Resources
+
+ * `http://mlton.org`
+ * mailing lists
+   - `MLton-devel@mlton.org` -- MLton developers
+     (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive],
+     https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe])
+   - `MLton-user@mlton.org` -- MLton user community
+     (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive],
+     https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe])
+
+== Need help? Found a bug?
+
+https://github.com/MLton/mlton/issues[Submit an issue] if you need any help.
+We welcome pull requests with bug fixes or changes.

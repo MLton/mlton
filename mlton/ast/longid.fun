@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -72,7 +73,7 @@ fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
                 ((ss, SourcePos.column p),
                  fn (s::ss, cl) =>
                     let
-                       val cr = cl + String.length (Symbol.toString s)
+                       val cr = cl + String.length (Symbol.toString s) - 1
                     in
                        SOME
                        ((s, Region.make
@@ -82,7 +83,7 @@ fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
                              right = SourcePos.make {column = cr,
                                                      file = file,
                                                      line = line}}),
-                        (ss, cr + 1))
+                        (ss, cr + 2))
                     end
                   | ([], _) => NONE)
              end

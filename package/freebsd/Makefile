@@ -95,7 +95,6 @@ post-install:
 	${FIND} ${PREFIX}/lib/mlton -type f -exec ${CHMOD} a+r {} \;
 	${FIND} ${PREFIX}/lib/mlton -type d -exec ${CHMOD} a+rx {} \;
 	${CHMOD} a+x ${PREFIX}/lib/mlton/mlton-compile
-	${CHMOD} a+x ${PREFIX}/lib/mlton/platform
 .if !defined(NOPORTDOCS)
 	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${DOCSDIR}
 	${FIND} ${DOCSDIR} -type f -exec ${CHMOD} a+r {} \;

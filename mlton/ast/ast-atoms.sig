@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -17,7 +17,6 @@ signature AST_ATOMS_STRUCTS =
       structure SortedRecord: RECORD
       structure Symbol: SYMBOL
       structure TyconKind: TYCON_KIND
-      structure Tyvar: TYVAR
       structure WordSize: WORD_SIZE
       sharing Record.Field = SortedRecord.Field
       sharing Symbol = Record.Field.Symbol
@@ -29,28 +28,26 @@ signature AST_ATOMS =
 
       structure Const: AST_CONST
 
+      structure Tyvar:
+         sig
+            include AST_ID
+            val isEquality: t -> bool
+         end
+
       structure Tycon:
          sig
             include AST_ID
             include PRIM_TYCONS sharing type tycon = t
          end
 
-      structure Var: AST_ID
-
       structure Con:
          sig
             include AST_ID
             include PRIM_CONS
             sharing type con = t
-
-            val ensureRedefine: t -> unit
-            val ensureSpecify: t -> unit
          end
 
-      structure Basid: AST_ID
-      structure Sigid: AST_ID
-      structure Strid: AST_ID
-      structure Fctid: AST_ID
+      structure Var: AST_ID
 
       structure Vid:
          sig
@@ -61,7 +58,30 @@ signature AST_ATOMS =
             val fromCon: Con.t -> t
             val toVar: t -> Var.t
             val toCon: t -> Con.t
+
+            (* check special ids *)
+            val checkRedefineSpecial:
+               t * {allowIt: bool,
+                    ctxt: unit -> Layout.t,
+                    keyword: string} -> unit
+            val checkSpecifySpecial:
+               t * {allowIt: bool,
+                    ctxt: unit -> Layout.t,
+                    keyword: string} -> unit
          end
+
+      structure Strid:
+         sig
+            include AST_ID
+            val uArg: string -> t
+            val uRes: string -> t
+            val uSig: t
+            val uStr: t
+         end
+      structure Sigid: AST_ID
+      structure Fctid: AST_ID
+
+      structure Basid: AST_ID
 
       structure Longtycon:
          sig
@@ -69,29 +89,32 @@ signature AST_ATOMS =
             val arrow: t
          end sharing Longtycon.Id = Tycon
 
-      structure Longvar: LONGID sharing Longvar.Id = Var
       structure Longcon: LONGID sharing Longcon.Id = Con
-      structure Longstrid: LONGID sharing Longstrid.Id = Strid
+      structure Longvar: LONGID sharing Longvar.Id = Var
       structure Longvid:
          sig
             include LONGID
 
             val toLongcon: t -> Longcon.t
          end sharing Longvid.Id = Vid
+      structure Longstrid: LONGID sharing Longstrid.Id = Strid
 
       sharing Strid = Longtycon.Strid = Longvar.Strid = Longcon.Strid
          = Longvid.Strid = Longstrid.Strid
 
-      sharing Symbol = Basid.Symbol = Con.Symbol = Fctid.Symbol = Longcon.Symbol
-         = Longstrid.Symbol = Longtycon.Symbol = Longvar.Symbol = Longvid.Symbol
-         = Sigid.Symbol = Strid.Symbol = Tycon.Symbol = Vid.Symbol = Var.Symbol
+      sharing Symbol = Basid.Symbol = Con.Symbol = Fctid.Symbol
+         = Longcon.Symbol = Longstrid.Symbol = Longtycon.Symbol
+         = Longvar.Symbol = Longvid.Symbol = Sigid.Symbol
+         = Strid.Symbol = Tycon.Symbol = Tyvar.Symbol = Vid.Symbol
+         = Var.Symbol
 
       structure Type:
          sig
             type t
             datatype node =
                Con of Longtycon.t * t vector
-             | Record of t SortedRecord.t
+             | Paren of t
+             | Record of (Region.t * t) Record.t
              | Var of Tyvar.t
 
             include WRAPPED sharing type node' = node
@@ -103,7 +126,7 @@ signature AST_ATOMS =
             val layout: t -> Layout.t
             val layoutApp: Layout.t * 'a vector * ('a -> Layout.t) -> Layout.t
             val layoutOption: t option -> Layout.t
-            val record: t SortedRecord.t -> t
+            val record: (Region.t * t) Record.t -> t
             val tuple: t vector -> t
             val unit: t
             val var: Tyvar.t -> t
@@ -117,8 +140,10 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val empty: t
+            val isEmpty: t -> bool
             val layout: t -> Layout.t
          end
       structure DatBind:
@@ -132,7 +157,8 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val layout: string * t -> Layout.t
          end
       structure DatatypeRhs:
@@ -144,7 +170,8 @@ signature AST_ATOMS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val checkSyntax: t -> unit
+            val checkSyntaxDef: t -> unit
+            val checkSyntaxSpec: t -> unit
             val layout: t -> Layout.t
          end
       structure ModIdBind:
@@ -173,12 +200,13 @@ signature AST_ATOMS =
       val layoutAndsSusp: string * 'a vector * (bool * Layout.t * 'a -> Layout.t)
                           -> (unit -> Layout.t) vector
       val reportDuplicates:
-         'a vector * {equals: 'a * 'a -> bool,
+         'a vector * {ctxt: unit -> Layout.t,
+                      equals: 'a * 'a -> bool,
                       layout: 'a -> Layout.t,
                       name: string,
-                      region: 'a -> Region.t,
-                      term: unit -> Layout.t} -> unit
+                      region: 'a -> Region.t} -> unit
       val reportDuplicateFields:
-         (Record.Field.t * 'a) vector * {region: Region.t,
-                                         term: unit -> Layout.t} -> unit
+         (Record.Field.t * (Region.t * 'a)) vector * {ctxt: unit -> Layout.t} -> unit
+      val reportDuplicateTyvars:
+         Tyvar.t vector * {ctxt: unit -> Layout.t} -> unit
    end

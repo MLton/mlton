@@ -1,7 +1,7 @@
 (* Copyright (C) 2003-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -27,6 +27,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                 (MIPS, "MIPS"),
                 (PowerPC, "PowerPC"),
                 (PowerPC64, "PowerPC64"),
+                (RISCV, "RISCV"),
                 (S390, "S390"),
                 (Sparc, "Sparc"),
                 (X86, "X86")]

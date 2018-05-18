@@ -1,29 +1,30 @@
-## Copyright (C) 2009,2016 Matthew Fluet.
+## Copyright (C) 2009,2016,2018 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
- # MLton is released under a BSD-style license.
+ # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
+
+FIND := find
+GZIP := gzip
+PATCH := patch
+TAR := tar
+
+######################################################################
+######################################################################
 
 all: MLRISC/README.mlton
 
 MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	rm -rf MLRISC
-	tar -x -z --exclude '*/._*' -f MLRISC.tgz
+	$(GZIP) -dc MLRISC.tgz | $(TAR) xf -
+	$(FIND) MLRISC -name '._*' -depth -exec rm -f '{}' ';'
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC
-	patch -s -d MLRISC -p1 < MLRISC.patch
+	$(PATCH) -s -d MLRISC -p1 < MLRISC.patch
 
 .PHONY: clean
 clean:
 	../../bin/clean
-
-.PHONY: patch
-patch:
-	mv MLRISC MLRISC-mlton
-	tar -x -z --exclude '*/._*' -f MLRISC.tgz
-	diff -Naur MLRISC MLRISC-mlton >MLRISC.patch || exit 0
-	rm -rf MLRISC
-	mv MLRISC-mlton MLRISC

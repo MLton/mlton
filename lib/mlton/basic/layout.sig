@@ -2,7 +2,7 @@
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -14,6 +14,8 @@ signature LAYOUT =
       val align: t list -> t
       val alignPrefix: t list * string -> t
       val array: t array -> t
+      (* layout the object on one line *)
+      val compact: t -> t
       (* Whether or not to print things in detail -
        * routines that create layouts should use this flag to decide
        * how detailed to print.

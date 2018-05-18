@@ -2,15 +2,46 @@
 
 set -e
 
+die () {
+        echo >&2 "$1"
+        exit 1
+}
+
+usage () {
+        die "usage: $name [--exclude <path> ...]"
+}
+
+
+name=$(basename "$0")
 dir=$(dirname "$0")
 root=$(cd "$dir/.." && pwd)
 bin="$root/bin"
+
+declare -a exclude
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        "--exclude")
+            shift
+            if [ "$#" -gt 0 ]; then
+                exclude+=("$1");
+                shift
+            fi
+            ;;
+        *) usage
+           ;;
+    esac
+done
 
 doit () {
     # rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
     "$bin/ls-ignore" | xargs rm -rf
     for f in *; do
         if [ -d "$f" ]; then
+            for ((i=0; i < ${#exclude[*]}; i++)); do
+                if [ "$f" == "${exclude[$i]}" ]; then
+                    continue 2
+                fi
+            done
             cd "$f"
             if [ -r Makefile ]; then
                 "$bin/mmake" clean || doit

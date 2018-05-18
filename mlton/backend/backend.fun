@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -645,9 +645,9 @@ let
          Trace.trace2 ("Backend.setLabelInfo",
                        Label.layout, Layout.ignore, Unit.layout)
          setLabelInfo
-      fun callReturnOperands (xs: 'a vector,
-                              ty: 'a -> Type.t,
-                              shift: Bytes.t): StackOffset.t vector =
+      fun callReturnStackOffsets (xs: 'a vector,
+                                  ty: 'a -> Type.t,
+                                  shift: Bytes.t): StackOffset.t vector =
          #1 (Vector.mapAndFold
              (xs, Bytes.zero,
               fn (x, offset) =>
@@ -686,7 +686,7 @@ let
             val raises = Option.map (raises, fn ts => raiseOperands ts)
             val returns =
                Option.map (returns, fn ts =>
-                           callReturnOperands (ts, fn t => t, Bytes.zero))
+                           callReturnStackOffsets (ts, fn t => t, Bytes.zero))
             val chunk = funcChunk name
             fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
                Vector.map (#args (labelInfo l), varOperand o #1)
@@ -788,12 +788,10 @@ let
             in
                val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
                   let
-                     val argOperands =
-                        Vector.map
-                        (callReturnOperands (args, #2, Bytes.zero),
-                         M.Operand.StackOffset)
+                     fun formalsStackOffsets args =
+                        callReturnStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
                   in
-                     AllocateRegisters.allocate {argOperands = argOperands,
+                     AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
                                                  function = f,
                                                  varInfo = varInfo}
                   end
@@ -890,7 +888,7 @@ let
                                               size = size})
                                     end
                            val dsts =
-                              callReturnOperands
+                              callReturnStackOffsets
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
@@ -983,7 +981,7 @@ let
                      case kind of
                         R.Kind.Cont _ =>
                            let
-                              val srcs = callReturnOperands (args, #2, size)
+                              val srcs = callReturnStackOffsets (args, #2, size)
                            in
                               (M.Kind.Cont {args = Vector.map (srcs,
                                                                Live.StackOffset),
@@ -1169,18 +1167,98 @@ let
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
+      val program =
+         Machine.Program.T
+         {chunks = chunks,
+          frameLayouts = frameLayouts,
+          frameOffsets = frameOffsets,
+          handlesSignals = handlesSignals,
+          main = main,
+          maxFrameSize = maxFrameSize,
+          objectTypes = objectTypes,
+          profileInfo = profileInfo,
+          reals = allReals (),
+          vectors = allVectors ()}
+
+      local
+         open Machine
+         fun pass' ({name, doit}, sel, p) =
+            let
+               val _ =
+                  let open Control
+                  in maybeSaveToFile
+                     ({name = name,
+                       suffix = "pre.machine"},
+                      Control.No, p, Control.Layouts Program.layouts)
+                  end
+               val p =
+                  Control.passTypeCheck
+                  {display = Control.Layouts
+                             (fn (r,output) =>
+                              Program.layouts (sel r, output)),
+                   name = name,
+                   stats = fn _ => Layout.empty,
+                   style = Control.No,
+                   suffix = "post.machine",
+                   thunk = fn () => doit p,
+                   typeCheck = Program.typeCheck o sel}
+            in
+               p
+            end
+         fun pass ({name, doit}, p) =
+            pass' ({name = name, doit = doit}, fn p => p, p)
+         fun maybePass ({name, doit, execute}, p) =
+            if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
+               if Regexp.Compiled.matchesAll (re, name)
+                  then new
+                  else old)
+               then pass ({name = name, doit = doit}, p)
+               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
+
+         fun shuffle p =
+            let
+               fun shuffle v =
+                  let
+                     val a = Array.fromVector v
+                     val () = Array.shuffle a
+                  in
+                     Array.toVector a
+                  end
+               val Machine.Program.T
+                  {chunks, frameLayouts, frameOffsets,
+                   handlesSignals, main, maxFrameSize,
+                   objectTypes, profileInfo,
+                   reals, vectors} = p
+               val chunks = Vector.fromList chunks
+               val chunks = shuffle chunks
+               val chunks =
+                  Vector.map
+                  (chunks, fn Machine.Chunk.T {blocks, chunkLabel, regMax} =>
+                   Machine.Chunk.T
+                   {blocks = shuffle blocks,
+                    chunkLabel = chunkLabel,
+                    regMax = regMax})
+               val chunks = Vector.toList chunks
+            in
+               Machine.Program.T
+               {chunks = chunks,
+                frameLayouts = frameLayouts,
+                frameOffsets = frameOffsets,
+                handlesSignals = handlesSignals,
+                main = main,
+                maxFrameSize = maxFrameSize,
+                objectTypes = objectTypes,
+                profileInfo = profileInfo,
+                reals = reals,
+                vectors = vectors}
+            end
+      in
+         val program = maybePass ({name = "machineShuffle",
+                                   doit = shuffle,
+                                   execute = false}, program)
+      end
 in
-      Machine.Program.T 
-      {chunks = chunks,
-       frameLayouts = frameLayouts,
-       frameOffsets = frameOffsets,
-       handlesSignals = handlesSignals,
-       main = main,
-       maxFrameSize = maxFrameSize,
-       objectTypes = objectTypes,
-       profileInfo = profileInfo,
-       reals = allReals (),
-       vectors = allVectors ()}
+   program
 end}
    in
       program

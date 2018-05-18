@@ -1,9 +1,9 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -252,8 +252,8 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
   max = 
     object
     + (ARRAY_TAG == tag
-       ? (sizeofArrayNoHeader (s, getArrayLength (object),
-                               bytesNonObjptrs, numObjptrs))
+       ? (sizeofArrayNoMetaData (s, getArrayLength (object),
+                                 bytesNonObjptrs, numObjptrs))
        : (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)));
   // Compute the hash.
   hash = (GC_hash)header;
@@ -267,9 +267,9 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
 
     amount = (size_t)(max - object);
     if (ARRAY_TAG == tag)
-      amount += GC_ARRAY_HEADER_SIZE;
+      amount += GC_ARRAY_METADATA_SIZE;
     else
-      amount += GC_NORMAL_HEADER_SIZE;
+      amount += GC_NORMAL_METADATA_SIZE;
     s->lastMajorStatistics.bytesHashConsed += amount;
   }
 done:

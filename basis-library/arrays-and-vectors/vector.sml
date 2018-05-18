@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -28,12 +28,12 @@ structure Vector: VECTOR_EXTRA =
          end
 
       fun update (v, i, x) = 
-         (Primitive.Vector.update (v, SeqIndex.fromInt i, x))
+         (Primitive.Vector.updateVector (v, SeqIndex.fromInt i, x))
          handle Overflow => raise Subscript
 
       val isSubvector = isSubsequence
 
-      val unsafeFromArray = Primitive.Vector.fromArrayUnsafe
+      val unsafeFromArray = Primitive.Vector.unsafeFromArray
 
       val vector = new
    end

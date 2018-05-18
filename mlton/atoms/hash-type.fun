@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -82,11 +83,10 @@ structure Type =
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
 
       fun layoutPretty (ty: t): Layout.t =
-         #1 (hom {con = Tycon.layoutAppPretty,
+         #1 (hom {con = fn (c, ts) => (Tycon.layoutAppPretty
+                                       (c, ts, {layoutPretty = Tycon.layout})),
                   ty = ty,
-                  var = fn a => (Tyvar.layout a,
-                                 ({isChar = false},
-                                  Tycon.BindingStrength.unit))})
+                  var = fn a => LayoutPretty.simple (Tyvar.layout a)})
 
       fun layout (ty: t): Layout.t =
          hom {con = Tycon.layoutApp,

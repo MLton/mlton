@@ -1,20 +1,21 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
 bool isPointerInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.start <= p 
-              and p < s->heap.start + s->heap.oldGenSize));
+              and p <= s->heap.start + s->heap.oldGenSize));
 }
 
 bool isPointerInNursery (GC_state s, pointer p) {
   return (not (isPointer (p))
-          or (s->heap.nursery <= p and p < s->frontier));
+          or (s->heap.nursery <= p
+              and p <= s->frontier));
 }
 
 #if ASSERT

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+NAME="mlton-run-docker"
+
+# Remove any containers which already have $NAME.
+docker image rm $NAME
+
+# build container, and assign it tag $NAME
+docker build -t $NAME .
+
+# run container with the tag $NAME.
+docker run --rm -it $NAME

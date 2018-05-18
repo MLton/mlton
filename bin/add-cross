@@ -64,7 +64,7 @@ PATH="$src"/bin:$PATH
 # from the rpms, this will usually be /usr/lib/mlton.  You must have
 # write permission there.
 
-lib="$src/build/lib"
+lib="$src/build/lib/mlton"
 
 # You shouldn't need to change anything below this line.
 
@@ -88,11 +88,8 @@ echo "Copying files."
 echo "Making runtime on $machine."
 ssh $machine "cd $tmp && ./bin/mmake CPPFLAGS=\"$CPPFLAGS\" LDFLAGS=\"$LDFLAGS\" COMPILE_FAST=yes OMIT_BYTECODE=yes clean dirs runtime"
 
-ssh $machine "cd $tmp/build/lib/targets/self && tar cf - ." |
+ssh $machine "cd $tmp/build/lib/mlton/targets/self && tar cf - ." |
         ( cd "$lib/targets/$crossTarget" && tar xf - )
-( cd "$src" &&
-        mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
-                mlbpathmap )
 
 case "$crossOS" in
 mingw)

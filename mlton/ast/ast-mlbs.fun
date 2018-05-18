@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017-2018 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -14,6 +15,9 @@ open S
 structure AstPrograms = AstPrograms (S)
 
 open AstPrograms Layout
+
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
 
 val layouts = List.map
 structure Wrap = Region.Wrap
@@ -80,12 +84,12 @@ and checkSyntaxBasdec (d: basdec): unit =
       Ann (_, _, dec) => checkSyntaxBasdec dec
     | Basis basbnds =>
          reportDuplicates
-         (basbnds, {equals = (fn ({name = id, ...}, {name = id', ...}) =>
+         (basbnds, {ctxt = mkCtxt (d, layoutBasdec),
+                    equals = (fn ({name = id, ...}, {name = id', ...}) =>
                               Basid.equals (id, id')),
                     layout = Basid.layout o #name,
                     name = "basis definition",
-                    region = Basid.region o #name,
-                    term = fn () => layoutBasdec d})
+                    region = Basid.region o #name})
     | Defs def => ModIdBind.checkSyntax def
     | Local (dec1, dec2) => 
          (checkSyntaxBasdec dec1
@@ -119,7 +123,7 @@ fun sourceFiles (d: basdec): File.t vector =
           | Defs _ => ()
           | Local (dec1, dec2) => (sourceFilesBasdec dec1
                                    ; sourceFilesBasdec dec2)
-          | MLB ({fileAbs, ...}, dec) =>
+          | MLB ({fileAbs, fileUse, ...}, dec) =>
                let
                   val b = psi fileAbs
                in
@@ -128,7 +132,7 @@ fun sourceFiles (d: basdec): File.t vector =
                      else let
                              val () = b := true
                           in
-                             Buffer.add (sourceFiles, fileAbs)
+                             Buffer.add (sourceFiles, fileUse)
                              ; sourceFilesBasdec (Promise.force dec)
                           end
                end

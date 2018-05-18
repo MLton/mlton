@@ -1,8 +1,8 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2016-2017 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -29,7 +29,8 @@ in
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
       ../config/objptr/objptr-$(OBJPTR_REP).sml
-      ../config/header/header-$(HEADER_WORD).sml
+      ../config/metadata/array-metadata-$(ARRAY_METADATA_SIZE).sml
+      ../config/metadata/normal-metadata-$(NORMAL_METADATA_SIZE).sml
       ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
    end end
@@ -137,7 +138,6 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
@@ -170,7 +170,6 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml
@@ -231,7 +230,6 @@ in
       ../config/bind/real-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/header-$(HEADER_WORD).sml
       ../config/objptr/objptr-$(OBJPTR_REP).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml
       ../config/c/position.sml

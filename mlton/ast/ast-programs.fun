@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -98,7 +98,7 @@ structure Program =
                    | List es => Vector.foreach (es, exp)
                    | Orelse (e1, e2) => (exp e1; exp e2)
                    | Raise exn => exp exn
-                   | Record r => Record.foreach (r, exp)
+                   | Record r => Record.foreach (r, exp o #2)
                    | Seq es => exps es
                    | While {test, expr} => (exp test; exp expr)
                    | _ => ()
@@ -118,6 +118,7 @@ structure Program =
                      Core d => dec d
                    | Local (d, d') => (strdec d; strdec d')
                    | Seq ds => List.foreach (ds, strdec)
+                   | ShowBasis _ => ()
                    | Structure ds =>
                         Vector.foreach (ds, fn {def, ...} => strexp def)
                end

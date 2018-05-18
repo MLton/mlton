@@ -1,8 +1,9 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -94,7 +95,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
  * Likewise, a primitive value may span multiple native words (e.g.,
  * Word64.word on an x86).
 */
-#define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
+#define GC_NORMAL_METADATA_SIZE (GC_HEADER_SIZE)
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 

@@ -4,14 +4,14 @@
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
- # MLton is released under a BSD-style license.
+ # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
 
 SRC := $(shell cd .. && pwd)
 BUILD := $(SRC)/build
 BIN := $(BUILD)/bin
-LIB := $(BUILD)/lib
+LIB := $(BUILD)/lib/mlton
 MLTON := mlton
 TARGET := self
 FLAGS := -target $(TARGET)	\
@@ -30,7 +30,7 @@ $(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).
 clean:
 	../bin/clean
 
-BENCH := barnes-hut boyer checksum count-graphs DLXSimulator even-odd fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
+BENCH := barnes-hut boyer checksum count-graphs DLXSimulator even-odd fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form string-concat tailfib tak tensor tsp tyan vector32-concat vector64-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH := barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
 BFLAGS := -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
@@ -41,9 +41,9 @@ BFLAGS := -mlton "$(BIN)/mlton"
 test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH := string-concat vector32-concat vector64-concat
-QBFLAGS := -mlton "~/devel/mlton/builds/20170725.130317-g159190284/bin/mlton"
-QBFLAGS += -mlton "~/devel/mlton/builds/20170813.010953-gcaa9c617a/bin/mlton"
+QBENCH := $(BENCH)
+QBFLAGS := -mlton "~/devel/mlton/builds/20171013.233239-g5513092e3/bin/mlton"
+QBFLAGS += -mlton "~/devel/mlton/mlton.git/build/bin/mlton -cse-canon {ascHash,descHash,ascIndex,descIndex}"
 
 .PHONY: qtest
 qtest: $(NAME)

@@ -1,9 +1,9 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -20,6 +20,7 @@ datatype t =
  | SpaceString of string -> unit
  | SpaceString2 of string * string -> unit
  | String of string -> unit
+ | Word of word -> unit
 
 local
    fun make b (r: bool ref): t = None (fn () => r := b)
@@ -33,6 +34,8 @@ fun boolRef (r: bool ref): t = Bool (fn b => r := b)
 fun intRef (r: int ref): t = Int (fn n => r := n)
 
 fun stringRef (r: string ref): t = String (fn s => r := s)
+
+fun wordRef (r: word ref): t = Word (fn w => r := w)
 
 val trace = ("trace", SpaceString (fn s =>
                                    let
@@ -143,6 +146,7 @@ fun parse {switches: string list,
                                            (f (s1, s2); loop switches)
                                       | _ => error (concat ["-", switch, " requires two arguments"]))
                                | String f => (f ""; loop switches)
+                               | Word f => next (f, Word.fromString, "a word")
                            end
                      end
                    | _ => switch :: switches

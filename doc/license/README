@@ -1,8 +1,9 @@
 package         license                         use
 --------------  ------------------------------  ------------
-MLton           MLton-LICENSE (BSD-style)
+MLton           MLton-LICENSE (HPND-style)      all components excepting those
+                                                identified below
 
-SML/NJ          NJ-LICENSE (BSD-style)          front-end mllex specification
+SML/NJ          NJ-LICENSE (HPND-style)         front-end mllex specification
                                                 front-end mlyacc specification
                                                 precedence parser
                                                 CM lexer and parser
@@ -13,11 +14,16 @@ SML/NJ          NJ-LICENSE (BSD-style)          front-end mllex specification
                                                 CKit Library
                                                 mlnlffigen and MLNLFFI Library
                                                 MLRISC Library
+                                                ML-LPT Library
 
-SML/NJ Lib	SMLNJ-LIB-LICENSE (BSD-style) 	SML/NJ Library
+SML/NJ Lib      SMLNJ-LIB-LICENSE (HPND-style)  SML/NJ Library
 
 ML Kit          MLKit-LICENSE (MIT)             Path, Time, Date
 
-gdtoa           gdtoa-LICENSE (BSD-style)       Real binary <-> decimal conversions
+gdtoa           gdtoa-LICENSE (HPND-style)      Real binary <-> decimal conversions
 
-gmp             gmp-LICENSE (LGPL)              IntInf
+
+The Historical Permission Notice and Disclaimer (HPND) license is an
+open source (https://opensource.org/licenses/HPND) and
+free software (https://www.gnu.org/licenses/license-list.en.html#HPND)
+license.

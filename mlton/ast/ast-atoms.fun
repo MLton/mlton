@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -13,8 +13,21 @@ struct
 open S
 
 structure Wrap = Region.Wrap
-structure Const = AstConst ()
 structure Field = Record.Field
+
+structure Const = AstConst ()
+
+structure Tyvar =
+   struct
+      structure Id = AstId (structure Symbol = Symbol)
+      open Id
+      fun isEquality t =
+         let
+            val s = toString t
+         in
+            String.length s > 1 andalso String.sub (s, 1) = #"'"
+         end
+   end
 
 structure Tycon =
    struct
@@ -48,30 +61,25 @@ structure Con =
 
       open P
 
-      val it = fromSymbol (Symbol.itt, Region.bogus)
-
-      fun ensure oper c =
-         if List.exists ([cons, falsee, it, nill, reff, truee],
-                         fn c' => equals (c, c'))
-            then 
-               let
-                  open Layout
-               in
-                  Control.error (region c,
-                                 seq [str (concat ["can not ", oper, " "]),
-                                      layout c],
-                                 empty)
-               end
-         else ()
-
-      val ensureRedefine = ensure "redefine"
-
-      val ensureSpecify = ensure "specify"
+      val special =
+         [cons, falsee, nill, reff, truee]
    end
 
 structure Basid = AstId (structure Symbol = Symbol)
 structure Sigid = AstId (structure Symbol = Symbol)
 structure Strid = AstId (structure Symbol = Symbol)
+structure Strid =
+   struct
+      open Strid
+      local
+         fun make s = fromSymbol (Symbol.fromString s, Region.bogus)
+      in
+         val uArg = fn s => make ("_arg_" ^ s)
+         val uRes = fn s => make ("_res_" ^ s)
+         val uStr = make "_str"
+         val uSig = make "_sig"
+      end
+   end
 structure Fctid = AstId (structure Symbol = Symbol)
 
 structure Vid =
@@ -87,6 +95,39 @@ structure Vid =
          val toCon = make Con.fromSymbol
          val toVar = make Var.fromSymbol
       end
+
+      val it = fromSymbol (Symbol.itt, Region.bogus)
+      val equal = fromSymbol (Symbol.equal, Region.bogus)
+      val specialCons = List.map (Con.special, fromCon)
+
+      fun checkSpecial (oper, ctrl) (vid, {allowIt, ctxt, keyword}) =
+         if not (Control.Elaborate.current ctrl)
+            andalso
+            ((not allowIt andalso equals (vid, it))
+             orelse
+             equals (vid, equal)
+             orelse
+             List.exists (specialCons, fn vid' => equals (vid, vid')))
+            then
+               let
+                  open Layout
+               in
+                  Control.error (region vid,
+                                 seq [str "special identifier cannot be ",
+                                      str oper,
+                                      str " by ",
+                                      str keyword,
+                                      str ": ",
+                                      layout vid],
+                                 ctxt ())
+               end
+         else ()
+
+      val checkRedefineSpecial =
+         checkSpecial ("redefined", Control.Elaborate.allowRedefineSpecialIds)
+
+      val checkSpecifySpecial =
+         checkSpecial ("specified", Control.Elaborate.allowSpecifySpecialIds)
    end
 
 structure Longtycon =
@@ -137,12 +178,15 @@ structure Longvid =
 
 open Layout
 
+fun mkCtxt (x, lay) () =
+   seq [str "in: ", lay x]
+
 fun reportDuplicates (v: 'a vector,
-                      {equals: 'a * 'a -> bool,
+                      {ctxt: unit -> Layout.t,
+                       equals: 'a * 'a -> bool,
                        layout: 'a -> Layout.t,
                        name: string,
-                       region: 'a -> Region.t,
-                       term: unit -> Layout.t}) =
+                       region: 'a -> Region.t}) =
    Vector.foreachi
    (v, fn (i, a) =>
     let
@@ -159,29 +203,37 @@ fun reportDuplicates (v: 'a vector,
                    Control.error
                    (region a,
                     seq [str (concat ["duplicate ", name, ": "]), layout a],
-                    seq [str "in: ", term ()])
+                    ctxt ())
                 end
     in
        loop 0
     end)
 
-fun reportDuplicateFields (v: (Field.t * 'a) vector,
-                           {region: Region.t,
-                            term: unit -> Layout.t}): unit =
+fun reportDuplicateFields (v: (Field.t * (Region.t * 'a)) vector,
+                           {ctxt: unit -> Layout.t}): unit =
    reportDuplicates (v,
-                     {equals = fn ((f, _), (f', _)) => Field.equals (f, f'),
+                     {ctxt = ctxt,
+                      equals = fn ((f, _), (f', _)) => Field.equals (f, f'),
                       layout = Field.layout o #1,
                       name = "label",
-                      region = fn _ => region,
-                      term = term})
+                      region = #1 o #2})
+
+fun reportDuplicateTyvars (v: Tyvar.t vector,
+                           {ctxt: unit -> Layout.t}): unit =
+   reportDuplicates (v,
+                     {ctxt = ctxt,
+                      equals = Tyvar.equals,
+                      layout = Tyvar.layout,
+                      name = "type variable",
+                      region = Tyvar.region})
 
 structure Type =
    struct
-      structure Record = SortedRecord
       open Wrap
       datatype node =
          Con of Longtycon.t * t vector
-       | Record of t Record.t
+       | Paren of t
+       | Record of (Region.t * t) Record.t
        | Var of Tyvar.t
       withtype t = node Wrap.t
       type node' = node
@@ -190,7 +242,7 @@ structure Type =
       fun make n = makeRegion (n, Region.bogus)
       val var = make o Var
       val record = make o Record
-      val tuple = record o Record.tuple
+      val tuple = record o Record.tuple o (fn tys => Vector.map (tys, fn ty => (Region.bogus, ty)))
       val unit = tuple (Vector.new0 ())
 
       fun con (c: Tycon.t, ts: t vector): t =
@@ -219,10 +271,11 @@ structure Type =
                                           layout (Vector.sub (tys, 1))]])
                        else Error.bug "AstAtoms.Type.layout: non-binary -> tyc"
                else layoutApp (Longtycon.layout c, tys, layout)
+          | Paren t => layout t
           | Record r => Record.layout {record = r,
-                                       separator = ":", extra = "",
-                                       layoutElt = layout,
-                                       layoutTuple = layoutTupleTy}
+                                       separator = ": ", extra = "",
+                                       layoutElt = layout o #2,
+                                       layoutTuple = fn rtys => layoutTupleTy (Vector.map (rtys, #2))}
       and layoutTupleTy tys =
          case Vector.length tys of
             0 => str "unit"
@@ -238,11 +291,11 @@ structure Type =
       fun checkSyntax (t: t): unit =
          case node t of
             Con (_, ts) => Vector.foreach (ts, checkSyntax)
+          | Paren t => checkSyntax t
           | Record r =>
                (reportDuplicateFields (Record.toVector r,
-                                       {region = region t,
-                                        term = fn () => layout t})
-                ; Record.foreach (r, checkSyntax))
+                                       {ctxt = mkCtxt (t, layout)})
+                ; Record.foreach (r, checkSyntax o #2))
           | Var _ => ()
    end
 
@@ -307,19 +360,37 @@ structure TypBind =
 
       val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
 
-      fun checkSyntax (b: t): unit =
+      fun isEmpty (b: t) =
+         let
+            val T ds = node b
+         in
+            Vector.isEmpty ds
+         end
+
+      fun checkSyntax (b: t, kind: string): unit =
          let
             val T v = node b
-            val () = Vector.foreach (v, fn {def, ...} => Type.checkSyntax def)
+            val () =
+               Vector.foreach
+               (v, fn {tyvars, tycon, def} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
+                 ; Type.checkSyntax def))
          in
             reportDuplicates
-            (v, {equals = (fn ({tycon = t, ...}, {tycon = t', ...}) =>
+            (v, {ctxt = mkCtxt (b, layout),
+                 equals = (fn ({tycon = t, ...}, {tycon = t', ...}) =>
                            Tycon.equals (t, t')),
                  layout = Tycon.layout o #tycon,
-                 name = "type definition",
-                 region = Tycon.region o #tycon,
-                 term = fn () => layout b})
+                 name = "type " ^ kind,
+                 region = Tycon.region o #tycon})
          end
+      fun checkSyntaxDef b = checkSyntax (b, "definition")
+      fun checkSyntaxSpec b = checkSyntax (b, "specification")
    end
 
 (*---------------------------------------------------*)
@@ -359,40 +430,65 @@ structure DatBind =
                    else seq [str "with", TypBind.layout withtypes]]
          end
 
-      fun checkSyntax (b: t): unit =
+      fun checkSyntax (b: t, kind: string,
+                       vidCheckSpecial: Vid.t * {allowIt: bool,
+                                                 ctxt: unit -> Layout.t,
+                                                 keyword: string} -> unit): unit =
          let
             val T {datatypes, withtypes} = node b
+            val TypBind.T withtypes = TypBind.node withtypes
+            val ctxt = mkCtxt ((), fn () => layout ("datatype", b))
             val () =
                Vector.foreach
-               (datatypes, fn {cons, ...} =>
-                Vector.foreach (cons, fn (c, to) =>
-                                (Con.ensureRedefine c
-                                 ; Option.app (to, Type.checkSyntax))))
-            fun term () = layout ("datatype", b)
+               (datatypes, fn {tyvars, tycon, cons} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
+                 ; Vector.foreach
+                   (cons, fn (c, to) =>
+                    (vidCheckSpecial
+                     (Vid.fromCon c,
+                      {allowIt = false,
+                       ctxt = ctxt,
+                       keyword = "datatype"})
+                     ; Option.app (to, Type.checkSyntax)))))
             val () =
                reportDuplicates
                (Vector.concatV (Vector.map (datatypes, #cons)),
-                {equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
+                {ctxt = ctxt,
+                 equals = fn ((c, _), (c', _)) => Con.equals (c, c'),
                  layout = Con.layout o #1,
-                 name = "constructor",
-                 region = Con.region o #1,
-                 term = term})
+                 name = "constructor " ^ kind,
+                 region = Con.region o #1})
+            val () =
+               Vector.foreach
+               (withtypes, fn {tyvars, tycon, def} =>
+                (reportDuplicateTyvars
+                 (tyvars, {ctxt = fn () =>
+                           seq [str "in: ",
+                                Type.layoutApp
+                                (Tycon.layout tycon,
+                                 tyvars, Tyvar.layout)]})
+                 ; Type.checkSyntax def))
             val () =
                reportDuplicates
                (Vector.concat [Vector.map (datatypes, #tycon),
-                               let
-                                  val TypBind.T v = TypBind.node withtypes
-                               in
-                                  Vector.map (v, #tycon)
-                               end],
-                {equals = Tycon.equals,
+                               Vector.map (withtypes, #tycon)],
+                {ctxt = ctxt,
+                 equals = Tycon.equals,
                  layout = Tycon.layout,
-                 name = "type definition",
-                 region = Tycon.region,
-                 term = term})
+                 name = "type " ^ kind,
+                 region = Tycon.region})
          in
             ()
          end
+      fun checkSyntaxDef b =
+         checkSyntax (b, "definition", Vid.checkRedefineSpecial)
+      fun checkSyntaxSpec b =
+         checkSyntax (b, "specification", Vid.checkSpecifySpecial)
    end
 
 structure DatatypeRhs =
@@ -411,12 +507,14 @@ structure DatatypeRhs =
             DatBind d => DatBind.layout ("datatype", d)
           | Repl {lhs, rhs} =>
                seq [str "datatype ", Tycon.layout lhs,
-                   str " = datatype ", Longtycon.layout rhs]
+                    str " = datatype ", Longtycon.layout rhs]
 
-      fun checkSyntax (rhs: t): unit =
+      fun checkSyntax (rhs: t, datBindCheckSyntax) =
          case node rhs of
-            DatBind b => DatBind.checkSyntax b
+            DatBind b => datBindCheckSyntax b
           | Repl _ => ()
+      fun checkSyntaxDef rhs = checkSyntax (rhs, DatBind.checkSyntaxDef)
+      fun checkSyntaxSpec rhs = checkSyntax (rhs, DatBind.checkSyntaxSpec)
    end
 
 (*---------------------------------------------------*)
@@ -452,12 +550,12 @@ structure ModIdBind =
             fun doit (bds : {lhs: 'a, rhs: 'a} Vector.t, 
                       {equalsId, layoutId, regionId, name}) =
                reportDuplicates
-               (bds, {equals = (fn ({lhs = id, ...}, {lhs = id', ...}) =>
+               (bds, {ctxt = mkCtxt (d, layout),
+                      equals = (fn ({lhs = id, ...}, {lhs = id', ...}) =>
                                 equalsId (id, id')),
                       layout = layoutId o #lhs,
                       name = concat [name, " definition"],
-                      region = regionId o #lhs,
-                      term = fn () => layout d})
+                      region = regionId o #lhs})
          in
             case node d of
                Fct bds => doit (bds, {equalsId = Fctid.equals, 

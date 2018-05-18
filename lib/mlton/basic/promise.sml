@@ -1,7 +1,8 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -11,8 +12,8 @@ struct
 datatype 'a t = T of 'a state ref
 and 'a state =
    Unevaluated of unit -> 'a
-  | Evaluating
-  | Evaluated of 'a
+ | Evaluating
+ | Evaluated of 'a
 
 fun layout l (T r) =
   let
@@ -49,5 +50,10 @@ fun lazy th =
    let val p = delay th
    in fn () => force p
    end
+
+fun isUnevaluated (T r) =
+   case !r of
+      Unevaluated _ => true
+    | _ => false
 
 end

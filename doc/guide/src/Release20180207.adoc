@@ -1,0 +1,100 @@
+Release20180207
+===============
+
+Here you can download the latest public release of MLton, version 20180207.
+
+== Changes since the last public release ==
+
+* Compiler.
+  ** Added an experimental LLVM codegen (`-codegen llvm`); requires LLVM tools
+  (`llvm-as`, `opt`, `llc`) version &ge; 3.7.
+  ** Made many substantial cosmetic improvements to front-end diagnostic
+  messages, especially with respect to source location regions, type inference
+  for `fun` and `val rec` declarations, signature constraints applied to a
+  structure, `sharing type` specifications and `where type` signature
+  expressions, type constructor or type variable escaping scope, and
+  nonexhaustive pattern matching.
+  ** Fixed minor bugs with exception replication, precedence parsing of function
+  clauses, and simultaneous `sharing` of multiple structures.
+  ** Made compilation deterministic (eliminate output executable name from
+  compile-time specified `@MLton` runtime arguments; deterministically generate
+  magic constant for executable).
+  ** Updated `-show-basis` (recursively expand structures in environments,
+  displaying components with long identifiers; append `(* @ region *)`
+  annotations to items shown in environment).
+  ** Forced amd64 codegen to generate PIC on amd64-linux targets.
+* Runtime.
+  ** Added `gc-summary-file file` runtime option.
+  ** Reorganized runtime support for `IntInf` operations so that programs that
+  do not use `IntInf` compile to executables with no residual dependency on GMP.
+  ** Changed heap representation to store forwarding pointer for an object in
+  the object header (rather than in the object data and setting the header to a
+  sentinel value).
+* Language.
+  ** Added support for selected SuccessorML features; see
+  http://mlton.org/SuccessorML for details.
+  ** Added `(*#showBasis "file" *)` directive; see
+  http://mlton.org/ShowBasisDirective for details.
+  ** FFI:
+    *** Added `pure`, `impure`, and `reentrant` attributes to `_import`.  An
+    unattributed `_import` is treated as `impure`.  A `pure` `_import` may be
+    subject to more aggressive optimizations (common subexpression elimination,
+    dead-code elimination).  An `_import`-ed C function that (directly or
+    indirectly) calls an `_export`-ed SML function should be attributed
+    `reentrant`.
+  ** ML Basis annotations.
+    *** Added `allowSuccessorML {false|true}` to enable all SuccessorML features
+    and other annotations to enable specific SuccessorML features; see
+    http://mlton.org/SuccessorML for details.
+    *** Split `nonexhaustiveMatch {warn|error|igore}` and `redundantMatch
+    {warn|error|ignore}` into `nonexhaustiveMatch` and `redundantMatch`
+    (controls diagnostics for `case` expressions, `fn` expressions, and `fun`
+    declarations (which may raise `Match` on failure)) and `nonexhaustiveBind`
+    and `redundantBind` (controls diagnostics for `val` declarations (which may
+    raise `Bind` on failure)).
+    *** Added `valrecConstr {warn|error|ignore}` to report when a `val rec` (or
+    `fun`) declaration redefines an identifier that previously had constructor
+    status.
+* Libraries.
+  ** Basis Library.
+    *** Improved performance of `Array.copy`, `Array.copyVec`, `Vector.append`,
+    `String.^`, `String.concat`, `String.concatWith`, and other related
+    functions by using `memmove` rather than element-by-element constructions.
+  ** `Unsafe` structure.
+    *** Added unsafe operations for array uninitialization and raw arrays; see
+    https://github.com/MLton/mlton/pull/207 for details.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Tools.
+  ** mlnlffigen
+    *** Updated to warn and skip (rather than abort) when encountering functions
+    with `struct`/`union` argument or return type.
+
+For a complete list of changes and bug fixes since
+<:Release20130715:>, see the
+<!ViewGitFile(mlton,on-20180207-release,CHANGELOG.adoc)> and
+<:Bugs20130715:>.
+
+== 20180207 binary packages ==
+
+* AMD64 (aka "x86-64" or "x64")
+** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), dynamically linked against <:GnuMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GnuMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-linux.tgz[Linux], glibc 2.23
+// ** Windows MinGW 32/64 https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.exe[self-extracting] (28MB) or https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.msi[MSI] (61MB) installer
+// * X86
+// ** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.x86-cygwin.tgz[Cygwin] 1.7.5
+// ** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.x86-linux.tgz[Linux], glibc 2.23
+// ** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.x86-linux.static.tgz[Linux], statically linked
+// ** Windows MinGW 32/64 https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.exe[self-extracting] (28MB) or https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.msi[MSI] (61MB) installer
+
+== 20180207 source packages ==
+
+ * https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207.src.tgz[mlton-20180207.src.tgz]
+
+== Also see ==
+
+* <:Bugs20180207:>
+* http://www.mlton.org/guide/20180207/[MLton Guide (20180207)].
++
+A snapshot of the MLton website at the time of release.

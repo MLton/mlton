@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -43,7 +43,7 @@ fun fromVector v =
            | _ => false)
       val v = if isSorted then sort v else v
    in
-      if isTuple v
+      if isTuple v andalso Vector.length v <> 1
          then Tuple (Vector.map (v, #2))
       else Record v
    end

@@ -2,7 +2,7 @@
  * Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -482,7 +482,7 @@ fun getVec (a, n, bytesRead) =
 
 fun recvVec' (sock, n, in_flags) =
    let
-      val a = Word8Array.uninit n
+      val a = Word8Array.alloc n
       val bytesRead =
          recvArr' (sock, Word8ArraySlice.full a, in_flags)
    in
@@ -509,7 +509,7 @@ fun recvArrFrom' (s, sl, in_flags) =
 
 fun recvVecFrom' (sock, n, in_flags) =
    let
-      val a = Word8Array.uninit n
+      val a = Word8Array.alloc n
       val (bytesRead, sock_addr) =
          recvArrFrom' (sock, Word8ArraySlice.full a, in_flags)
    in
@@ -536,7 +536,7 @@ fun recvArrNB' (s, sl, in_flags) =
 
 fun recvVecNB' (s, n, in_flags) =
    let
-      val a = Word8Array.uninit n
+      val a = Word8Array.alloc n
    in
       nonBlock
       (C_SSize.castFromFixedInt ~1,
@@ -565,7 +565,7 @@ fun recvArrFromNB' (s, sl, in_flags) =
 
 fun recvVecFromNB' (s, n, in_flags) =
    let
-      val a = Word8Array.uninit n
+      val a = Word8Array.alloc n
       val (sa, salen, finish) = newSockAddr ()
    in
       nonBlock

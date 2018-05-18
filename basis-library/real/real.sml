@@ -2,7 +2,7 @@
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -382,7 +382,7 @@ functor Real (structure W: WORD_EXTRA
                           Int.+ (4 (* "0." + "E" + "\000" *),
                           Int.+ (List.length digits,
                                  String.size exp)))
-                  val a = Array.uninit n
+                  val a = Array.alloc n
                   fun upd (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
                   val i = 0
                   val i = if sign then upd (i, #"-") else i

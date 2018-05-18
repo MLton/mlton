@@ -244,19 +244,19 @@ is running on.  To use any other target, you must first install a
 +
 Like `-as-opt`, this passes _option_ to `gcc` when compliling
 assembler code, except it only passes _option_ when the target
-architecture or operating system is _target_.
+architecture, operating system, or arch-os pair is _target_.
 
 * ++-target-cc-opt __target__ __option__++
 +
 Like `-cc-opt`, this passes _option_ to `gcc` when compiling C code,
-except it only passes _option_ when the target architecture or
-operating system is _target_.
+except it only passes _option_ when the target architecture, operating
+system, or arch-os pair is _target_.
 
 * ++-target-link-opt __target__ __option__++
 +
 Like `-link-opt`, this passes _option_ to `gcc` when linking, except
-it only passes _option_ when the target architecture or operating
-system is _target_.
+it only passes _option_ when the target architecture, operating
+system, or arch-os pair is _target_.
 
 * ++-verbose {0|1|2|3}++
 +

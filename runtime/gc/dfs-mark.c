@@ -1,9 +1,9 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -122,7 +122,7 @@ mark:
   splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if (NORMAL_TAG == tag) {
     size +=
-      GC_NORMAL_HEADER_SIZE
+      GC_NORMAL_METADATA_SIZE
       + bytesNonObjptrs
       + (numObjptrs * OBJPTR_SIZE);
     if (0 == numObjptrs) {
@@ -190,8 +190,8 @@ markNextInNormal:
      *   todo is the start of the element.
      */
     size +=
-      GC_ARRAY_HEADER_SIZE
-      + sizeofArrayNoHeader (s, getArrayLength (cur), bytesNonObjptrs, numObjptrs);
+      GC_ARRAY_METADATA_SIZE
+      + sizeofArrayNoMetaData (s, getArrayLength (cur), bytesNonObjptrs, numObjptrs);
     if (0 == numObjptrs or 0 == getArrayLength (cur)) {
       /* There is nothing to mark. */
 arrayDone:
@@ -247,7 +247,7 @@ markNextInArray:
   } else {
     assert (STACK_TAG == tag);
     size +=
-      GC_STACK_HEADER_SIZE
+      GC_STACK_METADATA_SIZE
       + sizeof (struct GC_stack) + ((GC_stack)cur)->reserved;
     top = getStackTop (s, (GC_stack)cur);
     assert (((GC_stack)cur)->used <= ((GC_stack)cur)->reserved);

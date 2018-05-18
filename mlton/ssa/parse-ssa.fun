@@ -1,6 +1,6 @@
 (* Copyright (C) 2017 James Reilly.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -8,13 +8,12 @@ functor ParseSsa (S: PARSE_SSA_STRUCTS): PARSE_SSA =
 struct
    open S
    open SsaTree
-   structure T = StreamParser
-   open T.Ops
+   structure P = Parse
+   open P.Ops
    infix 1 <|> >>=
-   infix 2 <&>
    infix  3 <*> <* *>
-   infixr 4 <$> <$$> <$$$> <$ <$$$$>
-   
+   infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?> 
+
    fun isInfixChar b = case List.index
       (String.explode "!%&$#+-/:<=>?@\\~'^|*",
        fn c => b = c) of
@@ -24,28 +23,26 @@ struct
    fun isIdentFirst b = Char.isAlpha b orelse b = #"'"
    fun isIdentRest b = Char.isAlphaNum b orelse b = #"'" orelse b = #"_" orelse b = #"."
 
-   val stringToken = (fn (x, y) => [x, y]) <$$> (T.char #"\\", T.next) <|>
-                     (fn x      => [x]   ) <$> T.next
-   fun skipComments () = T.any
-      [T.string "(*" *> T.cut (T.manyCharsFailing(T.string "*)" <|> T.string "(*") *>
-            ((T.string "*)" <|> "" <$ T.delay skipComments) *> T.each [T.next]
-          <|> T.failCut "Closing comment")),
-       List.concat <$> T.each
-         [T.each [T.char #"\""],
-          List.concat <$> T.manyFailing(stringToken, T.char #"\""),
-          T.each [T.char #"\""]],
-       T.each [T.next]]
+  val stringToken = (fn (x, y) => [x, y]) <$$> (P.char #"\\", P.next) <|>
+                     (fn x      => [x]   ) <$> P.next
+   fun skipComments () = P.any
+      [P.str "(*" *> P.cut (P.manyCharsFailing(P.str "*)" <|> P.str "(*") *>
+            ((P.str "*)" <|> "" <$ P.delay skipComments) *> P.each [P.next]
+          <|> P.failCut "Closing comment")),
+       List.concat <$> P.each
+         [P.each [P.char #"\""],
+          List.concat <$> P.manyFailing(stringToken, P.char #"\""),
+          P.each [P.char #"\""]],
+       P.each [P.next]]
 
-   val space = T.sat(T.next, Char.isSpace)
-   val spaces = T.many(space)
-   fun token s = T.notFollowedBy
-      (T.string s,
-       (T.char #"_") <|> (T.sat(T.next,Char.isAlphaNum))) <* spaces
-   fun symbol s = T.notFollowedBy
-      (T.string s,
-       (T.sat(T.next,fn b => isInfixChar b orelse b = #"_"))) <* spaces
+   fun token s = P.notFollowedBy
+      (P.str s,
+       (P.char #"_") <|> (P.nextSat Char.isAlphaNum)) <* P.spaces
+   fun symbol s = P.notFollowedBy
+      (P.str s,
+       (P.nextSat (fn b => isInfixChar b orelse b = #"_"))) <* P.spaces
 
-   val clOptions = T.manyCharsFailing(T.string "Datatypes:")
+   val clOptions = P.manyCharsFailing(P.str "Datatypes:")
 
    fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
@@ -56,44 +53,33 @@ struct
          fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
       end
 
+
    val ident = (
-      String.implode <$> (T.any
+      String.implode <$> (P.any
          [(op ::) <$$>
-             (T.sat(T.next, isIdentFirst),
-              T.many (T.sat(T.next, isIdentRest))),
+             (P.nextSat isIdentFirst,
+              P.many (P.nextSat isIdentRest)),
           List.append <$$>
-             (T.many1 (T.sat(T.next, isInfixChar)),
-              (op ::) <$$> (T.char #"_", T.many (T.sat(T.next, Char.isDigit))) <|> T.pure []
+             (P.many1 (P.nextSat isInfixChar),
+              (op ::) <$$> (P.char #"_", P.many (P.nextSat Char.isDigit)) <|> P.pure []
               (* just for collecting _0 *)
-              )])) <|> T.failCut "identifier"
+              )])) <|> P.failCut "identifier"
 
-   (* parse a tuple of parsers which must begin with a paren but may be unary *)
-   fun tupleOf p = Vector.fromList <$>
-      (T.char #"(" *> T.sepBy(spaces *> p, T.char #",") <* T.char #")")
+   fun parenOf p = (P.char #"(" *> P.spaces *> p <* P.spaces <* P.char #")")
 
-   fun vectorOf p = Vector.fromList <$>
-      (T.char #"[" *> T.sepBy(spaces *> p, T.char #",") <* T.char #"]")
-
-   fun parenOf p = (T.char #"(" *> spaces *> p <* spaces <* T.char #")")
-
-   fun doneRecord' () = T.char #"{" <* T.many(T.delay doneRecord' <|> T.failing(T.char #"}") *> T.next) <* T.char #"}"
+   fun doneRecord' () = P.char #"{" <* P.many(P.delay doneRecord' <|> P.failing(P.char #"}") *> P.next) <* P.char #"}"
    val doneRecord = doneRecord' ()
-   fun fromRecord name p = T.peek
-      (T.char #"{" *> T.many (() <$ T.delay doneRecord' <|> () <$ T.failing (token name <* symbol "=") <* T.next)
+   fun fromRecord name p = P.peek
+      (P.char #"{" *> P.many (() <$ P.delay doneRecord' <|> () <$ P.failing (token name <* symbol "=") <* P.next)
        *> token name *> symbol "=" *> p)
 
-   fun casesOf(con, left, right) = Vector.fromList <$> T.sepBy1
-      (left <* spaces <* token "=>" >>= (fn l =>
+   fun casesOf(con, left, right) = Vector.fromList <$> P.sepBy1
+      (left <* P.spaces <* token "=>" >>= (fn l =>
          right >>= (fn r => con (l, r))),
-      spaces *> T.char #"|" *> spaces)
+       P.spaces *> P.char #"|" *> P.spaces)
 
-   fun optionOf p = SOME <$> (token "Some" *> T.cut(p)) <|> NONE <$ token "None"
+   fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
-
-   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
-                                           | SOME y => T.pure y)
-   val parseInt = possibly ((Int.fromString o String.implode) <$>
-         T.many (T.sat(T.next, Char.isDigit))) <|> T.failCut "integer"
 
    (* too many arguments for the maps, curried to use <*> instead *)
    fun makeTyp resolveTycon (args, ident) = 
@@ -117,13 +103,13 @@ struct
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
-         (((tupleOf (T.delay (typ' resolveTycon))) <|> T.pure (Vector.new0 ())),
-         (spaces *> ident <* spaces))
+         (((P.tuple (P.delay (typ' resolveTycon))) <|> P.pure (Vector.new0 ())),
+         (P.spaces *> ident <* P.spaces))
    in
       fun typ resolveTycon = typ' resolveTycon ()
    end
 
-   val ctype = (T.any o List.map)
+   val ctype = (P.any o List.map)
                (CType.all, fn ct =>
                 ct <$ token (CType.toString ct))
 
@@ -131,9 +117,9 @@ struct
 
    (* parse in a constructor (to Con.t) *)
    fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-      (ident <* spaces,
-      (token "of" *> tupleOf (typ resolveTycon)) <|> Vector.fromList <$> T.many (token "of" *> (T.char #"(" *> (typ
-      resolveTycon) <* T.char #")")))
+      (ident <* P.spaces,
+      (token "of" *> P.tuple (typ resolveTycon)) <|> Vector.fromList <$> P.many (token "of" *> (P.char #"(" *> (typ
+      resolveTycon) <* P.char #")")))
 
    fun makeDt resolveTycon (tycon, cons) =
       Datatype.T
@@ -141,38 +127,36 @@ struct
        cons = cons}
 
    fun datatyp resolveCon resolveTycon = (makeDt resolveTycon) <$$>
-      ((spaces *> ident <* spaces <* symbol "="),
-       (Vector.fromList <$> T.sepBy1
-          ((constructor resolveCon resolveTycon) <* spaces,
-           T.char #"|" *> spaces)))
+      ((P.spaces *> ident <* P.spaces <* symbol "="),
+       (Vector.fromList <$> P.sepBy1
+          ((constructor resolveCon resolveTycon) <* P.spaces,
+           P.char #"|" *> P.spaces)))
 
    fun datatypes resolveCon resolveTycon =
-      token "Datatypes:" *> Vector.fromList <$> T.many (datatyp resolveCon resolveTycon)
+      token "Datatypes:" *> Vector.fromList <$> P.many (datatyp resolveCon resolveTycon)
 
-   fun possibly t = t >>= (fn x => case x of NONE => T.fail "Syntax error"
-                                           | SOME y => T.pure y)
 
-   val parseString = possibly ((String.fromString o String.implode o List.concat) <$>
-      (T.char #"\"" *> (T.manyFailing(stringToken, T.char #"\"")) <* T.char #"\""))
-   val parseIntInf = possibly ((IntInf.fromString o String.implode) <$>
-         T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")))
+   val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
+   val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
+   val parseString = ((String.fromString o String.implode o List.concat) <$?>
+         (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
    fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
-   fun parseReal sz = possibly (makeReal <$$> (String.implode <$>
-         List.concat <$> T.each
-         [T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"~")),
-          T.char #"." *> T.pure [#"."] <|> T.pure [],
-          T.many (T.sat(T.next, fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
-         T.pure sz))
-   val parseHex = T.fromReader (IntInf.scan(StringCvt.HEX, T.toReader T.next))
+   fun parseReal sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
+         List.concat <$> P.each
+         [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
+          P.char #"." *> P.pure [#"."] <|> P.pure [],
+          P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
+         P.pure sz))
+   val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
 
    fun makeWord typ int =
       if Tycon.isWordX typ
-         then T.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-         else T.fail "Invalid word"
+         then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
+         else P.fail "Invalid word"
    val parseWord8Vector = WordXVector.fromVector <$$>
-        (T.pure {elementSize=WordSize.word8},
-         T.char #"#" *> vectorOf (parseHex >>= makeWord (Tycon.word WordSize.word8)))
+        (P.pure {elementSize=WordSize.word8},
+         P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
 
    (* Prim EXP *)
@@ -180,10 +164,10 @@ struct
    
    fun primAppExp resolveTycon resolveVar = 
       let 
-         val var = resolveVar <$> ident <* spaces
+         val var = resolveVar <$> ident <* P.spaces
 
          val varExp =
-         T.failing (token "in" <|> token "exception" <|> token "val") *> var
+         P.failing (token "in" <|> token "exception" <|> token "val") *> var
          val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                     CFunction.Convention.Stdcall <$ token "stdcall"
          fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
@@ -191,7 +175,7 @@ struct
             mayGC=mayGC, maySwitchThreads=maySwitch, modifiesFrontier=modifies,
             readsStackTop=readsSt, writesStackTop=writesSt})
          val parseRuntimeTarget = makeRuntimeTarget
-            <$> fromRecord "bytesNeeded" (optionOf parseInt)
+            <$> fromRecord "bytesNeeded" (optionOf P.uint)
             <*> fromRecord "ensuresBytesFree" parseBool
             <*> fromRecord "mayGC" parseBool
             <*> fromRecord "maySwitchThreads" parseBool
@@ -201,12 +185,12 @@ struct
             <* doneRecord
          val parseKind = CFunction.Kind.Impure <$ token "Impure" <|>
                          CFunction.Kind.Pure <$ token "Pure" <|>
-                         token "Runtime" *> T.cut parseRuntimeTarget
+                         token "Runtime" *> P.cut parseRuntimeTarget
 
          val parsePrototype = (fn x => x) <$$>
-            (fromRecord "args" (tupleOf ctype),
+            (fromRecord "args" (P.tuple ctype),
              fromRecord "res" (optionOf ctype)) <* doneRecord
-         val parseSymbolScope = T.any
+         val parseSymbolScope = P.any
             [CFunction.SymbolScope.External <$ token "external",
              CFunction.SymbolScope.Private <$ token "private",
              CFunction.SymbolScope.Public <$ token "public"]
@@ -219,9 +203,9 @@ struct
                {args=args, convention=conv, kind=kind,
                 prototype=prototype, return=return, symbolScope=symbolScope,
                 target = target})
-         val resolveFFI = token "FFI" *> T.cut(
+         val resolveFFI = token "FFI" *> P.cut(
             makeFFI
-            <$> fromRecord "args" (tupleOf (typ resolveTycon))
+            <$> fromRecord "args" (P.tuple (typ resolveTycon))
             <*> fromRecord "convention" parseConvention
             <*> fromRecord "kind" parseKind
             <*> fromRecord "prototype" parsePrototype
@@ -231,7 +215,7 @@ struct
             <* doneRecord)
          fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
 
-         val resolveFFISym = token "FFI_Symbol" *> T.cut(
+         val resolveFFISym = token "FFI_Symbol" *> P.cut(
             makeFFISym
             <$> fromRecord "name" ident
             <*> fromRecord "cty" (optionOf ctype)
@@ -240,22 +224,22 @@ struct
 
          fun resolvePrim p = 
             case Prim.fromString p
-               of SOME p' =>  T.pure p'
-                | NONE => T.fail ("valid primitive, got " ^ p)
+               of SOME p' =>  P.pure p'
+                | NONE => P.fail ("valid primitive, got " ^ p)
 
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
       in
-         token "prim" *> T.cut (makePrimApp <$$$>
-         (T.any [
+         token "prim" *> P.cut (makePrimApp <$$$>
+         (P.any [
             resolveFFI,
             resolveFFISym,
-            (ident <* spaces >>= resolvePrim)],
-          (tupleOf (typ resolveTycon) <* T.peek(spaces *> tupleOf varExp
-          <* spaces) <|> T.pure (Vector.new0 ())),
-          spaces *> tupleOf varExp <* spaces))
+            (ident <* P.spaces >>= resolvePrim)],
+          (P.tuple (typ resolveTycon) <* P.peek(P.spaces *> P.tuple varExp
+          <* P.spaces) <|> P.pure (Vector.new0 ())),
+          P.spaces *> P.tuple varExp <* P.spaces))
       end
 
-   fun makeStatement (var, ty, exp) =
+   fun makeStatement (var, ty, exp) = 
       Statement.T
       {var = var,
        ty = ty,
@@ -264,53 +248,57 @@ struct
    fun statements resolveCon resolveTycon resolveVar =
       let
 
-         val var = resolveVar <$> ident <* spaces
+         val var = resolveVar <$> ident <* P.spaces
 
          val varExp =
-         T.failing (token "in" <|> token "exception" <|> token "val") *> var
+         P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
          val typedvar = (fn (x,y) => (x,y)) <$$>
-            (SOME <$> var <|> token "_" *> T.pure(NONE),
-             symbol ":" *> (typ resolveTycon) <* spaces)
+            (SOME <$> var <|> token "_" *> P.pure(NONE),
+             symbol ":" *> (typ resolveTycon) <* P.spaces)
          fun makeConApp(con, args) = { con=con, args=args }
          fun conApp v = 
             makeConApp <$$>
-                  (resolveCon <$> ident <* spaces,
+                  (resolveCon <$> ident <* P.spaces,
                    v)
-         val conAppExp = token "new" *> T.cut (conApp ((tupleOf varExp) <|> T.pure (Vector.new0 ())))
+         val conAppExp = token "new" *> P.cut (conApp ((P.tuple varExp) <|> P.pure (Vector.new0 ())))
          fun constExp typ =
             case Type.dest typ of
-                 Type.Word ws => Const.Word <$> (T.string "0x" *> parseHex >>=
-                 makeWord (Tycon.word ws)) <|> T.failCut "word"
-               | Type.Real rs => Const.Real <$> parseReal rs <|> T.failCut "real"
-               | Type.IntInf => Const.IntInf <$> parseIntInf <|> T.failCut "integer"
-               | Type.CPointer => Const.null <$ token "NULL" <|> T.failCut "null"
-               | Type.Vector _  => T.any
+                 Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
+                 makeWord (Tycon.word ws)) <|> P.failCut "word"
+               | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
+               | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
+               | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
+               | Type.Vector _  => 
+                  (* assume it's a word8 vector *)
+                  P.any
                   [Const.string <$> parseString,
                    Const.wordVector <$> parseWord8Vector,
-                   T.failCut "string constant"]
-               | _ => T.fail "constant"
+                   P.failCut "string constant"]
+               | _ => P.fail "constant"
          
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
-         val selectExp = symbol "#" *> T.cut(makeSelect <$$>
-            (parseInt <* spaces,
-             T.char #"(" *> varExp <* T.char #")"))
-         val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
-                           ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
-            <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
-         fun exp typ = T.any
+         val selectExp = symbol "#" *> P.cut(makeSelect <$$>
+            (P.uint <* P.spaces,
+             P.char #"(" *> varExp <* P.char #")"))
+         val profileExp = (ProfileExp.Enter <$ token "Enter" <|>
+                           ProfileExp.Leave <$ token "Leave") <*>
+                           P.cut ((SourceInfo.fromC o String.implode) <$>
+                              P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
+         fun exp typ = P.any
             [Exp.ConApp <$> conAppExp,
              Exp.Const <$> constExp typ,
              Exp.PrimApp <$> (primAppExp resolveTycon resolveVar),
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
-             Exp.Tuple <$> (tupleOf varExp ),
+             Exp.Tuple <$> (P.tuple varExp ),
              Exp.Var <$> varExp]
-         val statement' = makeStatement
+         val statement' =
+            makeStatement
             <$>
             (typedvar >>= (fn (var, ty) =>
-             (symbol "=" *> exp ty <* spaces) >>= (fn exp =>
-               T.pure (var, ty, exp))))
+             (symbol "=" *> exp ty <* P.spaces) >>= (fn exp => 
+               P.pure (var, ty, exp))))
       in
          statement'
       end
@@ -318,8 +306,8 @@ struct
 
    fun globls resolveCon resolveTycon resolveVar = 
       let
-         fun globals' () = spaces *> token "Globals:" *> Vector.fromList <$>
-            T.many (statements resolveCon resolveTycon resolveVar)
+         fun globals' () = P.spaces *> token "Globals:" *> Vector.fromList <$>
+            P.many (statements resolveCon resolveTycon resolveVar)
       in
          globals' ()
       end
@@ -337,25 +325,25 @@ struct
 
    fun functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel = 
          let 
-            val name =  spaces *> symbol "fun" *> resolveFunc <$> ident <*
-            spaces
+            val name =  P.spaces *> symbol "fun" *> resolveFunc <$> ident <*
+            P.spaces
 
 
-            val var = resolveVar <$> ident <* spaces
+            val var = resolveVar <$> ident <* P.spaces
 
-            val label = spaces *> symbol "=" *> resolveLabel <$> ident <*
-            spaces <* token "()"
+            val label = P.spaces *> symbol "=" *> resolveLabel <$> ident <*
+            P.spaces <* token "()"
 
-            val label' = resolveLabel <$> ident <* spaces
-            val con' = spaces *> resolveCon <$> ident <* spaces
+            val label' = resolveLabel <$> ident <* P.spaces
+            val con' = P.spaces *> resolveCon <$> ident <* P.spaces
 
-             val labelWithArgs = spaces *> resolveLabel <$> ident
+             val labelWithArgs = P.spaces *> resolveLabel <$> ident
 
             val typedvar = (fn (x,y) => (x,y)) <$$>
                (var ,
-                symbol ":" *> (typ resolveTycon) <* spaces)
-            val args = spaces *> (tupleOf typedvar <|> T.pure (Vector.new0 ()))
-            val vars = spaces *> (tupleOf var <|> T.pure (Vector.new0 ()))
+                symbol ":" *> (typ resolveTycon) <* P.spaces)
+            val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
+            val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ()))
 
             fun makeConCases var (cons, def) =
                {test=var,
@@ -371,28 +359,28 @@ struct
                   | _ => raise Fail "makeWordCases" (* can't happen *)
                   , wds),
                 default=def}
-            fun makePat(con, exp) = T.pure (con, exp)
+            fun makePat(con, exp) = P.pure (con, exp)
             fun makeCaseWord size (int, exp) = case size of
                 (* this is repetetive, but it's a bit awkward to rework around the fail *)
-               8 => T.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
-             | 16 => T.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
-             | 32 => T.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
-             | 64 => T.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
-             | _ => T.fail "valid word size for cases (8, 16, 32 or 64)"
+               8 => P.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
+             | 16 => P.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
+             | 32 => P.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
+             | 64 => P.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
+             | _ => P.fail "valid word size for cases (8, 16, 32 or 64)"
 
             val defaultCase =
-               spaces *> T.optional(T.char #"|" *> spaces *> token "_" *> spaces *> token
-                            "=>" *> spaces *> label')
+               P.spaces *> P.optional(P.char #"|" *> P.spaces *> token "_" *> P.spaces *> token
+                            "=>" *> P.spaces *> label')
 
-            val casesExp = T.string "case" *>
-               T.optional parseInt <* T.many1 space >>= (fn size => T.cut(
-                  var <* token "of" <* spaces >>= (fn test =>
+            val casesExp = P.str "case" *>
+               P.optional P.uint <* P.many1 P.space >>= (fn size => P.cut(
+                  var <* token "of" <* P.spaces >>= (fn test =>
                      case size of
                          NONE => makeConCases test <$$>
                            (casesOf(makePat, con', label'),
                             defaultCase)
                        | SOME s => makeWordCases test s <$$>
-                           (casesOf(makeCaseWord s, T.string "0x" *> parseHex,
+                           (casesOf(makeCaseWord s, P.str "0x" *> parseHex,
                             label'),
                             defaultCase)
                          )))
@@ -415,11 +403,11 @@ struct
                   ty = ty}
 
             val transferArith = makeArith <$$$$>
-               (T.string "arith" *> spaces *> (typ resolveTycon) <* spaces,
+               (P.str "arith" *> P.spaces *> (typ resolveTycon) <* P.spaces,
                label',
                symbol "(" *> (primAppExp resolveTycon resolveVar) <* symbol
                ")",
-               spaces *> T.string "handle Overflow => " *> label' <* spaces)
+               P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
 
             fun makeReturnNonTail cont (handler) = 
                Return.NonTail {
@@ -432,12 +420,12 @@ struct
                }
 
             fun returnNonTail cont = makeReturnNonTail cont <$>
-               (T.string "handle _ => " *> ident <* spaces)
+               (P.str "handle _ => " *> ident <* P.spaces)
 
             fun getReturn return = 
                case return of
-                    "dead" => T.pure(Return.Dead)
-                  | "return" => T.pure(Return.Tail)
+                    "dead" => P.pure(Return.Dead)
+                  | "return" => P.pure(Return.Tail)
                   | _ => returnNonTail (resolveLabel return)
 
 
@@ -449,13 +437,13 @@ struct
                }
 
             val transferCall = 
-               spaces *> T.string "call" *> spaces *> ident <* spaces >>= (fn return =>
-                  symbol "(" *> resolveFunc <$> ident <* spaces >>= (fn func =>
-                      vars <* symbol ")" <* spaces >>= (fn argus =>
+               P.spaces *> P.str "call" *> P.spaces *> ident <* P.spaces >>= (fn return =>
+                  symbol "(" *> resolveFunc <$> ident <* P.spaces >>= (fn func =>
+                      vars <* symbol ")" <* P.spaces >>= (fn argus =>
                         makeCall argus func <$> (getReturn return)
                      )))
 
-            val transferBug = spaces *> T.string "Bug" *> T.pure(Transfer.Bug) <* spaces
+            val transferBug = P.spaces *> P.str "Bug" *> P.pure(Transfer.Bug) <* P.spaces
 
             fun makeRuntime (return , {prim, targs = _, args}) =
                Transfer.Runtime {
@@ -470,15 +458,15 @@ struct
 
             fun makeTransferReturn vars = Transfer.Return vars
 
-            val transferReturn = makeTransferReturn <$> (T.string "return" *>
-            spaces *> vars <* spaces)
+            val transferReturn = makeTransferReturn <$> (P.str "return" *>
+            P.spaces *> vars <* P.spaces)
 
             fun makeTransferRaise vars = Transfer.Raise vars
 
-            val transferRaise = makeTransferRaise <$> (T.string "raise" *>
-            spaces *> vars <* spaces)
+            val transferRaise = makeTransferRaise <$> (P.str "raise" *>
+            P.spaces *> vars <* P.spaces)
 
-            val transfer = T.any
+            val transfer = P.any
                [transferArith, transferCase, transferCall, transferBug,
                 transferRuntime, transferRaise, transferReturn, transferGoto]
 
@@ -491,26 +479,26 @@ struct
 
             val block = makeBlock
                <$> labelWithArgs
-               <*> args <* spaces
-               <*> (Vector.fromList <$> T.many(statements resolveCon resolveTycon
+               <*> args <* P.spaces
+               <*> (Vector.fromList <$> P.many(statements resolveCon resolveTycon
                resolveVar))
                <*> transfer
 
             val funcs = makeFunction
                <$> name
-               <*> args <* symbol ":" <* spaces
-               <*> fromRecord "returns" (optionOf (tupleOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
-               <*> fromRecord "raises" (optionOf (tupleOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
+               <*> args <* symbol ":" <* P.spaces
+               <*> fromRecord "returns" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
+               <*> fromRecord "raises" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
                <* doneRecord
                <*> label
-               <*> (Vector.fromList <$> T.manyFailing(block, T.peek(name)))
+               <*> (Vector.fromList <$> P.manyFailing(block, P.peek(name)))
 
-            val functns' = spaces *> token "Functions:" *> T.many funcs
+            val functns' = P.spaces *> token "Functions:" *> P.many funcs
          in
             functns'
          end
 
-   fun mainFunc resolveFunc = spaces *> token "Main:" *> resolveFunc <$> ident <* spaces
+   fun mainFunc resolveFunc = P.spaces *> token "Main:" *> resolveFunc <$> ident <* P.spaces
 
    fun makeProgram (datatypes, globals, main, functions) =
       Program.T
@@ -519,12 +507,13 @@ struct
           globals = globals,
           main = main} 
    
-   val program : Program.t StreamParser.t=
+   val program : Program.t Parse.t =
       let
-         fun strip_unique s  = T.parse
-            (String.implode <$> T.manyCharsFailing(
-               T.char #"_" *> T.many1 (T.sat(T.next, Char.isDigit)) *> T.failing T.next),
-             Stream.fromList (String.explode s))
+         fun strip_unique s  = case P.parseString
+            (String.implode <$> P.manyCharsFailing(
+               P.char #"_" *> P.many1 (P.nextSat Char.isDigit) *> P.failing P.next),
+             s) of Result.Yes s' => s'
+                 | Result.No _ => s
          val resolveCon0 = makeNameResolver(Con.newString o strip_unique)
          fun resolveCon ident =
             case List.peek ([Con.falsee, Con.truee, Con.overflow, Con.reff], fn con =>
@@ -542,14 +531,15 @@ struct
          val resolveFunc = makeNameResolver(Func.newString o strip_unique)
          val resolveLabel = makeNameResolver(Label.newString o strip_unique)
       in
-         T.compose(skipComments (),
-            clOptions *>
-            (makeProgram <$$$$> (datatypes resolveCon resolveTycon, globls
-            resolveCon resolveTycon resolveVar,
-            mainFunc resolveFunc,
-            functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel)))
+         P.compose(skipComments (),
+         clOptions *>
+         (makeProgram <$$$$>
+             (datatypes resolveCon resolveTycon,
+              globls resolveCon resolveTycon resolveVar,
+              mainFunc resolveFunc,
+              functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel
+              (* failing next to check for end of file *)
+              <* P.spaces <* (P.failing P.next <|> P.failCut "End of file"))))
       end
-   
-   fun parse s = T.parse(program, s)
       
 end

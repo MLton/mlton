@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -252,7 +252,7 @@ end
 
 fun toBytes (r: real): Word8Vector.vector =
    let
-      val a = Array.uninit bytesPerElem
+      val a = Array.alloc bytesPerElem
    in
       (updA (a, 0, r)
        ; Word8Vector.fromPoly (Array.vector a))

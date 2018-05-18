@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -48,7 +49,6 @@ in
    val hash = make #hash
    val originalName = make #originalName
    val plist = make #plist
-   val printName = make #printName
 end
 
 fun isAlphaNum (s: string): bool =
@@ -58,8 +58,6 @@ fun clearPrintName (T {originalName, printName, ...}): unit =
    if isAlphaNum originalName
       then ()
    else printName := NONE
-
-fun setPrintName (x, s) = printName x := SOME s
 
 val printNameAlphaNumeric: bool ref = ref false
 
@@ -79,11 +77,11 @@ fun toString (T {originalName, printName, ...}) =
                     | #"$" => "Dollar"
                     | #"%" => "Percent"
                     | #"&" => "Ampersand"
-                    | #"'" => "P"
+                    | #"'" => "Prime"
                     | #"*" => "Star"
                     | #"+" => "Plus"
                     | #"-" => "Minus"
-                    | #"." => "D"
+                    | #"." => "Dot"
                     | #"/" => "Divide"
                     | #":" => "Colon"
                     | #"<" => "Lt"

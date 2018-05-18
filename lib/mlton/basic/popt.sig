@@ -1,9 +1,9 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -15,26 +15,29 @@ signature POPT =
       datatype t =
          (* one arg: a boolean (true, false), after a space *)
          Bool of bool -> unit
-         (* one arg: an integer, after a space *)
-       | Digit of int -> unit
-         (* one arg: an integer followed by tional k or m. *)
-       | Int of int -> unit
          (* one arg: a single digit, no space. *)
+       | Digit of int -> unit
+         (* one arg: an integer, after a space *)
+       | Int of int -> unit
+         (* one arg: an integer followed by optional k or m. *)
        | Mem of int -> unit
          (* no args *)
        | None of unit -> unit
        | Real of real -> unit
          (* Any string immediately follows the switch. *)
        | String of string -> unit
-         (* one arg: any string *)
+         (* one arg: any string, after a space *)
        | SpaceString of string -> unit
        | SpaceString2 of string * string -> unit
+         (* one arg: a word (hex), after a space *)
+       | Word of word -> unit
 
       val boolRef: bool ref -> t
       val falseRef: bool ref -> t
       val intRef: int ref -> t
       val stringRef: string ref -> t
       val trueRef: bool ref -> t
+      val wordRef: word ref -> t
 
       val trace: string * t
 

@@ -1,5 +1,7 @@
 #include "platform.h"
 
+const C_Size_t Posix_Signal_sigSetLen = sizeof (sigset_t);
+
 #if (defined (NSIG))
 const C_Int_t Posix_Signal_NSIG = NSIG;
 #elif (defined (_NSIG))

@@ -64,7 +64,7 @@ not a value.  All other lines are type correct.  By its last line, the
 program has cast the string `"foo"` to an integer.  This breaks type
 safety, because now we can add a string to an integer with an
 expression like `v + 13`.  We could even be more devious, by adding
-the following two lines, which allow us to threat the string `"foo"`
+the following two lines, which allow us to treat the string `"foo"`
 as a function.
 
 [source,sml]
@@ -102,15 +102,17 @@ disallowed because `id id` is not a value.  MLton reports the
 following type error.
 
 ----
-Error: z.sml 2.19.
-  Can't bind type variable: 'a.
-    in: val 'a (f): ('a -> 'a) = id id
+Error: z.sml 2.5-2.5.
+  Type of variable cannot be generalized in expansive declaration: f.
+    type: ['a] -> ['a]
+    in: val 'a f: ('a -> 'a) = id id
 ----
 
 MLton indicates the inability to make `f` polymorphic by saying that
-it can't bind the type variable `'a` at the declaration.  MLton
-doesn't explicitly mention the value restriction, but that is the
-reason.  If we leave the type constraint off of `f`
+the type of `f` cannot be generalized (made polymorphic) its
+declaration is expansive (not a value).  MLton doesn't explicitly
+mention the value restriction, but that is the reason.  If we leave
+the type constraint off of `f`
 
 [source,sml]
 ----
@@ -122,8 +124,8 @@ then the program succeeds; however, MLton gives us the following
 warning.
 
 ----
-Warning: z.sml 2.1.
-  Unable to locally determine type of variable: f.
+Warning: z.sml 2.5-2.5.
+  Type of variable was not inferred and could not be generalized: f.
     type: ??? -> ???
     in: val f = id id
 ----
@@ -149,6 +151,14 @@ val id: 'a -> 'a = fn x => x
 val f = id id
 val _ = f 13
 val _ = f "foo"
+----
+
+----
+Error: z.sml 4.9-4.15.
+  Function applied to incorrect argument.
+    expects: [int]
+    but got: [string]
+    in: f "foo"
 ----
 
 

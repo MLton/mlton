@@ -1,39 +1,56 @@
-## Copyright (C) 2010-2013 Matthew Fluet.
+## Copyright (C) 2010-2013,2018 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
- # MLton is released under a BSD-style license.
+ # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
 
-PATH := ../bin:$(shell echo $$PATH)
+CC := gcc
+AR := ar
+RANLIB := ranlib
 
+WITH_GMP_DIR :=
+ifneq ($(WITH_GMP_DIR),)
+WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
+endif
+
+FIND := find
+GREP := grep
+GZIP := gzip
+PATCH := patch
+SED := sed
+TAR := tar
+
+######################################################################
+######################################################################
+
+SRC := $(shell cd .. && pwd)
+BUILD := $(SRC)/build
+BIN := $(BUILD)/bin
+
+PATH := $(BIN):$(shell echo $$PATH)
+
+HOST_ARCH := $(shell ../bin/host-arch)
+HOST_OS := $(shell ../bin/host-os)
 TARGET := self
+TARGET_ARCH := $(HOST_ARCH)
+TARGET_OS := $(HOST_OS)
+
+######################################################################
 
 ifeq ($(TARGET), self)
-CC := gcc -std=gnu99
-AR := ar rc
-RANLIB := ranlib
+CROSS_PREFIX :=
 else
-CC := $(TARGET)-gcc -std=gnu99
-AR := $(TARGET)-ar rc
-RANLIB := $(TARGET)-ranlib
+CROSS_PREFIX := $(TARGET)-
 endif
 
-WITH_GMP :=
-ifneq ($(WITH_GMP),)
-WITH_GMP_INC_DIR := "$(WITH_GMP)/include"
-WITH_GMP_LIB_DIR := "$(WITH_GMP)/lib"
-endif
-
-TARGET_ARCH := $(shell ../bin/host-arch)
-TARGET_OS := $(shell ../bin/host-os)
 GCC_MAJOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | grep 'gcc version' | 		\
+	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
 GCC_MINOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | grep 'gcc version' | 		\
+	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
@@ -45,9 +62,6 @@ CFLAGS :=
 
 WARNXCFLAGS :=
 WARNXCFLAGS += -pedantic -Wall
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -W
-endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNXCFLAGS += -Wextra
 endif
@@ -86,7 +100,7 @@ WARNXCFLAGS += -Wredundant-decls
 WARNXCFLAGS += -Wnested-externs
 # WARNXCFLAGS += -Wunreachable-code
 
-XCFLAGS := -fno-common $(WARNXCFLAGS)
+XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
 OPTXCFLAGS := -Wdisabled-optimization -O2 -fomit-frame-pointer
 DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
@@ -137,11 +151,7 @@ endif
 
 ifeq ($(TARGET_ARCH), x86)
 XCFLAGS += -m32
-ifeq (3, $(firstword $(sort $(GCC_MAJOR_VERSION) 3)))
 OPTXCFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
-else
-OPTXCFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
-endif
 endif
 
 ifeq ($(TARGET_OS), cygwin)
@@ -178,16 +188,16 @@ all: $(ALL)
 
 UTILHFILES :=							\
 	util.h							\
-	$(shell find util -type f | grep '\.h$$')
+	$(shell $(FIND) util -type f -name '*.h')
 UTILCFILES :=							\
-	$(shell find util -type f | grep '\.c$$')
+	$(shell $(FIND) util -type f -name '*.c')
 
 util-pic.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CC) $(PICCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) -c -o $@ $<
 util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) -c -o $@ $<
 util.o:     util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CC) $(OPTCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -c -o $@ $<
 
 ### c-types.h  ml-types.h  gen/c-types.sml ###
 
@@ -198,7 +208,7 @@ ml-types.h: gen/ml-types.h
 gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.stamp
 	@touch $@
 gen/gen-types.stamp: gen/gen-types.c util.h util.o
-	$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.c util.o
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.c util.o
 	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h gen/gen-types.stamp
 	cd gen && ./gen-types
 	rm -f gen/gen-types$(EXE) gen/gen-types
@@ -234,11 +244,11 @@ GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
 GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
 gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch
-	gzip -dc gdtoa.tgz | tar xf -
-	patch -s -p0 <gdtoa.may_alias-unions.patch
-	patch -s -p0 <gdtoa.rename-public-fns.patch
-	patch -s -p0 <gdtoa.hide-private-fns.patch
-	patch -s -p0 <gdtoa.hide-public-fns.patch
+	$(GZIP) -dc gdtoa.tgz | $(TAR) xf -
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.may_alias-unions.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.rename-public-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-private-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-public-fns.patch
 	@touch $@
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
@@ -248,7 +258,7 @@ gdtoa/arithchk.c: gdtoa/README
 	@touch $@
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
-	cd gdtoa && $(CC) $(OPTCFLAGS) -w -O1 -o arithchk.out arithchk.c
+	cd gdtoa && $(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -O1 -o arithchk.out arithchk.c
 
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
@@ -257,17 +267,17 @@ gdtoa/qnan.c: gdtoa/README
 	@touch $@
 
 gdtoa/qnan.out: gdtoa/arith.h gdtoa/qnan.c
-	cd gdtoa && $(CC) $(OPTCFLAGS) -w -O1 -o qnan.out qnan.c
+	cd gdtoa && $(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -O1 -o qnan.out qnan.c
 
 gdtoa/gd_qnan.h: gdtoa/qnan.out
 	cd gdtoa && ./qnan.out >gd_qnan.h
 
 gdtoa/%-pic.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CC) $(PICCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CC) $(DEBUGCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CC) $(OPTCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 
 libgdtoa.a:     $(GDTOA_OBJS)
 libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
@@ -277,18 +287,18 @@ libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
 
 PLATFORMHFILES :=						\
 	platform.h						\
-	$(shell find platform -type f | grep '\.h$$')
+	$(shell $(FIND) platform -type f -name '*.h')
 PLATFORMCFILES :=						\
-	$(shell find platform -type f | grep '\.c$$')
+	$(shell $(FIND) platform -type f -name '*.c')
 
 GCHFILES :=							\
 	gc.h							\
-	$(shell find gc -type f | grep '\.h$$')
+	$(shell $(FIND) gc -type f -name '*.h')
 GCCFILES :=							\
-	$(shell find gc -type f | grep '\.c$$')
+	$(shell $(FIND) gc -type f -name '*.c')
 
 BASISCFILES :=							\
-	$(shell find basis -type f | grep '\.c$$')
+	$(shell $(FIND) basis -type f -name '*.c')
 
 HFILES :=							\
 	cenv.h							\
@@ -343,11 +353,11 @@ basis/cpointer-gdb.o:   basis/cpointer.h
 basis/cpointer.o:       basis/cpointer.h
 
 %-pic.o: %.c $(HFILES)
-	$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
 %-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
 %.o: %.c $(HFILES)
-	$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
 
 libmlton.a: $(MLTON_OBJS)
 libmlton-gdb.a: $(MLTON_DEBUG_OBJS)
@@ -358,7 +368,7 @@ libmlton-pic.a: $(MLTON_PIC_OBJS)
 gen/sizes: gen/gen-sizes.stamp
 	@touch $@
 gen/gen-sizes.stamp: gen/gen-sizes.c libmlton.a $(HFILES)
-	$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c -L. -lmlton
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c -L. -lmlton
 	rm -f gen/sizes
 	cd gen && ./gen-sizes
 	rm -f gen/gen-sizes$(EXE) gen/gen-sizes
@@ -370,24 +380,24 @@ gen/gen-sizes.stamp: gen/gen-sizes.c libmlton.a $(HFILES)
 
 %.a:
 	rm -f $@
-	$(AR) $@ $^
-	$(RANLIB) $@
+	$(CROSS_PREFIX)$(AR) rc $@ $^
+	$(CROSS_PREFIX)$(RANLIB) $@
 
 
 
 .PHONY: flags
 flags:
-	echo TARGET = $(TARGET)
-	echo TARGET_ARCH = $(TARGET_ARCH)
-	echo TARGET_OS = $(TARGET_OS)
-	echo GCC_MAJOR_VERSION = $(GCC_MAJOR_VERSION)
-	echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
-	echo GCC_VERSION = $(GCC_VERSION)
-	echo EXE = $(EXE)
-	echo XCFLAGS = $(XCFLAGS)
-	echo OPTXCFLAGS = $(OPTXCFLAGS)
-	echo DEBUGXCFLAGS = $(DEBUGXCFLAGS)
-	echo PICXCFLAGS = $(PICXCFLAGS)
+	@echo TARGET = $(TARGET)
+	@echo TARGET_ARCH = $(TARGET_ARCH)
+	@echo TARGET_OS = $(TARGET_OS)
+	@echo GCC_MAJOR_VERSION = $(GCC_MAJOR_VERSION)
+	@echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
+	@echo GCC_VERSION = $(GCC_VERSION)
+	@echo EXE = $(EXE)
+	@echo XCFLAGS = $(XCFLAGS)
+	@echo OPTXCFLAGS = $(OPTXCFLAGS)
+	@echo DEBUGXCFLAGS = $(DEBUGXCFLAGS)
+	@echo PICXCFLAGS = $(PICXCFLAGS)
 
 
 .PHONY: clean

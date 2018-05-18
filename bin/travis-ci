@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo
+mlton
+echo
+make -version
+echo
+$CC --version
+echo
+if [[ "$MLTON_COMPILE_ARGS" == *"llvm"* ]]; then
+llvm-as -version
+opt -version
+llc -version
+echo
+fi
+
+echo "Building MLton..."
+make CC="$CC" MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" all
+
+if [ "$REGRESSION" == "true" ]; then
+echo "Running regression tests..."
+./bin/regression $MLTON_COMPILE_ARGS
+fi

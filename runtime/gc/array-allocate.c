@@ -1,8 +1,9 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2016 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -24,26 +25,18 @@ pointer GC_arrayAllocate (GC_state s,
              (uintmax_t)ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   /* Check for overflow when computing arraySize.
-   * Note: bytesPerElement > 0
    */
-  if (numElements > (SIZE_MAX / bytesPerElement)) {
+  if (bytesPerElement > 0 and numElements > (SIZE_MAX / bytesPerElement)) {
     goto doOverflow;
   }
   arraySize = bytesPerElement * numElements;
-  if (arraySize > SIZE_MAX - GC_ARRAY_HEADER_SIZE) {
+  if (arraySize > SIZE_MAX - GC_ARRAY_METADATA_SIZE) {
     goto doOverflow;
   }
-  arraySize += GC_ARRAY_HEADER_SIZE;
+  arraySize += GC_ARRAY_METADATA_SIZE;
   arraySizeAligned = align (arraySize, s->alignment);
   if (arraySizeAligned < arraySize) {
     goto doOverflow;
-  }
-  if (arraySizeAligned < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
-    /* Very small (including empty) arrays have OBJPTR_SIZE bytes
-     * space for the forwarding pointer.
-     */
-    arraySize = GC_ARRAY_HEADER_SIZE;
-    arraySizeAligned = align(GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE, s->alignment);
   }
   if (DEBUG_ARRAY)
     fprintf (stderr,

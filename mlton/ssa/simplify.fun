@@ -1,9 +1,9 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -33,6 +33,7 @@ structure Profile = Profile (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
+structure ShareZeroVec = ShareZeroVec (S)
 structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 
@@ -95,6 +96,16 @@ val ssaPassesDefault =
    {name = "commonArg", doit = CommonArg.transform, execute = true} ::
    {name = "commonSubexp1", doit = CommonSubexp.transform, execute = true} ::
    {name = "commonBlock", doit = CommonBlock.transform, execute = true} ::
+   (* shareZeroVec should run
+    *  - after useless because sharing of zero-length array inhibits
+    *    changing type of flow-disjoint vector data
+    *  - after simplifyTypes because it may make previously distinct
+    *    types equal and allow more sharing of zero-length arrays
+    *  - after inlining because shareZeroVec (slightly) increases size
+    *  - before redundantTests because shareZeroVec introduces
+    *    comparisons with zero
+    *)
+   {name = "shareZeroVec", doit = ShareZeroVec.transform, execute = true} ::
    {name = "redundantTests", doit = RedundantTests.transform, execute = true} ::
    {name = "redundant", doit = Redundant.transform, execute = true} ::
    {name = "loopUnswitch2", doit = LoopUnswitch.transform, execute = false} ::
@@ -203,14 +214,12 @@ local
 
    val passGens = 
       inlinePassGen ::
-      (List.map([("addProfile", Profile.addProfile),
-                 ("combineConversions",  CombineConversions.transform),
+      (List.map([("combineConversions",  CombineConversions.transform),
                  ("commonArg", CommonArg.transform),
                  ("commonBlock", CommonBlock.transform),
                  ("commonSubexp", CommonSubexp.transform),
                  ("constantPropagation", ConstantPropagation.transform),
                  ("contify", Contify.transform),
-                 ("dropProfile", Profile.dropProfile),
                  ("flatten", Flatten.transform),
                  ("introduceLoops", IntroduceLoops.transform),
                  ("knownCase", KnownCase.transform),
@@ -224,14 +233,16 @@ local
                  ("redundant", Redundant.transform),
                  ("redundantTests", RedundantTests.transform),
                  ("removeUnused", RemoveUnused.transform),
+                 ("shareZeroVec", ShareZeroVec.transform),
                  ("simplifyTypes", SimplifyTypes.transform),
                  ("useless", Useless.transform),
-                 ("breakCriticalEdges",fn p => 
-                  S.breakCriticalEdges (p, {codeMotion = true})),
-                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
-                 ("orderFunctions",S.orderFunctions),
-                 ("reverseFunctions",S.reverseFunctions),
-                 ("shrink", S.shrink)],
+                 ("ssaAddProfile", Profile.addProfile),
+                 ("ssaDropProfile", Profile.dropProfile),
+                 ("ssaBreakCriticalEdges", fn p => S.breakCriticalEdges (p, {codeMotion = true})),
+                 ("ssaEliminateDeadBlocks", S.eliminateDeadBlocks),
+                 ("ssaOrderFunctions", S.orderFunctions),
+                 ("ssaReverseFunctions", S.reverseFunctions),
+                 ("ssaShrink", S.shrink)],
                 mkSimplePassGen))
 in
    fun ssaPassesSetCustom s =
@@ -297,11 +308,11 @@ fun simplify p =
    let
       fun simplify' n p =
          let
-            val midfix = if n = 0
+            val midfix = if !Control.loopSsaPasses = 1
                             then ""
-                         else concat [Int.toString n,"."]
+                         else concat [Int.toString n, "."]
          in
-            if n = !Control.loopPasses
+            if n = !Control.loopSsaPasses
                then p
             else simplify' 
                  (n + 1)
@@ -324,11 +335,11 @@ val simplify = fn p => let
                          val p =
                             if !Control.profile <> Control.ProfileNone
                                andalso !Control.profileIL = Control.ProfileSSA
-                               then pass ({name = "addProfile1",
+                               then pass ({name = "ssaAddProfile",
                                            doit = Profile.addProfile,
                                            midfix = ""}, p)
                             else p
-                         val p = maybePass ({name = "orderFunctions1",
+                         val p = maybePass ({name = "ssaOrderFunctions",
                                              doit = S.orderFunctions,
                                              execute = true,
                                              midfix = ""}, p)

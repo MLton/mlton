@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -643,6 +643,31 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
          (objectTypes, fn (i, (opt, _)) => ObjptrTycon.setIndex (opt, i))
       val objectTypes = Vector.map (objectTypes, #2)
       val () = diagnostic ()
+
+      val newObjectTypes = ref []
+      local
+         val h = HashSet.new {hash = fn {bits, ...} =>
+                              Bits.toWord bits}
+      in
+         fun allocRawOpt width =
+            (#opt o HashSet.lookupOrInsert)
+            (h, Bits.toWord width,
+             fn {bits, ...} => Bits.equals (bits, width),
+             fn () =>
+             let
+                val rawElt = Type.bits width
+                val rawTy = ObjectType.Array {elt = rawElt, hasIdentity = true}
+                val rawOpt = ObjptrTycon.new ()
+                val () =
+                   ObjptrTycon.setIndex
+                   (rawOpt, Vector.length objectTypes + HashSet.size h)
+                val () =
+                   List.push (newObjectTypes, rawTy)
+             in
+                {bits = width, opt = rawOpt}
+             end)
+      end
+
       val {get = varInfo: Var.t -> {ty: S.Type.t},
            set = setVarInfo, ...} =
          Property.getSetOnce (Var.plist,
@@ -986,6 +1011,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   let
                      fun none () = loop (i - 1, ss, t)
                      fun add s = loop (i - 1, s :: ss, t)
+                     fun add2 (s1, s2) = loop (i - 1, s1 :: s2 :: ss, t)
                      fun adds ss' = loop (i - 1, ss' @ ss, t)
                      val s = Vector.sub (statements, i)
                   in
@@ -1151,18 +1177,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                [Vector.new1 GCState,
                                                 vos args],
                                         func = f}
-                              fun array (numElts: Operand.t) =
+                              fun arrayAlloc (numElts: Operand.t, opt) =
                                  let
                                     val result = valOf (toRtype ty)
-                                    val opt =
-                                       case Type.deObjptr result of
-                                          NONE => Error.bug "SsaToRssa.array"
-                                        | SOME opt => ObjptrTycon opt
                                     val args =
                                        Vector.new4 (GCState,
                                                     EnsuresBytesFree,
                                                     numElts,
-                                                    opt)
+                                                    ObjptrTycon opt)
                                     val func =
                                        CFunction.gcArrayAllocate
                                        {return = result}
@@ -1204,33 +1226,124 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
-                                 Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                                 Array_alloc {raw} =>
+                                    let
+                                       val allocOpt = fn () =>
+                                          let
+                                             val result = valOf (toRtype ty)
+                                             val opt =
+                                                case Type.deObjptr result of
+                                                   NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_alloc"
+                                                 | SOME opt => opt
+                                          in
+                                             opt
+                                          end
+                                       val allocRawOpt = fn () =>
+                                          let
+                                             val result = valOf (toRtype ty)
+                                             val arrOpt =
+                                                case Type.deObjptr result of
+                                                   NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_allocRaw"
+                                                 | SOME arrOpt => arrOpt
+                                             val arrTy =
+                                                Vector.sub (objectTypes, ObjptrTycon.index arrOpt)
+                                             val arrElt =
+                                                case arrTy of
+                                                   ObjectType.Array {elt, ...} => elt
+                                                 | _ => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_allocRaw"
+                                             val rawOpt = allocRawOpt (Type.width arrElt)
+                                          in
+                                             rawOpt
+                                          end
+                                    in
+                                       arrayAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
+                                    end
+                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_length => arrayOrVectorLength ()
+                               | Array_toArray =>
+                                    let
+                                       val rawarr = a 0
+                                       val arrTy = valOf (toRtype ty)
+                                       val arrOpt =
+                                          case Type.deObjptr arrTy of
+                                             NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_toArray"
+                                           | SOME arrOpt => arrOpt
+                                    in
+                                       add2
+                                       (Move
+                                        {dst = (Offset
+                                                {base = rawarr,
+                                                 offset = Runtime.headerOffset (),
+                                                 ty = Type.objptrHeader ()}),
+                                         src = ObjptrTycon arrOpt},
+                                        Bind {dst = (valOf var, arrTy),
+                                              isMutable = false,
+                                              src = Operand.cast (rawarr, arrTy)})
+                                    end
                                | Array_toVector =>
                                     let
                                        val array = a 0
                                        val vecTy = valOf (toRtype ty)
-                                       val opt =
+                                       val vecOpt =
                                           case Type.deObjptr vecTy of
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_toVector"
-                                           | SOME opt => opt
+                                           | SOME vecOpt => vecOpt
                                     in
-                                       loop
-                                       (i - 1,
-                                        Move
+                                       add2
+                                       (Move
                                         {dst = (Offset
                                                 {base = array,
                                                  offset = Runtime.headerOffset (),
                                                  ty = Type.objptrHeader ()}),
-                                         src = ObjptrTycon opt}
-                                        :: Bind {dst = (valOf var, vecTy),
-                                                 isMutable = false,
-                                                 src = Operand.cast (array, vecTy)}
-                                        :: ss,
-                                        t)
+                                         src = ObjptrTycon vecOpt},
+                                        Bind {dst = (valOf var, vecTy),
+                                              isMutable = false,
+                                              src = Operand.cast (array, vecTy)})
                                     end
-                               | Array_uninit => array (a 0)
+                               | Array_uninit =>
+                                    let
+                                       val array = a 0
+                                       val arrayTy = varType (arg 0)
+                                       val index = a 1
+                                       val eltTys =
+                                          case S.Type.deVectorOpt arrayTy of
+                                             NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninit"
+                                           | SOME eltTys => eltTys
+                                       val sss =
+                                          (Vector.toList o Vector.keepAllMapi)
+                                          (S.Prod.dest eltTys, fn (offset, {elt, ...}) =>
+                                           case toRtype elt of
+                                              NONE => NONE
+                                            | SOME elt =>
+                                                 if not (Type.isObjptr elt)
+                                                    then NONE
+                                                    else (SOME o update)
+                                                         {base = Base.VectorSub
+                                                                 {index = index,
+                                                                  vector = array},
+                                                                 baseTy = arrayTy,
+                                                                 offset = offset,
+                                                                 value = bogus elt})
+                                    in
+                                       adds (List.concat sss)
+                                    end
+                               | Array_uninitIsNop =>
+                                    let
+                                       val arrayTy = varType (arg 0)
+                                       val eltTys =
+                                          case S.Type.deVectorOpt arrayTy of
+                                             NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninitIsNop"
+                                           | SOME eltTys => eltTys
+                                       val isNop =
+                                          Vector.forall
+                                          (S.Prod.dest eltTys, fn {elt, ...} =>
+                                           case toRtype elt of
+                                              NONE => true
+                                            | SOME elt => not (Type.isObjptr elt))
+                                    in
+                                       move (Operand.bool isNop)
+                                    end
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()
@@ -1317,8 +1430,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               simpleCCallWithGCState
                                               (CFunction.share (Operand.ty (a 0))))
                                | MLton_size =>
-                                    simpleCCallWithGCState
-                                    (CFunction.size (Operand.ty (a 0)))
+                                    (case toRtype (varType (arg 0)) of
+                                        NONE => move (Operand.word (WordX.zero (WordSize.csize ())))
+                                      | SOME t =>
+                                           if not (Type.isObjptr t)
+                                              then move (Operand.word (WordX.zero (WordSize.csize ())))
+                                           else
+                                              simpleCCallWithGCState
+                                              (CFunction.size (Operand.ty (a 0))))
                                | MLton_touch =>
                                     let
                                        val a = arg 0
@@ -1631,7 +1750,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val p = Program.T {functions = functions,
                          handlesSignals = handlesSignals,
                          main = main,
-                         objectTypes = objectTypes}
+                         objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)]}
       val _ = Program.clear p
    in
       p

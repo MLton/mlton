@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -20,15 +21,20 @@ signature TYPE_ENV =
             type t
 
             val now: unit -> t
+            val tick: {region: Region.t} -> unit
          end
 
       structure Type:
          sig
             include TYPE_OPS
 
-            val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
+            val checkTime:
+               t * Time.t * {layoutPrettyTycon: Tycon.t -> Layout.t,
+                             layoutPrettyTyvar: Tyvar.t -> Layout.t}
+               -> (Layout.t * t * {tycons: Tycon.t list, tyvars: Tyvar.t list}) option
+            val copy: t -> t
             val deEta: t * Tyvar.t vector -> Tycon.t option
             val deRecord: t -> (Record.Field.t * t) vector
             val flexRecord: t SortedRecord.t -> t * (unit -> bool)
@@ -43,29 +49,32 @@ signature TYPE_ENV =
             val isCPointer: t -> bool
             val isInt: t -> bool
             val isUnit: t -> bool
+            val isUnknown: t -> bool
             val layout: t -> Layout.t
-            val layoutPrettyAux: t * {expandOpaque: bool, localTyvarNames: bool} -> Layout.t
-            val layoutPretty: t -> Layout.t
+            val layoutPretty:
+               t * {expandOpaque: bool,
+                    layoutPrettyTycon: Tycon.t -> Layout.t,
+                    layoutPrettyTyvar: Tyvar.t -> Layout.t}
+               -> LayoutPretty.t
             val makeHom: {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
                           var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
                                                   hom: t -> 'a}
             val makeLayoutPretty:
-               {expandOpaque:bool,
-                localTyvarNames: bool} -> {destroy: unit -> unit,
-                                           lay: t -> Layout.t * ({isChar: bool}
-                                                                 * Tycon.BindingStrength.t)}
-            (* minTime (t, time) makes every component of t occur no later than
-             * time.  This will display a type error message if time is before
-             * the definition time of some component of t.
-             *)
-            val minTime: t * Time.t -> unit
+               {expandOpaque: bool,
+                layoutPrettyTycon: Tycon.t -> Layout.t,
+                layoutPrettyTyvar: Tyvar.t -> Layout.t}
+               -> {destroy: unit -> unit,
+                   layoutPretty: t -> LayoutPretty.t}
             val new: unit -> t
             val record: t SortedRecord.t -> t
             (* make two types identical (recursively).  side-effecting. *)
             val unify:
-               t * t * {error: Layout.t * Layout.t -> unit,
-                        preError: unit -> unit} -> unit
+               t * t * {error: Layout.t * Layout.t * {notes: unit -> Layout.t} -> unit,
+                        layoutPretty: t -> LayoutPretty.t,
+                        layoutPrettyTycon: Tycon.t -> Layout.t,
+                        layoutPrettyTyvar: Tyvar.t -> Layout.t}
+               -> unit
             val unresolvedChar: unit -> t
             val unresolvedInt: unit -> t
             val unresolvedReal: unit -> t
@@ -77,39 +86,77 @@ signature TYPE_ENV =
       sharing type Type.realSize = RealSize.t
       sharing type Type.wordSize = WordSize.t
       sharing type Type.tycon = Tycon.t
+
       structure Scheme:
          sig
             type t
 
             val admitsEquality: t -> bool
             val apply: t * Type.t vector -> Type.t
-            val bound: t -> Tyvar.t vector
+            val checkEquality: t * {layoutPrettyTycon: Tycon.t -> Layout.t} -> Layout.t option
             val dest: t -> Tyvar.t vector * Type.t
+            val fresh: t -> Tyvar.t vector * Type.t
+            val fromTycon: Tycon.t -> t
             val fromType: Type.t -> t
-            val haveFrees: t vector -> bool vector
+            val haveUnknowns: t -> bool
             val instantiate: t -> {args: unit -> Type.t vector,
                                    instance: Type.t}
+            val kind: t -> TyconKind.t
             val layout: t -> Layout.t
-            val layoutPrettyAux: 
-               t * {expandOpaque: bool, 
-                    localTyvarNames: bool} -> Layout.t
-            val layoutPretty: t -> Layout.t
             val make: {canGeneralize: bool,
                        ty: Type.t,
                        tyvars: Tyvar.t vector} -> t
             val ty: t -> Type.t
          end
 
+      structure TyvarExt:
+         sig
+            type t
+            val makeString: string * {equality: bool} -> t
+            val makeNoname: {equality: bool} -> t
+            val makeLayoutPretty:
+               unit ->
+               {destroy: unit -> unit,
+                layoutPretty: t -> Layout.t,
+                localInit: t vector -> unit}
+            val makeLayoutPrettyLocal:
+               unit ->
+               {destroy: unit -> unit,
+                layoutPretty: t -> Layout.t,
+                reset: unit -> unit}
+            val makeLike: t -> t
+         end
+      sharing type TyvarExt.t = Tyvar.t
+
+      structure TyconExt:
+         sig
+            type t
+            val admitsEquality: t -> AdmitsEquality.t
+            val kind: t -> TyconKind.t
+            val layoutPrettyDefault: t -> Layout.t
+            val make: {admitsEquality: AdmitsEquality.t,
+                       kind: TyconKind.t,
+                       name: string,
+                       prettyDefault: string,
+                       region: Region.t} -> t
+            val makeBogus: {name: string,
+                            kind: TyconKind.t,
+                            region: Region.t option} -> t
+            val makeLike: t -> t
+            val region: t -> Region.t
+            val scopeNew: (unit -> 'a) -> ('a * t list)
+            val setAdmitsEquality: t * AdmitsEquality.t -> unit
+            val setOpaqueExpansion: t * (Type.t vector -> Type.t) -> unit
+         end
+      sharing type TyconExt.t = Tycon.t
+
       val close:
-         Tyvar.t vector * {useBeforeDef: Tycon.t -> unit}
-         -> {isExpansive: bool, ty: Type.t} vector
+         {region: Region.t}
+         -> (Tyvar.t vector
+             * {isExpansive: bool, ty: Type.t, var: 'a} vector
+             * {error: 'a * Layout.t * Tyvar.t list -> unit,
+                layoutPrettyTycon: Tycon.t -> Layout.t,
+                layoutPrettyTyvar: Tyvar.t -> Layout.t})
          -> {bound: unit -> Tyvar.t vector,
-             schemes: Scheme.t vector,
-             unable: Tyvar.t vector}
-      val generalize: Tyvar.t vector -> unit -> {unable: Tyvar.t vector}
-      val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
-      val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
-      val tick: {useBeforeDef: Tycon.t -> unit} -> unit
-      val tyconAdmitsEquality: Tycon.t -> Tycon.AdmitsEquality.t ref
-      val tyconRegion: Tycon.t -> Region.t option ref
+             schemes: Scheme.t vector}
    end

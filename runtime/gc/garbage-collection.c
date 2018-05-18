@@ -1,9 +1,9 @@
-/* Copyright (C) 2009-2010,2012 Matthew Fluet.
+/* Copyright (C) 2009-2010,2012,2016 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
@@ -61,7 +61,7 @@ void growStackCurrent (GC_state s) {
              uintmaxToCommaString(getStackCurrent(s)->reserved),
              uintmaxToCommaString(reserved),
              uintmaxToCommaString(getStackCurrent(s)->used));
-  assert (hasHeapBytesFree (s, sizeofStackWithHeader (s, reserved), 0));
+  assert (hasHeapBytesFree (s, sizeofStackWithMetaData (s, reserved), 0));
   stack = newStack (s, reserved, TRUE);
   copyStack (s, getStackCurrent(s), stack);
   getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
@@ -138,7 +138,7 @@ void performGC (GC_state s,
   stackBytesRequested = 
     stackTopOk 
     ? 0 
-    : sizeofStackWithHeader (s, sizeofStackGrowReserved (s, getStackCurrent (s)));
+    : sizeofStackWithMetaData (s, sizeofStackGrowReserved (s, getStackCurrent (s)));
   totalBytesRequested = 
     oldGenBytesRequested 
     + nurseryBytesRequested

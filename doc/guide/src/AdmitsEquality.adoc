@@ -88,11 +88,15 @@ structure Bad: sig eqtype 'a t end =
 
 On `structure Bad`, MLton reports the following error.
 ----
-Type t admits equality in signature but not in structure.
-  not equality: [real] * _ * _
+Error: z.sml 1.16-1.34.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: type 'a t = [real] * _ * _
+    defn at: z.sml 3.15-3.15
+    signature: [eqtype] 'a t
+    spec at: z.sml 1.30-1.30
 ----
 
-The `not equality` section provides an explanation of why the type
+The `structure:` section provides an explanation of why the type
 did not admit equality, highlighting the problematic component
 (`real`).
 
@@ -157,8 +161,12 @@ structure Bad: sig eqtype 'a t end =
 MLton reports the following error.
 
 ----
-Type t admits equality in signature but not in structure.
-  not equality: B of [real] * _
+Error: z.sml 1.16-1.34.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: datatype 'a t = B of [real] * _ | ...
+    defn at: z.sml 3.19-3.19
+    signature: [eqtype] 'a t
+    spec at: z.sml 1.30-1.30
 ----
 
 MLton indicates the problematic constructor (`B`), as well as
@@ -231,10 +239,16 @@ structure Bad: sig eqtype t eqtype u end =
 MLton reports the following error.
 
 ----
-Error: z.sml 1.16.
-  Type t admits equality in signature but not in structure.
-    not equality: B of [u] * [real]
-Error: z.sml 1.16.
-  Type u admits equality in signature but not in structure.
-    not equality: D of [t]
+Error: z.sml 1.16-1.40.
+  Type in structure disagrees with signature (admits equality): t.
+    structure: datatype t = B of [_str.u] * [real] | ...
+    defn at: z.sml 3.16-3.16
+    signature: [eqtype] t
+    spec at: z.sml 1.27-1.27
+Error: z.sml 1.16-1.40.
+  Type in structure disagrees with signature (admits equality): u.
+    structure: datatype u = D of [_str.t] | ...
+    defn at: z.sml 4.11-4.11
+    signature: [eqtype] u
+    spec at: z.sml 1.36-1.36
 ----

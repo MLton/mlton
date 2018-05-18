@@ -3,7 +3,7 @@
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -205,10 +205,7 @@ local
    fun msg (kind: string, r: Region.t, msg: Layout.t, extra: Layout.t): unit =
       let
          open Layout
-         val p =
-            case Region.left r of
-               NONE => "<bogus>"
-             | SOME p => SourcePos.toString p
+         val r = Region.toString r
          val msg = Layout.toString msg
          val msg =
             Layout.str
@@ -216,7 +213,7 @@ local
                      String.dropPrefix (msg, 1),
                      "."])
          in
-            outputl (align [seq [str (concat [kind, ": "]), str p, str "."],
+            outputl (align [seq [str (concat [kind, ": "]), str r, str "."],
                             indent (align [msg,
                                            indent (extra, 2)],
                                     2)],

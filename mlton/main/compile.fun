@@ -1,9 +1,9 @@
-(* Copyright (C) 2011,2014-2015 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -41,17 +41,16 @@ structure CoreML = CoreML (open Atoms
                                              var = var}
 
                                  fun layout t = 
-                                    layoutPrettyAux 
-                                    (t, {expandOpaque = true,
-                                         localTyvarNames = false})
+                                    #1 (layoutPretty
+                                        (t, {expandOpaque = true,
+                                             layoutPrettyTycon = Tycon.layout,
+                                             layoutPrettyTyvar = Tyvar.layout}))
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
-structure ParseSxml = ParseSxml(structure XmlTree = Xml
-                                structure StreamParser = StreamParser)
+structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
-structure ParseSsa = ParseSsa(structure SsaTree = Ssa 
-                              structure StreamParser = StreamParser)
+structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
@@ -166,7 +165,11 @@ local
    structure Con = TypeEnv.Con
    structure Tycon = TypeEnv.Tycon
    structure Type = TypeEnv.Type
-   structure Tyvar = TypeEnv.Tyvar
+   structure Tyvar =
+      struct
+         open TypeEnv.Tyvar
+         open TypeEnv.TyvarExt
+      end
 
    val primitiveDatatypes =
       Vector.new3
@@ -175,7 +178,7 @@ local
         cons = Vector.new2 ({con = Con.falsee, arg = NONE},
                             {con = Con.truee, arg = NONE})},
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.list,
            tyvars = Vector.new1 a,
@@ -187,7 +190,7 @@ local
                                               Type.list (Type.var a))))})}
        end,
        let
-          val a = Tyvar.newNoname {equality = false}
+          val a = Tyvar.makeNoname {equality = false}
        in
           {tycon = Tycon.reff,
            tyvars = Vector.new1 a,
@@ -229,50 +232,53 @@ local
             let
                val _ =
                   List.foreach
-                  (Tycon.prims, fn {kind, name, tycon, ...} =>
-                   extendTycon
-                   (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
-                                             Region.bogus),
-                    TypeStr.tycon (tycon, kind),
-                    {forceUsed = false, isRebind = false}))
+                  (Tycon.prims, fn {name, tycon, ...} =>
+                   if List.contains ([Tycon.arrow, Tycon.tuple], tycon, Tycon.equals)
+                      then ()
+                      else extendTycon
+                           (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
+                                                     Region.bogus),
+                            TypeStr.tycon tycon,
+                            {forceUsed = false, isRebind = false}))
                val _ =
                   Vector.foreach
                   (primitiveDatatypes, fn {tyvars, tycon, cons} =>
                    let
                       val cons =
-                         Env.newCons
-                         (E, Vector.map (cons, fn {con, ...} =>
-                                         {con = con, name = Con.toAst con}))
-                         (Vector.map
-                          (cons, fn {arg, ...} =>
-                           let
-                              val resultType =
-                                 Type.con (tycon, Vector.map (tyvars, Type.var))
-                           in
-                              Scheme.make
-                              {canGeneralize = true,
-                               ty = (case arg of
-                                        NONE => resultType
-                                      | SOME t => Type.arrow (t, resultType)),
-                               tyvars = tyvars}
-                           end))
+                         Vector.map
+                         (cons, fn {con, arg} =>
+                          let
+                             val res =
+                                Type.con (tycon, Vector.map (tyvars, Type.var))
+                             val ty =
+                                case arg of
+                                   NONE => res
+                                 | SOME arg => Type.arrow (arg, res)
+                             val scheme =
+                                Scheme.make
+                                {canGeneralize = true,
+                                 ty = ty,
+                                 tyvars = tyvars}
+                          in
+                             {con = con,
+                              name = Con.toAst con,
+                              scheme = scheme}
+                          end)
+                      val cons = Env.newCons (E, cons)
                    in
                       extendTycon
                       (E, Tycon.toAst tycon,
-                       TypeStr.data (tycon,
-                                     TypeStr.Kind.Arity (Vector.length tyvars),
-                                     cons),
+                       TypeStr.data (tycon, cons),
                        {forceUsed = false, isRebind = false})
                    end)
                val _ =
                   extendTycon (E,
                                Ast.Tycon.fromSymbol (Symbol.unit, Region.bogus),
-                               TypeStr.def (Scheme.fromType Type.unit,
-                                            TypeStr.Kind.Arity 0),
+                               TypeStr.def (Scheme.fromType Type.unit),
                                {forceUsed = false, isRebind = false})
                val scheme = Scheme.fromType Type.exn
                val _ = List.foreach (primitiveExcons, fn c =>
-                                     extendExn (E, Con.toAst c, c, SOME scheme))
+                                     extendExn (E, Con.toAst c, c, scheme))
             in
                ()
             end
@@ -393,7 +399,13 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
           | SOME f =>
                File.withOut
                (f, fn out =>
-                Layout.outputl (Env.layoutCurrentScope E, out))
+                Env.output
+                (E, out,
+                 {compact = !Control.showBasisCompact,
+                  def = !Control.showBasisDef,
+                  flat = !Control.showBasisFlat,
+                  onlyCurrent = false,
+                  prefixUnset = true}))
       val _ = Env.processDefUse E
       val _ =
          case !Control.exportHeader of
@@ -723,8 +735,8 @@ fun setupConstants() : unit =
 
 fun preCodegen (input: MLBString.t): Machine.Program.t =
    let
-      val _  = setupConstants()
       val xml = elaborate {input = input}
+      val _ = setupConstants ()
       val xml = simplifyXml xml
       val sxml = makeSxml xml
       val sxml = simplifySxml sxml
@@ -830,17 +842,15 @@ fun genFromSXML (input: File.t): Machine.Program.t =
           stats = Sxml.Program.layoutStats,
           style = Control.ML,
           suffix = "sxml",
-          thunk = (fn () =>
-                   File.withIn
-                   (input, fn i =>
-                    let
-                       fun toStream () =
-                          case In.inputChar i of
-                             SOME c => Stream.cons (c, Stream.delay toStream)
-                           | NONE => Stream.empty ()
-                    in
-                       ParseSxml.parse (toStream ())
-                    end)),
+          thunk = (fn () => case
+                     Parse.parseFile(ParseSxml.program, input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error 
+                           (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
           typeCheck = Sxml.typeCheck}
       val sxml = simplifySxml sxml
       val ssa = makeSsa sxml
@@ -867,17 +877,15 @@ fun genFromSsa (input: File.t): Machine.Program.t =
           stats = Ssa.Program.layoutStats,
           style = Control.ML,
           suffix = "ssa",
-          thunk = (fn () =>
-                   File.withIn
-                   (input, fn i =>
-                    let
-                       fun toStream () =
-                          case In.inputChar i of
-                             SOME c => Stream.cons (c, Stream.delay toStream)
-                           | NONE => Stream.empty ()
-                    in
-                       ParseSsa.parse (toStream ())
-                    end)),
+          thunk = (fn () => case
+                     Parse.parseFile(ParseSsa.program, input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error 
+                           (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
           typeCheck = Ssa.typeCheck}
       val ssa = simplifySsa ssa
       val ssa2 = makeSsa2 ssa

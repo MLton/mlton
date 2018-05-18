@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2017 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -31,10 +32,14 @@ val extendRight =
     | (T {left, ...}, right) => T {left = left, right = right}
 
 val toString =
-   fn Bogus => "Bogus"
+   fn Bogus => SourcePos.toString (SourcePos.bogus)
     | T {left, right} =>
-         concat [SourcePos.file left, ":",
-                 SourcePos.posToString left, "-", SourcePos.posToString right]
+         if SourcePos.isBogus left
+            orelse SourcePos.isBogus right
+            orelse not (SourcePos.fileEquals (left, right))
+            then SourcePos.toString left
+            else concat [SourcePos.toString left, "-",
+                         SourcePos.posToString right]
 
 val layout = Layout.str o toString
 

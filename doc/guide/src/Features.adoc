@@ -16,7 +16,8 @@ MLton has the following features.
 ** <:RunningOnAMD64:AMD64>:
 *** <:RunningOnDarwin:Darwin> (Mac OS X)
 *** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
+*** <:RunningOnOpenBSD:OpenBSD>
 *** <:RunningOnSolaris:Solaris> (10 and above)
 
 ** <:RunningOnHPPA:HPPA>:
@@ -30,7 +31,7 @@ MLton has the following features.
 ** <:RunningOnPowerPC:PowerPC>:
 *** <:RunningOnAIX:AIX> (5.2 and above)
 *** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnLinux:Linux> (Debian, Fedora)
+*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
 
 ** <:RunningOnPowerPC64:PowerPC64>:
 *** <:RunningOnAIX:AIX> (5.2 and above)
@@ -46,7 +47,7 @@ MLton has the following features.
 *** <:RunningOnCygwin:Cygwin>/Windows
 *** <:RunningOnDarwin:Darwin> (Mac OS X)
 *** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
 *** <:RunningOnMinGW:MinGW>/Windows
 *** <:RunningOnNetBSD:NetBSD>
 *** <:RunningOnOpenBSD:OpenBSD>
@@ -78,7 +79,7 @@ generate statically linked executables.
 * Compiles large programs.
 +
 MLton is sufficiently efficient and robust that it can compile large
-programs, including itself (over 140K lines).  The distributed version
+programs, including itself (over 190K lines).  The distributed version
 of MLton was compiled by MLton.
 
 * Support for large amounts of memory (up to 4G on 32-bit systems; more on 64-bit systems).
@@ -113,7 +114,7 @@ same C-like representations as their polymorphic counterparts.
 
 * Multiple <:GarbageCollection:garbage collection> strategies.
 
-* Fast arbitrary precision arithmetic (`IntInf`) based on the <:GnuMP:>.
+* Fast arbitrary precision arithmetic (`IntInf`) based on <:GnuMP:>.
 +
 For `IntInf` intensive programs, MLton can be an order of magnitude or
 more faster than Poly/ML or SML/NJ.

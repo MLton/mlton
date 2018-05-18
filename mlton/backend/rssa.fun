@@ -1,9 +1,9 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -1589,7 +1589,7 @@ structure Program =
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
                                   Bytes.equals
-                                  (size, Bytes.+ (Runtime.headerSize (),
+                                  (size, Bytes.+ (Runtime.normalMetaDataSize (),
                                                   Type.bytes ty))
                               | _ => false)
                         end

@@ -1,8 +1,9 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2015 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
 
@@ -26,79 +27,59 @@ fun raiseInval () =
       raiseSys inval
    end
 
-val validSignals = 
-   Array.tabulate 
-   (C_Int.toInt Prim.NSIG, fn i => 
-    SysCall.syscallErr
-    ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
-     {return = Prim.sigismember (repFromInt i),
-      post = fn _ => true,
-      handlers = [(Error.inval, fn () => false)]}))
-
 structure Mask =
    struct
-      datatype t =
-         AllBut of signal list
-       | Some of signal list
+      type pre_sig_set = Word8.word array
+      type sig_set = Word8.word vector
+      fun newSigSet (): (pre_sig_set * (unit -> sig_set)) =
+         let
+            val sslen = C_Size.toInt Prim.sigSetLen
+            val ss = Array.array (sslen, 0wx0: Word8.word)
+         in
+            (ss, fn () => Array.vector ss)
+         end
 
-      val allBut = AllBut
-      val some = Some
+      type t = sig_set
 
+      fun allBut sigs =
+         let
+            val (ss, finish) = newSigSet ()
+            val () = SysCall.simple (fn () => Prim.sigfillset ss)
+            val () = List.app (fn s => SysCall.simple
+                                       (fn () => Prim.sigdelset (ss, toRep s)))
+                              sigs
+         in
+            finish ()
+         end
       val all = allBut []
+      fun some sigs =
+         let
+            val (ss, finish) = newSigSet ()
+            val () = SysCall.simple (fn () => Prim.sigemptyset ss)
+            val () = List.app (fn s => SysCall.simple
+                                       (fn () => Prim.sigaddset (ss, toRep s)))
+                              sigs
+         in
+            finish ()
+         end
       val none = some []
 
-      fun read () =
-         Some
-         (Array.foldri
-          (fn (i, b, sigs) =>
-           if b
-              then let
-                      val s = fromInt i
-                      val s' = repFromInt i
-                      val res =
-                         SysCall.simpleResult
-                         (fn () => Prim.sigismember s')
-                   in
-                      if res = C_Int.fromInt 1
-                         then s::sigs
-                         else sigs
-                   end
-              else sigs)
-          []
-          validSignals)
-
-      fun write m =
-         case m of
-            AllBut signals =>
-               (SysCall.simple Prim.sigfillset
-                ; List.app (fn s => SysCall.simple
-                                    (fn () => Prim.sigdelset (toRep s)))
-                           signals)
-          | Some signals =>
-               (SysCall.simple Prim.sigemptyset
-                ; List.app (fn s => SysCall.simple
-                                    (fn () => Prim.sigaddset (toRep s)))
-                           signals)
+      fun isMember (ss, s) =
+         SysCall.simpleResult (fn () => Prim.sigismember (ss, toRep s)) <> C_Int.zero
 
       local
-         fun make (how: how) (m: t) =
-            (write m; SysCall.simpleRestart (fn () => Prim.sigprocmask how))
+         fun make (how: how) (ss: t) =
+            let
+               val (oss, finish) = newSigSet ()
+               val () = SysCall.simpleRestart (fn () => Prim.sigprocmask (how, ss, oss))
+            in
+               finish ()
+            end
       in
-         val block = make Prim.SIG_BLOCK
-         val unblock = make Prim.SIG_UNBLOCK
-         val setBlocked = make Prim.SIG_SETMASK
-         fun getBlocked () = (make Prim.SIG_BLOCK none; read ())
-      end
-
-      local
-         fun member (sigs, s) = List.exists (fn s' => s = s') sigs
-      in
-         fun isMember (mask, s) =
-            if Array.sub (validSignals, toInt s)
-               then case mask of
-                       AllBut sigs => not (member (sigs, s))
-                     | Some sigs => member (sigs, s)              
-               else raiseInval ()
+         val block = ignore o make Prim.SIG_BLOCK
+         val unblock = ignore o make Prim.SIG_UNBLOCK
+         val setBlocked = ignore o make Prim.SIG_SETMASK
+         fun getBlocked () = make Prim.SIG_BLOCK none
       end
    end
 
@@ -234,8 +215,7 @@ val setHandler = fn (s, h) =>
           ; SysCall.simpleRestart (fn () => Prim.ignore (toRep s)))
 
 fun suspend m =
-   (Mask.write m
-    ; Prim.sigsuspend ()
+   (Prim.sigsuspend m
     ; MLtonThread.switchToSignalHandler ())
 
 fun handleGC f =

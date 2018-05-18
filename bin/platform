@@ -112,10 +112,10 @@ mips*)
 # big-endian and little-endian detect via headers
         HOST_ARCH=mips
 ;;
-powerpc64)
+powerpc64*)
 	HOST_ARCH=powerpc64
 ;;
-ppc64)
+ppc64*)
         HOST_ARCH=powerpc64
 ;;
 powerpc)
@@ -126,6 +126,9 @@ ppc*)
 ;;
 Power*)
         HOST_ARCH=powerpc
+;;
+riscv*)
+        HOST_ARCH=riscv
 ;;
 s390*)
         HOST_ARCH=s390

@@ -1,20 +1,22 @@
-/* Copyright (C) 2011-2012 Matthew Fluet.
+/* Copyright (C) 2011-2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
 #if ASSERT
 void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
   assert (isObjptrInFromSpace (s, *opp));
-  unless (isObjptrInFromSpace (s, *opp))
+  unless (isObjptrInFromSpace (s, *opp)) {
+    displayGCState (s, stderr);
     die ("gc.c: assertIsObjptrInFromSpace "
          "opp = "FMTPTR"  "
          "*opp = "FMTOBJPTR"\n",
          (uintptr_t)opp, *opp);
+  }
   /* The following checks that intergenerational pointers have the
    * appropriate card marked.  Unfortunately, it doesn't work because
    * for stacks, the card containing the beginning of the stack is

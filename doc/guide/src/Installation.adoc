@@ -1,61 +1,91 @@
 Installation
 ============
 
-MLton runs on a variety of platforms and is distributed in both source
-and binary form.  The format for the binary package depends on the
-platform.  The binary package will install under `/usr` or
-`/usr/local`, depending on the platform.  A `.tgz` or `.tbz` binary
-package should be extracted in the root directory.  If you install
-MLton somewhere else, you must set the `lib` variable in the
-`/usr/bin/mlton` script to the directory that contains the libraries
-(`/usr/lib/mlton` by default).
+MLton runs on a variety of platforms and is distributed in both source and
+binary form.
 
-MLton requires that you have the <:GnuMP: GNU multiprecision> library
-installed on your machine.  MLton must be able to find both the
-`gmp.h` include file and the `libgmp.a` (or `libgmp.so` or
-`libgmp.dylib`) library. If you see the error message `gmp.h: No such
-file or directory`, you should copy `gmp.h` to
-`/usr/lib/mlton/self/include`.  If you see the error message
-`/usr/bin/ld: cannot find -lgmp`, you should add a `-link-opt -L`
-argument in the `/usr/bin/mlton` script so that the linker can find
-`libgmp`.  If, for example, `libgmp.a` is in `/tmp`, then add
-`-link-opt -L/tmp`.
+A `.tgz` or `.tbz` binary package can be extracted at any location, yielding
+`README.adoc` (this file), `CHANGELOG.adoc`, `LICENSE`, `Makefile`, `bin/`,
+`lib/`, and `share/`.  The compiler and tools can be executed in-place (e.g.,
+`./bin/mlton`).
+
+A small set of `Makefile` variables can be used to customize the binary package
+via `make update`:
+
+ * `CC`: Specify C compiler.  Can be used for alternative tools (e.g.,
+   `CC=clang` or `CC=gcc-7`).
+ * `WITH_GMP_DIR`, `WITH_GMP_INC_DIR`, `WITH_GMP_LIB_DIR`: Specify GMP include
+   and library paths, if not on default search paths.  (If `WITH_GMP_DIR` is
+   set, then `WITH_GMP_INC_DIR` defaults to `$(WITH_GMP_DIR)/include` and
+   `WITH_GMP_LIB_DIR` defaults to `$(WITH_GMP_DIR)/lib`.)
+
+For example:
+
+[source,sml]
+----
+$ make CC=clang WITH_GMP_DIR=/opt/gmp update
+----
+
+On typical platforms, installing MLton (after optionally performing
+`make update`) to `/usr/local` can be accomplished via:
+
+[source,sml]
+----
+$ make install
+----
+
+A small set of `Makefile` variables can be used to customize the installation:
+
+ * `PREFIX`: Specify the installation prefix.
+ * `CC`: Specify C compiler.  Can be used for alternative tools (e.g.,
+   `CC=clang` or `CC=gcc-7`).
+ * `WITH_GMP_DIR`, `WITH_GMP_INC_DIR`, `WITH_GMP_LIB_DIR`: Specify GMP include
+   and library paths, if not on default search paths.  (If `WITH_GMP_DIR` is
+   set, then `WITH_GMP_INC_DIR` defaults to `$(WITH_GMP_DIR)/include` and
+   `WITH_GMP_LIB_DIR` defaults to `$(WITH_GMP_DIR)/lib`.)
+
+For example:
+
+[source,sml]
+----
+$ make PREFIX=/opt/mlton install
+----
 
 Installation of MLton creates the following files and directories.
 
-* `/usr/bin/mllex`
+* ++__prefix__/bin/mllex++
 +
 The <:MLLex:> lexer generator.
 
-* `/usr/bin/mlnlffigen`
+* ++__prefix__/bin/mlnlffigen++
 +
 The <:MLNLFFI:ML-NLFFI> tool.
 
-* `/usr/bin/mlprof`
+* ++__prefix__/bin/mlprof++
 +
 A <:Profiling:> tool.
 
-* `/usr/bin/mlton`
+* ++__prefix__/bin/mlton++
 +
 A script to call the compiler.  This script may be moved anywhere,
-however, it makes use of files in `/usr/lib/mlton`.
+however, it makes use of files in ++__prefix__/lib/mlton++.
 
-* `/usr/bin/mlyacc`
+* ++__prefix__/bin/mlyacc++
 +
 The <:MLYacc:> parser generator.
 
-* `/usr/lib/mlton`
+* ++__prefix__/lib/mlton++
 +
 Directory containing libraries and include files needed during compilation.
 
-* `/usr/share/man/man1/mllex.1`, `mlnlffigen.1`, `mlprof.1`, `mlton.1`, `mlyacc.1`
+* ++__prefix__/share/man/man1/{mllex,mlnlffigen,mlprof,mlton,mlyacc}.1++
 +
 Man pages.
 
-* `/usr/share/doc/mlton`
+* ++__prefix__/share/doc/mlton++
 +
 Directory containing the user guide for MLton, mllex, and mlyacc, as
-well as example SML programs (in the `examples` dir), and license
+well as example SML programs (in the `examples` directory), and license
 information.
 
 
@@ -74,7 +104,7 @@ mlton hello-world.sml
 ----
 
 You can now run `hello-world` to verify that it works.  There are more
-small examples in `/usr/share/doc/mlton/examples`.
+small examples in ++__prefix__/share/doc/mlton/examples++.
 
 
 == Installation on Cygwin ==

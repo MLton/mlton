@@ -1,25 +1,15 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2017 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under a BSD-style license.
+ * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  */
 
 #ifndef _MLTON_CENV_H_
 #define _MLTON_CENV_H_
 
-/* GNU C Library Feature Macros */
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-// #define _XOPEN_SOURCE 600
-/* Only enable _POSIX_C_SOURCE on platforms that don't have broken
- * system headers.
- */
-#if (defined (__linux__) || defined(__GNU__))
-#define _POSIX_C_SOURCE 200112L
-#endif
 #define _FILE_OFFSET_BITS 64
 
 #ifndef ASSERT
@@ -117,6 +107,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/powerpc64.h"
 #elif (defined (__ppc__)) || (defined (__powerpc__))
 #include "platform/powerpc.h"
+#elif (defined (__riscv))
+#include "platform/riscv.h"
 #elif (defined (__s390__))
 #include "platform/s390.h"
 #elif (defined (__sparc__))
