@@ -251,7 +251,7 @@ struct
           spaces *> tupleOf varExp <* spaces))
       end
 
-   fun makeStatement resolveTycon resolveVar (var, ty, exp) = 
+   fun makeStatement (var, ty, exp) =
       Statement.T
       {var = var,
        ty = ty,
@@ -268,7 +268,6 @@ struct
          val typedvar = (fn (x,y) => (x,y)) <$$>
             (SOME <$> var <|> token "_" *> T.pure(NONE),
              symbol ":" *> (typ resolveTycon) <* spaces)
-         fun makeApp(func, arg) = {arg=arg, func=func}
          fun makeConApp(con, args) = { con=con, args=args }
          fun conApp v = 
             makeConApp <$$>
@@ -295,12 +294,7 @@ struct
          val profileExp = (ProfileExp.Enter <$> (token "Enter" *> SourceInfo.fromC <$> T.info) <|>
                            ProfileExp.Leave <$> (token "Leave" *> SourceInfo.fromC <$> T.info ))
             <* T.char #"<" <* T.manyCharsFailing(T.char #">") <* T.char #">" <* spaces
-         fun statement' resolveTycon resolveVar = (makeStatement resolveTycon resolveVar)
-            <$>
-            (typedvar >>= (fn (var, ty) =>
-             (symbol "=" *> exp ty <* spaces) >>= (fn exp => 
-               T.pure (var, ty, exp))))
-         and exp typ = T.any
+         fun exp typ = T.any
             [Exp.ConApp <$> conAppExp,
              Exp.Const <$> constExp typ,
              Exp.PrimApp <$> (primAppExp resolveTycon resolveVar),
@@ -308,8 +302,13 @@ struct
              Exp.Select <$> selectExp,
              Exp.Tuple <$> (tupleOf varExp ),
              Exp.Var <$> varExp]
+         val statement' = makeStatement
+            <$>
+            (typedvar >>= (fn (var, ty) =>
+             (symbol "=" *> exp ty <* spaces) >>= (fn exp =>
+               T.pure (var, ty, exp))))
       in
-         statement' resolveTycon resolveCon
+         statement'
       end
    
 
@@ -493,7 +492,7 @@ struct
                resolveVar))
                <*> transfer
 
-            fun funcs resolveTycon resolveVar resolveFunc = makeFunction 
+            val funcs = makeFunction
                <$> name
                <*> args <* symbol ":" <* spaces
                <*> fromRecord "returns" (optionOf (tupleOf (typ resolveTycon) <|> T.pure (Vector.new0 ())))
@@ -502,9 +501,9 @@ struct
                <*> label
                <*> (Vector.fromList <$> T.manyFailing(block, T.peek(name)))
 
-            fun functns' () = spaces *> token "Functions:" *> T.many (funcs resolveTycon resolveVar resolveFunc) 
+            val functns' = spaces *> token "Functions:" *> T.many funcs
          in
-            functns' ()
+            functns'
          end
 
    fun mainFunc resolveFunc = spaces *> token "Main:" *> resolveFunc <$> ident <* spaces
