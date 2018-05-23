@@ -44,7 +44,7 @@ structure List: LIST =
         in loop (l, b)
         end
 
-     fun length l = foldl (fn (_, n) => n +? 1) 0 l
+     fun length l = foldl (fn (_, n) => n +! 1) 0 l
 
      fun appendRev (l1, l2) = foldl (op ::) l2 l1
 

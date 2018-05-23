@@ -68,8 +68,9 @@ structure SeqIndex =
 
 functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
    struct
+      (* TODO what are these operators *)
       val op +? = SeqIndex.+?
-      val op +! = SeqIndex.+!
+      val op +? = SeqIndex.+?
       val op -? = SeqIndex.-?
       val op <= = SeqIndex.<=
       val op > = SeqIndex.>
@@ -246,7 +247,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                         val add =
                            if Primitive.Controls.safe 
                               then (fn (x, s) =>
-                                       (s +! S.Slice.length (toSlice x))
+                                       (s +? S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
                               else (fn (x, s) => s +? S.Slice.length (toSlice x))
                         val n = List.foldl add 0 xs
@@ -276,7 +277,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                         val add = 
                            if Primitive.Controls.safe 
                               then (fn (x, s) =>
-                                       (s +! sepn +! S.Slice.length (toSlice x))
+                                       (s +? sepn +? S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
                               else (fn (x, s) =>
                                        (s +? sepn +? S.Slice.length (toSlice x)))
@@ -320,7 +321,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                           then S.Slice.unsafeSubslice (sl, len, SOME 0)
                           else S.Slice.unsafeSubslice (sl, k, SOME (len -? k))
                     end handle Overflow => 
-                           (* k is positive, so behavior is specified! *)
+                           (* k is positive, so behavior is specified? *)
                            S.Slice.unsafeSubslice (sl, S.Slice.length sl, SOME 0)
             fun trimr k sl =
                if Primitive.Controls.safe andalso Int.< (k, 0)
@@ -336,7 +337,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                           then S.Slice.unsafeSubslice (sl, 0, SOME 0)
                           else S.Slice.unsafeSubslice (sl, 0, SOME (len -? k))
                     end handle Overflow => 
-                           (* k is positive, so behavior is specified! *)
+                           (* k is positive, so behavior is specified? *)
                            S.Slice.unsafeSubslice (sl, 0, SOME 0)
             fun isSubsequence (eq: 'a elt * 'a elt -> bool)
                               (seq: 'a sequence)
