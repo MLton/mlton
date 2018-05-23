@@ -27,9 +27,9 @@ functor PrimSequence (S: sig
    struct
       structure Array = Primitive.Array
 
-      val op +? = SeqIndex.+?
+      val op +$ = SeqIndex.+$
       val op + = SeqIndex.+
-      val op -? = SeqIndex.-?
+      val op -$ = SeqIndex.-$
       val op < = SeqIndex.<
       val op <= = SeqIndex.<=
       val op > = SeqIndex.>
@@ -130,7 +130,7 @@ functor PrimSequence (S: sig
                      val (x, b) = f (i, b)
                      val () = Array.updateUnsafe (a, i, x)
                   in
-                     loop (i +? 1, b)
+                     loop (i +$ 1, b)
                   end
             val b = loop (0, b)
          in
@@ -154,13 +154,13 @@ functor PrimSequence (S: sig
             
             fun length (T {len, ...}) = len
             fun unsafeSub (T {seq, start, ...}, i) =
-               S.subUnsafe (seq, start +? i)
+               S.subUnsafe (seq, start +$ i)
             fun sub (sl as T {len, ...}, i) =
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
                   else unsafeSub (sl, i)
             fun unsafeUpdate (T {seq, start, ...}, i, x) =
-               S.updateUnsafe (seq, start +? i, x)
+               S.updateUnsafe (seq, start +$ i, x)
             fun update (sl as T {len, ...}, i, x) =
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
@@ -168,7 +168,7 @@ functor PrimSequence (S: sig
             fun uninitIsNop (T {seq, ...}) =
                S.uninitIsNop seq
             fun unsafeUninit (T {seq, start, ...}, i) =
-               S.uninitUnsafe (seq, start +? i)
+               S.uninitUnsafe (seq, start +$ i)
             fun uninit (sl as T {len, ...}, i) =
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
@@ -179,15 +179,15 @@ functor PrimSequence (S: sig
                               len: SeqIndex.int,
                               overlap: unit -> bool} =
                   let
-                     fun move i = Array.updateUnsafe (dst, di +? i, S.subUnsafe (src, si +? i))
-                     val len = len -? 1
+                     fun move i = Array.updateUnsafe (dst, di +$ i, S.subUnsafe (src, si +$ i))
+                     val len = len -$ 1
                   in
                      if overlap ()
                         then let
                                 fun loop i =
                                    if i < 0
                                       then ()
-                                      else (move i; loop (i -? 1))
+                                      else (move i; loop (i -$ 1))
                              in
                                 loop len
                              end
@@ -195,7 +195,7 @@ functor PrimSequence (S: sig
                                 fun loop i =
                                    if i > len
                                       then ()
-                                      else (move i; loop (i +? 1))
+                                      else (move i; loop (i +$ 1))
                              in
                                 loop 0
                              end
@@ -222,13 +222,13 @@ functor PrimSequence (S: sig
                          src =  T {seq = src, start = si, len}} =
                   if Primitive.Controls.safe
                      andalso (gtu (di, Array.length dst)
-                              orelse gtu (di +? len, Array.length dst))
+                              orelse gtu (di +$ len, Array.length dst))
                      then raise Subscript
                      else let
                              fun overlap () =
                                 S.sameArray (dst, src)
                                 andalso si < di
-                                andalso di <= si +? len
+                                andalso di <= si +$ len
                           in
                              maybeSmallCopy {dst = dst, di = di,
                                              src = src, si = si,
@@ -240,9 +240,9 @@ functor PrimSequence (S: sig
                T {seq = seq, start = 0, len = S.length seq}
             fun unsafeSubslice (T {seq, start, len}, start', len') = 
                T {seq = seq, 
-                  start = start +? start',
+                  start = start +$ start',
                   len = (case len' of
-                            NONE => len -? start'
+                            NONE => len -$ start'
                           | SOME len' => len')}
             fun unsafeSlice (seq, start, len) =
                unsafeSubslice (full seq, start, len)
@@ -253,15 +253,15 @@ functor PrimSequence (S: sig
                         andalso gtu (start', len)
                         then raise Subscript
                         else T {seq = seq,
-                                start = start +? start',
-                                len = len -? start'}
+                                start = start +$ start',
+                                len = len -$ start'}
                 | SOME len' => 
                      if Primitive.Controls.safe
                         andalso (gtu (start', len)
-                                 orelse gtu (len', len -? start'))
+                                 orelse gtu (len', len -$ start'))
                         then raise Subscript
                         else T {seq = seq,
-                                start = start +? start',
+                                start = start +$ start',
                                 len = len'}
             fun slice (seq: 'a sequence, start, len) =
                subslice (full seq, start, len)
@@ -273,26 +273,26 @@ functor PrimSequence (S: sig
                   then NONE
                else SOME (S.subUnsafe (seq, start), 
                           T {seq = seq, 
-                             start = start +? 1, 
-                             len = len -? 1})
+                             start = start +$ 1, 
+                             len = len -$ 1})
             fun foldli f b (T {seq, start, len}) =
                let
                   val min = start
-                  val len = len -? 1
-                  val max = start +? len
+                  val len = len -$ 1
+                  val max = start +$ len
                   fun loop (i, b) =
                      if i > max then b
-                     else loop (i +? 1, f (i -? min, S.subUnsafe (seq, i), b))
+                     else loop (i +$ 1, f (i -$ min, S.subUnsafe (seq, i), b))
                in loop (min, b)
                end
             fun foldri f b (T {seq, start, len}) =
                let
                   val min = start
-                  val len = len -? 1
-                  val max = start +? len
+                  val len = len -$ 1
+                  val max = start +$ len
                   fun loop (i, b) =
                      if i < min then b
-                     else loop (i -? 1, f (i -? min, S.subUnsafe (seq, i), b))
+                     else loop (i -$ 1, f (i -$ min, S.subUnsafe (seq, i), b))
                in loop (max, b)
                end
             local
@@ -304,20 +304,20 @@ functor PrimSequence (S: sig
             fun appi f sl = foldli (fn (i, x, ()) => f (i, x)) () sl
             fun app f sl = appi (f o #2) sl 
             fun mapi f (T {seq, start, len}) = 
-               tabulate (len, fn i => f (i, S.subUnsafe (seq, start +? i)))
+               tabulate (len, fn i => f (i, S.subUnsafe (seq, start +$ i)))
             fun map f sl = mapi (f o #2) sl
             fun findi p (T {seq, start, len}) = 
                let
                   val min = start
-                  val len = len -? 1
-                  val max = start +? len
+                  val len = len -$ 1
+                  val max = start +$ len
                   fun loop i =
                      if i > max
                         then NONE
-                     else let val z = (i -? min, S.subUnsafe (seq, i))
+                     else let val z = (i -$ min, S.subUnsafe (seq, i))
                           in if p z
                                 then SOME z
-                             else loop (i +? 1)
+                             else loop (i +$ 1)
                           end
                in loop min
                end
@@ -337,8 +337,8 @@ functor PrimSequence (S: sig
                let
                   val min1 = start1
                   val min2 = start2
-                  val max1 = start1 +? len1
-                  val max2 = start2 +? len2
+                  val max1 = start1 +$ len1
+                  val max2 = start2 +$ len2
                   fun loop (i, j) =
                      case (i >= max1, j >= max2) of
                         (true, true) => EQUAL
@@ -347,7 +347,7 @@ functor PrimSequence (S: sig
                       | (false, false) => 
                            (case cmp (S.subUnsafe (seq1, i), 
                                       S.subUnsafe (seq2, j)) of
-                              EQUAL => loop (i +? 1, j +? 1)
+                              EQUAL => loop (i +$ 1, j +$ 1)
                             | ans => ans)
                in loop (min1, min2)
                end
@@ -369,7 +369,7 @@ functor PrimSequence (S: sig
                   let
                      val (seq1, start1, len1) = base sl1
                      val (seq2, start2, len2) = base sl2
-                     val n = len1 +? len2
+                     val n = len1 +$ len2
                      val a = arrayAlloc n
                   in
                      S.copyUnsafe (a, 0, seq1, start1, len1)
@@ -377,16 +377,16 @@ functor PrimSequence (S: sig
                      ; S.fromArray a
                   end
             fun split (T {seq, start, len}, i) =
-               (unsafeSlice (seq, start, SOME (i -? start)),
-                unsafeSlice (seq, i, SOME (len -? (i -? start))))
+               (unsafeSlice (seq, start, SOME (i -$ start)),
+                unsafeSlice (seq, i, SOME (len -$ (i -$ start))))
             fun splitl f (sl as T {seq, start, len}) =
                let
-                  val stop = start +? len
+                  val stop = start +$ len
                   fun loop i =
                      if i >= stop
                         then i
                      else if f (S.subUnsafe (seq, i))
-                             then loop (i +? 1)
+                             then loop (i +$ 1)
                           else i
                in split (sl, loop start)
                end
@@ -396,15 +396,15 @@ functor PrimSequence (S: sig
                      if i < start
                         then start
                      else if f (S.subUnsafe (seq, i))
-                             then loop (i -? 1)
-                          else i +? 1
-               in split (sl, loop (start +? len -? 1))
+                             then loop (i -$ 1)
+                          else i +$ 1
+               in split (sl, loop (start +$ len -$ 1))
                end
             fun splitAt (T {seq, start, len}, i) =
                if Primitive.Controls.safe andalso gtu (i, len)
                   then raise Subscript
                else (unsafeSlice (seq, start, SOME i),
-                     unsafeSlice (seq, start +? i, SOME (len -? i)))
+                     unsafeSlice (seq, start +$ i, SOME (len -$ i)))
             fun dropl p s = #2 (splitl p s)
             fun dropr p s = #1 (splitr p s)
             fun takel p s = #1 (splitl p s)
@@ -414,19 +414,19 @@ functor PrimSequence (S: sig
                          (sl as T {seq, start, len}) =
                let
                   val len' = S.length seq'
-                  val max = start +? len -? len' +? 1
+                  val max = start +$ len -$ len' +$ 1
                   (* loop returns the index of the front of the suffix. *)
                   fun loop i =
                      if i >= max
-                        then start +? len
+                        then start +$ len
                      else let
                              fun loop' j =
                                 if j >= len'
                                    then i
-                                else if eq (S.subUnsafe (seq, i +? j), 
+                                else if eq (S.subUnsafe (seq, i +$ j), 
                                             S.subUnsafe (seq', j))
-                                        then loop' (j +? 1)
-                                     else loop (i +? 1)
+                                        then loop' (j +$ 1)
+                                     else loop (i +$ 1)
                           in loop' 0
                           end
                in split (sl, loop start)
@@ -435,9 +435,9 @@ functor PrimSequence (S: sig
                      (T {seq, start, ...},
                       T {seq = seq', start = start', len = len'}) =
                if Primitive.Controls.safe andalso 
-                  (not (eq (seq, seq')) orelse start' +? len' < start)
+                  (not (eq (seq, seq')) orelse start' +$ len' < start)
                   then raise Span
-               else unsafeSlice (seq, start, SOME ((start' +? len') -? start))
+               else unsafeSlice (seq, start, SOME ((start' +$ len') -$ start))
          end
 
       local

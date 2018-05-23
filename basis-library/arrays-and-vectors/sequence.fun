@@ -68,10 +68,9 @@ structure SeqIndex =
 
 functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
    struct
-      (* TODO what are these operators *)
-      val op +? = SeqIndex.+?
-      val op +? = SeqIndex.+?
-      val op -? = SeqIndex.-?
+      val op +$ = SeqIndex.+$
+      val op +! = SeqIndex.+!
+      val op -$ = SeqIndex.-$
       val op <= = SeqIndex.<=
       val op > = SeqIndex.>
       val op >= = SeqIndex.>=
@@ -247,9 +246,9 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                         val add =
                            if Primitive.Controls.safe 
                               then (fn (x, s) =>
-                                       (s +? S.Slice.length (toSlice x))
+                                       (s +$ S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
-                              else (fn (x, s) => s +? S.Slice.length (toSlice x))
+                              else (fn (x, s) => s +! S.Slice.length (toSlice x))
                         val n = List.foldl add 0 xs
                         val a = Primitive.Array.alloc n
                         fun loop (di, xs) =
@@ -259,7 +258,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                  let val sl = toSlice x
                                  in
                                     S.Slice.unsafeCopy {dst = a, di = di, src = sl}
-                                    ; loop (di +? S.Slice.length sl, xs)
+                                    ; loop (di +$ S.Slice.length sl, xs)
                                  end
                      in
                         loop (0, xs)
@@ -277,10 +276,10 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                         val add = 
                            if Primitive.Controls.safe 
                               then (fn (x, s) =>
-                                       (s +? sepn +? S.Slice.length (toSlice x))
+                                       (s +$ sepn +$ S.Slice.length (toSlice x))
                                        handle Overflow => raise Size)
                               else (fn (x, s) =>
-                                       (s +? sepn +? S.Slice.length (toSlice x)))
+                                       (s +$ sepn +$ S.Slice.length (toSlice x)))
                         val n = List.foldl add (S.Slice.length (toSlice x)) xs
                         val a = Primitive.Array.alloc n
                         fun loop (di, xs) =
@@ -297,9 +296,9 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                  let
                                     val sl = toSlice x
                                     val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sl}
-                                    val di = di +? S.Slice.length sl
+                                    val di = di +$ S.Slice.length sl
                                     val _ = S.Slice.unsafeCopy {dst = a, di = di, src = sep}
-                                    val di = di +? sepn
+                                    val di = di +$ sepn
                                  in
                                     loop (di, xs)
                                  end
@@ -319,7 +318,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                     in
                        if SeqIndex.> (k, len)
                           then S.Slice.unsafeSubslice (sl, len, SOME 0)
-                          else S.Slice.unsafeSubslice (sl, k, SOME (len -? k))
+                          else S.Slice.unsafeSubslice (sl, k, SOME (len -$ k))
                     end handle Overflow => 
                            (* k is positive, so behavior is specified? *)
                            S.Slice.unsafeSubslice (sl, S.Slice.length sl, SOME 0)
@@ -335,7 +334,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                     in
                        if SeqIndex.> (k, len)
                           then S.Slice.unsafeSubslice (sl, 0, SOME 0)
-                          else S.Slice.unsafeSubslice (sl, 0, SOME (len -? k))
+                          else S.Slice.unsafeSubslice (sl, 0, SOME (len -$ k))
                     end handle Overflow => 
                            (* k is positive, so behavior is specified? *)
                            S.Slice.unsafeSubslice (sl, 0, SOME 0)
@@ -348,16 +347,16 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                in
                   if n <= n'
                      then let
-                             val n'' = n' -? n
+                             val n'' = n' -$ n
                              fun loop (i, j) =
                                 if i > n''
                                    then false
                                 else if j >= n
                                    then true
                                 else if eq (S.unsafeSub (seq, j), 
-                                            S.Slice.unsafeSub (sl, i +? j))
-                                   then loop (i, j +? 1)
-                                else loop (i +? 1, 0)
+                                            S.Slice.unsafeSub (sl, i +$ j))
+                                   then loop (i, j +$ 1)
+                                else loop (i +$ 1, 0)
                           in
                              loop (0, 0)
                           end
@@ -377,7 +376,7 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                                    then true
                                 else if eq (S.unsafeSub (seq, j), 
                                             S.Slice.unsafeSub (sl, j))
-                                   then loop (j +? 1)
+                                   then loop (j +$ 1)
                                 else false
                           in
                              loop (0)
@@ -393,13 +392,13 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                in
                   if n <= n'
                      then let
-                             val n'' = n' -? n
+                             val n'' = n' -$ n
                              fun loop (j) =
                                 if j >= n
                                    then true
                                 else if eq (S.unsafeSub (seq, j), 
-                                            S.Slice.unsafeSub (sl, n'' +? j))
-                                   then loop (j +? 1)
+                                            S.Slice.unsafeSub (sl, n'' +$ j))
+                                   then loop (j +$ 1)
                                 else false
                           in
                              loop (0)
@@ -424,14 +423,14 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                fun make finish p sl =
                   let
                      val (seq, start, len) = S.Slice.base sl
-                     val max = start +? len
+                     val max = start +$ len
                      fun loop (i, start, sls) =
                         if i >= max
                            then List.rev (finish (seq, start, i, sls))
                         else
                            if p (S.unsafeSub (seq, i))
-                              then loop (i +? 1, i +? 1, finish (seq, start, i, sls))
-                           else loop (i +? 1, start, sls)
+                              then loop (i +$ 1, i +$ 1, finish (seq, start, i, sls))
+                           else loop (i +$ 1, start, sls)
                   in loop (start, start, []) 
                   end
             in
@@ -442,14 +441,14 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
                         else
                            (fromSlice
                             (S.Slice.unsafeSlice
-                             (seq, start, SOME (stop -? start))))
+                             (seq, start, SOME (stop -$ start))))
                            :: sls)
                        p sl
                fun fieldsGen fromSlice p sl =
                   make (fn (seq, start, stop, sls) =>
                         (fromSlice
                          (S.Slice.unsafeSlice
-                          (seq, start, SOME (stop -? start))))
+                          (seq, start, SOME (stop -$ start))))
                         :: sls)
                        p sl
             end

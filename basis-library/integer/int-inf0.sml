@@ -1015,9 +1015,9 @@ structure IntInf =
                 | SOME i => i
             end
       in
-         val bigAdd = make (I.+?, Prim.+, S.max, 1)
-         val bigSub = make (I.-?, Prim.-, S.max, 1)
-         val bigMul = make (I.*?, Prim.*, S.+, 0)
+         val bigAdd = make (I.+$, Prim.+, S.max, 1)
+         val bigSub = make (I.-$, Prim.-, S.max, 1)
+         val bigMul = make (I.*$, Prim.*, S.+, 0)
       end
 
       fun bigNeg (arg: bigInt): bigInt =
