@@ -82,16 +82,16 @@ structure ObjectCon =
       datatype t =
          Con of Con.t
        | Tuple
-       | Vector
+       | Sequence  (*CH*)
 
       val equals: t * t -> bool =
          fn (Con c, Con c') => Con.equals (c, c')
           | (Tuple, Tuple) => true
-          | (Vector, Vector) => true
+          | (Sequence, Sequence) => true  (*CH*)
           | _ => false
 
-      val isVector: t -> bool =
-         fn Vector => true
+      val isSequence: t -> bool =  (*CH*)
+         fn Sequence => true  (*CH*)
           | _ => false
 
       val layout: t -> Layout.t =
@@ -102,7 +102,7 @@ structure ObjectCon =
             case oc of
                Con c => Con.layout c
              | Tuple => str "Tuple"
-             | Vector => str "Vector"
+             | Sequence => str "Sequence"  (*CH*)
          end
    end
 
@@ -139,22 +139,22 @@ structure Type =
 
       fun equals (t, t') = PropertyList.equals (plist t, plist t')
 
-      val deVectorOpt: t -> t Prod.t option =
+      val deSequenceOpt: t -> t Prod.t option =  (*CH*)
          fn t =>
          case dest t of
-            Object {args, con = Vector} => SOME args
+            Object {args, con = Sequence} => SOME args  (*CH*)
           | _ => NONE
 
-      val deVector1: t -> t =
+      val deSequence1: t -> t =  (*CH*)
          fn t =>
-         case deVectorOpt t of
+         case deSequenceOpt t of  (*CH*)
             SOME args =>
                if Prod.length args = 1
                   then Prod.elt (args, 0)
-                  else Error.bug "SsaTree2.Type.deVector1"
-          | _ => Error.bug "SsaTree2.Type.deVector1"
+                  else Error.bug "SsaTree2.Type.deSequence1"  (*CH*)
+          | _ => Error.bug "SsaTree2.Type.deSequence1"  (*CH*)
 
-      val isVector: t -> bool = isSome o deVectorOpt
+      val isSequence: t -> bool = isSome o deSequenceOpt  (*CH*)
 
       val deWeakOpt: t -> t option =
          fn t =>
@@ -235,7 +235,7 @@ structure Type =
       local
          val generator: Word.t = 0wx5555
          val tuple = newHash ()
-         val vector = newHash ()
+         val sequence = newHash ()  (*CH*)
          fun hashProd (p, base) =
             Vector.fold (Prod.dest p, base, fn ({elt, ...}, w) =>
                          Word.xorb (w * generator, hash elt))
@@ -246,18 +246,18 @@ structure Type =
                   case con of
                      Con c => Con.hash c
                    | Tuple => tuple
-                   | Vector => vector
+                   | Sequence => sequence  (*CH*)
                val hash = hashProd (args, base)
             in
                lookup (hash, Object {args = args, con = con})
             end
       end
 
-      fun vector p = object {args = p, con = Vector}
+      fun sequence p = object {args = p, con = Sequence}  (*CH*)
 
       local
          fun make isMutable t =
-            vector (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
+            sequence (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))  (*CH*)
       in
          val array1 = make true
          val vector1 = make false
@@ -313,7 +313,7 @@ structure Type =
                           case con of
                              Con c => seq [Con.layout c, str " of ", args]
                            | Tuple => args
-                           | Vector => seq [args, str " vector"]
+                           | Sequence => seq [args, str " sequence"]  (*CH*)
                        end
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
@@ -409,11 +409,11 @@ structure Type =
              | Array_length =>
                   oneArg
                   (fn a =>
-                   isVector a andalso equals (result, seqIndex))
+                   isSequence a andalso equals (result, seqIndex))  (*CH*)
              | Array_toArray =>
                   oneArg
                   (fn arr =>
-                   case (deVectorOpt arr, deVectorOpt result) of
+                   case (deSequenceOpt arr, deSequenceOpt result) of  (*CH*)
                       (SOME arrp, SOME resp) =>
                          Vector.equals (Prod.dest arrp, Prod.dest resp,
                                         fn ({elt = arrElt, isMutable = arrIsMutable},
@@ -424,7 +424,7 @@ structure Type =
              | Array_toVector =>
                   oneArg
                   (fn arr =>
-                   case (deVectorOpt arr, deVectorOpt result) of
+                   case (deSequenceOpt arr, deSequenceOpt result) of  (*CH*)
                       (SOME arrp, SOME resp) =>
                          Vector.equals (Prod.dest arrp, Prod.dest resp,
                                         fn ({elt = arrElt, isMutable = arrIsMutable},
@@ -435,7 +435,7 @@ structure Type =
              | Array_uninit =>
                   twoArgs
                   (fn (arr, i) =>
-                   case deVectorOpt arr of
+                   case deSequenceOpt arr of  (*CH*)
                       SOME arrp =>
                          Prod.allAreMutable arrp
                          andalso equals (i, seqIndex)
@@ -444,7 +444,7 @@ structure Type =
              | Array_uninitIsNop =>
                   oneArg
                   (fn arr =>
-                   case deVectorOpt arr of
+                   case deSequenceOpt arr of  (*CH*)
                       SOME arrp =>
                          Prod.allAreMutable arrp
                          andalso isBool result
@@ -462,7 +462,7 @@ structure Cases =
       fun equals (c1: t, c2: t): bool =
          let
             fun doit (l1, l2, eq') = 
-               Vector.equals 
+               Vector.equals
                (l1, l2, fn ((x1, a1), (x2, a2)) =>
                 eq' (x1, x2) andalso Label.equals (a1, a2))
          in
@@ -529,8 +529,8 @@ structure Base =
    struct
       datatype 'a t =
          Object of 'a
-       | VectorSub of {index: 'a,
-                       vector: 'a}
+       | SequenceSub of {index: 'a,  (*CH*)
+                          sequence: 'a}  (*CH*)
 
       fun layout (b: 'a t, layoutX: 'a -> Layout.t): Layout.t =
          let
@@ -538,48 +538,48 @@ structure Base =
          in
             case b of
                Object x => layoutX x
-             | VectorSub {index, vector} =>
-                  seq [str "$", Vector.layout layoutX (Vector.new2 (vector, index))]
+             | SequenceSub {index, sequence} =>  (*CH*)
+                  seq [str "$", Vector.layout layoutX (Vector.new2 (sequence, index))]
          end
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
          fn (b1, b2, equalsX) =>
          case (b1, b2) of
             (Object x1, Object x2) => equalsX (x1, x2)
-          | (VectorSub {index = i1, vector = v1},
-             VectorSub {index = i2, vector = v2}) =>
+          | (SequenceSub {index = i1, sequence = v1},  (*CH*)
+             SequenceSub {index = i2, sequence = v2}) =>  (*CH*)
                equalsX (i1, i2) andalso equalsX (v1, v2)
           | _ => false
 
       fun object (b: 'a t): 'a =
          case b of
             Object x => x
-          | VectorSub {vector = x, ...} => x
+          | SequenceSub {sequence = x, ...} => x  (*CH*)
 
       local
          val newHash = Random.word
          val object = newHash ()
-         val vectorSub = newHash ()
+         val sequenceSub = newHash ()  (*CH*)
       in
          val hash: 'a t * ('a -> word) -> word =
             fn (b, hashX) =>
             case b of
                Object x => Word.xorb (object, hashX x)
-             | VectorSub {index, vector} =>
-                  Word.xorb (Word.xorb (hashX index, hashX vector),
-                             vectorSub)
+             | SequenceSub {index, sequence} =>  (*CH*)
+                  Word.xorb (Word.xorb (hashX index, hashX sequence),  (*CH*)
+                             sequenceSub)  (*CH*)
       end
 
       fun foreach (b: 'a t, f: 'a -> unit): unit =
          case b of
             Object x => f x
-          | VectorSub {index, vector} => (f index; f vector)
+          | SequenceSub {index, sequence} => (f index; f sequence)  (*CH*)
 
       fun map (b: 'a t, f: 'a -> 'b): 'b t =
          case b of
             Object x => Object (f x)
-          | VectorSub {index, vector} => VectorSub {index = f index,
-                                                    vector = f vector}
+          | SequenceSub {index, sequence} => SequenceSub {index = f index,  (*CH*)
+                                                            sequence = f sequence}  (*CH*)
    end
 
 structure Exp =

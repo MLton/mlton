@@ -365,7 +365,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                    case con of
                                       Con con => visitCon con
                                     | Tuple => ()
-                                    | Vector => ()
+                                    | Sequence => ()
                              in
                                 ()
                              end
@@ -461,7 +461,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                                case con of
                                                   Con con => deconCon con
                                                 | Tuple => default ()
-                                                | Vector => default ()
+                                                | Sequence => default ()
                                          in
                                             ()
                                          end
@@ -531,14 +531,14 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                               ()
                                            end
                                       | Tuple => ()
-                                      | Vector => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple")
+                                      | Sequence => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple")
                                | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
                         in
                            ()
                         end
-                   | VectorSub {index, vector} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
-                         ; visitVar vector)
+                         ; visitVar sequence)
                end
           | Var x => visitVar x
       val visitExpTh = fn e => fn () => visitExp e
@@ -580,11 +580,11 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                  | Tuple =>
                                       (visitVar base
                                        ; visitVar value)
-                                 | Vector => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
+                                 | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
                           | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
-                   | VectorSub {index, vector} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
-                         ; visitVar vector
+                         ; visitVar sequence
                          ; visitVar value)
                end
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t) =
@@ -1157,7 +1157,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                                    offset = offset}
                                         end
                                    | Tuple => e
-                                   | Vector => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple")
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple")
                             | _ => Error.bug "RemoveUnused2.simplifyExp:Select:non-Object"
                         end
                    | _ => e
@@ -1227,7 +1227,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            else NONE
                                         end
                                    | Tuple => SOME s
-                                   | Vector => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple")
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple")
                             | _ => Error.bug "RemoveUnused2.simplifyStatement: Select:non-Object"
                         end
                    | _ => SOME s
