@@ -1307,7 +1307,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        val arrayTy = varType (arg 0)
                                        val index = a 1
                                        val eltTys =
-                                          case S.Type.deVectorOpt arrayTy of
+                                          case S.Type.deSequenceOpt arrayTy of
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninit"
                                            | SOME eltTys => eltTys
                                        val sss =
@@ -1319,9 +1319,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  if not (Type.isObjptr elt)
                                                     then NONE
                                                     else (SOME o update)
-                                                         {base = Base.VectorSub
+                                                         {base = Base.SequenceSub
                                                                  {index = index,
-                                                                  vector = array},
+                                                                  sequence = array},
                                                                  baseTy = arrayTy,
                                                                  offset = offset,
                                                                  value = bogus elt})
@@ -1332,7 +1332,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     let
                                        val arrayTy = varType (arg 0)
                                        val eltTys =
-                                          case S.Type.deVectorOpt arrayTy of
+                                          case S.Type.deSequenceOpt arrayTy of
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninitIsNop"
                                            | SOME eltTys => eltTys
                                        val isNop =
