@@ -497,7 +497,7 @@ let
             datatype z = datatype R.Operand.t
          in
             case oper of
-               ArrayOffset {base, index, offset, scale, ty} =>
+               SequenceOffset {base, index, offset, scale, ty} =>
                   let
                      val base = translateOperand base
                   in
@@ -1140,7 +1140,7 @@ let
                     datatype z = datatype M.Operand.t
                  in
                     case z of
-                       ArrayOffset {base, index, ...} =>
+                       SequenceOffset {base, index, ...} =>
                           doOperand (base, doOperand (index, max))
                      | Cast (z, _) => doOperand (z, max)
                      | Contents {oper, ...} => doOperand (oper, max)

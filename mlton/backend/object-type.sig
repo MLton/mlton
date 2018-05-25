@@ -12,8 +12,8 @@ signature OBJECT_TYPE =
 
       type ty
       datatype t =
-         Array of {elt: ty,
-                   hasIdentity: bool}
+         Sequence of {elt: ty,
+                      hasIdentity: bool}
        | Normal of {hasIdentity: bool,
                     ty: ty}
        | Stack

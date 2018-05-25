@@ -590,7 +590,7 @@ structure Base =
                                                (seqIndexSize,
                                                 {signed = false}))}
                         in
-                           (ArrayOffset {base = sequence,
+                           (SequenceOffset {base = sequence,
                                          index = Var {var = prod, ty = seqIndexTy},
                                          offset = offset,
                                          scale = Scale.One,
@@ -598,7 +598,7 @@ structure Base =
                             [s])
                         end
                    | SOME s =>
-                        (ArrayOffset {base = sequence,
+                        (SequenceOffset {base = sequence,
                                       index = index,
                                       offset = offset,
                                       scale = s,
