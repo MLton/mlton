@@ -35,7 +35,7 @@ signature REP_TYPE =
 
       val bogusWord: t -> WordX.t
       val align: t * Bytes.t -> Bytes.t
-      val arrayOffsetIsOk: {base: t,
+      val sequenceOffsetIsOk: {base: t,
                             index: t,
                             offset: Bytes.t,
                             tyconTy: ObjptrTycon.t -> ObjectType.t,
