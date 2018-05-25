@@ -371,7 +371,7 @@ structure Type =
                Array_alloc _ =>
                   oneArg
                   (fn n =>
-                   case deVectorOpt result of
+                   case deSequenceOpt result of
                       SOME resp =>
                          Prod.allAreMutable resp
                          andalso equals (n, seqIndex)
@@ -379,7 +379,7 @@ structure Type =
              | Array_copyArray =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
-                   case (deVectorOpt dst, deVectorOpt src) of
+                   case (deSequenceOpt dst, deSequenceOpt src) of
                       (SOME dstp, SOME srcp) =>
                          Vector.equals (Prod.dest dstp, Prod.dest srcp,
                                         fn ({elt = dstElt, isMutable = dstIsMutable},
@@ -394,7 +394,7 @@ structure Type =
              | Array_copyVector =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
-                   case (deVectorOpt dst, deVectorOpt src) of
+                   case (deSequenceOpt dst, deSequenceOpt src) of
                       (SOME dstp, SOME srcp) =>
                          Vector.equals (Prod.dest dstp, Prod.dest srcp,
                                         fn ({elt = dstElt, isMutable = dstIsMutable},
