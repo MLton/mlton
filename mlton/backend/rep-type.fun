@@ -487,7 +487,7 @@ structure ObjectType =
                   let
                      val (b, nops) = Type.bytesAndObjptrs elt
                   in
-                     R.Sequence {hasIdentity = hasIdentity,
+                     R.Array {hasIdentity = hasIdentity,
                               bytesNonObjptrs = b,
                               numObjptrs = nops}
                   end
@@ -788,7 +788,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
                         | _ => false)
     | _ => false
 
-fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} = 
+fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} = 
    case node base of
       CPointer => 
          (equals (index, csize ()))
