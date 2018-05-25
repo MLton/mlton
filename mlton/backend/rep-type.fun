@@ -365,8 +365,8 @@ structure ObjectType =
 
       type ty = Type.t
       datatype t =
-         Array of {elt: ty,
-                   hasIdentity: bool}
+         Sequence of {elt: ty,
+                      hasIdentity: bool}
        | Normal of {hasIdentity: bool,
                     ty: ty}
        | Stack
@@ -377,8 +377,8 @@ structure ObjectType =
             open Layout
          in
             case t of
-               Array {elt, hasIdentity} =>
-                  seq [str "Array ",
+               Sequence {elt, hasIdentity} =>
+                  seq [str "Sequence ",
                        record [("elt", Type.layout elt),
                                ("hasIdentity", Bool.layout hasIdentity)]]
              | Normal {hasIdentity, ty} =>
@@ -391,7 +391,7 @@ structure ObjectType =
 
       fun isOk (t: t): bool =
          case t of
-            Array {elt, ...} =>
+            Sequence {elt, ...} =>
                let
                   val b = Type.width elt
                in
@@ -464,7 +464,7 @@ structure ObjectType =
                   val b = Bits.fromInt i
                in
                   (ObjptrTycon.wordVector b,
-                   Array {hasIdentity = false,
+                   Sequence {hasIdentity = false,
                           elt = Type.word (WordSize.fromBits b)})
                end
          in
@@ -483,11 +483,11 @@ structure ObjectType =
       in
          fun toRuntime (t: t): R.t =
             case t of
-               Array {elt, hasIdentity} =>
+               Sequence {elt, hasIdentity} =>
                   let
                      val (b, nops) = Type.bytesAndObjptrs elt
                   in
-                     R.Array {hasIdentity = hasIdentity,
+                     R.Sequence {hasIdentity = hasIdentity,
                               bytesNonObjptrs = b,
                               numObjptrs = nops}
                   end
@@ -775,7 +775,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
          else if Bytes.equals (offset, Runtime.arrayLengthOffset ())
             then (1 = Vector.length opts)
                  andalso (case tyconTy (Vector.sub (opts, 0)) of
-                             ObjectType.Array _ => true
+                             ObjectType.Sequence _ => true
                            | _ => false)
                  andalso (equals (result, seqIndex ()))
          else (1 = Vector.length opts)
@@ -806,7 +806,7 @@ fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} =
          (equals (index, seqIndex ()))
          andalso (1 = Vector.length opts)
          andalso (case tyconTy (Vector.first opts) of
-                     ObjectType.Array {elt, ...} => 
+                     ObjectType.Sequence {elt, ...} => 
                         if equals (elt, word8)
                            then (* special case for PackWord operations *)
                                 (case node result of

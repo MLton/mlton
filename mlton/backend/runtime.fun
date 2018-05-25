@@ -141,9 +141,9 @@ structure GCField =
 structure RObjectType =
    struct
       datatype t =
-         Array of {hasIdentity: bool,
-                   bytesNonObjptrs: Bytes.t,
-                   numObjptrs: int}
+         Sequence of {hasIdentity: bool,
+                      bytesNonObjptrs: Bytes.t,
+                      numObjptrs: int}
        | Normal of {hasIdentity: bool,
                     bytesNonObjptrs: Bytes.t,
                     numObjptrs: int}
@@ -155,8 +155,8 @@ structure RObjectType =
             open Layout
          in
             case t of
-               Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                  seq [str "Array ",
+               Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                  seq [str "Sequence ",
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
                                ("numObjptrs", Int.layout numObjptrs)]]

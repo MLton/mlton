@@ -37,7 +37,7 @@ fun constrain (ty: Type.t): Layout.t =
 structure Operand =
    struct
       datatype t =
-         ArrayOffset of {base: t,
+         SequenceOffset of {base: t,
                          index: t,
                          offset: Bytes.t,
                          scale: Scale.t,
@@ -64,7 +64,7 @@ structure Operand =
          word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
 
       val ty =
-         fn ArrayOffset {ty, ...} => ty
+         fn SequenceOffset {ty, ...} => ty
           | Cast (_, ty) => ty
           | Const c =>
                let
@@ -89,7 +89,7 @@ structure Operand =
             open Layout 
          in
             case z of
-               ArrayOffset {base, index, offset, scale, ty} =>
+               SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
@@ -115,7 +115,7 @@ structure Operand =
       val cast = Trace.trace2 ("Rssa.Operand.cast", layout, Type.layout, layout) cast
 
       val rec isLocation =
-         fn ArrayOffset _ => true
+         fn SequenceOffset _ => true
           | Cast (z, _) => isLocation z
           | Offset _ => true
           | Runtime _ => true
@@ -124,7 +124,7 @@ structure Operand =
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
          case z of
-            ArrayOffset {base, index, ...} =>
+            SequenceOffset {base, index, ...} =>
                foldVars (index, foldVars (base, a, f), f)
           | Cast (z, _) => foldVars (z, a, f)
           | Offset {base, ...} => foldVars (base, a, f)
@@ -135,8 +135,8 @@ structure Operand =
          let
             fun loop (z: t): t =
                case z of
-                  ArrayOffset {base, index, offset, scale, ty} =>
-                     ArrayOffset {base = loop base,
+                  SequenceOffset {base, index, offset, scale, ty} =>
+                     SequenceOffset {base = loop base,
                                   index = loop index,
                                   offset = offset,
                                   scale = scale,
@@ -1522,15 +1522,15 @@ structure Program =
                    datatype z = datatype Operand.t
                    fun ok () =
                       case x of
-                         ArrayOffset {base, index, offset, scale, ty} =>
+                         SequenceOffset {base, index, offset, scale, ty} =>
                             (checkOperand base
                              ; checkOperand index
-                             ; Type.arrayOffsetIsOk {base = Operand.ty base,
-                                                     index = Operand.ty index,
-                                                     offset = offset,
-                                                     tyconTy = tyconTy,
-                                                     result = ty,
-                                                     scale = scale})
+                             ; Type.sequenceOffsetIsOk {base = Operand.ty base,
+                                                        index = Operand.ty index,
+                                                        offset = offset,
+                                                        tyconTy = tyconTy,
+                                                        result = ty,
+                                                        scale = scale})
                        | Cast (z, ty) =>
                             (checkOperand z
                             ; Type.castIsOk {from = Operand.ty z,

@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature RSSA_STRUCTS = 
+signature RSSA_STRUCTS =
    sig
       include ATOMS
 
@@ -38,7 +38,7 @@ signature RSSA =
       structure Operand:
          sig
             datatype t =
-               ArrayOffset of {base: t,
+               SequenceOffset of {base: t,
                                index: t,
                                offset: Bytes.t,
                                scale: Scale.t,
