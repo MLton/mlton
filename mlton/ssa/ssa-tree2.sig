@@ -43,9 +43,9 @@ signature SSA_TREE2 =
             datatype t =
                Con of Con.t
              | Tuple
-             | Sequence  (*CH*)
+             | Sequence
 
-            val isSequence: t -> bool  (*CH*)
+            val isSequence: t -> bool
             val layout: t -> Layout.t
          end
 
@@ -73,11 +73,11 @@ signature SSA_TREE2 =
             val cpointer: t
             val datatypee: Tycon.t -> t
             val dest: t -> dest
-            val deSequence1: t -> t  (*CH*)
-            val deSequenceOpt: t -> t Prod.t option  (*CH*)
+            val deSequence1: t -> t
+            val deSequenceOpt: t -> t Prod.t option
             val equals: t * t -> bool
             val intInf: t
-            val isSequence: t -> bool  (*CH*)
+            val isSequence: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
             val object: {args: t Prod.t, con: ObjectCon.t} -> t
@@ -87,7 +87,7 @@ signature SSA_TREE2 =
             val reff1: t -> t
             val thread: t
             val tuple: t Prod.t -> t
-            val sequence: t Prod.t -> t  (*CH*)
+            val sequence: t Prod.t -> t
             val vector1: t -> t
             val weak: t -> t
             val word: WordSize.t -> t
@@ -98,8 +98,8 @@ signature SSA_TREE2 =
          sig
             datatype 'a t =
                Object of 'a
-             | SequenceSub of {index: 'a,  (*CH*)
-                               sequence: 'a}  (*CH*)
+             | SequenceSub of {index: 'a,
+                               sequence: 'a}
 
             val foreach: 'a t * ('a -> unit) -> unit
             val layout: 'a t * ('a -> Layout.t) -> Layout.t
