@@ -1022,12 +1022,12 @@ structure Program =
                             ; checkOperand (index, alloc)
                             ; (Operand.isLocation base
                                andalso
-                               (Type.arrayOffsetIsOk {base = Operand.ty base,
-                                                      index = Operand.ty index,
-                                                      offset = offset,
-                                                      tyconTy = tyconTy,
-                                                      result = ty,
-                                                      scale = scale})))
+                               (Type.sequenceOffsetIsOk {base = Operand.ty base,
+                                                          index = Operand.ty index,
+                                                          offset = offset,
+                                                          tyconTy = tyconTy,
+                                                          result = ty,
+                                                          scale = scale})))
                       | Cast (z, t) =>
                            (checkOperand (z, alloc)
                             ; (Type.castIsOk

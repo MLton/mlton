@@ -1140,7 +1140,7 @@ let
                     datatype z = datatype M.Operand.t
                  in
                     case z of
-                       SequenceOffset {base, index, ...} =>
+                       ArrayOffset {base, index, ...} =>
                           doOperand (base, doOperand (index, max))
                      | Cast (z, _) => doOperand (z, max)
                      | Contents {oper, ...} => doOperand (oper, max)

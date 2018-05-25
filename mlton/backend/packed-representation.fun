@@ -2617,7 +2617,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                     ObjptrRep.componentsTy opr
                                         in
                                            SOME (opt,
-                                                 ObjectType.Array
+                                                 ObjectType.Sequence
                                                  {elt = ty,
                                                   hasIdentity = hasIdentity})
                                         end)
