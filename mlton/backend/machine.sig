@@ -72,11 +72,11 @@ signature MACHINE =
       structure Operand:
          sig
             datatype t =
-               ArrayOffset of {base: t,
-                               index: t,
-                               offset: Bytes.t,
-                               scale: Scale.t,
-                               ty: Type.t}
+               SequenceOffset of {base: t,
+                                  index: t,
+                                  offset: Bytes.t,
+                                  scale: Scale.t,
+                                  ty: Type.t}
              | Cast of t * Type.t
              | Contents of {oper: t,
                             ty: Type.t}

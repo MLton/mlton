@@ -487,7 +487,7 @@ structure ObjectType =
                   let
                      val (b, nops) = Type.bytesAndObjptrs elt
                   in
-                     R.Array {hasIdentity = hasIdentity,
+                     R.Sequence {hasIdentity = hasIdentity,
                               bytesNonObjptrs = b,
                               numObjptrs = nops}
                   end
