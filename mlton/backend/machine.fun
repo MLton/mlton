@@ -197,11 +197,11 @@ structure StackOffset =
 structure Operand =
    struct
       datatype t =
-         ArrayOffset of {base: t,
-                         index: t,
-                         offset: Bytes.t,
-                         scale: Scale.t,
-                         ty: Type.t}
+         SequenceOffset of {base: t,
+                            index: t,
+                            offset: Bytes.t,
+                            scale: Scale.t,
+                            ty: Type.t}
        | Cast of t * Type.t
        | Contents of {oper: t,
                       ty: Type.t}
@@ -220,7 +220,7 @@ structure Operand =
        | Word of WordX.t
 
     val ty =
-       fn ArrayOffset {ty, ...} => ty
+       fn SequenceOffset {ty, ...} => ty
         | Cast (_, ty) => ty
         | Contents {ty, ...} => ty
         | Frontier => Type.cpointer ()
@@ -244,7 +244,7 @@ structure Operand =
                else empty
          in
             case z of
-               ArrayOffset {base, index, offset, scale, ty} =>
+               SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset],
@@ -273,8 +273,8 @@ structure Operand =
     val toString = Layout.toString o layout
 
     val rec equals =
-         fn (ArrayOffset {base = b, index = i, ...},
-             ArrayOffset {base = b', index = i', ...}) =>
+         fn (SequenceOffset {base = b, index = i, ...},
+             SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i') 
            | (Cast (z, t), Cast (z', t')) =>
                 Type.equals (t, t') andalso equals (z, z')
@@ -301,7 +301,7 @@ structure Operand =
             case (read, write) of
                (Cast (z, _), _) => interfere (write, z)
              | (_, Cast (z, _)) => interfere (z, read)
-             | (ArrayOffset {base, index, ...}, _) => 
+             | (SequenceOffset {base, index, ...}, _) => 
                   inter base orelse inter index
              | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
@@ -313,7 +313,7 @@ structure Operand =
          end
 
       val rec isLocation =
-         fn ArrayOffset _ => true
+         fn SequenceOffset _ => true
           | Cast (z, _) => isLocation z
           | Contents _ => true
           | GCState => true
@@ -1017,7 +1017,7 @@ structure Program =
                   datatype z = datatype Operand.t
                   fun ok () =
                      case x of
-                        ArrayOffset {base, index, offset, scale, ty} =>
+                        SequenceOffset {base, index, offset, scale, ty} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
                             ; (Operand.isLocation base

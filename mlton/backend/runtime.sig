@@ -66,8 +66,8 @@ signature RUNTIME =
       structure RObjectType:
          sig
             datatype t =
-               Array of {hasIdentity: bool,
-                         bytesNonObjptrs: Bytes.t,
+               Sequence of {hasIdentity: bool,
+                            bytesNonObjptrs: Bytes.t,
                          numObjptrs: int}
              | Normal of {hasIdentity: bool,
                           bytesNonObjptrs: Bytes.t,
