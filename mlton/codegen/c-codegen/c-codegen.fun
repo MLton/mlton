@@ -156,7 +156,7 @@ structure Operand =
 
       fun isMem (z: t): bool =
          case z of
-            ArrayOffset _ => true
+            SequenceOffset _ => true
           | Cast (z, _) => isMem z
           | Contents _ => true
           | Offset _ => true
@@ -353,7 +353,7 @@ fun outputDeclarations
              datatype z = datatype Runtime.RObjectType.t
              val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
-                   Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                   Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                       ("ARRAY_TAG", hasIdentity,
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
@@ -687,7 +687,7 @@ fun output {program as Machine.Program.T {chunks,
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
             case z of
-               ArrayOffset {base, index, offset, scale, ty} =>
+               SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
                                        toString index,
@@ -859,7 +859,7 @@ fun output {program as Machine.Program.T {chunks,
                let
                   fun usesStack z =
                      case z of
-                        Operand.ArrayOffset {base, index, ...} =>
+                        Operand.SequenceOffset {base, index, ...} =>
                            (usesStack base) orelse (usesStack index)
                       | Operand.Cast (z, _) =>
                            (usesStack z)

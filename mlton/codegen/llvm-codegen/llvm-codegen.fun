@@ -462,7 +462,7 @@ fun getArg (argv, i) =
  *)
 fun getOperandAddr (cxt, operand) =
     case operand of
-        Operand.ArrayOffset {base, index, offset, scale, ty} =>
+        Operand.SequenceOffset {base, index, offset, scale, ty} =>
         let
             (* arrayoffset = base + (index * scale) + offset *)
             val (basePre, baseTy, baseReg) = getOperandValue (cxt, base)
@@ -559,7 +559,7 @@ and getOperandValue (cxt, operand) =
         val Context { labelToStringIndex, ... } = cxt
     in
         case operand of
-            Operand.ArrayOffset _ => loadOperand ()
+            Operand.SequenceOffset _ => loadOperand ()
           | Operand.Cast (oper, ty) =>
             let
                 val (operPre, operTy, operReg) =
