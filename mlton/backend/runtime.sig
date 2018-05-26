@@ -76,9 +76,9 @@ signature RUNTIME =
              | Weak of {gone: bool}
          end
 
-      val arrayLengthOffset: unit -> Bytes.t
-      val arrayLengthSize: unit -> Bytes.t
-      val arrayMetaDataSize: unit -> Bytes.t
+      val sequenceLengthOffset: unit -> Bytes.t
+      val sequenceLengthSize: unit -> Bytes.t
+      val sequenceMetaDataSize: unit -> Bytes.t
       val cpointerSize: unit -> Bytes.t
       val headerOffset: unit -> Bytes.t
       val headerSize: unit -> Bytes.t
