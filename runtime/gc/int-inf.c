@@ -313,7 +313,7 @@ objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
   if (sp->obj.chars[0] == '-')
     sp->obj.chars[0] = '~';
   setFrontier (s, (pointer)&sp->obj + size, bytes);
-  sp->counter = (GC_sCounter)0;
+  sp->counter = (GC_sequenceCounter)0;
   sp->length = (GC_sequenceLength)size;
   sp->header = GC_STRING8_HEADER;
   return pointerToObjptr ((pointer)&sp->obj, s->heap.start);
