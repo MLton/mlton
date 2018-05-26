@@ -12,7 +12,7 @@ C_Errno_t(C_PId_t) MLton_Process_spawnp (NullString8_t pNStr,
 
   path = (const char *) pNStr;
   args = (char **) aStr;
-  aLen = GC_getArrayLength((pointer)aStr);
+  aLen = GC_getSequenceLength((pointer)aStr);
   aSaved = args[aLen - 1];
   args[aLen - 1] = NULL;
   res = spawnvp (SPAWN_MODE, path, 
