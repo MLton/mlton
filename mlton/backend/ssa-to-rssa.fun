@@ -1111,7 +1111,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               fun arrayOrVectorLength () =
                                  move (Offset
                                        {base = a 0,
-                                        offset = Runtime.arrayLengthOffset (),
+                                        offset = Runtime.sequenceLengthOffset (),
                                         ty = Type.seqIndex ()})
                               fun subWord s =
                                  let
@@ -1256,10 +1256,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              rawOpt
                                           end
                                     in
-                                       arrayAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
+                                       sequenceAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
                                     end
-                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
-                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_length => arrayOrVectorLength ()
                                | Array_toArray =>
                                     let

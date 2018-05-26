@@ -354,7 +354,7 @@ fun outputDeclarations
              val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
                    Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      ("ARRAY_TAG", hasIdentity,
+                      ("SEQUENCE_TAG", hasIdentity,
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                       ("NORMAL_TAG", hasIdentity,

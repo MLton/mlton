@@ -772,7 +772,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
       Objptr opts => 
          if Bytes.equals (offset, Runtime.headerOffset ())
             then equals (result, objptrHeader ())
-         else if Bytes.equals (offset, Runtime.arrayLengthOffset ())
+         else if Bytes.equals (offset, Runtime.sequenceLengthOffset ())
             then (1 = Vector.length opts)
                  andalso (case tyconTy (Vector.sub (opts, 0)) of
                              ObjectType.Sequence _ => true
