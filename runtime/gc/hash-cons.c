@@ -176,8 +176,8 @@ lookNext:
       unless (*p1 == *p2)
         goto lookNext;
     splitHeader (s, header, &tag, NULL, NULL, NULL);
-    if (ARRAY_TAG == tag
-        and (getArrayLength (object) != getArrayLength (e->object)))
+    if (SEQUENCE_TAG == tag
+        and (getSequenceLength (object) != getSequenceLength (e->object)))
       goto lookNext;
   }
   /* object is equal to e->object. */
@@ -248,11 +248,11 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
     res = object;
     goto done;
   }
-  assert ((ARRAY_TAG == tag) or (NORMAL_TAG == tag));
+  assert ((SEQUENCE_TAG == tag) or (NORMAL_TAG == tag));
   max = 
     object
-    + (ARRAY_TAG == tag
-       ? (sizeofArrayNoMetaData (s, getArrayLength (object),
+    + (SEQUENCE_TAG == tag
+       ? (sizeofSequenceNoMetaData (s, getSequenceLength (object),
                                  bytesNonObjptrs, numObjptrs))
        : (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)));
   // Compute the hash.
@@ -266,8 +266,8 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
     size_t amount;
 
     amount = (size_t)(max - object);
-    if (ARRAY_TAG == tag)
-      amount += GC_ARRAY_METADATA_SIZE;
+    if (SEQUENCE_TAG == tag)
+      amount += GC_SEQUENCE_METADATA_SIZE;
     else
       amount += GC_NORMAL_METADATA_SIZE;
     s->lastMajorStatistics.bytesHashConsed += amount;

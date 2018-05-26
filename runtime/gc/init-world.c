@@ -21,7 +21,7 @@ size_t sizeofInitialBytesLive (GC_state s) {
     dataBytes =
       s->vectorInits[i].elementSize
       * s->vectorInits[i].length;
-    total += align (GC_ARRAY_METADATA_SIZE + dataBytes, s->alignment);
+    total += align (GC_SEQUENCE_METADATA_SIZE + dataBytes, s->alignment);
   }
   return total;
 }
@@ -42,12 +42,12 @@ void initVectors (GC_state s) {
 
     elementSize = inits[i].elementSize;
     dataBytes = elementSize * inits[i].length;
-    objectSize = align (GC_ARRAY_METADATA_SIZE + dataBytes, s->alignment);
+    objectSize = align (GC_SEQUENCE_METADATA_SIZE + dataBytes, s->alignment);
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
-    *((GC_arrayCounter*)(frontier)) = 0;
-    frontier = frontier + GC_ARRAY_COUNTER_SIZE;
-    *((GC_arrayLength*)(frontier)) = inits[i].length;
-    frontier = frontier + GC_ARRAY_LENGTH_SIZE;
+    *((GC_sequenceCounter*)(frontier)) = 0;
+    frontier = frontier + GC_SEQUENCE_COUNTER_SIZE;
+    *((GC_sequenceLength*)(frontier)) = inits[i].length;
+    frontier = frontier + GC_SEQUENCE_LENGTH_SIZE;
     switch (elementSize) {
     case 1:
       typeIndex = WORD8_VECTOR_TYPE_INDEX;
@@ -72,7 +72,7 @@ void initVectors (GC_state s) {
       fprintf (stderr, "allocated vector at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
     memcpy (frontier, inits[i].words, dataBytes);
-    frontier += objectSize - GC_ARRAY_METADATA_SIZE;
+    frontier += objectSize - GC_SEQUENCE_METADATA_SIZE;
   }
   if (DEBUG_DETAILED)
     fprintf (stderr, "frontier after string allocation is "FMTPTR"\n",

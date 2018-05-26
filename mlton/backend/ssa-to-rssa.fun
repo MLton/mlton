@@ -106,7 +106,7 @@ structure CFunction =
             symbolScope = Private,
             target = Direct "MLton_halt"}
 
-      fun gcArrayAllocate {return} =
+      fun gcSequenceAllocate {return} =
          T {args = Vector.new4 (Type.gcState (),
                                 Type.csize (),
                                 Type.seqIndex (),
@@ -126,9 +126,9 @@ structure CFunction =
                          SOME CType.objptr),
             return = return,
             symbolScope = Private,
-            target = Direct "GC_arrayAllocate"}
+            target = Direct "GC_sequenceAllocate"}
 
-      fun gcArrayCopy (dt, st) =
+      fun gcSequenceCopy (dt, st) =
          T {args = Vector.new6 (Type.gcState (),
                                 dt,
                                 Type.seqIndex (),
@@ -152,7 +152,7 @@ structure CFunction =
                          NONE),
             return = Type.unit,
             symbolScope = Private,
-            target = Direct "GC_arrayCopy"}
+            target = Direct "GC_sequenceCopy"}
 
       val returnToC = fn () =>
          T {args = Vector.new0 (),
@@ -1177,7 +1177,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                [Vector.new1 GCState,
                                                 vos args],
                                         func = f}
-                              fun arrayAlloc (numElts: Operand.t, opt) =
+                              fun sequenceAlloc (numElts: Operand.t, opt) =
                                  let
                                     val result = valOf (toRtype ty)
                                     val args =
@@ -1186,7 +1186,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                     numElts,
                                                     ObjptrTycon opt)
                                     val func =
-                                       CFunction.gcArrayAllocate
+                                       CFunction.gcSequenceAllocate
                                        {return = result}
                                  in
                                     ccall {args = args, func = func}

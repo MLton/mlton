@@ -11,12 +11,12 @@
 
 /* 
  * There are four kinds of ML objects: 
- *   array, normal (fixed size), stack, and weak.
+ *   sequence, normal (fixed size), stack, and weak.
  */
 typedef enum { 
   /* The tag indices here must agree with those in declareObjectTypes()
    * in codegen/c-codegen/c-codegen.fun. */
-  ARRAY_TAG = 0,
+  SEQUENCE_TAG = 0,
   NORMAL_TAG = 1,
   STACK_TAG = 2,
   WEAK_TAG = 3,
@@ -100,7 +100,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
 
-/* Array objects are described in "array.h" */
+/* Sequence objects are described in "sequence.h" */
 
 /* Stack objects are described in "stack.h" */
 
@@ -122,10 +122,10 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
  * fields, in which case it may not be hash-cons-ed.  In a normal
  * object, the bytesNonObjptrs field indicates the number of bytes of
  * non heap-pointer data, while the numObjptrs field indicates the
- * number of heap pointers.  In an array object, the bytesNonObjptrs
+ * number of heap pointers.  In a sequence object, the bytesNonObjptrs
  * field indicates the number of bytes of non heap-pointer data in a
- * single array element, while the numObjptrs field indicates the
- * number of heap pointers in a single array element.  In a stack
+ * single sequence element, while the numObjptrs field indicates the
+ * number of heap pointers in a single sequence element.  In a stack
  * object, the bytesNonObjptrs and numObjptrs fields are irrelevant.
  * In a weak object, the bytesNonObjptrs and numObjptrs fields are
  * interpreted as in a normal object.

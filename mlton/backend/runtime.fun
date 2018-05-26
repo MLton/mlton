@@ -197,16 +197,16 @@ val headerSize : unit -> Bytes.t =
 val headerOffset : unit -> Bytes.t = 
    Promise.lazy (Bytes.~ o headerSize)
 
-(* see gc/array.h *)
-val arrayLengthSize : unit -> Bytes.t =
+(* see gc/sequence.h *)
+val sequenceLengthSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.seqIndex)
-val arrayLengthOffset : unit -> Bytes.t =
+val sequenceLengthOffset : unit -> Bytes.t =
    Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
-                                            arrayLengthSize ())))
+                                            sequenceLengthSize ())))
 
-(* see gc/object.h and gc/array.h *)
-val arrayMetaDataSize : unit -> Bytes.t =
-   Promise.lazy (Bits.toBytes o Control.Target.Size.arrayMetaData)
+(* see gc/object.h and gc/sequence.h *)
+val sequenceMetaDataSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.sequenceMetaData)
 val normalMetaDataSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.normalMetaData)
 
