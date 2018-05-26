@@ -73,7 +73,7 @@ pointer GC_sequenceAllocate (GC_state s,
   last = frontier + sequenceSize;
   *((GC_sequenceCounter*)(frontier)) = 0;
   frontier = frontier + GC_SEQUENCE_COUNTER_SIZE;
-  *((GC_equenceLength*)(frontier)) = numElements;
+  *((GC_sequenceLength*)(frontier)) = numElements;
   frontier = frontier + GC_SEQUENCE_LENGTH_SIZE;
   *((GC_header*)(frontier)) = header;
   frontier = frontier + GC_HEADER_SIZE;
