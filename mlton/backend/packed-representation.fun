@@ -2616,7 +2616,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                               constant
                               (Rep.T {rep = Rep.Objptr {endsIn00 = true},
                                       ty = Type.objptr opt})
-                            end)
+                            end
                         | ObjectCon.Tuple =>
                             let
                               val opt = ObjptrTycon.new ()
@@ -2656,7 +2656,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                               val () = Value.affect (tr, r)
                             in
                               r
-                            end
+                            end)
                | Real s => nonObjptr (Type.real s)
                | Thread =>
                     constant (Rep.T {rep = Rep.Objptr {endsIn00 = true},

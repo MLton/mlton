@@ -530,8 +530,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            in
                                               ()
                                            end
-                                      | Sequence => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple")
-                                      | Tuple => ()
+                                      | Sequence => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple"
+                                      | Tuple => ())
                                | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
                         in
                            ()
@@ -577,10 +577,10 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            ; visitVar base
                                            ; visitVar value))
                                       end
-                                  | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
+                                  | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple"
                                   | Tuple =>
                                       (visitVar base
-                                       ; visitVar value)
+                                       ; visitVar value))
                           | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
                     | SequenceSub {index, sequence} =>
                         (visitVar index
@@ -1156,8 +1156,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            Select {base = Base.Object base,
                                                    offset = offset}
                                         end
-                                    | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple")
-                                    | Tuple => e
+                                    | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple"
+                                    | Tuple => e)
                             | _ => Error.bug "RemoveUnused2.simplifyExp:Select:non-Object"
                         end
                    | _ => e
@@ -1226,8 +1226,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                                  end
                                            else NONE
                                         end
-                                    | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple")
-                                    | Tuple => SOME s
+                                    | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple"
+                                    | Tuple => SOME s)
                             | _ => Error.bug "RemoveUnused2.simplifyStatement: Select:non-Object"
                         end
                    | _ => SOME s
