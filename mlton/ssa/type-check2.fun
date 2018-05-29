@@ -61,8 +61,8 @@ fun checkScopes (program as
             val _ =
                case oc of
                   Con con => getCon con
-                | Tuple => ()
                 | Sequence => ()
+                | Tuple => ()
          in
             ()
          end

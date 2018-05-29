@@ -1118,10 +1118,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     val ty = Type.word s
                                  in
                                     move (SequenceOffset {base = a 0,
-                                                       index = a 1,
-                                                       offset = Bytes.zero,
-                                                       scale = Type.scale ty,
-                                                       ty = ty})
+                                                          index = a 1,
+                                                          offset = Bytes.zero,
+                                                          scale = Type.scale ty,
+                                                          ty = ty})
                                  end
                               fun dst () =
                                  case var of

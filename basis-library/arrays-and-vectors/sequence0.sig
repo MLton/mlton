@@ -10,11 +10,11 @@
  
 signature PRIM_SEQUENCE =
    sig
-      type 'a sequence
       type 'a elt
+      type 'a sequence
 
-      structure Slice: PRIM_SLICE where type 'a sequence = 'a sequence
-                                    and type 'a elt = 'a elt
+      structure Slice: PRIM_SLICE where type 'a elt = 'a elt
+                                    and type 'a sequence = 'a sequence
 
       val maxLen: SeqIndex.int (* Must also be representable as an Int.int *)
       val length: 'a sequence -> SeqIndex.int

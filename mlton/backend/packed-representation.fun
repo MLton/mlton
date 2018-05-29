@@ -2525,58 +2525,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                | Object {args, con} =>
                     (case con of
                         ObjectCon.Con con =>
-                           let
+                            let
                               val {rep, tyconRep} = conInfo con
                               fun compute () = ConRep.rep (!rep)
                               val r = Value.new {compute = compute,
                                                  equals = Rep.equals,
                                                  init = Rep.unit}
                               val () = Value.affect (tyconRep, r)
-                           in
+                            in
                               r
-                           end
-                      | ObjectCon.Tuple =>
-                           let
-                              val opt = ObjptrTycon.new ()
-                              val rs =
-                                 Vector.map (Prod.dest args, typeRep o #elt)
-                              fun compute () =
-                                 TupleRep.make
-                                 (opt,
-                                  Vector.map2 (rs, Prod.dest args,
-                                               fn (r, {elt, isMutable}) =>
-                                               {isMutable = isMutable,
-                                                rep = Value.get r,
-                                                ty = elt}),
-                                  {forceBox = false, isSequence = false})
-                              val tr =
-                                 Value.new {compute = compute,
-                                            equals = TupleRep.equals,
-                                            init = TupleRep.unit}
-                              val () = Vector.foreach (rs, fn r =>
-                                                       Value.affect (r, tr))
-                              val hasIdentity = Prod.someIsMutable args
-                              val () =
-                                 List.push
-                                 (delayedObjectTypes, fn () =>
-                                  case Value.get tr of
-                                     TupleRep.Indirect opr =>
-                                        SOME
-                                        (opt, (ObjectType.Normal
-                                               {hasIdentity = hasIdentity,
-                                                ty = ObjptrRep.componentsTy opr}))
-                                   | _ => NONE)
-                              val () = setTupleRep (t, tr)
-                              fun compute () = TupleRep.rep (Value.get tr)
-                              val r = Value.new {compute = compute,
-                                                 equals = Rep.equals,
-                                                 init = Rep.unit}
-                              val () = Value.affect (tr, r)
-                           in
-                              r
-                           end
-                      | ObjectCon.Sequence =>
-                           let
+                            end
+                        | ObjectCon.Sequence =>
+                            let
                               val hasIdentity = Prod.someIsMutable args
                               val args = Prod.dest args
                               fun tupleRep opt =
@@ -2652,11 +2612,51 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                  end
                                             | _ => delay ())
                                     end
-                           in
+                            in
                               constant
                               (Rep.T {rep = Rep.Objptr {endsIn00 = true},
                                       ty = Type.objptr opt})
-                           end)
+                            end)
+                        | ObjectCon.Tuple =>
+                            let
+                              val opt = ObjptrTycon.new ()
+                              val rs =
+                                 Vector.map (Prod.dest args, typeRep o #elt)
+                              fun compute () =
+                                 TupleRep.make
+                                 (opt,
+                                  Vector.map2 (rs, Prod.dest args,
+                                               fn (r, {elt, isMutable}) =>
+                                               {isMutable = isMutable,
+                                                rep = Value.get r,
+                                                ty = elt}),
+                                  {forceBox = false, isSequence = false})
+                              val tr =
+                                 Value.new {compute = compute,
+                                            equals = TupleRep.equals,
+                                            init = TupleRep.unit}
+                              val () = Vector.foreach (rs, fn r =>
+                                                       Value.affect (r, tr))
+                              val hasIdentity = Prod.someIsMutable args
+                              val () =
+                                 List.push
+                                 (delayedObjectTypes, fn () =>
+                                  case Value.get tr of
+                                     TupleRep.Indirect opr =>
+                                        SOME
+                                        (opt, (ObjectType.Normal
+                                               {hasIdentity = hasIdentity,
+                                                ty = ObjptrRep.componentsTy opr}))
+                                   | _ => NONE)
+                              val () = setTupleRep (t, tr)
+                              fun compute () = TupleRep.rep (Value.get tr)
+                              val r = Value.new {compute = compute,
+                                                 equals = Rep.equals,
+                                                 init = Rep.unit}
+                              val () = Value.affect (tr, r)
+                            in
+                              r
+                            end
                | Real s => nonObjptr (Type.real s)
                | Thread =>
                     constant (Rep.T {rep = Rep.Objptr {endsIn00 = true},
@@ -2781,18 +2781,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
             datatype z = datatype ObjectCon.t
          in
             case con of
-               Con con =>
+                Con con =>
                   (case conRep con of
                       ConRep.ShiftAndTag {selects, ...} => (selects, NONE)
                     | ConRep.Tuple tr => (TupleRep.selects tr, NONE)
                     | _ => Error.bug "PackedRepresentation.getSelects: Con,non-select")
-             | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
-             | Sequence =>
-                  case sequenceRep objectTy of
+                | Sequence =>
+                  (case sequenceRep objectTy of
                      tr as TupleRep.Indirect pr =>
                         (TupleRep.selects tr,
                          SOME (Type.bytes (ObjptrRep.componentsTy pr)))
-                   | _ => Error.bug "PackedRepresentation.getSelects: Sequence,non-Indirect"
+                   | _ => Error.bug "PackedRepresentation.getSelects: Sequence,non-Indirect")
+                | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
          end
       fun select {base, baseTy, dst, offset} =
          case S.Type.dest baseTy of

@@ -408,8 +408,8 @@ structure Value =
          andalso Prod.allAreImmutable args
          andalso (case con of
                      ObjectCon.Con _ => false
-                   | ObjectCon.Tuple => true
-                   | ObjectCon.Sequence => false)
+                   | ObjectCon.Sequence => false
+                   | ObjectCon.Tuple => true)
 
       fun objectFields {args, con} =
          let

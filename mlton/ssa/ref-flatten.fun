@@ -360,8 +360,8 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                      in
                                         v
                                      end))
-                        | Tuple => doit ()
-                        | Sequence => doit ()
+                          | Sequence => doit ()
+                          | Tuple => doit ()
                     end
                | Weak t =>
                     (case makeTypeValue t of
@@ -607,7 +607,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                   else i := Unflattenable
                              | Unflattenable => ()
                          end
-                    | Base.SequenceSub _ => ()))
+                      | Base.SequenceSub _ => ()))
           | _ => Statement.foreachUse (s, use)
       val loopStatement =
          Trace.trace2

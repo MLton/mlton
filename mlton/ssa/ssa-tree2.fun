@@ -80,14 +80,14 @@ structure Prod =
 structure ObjectCon =
    struct
       datatype t =
-         Con of Con.t
-       | Tuple
-       | Sequence
+          Con of Con.t
+        | Sequence
+        | Tuple
 
       val equals: t * t -> bool =
-         fn (Con c, Con c') => Con.equals (c, c')
-          | (Tuple, Tuple) => true
+        fn (Con c, Con c') => Con.equals (c, c')
           | (Sequence, Sequence) => true
+          | (Tuple, Tuple) => true
           | _ => false
 
       val isSequence: t -> bool =
@@ -100,9 +100,9 @@ structure ObjectCon =
             open Layout
          in
             case oc of
-               Con c => Con.layout c
-             | Tuple => str "Tuple"
-             | Sequence => str "Sequence"
+                Con c => Con.layout c
+              | Sequence => str "Sequence"
+              | Tuple => str "Tuple"
          end
    end
 
@@ -244,9 +244,9 @@ structure Type =
             let
                val base =
                   case con of
-                     Con c => Con.hash c
-                   | Tuple => tuple
-                   | Sequence => sequence
+                      Con c => Con.hash c
+                    | Sequence => sequence
+                    | Tuple => tuple
                val hash = hashProd (args, base)
             in
                lookup (hash, Object {args = args, con = con})
@@ -311,9 +311,9 @@ structure Type =
                           val args = Prod.layout (args, layout)
                        in
                           case con of
-                             Con c => seq [Con.layout c, str " of ", args]
-                           | Tuple => args
-                           | Sequence => seq [args, str " sequence"]
+                              Con c => seq [Con.layout c, str " of ", args]
+                            | Sequence => seq [args, str " sequence"]
+                            | Tuple => args
                        end
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
