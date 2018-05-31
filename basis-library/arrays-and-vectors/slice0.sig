@@ -10,8 +10,8 @@
 
 signature PRIM_SLICE = 
    sig
-      type 'a sequence
       type 'a elt
+      type 'a sequence
       type 'a slice
       val length: 'a slice -> SeqIndex.int
       val sub: 'a slice * SeqIndex.int -> 'a elt

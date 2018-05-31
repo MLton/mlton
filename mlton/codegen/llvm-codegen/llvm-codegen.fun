@@ -462,26 +462,7 @@ fun getArg (argv, i) =
  *)
 fun getOperandAddr (cxt, operand) =
     case operand of
-        Operand.ArrayOffset {base, index, offset, scale, ty} =>
-        let
-            (* arrayoffset = base + (index * scale) + offset *)
-            val (basePre, baseTy, baseReg) = getOperandValue (cxt, base)
-            val (indexPre, indexTy, indexReg) = getOperandValue (cxt, index)
-            val scl = Scale.toString scale (* "1", "2", "4", or "8" *)
-            val scaledIndex = nextLLVMReg ()
-            val scaleIndex = mkinst (scaledIndex, "mul nsw", indexTy, indexReg, scl)
-            val ofs = llbytes offset
-            val offsettedIndex = nextLLVMReg ()
-            val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
-            val llvmTy = llty ty
-            val ptr = nextLLVMReg ()
-            val gep = mkgep (ptr, baseTy, baseReg, [(indexTy, offsettedIndex)])
-            val castedPtr = nextLLVMReg ()
-            val cast = mkconv (castedPtr, "bitcast", baseTy, ptr, llvmTy ^ "*")
-        in
-            (concat [basePre, indexPre, scaleIndex, offsetIndex, gep, cast], llvmTy, castedPtr)
-        end
-      | Operand.Contents {oper, ty} =>
+      Operand.Contents {oper, ty} =>
         let
             val (operPre, operTy, operReg) = getOperandAddr (cxt, oper)
             val llvmTy = llty ty
@@ -528,6 +509,25 @@ fun getOperandAddr (cxt, operand) =
         in
             ("", ty, reg)
         end
+      | Operand.SequenceOffset {base, index, offset, scale, ty} =>
+        let
+            (* arrayoffset = base + (index * scale) + offset *)
+            val (basePre, baseTy, baseReg) = getOperandValue (cxt, base)
+            val (indexPre, indexTy, indexReg) = getOperandValue (cxt, index)
+            val scl = Scale.toString scale (* "1", "2", "4", or "8" *)
+            val scaledIndex = nextLLVMReg ()
+            val scaleIndex = mkinst (scaledIndex, "mul nsw", indexTy, indexReg, scl)
+            val ofs = llbytes offset
+            val offsettedIndex = nextLLVMReg ()
+            val offsetIndex = mkinst (offsettedIndex, "add nsw", indexTy, scaledIndex, ofs)
+            val llvmTy = llty ty
+            val ptr = nextLLVMReg ()
+            val gep = mkgep (ptr, baseTy, baseReg, [(indexTy, offsettedIndex)])
+            val castedPtr = nextLLVMReg ()
+            val cast = mkconv (castedPtr, "bitcast", baseTy, ptr, llvmTy ^ "*")
+        in
+            (concat [basePre, indexPre, scaleIndex, offsetIndex, gep, cast], llvmTy, castedPtr)
+        end
       | Operand.StackOffset stackOffset =>
         let
             val StackOffset.T {offset, ty} = stackOffset
@@ -559,7 +559,7 @@ and getOperandValue (cxt, operand) =
         val Context { labelToStringIndex, ... } = cxt
     in
         case operand of
-            Operand.ArrayOffset _ => loadOperand ()
+            Operand.SequenceOffset _ => loadOperand ()
           | Operand.Cast (oper, ty) =>
             let
                 val (operPre, operTy, operReg) =

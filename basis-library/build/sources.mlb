@@ -29,7 +29,7 @@ in
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
       ../config/objptr/objptr-$(OBJPTR_REP).sml
-      ../config/metadata/array-metadata-$(ARRAY_METADATA_SIZE).sml
+      ../config/metadata/sequence-metadata-$(SEQUENCE_METADATA_SIZE).sml
       ../config/metadata/normal-metadata-$(NORMAL_METADATA_SIZE).sml
       ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
       $(LIB_MLTON_DIR)/targets/$(TARGET)/sml/c-types.sml

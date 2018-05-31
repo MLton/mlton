@@ -37,22 +37,22 @@ fun constrain (ty: Type.t): Layout.t =
 structure Operand =
    struct
       datatype t =
-         ArrayOffset of {base: t,
-                         index: t,
-                         offset: Bytes.t,
-                         scale: Scale.t,
-                         ty: Type.t}
-       | Cast of t * Type.t
-       | Const of Const.t
-       | EnsuresBytesFree
-       | GCState
-       | Offset of {base: t,
-                    offset: Bytes.t,
-                    ty: Type.t}
-       | ObjptrTycon of ObjptrTycon.t
-       | Runtime of GCField.t
-       | Var of {var: Var.t,
-                 ty: Type.t}
+          Cast of t * Type.t
+        | Const of Const.t
+        | EnsuresBytesFree
+        | GCState
+        | Offset of {base: t,
+                      offset: Bytes.t,
+                      ty: Type.t}
+        | ObjptrTycon of ObjptrTycon.t
+        | Runtime of GCField.t
+        | SequenceOffset of {base: t,
+                              index: t,
+                              offset: Bytes.t,
+                              scale: Scale.t,
+                              ty: Type.t}
+        | Var of {var: Var.t,
+                  ty: Type.t}
 
       val null = Const Const.null
 
@@ -64,8 +64,7 @@ structure Operand =
          word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
 
       val ty =
-         fn ArrayOffset {ty, ...} => ty
-          | Cast (_, ty) => ty
+         fn Cast (_, ty) => ty
           | Const c =>
                let
                   datatype z = datatype Const.t
@@ -82,6 +81,7 @@ structure Operand =
           | Offset {ty, ...} => ty
           | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
+          | SequenceOffset {ty, ...} => ty
           | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -89,22 +89,22 @@ structure Operand =
             open Layout 
          in
             case z of
-               ArrayOffset {base, index, offset, scale, ty} =>
-                  seq [str (concat ["X", Type.name ty, " "]),
-                       tuple [layout base, layout index, Scale.layout scale,
-                              Bytes.layout offset]]
-             | Cast (z, ty) =>
+                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-             | Const c => seq [Const.layout c, constrain (ty z)]
-             | EnsuresBytesFree => str "<EnsuresBytesFree>"
-             | GCState => str "<GCState>"
-             | Offset {base, offset, ty} =>
+              | Const c => seq [Const.layout c, constrain (ty z)]
+              | EnsuresBytesFree => str "<EnsuresBytesFree>"
+              | GCState => str "<GCState>"
+              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-             | ObjptrTycon opt => ObjptrTycon.layout opt
-             | Runtime r => GCField.layout r
-             | Var {var, ...} => Var.layout var
+              | ObjptrTycon opt => ObjptrTycon.layout opt
+              | Runtime r => GCField.layout r
+              | SequenceOffset {base, index, offset, scale, ty} =>
+                  seq [str (concat ["X", Type.name ty, " "]),
+                       tuple [layout base, layout index, Scale.layout scale,
+                              Bytes.layout offset]]
+              | Var {var, ...} => Var.layout var
          end
 
       fun cast (z: t, t: Type.t): t =
@@ -115,19 +115,19 @@ structure Operand =
       val cast = Trace.trace2 ("Rssa.Operand.cast", layout, Type.layout, layout) cast
 
       val rec isLocation =
-         fn ArrayOffset _ => true
-          | Cast (z, _) => isLocation z
+         fn Cast (z, _) => isLocation z
           | Offset _ => true
           | Runtime _ => true
+          | SequenceOffset _ => true
           | Var _ => true
           | _ => false
 
       fun 'a foldVars (z: t, a: 'a, f: Var.t * 'a -> 'a): 'a =
          case z of
-            ArrayOffset {base, index, ...} =>
-               foldVars (index, foldVars (base, a, f), f)
-          | Cast (z, _) => foldVars (z, a, f)
+            Cast (z, _) => foldVars (z, a, f)
           | Offset {base, ...} => foldVars (base, a, f)
+          | SequenceOffset {base, index, ...} =>
+               foldVars (index, foldVars (base, a, f), f)
           | Var {var, ...} => f (var, a)
           | _ => a
 
@@ -135,17 +135,17 @@ structure Operand =
          let
             fun loop (z: t): t =
                case z of
-                  ArrayOffset {base, index, offset, scale, ty} =>
-                     ArrayOffset {base = loop base,
-                                  index = loop index,
-                                  offset = offset,
-                                  scale = scale,
-                                  ty = ty}
-                | Cast (t, ty) => Cast (loop t, ty)
+                  Cast (t, ty) => Cast (loop t, ty)
                 | Offset {base, offset, ty} =>
                      Offset {base = loop base,
                              offset = offset,
                              ty = ty}
+                | SequenceOffset {base, index, offset, scale, ty} =>
+                     SequenceOffset {base = loop base,
+                                  index = loop index,
+                                  offset = offset,
+                                  scale = scale,
+                                  ty = ty}
                 | Var {var, ...} => f var
                 | _ => z
          in
@@ -1522,31 +1522,31 @@ structure Program =
                    datatype z = datatype Operand.t
                    fun ok () =
                       case x of
-                         ArrayOffset {base, index, offset, scale, ty} =>
-                            (checkOperand base
-                             ; checkOperand index
-                             ; Type.arrayOffsetIsOk {base = Operand.ty base,
-                                                     index = Operand.ty index,
-                                                     offset = offset,
-                                                     tyconTy = tyconTy,
-                                                     result = ty,
-                                                     scale = scale})
-                       | Cast (z, ty) =>
+                          Cast (z, ty) =>
                             (checkOperand z
                             ; Type.castIsOk {from = Operand.ty z,
                                              to = ty,
                                              tyconTy = tyconTy})
-                       | Const _ => true
-                       | EnsuresBytesFree => true
-                       | GCState => true
-                       | Offset {base, offset, ty} =>
+                        | Const _ => true
+                        | EnsuresBytesFree => true
+                        | GCState => true
+                        | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
                                              offset = offset,
                                              tyconTy = tyconTy,
                                              result = ty}
-                       | ObjptrTycon _ => true
-                       | Runtime _ => true
-                       | Var {ty, var} => Type.isSubtype (varType var, ty)
+                        | ObjptrTycon _ => true
+                        | Runtime _ => true
+                        | SequenceOffset {base, index, offset, scale, ty} =>
+                            (checkOperand base
+                             ; checkOperand index
+                             ; Type.sequenceOffsetIsOk {base = Operand.ty base,
+                                                        index = Operand.ty index,
+                                                        offset = offset,
+                                                        tyconTy = tyconTy,
+                                                        result = ty,
+                                                        scale = scale})
+                        | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
                    Err.check ("operand", ok, fn () => Operand.layout x)
                 end
