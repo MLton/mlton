@@ -24,8 +24,6 @@
 #include "gc/align.c"
 #include "gc/read_write.c"
 
-#include "gc/array-allocate.c"
-#include "gc/array.c"
 #include "gc/atomic.c"
 #include "gc/call-stack.c"
 #include "gc/cheney-copy.c"
@@ -59,6 +57,8 @@
 #include "gc/pointer.c"
 #include "gc/profiling.c"
 #include "gc/rusage.c"
+#include "gc/sequence-allocate.c"
+#include "gc/sequence.c"
 #include "gc/share.c"
 #include "gc/signals.c"
 #include "gc/size.c"

@@ -170,7 +170,7 @@ structure Value =
                 ref
                 (if Vector.exists (Prod.dest args, fn {elt, isMutable} =>
                                    isMutable andalso not (isUnit elt))
-                    andalso not (ObjectCon.isVector con)
+                    andalso not (ObjectCon.isSequence con)
                     then Unknown
                  else NotFlat)
           in
@@ -330,7 +330,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                              val args = Prod.map (args, makeTypeValue)
                              val mayFlatten =
                                 Vector.exists (Prod.dest args, #isMutable)
-                                andalso not (ObjectCon.isVector con)
+                                andalso not (ObjectCon.isSequence con)
                           in
                              if mayFlatten orelse needToMakeProd args
                                 then Make (fn () =>
@@ -360,8 +360,8 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                      in
                                         v
                                      end))
-                        | Tuple => doit ()
-                        | Vector => doit ()
+                          | Sequence => doit ()
+                          | Tuple => doit ()
                     end
                | Weak t =>
                     (case makeTypeValue t of
@@ -492,7 +492,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
       fun base b =
          case b of
             Base.Object obj => obj
-          | Base.VectorSub {vector, ...} => vector
+          | Base.SequenceSub {sequence, ...} => sequence
       fun select {base, offset} =
          let
             datatype z = datatype Value.value
@@ -607,7 +607,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                   else i := Unflattenable
                              | Unflattenable => ()
                          end
-                    | Base.VectorSub _ => ()))
+                      | Base.SequenceSub _ => ()))
           | _ => Statement.foreachUse (s, use)
       val loopStatement =
          Trace.trace2
@@ -714,7 +714,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
        * approximate liveness), then don't allow the flattening to
        * happen.
        *
-       * Vectors may be objects of unbounded size.
+       * Sequences may be objects of unbounded size.
        * Weak pointers may not be objects of unbounded size; weak
        * pointers do not keep pointed-to object live.
        * Instances of recursive datatypes may be objects of unbounded
@@ -796,7 +796,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                | Datatype tc => Size.<= (tyconSize tc, s)
                                | IntInf => Size.makeTop s
                                | Object {args, con, ...} =>
-                                    if ObjectCon.isVector con
+                                    if ObjectCon.isSequence con
                                        then Size.makeTop s
                                     else Prod.foreach (args, dependsOn)
                                | Real _ => ()
@@ -1064,7 +1064,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                               {base = base,
                                                offset = (objectOffset
                                                          (obj, offset))})))
-                           | Base.VectorSub _ => make exp))
+                           | Base.SequenceSub _ => make exp))
              | _ => make exp
          end
       fun transformStatement (s: Statement.t): Statement.t vector =
@@ -1092,7 +1092,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                         offset = objectOffset (obj, offset),
                                         value = value}
                              end)
-                 | Base.VectorSub _ => s)
+                 | Base.SequenceSub _ => s)
       val transformStatement =
          Trace.trace ("RefFlatten.transformStatement",
                       Statement.layout,

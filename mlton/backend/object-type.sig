@@ -12,12 +12,12 @@ signature OBJECT_TYPE =
 
       type ty
       datatype t =
-         Array of {elt: ty,
-                   hasIdentity: bool}
-       | Normal of {hasIdentity: bool,
-                    ty: ty}
-       | Stack
-       | Weak of ty option (* in Weak (SOME t), must have Type.isPointer t *)
+          Normal of {hasIdentity: bool,
+                      ty: ty}
+        | Sequence of {elt: ty,
+                        hasIdentity: bool}
+        | Stack
+        | Weak of ty option (* in Weak (SOME t), must have Type.isPointer t *)
 
       val basic: unit -> (ObjptrTycon.t * t) vector
       val isOk: t -> bool

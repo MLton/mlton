@@ -57,7 +57,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   uint32_t objptrIndex; /* The i'th pointer in the object (element) being marked. */
   GC_header nextHeader;
   GC_header* nextHeaderp;
-  GC_arrayCounter arrayIndex;
+  GC_sequenceCounter sequenceIndex;
   pointer top; /* The top of the next stack frame to mark. */
   GC_returnAddress returnAddress;
   GC_frameLayout frameLayout;
@@ -181,67 +181,67 @@ markNextInNormal:
       }
     }
     goto ret;
-  } else if (ARRAY_TAG == tag) {
-    /* When marking arrays:
-     *   arrayIndex is the index of the element to mark.
-     *   cur is the pointer to the array.
+  } else if (SEQUENCE_TAG == tag) {
+    /* When marking sequences:
+     *   sequenceIndex is the index of the element to mark.
+     *   cur is the pointer to the sequence.
      *   objptrIndex is the index of the pointer within the element
      *     (i.e. the i'th pointer is at index i).
      *   todo is the start of the element.
      */
     size +=
-      GC_ARRAY_METADATA_SIZE
-      + sizeofArrayNoMetaData (s, getArrayLength (cur), bytesNonObjptrs, numObjptrs);
-    if (0 == numObjptrs or 0 == getArrayLength (cur)) {
+      GC_SEQUENCE_METADATA_SIZE
+      + sizeofSequenceNoMetaData (s, getSequenceLength (cur), bytesNonObjptrs, numObjptrs);
+    if (0 == numObjptrs or 0 == getSequenceLength (cur)) {
       /* There is nothing to mark. */
-arrayDone:
+sequenceDone:
       if (shouldHashCons)
         cur = hashConsPointer (s, cur, TRUE);
       goto ret;
     }
     /* Begin marking first element. */
-    arrayIndex = 0;
+    sequenceIndex = 0;
     todo = cur;
-markArrayElt:
-    assert (arrayIndex < getArrayLength (cur));
+markSequenceElt:
+    assert (sequenceIndex < getSequenceLength (cur));
     objptrIndex = 0;
     /* Skip to the first pointer. */
     todo += bytesNonObjptrs;
-markInArray:
+markInSequence:
     if (DEBUG_DFS_MARK)
-      fprintf (stderr, "markInArray arrayIndex = %"PRIxARRCTR" objptrIndex = %"PRIu32"\n",
-               arrayIndex, objptrIndex);
-    assert (arrayIndex < getArrayLength (cur));
+      fprintf (stderr, "markInSequence sequenceIndex = %"PRIxSEQCTR" objptrIndex = %"PRIu32"\n",
+               sequenceIndex, objptrIndex);
+    assert (sequenceIndex < getSequenceLength (cur));
     assert (objptrIndex < numObjptrs);
-    assert (todo == indexArrayAtObjptrIndex (s, cur, arrayIndex, objptrIndex));
+    assert (todo == indexSequenceAtObjptrIndex (s, cur, sequenceIndex, objptrIndex));
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (not (isPointer(next))) {
-markNextInArray:
-      assert (arrayIndex < getArrayLength (cur));
+markNextInSequence:
+      assert (sequenceIndex < getSequenceLength (cur));
       assert (objptrIndex < numObjptrs);
-      assert (todo == indexArrayAtObjptrIndex (s, cur, arrayIndex, objptrIndex));
+      assert (todo == indexSequenceAtObjptrIndex (s, cur, sequenceIndex, objptrIndex));
       todo += OBJPTR_SIZE;
       objptrIndex++;
       if (objptrIndex < numObjptrs)
-        goto markInArray;
-      arrayIndex++;
-      if (arrayIndex < getArrayLength (cur))
-        goto markArrayElt;
+        goto markInSequence;
+      sequenceIndex++;
+      if (sequenceIndex < getSequenceLength (cur))
+        goto markSequenceElt;
       /* Done.  Clear out the counters and return. */
-      *getArrayCounterp (cur) = 0;
+      *getSequenceCounterp (cur) = 0;
       *headerp = header & ~COUNTER_MASK;
-      goto arrayDone;
+      goto sequenceDone;
     }
     nextHeaderp = getHeaderp (next);
     nextHeader = *nextHeaderp;
     if (mark == (nextHeader & MARK_MASK)) {
       if (shouldHashCons)
         shareObjptr (s, (objptr*)todo);
-      goto markNextInArray;
+      goto markNextInSequence;
     }
     /* Recur and mark next. */
-    *getArrayCounterp (cur) = arrayIndex;
+    *getSequenceCounterp (cur) = sequenceIndex;
     *headerp = (header & ~COUNTER_MASK) | (objptrIndex << COUNTER_SHIFT);
     goto markNext;
   } else {
@@ -326,9 +326,9 @@ ret:
     if (shouldHashCons)
       markIntergenerationalPointer (s, (pointer*)todo);
     goto markNextInNormal;
-  } else if (ARRAY_TAG == tag) {
-    arrayIndex = getArrayCounter (cur);
-    todo = cur + arrayIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
+  } else if (SEQUENCE_TAG == tag) {
+    sequenceIndex = getSequenceCounter (cur);
+    todo = cur + sequenceIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     objptrIndex = (header & COUNTER_MASK) >> COUNTER_SHIFT;
     todo += bytesNonObjptrs + objptrIndex * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
@@ -337,7 +337,7 @@ ret:
     storeObjptrFromPointer (todo, next, s->heap.start);
     if (shouldHashCons)
       markIntergenerationalPointer (s, (pointer*)todo);
-    goto markNextInArray;
+    goto markNextInSequence;
   } else {
     assert (STACK_TAG == tag);
     objptrIndex = ((GC_stack)cur)->markIndex;

@@ -81,8 +81,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
       fun unwrap1 f = fn (i) => f (SeqIndex.fromIntUnsafe i)
       fun unwrap2 f = fn (i, x) => f (SeqIndex.fromIntUnsafe i, x)
 
-      type 'a sequence = 'a S.sequence
       type 'a elt = 'a S.elt
+      type 'a sequence = 'a S.sequence
 
       (* S.maxLen must be representable as an Int.int already *)
       val maxLen = SeqIndex.toInt S.maxLen
@@ -127,8 +127,8 @@ functor Sequence (S: PRIM_SEQUENCE): SEQUENCE =
 
       structure Slice =
          struct
-            type 'a sequence = 'a S.Slice.sequence
             type 'a elt = 'a S.Slice.elt
+            type 'a sequence = 'a S.Slice.sequence
             type 'a slice = 'a S.Slice.slice
 
             fun length sl = 

@@ -1045,7 +1045,7 @@ fun commandLine (args: string list): unit =
                 | SOME (_, size) => size
          in
             Control.Target.setSizes
-            {arrayMetaData = lookup "arrayMetaData",
+            {sequenceMetaData = lookup "sequenceMetaData",
              cint = lookup "cint",
              cpointer = lookup "cpointer",
              cptrdiff = lookup "cptrdiff",

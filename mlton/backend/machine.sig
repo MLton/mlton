@@ -72,27 +72,27 @@ signature MACHINE =
       structure Operand:
          sig
             datatype t =
-               ArrayOffset of {base: t,
-                               index: t,
-                               offset: Bytes.t,
-                               scale: Scale.t,
-                               ty: Type.t}
-             | Cast of t * Type.t
-             | Contents of {oper: t,
+                Cast of t * Type.t
+              | Contents of {oper: t,
+                              ty: Type.t}
+              | Frontier
+              | GCState
+              | Global of Global.t
+              | Label of Label.t
+              | Null
+              | Offset of {base: t,
+                            offset: Bytes.t,
                             ty: Type.t}
-             | Frontier
-             | GCState
-             | Global of Global.t
-             | Label of Label.t
-             | Null
-             | Offset of {base: t,
-                          offset: Bytes.t,
-                          ty: Type.t}
-             | Real of RealX.t
-             | Register of Register.t
-             | StackOffset of StackOffset.t
-             | StackTop
-             | Word of WordX.t
+              | Real of RealX.t
+              | Register of Register.t
+              | SequenceOffset of {base: t,
+                                    index: t,
+                                    offset: Bytes.t,
+                                    scale: Scale.t,
+                                    ty: Type.t}
+              | StackOffset of StackOffset.t
+              | StackTop
+              | Word of WordX.t
 
             val equals: t * t -> bool
             val interfere: t * t -> bool

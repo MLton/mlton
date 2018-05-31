@@ -106,7 +106,7 @@ structure CFunction =
             symbolScope = Private,
             target = Direct "MLton_halt"}
 
-      fun gcArrayAllocate {return} =
+      fun gcSequenceAllocate {return} =
          T {args = Vector.new4 (Type.gcState (),
                                 Type.csize (),
                                 Type.seqIndex (),
@@ -126,9 +126,9 @@ structure CFunction =
                          SOME CType.objptr),
             return = return,
             symbolScope = Private,
-            target = Direct "GC_arrayAllocate"}
+            target = Direct "GC_sequenceAllocate"}
 
-      fun gcArrayCopy (dt, st) =
+      fun gcSequenceCopy (dt, st) =
          T {args = Vector.new6 (Type.gcState (),
                                 dt,
                                 Type.seqIndex (),
@@ -152,7 +152,7 @@ structure CFunction =
                          NONE),
             return = Type.unit,
             symbolScope = Private,
-            target = Direct "GC_arrayCopy"}
+            target = Direct "GC_sequenceCopy"}
 
       val returnToC = fn () =>
          T {args = Vector.new0 (),
@@ -617,7 +617,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
                          (WordX.fromIntInf (cardSizeLog2, WordSize.shiftArg)))),
                 dst = SOME (index, indexTy),
                 prim = Prim.wordRshift (sz, {signed = false})},
-       Move {dst = (ArrayOffset
+       Move {dst = (SequenceOffset
                     {base = Runtime GCField.CardMapAbsolute,
                      index = Var {ty = indexTy, var = index},
                      offset = Bytes.zero,
@@ -656,7 +656,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
              fn () =>
              let
                 val rawElt = Type.bits width
-                val rawTy = ObjectType.Array {elt = rawElt, hasIdentity = true}
+                val rawTy = ObjectType.Sequence {elt = rawElt, hasIdentity = true}
                 val rawOpt = ObjptrTycon.new ()
                 val () =
                    ObjptrTycon.setIndex
@@ -1111,17 +1111,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               fun arrayOrVectorLength () =
                                  move (Offset
                                        {base = a 0,
-                                        offset = Runtime.arrayLengthOffset (),
+                                        offset = Runtime.sequenceLengthOffset (),
                                         ty = Type.seqIndex ()})
                               fun subWord s =
                                  let
                                     val ty = Type.word s
                                  in
-                                    move (ArrayOffset {base = a 0,
-                                                       index = a 1,
-                                                       offset = Bytes.zero,
-                                                       scale = Type.scale ty,
-                                                       ty = ty})
+                                    move (SequenceOffset {base = a 0,
+                                                          index = a 1,
+                                                          offset = Bytes.zero,
+                                                          scale = Type.scale ty,
+                                                          ty = ty})
                                  end
                               fun dst () =
                                  case var of
@@ -1177,7 +1177,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                [Vector.new1 GCState,
                                                 vos args],
                                         func = f}
-                              fun arrayAlloc (numElts: Operand.t, opt) =
+                              fun sequenceAlloc (numElts: Operand.t, opt) =
                                  let
                                     val result = valOf (toRtype ty)
                                     val args =
@@ -1186,28 +1186,28 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                     numElts,
                                                     ObjptrTycon opt)
                                     val func =
-                                       CFunction.gcArrayAllocate
+                                       CFunction.gcSequenceAllocate
                                        {return = result}
                                  in
                                     ccall {args = args, func = func}
                                  end
                      fun cpointerGet () =
                         maybeMove (fn ty =>
-                                   ArrayOffset {base = a 0,
-                                                index = a 1,
-                                                offset = Bytes.zero,
-                                                scale = Type.scale ty,
-                                                ty = ty})
+                                   SequenceOffset {base = a 0,
+                                                    index = a 1,
+                                                    offset = Bytes.zero,
+                                                    scale = Type.scale ty,
+                                                    ty = ty})
                      fun cpointerSet () =
                         let
                            val src = a 2
                            val ty = Operand.ty src
                         in
-                           add (Move {dst = ArrayOffset {base = a 0,
-                                                         index = a 1,
-                                                         offset = Bytes.zero,
-                                                         scale = Type.scale ty,
-                                                         ty = ty},
+                           add (Move {dst = SequenceOffset {base = a 0,
+                                                            index = a 1,
+                                                            offset = Bytes.zero,
+                                                            scale = Type.scale ty,
+                                                            ty = ty},
                                       src = a 2})
                         end
                      fun codegenOrC (p: Prim.t) =
@@ -1249,17 +1249,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                 Vector.sub (objectTypes, ObjptrTycon.index arrOpt)
                                              val arrElt =
                                                 case arrTy of
-                                                   ObjectType.Array {elt, ...} => elt
+                                                   ObjectType.Sequence {elt, ...} => elt
                                                  | _ => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_allocRaw"
                                              val rawOpt = allocRawOpt (Type.width arrElt)
                                           in
                                              rawOpt
                                           end
                                     in
-                                       arrayAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
+                                       sequenceAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
                                     end
-                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
-                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcArrayCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
                                | Array_length => arrayOrVectorLength ()
                                | Array_toArray =>
                                     let
@@ -1283,7 +1283,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     end
                                | Array_toVector =>
                                     let
-                                       val array = a 0
+                                       val sequence = a 0
                                        val vecTy = valOf (toRtype ty)
                                        val vecOpt =
                                           case Type.deObjptr vecTy of
@@ -1293,21 +1293,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        add2
                                        (Move
                                         {dst = (Offset
-                                                {base = array,
+                                                {base = sequence,
                                                  offset = Runtime.headerOffset (),
                                                  ty = Type.objptrHeader ()}),
                                          src = ObjptrTycon vecOpt},
                                         Bind {dst = (valOf var, vecTy),
                                               isMutable = false,
-                                              src = Operand.cast (array, vecTy)})
+                                              src = Operand.cast (sequence, vecTy)})
                                     end
                                | Array_uninit =>
                                     let
-                                       val array = a 0
-                                       val arrayTy = varType (arg 0)
+                                       val sequence = a 0
+                                       val sequenceTy = varType (arg 0)
                                        val index = a 1
                                        val eltTys =
-                                          case S.Type.deVectorOpt arrayTy of
+                                          case S.Type.deSequenceOpt sequenceTy of
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninit"
                                            | SOME eltTys => eltTys
                                        val sss =
@@ -1319,20 +1319,20 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  if not (Type.isObjptr elt)
                                                     then NONE
                                                     else (SOME o update)
-                                                         {base = Base.VectorSub
+                                                         {base = Base.SequenceSub
                                                                  {index = index,
-                                                                  vector = array},
-                                                                 baseTy = arrayTy,
-                                                                 offset = offset,
-                                                                 value = bogus elt})
+                                                                  sequence = sequence},
+                                                                  baseTy = sequenceTy,
+                                                                  offset = offset,
+                                                                  value = bogus elt})
                                     in
                                        adds (List.concat sss)
                                     end
                                | Array_uninitIsNop =>
                                     let
-                                       val arrayTy = varType (arg 0)
+                                       val sequenceTy = varType (arg 0)
                                        val eltTys =
-                                          case S.Type.deVectorOpt arrayTy of
+                                          case S.Type.deSequenceOpt sequenceTy of
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninitIsNop"
                                            | SOME eltTys => eltTys
                                        val isNop =
@@ -1639,7 +1639,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     let
                                        val ty = Type.word eleSize
                                     in
-                                       add (Move {dst = (ArrayOffset
+                                       add (Move {dst = (SequenceOffset
                                                          {base = a 0,
                                                           index = a 1,
                                                           offset = Bytes.zero,
