@@ -25,11 +25,11 @@ struct GC_intInfInit {
   const char *mlstr;
 };
 
-/* GC_init allocates a collection of arrays/vectors in the heap. */
+/* GC_init allocates a collection of sequences in the heap. */
 struct GC_vectorInit {
   size_t elementSize;
   uint32_t globalIndex;
-  GC_arrayLength length;
+  GC_sequenceLength length;
   pointer words;
 };
 

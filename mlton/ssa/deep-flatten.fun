@@ -380,7 +380,7 @@ structure Value =
                     let
                        val {args = a, con, ...} = Equatable.value e
                     in
-                       if Prod.someIsMutable a orelse ObjectCon.isVector con
+                       if Prod.someIsMutable a orelse ObjectCon.isSequence con
                           then unify (from, to)
                        else
                           case !f' of
@@ -399,7 +399,7 @@ structure Value =
       fun mayFlatten {args, con}: bool =
          (* Don't flatten constructors, since they are part of a sum type.
           * Don't flatten unit.
-          * Don't flatten vectors (of course their components can be
+          * Don't flatten sequences (of course their components can be
           * flattened).
           * Don't flatten objects with mutable fields, since sharing must be
           * preserved.
@@ -408,8 +408,8 @@ structure Value =
          andalso Prod.allAreImmutable args
          andalso (case con of
                      ObjectCon.Con _ => false
-                   | ObjectCon.Tuple => true
-                   | ObjectCon.Vector => false)
+                   | ObjectCon.Sequence => false
+                   | ObjectCon.Tuple => true)
 
       fun objectFields {args, con} =
          let
@@ -420,7 +420,7 @@ structure Value =
                if (case con  of
                       ObjectCon.Con _ => true
                     | ObjectCon.Tuple => true
-                    | ObjectCon.Vector => false)
+                    | ObjectCon.Sequence => false)
                   then Vector.foreach (Prod.dest args, fn {elt, isMutable} =>
                                        if isMutable
                                           then ()
@@ -607,7 +607,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                      (conValue c, fn () =>
                                       makeValue (doit ())))
                          | Tuple => doit ()
-                         | Vector => doit ()
+                         | Sequence => doit ()
                      end
                 | Weak t =>
                      (case makeTypeValue t of
@@ -729,7 +729,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
       fun base b =
          case b of
             Base.Object obj => obj
-          | Base.VectorSub {vector, ...} => vector
+          | Base.SequenceSub {sequence, ...} => sequence
       fun select {base, offset} =
          let
             datatype z = datatype Value.t
@@ -988,7 +988,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                      val baseVar =
                         case base of
                            Base.Object x => x
-                         | Base.VectorSub {vector = x, ...} => x
+                         | Base.SequenceSub {sequence = x, ...} => x
                   in
                      case Value.deObject (varValue baseVar) of
                         NONE => simple ()

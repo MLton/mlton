@@ -156,10 +156,10 @@ structure Operand =
 
       fun isMem (z: t): bool =
          case z of
-            ArrayOffset _ => true
-          | Cast (z, _) => isMem z
+            Cast (z, _) => isMem z
           | Contents _ => true
           | Offset _ => true
+          | SequenceOffset _ => true
           | StackOffset _ => true
           | _ => false
    end
@@ -353,11 +353,11 @@ fun outputDeclarations
              datatype z = datatype Runtime.RObjectType.t
              val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
-                   Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      ("ARRAY_TAG", hasIdentity,
-                       Bytes.toInt bytesNonObjptrs, numObjptrs)
-                 | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                   Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                       ("NORMAL_TAG", hasIdentity,
+                       Bytes.toInt bytesNonObjptrs, numObjptrs)
+                 | Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                      ("SEQUENCE_TAG", hasIdentity,
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
                       ("STACK_TAG", false, 0, 0)
@@ -687,13 +687,7 @@ fun output {program as Machine.Program.T {chunks,
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
             case z of
-               ArrayOffset {base, index, offset, scale, ty} =>
-                  concat ["X", C.args [Type.toC ty,
-                                       toString base,
-                                       toString index,
-                                       Scale.toString scale,
-                                       C.bytes offset]]
-             | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
+              Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
              | Contents {oper, ty} => contents (ty, toString oper)
              | Frontier => "Frontier"
              | GCState => "GCState"
@@ -713,6 +707,12 @@ fun output {program as Machine.Program.T {chunks,
              | Register r =>
                   concat [Type.name (Register.ty r), "_",
                           Int.toString (Register.index r)]
+             | SequenceOffset {base, index, offset, scale, ty} =>
+                  concat ["X", C.args [Type.toC ty,
+                                       toString base,
+                                       toString index,
+                                       Scale.toString scale,
+                                       C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
              | Word w => WordX.toC w
@@ -859,14 +859,14 @@ fun output {program as Machine.Program.T {chunks,
                let
                   fun usesStack z =
                      case z of
-                        Operand.ArrayOffset {base, index, ...} =>
-                           (usesStack base) orelse (usesStack index)
-                      | Operand.Cast (z, _) =>
+                      Operand.Cast (z, _) =>
                            (usesStack z)
                       | Operand.Contents {oper, ...} =>
                            (usesStack oper)
                       | Operand.Offset {base, ...} =>
                            (usesStack base)
+                      | Operand.SequenceOffset {base, index, ...} =>
+                           (usesStack base) orelse (usesStack index)
                       | Operand.StackOffset _ => true
                       | _ => false
                in

@@ -7,11 +7,11 @@
  * See the file MLton-LICENSE for details.
  */
 
-pointer GC_arrayAllocate (GC_state s,
-                          size_t ensureBytesFree,
-                          GC_arrayLength numElements,
-                          GC_header header) {
-  size_t arraySize, arraySizeAligned;
+pointer GC_sequenceAllocate (GC_state s,
+                              size_t ensureBytesFree,
+                              GC_sequenceLength numElements,
+                              GC_header header) {
+  size_t sequenceSize, sequenceSizeAligned;
   size_t bytesPerElement;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
@@ -21,60 +21,60 @@ pointer GC_arrayAllocate (GC_state s,
 
   splitHeader(s, header, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
   if (DEBUG)
-    fprintf (stderr, "GC_arrayAllocate (%"PRIuMAX", "FMTARRLEN", "FMTHDR")\n",
+    fprintf (stderr, "GC_sequenceAllocate (%"PRIuMAX", "FMTSEQLEN", "FMTHDR")\n",
              (uintmax_t)ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
-  /* Check for overflow when computing arraySize.
+  /* Check for overflow when computing sequenceSize.
    */
   if (bytesPerElement > 0 and numElements > (SIZE_MAX / bytesPerElement)) {
     goto doOverflow;
   }
-  arraySize = bytesPerElement * numElements;
-  if (arraySize > SIZE_MAX - GC_ARRAY_METADATA_SIZE) {
+  sequenceSize = bytesPerElement * numElements;
+  if (sequenceSize > SIZE_MAX - GC_SEQUENCE_METADATA_SIZE) {
     goto doOverflow;
   }
-  arraySize += GC_ARRAY_METADATA_SIZE;
-  arraySizeAligned = align (arraySize, s->alignment);
-  if (arraySizeAligned < arraySize) {
+  sequenceSize += GC_SEQUENCE_METADATA_SIZE;
+  sequenceSizeAligned = align (sequenceSize, s->alignment);
+  if (sequenceSizeAligned < sequenceSize) {
     goto doOverflow;
   }
-  if (DEBUG_ARRAY)
+  if (DEBUG_SEQUENCE)
     fprintf (stderr,
-             "Array with "FMTARRLEN" elts of size %"PRIuMAX" and total size %s and total aligned size %s.  "
+             "Sequence with "FMTSEQLEN" elts of size %"PRIuMAX" and total size %s and total aligned size %s.  "
              "Ensure %s bytes free.\n",
              numElements, (uintmax_t)bytesPerElement,
-             uintmaxToCommaString(arraySize),
-             uintmaxToCommaString(arraySizeAligned),
+             uintmaxToCommaString(sequenceSize),
+             uintmaxToCommaString(sequenceSizeAligned),
              uintmaxToCommaString(ensureBytesFree));
-  if (arraySizeAligned >= s->controls.oldGenArraySize) {
-    if (not hasHeapBytesFree (s, arraySizeAligned, ensureBytesFree)) {
+  if (sequenceSizeAligned >= s->controls.oldGenSequenceSize) {
+    if (not hasHeapBytesFree (s, sequenceSizeAligned, ensureBytesFree)) {
       enter (s);
-      performGC (s, arraySizeAligned, ensureBytesFree, FALSE, TRUE);
+      performGC (s, sequenceSizeAligned, ensureBytesFree, FALSE, TRUE);
       leave (s);
     }
     frontier = s->heap.start + s->heap.oldGenSize;
-    s->heap.oldGenSize += arraySizeAligned;
-    s->cumulativeStatistics.bytesAllocated += arraySizeAligned;
+    s->heap.oldGenSize += sequenceSizeAligned;
+    s->cumulativeStatistics.bytesAllocated += sequenceSizeAligned;
   } else {
     size_t bytesRequested;
     pointer newFrontier;
 
-    bytesRequested = arraySizeAligned + ensureBytesFree;
+    bytesRequested = sequenceSizeAligned + ensureBytesFree;
     if (not hasHeapBytesFree (s, 0, bytesRequested)) {
       enter (s);
       performGC (s, 0, bytesRequested, FALSE, TRUE);
       leave (s);
     }
     frontier = s->frontier;
-    newFrontier = frontier + arraySizeAligned;
+    newFrontier = frontier + sequenceSizeAligned;
     assert (isFrontierAligned (s, newFrontier));
     s->frontier = newFrontier;
   }
-  last = frontier + arraySize;
-  *((GC_arrayCounter*)(frontier)) = 0;
-  frontier = frontier + GC_ARRAY_COUNTER_SIZE;
-  *((GC_arrayLength*)(frontier)) = numElements;
-  frontier = frontier + GC_ARRAY_LENGTH_SIZE;
+  last = frontier + sequenceSize;
+  *((GC_sequenceCounter*)(frontier)) = 0;
+  frontier = frontier + GC_SEQUENCE_COUNTER_SIZE;
+  *((GC_sequenceLength*)(frontier)) = numElements;
+  frontier = frontier + GC_SEQUENCE_LENGTH_SIZE;
   *((GC_header*)(frontier)) = header;
   frontier = frontier + GC_HEADER_SIZE;
   result = frontier;
@@ -87,7 +87,7 @@ pointer GC_arrayAllocate (GC_state s,
       for (p = frontier; p < last; p += OBJPTR_SIZE)
         *((objptr*)p) = BOGUS_OBJPTR;
     else {
-      /* Array with a mix of pointers and non-pointers. */
+      /* Sequence with a mix of pointers and non-pointers. */
       size_t bytesObjptrs;
 
       bytesObjptrs = numObjptrs * OBJPTR_SIZE;
@@ -103,9 +103,9 @@ pointer GC_arrayAllocate (GC_state s,
       }
     }
   }
-  GC_profileAllocInc (s, arraySizeAligned);
-  if (DEBUG_ARRAY) {
-    fprintf (stderr, "GC_arrayAllocate done.  result = "FMTPTR"  frontier = "FMTPTR"\n",
+  GC_profileAllocInc (s, sequenceSizeAligned);
+  if (DEBUG_SEQUENCE) {
+    fprintf (stderr, "GC_sequenceAllocate done.  result = "FMTPTR"  frontier = "FMTPTR"\n",
              (uintptr_t)result, (uintptr_t)s->frontier);
     displayGCState (s, stderr);
   }
@@ -117,6 +117,6 @@ pointer GC_arrayAllocate (GC_state s,
   return result;
 
 doOverflow:
-  die ("Out of memory.  Unable to allocate array with "FMTARRLEN" elements and elements of size %"PRIuMAX" bytes.",
+  die ("Out of memory.  Unable to allocate sequence with "FMTSEQLEN" elements and elements of size %"PRIuMAX" bytes.",
        numElements, (uintmax_t)bytesPerElement);
 }

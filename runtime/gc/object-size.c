@@ -7,13 +7,13 @@
  * See the file MLton-LICENSE for details.
  */
 
-size_t sizeofArrayNoMetaData (GC_state s,
-                              GC_arrayLength numElements,
-                              uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
+size_t sizeofSequenceNoMetaData (GC_state s,
+                                  GC_sequenceLength numElements,
+                                  uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
   size_t result;
 
   result = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-  return alignWithExtra (s, result, GC_ARRAY_METADATA_SIZE);
+  return alignWithExtra (s, result, GC_SEQUENCE_METADATA_SIZE);
 }
 
 size_t sizeofStackNoMetaData (__attribute__ ((unused)) GC_state s,
@@ -34,9 +34,9 @@ void sizeofObjectAux (GC_state s, pointer p, size_t* metaDataBytes, size_t* obje
   if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { 
     *metaDataBytes = GC_NORMAL_METADATA_SIZE;
     *objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
-  } else if (ARRAY_TAG == tag) {
-    *metaDataBytes = GC_ARRAY_METADATA_SIZE;
-    *objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+  } else if (SEQUENCE_TAG == tag) {
+    *metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
+    *objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
                                           bytesNonObjptrs, numObjptrs);
   } else { /* Stack. */
     assert (STACK_TAG == tag);

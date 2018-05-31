@@ -9,8 +9,8 @@
 
 const char* objectTypeTagToString (GC_objectTypeTag tag) {
   switch (tag) {
-  case ARRAY_TAG:
-    return "ARRAY";
+  case SEQUENCE_TAG:
+    return "SEQUENCE";
   case NORMAL_TAG:
     return "NORMAL";
   case STACK_TAG:
@@ -101,8 +101,8 @@ pointer advanceToObjectData (ARG_USED_FOR_ASSERT GC_state s, pointer p) {
   assert (isFrontierAligned (s, p));
   header = *(GC_header*)p;
   if (0 == header)
-    /* Looking at the counter word in an array. */
-    res = p + GC_ARRAY_METADATA_SIZE;
+    /* Looking at the counter word in a sequence. */
+    res = p + GC_SEQUENCE_METADATA_SIZE;
   else
     /* Looking at a header word. */
     res = p + GC_NORMAL_METADATA_SIZE;

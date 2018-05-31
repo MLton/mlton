@@ -1187,20 +1187,20 @@ structure Target =
 
       structure Size =
          struct
-            val (arrayMetaData: unit -> Bits.t, set_arrayMetaData) = make "Size.arrayMetaData"
+            val (sequenceMetaData: unit -> Bits.t, set_sequenceMetaData) = make "Size.sequenceMetaData"
             val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
             val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
             val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
             val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
             val (header: unit -> Bits.t, set_header) = make "Size.header"
             val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
-            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.noramlMetaData"
+            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.normalMetaData"
             val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
             val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
          end
-      fun setSizes {arrayMetaData, cint, cpointer, cptrdiff, csize,
+      fun setSizes {sequenceMetaData, cint, cpointer, cptrdiff, csize,
                     header, mplimb, normalMetaData, objptr, seqIndex} =
-         (Size.set_arrayMetaData arrayMetaData
+         (Size.set_sequenceMetaData sequenceMetaData
           ; Size.set_cint cint
           ; Size.set_cpointer cpointer
           ; Size.set_cptrdiff cptrdiff
@@ -1230,8 +1230,8 @@ fun mlbPathMap () =
                         32 => "rep32"
                       | 64 => "rep64"
                       | _ => Error.bug "Control.mlbPathMap")},
-            {var = "ARRAY_METADATA_SIZE",
-             path = (case Bits.toInt (Target.Size.arrayMetaData ()) of
+            {var = "SEQUENCE_METADATA_SIZE",
+             path = (case Bits.toInt (Target.Size.sequenceMetaData ()) of
                         96 => "size96"
                       | 192 => "size192"
                       | _ => Error.bug "Control.mlbPathMap")},

@@ -35,12 +35,6 @@ signature REP_TYPE =
 
       val bogusWord: t -> WordX.t
       val align: t * Bytes.t -> Bytes.t
-      val arrayOffsetIsOk: {base: t,
-                            index: t,
-                            offset: Bytes.t,
-                            tyconTy: ObjptrTycon.t -> ObjectType.t,
-                            result: t,
-                            scale: Scale.t} -> bool
       val bits: Bits.t -> t
       val bool: t
       val bytes: t -> Bytes.t
@@ -84,6 +78,12 @@ signature REP_TYPE =
       val resize: t * Bits.t -> t
       val seq: t vector -> t
       val seqIndex: unit -> t
+      val sequenceOffsetIsOk: {base: t,
+                            index: t,
+                            offset: Bytes.t,
+                            tyconTy: ObjptrTycon.t -> ObjectType.t,
+                            result: t,
+                            scale: Scale.t} -> bool
       val shiftArg: t
       val string: unit -> t
       val sum: t vector -> t

@@ -4,7 +4,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure ArrayMetaDataSize =
+structure SequenceMetaDataSize =
    struct
-      val bytes : Int32.int = 24
+      val bytes : Int32.int = 16
    end
