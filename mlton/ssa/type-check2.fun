@@ -61,8 +61,8 @@ fun checkScopes (program as
             val _ =
                case oc of
                   Con con => getCon con
+                | Sequence => ()
                 | Tuple => ()
-                | Vector => ()
          in
             ()
          end
@@ -462,17 +462,17 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun base b =
          case b of
             Base.Object ty => ty
-          | Base.VectorSub {index, vector} =>
-               if Type.isVector vector 
+          | Base.SequenceSub {index, sequence} =>
+               if Type.isSequence sequence 
                   then let
                           val _ =
                              if Type.equals (index, Type.word (WordSize.seqIndex ()))
                                 then ()
-                             else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non seqIndex)"
+                             else Error.bug "Ssa2.TypeCheck2.base (sequence-sub of non seqIndex)"
                        in
-                          vector
+                          sequence
                        end
-               else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non vector)"
+               else Error.bug "Ssa2.TypeCheck2.base (sequence-sub of non sequence)"
       fun select {base: Type.t, offset: int, resultType = _}: Type.t =
          case Type.dest base of
             Type.Object {args, ...} => Prod.elt (args, offset)

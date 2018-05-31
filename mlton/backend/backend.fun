@@ -497,19 +497,7 @@ let
             datatype z = datatype R.Operand.t
          in
             case oper of
-               ArrayOffset {base, index, offset, scale, ty} =>
-                  let
-                     val base = translateOperand base
-                  in
-                     if M.Operand.isLocation base
-                        then M.Operand.ArrayOffset {base = base,
-                                                    index = translateOperand index,
-                                                    offset = offset,
-                                                    scale = scale,
-                                                    ty = ty}
-                     else bogusOp ty
-                  end
-             | Cast (z, t) => M.Operand.Cast (translateOperand z, t)
+              Cast (z, t) => M.Operand.Cast (translateOperand z, t)
              | Const c => constOperand c
              | EnsuresBytesFree =>
                   Error.bug "Backend.translateOperand: EnsuresBytesFree"
@@ -531,6 +519,18 @@ let
                                    (ObjptrTycon.index opt)),
                     WordSize.objptrHeader ()))
              | Runtime f => runtimeOp f
+             | SequenceOffset {base, index, offset, scale, ty} =>
+                  let
+                     val base = translateOperand base
+                  in
+                     if M.Operand.isLocation base
+                        then M.Operand.SequenceOffset {base = base,
+                                                        index = translateOperand index,
+                                                        offset = offset,
+                                                        scale = scale,
+                                                        ty = ty}
+                     else bogusOp ty
+                  end
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -1140,7 +1140,7 @@ let
                     datatype z = datatype M.Operand.t
                  in
                     case z of
-                       ArrayOffset {base, index, ...} =>
+                       SequenceOffset {base, index, ...} =>
                           doOperand (base, doOperand (index, max))
                      | Cast (z, _) => doOperand (z, max)
                      | Contents {oper, ...} => doOperand (oper, max)

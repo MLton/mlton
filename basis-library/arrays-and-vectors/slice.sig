@@ -10,8 +10,8 @@
 
 signature SLICE =
    sig
-      type 'a sequence
       type 'a elt
+      type 'a sequence
       type 'a slice 
       val length: 'a slice -> int
       val sub: 'a slice * int -> 'a elt

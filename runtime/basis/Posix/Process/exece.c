@@ -14,11 +14,11 @@ C_Errno_t(C_Int_t) Posix_Process_exece (NullString8_t pNStr,
 
   path = (const char *) pNStr;
   args = (char **) aStr;
-  aLen = GC_getArrayLength((pointer)aStr);
+  aLen = GC_getSequenceLength((pointer)aStr);
   aSaved = args[aLen - 1];
   args[aLen - 1] = NULL;
   env = (char **) eStr;
-  eLen = GC_getArrayLength((pointer)eStr);
+  eLen = GC_getSequenceLength((pointer)eStr);
   eSaved = env[eLen - 1];
   env[eLen - 1] = NULL;
   res = EXECVE (path, 

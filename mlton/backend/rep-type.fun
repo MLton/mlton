@@ -365,39 +365,33 @@ structure ObjectType =
 
       type ty = Type.t
       datatype t =
-         Array of {elt: ty,
-                   hasIdentity: bool}
-       | Normal of {hasIdentity: bool,
+        Normal of {hasIdentity: bool,
                     ty: ty}
-       | Stack
-       | Weak of Type.t option
+        | Sequence of {elt: ty,
+                        hasIdentity: bool}
+        | Stack
+        | Weak of Type.t option
 
       fun layout (t: t) =
          let
             open Layout
          in
             case t of
-               Array {elt, hasIdentity} =>
-                  seq [str "Array ",
-                       record [("elt", Type.layout elt),
-                               ("hasIdentity", Bool.layout hasIdentity)]]
-             | Normal {hasIdentity, ty} =>
+              Normal {hasIdentity, ty} =>
                   seq [str "Normal ",
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("ty", Type.layout ty)]]
-             | Stack => str "Stack"
-             | Weak t => seq [str "Weak ", Option.layout Type.layout t]
+              | Sequence {elt, hasIdentity} =>
+                  seq [str "Sequence ",
+                       record [("elt", Type.layout elt),
+                               ("hasIdentity", Bool.layout hasIdentity)]]
+              | Stack => str "Stack"
+              | Weak t => seq [str "Weak ", Option.layout Type.layout t]
          end
 
       fun isOk (t: t): bool =
          case t of
-            Array {elt, ...} =>
-               let
-                  val b = Type.width elt
-               in
-                  Bits.isByteAligned b
-               end
-          | Normal {ty, ...} =>
+          Normal {ty, ...} =>
                let
                   val b = Bits.+ (Type.width ty,
                                   Type.width (Type.objptrHeader ()))
@@ -405,6 +399,12 @@ structure ObjectType =
                   case !Control.align of
                      Control.Align4 => Bits.isWord32Aligned b
                    | Control.Align8 => Bits.isWord64Aligned b
+               end
+          | Sequence {elt, ...} =>
+               let
+                  val b = Type.width elt
+               in
+                  Bits.isByteAligned b
                end
           | Stack => true
           | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
@@ -464,7 +464,7 @@ structure ObjectType =
                   val b = Bits.fromInt i
                in
                   (ObjptrTycon.wordVector b,
-                   Array {hasIdentity = false,
+                   Sequence {hasIdentity = false,
                           elt = Type.word (WordSize.fromBits b)})
                end
          in
@@ -483,15 +483,7 @@ structure ObjectType =
       in
          fun toRuntime (t: t): R.t =
             case t of
-               Array {elt, hasIdentity} =>
-                  let
-                     val (b, nops) = Type.bytesAndObjptrs elt
-                  in
-                     R.Array {hasIdentity = hasIdentity,
-                              bytesNonObjptrs = b,
-                              numObjptrs = nops}
-                  end
-             | Normal {hasIdentity, ty} =>
+                Normal {hasIdentity, ty} =>
                   let
                      val (b, nops) = Type.bytesAndObjptrs ty
                   in
@@ -499,8 +491,16 @@ structure ObjectType =
                                bytesNonObjptrs = b,
                                numObjptrs = nops}
                   end
-             | Stack => R.Stack
-             | Weak to => R.Weak {gone = Option.isNone to}
+              | Sequence {elt, hasIdentity} =>
+                  let
+                     val (b, nops) = Type.bytesAndObjptrs elt
+                  in
+                     R.Sequence {hasIdentity = hasIdentity,
+                              bytesNonObjptrs = b,
+                              numObjptrs = nops}
+                  end
+              | Stack => R.Stack
+              | Weak to => R.Weak {gone = Option.isNone to}
       end
    end
 
@@ -772,11 +772,11 @@ fun offsetIsOk {base, offset, tyconTy, result} =
       Objptr opts => 
          if Bytes.equals (offset, Runtime.headerOffset ())
             then equals (result, objptrHeader ())
-         else if Bytes.equals (offset, Runtime.arrayLengthOffset ())
+         else if Bytes.equals (offset, Runtime.sequenceLengthOffset ())
             then (1 = Vector.length opts)
                  andalso (case tyconTy (Vector.sub (opts, 0)) of
-                             ObjectType.Array _ => true
-                           | _ => false)
+                              ObjectType.Sequence _ => true
+                            | _ => false)
                  andalso (equals (result, seqIndex ()))
          else (1 = Vector.length opts)
               andalso (case tyconTy (Vector.sub (opts, 0)) of
@@ -788,7 +788,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
                         | _ => false)
     | _ => false
 
-fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} = 
+fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} = 
    case node base of
       CPointer => 
          (equals (index, csize ()))
@@ -806,7 +806,7 @@ fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} =
          (equals (index, seqIndex ()))
          andalso (1 = Vector.length opts)
          andalso (case tyconTy (Vector.first opts) of
-                     ObjectType.Array {elt, ...} => 
+                     ObjectType.Sequence {elt, ...} => 
                         if equals (elt, word8)
                            then (* special case for PackWord operations *)
                                 (case node result of

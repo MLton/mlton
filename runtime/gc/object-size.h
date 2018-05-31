@@ -9,8 +9,8 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static inline size_t sizeofArrayNoMetaData (GC_state s, GC_arrayLength numElements,
-                                            uint16_t bytesNonObjptrs, uint16_t numObjptrs);
+static inline size_t sizeofSequenceNoMetaData (GC_state s, GC_sequenceLength numElements,
+                                            	uint16_t bytesNonObjptrs, uint16_t numObjptrs);
 static inline size_t sizeofStackNoMetaData (GC_state s, GC_stack stack);
 
 static inline void sizeofObjectAux (GC_state s, pointer p,

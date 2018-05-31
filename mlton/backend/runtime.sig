@@ -66,19 +66,16 @@ signature RUNTIME =
       structure RObjectType:
          sig
             datatype t =
-               Array of {hasIdentity: bool,
-                         bytesNonObjptrs: Bytes.t,
-                         numObjptrs: int}
-             | Normal of {hasIdentity: bool,
-                          bytesNonObjptrs: Bytes.t,
-                          numObjptrs: int}
-             | Stack
-             | Weak of {gone: bool}
+                Normal of {hasIdentity: bool,
+                            bytesNonObjptrs: Bytes.t,
+                            numObjptrs: int}
+              | Sequence of {hasIdentity: bool,
+                              bytesNonObjptrs: Bytes.t,
+                              numObjptrs: int}
+              | Stack
+              | Weak of {gone: bool}
          end
 
-      val arrayLengthOffset: unit -> Bytes.t
-      val arrayLengthSize: unit -> Bytes.t
-      val arrayMetaDataSize: unit -> Bytes.t
       val cpointerSize: unit -> Bytes.t
       val headerOffset: unit -> Bytes.t
       val headerSize: unit -> Bytes.t
@@ -88,5 +85,8 @@ signature RUNTIME =
       val maxFrameSize: Bytes.t
       val normalMetaDataSize: unit -> Bytes.t
       val objptrSize: unit -> Bytes.t
+      val sequenceLengthOffset: unit -> Bytes.t
+      val sequenceLengthSize: unit -> Bytes.t
+      val sequenceMetaDataSize: unit -> Bytes.t
       val typeIndexToHeader: int -> word
    end

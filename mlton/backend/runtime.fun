@@ -141,32 +141,32 @@ structure GCField =
 structure RObjectType =
    struct
       datatype t =
-         Array of {hasIdentity: bool,
-                   bytesNonObjptrs: Bytes.t,
+          Normal of {hasIdentity: bool,
+                      bytesNonObjptrs: Bytes.t,
+                      numObjptrs: int}
+        | Sequence of {hasIdentity: bool,
+                        bytesNonObjptrs: Bytes.t,
                    numObjptrs: int}
-       | Normal of {hasIdentity: bool,
-                    bytesNonObjptrs: Bytes.t,
-                    numObjptrs: int}
-       | Stack
-       | Weak of {gone: bool}
+        | Stack
+        | Weak of {gone: bool}
 
       fun layout (t: t): Layout.t =
          let
             open Layout
          in
             case t of
-               Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                  seq [str "Array ",
-                       record [("hasIdentity", Bool.layout hasIdentity),
-                               ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
-                               ("numObjptrs", Int.layout numObjptrs)]]
-             | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                   seq [str "Normal ",
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
                                ("numObjptrs", Int.layout numObjptrs)]]
-             | Stack => str "Stack"
-             | Weak {gone} => 
+              | Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+                  seq [str "Sequence ",
+                       record [("hasIdentity", Bool.layout hasIdentity),
+                               ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
+                               ("numObjptrs", Int.layout numObjptrs)]]
+              | Stack => str "Stack"
+              | Weak {gone} => 
                   seq [str "Weak",
                        record [("gone", Bool.layout gone)]]
          end
@@ -197,16 +197,16 @@ val headerSize : unit -> Bytes.t =
 val headerOffset : unit -> Bytes.t = 
    Promise.lazy (Bytes.~ o headerSize)
 
-(* see gc/array.h *)
-val arrayLengthSize : unit -> Bytes.t =
+(* see gc/sequence.h *)
+val sequenceLengthSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.seqIndex)
-val arrayLengthOffset : unit -> Bytes.t =
+val sequenceLengthOffset : unit -> Bytes.t =
    Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
-                                            arrayLengthSize ())))
+                                            sequenceLengthSize ())))
 
-(* see gc/object.h and gc/array.h *)
-val arrayMetaDataSize : unit -> Bytes.t =
-   Promise.lazy (Bits.toBytes o Control.Target.Size.arrayMetaData)
+(* see gc/object.h and gc/sequence.h *)
+val sequenceMetaDataSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.sequenceMetaData)
 val normalMetaDataSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.normalMetaData)
 

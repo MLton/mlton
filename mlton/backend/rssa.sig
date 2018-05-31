@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature RSSA_STRUCTS = 
+signature RSSA_STRUCTS =
    sig
       include ATOMS
 
@@ -38,27 +38,27 @@ signature RSSA =
       structure Operand:
          sig
             datatype t =
-               ArrayOffset of {base: t,
-                               index: t,
-                               offset: Bytes.t,
-                               scale: Scale.t,
-                               ty: Type.t}
-             | Cast of t * Type.t
-             | Const of Const.t
+                Cast of t * Type.t
+              | Const of Const.t
                (* EnsuresBytesFree is a pseudo-op used by C functions (like
                 * GC_allocateArray) that take a number of bytes as an argument
                 * and ensure that that number of bytes is free upon return.
                 * EnsuresBytesFree is replaced by the limit check pass with
                 * a real operand.
                 *)
-             | EnsuresBytesFree
-             | GCState
-             | Offset of {base: t,
-                          offset: Bytes.t,
-                          ty: Type.t}
-             | ObjptrTycon of ObjptrTycon.t
-             | Runtime of Runtime.GCField.t
-             | Var of {ty: Type.t,
+              | EnsuresBytesFree
+              | GCState
+              | Offset of {base: t,
+                            offset: Bytes.t,
+                            ty: Type.t}
+              | ObjptrTycon of ObjptrTycon.t
+              | Runtime of Runtime.GCField.t
+              | SequenceOffset of {base: t,
+                                    index: t,
+                                    offset: Bytes.t,
+                                    scale: Scale.t,
+                                    ty: Type.t}
+              | Var of {ty: Type.t,
                        var: Var.t}
 
             val bool: bool -> t

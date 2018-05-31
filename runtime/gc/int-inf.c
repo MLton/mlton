@@ -129,7 +129,7 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
  * If the answer fits in a fixnum, we return that, with the frontier
  * rolled back.
  * If the answer doesn't need all of the space allocated, we adjust
- * the array size and roll the frontier slightly back.
+ * the sequence size and roll the frontier slightly back.
  */
 objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   GC_intInf bp;
@@ -210,8 +210,8 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
     }
   }
   setFrontier (s, (pointer)(&bp->obj.limbs[size]), bytes);
-  bp->counter = (GC_arrayCounter)0;
-  bp->length = (GC_arrayLength)(size + 1); /* +1 for isneg field */
+  bp->counter = (GC_sequenceCounter)0;
+  bp->length = (GC_sequenceLength)(size + 1); /* +1 for isneg field */
   bp->header = GC_INTINF_HEADER;
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
@@ -313,8 +313,8 @@ objptr IntInf_strop (GC_state s, objptr arg, Int32_t base, size_t bytes,
   if (sp->obj.chars[0] == '-')
     sp->obj.chars[0] = '~';
   setFrontier (s, (pointer)&sp->obj + size, bytes);
-  sp->counter = (GC_arrayCounter)0;
-  sp->length = (GC_arrayLength)size;
+  sp->counter = (GC_sequenceCounter)0;
+  sp->length = (GC_sequenceLength)size;
   sp->header = GC_STRING8_HEADER;
   return pointerToObjptr ((pointer)&sp->obj, s->heap.start);
 }

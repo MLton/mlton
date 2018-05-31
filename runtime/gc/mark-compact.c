@@ -136,9 +136,9 @@ thread:
         objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
         skipFront = 0;
         skipGap = 0;
-      } else if (ARRAY_TAG == tag) {
-        metaDataBytes = GC_ARRAY_METADATA_SIZE;
-        objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+      } else if (SEQUENCE_TAG == tag) {
+        metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
+        objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
                                              bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
@@ -162,22 +162,22 @@ thread:
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
                  (uintptr_t)p, (uintmax_t)size);
-      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_METADATA_SIZE) {
-        pointer newArray = endOfLastMarked;
-        /* Compress all of the unmarked into one vector.  We require
-         * GC_ARRAY_METADATA_SIZE space to be available because that is
-         * the smallest possible array.
+      if ((size_t)(front - endOfLastMarked) >= GC_SEQUENCE_METADATA_SIZE) {
+        pointer newSequence = endOfLastMarked;
+        /* Compress all of the unmarked into one sequence.  We require
+         * GC_SEQUENCE_METADATA_SIZE space to be available because that is
+         * the smallest possible sequence.
          */
         if (DEBUG_MARK_COMPACT)
           fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %"PRIuMAX")\n",
                    (uintptr_t)endOfLastMarked, (uintptr_t)front,
                    (uintmax_t)(front - endOfLastMarked));
-        *((GC_arrayCounter*)(newArray)) = 0;
-        newArray += GC_ARRAY_COUNTER_SIZE;
-        *((GC_arrayLength*)(newArray)) =
-          ((size_t)(front - endOfLastMarked)) - GC_ARRAY_METADATA_SIZE;
-        newArray += GC_ARRAY_LENGTH_SIZE;
-        *((GC_header*)(newArray)) = GC_WORD8_VECTOR_HEADER;
+        *((GC_sequenceCounter*)(newSequence)) = 0;
+        newSequence += GC_SEQUENCE_COUNTER_SIZE;
+        *((GC_sequenceLength*)(newSequence)) =
+          ((size_t)(front - endOfLastMarked)) - GC_SEQUENCE_METADATA_SIZE;
+        newSequence += GC_SEQUENCE_LENGTH_SIZE;
+        *((GC_header*)(newSequence)) = GC_WORD8_VECTOR_HEADER;
       }
       gap += skipGap;
       front += size + skipFront;
@@ -267,9 +267,9 @@ unmark:
         objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
         skipFront = 0;
         skipGap = 0;
-      } else if (ARRAY_TAG == tag) {
-        metaDataBytes = GC_ARRAY_METADATA_SIZE;
-        objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
+      } else if (SEQUENCE_TAG == tag) {
+        metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
+        objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
                                              bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
