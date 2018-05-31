@@ -77,7 +77,7 @@ WordU_addCheckBody(size, c, x, doOverflow, doSuccess)
 /* #define WordU_mulCheckBody(small, large, x, y, doOverflow, doSuccess)   \ */
 /* Word_mulCheckBody(U##small, U##large, x, y, doOverflow, doSuccess) */
 
-#define WordS_negCheckBody(size, x, doOverflow, doSuccess)      \
+#define Word_negCheckBody(size, x, doOverflow, doSuccess)       \
   do {                                                          \
     if (x == WordS##size##_min) {                               \
       doOverflow;                                               \
@@ -111,48 +111,48 @@ WordU_addCheckBody(size, c, x, doOverflow, doSuccess)
 WordS_subCheckBodyCX(size, x, y, doOverflow, doSuccess)
 
 
-#define WordS_addCheckOverflows(size)                                   \
+#define WordS_addCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordS##size##_addCheckOverflows (WordS##size x, WordS##size y) { \
+  Bool WordS##size##_addCheckP (WordS##size x, WordS##size y) {         \
     WordS_addCheckBody(size, x, y, return TRUE, return FALSE);          \
   }
 
-#define WordU_addCheckOverflows(size)                                   \
+#define WordU_addCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordU##size##_addCheckOverflows (WordU##size x, WordU##size y) { \
+  Bool WordU##size##_addCheckP (WordU##size x, WordU##size y) {         \
     WordU_addCheckBody(size, x, y, return TRUE, return FALSE);          \
   }
 
-#define WordS_mulCheckOverflows(size)                                   \
+#define WordS_mulCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordS##size##_mulCheckOverflows (WordS##size x, WordS##size y) { \
+  Bool WordS##size##_mulCheckP (WordS##size x, WordS##size y) {         \
     WordS_mulCheckBody(size, x, y, return TRUE, return FALSE);          \
   }
-#define WordU_mulCheckOverflows(size)                                   \
+#define WordU_mulCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordU##size##_mulCheckOverflows (WordU##size x, WordU##size y) { \
+  Bool WordU##size##_mulCheckP (WordU##size x, WordU##size y) {         \
     WordU_mulCheckBody(size, x, y, return TRUE, return FALSE);          \
   }
 
-#define WordS_negCheckOverflows(size)                                   \
+#define Word_negCheckP(size)                                            \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordS##size##_negCheckOverflows (WordS##size x) {                \
-    WordS_negCheckBody(size, x, return TRUE, return FALSE);             \
+  Bool Word##size##_negCheckP (WordS##size x) {                         \
+    Word_negCheckBody(size, x, return TRUE, return FALSE);              \
   }
 
-#define WordS_subCheckOverflows(size)                                   \
+#define WordS_subCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool WordS##size##_subCheckOverflows (WordS##size x, WordS##size y) { \
+  Bool WordS##size##_subCheckP (WordS##size x, WordS##size y) {         \
     WordS_subCheckBody(size, x, y, return TRUE, return FALSE);          \
   }
 
 #define all(size)                               \
-WordS_addCheckOverflows(size)                   \
-WordU_addCheckOverflows(size)                   \
-WordS_mulCheckOverflows(size)                   \
-WordU_mulCheckOverflows(size)                   \
-WordS_negCheckOverflows(size)                   \
-WordS_subCheckOverflows(size)
+WordS_addCheckP(size)                           \
+WordU_addCheckP(size)                           \
+WordS_mulCheckP(size)                           \
+WordU_mulCheckP(size)                           \
+Word_negCheckP(size)                            \
+WordS_subCheckP(size)
 
 all(8)
 all(16)
@@ -160,9 +160,9 @@ all(32)
 all(64)
 
 #undef all
-#undef WordS_subCheckOverflows
-#undef WordS_negCheckOverflows
-#undef WordU_mulCheckOverflows
-#undef WordS_mulCheckOverflows
-#undef WordU_addCheckOverflows
-#undef WordS_addCheckOverflows
+#undef WordS_subCheckP
+#undef WordS_negCheckP
+#undef WordU_mulCheckP
+#undef WordS_mulCheckP
+#undef WordU_addCheckP
+#undef WordS_addCheckP

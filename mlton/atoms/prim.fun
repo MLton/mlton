@@ -167,6 +167,7 @@ datatype 'a t =
  | Weak_new (* to rssa (as runtime C fn) *)
  | Word_add of WordSize.t (* codegen *)
  | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
+ | Word_addCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_andb of WordSize.t (* codegen *)
  | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
  | Word_equal of WordSize.t (* codegen *)
@@ -175,8 +176,10 @@ datatype 'a t =
  | Word_lt of WordSize.t * {signed: bool} (* codegen *)
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
  | Word_mulCheck of WordSize.t * {signed: bool} (* codegen *)
+ | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_neg of WordSize.t (* codegen *)
  | Word_negCheck of WordSize.t (* codegen *)
+ | Word_negCheckP of WordSize.t (* codegen *)
  | Word_notb of WordSize.t (* codegen *)
  | Word_orb of WordSize.t (* codegen *)
  | Word_quot of WordSize.t * {signed: bool} (* codegen *)
@@ -187,6 +190,7 @@ datatype 'a t =
  | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
  | Word_sub of WordSize.t (* codegen *)
  | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
+ | Word_subCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_toIntInf (* to rssa *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* to rssa *)
@@ -344,6 +348,7 @@ fun toString (n: 'a t): string =
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
        | Word_addCheck (s, sg) => wordS (s, sg, "addCheck")
+       | Word_addCheckP (s, sg) => wordS (s, sg, "addCheckP")
        | Word_andb s => word (s, "andb")
        | Word_castToReal (s1, s2) => cast (wordC, realC, s1, s2)
        | Word_equal s => word (s, "equal")
@@ -352,8 +357,10 @@ fun toString (n: 'a t): string =
        | Word_lt (s, sg) => wordS (s, sg, "lt")
        | Word_mul (s, sg) => wordS (s, sg, "mul")
        | Word_mulCheck (s, sg) => wordS (s, sg, "mulCheck")
+       | Word_mulCheckP (s, sg) => wordS (s, sg, "mulCheckP")
        | Word_neg s => word (s, "neg")
        | Word_negCheck s => word (s, "negCheck")
+       | Word_negCheckP s => word (s, "negCheckP")
        | Word_notb s => word (s, "notb")
        | Word_orb s => word (s, "orb")
        | Word_quot (s, sg) => wordS (s, sg, "quot")
@@ -364,6 +371,7 @@ fun toString (n: 'a t): string =
        | Word_rshift (s, sg) => wordS (s, sg, "rshift")
        | Word_sub s => word (s, "sub")
        | Word_subCheck (s, sg) => wordS (s, sg, "subCheck")
+       | Word_subCheckP (s, sg) => wordS (s, sg, "subCheckP")
        | Word_toIntInf => "Word_toIntInf"
        | Word_xorb s => word (s, "xorb")
        | World_save => "World_save"
@@ -671,6 +679,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Weak_new => Weak_new
     | Word_add z => Word_add z
     | Word_addCheck z => Word_addCheck z
+    | Word_addCheckP z => Word_addCheckP z
     | Word_andb z => Word_andb z
     | Word_castToReal z => Word_castToReal z
     | Word_equal z => Word_equal z
@@ -679,8 +688,10 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_lt z => Word_lt z
     | Word_mul z => Word_mul z
     | Word_mulCheck z => Word_mulCheck z
+    | Word_mulCheckP z => Word_mulCheckP z
     | Word_neg z => Word_neg z
     | Word_negCheck z => Word_negCheck z
+    | Word_negCheckP z => Word_negCheckP z
     | Word_notb z => Word_notb z
     | Word_orb z => Word_orb z
     | Word_quot z => Word_quot z
@@ -691,6 +702,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_rshift z => Word_rshift z
     | Word_sub z => Word_sub z
     | Word_subCheck z => Word_subCheck z
+    | Word_subCheckP z => Word_subCheckP z
     | Word_toIntInf => Word_toIntInf
     | Word_xorb z => Word_xorb z
     | WordVector_toIntInf => WordVector_toIntInf
@@ -767,6 +779,7 @@ val vectorLength = Vector_length
 val vectorSub = Vector_sub
 val wordAdd = Word_add
 val wordAddCheck = Word_addCheck
+val wordAddCheckP = Word_addCheckP
 val wordAndb = Word_andb
 val wordCastToReal = Word_castToReal
 val wordEqual = Word_equal
@@ -776,6 +789,7 @@ val wordLt = Word_lt
 val wordMul = Word_mul
 val wordNeg = Word_neg
 val wordNegCheck = Word_negCheck
+val wordNegCheckP = Word_negCheckP
 val wordNotb = Word_notb
 val wordOrb = Word_orb
 val wordQuot = Word_quot
@@ -792,10 +806,12 @@ val isCommutative =
     | Real_qequal _ => true
     | Word_add _ => true
     | Word_addCheck _ => true
+    | Word_addCheckP _ => true
     | Word_andb _ => true
     | Word_equal _ => true
     | Word_mul _ => true
     | Word_mulCheck _ => true
+    | Word_mulCheckP _ => true
     | Word_orb _ => true
     | Word_xorb _ => true
     | _ => false
@@ -933,6 +949,7 @@ val kind: 'a t -> Kind.t =
        | WordVector_toIntInf => Functional
        | Word_add _ => Functional
        | Word_addCheck _ => SideEffect
+       | Word_addCheckP _ => Functional
        | Word_andb _ => Functional
        | Word_castToReal _ => Functional
        | Word_equal _ => Functional
@@ -941,8 +958,10 @@ val kind: 'a t -> Kind.t =
        | Word_lt _ => Functional
        | Word_mul _ => Functional
        | Word_mulCheck _ => SideEffect
+       | Word_mulCheckP _ => Functional 
        | Word_neg _ => Functional
        | Word_negCheck _ => SideEffect
+       | Word_negCheckP _ => Functional
        | Word_notb _ => Functional
        | Word_orb _ => Functional
        | Word_quot _ => Functional
@@ -953,6 +972,7 @@ val kind: 'a t -> Kind.t =
        | Word_rshift _ => Functional
        | Word_sub _ => Functional
        | Word_subCheck _ => SideEffect
+       | Word_subCheckP _ => Functional
        | Word_toIntInf => Functional
        | Word_xorb _ => Functional
        | World_save => SideEffect
@@ -995,13 +1015,16 @@ local
          val sg = {signed = signed}
       in
          List.map ([Word_addCheck,
+                    Word_addCheckP,
                     Word_lt,
                     Word_mul,
                     Word_mulCheck,
+                    Word_mulCheckP,
                     Word_quot,
                     Word_rem,
                     Word_rshift,
-                    Word_subCheck],
+                    Word_subCheck,
+                    Word_subCheckP],
                    fn p => p (s, sg))
       end
 
@@ -1012,6 +1035,7 @@ local
        (Word_lshift s),
        (Word_neg s),
        (Word_negCheck s),
+       (Word_negCheckP s),
        (Word_notb s),
        (Word_orb s),
        (Word_rol s),
@@ -1245,6 +1269,13 @@ fun 'a checkApp (prim: 'a t,
       end
       local
          fun make f s = let val t = f s
+                        in noTargs (fn () => (oneArg t, bool))
+                        end
+      in
+         val wordUnaryP = make word
+      end
+      local
+         fun make f s = let val t = f s
                         in noTargs (fn () => (twoArgs (t, t), t))
                         end
       in
@@ -1258,6 +1289,7 @@ fun 'a checkApp (prim: 'a t,
       in
          val realCompare = make real
          val wordCompare = make word
+         val wordBinaryP = make word
       end
       val cint = word (WordSize.cint ())
       val compareRes = word WordSize.compareRes
@@ -1435,6 +1467,7 @@ fun 'a checkApp (prim: 'a t,
             noTargs (fn () => (oneArg (vector bigIntInfWord), intInf))
        | Word_add s => wordBinary s
        | Word_addCheck (s, _) => wordBinary s
+       | Word_addCheckP (s, _) => wordBinaryP s
        | Word_andb s => wordBinary s
        | Word_castToReal (s, s') =>
             noTargs (fn () => (oneArg (word s), real s'))
@@ -1445,8 +1478,10 @@ fun 'a checkApp (prim: 'a t,
        | Word_lt (s, _) => wordCompare s
        | Word_mul (s, _) => wordBinary s
        | Word_mulCheck (s, _) => wordBinary s
+       | Word_mulCheckP (s, _) => wordBinaryP s
        | Word_neg s => wordUnary s
        | Word_negCheck s => wordUnary s
+       | Word_negCheckP s => wordUnaryP s
        | Word_notb s => wordUnary s
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
@@ -1458,6 +1493,7 @@ fun 'a checkApp (prim: 'a t,
        | Word_rshift (s, _) => wordShift s
        | Word_sub s => wordBinary s
        | Word_subCheck (s, _) => wordBinary s
+       | Word_subCheckP (s, _) => wordBinaryP s
        | Word_toIntInf => noTargs (fn () => (oneArg smallIntInfWord, intInf))
        | Word_xorb s => wordBinary s
        | World_save => noTargs (fn () => (oneArg string, unit))

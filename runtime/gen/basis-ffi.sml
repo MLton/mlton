@@ -1207,7 +1207,7 @@ val xorb = _import "Word8_xorb" private : Word8.t * Word8.t -> Word8.t;
 end
 structure WordS16 = 
 struct
-val addCheckOverflows = _import "WordS16_addCheckOverflows" private : Int16.t * Int16.t -> Bool.t;
+val addCheckP = _import "WordS16_addCheckP" private : Int16.t * Int16.t -> Bool.t;
 val extdToWord16 = _import "WordS16_extdToWord16" private : Int16.t -> Word16.t;
 val extdToWord32 = _import "WordS16_extdToWord32" private : Int16.t -> Word32.t;
 val extdToWord64 = _import "WordS16_extdToWord64" private : Int16.t -> Word64.t;
@@ -1217,18 +1217,18 @@ val gt = _import "WordS16_gt" private : Int16.t * Int16.t -> Bool.t;
 val le = _import "WordS16_le" private : Int16.t * Int16.t -> Bool.t;
 val lt = _import "WordS16_lt" private : Int16.t * Int16.t -> Bool.t;
 val mul = _import "WordS16_mul" private : Int16.t * Int16.t -> Int16.t;
-val mulCheckOverflows = _import "WordS16_mulCheckOverflows" private : Int16.t * Int16.t -> Bool.t;
-val negCheckOverflows = _import "WordS16_negCheckOverflows" private : Int16.t -> Bool.t;
+val mulCheckP = _import "WordS16_mulCheckP" private : Int16.t * Int16.t -> Bool.t;
+val negCheckP = _import "WordS16_negCheckP" private : Int16.t -> Bool.t;
 val quot = _import "WordS16_quot" private : Int16.t * Int16.t -> Int16.t;
 val rem = _import "WordS16_rem" private : Int16.t * Int16.t -> Int16.t;
 val rndToReal32 = _import "WordS16_rndToReal32" private : Int16.t -> Real32.t;
 val rndToReal64 = _import "WordS16_rndToReal64" private : Int16.t -> Real64.t;
 val rshift = _import "WordS16_rshift" private : Int16.t * Word32.t -> Int16.t;
-val subCheckOverflows = _import "WordS16_subCheckOverflows" private : Int16.t * Int16.t -> Bool.t;
+val subCheckP = _import "WordS16_subCheckP" private : Int16.t * Int16.t -> Bool.t;
 end
 structure WordS32 = 
 struct
-val addCheckOverflows = _import "WordS32_addCheckOverflows" private : Int32.t * Int32.t -> Bool.t;
+val addCheckP = _import "WordS32_addCheckP" private : Int32.t * Int32.t -> Bool.t;
 val extdToWord16 = _import "WordS32_extdToWord16" private : Int32.t -> Word16.t;
 val extdToWord32 = _import "WordS32_extdToWord32" private : Int32.t -> Word32.t;
 val extdToWord64 = _import "WordS32_extdToWord64" private : Int32.t -> Word64.t;
@@ -1238,18 +1238,18 @@ val gt = _import "WordS32_gt" private : Int32.t * Int32.t -> Bool.t;
 val le = _import "WordS32_le" private : Int32.t * Int32.t -> Bool.t;
 val lt = _import "WordS32_lt" private : Int32.t * Int32.t -> Bool.t;
 val mul = _import "WordS32_mul" private : Int32.t * Int32.t -> Int32.t;
-val mulCheckOverflows = _import "WordS32_mulCheckOverflows" private : Int32.t * Int32.t -> Bool.t;
-val negCheckOverflows = _import "WordS32_negCheckOverflows" private : Int32.t -> Bool.t;
+val mulCheckP = _import "WordS32_mulCheckP" private : Int32.t * Int32.t -> Bool.t;
+val negCheckP = _import "WordS32_negCheckP" private : Int32.t -> Bool.t;
 val quot = _import "WordS32_quot" private : Int32.t * Int32.t -> Int32.t;
 val rem = _import "WordS32_rem" private : Int32.t * Int32.t -> Int32.t;
 val rndToReal32 = _import "WordS32_rndToReal32" private : Int32.t -> Real32.t;
 val rndToReal64 = _import "WordS32_rndToReal64" private : Int32.t -> Real64.t;
 val rshift = _import "WordS32_rshift" private : Int32.t * Word32.t -> Int32.t;
-val subCheckOverflows = _import "WordS32_subCheckOverflows" private : Int32.t * Int32.t -> Bool.t;
+val subCheckP = _import "WordS32_subCheckP" private : Int32.t * Int32.t -> Bool.t;
 end
 structure WordS64 = 
 struct
-val addCheckOverflows = _import "WordS64_addCheckOverflows" private : Int64.t * Int64.t -> Bool.t;
+val addCheckP = _import "WordS64_addCheckP" private : Int64.t * Int64.t -> Bool.t;
 val extdToWord16 = _import "WordS64_extdToWord16" private : Int64.t -> Word16.t;
 val extdToWord32 = _import "WordS64_extdToWord32" private : Int64.t -> Word32.t;
 val extdToWord64 = _import "WordS64_extdToWord64" private : Int64.t -> Word64.t;
@@ -1259,18 +1259,18 @@ val gt = _import "WordS64_gt" private : Int64.t * Int64.t -> Bool.t;
 val le = _import "WordS64_le" private : Int64.t * Int64.t -> Bool.t;
 val lt = _import "WordS64_lt" private : Int64.t * Int64.t -> Bool.t;
 val mul = _import "WordS64_mul" private : Int64.t * Int64.t -> Int64.t;
-val mulCheckOverflows = _import "WordS64_mulCheckOverflows" private : Int64.t * Int64.t -> Bool.t;
-val negCheckOverflows = _import "WordS64_negCheckOverflows" private : Int64.t -> Bool.t;
+val mulCheckP = _import "WordS64_mulCheckP" private : Int64.t * Int64.t -> Bool.t;
+val negCheckP = _import "WordS64_negCheckP" private : Int64.t -> Bool.t;
 val quot = _import "WordS64_quot" private : Int64.t * Int64.t -> Int64.t;
 val rem = _import "WordS64_rem" private : Int64.t * Int64.t -> Int64.t;
 val rndToReal32 = _import "WordS64_rndToReal32" private : Int64.t -> Real32.t;
 val rndToReal64 = _import "WordS64_rndToReal64" private : Int64.t -> Real64.t;
 val rshift = _import "WordS64_rshift" private : Int64.t * Word32.t -> Int64.t;
-val subCheckOverflows = _import "WordS64_subCheckOverflows" private : Int64.t * Int64.t -> Bool.t;
+val subCheckP = _import "WordS64_subCheckP" private : Int64.t * Int64.t -> Bool.t;
 end
 structure WordS8 = 
 struct
-val addCheckOverflows = _import "WordS8_addCheckOverflows" private : Int8.t * Int8.t -> Bool.t;
+val addCheckP = _import "WordS8_addCheckP" private : Int8.t * Int8.t -> Bool.t;
 val extdToWord16 = _import "WordS8_extdToWord16" private : Int8.t -> Word16.t;
 val extdToWord32 = _import "WordS8_extdToWord32" private : Int8.t -> Word32.t;
 val extdToWord64 = _import "WordS8_extdToWord64" private : Int8.t -> Word64.t;
@@ -1280,18 +1280,18 @@ val gt = _import "WordS8_gt" private : Int8.t * Int8.t -> Bool.t;
 val le = _import "WordS8_le" private : Int8.t * Int8.t -> Bool.t;
 val lt = _import "WordS8_lt" private : Int8.t * Int8.t -> Bool.t;
 val mul = _import "WordS8_mul" private : Int8.t * Int8.t -> Int8.t;
-val mulCheckOverflows = _import "WordS8_mulCheckOverflows" private : Int8.t * Int8.t -> Bool.t;
-val negCheckOverflows = _import "WordS8_negCheckOverflows" private : Int8.t -> Bool.t;
+val mulCheckP = _import "WordS8_mulCheckP" private : Int8.t * Int8.t -> Bool.t;
+val negCheckP = _import "WordS8_negCheckP" private : Int8.t -> Bool.t;
 val quot = _import "WordS8_quot" private : Int8.t * Int8.t -> Int8.t;
 val rem = _import "WordS8_rem" private : Int8.t * Int8.t -> Int8.t;
 val rndToReal32 = _import "WordS8_rndToReal32" private : Int8.t -> Real32.t;
 val rndToReal64 = _import "WordS8_rndToReal64" private : Int8.t -> Real64.t;
 val rshift = _import "WordS8_rshift" private : Int8.t * Word32.t -> Int8.t;
-val subCheckOverflows = _import "WordS8_subCheckOverflows" private : Int8.t * Int8.t -> Bool.t;
+val subCheckP = _import "WordS8_subCheckP" private : Int8.t * Int8.t -> Bool.t;
 end
 structure WordU16 = 
 struct
-val addCheckOverflows = _import "WordU16_addCheckOverflows" private : Word16.t * Word16.t -> Bool.t;
+val addCheckP = _import "WordU16_addCheckP" private : Word16.t * Word16.t -> Bool.t;
 val extdToWord16 = _import "WordU16_extdToWord16" private : Word16.t -> Word16.t;
 val extdToWord32 = _import "WordU16_extdToWord32" private : Word16.t -> Word32.t;
 val extdToWord64 = _import "WordU16_extdToWord64" private : Word16.t -> Word64.t;
@@ -1301,7 +1301,7 @@ val gt = _import "WordU16_gt" private : Word16.t * Word16.t -> Bool.t;
 val le = _import "WordU16_le" private : Word16.t * Word16.t -> Bool.t;
 val lt = _import "WordU16_lt" private : Word16.t * Word16.t -> Bool.t;
 val mul = _import "WordU16_mul" private : Word16.t * Word16.t -> Word16.t;
-val mulCheckOverflows = _import "WordU16_mulCheckOverflows" private : Word16.t * Word16.t -> Bool.t;
+val mulCheckP = _import "WordU16_mulCheckP" private : Word16.t * Word16.t -> Bool.t;
 val quot = _import "WordU16_quot" private : Word16.t * Word16.t -> Word16.t;
 val rem = _import "WordU16_rem" private : Word16.t * Word16.t -> Word16.t;
 val rndToReal32 = _import "WordU16_rndToReal32" private : Word16.t -> Real32.t;
@@ -1310,7 +1310,7 @@ val rshift = _import "WordU16_rshift" private : Word16.t * Word32.t -> Word16.t;
 end
 structure WordU32 = 
 struct
-val addCheckOverflows = _import "WordU32_addCheckOverflows" private : Word32.t * Word32.t -> Bool.t;
+val addCheckP = _import "WordU32_addCheckP" private : Word32.t * Word32.t -> Bool.t;
 val extdToWord16 = _import "WordU32_extdToWord16" private : Word32.t -> Word16.t;
 val extdToWord32 = _import "WordU32_extdToWord32" private : Word32.t -> Word32.t;
 val extdToWord64 = _import "WordU32_extdToWord64" private : Word32.t -> Word64.t;
@@ -1320,7 +1320,7 @@ val gt = _import "WordU32_gt" private : Word32.t * Word32.t -> Bool.t;
 val le = _import "WordU32_le" private : Word32.t * Word32.t -> Bool.t;
 val lt = _import "WordU32_lt" private : Word32.t * Word32.t -> Bool.t;
 val mul = _import "WordU32_mul" private : Word32.t * Word32.t -> Word32.t;
-val mulCheckOverflows = _import "WordU32_mulCheckOverflows" private : Word32.t * Word32.t -> Bool.t;
+val mulCheckP = _import "WordU32_mulCheckP" private : Word32.t * Word32.t -> Bool.t;
 val quot = _import "WordU32_quot" private : Word32.t * Word32.t -> Word32.t;
 val rem = _import "WordU32_rem" private : Word32.t * Word32.t -> Word32.t;
 val rndToReal32 = _import "WordU32_rndToReal32" private : Word32.t -> Real32.t;
@@ -1329,7 +1329,7 @@ val rshift = _import "WordU32_rshift" private : Word32.t * Word32.t -> Word32.t;
 end
 structure WordU64 = 
 struct
-val addCheckOverflows = _import "WordU64_addCheckOverflows" private : Word64.t * Word64.t -> Bool.t;
+val addCheckP = _import "WordU64_addCheckP" private : Word64.t * Word64.t -> Bool.t;
 val extdToWord16 = _import "WordU64_extdToWord16" private : Word64.t -> Word16.t;
 val extdToWord32 = _import "WordU64_extdToWord32" private : Word64.t -> Word32.t;
 val extdToWord64 = _import "WordU64_extdToWord64" private : Word64.t -> Word64.t;
@@ -1339,7 +1339,7 @@ val gt = _import "WordU64_gt" private : Word64.t * Word64.t -> Bool.t;
 val le = _import "WordU64_le" private : Word64.t * Word64.t -> Bool.t;
 val lt = _import "WordU64_lt" private : Word64.t * Word64.t -> Bool.t;
 val mul = _import "WordU64_mul" private : Word64.t * Word64.t -> Word64.t;
-val mulCheckOverflows = _import "WordU64_mulCheckOverflows" private : Word64.t * Word64.t -> Bool.t;
+val mulCheckP = _import "WordU64_mulCheckP" private : Word64.t * Word64.t -> Bool.t;
 val quot = _import "WordU64_quot" private : Word64.t * Word64.t -> Word64.t;
 val rem = _import "WordU64_rem" private : Word64.t * Word64.t -> Word64.t;
 val rndToReal32 = _import "WordU64_rndToReal32" private : Word64.t -> Real32.t;
@@ -1348,7 +1348,7 @@ val rshift = _import "WordU64_rshift" private : Word64.t * Word32.t -> Word64.t;
 end
 structure WordU8 = 
 struct
-val addCheckOverflows = _import "WordU8_addCheckOverflows" private : Word8.t * Word8.t -> Bool.t;
+val addCheckP = _import "WordU8_addCheckP" private : Word8.t * Word8.t -> Bool.t;
 val extdToWord16 = _import "WordU8_extdToWord16" private : Word8.t -> Word16.t;
 val extdToWord32 = _import "WordU8_extdToWord32" private : Word8.t -> Word32.t;
 val extdToWord64 = _import "WordU8_extdToWord64" private : Word8.t -> Word64.t;
@@ -1358,7 +1358,7 @@ val gt = _import "WordU8_gt" private : Word8.t * Word8.t -> Bool.t;
 val le = _import "WordU8_le" private : Word8.t * Word8.t -> Bool.t;
 val lt = _import "WordU8_lt" private : Word8.t * Word8.t -> Bool.t;
 val mul = _import "WordU8_mul" private : Word8.t * Word8.t -> Word8.t;
-val mulCheckOverflows = _import "WordU8_mulCheckOverflows" private : Word8.t * Word8.t -> Bool.t;
+val mulCheckP = _import "WordU8_mulCheckP" private : Word8.t * Word8.t -> Bool.t;
 val quot = _import "WordU8_quot" private : Word8.t * Word8.t -> Word8.t;
 val rem = _import "WordU8_rem" private : Word8.t * Word8.t -> Word8.t;
 val rndToReal32 = _import "WordU8_rndToReal32" private : Word8.t -> Real32.t;

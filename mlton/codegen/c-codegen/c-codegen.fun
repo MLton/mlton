@@ -207,6 +207,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_sub _ => true
        | Word_add _ => true
        | Word_addCheck _ => true
+       | Word_addCheckP _ => true
        | Word_andb _ => true
        | Word_castToReal _ => true
        | Word_equal _ => true
@@ -215,8 +216,10 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lt _ => true
        | Word_mul _ => true
        | Word_mulCheck _ => true
+       | Word_mulCheckP _ => true
        | Word_neg _ => true
        | Word_negCheck _ => true
+       | Word_negCheckP _ => true
        | Word_notb _ => true
        | Word_orb _ => true
        | Word_quot (_, {signed}) => not signed
@@ -227,6 +230,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_rshift _ => true
        | Word_sub _ => true
        | Word_subCheck _ => true
+       | Word_subCheckP _ => true
        | Word_xorb _ => true
        | _ => false
    end
@@ -1014,6 +1018,10 @@ fun output {program as Machine.Program.T {chunks,
                                                     else ""]
                                   | Word_mulCheck _ => Prim.toString prim
                                   | Word_negCheck _ => Prim.toString prim
+                                  | Word_addCheckP _ => Prim.toString prim
+                                  | Word_mulCheckP _ => Prim.toString prim
+                                  | Word_negCheckP _ => Prim.toString prim
+                                  | Word_subCheckP _ => Prim.toString prim
                                   | Word_subCheck _ =>
                                        concat [Prim.toString prim,
                                                if const0 ()

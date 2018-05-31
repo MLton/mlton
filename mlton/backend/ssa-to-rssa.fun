@@ -476,11 +476,24 @@ structure Name =
                               prototype = (Vector.new (n, ct), SOME CType.bool),
                               return = Type.bool}
                   end
+               fun makeP n (s, sg) =
+                  let
+                     val t = word s
+                     val ct = CType.word (s, sg)
+                  in
+                     vanilla {args = Vector.new (n, t),
+                              name = name,
+                              prototype = (Vector.new (n, ct), SOME CType.bool),
+                              return = Type.bool}
+                  end
+
             in
                val wordBinary = make 2
                val wordBinaryOverflows = makeOverflows 2
+               val wordBinaryP = makeP 2
                val wordUnary = make 1
                val wordUnaryOverflows = makeOverflows 1
+               val wordUnaryP = makeP 1
             end
             fun wordCompare (s, sg) =
                let
@@ -551,6 +564,7 @@ structure Name =
              | Thread_returnToC => CFunction.returnToC ()
              | Word_add s => wordBinary (s, {signed = false})
              | Word_addCheck (s, sg) => wordBinaryOverflows (s, sg)
+             | Word_addCheckP (s, sg) => wordBinaryP (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
              | Word_castToReal (s1, s2) =>
                   coerce (word s1, wordCType (s1, {signed = false}),
@@ -563,8 +577,10 @@ structure Name =
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
              | Word_mulCheck (s, sg) => wordBinaryOverflows (s, sg)
+             | Word_mulCheckP (s, sg) => wordBinaryP (s, sg)
              | Word_neg s => wordUnary (s, {signed = true})
              | Word_negCheck s => wordUnaryOverflows (s, {signed = true})
+             | Word_negCheckP s => wordUnaryP (s, {signed = true})
              | Word_notb s => wordUnary (s, {signed = false})
              | Word_orb s => wordBinary (s, {signed = false})
              | Word_quot z => wordBinary z
@@ -578,6 +594,7 @@ structure Name =
              | Word_rshift z => wordShift z
              | Word_sub s => wordBinary (s, {signed = false})
              | Word_subCheck (s, sg) => wordBinaryOverflows (s, sg)
+             | Word_subCheckP (s, sg) => wordBinaryP (s, sg)
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
 
