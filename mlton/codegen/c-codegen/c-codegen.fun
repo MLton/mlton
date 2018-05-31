@@ -1018,10 +1018,6 @@ fun output {program as Machine.Program.T {chunks,
                                                     else ""]
                                   | Word_mulCheck _ => Prim.toString prim
                                   | Word_negCheck _ => Prim.toString prim
-                                  | Word_addCheckP _ => Prim.toString prim
-                                  | Word_mulCheckP _ => Prim.toString prim
-                                  | Word_negCheckP _ => Prim.toString prim
-                                  | Word_subCheckP _ => Prim.toString prim
                                   | Word_subCheck _ =>
                                        concat [Prim.toString prim,
                                                if const0 ()
