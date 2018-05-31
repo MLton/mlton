@@ -32,6 +32,7 @@ structure Controls =
    struct
       val debug = _command_line_const "MLton.debug": bool = false;
       val detectOverflow = _command_line_const "MLton.detectOverflow": bool = true;
+      val newOverflow = _command_line_const "MLton.newOverflow": bool = false;
       val safe = _command_line_const "MLton.safe": bool = true;
       val bufSize = _command_line_const "TextIO.bufSize": Int32.int = 4096;
    end
@@ -52,6 +53,8 @@ structure Exn =
       exception Span
       exception Subscript
 
+      val mkOverflow: ('a -> 'b) * ('a -> bool) -> ('a -> 'b) =
+        fn (!, ?) => fn a => if ? a then raise Overflow else ! a
       val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
          fn f => fn a => f a handle PrimOverflow => raise Overflow
    end
