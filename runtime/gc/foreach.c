@@ -74,13 +74,13 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
         callIfIsObjptr (s, f, (objptr*)p);
       p += OBJPTR_SIZE;
     }
-  } else if (ARRAY_TAG == tag) {
+  } else if (SEQUENCE_TAG == tag) {
     size_t bytesPerElement;
     size_t dataBytes;
     pointer last;
-    GC_arrayLength numElements;
+    GC_sequenceLength numElements;
 
-    numElements = getArrayLength (p);
+    numElements = getSequenceLength (p);
     bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
     dataBytes = numElements * bytesPerElement;
     if (0 == numObjptrs) {
@@ -89,16 +89,16 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     } else {
       last = p + dataBytes;
       if (0 == bytesNonObjptrs)
-        /* Array with only pointers. */
+        /* Sequence with only pointers. */
         for ( ; p < last; p += OBJPTR_SIZE)
           callIfIsObjptr (s, f, (objptr*)p);
       else {
-        /* Array with a mix of pointers and non-pointers. */
+        /* Sequence with a mix of pointers and non-pointers. */
         size_t bytesObjptrs;
 
         bytesObjptrs = numObjptrs * OBJPTR_SIZE;
 
-        /* For each array element. */
+        /* For each sequence element. */
         for ( ; p < last; ) {
           pointer next;
 
@@ -113,7 +113,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       assert (p == last);
       p -= dataBytes;
     }
-    p += alignWithExtra (s, dataBytes, GC_ARRAY_METADATA_SIZE);
+    p += alignWithExtra (s, dataBytes, GC_SEQUENCE_METADATA_SIZE);
   } else { /* stack */
     GC_stack stack; 
     pointer top, bottom; 

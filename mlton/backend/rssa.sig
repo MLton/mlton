@@ -38,12 +38,7 @@ signature RSSA =
       structure Operand:
          sig
             datatype t =
-               ArrayOffset of {base: t,
-                               index: t,
-                               offset: Bytes.t,
-                               scale: Scale.t,
-                               ty: Type.t}
-             | Cast of t * Type.t
+               Cast of t * Type.t
              | Const of Const.t
                (* EnsuresBytesFree is a pseudo-op used by C functions (like
                 * GC_allocateArray) that take a number of bytes as an argument
@@ -58,6 +53,11 @@ signature RSSA =
                           ty: Type.t}
              | ObjptrTycon of ObjptrTycon.t
              | Runtime of Runtime.GCField.t
+             | SequenceOffset of {base: t,
+                                  index: t,
+                                  offset: Bytes.t,
+                                  scale: Scale.t,
+                                  ty: Type.t}
              | Var of {ty: Type.t,
                        var: Var.t}
 

@@ -10,7 +10,7 @@ C_Errno_t(C_Int_t) Posix_Process_execp (NullString8_t fNStr,
 
   file = (const char *) fNStr;
   args = (char **) aStr;
-  aLen = GC_getArrayLength((pointer)aStr);
+  aLen = GC_getSequenceLength((pointer)aStr);
   aSaved = args[aLen - 1];
   args[aLen - 1] = NULL;
   res = EXECVP (file, 

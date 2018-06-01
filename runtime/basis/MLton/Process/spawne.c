@@ -16,11 +16,11 @@ C_Errno_t(C_PId_t) MLton_Process_spawne (NullString8_t pNStr,
 
   path = (const char *) pNStr;
   args = (char **) aStr;
-  aLen = GC_getArrayLength((pointer)aStr);
+  aLen = GC_getSequenceLength((pointer)aStr);
   aSaved = args[aLen - 1];
   args[aLen - 1] = NULL;
   env = (char **) eStr;
-  eLen = GC_getArrayLength((pointer)eStr);
+  eLen = GC_getSequenceLength((pointer)eStr);
   eSaved = env[eLen - 1];
   env[eLen - 1] = NULL;
   res = spawnve (SPAWN_MODE, path, 

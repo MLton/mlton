@@ -125,7 +125,7 @@ fun isC (s: t): bool =
     | _ => false
 
 val gc = fromC "gc"
-val gcArrayAllocate = fromC "GC_arrayAllocate"
+val gcSequenceAllocate = fromC "GC_sequenceAllocate"
 val main = fromC "main"
 val polyEqual = fromC "poly-equal"
 val polyHash = fromC "poly-hash"

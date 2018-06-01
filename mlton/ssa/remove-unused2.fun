@@ -364,8 +364,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                 val () =
                                    case con of
                                       Con con => visitCon con
+                                    | Sequence => ()
                                     | Tuple => ()
-                                    | Vector => ()
                              in
                                 ()
                              end
@@ -460,8 +460,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                             val () =
                                                case con of
                                                   Con con => deconCon con
+                                                | Sequence => default ()
                                                 | Tuple => default ()
-                                                | Vector => default ()
                                          in
                                             ()
                                          end
@@ -530,15 +530,15 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            in
                                               ()
                                            end
-                                      | Tuple => ()
-                                      | Vector => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple")
+                                      | Sequence => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple"
+                                      | Tuple => ())
                                | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
                         in
                            ()
                         end
-                   | VectorSub {index, vector} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
-                         ; visitVar vector)
+                         ; visitVar sequence)
                end
           | Var x => visitVar x
       val visitExpTh = fn e => fn () => visitExp e
@@ -577,14 +577,14 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            ; visitVar base
                                            ; visitVar value))
                                       end
+                                 | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple"
                                  | Tuple =>
                                       (visitVar base
-                                       ; visitVar value)
-                                 | Vector => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
+                                       ; visitVar value))
                           | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
-                   | VectorSub {index, vector} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
-                         ; visitVar vector
+                         ; visitVar sequence
                          ; visitVar value)
                end
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t) =
@@ -1156,8 +1156,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            Select {base = Base.Object base,
                                                    offset = offset}
                                         end
-                                   | Tuple => e
-                                   | Vector => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple")
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple"
+                                   | Tuple => e)
                             | _ => Error.bug "RemoveUnused2.simplifyExp:Select:non-Object"
                         end
                    | _ => e
@@ -1226,8 +1226,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                                  end
                                            else NONE
                                         end
-                                   | Tuple => SOME s
-                                   | Vector => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple")
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple"
+                                   | Tuple => SOME s)
                             | _ => Error.bug "RemoveUnused2.simplifyStatement: Select:non-Object"
                         end
                    | _ => SOME s

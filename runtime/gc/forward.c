@@ -78,10 +78,10 @@ void forwardObjptr (GC_state s, objptr *opp) {
       metaDataBytes = GC_NORMAL_METADATA_SIZE;
       objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
       skip = 0;
-    } else if (ARRAY_TAG == tag) {
-      metaDataBytes = GC_ARRAY_METADATA_SIZE;
-      objectBytes = sizeofArrayNoMetaData (s, getArrayLength (p),
-                                           bytesNonObjptrs, numObjptrs);
+    } else if (SEQUENCE_TAG == tag) {
+      metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
+      objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
+                                              bytesNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
       bool current;
