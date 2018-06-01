@@ -139,7 +139,7 @@ thread:
       } else if (SEQUENCE_TAG == tag) {
         metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
         objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
-                                             bytesNonObjptrs, numObjptrs);
+                                                bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */
@@ -270,7 +270,7 @@ unmark:
       } else if (SEQUENCE_TAG == tag) {
         metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
         objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
-                                             bytesNonObjptrs, numObjptrs);
+                                                bytesNonObjptrs, numObjptrs);
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */

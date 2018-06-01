@@ -8,9 +8,9 @@
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-PRIVATE pointer GC_sequenceAllocate (GC_state s, 
-                                  		size_t ensureBytesFree, 
-                                  		GC_sequenceLength numElements, 
-                                  		GC_header header);
+PRIVATE pointer GC_sequenceAllocate (GC_state s,
+                                     size_t ensureBytesFree,
+                                     GC_sequenceLength numElements,
+                                     GC_header header);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

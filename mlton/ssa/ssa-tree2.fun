@@ -80,15 +80,15 @@ structure Prod =
 structure ObjectCon =
    struct
       datatype t =
-          Con of Con.t
-        | Sequence
-        | Tuple
+         Con of Con.t
+       | Sequence
+       | Tuple
 
       val equals: t * t -> bool =
-        fn (Con c, Con c') => Con.equals (c, c')
-         | (Sequence, Sequence) => true
-         | (Tuple, Tuple) => true
-         | _ => false
+         fn (Con c, Con c') => Con.equals (c, c')
+          | (Sequence, Sequence) => true
+          | (Tuple, Tuple) => true
+          | _ => false
 
       val isSequence: t -> bool =
          fn Sequence => true
@@ -100,9 +100,9 @@ structure ObjectCon =
             open Layout
          in
             case oc of
-                Con c => Con.layout c
-              | Sequence => str "Sequence"
-              | Tuple => str "Tuple"
+               Con c => Con.layout c
+             | Sequence => str "Sequence"
+             | Tuple => str "Tuple"
          end
    end
 
@@ -244,9 +244,9 @@ structure Type =
             let
                val base =
                   case con of
-                      Con c => Con.hash c
-                    | Sequence => sequence
-                    | Tuple => tuple
+                     Con c => Con.hash c
+                   | Sequence => sequence
+                   | Tuple => tuple
                val hash = hashProd (args, base)
             in
                lookup (hash, Object {args = args, con = con})
@@ -311,9 +311,9 @@ structure Type =
                           val args = Prod.layout (args, layout)
                        in
                           case con of
-                              Con c => seq [Con.layout c, str " of ", args]
-                            | Sequence => seq [args, str " sequence"]
-                            | Tuple => args
+                             Con c => seq [Con.layout c, str " of ", args]
+                           | Sequence => seq [args, str " sequence"]
+                           | Tuple => args
                        end
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
@@ -462,7 +462,7 @@ structure Cases =
       fun equals (c1: t, c2: t): bool =
          let
             fun doit (l1, l2, eq') = 
-               Vector.equals
+               Vector.equals 
                (l1, l2, fn ((x1, a1), (x2, a2)) =>
                 eq' (x1, x2) andalso Label.equals (a1, a2))
          in

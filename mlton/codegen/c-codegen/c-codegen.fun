@@ -687,7 +687,7 @@ fun output {program as Machine.Program.T {chunks,
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
             case z of
-              Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
+               Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
              | Contents {oper, ty} => contents (ty, toString oper)
              | Frontier => "Frontier"
              | GCState => "GCState"
@@ -859,7 +859,7 @@ fun output {program as Machine.Program.T {chunks,
                let
                   fun usesStack z =
                      case z of
-                      Operand.Cast (z, _) =>
+                        Operand.Cast (z, _) =>
                            (usesStack z)
                       | Operand.Contents {oper, ...} =>
                            (usesStack oper)

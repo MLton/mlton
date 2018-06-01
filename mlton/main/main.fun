@@ -1045,8 +1045,7 @@ fun commandLine (args: string list): unit =
                 | SOME (_, size) => size
          in
             Control.Target.setSizes
-            {sequenceMetaData = lookup "sequenceMetaData",
-             cint = lookup "cint",
+            {cint = lookup "cint",
              cpointer = lookup "cpointer",
              cptrdiff = lookup "cptrdiff",
              csize = lookup "csize",
@@ -1054,7 +1053,8 @@ fun commandLine (args: string list): unit =
              mplimb = lookup "mplimb",
              normalMetaData = lookup "normalMetaData",
              objptr = lookup "objptr",
-             seqIndex = lookup "seqIndex"}
+             seqIndex = lookup "seqIndex",
+             sequenceMetaData = lookup "sequenceMetaData"}
          end
 
       fun tokenize l =

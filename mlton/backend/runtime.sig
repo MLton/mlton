@@ -66,14 +66,14 @@ signature RUNTIME =
       structure RObjectType:
          sig
             datatype t =
-                Normal of {hasIdentity: bool,
+               Normal of {hasIdentity: bool,
+                          bytesNonObjptrs: Bytes.t,
+                          numObjptrs: int}
+             | Sequence of {hasIdentity: bool,
                             bytesNonObjptrs: Bytes.t,
                             numObjptrs: int}
-              | Sequence of {hasIdentity: bool,
-                              bytesNonObjptrs: Bytes.t,
-                              numObjptrs: int}
-              | Stack
-              | Weak of {gone: bool}
+             | Stack
+             | Weak of {gone: bool}
          end
 
       val cpointerSize: unit -> Bytes.t

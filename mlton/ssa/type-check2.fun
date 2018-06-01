@@ -463,7 +463,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
          case b of
             Base.Object ty => ty
           | Base.SequenceSub {index, sequence} =>
-               if Type.isSequence sequence 
+               if Type.isSequence sequence
                   then let
                           val _ =
                              if Type.equals (index, Type.word (WordSize.seqIndex ()))

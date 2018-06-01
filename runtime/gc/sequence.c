@@ -12,9 +12,9 @@
  * Returns a pointer to the length for the sequence pointed to by p.
  */
 GC_sequenceLength* getSequenceLengthp (pointer a) {
-  return (GC_sequenceLength*)(a 
-                                - GC_HEADER_SIZE 
-                                - GC_SEQUENCE_LENGTH_SIZE);
+  return (GC_sequenceLength*)(a
+                              - GC_HEADER_SIZE
+                              - GC_SEQUENCE_LENGTH_SIZE);
 }
 
 /* getSequenceLength (p)
@@ -34,10 +34,10 @@ uintmax_t GC_getSequenceLength (pointer a) {
  * Returns a pointer to the counter for the sequence pointed to by p.
  */
 GC_sequenceCounter* getSequenceCounterp (pointer a) {
-  return (GC_sequenceCounter*)(a 
-                            - GC_HEADER_SIZE 
-                            - GC_SEQUENCE_LENGTH_SIZE 
-                            - GC_SEQUENCE_COUNTER_SIZE);
+  return (GC_sequenceCounter*)(a
+                               - GC_HEADER_SIZE
+                               - GC_SEQUENCE_LENGTH_SIZE
+                               - GC_SEQUENCE_COUNTER_SIZE);
 }
 
 /* getSequenceCounter (p)

@@ -497,7 +497,7 @@ let
             datatype z = datatype R.Operand.t
          in
             case oper of
-              Cast (z, t) => M.Operand.Cast (translateOperand z, t)
+               Cast (z, t) => M.Operand.Cast (translateOperand z, t)
              | Const c => constOperand c
              | EnsuresBytesFree =>
                   Error.bug "Backend.translateOperand: EnsuresBytesFree"

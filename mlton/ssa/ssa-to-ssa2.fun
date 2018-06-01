@@ -118,7 +118,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                      fun sub () =
                         simple
                         (S2.Exp.Select {base = Base.SequenceSub {index = arg 1,
-                                                                  sequence = arg 0},
+                                                                 sequence = arg 0},
                                         offset = 0})
                      datatype z = datatype Prim.Name.t
                    in
@@ -128,7 +128,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                             maybeBindUnit
                             (S2.Statement.Update
                              {base = Base.SequenceSub {index = arg 1,
-                                                        sequence = arg 0},
+                                                       sequence = arg 0},
                               offset = 0,
                               value = arg 2})
                        | Ref_assign =>
@@ -173,7 +173,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                                       val uStmt =
                                          S2.Statement.Update
                                          {base = Base.SequenceSub {index = iVar,
-                                                                    sequence = aVar},
+                                                                   sequence = aVar},
                                           offset = 0,
                                           value = arg}
                                    in

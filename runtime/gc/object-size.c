@@ -8,8 +8,8 @@
  */
 
 size_t sizeofSequenceNoMetaData (GC_state s,
-                                  GC_sequenceLength numElements,
-                                  uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
+                                 GC_sequenceLength numElements,
+                                 uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
   size_t result;
 
   result = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
@@ -37,7 +37,7 @@ void sizeofObjectAux (GC_state s, pointer p, size_t* metaDataBytes, size_t* obje
   } else if (SEQUENCE_TAG == tag) {
     *metaDataBytes = GC_SEQUENCE_METADATA_SIZE;
     *objectBytes = sizeofSequenceNoMetaData (s, getSequenceLength (p),
-                                          bytesNonObjptrs, numObjptrs);
+                                             bytesNonObjptrs, numObjptrs);
   } else { /* Stack. */
     assert (STACK_TAG == tag);
     *metaDataBytes = GC_STACK_METADATA_SIZE;

@@ -10,11 +10,11 @@
 
 signature SEQUENCE =
    sig
-      type 'a elt
       type 'a sequence
+      type 'a elt
 
-      structure Slice : SLICE where type 'a elt = 'a elt
-                                and type 'a sequence = 'a sequence
+      structure Slice : SLICE where type 'a sequence = 'a sequence
+                                and type 'a elt = 'a elt
 
       val maxLen: int
       val length: 'a sequence -> int

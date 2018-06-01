@@ -462,7 +462,7 @@ fun getArg (argv, i) =
  *)
 fun getOperandAddr (cxt, operand) =
     case operand of
-      Operand.Contents {oper, ty} =>
+        Operand.Contents {oper, ty} =>
         let
             val (operPre, operTy, operReg) = getOperandAddr (cxt, oper)
             val llvmTy = llty ty
@@ -559,8 +559,7 @@ and getOperandValue (cxt, operand) =
         val Context { labelToStringIndex, ... } = cxt
     in
         case operand of
-            Operand.SequenceOffset _ => loadOperand ()
-          | Operand.Cast (oper, ty) =>
+            Operand.Cast (oper, ty) =>
             let
                 val (operPre, operTy, operReg) =
                    getOperandValue (cxt, oper)
@@ -615,6 +614,7 @@ and getOperandValue (cxt, operand) =
           | Operand.Offset _ => loadOperand ()
           | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString real)
           | Operand.Register  _ => loadOperand ()
+          | Operand.SequenceOffset _ => loadOperand ()
           | Operand.StackOffset _ => loadOperand ()
           | Operand.StackTop => loadOperand()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)

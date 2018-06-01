@@ -8,9 +8,9 @@
  */
 
 pointer GC_sequenceAllocate (GC_state s,
-                              size_t ensureBytesFree,
-                              GC_sequenceLength numElements,
-                              GC_header header) {
+                             size_t ensureBytesFree,
+                             GC_sequenceLength numElements,
+                             GC_header header) {
   size_t sequenceSize, sequenceSizeAligned;
   size_t bytesPerElement;
   uint16_t bytesNonObjptrs;

@@ -37,22 +37,22 @@ fun constrain (ty: Type.t): Layout.t =
 structure Operand =
    struct
       datatype t =
-          Cast of t * Type.t
-        | Const of Const.t
-        | EnsuresBytesFree
-        | GCState
-        | Offset of {base: t,
-                      offset: Bytes.t,
-                      ty: Type.t}
-        | ObjptrTycon of ObjptrTycon.t
-        | Runtime of GCField.t
-        | SequenceOffset of {base: t,
-                              index: t,
-                              offset: Bytes.t,
-                              scale: Scale.t,
-                              ty: Type.t}
-        | Var of {var: Var.t,
-                  ty: Type.t}
+         Cast of t * Type.t
+       | Const of Const.t
+       | EnsuresBytesFree
+       | GCState
+       | Offset of {base: t,
+                    offset: Bytes.t,
+                    ty: Type.t}
+       | ObjptrTycon of ObjptrTycon.t
+       | Runtime of GCField.t
+       | SequenceOffset of {base: t,
+                            index: t,
+                            offset: Bytes.t,
+                            scale: Scale.t,
+                            ty: Type.t}
+       | Var of {var: Var.t,
+                 ty: Type.t}
 
       val null = Const Const.null
 
@@ -89,22 +89,22 @@ structure Operand =
             open Layout 
          in
             case z of
-                Cast (z, ty) =>
+               Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-              | Const c => seq [Const.layout c, constrain (ty z)]
-              | EnsuresBytesFree => str "<EnsuresBytesFree>"
-              | GCState => str "<GCState>"
-              | Offset {base, offset, ty} =>
+             | Const c => seq [Const.layout c, constrain (ty z)]
+             | EnsuresBytesFree => str "<EnsuresBytesFree>"
+             | GCState => str "<GCState>"
+             | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-              | ObjptrTycon opt => ObjptrTycon.layout opt
-              | Runtime r => GCField.layout r
-              | SequenceOffset {base, index, offset, scale, ty} =>
+             | ObjptrTycon opt => ObjptrTycon.layout opt
+             | Runtime r => GCField.layout r
+             | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
-              | Var {var, ...} => Var.layout var
+             | Var {var, ...} => Var.layout var
          end
 
       fun cast (z: t, t: Type.t): t =
@@ -1522,22 +1522,22 @@ structure Program =
                    datatype z = datatype Operand.t
                    fun ok () =
                       case x of
-                          Cast (z, ty) =>
+                         Cast (z, ty) =>
                             (checkOperand z
                             ; Type.castIsOk {from = Operand.ty z,
                                              to = ty,
                                              tyconTy = tyconTy})
-                        | Const _ => true
-                        | EnsuresBytesFree => true
-                        | GCState => true
-                        | Offset {base, offset, ty} =>
+                       | Const _ => true
+                       | EnsuresBytesFree => true
+                       | GCState => true
+                       | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
                                              offset = offset,
                                              tyconTy = tyconTy,
                                              result = ty}
-                        | ObjptrTycon _ => true
-                        | Runtime _ => true
-                        | SequenceOffset {base, index, offset, scale, ty} =>
+                       | ObjptrTycon _ => true
+                       | Runtime _ => true
+                       | SequenceOffset {base, index, offset, scale, ty} =>
                             (checkOperand base
                              ; checkOperand index
                              ; Type.sequenceOffsetIsOk {base = Operand.ty base,
@@ -1546,7 +1546,7 @@ structure Program =
                                                         tyconTy = tyconTy,
                                                         result = ty,
                                                         scale = scale})
-                        | Var {ty, var} => Type.isSubtype (varType var, ty)
+                       | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
                    Err.check ("operand", ok, fn () => Operand.layout x)
                 end

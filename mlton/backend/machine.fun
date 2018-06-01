@@ -197,30 +197,30 @@ structure StackOffset =
 structure Operand =
    struct
       datatype t =
-        Cast of t * Type.t
-      | Contents of {oper: t,
+         Cast of t * Type.t
+       | Contents of {oper: t,
                       ty: Type.t}
-      | Frontier
-      | GCState
-      | Global of Global.t
-      | Label of Label.t
-      | Null
-      | Offset of {base: t,
-                   offset: Bytes.t,
-                   ty: Type.t}
-      | Register of Register.t
-      | Real of RealX.t
-      | SequenceOffset of {base: t,
-                           index: t,
-                           offset: Bytes.t,
-                           scale: Scale.t,
-                           ty: Type.t}
-      | StackOffset of StackOffset.t
-      | StackTop
-      | Word of WordX.t
+       | Frontier
+       | GCState
+       | Global of Global.t
+       | Label of Label.t
+       | Null
+       | Offset of {base: t,
+                    offset: Bytes.t,
+                    ty: Type.t}
+       | Register of Register.t
+       | Real of RealX.t
+       | SequenceOffset of {base: t,
+                            index: t,
+                            offset: Bytes.t,
+                            scale: Scale.t,
+                            ty: Type.t}
+       | StackOffset of StackOffset.t
+       | StackTop
+       | Word of WordX.t
 
     val ty =
-      fn Cast (_, ty) => ty
+       fn Cast (_, ty) => ty
         | Contents {ty, ...} => ty
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
@@ -244,30 +244,30 @@ structure Operand =
                else empty
          in
             case z of
-              Cast (z, ty) =>
+               Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-            | Contents {oper, ty} =>
+             | Contents {oper, ty} =>
                   seq [str (concat ["C", Type.name ty, " "]),
                        paren (layout oper)]
-            | Frontier => str "<Frontier>"
-            | GCState => str "<GCState>"
-            | Global g => Global.layout g
-            | Label l => Label.layout l
-            | Null => str "NULL"
-            | Offset {base, offset, ty} =>
+             | Frontier => str "<Frontier>"
+             | GCState => str "<GCState>"
+             | Global g => Global.layout g
+             | Label l => Label.layout l
+             | Null => str "NULL"
+             | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-            | Real r => RealX.layout r
-            | Register r => Register.layout r
-            | SequenceOffset {base, index, offset, scale, ty} =>
+             | Real r => RealX.layout r
+             | Register r => Register.layout r
+             | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset],
                        constrain ty]
-            | StackOffset so => StackOffset.layout so
-            | StackTop => str "<StackTop>"
-            | Word w => WordX.layout w
+             | StackOffset so => StackOffset.layout so
+             | StackTop => str "<StackTop>"
+             | Word w => WordX.layout w
          end
 
     val toString = Layout.toString o layout
@@ -275,22 +275,22 @@ structure Operand =
     val rec equals =
          fn (Cast (z, t), Cast (z', t')) =>
                 Type.equals (t, t') andalso equals (z, z')
-          | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
+           | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
                 equals (z, z')
-          | (GCState, GCState) => true
-          | (Global g, Global g') => Global.equals (g, g')
-          | (Label l, Label l') => Label.equals (l, l')
-          | (Offset {base = b, offset = i, ...},
-                Offset {base = b', offset = i', ...}) =>
-                  equals (b, b') andalso Bytes.equals (i, i')
-          | (Real r, Real r') => RealX.equals (r, r')
-          | (Register r, Register r') => Register.equals (r, r')
-          | (SequenceOffset {base = b, index = i, ...},
-                SequenceOffset {base = b', index = i', ...}) =>
-                  equals (b, b') andalso equals (i, i')
-          | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
-          | (Word w, Word w') => WordX.equals (w, w')
-          | _ => false
+           | (GCState, GCState) => true
+           | (Global g, Global g') => Global.equals (g, g')
+           | (Label l, Label l') => Label.equals (l, l')
+           | (Offset {base = b, offset = i, ...},
+              Offset {base = b', offset = i', ...}) =>
+                equals (b, b') andalso Bytes.equals (i, i')
+           | (Real r, Real r') => RealX.equals (r, r')
+           | (Register r, Register r') => Register.equals (r, r')
+           | (SequenceOffset {base = b, index = i, ...},
+              SequenceOffset {base = b', index = i', ...}) =>
+                equals (b, b') andalso equals (i, i')
+           | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
+           | (Word w, Word w') => WordX.equals (w, w')
+           | _ => false
 
       val stackOffset = StackOffset o StackOffset.T
 
@@ -305,7 +305,7 @@ structure Operand =
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
              | (Register r, Register r') => Register.equals (r, r')
-             | (SequenceOffset {base, index, ...}, _) => 
+             | (SequenceOffset {base, index, ...}, _) =>
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
@@ -1053,12 +1053,12 @@ structure Program =
                       | Real _ => true
                       | Register r => Alloc.doesDefine (alloc, Live.Register r)
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
-                            Bytes.<= (Bytes.+ (offset, Type.bytes ty),
+                           Bytes.<= (Bytes.+ (offset, Type.bytes ty),
                                      maxFrameSize)
-                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
-                            andalso (case Type.deLabel ty of
-                                      NONE => true
-                                    | SOME l =>
+                           andalso Alloc.doesDefine (alloc, Live.StackOffset so)
+                           andalso (case Type.deLabel ty of
+                                       NONE => true
+                                     | SOME l =>
                                           let
                                              val Block.T {kind, ...} =
                                                 labelBlock l
@@ -1086,16 +1086,16 @@ structure Program =
                                               | Kind.Jump => true
                                           end)
                       | SequenceOffset {base, index, offset, scale, ty} =>
-                            (checkOperand (base, alloc)
-                              ; checkOperand (index, alloc)
-                              ; (Operand.isLocation base
-                                 andalso
-                                 (Type.sequenceOffsetIsOk {base = Operand.ty base,
-                                                           index = Operand.ty index,
-                                                           offset = offset,
-                                                           tyconTy = tyconTy,
-                                                           result = ty,
-                                                           scale = scale})))
+                           (checkOperand (base, alloc)
+                            ; checkOperand (index, alloc)
+                            ; (Operand.isLocation base
+                               andalso
+                               (Type.sequenceOffsetIsOk {base = Operand.ty base,
+                                                         index = Operand.ty index,
+                                                         offset = offset,
+                                                         tyconTy = tyconTy,
+                                                         result = ty,
+                                                         scale = scale})))
                       | StackTop => true
                       | Word _ => true
                in

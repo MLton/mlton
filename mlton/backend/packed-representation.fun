@@ -591,18 +591,18 @@ structure Base =
                                                 {signed = false}))}
                         in
                            (SequenceOffset {base = sequence,
-                                         index = Var {var = prod, ty = seqIndexTy},
-                                         offset = offset,
-                                         scale = Scale.One,
-                                         ty = ty},
+                                            index = Var {var = prod, ty = seqIndexTy},
+                                            offset = offset,
+                                            scale = Scale.One,
+                                            ty = ty},
                             [s])
                         end
                    | SOME s =>
                         (SequenceOffset {base = sequence,
-                                      index = index,
-                                      offset = offset,
-                                      scale = s,
-                                      ty = ty},
+                                         index = index,
+                                         offset = offset,
+                                         scale = s,
+                                         ty = ty},
                          [])
                end
    end
@@ -2525,18 +2525,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                | Object {args, con} =>
                     (case con of
                         ObjectCon.Con con =>
-                            let
+                           let
                               val {rep, tyconRep} = conInfo con
                               fun compute () = ConRep.rep (!rep)
                               val r = Value.new {compute = compute,
                                                  equals = Rep.equals,
                                                  init = Rep.unit}
                               val () = Value.affect (tyconRep, r)
-                            in
+                           in
                               r
-                            end
+                           end
                       | ObjectCon.Sequence =>
-                            let
+                           let
                               val hasIdentity = Prod.someIsMutable args
                               val args = Prod.dest args
                               fun tupleRep opt =
@@ -2612,13 +2612,13 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                  end
                                             | _ => delay ())
                                     end
-                            in
+                           in
                               constant
                               (Rep.T {rep = Rep.Objptr {endsIn00 = true},
                                       ty = Type.objptr opt})
-                            end
+                           end
                       | ObjectCon.Tuple =>
-                            let
+                           let
                               val opt = ObjptrTycon.new ()
                               val rs =
                                  Vector.map (Prod.dest args, typeRep o #elt)
@@ -2654,9 +2654,9 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                  equals = Rep.equals,
                                                  init = Rep.unit}
                               val () = Value.affect (tr, r)
-                            in
+                           in
                               r
-                            end)
+                           end)
                | Real s => nonObjptr (Type.real s)
                | Thread =>
                     constant (Rep.T {rep = Rep.Objptr {endsIn00 = true},
@@ -2781,18 +2781,18 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
             datatype z = datatype ObjectCon.t
          in
             case con of
-                Con con =>
+               Con con =>
                   (case conRep con of
                       ConRep.ShiftAndTag {selects, ...} => (selects, NONE)
                     | ConRep.Tuple tr => (TupleRep.selects tr, NONE)
                     | _ => Error.bug "PackedRepresentation.getSelects: Con,non-select")
-              | Sequence =>
+             | Sequence =>
                   (case sequenceRep objectTy of
                      tr as TupleRep.Indirect pr =>
                         (TupleRep.selects tr,
                          SOME (Type.bytes (ObjptrRep.componentsTy pr)))
                    | _ => Error.bug "PackedRepresentation.getSelects: Sequence,non-Indirect")
-              | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
+             | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
          end
       fun select {base, baseTy, dst, offset} =
          case S.Type.dest baseTy of

@@ -41,9 +41,9 @@ signature SSA_TREE2 =
       structure ObjectCon:
          sig
             datatype t =
-                Con of Con.t
-              | Sequence
-              | Tuple
+               Con of Con.t
+             | Sequence
+             | Tuple
 
             val isSequence: t -> bool
             val layout: t -> Layout.t
@@ -97,9 +97,9 @@ signature SSA_TREE2 =
       structure Base:
          sig
             datatype 'a t =
-                Object of 'a
-              | SequenceSub of {index: 'a,
-                                sequence: 'a}
+               Object of 'a
+             | SequenceSub of {index: 'a,
+                               sequence: 'a}
 
             val foreach: 'a t * ('a -> unit) -> unit
             val layout: 'a t * ('a -> Layout.t) -> Layout.t

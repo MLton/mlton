@@ -11,7 +11,7 @@
 
 /* 
  * There are four kinds of ML objects: 
- *   sequence, normal (fixed size), stack, and weak.
+ *   normal (fixed size), sequence, stack, and weak.
  */
 typedef enum { 
   /* The tag indices here must agree with those in declareObjectTypes()

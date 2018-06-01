@@ -511,12 +511,12 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                   datatype z = datatype ObjectCon.t
                in
                   case base of
-                      Object base =>
+                     Object base =>
                         let
                            val () = visitVar base
                            val () =
                               case Type.dest (tyVar base) of
-                                  Type.Object {con, ...} =>
+                                 Type.Object {con, ...} =>
                                     (case con of
                                         Con con =>
                                            let
@@ -532,11 +532,11 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            end
                                       | Sequence => Error.bug "RemoveUnused2.visitExp: Select:non-Con|Tuple"
                                       | Tuple => ())
-                                | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
+                               | _ => Error.bug "RemovUnused2.visitExp: Select:non-Object"
                         in
                            ()
                         end
-                    | SequenceSub {index, sequence} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
                          ; visitVar sequence)
                end
@@ -560,11 +560,11 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                   datatype z = datatype ObjectCon.t
                in
                   case base of
-                      Object base =>
+                     Object base =>
                         (case Type.dest (tyVar base) of
                             Type.Object {con, ...} =>
                                (case con of
-                                    Con con =>
+                                   Con con =>
                                       let
                                          val ci = conInfo con
                                          val ciArgs = ConInfo.args ci
@@ -577,12 +577,12 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            ; visitVar base
                                            ; visitVar value))
                                       end
-                                  | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple"
-                                  | Tuple =>
+                                 | Sequence => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple"
+                                 | Tuple =>
                                       (visitVar base
                                        ; visitVar value))
                           | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
-                    | SequenceSub {index, sequence} =>
+                   | SequenceSub {index, sequence} =>
                         (visitVar index
                          ; visitVar sequence
                          ; visitVar value)
@@ -1141,7 +1141,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                            case Type.dest (tyVar base) of
                               Object {con, ...} =>
                                  (case con of
-                                      Con con =>
+                                     Con con =>
                                         let
                                            val ci = conInfo con
                                            val ciArgs = ConInfo.args ci
@@ -1156,8 +1156,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                            Select {base = Base.Object base,
                                                    offset = offset}
                                         end
-                                    | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple"
-                                    | Tuple => e)
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyExp: Update:non-Con|Tuple"
+                                   | Tuple => e)
                             | _ => Error.bug "RemoveUnused2.simplifyExp:Select:non-Object"
                         end
                    | _ => e
@@ -1199,7 +1199,7 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                            case Type.dest (tyVar base) of
                               Object {con, ...} =>
                                  (case con of
-                                      Con con =>
+                                     Con con =>
                                         let
                                            val ci = conInfo con
                                            val ciArgs = ConInfo.args ci
@@ -1226,8 +1226,8 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                                                  end
                                            else NONE
                                         end
-                                    | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple"
-                                    | Tuple => SOME s)
+                                   | Sequence => Error.bug "RemoveUnused2.simplifyStatement: Update:non-Con|Tuple"
+                                   | Tuple => SOME s)
                             | _ => Error.bug "RemoveUnused2.simplifyStatement: Select:non-Object"
                         end
                    | _ => SOME s

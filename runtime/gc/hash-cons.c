@@ -253,7 +253,7 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
     object
     + (SEQUENCE_TAG == tag
        ? (sizeofSequenceNoMetaData (s, getSequenceLength (object),
-                                 bytesNonObjptrs, numObjptrs))
+                                    bytesNonObjptrs, numObjptrs))
        : (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)));
   // Compute the hash.
   hash = (GC_hash)header;

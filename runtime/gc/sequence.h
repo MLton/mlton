@@ -11,7 +11,7 @@
 
 /*
  * Sequence objects have the following layout:
- * 
+ *
  * counter ::
  * length ::
  * header ::
@@ -54,8 +54,8 @@ static inline GC_sequenceCounter getSequenceCounter (pointer a);
 
 #if ASSERT
 static inline pointer indexSequenceAtObjptrIndex (GC_state s, pointer a,
-                                               		GC_sequenceCounter sequenceIndex,
-                                               		uint32_t objptrIndex);
+                                                  GC_sequenceCounter sequenceIndex,
+                                                  uint32_t objptrIndex);
 #endif
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

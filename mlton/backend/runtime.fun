@@ -141,32 +141,32 @@ structure GCField =
 structure RObjectType =
    struct
       datatype t =
-          Normal of {hasIdentity: bool,
+         Normal of {hasIdentity: bool,
+                    bytesNonObjptrs: Bytes.t,
+                    numObjptrs: int}
+       | Sequence of {hasIdentity: bool,
                       bytesNonObjptrs: Bytes.t,
                       numObjptrs: int}
-        | Sequence of {hasIdentity: bool,
-                        bytesNonObjptrs: Bytes.t,
-                   numObjptrs: int}
-        | Stack
-        | Weak of {gone: bool}
+       | Stack
+       | Weak of {gone: bool}
 
       fun layout (t: t): Layout.t =
          let
             open Layout
          in
             case t of
-                Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+               Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                   seq [str "Normal ",
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
                                ("numObjptrs", Int.layout numObjptrs)]]
-              | Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
+             | Sequence {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                   seq [str "Sequence ",
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
                                ("numObjptrs", Int.layout numObjptrs)]]
-              | Stack => str "Stack"
-              | Weak {gone} => 
+             | Stack => str "Stack"
+             | Weak {gone} => 
                   seq [str "Weak",
                        record [("gone", Bool.layout gone)]]
          end
