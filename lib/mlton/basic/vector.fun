@@ -623,4 +623,14 @@ fun removeDuplicates (v, equals) =
 
 fun randomElement v = sub (v, Random.natLessThan (length v))
 
+fun toListKeepAllMap (v, f) = 
+   let 
+      val a = map(v, f)
+   in
+      foldr (a, [], fn (a, ac) => 
+         case a of
+            NONE => ac
+          | SOME b => b :: ac)
+   end
+
 end
