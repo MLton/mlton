@@ -52,7 +52,7 @@ val allVector = Vector.tabulate (65, fn i =>
                                      then SOME (fromBits (Bits.fromInt i))
                                   else NONE)
 
-val all: t list = Vector.toList (Vector.keepAllMap (allVector, fn so => so))
+val all: t list = Vector.toListKeepAllMap (allVector, fn so => so)
 
 val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
 

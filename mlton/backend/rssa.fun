@@ -1078,15 +1078,15 @@ structure Program =
                                | Const c => SOME (ApplyArg.Const c)
                                | Var x => SOME (ApplyArg.Var x)
                                | _ => NONE
-                           val applyArgs = Vector.keepAllMap (args, getArg)
+                           val applyArgs = Vector.toListKeepAllMap (args, getArg) 
                            datatype z = datatype ApplyResult.t
                         in
-                           if Vector.length args <> Vector.length applyArgs
+                           if Vector.length args <> List.length applyArgs
                               then keep ()
                            else
                               case (tracePrimApply
                                     Prim.apply
-                                    (prim, Vector.toList applyArgs,
+                                    (prim, applyArgs,
                                      fn ({var = x, ...}, {var = y, ...}) =>
                                      Var.equals (x, y))) of
                                  Apply (prim, args) =>
