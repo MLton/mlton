@@ -49,7 +49,7 @@ structure Prod =
 
       fun layout (p, layout) =
          if isEmpty p
-            then Layout.str "() tuple"
+            then Layout.str "unit"
             else let
                     open Layout
                  in
@@ -738,7 +738,7 @@ structure Statement =
                   end
              | Profile p => seq [str "profile", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [Exp.layout' (Exp.Select {base = base,
+                  mayAlign [seq [str "update", Exp.layout' (Exp.Select {base = base,
                                                           offset = offset},
                                               layoutVar),
                                  str " :="],
