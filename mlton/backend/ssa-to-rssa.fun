@@ -1311,7 +1311,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_uninit"
                                            | SOME eltTys => eltTys
                                        val sss =
-                                          (Vector.toList o Vector.keepAllMapi)
+                                          Vector.toListKeepAllMapi
                                           (S.Prod.dest eltTys, fn (offset, {elt, ...}) =>
                                            case toRtype elt of
                                               NONE => NONE
