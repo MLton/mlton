@@ -120,6 +120,7 @@ signature VECTOR =
       val toArray: 'a t -> 'a array
       val toList: 'a t -> 'a list
       val toListKeepAllMap: 'a t * ('a -> 'b option) -> 'b list
+      val toListKeepAllMapi: 'a t * (int * 'a -> 'b option) -> 'b list
       val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListRev: 'a t -> 'a list
       val toString: ('a -> string) -> 'a t -> string
