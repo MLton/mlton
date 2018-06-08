@@ -456,24 +456,25 @@ structure TypeStr =
                   let
                      val extra = ref false
                      val cons =
-                        Vector.toListKeepAllMap (Cons.dest cons, fn {name, scheme, ...} =>
-                           let
-                              val (tyvars, ty) = Scheme.dest scheme
-                           in
-                              case Type.deArrowOpt ty of
-                                 NONE => (extra := true; NONE)
-                               | SOME (arg, _) =>
-                                    let
-                                       val argScheme =
-                                          Scheme.make {canGeneralize = true,
-                                                       ty = arg,
-                                                       tyvars = tyvars}
-                                    in
-                                       case Scheme.checkEquality (argScheme, {layoutPrettyTycon = layoutPrettyTycon}) of
-                                          NONE => (extra := true; NONE)
-                                        | SOME l => SOME (seq [Ast.Con.layout name, str " of ", l])
-                                    end
-                           end)
+                        Vector.toListKeepAllMap
+                        (Cons.dest cons, fn {name, scheme, ...} =>
+                         let
+                            val (tyvars, ty) = Scheme.dest scheme
+                         in
+                            case Type.deArrowOpt ty of
+                               NONE => (extra := true; NONE)
+                             | SOME (arg, _) =>
+                                  let
+                                     val argScheme =
+                                        Scheme.make {canGeneralize = true,
+                                                     ty = arg,
+                                                     tyvars = tyvars}
+                                  in
+                                     case Scheme.checkEquality (argScheme, {layoutPrettyTycon = layoutPrettyTycon}) of
+                                        NONE => (extra := true; NONE)
+                                      | SOME l => SOME (seq [Ast.Con.layout name, str " of ", l])
+                                  end
+                         end)
 
                      val cons =
                         if !extra

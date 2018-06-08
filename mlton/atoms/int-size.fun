@@ -23,11 +23,12 @@ fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64
 
 val sizes: Bits.t list =
-   Vector.toListKeepAllMap (Vector.tabulate (65, fn i => 
-                                  if isValidSize i
-                                     then SOME (Bits.fromInt i)
-                                  else NONE),
-     fn i => i)
+   Vector.toListKeepAllMap
+   (Vector.tabulate (65, fn i =>
+                     if isValidSize i
+                        then SOME (Bits.fromInt i)
+                        else NONE),
+    fn i => i)
 
 fun make i = T {bits = i}
 

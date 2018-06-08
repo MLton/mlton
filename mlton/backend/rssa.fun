@@ -1078,7 +1078,7 @@ structure Program =
                                | Const c => SOME (ApplyArg.Const c)
                                | Var x => SOME (ApplyArg.Var x)
                                | _ => NONE
-                           val applyArgs = Vector.toListKeepAllMap (args, getArg) 
+                           val applyArgs = Vector.toListKeepAllMap (args, getArg)
                            datatype z = datatype ApplyResult.t
                         in
                            if Vector.length args <> List.length applyArgs
