@@ -633,7 +633,7 @@ structure Exp =
              | Inject {sum, variant} =>
                   seq [str "inject ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
-                  seq [str "new", (case con of
+                  seq [str "new ", (case con of
                            NONE => str "tuple"
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
