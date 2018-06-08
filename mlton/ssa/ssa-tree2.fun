@@ -49,7 +49,7 @@ structure Prod =
 
       fun layout (p, layout) =
          if isEmpty p
-            then Layout.str "unit"
+            then Layout.str "() tuple"
             else let
                     open Layout
                  in
@@ -642,7 +642,7 @@ structure Exp =
              | PrimApp {args, prim} =>
                   seq [str "prim ", Prim.layout prim, str " ", layoutArgs args]
              | Select {base, offset} =>
-                  seq [str "select", Int.layout offset, str " ",
+                  seq [str "select ", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
              | Var x => seq [str "val ", layoutVar x]
          end
@@ -736,9 +736,9 @@ structure Statement =
                                          ty],
                                indent (Exp.layout' (exp, layoutVar), 2)]
                   end
-             | Profile p => seq [str "profile", ProfileExp.layout p]
+             | Profile p => seq [str "profile ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "update", Exp.layout' (Exp.Select {base = base,
+                  mayAlign [seq [str "update ", Exp.layout' (Exp.Select {base = base,
                                                           offset = offset},
                                               layoutVar),
                                  str " :="],
@@ -1268,8 +1268,8 @@ structure Datatype =
                  alignPrefix
                  (Vector.toListMap
                   (cons, fn {con, args} =>
-                   seq [Con.layout con, str " of ",
-                        Prod.layout (args, Type.layout)]),
+                   seq [Prod.layout (args, Type.layout), str " ",
+                                Con.layout con]),
                   "| ")]
          end
 
