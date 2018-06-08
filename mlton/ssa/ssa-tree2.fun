@@ -48,20 +48,18 @@ structure Prod =
                         m1 = m2 andalso equals (e1, e2))
 
       fun layout (p, layout) =
-         if isEmpty p
-            then Layout.str "() tuple"
-            else let
-                    open Layout
-                 in
-                    seq [str "(",
-                         (mayAlign o separateRight)
-                         (Vector.toListMap (dest p, fn {elt, isMutable} =>
-                                            if isMutable
-                                               then seq [layout elt, str " ref"]
-                                               else layout elt),
-                          ", "),
-                         str ")"]
-                 end
+        let
+            open Layout
+          in
+            seq [str "(",
+            (mayAlign o separateRight)
+            (Vector.toListMap (dest p, fn {elt, isMutable} =>
+                    if isMutable
+                    then seq [layout elt, str " ref"]
+                    else layout elt),
+              ", "),
+              str ")"]
+         end
 
       val map: 'a t * ('a -> 'b) -> 'b t =
          fn (p, f) =>
@@ -635,8 +633,8 @@ structure Exp =
              | Inject {sum, variant} =>
                   seq [str "inject ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
-                  seq [(case con of
-                           NONE => empty
+                  seq [str "new", (case con of
+                           NONE => str "tuple"
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
@@ -644,7 +642,7 @@ structure Exp =
              | Select {base, offset} =>
                   seq [str "select ", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
-             | Var x => seq [str "val ", layoutVar x]
+             | Var x => layoutVar x
          end
 
       fun layout e = layout' (e, Var.layout)
@@ -730,7 +728,7 @@ structure Statement =
                            else (str " =", empty)
                   in
                      mayAlign [mayAlign [seq [case var of
-                                                 NONE => str "new "
+                                                 NONE => str "_"
                                                | SOME var => Var.layout var,
                                               sep],
                                          ty],
@@ -1103,7 +1101,7 @@ structure Transfer =
                 | Bug => str "Bug"
                 | Call {func, args, return} =>
                      let
-                        val call = seq [Func.layout func, str " ", layoutArgs args]
+                        val call = seq [str "call", Func.layout func, str " ", layoutArgs args]
                      in
                         case return of
                            Return.Dead => seq [str "dead ", paren call]
