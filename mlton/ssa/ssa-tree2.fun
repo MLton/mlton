@@ -727,10 +727,10 @@ structure Statement =
                      val (sep, ty) =
                         if !Control.showTypes
                            then (str ":", indent (seq [Type.layout ty, str " ="], 2))
-                           else (str " = new ", empty)
+                           else (str " =", empty)
                   in
                      mayAlign [mayAlign [seq [case var of
-                                                 NONE => str "_"
+                                                 NONE => str "new "
                                                | SOME var => Var.layout var,
                                               sep],
                                          ty],
