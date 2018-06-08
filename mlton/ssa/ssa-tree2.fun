@@ -644,7 +644,7 @@ structure Exp =
              | Select {base, offset} =>
                   seq [str "select", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
-             | Var x => seq [seq "val ", layoutVar x]
+             | Var x => seq [str "val ", layoutVar x]
          end
 
       fun layout e = layout' (e, Var.layout)
@@ -725,7 +725,6 @@ structure Statement =
                Bind {var, ty, exp} =>
                   let
                      val (sep, ty) =
-                        str "bind "
                         if !Control.showTypes
                            then (str ":", indent (seq [Type.layout ty, str " ="], 2))
                            else (str " =", empty)
@@ -739,7 +738,6 @@ structure Statement =
                   end
              | Profile p => seq [str "profile", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  str "update "
                   mayAlign [seq [Exp.layout' (Exp.Select {base = base,
                                                           offset = offset},
                                               layoutVar),
@@ -1099,7 +1097,7 @@ structure Transfer =
             in
                case t of
                   Arith {prim, args, overflow, success, ...} =>
-                     seq ["arith ", Label.layout success, str " ",
+                     seq [str "arith ", Label.layout success, str " ",
                           tuple [layoutPrim {prim = prim, args = args}],
                           str " handle Overflow => ", Label.layout overflow]
                 | Bug => str "Bug"
