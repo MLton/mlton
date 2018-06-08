@@ -119,8 +119,8 @@ signature VECTOR =
       val tabulator: int * (('a -> unit) -> unit) -> 'a t
       val toArray: 'a t -> 'a array
       val toList: 'a t -> 'a list
-      val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListKeepAllMap: 'a t * ('a -> 'b option) -> 'b list
+      val toListMap: 'a t * ('a -> 'b) -> 'b list
       val toListRev: 'a t -> 'a list
       val toString: ('a -> string) -> 'a t -> string
       val unzip: ('a * 'b) t -> 'a t * 'b t
