@@ -281,14 +281,10 @@ fun toList a = foldr (a, [], op ::)
 fun toListMap (a, f) = foldr (a, [], fn (a, ac) => f a :: ac)
 
 fun toListKeepAllMap (v, f) =
-   let
-      val a = map(v, f)
-   in
-      foldr (a, [], fn (a, ac) =>
-             case a of
-                NONE => ac
-              | SOME b => b :: ac)
-   end
+   foldr (v, [], fn (a, bs) =>
+          case f a of
+             NONE => bs
+           | SOME b => b :: bs)
 
 fun layout l v = Layout.tuple (toListMap (v, l))
 
