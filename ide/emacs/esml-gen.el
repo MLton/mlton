@@ -87,21 +87,21 @@ the format `[{]id[: ty][,] ...[,] id[}]' where `[]' marks optional parts."
         (compat-error "%s" "Record must have at least two fields")
       (let ((fields (sort fields 'string-lessp))
             (start (point)))
-        (labels ((format-fields
-                  (fmt)
-                  (with-temp-buffer
-                    (loop
-                      for f in fields
-                      for i from 1 to n
-                      do (insert
-                          (let* ((result fmt)
-                                 (result (compat-replace-regexp-in-string
-                                          result "\\%f" f))
-                                 (result (compat-replace-regexp-in-string
-                                          result "\\%i" (int-to-string i))))
-                            result)))
-                    (delete-char -2) ;; TBD
-                    (buffer-string))))
+        (cl-labels ((format-fields
+                     (fmt)
+                     (with-temp-buffer
+                       (loop
+                         for f in fields
+                         for i from 1 to n
+                         do (insert
+                             (let* ((result fmt)
+                                    (result (compat-replace-regexp-in-string
+                                             result "\\%f" f))
+                                    (result (compat-replace-regexp-in-string
+                                             result "\\%i" (int-to-string i))))
+                               result)))
+                       (delete-char -2) ;; TBD
+                       (buffer-string))))
           (insert
            (let* ((result (nth 0 esml-gen-fru-setter-template))
                   (result (compat-replace-regexp-in-string
@@ -145,17 +145,17 @@ two characters of a pattern are deleted at the end."
   (if (not (and (<= 2 n)
                 (<= n 100)))
       (compat-error "%s" "Number of fields must be between 2 and 100")
-    (labels ((format-fields
-              (fmt n)
-              (with-temp-buffer
-                (loop for i from 1 to n
-                  do (insert
-                      (let* ((result fmt)
-                             (result (compat-replace-regexp-in-string
-                                      result "%i" (int-to-string i))))
-                        result)))
-                (delete-char -2) ;; TBD
-                (buffer-string))))
+    (cl-labels ((format-fields
+                 (fmt n)
+                 (with-temp-buffer
+                   (loop for i from 1 to n
+                     do (insert
+                         (let* ((result fmt)
+                                (result (compat-replace-regexp-in-string
+                                         result "%i" (int-to-string i))))
+                           result)))
+                   (delete-char -2) ;; TBD
+                   (buffer-string))))
       (let ((start (point)))
         (loop for i from 2 to n do
           (unless (= i 2)

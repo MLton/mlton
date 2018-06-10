@@ -39,8 +39,8 @@ source file."
                  (file (if (file-name-absolute-p file)
                            file
                          (concat prefix (funcall match 2))))
-                 (line (string-to-int (funcall match 3)))
-                 (col (string-to-int (funcall match 4)))
+                 (line (string-to-number (funcall match 3)))
+                 (col (string-to-number (funcall match 4)))
                  (marker (save-excursion
                            (find-file file)
                            (goto-line line)
