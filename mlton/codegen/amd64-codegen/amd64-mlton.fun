@@ -71,8 +71,6 @@ struct
          | Real_le _ => true
          | Real_lt _ => true
          | Real_mul _ => true
-         | Real_muladd _ => true
-         | Real_mulsub _ => true
          | Real_neg _ => true
          | Real_qequal _ => true
          | Real_rndToReal _ => true
@@ -573,40 +571,6 @@ struct
                 transfer = NONE}]
             end
 
-        fun sse_binas_mul oper
-          = let
-              val ((src1,src1size),
-                   (src2,src2size),
-                   (src3,src3size)) = getSrc3 ()
-              val (dst,dstsize) = getDst1 ()
-              val _ 
-                = Assert.assert
-                  ("amd64MLton.prim: binal, dstsize/src1size/src2size",
-                   fn () => src1size = dstsize andalso
-                            src2size = dstsize andalso
-                            src3size = dstsize)
-            in
-              AppendList.fromList
-              [Block.mkBlock'
-               {entry = NONE,
-                statements
-                = [Assembly.instruction_sse_movs
-                   {dst = dst,
-                    src = src1,
-                    size = src1size},
-                   Assembly.instruction_sse_binas
-                   {oper = Instruction.SSE_MULS,
-                    dst = dst,
-                    src = src2,
-                    size = dstsize},
-                   Assembly.instruction_sse_binas
-                   {oper = oper,
-                    dst = dst,
-                    src = src3,
-                    size = dstsize}],
-                transfer = NONE}]
-            end
-
         fun sse_unas oper
           = let
               val (src,srcsize) = getSrc1 ()
@@ -897,8 +861,6 @@ struct
                      transfer = NONE}]
                 end
              | Real_mul _ => sse_binas Instruction.SSE_MULS
-             | Real_muladd _ => sse_binas_mul Instruction.SSE_ADDS
-             | Real_mulsub _ => sse_binas_mul Instruction.SSE_SUBS
              | Real_neg s =>
                 let
                    val (dst,dstsize) = getDst1 ()
