@@ -26,6 +26,7 @@ PRIVATE Word64 indexTemp;
 PRIVATE Word64 raTemp1;
 PRIVATE Word64 spill[32];
 PRIVATE Word64 stackTopTemp;
+PRIVATE Word64 overflowCheckTemp;
 
 #ifndef DEBUG_AMD64CODEGEN
 #define DEBUG_AMD64CODEGEN FALSE

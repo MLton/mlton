@@ -231,6 +231,13 @@ struct
                     class = Classes.StaticTemp}
   fun fpeqTempContentsOperand size
     = Operand.memloc (fpeqTempContents size)
+  val overflowCheckTemp = Label.fromString "overflowCheckTemp"
+  fun overflowCheckTempContents size
+    = makeContents {base = Immediate.label overflowCheckTemp,
+                    size = size,
+                    class = Classes.StaticTemp}
+  fun overflowCheckTempContentsOperand size
+    = Operand.memloc (overflowCheckTempContents size)
 
   local
      fun make prefix =
