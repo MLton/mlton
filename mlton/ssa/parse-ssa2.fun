@@ -78,6 +78,38 @@
 
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
+ val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
+
+ val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
+
+ val parseString = ((String.fromString o String.implode o List.concat) <$?>
+       (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
+
+ fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
+ fun parseRealHelper sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
+       List.concat <$> P.each
+       [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
+        P.char #"." *> P.pure [#"."] <|> P.pure [],
+        P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
+       P.pure sz))
+ val parseReal = fn sz =>
+    P.any
+    [P.str "inf" *> P.pure (RealX.posInf sz),
+     P.str "~inf" *> P.pure (RealX.negInf sz),
+     parseRealHelper sz]
+
+ val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
+
+ val parseBool = true <$ token "true" <|> false <$ token "false"
+
+ fun makeWord typ int =
+    if Tycon.isWordX typ
+       then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
+       else P.fail "Invalid word"
+ val parseWord8Vector = WordXVector.fromVector <$$>
+      (P.pure {elementSize=WordSize.word8},
+       P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
+
  fun makeObjectCon resolveCon (args, ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
@@ -90,7 +122,7 @@
     resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  fun makeType resolveTycon (args, ident) = case ident of
-                                          "pointer" => Type.cpointer
+                                          "cpointer" => Type.cpointer
                                         | "intInf"  => Type.intInf
                                         | "real32"  => Type.real RealSize.R32
                                         | "real64"  => Type.real RealSize.R64
@@ -103,7 +135,7 @@
                                         | "object"  =>
                                         | _         => Type.datatypee (resolveTycon ident)
 
- fun parseConstExp typ = token "constExp" *> P.cut (
+ fun parseConstExp typ = token "constExp " *> P.cut (
    case Type.dest typ of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
       makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -198,6 +230,10 @@
                     P.spaces *> P.tuple parseVarExp <* P.spaces))
         end
 
+ fun makeSelectExpression (offset, base) = {offset = offset, base = base}
+ (*val parseSelectExpression = symbol "selectExp" *> P.cut(makeSelectExpression <$$>
+                                    (P.uint <* P.spaces,
+                                      ))*)
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
  fun parseExpression typ =
@@ -209,7 +245,16 @@
          Exp.Var     <$> parseVarExp
        ]
 
- fun makeReturnArith (ty, success, {prim, targs = _, args}, overflow) =
+ val parseProfileStatement = token "profileStatement " *> P.spaces *>
+                            (ProfileExp.Enter <$ token "Enter" <|>
+                             ProfileExp.Leave <$ token "Leave") <*>
+                             P.cut ((SourceInfo.fromC o String.implode) <$>
+                             P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
+
+ val parseStatement = P.any [parseBindStatement,
+                             parseProfileStatement,
+                             parseUpdateStatement]
+ fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
  Transfer.Arith {
    prim = prim,
    args = args,
