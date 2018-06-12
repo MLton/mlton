@@ -97,7 +97,7 @@ structure ObjectCon =
          let
             open Layout
          in
-            case oc of
+         case oc of
                Con c => Con.layout c
              | Tuple => str "Tuple"
              | Vector => str "Vector"
@@ -629,18 +629,18 @@ structure Exp =
             fun layoutArgs xs = Vector.layout layoutVar xs
          in
             case e of
-               Const c => seq [str "const ", Const.layout c]
+               Const c => seq [str "constExp ", Const.layout c]
              | Inject {sum, variant} =>
-                  seq [str "inject ", paren (layoutVar variant), str ": ", Tycon.layout sum]
+                  seq [str "injectExp ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
                   seq [str "new ", (case con of
                            NONE => str "tuple"
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
-                  seq [str "prim ", Prim.layout prim, str " ", layoutArgs args]
+                  seq [str "primExp ", Prim.layout prim, str " ", layoutArgs args]
              | Select {base, offset} =>
-                  seq [str "select ", Int.layout offset, str " ",
+                  seq [str "selectExp ", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
              | Var x => layoutVar x
          end
@@ -734,9 +734,9 @@ structure Statement =
                                          ty],
                                indent (Exp.layout' (exp, layoutVar), 2)]
                   end
-             | Profile p => seq [str "profile ", ProfileExp.layout p]
+             | Profile p => seq [str "profileStatement ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "update ", Exp.layout' (Exp.Select {base = base,
+                  mayAlign [seq [str "updateStatement ", Exp.layout' (Exp.Select {base = base,
                                                           offset = offset},
                                               layoutVar),
                                  str " :="],
@@ -1098,22 +1098,22 @@ structure Transfer =
                      seq [str "arith ", Label.layout success, str " ",
                           tuple [layoutPrim {prim = prim, args = args}],
                           str " handle Overflow => ", Label.layout overflow]
-                | Bug => str "Bug"
+                | Bug => str "bug"
                 | Call {func, args, return} =>
                      let
-                        val call = seq [str "call", Func.layout func, str " ", layoutArgs args]
+                        val call = seq [Func.layout func, str " ", layoutArgs args]
                      in
                         case return of
-                           Return.Dead => seq [str "dead ", paren call]
+                           Return.Dead => seq [str "call dead ", paren call]
                          | Return.NonTail {cont, handler} =>
-                              seq [Label.layout cont, str " ",
+                              seq [str "call ", Label.layout cont, str " ",
                                    paren call,
                                    str " handle _ => ",
                                    case handler of
                                       Handler.Caller => str "raise"
                                     | Handler.Dead => str "dead"
                                     | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "return ", paren call]
+                         | Return.Tail => seq [str "call return ", paren call]
                      end
                 | Case arg => layoutCase (arg, layoutVar)
                 | Goto {dst, args} =>
@@ -1234,7 +1234,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [str "block ", seq [Label.layout label, str " ",
+            align [str "block: ", seq [Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
