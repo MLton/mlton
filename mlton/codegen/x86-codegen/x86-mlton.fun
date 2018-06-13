@@ -128,9 +128,6 @@ struct
         fun getSrc2 ()
           = (Vector.sub (args, 0), Vector.sub (args, 1))
             handle _ => Error.bug "x86MLton.prim: getSrc2"
-        fun getSrc3 ()
-          = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
-            handle _ => Error.bug "x86MLton.prim: getSrc3"
         fun getSrc4 ()
           = (Vector.sub (args, 0), Vector.sub (args, 1), 
              Vector.sub (args, 2), Vector.sub (args, 3))
