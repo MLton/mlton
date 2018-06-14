@@ -40,7 +40,7 @@ structure CoreML = CoreML (open Atoms
                                              expandOpaque = true,
                                              var = var}
 
-                                 fun layout t = 
+                                 fun layout t =
                                     #1 (layoutPretty
                                         (t, {expandOpaque = true,
                                              layoutPrettyTycon = Tycon.layout,
@@ -117,7 +117,7 @@ fun setCommandLineConstant (c as {name, value}) =
             set
          end
       val () =
-         case List.peek ([("Exn.keepHistory", 
+         case List.peek ([("Exn.keepHistory",
                            make (Bool.fromString, Control.exnHistory))],
                          fn (s, _) => s = name) of
             NONE => ()
@@ -157,7 +157,7 @@ val lookupConstant =
       fn z => f () z
    end
 
-(* ------------------------------------------------- *)   
+(* ------------------------------------------------- *)
 (*                   Primitive Env                   *)
 (* ------------------------------------------------- *)
 
@@ -215,7 +215,7 @@ local
 
    structure Env =
       struct
-         open Env 
+         open Env
 
          structure Tycon =
             struct
@@ -328,7 +328,7 @@ structure MLBString:>
 
 val lexAndParseMLB = MLBString.lexAndParseMLB
 
-val lexAndParseMLB: MLBString.t -> Ast.Basdec.t = 
+val lexAndParseMLB: MLBString.t -> Ast.Basdec.t =
    fn input =>
    let
       val ast = lexAndParseMLB input
@@ -410,7 +410,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ =
          case !Control.exportHeader of
             NONE => ()
-          | SOME f => 
+          | SOME f =>
                File.withOut
                (f, fn out =>
                 let
@@ -435,11 +435,11 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                        | Control.Executable => "PART_OF"
                        | Control.LibArchive => "NO_DEFAULT_LINK"
                        | Control.Library    => "DYNAMIC_LINK"
-                   val _ = 
+                   val _ =
                       print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \\\n\
                              \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \\\n\
                              \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = 
+                   val _ =
                       print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
                    val _ = print "#endif\n"
                    val _ = print "\n"
@@ -462,11 +462,11 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "extern \"C\" {\n"
                    val _ = print "#endif\n"
                    val _ = print "\n"
-                   val _ = 
+                   val _ =
                       if !Control.format = Control.Executable then () else
                           (print ("MLLIB_PUBLIC(void " ^ libname ^ "_open(int argc, const char** argv);)\n")
                           ;print ("MLLIB_PUBLIC(void " ^ libname ^ "_close();)\n"))
-                   val _ = Ffi.declareHeaders {print = print} 
+                   val _ = Ffi.declareHeaders {print = print}
                    val _ = print "\n"
                    val _ = print "#undef MLLIB_PRIVATE\n"
                    val _ = print "#undef MLLIB_PUBLIC\n"
@@ -579,7 +579,7 @@ fun makeSsa sxml =
    {display = Control.Layouts Ssa.Program.layouts,
     name = "closureConvert",
     stats = Ssa.Program.layoutStats,
-    style = Control.No,
+    style = Control.ML,
     suffix = "ssa",
     thunk = fn () => ClosureConvert.closureConvert sxml,
     typeCheck = Ssa.typeCheck}
@@ -591,7 +591,7 @@ fun simplifySsa ssa =
          {display = Control.Layouts Ssa.Program.layouts,
           name = "ssaSimplify",
           stats = Ssa.Program.layoutStats,
-          style = Control.No,
+          style = Control.ML,
           suffix = "ssa",
           thunk = fn () => Ssa.simplify ssa,
           typeCheck = Ssa.typeCheck}
@@ -610,7 +610,7 @@ fun makeSsa2 ssa =
    {display = Control.Layouts Ssa2.Program.layouts,
     name = "toSsa2",
     stats = Ssa2.Program.layoutStats,
-    style = Control.No,
+    style = Control.ML,
     suffix = "ssa2",
     thunk = fn () => SsaToSsa2.convert ssa,
     typeCheck = Ssa2.typeCheck}
@@ -622,7 +622,7 @@ fun simplifySsa2 ssa2 =
          {display = Control.Layouts Ssa2.Program.layouts,
           name = "ssa2Simplify",
           stats = Ssa2.Program.layoutStats,
-          style = Control.No,
+          style = Control.ML,
           suffix = "ssa2",
           thunk = fn () => Ssa2.simplify ssa2,
           typeCheck = Ssa2.typeCheck}
@@ -673,7 +673,7 @@ fun makeMachine ssa2 =
       machine
    end
 
-fun setupConstants() : unit = 
+fun setupConstants() : unit =
    (* Set GC_state offsets and sizes. *)
    let
       val _ =
@@ -845,7 +845,7 @@ fun genFromSXML (input: File.t): Machine.Program.t =
           thunk = (fn () => case
                      Parse.parseFile(ParseSxml.program, input)
                         of Result.Yes x => x
-                         | Result.No msg => (Control.error 
+                         | Result.No msg => (Control.error
                            (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
                             Control.checkForErrors("parse");
                             (* can't be reached *)
@@ -880,7 +880,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
           thunk = (fn () => case
                      Parse.parseFile(ParseSsa.program, input)
                         of Result.Yes x => x
-                         | Result.No msg => (Control.error 
+                         | Result.No msg => (Control.error
                            (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
                             Control.checkForErrors("parse");
                             (* can't be reached *)
