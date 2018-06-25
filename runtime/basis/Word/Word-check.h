@@ -114,36 +114,36 @@ WordS_subCheckBodyCX(size, x, y, doOverflow, doSuccess)
 #define WordS_addCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordS##size##_addCheckP (WordS##size x, WordS##size y) {         \
-    WordS_addCheckBody(size, x, y, return TRUE, return FALSE);          \
+    return __builtin_add_overflow_p (x, y, (WordS##size) 0);            \
   }
 
 #define WordU_addCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordU##size##_addCheckP (WordU##size x, WordU##size y) {         \
-    WordU_addCheckBody(size, x, y, return TRUE, return FALSE);          \
+    return __builtin_add_overflow_p (x, y, (WordU##size) 0);            \
   }
 
 #define WordS_mulCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordS##size##_mulCheckP (WordS##size x, WordS##size y) {         \
-    WordS_mulCheckBody(size, x, y, return TRUE, return FALSE);          \
+    return __builtin_mul_overflow_p (x, y, (WordS##size) 0);            \
   }
 #define WordU_mulCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordU##size##_mulCheckP (WordU##size x, WordU##size y) {         \
-    WordU_mulCheckBody(size, x, y, return TRUE, return FALSE);          \
+    return __builtin_mul_overflow_p (x, y, (WordU##size) 0);            \
   }
 
 #define Word_negCheckP(size)                                            \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool Word##size##_negCheckP (WordS##size x) {                         \
-    Word_negCheckBody(size, x, return TRUE, return FALSE);              \
+    return x == WordS##size##_min;                                      \
   }
 
 #define WordS_subCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordS##size##_subCheckP (WordS##size x, WordS##size y) {         \
-    WordS_subCheckBody(size, x, y, return TRUE, return FALSE);          \
+    return __builtin_sub_overflow_p (x, y, (WordS##size) 0);            \
   }
 
 #define all(size)                               \
