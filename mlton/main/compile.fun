@@ -629,7 +629,7 @@ fun simplifySsa2 ssa2 =
           typeCheck = Ssa2.typeCheck}
       open Control
       val _ =
-         if keepSSA2
+         if !keepSSA2
             then saveToFile ({suffix = "ssa2"}, ML, ssa2,
                Layouts Ssa2.Program.layouts)
          else ()
