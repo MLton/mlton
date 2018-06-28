@@ -57,7 +57,7 @@ structure Prod =
                     if isMutable
                     then seq [layout elt, str " ref"]
                     else layout elt),
-              ", "),
+              ","),
               str ")"]
          end
 
@@ -629,18 +629,18 @@ structure Exp =
             fun layoutArgs xs = Vector.layout layoutVar xs
          in
             case e of
-               Const c => seq [str "constExp ", Const.layout c]
+               Const c => seq [str "const", Const.layout c]
              | Inject {sum, variant} =>
-                  seq [str "injectExp ", paren (layoutVar variant), str ": ", Tycon.layout sum]
+                  seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
                   seq [str "new ", (case con of
                            NONE => str "tuple"
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
-                  seq [str "primExp ", Prim.layout prim, str " ", layoutArgs args]
+                  seq [str "prim ", Prim.layout prim, str " ", layoutArgs args]
              | Select {base, offset} =>
-                  seq [str "selectExp ", Int.layout offset, str " ",
+                  seq [str "sel ", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
              | Var x => layoutVar x
          end
@@ -734,9 +734,9 @@ structure Statement =
                                          ty],
                                indent (Exp.layout' (exp, layoutVar), 2)]
                   end
-             | Profile p => seq [str "profileStatement ", ProfileExp.layout p]
+             | Profile p => seq [str "prof ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "updateStatement ", Exp.layout' (Exp.Select {base = base,
+                  mayAlign [seq [str "upd ", Exp.layout' (Exp.Select {base = base,
                                                           offset = offset},
                                               layoutVar),
                                  str " :="],
@@ -1234,7 +1234,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [str "block: ", seq [Label.layout label, str " ",
+            align [seq [str "block: ", Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
