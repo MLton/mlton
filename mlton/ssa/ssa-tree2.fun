@@ -629,7 +629,7 @@ structure Exp =
             fun layoutArgs xs = Vector.layout layoutVar xs
          in
             case e of
-               Const c => seq [str "const", Const.layout c]
+               Const c => seq [str "const ", Const.layout c]
              | Inject {sum, variant} =>
                   seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
@@ -724,7 +724,7 @@ structure Statement =
                   let
                      val (sep, ty) =
                         if !Control.showTypes
-                           then (str ":", indent (seq [Type.layout ty, str " ="], 2))
+                           then (str ":", indent (seq [str "val ", Type.layout ty, str " ="], 2))
                            else (str " =", empty)
                   in
                      mayAlign [mayAlign [seq [case var of
