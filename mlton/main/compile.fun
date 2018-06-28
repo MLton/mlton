@@ -52,6 +52,7 @@ structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
+structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
 local
@@ -628,8 +629,8 @@ fun simplifySsa2 ssa2 =
           typeCheck = Ssa2.typeCheck}
       open Control
       val _ =
-         if !keepSSA2
-            then saveToFile ({suffix = "ssa2"}, No, ssa2,
+         if keepSSA2
+            then saveToFile ({suffix = "ssa2"}, ML, ssa2,
                Layouts Ssa2.Program.layouts)
          else ()
    in
