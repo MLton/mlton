@@ -75,7 +75,7 @@
   mul_overflow_b(x, y, size, doOverflow, doSuccess)
 
 #define WordS_negCheckBody(size, x, doOverflow, doSuccess)      \
-  neg_overflow_b(x, y, size, doOverflow, doSuccess)
+  neg_overflow_b(x, size, doOverflow, doSuccess)
 
 #define WordS_subCheckBody(size, x, y, doOverflow, doSuccess)   \
   sub_overflow_b(x, y, size, doOverflow, doSuccess)
