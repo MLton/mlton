@@ -133,7 +133,7 @@
               | "real32"   => Type.real RealSize.R32
               | "real64"   => Type.real RealSize.R64
               | "thread"   => Type.thread
-              | "weak"     => Type.weak Vector.first args
+              | "weak"     => Type.weak (Vector.first args)
               | "word8"    => Type.word WordSize.word8
               | "word16"   => Type.word WordSize.word16
               | "word32"   => Type.word WordSize.word32
