@@ -153,6 +153,8 @@
                         Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
                         P.char #")" <* P.spaces
 
+ val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+ 
  fun parseConstExp parseType = token "const" *> P.cut (
    case Type.dest parseType of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
@@ -168,7 +170,7 @@
         P.failCut "string constant"]
     | _ => P.fail "constant" )
 
- fun makeInjectExp (sum, variant) = {sum = resolveTycon sum, variant = var}
+ fun makeInjectExp (sum, variant) = {sum = sum, variant = variant}
  val parseInjectExp = token "inj " *> P.cut ( makeInjectExp <$$>
                                 parseVarExp *> token ":" *> P.spaces,
                                 P.spaces *> ident <* P.spaces )
@@ -252,8 +254,6 @@
  val parseSelectExpression = symbol "sel" *> P.cut(makeSelectExpression <$$>
                                     (P.uint <* P.spaces,
                                      parseBase))
-
- val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
  fun parseExpression parseType =
  P.any [ Exp.Const   <$> parseConstExp parseType,
