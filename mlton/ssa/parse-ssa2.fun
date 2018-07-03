@@ -120,12 +120,6 @@
                    | "Vector" => Type.vector
                    | _        => Type.datatypee (resolveCon ident)
 
- fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
-
- fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-    (P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
-    resolveTycon) <* P.char #")")), ident <* P.spaces)
-
  fun makeType resolveTycon (args, ident) =
      case ident of
                 "cpointer" => Type.cpointer
@@ -152,6 +146,12 @@
     val ctype = (P.any o List.map)
                 (CType.all, fn ct =>
                  ct <$ token (CType.toString ct))
+
+ fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
+
+ fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
+                 (P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
+                  resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  fun parseConstExp typ = token "const" *> P.cut (
    case Type.dest typ of
