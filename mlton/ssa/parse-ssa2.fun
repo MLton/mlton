@@ -250,8 +250,8 @@
                     P.spaces *> P.tuple parseVarExp <* P.spaces))
         end
 
- fun makeSelectExpression (offset, base) = {offset = offset, base = base}
- val parseSelectExpression = symbol "sel" *> P.cut(makeSelectExpression <$$>
+ fun makeSelectExp (offset, base) = {offset = offset, base = base}
+ val parseSelectExp = symbol "sel" *> P.cut(makeSelectExpression <$$>
                                     (P.uint <* P.spaces,
                                      parseBase))
 
@@ -259,7 +259,7 @@
  P.any [ Exp.Const   <$> parseConstExp parseType,
          Exp.Inject  <$> parseInjectExp,
          Exp.Object  <$> parseObjectExp,
-         Exp.PrimApp <$> parsePrimAppExp resolveTycon resolveVar,
+         Exp.PrimApp <$> parsePrimAppExp (resolveTycon resolveVar),
          Exp.Select  <$> parseSelectExp,
          Exp.Var     <$> parseVarExp
        ]
@@ -268,7 +268,7 @@
  Statement.Bind {
     var = var,
     ty = ty,
-    exp = parseExpression
+    exp = exp
  }
 
  fun makeBindStatement' resolveCon resolveTycon resolveVar =
