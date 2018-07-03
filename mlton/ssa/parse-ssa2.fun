@@ -146,8 +146,8 @@
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
  fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-                 (P.tuple (parseType resolveTycon) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
-                  resolveTycon) <* P.char #")"))), ident <* P.spaces)
+                 ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
+                  resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  fun parseProd resolveTycon resolveCon = P.spaces *> P.char #"(" *> P.tuple (parseType resolveTycon) *> P.str "ref," <|> P.str ",") <|>
                         Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
