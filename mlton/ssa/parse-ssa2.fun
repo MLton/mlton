@@ -291,7 +291,8 @@
           parseBindStatement'
        end
 
- val parseBindStatement = makeBindStatement' resolveCon resolveTycon resolveVar
+ val parseBindStatement resolveCon resolveTycon resolveVar =
+                                   makeBindStatement' resolveCon resolveTycon resolveVar
 
  val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
                             (ProfileExp.Enter <$ token "Enter" <|>
