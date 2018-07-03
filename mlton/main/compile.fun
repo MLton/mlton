@@ -901,5 +901,38 @@ fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
             outputLL = outputLL,
             outputS = outputS}
 
+fun genFromSsa2 (input: File.t): Machine.Program.t =
+               let
+                  val _ = setupConstants()
+                  val ssa2 =
+                     Control.passTypeCheck
+                     {display = Control.Layouts Ssa2.Program.layouts,
+                      name = "ssa2Parse",
+                      stats = Ssa2.Program.layoutStats,
+                      style = Control.ML,
+                      suffix = "ssa2",
+                      thunk = (fn () => case
+                                 Parse.parseFile(ParseSsa2.program, input)
+                                    of Result.Yes x => x
+                                     | Result.No msg => (Control.error
+                                       (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
+                                        Control.checkForErrors("parse");
+                                        (* can't be reached *)
+                                        raise Fail "parse")
+                               ),
+                      typeCheck = Ssa2.typeCheck}
+                  val ssa2 = makeSsa2 ssa
+                  val ssa2 = simplifySsa2 ssa2
+               in
+                  makeMachine ssa2
+               end
+
+ fun compileSSA2 {input: File.t, outputC, outputLL, outputS}: unit =
+               compile {input = input,
+                        resolve = genFromSsa2,
+                        outputC = outputC,
+                        outputLL = outputLL,
+                        outputS = outputS}
+
 
 end
