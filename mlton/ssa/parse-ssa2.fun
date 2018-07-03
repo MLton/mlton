@@ -106,9 +106,14 @@
     if Tycon.isWordX typ
        then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
        else P.fail "Invalid word"
+
  val parseWord8Vector = WordXVector.fromVector <$$>
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
+
+ fun parseProd resolveTycon resolveCon = P.spaces *> P.char #"(" *> P.tuple (parseType tycon) *> P.str "ref," <|> P.str ",") <|>
+                                         Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
+                                         P.char #")" <* P.spaces
 
  fun makeObjectCon resolveCon (args, ident) = case ident of
                      "Tuple"  => Type.tuple
@@ -121,21 +126,34 @@
     (P.tuple (typ resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (typ
     resolveTycon) <* P.char #")")), ident <* P.spaces)
 
- fun makeType resolveTycon (args, ident) = case ident of
-                                          "cpointer" => Type.cpointer
-                                        | "intInf"   => Type.intInf
-                                        | "real32"   => Type.real RealSize.R32
-                                        | "real64"   => Type.real RealSize.R64
-                                        | "thread"   => Type.thread
-                                        | "weak"     => Type.weak Vector.first args
-                                        | "word8"    => Type.word WordSize.word8
-                                        | "word16"   => Type.word WordSize.word16
-                                        | "word32"   => Type.word WordSize.word32
-                                        | "word64"   => Type.word WordSize.word64
-                                        | "object"   =>
-                                        | _          => Type.datatypee (resolveTycon ident)
+ fun makeType resolveTycon (args, ident) =
+     case ident of
+                "cpointer" => Type.cpointer
+              | "intInf"   => Type.intInf
+              | "real32"   => Type.real RealSize.R32
+              | "real64"   => Type.real RealSize.R64
+              | "thread"   => Type.thread
+              | "weak"     => Type.weak Vector.first args
+              | "word8"    => Type.word WordSize.word8
+              | "word16"   => Type.word WordSize.word16
+              | "word32"   => Type.word WordSize.word32
+              | "word64"   => Type.word WordSize.word64
+              | "unit"     => Type.unit
+              | _          => Type.datatypee (resolveTycon ident)
 
- fun parseConstExp typ = token "const " *> P.cut (
+    local
+        fun makeType' resolveTycon () = (makeType resolveTycon) <$$>
+            (((P.tuple (P.delay (typ' resolveTycon))) <|> P.pure (Vector.new0 ())),
+            (P.spaces *> ident <* P.spaces))
+    in
+        fun parseType resolveTycon = makeType' resolveTycon ()
+    end
+
+    val ctype = (P.any o List.map)
+                (CType.all, fn ct =>
+                 ct <$ token (CType.toString ct))
+
+ fun parseConstExp typ = token "const" *> P.cut (
    case Type.dest typ of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
       makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -156,7 +174,7 @@
                                 P.spaces *> ident <* P.spaces )
 
  fun makeObjectExp (con, args) = {con = con, args = args}
- (*val parseObjectExp*)
+ val parseObjectExp v = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
 
  fun parsePrimAppExp resolveTycon resolveVar =
      let
@@ -231,9 +249,10 @@
         end
 
  fun makeSelectExpression (offset, base) = {offset = offset, base = base}
- (*val parseSelectExpression = symbol "selectExp" *> P.cut(makeSelectExpression <$$>
+ val parseSelectExpression = symbol "sel" *> P.cut(makeSelectExpression <$$>
                                     (P.uint <* P.spaces,
-                                      ))*)
+                                     parseBase))
+
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
  fun parseExpression typ =
