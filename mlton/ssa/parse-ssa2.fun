@@ -182,6 +182,8 @@
      let
         val var = resolveVar <$> ident <* P.spaces
 
+        val varExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+
         val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
                                                 CFunction.Convention.Stdcall <$ token "stdcall"
 
@@ -259,7 +261,7 @@
  P.any [ Exp.Const   <$> parseConstExp parseType,
          Exp.Inject  <$> parseInjectExp,
          Exp.Object  <$> parseObjectExp,
-         Exp.PrimApp <$> parsePrimAppExp (resolveTycon resolveVar),
+         Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
          Exp.Select  <$> parseSelectExp,
          Exp.Var     <$> parseVarExp
        ]
