@@ -137,7 +137,7 @@
 
     local
         fun makeType' resolveTycon () = (makeType resolveTycon) <$$>
-            (((P.tuple (P.delay (typ' resolveTycon))) <|> P.pure (Vector.new0 ())),
+            (((P.tuple (P.delay (makeType' resolveTycon))) <|> P.pure (Vector.new0 ())),
             (P.spaces *> ident <* P.spaces))
     in
         fun parseType resolveTycon = makeType' resolveTycon ()
