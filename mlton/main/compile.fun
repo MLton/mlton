@@ -52,7 +52,7 @@ structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
-(*structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)*)
+structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
 local
@@ -921,8 +921,8 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                                         raise Fail "parse")
                                ),
                       typeCheck = Ssa2.typeCheck}
-                  val ssa2 = makeSsa2 ssa
-                  val ssa2 = simplifySsa2 ssa2
+                  (*val ssa2 = makeSsa2 ssa
+                  val ssa2 = simplifySsa2 ssa2*)
                in
                   makeMachine ssa2
                end
