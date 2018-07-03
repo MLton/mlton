@@ -150,7 +150,7 @@
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  fun parseProd resolveTycon resolveCon = P.spaces *> ((P.char #"(" *> P.tuple (parseType resolveTycon) <* P.str "ref," <|> P.str ",")) <|>
-                        (Vector.fromList <$> P.many (parseType resolveTycon <* P.str "ref," <|> P.str ",")) <*
+                        (Vector.fromList <$> (P.many (parseType resolveTycon <* P.str "ref," <|> P.str ","))) <*
                         P.char #")") <* P.spaces
 
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
