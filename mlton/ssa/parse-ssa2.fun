@@ -78,44 +78,6 @@
 
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
- val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
-
- val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
-
- val parseString = ((String.fromString o String.implode o List.concat) <$?>
-       (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
-
- fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
- fun parseRealHelper sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
-       List.concat <$> P.each
-       [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
-        P.char #"." *> P.pure [#"."] <|> P.pure [],
-        P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
-       P.pure sz))
- val parseReal = fn sz =>
-    P.any
-    [P.str "inf" *> P.pure (RealX.posInf sz),
-     P.str "~inf" *> P.pure (RealX.negInf sz),
-     parseRealHelper sz]
-
- val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
-
- val parseBool = true <$ token "true" <|> false <$ token "false"
-
- fun makeWord typ int =
-    if Tycon.isWordX typ
-       then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-       else P.fail "Invalid word"
-
- val parseWord8Vector = WordXVector.fromVector <$$>
-      (P.pure {elementSize=WordSize.word8},
-       P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
-
- fun makeObjectCon resolveCon (args, ident) = case ident of
-                     "Tuple"  => Type.tuple
-                   | "Vector" => Type.vector
-                   | _        => Type.datatypee (resolveCon ident)
-
  fun makeType resolveTycon (args, ident) =
      case ident of
                 "cpointer" => Type.cpointer
@@ -143,6 +105,44 @@
                 (CType.all, fn ct =>
                  ct <$ token (CType.toString ct))
 
+ val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
+
+ val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
+
+ val parseString = ((String.fromString o String.implode o List.concat) <$?>
+       (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
+
+ fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
+ fun parseRealHelper sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
+       List.concat <$> P.each
+       [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
+        P.char #"." *> P.pure [#"."] <|> P.pure [],
+        P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
+       P.pure sz))
+ val parseReal = fn sz =>
+    P.any
+    [P.str "inf" *> P.pure (RealX.posInf sz),
+     P.str "~inf" *> P.pure (RealX.negInf sz),
+     parseRealHelper sz]
+
+ val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
+
+ val parseBool = true <$ token "true" <|> false <$ token "false"
+
+ fun makeWord parseType int =
+    if Tycon.isWordX parseType
+       then P.pure (WordX.fromIntInf(int, (Tycon.deWordX parseType)))
+       else P.fail "Invalid word"
+
+ val parseWord8Vector = WordXVector.fromVector <$$>
+      (P.pure {elementSize=WordSize.word8},
+       P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
+
+ fun makeObjectCon resolveCon (args, ident) = case ident of
+                     "Tuple"  => Type.tuple
+                   | "Vector" => Type.vector
+                   | _        => Type.datatypee (resolveCon ident)
+
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
  fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
@@ -153,8 +153,8 @@
                         Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
                         P.char #")" <* P.spaces
 
- fun parseConstExp typ = token "const" *> P.cut (
-   case Type.dest typ of
+ fun parseConstExp parseType = token "const" *> P.cut (
+   case Type.dest parseType of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
       makeWord (Tycon.word ws)) <|> P.failCut "word"
     | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
@@ -219,11 +219,11 @@
                                        prototype=prototype, return=return, symbolScope=symbolScope,
                                        target = target})
         val resolveFFI = token "FFI" *> P.cut( makeFFI
-                                    <$> fromRecord "args" (P.tuple (typ resolveTycon))
+                                    <$> fromRecord "args" (P.tuple (parseType resolveTycon))
                                     <*> fromRecord "convention" parseConvention
                                     <*> fromRecord "kind" parseKind
                                     <*> fromRecord "prototype" parsePrototype
-                                    <*> fromRecord "return" (typ resolveTycon)
+                                    <*> fromRecord "return" (parseType resolveTycon)
                                     <*> fromRecord "symbolScope" parseSymbolScope
                                     <*> fromRecord "target" parseTarget
                                     <* doneRecord)
@@ -243,7 +243,7 @@
         in
             token "prim" *> P.cut (makePrimApp <$$>
             (P.any [ resolveFFI, resolveFFISym, (ident <* P.spaces >>= resolvePrim)],
-                    (P.tuple (typ resolveTycon) <* P.peek(P.spaces *> P.tuple parseVarExp
+                    (P.tuple (parseType resolveTycon) <* P.peek(P.spaces *> P.tuple parseVarExp
                     <* P.spaces) <|> P.pure (Vector.new0 ())),
                     P.spaces *> P.tuple parseVarExp <* P.spaces))
         end
@@ -255,8 +255,8 @@
 
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
- fun parseExpression typ =
- P.any [ Exp.Const   <$> parseConstExp typ,
+ fun parseExpression parseType =
+ P.any [ Exp.Const   <$> parseConstExp parseType,
          Exp.Inject  <$> parseInjectExp,
          Exp.Object  <$> parseObjectExp,
          Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
@@ -277,7 +277,7 @@
 
        val typedvar = (fn (x,y) => (x,y)) <$$>
           (SOME <$> var <|> token "_" *> P.pure(NONE),
-           symbol ":" *> (typ resolveTycon) <* P.spaces)
+           symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
        val parseBindStatement' = makeBindStatement
                                  <$>
@@ -322,7 +322,7 @@
  }
 
  val parseTransferArith = makeArith <$$$$>
-                          (P.str "arith" *> P.spaces *> (typ resolveTycon) <* P.spaces, label',
+                          (P.str "arith" *> P.spaces *> (parseType resolveTycon) <* P.spaces, label',
                           symbol "(" *> (parsePrimAppExp resolveTycon resolveVar) <* symbol
                           ")",
                           P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
@@ -500,7 +500,7 @@
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
            (var ,
-            symbol ":" *> (typ resolveTycon) <* P.spaces)
+            symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
         val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
 
@@ -509,8 +509,8 @@
         val makeFuncion' = makeFunction
                            <$> name
                            <*> args <* symbol ":" <* P.spaces
-                           <*> fromRecord "returns" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
-                           <*> fromRecord "raises" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
+                           <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
+                           <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
                            <*  doneRecord
                            <*> label
                            <*> (Vector.fromList <$> P.manyFailing(block, P.peek(name)))
