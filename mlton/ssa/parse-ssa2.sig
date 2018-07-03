@@ -6,7 +6,7 @@
 
  signature PARSE_SSA2_STRUCTS =
     sig
-       structure SsaTree2: SSA_TREE2
+       structure SsaTree2: SSA2_TREE
     end
 
  signature PARSE_SSA2 =
