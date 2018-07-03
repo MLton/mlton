@@ -154,7 +154,7 @@
                         P.char #")" <* P.spaces
 
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
- 
+
  fun parseConstExp parseType = token "const" *> P.cut (
    case Type.dest parseType of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
@@ -176,7 +176,7 @@
                                 P.spaces *> ident <* P.spaces )
 
  fun makeObjectExp (con, args) = {con = con, args = args}
- val parseObjectExp v = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
+ val parseObjectExp = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
 
  fun parsePrimAppExp resolveTycon resolveVar =
      let
@@ -259,7 +259,7 @@
  P.any [ Exp.Const   <$> parseConstExp parseType,
          Exp.Inject  <$> parseInjectExp,
          Exp.Object  <$> parseObjectExp,
-         Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
+         Exp.PrimApp <$> parsePrimAppExp resolveTycon resolveVar,
          Exp.Select  <$> parseSelectExp,
          Exp.Var     <$> parseVarExp
        ]
