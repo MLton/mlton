@@ -149,9 +149,9 @@
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
 
- fun parseProd resolveTycon resolveCon = P.spaces *> P.char #"(" *> P.tuple (parseType resolveTycon) *> P.str "ref," <|> P.str ",") <|>
-                        Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
-                        P.char #")" <* P.spaces
+ fun parseProd resolveTycon resolveCon = P.spaces *> ((P.char #"(" *> P.tuple (parseType resolveTycon) <* P.str "ref," <|> P.str ",")) <|>
+                        (Vector.fromList <$> P.many (parseType resolveTycon <* P.str "ref," <|> P.str ",")) <*
+                        P.char #")") <* P.spaces
 
  val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
@@ -311,9 +311,10 @@
                             parseSelectExpression *> token ":=" *>
                             parseVarExp <* P.spaces
 
- val parseStatement = P.any [parseBindStatement,
-                             parseProfileStatement,
-                             parseUpdateStatement]
+ val parseStatement resolveCon resolveTycon resolveVar =
+                                            P.any [parseBindStatement resolveCon resolveTycon resolveVar,
+                                                   parseProfileStatement,
+                                                   parseUpdateStatement]
 
  fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
  Transfer.Arith {
