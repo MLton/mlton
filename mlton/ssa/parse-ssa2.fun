@@ -251,7 +251,7 @@
         end
 
  fun makeSelectExp (offset, base) = {offset = offset, base = base}
- val parseSelectExp = symbol "sel" *> P.cut(makeSelectExpression <$$>
+ val parseSelectExp = symbol "sel" *> P.cut(makeSelectExp <$$>
                                     (P.uint <* P.spaces,
                                      parseBase))
 
