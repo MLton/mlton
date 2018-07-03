@@ -123,7 +123,7 @@
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
  fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-    (P.tuple (typ resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (typ
+    (P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
     resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  fun makeType resolveTycon (args, ident) =
