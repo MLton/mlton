@@ -44,7 +44,7 @@
     (P.str s,
     (P.nextSat (fn b => isInfixChar b orelse b = #"_"))) <* P.spaces
 
- val clOptions = P.manyCharsFailing(P.str "Datatypes:")
+ val start = P.str "Datatypes:"
 
  fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
@@ -123,19 +123,19 @@
 
  fun makeType resolveTycon (args, ident) = case ident of
                                           "cpointer" => Type.cpointer
-                                        | "intInf"  => Type.intInf
-                                        | "real32"  => Type.real RealSize.R32
-                                        | "real64"  => Type.real RealSize.R64
-                                        | "thread"  => Type.thread
-                                        | "weak"    => Type.weak Vector.first args
-                                        | "word8"   => Type.word WordSize.word8
-                                        | "word16"  => Type.word WordSize.word16
-                                        | "word32"  => Type.word WordSize.word32
-                                        | "word64"  => Type.word WordSize.word64
-                                        | "object"  =>
-                                        | _         => Type.datatypee (resolveTycon ident)
+                                        | "intInf"   => Type.intInf
+                                        | "real32"   => Type.real RealSize.R32
+                                        | "real64"   => Type.real RealSize.R64
+                                        | "thread"   => Type.thread
+                                        | "weak"     => Type.weak Vector.first args
+                                        | "word8"    => Type.word WordSize.word8
+                                        | "word16"   => Type.word WordSize.word16
+                                        | "word32"   => Type.word WordSize.word32
+                                        | "word64"   => Type.word WordSize.word64
+                                        | "object"   =>
+                                        | _          => Type.datatypee (resolveTycon ident)
 
- fun parseConstExp typ = token "constExp " *> P.cut (
+ fun parseConstExp typ = token "const " *> P.cut (
    case Type.dest typ of
       Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
       makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -151,7 +151,7 @@
     | _ => P.fail "constant" )
 
  fun makeInjectExp (sum, variant) = {sum = resolveTycon sum, variant = var}
- val parseInjectExp = token "injectExp " *> P.cut ( makeInjectExp <$$>
+ val parseInjectExp = token "inj " *> P.cut ( makeInjectExp <$$>
                                 parseVarExp *> token ":" *> P.spaces,
                                 P.spaces *> ident <* P.spaces )
 
@@ -223,7 +223,7 @@
 
         fun makePrimApp(prim, args) = {args=args, prim=prim}
         in
-            token "primExp" *> P.cut (makePrimApp <$$>
+            token "prim" *> P.cut (makePrimApp <$$>
             (P.any [ resolveFFI, resolveFFISym, (ident <* P.spaces >>= resolvePrim)],
                     (P.tuple (typ resolveTycon) <* P.peek(P.spaces *> P.tuple parseVarExp
                     <* P.spaces) <|> P.pure (Vector.new0 ())),
@@ -245,15 +245,54 @@
          Exp.Var     <$> parseVarExp
        ]
 
- val parseProfileStatement = token "profileStatement " *> P.spaces *>
+ fun makeBindStatement (var, ty, exp) =
+ Statement.Bind {
+    var = var,
+    ty = ty,
+    exp = parseExpression
+ }
+
+ fun makeBindStatement' resolveCon resolveTycon resolveVar =
+    let
+       val var = resolveVar <$> ident <* P.spaces
+
+       val typedvar = (fn (x,y) => (x,y)) <$$>
+          (SOME <$> var <|> token "_" *> P.pure(NONE),
+           symbol ":" *> (typ resolveTycon) <* P.spaces)
+
+       val parseBindStatement' = makeBindStatement
+                                 <$>
+                                 (P.spaces *> token "val" *> P.spaces *>
+                                 typedvar >>= (fn (var, ty) =>
+                                 (symbol "=" *> parseExpression ty <* P.spaces)
+                                 >>= (fn exp => P.pure (var, ty, exp))))
+       in
+          parseBindStatement'
+       end
+
+ val parseBindStatement = makeBindStatement' resolveCon resolveTycon resolveVar
+
+ val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
                             (ProfileExp.Enter <$ token "Enter" <|>
                              ProfileExp.Leave <$ token "Leave") <*>
                              P.cut ((SourceInfo.fromC o String.implode) <$>
                              P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
 
+ fun makeUpdateStatement (base, offset, value) =
+ Statement.Update {
+   base = base,
+   offset = offset,
+   value = value
+ }
+
+ val parseUpdateStatement = P.spaces *> token "upd " *> P.spaces *>
+                            parseSelectExpression *> token ":=" *>
+                            parseVarExp <* P.spaces
+
  val parseStatement = P.any [parseBindStatement,
                              parseProfileStatement,
                              parseUpdateStatement]
+
  fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
  Transfer.Arith {
    prim = prim,
@@ -382,20 +421,20 @@
  Block.T {
     args = args,
     labels = labels,
-    statements = statements,
-    transfer = transfer
+    statements = parseStatement,
+    transfer = parseTransfer
  }
 
- val parseBlock = P.spaces *> symbol "block" <* P.spaces
+ val parseBlock = P.spaces *> symbol "block:" <* P.spaces
                   makeBlock
                   <$> labelWithArgs
                   <*> args <* P.spaces
-                  <*> (Vector.fromList <$> P.many(statements resolveCon resolveTycon resolveVar))
+                  <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
                   <*> parseTransfer
 
  fun makeDatatype resolveTycon(tycon, cons) =
  Datatype.T {
-   tycon = resolveTycon tycon
+   tycon = resolveTycon tycon,
    cons = cons
  }
 
@@ -406,14 +445,14 @@
                                                         P.char #"|" *> P.spaces)))
 
  fun parseDatatype =
-          token "Datatypes:" *> Vector.fromList <$> P.many (parseDatatypeHelper resolveCon resolveTycon)
+          P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (parseDatatypeHelper resolveCon resolveTycon)
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
     let
-        fun pareseGlobals' () = P.spaces *> token "Globals:" *> Vector.fromList <$>
-                                    P.many (statements resolveCon resolveTycon resolveVar)
+        fun parseGlobals' () = P.spaces *> token "Globals:" *> Vector.fromList <$>
+                                    P.many (parseStatements resolveCon resolveTycon resolveVar)
             in
-              pareseGlobals' ()
+              parseGlobals' ()
             end
 
  fun parseMain resolveFunc = P.spaces *> token "Main:" *> resolveFunc <$> ident <* P.spaces
@@ -436,8 +475,8 @@
         val var = resolveVar <$> ident <* P.spaces
 
         val label = P.spaces *> symbol "=" *> resolveLabel <$> ident <* P.spaces <* token "()"
-
         val label' = resolveLabel <$> ident <* P.spaces
+
         val con' = P.spaces *> resolveCon <$> ident <* P.spaces
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
@@ -447,6 +486,20 @@
         val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
 
         val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ()))
+
+        val makeFuncion' = makeFunction
+                           <$> name
+                           <*> args <* symbol ":" <* P.spaces
+                           <*> fromRecord "returns" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
+                           <*> fromRecord "raises" (optionOf (P.tuple (typ resolveTycon) <|> P.pure (Vector.new0 ())))
+                           <*  doneRecord
+                           <*> label
+                           <*> (Vector.fromList <$> P.manyFailing(block, P.peek(name)))
+
+        val parseFunction' = P.spaces *> token "Functions:" *> P.many makeFunction'
+        in
+            parseFunction'
+        end
 
  fun makeProgram ( datatypes, globals, main, functions ) =
  Program.T {
@@ -481,7 +534,6 @@
        val resolveLabel = makeNameResolver(Label.newString o strip_unique)
     in
        P.compose(skipComments (),
-       clOptions *>
        (makeProgram <$$$$>
            (parseDatatype resolveCon resolveTycon,
             parseGlobals resolveCon resolveTycon resolveVar,
