@@ -111,10 +111,6 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- fun parseProd resolveTycon resolveCon = P.spaces *> P.char #"(" *> P.tuple (parseType tycon) *> P.str "ref," <|> P.str ",") <|>
-                                         Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
-                                         P.char #")" <* P.spaces
-
  fun makeObjectCon resolveCon (args, ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
@@ -152,6 +148,10 @@
  fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
                  (P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
+
+ fun parseProd resolveTycon resolveCon = P.spaces *> P.char #"(" *> P.tuple (parseType resolveTycon) *> P.str "ref," <|> P.str ",") <|>
+                        Vector.fromList <$> P.many (parseType resolveTycon *> P.str "ref," <|> P.str ",") *>
+                        P.char #")" <* P.spaces
 
  fun parseConstExp typ = token "const" *> P.cut (
    case Type.dest typ of
