@@ -516,7 +516,7 @@
            transfer = transfer
         }
 
-        val parseBlock = P.spaces *> P.str "block:" *> P.spaces *>
+        val parseBlock = P.spaces *> token "block:" *> P.spaces *>
                          makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
