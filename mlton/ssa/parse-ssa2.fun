@@ -64,6 +64,8 @@
               (* just for collecting _0 *)
               )])) <|> P.failCut "identifier"
 
+ fun parenOf p = (P.char #"(" *> P.spaces *> p <* P.spaces <* P.char #")")
+ 
  fun doneRecord' () = P.char #"{" <* P.many(P.delay doneRecord' <|> P.failing(P.char #"}") *> P.next) <* P.char #"}"
  val doneRecord = doneRecord' ()
 
@@ -379,7 +381,7 @@
         val con' = P.spaces *> resolveCon <$> ident <* P.spaces
 
         val labelWithArgs = P.spaces *> resolveLabel <$> ident
-        
+
         val typedvar = (fn (x,y) => (x,y)) <$$>
            (var ,
             symbol ":" *> (parseType resolveTycon) <* P.spaces)
@@ -479,7 +481,7 @@
         val parseTransferCall = P.spaces *> P.str "call" *> P.spaces *> ident <* P.spaces >>= (fn return =>
                                 symbol "(" *> resolveFunc <$> ident <* P.spaces >>= (fn func =>
                                 vars <* symbol ")" <* P.spaces >>= (fn argus =>
-                                makeCall argus func <$> (getReturn return))))
+                                makeTransferCall argus func <$> (getReturn return))))
 
         val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
 
