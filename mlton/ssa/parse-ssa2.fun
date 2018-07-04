@@ -438,7 +438,7 @@
         }
 
         val parseTransferGoto = makeTransferGoto <$> labelWithArgs
-                                                 <*> P.str "goto" *> P.spaces *> vars <* P.spaces
+                                                  *> P.str "goto" *> P.spaces *> vars <* P.spaces
 
         fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
         Transfer.Arith {
