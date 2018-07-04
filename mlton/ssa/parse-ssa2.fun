@@ -343,7 +343,7 @@
                                                       ((constructor resolveCon resolveTycon) <* P.spaces,
                                                         P.char #"|" *> P.spaces)))
 
- fun parseDatatype =
+ fun parseDatatype resolveCon resolveTycon =
           P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (parseDatatypeHelper resolveCon resolveTycon)
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
@@ -364,7 +364,7 @@
    raises = raises,
    mayInline = false,
    start = label,
-   blocks = blocks,
+   blocks = blocks
  }
 
  fun parseFunctions resolveCon resolveTycon resolveVar resolveFunc resolveLabel =
@@ -378,6 +378,8 @@
 
         val con' = P.spaces *> resolveCon <$> ident <* P.spaces
 
+        val labelWithArgs = P.spaces *> resolveLabel <$> ident
+        
         val typedvar = (fn (x,y) => (x,y)) <$$>
            (var ,
             symbol ":" *> (parseType resolveTycon) <* P.spaces)
