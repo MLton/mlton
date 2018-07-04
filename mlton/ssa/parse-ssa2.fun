@@ -516,8 +516,7 @@
            transfer = transfer
         }
 
-        val parseBlock = P.spaces *> token "block:" *> P.spaces *>
-                         makeBlock
+        val parseBlock = makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
                          <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
