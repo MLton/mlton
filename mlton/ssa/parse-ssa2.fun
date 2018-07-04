@@ -485,7 +485,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
 
-        fun makeTransferRuntime (return , {prim, targs = _, args}) =
+        fun makeTransferRuntime (return , {prim, args}) =
         Transfer.Runtime {
            args = args,
            prim = prim,
