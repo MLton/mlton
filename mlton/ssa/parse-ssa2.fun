@@ -65,7 +65,7 @@
               )])) <|> P.failCut "identifier"
 
  fun parenOf p = (P.char #"(" *> P.spaces *> p <* P.spaces <* P.char #")")
- 
+
  fun doneRecord' () = P.char #"{" <* P.many(P.delay doneRecord' <|> P.failing(P.char #"}") *> P.next) <* P.char #"}"
  val doneRecord = doneRecord' ()
 
@@ -516,7 +516,7 @@
            transfer = transfer
         }
 
-        val parseBlock = P.spaces *> symbol "block:" <* P.spaces
+        val parseBlock = P.spaces *> P.str "block:" *> P.spaces *>
                          makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
@@ -529,7 +529,7 @@
                            <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
                            <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
                            <*  doneRecord
-                           <*> (Vector.fromList <$> P.manyFailing(block, P.peek(name)))
+                           <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(name)))
                            <*> label
 
         val parseFunction' = P.spaces *> token "Functions:" *> P.many makeFunction'
