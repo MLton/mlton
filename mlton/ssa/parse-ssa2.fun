@@ -228,7 +228,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
            in
               token "prim" *> P.cut (makePrimApp <$$>
                              (P.any [ resolveFFI, resolveFFISym, (ident <* P.spaces >>= resolvePrim)],
-                              P.spaces *> P.tuple VarExp <* P.spaces))
+                              P.spaces *> P.tuple varExp <* P.spaces))
            end
 
  fun parseExpressions resolveCon resolveTycon resolveVar parseType =
@@ -485,7 +485,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
 
-        fun makeTransferRuntime ({prim, targs = _, args}, return) =
+        fun makeTransferRuntime (return , {prim, targs = _, args}) =
         Transfer.Runtime {
            args = args,
            prim = prim,
@@ -493,8 +493,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
         }
 
         val parseTransferRuntime = makeTransferRuntime <$$>
-                                         (parenOf (parsePrimAppExp resolveTycon resolveVar),
-                                          label')
+                                         (label',
+                                          parenOf (parsePrimAppExp resolveTycon resolveVar))
 
         fun makeTransferReturn vars = Transfer.Return vars
 
