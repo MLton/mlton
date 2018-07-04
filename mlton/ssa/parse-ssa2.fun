@@ -162,7 +162,7 @@
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
                                            (SOME <$> var <|> token "_" *> P.pure(NONE),
-                                            symbol ":" *> (typ resolveTycon) <* P.spaces)
+                                            symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
         fun parseConstExp parseType = token "const" *> P.cut (
                                              case Type.dest parseType of
@@ -185,7 +185,7 @@
                                       P.spaces *> ident <* P.spaces )
 
         fun makeObjectExp (con, args) = {con = con, args = args}
-        val parseObjectExp = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
+        val parseObjectExp v = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
 
         fun parsePrimAppExp resolveTycon resolveVar =
             let
@@ -331,145 +331,6 @@
                                                    parseProfileStatement,
                                                    parseUpdateStatement]*)
 
- fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
- Transfer.Arith {
-   prim = prim,
-   args = args,
-   overflow = overflow,
-   success = success,
-   ty = ty
- }
-
- val parseTransferArith = makeArith <$$$$>
-                          (P.str "arith" *> P.spaces *> (parseType resolveTycon) <* P.spaces, label',
-                          symbol "(" *> (parsePrimAppExp resolveTycon resolveVar) <* symbol
-                          ")",
-                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
-
- val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
-
- fun makeReturnNonTail cont (handler) =
-    Return.NonTail {
-       cont=cont,
-       handler=
-          case handler of
-               "raise" => Handler.Caller
-             | "dead" => Handler.Dead
-             | _ => Handler.Handle (resolveLabel handler)
-    }
-
- fun returnNonTail cont = makeReturnNonTail cont <$>
-    (P.str "handle _ => " *> ident <* P.spaces)
-
- fun getReturn return =
-    case return of
-         "dead" => P.pure(Return.Dead)
-       | "return" => P.pure(Return.Tail)
-       | _ => returnNonTail (resolveLabel return)
-
- fun makeTransferCall args func (return) =
- Transfer.Call {
-   args = args,
-   func = func,
-   return = return
- }
-
- val parseTransferCall =
-              P.spaces *> P.str "call" *> P.spaces *> ident <* P.spaces >>= (fn return =>
-                        symbol "(" *> resolveFunc <$> ident <* P.spaces >>= (fn func =>
-                        vars <* symbol ")" <* P.spaces >>= (fn argus =>
-                        makeCall argus func <$> (getReturn return)
-                    )))
-
- fun makeConCases var (cons, def) =
-    {test = var,
-     cases = Cases.Con cons,
-     default = def}
-
- fun makeWordCases var s (wds, def) =
-     {test=var,
-       cases=Cases.Word (case s of
-         8  => WordSize.word8
-       | 16 => WordSize.word16
-       | 32 => WordSize.word32
-       | 64 => WordSize.word64
-       |  _ => raise Fail "makeWordCases" (* can't happen *)
-          , wds),
-       default=def}
-
- fun makePat(con, exp) = P.pure (con, exp)
-
- fun makeCaseWord size (int, exp) = case size of
-        8  => P.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
-      | 16 => P.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
-      | 32 => P.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
-      | 64 => P.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
-      | _  => P.fail "valid word size for cases (8, 16, 32 or 64)"
-
- val defaultCase =
-      P.spaces *> P.optional(P.char #"|" *> P.spaces *> token "_" *> P.spaces *> token
-                    "=>" *> P.spaces *> label')
-
- val makeTransferCase = P.str "case" *>
-                        P.optional P.uint <* P.many1 P.space >>= (fn size => P.cut(
-                                      var <* token "of" <* P.spaces >>= (fn test =>
-                                      case size of
-                                      NONE => makeConCases test <$$>
-                                                  (casesOf(makePat, con', label'),
-                                                  defaultCase)
-                                    | SOME s => makeWordCases test s <$$>
-                                                  (casesOf(makeCaseWord s, P.str "0x" *> parseHex,
-                                                  label'),
-                                                  defaultCase)
-                                    )))
-
- val parseTransferCase = Transfer.Case <$> makeTransferCase
-
- fun makeTransferGoto args dst =
- Transfer.Goto {
-    args = args,
-    dst = dst
- }
- val parseTransferGoto = makeTransferGoto
-                                <*> (P.str "goto" *> P.spaces *> vars <* P.spaces)
-                                <$> labelWithArgs
-
- fun makeTransferRaise vars = Transfer.Raise vars
- val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *>
-                                              P.spaces *> vars <* P.spaces)
-
- fun makeTransferReturn vars = Transfer.Return vars
- val parseTransferReturn = makeTransferReturn <$> (P.str "return" *>
-                                              P.spaces *> vars <* P.spaces)
-
- fun makeTransferRuntime ({prim, targs = _, args}, return) =
- Transfer.Runtime {
-    args = args,
-    prim = prim,
-    return = return
- }
- val parseTransferRuntime = makeTransferRuntime <$$>
-                                  (parenOf (parsePrimAppExp resolveTycon resolveVar), label')
-
- val parseTransfer = P.any [parseTransferArith, parseTransferBug, parseTransferCall,
-                            parseTransferCase, parseTransferGoto, parseTransferRaise,
-                            parseTransferReturn, parseTransferRuntime]
-
- fun makeBlock args labels statements transfer =
- Block.T {
-    args = args,
-    labels = labels,
-    statements = statements,
-    transfer = transfer
- }
-
- val parseBlock = P.spaces *> symbol "block:" <* P.spaces
-                  makeBlock
-                  <$> labelWithArgs
-                  <*> args <* P.spaces
-                  <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
-                  <*> parseTransfer
-
  fun makeDatatype resolveTycon(tycon, cons) =
  Datatype.T {
    tycon = resolveTycon tycon,
@@ -524,6 +385,139 @@
         val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
 
         val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ()))
+
+        fun makeConCases var (cons, def) =
+           {test = var,
+            cases = Cases.Con cons,
+            default = def}
+
+        fun makeWordCases var s (wds, def) =
+            {test=var,
+              cases=Cases.Word (case s of
+                8  => WordSize.word8
+              | 16 => WordSize.word16
+              | 32 => WordSize.word32
+              | 64 => WordSize.word64
+              |  _ => raise Fail "makeWordCases" (* can't happen *)
+                 , wds),
+              default=def}
+
+        fun makePat(con, exp) = P.pure (con, exp)
+
+        fun makeCaseWord size (int, exp) = case size of
+               8  => P.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
+             | 16 => P.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
+             | 32 => P.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
+             | 64 => P.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
+             | _  => P.fail "valid word size for cases (8, 16, 32 or 64)"
+
+        val defaultCase = P.spaces *> P.optional(P.char #"|" *> P.spaces *> token "_" *> P.spaces *> token
+                                   "=>" *> P.spaces *> label')
+
+        val makeTransferCase = P.str "case" *> P.optional P.uint <* P.many1 P.space >>= (fn size => P.cut(
+                               var <* token "of" <* P.spaces >>= (fn test =>
+                               case size of
+                                         NONE => makeConCases test <$$>
+                                                (casesOf(makePat, con', label'),
+                                                 defaultCase)
+                                       | SOME s => makeWordCases test s <$$>
+                                                  (casesOf(makeCaseWord s, P.str "0x" *> parseHex,
+                                                   label'),
+                                                   defaultCase))))
+
+        val parseTransferCase = Transfer.Case <$> makeTransferCase
+
+        fun makeTransferGoto args dst =
+        Transfer.Goto {
+          args = args,
+          dst = dst
+        }
+
+        val parseTransferGoto = makeTransferGoto <*> (P.str "goto" *> P.spaces *> vars <* P.spaces)
+                                                 <$> labelWithArgs
+
+        fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
+        Transfer.Arith {
+          prim = prim,
+          args = args,
+          overflow = overflow,
+          success = success,
+          ty = ty
+        }
+
+        val parseTransferArith = makeTransferArith <$$$$>
+                                                   (P.str "arith" *> P.spaces *> (parseType resolveTycon) <* P.spaces,
+                                                    label',
+                                                    symbol "(" *> (parsePrimAppExp resolveTycon resolveVar) <* symbol ")",
+                                                    P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
+
+        fun makeReturnNonTail cont (handler) =
+        Return.NonTail {
+          cont = cont,
+          handler = case handler of
+                                "raise" => Handler.Caller
+                              | "dead" => Handler.Dead
+                              | _ => Handler.Handle (resolveLabel handler)
+        }
+
+        fun returnNonTail cont = makeReturnNonTail cont <$> (P.str "handle _ => " *> ident <* P.spaces)
+
+        fun getReturn return = case return of
+                                          "dead" => P.pure(Return.Dead)
+                                        | "return" => P.pure(Return.Tail)
+                                        | _ => returnNonTail (resolveLabel return)
+
+        fun makeTransferCall args func (return) =
+        Transfer.Call {
+          args = args,
+          func = func,
+          return = return
+        }
+
+        val parseTransferCall = P.spaces *> P.str "call" *> P.spaces *> ident <* P.spaces >>= (fn return =>
+                                symbol "(" *> resolveFunc <$> ident <* P.spaces >>= (fn func =>
+                                vars <* symbol ")" <* P.spaces >>= (fn argus =>
+                                makeCall argus func <$> (getReturn return))))
+
+        val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
+
+        fun makeTransferRuntime ({prim, targs = _, args}, return) =
+        Transfer.Runtime {
+           args = args,
+           prim = prim,
+           return = return
+        }
+
+        val parseTransferRuntime = makeTransferRuntime <$$>
+                                         (parenOf (parsePrimAppExp resolveTycon resolveVar),
+                                          label')
+
+        fun makeTransferReturn vars = Transfer.Return vars
+
+        val parseTransferReturn = makeTransferReturn <$> (P.str "return" *> P.spaces *> vars <* P.spaces)
+
+        fun makeTransferRaise vars = Transfer.Raise vars
+
+        val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *> P.spaces *> vars <* P.spaces)
+
+        val parseTransfer = P.any [parseTransferArith, parseTransferBug, parseTransferCall,
+                                   parseTransferCase, parseTransferGoto, parseTransferRaise,
+                                   parseTransferReturn, parseTransferRuntime]
+
+        fun makeBlock args labels statements transfer =
+        Block.T {
+           args = args,
+           labels = labels,
+           statements = statements,
+           transfer = transfer
+        }
+
+        val parseBlock = P.spaces *> symbol "block:" <* P.spaces
+                         makeBlock
+                         <$> labelWithArgs
+                         <*> args <* P.spaces
+                         <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
+                         <*> parseTransfer
 
         val makeFuncion' = makeFunction
                            <$> name
