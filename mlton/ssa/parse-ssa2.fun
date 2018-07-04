@@ -44,7 +44,7 @@
     (P.str s,
     (P.nextSat (fn b => isInfixChar b orelse b = #"_"))) <* P.spaces
 
- val start = P.str "Datatypes:"
+ (*val start = P.str "Datatypes:"*)
 
  fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
@@ -138,10 +138,10 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- fun makeObjectCon resolveCon (args, ident) = case ident of
+ (*fun makeObjectCon resolveCon (args, ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
-                   | _        => Type.datatypee (resolveCon ident)
+                   | _        => Type.datatypee (resolveCon ident)*)
 
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
@@ -149,9 +149,9 @@
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
 
- fun parseProd resolveTycon resolveCon = P.spaces *> ((P.char #"(" *> P.tuple (parseType resolveTycon) <* P.str "ref," <|> P.str ",")) <|>
+ (*fun parseProd resolveTycon resolveCon = P.spaces *> ((P.char #"(" *> P.tuple (parseType resolveTycon) <* P.str "ref," <|> P.str ",")) <|>
                         (Vector.fromList <$> (P.many (((parseType resolveTycon <* P.str "ref," <|> P.str ","))))) <*
-                        P.char #")") <* P.spaces
+                        P.char #")") <* P.spaces*)
 
  fun parseExpressions resolveCon resolveTycon resolveVar parseType =
      let
@@ -268,7 +268,7 @@
                                     (P.uint <* P.spaces,
                                      parseBase))
 
-      val parseExpression' parseType =
+      fun parseExpression' parseType =
                         P.any [ Exp.Const   <$> parseConstExp parseType,
                                 Exp.Inject  <$> parseInjectExp,
                                 Exp.Object  <$> parseObjectExp,
@@ -281,7 +281,7 @@
           parseExpression'
       end
 
- fun makeBindStatement (var, ty, exp) =
+ (*fun makeBindStatement (var, ty, exp) =
  Statement.Bind {
     var = var,
     ty = ty,
@@ -329,7 +329,7 @@
  val parseStatement resolveCon resolveTycon resolveVar =
                                             P.any [parseBindStatement resolveCon resolveTycon resolveVar,
                                                    parseProfileStatement,
-                                                   parseUpdateStatement]
+                                                   parseUpdateStatement]*)
 
  fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
  Transfer.Arith {
@@ -459,8 +459,8 @@
  Block.T {
     args = args,
     labels = labels,
-    statements = parseStatement,
-    transfer = parseTransfer
+    statements = statements,
+    transfer = transfer
  }
 
  val parseBlock = P.spaces *> symbol "block:" <* P.spaces
