@@ -431,14 +431,14 @@
 
         val parseTransferCase = Transfer.Case <$> makeTransferCase
 
-        fun makeTransferGoto args dst =
+        fun makeTransferGoto dst args =
         Transfer.Goto {
           args = args,
           dst = dst
         }
 
-        val parseTransferGoto = makeTransferGoto <*> (P.str "goto" *> P.spaces *> vars <* P.spaces)
-                                                 <$> labelWithArgs
+        val parseTransferGoto = makeTransferGoto <$> labelWithArgs
+                                                 <*> P.str "goto" *> P.spaces *> vars <* P.spaces
 
         fun makeTransferArith (ty, success, {prim, targs = _, args}, overflow) =
         Transfer.Arith {
@@ -516,7 +516,8 @@
            transfer = transfer
         }
 
-        val parseBlock = makeBlock
+        val parseBlock = P.spaces *> token "block:" *> P.spaces *>
+                         makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
                          <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
