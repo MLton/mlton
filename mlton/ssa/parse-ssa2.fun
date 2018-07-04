@@ -508,15 +508,15 @@
                                    parseTransferCase, parseTransferGoto, parseTransferRaise,
                                    parseTransferReturn, parseTransferRuntime]
 
-        fun makeBlock args labels statements transfer =
+        fun makeBlock label args statements transfer =
         Block.T {
            args = args,
-           labels = labels,
+           label = label,
            statements = statements,
            transfer = transfer
         }
 
-        val parseBlock = P.spaces *> token "block:" *> P.spaces *>
+        val parseBlock = P.spaces *> P.str "block:" *> P.spaces *>
                          makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
