@@ -262,7 +262,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                           parseVarExp <* token ":" *> P.spaces,
                                                                           P.spaces *> ident <* P.spaces)
 
-        fun makeObjectExp (con, args) = {con = con, args = args}
+        (*fun makeObjectExp (con, args) = {con = con, args = args}
         val parseObjectExp v = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
 
         fun makeSelectExp (offset, base) = {offset = offset, base = base}
@@ -277,7 +277,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                 Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
                                 Exp.Select  <$> parseSelectExp,
                                 Exp.Var     <$> parseVarExp
-                              ]
+                              ]*)
 
         in
             parseExpression'
