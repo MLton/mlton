@@ -262,15 +262,21 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                           (parseVarExp <* token ":" *> P.spaces,
                                                                           P.spaces *> ident <* P.spaces))
 
-        (*fun makeObjectExp (con, args) = {con = con, args = args}
-        val parseObjectExp v = makeObjectExp <$$> (v, resolveCon <$> ident <* P.spaces)
+        fun makeObjectExp (args, con) = {con = con, args = args}
 
-        fun makeSelectExp (offset, base) = {offset = offset, base = base}
+        fun makeObjectExp' = makeObjectExp <$$> ((case con of
+                                                           NONE => P.str "tuple"
+                                                         | SOME => resolveCon <$> ident <* P.spaces),
+                                                 P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
+
+        val parseObjectExp = token "new" *> P.cut(makeObjectExp')
+
+        (*fun makeSelectExp (offset, base) = {offset = offset, base = base}
         val parseSelectExp = token "sel" *> P.cut(makeSelectExp <$$>
                                     (P.uint <* P.spaces,
-                                     parseBase))
+                                     parseBase))*)
 
-        fun parseExpression' parseType =
+        fun parseExpression' =
                         P.any [ Exp.Const   <$> parseConstExp parseType,
                                 Exp.Inject  <$> parseInjectExp,
                                 Exp.Object  <$> parseObjectExp,
