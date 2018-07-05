@@ -264,29 +264,28 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         fun makeObjectExp (args, con) = {con = con, args = args}
 
-        fun makeObjectExp' = makeObjectExp <$$> ((case con of
+        fun makeObjectExp' () = makeObjectExp <$$> ((case con of
                                                            NONE => P.str "tuple"
                                                          | SOME => resolveCon <$> ident <* P.spaces),
                                                  P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
-        val parseObjectExp = token "new" *> P.cut(makeObjectExp')
+        val parseObjectExp = token "new" *> P.cut(makeObjectExp' ())
 
         (*fun makeSelectExp (offset, base) = {offset = offset, base = base}
         val parseSelectExp = token "sel" *> P.cut(makeSelectExp <$$>
                                     (P.uint <* P.spaces,
                                      parseBase))*)
 
-        fun parseExpression' =
-                        P.any [ Exp.Const   <$> parseConstExp parseType,
-                                Exp.Inject  <$> parseInjectExp,
-                                Exp.Object  <$> parseObjectExp,
-                                Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
-                                Exp.Select  <$> parseSelectExp,
-                                Exp.Var     <$> parseVarExp
-                              ]*)
+        fun parseExpression' () = P.any [ Exp.Const   <$> parseConstExp parseType resolveTycon,
+                                          Exp.Inject  <$> parseInjectExp,
+                                          Exp.Object  <$> parseObjectExp,
+                                          Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
+                                          Exp.Select  <$> parseSelectExp,
+                                          Exp.Var     <$> parseVarExp
+                                        ]
 
         in
-            parseExpression'
+            parseExpression' ()
         end
 
  (*fun makeBindStatement (var, ty, exp) =
