@@ -276,7 +276,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                     (P.uint <* P.spaces,
                                      parseBase))*)
 
-        fun parseExpression' () = P.any [ Exp.Const   <$> parseConstExp parseType resolveTycon,
+        fun parseExpression' () = P.any [ Exp.Const   <$> parseConstExp (parseType resolveTycon),
                                           Exp.Inject  <$> parseInjectExp,
                                           Exp.Object  <$> parseObjectExp,
                                           Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
