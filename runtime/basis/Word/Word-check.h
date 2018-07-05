@@ -47,12 +47,7 @@
   } while (0)
 #endif
 #define neg_overflow_b(x, size, onOverflow, onSuccess)          \
-  do {                                                          \
-    if (x == WordS##size##_min) {                               \
-      onOverflow;                                               \
-    }                                                           \
-    onSuccess;                                                  \
-  } while (0)                                                   \
+  sub_overflow_b(0, x, size, onOverflow, onSuccess)
 
 /**
  * Old-style overflow operators
