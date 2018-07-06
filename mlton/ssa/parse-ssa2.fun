@@ -141,9 +141,9 @@
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
  fun makeObjectCon resolveCon (ident) = case ident of
-                     "Tuple"  => Type.tuple
-                   | "Vector" => Type.vector
-                   | _        => Type.Object (resolveCon ident)
+                     "Tuple"  => ObjectCon.Tuple
+                   | "Vector" => ObjectCon.Vector
+                   | _        => ObjectCon.Con (resolveCon ident)
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
