@@ -140,10 +140,12 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- (*fun makeObjectCon resolveCon (args, ident) = case ident of
+ fun makeObjectCon resolveCon (ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
-                   | _        => Type.datatypee (resolveCon ident)*)
+                   | _        => Type.datatypee (resolveCon ident)
+
+ fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
@@ -155,7 +157,7 @@
                         (Vector.fromList <$> (P.many (((parseType resolveTycon <* P.str "ref," <|> P.str ","))))) <*
                         P.char #")") <* P.spaces*)
 
-fun makeBase resolveVar =
+(*fun makeBase resolveVar =
     let
 
         val var = resolveVar <$> ident <* P.spaces
@@ -175,7 +177,7 @@ fun makeBase resolveVar =
 
         in
           parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
-        end
+        end*)
 
 fun parsePrimAppExp resolveTycon resolveVar =
     let
@@ -295,7 +297,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         fun makeSelectExp (base, offset) = {offset = offset, base = base}
         val parseSelectExp = token "sel" *> parenOf (P.cut(makeSelectExp <$$>
                                                                          (P.uint <* P.spaces,
-                                                                          makeBase resolveVar)))
+                                                                          makeBase resolveVar))) <* P.spaces
 
         fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp (),
                                           Exp.Inject  <$>  parseInjectExp,
