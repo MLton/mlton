@@ -155,6 +155,28 @@
                         (Vector.fromList <$> (P.many (((parseType resolveTycon <* P.str "ref," <|> P.str ","))))) <*
                         P.char #")") <* P.spaces*)
 
+fun makeBase resolveVar =
+    let
+
+        val var = resolveVar <$> ident <* P.spaces
+
+        val parseBaseObject = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+
+        fun makeBaseVectorSub (index, vector)=
+        Base.VectorSub {
+            index = index
+            vector = vector
+        }
+
+        val parseBaseVectorSub = token "$" *> symbol "(" *> P.tuple parseBaseObject *>
+                                                            P.pure(Vector.new2(makeBaseVectorSub <$$>
+                                                                                                  parseBaseObject,
+                                                                                                  parseBaseObject))
+
+        in
+          parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
+        end
+
 fun parsePrimAppExp resolveTycon resolveVar =
     let
 
@@ -243,7 +265,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                             symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
         fun parseConstExp () = token "const" *> P.cut (
-                                             case Type.dest parseType resolveTycon of
+                                             case Type.dest (parseType resolveTycon) of
                                              Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                              makeWord (Tycon.word ws)) <|> P.failCut "word"
                                            | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
@@ -270,10 +292,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseObjectExp = token "new" *> P.cut(makeObjectExp' ())
 
-        (*fun makeSelectExp (offset, base) = {offset = offset, base = base}
-        val parseSelectExp = token "sel" *> P.cut(makeSelectExp <$$>
-                                    (P.uint <* P.spaces,
-                                     parseBase))*)
+        fun makeSelectExp (base, offset) = {offset = offset, base = base}
+        val parseSelectExp = token "sel" *> parenOf (P.cut(makeSelectExp <$$>
+                                                                         (P.uint <* P.spaces,
+                                                                          makeBase resolveVar)))
 
         fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp (),
                                           Exp.Inject  <$>  parseInjectExp,
