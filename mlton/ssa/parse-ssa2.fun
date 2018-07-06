@@ -140,12 +140,10 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- fun makeObjectCon resolveCon (args, ident) = case ident of
+ (*fun makeObjectCon resolveCon (args, ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
-                   | _        => Type.datatypee (resolveCon ident)
-
-
+                   | _        => Type.datatypee (resolveCon ident)*)
 
  fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
 
@@ -244,7 +242,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                            (SOME <$> var <|> token "_" *> P.pure(NONE),
                                             symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
-        fun parseConstExp parseType = token "const" *> P.cut (
+        fun parseConstExp () = token "const" *> P.cut (
                                              case Type.dest parseType of
                                              Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                              makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -277,7 +275,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                     (P.uint <* P.spaces,
                                      parseBase))*)
 
-        fun parseExpression' () = P.any [ Exp.Const   <$> (parseConstExp parseType resolveTycon),
+        fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp (),
                                           Exp.Inject  <$>  parseInjectExp,
                                           Exp.Object  <$>  parseObjectExp,
                                           Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
