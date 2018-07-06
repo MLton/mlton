@@ -243,7 +243,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                             symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
         fun parseConstExp () = token "const" *> P.cut (
-                                             case Type.dest parseType of
+                                             case Type.dest parseType resolveTycon of
                                              Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                              makeWord (Tycon.word ws)) <|> P.failCut "word"
                                            | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
@@ -262,7 +262,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                           (parseVarExp <* token ":" *> P.spaces,
                                                                           P.spaces *> ident <* P.spaces))
 
-        fun makeObjectExp (args, con) = {con = con, args = args}
+        fun makeObjectExp (con, args) = {con = con, args = args}
 
         fun makeObjectExp' () = makeObjectExp <$$> ((fn x => x) <$> (SOME <$> resolveCon ident <* P.spaces <|>
                                                             token "tuple" *> P.pure(NONE)),
