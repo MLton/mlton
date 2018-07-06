@@ -143,7 +143,7 @@
  fun makeObjectCon resolveCon (ident) = case ident of
                      "Tuple"  => Type.tuple
                    | "Vector" => Type.vector
-                   | _        => Type.datatypee (resolveCon ident)
+                   | _        => Type.Object (resolveCon ident)
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
