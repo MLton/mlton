@@ -264,7 +264,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         fun makeObjectExp (args, con) = {con = con, args = args}
 
-        fun makeObjectExp' () = makeObjectExp <$$> (P.optionalWN NONE => P.str "tuple"
+        fun makeObjectExp' () = makeObjectExp <$$> (P.optional   NONE => P.str "tuple"
                                                                | SOME => resolveCon <$> ident <* P.spaces),
                                                  P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 

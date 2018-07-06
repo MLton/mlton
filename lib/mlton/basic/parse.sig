@@ -97,7 +97,7 @@ signature PARSE =
       (* succeeds with SOME if the parser succeeded and NONE otherwise *)
       val optional: 'a t -> 'a option t
 
-      val optionalWN: 'a t -> 'a t
+      (*val optionalWN: 'a t -> 'a t*)
 
       (* parse an integer, as Integer.scan StringCVT.DEC *)
       val int: int t

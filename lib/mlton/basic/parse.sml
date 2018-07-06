@@ -215,7 +215,7 @@ fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
 
 fun optional t = SOME <$> t <|> pure NONE
 
-fun optionalWN t = SOME <$> t <|> NONE <$> t
+(*fun optionalWN t = SOME <$> t <|> NONE <$> t*)
 
 fun char c s = case Stream.force (s)
    of NONE => Failure [String.fromChar c ^ " at end of file"]
