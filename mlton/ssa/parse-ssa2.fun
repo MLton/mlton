@@ -249,7 +249,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                            | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
                                            | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
                                            | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
-                                           | Type.Vector _  =>
+                                           | Type.Object _  =>
                                              (* assume it's a word8 vector *)
                                              P.any
                                              [Const.string <$> parseString,
@@ -264,9 +264,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         fun makeObjectExp (args, con) = {con = con, args = args}
 
-        fun makeObjectExp' () = makeObjectExp <$$> ((case con of
-                                                           NONE => P.str "tuple"
-                                                         | SOME => resolveCon <$> ident <* P.spaces),
+        fun makeObjectExp' () = makeObjectExp <$$> (P.optionalWN NONE => P.str "tuple"
+                                                               | SOME => resolveCon <$> ident <* P.spaces),
                                                  P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
         val parseObjectExp = token "new" *> P.cut(makeObjectExp' ())
