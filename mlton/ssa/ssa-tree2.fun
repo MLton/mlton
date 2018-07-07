@@ -99,8 +99,8 @@ structure ObjectCon =
          in
          case oc of
                Con c => Con.layout c
-             | Tuple => str "Tuple"
-             | Vector => str "Vector"
+             | Tuple => str "tuple"
+             | Vector => str "vector"
          end
    end
 
