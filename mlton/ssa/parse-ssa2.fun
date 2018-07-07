@@ -404,6 +404,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         val var = resolveVar <$> ident <* P.spaces
 
         val label = P.spaces *> symbol "=" *> resolveLabel <$> ident <* P.spaces <* token "()"
+
         val label' = resolveLabel <$> ident <* P.spaces
 
         val con' = P.spaces *> resolveCon <$> ident <* P.spaces
@@ -478,7 +479,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         }
 
         val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$$>
-                                                                        (P.spaces *> label' <* P.spaces,
+                                                                        (label',
                                                                          parenOf(parsePrimAppExp resolveTycon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
                                                                          parseType resolveTycon)
