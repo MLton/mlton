@@ -155,27 +155,24 @@
                                          parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
                                                                   <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
 
-(*fun makeBase resolveVar =
-    let
+ fun makeBase resolveVar =
+     let
 
         val var = resolveVar <$> ident <* P.spaces
 
         val parseBaseObject = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
-        fun makeBaseVectorSub (index, vector)=
+        (*fun makeBaseVectorSub (index, vector)=
         Base.VectorSub {
             index = index
             vector = vector
-        }
+        }*)
 
-        val parseBaseVectorSub = token "$" *> symbol "(" *> P.tuple parseBaseObject *>
-                                                            P.pure(Vector.new2(makeBaseVectorSub <$$>
-                                                                                                  parseBaseObject,
-                                                                                                  parseBaseObject))
+        val parseBaseVectorSub = token "$" *> P.tuple parseBaseObject
 
         in
-          parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
-        end*)
+          val parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
+        end
 
 fun parsePrimAppExp resolveTycon resolveVar =
     let
