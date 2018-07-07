@@ -60,8 +60,14 @@ PRIVATE void initIntInf (GC_state s);
 static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res, 
                                   mp_limb_t space[LIMBS_PER_OBJPTR + 1]);
 static inline void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
+static inline void initIntInfRes_2 (GC_state s,
+                                    __mpz_struct *lres, __mpz_struct *rres,
+                                    size_t lbytes, size_t rbytes);
 static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
-
+static inline void finiIntInfRes_2 (GC_state s,
+                                    __mpz_struct *l_res, __mpz_struct *r_res,
+                                    size_t l_bytes, size_t r_bytes,
+                                    objptr *l_final, objptr *r_final);
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
@@ -70,6 +76,14 @@ PRIVATE objptr IntInf_binop (GC_state s, objptr lhs, objptr rhs, size_t bytes,
                              void(*binop)(__mpz_struct *resmpz,
                                           const __mpz_struct *lhsspace,
                                           const __mpz_struct *rhsspace));
+PRIVATE void IntInf_binop_2 (GC_state s,
+                             objptr lhs, objptr rhs,
+                             size_t l_bytes, size_t r_bytes,
+                             objptr *l_final, objptr *r_final,
+                             void(*binop)(__mpz_struct *l_res_mpz,
+                                         __mpz_struct *r_res_mpz,
+                                         const __mpz_struct *lhsspace,
+                                         const __mpz_struct *rhsspace));
 PRIVATE objptr IntInf_unop (GC_state s, objptr arg, size_t bytes,
                             void(*unop)(__mpz_struct *resmpz,
                                         const __mpz_struct *argspace));

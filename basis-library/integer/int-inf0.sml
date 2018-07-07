@@ -989,19 +989,35 @@ structure IntInf =
          V.unsafeSub (Prim.toVector arg, 0) <> 0w0
 
       local
+         (* Convenient modular conversions for arguments and results
+          * For use with isSmall cases
+          * Return intermediate results (in order of creation) *)
+         (* convert the argument to a word, then an objptr *)
+         fun word_objptr_arg n =
+            let
+               val nw = dropTagCoerce n
+               val ni = W.idToObjptrInt nw
+            in
+               (nw, ni)
+            end
+
+         fun word_tag_ans a =
+            let
+               val aw = W.idFromObjptrInt a
+               val at = addTag aw
+            in
+               (aw, at)
+            end
+
          fun make (smallOp, bigOp, limbsFn, extra)
                   (lhs: bigInt, rhs: bigInt): bigInt =
             let
                val res =
                   if areSmall (lhs, rhs)
                      then let
-                             val lhsw = dropTagCoerce lhs
-                             val lhsi = W.idToObjptrInt lhsw
-                             val rhsw = dropTagCoerce rhs
-                             val rhsi = W.idToObjptrInt rhsw
-                             val ansi = smallOp (lhsi, rhsi)
-                             val answ = W.idFromObjptrInt ansi
-                             val ans = addTag answ
+                             val (_, lhsi) = word_objptr_arg lhs
+                             val (_, rhsi) = word_objptr_arg rhs
+                             val (answ, ans) = word_tag_ans (smallOp (lhsi, rhsi))
                           in
                              if sameSignBit (ans, answ)
                                 then SOME (Prim.fromWord ans)
@@ -1014,10 +1030,104 @@ structure IntInf =
                                  reserve (limbsFn (numLimbs lhs, numLimbs rhs), extra))
                 | SOME i => i
             end
+
+         (*
+          * quotient and remainder for small values (fitting in objptr)
+          * 
+          * Pull these functions out because each will be used twice,
+          * and we want to avoid redundant size checks if at all possible.
+          *)
+         fun smallQuot (num: bigInt, den: bigInt): bigInt =
+            let
+               val (numw, numi) = word_objptr_arg num
+               val (_, deni) = word_objptr_arg den
+            in
+               if numw = badObjptrWord 
+                  andalso deni = ~1
+               then negBadIntInf
+               else
+                  let
+                     val (_, ans) = word_tag_ans (I.quot (numi, deni))
+                  in 
+                     Prim.fromWord ans
+                  end
+            end
+
+         fun smallRem (num, den) =
+            let 
+               val (_, numi) = word_objptr_arg num
+               val (_, deni) = word_objptr_arg den
+               val (_, ans) = word_tag_ans (I.rem (numi, deni))
+            in 
+               Prim.fromWord ans
+            end
+
+         (*fun quotReserve (nlimbs, dlimbs) = reserve (S.- (nlimbs, dlimbs), 2)
+         fun remReserve (nlimbs, dlimbs) = reserve (dlimbs, 1)*)
       in
          val bigAdd = make (I.+!, Prim.+, S.max, 1)
          val bigSub = make (I.-!, Prim.-, S.max, 1)
          val bigMul = make (I.*!, Prim.*, S.+, 0)
+
+         fun bigQuot (num: bigInt, den: bigInt): bigInt =
+            if areSmall (num, den) then smallQuot (num, den)
+               else let
+                       val nlimbs = numLimbs num
+                       val dlimbs = numLimbs den
+                    in
+                       if S.< (nlimbs, dlimbs)
+                          then zero
+                          else if den = zero
+                                  then raise Div
+                                  else Prim.quot (num, den, reserve (S.- (nlimbs, dlimbs), 2))
+                    end
+
+         fun bigRem (num: bigInt, den: bigInt): bigInt =
+            if areSmall (num, den)
+               then smallRem (num, den)
+               else let 
+                       val nlimbs = numLimbs num
+                       val dlimbs = numLimbs den
+                    in 
+                       if S.< (nlimbs, dlimbs)
+                          then num
+                          else if den = zero
+                                  then raise Div
+                                  else Prim.rem (num, den, reserve (dlimbs, 1))
+                    end
+
+         fun bigQuotRem (num, den) =
+            if areSmall (num, den) then
+               (* the small versions are not optimized together,
+                * as this would not save a significant amount
+                * of time *)
+               (smallQuot (num, den), smallRem (num, den))
+            else  (* arguments are large *)
+               let
+                  val n_d_limbs as (nlimbs, dlimbs) =
+                     (numLimbs num, numLimbs den)
+               in
+                  (* try to avoid operation in trivial cases *)
+                  if S.< n_d_limbs then
+                     (zero, num)
+                  else if den = zero then
+                     raise Div
+                  else  (* must perform operation *)
+                     let
+                        (* get 2 refs to fill in using the primitive *)
+                        val quot = ref zero
+                        val rem  = ref zero
+                        val _ =
+                           Prim.quotRem (num, den,
+                                         reserve (S.- (nlimbs, dlimbs), 1),
+                                         reserve (dlimbs, 0),
+                                         quot, rem)
+                        (* write a deref function because `op !` isn't supplied yet *)
+                        fun deref (ref x) = x
+                     in
+                        (deref quot, deref rem)
+                     end
+               end
       end
 
       fun bigNeg (arg: bigInt): bigInt =
@@ -1030,63 +1140,6 @@ structure IntInf =
                        else Prim.fromWord (W.- (0w2, argw))
                  end 
             else Prim.~ (arg, reserve (numLimbs arg, 1))
-
-
-      fun bigQuot (num: bigInt, den: bigInt): bigInt =
-         if areSmall (num, den)
-            then let
-                    val numw = dropTagCoerce num
-                    val numi = W.idToObjptrInt numw
-                    val denw = dropTagCoerce den
-                    val deni = W.idToObjptrInt denw
-                 in
-                    if numw = badObjptrWord 
-                       andalso deni = ~1
-                       then negBadIntInf
-                       else let
-                               val ansi = I.quot (numi, deni)
-                               val answ = W.idFromObjptrInt ansi
-                               val ans = addTag answ
-                            in 
-                               Prim.fromWord ans
-                            end
-                 end
-            else let
-                    val nlimbs = numLimbs num
-                    val dlimbs = numLimbs den
-                 in
-                    if S.< (nlimbs, dlimbs)
-                       then zero
-                       else if den = zero
-                               then raise Div
-                               else Prim.quot (num, den, 
-                                               reserve (S.- (nlimbs, dlimbs), 2))
-                 end
-
-      fun bigRem (num: bigInt, den: bigInt): bigInt =
-         if areSmall (num, den)
-            then let 
-                    val numw = dropTagCoerce num
-                    val numi = W.idToObjptrInt numw
-                    val denw = dropTagCoerce den
-                    val deni = W.idToObjptrInt denw
-                    val ansi = I.rem (numi, deni)
-                    val answ = W.idFromObjptrInt ansi
-                    val ans = addTag answ
-                 in 
-                    Prim.fromWord ans
-                 end
-            else let 
-                    val nlimbs = numLimbs num
-                    val dlimbs = numLimbs den
-                 in 
-                    if S.< (nlimbs, dlimbs)
-                       then num
-                       else if den = zero
-                               then raise Div
-                               else Prim.rem (num, den, 
-                                              reserve (dlimbs, 1))
-                 end
 
       (* Based on code from PolySpace. *)
       local
@@ -1230,7 +1283,6 @@ structure IntInf =
                                else raise Div
 
          fun bigDivMod (x, y) = (bigDiv (x, y), bigMod (x, y))
-         fun bigQuotRem (x, y) = (bigQuot (x, y), bigRem (x, y))
       end
 
       local

@@ -320,6 +320,34 @@ structure CFunction =
                       return = Type.intInf (),
                       symbolScope = Private,
                       target = Direct (Prim.Name.toString name)}
+
+      val intInfBinary_2Res = fn name =>
+         CFunction.T {args = Vector.new7 (Type.gcState (),
+                                          Type.intInf (),
+                                          Type.intInf (),
+                                          Type.csize (),
+                                          Type.csize (),
+                                          Type.cpointer (),
+                                          Type.cpointer ()),
+                      convention = Cdecl,
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 4,  (* CHECK *)
+                                                     ensuresBytesFree = false,
+                                                     mayGC = false,
+                                                     maySwitchThreads = false,
+                                                     modifiesFrontier = true,
+                                                     readsStackTop = amAllocationProfiling (),
+                                                     writesStackTop = false},
+                      prototype = (Vector.new7 (CType.gcState,
+                                                CType.intInf,
+                                                CType.intInf,
+                                                CType.csize (),
+                                                CType.csize (),
+                                                CType.cpointer,
+                                                CType.cpointer),
+                                   NONE),
+                      return = Type.unit,
+                      symbolScope = Private,
+                      target = Direct (Prim.Name.toString name)}
       val intInfCompare = fn name =>
          (* CHECK; cint would be better? *)
          CFunction.T {args = Vector.new3 (Type.gcState (),
@@ -1394,6 +1422,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | IntInf_quot =>
                                     simpleCCallWithGCState
                                     (CFunction.intInfBinary IntInf_quot)
+                               | IntInf_quotRem =>
+                                    simpleCCallWithGCState
+                                    (CFunction.intInfBinary_2Res IntInf_quotRem)
                                | IntInf_rem =>
                                     simpleCCallWithGCState
                                     (CFunction.intInfBinary IntInf_rem)

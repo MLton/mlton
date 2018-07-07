@@ -102,6 +102,7 @@ signature VECTOR =
       val new4: 'a * 'a * 'a * 'a -> 'a t
       val new5: 'a * 'a * 'a * 'a * 'a -> 'a t
       val new6: 'a * 'a * 'a * 'a * 'a * 'a -> 'a t
+      val new7: 'a * 'a * 'a * 'a * 'a * 'a * 'a -> 'a t
       val partition: 'a t * ('a -> bool) -> {no: 'a t, yes: 'a t}
       val partitioni: 'a t * (int * 'a -> bool) -> {no: 'a t, yes: 'a t}
       val peek: 'a t * ('a -> bool) -> 'a option
