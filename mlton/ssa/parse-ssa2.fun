@@ -313,7 +313,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
                                           Exp.Inject  <$>   parseInjectExp,
                                           Exp.Object  <$>   parseObjectExp,
-                                          Exp.PrimApp <$>  (parsePrimAppExp (resolveTycon resolveVar)),
+                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
                                           (*Exp.Select  <$>   parseSelectExp*)
                                           Exp.Var     <$>   parseVarExp
                                         ]
