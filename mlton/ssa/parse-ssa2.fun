@@ -259,20 +259,21 @@ fun parsePrimAppExp resolveTycon resolveVar =
         (*val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var*)
 
         fun parseConstExp parseType = token "const" *> P.spaces *>
-                                                            if Tycon.isWordX typ then
-                                                                  Const.Word <$> (P.str "0x" *> parseHex >>= makeWord typ) <|> P.failCut "word"
-                                                            else if Tycon.isRealX typ then
-                                                                  Const.Real <$> parseReal (Tycon.deRealX typ) <|> P.failCut "real"
-                                                            else if Tycon.isIntX typ then
+                                                            P.cut (
+                                                              if Tycon.isWordX parseType then
+                                                                  Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
+                                                              else if Tycon.isRealX parseType then
+                                                                  Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
+                                                              else if Tycon.isIntX parseType then
                                                                   Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-                                                            else if Tycon.equals(typ, Tycon.vector) then
+                                                              else if Tycon.equals(parseType, Tycon.vector) then
                                                                   (* assume it's a word8 vector *)
                                                                   P.any
                                                                       [Const.string <$> parseString,
                                                                        Const.wordVector <$> parseWord8Vector,
                                                                        P.failCut "string constant"]
-                                                            else
-                                                                  P.fail "constant"
+                                                               else
+                                                                  P.fail "constant"))
 
         (*fun parseConstExp parseType = token "const" *> P.cut (
                                              case Type.dest parseType of
