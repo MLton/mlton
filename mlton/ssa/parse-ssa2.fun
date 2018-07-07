@@ -168,8 +168,7 @@
             vector = vector
         }*)
 
-        val parseBaseVectorSub = token "$" *> P.spaces *> P.tuple parseBaseObject
-                                                      <|> P.pure(Vector.new2(parseBaseObject, parseBaseObject)) <* P.spaces
+        val parseBaseVectorSub = token "$" *> P.spaces *> P.tuple parseBaseObject <* P.spaces
         val parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
 
         in
