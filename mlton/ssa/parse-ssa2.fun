@@ -474,7 +474,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
           args = args,
           overflow = overflow,
           success = success,
-          typ = parseType resolveTycon
+          ty = parseType resolveTycon
         }
 
         val parseTransferArith = token "arith" *> P.spaces *> (makeTransferArith parseType resolveTycon) <$$$>
