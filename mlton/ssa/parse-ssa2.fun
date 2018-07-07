@@ -478,7 +478,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferArith = token "arith" *> P.spaces *> makeTransferArith <$$$>
                                                                         (P.spaces *> label' <* P.spaces,
-                                                                         parenOf((parsePrimAppExp resolveTycon resolveVar)),
+                                                                         parenOf(parsePrimAppExp resolveTycon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
 
         fun makeReturnNonTail cont (handler) =
