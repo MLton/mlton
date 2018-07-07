@@ -311,41 +311,52 @@ fun parsePrimAppExp resolveTycon resolveVar =
             parseExpression' ()
         end
 
- (*fun makeBindStatement (var, ty, exp) =
- Statement.Bind {
-    var = var,
-    ty = ty,
-    exp = exp
- }
+ fun parseStatements resolveCon resolveTycon resolveVar =
+     let
 
- fun makeBindStatement' resolveCon resolveTycon resolveVar =
-    let
-       val var = resolveVar <$> ident <* P.spaces
+     val var = resolveVar <$> ident <* P.spaces
 
-       val typedvar = (fn (x,y) => (x,y)) <$$>
-          (SOME <$> var <|> token "_" *> P.pure(NONE),
-           symbol ":" *> (parseType resolveTycon) <* P.spaces)
+     val varExp =
+     P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
-       val parseBindStatement' = makeBindStatement
-                                 <$>
-                                 (P.spaces *> token "val" *> P.spaces *>
-                                 typedvar >>= (fn (var, ty) =>
-                                 (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
-                                 >>= (fn exp => P.pure (var, ty, exp))))
-       in
-          parseBindStatement'
-       end
+     val typedvar = (fn (x,y) => (x,y)) <$$>
+        (SOME <$> var <|> token "_" *> P.pure(NONE),
+         symbol ":" *> (typ resolveTycon) <* P.spaces)
 
- val parseBindStatement resolveCon resolveTycon resolveVar =
+     val parseProfileExpStatement = P.str "prof" *> P.spaces *>
+                                   (ProfileExp.Enter <$ token "Enter" <|>
+                                    ProfileExp.Leave <$ token "Leave") <*>
+                                    P.cut ((SourceInfo.fromC o String.implode) <$>
+                                    P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
+
+     fun makeBindStatement (var, ty, exp) =
+     Statement.Bind {
+       var = var,
+       ty = ty,
+       exp = exp
+     }
+
+     fun makeBindStatement' resolveCon resolveTycon resolveVar =
+         let
+            val parseBindStatement' = makeBindStatement <$>
+                                                        (P.spaces *> P.str "val" *> P.spaces *>
+                                                         typedvar >>= (fn (var, ty) =>
+                                                         (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
+                                                         >>= (fn exp => P.pure (var, ty, exp))))
+            in
+              parseBindStatement'
+            end
+
+     val parseBindStatement resolveCon resolveTycon resolveVar =
                                    makeBindStatement' resolveCon resolveTycon resolveVar
 
- val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
+     val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
                             (ProfileExp.Enter <$ token "Enter" <|>
                              ProfileExp.Leave <$ token "Leave") <*>
                              P.cut ((SourceInfo.fromC o String.implode) <$>
                              P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
 
- fun makeUpdateStatement (base, offset, value) =
+ (*fun makeUpdateStatement (base, offset, value) =
  Statement.Update {
    base = base,
    offset = offset,
@@ -354,12 +365,13 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
  val parseUpdateStatement = P.spaces *> token "upd " *> P.spaces *>
                             parseSelectExpression *> token ":=" *>
-                            parseVarExp <* P.spaces
+                            parseVarExp <* P.spaces*)
+     in
+        val parseStatement' resolveCon resolveTycon resolveVar = P.any [parseBindStatement resolveCon resolveTycon resolveVar,
+                                                                        parseProfileStatement
+                                                                        (*parseUpdateStatement*)]
+     end
 
- val parseStatement resolveCon resolveTycon resolveVar =
-                                            P.any [parseBindStatement resolveCon resolveTycon resolveVar,
-                                                   parseProfileStatement,
-                                                   parseUpdateStatement]*)
 
  fun makeDatatype resolveTycon(tycon, cons) =
  Datatype.T {
