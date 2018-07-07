@@ -256,7 +256,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val var = resolveVar <$> ident <* P.spaces
 
-        (*val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var*)
+        val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
         fun parseConstExp parseType = token "const" *> P.spaces *>
                                                             P.cut (
@@ -292,10 +292,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
 
 
-        (*fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
+        fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
         val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
                                                                           (parseVarExp <* token ":" <* P.spaces,
-                                                                           P.spaces *> resolveTycon ident <* P.spaces))*)
+                                                                           P.spaces *> resolveTycon ident <* P.spaces))
 
         fun makeObjectExp (con, args) = {con = con, args = args}
 
@@ -303,19 +303,19 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                             (token "tuple" *> P.pure(NONE))),
                                                     P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
-        val parseObjectExp = token "new" *> P.cut(makeObjectExp' ())
+        val parseObjectExp = token "new" *> P.spaces *> P.cut(makeObjectExp' ())
 
-        fun makeSelectExp (base, offset) = {offset = offset, base = base}
-        val parseSelectExp = token "sel" *> parenOf (P.cut(makeSelectExp <$$>
+        (*fun makeSelectExp (base, offset) = {offset = offset, base = base}
+        val parseSelectExp = token "sel" *> P.spaces *> parenOf (P.cut(makeSelectExp <$$>
                                                                          (P.uint <* P.spaces,
-                                                                          makeBase resolveVar))) <* P.spaces
+                                                                          makeBase resolveVar))) <* P.spaces*)
 
-        fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (Type.tycon parseType)),
-                                          (*Exp.Inject  <$>   parseInjectExp,*)
+        fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
+                                          Exp.Inject  <$>   parseInjectExp,
                                           Exp.Object  <$>   parseObjectExp,
-                                          (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
-                                          Exp.Select  <$>   parseSelectExp
-                                          (*Exp.Var     <$>   parseVarExp*)
+                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                          (*Exp.Select  <$>   parseSelectExp*)
+                                          Exp.Var     <$>   parseVarExp
                                         ]
 
         in
