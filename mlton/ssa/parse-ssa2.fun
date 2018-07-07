@@ -299,12 +299,12 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                          (P.uint <* P.spaces,
                                                                           makeBase resolveVar))) <* P.spaces
 
-        fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp parseType,
-                                          Exp.Inject  <$>  parseInjectExp,
-                                          Exp.Object  <$>  parseObjectExp,
-                                          Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
-                                          Exp.Select  <$>  parseSelectExp,
-                                          Exp.Var     <$>  parseVarExp
+        fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp parseType),
+                                          Exp.Inject  <$>   parseInjectExp,
+                                          Exp.Object  <$>   parseObjectExp,
+                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                          Exp.Select  <$>   parseSelectExp,
+                                          Exp.Var     <$>   parseVarExp
                                         ]
 
         in
@@ -477,7 +477,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
           ty = parseType resolveTycon
         }
 
-        val parseTransferArith = token "arith" *> P.spaces *> makeTransferArith (parseType resolveTycon) <$$$>
+        val parseTransferArith parseType resolveTycon = token "arith" *> P.spaces *> makeTransferArith (parseType resolveTycon) <$$$>
                                                                         (P.spaces *> label' <* P.spaces,
                                                                          parenOf(parsePrimAppExp resolveTycon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
@@ -531,9 +531,14 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *> P.spaces *> vars <* P.spaces)
 
-        val parseTransfer = P.any [parseTransferArith, parseTransferBug, parseTransferCall,
-                                   parseTransferCase, parseTransferGoto, parseTransferRaise,
-                                   parseTransferReturn, parseTransferRuntime]
+        val parseTransfer = P.any [Transfer.Arith   <$> (parseTransferArith parseType resolveTycon),
+                                   Transfer.Bug     <$> parseTransferBug,
+                                   Transfer.Call    <$> parseTransferCall,
+                                   Transfer.Case    <$> parseTransferCase,
+                                   Transfer.Goto    <$> parseTransferGoto,
+                                   Transfer.Raise   <$> parseTransferRaise,
+                                   Transfer.Return  <$> parseTransferReturn,
+                                   Transfer.Runtime <$> parseTransferRuntime]
 
         fun makeBlock label args statements transfer =
         Block.T {
