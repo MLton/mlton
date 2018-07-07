@@ -44,8 +44,6 @@
     (P.str s,
     (P.nextSat (fn b => isInfixChar b orelse b = #"_"))) <* P.spaces
 
- (*val start = P.str "Datatypes:"*)
-
  fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
           val hash = String.hash
@@ -93,7 +91,7 @@
               | "word32"   => Type.word WordSize.word32
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
-              | _          => Type.datatypee (resolveTycon ident)
+              | "dt"       => Type.datatypee (resolveTycon ident)
 
     local
         fun makeType' resolveTycon () = (makeType resolveTycon) <$$>

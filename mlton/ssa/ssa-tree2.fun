@@ -299,7 +299,7 @@ structure Type =
              (fn (t, layout) =>
               case dest t of
                  CPointer => str "cpointer"
-               | Datatype t => Tycon.layout t
+               | Datatype t => seq [str "dt", Tycon.layout t]
                | IntInf => str "intInf"
                | Object {args, con} =>
                     if isUnit t
@@ -315,7 +315,7 @@ structure Type =
                        end
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
-               | Weak t => seq [layout t, str " weak"]
+               | Weak t => seq [str "(", layout t, str ") weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
       end
 
