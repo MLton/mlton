@@ -256,13 +256,25 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val var = resolveVar <$> ident <* P.spaces
 
-        val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+        (*val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var*)
 
-        val typedvar = (fn (x,y) => (x,y)) <$$>
-                                           (SOME <$> var <|> token "_" *> P.pure(NONE),
-                                            symbol ":" *> (parseType resolveTycon) <* P.spaces)
+        fun parseConstExp parseType = token "const" *> P.spaces *>
+                                                            if Tycon.isWordX typ then
+                                                                  Const.Word <$> (P.str "0x" *> parseHex >>= makeWord typ) <|> P.failCut "word"
+                                                            else if Tycon.isRealX typ then
+                                                                  Const.Real <$> parseReal (Tycon.deRealX typ) <|> P.failCut "real"
+                                                            else if Tycon.isIntX typ then
+                                                                  Const.IntInf <$> parseIntInf <|> P.failCut "integer"
+                                                            else if Tycon.equals(typ, Tycon.vector) then
+                                                                  (* assume it's a word8 vector *)
+                                                                  P.any
+                                                                      [Const.string <$> parseString,
+                                                                       Const.wordVector <$> parseWord8Vector,
+                                                                       P.failCut "string constant"]
+                                                            else
+                                                                  P.fail "constant"
 
-        fun parseConstExp parseType = token "const" *> P.cut (
+        (*fun parseConstExp parseType = token "const" *> P.cut (
                                              case Type.dest parseType of
                                              Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                              makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -275,17 +287,19 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                              [Const.string <$> parseString,
                                              Const.wordVector <$> parseWord8Vector,
                                              P.failCut "string constant"]
-                                           | _ => P.fail "constant" )
+                                           | _ => P.fail "constant" )*)
 
-        fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
+
+
+        (*fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
         val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
                                                                           (parseVarExp <* token ":" <* P.spaces,
-                                                                           P.spaces *> resolveTycon ident <* P.spaces))
+                                                                           P.spaces *> resolveTycon ident <* P.spaces))*)
 
         fun makeObjectExp (con, args) = {con = con, args = args}
 
-        fun makeObjectExp' () = makeObjectExp <$$> ((fn x => x) <$> (SOME <$> resolveCon ident <* P.spaces <|>
-                                                            token "tuple" *> P.pure(NONE)),
+        fun makeObjectExp' () = makeObjectExp <$$> ((fn x => x) <$> ((SOME <$> (resolveCon ident <* P.spaces)) <|>
+                                                            (token "tuple" *> P.pure(NONE)),
                                                     P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
         val parseObjectExp = token "new" *> P.cut(makeObjectExp' ())
@@ -296,7 +310,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                           makeBase resolveVar))) <* P.spaces
 
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp parseType),
-                                          Exp.Inject  <$>   parseInjectExp,
+                                          (*Exp.Inject  <$>   parseInjectExp,*)
                                           Exp.Object  <$>   parseObjectExp,
                                           Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
                                           Exp.Select  <$>   parseSelectExp,
