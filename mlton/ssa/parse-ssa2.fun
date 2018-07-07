@@ -151,7 +151,7 @@
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
 
- val parseProd resolveTycon resolveCon = P.spaces *>
+ fun parseProd resolveTycon resolveCon = P.spaces *>
                                          parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
                                                                   <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
 
