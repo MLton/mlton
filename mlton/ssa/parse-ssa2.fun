@@ -566,7 +566,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                          makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
-                         <*> (Vector.fromList <$> P.many(parseStatement resolveCon resolveTycon resolveVar))
+                         <*> (Vector.fromList <$> P.many(parseStatements resolveCon resolveTycon resolveVar))
                          <*> parseTransfer
 
         val makeFuncion' = makeFunction
