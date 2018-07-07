@@ -246,7 +246,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
        fun makePrimApp(prim, args) = {args=args, prim=prim}
            in
-              token "prim" *> P.cut (makePrimApp <$$>
+              token "prim" *> P.spaces *> P.cut (makePrimApp <$$>
                              (P.any [ resolveFFI, resolveFFISym, (ident <* P.spaces >>= resolvePrim)],
                               P.spaces *> P.tuple varExp <* P.spaces))
            end
@@ -313,7 +313,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
                                           Exp.Inject  <$>   parseInjectExp,
                                           Exp.Object  <$>   parseObjectExp,
-                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                          Exp.PrimApp <$>  (parsePrimAppExp (resolveTycon resolveVar)),
                                           (*Exp.Select  <$>   parseSelectExp*)
                                           Exp.Var     <$>   parseVarExp
                                         ]
