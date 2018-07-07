@@ -301,7 +301,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         fun makeObjectExp' () = makeObjectExp <$$> ((fn x => x) <$> (((SOME <$> (resolveCon ident <* P.spaces)) <|>
                                                             (token "tuple" *> P.pure(NONE))),
-                                                    P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
+                                                    P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces))
 
         val parseObjectExp = token "new" *> P.spaces *> P.cut(makeObjectExp' ())
 
