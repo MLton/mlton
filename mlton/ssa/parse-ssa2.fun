@@ -465,19 +465,18 @@ fun parsePrimAppExp resolveTycon resolveVar =
           dst = dst
         }
 
-        val parseTransferGoto = makeTransferGoto <$> labelWithArgs
-                                                  *> P.str "goto" *> P.spaces *> vars <* P.spaces
+        val parseTransferGoto = P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
+                                                                                   P.spaces *> vars <* P.spaces)
 
-        fun makeTransferArith parseType resolveTycon (success, {prim, args}, overflow) =
+        fun makeTransferArith (success, {prim, args}, overflow, ty=_) =
         Transfer.Arith {
           prim = prim,
           args = args,
           overflow = overflow,
-          success = success,
-          ty = parseType resolveTycon
+          success = success
         }
 
-        val parseTransferArith parseType resolveTycon = token "arith" *> P.spaces *> makeTransferArith (parseType resolveTycon) <$$$>
+        val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$>
                                                                         (P.spaces *> label' <* P.spaces,
                                                                          parenOf(parsePrimAppExp resolveTycon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
@@ -520,7 +519,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         }
 
         val parseTransferRuntime = makeTransferRuntime <$$>
-                                         (label',
+                                         (P.str "runtime" *> P.spaces *> label' <* P.spaces,
                                           parenOf (parsePrimAppExp resolveTycon resolveVar))
 
         fun makeTransferReturn vars = Transfer.Return vars
@@ -531,14 +530,14 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *> P.spaces *> vars <* P.spaces)
 
-        val parseTransfer = P.any [Transfer.Arith   <$> (parseTransferArith parseType resolveTycon),
-                                   Transfer.Bug     <$> parseTransferBug,
-                                   Transfer.Call    <$> parseTransferCall,
-                                   Transfer.Case    <$> parseTransferCase,
-                                   Transfer.Goto    <$> parseTransferGoto,
-                                   Transfer.Raise   <$> parseTransferRaise,
-                                   Transfer.Return  <$> parseTransferReturn,
-                                   Transfer.Runtime <$> parseTransferRuntime]
+        val parseTransfer = P.any [parseTransferArith,
+                                   parseTransferBug,
+                                   parseTransferCall,
+                                   parseTransferCase,
+                                   parseTransferGoto,
+                                   parseTransferRaise,
+                                   parseTransferReturn,
+                                   parseTransferRuntime]
 
         fun makeBlock label args statements transfer =
         Block.T {
