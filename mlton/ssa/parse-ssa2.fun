@@ -273,7 +273,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                        Const.wordVector <$> parseWord8Vector,
                                                                        P.failCut "string constant"]
                                                                else
-                                                                  P.fail "constant"))
+                                                                  P.fail "constant")
 
         (*fun parseConstExp parseType = token "const" *> P.cut (
                                              case Type.dest parseType of
@@ -313,9 +313,9 @@ fun parsePrimAppExp resolveTycon resolveVar =
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp parseType),
                                           (*Exp.Inject  <$>   parseInjectExp,*)
                                           Exp.Object  <$>   parseObjectExp,
-                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                          (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
                                           Exp.Select  <$>   parseSelectExp,
-                                          Exp.Var     <$>   parseVarExp
+                                          (*Exp.Var     <$>   parseVarExp*)
                                         ]
 
         in
