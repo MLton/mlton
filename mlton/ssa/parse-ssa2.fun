@@ -152,8 +152,8 @@
                   resolveTycon) <* P.char #")")), ident <* P.spaces)
 
  val parseProd resolveTycon resolveCon = P.spaces *>
-                                         parenOf (Vector.fromList((parseType resolveTycon <* P.str "ref" <* P.spaces)
-                                                              <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
+                                         parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
+                                                                  <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
 
 (*fun makeBase resolveVar =
     let
