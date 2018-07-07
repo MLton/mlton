@@ -277,10 +277,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                              P.failCut "string constant"]
                                            | _ => P.fail "constant" )
 
-        fun makeInjectExp resolveTycon (variant, sum) = {sum = resolveTycon sum, variant = variant}
-        val parseInjectExp = token "inj " *> P.cut ((makeInjectExp resolveTycon) <$$>
-                                                                          (parseVarExp <* token ":" *> P.spaces,
-                                                                          P.spaces *> ident <* P.spaces))
+        fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
+        val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
+                                                                          (parseVarExp <* token ":" <* P.spaces,
+                                                                           P.spaces *> resolveTycon ident <* P.spaces))
 
         fun makeObjectExp (con, args) = {con = con, args = args}
 
