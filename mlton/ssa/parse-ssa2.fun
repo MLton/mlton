@@ -469,12 +469,13 @@ fun parsePrimAppExp resolveTycon resolveVar =
         val parseTransferGoto = P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
                                                                                    P.spaces *> vars <* P.spaces)
 
-        fun makeTransferArith (success, {prim, args}, overflow, ty = parseType resolveTycon) =
+        fun makeTransferArith (success, {prim, args}, overflow, ty) =
         Transfer.Arith {
           prim = prim,
           args = args,
           overflow = overflow,
-          success = success
+          success = success,
+          ty = parseType resolveTycon
         }
 
         val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$>
