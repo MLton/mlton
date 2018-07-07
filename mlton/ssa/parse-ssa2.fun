@@ -325,7 +325,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                     P.cut ((SourceInfo.fromC o String.implode) <$>
                                     P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
 
-     fun makeBindStatement (var, ty, exp) =
+     (*fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
        var = var,
        ty = ty,
@@ -344,7 +344,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
             end
 
      val parseBindStatement resolveCon resolveTycon resolveVar =
-                                   makeBindStatement' resolveCon resolveTycon resolveVar
+                                   makeBindStatement' resolveCon resolveTycon resolveVar*)
 
      val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
                             (ProfileExp.Enter <$ token "Enter" <|>
@@ -363,7 +363,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                             parseSelectExpression *> token ":=" *>
                             parseVarExp <* P.spaces*)
 
-     val parseStatement' resolveCon resolveTycon resolveVar = P.any [parseBindStatement resolveCon resolveTycon resolveVar,
+     val parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)
                                                                      parseProfileStatement(*parseUpdateStatement*)]
 
      in
