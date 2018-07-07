@@ -1094,10 +1094,10 @@ structure Transfer =
                    layoutVar)
             in
                case t of
-                  Arith {prim, args, overflow, success, ...} =>
-                     seq [str "arith ", Label.layout success, str " ",
-                          tuple [layoutPrim {prim = prim, args = args}],
-                          str " handle Overflow => ", Label.layout overflow]
+                  Arith {prim, args, overflow, success, ...}=>
+                  seq [str "arith ", Label.layout success, str " ",
+                       tuple [layoutPrim {prim = prim, args = args}],
+                       str " handle Overflow => ", Label.layout overflow]
                 | Bug => str "bug"
                 | Call {func, args, return} =>
                      let

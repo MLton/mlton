@@ -266,8 +266,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                            (SOME <$> var <|> token "_" *> P.pure(NONE),
                                             symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
-        fun parseConstExp () = token "const" *> P.cut (
-                                             case Type.dest (parseType resolveTycon) of
+        fun parseConstExp parseType = token "const" *> P.cut (
+                                             case Type.dest parseType of
                                              Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                              makeWord (Tycon.word ws)) <|> P.failCut "word"
                                            | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
@@ -299,7 +299,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                          (P.uint <* P.spaces,
                                                                           makeBase resolveVar))) <* P.spaces
 
-        fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp (),
+        fun parseExpression' () = P.any [ Exp.Const   <$>  parseConstExp parseType,
                                           Exp.Inject  <$>  parseInjectExp,
                                           Exp.Object  <$>  parseObjectExp,
                                           Exp.PrimApp <$> (parsePrimAppExp resolveTycon resolveVar),
@@ -468,20 +468,18 @@ fun parsePrimAppExp resolveTycon resolveVar =
         val parseTransferGoto = makeTransferGoto <$> labelWithArgs
                                                   *> P.str "goto" *> P.spaces *> vars <* P.spaces
 
-        fun makeTransferArith (ty, success, {prim, args}, overflow) =
+        fun makeTransferArith (success, {prim, args}, overflow) =
         Transfer.Arith {
           prim = prim,
           args = args,
           overflow = overflow,
-          success = success,
-          ty = ty
+          success = success
         }
 
-        val parseTransferArith = makeTransferArith <$$$$>
-                                                   (P.str "arith" *> P.spaces *> (parseType resolveTycon) <* P.spaces,
-                                                    label',
-                                                    symbol "(" *> (parsePrimAppExp resolveTycon resolveVar) <* symbol ")",
-                                                    P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
+        val parseTransferArith = token "arith" *> P.spaces *> makeTransferArith <$$$>
+                                                                        (P.spaces *> label' <* P.spaces,
+                                                                         parenOf((parsePrimAppExp resolveTycon resolveVar)),
+                                                                         P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
 
         fun makeReturnNonTail cont (handler) =
         Return.NonTail {
