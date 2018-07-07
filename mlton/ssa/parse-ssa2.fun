@@ -459,7 +459,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferCase = Transfer.Case <$> makeTransferCase
 
-        fun makeTransferGoto (dst args) =
+        fun makeTransferGoto (dst, args) =
         Transfer.Goto {
           args = args,
           dst = dst
