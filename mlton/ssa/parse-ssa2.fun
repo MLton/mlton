@@ -474,13 +474,14 @@ fun parsePrimAppExp resolveTycon resolveVar =
           args = args,
           overflow = overflow,
           success = success,
-          ty = _
+          ty = ty
         }
 
-        val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$>
+        val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$$>
                                                                         (P.spaces *> label' <* P.spaces,
                                                                          parenOf(parsePrimAppExp resolveTycon resolveVar),
-                                                                         P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
+                                                                         P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
+                                                                         parseType resolveTycon)
 
         fun makeReturnNonTail cont (handler) =
         Return.NonTail {
