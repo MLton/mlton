@@ -378,7 +378,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                             parseSelectExpression *> token ":=" *>
                             parseVarExp <* P.spaces*)
 
-     val parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)
+     fun parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)
                                                                      parseProfileStatement(*parseUpdateStatement*)]
 
      in
