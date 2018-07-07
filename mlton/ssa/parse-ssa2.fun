@@ -169,10 +169,10 @@
         }*)
 
         val parseBaseVectorSub = token "$" *> P.spaces *> P.tuple parseBaseObject <* P.spaces
-        val parseBase' = P.any[parseBaseObject, parseBaseVectorSub]
+        fun parseBase' () = P.any[parseBaseObject, parseBaseVectorSub]
 
         in
-          parseBase'
+          parseBase' ()
         end
 
 fun parsePrimAppExp resolveTycon resolveVar =
