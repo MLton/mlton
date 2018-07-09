@@ -396,10 +396,9 @@ fun parsePrimAppExp resolveTycon resolveVar =
  }
 
  fun makeDatatype' resolveCon resolveTycon = (makeDatatype resolveTycon) <$$>
-                                                   ((P.spaces *> ident <* P.spaces <* symbol "="),
-                                                   (Vector.fromList <$> P.sepBy1
-                                                      ((constructor resolveCon resolveTycon) <* P.spaces,
-                                                        P.char #"|" *> P.spaces)))
+                                                   (P.spaces *> ident <* P.spaces <* symbol "="),
+                                                   (((constructor resolveCon resolveTycon) <* P.spaces,
+                                                        P.char #"|" *> P.spaces))
 
  fun parseDatatype resolveCon resolveTycon =
           P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (makeDatatype' resolveCon resolveTycon)
