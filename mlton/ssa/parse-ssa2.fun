@@ -145,7 +145,7 @@
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
- fun makeProd (elt, isMutable) =  {elt = elt, isMutable = isMutable}
+ fun makeProd resolveTycon (elt, isMutable) =  {elt = resolveTycon elt, isMutable = Type.bool}
  fun parseProd resolveTycon resolveCon = P.spaces *>
                                          parenOf (Vector.fromList <$> P.sepBy((makeProd <$$> ((parseType resolveTycon) <* P.str "ref" <* P.spaces, true)
                                                                   <|> ((parseType resolveTycon), false)) <* P.str "," <* P.spaces) <* P.spaces)
