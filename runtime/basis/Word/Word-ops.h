@@ -5,9 +5,21 @@
     return w1 op w2;                                                    \
   }
 
+#define binaryBuiltin(kind, name, builtin)                              \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
+    Word##kind res;                                                     \
+    __builtin_##builtin##_overflow(w1, w2, &res);                       \
+    return res;                                                         \
+  }
+
 #define bothBinary(size, name, op)              \
 binary (S##size, name, op)                      \
 binary (U##size, name, op)
+
+#define bothBinaryBuiltin(size, name, builtin)      \
+  binaryBuiltin(S##size, name, builtin)             \
+  binaryBuiltin(U##size, name, builtin)
 
 #define compare(kind, name, op)                                         \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -62,7 +74,7 @@ compare (U##size, name, op)
   }
 
 #define all(size)                               \
-binary (size, add, +)                           \
+binaryBuiltin (size, add, add)                  \
 binary (size, andb, &)                          \
 compare (size, equal, ==)                       \
 bothCompare (size, ge, >=)                      \
@@ -70,7 +82,7 @@ bothCompare (size, gt, >)                       \
 bothCompare (size, le, <=)                      \
 shift (size, lshift, <<)                        \
 bothCompare (size, lt, <)                       \
-bothBinary (size, mul, *)                       \
+bothBinaryBuiltin (size, mul, mul)              \
 unary (size, neg, -)                            \
 unary (size, notb, ~)                           \
 /* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
@@ -89,7 +101,7 @@ ror(size)                                       \
  */                                                                     \
 shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
-binary (size, sub, -)                           \
+binaryBuiltin (size, sub, sub)                  \
 binary (size, xorb, ^)
 
 all (8)
