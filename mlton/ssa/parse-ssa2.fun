@@ -148,9 +148,8 @@
  fun makeProd (elt, isMutable) =  {elt = elt, isMutable = isMutable}
  fun parseProd resolveTycon resolveCon = P.spaces *>
                                          parenOf (Vector.fromList <$> P.sepBy((makeProd <$$> ((parseType resolveTycon) <* P.str "ref" <* P.spaces, true)
-                                                                  <|> ((parseType resolveTycon), false) <* P.str "," <* P.spaces)) <* P.spaces)
+                                                                  <|> ((parseType resolveTycon), false)) <* P.str "," <* P.spaces) <* P.spaces)
 
- P.many(makeProd <$$> ((parseType resolveTycon <* P.str "ref" <* P.spaces), true) <|> ((parseType resolveTycon), false))
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
  (*fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
