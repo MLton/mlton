@@ -337,11 +337,11 @@ fun parsePrimAppExp resolveTycon resolveVar =
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
-     val parseProfileExpStatement = P.str "prof" *> P.spaces *>
+     (*val parseProfileExpStatement = P.str "prof" *> P.spaces *>
                                    (ProfileExp.Enter <$ token "Enter" <|>
                                     ProfileExp.Leave <$ token "Leave") <*>
                                     P.cut ((SourceInfo.fromC o String.implode) <$>
-                                    P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
+                                    P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)*)
 
      (*fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
