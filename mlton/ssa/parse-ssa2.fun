@@ -145,10 +145,9 @@
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
- fun makeProd (elt, isMutable) =  {elt = elt, isMutable = isMutable}
  fun parseProd resolveTycon resolveCon = P.spaces *>
-                                         parenOf (Vector.fromList <$> P.many((makeProd <$$> ((parseType resolveTycon) <* P.str "ref" <* P.spaces, P.str "true")
-                                                                  <|> ((parseType resolveTycon), P.str "false") <* P.str "," <* P.spaces)) <* P.spaces)
+                                         parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
+                                                                  <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
 
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
@@ -586,7 +585,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                          <*> (Vector.fromList <$> P.many(parseStatements resolveCon resolveTycon resolveVar))
                          <*> parseTransfer
 
-        val makeFuncion' = makeFunction
+        val makeFunction' = makeFunction
                            <$> name
                            <*> args <* symbol ":" <* P.spaces
                            <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
