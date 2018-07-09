@@ -145,10 +145,10 @@
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
- fun makeProd resolveTycon resolveCon (name) =  {name = name} 
+ fun makeProd resolveTycon resolveCon (name) =  {name = name}
  fun parseProd resolveTycon resolveCon = P.spaces *>
-                                         parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
-                                                                  <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
+                                         parenOf (Vector.fromList <$> P.many(makeProd <$> ((parseType resolveTycon <* P.str "ref" <* P.spaces)
+                                                                  <|> ((parseType resolveTycon) <* P.str "," <* P.spaces))) <* P.spaces
 
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
