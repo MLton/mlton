@@ -244,7 +244,7 @@ struct
           P.spaces *> P.tuple varExp <* P.spaces))
       end
 
-  fun makeStatement (var, ty, exp) = 
+  fun makeStatement (var, ty, exp) =
       Statement.T
       {var = var,
        ty = ty,
