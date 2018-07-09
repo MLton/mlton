@@ -145,15 +145,18 @@
 
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
- fun makeCon resolveCon (name, args) = {con = resolveCon name, args = args}
-
- fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-                 ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
-                  resolveTycon) <* P.char #")")), ident <* P.spaces)
-
  fun parseProd resolveTycon resolveCon = P.spaces *>
                                          parenOf (Vector.fromList <$> P.many((parseType resolveTycon <* P.str "ref" <* P.spaces)
                                                                   <|> (parseType resolveTycon) <* P.str "," <* P.spaces)) <* P.spaces
+
+ fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
+
+ (*fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
+                 ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
+                  resolveTycon) <* P.char #")")), ident <* P.spaces)*)
+
+ fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon resolveCon) <* P.spaces,
+                                                                       ident <* P.spaces)
 
  fun makeBase resolveVar =
      let
@@ -392,14 +395,14 @@ fun parsePrimAppExp resolveTycon resolveVar =
    cons = cons
  }
 
- fun parseDatatypeHelper resolveCon resolveTycon = (makeDatatype resolveTycon) <$$>
+ fun makeDatatype' resolveCon resolveTycon = (makeDatatype resolveTycon) <$$>
                                                    ((P.spaces *> ident <* P.spaces <* symbol "="),
                                                    (Vector.fromList <$> P.sepBy1
                                                       ((constructor resolveCon resolveTycon) <* P.spaces,
                                                         P.char #"|" *> P.spaces)))
 
  fun parseDatatype resolveCon resolveTycon =
-          P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (parseDatatypeHelper resolveCon resolveTycon)
+          P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (makeDatatype' resolveCon resolveTycon)
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
     let
