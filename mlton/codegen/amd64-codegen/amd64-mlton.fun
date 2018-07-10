@@ -504,6 +504,33 @@ struct
                 transfer = NONE}]
             end
 
+        fun negalcc ()
+          = let
+              val (src,srcsize) = getSrc1 ()
+              val (dst,dstsize) = getDst1 ()
+              val (tmp,tmpsize) = (overflowCheckTempContentsOperand srcsize,
+                                   srcsize)
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = Operand.immediate_zero,
+                    size = tmpsize},
+                   Assembly.instruction_binal
+                   {oper = Instruction.SUB,
+                    dst = tmp,
+                    src = src,
+                    size = srcsize},
+                   Assembly.instruction_setcc
+                   {condition = Instruction.O,
+                    dst = dst,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
         fun unalcc (oper, condition)
           = let
               val (src,srcsize) = getSrc1 ()
@@ -1240,7 +1267,7 @@ struct
                       | W64 => imul2cc (flag sg)
                  end
              | Word_neg _ => unal Instruction.NEG
-             | Word_negCheckP _ => unalcc (Instruction.NEG, Instruction.O)
+             | Word_negCheckP _ => negalcc ()
              | Word_notb _ => unal Instruction.NOT
              | Word_orb _ => binal Instruction.OR
              | Word_quot (_, {signed}) =>
