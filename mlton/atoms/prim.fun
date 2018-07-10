@@ -1694,6 +1694,18 @@ fun ('a, 'b) apply (p: 'a t,
          in
             wordOrOverflow (s, sg, f (conv w, conv w'))
          end
+      fun wordOrTrue (s, sg, w) = if WordSize.isInRange (s, w, sg)
+                                  then f
+                                  else t
+      fun wcheckp (f: IntInf.t * IntInf.t -> IntInf.t,
+                   (s: WordSize.t, sg as {signed}),
+                   w: WordX.t,
+                   w': WordX.t) =
+         let
+            val conv = if signed then WordX.toIntInfX else WordX.toIntInf
+         in
+            wordOrTrue (s, sg, f (conv w, conv w'))
+         end
       val eq =
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | _ => ApplyResult.Unknown
@@ -1827,15 +1839,19 @@ fun ('a, 'b) apply (p: 'a t,
                  (if signed then WordX.toIntInfX w else WordX.toIntInf w, s))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
            | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
+           | (Word_addCheckP s, [Word w1, Word w2]) => wcheckp (op +, s, w1, w2)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
            | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
            | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
            | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
            | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
            | (Word_mulCheck s, [Word w1, Word w2]) => wcheck (op *, s, w1, w2)
+           | (Word_mulCheckP s, [Word w1, Word w2]) => wcheckp (op *, s, w1, w2)
            | (Word_neg _, [Word w]) => word (WordX.neg w)
            | (Word_negCheck s, [Word w]) =>
                 wordOrOverflow (s, {signed = true}, ~ (WordX.toIntInfX w))
+           | (Word_negCheckP s, [Word w]) =>
+                wordOrTrue (s, {signed = true}, ~ (WordX.toIntInfX w))
            | (Word_notb _, [Word w]) => word (WordX.notb w)
            | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
            | (Word_quot s, [Word w1, Word w2]) =>
@@ -1852,6 +1868,7 @@ fun ('a, 'b) apply (p: 'a t,
                 wordS (WordX.rshift, s, w1, w2)
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
            | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
+           | (Word_subCheckP s, [Word w1, Word w2]) => wcheckp (op -, s, w1, w2)
            | (Word_toIntInf, [Word w]) =>
                 (case IntInfRep.smallToIntInf w of
                     NONE => ApplyResult.Unknown
@@ -2041,6 +2058,9 @@ fun ('a, 'b) apply (p: 'a t,
                         else Unknown
                    | Word_add _ => add ()
                    | Word_addCheck _ => add ()
+                   | Word_addCheckP _ => if WordX.isZero w
+                                         then f
+                                         else Unknown
                    | Word_andb s =>
                         if WordX.isZero w
                            then zero s
@@ -2054,6 +2074,9 @@ fun ('a, 'b) apply (p: 'a t,
                         else if WordX.isMax (w, sg) then f else Unknown
                    | Word_mul s => mul (s, wordNeg)
                    | Word_mulCheck s => mul (s, wordNegCheck)
+                   | Word_mulCheckP _ => if WordX.isZero w orelse WordX.isOne w
+                                         then f
+                                         else Unknown
                    | Word_orb _ =>
                         if WordX.isZero w
                            then Var x
@@ -2089,6 +2112,9 @@ fun ('a, 'b) apply (p: 'a t,
                            shift s
                    | Word_sub s => sub (s, wordNeg)
                    | Word_subCheck s => sub (s, wordNegCheck o #1)
+                   | Word_subCheckP _ => if WordX.isZero w andalso inOrder
+                                         then f
+                                         else Unknown
                    | Word_xorb s =>
                         if WordX.isZero w
                            then Var x
