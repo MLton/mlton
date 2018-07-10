@@ -54,7 +54,10 @@ structure Exn =
       exception Subscript
 
       val mkOverflow: ('a -> 'b) * ('a -> bool) -> ('a -> 'b) =
-        fn (!, ?) => fn a => if ? a then raise Overflow else ! a
+        fn (!, ?) => fn a =>
+          let val r = ! a
+          in if ? a then raise Overflow else r
+          end
       val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
          fn f => fn a => f a handle PrimOverflow => raise Overflow
    end
