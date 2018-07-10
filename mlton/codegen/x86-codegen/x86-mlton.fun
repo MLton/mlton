@@ -260,8 +260,7 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
+              val tmp = overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: binal, src1size/src2size",
@@ -302,7 +301,7 @@ struct
                    {oper = oper,
                     dst = tmp,
                     src = src2,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_setcc
                    {condition = condition,
                     dst = dst,
@@ -375,8 +374,7 @@ struct
               val ((src1,src1size), _,
                    (src3,src3size), _) = getSrc4 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
+              val tmp = overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: binal64cc, src1size/src3size",
@@ -389,12 +387,12 @@ struct
                 = [Assembly.instruction_mov
                    {dst = tmp,
                     src = src1,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_binal
                    {oper = oper,
                     dst = tmp,
                     src = src3,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_setcc
                    {condition = condition,
                     dst = dst,
@@ -452,8 +450,7 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
+              val tmp= overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: pmdcc, src1size/src2size",
@@ -483,12 +480,12 @@ struct
                 = [Assembly.instruction_mov
                    {dst = tmp,
                     src = src1,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_pmd
                    {oper = oper,
                     dst = tmp,
                     src = src2,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_setcc
                    {condition = condition,
                     dst = dst,
@@ -541,8 +538,7 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
+              val tmp= overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: imul2, src1size/src2size",
@@ -568,11 +564,11 @@ struct
                 = [Assembly.instruction_mov
                    {dst = tmp,
                     src = src1,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_imul2
                    {dst = tmp,
                     src = src2,
-                    size = tmpsize},
+                    size = src1size},
                    Assembly.instruction_setcc
                    {condition = condition,
                     dst = dst,
@@ -584,8 +580,7 @@ struct
           = let
               val (src,srcsize) = getSrc1 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand srcsize,
-                                   srcsize)
+              val tmp = overflowCheckTempContentsOperand srcsize
             in
               AppendList.fromList
               [Block.mkBlock'
@@ -594,7 +589,7 @@ struct
                 = [Assembly.instruction_mov
                    {dst = tmp,
                     src = Operand.immediate_zero,
-                    size = tmpsize},
+                    size = srcsize},
                    Assembly.instruction_binal
                    {oper = Instruction.SUB,
                     dst = tmp,
@@ -612,8 +607,6 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: negal64cc, src1size/src2size",
@@ -674,32 +667,6 @@ struct
                 transfer = NONE}]
             end
 
-        fun unalcc (oper, condition)
-          = let
-              val (src,srcsize) = getSrc1 ()
-              val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand srcsize,
-                                   srcsize)
-            in
-              AppendList.fromList
-              [Block.mkBlock'
-               {entry = NONE,
-                statements 
-                = [Assembly.instruction_mov
-                   {dst = tmp,
-                    src = src,
-                    size = tmpsize},
-                   Assembly.instruction_unal
-                   {oper = oper,
-                    dst = tmp,
-                    size = tmpsize},
-                   Assembly.instruction_setcc
-                   {condition = condition,
-                    dst = dst,
-                    size = dstsize}],
-                transfer = NONE}]
-            end
-
         fun unal64 (oper, mk)
           = let
               val ((src1,src1size),(src2,src2size)) = getSrc2 ()
@@ -743,33 +710,6 @@ struct
                     size = dst2size}],
                 transfer = NONE}]
             end
-
-        fun unal64cc (oper, condition)
-          = let
-              val ((src1,src1size),_) = getSrc2 ()
-              val (dst,dstsize) = getDst1 ()
-              val (tmp,tmpsize) = (overflowCheckTempContentsOperand src1size,
-                                   src1size)
-            in
-              AppendList.fromList
-              [Block.mkBlock'
-               {entry = NONE,
-                statements 
-                = [Assembly.instruction_mov
-                   {dst = tmp,
-                    src = src1,
-                    size = src1size},
-                   Assembly.instruction_unal
-                   {oper = oper,
-                    dst = tmp,
-                    size = tmpsize},
-                   Assembly.instruction_setcc
-                   {condition = condition,
-                    dst = dst,
-                    size = dstsize}],
-                transfer = NONE}]
-            end
-
 
         fun sral oper
           = let
