@@ -177,7 +177,7 @@
 
         val var = resolveVar <$> ident <* P.spaces
 
-        val parseBaseObject = makeBaseObject <$> (P.failing (token "in" <|> token "exception" <|> token "val") *> var)
+        val parseBaseObject = P.failing (token "in" <|> token "exception" <|> token "val") *> makeBaseObject <$> (var)
 
         fun makeBaseVectorSub (index, vector)=
         Base.VectorSub {
