@@ -155,7 +155,8 @@
                                                                                            (P.str "ref" *> true) <|> P.pure(false)))))*)
  fun parseProd resolveTycon = Prod.make (P.spaces *>
                                          parenOf (Vector.fromList <$> P.many (makeProd <$$> (parseType resolveTycon <* P.spaces,
-                                                                                            ((P.str "ref" *> true) <|> P.pure(false)))) <* P.spaces))
+                                                                                            ((P.str "ref" *> true) <|> P.pure(false))))
+                                                 <* P.spaces))
 
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
@@ -173,17 +174,18 @@
 
         val parseBaseObject = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
-        (*fun makeBaseVectorSub (index, vector)=
+        fun makeBaseVectorSub (index, vector)=
         Base.VectorSub {
             index = index
             vector = vector
-        }*)
+        }
 
         val parseBaseVectorSub = token "$" *> P.spaces *> P.tuple parseBaseObject <* P.spaces
-        fun parseBase' () = P.any[parseBaseObject, parseBaseVectorSub]
+
+        val parseBase = P.any[parseBaseObject, parseBaseVectorSub]
 
         in
-          parseBase' ()
+          parseBase
         end
 
 fun parsePrimAppExp resolveTycon resolveVar =
