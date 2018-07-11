@@ -96,7 +96,7 @@
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
               | "dt"       => Type.datatypee (resolveTycon ident)
-              | _          => Type.object ()
+              (*)| _          => Type.object ()*)
 
     local
         fun makeType' resolveTycon () = (makeType resolveTycon) <$$>
@@ -161,7 +161,7 @@
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)*)
 
- fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon resolveCon) <* P.spaces,
+ fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon) <* P.spaces,
                                                                        ident <* P.spaces)
 
  fun makeBase resolveVar =
