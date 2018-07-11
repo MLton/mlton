@@ -176,7 +176,7 @@
 
         fun makeBaseVectorSub (index, vector)=
         Base.VectorSub {
-            index = index
+            index = index,
             vector = vector
         }
 
