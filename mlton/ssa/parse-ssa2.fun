@@ -180,7 +180,8 @@
             vector = vector
         }
 
-        val parseBaseVectorSub = token "$" *> P.spaces *> P.tuple parseBaseObject <* P.spaces
+        val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseBaseObject <* P.str "," <* P.spaces,
+                                                                                           parseBaseObject)) <* P.spaces
 
         val parseBase = P.any[parseBaseObject, parseBaseVectorSub]
 
