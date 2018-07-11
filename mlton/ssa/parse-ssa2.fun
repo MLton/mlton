@@ -96,7 +96,6 @@
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
               | "dt"       => Type.datatypee (resolveTycon ident)
-              (*)| _          => Type.object ()*)
 
     local
         fun makeType' resolveTycon () = (makeType resolveTycon) <$$>
@@ -151,9 +150,12 @@
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
  fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
- fun parseProd resolveTycon resolveCon = Prod.make (P.spaces *>
+ (*fun parseProd resolveTycon resolveCon = Prod.make (P.spaces *>
                                          parenOf (Vector.fromList <$> P.many(makeProd <$$> (parseType resolveTycon,
-                                                                                           (P.str "ref" *> true) <|> P.pure(false)))))
+                                                                                           (P.str "ref" *> true) <|> P.pure(false)))))*)
+ fun parseProd resolveTycon = Prod.make (P.spaces *>
+                                         parenOf (Vector.fromList <$> P.many (makeProd <$$> (parseType resolveTycon <* P.spaces,
+                                                                                            ((P.str "ref" *> true) <|> P.pure(false)))) <* P.spaces))
 
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
