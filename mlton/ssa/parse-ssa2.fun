@@ -349,7 +349,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> (parseType resolveTycon) <* P.spaces)
+         symbol ":" *> P.str "val" *> P.spaces *> (parseType resolveTycon) <* P.spaces)
 
      fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
@@ -358,7 +358,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
        exp = exp
      }
 
-     fun makeBindStatement' resolveCon resolveTycon resolveVar =
+     val parseBindStatement = makeBindStatement <$> (typedvar >>= (fn (var, ty) =>
+                                                    (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
+                                                    >>= (fn exp => P.pure (var, ty, exp))))
+     (*fun makeBindStatement' resolveCon resolveTycon resolveVar =
          let
             val parseBindStatement' resolveCon resolveTycon resolveVar = makeBindStatement <$>
                                                                         (P.spaces *> P.str "val" *> P.spaces *>
@@ -367,7 +370,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                                         >>= (fn exp => P.pure (var, ty, exp))))
             in
               parseBindStatement' resolveCon resolveTycon resolveVar
-            end
+            end*)
 
      val parseBindStatement resolveCon resolveTycon resolveVar =
                                    makeBindStatement' resolveCon resolveTycon resolveVar
@@ -390,7 +393,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> varExp <* P.spaces)
 
-     fun parseStatement' resolveCon resolveTycon resolveVar = P.any [parseBindStatement resolveCon resolveTycon resolveVar,
+     fun parseStatement' resolveCon resolveTycon resolveVar = P.any [parseBindStatement,
                                                                      parseProfileStatement,
                                                                      parseUpdateStatement]
 
