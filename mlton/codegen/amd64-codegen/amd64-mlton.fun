@@ -501,7 +501,7 @@ struct
                 transfer = NONE}]
             end
 
-        fun negalcc ()
+        fun negcc ()
           = let
               val (src,srcsize) = getSrc1 ()
               val (dst,dstsize) = getDst1 ()
@@ -1234,7 +1234,7 @@ struct
                  else
                    pmdcc (Instruction.MUL, amd64.Instruction.C)
              | Word_neg _ => unal Instruction.NEG
-             | Word_negCheckP _ => negalcc ()
+             | Word_negCheckP _ => negcc ()
              | Word_notb _ => unal Instruction.NOT
              | Word_orb _ => binal Instruction.OR
              | Word_quot (_, {signed}) =>

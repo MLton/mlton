@@ -576,7 +576,7 @@ struct
                 transfer = NONE}]
             end
 
-        fun negalcc ()
+        fun negcc ()
           = let
               val (src,srcsize) = getSrc1 ()
               val (dst,dstsize) = getDst1 ()
@@ -602,14 +602,14 @@ struct
                 transfer = NONE}]
             end
 
-        fun negal64cc ()
+        fun neg64cc ()
           = let
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
               val _ 
                 = Assert.assert
-                  ("x86MLton.prim: negal64cc, src1size/src2size",
+                  ("x86MLton.prim: neg64cc, src1size/src2size",
                    fn () => src1size = src2size)
               val tdst1 = wordTemp1ContentsOperand src1size
               val tdst2 = wordTemp1ContentsOperand src2size
@@ -1643,10 +1643,10 @@ struct
                                                          size = dstsize}]))
              | Word_negCheckP s =>
                 (case WordSize.prim s of
-                    W8 => negalcc ()
-                  | W16 => negalcc ()
-                  | W32 => negalcc ()
-                  | W64 => negal64cc ())
+                    W8 => negcc ()
+                  | W16 => negcc ()
+                  | W32 => negcc ()
+                  | W64 => neg64cc ())
              | Word_notb s => 
                 (case WordSize.prim s of
                     W8 => unal Instruction.NOT
