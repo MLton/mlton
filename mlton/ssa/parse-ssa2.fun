@@ -332,7 +332,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                           Exp.Inject  <$>   parseInjectExp,
                                           Exp.Object  <$>   parseObjectExp,
                                           Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
-                                          Exp.Select  <$>   parseSelectExp
+                                          Exp.Select  <$>   parseSelectExp,
                                           Exp.Var     <$>   parseVarExp
                                         ]
 
