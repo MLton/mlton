@@ -325,7 +325,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         fun makeSelectExp (offset, base) = {offset = offset, base = base}
         val parseSelectExp = token "sel" *> P.spaces *> P.cut(makeSelectExp <$$> (P.uint <* P.spaces,
-                                                                                  parenOf (makeBase parseVarExp)))
+                                                                                  parenOf (makeBase resolveVar)))
 
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
                                           Exp.Inject  <$>   parseInjectExp,
