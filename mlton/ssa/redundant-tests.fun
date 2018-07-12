@@ -325,45 +325,6 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                 Vector.map
                 (blocks, fn Block.T {label, args, statements, transfer} =>
                  let
-                    val statements =
-                       Vector.map
-                       (statements, fn statement as Statement.T {ty, var, ...} =>
-                        let
-                           fun doit x =
-                              (Int.inc numSimplified
-                               ; Control.diagnostic
-                                 (fn () =>
-                                  let open Layout
-                                  in seq [Option.layout Var.layout var,
-                                          str " -> ",
-                                          Var.layout x]
-                                  end)
-                               ; Statement.T {var = var, 
-                                              ty = ty,
-                                              exp = Var x})
-                           fun falsee () = doit falseVar
-                           fun truee () = doit trueVar
-                        in
-                           case var of
-                              NONE => statement
-                            | SOME var =>
-                                 (case varInfo var of
-                                     Or (f, f') =>
-                                        (case determine (label, f) of
-                                            False =>
-                                               (case determine (label, f') of
-                                                   False => falsee ()
-                                                 | True => truee ()
-                                                 | Unknown => statement)
-                                          | True => truee ()
-                                          | Unknown => statement)
-                                   | Fact f => 
-                                        (case determine (label, f) of
-                                            False => falsee ()
-                                          | True => truee () 
-                                          | Unknown => statement)
-                                   | _ => statement)
-                        end)
                     fun add1Eligible (x: Var.t, s: WordSize.t, sg) =
                        isFact (label, fn Fact.T {lhs, rel, rhs} =>
                                case (lhs, rel, rhs) of
@@ -400,24 +361,26 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                 | _ => false)
                     val statements =
                        Vector.map
-                       (statements,
-                        fn statement as Statement.T {exp, var, ...} =>
-                        case exp of
-                           Exp.PrimApp {args, prim, ...} =>
+                       (statements, fn statement as Statement.T {ty, var, exp, ...} =>
+                        let
+                           fun doit x =
+                              (Int.inc numSimplified
+                               ; Control.diagnostic
+                                 (fn () =>
+                                  let open Layout
+                                  in seq [Option.layout Var.layout var,
+                                          str " -> ",
+                                          Var.layout x]
+                                  end)
+                               ; Statement.T {var = var, 
+                                              ty = ty,
+                                              exp = Var x})
+                           fun falsee () = doit falseVar
+                           fun truee () = doit trueVar
+
+                           fun checkPrimApp (args, prim) =
                               let
                                 open Prim.Name
-                                fun doit x =
-                                   (Int.inc numSimplified
-                                    ; Control.diagnostic
-                                      (fn () =>
-                                       let open Layout
-                                       in seq [Option.layout Var.layout var,
-                                               str " ~> ",
-                                               Var.layout x]
-                                       end)
-                                    ; Statement.T {var = var, ty = Type.bool,
-                                                   exp = Var x})
-                                fun falsee () = doit falseVar
 
                                 fun add1 (x: Var.t, s: WordSize.t, sg) =
                                    if add1Eligible (x, s, sg) then falsee ()
@@ -470,7 +433,30 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                        end
                                   | _ => statement
                               end
-                         | _ => statement)
+                        in
+                           case var of
+                              NONE => statement
+                            | SOME var =>
+                                 (case varInfo var of
+                                     Or (f, f') =>
+                                        (case determine (label, f) of
+                                            False =>
+                                               (case determine (label, f') of
+                                                   False => falsee ()
+                                                 | True => truee ()
+                                                 | Unknown => statement)
+                                          | True => truee ()
+                                          | Unknown => statement)
+                                   | Fact f => 
+                                        (case determine (label, f) of
+                                            False => falsee ()
+                                          | True => truee () 
+                                          | Unknown => statement)
+                                   | _ => (case exp of
+                                              Exp.PrimApp {args, prim, ...} =>
+                                                checkPrimApp (args, prim)
+                                            | _ => statement))
+                        end)
                     val noChange = (statements, transfer)
                     fun arith (args: Var.t vector,
                                prim: Type.t Prim.t,
