@@ -170,11 +170,13 @@
  fun makeBase resolveVar =
      let
 
-        fun makeBaseObject x = Base.Object x
-
         val var = resolveVar <$> ident <* P.spaces
 
-        val parseBaseObject = makeBaseObject <$> (P.failing (token "in" <|> token "exception" <|> token "val") *> var)
+        val parseVar = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+
+        fun makeBaseObject x = Base.Object x
+
+        val parseBaseObject = makeBaseObject <$> parseVar
 
         fun makeBaseVectorSub (index, vector)=
         Base.VectorSub {
@@ -182,8 +184,8 @@
             vector = vector
         }
 
-        val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseBaseObject <* P.str "," <* P.spaces,
-                                                                                           parseBaseObject)) <* P.spaces
+        val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseVar <* P.str "," <* P.spaces,
+                                                                                           parseVar)) <* P.spaces
 
         val parseBase = P.any[parseBaseObject, parseBaseVectorSub]
 
