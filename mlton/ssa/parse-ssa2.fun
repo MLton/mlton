@@ -384,19 +384,20 @@ fun parsePrimAppExp resolveTycon resolveVar =
                              P.cut ((SourceInfo.fromC o String.implode) <$>
                              P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
 
- (*fun makeUpdateStatement (base, offset, value) =
- Statement.Update {
-   base = base,
-   offset = offset,
-   value = value
- }
+     fun makeUpdateStatement (offset, base, value) =
+     Statement.Update {
+        base = base,
+        offset = offset,
+        value = value
+     }
 
- val parseUpdateStatement = P.spaces *> token "upd " *> P.spaces *>
-                            parseSelectExpression *> token ":=" *>
-                            parseVarExp <* P.spaces*)
+     val parseUpdateStatement = P.spaces *> token "upd" *> P.spaces *> token "sel" *> P.spaces *>
+                                makeUpdateStatement <$$$> (P.uint <* P.spaces,
+                                                           parenOf (makeBase resolveVar),
+                                                           P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
      fun parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)
-                                                                     parseProfileStatement(*parseUpdateStatement*)]
+                                                                     parseProfileStatement, parseUpdateStatement]
 
      in
         parseStatement' resolveCon resolveTycon resolveVar
