@@ -1617,17 +1617,19 @@ struct
                   | W32 => imul2 ()
                   | W64 => Error.bug "x86MLton.prim: Word_mul, W64")
              | Word_mulCheckP (s, {signed}) =>
-                 let
-                   val cond = flag {signed = signed}
-                 in
-                   case WordSize.prim s of
-                      W8 => pmdcc (if signed
-                                 then Instruction.IMUL
-                                 else Instruction.MUL, cond)
-                    | W16 => imul2cc cond
-                    | W32 => imul2cc cond
-                    | W64 => Error.bug "x86MLton.prim: Word_mulCheckP, W64"
-                 end
+                 if signed
+                    then
+                       (case WordSize.prim s of
+                           W8 => pmdcc (x86.Instruction.IMUL, x86.Instruction.O)
+                         | W16 => imul2cc x86.Instruction.O
+                         | W32 => imul2cc x86.Instruction.O
+                         | W64 => Error.bug "x86MLton.arith: Word_mulCheckP, W64")
+                 else
+                    (case WordSize.prim s of
+                        W8 => pmdcc (x86.Instruction.MUL, x86.Instruction.C)
+                      | W16 => pmdcc (x86.Instruction.MUL, x86.Instruction.C)
+                      | W32 => pmdcc (x86.Instruction.MUL, x86.Instruction.C)
+                      | W64 => Error.bug "x86MLton.arith: Word_mulCheckP, W64")
              | Word_neg s => 
                 (case WordSize.prim s of
                     W8 => unal Instruction.NEG

@@ -827,7 +827,7 @@ struct
               else (AppendList.empty,AppendList.empty)
 
         fun flag {signed} =
-          if signed then Instruction.O else Instruction.C
+           if signed then amd64.Instruction.O else amd64.Instruction.C
       in
         AppendList.appends
         [comment_begin,
@@ -1224,18 +1224,15 @@ struct
                   | W16 => imul2 ()
                   | W32 => imul2 ()
                   | W64 => imul2 ())
-             | Word_mulCheckP (s, sg) =>
-                 let
-                   val {signed} = sg
-                 in
-                   case WordSize.prim s of
-                        W8 => pmdcc (if signed then Instruction.IMUL
-                                 else Instruction.MUL,
-                                 flag sg)
-                      | W16 => imul2cc (flag sg)
-                      | W32 => imul2cc (flag sg)
-                      | W64 => imul2cc (flag sg)
-                 end
+             | Word_mulCheckP (s, {signed}) =>
+                 if signed then
+                   (case WordSize.prim s of
+                      W8 => pmdcc (Instruction.IMUL, amd64.Instruction.O)
+                    | W16 => imul2cc amd64.Instruction.O
+                    | W32 => imul2cc amd64.Instruction.O
+                    | W64 => imul2cc amd64.Instruction.O)
+                 else
+                   pmdcc (Instruction.MUL, amd64.Instruction.C)
              | Word_neg _ => unal Instruction.NEG
              | Word_negCheckP _ => negalcc ()
              | Word_notb _ => unal Instruction.NOT
