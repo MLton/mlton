@@ -351,12 +351,6 @@ fun parsePrimAppExp resolveTycon resolveVar =
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> (parseType resolveTycon) <* P.spaces)
 
-     (*val parseProfileExpStatement = P.str "prof" *> P.spaces *>
-                                   (ProfileExp.Enter <$ token "Enter" <|>
-                                    ProfileExp.Leave <$ token "Leave") <*>
-                                    P.cut ((SourceInfo.fromC o String.implode) <$>
-                                    P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)*)
-
      (*fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
        var = var,
@@ -378,11 +372,11 @@ fun parsePrimAppExp resolveTycon resolveVar =
      val parseBindStatement resolveCon resolveTycon resolveVar =
                                    makeBindStatement' resolveCon resolveTycon resolveVar*)
 
-     val parseProfileStatement = P.spaces *> token "prof " *> P.spaces *>
-                            (ProfileExp.Enter <$ token "Enter" <|>
-                             ProfileExp.Leave <$ token "Leave") <*>
-                             P.cut ((SourceInfo.fromC o String.implode) <$>
-                             P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
+     val parseProfileStatement = Statement.Profile <$> (P.spaces *> token "prof " *> P.spaces *>
+                                                       (ProfileExp.Enter <$ token "Enter" <|>
+                                                        ProfileExp.Leave <$ token "Leave") <*>
+                                                        P.cut ((SourceInfo.fromC o String.implode) <$>
+                                                        P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces))
 
      fun makeUpdateStatement (offset, base, value) =
      Statement.Update {
@@ -396,7 +390,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> varExp <* P.spaces)
 
-     fun parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)(*parseProfileStatement,*) 
+     fun parseStatement' resolveCon resolveTycon resolveVar = P.any [(*parseBindStatement resolveCon resolveTycon resolveVar,*)
+                                                                     parseProfileStatement,
                                                                      parseUpdateStatement]
 
      in
