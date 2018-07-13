@@ -80,7 +80,7 @@
 
  fun makeTypeObject (args, con) = {args = args, con = con}
 
- (*val parseTypeObject = *)
+ val parseTypeObject =
 
  fun makeType resolveTycon (args, ident) =
      case ident of
@@ -330,7 +330,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
         fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
                                           Exp.Inject  <$>   parseInjectExp,
                                           Exp.Object  <$>   parseObjectExp,
-                                          Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                          Exp.PrimApp <$>  (parsePrimAppExp (resolveTycon resolveVar)),
                                           Exp.Select  <$>   parseSelectExp,
                                           Exp.Var     <$>   parseVarExp
                                         ]
@@ -368,6 +368,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
      val parseBindStatement = makeBindStatement <$> (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
                                                     >>= (fn exp => P.pure (var, ty, exp))))
+
      (*fun makeBindStatement' resolveCon resolveTycon resolveVar =
          let
             val parseBindStatement' resolveCon resolveTycon resolveVar = makeBindStatement <$>
