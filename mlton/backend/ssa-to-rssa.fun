@@ -322,13 +322,11 @@ structure CFunction =
                       target = Direct (Prim.Name.toString name)}
 
       val intInfBinary_2Res = fn name =>
-         CFunction.T {args = Vector.new7 (Type.gcState (),
+         CFunction.T {args = Vector.new5 (Type.gcState (),
                                           Type.intInf (),
                                           Type.intInf (),
                                           Type.csize (),
-                                          Type.csize (),
-                                          Type.cpointer (),
-                                          Type.cpointer ()),
+                                          Type.csize ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 4,  (* CHECK *)
                                                      ensuresBytesFree = false,
@@ -337,15 +335,13 @@ structure CFunction =
                                                      modifiesFrontier = true,
                                                      readsStackTop = amAllocationProfiling (),
                                                      writesStackTop = false},
-                      prototype = (Vector.new7 (CType.gcState,
+                      prototype = (Vector.new5 (CType.gcState,
                                                 CType.intInf,
                                                 CType.intInf,
                                                 CType.csize (),
-                                                CType.csize (),
-                                                CType.cpointer,
-                                                CType.cpointer),
-                                   NONE),
-                      return = Type.unit,
+                                                CType.csize ()),
+                                   SOME CType.objptr),
+                      return = Type.intInfVector (),
                       symbolScope = Private,
                       target = Direct (Prim.Name.toString name)}
       val intInfCompare = fn name =>

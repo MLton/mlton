@@ -124,12 +124,15 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
 }
 
 /*
- * Mimics the result initialization for two simultaneous results
+ * Mimics the result initialization for two simultaneous results, but returns the
+ * allocated sequence that will house the results
  */
-void initIntInfRes_2 (GC_state s,
-                       __mpz_struct *lres, __mpz_struct *rres,
-                       ARG_USED_FOR_ASSERT size_t lbytes,
-                       ARG_USED_FOR_ASSERT size_t rbytes) {
+GC_objptr_sequence initIntInfRes_2 (GC_state s,
+                                    __mpz_struct *lres, __mpz_struct *rres,
+                                    ARG_USED_FOR_ASSERT size_t lbytes,
+                                    ARG_USED_FOR_ASSERT size_t rbytes) {
+  GC_objptr_sequence seq = allocate_objptr_seq (s, GC_INTINF_VECTOR_HEADER, 2);
+
   GC_intInf bp;
   size_t nl_limbs, nr_limbs;  // number of limbs that each result could need
 
@@ -156,6 +159,8 @@ void initIntInfRes_2 (GC_state s,
   /* is this necessary? */
   lres->_mp_size = 0;
   rres->_mp_size = 0;
+
+  return seq;
 }
 
 /*
@@ -174,21 +179,6 @@ static inline void __mpz_is_correct_fmt (__mpz_struct *res) {
 }
 
 /*
- * Adjusts the isNeg of the GC_intInf for negatives and then returns
- * the (positive) number of limbs of the __mpz_struct
- */
-static inline int __mpz_intInf_adjSize (__mpz_struct *res, GC_intInf *ii) {
-  int size = res->_mp_size;
-  if (size < 0) {
-    (*ii)->obj.isneg = TRUE;
-    size = - size;
-  } else
-    (*ii)->obj.isneg = FALSE;
-
-  return size;
-}
-
-/*
  * Performs a simple conversion to a GC_intInf so that it is lined up
  * correctly with the result
  * 
@@ -200,7 +190,15 @@ static inline int __mpz_intInf_lineup (__mpz_struct *res, GC_intInf *ii) {
                         + offsetof(struct GC_intInf_obj, limbs)));
   assert (res->_mp_d == (mp_limb_t*)((*ii)->obj.limbs));
 
-  return __mpz_intInf_adjSize (res, ii);
+  // adjust the size if necessary
+  int size = res->_mp_size;
+  if (size < 0) {
+    (*ii)->obj.isneg = TRUE;
+    size = - size;
+  } else
+    (*ii)->obj.isneg = FALSE;
+
+  return size;
 }
 
 /*
@@ -210,7 +208,7 @@ static inline int __mpz_intInf_lineup (__mpz_struct *res, GC_intInf *ii) {
 static inline objptr __mpz_form_final (GC_state s, GC_intInf bp, int size, size_t bytes) {
   setFrontier (s, (pointer)(&bp->obj.limbs[size]), bytes);
   bp->counter = (GC_sequenceCounter)0;
-  bp->length = (GC_sequenceLength)(size + 1); /* +1 for isneg field */
+  bp->length = (GC_sequenceLength)(size + 1); // +1 for isneg field
   bp->header = GC_INTINF_HEADER;
 
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
@@ -218,7 +216,8 @@ static inline objptr __mpz_form_final (GC_state s, GC_intInf bp, int size, size_
 
 /*
  * Determines if the __mpz_struct value is small enough to fit in an
- * object pointer; if so, sets the value pointer to it.
+ * object pointer; if so, sets the value pointer to it and returns 1.
+ * Otherwise, returns 0.
  * 
  * Takes in a GC_intInf that has been properly aligned to the value
  * of res via a call to __mpz_intInf_lineup.
@@ -239,15 +238,11 @@ static inline int __mpz_is_small (GC_intInf bp,
       objptr ans;
       mp_limb_t val = bp->obj.limbs[0];
       if (bp->obj.isneg) {
-        /*
-         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
-         */
+        // We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
         ans = (objptr)(- val);
         val = val - 1;
       } else {
-        /*
-         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
-         */
+        // We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
         ans = (objptr)val;
       }
       // The conditional below is to quell a gcc warning:
@@ -274,15 +269,11 @@ static inline int __mpz_is_small (GC_intInf bp,
         val = val & (objptr)(bp->obj.limbs[i]);
       }
       if (bp->obj.isneg) {
-        /*
-         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
-         */
+        // We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
         ans = - val;
         val = val - 1;
       } else {
-        /*
-         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
-         */
+        // We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
         ans = val;
       }
       if (val < (objptr)1<<(CHAR_BIT * OBJPTR_SIZE - 2)) {
@@ -291,10 +282,9 @@ static inline int __mpz_is_small (GC_intInf bp,
       }
     }
   }
-  /* the result is not small - the frontier will have to be set */
+  // the result is not small - the frontier will have to be set
   return 0;
 }
-
 
 /*
  * Given an __mpz_struct pointer which reflects the answer, set
@@ -308,12 +298,10 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   GC_intInf bp;
   int size;
 
-  /*
-   * will be overwritten by __mpz_is_small
-   */
+  // will be overwritten by __mpz_is_small
   objptr small_res;
 
-  /* ensure correct format of the structs */
+  // ensure correct format of the structs
   __mpz_is_correct_fmt (res);
 
   if (DEBUG_INT_INF)
@@ -325,10 +313,7 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
 
   size = __mpz_intInf_lineup (res, &bp);
 
-  /*
-   * The mpz result is small
-   * This sets the small_res pointer as well
-   */
+  // The mpz result is small - this sets the small_res pointer as well
   if (__mpz_is_small (bp, size, &small_res)) {
     return small_res;
   }
@@ -337,19 +322,15 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
 }
 
 /*
- * Unlike the above method, here we must resort to setting the two
- * final result objptr values since there is no way to return 2
+ * Unlike the above method, a sequence is passed in for storing the two results
+ * in order to return them in a functional manner (rather than setting refs at
+ * the program level)
  */
-void finiIntInfRes_2 (GC_state s, __mpz_struct *l_res, __mpz_struct *r_res,
-                        size_t l_bytes, size_t r_bytes,
-                        objptr *l_final, objptr *r_final) {
+objptr finiIntInfRes_2 (GC_state s, __mpz_struct *l_res, __mpz_struct *r_res,
+                        GC_objptr_sequence finals, size_t l_bytes, size_t r_bytes) {
   GC_intInf l_bp, r_bp;
   int l_size, r_size;
-
-  /*
-   * will both be overwritten by __mpz_is_small
-   */
-  objptr small_l_res, small_r_res;
+  objptr l_final, r_final;
 
   /*
    * Check that both of the returned results are formatted
@@ -370,54 +351,39 @@ void finiIntInfRes_2 (GC_state s, __mpz_struct *l_res, __mpz_struct *r_res,
   l_size = __mpz_intInf_lineup (l_res, &l_bp);
   r_size = __mpz_intInf_lineup (r_res, &r_bp);
 
-  int leftIsSmall = __mpz_is_small (l_bp, l_size, &small_l_res);
-  int rightIsSmall = __mpz_is_small (r_bp, r_size, &small_r_res);
-
-  if (leftIsSmall) {
-    *l_final = small_l_res;
-    if (rightIsSmall) {
-      *r_final = small_r_res;
-    } else {
-      // set the right result objptr as in the last method and
-      // we will be done
-      *r_final = __mpz_form_final (s, r_bp, r_size, r_bytes);
-    }
-  } else {
-    // will set the frontier forward only the number of bytes
-    // that were used
-    *l_final = __mpz_form_final (s, l_bp, l_size, l_bytes);
-
-    if (rightIsSmall) {
-      // set r_final to the small res and we are done
-      *r_final = small_r_res;
-    } else {
-      // must memmove the right argument back if it didn't take as
-      // much space as it could have
-      size_t mp_limb_size = sizeof (mp_limb_t);
-      if ((size_t)l_size
-          < (l_bytes
-             - offsetof (struct GC_intInf, obj)
-             - offsetof (struct GC_intInf_obj, limbs))
-            / mp_limb_size) {
-        /*
-         * target of the shift backwards is the frontier after setting the
-         * left result above - shift back the entire GC_intInf
-         */
-        memmove ((void*)s->frontier,
-                 (const void*)r_bp,
-                 (size_t)r_bytes);
-        // reset the object to the new location
-        r_bp = (GC_intInf)(s->frontier);
-
-        // reset GC pointer size again - no need to align anything because
-        // this requires the stored size in r_res only
-        __mpz_intInf_adjSize (r_res, &r_bp);
-      }
-      // have completed any necessary right result movement
-      // get the proper output for the r_final pointer
-      *r_final = __mpz_form_final (s, r_bp, r_size, r_bytes);
-    }
+  // finalize the left result in the heap if necessary
+  unless (__mpz_is_small (l_bp, l_size, &l_final)) {
+    if (DEBUG_INT_INF_DETAILED)
+      fprintf (stderr, "Quotient isn't small\n");
+    // set frontier forward the number of bytes used
+    l_final = __mpz_form_final (s, l_bp, l_size, l_bytes);
   }
+
+  // finalize the right result in the heap if necessary
+  // roll the result back to the frontier if necessary
+  unless (__mpz_is_small (r_bp, r_size, &r_final)) {
+    if (DEBUG_INT_INF_DETAILED)
+      fprintf (stderr, "Remainder isn't small\n");
+
+    // Move the right result to the frontier if it isn't already there
+    if ((GC_intInf)s->frontier != r_bp) {
+      memmove ((void*)s->frontier,
+               (const void*)(r_bp),
+               r_bytes);
+      // point the pointer at the frontier
+      r_bp = (GC_intInf)(s->frontier);
+      if (DEBUG_INT_INF_DETAILED)
+        fprintf(stderr, "Remainder was shifted back to heap frontier\n");
+    }
+    // Set frontier forward the number of bytes used (after possible shift back)
+    r_final = __mpz_form_final (s, r_bp, r_size, r_bytes);
+  }
+
+  // Result processing done - pack results into `finals` and return an objptr to it
+  finals->objs[0] = l_final;
+  finals->objs[1] = r_final;
+
+  return pointerToObjptr ((pointer)&finals->objs, s->heap.start);
 }
 
 objptr IntInf_binop (GC_state s,
@@ -438,26 +404,28 @@ objptr IntInf_binop (GC_state s,
   return finiIntInfRes (s, &resmpz, bytes);
 }
 
-void IntInf_binop_2 (GC_state s,
-                     objptr lhs, objptr rhs,
-                     size_t l_bytes, size_t r_bytes,
-                     objptr *l_final, objptr *r_final,
-                     void(*binop)(__mpz_struct *l_res_mpz,
-                                  __mpz_struct *r_res_mpz,
-                                  const __mpz_struct *lhsspace,
-                                  const __mpz_struct *rhsspace)) {
+// the returned objptr is to a sequence containing the two results
+objptr IntInf_binop_2 (GC_state s,
+                       objptr lhs, objptr rhs,
+                       size_t l_bytes, size_t r_bytes,
+                       void(*binop)(__mpz_struct *l_res_mpz,
+                                    __mpz_struct *r_res_mpz,
+                                    const __mpz_struct *lhsspace,
+                                    const __mpz_struct *rhsspace)) {
+
   __mpz_struct lhsmpz, rhsmpz, l_res_mpz, r_res_mpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_binop_2 ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)l_bytes, (uintmax_t)r_bytes);
-  initIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, l_bytes, r_bytes);
+
+  // get the sequence for storing the final results (will be allocated on the stack here)
+  GC_objptr_sequence finals = initIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, l_bytes, r_bytes);
   fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
   fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
   binop (&l_res_mpz, &r_res_mpz, &lhsmpz, &rhsmpz);
 
-  // this sets the final objptrs to what we need
-  finiIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, l_bytes, r_bytes, l_final, r_final);
+  return finiIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, finals, l_bytes, r_bytes);
 }
 
 objptr IntInf_unop (GC_state s,

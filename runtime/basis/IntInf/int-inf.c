@@ -9,10 +9,10 @@ PRIVATE objptr IntInf_gcd (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_mul (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_orb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_quot (GC_state s, objptr lhs, objptr rhs, size_t bytes);
-PRIVATE void IntInf_quotRem (GC_state s,
+
+PRIVATE objptr IntInf_quotRem (GC_state s,
                                objptr lhs, objptr rhs,
-                               size_t l_bytes, size_t r_bytes,
-                               objptr *l_final, objptr *r_final);
+                               size_t l_bytes, size_t r_bytes);
 PRIVATE objptr IntInf_rem (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_sub (GC_state s, objptr lhs, objptr rhs, size_t bytes);
 PRIVATE objptr IntInf_xorb (GC_state s, objptr lhs, objptr rhs, size_t bytes);
@@ -66,14 +66,13 @@ objptr IntInf_quot (GC_state s, objptr lhs, objptr rhs, size_t bytes) {
   return IntInf_binop (s, lhs, rhs, bytes, &mpz_tdiv_q);
 }
 
-void IntInf_quotRem (GC_state s,
-                     objptr lhs, objptr rhs,
-                     size_t l_bytes, size_t r_bytes,
-                     objptr *l_final, objptr *r_final) {
+objptr IntInf_quotRem (GC_state s,
+                       objptr lhs, objptr rhs,
+                       size_t l_bytes, size_t r_bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_quotRem ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)l_bytes, (uintmax_t)r_bytes);
-  IntInf_binop_2 (s, lhs, rhs, l_bytes, r_bytes, l_final, r_final, &mpz_tdiv_qr);
+  return IntInf_binop_2 (s, lhs, rhs, l_bytes, r_bytes, &mpz_tdiv_qr);
 }
 
 objptr IntInf_rem (GC_state s, objptr lhs, objptr rhs, size_t bytes) {

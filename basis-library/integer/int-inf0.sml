@@ -1107,25 +1107,20 @@ structure IntInf =
                   val n_d_limbs as (nlimbs, dlimbs) =
                      (numLimbs num, numLimbs den)
                in
-                  (* try to avoid operation in trivial cases *)
+                  (* try to avoid expensive operation in trivial cases *)
                   if S.< n_d_limbs then
                      (zero, num)
                   else if den = zero then
                      raise Div
                   else  (* must perform operation *)
                      let
-                        (* get 2 refs to fill in using the primitive *)
-                        val quot = ref zero
-                        val rem  = ref zero
-                        val _ =
+                        val qrs =
                            Prim.quotRem (num, den,
                                          reserve (S.- (nlimbs, dlimbs), 1),
-                                         reserve (dlimbs, 0),
-                                         quot, rem)
-                        (* write a deref function because `op !` isn't supplied yet *)
-                        fun deref (ref x) = x
+                                         reserve (dlimbs, 0))
+                        val sub = Primitive.Vector.unsafeSub
                      in
-                        (deref quot, deref rem)
+                        (sub (qrs, 0), sub (qrs, 1))
                      end
                end
       end

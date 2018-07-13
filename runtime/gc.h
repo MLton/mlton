@@ -31,6 +31,7 @@ typedef GC_state GCState_t;
 #include "gc/objptr.h"
 #include "gc/object.h"
 #include "gc/sequence.h"
+#include "gc/objptr-seq.h"
 #include "gc/frame.h"
 #include "gc/stack.h"
 #include "gc/thread.h"

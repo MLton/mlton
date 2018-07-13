@@ -862,7 +862,7 @@ val kind: 'a t -> Kind.t =
        | IntInf_notb => Functional
        | IntInf_orb => Functional
        | IntInf_quot => Functional
-       | IntInf_quotRem => SideEffect
+       | IntInf_quotRem => Functional
        | IntInf_rem => Functional
        | IntInf_sub => Functional
        | IntInf_toString => Functional
@@ -1223,6 +1223,12 @@ fun 'a checkApp (prim: 'a t,
          andalso equals (arg0', arg 0)
          andalso equals (arg1', arg 1)
          andalso equals (arg2', arg 2)
+      fun fourArgs (arg0', arg1', arg2', arg3') () =
+         4 = Vector.length args
+         andalso equals (arg0', arg 0)
+         andalso equals (arg1', arg 1)
+         andalso equals (arg2', arg 2)
+         andalso equals (arg3', arg 3)
       fun fiveArgs (arg0', arg1', arg2', arg3', arg4') () =
          5 = Vector.length args
          andalso equals (arg0', arg 0)
@@ -1286,11 +1292,8 @@ fun 'a checkApp (prim: 'a t,
       val word32 = word WordSize.word32
       fun intInfBinary () =
          noTargs (fn () => (threeArgs (intInf, intInf, csize), intInf))
-      fun intInfBinary_2Res () =
-         noTargs (
-            fn () => 
-               (sixArgs
-                  (intInf, intInf, csize, csize, reff intInf, reff intInf), unit))
+      fun intInfBinary_MulRes () = (* binary with multiple results *)
+         noTargs (fn () => (fourArgs (intInf, intInf, csize, csize), vector intInf))
       fun intInfShift () =
          noTargs (fn () => (threeArgs (intInf, shiftArg, csize), intInf))
       fun intInfUnary () =
@@ -1366,7 +1369,7 @@ fun 'a checkApp (prim: 'a t,
        | IntInf_notb => intInfUnary ()
        | IntInf_orb => intInfBinary ()
        | IntInf_quot => intInfBinary ()
-       | IntInf_quotRem => intInfBinary_2Res ()
+       | IntInf_quotRem => intInfBinary_MulRes ()
        | IntInf_rem => intInfBinary ()
        | IntInf_sub => intInfBinary ()
        | IntInf_toString =>
