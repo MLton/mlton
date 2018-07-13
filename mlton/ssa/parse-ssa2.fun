@@ -339,6 +339,20 @@ fun parsePrimAppExp resolveTycon resolveVar =
             parseExpression' ()
         end
 
+ fun makeBindStatement (var, ty, exp) =
+ Statement.Bind {
+    var = var,
+    ty = ty,
+    exp = exp
+ }
+
+ fun makeUpdateStatement (offset, base, value) =
+ Statement.Update {
+    base = base,
+    offset = offset,
+    value = value
+ }
+
  fun parseStatements resolveCon resolveTycon resolveVar =
      let
 
@@ -350,13 +364,6 @@ fun parsePrimAppExp resolveTycon resolveVar =
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> P.str "val" *> P.spaces *> (parseType resolveTycon) <* P.spaces)
-
-     fun makeBindStatement (var, ty, exp) =
-     Statement.Bind {
-       var = var,
-       ty = ty,
-       exp = exp
-     }
 
      val parseBindStatement = makeBindStatement <$> (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
@@ -380,13 +387,6 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                         ProfileExp.Leave <$ token "Leave") <*>
                                                         P.cut ((SourceInfo.fromC o String.implode) <$>
                                                         P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces))
-
-     fun makeUpdateStatement (offset, base, value) =
-     Statement.Update {
-        base = base,
-        offset = offset,
-        value = value
-     }
 
      val parseUpdateStatement = P.spaces *> token "upd" *> P.spaces *> token "sel" *> P.spaces *>
                                 makeUpdateStatement <$$$> (P.uint <* P.spaces,
