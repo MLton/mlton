@@ -276,6 +276,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
      val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
 
+     val typedvar = (fn (x,y) => (x,y)) <$$>
+        (SOME <$> var <|> token "_" *> P.pure(NONE),
+         symbol ":" *> P.str "val" *> P.spaces *> parseType <* P.spaces)
+
      fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
                                                            if Tycon.isWordX parseType then
@@ -330,14 +334,10 @@ fun parsePrimAppExp resolveTycon resolveVar =
      fun parseExpressions parseType = P.any [ Exp.Const   <$>   parseConstExp parseType,
                                              Exp.Inject  <$>   parseInjectExp,
                                              Exp.Object  <$>   parseObjectExp,
-                                             Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                             (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar)*),
                                              Exp.Select  <$>   parseSelectExp,
                                              Exp.Var     <$>   parseVarExp
                                            ]
-
-     val typedvar = (fn (x,y) => (x,y)) <$$>
-        (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> P.str "val" *> P.spaces *> (parseType resolveTycon) <* P.spaces)
 
      fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
@@ -382,12 +382,12 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
-     val parseStatement' = P.any [parseBindStatement,
-                                  parseProfileStatement,
-                                  parseUpdateStatement]
+     val parseStatements' = P.any [parseBindStatement,
+                                   parseProfileStatement,
+                                   parseUpdateStatement]
 
      in
-        parseStatement'
+        parseStatements'
      end
 
 
