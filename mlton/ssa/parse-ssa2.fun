@@ -272,101 +272,91 @@ fun parsePrimAppExp resolveTycon resolveVar =
  fun parseExpressions resolveCon resolveTycon resolveVar parseType =
      let
 
-        val var = resolveVar <$> ident <* P.spaces
-
-        val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
-
-        fun parseConstExp parseType = token "const" *> P.spaces *>
-                                                            P.cut (
-                                                              if Tycon.isWordX parseType then
-                                                                  Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
-                                                              else if Tycon.isRealX parseType then
-                                                                  Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
-                                                              else if Tycon.isIntX parseType then
-                                                                  Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-                                                              else if Tycon.equals(parseType, Tycon.vector) then
-                                                                  (* assume it's a word8 vector *)
-                                                                  P.any
-                                                                      [Const.string <$> parseString,
-                                                                       Const.wordVector <$> parseWord8Vector,
-                                                                       P.failCut "string constant"]
-                                                               else
-                                                                  P.fail "constant")
-
-        (*fun parseConstExp parseType = token "const" *> P.cut (
-                                             case Type.dest parseType of
-                                             Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
-                                             makeWord (Tycon.word ws)) <|> P.failCut "word"
-                                           | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
-                                           | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-                                           | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
-                                           | Type.Object _  =>
-                                             (* assume it's a word8 vector *)
-                                             P.any
-                                             [Const.string <$> parseString,
-                                             Const.wordVector <$> parseWord8Vector,
-                                             P.failCut "string constant"]
-                                           | _ => P.fail "constant" )*)
-
-
-
-        fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
-        val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
-                                                                          (parseVarExp <* token ":" <* P.spaces,
-                                                                           P.spaces *> resolveTycon ident <* P.spaces))
-
-        fun makeObjectExp (con, args) = {con = con, args = args}
-
-        fun makeObjectExp' () = makeObjectExp <$$> (((fn x => x) <$> (SOME <$> (resolveCon ident <* P.spaces)) <|>
-                                                            (token "tuple" *> P.pure(NONE))),
-                                                    P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
-
-        val parseObjectExp = token "new" *> P.spaces *> P.cut(makeObjectExp' ())
-
-        fun makeSelectExp (offset, base) = {offset = offset, base = base}
-        val parseSelectExp = token "sel" *> P.spaces *> P.cut(makeSelectExp <$$> (P.uint <* P.spaces,
-                                                                                  parenOf (makeBase resolveVar)))
-
-        fun parseExpression' () = P.any [ Exp.Const   <$>  (parseConstExp (parseType resolveTycon)),
-                                          Exp.Inject  <$>   parseInjectExp,
-                                          Exp.Object  <$>   parseObjectExp,
-                                          Exp.PrimApp <$>   parsePrimAppExp resolveTycon resolveVar,
-                                          Exp.Select  <$>   parseSelectExp,
-                                          Exp.Var     <$>   parseVarExp
-                                        ]
+        fun parseExpression' () =
 
         in
             parseExpression' ()
         end
-
- fun makeBindStatement (var, ty, exp) =
- Statement.Bind {
-    var = var,
-    ty = ty,
-    exp = exp
- }
-
- fun makeUpdateStatement (offset, base, value) =
- Statement.Update {
-    base = base,
-    offset = offset,
-    value = value
- }
 
  fun parseStatements resolveCon resolveTycon resolveVar =
      let
 
      val var = resolveVar <$> ident <* P.spaces
 
-     val varExp =
-     P.failing (token "in" <|> token "exception" <|> token "val") *> var
+     val parseVarExp = P.failing (token "in" <|> token "exception" <|> token "val") *> var
+
+     fun parseConstExp parseType = token "const" *> P.spaces *>
+                                                         P.cut (
+                                                           if Tycon.isWordX parseType then
+                                                               Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
+                                                           else if Tycon.isRealX parseType then
+                                                               Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
+                                                           else if Tycon.isIntX parseType then
+                                                               Const.IntInf <$> parseIntInf <|> P.failCut "integer"
+                                                           else if Tycon.equals(parseType, Tycon.vector) then
+                                                               (* assume it's a word8 vector *)
+                                                               P.any
+                                                                   [Const.string <$> parseString,
+                                                                    Const.wordVector <$> parseWord8Vector,
+                                                                    P.failCut "string constant"]
+                                                            else
+                                                               P.fail "constant")
+
+     (*fun parseConstExp parseType = token "const" *> P.cut (
+                                          case Type.dest parseType of
+                                          Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
+                                          makeWord (Tycon.word ws)) <|> P.failCut "word"
+                                        | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
+                                        | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
+                                        | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
+                                        | Type.Object _  =>
+                                          (* assume it's a word8 vector *)
+                                          P.any
+                                          [Const.string <$> parseString,
+                                          Const.wordVector <$> parseWord8Vector,
+                                          P.failCut "string constant"]
+                                        | _ => P.fail "constant" )*)
+
+
+
+     fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
+     val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
+                                                                       (parseVarExp <* token ":" <* P.spaces,
+                                                                        P.spaces *> resolveTycon ident <* P.spaces))
+
+     fun makeObjectExp (con, args) = {con = con, args = args}
+
+     fun makeObjectExp' () = makeObjectExp <$$> (((fn x => x) <$> (SOME <$> (resolveCon ident <* P.spaces)) <|>
+                                                         (token "tuple" *> P.pure(NONE))),
+                                                 P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
+
+     val parseObjectExp = token "new" *> P.spaces *> P.cut(makeObjectExp' ())
+
+     fun makeSelectExp (offset, base) = {offset = offset, base = base}
+     val parseSelectExp = token "sel" *> P.spaces *> P.cut(makeSelectExp <$$> (P.uint <* P.spaces,
+                                                                               parenOf (makeBase resolveVar)))
+
+     fun parseExpressions parseType = P.any [ Exp.Const   <$>   parseConstExp parseType,
+                                             Exp.Inject  <$>   parseInjectExp,
+                                             Exp.Object  <$>   parseObjectExp,
+                                             Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),
+                                             Exp.Select  <$>   parseSelectExp,
+                                             Exp.Var     <$>   parseVarExp
+                                           ]
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> P.str "val" *> P.spaces *> (parseType resolveTycon) <* P.spaces)
 
+     fun makeBindStatement (var, ty, exp) =
+     Statement.Bind {
+        var = var,
+        ty = ty,
+        exp = exp
+     }
+
      val parseBindStatement = makeBindStatement <$> (typedvar >>= (fn (var, ty) =>
-                                                    (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
+                                                    (symbol "=" *> parseExpressions ty <* P.spaces)
                                                     >>= (fn exp => P.pure (var, ty, exp))))
 
      (*fun makeBindStatement' resolveCon resolveTycon resolveVar =
@@ -389,10 +379,17 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                                         P.cut ((SourceInfo.fromC o String.implode) <$>
                                                         P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces))
 
+     fun makeUpdateStatement (offset, base, value) =
+     Statement.Update {
+        base = base,
+        offset = offset,
+        value = value
+     }
+
      val parseUpdateStatement = P.spaces *> token "upd" *> P.spaces *> token "sel" *> P.spaces *>
                                 makeUpdateStatement <$$$> (P.uint <* P.spaces,
                                                            parenOf (makeBase resolveVar),
-                                                           P.spaces *> P.str ":=" *> varExp <* P.spaces)
+                                                           P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
      val parseStatement' = P.any [parseBindStatement,
                                   parseProfileStatement,
