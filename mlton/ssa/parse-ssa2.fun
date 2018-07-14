@@ -278,7 +278,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> P.str "val" *> P.spaces *> parseType <* P.spaces)
+         symbol ":" *> P.str "val" *> P.spaces *> parseType resolveTycon <* P.spaces)
 
      fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
@@ -334,7 +334,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
      fun parseExpressions parseType = P.any [ Exp.Const   <$>   parseConstExp parseType,
                                              Exp.Inject  <$>   parseInjectExp,
                                              Exp.Object  <$>   parseObjectExp,
-                                             (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar)*),
+                                             (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
                                              Exp.Select  <$>   parseSelectExp,
                                              Exp.Var     <$>   parseVarExp
                                            ]
