@@ -269,15 +269,6 @@ fun parsePrimAppExp resolveTycon resolveVar =
                               P.spaces *> P.tuple varExp <* P.spaces))
            end
 
- fun parseExpressions resolveCon resolveTycon resolveVar parseType =
-     let
-
-        fun parseExpression' () =
-
-        in
-            parseExpression' ()
-        end
-
  fun parseStatements resolveCon resolveTycon resolveVar =
      let
 
