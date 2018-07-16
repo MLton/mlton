@@ -3087,6 +3087,216 @@ struct
         val elimALCopy_msg = elimALCopy_msg
       end
 
+      (* TODO add new template/rewriter elimCheckP? based on elimALCopy or
+       * others
+       * Also:
+       *    - Fix liveness information
+       *    - Reassemble block w/o check oper
+       *    - Add flag to `main`, `control-flags`, `native`*)
+      local
+        val isInstructionMOV_dstTemp : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.MOV
+                                      {dst = Operand.MemLoc memloc,...}),
+                _)
+             => amd64Liveness.track memloc
+             | _ => false
+
+        fun isInstructionAL_aux (check) : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.BinAL
+                                      {dst = Operand.MemLoc memloc,...}),
+                _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.pMD
+                                      {dst = Operand.MemLoc memloc,...}),
+
+                _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.IMUL2
+                                      {dst = Operand.MemLoc memloc,...}),
+
+                _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.UnAL
+                                      {dst = Operand.MemLoc memloc,...}),
+
+                _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.SRAL
+                                      {dst = Operand.MemLoc memloc,...}),
+
+                _)
+             => check memloc
+             | _ => false
+        val isInstructionAL_dstTemp : statement_type -> bool
+          = isInstructionAL_aux amd64Liveness.track
+        fun isDeadTemp dead memloc
+          = amd64Liveness.track memloc andalso LiveSet.contains (dead, memloc)
+        val isInstructionAL_dstDeadTemp : statement_type -> bool
+          = fn (instr, liveness as Liveness.T {dead, ...})
+            => isInstructionAL_aux (isDeadTemp dead) (instr, liveness)
+
+        val isInstructionALorMOV_dstTemp : statement_type -> bool
+          = fn stype => isInstructionAL_dstTemp stype orelse
+                        isInstructionMOV_dstTemp stype
+
+        val template : template
+          = {start = EmptyOrNonEmpty,
+             statements = [One isInstructionMOV_dstTemp,
+                           All isComment,
+                           One isInstructionALorMOV_dstTemp,
+                           All isComment,
+                           One isInstructionALorMOV_dstTemp,
+                           All isComment,
+                           One isInstructionAL_dstDeadTemp],
+             finish = EmptyOrNonEmpty,
+             transfer = fn _ => true}
+
+        (*
+         * Pattern:
+         *
+         * mov $x, $z
+         * AL  $y, $z
+         * mov $x, $t
+         * AL  $y, $t
+         * setcc
+         *
+         * OR
+         *
+         * mov $x, $z
+         * mov $x, $t
+         * AL  $y, $z
+         * AL  $y, $t
+         * setcc
+         *)
+
+        val rewriter : rewriter
+          = fn {entry, profileLabel, start, statements, finish, transfer} =>
+            let
+              fun rewriter' (stmtMov, src1x, dst1z,
+                             comments1,
+                             stmtAL, instrAL1,
+                             comments2,
+                             src2x, dst2z,
+                             comments3,
+                             instrAL2, liveOut2)
+                = if !Control.Native.elimALRedundant andalso
+                     Operand.eq (src1x, src2x) andalso
+                     (let
+                        fun checkUn (oper1, dst1, oper2, dst2)
+                          = oper1 = oper2 andalso
+                            Operand.eq(dst1z, dst1) andalso
+                            Operand.eq(dst2z, dst2)
+
+                        fun checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                          = oper1 = oper2 andalso
+                            Operand.eq(src1, src2) andalso
+                            Operand.eq(dst1z, dst1) andalso
+                            Operand.eq(dst2z, dst2)
+                      in
+                        case (instrAL1, instrAL2) of
+                           (Instruction.BinAL
+                             {oper = oper1, src = src1, dst = dst1, ...},
+                            Instruction.BinAL
+                             {oper = oper2, src = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | (Instruction.pMD
+                             {oper = oper1, src = src1, dst = dst1, ...},
+                            Instruction.pMD
+                             {oper = oper2, src = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | (Instruction.UnAL
+                             {oper = oper1, dst = dst1, ...},
+                            Instruction.UnAL
+                             {oper = oper2, dst = dst2, ...})
+                           => checkUn (oper1, dst1, oper2, dst2)
+                         | (Instruction.SRAL
+                             {oper = oper1, count = src1, dst = dst1, ...},
+                            Instruction.SRAL
+                             {oper = oper2, count = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | _ => false
+                      end)
+                     then
+                       let
+                         val excomm = fn comm => List.map (comm, fn (c, _) => c)
+                         val comments1 = excomm comments1
+                         val comments2 = excomm comments2
+                         val comments3 = excomm comments3
+
+                         val statements =
+                           stmtMov::(comments1 @ (stmtAL::(comments2 @ comments3)))
+                         val {statements, ...}
+                           = LivenessBlock.toLivenessStatements
+                             {statements = statements, live = liveOut2}
+                         val statements
+                           = List.fold (start,
+                                        List.concat [statements, finish],
+                                        op ::)
+                       in
+                         SOME (LivenessBlock.T
+                               {entry = entry,
+                                profileLabel = profileLabel,
+                                statements = statements,
+                                transfer = transfer})
+                       end
+                     else NONE
+             in
+               case statements of
+                    [[(stmtMov as Assembly.Instruction (Instruction.MOV
+                                                        {src = src1x,
+                                                         dst = dst1z, ...}),
+                       _)],
+                    comments1,
+                    [(stmtAL as Assembly.Instruction instrAL1, _)],
+                    comments2,
+                    [(Assembly.Instruction (Instruction.MOV
+                                            {src = src2x,
+                                             dst = dst2z, ...}),
+                      _)],
+                    comments3,
+                    [(Assembly.Instruction instrAL2,
+                      Liveness.T {liveOut = liveOut2, ...})]]
+                      => rewriter' (stmtMov, src1x, dst1z,
+                                    comments1,
+                                    stmtAL, instrAL1,
+                                    comments2,
+                                    src2x, dst2z,
+                                    comments3,
+                                    instrAL2, liveOut2)
+                  | [[(stmtMov as Assembly.Instruction (Instruction.MOV
+                                                         {src = src1x,
+                                                          dst = dst1z, ...}),
+                       _)],
+                     comments1,
+                     [(Assembly.Instruction (Instruction.MOV
+                                             {src = src2x,
+                                              dst = dst2z, ...}),
+                       _)],
+                     comments2,
+                     [(stmtAL as Assembly.Instruction instrAL1, _)],
+                     comments3,
+                     [(Assembly.Instruction instrAL2,
+                       Liveness.T {liveOut = liveOut2, ...})]]
+                       => rewriter' (stmtMov, src1x, dst1z,
+                                     comments1,
+                                     stmtAL, instrAL1,
+                                     comments2,
+                                     src2x, dst2z,
+                                     comments3,
+                                     instrAL2, liveOut2)
+                  | _ => NONE
+             end
+
+        val (callback,elimALRedundant_msg)
+          = make_callback_msg "elimALRedundant"
+      in
+        val elimALRedundant : optimization
+          = {template = template,
+             rewriter = rewriter,
+             callback = callback}
+        val elimALRedundant_msg = elimALRedundant_msg
+      end
+
       local
         val isInstructionSSEMOVS_dstTemp : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.SSE_MOVS
@@ -3938,6 +4148,7 @@ struct
       local
         val optimizations 
           = elimALCopy::
+            elimALRedundant::
             elimSSEASCopy::
             elimDeadDsts::
             elimSelfMove::
@@ -3948,6 +4159,7 @@ struct
             nil
         val optimizations_msg
           = elimALCopy_msg:: 
+            elimALRedundant_msg::
             elimSSEASCopy_msg:: 
             elimDeadDsts_msg::
             elimSelfMove_msg::

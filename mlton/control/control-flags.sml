@@ -946,6 +946,10 @@ structure Native =
                                default = 0,
                                toString = Int.toString}
 
+      val elimALRedundant = control {name = "elim AL redundant",
+                                     default = true,
+                                     toString = Bool.toString}
+
       val liveStack = control {name = "native live stack",
                                default = false,
                                toString = Bool.toString}
