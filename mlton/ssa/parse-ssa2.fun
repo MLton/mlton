@@ -113,7 +113,7 @@
             (P.spaces *> ident <* P.spaces))
     and makeProd' resolveTycon resolveCon () = Prod.make <$>
            (P.spaces *> parenOf (Vector.fromList <$>
-                                 P.many (makeProd <$$> (makeType' resolveTycon resolveCon <* P.spaces,
+                                 P.many (makeProd <$$> ((makeType' resolveTycon resolveCon) <* P.spaces,
                                                        ((P.str "ref" *> P.pure true) <|> P.pure false))) <* P.spaces))
 
     in
