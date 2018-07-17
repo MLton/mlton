@@ -114,7 +114,7 @@
     and makeProd' resolveTycon resolveCon () = Prod.make <$>
                           (P.spaces *> parenOf (Vector.fromList <$>
                                                        P.many (makeProd <$$> (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
-                                                                (((P.str "ref" *> P.pure true) <|> P.pure false), P.char #"," *> P.spaces)))
+                                                                (((P.str "ref" *> P.pure true) <|> P.pure false) <* P.char #"," <* P.spaces)))
                                                                 <* P.spaces))
 
     (*fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
