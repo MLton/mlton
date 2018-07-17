@@ -158,7 +158,7 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
+ (*fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)*)
 
  (*fun parseProd resolveTycon = Prod.make (P.spaces *>
                                          parenOf (Vector.fromList <$> P.many (makeProd <$$> (parseType resolveTycon <* P.spaces,

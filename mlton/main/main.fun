@@ -1605,7 +1605,7 @@ fun commandLine (args: string list): unit =
                   val compileSSA2 =
                       mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                     elaborate = fn _ => raise Fail "Unimplemented",
-                                    compile = Compile.compileSSA}
+                                    compile = Compile.compileSSA2}
 
                   fun compile () =
                      case start of
