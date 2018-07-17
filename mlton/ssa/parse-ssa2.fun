@@ -109,13 +109,22 @@
     local
 
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
+                                               (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
+                                               (P.spaces *> ident <* P.spaces))
+    and makeProd' resolveTycon resolveCon () = Prod.make <$>
+                          (P.spaces *> parenOf (Vector.fromList <$>
+                                                       P.many (makeProd <$$> (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
+                                                                (((P.str "ref" *> P.pure true) <|> P.pure false), P.char #"," *> P.spaces)))
+                                                                <* P.spaces))
+
+    (*fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
            (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
             (P.spaces *> ident <* P.spaces))
     and makeProd' resolveTycon resolveCon () = Prod.make <$>
            (P.spaces *> parenOf (Vector.fromList <$>
                                  P.many (makeProd <$$> (P.delay ((makeType' resolveTycon resolveCon) <* P.spaces,
                                                                 ((P.str "ref" *> P.pure true) <|> P.pure false, P.char #"," *> P.spaces))))
-                                                                <* P.spaces))
+                                                                <* P.spaces))*)
 
     in
         fun parseType resolveTycon resolveCon = makeType' resolveTycon resolveCon ()
