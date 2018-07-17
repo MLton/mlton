@@ -341,8 +341,8 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      val parseSelectExp = token "sel" *> P.spaces *> P.cut(makeSelectExp <$$> (P.uint <* P.spaces,
                                                                                parenOf (makeBase resolveVar)))
 
-     fun parseExpressions parseType = P.any [ Exp.Const   <$>  parseConstExp parseType,
-                                             Exp.Inject  <$>   parseInjectExp,
+     fun parseExpressions parseType = P.any [Exp.Const   <$>   parseConstExp parseType,
+                                             (*Exp.Inject  <$>   parseInjectExp,*)
                                              Exp.Object  <$>   parseObjectExp,
                                              (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
                                              Exp.Select  <$>   parseSelectExp,
