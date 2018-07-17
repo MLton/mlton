@@ -1602,7 +1602,7 @@ fun commandLine (args: string list): unit =
                                    elaborate = fn _ => raise Fail "Unimplemented",
                                    compile = Compile.compileSSA}
 
-                  val compileSSA =
+                  val compileSSA2 =
                       mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                     elaborate = fn _ => raise Fail "Unimplemented",
                                     compile = Compile.compileSSA}

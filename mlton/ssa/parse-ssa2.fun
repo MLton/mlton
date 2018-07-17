@@ -359,7 +359,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      val parseBindStatement = makeBindStatement <$> (P.spaces *> token "val" *> P.spaces *>
                                                     (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions ty <* P.spaces)
-                                                    >>= (fn exp => P.pure (var, ty, exp))))
+                                                    >>= (fn exp => P.pure (var, ty, exp)))))
 
      (*fun makeBindStatement' resolveCon resolveTycon resolveVar =
          let
