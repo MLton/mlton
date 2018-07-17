@@ -299,7 +299,7 @@ structure Type =
              (fn (t, layout) =>
               case dest t of
                  CPointer => str "cpointer"
-               | Datatype t => seq [str "dt", Tycon.layout t]
+               | Datatype t => Tycon.layout t
                | IntInf => str "intInf"
                | Object {args, con} =>
                     if isUnit t
@@ -724,10 +724,11 @@ structure Statement =
                   let
                      val (sep, ty) =
                         if !Control.showTypes
-                           then (str ":", indent (seq [str "val ", Type.layout ty, str " ="], 2))
+                           then (str ":", indent (seq [Type.layout ty, str " ="], 2))
                            else (str " =", empty)
                   in
-                     mayAlign [mayAlign [seq [case var of
+                     mayAlign [mayAlign [seq [str "val ",
+                                            case var of
                                                  NONE => str "_"
                                                | SOME var => Var.layout var,
                                               sep],

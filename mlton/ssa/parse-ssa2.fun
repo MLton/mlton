@@ -12,7 +12,7 @@
  open P.Ops
  infix 1 <|> >>=
  infix  3 <*> <* *>
- infixr 4 <$> <$$> <$$$> <$ <$?>
+ infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
 
  fun isInfixChar b = case List.index
     (String.explode "!%&$#+-/:<=>?@\\~'^|*",
@@ -78,31 +78,47 @@
 
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
- fun makeTypeObject (args, con) = {args = args, con = con}
+ fun makeObjectCon resolveCon (ident) = case ident of
+                     "tuple"  => ObjectCon.Tuple
+                   | "vector" => ObjectCon.Vector
+                   | _        => ObjectCon.Con (resolveCon ident)
 
- (*val parseTypeObject =*)
+ fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
+ (*fun parseProd resolveTycon resolveCon = Prod.make <$> (P.spaces *>
+                                         parenOf (Vector.fromList <$> P.many(makeProd <$$> (parseType resolveTycon,
+                                        (P.str "ref" *> P.pure true) <|> P.pure false))))*)
 
- fun makeType resolveTycon (args, ident) =
+ fun makeType resolveTycon resolveCon (args, ident) =
      case ident of
                 "cpointer" => Type.cpointer
               | "intInf"   => Type.intInf
               | "real32"   => Type.real RealSize.R32
               | "real64"   => Type.real RealSize.R64
               | "thread"   => Type.thread
-              | "weak"     => Type.weak (Vector.first args)
+              | "weak"     => Type.weak (#elt (Vector.first (Prod.dest (valOf args))))
               | "word8"    => Type.word WordSize.word8
               | "word16"   => Type.word WordSize.word16
               | "word32"   => Type.word WordSize.word32
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
-              | "dt"       => Type.datatypee (resolveTycon ident)
+              | _          => (case args of
+                                  NONE => Type.datatypee (resolveTycon ident)
+                                | SOME args => Type.object {args = args,
+                                                            con = makeObjectCon resolveCon ident})
 
     local
-        fun makeType' resolveTycon () = (makeType resolveTycon) <$$>
-            (((P.tuple (P.delay (makeType' resolveTycon))) <|> P.pure (Vector.new0 ())),
-              (P.spaces *> ident <* P.spaces))
+
+    fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
+           (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
+            (P.spaces *> ident <* P.spaces))
+    and makeProd' resolveTycon resolveCon () = Prod.make <$>
+           (P.spaces *> parenOf (Vector.fromList <$>
+                                 P.many (makeProd <$$> (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
+                                                                ((P.str "ref" *> P.pure true) <|> P.pure false))) <* P.spaces))
+
     in
-        fun parseType resolveTycon = makeType' resolveTycon ()
+        fun parseType resolveTycon resolveCon = makeType' resolveTycon resolveCon ()
+        fun parseProd resolveTycon resolveCon = makeProd' resolveTycon resolveCon ()
     end
 
     val ctype = (P.any o List.map)
@@ -142,21 +158,12 @@
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
- fun makeObjectCon resolveCon (ident) = case ident of
-                     "tuple"  => ObjectCon.Tuple
-                   | "vector" => ObjectCon.Vector
-                   | _        => ObjectCon.Con (resolveCon ident)
-
  fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)
 
- fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
- (*fun parseProd resolveTycon resolveCon = Prod.make (P.spaces *>
-                                         parenOf (Vector.fromList <$> P.many(makeProd <$$> (parseType resolveTycon,
-                                                                                           (P.str "ref" *> true) <|> P.pure(false)))))*)
- fun parseProd resolveTycon = Prod.make (P.spaces *>
+ (*fun parseProd resolveTycon = Prod.make (P.spaces *>
                                          parenOf (Vector.fromList <$> P.many (makeProd <$$> (parseType resolveTycon <* P.spaces,
                                                                                             ((P.str "ref" *> true) <|> P.pure(false))))
-                                                 <* P.spaces))
+                                                 <* P.spaces))*)
 
  fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
 
@@ -164,7 +171,7 @@
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)*)
 
- fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon) <* P.spaces,
+ fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon resolveCon) <* P.spaces,
                                                                        ident <* P.spaces)
 
  fun makeBase resolveVar =
@@ -193,7 +200,7 @@
           parseBase
         end
 
-fun parsePrimAppExp resolveTycon resolveVar =
+fun parsePrimAppExp resolveTycon resolveCon resolveVar =
     let
 
        val var = resolveVar <$> ident <* P.spaces
@@ -241,11 +248,11 @@ fun parsePrimAppExp resolveTycon resolveVar =
                                target = target})
 
        val resolveFFI = token "FFI" *> P.cut( makeFFI
-                            <$> fromRecord "args" (P.tuple (parseType resolveTycon))
+                            <$> fromRecord "args" (P.tuple (parseType resolveTycon resolveCon))
                             <*> fromRecord "convention" parseConvention
                             <*> fromRecord "kind" parseKind
                             <*> fromRecord "prototype" parsePrototype
-                            <*> fromRecord "return" (parseType resolveTycon)
+                            <*> fromRecord "return" (parseType resolveTycon resolveCon)
                             <*> fromRecord "symbolScope" parseSymbolScope
                             <*> fromRecord "target" parseTarget
                             <* doneRecord)
@@ -278,24 +285,27 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> P.str "val" *> P.spaces *> parseType resolveTycon <* P.spaces)
+         symbol ":" *> P.str "val" *> P.spaces *> parseType resolveTycon resolveCon <* P.spaces)
 
      fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
-                                                           if Tycon.isWordX parseType then
-                                                               Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
-                                                           else if Tycon.isRealX parseType then
-                                                               Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
-                                                           else if Tycon.isIntX parseType then
-                                                               Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-                                                           else if Tycon.equals(parseType, Tycon.vector) then
-                                                               (* assume it's a word8 vector *)
-                                                               P.any
-                                                                   [Const.string <$> parseString,
-                                                                    Const.wordVector <$> parseWord8Vector,
-                                                                    P.failCut "string constant"]
+                                                           case Type.dest parseType of
+                                                           Type.Datatype parseType =>
+                                                              if Tycon.isWordX parseType then
+                                                                 Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
+                                                              else if Tycon.isRealX parseType then
+                                                                 Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
+                                                              else if Tycon.isIntX parseType then
+                                                                 Const.IntInf <$> parseIntInf <|> P.failCut "integer"
+                                                              else if Tycon.equals(parseType, Tycon.vector) then
+                                                                (* assume it's a word8 vector *)
+                                                                  P.any
+                                                                      [Const.string <$> parseString,
+                                                                       Const.wordVector <$> parseWord8Vector,
+                                                                       P.failCut "string constant"]
                                                             else
-                                                               P.fail "constant")
+                                                               P.fail "constant"
+                                                            | _ => P.fail "constant")
 
      (*fun parseConstExp parseType = token "const" *> P.cut (
                                           case Type.dest parseType of
@@ -315,13 +325,13 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
 
      fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
-     val parseInjectExp = token "inj" *> P.spaces *> parenOf((makeInjectExp resolveTycon) <$$>
+     val parseInjectExp = token "inj" *> P.spaces *> parenOf(makeInjectExp <$$>
                                                                        (parseVarExp <* token ":" <* P.spaces,
-                                                                        P.spaces *> (resolveTycon ident) <* P.spaces))
+                                                                        P.spaces *> (resolveTycon <$> ident) <* P.spaces))
 
      fun makeObjectExp (con, args) = {con = con, args = args}
 
-     fun makeObjectExp' () = makeObjectExp <$$> (((fn x => x) <$> (SOME <$> (resolveCon ident <* P.spaces)) <|>
+     fun makeObjectExp' () = makeObjectExp <$$> (((fn x => x) <$> (SOME <$> (resolveCon <$> ident <* P.spaces)) <|>
                                                          (token "tuple" *> P.pure(NONE))),
                                                  P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
@@ -331,13 +341,13 @@ fun parsePrimAppExp resolveTycon resolveVar =
      val parseSelectExp = token "sel" *> P.spaces *> P.cut(makeSelectExp <$$> (P.uint <* P.spaces,
                                                                                parenOf (makeBase resolveVar)))
 
-     fun parseExpressions parseType = P.any [ Exp.Const   <$>   parseConstExp parseType,
+     fun parseExpressions parseType = P.any [ Exp.Const   <$>  parseConstExp parseType,
                                              Exp.Inject  <$>   parseInjectExp,
                                              Exp.Object  <$>   parseObjectExp,
                                              (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
                                              Exp.Select  <$>   parseSelectExp,
                                              Exp.Var     <$>   parseVarExp
-                                           ]
+                                            ]
 
      fun makeBindStatement (var, ty, exp) =
      Statement.Bind {
@@ -346,7 +356,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
         exp = exp
      }
 
-     val parseBindStatement = makeBindStatement <$> (typedvar >>= (fn (var, ty) =>
+     val parseBindStatement = makeBindStatement <$> (P.spaces *> token "val" *> P.spaces *>
+                                                    (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions ty <* P.spaces)
                                                     >>= (fn exp => P.pure (var, ty, exp))))
 
@@ -443,7 +454,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
            (var ,
-            symbol ":" *> (parseType resolveTycon) <* P.spaces)
+            symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
 
         val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
 
@@ -553,7 +564,7 @@ fun parsePrimAppExp resolveTycon resolveVar =
 
         val parseTransferRuntime = makeTransferRuntime <$$>
                                          (P.str "runtime" *> P.spaces *> label' <* P.spaces,
-                                          parenOf (parsePrimAppExp resolveTycon resolveVar))
+                                          parenOf (parsePrimAppExp resolveTycon resolveCon resolveVar))
 
         fun makeTransferReturn vars = Transfer.Return vars
 
@@ -590,8 +601,8 @@ fun parsePrimAppExp resolveTycon resolveVar =
         val makeFunction' = makeFunction
                            <$> name
                            <*> args <* symbol ":" <* P.spaces
-                           <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
-                           <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon) <|> P.pure (Vector.new0 ())))
+                           <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
+                           <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
                            <*  doneRecord
                            <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(name)))
                            <*> label
