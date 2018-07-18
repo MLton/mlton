@@ -111,19 +111,17 @@
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
                                                (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
                                                (P.spaces *> ident <* P.spaces))
-    and makeProd' resolveTycon resolveCon () = P.spaces *> P.char #"(" *> P.spaces *> Prod.make <$>
-                                              (Vector.fromList <$> P.many (makeProd <$$>
+    (*and makeProd' resolveTycon resolveCon () = P.spaces *> P.char #"(" *> P.spaces *> Prod.make <$>
+                                              (Vector.fromList <$> P.sepBy1 (makeProd <$$>
                                                                           (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
-                                                                          (((P.str "ref" *> P.pure true) <|> P.pure false) <* (P.char #"," <|> P.char #")") <* P.spaces)) <* P.spaces))
+                                                                          (((P.str "ref" *> P.pure true) <|> P.pure false) <* (P.char #"," <|> P.char #")") <* P.spaces)) <* P.spaces))*)
 
-    (*fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-           (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
-            (P.spaces *> ident <* P.spaces))
-    and makeProd' resolveTycon resolveCon () = Prod.make <$>
-           (P.spaces *> parenOf (Vector.fromList <$>
-                                 P.many (makeProd <$$> (P.delay ((makeType' resolveTycon resolveCon) <* P.spaces,
-                                                                ((P.str "ref" *> P.pure true) <|> P.pure false, P.char #"," *> P.spaces))))
-                                                                <* P.spaces))*)
+    and makeProd' resolveTycon resolveCon () = parenOf(Prod.make <$>
+                                                      (Vector.fromList <$>
+                                                      (P.sepBy1 (makeProd <$$>
+                                                      (P.delay (makeType' resolveTycon resolveCon) <* P.spaces),
+                                                      ((P.str "ref" *> P.pure true) <|> P.pure false)),
+                                                       P.char #"," *> P.spaces)))
 
     in
         fun parseType resolveTycon resolveCon = makeType' resolveTycon resolveCon ()
@@ -174,14 +172,29 @@
                                                                                             ((P.str "ref" *> true) <|> P.pure(false))))
                                                  <* P.spaces))*)
 
- fun makeCon resolveCon (args, name) = {con = resolveCon name, args = args}
-
  (*fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
                  ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
                   resolveTycon) <* P.char #")")), ident <* P.spaces)*)
 
- fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$> ((parseProd resolveTycon resolveCon) <* P.spaces,
-                                                                       ident <* P.spaces)
+ fun makeConstructor resolveCon (args, name) = {con = resolveCon name, args = args}
+
+ fun constructor resolveCon resolveTycon = (makeConstructor resolveCon) <$$> ((parseProd resolveTycon resolveCon) <* P.spaces,
+                                                                               ident <* P.spaces)
+
+ fun makeDatatype resolveTycon(tycon, cons) =
+ Datatype.T {
+   tycon = resolveTycon tycon,
+   cons = cons
+ }
+
+ fun makeDatatype' resolveCon resolveTycon = (makeDatatype resolveTycon) <$$>
+                                                   ((P.spaces *> ident <* P.spaces <* symbol "="),
+                                                   (Vector.fromList <$> P.sepBy1
+                                                      ((constructor resolveCon resolveTycon) <* P.spaces,
+                                                        P.char #"|" *> P.spaces)))
+
+ fun parseDatatype resolveCon resolveTycon = P.spaces *> token "Datatypes:" *>
+                                             Vector.fromList <$> P.many (makeDatatype' resolveCon resolveTycon)
 
  fun makeBase resolveVar =
      let
@@ -409,22 +422,6 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      in
         parseStatements'
      end
-
-
- fun makeDatatype resolveTycon(tycon, cons) =
- Datatype.T {
-   tycon = resolveTycon tycon,
-   cons = cons
- }
-
- fun makeDatatype' resolveCon resolveTycon = (makeDatatype resolveTycon) <$$>
-                                                   ((P.spaces *> ident <* P.spaces <* symbol "="),
-                                                   (Vector.fromList <$> P.sepBy1
-                                                      ((constructor resolveCon resolveTycon) <* P.spaces,
-                                                        P.char #"|" *> P.spaces)))
-
- fun parseDatatype resolveCon resolveTycon =
-          P.spaces *> token "Datatypes:" *> Vector.fromList <$> P.many (makeDatatype' resolveCon resolveTycon)
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
     let
