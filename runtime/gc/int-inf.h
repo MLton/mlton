@@ -63,12 +63,15 @@ static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
 static inline void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
 static inline GC_objptr_sequence initIntInfRes_2 (GC_state s,
                                                   __mpz_struct *lres, __mpz_struct *rres,
-                                                  size_t lbytes, size_t rbytes);
+                                                  // total bytes needed by all args
+                                                  // kept separately from other sizes for assertion
+                                                  size_t tot_bytes,
+                                                  size_t l_bytes_noAlign, size_t r_bytes_noAlign);
 static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
 static inline objptr finiIntInfRes_2 (GC_state s,
                                       __mpz_struct *l_res, __mpz_struct *r_res,
-                                      GC_objptr_sequence finals,
-                                      size_t l_bytes, size_t r_bytes);
+                                      size_t l_bytes, size_t r_bytes,
+                                      GC_objptr_sequence finals);
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
@@ -80,7 +83,7 @@ PRIVATE objptr IntInf_binop (GC_state s, objptr lhs, objptr rhs, size_t bytes,
 
 PRIVATE objptr IntInf_binop_2 (GC_state s,
                                 objptr lhs, objptr rhs,
-                                size_t l_bytes, size_t r_bytes,
+                                size_t tot_bytes, size_t l_bytes, size_t r_bytes,
                                 void(*binop)(__mpz_struct *l_res_mpz,
                                              __mpz_struct *r_res_mpz,
                                              const __mpz_struct *lhsspace,

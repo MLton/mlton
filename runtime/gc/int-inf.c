@@ -120,7 +120,7 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
    */
   res->_mp_alloc = (int)(min(nlimbs,(size_t)INT_MAX));
   res->_mp_d = (mp_limb_t*)(bp->obj.limbs);
-  res->_mp_size = 0; /* is this necessary? */
+  res->_mp_size = 0;
 }
 
 /*
@@ -129,20 +129,22 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
  */
 GC_objptr_sequence initIntInfRes_2 (GC_state s,
                                     __mpz_struct *lres, __mpz_struct *rres,
-                                    ARG_USED_FOR_ASSERT size_t lbytes,
-                                    ARG_USED_FOR_ASSERT size_t rbytes) {
+                                    ARG_USED_FOR_ASSERT size_t tot_bytes,
+                                    size_t l_bytes, size_t r_bytes) {
+  // make sure there are enough bytes for everything
+  assert (tot_bytes <= (size_t)(s->limitPlusSlop - s->frontier));
+
   GC_objptr_sequence seq = allocate_objptr_seq (s, GC_INTINF_VECTOR_HEADER, 2);
 
   GC_intInf bp;
   size_t nl_limbs, nr_limbs;  // number of limbs that each result could need
 
-  assert (lbytes + rbytes <= (size_t)(s->limitPlusSlop - s->frontier));
   // ensure that this object only looks at area after the left object
-  bp = (GC_intInf)(s->frontier + lbytes);
+  bp = (GC_intInf)(s->frontier + l_bytes);
   /* Amount of space for first result is amount required by the size, no more.
    * Will need additional guaranteed heap space for the second result.
    */
-  nl_limbs = lbytes / sizeof(mp_limb_t);
+  nl_limbs = l_bytes / sizeof(mp_limb_t);
   /* Amount of space for second result limbs is the amount of space
    * from the end of the first until the end of the heap, since we don't need
    * further checking for another result.
@@ -156,7 +158,6 @@ GC_objptr_sequence initIntInfRes_2 (GC_state s,
   rres->_mp_alloc = (int)(min(nr_limbs,(size_t)INT_MAX));
   lres->_mp_d = (mp_limb_t*)((GC_intInf)s->frontier)->obj.limbs;
   rres->_mp_d = (mp_limb_t*)bp->obj.limbs;
-  /* is this necessary? */
   lres->_mp_size = 0;
   rres->_mp_size = 0;
 
@@ -327,7 +328,7 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
  * the program level)
  */
 objptr finiIntInfRes_2 (GC_state s, __mpz_struct *l_res, __mpz_struct *r_res,
-                        GC_objptr_sequence finals, size_t l_bytes, size_t r_bytes) {
+                        size_t l_bytes, size_t r_bytes, GC_objptr_sequence finals) {
   GC_intInf l_bp, r_bp;
   int l_size, r_size;
   objptr l_final, r_final;
@@ -407,7 +408,8 @@ objptr IntInf_binop (GC_state s,
 // the returned objptr is to a sequence containing the two results
 objptr IntInf_binop_2 (GC_state s,
                        objptr lhs, objptr rhs,
-                       size_t l_bytes, size_t r_bytes,
+                       size_t tot_bytes,
+                       size_t l_bytes_noAlign, size_t r_bytes_noAlign,
                        void(*binop)(__mpz_struct *l_res_mpz,
                                     __mpz_struct *r_res_mpz,
                                     const __mpz_struct *lhsspace,
@@ -415,17 +417,26 @@ objptr IntInf_binop_2 (GC_state s,
 
   __mpz_struct lhsmpz, rhsmpz, l_res_mpz, r_res_mpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
+
+  /*
+   * Compute these alignments here so that we can avoid unnecessary memmoves resulting
+   * from adding in potentially overkill alignment predictions on the SML side
+   */
+  size_t l_bytes = align(l_bytes_noAlign, s->alignment);
+  size_t r_bytes = align(r_bytes_noAlign, s->alignment);
+
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_binop_2 ("FMTOBJPTR", "FMTOBJPTR", %"PRIuMAX", %"PRIuMAX")\n",
              lhs, rhs, (uintmax_t)l_bytes, (uintmax_t)r_bytes);
 
   // get the sequence for storing the final results (will be allocated on the stack here)
-  GC_objptr_sequence finals = initIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, l_bytes, r_bytes);
+  GC_objptr_sequence finals =
+    initIntInfRes_2(s, &l_res_mpz, &r_res_mpz, tot_bytes, l_bytes, r_bytes);
   fillIntInfArg (s, lhs, &lhsmpz, lhsspace);
   fillIntInfArg (s, rhs, &rhsmpz, rhsspace);
   binop (&l_res_mpz, &r_res_mpz, &lhsmpz, &rhsmpz);
 
-  return finiIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, finals, l_bytes, r_bytes);
+  return finiIntInfRes_2 (s, &l_res_mpz, &r_res_mpz, l_bytes, r_bytes, finals);
 }
 
 objptr IntInf_unop (GC_state s,

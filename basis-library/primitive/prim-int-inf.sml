@@ -30,7 +30,9 @@ structure IntInf =
       val orb = _prim "IntInf_orb": int * int * C_Size.t -> int;
       val quot = _prim "IntInf_quot": int * int * C_Size.t -> int;
       val quotRem =
-         _prim "IntInf_quotRem": int * int * C_Size.t * C_Size.t -> int vector;
+         (* The c sizes are for the total size, the size of the vector of answers, and the
+          * sizes of the two results (see the C code) *)
+         _prim "IntInf_quotRem": int * int * C_Size.t * C_Size.t * C_Size.t -> int vector;
       val rem = _prim "IntInf_rem": int * int * C_Size.t -> int;
       val - = _prim "IntInf_sub": int * int * C_Size.t -> int;
       val toString =

@@ -7,13 +7,18 @@
  * See the file MLton-LICENSE for details.
  */
 
- /*
+/*
  * Allocates a sequence of objptrs with the given header and length in the heap,
  * sets the frontier beyond it, and returns the beginning of the object
+ * 
+ * The bytes_noalign argument is aligned in the method.
  */
-static inline GC_objptr_sequence allocate_objptr_seq (GC_state s, GC_header h, GC_sequenceLength argct) {
-  size_t bytes = GC_OBJPTR_SEQ_BASE_SIZE + OBJPTR_SIZE * (size_t)argct;  // bytes required
-  assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));  // ensure enough space is free
+GC_objptr_sequence allocate_objptr_seq (GC_state s,
+                                        GC_header h,
+                                        GC_sequenceLength argct) {
+  // compute the size and align it
+  size_t bytes = align(argct * sizeof(objptr) + GC_SEQUENCE_METADATA_SIZE, s->alignment);
+
   GC_objptr_sequence seq = (GC_objptr_sequence)s->frontier;  // create object
   
   // set sequence parameters

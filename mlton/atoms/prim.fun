@@ -1223,12 +1223,6 @@ fun 'a checkApp (prim: 'a t,
          andalso equals (arg0', arg 0)
          andalso equals (arg1', arg 1)
          andalso equals (arg2', arg 2)
-      fun fourArgs (arg0', arg1', arg2', arg3') () =
-         4 = Vector.length args
-         andalso equals (arg0', arg 0)
-         andalso equals (arg1', arg 1)
-         andalso equals (arg2', arg 2)
-         andalso equals (arg3', arg 3)
       fun fiveArgs (arg0', arg1', arg2', arg3', arg4') () =
          5 = Vector.length args
          andalso equals (arg0', arg 0)
@@ -1236,14 +1230,6 @@ fun 'a checkApp (prim: 'a t,
          andalso equals (arg2', arg 2)
          andalso equals (arg3', arg 3)
          andalso equals (arg4', arg 4)
-      fun sixArgs (arg0', arg1', arg2', arg3', arg4', arg5') () =
-         6 = Vector.length args
-         andalso equals (arg0', arg 0)
-         andalso equals (arg1', arg 1)
-         andalso equals (arg2', arg 2)
-         andalso equals (arg3', arg 3)
-         andalso equals (arg4', arg 4)
-         andalso equals (arg5', arg 5)
       fun nArgs args' () =
          Vector.equals (args', args, equals)
       fun done (args, result') =
@@ -1293,7 +1279,7 @@ fun 'a checkApp (prim: 'a t,
       fun intInfBinary () =
          noTargs (fn () => (threeArgs (intInf, intInf, csize), intInf))
       fun intInfBinary_MulRes () = (* binary with multiple results *)
-         noTargs (fn () => (fourArgs (intInf, intInf, csize, csize), vector intInf))
+         noTargs (fn () => (fiveArgs (intInf, intInf, csize, csize, csize), vector intInf))
       fun intInfShift () =
          noTargs (fn () => (threeArgs (intInf, shiftArg, csize), intInf))
       fun intInfUnary () =

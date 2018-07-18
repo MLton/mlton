@@ -472,16 +472,16 @@ structure ObjectType =
                end
          in
             Vector.fromList
-            [(ObjptrTycon.stack, stack),
+            [(ObjptrTycon.intInfVector,
+              Sequence {hasIdentity = false,
+                        elt = Type.intInf ()}),
+             (ObjptrTycon.stack, stack),
              (ObjptrTycon.thread, thread ()),
              (ObjptrTycon.weakGone, Weak NONE),
              wordVec 8,
-             wordVec 32,
              wordVec 16,
-             wordVec 64,
-             (ObjptrTycon.intInfVector,
-              Sequence {hasIdentity = false,
-                        elt = Type.intInf ()})]
+             wordVec 32,
+             wordVec 64]
          end
 
       local

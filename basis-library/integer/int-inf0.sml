@@ -950,22 +950,44 @@ structure IntInf =
       end
 
       local
+         open Sz
          val bytesPerMPLimb = Sz.zextdFromInt32 (Int32.quot (MPLimb.sizeInBits, 8))
       in
-         val bytesPerSequenceMetaData = Sz.zextdFromInt32 SequenceMetaDataSize.bytes
-         (* Reserve heap space for a large IntInf.int with room for num + extra
+         val bytesPerSequenceMetaData = zextdFromInt32 SequenceMetaDataSize.bytes
+
+         (* alignment for vector and intinf reservations *)
+         val alignment =
+            case MLton.Align.align of
+               MLton.Align.Align4 => 0w3
+             | MLton.Align.Align8 => 0w7
+
+         (* Reserve heap space for a vector of n Intinf objptrs *)
+         fun reserveIntinfVector n =
+            (* size (in bytes) of objptr times number of objptrs requested *)
+            Sz.* (zextdFromInt32 (Int32.quot (ObjptrWord.sizeInBits, 8)), zextdFromSeqIndex n)
+            + bytesPerSequenceMetaData (* Sequence MetaData *)
+            + alignment
+
+         (*
+          * Reserve heap space for a large IntInf.int with room for num + extra
           * `limbs'.  The reason for splitting this up is that extra is intended
           * to be a constant, and so can be combined at compile time.
           *)
+         fun reserve_noAlign (num: S.int, extra: S.int) =
+            bytesPerMPLimb *
+               (zextdFromSeqIndex num (* primary limbs required *)
+                + zextdFromSeqIndex extra (* extra limbs required *)
+                + 0w1) (* isNeg field *)
+            + bytesPerSequenceMetaData (* Sequence MetaData *)
+
+         (* 
+          * Reserve an intInf argument with the given number of limbs, but add
+          * in an alignment. The alignment is probably overkill, but is necessary
+          * to ensure that the heap limit check actually checks for enough bytes
+          * in every case.
+          *)
          fun reserve (num: S.int, extra: S.int) =
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex num),
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex extra),
-            Sz.+ (bytesPerMPLimb, (* isneg Field *)
-            Sz.+ (bytesPerSequenceMetaData, (* Sequence MetaData *)
-                  case MLton.Align.align of (* alignment *)
-                     MLton.Align.Align4 => 0w3
-                   | MLton.Align.Align8 => 0w7
-            ))))
+            reserve_noAlign (num, extra) + alignment
       end
 
       (* badObjptr{Int,Word}{,Tagged} is the fixnum IntInf.int whose 
@@ -1062,8 +1084,8 @@ structure IntInf =
                Prim.fromWord ans
             end
 
-         (*fun quotReserve (nlimbs, dlimbs) = reserve (S.- (nlimbs, dlimbs), 2)
-         fun remReserve (nlimbs, dlimbs) = reserve (dlimbs, 1)*)
+         fun quotReserve_noAlign (nlimbs, dlimbs) = reserve_noAlign (S.- (nlimbs, dlimbs), 1)
+         fun remReserve_noAlign (nlimbs, dlimbs) = reserve_noAlign (dlimbs, 0)
       in
          val bigAdd = make (I.+!, Prim.+, S.max, 1)
          val bigSub = make (I.-!, Prim.-, S.max, 1)
@@ -1071,30 +1093,38 @@ structure IntInf =
 
          fun bigQuot (num: bigInt, den: bigInt): bigInt =
             if areSmall (num, den) then smallQuot (num, den)
-               else let
-                       val nlimbs = numLimbs num
-                       val dlimbs = numLimbs den
-                    in
-                       if S.< (nlimbs, dlimbs)
-                          then zero
-                          else if den = zero
-                                  then raise Div
-                                  else Prim.quot (num, den, reserve (S.- (nlimbs, dlimbs), 2))
-                    end
+               else
+                  let
+                     val nlimbs = numLimbs num
+                     val dlimbs = numLimbs den
+                  in
+                     if S.< (nlimbs, dlimbs) then
+                        zero
+                     else if den = zero then
+                        raise Div
+                     else
+                        Prim.quot (num, den,
+                                   (* add in the alignment after base quot size computation *)
+                                   Sz.+ (quotReserve_noAlign (nlimbs, dlimbs), alignment))
+                  end
 
          fun bigRem (num: bigInt, den: bigInt): bigInt =
             if areSmall (num, den)
                then smallRem (num, den)
-               else let 
-                       val nlimbs = numLimbs num
-                       val dlimbs = numLimbs den
-                    in 
-                       if S.< (nlimbs, dlimbs)
-                          then num
-                          else if den = zero
-                                  then raise Div
-                                  else Prim.rem (num, den, reserve (dlimbs, 1))
-                    end
+               else
+                  let 
+                     val nlimbs = numLimbs num
+                     val dlimbs = numLimbs den
+                  in 
+                     if S.< (nlimbs, dlimbs) then
+                        num
+                     else if den = zero then
+                        raise Div
+                     else
+                        Prim.rem (num, den,
+                                  (* add in the alignment after base rem size computation *)
+                                  Sz.+ (remReserve_noAlign (nlimbs, dlimbs), alignment))
+                  end
 
          fun bigQuotRem (num, den) =
             if areSmall (num, den) then
@@ -1104,20 +1134,34 @@ structure IntInf =
                (smallQuot (num, den), smallRem (num, den))
             else  (* arguments are large *)
                let
-                  val n_d_limbs as (nlimbs, dlimbs) =
-                     (numLimbs num, numLimbs den)
+                  val (nlimbs, dlimbs) = (numLimbs num, numLimbs den)
                in
                   (* try to avoid expensive operation in trivial cases *)
-                  if S.< n_d_limbs then
+                  if S.< (nlimbs, dlimbs) then
                      (zero, num)
                   else if den = zero then
                      raise Div
                   else  (* must perform operation *)
                      let
+                        val q_reserve_nA = quotReserve_noAlign (nlimbs, dlimbs)
+                        val r_reserve_nA = remReserve_noAlign (nlimbs, dlimbs)
+                        open Sz
                         val qrs =
                            Prim.quotRem (num, den,
-                                         reserve (S.- (nlimbs, dlimbs), 1),
-                                         reserve (dlimbs, 0))
+                                         (* Reserve info for the results and a vector containing them
+                                          * Add in an alignment for each result
+                                          *)
+                                         reserveIntinfVector 2 + q_reserve_nA + r_reserve_nA + 0w2 * alignment,
+                                         (* Also store the individual reservation byte counts - will be
+                                          * needed on the runtime side to determine how much space the
+                                          * rem argument should be pushed forward.
+                                          * 
+                                          * Don't add in the alignments here - they can be calculated more
+                                          * precisely on the runtime side. This could prevent the call to the
+                                          * gc primitive from performing an avoidable memmove.
+                                          *)
+                                         q_reserve_nA,
+                                         r_reserve_nA)
                         val sub = Primitive.Vector.unsafeSub
                      in
                         (sub (qrs, 0), sub (qrs, 1))
@@ -1335,10 +1379,7 @@ structure IntInf =
                                    then 0 else 1)
                     val bytes =
                        Sz.+ (Sz.+ (bytesPerSequenceMetaData (* Sequence MetaData *),
-                             Sz.+ (0w1 (* sign *),
-                                   case MLton.Align.align of (* alignment *)
-                                      MLton.Align.Align4 => 0w3
-                                    | MLton.Align.Align8 => 0w7)),
+                             Sz.+ (0w1 (* sign *), alignment)),
                              Sz.* (Sz.zextdFromInt32 dpl, 
                                    Sz.zextdFromSeqIndex (numLimbs arg)))
                  in

@@ -16,13 +16,14 @@ typedef struct GC_objptr_sequence {
   objptr objs[1];
 } __attribute__ ((packed)) *GC_objptr_sequence;
 
-// base size of an objptr sequence
-#define GC_OBJPTR_SEQ_BASE_SIZE sizeof(GC_sequenceCounter) + sizeof(GC_sequenceLength) + sizeof(GC_header)
-
 // assertion for sequence type
 COMPILE_TIME_ASSERT(GC_objptr_sequence__obj_packed,
-                    offsetof(struct GC_objptr_sequence, objs) == GC_OBJPTR_SEQ_BASE_SIZE);
+                    offsetof(struct GC_objptr_sequence, objs) == GC_SEQUENCE_METADATA_SIZE);
+
+#endif // (defined (MLTON_GC_INTERNAL_TYPES))
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 static inline GC_objptr_sequence allocate_objptr_seq (GC_state s, GC_header h, GC_sequenceLength argct);
 
-#endif // (defined (MLTON_GC_INTERNAL_BASIS))
+#endif // (defined (MLTON_GC_INTERNAL_FUNCS))
