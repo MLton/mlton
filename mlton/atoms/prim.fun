@@ -78,7 +78,7 @@ datatype 'a t =
  | IntInf_notb (* to rssa (as runtime C fn) *)
  | IntInf_orb (* to rssa (as runtime C fn) *)
  | IntInf_quot (* to rssa (as runtime C fn) *)
- | IntInf_quotRem (* to rssa (as runtime C fn) (refs removed in to ssa2) *)
+ | IntInf_quotRem (* to rssa (as runtime C fn) *)
  | IntInf_rem (* to rssa (as runtime C fn) *)
  | IntInf_sub (* to rssa (as runtime C fn) *)
  | IntInf_toString (* to rssa (as runtime C fn) *)

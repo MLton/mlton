@@ -329,7 +329,7 @@ structure CFunction =
                                           Type.csize (),
                                           Type.csize ()),
                       convention = Cdecl,
-                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,  (* CHECK *)
+                      kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = false,
                                                      mayGC = false,
                                                      maySwitchThreads = false,

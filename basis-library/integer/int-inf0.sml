@@ -955,18 +955,14 @@ structure IntInf =
       in
          val bytesPerSequenceMetaData = zextdFromInt32 SequenceMetaDataSize.bytes
 
-         (* alignment for vector and intinf reservations *)
-         val alignment =
-            case MLton.Align.align of
-               MLton.Align.Align4 => 0w3
-             | MLton.Align.Align8 => 0w7
-
          (* Reserve heap space for a vector of n Intinf objptrs *)
          fun reserveIntinfVector n =
             (* size (in bytes) of objptr times number of objptrs requested *)
             Sz.* (zextdFromInt32 (Int32.quot (ObjptrWord.sizeInBits, 8)), zextdFromSeqIndex n)
             + bytesPerSequenceMetaData (* Sequence MetaData *)
-            + alignment
+            + (case MLton.Align.align of
+                  MLton.Align.Align4 => 0w3
+                | MLton.Align.Align8 => 0w7)
 
          (*
           * Reserve heap space for a large IntInf.int with room for num + extra
@@ -987,7 +983,10 @@ structure IntInf =
           * in every case.
           *)
          fun reserve (num: S.int, extra: S.int) =
-            reserve_noAlign (num, extra) + alignment
+            reserve_noAlign (num, extra)
+            + (case MLton.Align.align of
+                  MLton.Align.Align4 => 0w3
+                | MLton.Align.Align8 => 0w7)
       end
 
       (* badObjptr{Int,Word}{,Tagged} is the fixnum IntInf.int whose 
@@ -1105,7 +1104,10 @@ structure IntInf =
                      else
                         Prim.quot (num, den,
                                    (* add in the alignment after base quot size computation *)
-                                   Sz.+ (quotReserve_noAlign (nlimbs, dlimbs), alignment))
+                                   Sz.+ (quotReserve_noAlign (nlimbs, dlimbs),
+                                         case MLton.Align.align of
+                                            MLton.Align.Align4 => 0w3
+                                          | MLton.Align.Align8 => 0w7))
                   end
 
          fun bigRem (num: bigInt, den: bigInt): bigInt =
@@ -1123,7 +1125,10 @@ structure IntInf =
                      else
                         Prim.rem (num, den,
                                   (* add in the alignment after base rem size computation *)
-                                  Sz.+ (remReserve_noAlign (nlimbs, dlimbs), alignment))
+                                  Sz.+ (remReserve_noAlign (nlimbs, dlimbs),
+                                        case MLton.Align.align of
+                                           MLton.Align.Align4 => 0w3
+                                         | MLton.Align.Align8 => 0w7))
                   end
 
          fun bigQuotRem (num, den) =
@@ -1151,7 +1156,10 @@ structure IntInf =
                                          (* Reserve info for the results and a vector containing them
                                           * Add in an alignment for each result
                                           *)
-                                         reserveIntinfVector 2 + q_reserve_nA + r_reserve_nA + 0w2 * alignment,
+                                         reserveIntinfVector 2 + q_reserve_nA + r_reserve_nA
+                                            + 0w2 * (case MLton.Align.align of
+                                                        MLton.Align.Align4 => 0w3
+                                                      | MLton.Align.Align8 => 0w7),
                                          (* Also store the individual reservation byte counts - will be
                                           * needed on the runtime side to determine how much space the
                                           * rem argument should be pushed forward.
@@ -1379,7 +1387,9 @@ structure IntInf =
                                    then 0 else 1)
                     val bytes =
                        Sz.+ (Sz.+ (bytesPerSequenceMetaData (* Sequence MetaData *),
-                             Sz.+ (0w1 (* sign *), alignment)),
+                             Sz.+ (0w1 (* sign *), case MLton.Align.align of
+                                                      MLton.Align.Align4 => 0w3
+                                                    | MLton.Align.Align8 => 0w7)),
                              Sz.* (Sz.zextdFromInt32 dpl, 
                                    Sz.zextdFromSeqIndex (numLimbs arg)))
                  in

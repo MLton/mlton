@@ -324,9 +324,6 @@ structure Type =
       fun checkPrimApp {args, prim, result}: bool =
          let
             exception BadPrimApp
-            (* put primitive names in scope *)
-            datatype z = datatype Prim.Name.t
-            val primName = Prim.name prim
             fun default () =
                let
                   val targs =
@@ -353,12 +350,7 @@ structure Type =
                                exn = unit,
                                intInf = intInf,
                                real = real,
-                               reff =
-                                 (* override error for some functions so that
-                                  * the refs can survive to rssa *)
-                                 case primName of
-                                    IntInf_quotRem => reff1
-                                  | _  => fn _ => raise BadPrimApp,
+                               reff = fn _ => raise BadPrimApp,
                                thread = thread,
                                unit = unit,
                                vector = vector1,
@@ -368,13 +360,14 @@ structure Type =
             val default = fn () =>
                (default ()) handle BadPrimApp => false
 
+            datatype z = datatype Prim.Name.t
             fun arg i = Vector.sub (args, i)
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
             fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
             fun fiveArgs f = 5 = Vector.length args andalso f (arg 0, arg 1, arg 2, arg 3, arg 4)
             val seqIndex = word (WordSize.seqIndex ())
          in
-            case primName of
+            case Prim.name prim of
                Array_alloc _ =>
                   oneArg
                   (fn n =>
