@@ -397,7 +397,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      (*val parseBindStatement resolveCon resolveTycon resolveVar =
                                    makeBindStatement' resolveCon resolveTycon resolveVar*)
 
-     val parseProfileStatement = Statement.Profile <$> (P.spaces *> token "prof " *> P.spaces *>
+     val parseProfileStatement = Statement.Profile <$> (P.spaces *> token "prof" *> P.spaces *>
                                                        (ProfileExp.Enter <$ token "Enter" <|>
                                                         ProfileExp.Leave <$ token "Leave") <*>
                                                         P.cut ((SourceInfo.fromC o String.implode) <$>
@@ -420,7 +420,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                      parseUpdateStatement]
 
      in
-        parseStatements' ()
+        parseBindStatement
      end
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
