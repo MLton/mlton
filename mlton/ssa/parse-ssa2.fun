@@ -108,13 +108,10 @@
 
     local
 
-    (*fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-                                               (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
-                                               (P.spaces *> ident <* P.spaces))*)
-
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-                                               (((P.tuple (P.delay (makeType' resolveTycon resolveCon))) <|> P.pure (Vector.new0 ())),
+                                               (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
                                                (P.spaces *> ident <* P.spaces))
+
     (*and makeProd' resolveTycon resolveCon () = P.spaces *> P.char #"(" *> P.spaces *> Prod.make <$>
                                               (Vector.fromList <$> P.sepBy1 (makeProd <$$>
                                                                           (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
