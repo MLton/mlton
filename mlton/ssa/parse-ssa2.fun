@@ -415,21 +415,21 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
-     val parseStatements' = P.any [parseBindStatement,
-                                   parseProfileStatement,
-                                   parseUpdateStatement]
+     fun parseStatements'() = P.any [parseBindStatement,
+                                     parseProfileStatement,
+                                     parseUpdateStatement]
 
      in
-        parseStatements'
+        parseStatements' ()
      end
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
     let
         fun parseGlobals' () = P.spaces *> token "Globals:" *> Vector.fromList <$>
                                     P.many (parseStatements resolveCon resolveTycon resolveVar)
-            in
-              parseGlobals' ()
-            end
+    in
+        parseGlobals' ()
+    end
 
  fun parseMain resolveFunc = P.spaces *> token "Main:" *> resolveFunc <$> ident <* P.spaces
 
