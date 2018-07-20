@@ -119,7 +119,7 @@
 
     and makeProd' resolveTycon resolveCon () = parenOf(Prod.make <$>
                                                       (Vector.fromList <$>
-                                                      (P.sepBy (makeProd <$$>
+                                                      (P.sepBy1 (makeProd <$$>
                                                       ((P.delay (makeType' resolveTycon resolveCon) <* P.spaces),
                                                       ((P.str "ref" *> P.pure true) <|> P.pure false)),
                                                        P.char #"," *> P.spaces))))
@@ -421,7 +421,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                       parseUpdateStatement]
 
      in
-        parseStatements' ()
+        parseBindStatement
      end
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
