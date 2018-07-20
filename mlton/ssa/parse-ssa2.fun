@@ -298,6 +298,20 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                               P.spaces *> P.tuple varExp <* P.spaces))
            end
 
+ fun makeBindStatement (var, ty, exp) =
+ Statement.Bind {
+    var = var,
+    ty = ty,
+    exp = exp
+ }
+
+ fun makeUpdateStatement (offset, base, value) =
+ Statement.Update {
+    base = base,
+    offset = offset,
+    value = value
+ }
+
  fun parseStatements resolveCon resolveTycon resolveVar =
      let
 
@@ -307,7 +321,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> P.str "val" *> P.spaces *> parseType resolveTycon resolveCon <* P.spaces)
+         symbol ":" *> parseType resolveTycon resolveCon <* P.spaces)
 
      fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
@@ -371,13 +385,6 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                              Exp.Var     <$>   parseVarExp
                                             ]
 
-     fun makeBindStatement (var, ty, exp) =
-     Statement.Bind {
-        var = var,
-        ty = ty,
-        exp = exp
-     }
-
      val parseBindStatement = makeBindStatement <$> (P.spaces *> token "val" *> P.spaces *>
                                                     (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions ty <* P.spaces)
@@ -403,21 +410,14 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                         P.cut ((SourceInfo.fromC o String.implode) <$>
                                                         P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces))
 
-     fun makeUpdateStatement (offset, base, value) =
-     Statement.Update {
-        base = base,
-        offset = offset,
-        value = value
-     }
-
      val parseUpdateStatement = P.spaces *> token "upd" *> P.spaces *> token "sel" *> P.spaces *>
                                 makeUpdateStatement <$$$> (P.uint <* P.spaces,
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
-     fun parseStatements'() = P.any [parseBindStatement,
+     (*fun parseStatements'() = P.any [parseBindStatement,
                                      parseProfileStatement,
-                                     parseUpdateStatement]
+                                     parseUpdateStatement]*)
 
      in
         parseBindStatement
