@@ -415,12 +415,12 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                            parenOf (makeBase resolveVar),
                                                            P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
 
-     (*fun parseStatements'() = P.any [parseBindStatement,
-                                     parseProfileStatement,
-                                     parseUpdateStatement]*)
+     fun parseStatements' () = P.any [parseBindStatement,
+                                      parseProfileStatement,
+                                      parseUpdateStatement]
 
      in
-        parseBindStatement
+        parseStatements' ()
      end
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
