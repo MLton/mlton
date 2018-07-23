@@ -528,7 +528,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$>
                                                                         (label',
-                                                                         parenOf(parsePrimAppExp resolveTycon resolveVar),
+                                                                         parenOf(parsePrimAppExp resolveTycon resolveCon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
                                                                          parseType resolveTycon)
 
