@@ -84,9 +84,6 @@
                    | _        => ObjectCon.Con (resolveCon ident)
 
  fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
- (*fun parseProd resolveTycon resolveCon = Prod.make <$> (P.spaces *>
-                                         parenOf (Vector.fromList <$> P.many(makeProd <$$> (parseType resolveTycon,
-                                        (P.str "ref" *> P.pure true) <|> P.pure false))))*)
 
  fun makeType resolveTycon resolveCon (args, ident) =
      case ident of
@@ -124,7 +121,7 @@
         fun parseProd resolveTycon resolveCon = makeProd' resolveTycon resolveCon ()
     end
 
-    val ctype = (P.any o List.map)
+ val ctype = (P.any o List.map)
                 (CType.all, fn ct =>
                  ct <$ token (CType.toString ct))
 
@@ -199,12 +196,10 @@
         }
 
         val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseVar <* P.str "," <* P.spaces,
-                                                                                           parseVar)) <* P.spaces
-
-        val parseBase = P.any[parseBaseObject, parseBaseVectorSub]
+                                                                                           parseVar <* P.spaces)) <* P.spaces
 
         in
-          parseBase
+          fun parseBase () = P.any[parseBaseObject, parseBaseVectorSub]
         end
 
 fun parsePrimAppExp resolveTycon resolveCon resolveVar =
