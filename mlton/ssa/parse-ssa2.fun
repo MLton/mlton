@@ -109,13 +109,8 @@
     local
 
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-                                               (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
+                                               (((SOME <$> (makeProd' resolveTycon resolveCon) <|> P.pure NONE),
                                                (P.spaces *> ident <* P.spaces))
-
-    (*and makeProd' resolveTycon resolveCon () = P.spaces *> P.char #"(" *> P.spaces *> Prod.make <$>
-                                              (Vector.fromList <$> P.sepBy1 (makeProd <$$>
-                                                                          (P.delay (makeType' resolveTycon resolveCon) <* P.spaces,
-                                                                          (((P.str "ref" *> P.pure true) <|> P.pure false) <* (P.char #"," <|> P.char #")") <* P.spaces)) <* P.spaces))*)
 
     and makeProd' resolveTycon resolveCon () = parenOf(Prod.make <$>
                                                       (Vector.fromList <$>
@@ -390,20 +385,6 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                     (typedvar >>= (fn (var, ty) =>
                                                     (symbol "=" *> parseExpressions ty <* P.spaces)
                                                     >>= (fn exp => P.pure (var, ty, exp)))))
-
-     (*fun makeBindStatement' resolveCon resolveTycon resolveVar =
-         let
-            val parseBindStatement' resolveCon resolveTycon resolveVar = makeBindStatement <$>
-                                                                        (P.spaces *> P.str "val" *> P.spaces *>
-                                                                         typedvar >>= (fn (var, ty) =>
-                                                                        (symbol "=" *> parseExpressions resolveCon resolveTycon resolveVar ty <* P.spaces)
-                                                                        >>= (fn exp => P.pure (var, ty, exp))))
-            in
-              parseBindStatement' resolveCon resolveTycon resolveVar
-            end*)
-
-     (*val parseBindStatement resolveCon resolveTycon resolveVar =
-                                   makeBindStatement' resolveCon resolveTycon resolveVar*)
 
      val parseProfileStatement = Statement.Profile <$> (P.spaces *> token "prof" *> P.spaces *>
                                                        (ProfileExp.Enter <$ token "Enter" <|>
