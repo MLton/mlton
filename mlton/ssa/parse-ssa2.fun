@@ -362,7 +362,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
 
      fun makeInjectExp resolveTycon (variant, sum) = {sum = sum, variant = variant}
-     val parseInjectExp = token "inj" *> P.spaces *> parenOf(makeInjectExp <$$>
+     val parseInjectExp resolveTycon = token "inj" *> P.spaces *> parenOf(makeInjectExp <$$>
                                                                        (parseVarExp <* token ":" <* P.spaces,
                                                                         P.spaces *> resolveTycon <$> ident <* P.spaces))
 
@@ -379,7 +379,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                                                parenOf (makeBase resolveVar)))
 
      fun parseExpressions parseType = P.any [Exp.Const   <$>   parseConstExp parseType,
-                                             Exp.Inject  <$>   parseInjectExp,
+                                             Exp.Inject  <$>   parseInjectExp resolveTycon,
                                              Exp.Object  <$>   parseObjectExp,
                                              Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveCon resolveVar),
                                              Exp.Select  <$>   parseSelectExp,
