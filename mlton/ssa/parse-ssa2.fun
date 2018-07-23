@@ -517,7 +517,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         val parseTransferGoto = P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
                                                                                    P.spaces *> vars <* P.spaces)
 
-        (*fun makeTransferArith (success, {prim, args}, overflow, ty) =
+        fun makeTransferArith (success, {prim, args}, overflow, ty) =
         Transfer.Arith {
           prim = prim,
           args = args,
@@ -530,7 +530,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                                         (label',
                                                                          parenOf(parsePrimAppExp resolveTycon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
-                                                                         parseType resolveTycon)*)
+                                                                         parseType resolveTycon)
 
         fun makeReturnNonTail cont (handler) =
         Return.NonTail {
@@ -581,7 +581,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *> P.spaces *> vars <* P.spaces)
 
-        val parseTransfer = P.any [(*parseTransferArith,*)
+        val parseTransfer = P.any [parseTransferArith,
                                    parseTransferBug,
                                    parseTransferCall,
                                    parseTransferCase,
