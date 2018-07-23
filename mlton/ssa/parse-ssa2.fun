@@ -381,7 +381,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      fun parseExpressions parseType = P.any [Exp.Const   <$>   parseConstExp parseType,
                                              (*Exp.Inject  <$>   parseInjectExp,*)
                                              Exp.Object  <$>   parseObjectExp,
-                                             (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveVar),*)
+                                             (*Exp.PrimApp <$>  (parsePrimAppExp resolveTycon resolveCon resolveVar),*)
                                              Exp.Select  <$>   parseSelectExp,
                                              Exp.Var     <$>   parseVarExp
                                             ]
@@ -530,7 +530,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                                         (label',
                                                                          parenOf(parsePrimAppExp resolveTycon resolveCon resolveVar),
                                                                          P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
-                                                                         parseType resolveTycon)
+                                                                         parseType resolveTycon resolveCon)
 
         fun makeReturnNonTail cont (handler) =
         Return.NonTail {
