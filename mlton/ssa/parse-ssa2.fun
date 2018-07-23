@@ -619,9 +619,9 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
        val resolveLabel = makeNameResolver(Label.newString o strip_unique)
     in
        P.compose(skipComments (),
-       (makeProgram <$$$$>
+       (makeProgram <$$$>
            (parseDatatype resolveCon resolveTycon,
-            parseGlobals resolveCon resolveTycon resolveVar,
+            (*parseGlobals resolveCon resolveTycon resolveVar,*)
             parseMain resolveFunc,
             parseFunctions resolveCon resolveTycon resolveVar resolveFunc resolveLabel
             (* failing next to check for end of file *)
