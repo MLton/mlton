@@ -109,7 +109,7 @@
     local
 
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-                                               (((SOME <$> (makeProd' resolveTycon resolveCon) <|> P.pure NONE),
+                                               (((SOME <$> (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
                                                (P.spaces *> ident <* P.spaces))
 
     and makeProd' resolveTycon resolveCon () = parenOf(Prod.make <$>
