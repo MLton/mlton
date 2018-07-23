@@ -421,7 +421,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                       parseUpdateStatement]
 
      in
-        parseBindStatement
+        parseStatements' ()
      end
 
  fun parseGlobals resolveCon resolveTycon resolveVar =
