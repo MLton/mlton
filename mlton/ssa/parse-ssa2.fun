@@ -109,13 +109,13 @@
     local
 
     fun makeType' resolveTycon resolveCon () = (makeType resolveTycon resolveCon) <$$>
-                                               (((SOME <$> (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
+                                               (((SOME <$> P.delay (makeProd' resolveTycon resolveCon)) <|> P.pure NONE),
                                                (P.spaces *> ident <* P.spaces))
 
     and makeProd' resolveTycon resolveCon () = parenOf(Prod.make <$>
                                                       (Vector.fromList <$>
                                                       (P.sepBy (makeProd <$$>
-                                                      ((makeType' resolveTycon resolveCon <* P.spaces),
+                                                      ((P.delay (makeType' resolveTycon resolveCon) <* P.spaces),
                                                       ((P.str "ref" *> P.pure true) <|> P.pure false)),
                                                        P.char #"," *> P.spaces))))
 
@@ -160,17 +160,6 @@
  val parseWord8Vector = WordXVector.fromVector <$$>
       (P.pure {elementSize=WordSize.word8},
        P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
-
- (*fun parseObjectCon resolveCon = (makeObjectCon resolveCon) <$> (P.spaces *> ident <* P.spaces)*)
-
- (*fun parseProd resolveTycon = Prod.make (P.spaces *>
-                                         parenOf (Vector.fromList <$> P.many (makeProd <$$> (parseType resolveTycon <* P.spaces,
-                                                                                            ((P.str "ref" *> true) <|> P.pure(false))))
-                                                 <* P.spaces))*)
-
- (*fun constructor resolveCon resolveTycon = (makeCon resolveCon) <$$>
-                 ((P.tuple (parseType resolveTycon)) <|> Vector.fromList <$> P.many ((P.char #"(" *> (parseType
-                  resolveTycon) <* P.char #")")), ident <* P.spaces)*)
 
  fun makeConstructor resolveCon (args, name) = {con = resolveCon name, args = args}
 
@@ -317,7 +306,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
      val typedvar = (fn (x,y) => (x,y)) <$$>
         (SOME <$> var <|> token "_" *> P.pure(NONE),
-         symbol ":" *> parseType resolveTycon resolveCon <* P.spaces)
+         symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
 
      fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
