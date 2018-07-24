@@ -768,7 +768,7 @@ structure Statement =
                        let
                           fun set () =
                              let
-                                val s = Layout.toString (Exp.layout' (exp, global))
+                                val s = Layout.toString (Exp.layout' (exp, Var.layout))
                                 val maxSize = 20
                                 val dots = " ... "
                                 val dotsSize = String.size dots
