@@ -305,7 +305,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
 
-     fun parseConstExp parseType = token "const" *> P.spaces *>
+     (*fun parseConstExp parseType = token "const" *> P.spaces *>
                                                          P.cut (
                                                            case Type.dest parseType of
                                                            Type.Datatype parseType =>
@@ -323,9 +323,9 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                                                        P.failCut "string constant"]
                                                             else
                                                                P.fail "constant"
-                                                            | _ => P.fail "constant")
+                                                            | _ => P.fail "constant")*)
 
-     (*fun parseConstExp parseType = token "const" *> P.cut (
+     fun parseConstExp parseType = token "const" *> P.cut (
                                           case Type.dest parseType of
                                           Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
                                           makeWord (Tycon.word ws)) <|> P.failCut "word"
@@ -338,7 +338,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                           [Const.string <$> parseString,
                                           Const.wordVector <$> parseWord8Vector,
                                           P.failCut "string constant"]
-                                        | _ => P.fail "constant" )*)
+                                        | _ => P.fail "constant" )
 
 
 
