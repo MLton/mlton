@@ -305,26 +305,6 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         (SOME <$> var <|> token "_" *> P.pure(NONE),
          symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
 
-     (*fun parseConstExp parseType = token "const" *> P.spaces *>
-                                                         P.cut (
-                                                           case Type.dest parseType of
-                                                           Type.Datatype parseType =>
-                                                              if Tycon.isWordX parseType then
-                                                                 Const.Word <$> (P.str "0x" *> parseHex >>= makeWord parseType) <|> P.failCut "word"
-                                                              else if Tycon.isRealX parseType then
-                                                                 Const.Real <$> parseReal (Tycon.deRealX parseType) <|> P.failCut "real"
-                                                              else if Tycon.isIntX parseType then
-                                                                 Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-                                                              else if Tycon.equals(parseType, Tycon.vector) then
-                                                                (* assume it's a word8 vector *)
-                                                                  P.any
-                                                                      [Const.string <$> parseString,
-                                                                       Const.wordVector <$> parseWord8Vector,
-                                                                       P.failCut "string constant"]
-                                                            else
-                                                               P.fail "constant"
-                                                            | _ => P.fail "constant")*)
-
      fun parseConstExp parseType = token "const" *> P.cut (
                                           case Type.dest parseType of
                                           Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
@@ -381,7 +361,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      val parseUpdateStatement = P.spaces *> token "upd" *> P.spaces *> token "sel" *> P.spaces *>
                                 makeUpdateStatement <$$$> (P.uint <* P.spaces,
                                                            parenOf (makeBase resolveVar),
-                                                           P.spaces *> P.str ":=" *> parseVarExp <* P.spaces)
+                                                           P.spaces *> P.str ":=" *> P.spaces *>parseVarExp <* P.spaces)
 
      val parseStatements = P.any [parseBindStatement,
                                   parseProfileStatement,
