@@ -426,7 +426,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
               | 16 => WordSize.word16
               | 32 => WordSize.word32
               | 64 => WordSize.word64
-              |  _ => raise Fail "makeWordCases" (* can't happen *)
+              | _  => raise Fail "makeWordCases" (* can't happen *)
                  , wds),
               default=def}
 
@@ -461,7 +461,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
           dst = dst
         }
 
-        val parseTransferGoto = P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
+        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
                                                                                    P.spaces *> vars <* P.spaces)
 
         fun makeTransferArith (success, {prim, args}, overflow, ty) =
@@ -507,7 +507,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                 vars <* symbol ")" <* P.spaces >>= (fn argus =>
                                 makeTransferCall argus func <$> (getReturn return))))
 
-        val parseTransferBug = P.spaces *> P.str "bug" *> P.pure(Transfer.Bug) <* P.spaces
+        val parseTransferBug = P.spaces *> P.str "bug" *> P.spaces *>P.pure(Transfer.Bug) <* P.spaces
 
         fun makeTransferRuntime (return , {prim, args}) =
         Transfer.Runtime {
