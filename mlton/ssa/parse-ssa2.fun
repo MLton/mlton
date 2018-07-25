@@ -464,7 +464,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> labelWithArgs
                                                                                          <*> vars
 
-        fun makeTransferArith (success, {prim, args}, overflow, ty) =
+        fun makeTransferArith (ty, success, {prim, args}, overflow) =
         Transfer.Arith {
           prim = prim,
           args = args,
@@ -474,10 +474,10 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         }
 
         val parseTransferArith = P.str "arith" *> P.spaces *> makeTransferArith <$$$$>
-                                                                        (label',
+                                                                        (parseType resolveTycon resolveCon <* P.spaces,
+                                                                         label',
                                                                          parenOf(parsePrimAppExp resolveTycon resolveCon resolveVar),
-                                                                         P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces,
-                                                                         parseType resolveTycon resolveCon)
+                                                                         P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
 
         fun makeReturnNonTail cont (handler) =
         Return.NonTail {
@@ -488,12 +488,12 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                               | _ => Handler.Handle (resolveLabel handler)
         }
 
-        fun returnNonTail cont = makeReturnNonTail cont <$> (P.str "handle _ => " *> ident <* P.spaces)
+        fun parseReturnNonTail cont = makeReturnNonTail cont <$> (P.str "handle _ => " *> ident <* P.spaces)
 
         fun getReturn return = case return of
-                                          "dead" => P.pure(Return.Dead)
+                                          "dead"   => P.pure(Return.Dead)
                                         | "return" => P.pure(Return.Tail)
-                                        | _ => returnNonTail (resolveLabel return)
+                                        | _        => parseReturnNonTail (resolveLabel return)
 
         fun makeTransferCall args func (return) =
         Transfer.Call {
@@ -507,7 +507,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                 vars <* symbol ")" <* P.spaces >>= (fn argus =>
                                 makeTransferCall argus func <$> (getReturn return))))
 
-        val parseTransferBug = P.spaces *> P.str "bug" *> P.spaces *>P.pure(Transfer.Bug) <* P.spaces
+        val parseTransferBug = P.spaces *> P.str "bug" *> P.spaces *> P.pure(Transfer.Bug) <* P.spaces
 
         fun makeTransferRuntime (return , {prim, args}) =
         Transfer.Runtime {
@@ -516,17 +516,18 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
            return = return
         }
 
-        val parseTransferRuntime = makeTransferRuntime <$$>
-                                         (P.str "runtime" *> P.spaces *> label' <* P.spaces,
-                                          parenOf (parsePrimAppExp resolveTycon resolveCon resolveVar))
+        val parseTransferRuntime = P.spaces *> P.str "runtime" *> P.spaces *>
+                                   makeTransferRuntime <$$>
+                                  (label' <* P.spaces,
+                                   parenOf (parsePrimAppExp resolveTycon resolveCon resolveVar))
 
         fun makeTransferReturn vars = Transfer.Return vars
 
-        val parseTransferReturn = makeTransferReturn <$> (P.str "return" *> P.spaces *> vars <* P.spaces)
+        val parseTransferReturn = P.spaces *> P.str "return" *> P.spaces *> makeTransferReturn <$> (vars <* P.spaces)
 
         fun makeTransferRaise vars = Transfer.Raise vars
 
-        val parseTransferRaise = makeTransferRaise <$> (P.str "raise" *> P.spaces *> vars <* P.spaces)
+        val parseTransferRaise = P.spaces *> P.str "raise" *> P.spaces *> makeTransferRaise <$> (vars <* P.spaces)
 
         val parseTransfer = P.any [parseTransferArith,
                                    parseTransferBug,
