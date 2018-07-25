@@ -407,12 +407,12 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
         val labelWithArgs = P.spaces *> resolveLabel <$> ident
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
-           (var ,
-            symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
+                                           (var,
+                                            symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
 
-        val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ()))
+        val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ())) <* P.spaces
 
-        val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ()))
+        val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ())) <* P.spaces
 
         fun makeConCases var (cons, def) =
            {test = var,
@@ -455,14 +455,14 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val parseTransferCase = Transfer.Case <$> makeTransferCase
 
-        fun makeTransferGoto (dst, args) =
+        fun makeTransferGoto dst args =
         Transfer.Goto {
-          args = args,
-          dst = dst
+          dst = dst,
+          args = args
         }
 
-        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$$> (labelWithArgs <* P.spaces,
-                                                                                   P.spaces *> vars <* P.spaces)
+        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> labelWithArgs
+                                                                                         <*> vars
 
         fun makeTransferArith (success, {prim, args}, overflow, ty) =
         Transfer.Arith {
@@ -549,7 +549,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                          makeBlock
                          <$> labelWithArgs
                          <*> args <* P.spaces
-                         <*> (Vector.fromList <$> P.many(parseStatements resolveCon resolveTycon resolveVar))
+                         <*> (Vector.fromList <$> P.many (parseStatements resolveCon resolveTycon resolveVar))
                          <*> parseTransfer
 
         val makeFunction' = makeFunction
