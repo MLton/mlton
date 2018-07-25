@@ -381,7 +381,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
  fun parseMain resolveFunc = P.spaces *> token "Main:" *> resolveFunc <$> ident <* P.spaces
 
- fun makeFunction name args returns raises blocks label =
+ fun makeFunction name args returns raises label blocks =
  Function.new {
    args = args,
    returns = returns,
@@ -558,13 +558,14 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                            <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
                            <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
                            <*  doneRecord
-                           <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(name)))
                            <*> label
+                           <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(name)))
 
         val parseFunction' = P.spaces *> token "Functions:" *> P.many makeFunction'
-        in
-            parseFunction'
-        end
+
+    in
+      parseFunction'
+    end
 
  fun makeProgram ( datatypes, globals, main, functions ) =
  Program.T {
