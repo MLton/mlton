@@ -398,7 +398,8 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val var = resolveVar <$> ident <* P.spaces
 
-        val label = P.spaces *> symbol "=" *> P.spaces *> resolveLabel <$> ident <* P.spaces <* token "()"
+        val label = P.spaces *> symbol "=" *> P.spaces *> P.str "goto" *> P.spaces *>
+                                              resolveLabel <$> ident <* P.spaces <* token "()"
 
         val label' = resolveLabel <$> ident <* P.spaces
 
