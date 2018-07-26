@@ -394,22 +394,22 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
  fun parseFunctions resolveCon resolveTycon resolveVar resolveFunc resolveLabel =
      let
-        val name =  P.spaces *> symbol "fun" *> resolveFunc <$> ident <* P.spaces
+        val functionName =  P.spaces *> symbol "fun" *> resolveFunc <$> ident <* P.spaces
 
         val var = resolveVar <$> ident <* P.spaces
 
-        val label = P.spaces *> symbol "=" *> P.spaces *> P.str "goto" *> P.spaces *>
+        val functionLabel = P.spaces *> symbol "=" *> P.spaces *> P.str "goto" *> P.spaces *>
                                               resolveLabel <$> ident <* P.spaces <* token "()"
 
         val label' = resolveLabel <$> ident <* P.spaces
 
         val con' = P.spaces *> resolveCon <$> ident <* P.spaces
 
-        val labelWithArgs = P.spaces *> resolveLabel <$> ident
+        val blockLabel = P.spaces *> resolveLabel <$> ident
 
         val typedvar = (fn (x,y) => (x,y)) <$$>
                                            (var,
-                                            symbol ":" *> (parseType resolveTycon resolveCon) <* P.spaces)
+                                            symbol ":" *> P.spaces *> (parseType resolveTycon resolveCon) <* P.spaces)
 
         val args = P.spaces *> (P.tuple typedvar <|> P.pure (Vector.new0 ())) <* P.spaces
 
@@ -462,7 +462,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
           args = args
         }
 
-        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> labelWithArgs
+        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> blockLabel
                                                                                          <*> vars
 
         fun makeTransferArith (ty, success, {prim, args}, overflow) =
@@ -549,19 +549,19 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val parseBlock = P.spaces *> P.str "block:" *> P.spaces *>
                          makeBlock
-                         <$> labelWithArgs
+                         <$> blockLabel
                          <*> args <* P.spaces
                          <*> (Vector.fromList <$> P.many (parseStatements resolveCon resolveTycon resolveVar))
                          <*> parseTransfer
 
         val makeFunction' = makeFunction
-                           <$> name
+                           <$> functionName
                            <*> args <* symbol ":" <* P.spaces
                            <*> fromRecord "returns" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
                            <*> fromRecord "raises" (optionOf (P.tuple (parseType resolveTycon resolveCon) <|> P.pure (Vector.new0 ())))
                            <*  doneRecord
-                           <*> label
-                           <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(name)))
+                           <*> functionLabel
+                           <*> (Vector.fromList <$> P.manyFailing(parseBlock, P.peek(functionName)))
 
         val parseFunction' = P.spaces *> token "Functions:" *> P.many makeFunction'
 
