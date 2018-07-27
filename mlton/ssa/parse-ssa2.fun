@@ -100,10 +100,10 @@
               | "unit"     => Type.unit
               | _          => (case args of
                                   NONE => Type.datatypee (resolveTycon ident)
-                                | SOME args => case makeObjectCon resolveCon ident of
-                                                    ObjectCon.Tuple  => Type.tuple args
-                                                  | ObjectCon.Vector => Type.vector args
-                                                  | _                => Type.object {args = args, con = ObjectCon.Con resolveCon ident})
+                                | SOME args => case ident of
+                                                    "tuple"  => Type.tuple args
+                                                  | "vector" => Type.vector args
+                                                  | _        => Type.object {args = args, con = ObjectCon.Con (resolveCon ident)})
 
     local
 
