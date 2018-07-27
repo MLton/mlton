@@ -3087,12 +3087,6 @@ struct
         val elimALCopy_msg = elimALCopy_msg
       end
 
-      (* TODO add new template/rewriter elimCheckP? based on elimALCopy or
-       * others
-       * Also:
-       *    - Fix liveness information
-       *    - Reassemble block w/o check oper
-       *    - Add flag to `main`, `control-flags`, `native`*)
       local
         val isInstructionMOV_dstTemp : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.MOV
@@ -3103,28 +3097,19 @@ struct
 
         fun isInstructionAL_aux (check) : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.BinAL
-                                      {dst = Operand.MemLoc memloc,...}),
-                _)
+                                      {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | (Assembly.Instruction (Instruction.pMD
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
+                                      {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | (Assembly.Instruction (Instruction.IMUL2
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
+                                      {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | (Assembly.Instruction (Instruction.UnAL
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
+                                      {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | (Assembly.Instruction (Instruction.SRAL
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
+                                      {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | _ => false
         val isInstructionAL_dstTemp : statement_type -> bool
@@ -3135,51 +3120,40 @@ struct
           = fn (instr, liveness as Liveness.T {dead, ...})
             => isInstructionAL_aux (isDeadTemp dead) (instr, liveness)
 
-        val isInstructionALorMOV_dstTemp : statement_type -> bool
-          = fn stype => isInstructionAL_dstTemp stype orelse
-                        isInstructionMOV_dstTemp stype
-
         val template : template
           = {start = EmptyOrNonEmpty,
              statements = [One isInstructionMOV_dstTemp,
                            All isComment,
-                           One isInstructionALorMOV_dstTemp,
+                           One isInstructionAL_dstTemp,
                            All isComment,
-                           One isInstructionALorMOV_dstTemp,
+                           One isInstructionMOV_dstTemp,
                            All isComment,
                            One isInstructionAL_dstDeadTemp],
              finish = EmptyOrNonEmpty,
              transfer = fn _ => true}
 
-        (*
-         * Pattern:
-         *
-         * mov $x, $z
-         * AL  $y, $z
-         * mov $x, $t
-         * AL  $y, $t
-         * setcc
-         *
-         * OR
-         *
-         * mov $x, $z
-         * mov $x, $t
-         * AL  $y, $z
-         * AL  $y, $t
-         * setcc
-         *)
-
         val rewriter : rewriter
-          = fn {entry, profileLabel, start, statements, finish, transfer} =>
-            let
-              fun rewriter' (stmtMov, src1x, dst1z,
-                             comments1,
-                             stmtAL, instrAL1,
-                             comments2,
-                             src2x, dst2z,
-                             comments3,
-                             instrAL2, liveOut2)
-                = if !Control.Native.elimALRedundant andalso
+          = fn {entry,
+                profileLabel,
+                start,
+                statements =
+                [[(stmtMov as Assembly.Instruction (Instruction.MOV
+                                                    {src = src1x,
+                                                     dst = dst1z, ...}),
+                   _)],
+                 comments1,
+                 [(stmtAL as Assembly.Instruction instrAL1, _)],
+                 comments2,
+                 [(Assembly.Instruction (Instruction.MOV
+                                         {src = src2x,
+                                          dst = dst2z, ...}),
+                   _)],
+                 comments3,
+                 [(Assembly.Instruction instrAL2,
+                   Liveness.T {liveOut = liveOut2, ...})]],
+                finish,
+                transfer}
+                => if !Control.Native.elimALRedundant andalso
                      Operand.eq (src1x, src2x) andalso
                      (let
                         fun checkUn (oper1, dst1, oper2, dst2)
@@ -3192,6 +3166,7 @@ struct
                             Operand.eq(src1, src2) andalso
                             Operand.eq(dst1z, dst1) andalso
                             Operand.eq(dst2z, dst2)
+
                       in
                         case (instrAL1, instrAL2) of
                            (Instruction.BinAL
@@ -3204,6 +3179,12 @@ struct
                             Instruction.pMD
                              {oper = oper2, src = src2, dst = dst2, ...})
                            => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | (Instruction.IMUL2
+                             {src = src1, dst = dst1, ...},
+                            Instruction.IMUL2
+                             {src = src2, dst = dst2, ...})
+                           => checkBin (Instruction.IMUL, src1, dst1,
+                                        Instruction.IMUL, src2, dst2)
                          | (Instruction.UnAL
                              {oper = oper1, dst = dst1, ...},
                             Instruction.UnAL
@@ -3240,52 +3221,7 @@ struct
                                 transfer = transfer})
                        end
                      else NONE
-             in
-               case statements of
-                    [[(stmtMov as Assembly.Instruction (Instruction.MOV
-                                                        {src = src1x,
-                                                         dst = dst1z, ...}),
-                       _)],
-                    comments1,
-                    [(stmtAL as Assembly.Instruction instrAL1, _)],
-                    comments2,
-                    [(Assembly.Instruction (Instruction.MOV
-                                            {src = src2x,
-                                             dst = dst2z, ...}),
-                      _)],
-                    comments3,
-                    [(Assembly.Instruction instrAL2,
-                      Liveness.T {liveOut = liveOut2, ...})]]
-                      => rewriter' (stmtMov, src1x, dst1z,
-                                    comments1,
-                                    stmtAL, instrAL1,
-                                    comments2,
-                                    src2x, dst2z,
-                                    comments3,
-                                    instrAL2, liveOut2)
-                  | [[(stmtMov as Assembly.Instruction (Instruction.MOV
-                                                         {src = src1x,
-                                                          dst = dst1z, ...}),
-                       _)],
-                     comments1,
-                     [(Assembly.Instruction (Instruction.MOV
-                                             {src = src2x,
-                                              dst = dst2z, ...}),
-                       _)],
-                     comments2,
-                     [(stmtAL as Assembly.Instruction instrAL1, _)],
-                     comments3,
-                     [(Assembly.Instruction instrAL2,
-                       Liveness.T {liveOut = liveOut2, ...})]]
-                       => rewriter' (stmtMov, src1x, dst1z,
-                                     comments1,
-                                     stmtAL, instrAL1,
-                                     comments2,
-                                     src2x, dst2z,
-                                     comments3,
-                                     instrAL2, liveOut2)
-                  | _ => NONE
-             end
+            | _ => Error.bug "amd64Simplify.PeepholeBlock: elimALRedundant"
 
         val (callback,elimALRedundant_msg)
           = make_callback_msg "elimALRedundant"
@@ -4146,9 +4082,15 @@ struct
       end
 
       local
+        val optimizations_pre
+          = elimALRedundant::
+            nil
+        val optimizations_pre_msg
+          = elimALRedundant_msg::
+            nil
+
         val optimizations 
           = elimALCopy::
-            elimALRedundant::
             elimSSEASCopy::
             elimDeadDsts::
             elimSelfMove::
@@ -4159,7 +4101,6 @@ struct
             nil
         val optimizations_msg
           = elimALCopy_msg:: 
-            elimALRedundant_msg::
             elimSSEASCopy_msg:: 
             elimDeadDsts_msg::
             elimSelfMove_msg::
@@ -4180,6 +4121,21 @@ struct
             elimSSESSelfMove_minor_msg::
             nil
       in
+        val peepholeLivenessBlock_pre
+          = fn block => (peepholeBlock {optimizations = optimizations_pre,
+                                        block = block})
+
+        val (peepholeLivenessBlock_pre, peepholeLivenessBlock_pre_msg)
+          = tracer
+            "peepholeLivenessBlock_pre"
+            peepholeLivenessBlock_pre
+
+        val peepholeLivenessBlock_pre_msg
+          = fn () => (peepholeLivenessBlock_pre_msg ();
+                      Control.indent ();
+                      List.foreach(optimizations_pre_msg, fn msg => msg ());
+                      Control.unindent ())
+
         val peepholeLivenessBlock
           = fn block => (peepholeBlock {optimizations = optimizations,
                                         block = block})
@@ -4403,6 +4359,7 @@ struct
                                   {block = block,
                                    changed = false,
                                    msg = "peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate"}
+
                           (***************************************************)
                           (* peepholeBlock_pre                               *)
                           (***************************************************)
@@ -4431,9 +4388,47 @@ struct
                                    changed = false,
                                    msg = "amd64Liveness.LivenessBlock.toLivenessBlock"}
 
+
+                          val _ = if !Control.debug then
+                                    (print "\n***** BEGIN PRE-PEEPHOLE *****\n"
+                                    ; Block.layouts (amd64Liveness.LivenessBlock.toBlock
+                                                     {block = block},
+                                                     print o Layout.toString)
+                                    ; print "\n***** END PRE-PEEPHOLE *****\n")
+                                  else ()
+
+                          (***************************************************)
+                          (* peepholeLivenessBlock_pre                       *)
+                          (***************************************************)
+                          val {block = block',
+                               changed = changed'}
+                            = PeepholeLivenessBlock.peepholeLivenessBlock_pre
+                              block
+
+                          val _ = checkLivenessBlock
+                                  {block = block,
+                                   block' = block',
+                                   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_pre"}
+
+                          val _ = changedLivenessBlock_msg
+                                  {block = block',
+                                   changed = changed',
+                                   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_pre"}
+                          val block = block'
+                          val changed = changed orelse changed'
+
+                          val _ = if !Control.debug then
+                                    (print "\n***** BEGIN POST-PEEPHOLE *****\n"
+                                    ; Block.layouts (amd64Liveness.LivenessBlock.toBlock
+                                                     {block = block},
+                                                     print o Layout.toString)
+                                    ; print "\n***** END POST-PEEPHOLE *****\n")
+                                  else ()
+
                           (***************************************************)
                           (* moveHoist                                       *)
                           (***************************************************)
+
                           val {block = block', 
                                changed = changed'}
                             = if !Control.Native.moveHoist
@@ -4624,6 +4619,7 @@ struct
        amd64EntryTransfer.verifyEntryTransfer_msg ();
        PeepholeBlock.peepholeBlock_pre_msg ();
        amd64Liveness.LivenessBlock.toLivenessBlock_msg ();
+       PeepholeLivenessBlock.peepholeLivenessBlock_pre_msg ();
        MoveHoistLivenessBlock.moveHoist_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_msg ();
        CopyPropagateLivenessBlock.copyPropagate_msg ();
