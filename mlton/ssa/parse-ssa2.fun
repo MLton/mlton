@@ -101,8 +101,8 @@
               | _          => (case args of
                                   NONE => Type.datatypee (resolveTycon ident)
                                 | SOME args => case ident of
-                                                    "tuple"  => Type.tuple args
-                                                  | "vector" => Type.vector args
+                                                    "tuple"  => Type.tuple  {args = args, con = ObjectCon.Tuple}
+                                                  | "vector" => Type.object {args = args, con = ObjectCon.Vector}
                                                   | _        => Type.object {args = args, con = ObjectCon.Con (resolveCon ident)})
 
     local
