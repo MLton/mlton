@@ -1128,6 +1128,8 @@ signature AMD64 =
                            transfer: Transfer.t}
         val printBlock : t -> unit
 
+        val layouts: t * (Layout.t -> unit) -> unit
+
         val compress : t' list -> t list
       end
 
@@ -1135,5 +1137,7 @@ signature AMD64 =
       sig
         datatype t = T of {data: Assembly.t list,
                            blocks: Block.t list}
+
+        val layouts: t * (Layout.t -> unit) -> unit
       end
 end
