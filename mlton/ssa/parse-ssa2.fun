@@ -98,6 +98,8 @@
               | "word32"   => Type.word WordSize.word32
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
+              | "tuple"    => Type.tuple args
+              | "vector"   => Type.vector args
               | _          => (case args of
                                   NONE => Type.datatypee (resolveTycon ident)
                                 | SOME args => Type.object {args = args,
