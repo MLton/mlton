@@ -281,8 +281,7 @@ structure Function =
                                open Layout
                             in
                                outputl
-                               (seq [str "goto (",
-                                     Label.layout label,
+                               (seq [Label.layout label,
                                      str " ",
                                      Option.layout
                                      (List.layout SourceInfo.layout)

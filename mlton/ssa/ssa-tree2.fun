@@ -1118,7 +1118,7 @@ structure Transfer =
                      end
                 | Case arg => layoutCase (arg, layoutVar)
                 | Goto {dst, args} =>
-                     seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
+                     seq [Label.layout dst, str " ", layoutArgs args]
                 | Raise xs => seq [str "raise ", layoutArgs xs]
                 | Return xs => seq [str "return ", layoutArgs xs]
                 | Runtime {prim, args, return} =>

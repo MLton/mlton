@@ -400,8 +400,10 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val var = resolveVar <$> ident <* P.spaces
 
-        val functionLabel = P.spaces *> symbol "=" *> P.spaces *> P.str "goto" *> P.spaces *>
-                                              resolveLabel <$> ident <* P.spaces <* token "()"
+        val functionLabel = P.spaces *> symbol "=" *> P.spaces *> resolveLabel <$> ident <* P.spaces <* token "()"
+
+        (*val functionLabel = P.spaces *> symbol "=" *> P.spaces *> P.str "goto" *> P.spaces *>
+                                              resolveLabel <$> ident <* P.spaces <* token "()"*)
 
         val label' = resolveLabel <$> ident <* P.spaces
 
@@ -464,8 +466,10 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
           args = args
         }
 
-        val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> blockLabel
-                                                                                         <*> vars
+        val parseTransferGoto = P.spaces *> makeTransferGoto <$> blockLabel <*> vars
+
+        (*val parseTransferGoto = P.spaces *> P.str "goto" *> P.spaces *> makeTransferGoto <$> blockLabel
+                                                                                           <*> vars*)
 
         fun makeTransferArith (ty, success, {prim, args}, overflow) =
         Transfer.Arith {
