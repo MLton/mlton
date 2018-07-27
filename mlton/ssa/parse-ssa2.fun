@@ -98,12 +98,12 @@
               | "word32"   => Type.word WordSize.word32
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
-              | "tuple"    => Type.tuple args
-              | "vector"   => Type.vector args
               | _          => (case args of
                                   NONE => Type.datatypee (resolveTycon ident)
-                                | SOME args => Type.object {args = args,
-                                                            con = makeObjectCon resolveCon ident})
+                                | SOME args => case makeObjectCon resolveCon ident of
+                                                    ObjectCon.Tuple  => Type.tuple args
+                                                  | ObjectCon.Vector => Type.vector args
+                                                  | _                => Type.object {args = args, con = ObjectCon.Con resolveCon ident})
 
     local
 
