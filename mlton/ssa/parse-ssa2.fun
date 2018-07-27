@@ -102,8 +102,8 @@
                                   NONE => Type.datatypee (resolveTycon ident)
                                 | SOME args => case ident of
                                                     "tuple"  => Type.object  {args = args, con = ObjectCon.Tuple}
-                                                  | "vector" => Type.object {args = args, con = ObjectCon.Vector}
-                                                  | _        => Type.object {args = args, con = ObjectCon.Con (resolveCon ident)})
+                                                  | "vector" => Type.object  {args = args, con = ObjectCon.Vector}
+                                                  | _        => Type.object  {args = args, con = ObjectCon.Con (resolveCon ident)})
 
     local
 
@@ -332,7 +332,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
      fun makeObjectExp (con, args) = {con = con, args = args}
 
      fun makeObjectExp' () = makeObjectExp <$$> (((fn x => x) <$> (SOME <$> (resolveCon <$> ident <* P.spaces)) <|>
-                                                         (token "tuple" *> P.pure(NONE))),
+                                                         (P.pure(NONE))),
                                                  P.spaces *> P.tuple parseVarExp <|> P.pure (Vector.new0 ()) <* P.spaces)
 
      val parseObjectExp = token "new" *> P.spaces *> P.cut(makeObjectExp' ())

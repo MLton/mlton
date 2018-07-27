@@ -634,7 +634,7 @@ structure Exp =
                   seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
                   seq [str "new ", (case con of
-                           NONE => str "tuple"
+                           NONE => empty
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
