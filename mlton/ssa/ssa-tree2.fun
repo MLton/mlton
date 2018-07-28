@@ -789,7 +789,7 @@ structure Statement =
                              Const _ => set ()
                            | Object {con, args, ...} =>
                                 (case con of
-                                    NONE => if Vector.isEmpty args then set () else ()
+                                    NONE => set()
                                   | SOME _ => set ())
                            | _ => ()
                        end)

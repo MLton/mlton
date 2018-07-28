@@ -372,7 +372,7 @@ structure Exp =
                   seq [str "new ",
                        Con.layout con,
                        if Vector.isEmpty args
-                          then str "tuple"
+                          then empty
                           else seq [str " ", layoutArgs args]]
              | Const c => Const.layout c
              | PrimApp {prim, targs, args} =>
