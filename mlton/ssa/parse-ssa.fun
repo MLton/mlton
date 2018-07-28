@@ -266,7 +266,7 @@ struct
             makeConApp <$$>
                   (resolveCon <$> ident <* P.spaces,
                    v)
-         val conAppExp = token "new" *> P.cut (conApp ((P.tuple varExp) <|> P.pure (Vector.new0 ())))
+         val conAppExp = token "new" *> P.cut (conApp ((P.tuple varExp) <|> token "tuple" *> P.pure (Vector.new0 ())))
          fun constExp typ =
             case Type.dest typ of
                  Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
