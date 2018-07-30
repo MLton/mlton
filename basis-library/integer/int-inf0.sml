@@ -950,22 +950,43 @@ structure IntInf =
       end
 
       local
+         open Sz
          val bytesPerMPLimb = Sz.zextdFromInt32 (Int32.quot (MPLimb.sizeInBits, 8))
       in
-         val bytesPerSequenceMetaData = Sz.zextdFromInt32 SequenceMetaDataSize.bytes
-         (* Reserve heap space for a large IntInf.int with room for num + extra
+         val bytesPerSequenceMetaData = zextdFromInt32 SequenceMetaDataSize.bytes
+
+         (* Reserve heap space for a vector of n Intinf objptrs *)
+         fun reserveIntinfVector n =
+            (* size (in bytes) of objptr times number of objptrs requested *)
+            Sz.* (zextdFromInt32 (Int32.quot (ObjptrWord.sizeInBits, 8)), zextdFromSeqIndex n)
+            + bytesPerSequenceMetaData (* Sequence MetaData *)
+            + (case MLton.Align.align of
+                  MLton.Align.Align4 => 0w3
+                | MLton.Align.Align8 => 0w7)
+
+         (*
+          * Reserve heap space for a large IntInf.int with room for num + extra
           * `limbs'.  The reason for splitting this up is that extra is intended
           * to be a constant, and so can be combined at compile time.
           *)
+         fun reserve_noAlign (num: S.int, extra: S.int) =
+            bytesPerMPLimb *
+               (zextdFromSeqIndex num (* primary limbs required *)
+                + zextdFromSeqIndex extra (* extra limbs required *)
+                + 0w1) (* isNeg field *)
+            + bytesPerSequenceMetaData (* Sequence MetaData *)
+
+         (* 
+          * Reserve an intInf argument with the given number of limbs, but add
+          * in an alignment. The alignment is probably overkill, but is necessary
+          * to ensure that the heap limit check actually checks for enough bytes
+          * in every case.
+          *)
          fun reserve (num: S.int, extra: S.int) =
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex num),
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex extra),
-            Sz.+ (bytesPerMPLimb, (* isneg Field *)
-            Sz.+ (bytesPerSequenceMetaData, (* Sequence MetaData *)
-                  case MLton.Align.align of (* alignment *)
-                     MLton.Align.Align4 => 0w3
-                   | MLton.Align.Align8 => 0w7
-            ))))
+            reserve_noAlign (num, extra)
+            + (case MLton.Align.align of
+                  MLton.Align.Align4 => 0w3
+                | MLton.Align.Align8 => 0w7)
       end
 
       (* badObjptr{Int,Word}{,Tagged} is the fixnum IntInf.int whose 
@@ -989,19 +1010,35 @@ structure IntInf =
          V.unsafeSub (Prim.toVector arg, 0) <> 0w0
 
       local
+         (* Convenient modular conversions for arguments and results
+          * For use with isSmall cases
+          * Return intermediate results (in order of creation) *)
+         (* convert the argument to a word, then an objptr *)
+         fun word_objptr_arg n =
+            let
+               val nw = dropTagCoerce n
+               val ni = W.idToObjptrInt nw
+            in
+               (nw, ni)
+            end
+
+         fun word_tag_ans a =
+            let
+               val aw = W.idFromObjptrInt a
+               val at = addTag aw
+            in
+               (aw, at)
+            end
+
          fun make (smallOp, bigOp, limbsFn, extra)
                   (lhs: bigInt, rhs: bigInt): bigInt =
             let
                val res =
                   if areSmall (lhs, rhs)
                      then let
-                             val lhsw = dropTagCoerce lhs
-                             val lhsi = W.idToObjptrInt lhsw
-                             val rhsw = dropTagCoerce rhs
-                             val rhsi = W.idToObjptrInt rhsw
-                             val ansi = smallOp (lhsi, rhsi)
-                             val answ = W.idFromObjptrInt ansi
-                             val ans = addTag answ
+                             val (_, lhsi) = word_objptr_arg lhs
+                             val (_, rhsi) = word_objptr_arg rhs
+                             val (answ, ans) = word_tag_ans (smallOp (lhsi, rhsi))
                           in
                              if sameSignBit (ans, answ)
                                 then SOME (Prim.fromWord ans)
@@ -1014,10 +1051,130 @@ structure IntInf =
                                  reserve (limbsFn (numLimbs lhs, numLimbs rhs), extra))
                 | SOME i => i
             end
+
+         (*
+          * quotient and remainder for small values (fitting in objptr)
+          * 
+          * Pull these functions out because each will be used twice,
+          * and we want to avoid redundant size checks if at all possible.
+          *)
+         fun smallQuot (num: bigInt, den: bigInt): bigInt =
+            let
+               val (numw, numi) = word_objptr_arg num
+               val (_, deni) = word_objptr_arg den
+            in
+               if numw = badObjptrWord 
+                  andalso deni = ~1
+               then negBadIntInf
+               else
+                  let
+                     val (_, ans) = word_tag_ans (I.quot (numi, deni))
+                  in 
+                     Prim.fromWord ans
+                  end
+            end
+
+         fun smallRem (num, den) =
+            let 
+               val (_, numi) = word_objptr_arg num
+               val (_, deni) = word_objptr_arg den
+               val (_, ans) = word_tag_ans (I.rem (numi, deni))
+            in 
+               Prim.fromWord ans
+            end
+
+         fun quotReserve_noAlign (nlimbs, dlimbs) = reserve_noAlign (S.- (nlimbs, dlimbs), 1)
+         fun remReserve_noAlign (nlimbs, dlimbs) = reserve_noAlign (dlimbs, 0)
       in
          val bigAdd = make (I.+!, Prim.+, S.max, 1)
          val bigSub = make (I.-!, Prim.-, S.max, 1)
          val bigMul = make (I.*!, Prim.*, S.+, 0)
+
+         fun bigQuot (num: bigInt, den: bigInt): bigInt =
+            if areSmall (num, den) then smallQuot (num, den)
+               else
+                  let
+                     val nlimbs = numLimbs num
+                     val dlimbs = numLimbs den
+                  in
+                     if S.< (nlimbs, dlimbs) then
+                        zero
+                     else if den = zero then
+                        raise Div
+                     else
+                        Prim.quot (num, den,
+                                   (* add in the alignment after base quot size computation *)
+                                   Sz.+ (quotReserve_noAlign (nlimbs, dlimbs),
+                                         case MLton.Align.align of
+                                            MLton.Align.Align4 => 0w3
+                                          | MLton.Align.Align8 => 0w7))
+                  end
+
+         fun bigRem (num: bigInt, den: bigInt): bigInt =
+            if areSmall (num, den)
+               then smallRem (num, den)
+               else
+                  let 
+                     val nlimbs = numLimbs num
+                     val dlimbs = numLimbs den
+                  in 
+                     if S.< (nlimbs, dlimbs) then
+                        num
+                     else if den = zero then
+                        raise Div
+                     else
+                        Prim.rem (num, den,
+                                  (* add in the alignment after base rem size computation *)
+                                  Sz.+ (remReserve_noAlign (nlimbs, dlimbs),
+                                        case MLton.Align.align of
+                                           MLton.Align.Align4 => 0w3
+                                         | MLton.Align.Align8 => 0w7))
+                  end
+
+         fun bigQuotRem (num, den) =
+            if areSmall (num, den) then
+               (* the small versions are not optimized together,
+                * as this would not save a significant amount
+                * of time *)
+               (smallQuot (num, den), smallRem (num, den))
+            else  (* arguments are large *)
+               let
+                  val (nlimbs, dlimbs) = (numLimbs num, numLimbs den)
+               in
+                  (* try to avoid expensive operation in trivial cases *)
+                  if S.< (nlimbs, dlimbs) then
+                     (zero, num)
+                  else if den = zero then
+                     raise Div
+                  else  (* must perform operation *)
+                     let
+                        val q_reserve_nA = quotReserve_noAlign (nlimbs, dlimbs)
+                        val r_reserve_nA = remReserve_noAlign (nlimbs, dlimbs)
+                        open Sz
+                        val qrs =
+                           Prim.quotRem (num, den,
+                                         (* Reserve info for the results and a vector containing them
+                                          * Add in an alignment for each result
+                                          *)
+                                         reserveIntinfVector 2 + q_reserve_nA + r_reserve_nA
+                                            + 0w2 * (case MLton.Align.align of
+                                                        MLton.Align.Align4 => 0w3
+                                                      | MLton.Align.Align8 => 0w7),
+                                         (* Also store the individual reservation byte counts - will be
+                                          * needed on the runtime side to determine how much space the
+                                          * rem argument should be pushed forward.
+                                          * 
+                                          * Don't add in the alignments here - they can be calculated more
+                                          * precisely on the runtime side. This could prevent the call to the
+                                          * gc primitive from performing an avoidable memmove.
+                                          *)
+                                         q_reserve_nA,
+                                         r_reserve_nA)
+                        val sub = Primitive.Vector.unsafeSub
+                     in
+                        (sub (qrs, 0), sub (qrs, 1))
+                     end
+               end
       end
 
       fun bigNeg (arg: bigInt): bigInt =
@@ -1030,63 +1187,6 @@ structure IntInf =
                        else Prim.fromWord (W.- (0w2, argw))
                  end 
             else Prim.~ (arg, reserve (numLimbs arg, 1))
-
-
-      fun bigQuot (num: bigInt, den: bigInt): bigInt =
-         if areSmall (num, den)
-            then let
-                    val numw = dropTagCoerce num
-                    val numi = W.idToObjptrInt numw
-                    val denw = dropTagCoerce den
-                    val deni = W.idToObjptrInt denw
-                 in
-                    if numw = badObjptrWord 
-                       andalso deni = ~1
-                       then negBadIntInf
-                       else let
-                               val ansi = I.quot (numi, deni)
-                               val answ = W.idFromObjptrInt ansi
-                               val ans = addTag answ
-                            in 
-                               Prim.fromWord ans
-                            end
-                 end
-            else let
-                    val nlimbs = numLimbs num
-                    val dlimbs = numLimbs den
-                 in
-                    if S.< (nlimbs, dlimbs)
-                       then zero
-                       else if den = zero
-                               then raise Div
-                               else Prim.quot (num, den, 
-                                               reserve (S.- (nlimbs, dlimbs), 2))
-                 end
-
-      fun bigRem (num: bigInt, den: bigInt): bigInt =
-         if areSmall (num, den)
-            then let 
-                    val numw = dropTagCoerce num
-                    val numi = W.idToObjptrInt numw
-                    val denw = dropTagCoerce den
-                    val deni = W.idToObjptrInt denw
-                    val ansi = I.rem (numi, deni)
-                    val answ = W.idFromObjptrInt ansi
-                    val ans = addTag answ
-                 in 
-                    Prim.fromWord ans
-                 end
-            else let 
-                    val nlimbs = numLimbs num
-                    val dlimbs = numLimbs den
-                 in 
-                    if S.< (nlimbs, dlimbs)
-                       then num
-                       else if den = zero
-                               then raise Div
-                               else Prim.rem (num, den, 
-                                              reserve (dlimbs, 1))
-                 end
 
       (* Based on code from PolySpace. *)
       local
@@ -1230,7 +1330,6 @@ structure IntInf =
                                else raise Div
 
          fun bigDivMod (x, y) = (bigDiv (x, y), bigMod (x, y))
-         fun bigQuotRem (x, y) = (bigQuot (x, y), bigRem (x, y))
       end
 
       local
@@ -1288,10 +1387,9 @@ structure IntInf =
                                    then 0 else 1)
                     val bytes =
                        Sz.+ (Sz.+ (bytesPerSequenceMetaData (* Sequence MetaData *),
-                             Sz.+ (0w1 (* sign *),
-                                   case MLton.Align.align of (* alignment *)
-                                      MLton.Align.Align4 => 0w3
-                                    | MLton.Align.Align8 => 0w7)),
+                             Sz.+ (0w1 (* sign *), case MLton.Align.align of
+                                                      MLton.Align.Align4 => 0w3
+                                                    | MLton.Align.Align8 => 0w7)),
                              Sz.* (Sz.zextdFromInt32 dpl, 
                                    Sz.zextdFromSeqIndex (numLimbs arg)))
                  in

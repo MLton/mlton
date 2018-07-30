@@ -59,4 +59,6 @@ in
        | _ => Error.bug "ObjptrTycon.wordVector"
 end
 
+val intInfVector = new ()
+
 end

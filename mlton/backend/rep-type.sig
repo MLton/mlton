@@ -58,6 +58,7 @@ signature REP_TYPE =
       val gcState: unit -> t
       val exists: t * (t -> bool) -> bool
       val intInf: unit -> t
+      val intInfVector: unit -> t
       val isCPointer: t -> bool
       val isObjptr: t -> bool
       val isUnit: t -> bool

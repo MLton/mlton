@@ -139,19 +139,21 @@ typedef struct GC_objectType {
 } *GC_objectType;
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */
-  STACK_TYPE_INDEX =         0,
-  THREAD_TYPE_INDEX =        1,
-  WEAK_GONE_TYPE_INDEX =     2,
-  WORD8_VECTOR_TYPE_INDEX =  3,
-  WORD32_VECTOR_TYPE_INDEX = 4,
+  INTINF_VECTOR_TYPE_INDEX = 0,
+  STACK_TYPE_INDEX =         1,
+  THREAD_TYPE_INDEX =        2,
+  WEAK_GONE_TYPE_INDEX =     3,
+  WORD8_VECTOR_TYPE_INDEX =  4,
   WORD16_VECTOR_TYPE_INDEX = 5,
-  WORD64_VECTOR_TYPE_INDEX = 6,
+  WORD32_VECTOR_TYPE_INDEX = 6,
+  WORD64_VECTOR_TYPE_INDEX = 7,
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
+#define GC_INTINF_VECTOR_HEADER buildHeaderFromTypeIndex (INTINF_VECTOR_TYPE_INDEX)
 #define GC_STACK_HEADER buildHeaderFromTypeIndex (STACK_TYPE_INDEX)
 #define GC_THREAD_HEADER buildHeaderFromTypeIndex (THREAD_TYPE_INDEX)
 #define GC_WEAK_GONE_HEADER buildHeaderFromTypeIndex (WEAK_GONE_TYPE_INDEX)

@@ -53,6 +53,7 @@
 #include "gc/object-size.c"
 #include "gc/object.c"
 #include "gc/objptr.c"
+#include "gc/objptr-seq.c"
 #include "gc/pack.c"
 #include "gc/pointer.c"
 #include "gc/profiling.c"

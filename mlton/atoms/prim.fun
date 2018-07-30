@@ -78,6 +78,7 @@ datatype 'a t =
  | IntInf_notb (* to rssa (as runtime C fn) *)
  | IntInf_orb (* to rssa (as runtime C fn) *)
  | IntInf_quot (* to rssa (as runtime C fn) *)
+ | IntInf_quotRem (* to rssa (as runtime C fn) *)
  | IntInf_rem (* to rssa (as runtime C fn) *)
  | IntInf_sub (* to rssa (as runtime C fn) *)
  | IntInf_toString (* to rssa (as runtime C fn) *)
@@ -266,6 +267,7 @@ fun toString (n: 'a t): string =
        | IntInf_notb => "IntInf_notb"
        | IntInf_orb => "IntInf_orb"
        | IntInf_quot => "IntInf_quot"
+       | IntInf_quotRem => "IntInf_quotRem"
        | IntInf_rem => "IntInf_rem"
        | IntInf_sub => "IntInf_sub"
        | IntInf_toString => "IntInf_toString"
@@ -424,6 +426,7 @@ val equals: 'a t * 'a t -> bool =
     | (IntInf_notb, IntInf_notb) => true
     | (IntInf_orb, IntInf_orb) => true
     | (IntInf_quot, IntInf_quot) => true
+    | (IntInf_quotRem, IntInf_quotRem) => true
     | (IntInf_rem, IntInf_rem) => true
     | (IntInf_sub, IntInf_sub) => true
     | (IntInf_toString, IntInf_toString) => true
@@ -601,6 +604,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | IntInf_notb => IntInf_notb
     | IntInf_orb => IntInf_orb
     | IntInf_quot => IntInf_quot
+    | IntInf_quotRem => IntInf_quotRem
     | IntInf_rem => IntInf_rem
     | IntInf_sub => IntInf_sub
     | IntInf_toString => IntInf_toString
@@ -858,6 +862,7 @@ val kind: 'a t -> Kind.t =
        | IntInf_notb => Functional
        | IntInf_orb => Functional
        | IntInf_quot => Functional
+       | IntInf_quotRem => Functional
        | IntInf_rem => Functional
        | IntInf_sub => Functional
        | IntInf_toString => Functional
@@ -1059,6 +1064,7 @@ in
        IntInf_neg,
        IntInf_orb,
        IntInf_quot,
+       IntInf_quotRem,
        IntInf_rem,
        IntInf_sub,
        IntInf_toString,
@@ -1272,6 +1278,8 @@ fun 'a checkApp (prim: 'a t,
       val word32 = word WordSize.word32
       fun intInfBinary () =
          noTargs (fn () => (threeArgs (intInf, intInf, csize), intInf))
+      fun intInfBinary_MulRes () = (* binary with multiple results *)
+         noTargs (fn () => (fiveArgs (intInf, intInf, csize, csize, csize), vector intInf))
       fun intInfShift () =
          noTargs (fn () => (threeArgs (intInf, shiftArg, csize), intInf))
       fun intInfUnary () =
@@ -1284,7 +1292,7 @@ fun 'a checkApp (prim: 'a t,
       val word8Vector = vector word8
       fun wordVector seqSize = vector (word seqSize)
       val string = word8Vector
-  in
+   in
       case prim of
          Array_alloc _ => oneTarg (fn targ => (oneArg seqIndex, array targ))
        | Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
@@ -1347,6 +1355,7 @@ fun 'a checkApp (prim: 'a t,
        | IntInf_notb => intInfUnary ()
        | IntInf_orb => intInfBinary ()
        | IntInf_quot => intInfBinary ()
+       | IntInf_quotRem => intInfBinary_MulRes ()
        | IntInf_rem => intInfBinary ()
        | IntInf_sub => intInfBinary ()
        | IntInf_toString =>

@@ -35,6 +35,7 @@ typedef GC_state GCState_t;
 #include "gc/stack.h"
 #include "gc/thread.h"
 #include "gc/weak.h"
+#include "gc/objptr-seq.h"
 #include "gc/int-inf.h"
 #include "gc/string.h"
 #include "gc/object-size.h"

@@ -109,6 +109,8 @@ structure Type =
 
       val compareRes = word WordSize.compareRes
 
+      val intInfVector: unit -> t = fn () => objptr ObjptrTycon.intInfVector
+
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 
       val seqIndex: unit -> t = word o WordSize.seqIndex
@@ -449,12 +451,13 @@ structure ObjectType =
 
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc/object.h.
+       * INTINF_VECTOR_TYPE_INDEX,
        * STACK_TYPE_INDEX,
        * THREAD_TYPE_INDEX,
        * WEAK_GONE_TYPE_INDEX,
        * WORD8_VECTOR_TYPE_INDEX,
        * WORD16_VECTOR_TYPE_INDEX,
-       * WORD32_VECTOR_TYPE_INDEX.
+       * WORD32_VECTOR_TYPE_INDEX,
        * WORD64_VECTOR_TYPE_INDEX.
        *)
       val basic = fn () => 
@@ -469,12 +472,15 @@ structure ObjectType =
                end
          in
             Vector.fromList
-            [(ObjptrTycon.stack, stack),
+            [(ObjptrTycon.intInfVector,
+              Sequence {hasIdentity = false,
+                        elt = Type.intInf ()}),
+             (ObjptrTycon.stack, stack),
              (ObjptrTycon.thread, thread ()),
              (ObjptrTycon.weakGone, Weak NONE),
              wordVec 8,
-             wordVec 32,
              wordVec 16,
+             wordVec 32,
              wordVec 64]
          end
 

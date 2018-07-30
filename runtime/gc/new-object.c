@@ -85,7 +85,7 @@ GC_thread newThread (GC_state s, size_t reserved) {
   thread->stack = pointerToObjptr((pointer)stack, s->heap.start);
   if (DEBUG_THREADS)
     fprintf (stderr, FMTPTR" = newThreadOfSize (%"PRIuMAX")\n",
-             (uintptr_t)thread, (uintmax_t)reserved);;
+             (uintptr_t)thread, (uintmax_t)reserved);
   return thread;
 }
 

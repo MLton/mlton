@@ -29,8 +29,12 @@ structure IntInf =
       val notb = _prim "IntInf_notb": int * C_Size.t -> int;
       val orb = _prim "IntInf_orb": int * int * C_Size.t -> int;
       val quot = _prim "IntInf_quot": int * int * C_Size.t -> int;
+      val quotRem =
+         (* C_Size args: the total size, the left result size, the right result size
+          * (see the C code) *)
+         _prim "IntInf_quotRem": int * int * C_Size.t * C_Size.t * C_Size.t -> int vector;
       val rem = _prim "IntInf_rem": int * int * C_Size.t -> int;
-      val - = _prim "IntInf_sub": int * int * C_Size.t -> int; 
+      val - = _prim "IntInf_sub": int * int * C_Size.t -> int;
       val toString =
          _prim "IntInf_toString": int * Int32.int * C_Size.t -> String8.string;
       val toVector = _prim "IntInf_toVector": int -> C_MPLimb.t vector;

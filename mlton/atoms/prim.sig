@@ -70,6 +70,7 @@ signature PRIM =
              | IntInf_notb (* to rssa (as runtime C fn) *)
              | IntInf_orb (* to rssa (as runtime C fn) *)
              | IntInf_quot (* to rssa (as runtime C fn) *)
+             | IntInf_quotRem (* to rssa (as runtime C fn) *)
              | IntInf_rem (* to rssa (as runtime C fn) *)
              | IntInf_sub (* to rssa (as runtime C fn) *)
              | IntInf_toString (* to rssa (as runtime C fn) *)
