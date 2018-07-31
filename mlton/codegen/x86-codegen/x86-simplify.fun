@@ -3182,6 +3182,107 @@ struct
       end
 
       local
+        fun isInstructionMOV_aux (check) : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.MOV
+                                      {dst = Operand.MemLoc memloc, ...}),
+                _)
+             => check memloc
+             | _ => false
+
+        fun isInstructionBinAL_aux (check) : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.BinAL
+                                      {dst = Operand.MemLoc memloc, ...}),
+                _)
+             => check memloc
+             | _ => false
+
+        fun isDeadTemp dead memloc
+          = x86Liveness.track memloc andalso LiveSet.contains (dead, memloc)
+        val isInstructionBinAL_dstDeadTemp : statement_type -> bool
+          = fn (instr, liveness as Liveness.T {dead, ...})
+            => isInstructionBinAL_aux (isDeadTemp dead) (instr, liveness)
+
+        val template : template
+          = {start = EmptyOrNonEmpty,
+             statements = [One (isInstructionMOV_aux (fn _ => true)),
+                           All isComment,
+                           One (isInstructionBinAL_aux (fn _ => true)),
+                           All isComment,
+                           One (isInstructionMOV_aux x86Liveness.track),
+                           All isComment,
+                           One isInstructionBinAL_dstDeadTemp],
+             finish = EmptyOrNonEmpty,
+             transfer = fn _ => true}
+
+        val rewriter : rewriter
+          = fn {entry,
+                profileLabel,
+                start,
+                statements =
+                [[(stmtMov as Assembly.Instruction (Instruction.MOV
+                                                    {src = src1x,
+                                                     dst = dst1z, ...}),
+                   _)],
+                 comments1,
+                 [(stmtAL as Assembly.Instruction (Instruction.BinAL
+                                                   {src = src1,
+                                                    dst = dst1, ...}),
+                   _)],
+                 comments2,
+                 [(Assembly.Instruction (Instruction.MOV
+                                         {src = src2x,
+                                          dst = dst2z, ...}),
+                   _)],
+                 comments3,
+                 [(Assembly.Instruction (Instruction.BinAL
+                                         {src = src2,
+                                         dst = dst2, ...}),
+                   Liveness.T {liveOut = liveOut2, ...})]],
+                finish,
+                transfer}
+                => if !Control.Native.elimALRedundant andalso
+                      Operand.eq (src1x, src2x) andalso
+                      Operand.eq (src1, dst1) andalso
+                      Operand.eq (src2, dst2) andalso
+                      Operand.eq (dst1z, src1) andalso
+                      Operand.eq (dst2z, src2)
+                      then
+                        let
+                          val excomm = fn comm => List.map (comm, fn (c, _) => c)
+                          val comments1 = excomm comments1
+                          val comments2 = excomm comments2
+                          val comments3 = excomm comments3
+
+                          val statements =
+                            stmtMov::(comments1 @ (stmtAL::(comments2 @ comments3)))
+                          val {statements, ...}
+                            = LivenessBlock.toLivenessStatements
+                              {statements = statements, live = liveOut2}
+                          val statements
+                            = List.fold (start,
+                                         List.concat [statements, finish],
+                                         op ::)
+                        in
+                          SOME (LivenessBlock.T
+                                {entry = entry,
+                                 profileLabel = profileLabel,
+                                 statements = statements,
+                                 transfer = transfer})
+                        end
+                      else NONE
+            | _ => Error.bug "x86Simplify.PeepholeBlock: elimALRedundant_pseudo"
+
+        val (callback, elimALRedundant_pseudo_msg)
+          = make_callback_msg "elimALRedundant_pseudo"
+      in
+        val elimALRedundant_pseudo : optimization
+          = {template = template,
+             rewriter = rewriter,
+             callback = callback}
+        val elimALRedundant_pseudo_msg = elimALRedundant_pseudo_msg
+      end
+
+      local
         val isInstructionMOV_dstTemp : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.MOV
                                       {dst = Operand.MemLoc memloc,...}),
@@ -4213,9 +4314,11 @@ struct
       local
         val optimizations_pre
           = elimALRedundant::
+            elimALRedundant_pseudo::
             nil
         val optimizations_pre_msg
           = elimALRedundant_msg::
+            elimALRedundant_pseudo_msg::
             nil
 
         val optimizations 
