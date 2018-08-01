@@ -3274,8 +3274,6 @@ struct
                             Instruction.BinAL
                              {oper = oper2, src = src2, dst = dst2, ...})
                            => checkBin (oper1, src1, dst1, oper2, src2, dst2)
-                              orelse
-                              checkBin' (oper1, src2, dst1, oper2, src2, dst2)
                          | (Instruction.pMD
                              {oper = oper1, src = src1, dst = dst1, ...},
                             Instruction.pMD
