@@ -921,8 +921,8 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                                         raise Fail "parse")
                                ),
                       typeCheck = Ssa2.typeCheck}
-                  (*val ssa2 = makeSsa2 ssa
-                  val ssa2 = simplifySsa2 ssa2*)
+                  val ssa2 = makeSsa2 ssa
+                  val ssa2 = simplifySsa2 ssa2
                in
                   makeMachine ssa2
                end
