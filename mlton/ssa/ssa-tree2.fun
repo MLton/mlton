@@ -638,7 +638,7 @@ structure Exp =
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
-                  seq [str "prim ", Prim.layout prim, str " ", layoutArgs args]
+                  seq [str "prim ", Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
              | Select {base, offset} =>
                   seq [str "sel ", Int.layout offset, str " ",
                        paren (Base.layout (base, layoutVar))]
