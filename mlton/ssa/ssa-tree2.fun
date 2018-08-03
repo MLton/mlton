@@ -1235,7 +1235,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [seq [Label.layout label, str " ",
+            align [seq [str "block: ", Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align

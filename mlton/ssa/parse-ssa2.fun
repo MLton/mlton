@@ -551,7 +551,7 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
            transfer = transfer
         }
 
-        val parseBlock = P.spaces *>
+        val parseBlock = P.spaces *> P.str "block:" *> P.spaces *>
                          makeBlock
                          <$> blockLabel
                          <*> args <* P.spaces
