@@ -501,7 +501,7 @@ struct
                 transfer = NONE}]
             end
 
-        fun negcc ()
+        fun unalcc (oper, condition)
           = let
               val (src,srcsize) = getSrc1 ()
               val (dst,dstsize) = getDst1 ()
@@ -513,15 +513,14 @@ struct
                 statements
                 = [Assembly.instruction_mov
                    {dst = tmp,
-                    src = Operand.immediate_zero,
-                    size = srcsize},
-                   Assembly.instruction_binal
-                   {oper = Instruction.SUB,
-                    dst = tmp,
                     src = src,
                     size = srcsize},
+                   Assembly.instruction_unal
+                   {oper = oper,
+                    dst = tmp,
+                    size = srcsize},
                    Assembly.instruction_setcc
-                   {condition = Instruction.O,
+                   {condition = condition,
                     dst = dst,
                     size = dstsize}],
                 transfer = NONE}]
@@ -1234,7 +1233,7 @@ struct
                  else
                    pmdcc (Instruction.MUL, amd64.Instruction.C)
              | Word_neg _ => unal Instruction.NEG
-             | Word_negCheckP _ => negcc ()
+             | Word_negCheckP _ => unalcc (Instruction.NEG, Instruction.O)
              | Word_notb _ => unal Instruction.NOT
              | Word_orb _ => binal Instruction.OR
              | Word_quot (_, {signed}) =>
