@@ -78,10 +78,10 @@
 
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
- (*fun makeObjectCon resolveCon (ident) = case ident of
+ fun makeObjectCon resolveCon (ident) = case ident of
                      "tuple"  => ObjectCon.Tuple
                    | "vector" => ObjectCon.Vector
-                   | _        => ObjectCon.Con (resolveCon ident)*)
+                   | _        => ObjectCon.Con (resolveCon ident)
 
  fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
 
@@ -99,11 +99,9 @@
               | "word64"   => Type.word WordSize.word64
               | "unit"     => Type.unit
               | _          => (case args of
-                                  NONE => Type.datatypee (resolveTycon ident)
-                                | SOME args => case ident of
-                                                    "tuple"  => Type.object  {args = args, con = ObjectCon.Tuple}
-                                                  | "vector" => Type.object  {args = args, con = ObjectCon.Vector}
-                                                  | _        => Type.object  {args = args, con = ObjectCon.Con (resolveCon ident)})
+                                  NONE      => Type.datatypee (resolveTycon ident)
+                                | SOME args => Type.object {args = args,
+                                                            con = makeObjectCon resolveCon ident})
 
     local
 

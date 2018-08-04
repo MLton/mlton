@@ -1070,6 +1070,10 @@ structure Transfer =
                   (l, fn (i, l) =>
                    seq [layout i, str " => ", Label.layout l])
                datatype z = datatype Cases.t
+               val suffix =
+                  case cases of
+                     Con _ => empty
+                   | Word (size, _) => str (WordSize.toString size)
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
@@ -1080,7 +1084,7 @@ structure Transfer =
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               align [seq [str "case ", layoutVar test, str " of"],
+               align [seq [str "case ", suffix, str " ", layoutVar test, str " of"],
                       indent (alignPrefix (cases, "| "), 2)]
             end
       in
