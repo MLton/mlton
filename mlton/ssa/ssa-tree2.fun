@@ -537,7 +537,7 @@ structure Base =
             case b of
                Object x => layoutX x
              | VectorSub {index, vector} =>
-                  seq [str "$", Vector.layout layoutX (Vector.new2 (vector, index))]
+                  seq [str "$", Vector.layout layoutX (Vector.new2 (vector, vector))]
          end
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
