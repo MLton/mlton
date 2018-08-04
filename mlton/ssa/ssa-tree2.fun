@@ -1084,7 +1084,7 @@ structure Transfer =
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               align [seq [str "case ", suffix, str " ", layoutVar test, str " of"],
+               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
                       indent (alignPrefix (cases, "| "), 2)]
             end
       in
