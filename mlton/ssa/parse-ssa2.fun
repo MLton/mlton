@@ -195,8 +195,17 @@
             vector = vector
         }
 
+        val nextIdent = (String.implode <$> (P.any[(op ::) <$$>
+                        (P.nextSat isIdentFirst,
+                         P.many (P.nextSat isIdentRest)),
+                         List.append <$$>
+                        (P.many1 (P.nextSat isInfixChar),
+                        (op ::) <$$> (P.char #"_", P.many (P.nextSat Char.isDigit)) <|> P.pure []
+                        (* just for collecting _0 *)
+                        )])) <|> P.failCut "identifier"
+
         val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseVar <* P.str "," <* P.spaces,
-                                                                                           parseVar <* P.spaces)) <* P.spaces
+                                                                                           resolveVar <$> nextIdent <* P.spaces)) <* P.spaces
 
         val parseBase = P.any[parseBaseVectorSub, parseBaseObject]
 
