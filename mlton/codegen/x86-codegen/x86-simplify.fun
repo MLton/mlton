@@ -3189,12 +3189,17 @@ struct
              => check memloc
              | _ => false
 
+        val isInstructionMOV = isInstructionMOV_aux (fn _ => true)
+        val isInstructionMOV_dstTemp = isInstructionMOV_aux x86Liveness.track
+
         fun isInstructionBinAL_aux (check) : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.BinAL
                                       {dst = Operand.MemLoc memloc, ...}),
                 _)
              => check memloc
              | _ => false
+
+        val isInstructionBinAL = isInstructionBinAL_aux (fn _ => true)
 
         fun isDeadTemp dead memloc
           = x86Liveness.track memloc andalso LiveSet.contains (dead, memloc)
@@ -3204,11 +3209,11 @@ struct
 
         val template : template
           = {start = EmptyOrNonEmpty,
-             statements = [One (isInstructionMOV_aux (fn _ => true)),
+             statements = [One isInstructionMOV,
                            All isComment,
-                           One (isInstructionBinAL_aux (fn _ => true)),
+                           One isInstructionBinAL,
                            All isComment,
-                           One (isInstructionMOV_aux x86Liveness.track),
+                           One isInstructionMOV_dstTemp,
                            All isComment,
                            One isInstructionBinAL_dstDeadTemp],
              finish = EmptyOrNonEmpty,
@@ -3283,12 +3288,15 @@ struct
       end
 
       local
-        val isInstructionMOV_dstTemp : statement_type -> bool
+        fun isInstructionMOV_aux (check) : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.MOV
                                       {dst = Operand.MemLoc memloc,...}),
                 _)
-             => x86Liveness.track memloc
+             => check memloc
              | _ => false
+
+        val isInstructionMOV = isInstructionMOV_aux (fn _ => true)
+        val isInstructionMOV_dstTemp = isInstructionMOV_aux x86Liveness.track
 
         fun isInstructionAL_aux (check) : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.BinAL
@@ -3307,8 +3315,7 @@ struct
                                       {dst = Operand.MemLoc memloc,...}), _)
              => check memloc
              | _ => false
-        val isInstructionAL_dstTemp : statement_type -> bool
-          = isInstructionAL_aux x86Liveness.track
+        val isInstructionAL = isInstructionAL_aux (fn _ => true)
         fun isDeadTemp dead memloc
           = x86Liveness.track memloc andalso LiveSet.contains (dead, memloc)
         val isInstructionAL_dstDeadTemp : statement_type -> bool
@@ -3317,9 +3324,9 @@ struct
 
         val template : template
           = {start = EmptyOrNonEmpty,
-             statements = [One isInstructionMOV_dstTemp,
+             statements = [One isInstructionMOV,
                            All isComment,
-                           One isInstructionAL_dstTemp,
+                           One isInstructionAL,
                            All isComment,
                            One isInstructionMOV_dstTemp,
                            All isComment,
