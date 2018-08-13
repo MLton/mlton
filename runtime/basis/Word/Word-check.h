@@ -1,4 +1,3 @@
-#if __GNUC__ < 7
 #define add_overflow_b(x, y, size, onOverflow, onSuccess)       \
   do {                                                          \
     WordS##size res;                                            \
@@ -23,31 +22,14 @@
     }                                                           \
     onSuccess;                                                  \
   } while (0)
-#else
-#define add_overflow_b(x, y, size, onOverflow, onSuccess)       \
-  do {                                                          \
-    if (__builtin_add_overflow_p(x, y, (WordS##size) 0)) {      \
-      onOverflow;                                               \
-    }                                                           \
-    onSuccess;                                                  \
-  } while (0)
-#define sub_overflow_b(x, y, size, onOverflow, onSuccess)       \
-  do {                                                          \
-    if (__builtin_sub_overflow_p(x, y, (WordS##size) 0)) {      \
-      onOverflow;                                               \
-    }                                                           \
-    onSuccess;                                                  \
-  } while (0)
-#define mul_overflow_b(x, y, size, onOverflow, onSuccess)       \
-  do {                                                          \
-    if (__builtin_mul_overflow_p(x, y, (WordS##size) 0)) {      \
-      onOverflow;                                               \
-    }                                                           \
-    onSuccess;                                                  \
-  } while (0)
-#endif
 #define neg_overflow_b(x, size, onOverflow, onSuccess)          \
-  sub_overflow_b(0, x, size, onOverflow, onSuccess)
+  do {                                                          \
+    Word##size res;                                             \
+    if (__builtin_sub_overflow(0, x, &res)) {                   \
+      onOverflow;                                               \
+    }                                                           \
+    onSuccess;                                                  \
+  } while (0)
 
 /**
  * Old-style overflow operators
