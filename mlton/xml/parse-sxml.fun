@@ -12,7 +12,7 @@ struct
    open P.Ops
    infix 1 <|> >>=
    infix  3 <*> <* *>
-   infixr 4 <$> <$$> <$$$> <$ <$?> 
+   infixr 4 <$> <$$> <$$$> <$ <$?>
 
    fun isInfixChar b = case List.index
       (String.explode "!%&$#+-/:<=>?@\\~'^|*",

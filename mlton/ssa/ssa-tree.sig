@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature SSA_TREE_STRUCTS = 
+signature SSA_TREE_STRUCTS =
    sig
       include ATOMS
    end
@@ -49,7 +49,7 @@ signature RETURN =
       val map: t * (Label.t -> Label.t) -> t
    end
 
-signature SSA_TREE = 
+signature SSA_TREE =
    sig
       include SSA_TREE_STRUCTS
 
