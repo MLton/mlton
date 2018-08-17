@@ -618,6 +618,7 @@ val _ =
    else raise Fail "bug"
 
 val _ = print "\nTesting *+, *-\n"
+val fmaDiffs = ref false
 val _ =
    for
    (fn r1 =>
@@ -625,9 +626,35 @@ val _ =
     (fn r2 =>
      for
      (fn r3 =>
-      if *+ (r1, r2, r3) == r1 * r2 + r3
-         then ()
-      else raise Fail "*+ bug")))
+      let
+        val fma = *+ (r1, r2, r3)
+        val std = r1 * r2 + r3
+      in
+        if fma == std
+           then ()
+        else (print o concat)
+               [(if !fmaDiffs then
+                  ""
+                else
+                  let
+                    val _ = fmaDiffs := true
+                  in
+                    concat["SOME *+ AND STANDARD RESULTS DIFFER\n",
+                           "(r1, r2, r3): *+(r1, r2, r3)\t(r1 * r2 + r3)\n",
+                           "--------------------------------------------\n"]
+                  end),
+                "(",
+                exact r1,
+                ", ",
+                exact r2,
+                ", ",
+                exact r3,
+                "): ",
+                exact fma,
+                "\t",
+                exact std,
+                "\n"]
+      end)))
 
 val _ = print "\nTesting Real.{realCeil,realFloor,realTrunc}\n"
 val _ =

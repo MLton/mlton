@@ -80,7 +80,7 @@
 
  fun makeObjectCon resolveCon (ident) = case ident of
                      "tuple"  => ObjectCon.Tuple
-                   | "vector" => ObjectCon.Vector
+                   | "sequence" => ObjectCon.Sequence
                    | _        => ObjectCon.Con (resolveCon ident)
 
  fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
@@ -189,13 +189,13 @@
 
         val parseBaseObject = makeBaseObject <$> parseVar
 
-        fun makeBaseVectorSub (vector, index)=
-        Base.VectorSub {
+        fun makeBaseSequenceSub (vector, index)=
+        Base.SequenceSub {
             index = index,
             vector = vector
         }
 
-        val parseBaseVectorSub = token "$" *> P.spaces *> parenOf (makeBaseVectorSub <$$> (parseVar <* P.str "," <* P.spaces,
+        val parseBaseSequenceSub = token "$" *> P.spaces *> parenOf (makeBaseSequenceSub <$$> (parseVar <* P.str "," <* P.spaces,
                                                                                            parseVar <* P.spaces)) <* P.spaces
 
         val parseBase = P.any[parseBaseVectorSub, parseBaseObject]

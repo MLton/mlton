@@ -280,6 +280,14 @@ fun toList a = foldr (a, [], op ::)
 
 fun toListMap (a, f) = foldr (a, [], fn (a, ac) => f a :: ac)
 
+fun toListKeepAllMapi (v, f) =
+   foldri (v, [], fn (i, a, bs) =>
+           case f (i, a) of
+              NONE => bs
+            | SOME b => b :: bs)
+
+fun toListKeepAllMap (v, f) = toListKeepAllMapi (v, f o #2)
+
 fun layout l v = Layout.tuple (toListMap (v, l))
 
 fun toString xToString l =

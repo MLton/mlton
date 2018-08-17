@@ -29,7 +29,7 @@ C_Errno_t(C_Int_t) Socket_select (Vector(C_Fd_t) read_vec,
   fd_set *read_fds, *write_fds, *except_fds;
   int res;
   
-  read_len = GC_getArrayLength((pointer)read_vec);
+  read_len = GC_getSequenceLength((pointer)read_vec);
   if (read_len > 0) {
     read_fds = &read_fd_set; 
     FD_ZERO(read_fds);
@@ -40,7 +40,7 @@ C_Errno_t(C_Int_t) Socket_select (Vector(C_Fd_t) read_vec,
   } else {
     read_fds = NULL;
   }
-  write_len = GC_getArrayLength((pointer)write_vec);
+  write_len = GC_getSequenceLength((pointer)write_vec);
   if (write_len > 0) {
     write_fds = &write_fd_set; 
     FD_ZERO(write_fds);
@@ -51,7 +51,7 @@ C_Errno_t(C_Int_t) Socket_select (Vector(C_Fd_t) read_vec,
   } else {
     write_fds = NULL;
   }
-  except_len = GC_getArrayLength((pointer)except_vec);
+  except_len = GC_getSequenceLength((pointer)except_vec);
   if (except_len > 0) {
     except_fds = &except_fd_set; 
     FD_ZERO(except_fds);

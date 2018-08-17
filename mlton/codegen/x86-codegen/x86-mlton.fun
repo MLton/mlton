@@ -70,8 +70,6 @@ struct
          | Real_le _ => true
          | Real_lt _ => true
          | Real_mul _ => true
-         | Real_muladd _ => true
-         | Real_mulsub _ => true
          | Real_neg _ => true
          | Real_qequal _ => true
          | Real_rndToReal _ => true
@@ -130,9 +128,6 @@ struct
         fun getSrc2 ()
           = (Vector.sub (args, 0), Vector.sub (args, 1))
             handle _ => Error.bug "x86MLton.prim: getSrc2"
-        fun getSrc3 ()
-          = (Vector.sub (args, 0), Vector.sub (args, 1), Vector.sub (args, 2))
-            handle _ => Error.bug "x86MLton.prim: getSrc3"
         fun getSrc4 ()
           = (Vector.sub (args, 0), Vector.sub (args, 1), 
              Vector.sub (args, 2), Vector.sub (args, 3))
@@ -573,40 +568,6 @@ struct
                    {oper = oper,
                     dst = dst,
                     src = src2,
-                    size = dstsize}],
-                transfer = NONE}]
-            end
-
-        fun fbina_fmul oper
-          = let
-              val (dst,dstsize) = getDst1 ()
-              val ((src1,src1size),
-                   (src2,src2size),
-                   (src3,src3size)) = getSrc3 ()
-              val _ 
-                = Assert.assert
-                  ("x86MLton.prim: fbina_fmul, dstsize/src1size/src2size/src3size",
-                   fn () => src1size = dstsize andalso
-                            src2size = dstsize andalso
-                            src3size = dstsize)
-            in
-              AppendList.fromList
-              [Block.mkBlock'
-               {entry = NONE,
-                statements
-                = [Assembly.instruction_pfmov
-                   {dst = dst,
-                    src = src1,
-                    size = src1size},
-                   Assembly.instruction_pfbina
-                   {oper = Instruction.FMUL,
-                    dst = dst,
-                    src = src2,
-                    size = dstsize},
-                   Assembly.instruction_pfbina
-                   {oper = oper,
-                    dst = dst,
-                    src = src3,
                     size = dstsize}],
                 transfer = NONE}]
             end
@@ -1069,8 +1030,6 @@ struct
                     transfer = NONE}]
                 end
              | Real_mul _ => fbina Instruction.FMUL
-             | Real_muladd _ => fbina_fmul Instruction.FADD
-             | Real_mulsub _ => fbina_fmul Instruction.FSUB
              | Real_add _ => fbina Instruction.FADD
              | Real_sub _ => fbina Instruction.FSUB
              | Real_div _ => fbina Instruction.FDIV

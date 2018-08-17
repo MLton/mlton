@@ -203,7 +203,7 @@ The expression should evaluate to a bg-build project object."
                    (insert-file-contents file)
                    (setq default-directory directory)
                    (goto-char (point-min))
-                   (eval `(labels
+                   (eval `(cl-labels
                               ((bg-build
                                 (&rest args)
                                 (apply (function bg-build-prj) ,file args)))
@@ -648,10 +648,10 @@ The expression should evaluate to a bg-build project object."
           (setq buffer-read-only t)
           (goto-char point)))))
   (setq bg-build-status
-        (labels ((fmt (label n)
-                      (cond ((= n 0) "")
-                            ((= n 1) label)
-                            (t (format "%s%d" label n)))))
+        (cl-labels ((fmt (label n)
+                         (cond ((= n 0) "")
+                               ((= n 1) label)
+                               (t (format "%s%d" label n)))))
           (let* ((queued (fmt "Q" (length bg-build-build-queue)))
                  (live (fmt "L" (length bg-build-live-builds)))
                  (messages

@@ -16,7 +16,7 @@ int main (__attribute__ ((unused)) int argc,
 
   sizesFd = fopen_safe ("sizes", "w");
 
-  fprintf (sizesFd, "arrayMetaData = %"PRIuMAX"\n", (uintmax_t)GC_ARRAY_METADATA_SIZE);
+  fprintf (sizesFd, "sequenceMetaData = %"PRIuMAX"\n", (uintmax_t)GC_SEQUENCE_METADATA_SIZE);
   fprintf (sizesFd, "cint = %"PRIuMAX"\n",     (uintmax_t)sizeof(C_Int_t));
   fprintf (sizesFd, "cpointer = %"PRIuMAX"\n", (uintmax_t)sizeof(C_Pointer_t));
   fprintf (sizesFd, "cptrdiff = %"PRIuMAX"\n", (uintmax_t)sizeof(C_Ptrdiff_t));
@@ -25,7 +25,7 @@ int main (__attribute__ ((unused)) int argc,
   fprintf (sizesFd, "mplimb = %"PRIuMAX"\n",   (uintmax_t)sizeof(C_MPLimb_t));
   fprintf (sizesFd, "normalMetaData = %"PRIuMAX"\n", (uintmax_t)GC_NORMAL_METADATA_SIZE);
   fprintf (sizesFd, "objptr = %"PRIuMAX"\n",   (uintmax_t)sizeof(objptr));
-  fprintf (sizesFd, "seqIndex = %"PRIuMAX"\n", (uintmax_t)sizeof(GC_arrayLength));
+  fprintf (sizesFd, "seqIndex = %"PRIuMAX"\n", (uintmax_t)sizeof(GC_sequenceLength));
 
   fclose_safe(sizesFd);
 

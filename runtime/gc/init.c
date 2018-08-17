@@ -283,7 +283,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.mayPageHeap = FALSE;
   s->controls.mayProcessAtMLton = TRUE;
   s->controls.messages = FALSE;
-  s->controls.oldGenArraySize = 0x100000;
+  s->controls.oldGenSequenceSize = 0x100000;
   s->controls.ratios.copy = 4.0f;
   s->controls.ratios.copyGenerational = 4.0f;
   s->controls.ratios.grow = 8.0f;

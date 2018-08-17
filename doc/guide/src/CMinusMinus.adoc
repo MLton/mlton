@@ -1,7 +1,7 @@
 CMinusMinus
 ===========
 
-http://cminusminus.org[C--] is a portable assembly language intended
+https://www.cs.tufts.edu/~nr/c--/index.html[C--] is a portable assembly language intended
 to make it easy for compilers for different high-level languages to
 share the same backend.  An experimental version of MLton has been
 made to generate C--.

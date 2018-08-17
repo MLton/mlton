@@ -76,7 +76,7 @@ struct
          get #1 0 v
 
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
-         fn ArrayOffset {base, index, offset, scale, ty}
+         fn SequenceOffset {base, index, offset, scale, ty}
             => let
                   val base = toX86Operand base
                   val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",

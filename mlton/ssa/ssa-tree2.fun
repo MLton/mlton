@@ -48,18 +48,19 @@ structure Prod =
                         m1 = m2 andalso equals (e1, e2))
 
       fun layout (p, layout) =
-        let
+         let
             open Layout
-          in
+         in
             seq [str "(",
             (mayAlign o separateRight)
             (Vector.toListMap (dest p, fn {elt, isMutable} =>
-                    if isMutable
-                    then seq [layout elt, str " ref"]
-                    else layout elt),
-              ","),
-              str ")"]
+                 if isMutable
+                 then seq [layout elt, str " ref"]
+                 else layout elt),
+            ","),
+            str ")"]
          end
+
 
       val map: 'a t * ('a -> 'b) -> 'b t =
          fn (p, f) =>
@@ -79,17 +80,17 @@ structure ObjectCon =
    struct
       datatype t =
          Con of Con.t
+       | Sequence
        | Tuple
-       | Vector
 
       val equals: t * t -> bool =
          fn (Con c, Con c') => Con.equals (c, c')
+          | (Sequence, Sequence) => true
           | (Tuple, Tuple) => true
-          | (Vector, Vector) => true
           | _ => false
 
-      val isVector: t -> bool =
-         fn Vector => true
+      val isSequence: t -> bool =
+         fn Sequence => true
           | _ => false
 
       val layout: t -> Layout.t =
@@ -97,10 +98,10 @@ structure ObjectCon =
          let
             open Layout
          in
-         case oc of
+            case oc of
                Con c => Con.layout c
+             | Sequence => str "sequence"
              | Tuple => str "tuple"
-             | Vector => str "vector"
          end
    end
 
@@ -137,22 +138,22 @@ structure Type =
 
       fun equals (t, t') = PropertyList.equals (plist t, plist t')
 
-      val deVectorOpt: t -> t Prod.t option =
+      val deSequenceOpt: t -> t Prod.t option =
          fn t =>
          case dest t of
-            Object {args, con = Vector} => SOME args
+            Object {args, con = Sequence} => SOME args
           | _ => NONE
 
-      val deVector1: t -> t =
+      val deSequence1: t -> t =
          fn t =>
-         case deVectorOpt t of
+         case deSequenceOpt t of
             SOME args =>
                if Prod.length args = 1
                   then Prod.elt (args, 0)
-                  else Error.bug "SsaTree2.Type.deVector1"
-          | _ => Error.bug "SsaTree2.Type.deVector1"
+                  else Error.bug "SsaTree2.Type.deSequence1"
+          | _ => Error.bug "SsaTree2.Type.deSequence1"
 
-      val isVector: t -> bool = isSome o deVectorOpt
+      val isSequence: t -> bool = isSome o deSequenceOpt
 
       val deWeakOpt: t -> t option =
          fn t =>
@@ -233,7 +234,7 @@ structure Type =
       local
          val generator: Word.t = 0wx5555
          val tuple = newHash ()
-         val vector = newHash ()
+         val sequence = newHash ()
          fun hashProd (p, base) =
             Vector.fold (Prod.dest p, base, fn ({elt, ...}, w) =>
                          Word.xorb (w * generator, hash elt))
@@ -243,19 +244,19 @@ structure Type =
                val base =
                   case con of
                      Con c => Con.hash c
+                   | Sequence => sequence
                    | Tuple => tuple
-                   | Vector => vector
                val hash = hashProd (args, base)
             in
                lookup (hash, Object {args = args, con = con})
             end
       end
 
-      fun vector p = object {args = p, con = Vector}
+      fun sequence p = object {args = p, con = Sequence}
 
       local
          fun make isMutable t =
-            vector (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
+            sequence (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
       in
          val array1 = make true
          val vector1 = make false
@@ -297,26 +298,25 @@ structure Type =
             (plist,
              Property.initRec
              (fn (t, layout) =>
-              case dest t of
-                 CPointer => str "cpointer"
-               | Datatype t => Tycon.layout t
-               | IntInf => str "intInf"
-               | Object {args, con} =>
-                    if isUnit t
-                       then str "unit"
-                    else
-                       let
-                          val args = Prod.layout (args, layout)
-                       in
-                          case con of
-                             Con c => seq [args, str " ", Con.layout c]
-                           | Tuple => seq [args, str " tuple"]
-                           | Vector => seq [args, str " vector"]
-                       end
-               | Real s => str (concat ["real", RealSize.toString s])
-               | Thread => str "thread"
-               | Weak t => seq [str "(", layout t, str ") weak"]
-               | Word s => str (concat ["word", WordSize.toString s])))
+             CPointer => str "cpointer"
+              | Datatype t => Tycon.layout t
+              | IntInf => str "intInf"
+              | Object {args, con} =>
+                   if isUnit t
+                      then str "unit"
+                   else
+                      let
+                         val args = Prod.layout (args, layout)
+                      in
+                         case con of
+                            Con c => seq [args, str " ", Con.layout c]
+                          | Tuple => seq [args, str " tuple"]
+                          | Sequence => seq [args, str " sequence"]
+                      end
+              | Real s => str (concat ["real", RealSize.toString s])
+              | Thread => str "thread"
+              | Weak t => seq [str "(", layout t, str ") weak"]
+              | Word s => str (concat ["word", WordSize.toString s])))
       end
 
       fun checkPrimApp {args, prim, result}: bool =
@@ -369,7 +369,7 @@ structure Type =
                Array_alloc _ =>
                   oneArg
                   (fn n =>
-                   case deVectorOpt result of
+                   case deSequenceOpt result of
                       SOME resp =>
                          Prod.allAreMutable resp
                          andalso equals (n, seqIndex)
@@ -377,7 +377,7 @@ structure Type =
              | Array_copyArray =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
-                   case (deVectorOpt dst, deVectorOpt src) of
+                   case (deSequenceOpt dst, deSequenceOpt src) of
                       (SOME dstp, SOME srcp) =>
                          Vector.equals (Prod.dest dstp, Prod.dest srcp,
                                         fn ({elt = dstElt, isMutable = dstIsMutable},
@@ -392,7 +392,7 @@ structure Type =
              | Array_copyVector =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
-                   case (deVectorOpt dst, deVectorOpt src) of
+                   case (deSequenceOpt dst, deSequenceOpt src) of
                       (SOME dstp, SOME srcp) =>
                          Vector.equals (Prod.dest dstp, Prod.dest srcp,
                                         fn ({elt = dstElt, isMutable = dstIsMutable},
@@ -407,11 +407,11 @@ structure Type =
              | Array_length =>
                   oneArg
                   (fn a =>
-                   isVector a andalso equals (result, seqIndex))
+                   isSequence a andalso equals (result, seqIndex))
              | Array_toArray =>
                   oneArg
                   (fn arr =>
-                   case (deVectorOpt arr, deVectorOpt result) of
+                   case (deSequenceOpt arr, deSequenceOpt result) of
                       (SOME arrp, SOME resp) =>
                          Vector.equals (Prod.dest arrp, Prod.dest resp,
                                         fn ({elt = arrElt, isMutable = arrIsMutable},
@@ -422,7 +422,7 @@ structure Type =
              | Array_toVector =>
                   oneArg
                   (fn arr =>
-                   case (deVectorOpt arr, deVectorOpt result) of
+                   case (deSequenceOpt arr, deSequenceOpt result) of
                       (SOME arrp, SOME resp) =>
                          Vector.equals (Prod.dest arrp, Prod.dest resp,
                                         fn ({elt = arrElt, isMutable = arrIsMutable},
@@ -433,7 +433,7 @@ structure Type =
              | Array_uninit =>
                   twoArgs
                   (fn (arr, i) =>
-                   case deVectorOpt arr of
+                   case deSequenceOpt arr of
                       SOME arrp =>
                          Prod.allAreMutable arrp
                          andalso equals (i, seqIndex)
@@ -442,7 +442,7 @@ structure Type =
              | Array_uninitIsNop =>
                   oneArg
                   (fn arr =>
-                   case deVectorOpt arr of
+                   case deSequenceOpt arr of
                       SOME arrp =>
                          Prod.allAreMutable arrp
                          andalso isBool result
@@ -527,8 +527,8 @@ structure Base =
    struct
       datatype 'a t =
          Object of 'a
-       | VectorSub of {index: 'a,
-                       vector: 'a}
+       | SequenceSub of {index: 'a,
+                         sequence: 'a}
 
       fun layout (b: 'a t, layoutX: 'a -> Layout.t): Layout.t =
          let
@@ -536,48 +536,48 @@ structure Base =
          in
             case b of
                Object x => layoutX x
-             | VectorSub {index, vector} =>
-                  seq [str "$", Vector.layout layoutX (Vector.new2 (vector, index))]
+             | SequenceSub {index, sequence} =>
+                  seq [str "$", Vector.layout layoutX (Vector.new2 (sequence, index))]
          end
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
          fn (b1, b2, equalsX) =>
          case (b1, b2) of
             (Object x1, Object x2) => equalsX (x1, x2)
-          | (VectorSub {index = i1, vector = v1},
-             VectorSub {index = i2, vector = v2}) =>
+          | (SequenceSub {index = i1, sequence = v1},
+             SequenceSub {index = i2, sequence = v2}) =>
                equalsX (i1, i2) andalso equalsX (v1, v2)
           | _ => false
 
       fun object (b: 'a t): 'a =
          case b of
             Object x => x
-          | VectorSub {vector = x, ...} => x
+          | SequenceSub {sequence = x, ...} => x
 
       local
          val newHash = Random.word
          val object = newHash ()
-         val vectorSub = newHash ()
+         val sequenceSub = newHash ()
       in
          val hash: 'a t * ('a -> word) -> word =
             fn (b, hashX) =>
             case b of
                Object x => Word.xorb (object, hashX x)
-             | VectorSub {index, vector} =>
-                  Word.xorb (Word.xorb (hashX index, hashX vector),
-                             vectorSub)
+             | SequenceSub {index, sequence} =>
+                  Word.xorb (Word.xorb (hashX index, hashX sequence),
+                             sequenceSub)
       end
 
       fun foreach (b: 'a t, f: 'a -> unit): unit =
          case b of
             Object x => f x
-          | VectorSub {index, vector} => (f index; f vector)
+          | SequenceSub {index, sequence} => (f index; f sequence)
 
       fun map (b: 'a t, f: 'a -> 'b): 'b t =
          case b of
             Object x => Object (f x)
-          | VectorSub {index, vector} => VectorSub {index = f index,
-                                                    vector = f vector}
+          | SequenceSub {index, sequence} => SequenceSub {index = f index,
+                                                          sequence = f sequence}
    end
 
 structure Exp =
@@ -633,15 +633,15 @@ structure Exp =
              | Inject {sum, variant} =>
                   seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
-                  seq [str "new ", (case con of
-                           NONE => str "tuple "
-                         | SOME c => seq [Con.layout c, str " "]),
-                       layoutArgs args]
+             seq [str "new ", (case con of
+                      NONE => str "tuple "
+                    | SOME c => seq [Con.layout c, str " "]),
+                  layoutArgs args]
              | PrimApp {args, prim} =>
                   seq [str "prim ", Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
              | Select {base, offset} =>
                   seq [str "sel ", Int.layout offset, str " ",
-                       paren (Base.layout (base, layoutVar))]
+                                   paren (Base.layout (base, layoutVar))]
              | Var x => layoutVar x
          end
 
@@ -724,25 +724,22 @@ structure Statement =
                   let
                      val (sep, ty) =
                         if !Control.showTypes
-                           then (str ":", indent (seq [Type.layout ty, str " ="], 2))
-                           else (str " =", empty)
+                            then (str ":", indent (seq [Type.layout ty, str " ="], 2))
+                            else (str " =", empty)
                   in
-                     mayAlign [mayAlign [seq [str "val ",
-                                            case var of
-                                                 NONE => str "_"
-                                               | SOME var => Var.layout var,
-                                              sep],
-                                         ty],
-                               indent (Exp.layout' (exp, layoutVar), 2)]
+                      mayAlign [mayAlign [seq [str "val ",
+                         case var of
+                                NONE => str "_"
+                              | SOME var => Var.layout var, sep], ty],
+                              indent (Exp.layout' (exp, layoutVar), 2)]
                   end
              | Profile p => seq [str "prof ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "upd ", Exp.layout' (Exp.Select {base = base,
-                                                          offset = offset},
-                                              layoutVar),
-                                 str " :="],
-                            layoutVar value]
+                    mayAlign [seq [str "upd ", Exp.layout' (Exp.Select {base = base,
+                                                     offset = offset}, layoutVar),
+                                   str " :="], layoutVar value]
          end
+
       fun layout s = layout' (s, Var.layout)
 
       val profile = Profile
@@ -789,7 +786,7 @@ structure Statement =
                              Const _ => set ()
                            | Object {con, args, ...} =>
                                 (case con of
-                                    NONE   => if Vector.isEmpty args then set () else ()
+                                    NONE => if Vector.isEmpty args then set () else ()
                                   | SOME _ => set ())
                            | _ => ()
                        end)
@@ -1070,10 +1067,6 @@ structure Transfer =
                   (l, fn (i, l) =>
                    seq [layout i, str " => ", Label.layout l])
                datatype z = datatype Cases.t
-               val suffix =
-                  case cases of
-                     Con _ => empty
-                   | Word (size, _) => str (WordSize.toString size)
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
@@ -1084,7 +1077,7 @@ structure Transfer =
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
+               align [seq [str "case ", layoutVar test, str " of"],
                       indent (alignPrefix (cases, "| "), 2)]
             end
       in
@@ -1099,34 +1092,34 @@ structure Transfer =
                    layoutVar)
             in
                case t of
-                  Arith {prim, args, overflow, success, ty}=>
-                  seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
-                       tuple [layoutPrim {prim = prim, args = args}],
-                       str " handle Overflow => ", Label.layout overflow]
-                | Bug => str "bug"
+                  Arith {prim, args, overflow, success, ...} =>
+                     seq [Label.layout success, str " ",
+                          tuple [layoutPrim {prim = prim, args = args}],
+                          str " handle Overflow => ", Label.layout overflow]
+                | Bug => str "Bug"
                 | Call {func, args, return} =>
                      let
                         val call = seq [Func.layout func, str " ", layoutArgs args]
                      in
                         case return of
-                           Return.Dead => seq [str "call dead ", paren call]
+                           Return.Dead => seq [str "dead ", paren call]
                          | Return.NonTail {cont, handler} =>
-                              seq [str "call ", Label.layout cont, str " ",
+                              seq [Label.layout cont, str " ",
                                    paren call,
                                    str " handle _ => ",
                                    case handler of
                                       Handler.Caller => str "raise"
                                     | Handler.Dead => str "dead"
                                     | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "call return ", paren call]
+                         | Return.Tail => seq [str "return ", paren call]
                      end
                 | Case arg => layoutCase (arg, layoutVar)
                 | Goto {dst, args} =>
-                     seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
+                     seq [Label.layout dst, str " ", layoutArgs args]
                 | Raise xs => seq [str "raise ", layoutArgs xs]
                 | Return xs => seq [str "return ", layoutArgs xs]
                 | Runtime {prim, args, return} =>
-                     seq [str "runtime ", Label.layout return, str " ",
+                     seq [Label.layout return, str " ",
                           tuple [layoutPrim {prim = prim, args = args}]]
             end
       end
@@ -1239,7 +1232,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [seq [str "block: ", Label.layout label, str " ",
+            align [seq [Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
@@ -1271,8 +1264,8 @@ structure Datatype =
                  alignPrefix
                  (Vector.toListMap
                   (cons, fn {con, args} =>
-                   seq [Prod.layout (args, Type.layout), str " ",
-                                Con.layout con]),
+                   seq [Con.layout con, str " of ",
+                        Prod.layout (args, Type.layout)]),
                   "| ")]
          end
 

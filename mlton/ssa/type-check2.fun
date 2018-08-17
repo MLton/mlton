@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor TypeCheck2 (S: TYPE_CHECK2_STRUCTS): TYPE_CHECK2 =
+functor TypeCheck2 (S: TYPE_CHECK2_STRUCTS): TYPE_CHECK2 = 
 struct
 
 open S
@@ -61,8 +61,8 @@ fun checkScopes (program as
             val _ =
                case oc of
                   Con con => getCon con
+                | Sequence => ()
                 | Tuple => ()
-                | Vector => ()
          in
             ()
          end
@@ -78,7 +78,7 @@ fun checkScopes (program as
                     CPointer => ()
                   | Datatype tycon => getTycon tycon
                   | IntInf => ()
-                  | Object {args, con, ...} =>
+                  | Object {args, con, ...} => 
                        let
                           val _ = loopObjectCon con
                           val _ = Prod.foreach (args, loopType)
@@ -97,7 +97,7 @@ fun checkScopes (program as
       val bindVar = fn (x, ty) => (loopType ty; bindVar (x, ty))
       fun loopExp exp =
          let
-            val _ =
+            val _ = 
                case exp of
                   Const _ => ()
                 | Inject {sum, variant, ...} => (getTycon sum; getVar variant)
@@ -110,8 +110,8 @@ fun checkScopes (program as
          end
       fun loopStatement (s: Statement.t): unit =
          let
-            val _ =
-               case s of
+            val _ = 
+               case s of 
                   Bind {exp, ty, var, ...} =>
                      let
                         val _ = loopExp exp
@@ -121,7 +121,7 @@ fun checkScopes (program as
                         ()
                      end
                 | Profile _ => ()
-                | Update {base, value, ...} =>
+                | Update {base, value, ...} => 
                      (Base.foreach (base, getVar); getVar value)
          in
             ()
@@ -174,7 +174,7 @@ fun checkScopes (program as
                   val _ = getVar test
                   val _ =
                      case cases of
-                        Cases.Con cs => doitCon cs
+                        Cases.Con cs => doitCon cs 
                       | Cases.Word (ws, cs) => doitWord (ws, cs)
                in
                   ()
@@ -201,7 +201,7 @@ fun checkScopes (program as
                            ; loopTransfer transfer)
                           handle exn => Error.reraiseSuffix (exn, concat [" in ", Label.toString label])
                   val _ = Vector.foreach (children, loop)
-                  val _ = Vector.foreach
+                  val _ = Vector.foreach 
                           (statements, fn s =>
                            Statement.foreachDef (s, unbindVar o #1))
                   val _ = Vector.foreach (args, unbindVar o #1)
@@ -273,7 +273,7 @@ structure Function =
                let
                   fun bug (msg: string): 'a =
                      let
-                        val _ =
+                        val _ = 
                            Vector.foreach
                            (blocks, fn Block.T {label, ...} =>
                             let
@@ -341,7 +341,7 @@ structure Function =
                                  outputl (List.layout SourceInfo.layout sources,
                                           Out.error)
                               end
-                           val _ =
+                           val _ = 
                               if (case transfer of
                                      Call {return, ...} =>
                                         let
@@ -462,17 +462,17 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun base b =
          case b of
             Base.Object ty => ty
-          | Base.VectorSub {index, vector} =>
-               if Type.isVector vector
+          | Base.SequenceSub {index, sequence} =>
+               if Type.isSequence sequence
                   then let
                           val _ =
                              if Type.equals (index, Type.word (WordSize.seqIndex ()))
                                 then ()
-                             else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non seqIndex)"
+                             else Error.bug "Ssa2.TypeCheck2.base (sequence-sub of non seqIndex)"
                        in
-                          vector
+                          sequence
                        end
-               else Error.bug "Ssa2.TypeCheck2.base (vector-sub of non vector)"
+               else Error.bug "Ssa2.TypeCheck2.base (sequence-sub of non sequence)"
       fun select {base: Type.t, offset: int, resultType = _}: Type.t =
          case Type.dest base of
             Type.Object {args, ...} => Prod.elt (args, offset)

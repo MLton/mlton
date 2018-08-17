@@ -1307,7 +1307,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                        | _ => Error.bug "Ssa2.Shrink2.evalBind: Select:non object")
                                 | _ => dontChange ()
                             end
-                       | Base.VectorSub _ => simple {sideEffect = false})
+                       | Base.SequenceSub _ => simple {sideEffect = false})
                 | Var x => setVar (varInfo x)
             end
          and evalStatement arg : Statement.t list -> Statement.t list =
