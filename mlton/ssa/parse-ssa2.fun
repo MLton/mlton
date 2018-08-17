@@ -79,9 +79,9 @@
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
  fun makeObjectCon resolveCon (ident) = case ident of
-                     "tuple"  => ObjectCon.Tuple
+                     "tuple"    => ObjectCon.Tuple
                    | "sequence" => ObjectCon.Sequence
-                   | _        => ObjectCon.Con (resolveCon ident)
+                   | _          => ObjectCon.Con (resolveCon ident)
 
  fun makeProd (elt, isMutable) = {elt = elt, isMutable = isMutable}
 

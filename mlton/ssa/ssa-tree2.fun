@@ -298,7 +298,8 @@ structure Type =
             (plist,
              Property.initRec
              (fn (t, layout) =>
-             CPointer => str "cpointer"
+              case dest t of
+                CPointer => str "cpointer"
               | Datatype t => Tycon.layout t
               | IntInf => str "intInf"
               | Object {args, con} =>
