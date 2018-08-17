@@ -189,16 +189,16 @@
 
         val parseBaseObject = makeBaseObject <$> parseVar
 
-        fun makeBaseSequenceSub (vector, index)=
+        fun makeBaseSequenceSub (sequence, index)=
         Base.SequenceSub {
             index = index,
-            vector = vector
+            sequence = sequence
         }
 
         val parseBaseSequenceSub = token "$" *> P.spaces *> parenOf (makeBaseSequenceSub <$$> (parseVar <* P.str "," <* P.spaces,
                                                                                            parseVar <* P.spaces)) <* P.spaces
 
-        val parseBase = P.any[parseBaseVectorSub, parseBaseObject]
+        val parseBase = P.any[parseBaseSequenceSub, parseBaseObject]
 
         in
           parseBase
