@@ -1068,17 +1068,24 @@ structure Transfer =
                   (l, fn (i, l) =>
                    seq [layout i, str " => ", Label.layout l])
                datatype z = datatype Cases.t
+
+               val suffix =
+                  case cases of
+                     Con _ => empty
+                   | Word (size, _) => str (WordSize.toString size)
+
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
                    | Word (_, l) => doit (l, WordX.layout)
+
                val cases =
                   case default of
                      NONE => cases
                    | SOME j =>
                         cases @ [seq [str "_ => ", Label.layout j]]
             in
-               align [seq [str "case ", layoutVar test, str " of"],
+               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
                       indent (alignPrefix (cases, "| "), 2)]
             end
       in
@@ -1093,34 +1100,34 @@ structure Transfer =
                    layoutVar)
             in
                case t of
-                  Arith {prim, args, overflow, success, ...} =>
-                     seq [Label.layout success, str " ",
+                  Arith {prim, args, overflow, success, ty} =>
+                     seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
                           tuple [layoutPrim {prim = prim, args = args}],
                           str " handle Overflow => ", Label.layout overflow]
-                | Bug => str "Bug"
+                | Bug => str "bug"
                 | Call {func, args, return} =>
                      let
                         val call = seq [Func.layout func, str " ", layoutArgs args]
                      in
                         case return of
-                           Return.Dead => seq [str "dead ", paren call]
+                           Return.Dead => seq [str "call dead ", paren call]
                          | Return.NonTail {cont, handler} =>
-                              seq [Label.layout cont, str " ",
+                              seq [str "call ", Label.layout cont, str " ",
                                    paren call,
                                    str " handle _ => ",
                                    case handler of
                                       Handler.Caller => str "raise"
                                     | Handler.Dead => str "dead"
                                     | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "return ", paren call]
+                         | Return.Tail => seq [str "call return ", paren call]
                      end
                 | Case arg => layoutCase (arg, layoutVar)
                 | Goto {dst, args} =>
-                     seq [Label.layout dst, str " ", layoutArgs args]
+                     seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
                 | Raise xs => seq [str "raise ", layoutArgs xs]
                 | Return xs => seq [str "return ", layoutArgs xs]
                 | Runtime {prim, args, return} =>
-                     seq [Label.layout return, str " ",
+                     seq [str "runtime ", Label.layout return, str " ",
                           tuple [layoutPrim {prim = prim, args = args}]]
             end
       end
@@ -1233,7 +1240,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [seq [Label.layout label, str " ",
+            align [seq [str "block: ", Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
@@ -1265,8 +1272,8 @@ structure Datatype =
                  alignPrefix
                  (Vector.toListMap
                   (cons, fn {con, args} =>
-                   seq [Con.layout con, str " of ",
-                        Prod.layout (args, Type.layout)]),
+                   seq [Prod.layout (args, Type.layout), str " ",
+                        Con.layout con]),
                   "| ")]
          end
 
