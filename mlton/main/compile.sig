@@ -54,7 +54,6 @@ signature COMPILE =
                         outputS: unit -> {file: File.t,
                                           print: string -> unit,
                                           done: unit -> unit}} -> unit
-
       val compileSSA2: {input: File.t,
                         outputC: unit -> {file: File.t,
                                           print: string -> unit,

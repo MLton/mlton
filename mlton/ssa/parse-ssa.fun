@@ -12,7 +12,7 @@ struct
    open P.Ops
    infix 1 <|> >>=
    infix  3 <*> <* *>
-   infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+   infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?> 
 
    fun isInfixChar b = case List.index
       (String.explode "!%&$#+-/:<=>?@\\~'^|*",
@@ -82,7 +82,7 @@ struct
 
 
    (* too many arguments for the maps, curried to use <*> instead *)
-   fun makeTyp resolveTycon (args, ident) =
+   fun makeTyp resolveTycon (args, ident) = 
          case ident of
               "array" => Type.array (Vector.first args)
             | "intInf" => Type.intInf
@@ -166,9 +166,9 @@ struct
 
    (* Prim EXP *)
 
-
-   fun primAppExp resolveTycon resolveVar =
-      let
+   
+   fun primAppExp resolveTycon resolveVar = 
+      let 
          val var = resolveVar <$> ident <* P.spaces
 
          val varExp =
@@ -199,7 +199,7 @@ struct
             [CFunction.SymbolScope.External <$ token "external",
              CFunction.SymbolScope.Private <$ token "private",
              CFunction.SymbolScope.Public <$ token "public"]
-
+         
 
          val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
                            CFunction.Target.Direct <$> ident
@@ -227,7 +227,7 @@ struct
             <*> fromRecord "symbolScope" parseSymbolScope
             <* doneRecord)
 
-         fun resolvePrim p =
+         fun resolvePrim p = 
             case Prim.fromString p
                of SOME p' =>  P.pure p'
                 | NONE => P.fail ("valid primitive, got " ^ p)
@@ -244,7 +244,7 @@ struct
           P.spaces *> P.tuple varExp <* P.spaces))
       end
 
-  fun makeStatement (var, ty, exp) =
+   fun makeStatement (var, ty, exp) = 
       Statement.T
       {var = var,
        ty = ty,
@@ -262,7 +262,7 @@ struct
             (SOME <$> var <|> token "_" *> P.pure(NONE),
              symbol ":" *> (typ resolveTycon) <* P.spaces)
          fun makeConApp(con, args) = { con=con, args=args }
-         fun conApp v =
+         fun conApp v = 
             makeConApp <$$>
                   (resolveCon <$> ident <* P.spaces,
                    v)
@@ -274,14 +274,14 @@ struct
                | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
                | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
                | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
-               | Type.Vector _  =>
+               | Type.Vector _  => 
                   (* assume it's a word8 vector *)
                   P.any
                   [Const.string <$> parseString,
                    Const.wordVector <$> parseWord8Vector,
                    P.failCut "string constant"]
                | _ => P.fail "constant"
-
+         
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> P.cut(makeSelect <$$>
             (P.uint <* P.spaces,
@@ -302,14 +302,14 @@ struct
             makeStatement
             <$>
             (typedvar >>= (fn (var, ty) =>
-             (symbol "=" *> exp ty <* P.spaces) >>= (fn exp =>
+             (symbol "=" *> exp ty <* P.spaces) >>= (fn exp => 
                P.pure (var, ty, exp))))
       in
          statement'
       end
+   
 
-
-   fun globls resolveCon resolveTycon resolveVar =
+   fun globls resolveCon resolveTycon resolveVar = 
       let
          fun globals' () = P.spaces *> token "Globals:" *> Vector.fromList <$>
             P.many (statements resolveCon resolveTycon resolveVar)
@@ -318,7 +318,7 @@ struct
       end
 
    fun makeFunction name args returns raises label blocks =
-      Function.new
+      Function.new 
       {args = args,
        blocks = blocks,
        mayInline = false,
@@ -328,8 +328,8 @@ struct
        start = label}
 
 
-   fun functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel =
-         let
+   fun functns resolveCon resolveTycon resolveVar resolveFunc resolveLabel = 
+         let 
             val name =  P.spaces *> symbol "fun" *> resolveFunc <$> ident <*
             P.spaces
 
@@ -391,13 +391,13 @@ struct
                          )))
 
             val transferCase = Transfer.Case <$> casesExp
-
-            fun makeGoto dst args =
+            
+            fun makeGoto dst args = 
                Transfer.Goto {dst = dst, args = args}
 
             val transferGoto = makeGoto
                <$> labelWithArgs
-               <*> vars
+               <*> vars 
 
             fun makeArith (ty, success, {prim, targs = _, args}, overflow) =
                Transfer.Arith {
@@ -414,7 +414,7 @@ struct
                ")",
                P.spaces *> P.str "handle Overflow => " *> label' <* P.spaces)
 
-            fun makeReturnNonTail cont (handler) =
+            fun makeReturnNonTail cont (handler) = 
                Return.NonTail {
                   cont=cont,
                   handler=
@@ -427,7 +427,7 @@ struct
             fun returnNonTail cont = makeReturnNonTail cont <$>
                (P.str "handle _ => " *> ident <* P.spaces)
 
-            fun getReturn return =
+            fun getReturn return = 
                case return of
                     "dead" => P.pure(Return.Dead)
                   | "return" => P.pure(Return.Tail)
@@ -438,10 +438,10 @@ struct
                Transfer.Call {
                   args=args,
                   func=func,
-                  return=return
+                  return=return 
                }
 
-            val transferCall =
+            val transferCall = 
                P.spaces *> P.str "call" *> P.spaces *> ident <* P.spaces >>= (fn return =>
                   symbol "(" *> resolveFunc <$> ident <* P.spaces >>= (fn func =>
                       vars <* symbol ")" <* P.spaces >>= (fn argus =>
@@ -475,7 +475,7 @@ struct
                [transferArith, transferCase, transferCall, transferBug,
                 transferRuntime, transferRaise, transferReturn, transferGoto]
 
-            fun makeBlock label args statements transfer =
+            fun makeBlock label args statements transfer = 
                Block.T {
                   args = args,
                   label = label,
@@ -510,8 +510,8 @@ struct
          {datatypes = datatypes,
           functions = functions,
           globals = globals,
-          main = main}
-
+          main = main} 
+   
    val program : Program.t Parse.t =
       let
          fun strip_unique s  = case P.parseString
@@ -526,7 +526,7 @@ struct
                SOME con => con
              | NONE => resolveCon0 ident
          val resolveTycon0 = makeNameResolver(Tycon.newString o strip_unique)
-         fun resolveTycon ident =
+         fun resolveTycon ident = 
             case ident of
                  "bool" => Tycon.bool
                | "exn" => Tycon.exn
@@ -546,5 +546,5 @@ struct
               (* failing next to check for end of file *)
               <* P.spaces <* (P.failing P.next <|> P.failCut "End of file"))))
       end
-
+      
 end

@@ -23,7 +23,7 @@ signature PARSE =
       (*
        * infix 1 <|> >>=
        * infix  3 <*> <* *>
-       * infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+       * infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?> 
        *)
       val >>= : 'a t * ('a -> 'b t) -> 'b t
       val <*> : ('a -> 'b) t * 'a t -> 'b t
@@ -96,9 +96,6 @@ signature PARSE =
       val notFollowedBy: 'a t * 'b t -> 'a t
       (* succeeds with SOME if the parser succeeded and NONE otherwise *)
       val optional: 'a t -> 'a option t
-
-      (*val optionalWN: 'a t -> 'a t*)
-
       (* parse an integer, as Integer.scan StringCVT.DEC *)
       val int: int t
       val intInf: IntInf.t t
