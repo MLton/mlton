@@ -16,7 +16,7 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | SSA | TypeCheck
+      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | SSA | SSA2 | TypeCheck
       val toInt: t -> int =
          fn MLB => 1
           | SML => 1
@@ -24,6 +24,7 @@ structure Place =
           | TypeCheck => 4
           | SXML => 7
           | SSA => 10
+          | SSA2 => 11
           | Generated => 13
           | O => 14
           | OUT => 15
@@ -37,6 +38,7 @@ structure Place =
           | SML => "sml"
           | SXML => "sxml"
           | SSA => "ssa"
+          | SSA2 => "ssa2"
           | TypeCheck => "tc"
 
       fun compare (p, p') = Int.compare (toInt p, toInt p')
@@ -1251,6 +1253,7 @@ fun commandLine (args: string list): unit =
                         (".sml", SML, false),
                         (".sxml", SXML, false),
                         (".ssa", SSA, false),
+                        (".ssa2", SSA2, false),
                         (".c", Generated, true),
                         (".o", O, true)]
                end
@@ -1598,6 +1601,10 @@ fun commandLine (args: string list): unit =
                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                    elaborate = fn _ => raise Fail "Unimplemented",
                                    compile = Compile.compileSSA}
+                  val compileSSA2 =
+                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
+                                    elaborate = fn _ => raise Fail "Unimplemented",
+                                    compile = Compile.compileSSA2}
 
                   fun compile () =
                      case start of
@@ -1607,6 +1614,7 @@ fun commandLine (args: string list): unit =
                       | Place.O => compileCSO (input :: csoFiles)
                       | Place.SXML => compileSXML input
                       | Place.SSA => compileSSA input
+                      | Place.SSA2 => compileSSA2 input
                       | _ => Error.bug "invalid start"
                   val doit
                     = trace (Top, "MLton")

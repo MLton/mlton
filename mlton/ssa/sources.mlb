@@ -29,6 +29,8 @@ local
    type-check2.fun
    parse-ssa.sig
    parse-ssa.fun
+   parse-ssa2.sig
+   parse-ssa2.fun
    prepasses.sig
    prepasses2.sig
    prepasses.fun
@@ -104,6 +106,7 @@ in
 
    functor FlatLattice
    functor ParseSsa
+   functor ParseSsa2
    functor Ssa
    functor Ssa2
    functor SsaToSsa2

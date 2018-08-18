@@ -52,6 +52,7 @@ structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
+structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
 local
@@ -579,7 +580,7 @@ fun makeSsa sxml =
    {display = Control.Layouts Ssa.Program.layouts,
     name = "closureConvert",
     stats = Ssa.Program.layoutStats,
-    style = Control.No,
+    style = Control.ML,
     suffix = "ssa",
     thunk = fn () => ClosureConvert.closureConvert sxml,
     typeCheck = Ssa.typeCheck}
@@ -591,7 +592,7 @@ fun simplifySsa ssa =
          {display = Control.Layouts Ssa.Program.layouts,
           name = "ssaSimplify",
           stats = Ssa.Program.layoutStats,
-          style = Control.No,
+          style = Control.ML,
           suffix = "ssa",
           thunk = fn () => Ssa.simplify ssa,
           typeCheck = Ssa.typeCheck}
@@ -610,7 +611,7 @@ fun makeSsa2 ssa =
    {display = Control.Layouts Ssa2.Program.layouts,
     name = "toSsa2",
     stats = Ssa2.Program.layoutStats,
-    style = Control.No,
+    style = Control.ML,
     suffix = "ssa2",
     thunk = fn () => SsaToSsa2.convert ssa,
     typeCheck = Ssa2.typeCheck}
@@ -622,14 +623,14 @@ fun simplifySsa2 ssa2 =
          {display = Control.Layouts Ssa2.Program.layouts,
           name = "ssa2Simplify",
           stats = Ssa2.Program.layoutStats,
-          style = Control.No,
+          style = Control.ML,
           suffix = "ssa2",
           thunk = fn () => Ssa2.simplify ssa2,
           typeCheck = Ssa2.typeCheck}
       open Control
       val _ =
          if !keepSSA2
-            then saveToFile ({suffix = "ssa2"}, No, ssa2,
+            then saveToFile ({suffix = "ssa2"}, ML, ssa2,
                Layouts Ssa2.Program.layouts)
          else ()
    in
@@ -899,6 +900,39 @@ fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
             outputC = outputC,
             outputLL = outputLL,
             outputS = outputS}
+
+fun genFromSsa2 (input: File.t): Machine.Program.t =
+               let
+                  val _ = setupConstants()
+                  val ssa2 =
+                     Control.passTypeCheck
+                     {display = Control.Layouts Ssa2.Program.layouts,
+                      name = "ssa2Parse",
+                      stats = Ssa2.Program.layoutStats,
+                      style = Control.ML,
+                      suffix = "ssa2",
+                      thunk = (fn () => case
+                                 Parse.parseFile(ParseSsa2.program, input)
+                                    of Result.Yes x => x
+                                     | Result.No msg => (Control.error
+                                       (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
+                                        Control.checkForErrors("parse");
+                                        (* can't be reached *)
+                                        raise Fail "parse")
+                               ),
+                      typeCheck = Ssa2.typeCheck}
+                  (*val ssa2 = makeSsa2 ssa*)
+                  val ssa2 = simplifySsa2 ssa2
+               in
+                  makeMachine ssa2
+               end
+
+ fun compileSSA2 {input: File.t, outputC, outputLL, outputS}: unit =
+               compile {input = input,
+                        resolve = genFromSsa2,
+                        outputC = outputC,
+                        outputLL = outputLL,
+                        outputS = outputS}
 
 
 end
