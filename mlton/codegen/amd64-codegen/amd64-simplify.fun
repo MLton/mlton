@@ -1514,7 +1514,7 @@ struct
 (*          elimBinAL0L:: *)
 (*          elimBinAL0R:: *)
             elimAddSub1::
-            elimMDPow2::
+(*          elimMDPow2::  *)
             elimCMPTEST::
             nil
         val optimizations_pre_msg
@@ -1522,18 +1522,20 @@ struct
 (*          elimBinAL0L_msg:: *)
 (*          elimBinAL0R_msg:: *)
             elimAddSub1_msg::
-            elimMDPow2_msg::
+(*          elimMDPow2_msg::  *)
             nil
 
         val optimizations_post
-          = elimBinALMDDouble::
+          = elimMDPow2::
+            elimBinALMDDouble::
             elimSSEBinASDouble::
             elimCMPTEST::
             elimCMP0::
             elimALTEST::
             nil
         val optimizations_post_msg
-          = elimBinALMDDouble_msg::
+          = elimMDPow2_msg::
+            elimBinALMDDouble_msg::
             elimSSEBinASDouble_msg::
             elimCMPTEST_msg::
             elimCMP0_msg::
