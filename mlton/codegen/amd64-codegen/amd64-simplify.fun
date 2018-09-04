@@ -4507,15 +4507,6 @@ struct
                                    changed = false,
                                    msg = "amd64Liveness.LivenessBlock.toLivenessBlock"}
 
-
-                          val _ = if !Control.debug then
-                                    (print "\n***** BEGIN PRE-PEEPHOLE *****\n"
-                                    ; Block.layouts (amd64Liveness.LivenessBlock.toBlock
-                                                     {block = block},
-                                                     print o Layout.toString)
-                                    ; print "\n***** END PRE-PEEPHOLE *****\n")
-                                  else ()
-
                           (***************************************************)
                           (* peepholeLivenessBlock_pre                       *)
                           (***************************************************)
@@ -4535,14 +4526,6 @@ struct
                                    msg = "PeepholeLivenessBlock.peepholeLivenessBlock_pre"}
                           val block = block'
                           val changed = changed orelse changed'
-
-                          val _ = if !Control.debug then
-                                    (print "\n***** BEGIN POST-PEEPHOLE *****\n"
-                                    ; Block.layouts (amd64Liveness.LivenessBlock.toBlock
-                                                     {block = block},
-                                                     print o Layout.toString)
-                                    ; print "\n***** END POST-PEEPHOLE *****\n")
-                                  else ()
 
                           (***************************************************)
                           (* moveHoist                                       *)
