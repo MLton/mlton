@@ -31,23 +31,19 @@ signature PRIM_INT_INF =
       val areSmall: int * int -> bool
 
       val abs: int -> int
-      val +? : int * int -> int
       val +! : int * int -> int
       val + : int * int -> int
       val divMod: int * int -> int * int
       val div: int * int -> int
       val gcd: int * int -> int
       val mod: int * int -> int
-      val *? : int * int -> int
       val *! : int * int -> int
       val * : int * int -> int
-      val ~? : int -> int
       val ~! : int -> int
       val ~ : int -> int
       val quotRem: int * int -> int * int
       val quot: int * int -> int
       val rem: int * int -> int
-      val -? : int * int -> int
       val -! : int * int -> int
       val - : int * int -> int
 
@@ -1324,23 +1320,19 @@ structure IntInf =
       val minInt = NONE
 
       val abs = bigAbs
-      val op +? = bigAdd
       val op +! = bigAdd
       val op + = bigAdd
       val divMod = bigDivMod
       val op div = bigDiv
       val gcd = bigGcd
       val op mod = bigMod
-      val op *? = bigMul
       val op *! = bigMul
       val op * = bigMul
-      val op ~? = bigNeg
       val op ~! = bigNeg
       val op ~ = bigNeg
       val quotRem = bigQuotRem
       val quot = bigQuot
       val rem = bigRem
-      val op -? = bigSub
       val op -! = bigSub
       val op - = bigSub
 
