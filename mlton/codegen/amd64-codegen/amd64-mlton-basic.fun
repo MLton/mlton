@@ -231,6 +231,7 @@ struct
                     class = Classes.StaticTemp}
   fun fpeqTempContentsOperand size
     = Operand.memloc (fpeqTempContents size)
+
   val overflowCheckTemp = Label.fromString "overflowCheckTemp"
   fun overflowCheckTempContents size
     = makeContents {base = Immediate.label overflowCheckTemp,
