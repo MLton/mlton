@@ -2056,9 +2056,10 @@ fun ('a, 'b) apply (p: 'a t,
                         else Unknown
                    | Word_add _ => add ()
                    | Word_addCheck _ => add ()
-                   | Word_addCheckP _ => if WordX.isZero w
-                                         then f
-                                         else Unknown
+                   | Word_addCheckP _ =>
+                        if WordX.isZero w
+                           then f
+                        else Unknown
                    | Word_andb s =>
                         if WordX.isZero w
                            then zero s
@@ -2072,9 +2073,10 @@ fun ('a, 'b) apply (p: 'a t,
                         else if WordX.isMax (w, sg) then f else Unknown
                    | Word_mul s => mul (s, wordNeg)
                    | Word_mulCheck s => mul (s, wordNegCheck)
-                   | Word_mulCheckP _ => if WordX.isZero w orelse WordX.isOne w
-                                         then f
-                                         else Unknown
+                   | Word_mulCheckP _ =>
+                        if WordX.isZero w orelse WordX.isOne w
+                           then f
+                        else Unknown
                    | Word_orb _ =>
                         if WordX.isZero w
                            then Var x
@@ -2110,9 +2112,10 @@ fun ('a, 'b) apply (p: 'a t,
                            shift s
                    | Word_sub s => sub (s, wordNeg)
                    | Word_subCheck s => sub (s, wordNegCheck o #1)
-                   | Word_subCheckP _ => if WordX.isZero w andalso inOrder
-                                         then f
-                                         else Unknown
+                   | Word_subCheckP _ =>
+                        if WordX.isZero w andalso inOrder
+                           then f
+                        else Unknown
                    | Word_xorb s =>
                         if WordX.isZero w
                            then Var x
