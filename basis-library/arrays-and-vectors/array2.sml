@@ -10,11 +10,11 @@
 structure Array2 : ARRAY2 =
    struct
 
-      val op +$ = SeqIndex.+$
+      val op +! = SeqIndex.+!
       val op + = SeqIndex.+
-      val op -$ = SeqIndex.-$
+      val op -! = SeqIndex.-!
       val op - = SeqIndex.-
-      val op *$ = SeqIndex.*$
+      val op *! = SeqIndex.*!
       val op * = SeqIndex.*
       val op < = SeqIndex.<
       val op <= = SeqIndex.<=
@@ -66,12 +66,12 @@ structure Array2 : ARRAY2 =
                                          handle Overflow => raise Subscript
                                    in
                                       if (start < 0 orelse num < 0
-                                          orelse start +$ num > max)
+                                          orelse start +! num > max)
                                          then raise Subscript
-                                         else (start, start +$ num)
+                                         else (start, start +! num)
                                    end
                               else (SeqIndex.fromIntUnsafe start, 
-                                    SeqIndex.fromIntUnsafe start +$ num)
+                                    SeqIndex.fromIntUnsafe start +! num)
          fun checkSliceMax (start: int, 
                             num: int option, 
                             max: SeqIndex.int): SeqIndex.int * SeqIndex.int =
@@ -147,7 +147,7 @@ structure Array2 : ARRAY2 =
           cols = 0}
 
       fun unsafeSpot' ({cols, ...}: 'a array, r, c) =
-         r *$ cols +$ c
+         r *! cols +! c
       fun spot' (a as {rows, cols, ...}: 'a array, r, c) =
          if Primitive.Controls.safe 
             andalso (geu (r, rows) orelse geu (c, cols))
@@ -197,13 +197,13 @@ structure Array2 : ARRAY2 =
                      List.foldl
                      (fn (row: 'a list, i) =>
                       let
-                         val max = i +$ cols'
+                         val max = i +! cols'
                          val i' =
                             List.foldl (fn (x: 'a, i) =>
                                         (if i >= max
                                             then raise Size
                                          else (Primitive.Array.unsafeUpdate (array, i, x)
-                                               ; i +$ 1)))
+                                               ; i +! 1)))
                             i row
                       in if i' = max
                             then i'
@@ -218,7 +218,7 @@ structure Array2 : ARRAY2 =
          if Primitive.Controls.safe andalso geu (r, rows)
             then raise Subscript
          else
-            ArraySlice.vector (Primitive.Array.Slice.slice (array, r *$ cols, SOME cols))
+            ArraySlice.vector (Primitive.Array.Slice.slice (array, r *! cols, SOME cols))
       fun row (a, r) =
          if Primitive.Controls.safe
             then let
@@ -257,9 +257,9 @@ structure Array2 : ARRAY2 =
                            else let
                                    fun loopCol (c, b) =
                                       if c >= stopCol then b
-                                         else loopCol (c +$ 1, f (r, c, sub' (base, r, c), b))
+                                         else loopCol (c +! 1, f (r, c, sub' (base, r, c), b))
                                 in
-                                   loopRow (r +$ 1, loopCol (startCol, b))
+                                   loopRow (r +! 1, loopCol (startCol, b))
                                 end
                   in
                      loopRow (startRow, b)
@@ -271,9 +271,9 @@ structure Array2 : ARRAY2 =
                            else let
                                    fun loopRow (r, b) =
                                       if r >= stopRow then b
-                                         else loopRow (r +$ 1, f (r, c, sub' (base, r, c), b))
+                                         else loopRow (r +! 1, f (r, c, sub' (base, r, c), b))
                                 in
-                                   loopCol (c +$ 1, loopRow (startRow, b))
+                                   loopCol (c +! 1, loopRow (startRow, b))
                                 end
                   in
                      loopCol (startCol, b)
@@ -310,8 +310,8 @@ structure Array2 : ARRAY2 =
                 dst, dst_row, dst_col} =
          let
             val {startRow, stopRow, startCol, stopCol} = checkRegion src
-            val nrows = stopRow -$ startRow
-            val ncols = stopCol -$ startCol
+            val nrows = stopRow -! startRow
+            val ncols = stopCol -! startCol
             val {startRow = dst_row, startCol = dst_col, ...} = 
                checkRegion' {base = dst, row = dst_row, col = dst_col,
                              nrows = SOME nrows, 
@@ -330,13 +330,13 @@ structure Array2 : ARRAY2 =
                      if i < start
                         then ()
                      else (f i; loop (i - 1))
-               in loop (stop -$ 1)
+               in loop (stop -! 1)
                end
             val forRows = if startRow <= dst_row then forDown else forUp
             val forCols = if startCol <= dst_col then forUp else forDown
          in forRows (0, nrows, fn r =>
             forCols (0, ncols, fn c =>
-                     unsafeUpdate' (dst, dst_row +$ r, dst_col +$ c,
-                                    unsafeSub' (base, startRow +$ r, startCol +$ c))))
+                     unsafeUpdate' (dst, dst_row +! r, dst_col +! c,
+                                    unsafeSub' (base, startRow +! r, startCol +! c))))
          end
    end
