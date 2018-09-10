@@ -585,12 +585,8 @@ fun checkPrimApp {args, prim, result} =
       local
          fun make f s = let val t = f s in done ([t, t], SOME bool) end
       in
-         val wordBinaryP = make wordOrBitsOrSeq
-      end
-      local
-         fun make f s = let val t = f s in done ([t, t], SOME bool) end
-      in
          val realCompare = make real
+         val wordBinaryP = make wordOrBitsOrSeq
          val wordCompare = make wordOrBitsOrSeq
          val objptrCompare = make (fn _ => objptr) ()
       end
