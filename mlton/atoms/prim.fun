@@ -1683,27 +1683,22 @@ fun ('a, 'b) apply (p: 'a t,
          if WordSize.isInRange (s, w, sg)
             then word (WordX.fromIntInf (w, s))
          else ApplyResult.Overflow
-      fun wcheck (f: IntInf.t * IntInf.t -> IntInf.t,
-                  (s: WordSize.t, sg as {signed}),
-                  w: WordX.t,
-                  w': WordX.t) =
-         let
-            val conv = if signed then WordX.toIntInfX else WordX.toIntInf
-         in
-            wordOrOverflow (s, sg, f (conv w, conv w'))
-         end
-      fun wordOrTrue (s, sg, w) = if WordSize.isInRange (s, w, sg)
-                                  then f
-                                  else t
-      fun wcheckp (f: IntInf.t * IntInf.t -> IntInf.t,
-                   (s: WordSize.t, sg as {signed}),
-                   w: WordX.t,
-                   w': WordX.t) =
-         let
-            val conv = if signed then WordX.toIntInfX else WordX.toIntInf
-         in
-            wordOrTrue (s, sg, f (conv w, conv w'))
-         end
+      fun wordOrTrue (s, sg, w) = bool (not (WordSize.isInRange (s, w, sg)))
+      local
+         fun mkCheck toAppRes =
+            fn (f: IntInf.t * IntInf.t -> IntInf.t,
+                (s: WordSize.t, sg as {signed}),
+                w: WordX.t,
+                w': WordX.t) =>
+            let
+               val conv = if signed then WordX.toIntInfX else WordX.toIntInf
+            in
+               toAppRes (s, sg, f (conv w, conv w'))
+            end
+      in
+         val wcheck = mkCheck wordOrOverflow
+         val wcheckp = mkCheck wordOrTrue
+      end
       val eq =
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | _ => ApplyResult.Unknown
