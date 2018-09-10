@@ -171,7 +171,16 @@ fun implementsPrim (p: 'a Prim.t): bool =
                     *)
                    not (WordSize.equals (ws, WordSize.word64))
               | _ => true)
-       | Word_mulCheckP _ => true (* TODO? *)
+       | Word_mulCheckP (ws, _) =>
+            (case (!Control.Target.arch, ws) of
+                (Control.Target.X86, ws) =>
+                   (* @llvm.smul.with.overflow.i64 becomes a call to __mulodi4.
+                    * @llvm.umul.with.overflow.i64 becomes a call to __udivdi3.
+                    * These are provided by compiler-rt and not always by libgcc.
+                    * In any case, do not depend on non-standard libraries.
+                    *)
+                   not (WordSize.equals (ws, WordSize.word64))
+              | _ => true)
        | Word_neg _ => true
        | Word_negCheck _ => true
        | Word_negCheckP _ => true
