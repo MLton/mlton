@@ -34,6 +34,7 @@ structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
 structure ShareZeroVec = ShareZeroVec (S)
+structure SplitTypes = SplitTypes (S)
 structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 

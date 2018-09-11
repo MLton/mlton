@@ -87,6 +87,7 @@ local
    share-zero-vec.fun
    simplify-types.fun
    useless.fun
+   split-types.fun
    zone.fun
    simplify.sig
    simplify2.sig
