@@ -131,7 +131,7 @@ all(64)
 
 #undef all
 #undef WordS_subCheckP
-#undef WordS_negCheckP
+#undef Word_negCheckP
 #undef WordU_mulCheckP
 #undef WordS_mulCheckP
 #undef WordU_addCheckP
