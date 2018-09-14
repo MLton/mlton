@@ -83,24 +83,37 @@ end
 
  fun transform (program as Program.T {datatypes, globals, functions, main}): Program.t =
     let
-       val { value, func, label } = analyze
-             { coerce = fn {from, to} => Value.coerce (from, to),
-             conApp = Value.fromCon,
-             const = Value.const,
-             filter = fn _ => (),
-             filterWord = fn _ => (),
-             fromType = Value.fromType,
-             layout = Value.layout,
-             primApp = fn { resultType: Type.t, ...} => Value.fromType resultType,
-             program = program,
-             select = fn { resultType: Type.t, ...} => Value.fromType resultType,
-             tuple = Value.fromTuple,
-             useFromTypeOnBinds = false }
-    in
-      Program.T {
-      datatypes = datatypes,
-      globals = globals,
-      functions = functions,
-      main = main}
-    end
+       val { value, func, label } =
+          analyze
+          { coerce = fn {from, to} => Value.coerce (from, to),
+            conApp = Value.fromCon,
+            const = Value.const,
+            filter = fn _ => (),
+            filterWord = fn _ => (),
+            fromType = Value.fromType,
+            layout = Value.layout,
+            primApp = fn { resultType: Type.t, ...} => Value.fromType resultType,
+            program = program,
+            select = fn { resultType: Type.t, ...} => Value.fromType resultType,
+            tuple = Value.fromTuple,
+            useFromTypeOnBinds = false }
+       fun makeTy value =
+          (case value of
+               Value.Unchanged ty => ty
+             | Value.Fresh eq => (case Equatable.value eq of (tycon, cons) => Type.datatypee tycon)
+             | Value.Tuple ts => Type.tuple (Vector.map (ts, makeTy))
+             | Value.Con _ => Error.bug "SplitTypes.makeTy: type Con appeared in final result")
+       val globals =
+          Vector.map(globals,
+          fn st as Statement.T {exp, ty, var=varopt} =>
+             (case varopt of
+                   NONE => st
+                 | SOME var => Statement.T {exp=exp, ty=makeTy (value var), var=varopt}))
+       val program =
+          Program.T
+          { datatypes = datatypes,
+            globals = globals,
+            functions = functions,
+            main = main }
+    in program end
  end
