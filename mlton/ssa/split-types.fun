@@ -11,7 +11,7 @@ struct
    structure Value = struct
       datatype t = Unchanged of Type.t
                  (* each other type has a constructor set with arguments to coerce *)
-                 | Fresh of (Type.t * con list ref) Equatable.t
+                 | Fresh of (Tycon.t * con list ref) Equatable.t
                  | Tuple of t vector
                  (* singular constructor, will need to be merged into another type *)
                  | Con of con
@@ -20,7 +20,7 @@ struct
       fun layoutCon (ConData (con, ts)) =
          Layout.fill [ Con.layout con, Vector.layout layout ts ]
       and layoutFresh (ty, cons) =
-         Layout.fill [ Type.layout ty, Layout.str " # " ]
+         Layout.fill [ Tycon.layout ty, Layout.str " # " ]
       and layout (t: t) =
          case t of
               Unchanged t => Type.layout t
@@ -28,9 +28,9 @@ struct
             | Tuple vect => Vector.layout layout vect
             | Con (ConData (con, _)) => Con.layout con
 
-      fun mergeFresh ((ty1, cons1), (ty2, cons2)) =
-         if Type.equals (ty1, ty2)
-            then (ty1, (cons1 := List.append (!cons1, !cons2) ; cons1))
+      fun mergeFresh ((tycon1, cons1), (tycon2, cons2)) =
+         if Tycon.equals (tycon1, tycon2)
+            then (tycon1, (cons1 := List.append (!cons1, !cons2) ; cons1))
             else Error.bug "SplitTypes.Value.mergeFresh: Merged different types"
       fun mergeConIntoType (conData as ConData (con, args), eq) =
          (case Equatable.value eq of
@@ -59,16 +59,24 @@ struct
             | (Fresh eq, Con conData) =>
                mergeConIntoType (conData, eq)
             (*| (Fresh (ty, cons), Con con) => cons := con :: !cons*)
+            | (Con (ConData (con1, args1)), Con (ConData (con2, args2))) =>
+                 if Con.equals (con1, con2)
+                 then (Vector.map2 (args1, args2, coerce) ; ())
+                 else () (* do nothing, this can happen for instance if a
+                 constant passes into a case statement *)
             | _ =>
                  Error.bug (Layout.toString (Layout.fill [
                  Layout.str "SplitTypes.Value.coerce: Strange coercion: ",
-                 layout from, layout to ]))
+                 layout from, Layout.str " coerced to ", layout to ]))
 
             (* TODO: Non-constructor types should always be equated *)
             (* delayed types will be dropped, reducing memory in some cases *)
-      fun fromType (ty: Type.t) = Fresh (Equatable.new (ty, ref []))
-      fun fromCon {con: Con.t, args: t vector} = 
-         case con of Con (ConData (con, args))
+      fun fromType (ty: Type.t) =
+         case Type.dest ty of
+              Type.Datatype tycon => Fresh (Equatable.new (tycon, ref []))
+            | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
+            | _ => Unchanged ty
+      fun fromCon {con: Con.t, args: t vector} = Con (ConData (con, args))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
 end
