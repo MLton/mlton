@@ -11,36 +11,47 @@ struct
    structure Value = struct
       datatype t = Unchanged of Type.t
                  (* each other type has a constructor set with arguments to coerce *)
-                 | Fresh of (Tycon.t * con list ref) Equatable.t
+                 | Fresh of (Tycon.t option * con list ref) Equatable.t
                  | Tuple of t vector
-                 (* singular constructor, will need to be merged into another type *)
-                 | Con of con
       and con = ConData of Con.t * (t vector)
 
       fun layoutCon (ConData (con, ts)) =
          Layout.fill [ Con.layout con, Vector.layout layout ts ]
       and layoutFresh (ty, cons) =
-         Layout.fill [ Tycon.layout ty, Layout.str " # " ]
+         Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # " ]
       and layout (t: t) =
          case t of
               Unchanged t => Type.layout t
             | Fresh eq => Equatable.layout (eq, layoutFresh)
             | Tuple vect => Vector.layout layout vect
-            | Con (ConData (con, _)) => Con.layout con
 
+      (* lattice join of options, where NONE is taken as less than SOME a
+       * calling inequal if inconsistent
+       *
+       * if SOME x and SOME y and x = y then return SOME x = SOME y
+       * else if one is SOME x and the other NONE then return SOME x
+       * else if both NONE then return NONE
+       * else call inequal *)
+      fun optionJoin (opt1, opt2, equals, inequal) =
+         case (opt1, opt2) of
+              (NONE, NONE) => NONE
+            | (SOME x1, NONE) => SOME x1
+            | (NONE, SOME x2) => SOME x2
+            | (SOME x1, SOME x2) =>
+                    if equals (x1, x2)
+                    then SOME x1
+                    else inequal (x1, x2)
       fun mergeFresh ((tycon1, cons1), (tycon2, cons2)) =
-         if Tycon.equals (tycon1, tycon2)
-            then (tycon1, (cons1 := List.append (!cons1, !cons2) ; cons1))
-            else Error.bug "SplitTypes.Value.mergeFresh: Merged different types"
-      fun mergeConIntoType (conData as ConData (con, args), eq) =
-         (case Equatable.value eq of
-               (_, cons) =>
-               (* if a con isn't present, then push it, else just merge all
-                * the arguments together instead *)
-                (case List.peek (!cons, fn (ConData (con2, _)) => Con.equals (con, con2)) of
-                      NONE => (cons := conData :: !cons)
-                    | SOME (ConData (_, args2)) => (Vector.map2 (args,
-                      args2, coerce) ; ())))
+         let
+            val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
+               fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
+            val _ = cons1 := List.append (!cons1, !cons2)
+            val _ = Layout.print (Layout.fill
+               [ Option.layout Tycon.layout tycon1, Layout.str " -> ",
+                 Option.layout Tycon.layout tycon2, Layout.str "\n" ], print)
+         in
+            (tycon, cons1)
+         end
       and coerce (from, to) =
          case (from, to) of
               (Fresh a, Fresh b) => Equatable.equate (a, b, mergeFresh)
@@ -54,16 +65,6 @@ struct
                   if Type.equals(t1, t2)
                   then ()
                   else Error.bug "SplitTypes.Value.coerce: Bad merge of unchanged types"
-            | (Con conData, Fresh eq) =>
-               mergeConIntoType (conData, eq)
-            | (Fresh eq, Con conData) =>
-               mergeConIntoType (conData, eq)
-            (*| (Fresh (ty, cons), Con con) => cons := con :: !cons*)
-            | (Con (ConData (con1, args1)), Con (ConData (con2, args2))) =>
-                 if Con.equals (con1, con2)
-                 then (Vector.map2 (args1, args2, coerce) ; ())
-                 else () (* do nothing, this can happen for instance if a
-                 constant passes into a case statement *)
             | _ =>
                  Error.bug (Layout.toString (Layout.fill [
                  Layout.str "SplitTypes.Value.coerce: Strange coercion: ",
@@ -73,10 +74,11 @@ struct
             (* delayed types will be dropped, reducing memory in some cases *)
       fun fromType (ty: Type.t) =
          case Type.dest ty of
-              Type.Datatype tycon => Fresh (Equatable.new (tycon, ref []))
+              Type.Datatype tycon => Fresh (Equatable.new (SOME tycon, ref []))
             | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
             | _ => Unchanged ty
-      fun fromCon {con: Con.t, args: t vector} = Con (ConData (con, args))
+      fun fromCon {con: Con.t, args: t vector} = Fresh (Equatable.delay (fn ()
+         => (NONE, ref [ConData (con, args)])))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
 end
@@ -97,18 +99,23 @@ end
             select = fn { resultType: Type.t, ...} => Value.fromType resultType,
             tuple = Value.fromTuple,
             useFromTypeOnBinds = false }
-       fun makeTy value =
+       fun makeTy ty value =
           (case value of
                Value.Unchanged ty => ty
-             | Value.Fresh eq => (case Equatable.value eq of (tycon, cons) => Type.datatypee tycon)
-             | Value.Tuple ts => Type.tuple (Vector.map (ts, makeTy))
-             | Value.Con _ => Error.bug "SplitTypes.makeTy: type Con appeared in final result")
+             | Value.Fresh eq =>
+                 (case Equatable.value eq of
+                       (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
+                     | (NONE, _) =>
+                          (case Type.dest ty of
+                               Type.Datatype tycon => Type.datatypee (Tycon.new tycon)
+                             | _ => ty))
+             | Value.Tuple ts => Type.tuple (Vector.map (ts, makeTy ty)))
        val globals =
           Vector.map(globals,
           fn st as Statement.T {exp, ty, var=varopt} =>
              (case varopt of
                    NONE => st
-                 | SOME var => Statement.T {exp=exp, ty=makeTy (value var), var=varopt}))
+                 | SOME var => Statement.T {exp=exp, ty=makeTy ty (value var), var=varopt}))
        val program =
           Program.T
           { datatypes = datatypes,
